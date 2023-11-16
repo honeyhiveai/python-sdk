@@ -9,10 +9,9 @@ import requests
 from llama_index.callbacks.base import BaseCallbackHandler
 from llama_index.callbacks.schema import TIMESTAMP_FORMAT, CBEvent, CBEventType
 from llama_index.callbacks.token_counting import get_llm_token_counts
-from llama_index.utils import globals_helper
+from llama_index.utilities.token_counting import TokenCounter
 
 from honeyhive.sdk.langchain_tracer import Config, Log, log_to_dict
-
 
 class HHEventType(str, Enum):
     MODEL = "model"
@@ -33,7 +32,7 @@ class HoneyHiveLlamaIndexTracer(BaseCallbackHandler):
         name: Optional[str] = None,
         source: Optional[str] = None,
         user_properties: Optional[Dict[str, Any]] = None,
-        tokenizer: Optional[Callable[[str], List]] = None,
+        tokenizer: Optional[TokenCounter] = None,
         event_starts_to_ignore: Optional[List[CBEventType]] = None,
         event_ends_to_ignore: Optional[List[CBEventType]] = None,
         api_key: Optional[str] = None,
@@ -53,7 +52,7 @@ class HoneyHiveLlamaIndexTracer(BaseCallbackHandler):
         self._event_pairs_by_id: Dict[str, List[CBEvent]] = defaultdict(list)
         self._cur_trace_id: Optional[str] = None
         self._trace_map: Dict[str, List[str]] = defaultdict(list)
-        self.tokenizer = tokenizer or globals_helper.tokenizer
+        self.tokenizer = TokenCounter(tokenizer=tokenizer) if tokenizer else TokenCounter()
 
         self.name = name
         self.project = project
@@ -197,7 +196,7 @@ class HoneyHiveLlamaIndexTracer(BaseCallbackHandler):
             error=None,
             parent_id=parent_id,
             config=Config(),
-            event_name=f"{event_type}",
+            event_name=f"{getattr(event_type, 'value', event_type)}",
             event_type=span_kind,
             start_time=start_time_us,
             end_time=end_time_us,
