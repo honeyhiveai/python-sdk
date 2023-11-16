@@ -32,8 +32,6 @@ python:
       shared: models/components
       webhooks: models/webhooks
   inputModelSuffix: input
-  installationURL: https://github.com/honeyhiveai/python-sdk.git
   maxMethodParams: 4
   outputModelSuffix: output
   packageName: HoneyHive
-  repoSubDirectory: .
