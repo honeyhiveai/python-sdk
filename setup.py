@@ -22,7 +22,7 @@ entry_points = {'console_scripts': ['honeyhive = honeyhive.cli:honeyhive']}
 
 setup(
     name='honeyhive',
-    version='0.1.60',
+    version='0.1.66',
     description='The HoneyHive SDK for Python',
     long_description=open('README.md').read(),
     long_description_content_type='text/markdown',
