@@ -1,0 +1,21 @@
+# FineTunedModelResponse
+
+The response object for a fine-tuned model
+
+
+## Fields
+
+| Field                                                                | Type                                                                 | Required                                                             | Description                                                          |
+| -------------------------------------------------------------------- | -------------------------------------------------------------------- | -------------------------------------------------------------------- | -------------------------------------------------------------------- |
+| `id`                                                                 | *Optional[str]*                                                      | :heavy_minus_sign:                                                   | The ID of the fine-tuned model                                       |
+| `object`                                                             | *Optional[str]*                                                      | :heavy_minus_sign:                                                   | The object type of the fine-tuned model                              |
+| `model`                                                              | *Optional[str]*                                                      | :heavy_minus_sign:                                                   | The model used for fine-tuning                                       |
+| `created_at`                                                         | [date](https://docs.python.org/3/library/datetime.html#date-objects) | :heavy_minus_sign:                                                   | The timestamp of when the fine-tuned model was created               |
+| `updated_at`                                                         | [date](https://docs.python.org/3/library/datetime.html#date-objects) | :heavy_minus_sign:                                                   | The timestamp of when the fine-tuned model was last updated          |
+| `fine_tuned_model`                                                   | *Optional[str]*                                                      | :heavy_minus_sign:                                                   | The fine-tuned model                                                 |
+| `hyperparams`                                                        | *Optional[str]*                                                      | :heavy_minus_sign:                                                   | The hyperparameters used for fine-tuning                             |
+| `org_id`                                                             | *Optional[str]*                                                      | :heavy_minus_sign:                                                   | The ID of the organization                                           |
+| `result_files`                                                       | *Optional[str]*                                                      | :heavy_minus_sign:                                                   | The result files of the fine-tuned model                             |
+| `status`                                                             | *Optional[str]*                                                      | :heavy_minus_sign:                                                   | The status of the fine-tuned model                                   |
+| `validation_files`                                                   | *Optional[str]*                                                      | :heavy_minus_sign:                                                   | The validation files used for fine-tuning                            |
+| `training_files`                                                     | *Optional[str]*                                                      | :heavy_minus_sign:                                                   | The training files used for fine-tuning                              |
