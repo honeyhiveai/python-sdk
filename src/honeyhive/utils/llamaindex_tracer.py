@@ -11,7 +11,7 @@ from llama_index.callbacks.schema import TIMESTAMP_FORMAT, CBEvent, CBEventType
 from llama_index.callbacks.token_counting import get_llm_token_counts
 from llama_index.utilities.token_counting import TokenCounter
 
-from honeyhive.sdk.langchain_tracer import Config, Log, log_to_dict
+from honeyhive.utils.langchain_tracer import Config, Log, log_to_dict
 
 class HHEventType(str, Enum):
     MODEL = "model"
