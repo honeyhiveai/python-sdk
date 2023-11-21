@@ -109,7 +109,6 @@ if res.delete_response is not None:
     # handle response
     pass
 ```
-
 <!-- End Error Handling -->
 
 <!-- Start Server Selection -->
@@ -181,7 +180,6 @@ s = honeyhive.HoneyHive(client: http_client)
 <!-- End Custom HTTP Client -->
 
 <!-- Start Authentication -->
-
 ## Authentication
 
 ### Per-Client Security Schemes
@@ -209,6 +207,16 @@ if res.delete_response is not None:
     pass
 ```
 <!-- End Authentication -->
+
+
+
+<!-- Start SDK Installation -->
+## SDK Installation
+
+```bash
+pip install git+https://github.com/honeyhiveai/python-sdk.git
+```
+<!-- End SDK Installation -->
 
 <!-- Placeholder for Future Speakeasy SDK Sections -->
 
