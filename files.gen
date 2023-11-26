@@ -1,12 +1,12 @@
 src/honeyhive/sdkconfiguration.py
 src/honeyhive/sdk.py
 pylintrc
-setup.py
 src/honeyhive/__init__.py
 src/honeyhive/utils/__init__.py
 src/honeyhive/utils/retries.py
 src/honeyhive/utils/utils.py
 src/honeyhive/models/errors/sdkerror.py
+tests/helpers.py
 src/honeyhive/models/operations/delete_tasks.py
 src/honeyhive/models/operations/get_tasks.py
 src/honeyhive/models/operations/post_tasks.py
