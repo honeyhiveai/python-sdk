@@ -149,11 +149,11 @@ req = components.TaskCreationQuery(
                 'string',
             ],
             hyperparameters={
-                "key": 'string',
+                'key': 'string',
             },
             few_shot_examples=[
                 {
-                    "key": 'string',
+                    'key': 'string',
                 },
             ],
         ),
@@ -162,7 +162,7 @@ req = components.TaskCreationQuery(
         components.DatasetResponse(
             file=[
                 {
-                    "key": 'string',
+                    'key': 'string',
                 },
             ],
         ),
@@ -170,7 +170,7 @@ req = components.TaskCreationQuery(
     metrics=[
         components.MetricResponse(
             threshold={
-                "key": 'string',
+                'key': 'string',
             },
         ),
     ],
@@ -224,11 +224,11 @@ req = components.TaskUpdateQuery(
                 'string',
             ],
             hyperparameters={
-                "key": 'string',
+                'key': 'string',
             },
             few_shot_examples=[
                 {
-                    "key": 'string',
+                    'key': 'string',
                 },
             ],
         ),
@@ -237,7 +237,7 @@ req = components.TaskUpdateQuery(
         components.DatasetResponse(
             file=[
                 {
-                    "key": 'string',
+                    'key': 'string',
                 },
             ],
         ),
@@ -245,7 +245,7 @@ req = components.TaskUpdateQuery(
     metrics=[
         components.MetricResponse(
             threshold={
-                "key": 'string',
+                'key': 'string',
             },
         ),
     ],
@@ -330,16 +330,16 @@ s = honeyhive.HoneyHive(
 
 req = components.GenerateQuery(
     input={
-        "key": 'string',
+        'key': 'string',
     },
     prompts=[
         'string',
     ],
     metadata={
-        "key": 'string',
+        'key': 'string',
     },
     user_properties={
-        "key": 'string',
+        'key': 'string',
     },
 )
 
@@ -421,11 +421,11 @@ s = honeyhive.HoneyHive(
 
 req = components.PromptCreationQuery(
     hyperparameters={
-        "key": 'string',
+        'key': 'string',
     },
     few_shot_examples=[
         {
-            "key": 'string',
+            'key': 'string',
         },
     ],
 )
@@ -511,11 +511,11 @@ res = s.put_prompts_id_(id='string', prompt_update_query=components.PromptUpdate
         'string',
     ],
     hyperparameters={
-        "key": 'string',
+        'key': 'string',
     },
     few_shot_examples=[
         {
-            "key": 'string',
+            'key': 'string',
         },
     ],
 ))
@@ -785,7 +785,7 @@ s = honeyhive.HoneyHive(
 req = components.UploadDataset(
     file=[
         {
-            "key": 'string',
+            'key': 'string',
         },
     ],
 )
@@ -830,7 +830,7 @@ s = honeyhive.HoneyHive(
 req = components.UploadDataset(
     file=[
         {
-            "key": 'string',
+            'key': 'string',
         },
     ],
 )
@@ -1113,16 +1113,16 @@ req = components.ChatCompletionRequest(
     project='string',
     messages=[
         {
-            "key": 'string',
+            'key': 'string',
         },
     ],
     model='Golf',
     hyperparameters={
-        "key": 'string',
+        'key': 'string',
     },
     functions=[
         {
-            "key": 'string',
+            'key': 'string',
         },
     ],
 )
@@ -1166,20 +1166,20 @@ s = honeyhive.HoneyHive(
 
 req = components.GenerationLoggingQuery(
     inputs={
-        "key": 'string',
+        'key': 'string',
     },
     hyperparameters={
-        "key": 'string',
+        'key': 'string',
     },
     usage={
-        "key": 'string',
+        'key': 'string',
     },
     user_properties={
-        "key": 'string',
+        'key': 'string',
     },
     metadata=components.Metadata(),
     feedback={
-        "key": 'string',
+        'key': 'string',
     },
 )
 
@@ -1224,7 +1224,7 @@ req = components.FeedbackQuery(
     task='string',
     generation_id='string',
     feedback_json={
-        "key": 'string',
+        'key': 'string',
     },
 )
 
@@ -1299,18 +1299,18 @@ s = honeyhive.HoneyHive(
 req = components.EvaluationLoggingQuery(
     prompts=[
         {
-            "key": 'string',
+            'key': 'string',
         },
     ],
     dataset=[
         {
-            "key": 'string',
+            'key': 'string',
         },
     ],
     metrics=[
         [
             {
-                "key": 'string',
+                'key': 'string',
             },
         ],
     ],
@@ -1319,22 +1319,22 @@ req = components.EvaluationLoggingQuery(
     ],
     results=[
         {
-            "key": 'string',
+            'key': 'string',
         },
     ],
     summary=[
         {
-            "key": 'string',
+            'key': 'string',
         },
     ],
     comments=[
         {
-            "key": 'string',
+            'key': 'string',
         },
     ],
     generations=[
         {
-            "key": 'string',
+            'key': 'string',
         },
     ],
 )
@@ -1456,34 +1456,34 @@ s = honeyhive.HoneyHive(
 res = s.put_evaluations_id_(id='string', evaluation_update_request=components.EvaluationUpdateRequest(
     prompts=[
         {
-            "key": 'string',
+            'key': 'string',
         },
     ],
     dataset=[
         {
-            "key": 'string',
+            'key': 'string',
         },
     ],
     metrics=[
         [
             {
-                "key": 'string',
+                'key': 'string',
             },
         ],
     ],
     summary=[
         {
-            "key": 'string',
+            'key': 'string',
         },
     ],
     generations=[
         {
-            "key": 'string',
+            'key': 'string',
         },
     ],
     results=[
         {
-            "key": 'string',
+            'key': 'string',
         },
     ],
     accepted=[
@@ -1491,7 +1491,7 @@ res = s.put_evaluations_id_(id='string', evaluation_update_request=components.Ev
     ],
     comments=[
         {
-            "key": 'string',
+            'key': 'string',
         },
     ],
 ))
@@ -1534,7 +1534,7 @@ s = honeyhive.HoneyHive(
 
 req = components.SessionStartQuery(
     user_properties={
-        "key": 'string',
+        'key': 'string',
     },
 )
 
@@ -1616,30 +1616,30 @@ s = honeyhive.HoneyHive(
 
 res = s.post_session_session_id_event(session_id='string', session_event_query=components.SessionEventQuery(
     config={
-        "key": 'string',
+        'key': 'string',
     },
     children=[
         {
-            "key": 'string',
+            'key': 'string',
         },
     ],
     inputs={
-        "key": 'string',
+        'key': 'string',
     },
     outputs={
-        "key": 'string',
+        'key': 'string',
     },
     user_properties={
-        "key": 'string',
+        'key': 'string',
     },
     metadata={
-        "key": 'string',
+        'key': 'string',
     },
     metrics={
-        "key": 'string',
+        'key': 'string',
     },
     feedback={
-        "key": 'string',
+        'key': 'string',
     },
 ))
 
@@ -1682,7 +1682,7 @@ s = honeyhive.HoneyHive(
 
 res = s.post_session_session_id_feedback(session_id='string', session_feedback=components.SessionFeedback(
     feedback={
-        "key": 'string',
+        'key': 'string',
     },
 ))
 
@@ -1884,7 +1884,7 @@ s = honeyhive.HoneyHive(
 
 
 res = s.get_session(project='string', query={
-    "key": 'string',
+    'key': 'string',
 }, limit=355376)
 
 if res.classes is not None:
@@ -1929,30 +1929,30 @@ res = s.post_session_session_id_traces(session_id='string', session_trace=compon
     logs=[
         components.SessionEventQuery(
             config={
-                "key": 'string',
+                'key': 'string',
             },
             children=[
                 {
-                    "key": 'string',
+                    'key': 'string',
                 },
             ],
             inputs={
-                "key": 'string',
+                'key': 'string',
             },
             outputs={
-                "key": 'string',
+                'key': 'string',
             },
             user_properties={
-                "key": 'string',
+                'key': 'string',
             },
             metadata={
-                "key": 'string',
+                'key': 'string',
             },
             metrics={
-                "key": 'string',
+                'key': 'string',
             },
             feedback={
-                "key": 'string',
+                'key': 'string',
             },
         ),
     ],
