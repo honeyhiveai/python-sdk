@@ -1,12 +1,12 @@
 src/honeyhive/sdkconfiguration.py
 src/honeyhive/sdk.py
 pylintrc
-setup.py
 src/honeyhive/__init__.py
 src/honeyhive/utils/__init__.py
 src/honeyhive/utils/retries.py
 src/honeyhive/utils/utils.py
 src/honeyhive/models/errors/sdkerror.py
+tests/helpers.py
 src/honeyhive/models/operations/delete_tasks.py
 src/honeyhive/models/operations/get_tasks.py
 src/honeyhive/models/operations/post_tasks.py
@@ -97,7 +97,6 @@ src/honeyhive/models/__init__.py
 src/honeyhive/models/errors/__init__.py
 src/honeyhive/models/operations/__init__.py
 src/honeyhive/models/components/__init__.py
-USAGE.md
 docs/models/operations/deletetasksrequest.md
 docs/models/operations/deletetasksresponse.md
 docs/models/operations/gettasksrequest.md
@@ -222,4 +221,5 @@ docs/models/components/successtraceresponse.md
 docs/models/components/sessiontrace.md
 docs/models/components/security.md
 docs/sdks/honeyhive/README.md
+USAGE.md
 .gitattributes
