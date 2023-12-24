@@ -5,86 +5,48 @@
 
 ### Available Operations
 
-* [delete_tasks](#delete_tasks) - Delete a task
 * [get_tasks](#get_tasks) - Get all tasks
 * [post_tasks](#post_tasks) - Create a task
+* [delete_tasks](#delete_tasks) - Delete a task
 * [put_tasks](#put_tasks) - Update a task
 * [get_generations](#get_generations) - Get all generations
 * [post_generations](#post_generations) - Generate a text
 * [get_prompts](#get_prompts) - Get all prompts or filter by task and name
 * [post_prompts](#post_prompts) - Create a prompt
-* [delete_prompts_id_](#delete_prompts_id_) - Delete a prompt by name
 * [put_prompts_id_](#put_prompts_id_) - Update a prompt
+* [delete_prompts_id_](#delete_prompts_id_) - Delete a prompt by name
 * [get_fine_tuned_models](#get_fine_tuned_models) - Get all fine-tuned models
 * [post_fine_tuned_models](#post_fine_tuned_models) - Create a new fine-tuned model
-* [delete_fine_tuned_models_id_](#delete_fine_tuned_models_id_) - Delete a fine-tuned model
 * [get_fine_tuned_models_id_](#get_fine_tuned_models_id_) - Get a fine-tuned model
-* [delete_datasets](#delete_datasets) - Delete all datasets
+* [delete_fine_tuned_models_id_](#delete_fine_tuned_models_id_) - Delete a fine-tuned model
 * [get_datasets](#get_datasets) - Get datasets
 * [post_datasets](#post_datasets) - Create a dataset
 * [put_datasets](#put_datasets) - Update a dataset
+* [delete_datasets](#delete_datasets) - Delete all datasets
 * [delete_datasets_name_](#delete_datasets_name_) - Delete a dataset
-* [delete_metrics](#delete_metrics) - Delete a metric
 * [get_metrics](#get_metrics) - Get all metrics
 * [post_metrics](#post_metrics) - Create a metric
+* [delete_metrics](#delete_metrics) - Delete a metric
 * [put_metrics](#put_metrics) - Update a metric
 * [post_metrics_compute](#post_metrics_compute) - Compute metric
 * [post_chat](#post_chat) - Create a chat completion
 * [post_generations_log](#post_generations_log) - Log a generation
 * [post_feedback](#post_feedback) - Send feedback
-* [get_evaluations](#get_evaluations) - Get all evaluations
 * [post_evaluations](#post_evaluations) - Log an evaluation
-* [delete_evaluations_id_](#delete_evaluations_id_) - Delete an evaluation
+* [get_evaluations](#get_evaluations) - Get all evaluations
 * [get_evaluations_id_](#get_evaluations_id_) - Get an evaluation
+* [delete_evaluations_id_](#delete_evaluations_id_) - Delete an evaluation
 * [put_evaluations_id_](#put_evaluations_id_) - Update an evaluation
 * [post_session_start](#post_session_start) - Start a session
 * [post_session_session_id_end](#post_session_session_id_end) - End a session
 * [post_session_session_id_event](#post_session_session_id_event) - Log an event
 * [post_session_session_id_feedback](#post_session_session_id_feedback) - Log session feedback
-* [delete_session_session_id_](#delete_session_session_id_) - Delete a session
 * [get_session_session_id_](#get_session_session_id_) - Get a session
 * [put_session_session_id_](#put_session_session_id_) - Update a session event
+* [delete_session_session_id_](#delete_session_session_id_) - Delete a session
 * [get_session_session_id_export](#get_session_session_id_export) - Get a session in Trace Event format
 * [get_session](#get_session) - Get all sessions
 * [post_session_session_id_traces](#post_session_session_id_traces) - Log a trace
-
-## delete_tasks
-
-Delete a task
-
-### Example Usage
-
-```python
-import honeyhive
-from honeyhive.models import operations
-
-s = honeyhive.HoneyHive(
-    bearer_auth="",
-)
-
-
-res = s.delete_tasks(name='string')
-
-if res.delete_response is not None:
-    # handle response
-    pass
-```
-
-### Parameters
-
-| Parameter          | Type               | Required           | Description        |
-| ------------------ | ------------------ | ------------------ | ------------------ |
-| `name`             | *str*              | :heavy_check_mark: | N/A                |
-
-
-### Response
-
-**[operations.DeleteTasksResponse](../../models/operations/deletetasksresponse.md)**
-### Errors
-
-| Error Object    | Status Code     | Content Type    |
-| --------------- | --------------- | --------------- |
-| errors.SDKError | 400-600         | */*             |
 
 ## get_tasks
 
@@ -97,7 +59,7 @@ import honeyhive
 from honeyhive.models import operations
 
 s = honeyhive.HoneyHive(
-    bearer_auth="",
+    bearer_auth="<YOUR_BEARER_TOKEN_HERE>",
 )
 
 
@@ -122,7 +84,7 @@ if res.classes is not None:
 
 | Error Object    | Status Code     | Content Type    |
 | --------------- | --------------- | --------------- |
-| errors.SDKError | 400-600         | */*             |
+| errors.SDKError | 4x-5xx          | */*             |
 
 ## post_tasks
 
@@ -136,7 +98,7 @@ import honeyhive
 from honeyhive.models import components
 
 s = honeyhive.HoneyHive(
-    bearer_auth="",
+    bearer_auth="<YOUR_BEARER_TOKEN_HERE>",
 )
 
 req = components.TaskCreationQuery(
@@ -149,11 +111,11 @@ req = components.TaskCreationQuery(
                 'string',
             ],
             hyperparameters={
-                "key": 'string',
+                'key': 'string',
             },
             few_shot_examples=[
                 {
-                    "key": 'string',
+                    'key': 'string',
                 },
             ],
         ),
@@ -162,7 +124,7 @@ req = components.TaskCreationQuery(
         components.DatasetResponse(
             file=[
                 {
-                    "key": 'string',
+                    'key': 'string',
                 },
             ],
         ),
@@ -170,7 +132,7 @@ req = components.TaskCreationQuery(
     metrics=[
         components.MetricResponse(
             threshold={
-                "key": 'string',
+                'key': 'string',
             },
         ),
     ],
@@ -197,7 +159,45 @@ if res.task_response is not None:
 
 | Error Object    | Status Code     | Content Type    |
 | --------------- | --------------- | --------------- |
-| errors.SDKError | 400-600         | */*             |
+| errors.SDKError | 4x-5xx          | */*             |
+
+## delete_tasks
+
+Delete a task
+
+### Example Usage
+
+```python
+import honeyhive
+from honeyhive.models import operations
+
+s = honeyhive.HoneyHive(
+    bearer_auth="<YOUR_BEARER_TOKEN_HERE>",
+)
+
+
+res = s.delete_tasks(name='string')
+
+if res.delete_response is not None:
+    # handle response
+    pass
+```
+
+### Parameters
+
+| Parameter          | Type               | Required           | Description        |
+| ------------------ | ------------------ | ------------------ | ------------------ |
+| `name`             | *str*              | :heavy_check_mark: | N/A                |
+
+
+### Response
+
+**[operations.DeleteTasksResponse](../../models/operations/deletetasksresponse.md)**
+### Errors
+
+| Error Object    | Status Code     | Content Type    |
+| --------------- | --------------- | --------------- |
+| errors.SDKError | 4x-5xx          | */*             |
 
 ## put_tasks
 
@@ -211,7 +211,7 @@ import honeyhive
 from honeyhive.models import components
 
 s = honeyhive.HoneyHive(
-    bearer_auth="",
+    bearer_auth="<YOUR_BEARER_TOKEN_HERE>",
 )
 
 req = components.TaskUpdateQuery(
@@ -224,11 +224,11 @@ req = components.TaskUpdateQuery(
                 'string',
             ],
             hyperparameters={
-                "key": 'string',
+                'key': 'string',
             },
             few_shot_examples=[
                 {
-                    "key": 'string',
+                    'key': 'string',
                 },
             ],
         ),
@@ -237,7 +237,7 @@ req = components.TaskUpdateQuery(
         components.DatasetResponse(
             file=[
                 {
-                    "key": 'string',
+                    'key': 'string',
                 },
             ],
         ),
@@ -245,7 +245,7 @@ req = components.TaskUpdateQuery(
     metrics=[
         components.MetricResponse(
             threshold={
-                "key": 'string',
+                'key': 'string',
             },
         ),
     ],
@@ -272,7 +272,7 @@ if res.task_update_response is not None:
 
 | Error Object    | Status Code     | Content Type    |
 | --------------- | --------------- | --------------- |
-| errors.SDKError | 400-600         | */*             |
+| errors.SDKError | 4x-5xx          | */*             |
 
 ## get_generations
 
@@ -285,7 +285,7 @@ import honeyhive
 from honeyhive.models import operations
 
 s = honeyhive.HoneyHive(
-    bearer_auth="",
+    bearer_auth="<YOUR_BEARER_TOKEN_HERE>",
 )
 
 
@@ -312,7 +312,7 @@ if res.classes is not None:
 
 | Error Object    | Status Code     | Content Type    |
 | --------------- | --------------- | --------------- |
-| errors.SDKError | 400-600         | */*             |
+| errors.SDKError | 4x-5xx          | */*             |
 
 ## post_generations
 
@@ -325,21 +325,21 @@ import honeyhive
 from honeyhive.models import components
 
 s = honeyhive.HoneyHive(
-    bearer_auth="",
+    bearer_auth="<YOUR_BEARER_TOKEN_HERE>",
 )
 
 req = components.GenerateQuery(
     input={
-        "key": 'string',
+        'key': 'string',
     },
     prompts=[
         'string',
     ],
     metadata={
-        "key": 'string',
+        'key': 'string',
     },
     user_properties={
-        "key": 'string',
+        'key': 'string',
     },
 )
 
@@ -364,7 +364,7 @@ if res.generation_response is not None:
 
 | Error Object    | Status Code     | Content Type    |
 | --------------- | --------------- | --------------- |
-| errors.SDKError | 400-600         | */*             |
+| errors.SDKError | 4x-5xx          | */*             |
 
 ## get_prompts
 
@@ -377,7 +377,7 @@ import honeyhive
 from honeyhive.models import operations
 
 s = honeyhive.HoneyHive(
-    bearer_auth="",
+    bearer_auth="<YOUR_BEARER_TOKEN_HERE>",
 )
 
 
@@ -403,7 +403,7 @@ if res.classes is not None:
 
 | Error Object    | Status Code     | Content Type    |
 | --------------- | --------------- | --------------- |
-| errors.SDKError | 400-600         | */*             |
+| errors.SDKError | 4x-5xx          | */*             |
 
 ## post_prompts
 
@@ -416,16 +416,16 @@ import honeyhive
 from honeyhive.models import components
 
 s = honeyhive.HoneyHive(
-    bearer_auth="",
+    bearer_auth="<YOUR_BEARER_TOKEN_HERE>",
 )
 
 req = components.PromptCreationQuery(
     hyperparameters={
-        "key": 'string',
+        'key': 'string',
     },
     few_shot_examples=[
         {
-            "key": 'string',
+            'key': 'string',
         },
     ],
 )
@@ -451,45 +451,7 @@ if res.prompt_response is not None:
 
 | Error Object    | Status Code     | Content Type    |
 | --------------- | --------------- | --------------- |
-| errors.SDKError | 400-600         | */*             |
-
-## delete_prompts_id_
-
-Delete a prompt by name
-
-### Example Usage
-
-```python
-import honeyhive
-from honeyhive.models import operations
-
-s = honeyhive.HoneyHive(
-    bearer_auth="",
-)
-
-
-res = s.delete_prompts_id_(id='string')
-
-if res.delete_response is not None:
-    # handle response
-    pass
-```
-
-### Parameters
-
-| Parameter          | Type               | Required           | Description        |
-| ------------------ | ------------------ | ------------------ | ------------------ |
-| `id`               | *str*              | :heavy_check_mark: | N/A                |
-
-
-### Response
-
-**[operations.DeletePromptsIDResponse](../../models/operations/deletepromptsidresponse.md)**
-### Errors
-
-| Error Object    | Status Code     | Content Type    |
-| --------------- | --------------- | --------------- |
-| errors.SDKError | 400-600         | */*             |
+| errors.SDKError | 4x-5xx          | */*             |
 
 ## put_prompts_id_
 
@@ -502,7 +464,7 @@ import honeyhive
 from honeyhive.models import components, operations
 
 s = honeyhive.HoneyHive(
-    bearer_auth="",
+    bearer_auth="<YOUR_BEARER_TOKEN_HERE>",
 )
 
 
@@ -511,11 +473,11 @@ res = s.put_prompts_id_(id='string', prompt_update_query=components.PromptUpdate
         'string',
     ],
     hyperparameters={
-        "key": 'string',
+        'key': 'string',
     },
     few_shot_examples=[
         {
-            "key": 'string',
+            'key': 'string',
         },
     ],
 ))
@@ -540,7 +502,45 @@ if res.prompt_response is not None:
 
 | Error Object    | Status Code     | Content Type    |
 | --------------- | --------------- | --------------- |
-| errors.SDKError | 400-600         | */*             |
+| errors.SDKError | 4x-5xx          | */*             |
+
+## delete_prompts_id_
+
+Delete a prompt by name
+
+### Example Usage
+
+```python
+import honeyhive
+from honeyhive.models import operations
+
+s = honeyhive.HoneyHive(
+    bearer_auth="<YOUR_BEARER_TOKEN_HERE>",
+)
+
+
+res = s.delete_prompts_id_(id='string')
+
+if res.delete_response is not None:
+    # handle response
+    pass
+```
+
+### Parameters
+
+| Parameter          | Type               | Required           | Description        |
+| ------------------ | ------------------ | ------------------ | ------------------ |
+| `id`               | *str*              | :heavy_check_mark: | N/A                |
+
+
+### Response
+
+**[operations.DeletePromptsIDResponse](../../models/operations/deletepromptsidresponse.md)**
+### Errors
+
+| Error Object    | Status Code     | Content Type    |
+| --------------- | --------------- | --------------- |
+| errors.SDKError | 4x-5xx          | */*             |
 
 ## get_fine_tuned_models
 
@@ -553,7 +553,7 @@ import honeyhive
 from honeyhive.models import operations
 
 s = honeyhive.HoneyHive(
-    bearer_auth="",
+    bearer_auth="<YOUR_BEARER_TOKEN_HERE>",
 )
 
 
@@ -579,7 +579,7 @@ if res.classes is not None:
 
 | Error Object    | Status Code     | Content Type    |
 | --------------- | --------------- | --------------- |
-| errors.SDKError | 400-600         | */*             |
+| errors.SDKError | 4x-5xx          | */*             |
 
 ## post_fine_tuned_models
 
@@ -592,7 +592,7 @@ import honeyhive
 from honeyhive.models import operations
 
 s = honeyhive.HoneyHive(
-    bearer_auth="",
+    bearer_auth="<YOUR_BEARER_TOKEN_HERE>",
 )
 
 req = operations.PostFineTunedModelsRequestBody()
@@ -618,45 +618,7 @@ if res.object is not None:
 
 | Error Object    | Status Code     | Content Type    |
 | --------------- | --------------- | --------------- |
-| errors.SDKError | 400-600         | */*             |
-
-## delete_fine_tuned_models_id_
-
-Delete a fine-tuned model
-
-### Example Usage
-
-```python
-import honeyhive
-from honeyhive.models import operations
-
-s = honeyhive.HoneyHive(
-    bearer_auth="",
-)
-
-
-res = s.delete_fine_tuned_models_id_(id='string')
-
-if res.status_code == 200:
-    # handle response
-    pass
-```
-
-### Parameters
-
-| Parameter          | Type               | Required           | Description        |
-| ------------------ | ------------------ | ------------------ | ------------------ |
-| `id`               | *str*              | :heavy_check_mark: | N/A                |
-
-
-### Response
-
-**[operations.DeleteFineTunedModelsIDResponse](../../models/operations/deletefinetunedmodelsidresponse.md)**
-### Errors
-
-| Error Object    | Status Code     | Content Type    |
-| --------------- | --------------- | --------------- |
-| errors.SDKError | 400-600         | */*             |
+| errors.SDKError | 4x-5xx          | */*             |
 
 ## get_fine_tuned_models_id_
 
@@ -669,7 +631,7 @@ import honeyhive
 from honeyhive.models import operations
 
 s = honeyhive.HoneyHive(
-    bearer_auth="",
+    bearer_auth="<YOUR_BEARER_TOKEN_HERE>",
 )
 
 
@@ -694,38 +656,45 @@ if res.fine_tuned_model_response is not None:
 
 | Error Object    | Status Code     | Content Type    |
 | --------------- | --------------- | --------------- |
-| errors.SDKError | 400-600         | */*             |
+| errors.SDKError | 4x-5xx          | */*             |
 
-## delete_datasets
+## delete_fine_tuned_models_id_
 
-Delete all datasets
+Delete a fine-tuned model
 
 ### Example Usage
 
 ```python
 import honeyhive
+from honeyhive.models import operations
 
 s = honeyhive.HoneyHive(
-    bearer_auth="",
+    bearer_auth="<YOUR_BEARER_TOKEN_HERE>",
 )
 
 
-res = s.delete_datasets()
+res = s.delete_fine_tuned_models_id_(id='string')
 
-if res.delete_response is not None:
+if res.status_code == 200:
     # handle response
     pass
 ```
 
+### Parameters
+
+| Parameter          | Type               | Required           | Description        |
+| ------------------ | ------------------ | ------------------ | ------------------ |
+| `id`               | *str*              | :heavy_check_mark: | N/A                |
+
 
 ### Response
 
-**[operations.DeleteDatasetsResponse](../../models/operations/deletedatasetsresponse.md)**
+**[operations.DeleteFineTunedModelsIDResponse](../../models/operations/deletefinetunedmodelsidresponse.md)**
 ### Errors
 
 | Error Object    | Status Code     | Content Type    |
 | --------------- | --------------- | --------------- |
-| errors.SDKError | 400-600         | */*             |
+| errors.SDKError | 4x-5xx          | */*             |
 
 ## get_datasets
 
@@ -738,7 +707,7 @@ import honeyhive
 from honeyhive.models import operations
 
 s = honeyhive.HoneyHive(
-    bearer_auth="",
+    bearer_auth="<YOUR_BEARER_TOKEN_HERE>",
 )
 
 
@@ -766,7 +735,7 @@ if res.classes is not None:
 
 | Error Object    | Status Code     | Content Type    |
 | --------------- | --------------- | --------------- |
-| errors.SDKError | 400-600         | */*             |
+| errors.SDKError | 4x-5xx          | */*             |
 
 ## post_datasets
 
@@ -779,13 +748,13 @@ import honeyhive
 from honeyhive.models import components
 
 s = honeyhive.HoneyHive(
-    bearer_auth="",
+    bearer_auth="<YOUR_BEARER_TOKEN_HERE>",
 )
 
 req = components.UploadDataset(
     file=[
         {
-            "key": 'string',
+            'key': 'string',
         },
     ],
 )
@@ -811,7 +780,7 @@ if res.dataset_response is not None:
 
 | Error Object    | Status Code     | Content Type    |
 | --------------- | --------------- | --------------- |
-| errors.SDKError | 400-600         | */*             |
+| errors.SDKError | 4x-5xx          | */*             |
 
 ## put_datasets
 
@@ -824,13 +793,13 @@ import honeyhive
 from honeyhive.models import components
 
 s = honeyhive.HoneyHive(
-    bearer_auth="",
+    bearer_auth="<YOUR_BEARER_TOKEN_HERE>",
 )
 
 req = components.UploadDataset(
     file=[
         {
-            "key": 'string',
+            'key': 'string',
         },
     ],
 )
@@ -856,7 +825,38 @@ if res.dataset_response is not None:
 
 | Error Object    | Status Code     | Content Type    |
 | --------------- | --------------- | --------------- |
-| errors.SDKError | 400-600         | */*             |
+| errors.SDKError | 4x-5xx          | */*             |
+
+## delete_datasets
+
+Delete all datasets
+
+### Example Usage
+
+```python
+import honeyhive
+
+s = honeyhive.HoneyHive(
+    bearer_auth="<YOUR_BEARER_TOKEN_HERE>",
+)
+
+
+res = s.delete_datasets()
+
+if res.delete_response is not None:
+    # handle response
+    pass
+```
+
+
+### Response
+
+**[operations.DeleteDatasetsResponse](../../models/operations/deletedatasetsresponse.md)**
+### Errors
+
+| Error Object    | Status Code     | Content Type    |
+| --------------- | --------------- | --------------- |
+| errors.SDKError | 4x-5xx          | */*             |
 
 ## delete_datasets_name_
 
@@ -869,7 +869,7 @@ import honeyhive
 from honeyhive.models import operations
 
 s = honeyhive.HoneyHive(
-    bearer_auth="",
+    bearer_auth="<YOUR_BEARER_TOKEN_HERE>",
 )
 
 
@@ -894,45 +894,7 @@ if res.delete_response is not None:
 
 | Error Object    | Status Code     | Content Type    |
 | --------------- | --------------- | --------------- |
-| errors.SDKError | 400-600         | */*             |
-
-## delete_metrics
-
-Delete a metric
-
-### Example Usage
-
-```python
-import honeyhive
-from honeyhive.models import operations
-
-s = honeyhive.HoneyHive(
-    bearer_auth="",
-)
-
-
-res = s.delete_metrics(metric_id='string')
-
-if res.metric_delete_response is not None:
-    # handle response
-    pass
-```
-
-### Parameters
-
-| Parameter          | Type               | Required           | Description        |
-| ------------------ | ------------------ | ------------------ | ------------------ |
-| `metric_id`        | *str*              | :heavy_check_mark: | N/A                |
-
-
-### Response
-
-**[operations.DeleteMetricsResponse](../../models/operations/deletemetricsresponse.md)**
-### Errors
-
-| Error Object    | Status Code     | Content Type    |
-| --------------- | --------------- | --------------- |
-| errors.SDKError | 400-600         | */*             |
+| errors.SDKError | 4x-5xx          | */*             |
 
 ## get_metrics
 
@@ -945,7 +907,7 @@ import honeyhive
 from honeyhive.models import operations
 
 s = honeyhive.HoneyHive(
-    bearer_auth="",
+    bearer_auth="<YOUR_BEARER_TOKEN_HERE>",
 )
 
 
@@ -970,7 +932,7 @@ if res.classes is not None:
 
 | Error Object    | Status Code     | Content Type    |
 | --------------- | --------------- | --------------- |
-| errors.SDKError | 400-600         | */*             |
+| errors.SDKError | 4x-5xx          | */*             |
 
 ## post_metrics
 
@@ -983,7 +945,7 @@ import honeyhive
 from honeyhive.models import components
 
 s = honeyhive.HoneyHive(
-    bearer_auth="",
+    bearer_auth="<YOUR_BEARER_TOKEN_HERE>",
 )
 
 req = components.MetricCreateRequest(
@@ -1011,7 +973,45 @@ if res.metric_create_response is not None:
 
 | Error Object    | Status Code     | Content Type    |
 | --------------- | --------------- | --------------- |
-| errors.SDKError | 400-600         | */*             |
+| errors.SDKError | 4x-5xx          | */*             |
+
+## delete_metrics
+
+Delete a metric
+
+### Example Usage
+
+```python
+import honeyhive
+from honeyhive.models import operations
+
+s = honeyhive.HoneyHive(
+    bearer_auth="<YOUR_BEARER_TOKEN_HERE>",
+)
+
+
+res = s.delete_metrics(metric_id='string')
+
+if res.metric_delete_response is not None:
+    # handle response
+    pass
+```
+
+### Parameters
+
+| Parameter          | Type               | Required           | Description        |
+| ------------------ | ------------------ | ------------------ | ------------------ |
+| `metric_id`        | *str*              | :heavy_check_mark: | N/A                |
+
+
+### Response
+
+**[operations.DeleteMetricsResponse](../../models/operations/deletemetricsresponse.md)**
+### Errors
+
+| Error Object    | Status Code     | Content Type    |
+| --------------- | --------------- | --------------- |
+| errors.SDKError | 4x-5xx          | */*             |
 
 ## put_metrics
 
@@ -1024,7 +1024,7 @@ import honeyhive
 from honeyhive.models import components
 
 s = honeyhive.HoneyHive(
-    bearer_auth="",
+    bearer_auth="<YOUR_BEARER_TOKEN_HERE>",
 )
 
 req = components.MetricUpdateRequest(
@@ -1052,7 +1052,7 @@ if res.metric_update_response is not None:
 
 | Error Object    | Status Code     | Content Type    |
 | --------------- | --------------- | --------------- |
-| errors.SDKError | 400-600         | */*             |
+| errors.SDKError | 4x-5xx          | */*             |
 
 ## post_metrics_compute
 
@@ -1065,7 +1065,7 @@ import honeyhive
 from honeyhive.models import components
 
 s = honeyhive.HoneyHive(
-    bearer_auth="",
+    bearer_auth="<YOUR_BEARER_TOKEN_HERE>",
 )
 
 req = components.MetricComputeRequest(
@@ -1093,7 +1093,7 @@ if res.metric_compute_response is not None:
 
 | Error Object    | Status Code     | Content Type    |
 | --------------- | --------------- | --------------- |
-| errors.SDKError | 400-600         | */*             |
+| errors.SDKError | 4x-5xx          | */*             |
 
 ## post_chat
 
@@ -1106,23 +1106,23 @@ import honeyhive
 from honeyhive.models import components
 
 s = honeyhive.HoneyHive(
-    bearer_auth="",
+    bearer_auth="<YOUR_BEARER_TOKEN_HERE>",
 )
 
 req = components.ChatCompletionRequest(
     project='string',
     messages=[
         {
-            "key": 'string',
+            'key': 'string',
         },
     ],
     model='Golf',
     hyperparameters={
-        "key": 'string',
+        'key': 'string',
     },
     functions=[
         {
-            "key": 'string',
+            'key': 'string',
         },
     ],
 )
@@ -1148,7 +1148,7 @@ if res.chat_completion_response is not None:
 
 | Error Object    | Status Code     | Content Type    |
 | --------------- | --------------- | --------------- |
-| errors.SDKError | 400-600         | */*             |
+| errors.SDKError | 4x-5xx          | */*             |
 
 ## post_generations_log
 
@@ -1161,25 +1161,25 @@ import honeyhive
 from honeyhive.models import components
 
 s = honeyhive.HoneyHive(
-    bearer_auth="",
+    bearer_auth="<YOUR_BEARER_TOKEN_HERE>",
 )
 
 req = components.GenerationLoggingQuery(
     inputs={
-        "key": 'string',
+        'key': 'string',
     },
     hyperparameters={
-        "key": 'string',
+        'key': 'string',
     },
     usage={
-        "key": 'string',
+        'key': 'string',
     },
     user_properties={
-        "key": 'string',
+        'key': 'string',
     },
     metadata=components.Metadata(),
     feedback={
-        "key": 'string',
+        'key': 'string',
     },
 )
 
@@ -1204,7 +1204,7 @@ if res.generation_response is not None:
 
 | Error Object    | Status Code     | Content Type    |
 | --------------- | --------------- | --------------- |
-| errors.SDKError | 400-600         | */*             |
+| errors.SDKError | 4x-5xx          | */*             |
 
 ## post_feedback
 
@@ -1217,14 +1217,14 @@ import honeyhive
 from honeyhive.models import components
 
 s = honeyhive.HoneyHive(
-    bearer_auth="",
+    bearer_auth="<YOUR_BEARER_TOKEN_HERE>",
 )
 
 req = components.FeedbackQuery(
     task='string',
     generation_id='string',
     feedback_json={
-        "key": 'string',
+        'key': 'string',
     },
 )
 
@@ -1249,38 +1249,7 @@ if res.feedback_response is not None:
 
 | Error Object    | Status Code     | Content Type    |
 | --------------- | --------------- | --------------- |
-| errors.SDKError | 400-600         | */*             |
-
-## get_evaluations
-
-Get all evaluations
-
-### Example Usage
-
-```python
-import honeyhive
-
-s = honeyhive.HoneyHive(
-    bearer_auth="",
-)
-
-
-res = s.get_evaluations()
-
-if res.classes is not None:
-    # handle response
-    pass
-```
-
-
-### Response
-
-**[operations.GetEvaluationsResponse](../../models/operations/getevaluationsresponse.md)**
-### Errors
-
-| Error Object    | Status Code     | Content Type    |
-| --------------- | --------------- | --------------- |
-| errors.SDKError | 400-600         | */*             |
+| errors.SDKError | 4x-5xx          | */*             |
 
 ## post_evaluations
 
@@ -1293,24 +1262,24 @@ import honeyhive
 from honeyhive.models import components
 
 s = honeyhive.HoneyHive(
-    bearer_auth="",
+    bearer_auth="<YOUR_BEARER_TOKEN_HERE>",
 )
 
 req = components.EvaluationLoggingQuery(
     prompts=[
         {
-            "key": 'string',
+            'key': 'string',
         },
     ],
     dataset=[
         {
-            "key": 'string',
+            'key': 'string',
         },
     ],
     metrics=[
         [
             {
-                "key": 'string',
+                'key': 'string',
             },
         ],
     ],
@@ -1319,22 +1288,22 @@ req = components.EvaluationLoggingQuery(
     ],
     results=[
         {
-            "key": 'string',
+            'key': 'string',
         },
     ],
     summary=[
         {
-            "key": 'string',
+            'key': 'string',
         },
     ],
     comments=[
         {
-            "key": 'string',
+            'key': 'string',
         },
     ],
     generations=[
         {
-            "key": 'string',
+            'key': 'string',
         },
     ],
 )
@@ -1360,45 +1329,38 @@ if res.success_response is not None:
 
 | Error Object    | Status Code     | Content Type    |
 | --------------- | --------------- | --------------- |
-| errors.SDKError | 400-600         | */*             |
+| errors.SDKError | 4x-5xx          | */*             |
 
-## delete_evaluations_id_
+## get_evaluations
 
-Delete an evaluation
+Get all evaluations
 
 ### Example Usage
 
 ```python
 import honeyhive
-from honeyhive.models import operations
 
 s = honeyhive.HoneyHive(
-    bearer_auth="",
+    bearer_auth="<YOUR_BEARER_TOKEN_HERE>",
 )
 
 
-res = s.delete_evaluations_id_(id='string')
+res = s.get_evaluations()
 
-if res.delete_response is not None:
+if res.classes is not None:
     # handle response
     pass
 ```
 
-### Parameters
-
-| Parameter          | Type               | Required           | Description        |
-| ------------------ | ------------------ | ------------------ | ------------------ |
-| `id`               | *str*              | :heavy_check_mark: | N/A                |
-
 
 ### Response
 
-**[operations.DeleteEvaluationsIDResponse](../../models/operations/deleteevaluationsidresponse.md)**
+**[operations.GetEvaluationsResponse](../../models/operations/getevaluationsresponse.md)**
 ### Errors
 
 | Error Object    | Status Code     | Content Type    |
 | --------------- | --------------- | --------------- |
-| errors.SDKError | 400-600         | */*             |
+| errors.SDKError | 4x-5xx          | */*             |
 
 ## get_evaluations_id_
 
@@ -1411,7 +1373,7 @@ import honeyhive
 from honeyhive.models import operations
 
 s = honeyhive.HoneyHive(
-    bearer_auth="",
+    bearer_auth="<YOUR_BEARER_TOKEN_HERE>",
 )
 
 
@@ -1436,7 +1398,45 @@ if res.evaluation is not None:
 
 | Error Object    | Status Code     | Content Type    |
 | --------------- | --------------- | --------------- |
-| errors.SDKError | 400-600         | */*             |
+| errors.SDKError | 4x-5xx          | */*             |
+
+## delete_evaluations_id_
+
+Delete an evaluation
+
+### Example Usage
+
+```python
+import honeyhive
+from honeyhive.models import operations
+
+s = honeyhive.HoneyHive(
+    bearer_auth="<YOUR_BEARER_TOKEN_HERE>",
+)
+
+
+res = s.delete_evaluations_id_(id='string')
+
+if res.delete_response is not None:
+    # handle response
+    pass
+```
+
+### Parameters
+
+| Parameter          | Type               | Required           | Description        |
+| ------------------ | ------------------ | ------------------ | ------------------ |
+| `id`               | *str*              | :heavy_check_mark: | N/A                |
+
+
+### Response
+
+**[operations.DeleteEvaluationsIDResponse](../../models/operations/deleteevaluationsidresponse.md)**
+### Errors
+
+| Error Object    | Status Code     | Content Type    |
+| --------------- | --------------- | --------------- |
+| errors.SDKError | 4x-5xx          | */*             |
 
 ## put_evaluations_id_
 
@@ -1449,41 +1449,41 @@ import honeyhive
 from honeyhive.models import components, operations
 
 s = honeyhive.HoneyHive(
-    bearer_auth="",
+    bearer_auth="<YOUR_BEARER_TOKEN_HERE>",
 )
 
 
 res = s.put_evaluations_id_(id='string', evaluation_update_request=components.EvaluationUpdateRequest(
     prompts=[
         {
-            "key": 'string',
+            'key': 'string',
         },
     ],
     dataset=[
         {
-            "key": 'string',
+            'key': 'string',
         },
     ],
     metrics=[
         [
             {
-                "key": 'string',
+                'key': 'string',
             },
         ],
     ],
     summary=[
         {
-            "key": 'string',
+            'key': 'string',
         },
     ],
     generations=[
         {
-            "key": 'string',
+            'key': 'string',
         },
     ],
     results=[
         {
-            "key": 'string',
+            'key': 'string',
         },
     ],
     accepted=[
@@ -1491,7 +1491,7 @@ res = s.put_evaluations_id_(id='string', evaluation_update_request=components.Ev
     ],
     comments=[
         {
-            "key": 'string',
+            'key': 'string',
         },
     ],
 ))
@@ -1516,7 +1516,7 @@ if res.update_response is not None:
 
 | Error Object    | Status Code     | Content Type    |
 | --------------- | --------------- | --------------- |
-| errors.SDKError | 400-600         | */*             |
+| errors.SDKError | 4x-5xx          | */*             |
 
 ## post_session_start
 
@@ -1529,12 +1529,12 @@ import honeyhive
 from honeyhive.models import components
 
 s = honeyhive.HoneyHive(
-    bearer_auth="",
+    bearer_auth="<YOUR_BEARER_TOKEN_HERE>",
 )
 
 req = components.SessionStartQuery(
     user_properties={
-        "key": 'string',
+        'key': 'string',
     },
 )
 
@@ -1559,7 +1559,7 @@ if res.session_start_response is not None:
 
 | Error Object    | Status Code     | Content Type    |
 | --------------- | --------------- | --------------- |
-| errors.SDKError | 400-600         | */*             |
+| errors.SDKError | 4x-5xx          | */*             |
 
 ## post_session_session_id_end
 
@@ -1572,7 +1572,7 @@ import honeyhive
 from honeyhive.models import operations
 
 s = honeyhive.HoneyHive(
-    bearer_auth="",
+    bearer_auth="<YOUR_BEARER_TOKEN_HERE>",
 )
 
 
@@ -1597,7 +1597,7 @@ if res.session_end_response is not None:
 
 | Error Object    | Status Code     | Content Type    |
 | --------------- | --------------- | --------------- |
-| errors.SDKError | 400-600         | */*             |
+| errors.SDKError | 4x-5xx          | */*             |
 
 ## post_session_session_id_event
 
@@ -1610,36 +1610,36 @@ import honeyhive
 from honeyhive.models import components, operations
 
 s = honeyhive.HoneyHive(
-    bearer_auth="",
+    bearer_auth="<YOUR_BEARER_TOKEN_HERE>",
 )
 
 
 res = s.post_session_session_id_event(session_id='string', session_event_query=components.SessionEventQuery(
     config={
-        "key": 'string',
+        'key': 'string',
     },
     children=[
         {
-            "key": 'string',
+            'key': 'string',
         },
     ],
     inputs={
-        "key": 'string',
+        'key': 'string',
     },
     outputs={
-        "key": 'string',
+        'key': 'string',
     },
     user_properties={
-        "key": 'string',
+        'key': 'string',
     },
     metadata={
-        "key": 'string',
+        'key': 'string',
     },
     metrics={
-        "key": 'string',
+        'key': 'string',
     },
     feedback={
-        "key": 'string',
+        'key': 'string',
     },
 ))
 
@@ -1663,7 +1663,7 @@ if res.session_event_response is not None:
 
 | Error Object    | Status Code     | Content Type    |
 | --------------- | --------------- | --------------- |
-| errors.SDKError | 400-600         | */*             |
+| errors.SDKError | 4x-5xx          | */*             |
 
 ## post_session_session_id_feedback
 
@@ -1676,13 +1676,13 @@ import honeyhive
 from honeyhive.models import components, operations
 
 s = honeyhive.HoneyHive(
-    bearer_auth="",
+    bearer_auth="<YOUR_BEARER_TOKEN_HERE>",
 )
 
 
 res = s.post_session_session_id_feedback(session_id='string', session_feedback=components.SessionFeedback(
     feedback={
-        "key": 'string',
+        'key': 'string',
     },
 ))
 
@@ -1706,45 +1706,7 @@ if res.success_response is not None:
 
 | Error Object    | Status Code     | Content Type    |
 | --------------- | --------------- | --------------- |
-| errors.SDKError | 400-600         | */*             |
-
-## delete_session_session_id_
-
-Delete a session
-
-### Example Usage
-
-```python
-import honeyhive
-from honeyhive.models import operations
-
-s = honeyhive.HoneyHive(
-    bearer_auth="",
-)
-
-
-res = s.delete_session_session_id_(session_id='string')
-
-if res.success_response is not None:
-    # handle response
-    pass
-```
-
-### Parameters
-
-| Parameter          | Type               | Required           | Description        |
-| ------------------ | ------------------ | ------------------ | ------------------ |
-| `session_id`       | *str*              | :heavy_check_mark: | N/A                |
-
-
-### Response
-
-**[operations.DeleteSessionSessionIDResponse](../../models/operations/deletesessionsessionidresponse.md)**
-### Errors
-
-| Error Object    | Status Code     | Content Type    |
-| --------------- | --------------- | --------------- |
-| errors.SDKError | 400-600         | */*             |
+| errors.SDKError | 4x-5xx          | */*             |
 
 ## get_session_session_id_
 
@@ -1757,7 +1719,7 @@ import honeyhive
 from honeyhive.models import operations
 
 s = honeyhive.HoneyHive(
-    bearer_auth="",
+    bearer_auth="<YOUR_BEARER_TOKEN_HERE>",
 )
 
 
@@ -1782,7 +1744,7 @@ if res.session_event_query is not None:
 
 | Error Object    | Status Code     | Content Type    |
 | --------------- | --------------- | --------------- |
-| errors.SDKError | 400-600         | */*             |
+| errors.SDKError | 4x-5xx          | */*             |
 
 ## put_session_session_id_
 
@@ -1795,7 +1757,7 @@ import honeyhive
 from honeyhive.models import components, operations
 
 s = honeyhive.HoneyHive(
-    bearer_auth="",
+    bearer_auth="<YOUR_BEARER_TOKEN_HERE>",
 )
 
 
@@ -1828,7 +1790,45 @@ if res.success_response is not None:
 
 | Error Object    | Status Code     | Content Type    |
 | --------------- | --------------- | --------------- |
-| errors.SDKError | 400-600         | */*             |
+| errors.SDKError | 4x-5xx          | */*             |
+
+## delete_session_session_id_
+
+Delete a session
+
+### Example Usage
+
+```python
+import honeyhive
+from honeyhive.models import operations
+
+s = honeyhive.HoneyHive(
+    bearer_auth="<YOUR_BEARER_TOKEN_HERE>",
+)
+
+
+res = s.delete_session_session_id_(session_id='string')
+
+if res.success_response is not None:
+    # handle response
+    pass
+```
+
+### Parameters
+
+| Parameter          | Type               | Required           | Description        |
+| ------------------ | ------------------ | ------------------ | ------------------ |
+| `session_id`       | *str*              | :heavy_check_mark: | N/A                |
+
+
+### Response
+
+**[operations.DeleteSessionSessionIDResponse](../../models/operations/deletesessionsessionidresponse.md)**
+### Errors
+
+| Error Object    | Status Code     | Content Type    |
+| --------------- | --------------- | --------------- |
+| errors.SDKError | 4x-5xx          | */*             |
 
 ## get_session_session_id_export
 
@@ -1841,7 +1841,7 @@ import honeyhive
 from honeyhive.models import operations
 
 s = honeyhive.HoneyHive(
-    bearer_auth="",
+    bearer_auth="<YOUR_BEARER_TOKEN_HERE>",
 )
 
 
@@ -1866,7 +1866,7 @@ if res.trace_event_trace is not None:
 
 | Error Object    | Status Code     | Content Type    |
 | --------------- | --------------- | --------------- |
-| errors.SDKError | 400-600         | */*             |
+| errors.SDKError | 4x-5xx          | */*             |
 
 ## get_session
 
@@ -1879,12 +1879,12 @@ import honeyhive
 from honeyhive.models import operations
 
 s = honeyhive.HoneyHive(
-    bearer_auth="",
+    bearer_auth="<YOUR_BEARER_TOKEN_HERE>",
 )
 
 
 res = s.get_session(project='string', query={
-    "key": 'string',
+    'key': 'string',
 }, limit=355376)
 
 if res.classes is not None:
@@ -1908,7 +1908,7 @@ if res.classes is not None:
 
 | Error Object    | Status Code     | Content Type    |
 | --------------- | --------------- | --------------- |
-| errors.SDKError | 400-600         | */*             |
+| errors.SDKError | 4x-5xx          | */*             |
 
 ## post_session_session_id_traces
 
@@ -1921,7 +1921,7 @@ import honeyhive
 from honeyhive.models import components, operations
 
 s = honeyhive.HoneyHive(
-    bearer_auth="",
+    bearer_auth="<YOUR_BEARER_TOKEN_HERE>",
 )
 
 
@@ -1929,30 +1929,30 @@ res = s.post_session_session_id_traces(session_id='string', session_trace=compon
     logs=[
         components.SessionEventQuery(
             config={
-                "key": 'string',
+                'key': 'string',
             },
             children=[
                 {
-                    "key": 'string',
+                    'key': 'string',
                 },
             ],
             inputs={
-                "key": 'string',
+                'key': 'string',
             },
             outputs={
-                "key": 'string',
+                'key': 'string',
             },
             user_properties={
-                "key": 'string',
+                'key': 'string',
             },
             metadata={
-                "key": 'string',
+                'key': 'string',
             },
             metrics={
-                "key": 'string',
+                'key': 'string',
             },
             feedback={
-                "key": 'string',
+                'key': 'string',
             },
         ),
     ],
@@ -1978,4 +1978,4 @@ if res.success_trace_response is not None:
 
 | Error Object    | Status Code     | Content Type    |
 | --------------- | --------------- | --------------- |
-| errors.SDKError | 400-600         | */*             |
+| errors.SDKError | 4x-5xx          | */*             |
