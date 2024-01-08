@@ -4,14 +4,14 @@ import requests as requests_http
 from .sdkconfiguration import SDKConfiguration
 from honeyhive import utils
 from honeyhive.models import components, errors, operations
-from typing import Any, Callable, Dict, List, Optional, Union
+from typing import Any, Dict, List, Optional
 
 class HoneyHive:
 
     sdk_configuration: SDKConfiguration
 
     def __init__(self,
-                 bearer_auth: Union[str,Callable[[], str]],
+                 bearer_auth: str ,
                  server_idx: int = None,
                  server_url: str = None,
                  url_params: Dict[str, str] = None,
@@ -47,43 +47,6 @@ class HoneyHive:
         
     
     
-    
-    
-    def delete_tasks(self, name: str) -> operations.DeleteTasksResponse:
-        r"""Delete a task"""
-        request = operations.DeleteTasksRequest(
-            name=name,
-        )
-        
-        base_url = utils.template_url(*self.sdk_configuration.get_server_details())
-        
-        url = base_url + '/tasks'
-        headers = {}
-        query_params = utils.get_query_params(operations.DeleteTasksRequest, request)
-        headers['Accept'] = 'application/json'
-        headers['user-agent'] = self.sdk_configuration.user_agent
-        
-        if callable(self.sdk_configuration.security):
-            client = utils.configure_security_client(self.sdk_configuration.client, self.sdk_configuration.security())
-        else:
-            client = utils.configure_security_client(self.sdk_configuration.client, self.sdk_configuration.security)
-        
-        http_res = client.request('DELETE', url, params=query_params, headers=headers)
-        content_type = http_res.headers.get('Content-Type')
-        
-        res = operations.DeleteTasksResponse(status_code=http_res.status_code, content_type=content_type, raw_response=http_res)
-        
-        if http_res.status_code == 200:
-            if utils.match_content_type(content_type, 'application/json'):
-                out = utils.unmarshal_json(http_res.text, Optional[components.DeleteResponse])
-                res.delete_response = out
-            else:
-                raise errors.SDKError(f'unknown content-type received: {content_type}', http_res.status_code, http_res.text, http_res)
-        elif http_res.status_code >= 400 and http_res.status_code < 500 or http_res.status_code >= 500 and http_res.status_code < 600:
-            raise errors.SDKError('API error occurred', http_res.status_code, http_res.text, http_res)
-
-        return res
-
     
     
     def get_tasks(self, name: Optional[str] = None) -> operations.GetTasksResponse:
@@ -129,7 +92,7 @@ class HoneyHive:
         
         url = base_url + '/tasks'
         headers = {}
-        req_content_type, data, form = utils.serialize_request_body(request, "request", False, False, 'json')
+        req_content_type, data, form = utils.serialize_request_body(request, components.TaskCreationQuery, "request", False, False, 'json')
         if req_content_type not in ('multipart/form-data', 'multipart/mixed'):
             headers['content-type'] = req_content_type
         if data is None and form is None:
@@ -160,13 +123,50 @@ class HoneyHive:
 
     
     
+    def delete_tasks(self, name: str) -> operations.DeleteTasksResponse:
+        r"""Delete a task"""
+        request = operations.DeleteTasksRequest(
+            name=name,
+        )
+        
+        base_url = utils.template_url(*self.sdk_configuration.get_server_details())
+        
+        url = base_url + '/tasks'
+        headers = {}
+        query_params = utils.get_query_params(operations.DeleteTasksRequest, request)
+        headers['Accept'] = 'application/json'
+        headers['user-agent'] = self.sdk_configuration.user_agent
+        
+        if callable(self.sdk_configuration.security):
+            client = utils.configure_security_client(self.sdk_configuration.client, self.sdk_configuration.security())
+        else:
+            client = utils.configure_security_client(self.sdk_configuration.client, self.sdk_configuration.security)
+        
+        http_res = client.request('DELETE', url, params=query_params, headers=headers)
+        content_type = http_res.headers.get('Content-Type')
+        
+        res = operations.DeleteTasksResponse(status_code=http_res.status_code, content_type=content_type, raw_response=http_res)
+        
+        if http_res.status_code == 200:
+            if utils.match_content_type(content_type, 'application/json'):
+                out = utils.unmarshal_json(http_res.text, Optional[components.DeleteResponse])
+                res.delete_response = out
+            else:
+                raise errors.SDKError(f'unknown content-type received: {content_type}', http_res.status_code, http_res.text, http_res)
+        elif http_res.status_code >= 400 and http_res.status_code < 500 or http_res.status_code >= 500 and http_res.status_code < 600:
+            raise errors.SDKError('API error occurred', http_res.status_code, http_res.text, http_res)
+
+        return res
+
+    
+    
     def put_tasks(self, request: components.TaskUpdateQuery) -> operations.PutTasksResponse:
         r"""Update a task"""
         base_url = utils.template_url(*self.sdk_configuration.get_server_details())
         
         url = base_url + '/tasks'
         headers = {}
-        req_content_type, data, form = utils.serialize_request_body(request, "request", False, False, 'json')
+        req_content_type, data, form = utils.serialize_request_body(request, components.TaskUpdateQuery, "request", False, False, 'json')
         if req_content_type not in ('multipart/form-data', 'multipart/mixed'):
             headers['content-type'] = req_content_type
         if data is None and form is None:
@@ -242,7 +242,7 @@ class HoneyHive:
         
         url = base_url + '/generations'
         headers = {}
-        req_content_type, data, form = utils.serialize_request_body(request, "request", False, False, 'json')
+        req_content_type, data, form = utils.serialize_request_body(request, components.GenerateQuery, "request", False, False, 'json')
         if req_content_type not in ('multipart/form-data', 'multipart/mixed'):
             headers['content-type'] = req_content_type
         if data is None and form is None:
@@ -317,7 +317,7 @@ class HoneyHive:
         
         url = base_url + '/prompts'
         headers = {}
-        req_content_type, data, form = utils.serialize_request_body(request, "request", False, False, 'json')
+        req_content_type, data, form = utils.serialize_request_body(request, components.PromptCreationQuery, "request", False, False, 'json')
         if req_content_type not in ('multipart/form-data', 'multipart/mixed'):
             headers['content-type'] = req_content_type
         if data is None and form is None:
@@ -334,6 +334,48 @@ class HoneyHive:
         content_type = http_res.headers.get('Content-Type')
         
         res = operations.PostPromptsResponse(status_code=http_res.status_code, content_type=content_type, raw_response=http_res)
+        
+        if http_res.status_code == 200:
+            if utils.match_content_type(content_type, 'application/json'):
+                out = utils.unmarshal_json(http_res.text, Optional[components.PromptResponse])
+                res.prompt_response = out
+            else:
+                raise errors.SDKError(f'unknown content-type received: {content_type}', http_res.status_code, http_res.text, http_res)
+        elif http_res.status_code >= 400 and http_res.status_code < 500 or http_res.status_code >= 500 and http_res.status_code < 600:
+            raise errors.SDKError('API error occurred', http_res.status_code, http_res.text, http_res)
+
+        return res
+
+    
+    
+    def put_prompts_id_(self, id: str, prompt_update_query: components.PromptUpdateQuery) -> operations.PutPromptsIDResponse:
+        r"""Update a prompt"""
+        request = operations.PutPromptsIDRequest(
+            id=id,
+            prompt_update_query=prompt_update_query,
+        )
+        
+        base_url = utils.template_url(*self.sdk_configuration.get_server_details())
+        
+        url = utils.generate_url(operations.PutPromptsIDRequest, base_url, '/prompts/{id}', request)
+        headers = {}
+        req_content_type, data, form = utils.serialize_request_body(request, operations.PutPromptsIDRequest, "prompt_update_query", False, False, 'json')
+        if req_content_type not in ('multipart/form-data', 'multipart/mixed'):
+            headers['content-type'] = req_content_type
+        if data is None and form is None:
+            raise Exception('request body is required')
+        headers['Accept'] = 'application/json'
+        headers['user-agent'] = self.sdk_configuration.user_agent
+        
+        if callable(self.sdk_configuration.security):
+            client = utils.configure_security_client(self.sdk_configuration.client, self.sdk_configuration.security())
+        else:
+            client = utils.configure_security_client(self.sdk_configuration.client, self.sdk_configuration.security)
+        
+        http_res = client.request('PUT', url, data=data, files=form, headers=headers)
+        content_type = http_res.headers.get('Content-Type')
+        
+        res = operations.PutPromptsIDResponse(status_code=http_res.status_code, content_type=content_type, raw_response=http_res)
         
         if http_res.status_code == 200:
             if utils.match_content_type(content_type, 'application/json'):
@@ -384,48 +426,6 @@ class HoneyHive:
 
     
     
-    def put_prompts_id_(self, id: str, prompt_update_query: components.PromptUpdateQuery) -> operations.PutPromptsIDResponse:
-        r"""Update a prompt"""
-        request = operations.PutPromptsIDRequest(
-            id=id,
-            prompt_update_query=prompt_update_query,
-        )
-        
-        base_url = utils.template_url(*self.sdk_configuration.get_server_details())
-        
-        url = utils.generate_url(operations.PutPromptsIDRequest, base_url, '/prompts/{id}', request)
-        headers = {}
-        req_content_type, data, form = utils.serialize_request_body(request, "prompt_update_query", False, False, 'json')
-        if req_content_type not in ('multipart/form-data', 'multipart/mixed'):
-            headers['content-type'] = req_content_type
-        if data is None and form is None:
-            raise Exception('request body is required')
-        headers['Accept'] = 'application/json'
-        headers['user-agent'] = self.sdk_configuration.user_agent
-        
-        if callable(self.sdk_configuration.security):
-            client = utils.configure_security_client(self.sdk_configuration.client, self.sdk_configuration.security())
-        else:
-            client = utils.configure_security_client(self.sdk_configuration.client, self.sdk_configuration.security)
-        
-        http_res = client.request('PUT', url, data=data, files=form, headers=headers)
-        content_type = http_res.headers.get('Content-Type')
-        
-        res = operations.PutPromptsIDResponse(status_code=http_res.status_code, content_type=content_type, raw_response=http_res)
-        
-        if http_res.status_code == 200:
-            if utils.match_content_type(content_type, 'application/json'):
-                out = utils.unmarshal_json(http_res.text, Optional[components.PromptResponse])
-                res.prompt_response = out
-            else:
-                raise errors.SDKError(f'unknown content-type received: {content_type}', http_res.status_code, http_res.text, http_res)
-        elif http_res.status_code >= 400 and http_res.status_code < 500 or http_res.status_code >= 500 and http_res.status_code < 600:
-            raise errors.SDKError('API error occurred', http_res.status_code, http_res.text, http_res)
-
-        return res
-
-    
-    
     def get_fine_tuned_models(self, task: Optional[str] = None, model_id: Optional[str] = None) -> operations.GetFineTunedModelsResponse:
         r"""Get all fine-tuned models"""
         request = operations.GetFineTunedModelsRequest(
@@ -464,13 +464,13 @@ class HoneyHive:
 
     
     
-    def post_fine_tuned_models(self, request: operations.PostFineTunedModelsRequestBody) -> operations.PostFineTunedModelsResponse:
+    def post_fine_tuned_models(self, request: Optional[operations.PostFineTunedModelsRequestBody]) -> operations.PostFineTunedModelsResponse:
         r"""Create a new fine-tuned model"""
         base_url = utils.template_url(*self.sdk_configuration.get_server_details())
         
         url = base_url + '/fine_tuned_models'
         headers = {}
-        req_content_type, data, form = utils.serialize_request_body(request, "request", False, True, 'json')
+        req_content_type, data, form = utils.serialize_request_body(request, Optional[operations.PostFineTunedModelsRequestBody], "request", False, True, 'json')
         if req_content_type not in ('multipart/form-data', 'multipart/mixed'):
             headers['content-type'] = req_content_type
         headers['Accept'] = 'application/json'
@@ -492,38 +492,6 @@ class HoneyHive:
                 res.object = out
             else:
                 raise errors.SDKError(f'unknown content-type received: {content_type}', http_res.status_code, http_res.text, http_res)
-        elif http_res.status_code >= 400 and http_res.status_code < 500 or http_res.status_code >= 500 and http_res.status_code < 600:
-            raise errors.SDKError('API error occurred', http_res.status_code, http_res.text, http_res)
-
-        return res
-
-    
-    
-    def delete_fine_tuned_models_id_(self, id: str) -> operations.DeleteFineTunedModelsIDResponse:
-        r"""Delete a fine-tuned model"""
-        request = operations.DeleteFineTunedModelsIDRequest(
-            id=id,
-        )
-        
-        base_url = utils.template_url(*self.sdk_configuration.get_server_details())
-        
-        url = utils.generate_url(operations.DeleteFineTunedModelsIDRequest, base_url, '/fine_tuned_models/{id}', request)
-        headers = {}
-        headers['Accept'] = '*/*'
-        headers['user-agent'] = self.sdk_configuration.user_agent
-        
-        if callable(self.sdk_configuration.security):
-            client = utils.configure_security_client(self.sdk_configuration.client, self.sdk_configuration.security())
-        else:
-            client = utils.configure_security_client(self.sdk_configuration.client, self.sdk_configuration.security)
-        
-        http_res = client.request('DELETE', url, headers=headers)
-        content_type = http_res.headers.get('Content-Type')
-        
-        res = operations.DeleteFineTunedModelsIDResponse(status_code=http_res.status_code, content_type=content_type, raw_response=http_res)
-        
-        if http_res.status_code == 200:
-            pass
         elif http_res.status_code >= 400 and http_res.status_code < 500 or http_res.status_code >= 500 and http_res.status_code < 600:
             raise errors.SDKError('API error occurred', http_res.status_code, http_res.text, http_res)
 
@@ -567,13 +535,17 @@ class HoneyHive:
 
     
     
-    def delete_datasets(self) -> operations.DeleteDatasetsResponse:
-        r"""Delete all datasets"""
+    def delete_fine_tuned_models_id_(self, id: str) -> operations.DeleteFineTunedModelsIDResponse:
+        r"""Delete a fine-tuned model"""
+        request = operations.DeleteFineTunedModelsIDRequest(
+            id=id,
+        )
+        
         base_url = utils.template_url(*self.sdk_configuration.get_server_details())
         
-        url = base_url + '/datasets'
+        url = utils.generate_url(operations.DeleteFineTunedModelsIDRequest, base_url, '/fine_tuned_models/{id}', request)
         headers = {}
-        headers['Accept'] = 'application/json'
+        headers['Accept'] = '*/*'
         headers['user-agent'] = self.sdk_configuration.user_agent
         
         if callable(self.sdk_configuration.security):
@@ -584,14 +556,10 @@ class HoneyHive:
         http_res = client.request('DELETE', url, headers=headers)
         content_type = http_res.headers.get('Content-Type')
         
-        res = operations.DeleteDatasetsResponse(status_code=http_res.status_code, content_type=content_type, raw_response=http_res)
+        res = operations.DeleteFineTunedModelsIDResponse(status_code=http_res.status_code, content_type=content_type, raw_response=http_res)
         
         if http_res.status_code == 200:
-            if utils.match_content_type(content_type, 'application/json'):
-                out = utils.unmarshal_json(http_res.text, Optional[components.DeleteResponse])
-                res.delete_response = out
-            else:
-                raise errors.SDKError(f'unknown content-type received: {content_type}', http_res.status_code, http_res.text, http_res)
+            pass
         elif http_res.status_code >= 400 and http_res.status_code < 500 or http_res.status_code >= 500 and http_res.status_code < 600:
             raise errors.SDKError('API error occurred', http_res.status_code, http_res.text, http_res)
 
@@ -645,7 +613,7 @@ class HoneyHive:
         
         url = base_url + '/datasets'
         headers = {}
-        req_content_type, data, form = utils.serialize_request_body(request, "request", False, False, 'json')
+        req_content_type, data, form = utils.serialize_request_body(request, components.UploadDataset, "request", False, False, 'json')
         if req_content_type not in ('multipart/form-data', 'multipart/mixed'):
             headers['content-type'] = req_content_type
         if data is None and form is None:
@@ -682,7 +650,7 @@ class HoneyHive:
         
         url = base_url + '/datasets'
         headers = {}
-        req_content_type, data, form = utils.serialize_request_body(request, "request", False, False, 'json')
+        req_content_type, data, form = utils.serialize_request_body(request, components.UploadDataset, "request", False, False, 'json')
         if req_content_type not in ('multipart/form-data', 'multipart/mixed'):
             headers['content-type'] = req_content_type
         if data is None and form is None:
@@ -704,6 +672,38 @@ class HoneyHive:
             if utils.match_content_type(content_type, 'application/json'):
                 out = utils.unmarshal_json(http_res.text, Optional[components.DatasetResponse])
                 res.dataset_response = out
+            else:
+                raise errors.SDKError(f'unknown content-type received: {content_type}', http_res.status_code, http_res.text, http_res)
+        elif http_res.status_code >= 400 and http_res.status_code < 500 or http_res.status_code >= 500 and http_res.status_code < 600:
+            raise errors.SDKError('API error occurred', http_res.status_code, http_res.text, http_res)
+
+        return res
+
+    
+    
+    def delete_datasets(self) -> operations.DeleteDatasetsResponse:
+        r"""Delete all datasets"""
+        base_url = utils.template_url(*self.sdk_configuration.get_server_details())
+        
+        url = base_url + '/datasets'
+        headers = {}
+        headers['Accept'] = 'application/json'
+        headers['user-agent'] = self.sdk_configuration.user_agent
+        
+        if callable(self.sdk_configuration.security):
+            client = utils.configure_security_client(self.sdk_configuration.client, self.sdk_configuration.security())
+        else:
+            client = utils.configure_security_client(self.sdk_configuration.client, self.sdk_configuration.security)
+        
+        http_res = client.request('DELETE', url, headers=headers)
+        content_type = http_res.headers.get('Content-Type')
+        
+        res = operations.DeleteDatasetsResponse(status_code=http_res.status_code, content_type=content_type, raw_response=http_res)
+        
+        if http_res.status_code == 200:
+            if utils.match_content_type(content_type, 'application/json'):
+                out = utils.unmarshal_json(http_res.text, Optional[components.DeleteResponse])
+                res.delete_response = out
             else:
                 raise errors.SDKError(f'unknown content-type received: {content_type}', http_res.status_code, http_res.text, http_res)
         elif http_res.status_code >= 400 and http_res.status_code < 500 or http_res.status_code >= 500 and http_res.status_code < 600:
@@ -740,43 +740,6 @@ class HoneyHive:
             if utils.match_content_type(content_type, 'application/json'):
                 out = utils.unmarshal_json(http_res.text, Optional[components.DeleteResponse])
                 res.delete_response = out
-            else:
-                raise errors.SDKError(f'unknown content-type received: {content_type}', http_res.status_code, http_res.text, http_res)
-        elif http_res.status_code >= 400 and http_res.status_code < 500 or http_res.status_code >= 500 and http_res.status_code < 600:
-            raise errors.SDKError('API error occurred', http_res.status_code, http_res.text, http_res)
-
-        return res
-
-    
-    
-    def delete_metrics(self, metric_id: str) -> operations.DeleteMetricsResponse:
-        r"""Delete a metric"""
-        request = operations.DeleteMetricsRequest(
-            metric_id=metric_id,
-        )
-        
-        base_url = utils.template_url(*self.sdk_configuration.get_server_details())
-        
-        url = base_url + '/metrics'
-        headers = {}
-        query_params = utils.get_query_params(operations.DeleteMetricsRequest, request)
-        headers['Accept'] = 'application/json'
-        headers['user-agent'] = self.sdk_configuration.user_agent
-        
-        if callable(self.sdk_configuration.security):
-            client = utils.configure_security_client(self.sdk_configuration.client, self.sdk_configuration.security())
-        else:
-            client = utils.configure_security_client(self.sdk_configuration.client, self.sdk_configuration.security)
-        
-        http_res = client.request('DELETE', url, params=query_params, headers=headers)
-        content_type = http_res.headers.get('Content-Type')
-        
-        res = operations.DeleteMetricsResponse(status_code=http_res.status_code, content_type=content_type, raw_response=http_res)
-        
-        if http_res.status_code == 200:
-            if utils.match_content_type(content_type, 'application/json'):
-                out = utils.unmarshal_json(http_res.text, Optional[components.MetricDeleteResponse])
-                res.metric_delete_response = out
             else:
                 raise errors.SDKError(f'unknown content-type received: {content_type}', http_res.status_code, http_res.text, http_res)
         elif http_res.status_code >= 400 and http_res.status_code < 500 or http_res.status_code >= 500 and http_res.status_code < 600:
@@ -823,13 +786,13 @@ class HoneyHive:
 
     
     
-    def post_metrics(self, request: components.MetricCreateRequest) -> operations.PostMetricsResponse:
+    def post_metrics(self, request: Optional[components.MetricCreateRequest]) -> operations.PostMetricsResponse:
         r"""Create a metric"""
         base_url = utils.template_url(*self.sdk_configuration.get_server_details())
         
         url = base_url + '/metrics'
         headers = {}
-        req_content_type, data, form = utils.serialize_request_body(request, "request", False, True, 'json')
+        req_content_type, data, form = utils.serialize_request_body(request, Optional[components.MetricCreateRequest], "request", False, True, 'json')
         if req_content_type not in ('multipart/form-data', 'multipart/mixed'):
             headers['content-type'] = req_content_type
         headers['Accept'] = 'application/json'
@@ -858,13 +821,50 @@ class HoneyHive:
 
     
     
-    def put_metrics(self, request: components.MetricUpdateRequest) -> operations.PutMetricsResponse:
+    def delete_metrics(self, metric_id: str) -> operations.DeleteMetricsResponse:
+        r"""Delete a metric"""
+        request = operations.DeleteMetricsRequest(
+            metric_id=metric_id,
+        )
+        
+        base_url = utils.template_url(*self.sdk_configuration.get_server_details())
+        
+        url = base_url + '/metrics'
+        headers = {}
+        query_params = utils.get_query_params(operations.DeleteMetricsRequest, request)
+        headers['Accept'] = 'application/json'
+        headers['user-agent'] = self.sdk_configuration.user_agent
+        
+        if callable(self.sdk_configuration.security):
+            client = utils.configure_security_client(self.sdk_configuration.client, self.sdk_configuration.security())
+        else:
+            client = utils.configure_security_client(self.sdk_configuration.client, self.sdk_configuration.security)
+        
+        http_res = client.request('DELETE', url, params=query_params, headers=headers)
+        content_type = http_res.headers.get('Content-Type')
+        
+        res = operations.DeleteMetricsResponse(status_code=http_res.status_code, content_type=content_type, raw_response=http_res)
+        
+        if http_res.status_code == 200:
+            if utils.match_content_type(content_type, 'application/json'):
+                out = utils.unmarshal_json(http_res.text, Optional[components.MetricDeleteResponse])
+                res.metric_delete_response = out
+            else:
+                raise errors.SDKError(f'unknown content-type received: {content_type}', http_res.status_code, http_res.text, http_res)
+        elif http_res.status_code >= 400 and http_res.status_code < 500 or http_res.status_code >= 500 and http_res.status_code < 600:
+            raise errors.SDKError('API error occurred', http_res.status_code, http_res.text, http_res)
+
+        return res
+
+    
+    
+    def put_metrics(self, request: Optional[components.MetricUpdateRequest]) -> operations.PutMetricsResponse:
         r"""Update a metric"""
         base_url = utils.template_url(*self.sdk_configuration.get_server_details())
         
         url = base_url + '/metrics'
         headers = {}
-        req_content_type, data, form = utils.serialize_request_body(request, "request", False, True, 'json')
+        req_content_type, data, form = utils.serialize_request_body(request, Optional[components.MetricUpdateRequest], "request", False, True, 'json')
         if req_content_type not in ('multipart/form-data', 'multipart/mixed'):
             headers['content-type'] = req_content_type
         headers['Accept'] = 'application/json'
@@ -893,13 +893,13 @@ class HoneyHive:
 
     
     
-    def post_metrics_compute(self, request: components.MetricComputeRequest) -> operations.PostMetricsComputeResponse:
+    def post_metrics_compute(self, request: Optional[components.MetricComputeRequest]) -> operations.PostMetricsComputeResponse:
         r"""Compute metric"""
         base_url = utils.template_url(*self.sdk_configuration.get_server_details())
         
         url = base_url + '/metrics/compute'
         headers = {}
-        req_content_type, data, form = utils.serialize_request_body(request, "request", False, True, 'json')
+        req_content_type, data, form = utils.serialize_request_body(request, Optional[components.MetricComputeRequest], "request", False, True, 'json')
         if req_content_type not in ('multipart/form-data', 'multipart/mixed'):
             headers['content-type'] = req_content_type
         headers['Accept'] = 'application/json'
@@ -928,13 +928,13 @@ class HoneyHive:
 
     
     
-    def post_chat(self, request: components.ChatCompletionRequest) -> operations.PostChatResponse:
+    def post_chat(self, request: Optional[components.ChatCompletionRequest]) -> operations.PostChatResponse:
         r"""Create a chat completion"""
         base_url = utils.template_url(*self.sdk_configuration.get_server_details())
         
         url = base_url + '/chat'
         headers = {}
-        req_content_type, data, form = utils.serialize_request_body(request, "request", False, True, 'json')
+        req_content_type, data, form = utils.serialize_request_body(request, Optional[components.ChatCompletionRequest], "request", False, True, 'json')
         if req_content_type not in ('multipart/form-data', 'multipart/mixed'):
             headers['content-type'] = req_content_type
         headers['Accept'] = 'application/json'
@@ -969,7 +969,7 @@ class HoneyHive:
         
         url = base_url + '/generations/log'
         headers = {}
-        req_content_type, data, form = utils.serialize_request_body(request, "request", False, False, 'json')
+        req_content_type, data, form = utils.serialize_request_body(request, components.GenerationLoggingQuery, "request", False, False, 'json')
         if req_content_type not in ('multipart/form-data', 'multipart/mixed'):
             headers['content-type'] = req_content_type
         if data is None and form is None:
@@ -1006,7 +1006,7 @@ class HoneyHive:
         
         url = base_url + '/feedback'
         headers = {}
-        req_content_type, data, form = utils.serialize_request_body(request, "request", False, False, 'json')
+        req_content_type, data, form = utils.serialize_request_body(request, components.FeedbackQuery, "request", False, False, 'json')
         if req_content_type not in ('multipart/form-data', 'multipart/mixed'):
             headers['content-type'] = req_content_type
         if data is None and form is None:
@@ -1028,6 +1028,43 @@ class HoneyHive:
             if utils.match_content_type(content_type, 'application/json'):
                 out = utils.unmarshal_json(http_res.text, Optional[components.FeedbackResponse])
                 res.feedback_response = out
+            else:
+                raise errors.SDKError(f'unknown content-type received: {content_type}', http_res.status_code, http_res.text, http_res)
+        elif http_res.status_code >= 400 and http_res.status_code < 500 or http_res.status_code >= 500 and http_res.status_code < 600:
+            raise errors.SDKError('API error occurred', http_res.status_code, http_res.text, http_res)
+
+        return res
+
+    
+    
+    def post_evaluations(self, request: components.EvaluationLoggingQuery) -> operations.PostEvaluationsResponse:
+        r"""Log an evaluation"""
+        base_url = utils.template_url(*self.sdk_configuration.get_server_details())
+        
+        url = base_url + '/evaluations'
+        headers = {}
+        req_content_type, data, form = utils.serialize_request_body(request, components.EvaluationLoggingQuery, "request", False, False, 'json')
+        if req_content_type not in ('multipart/form-data', 'multipart/mixed'):
+            headers['content-type'] = req_content_type
+        if data is None and form is None:
+            raise Exception('request body is required')
+        headers['Accept'] = 'application/json'
+        headers['user-agent'] = self.sdk_configuration.user_agent
+        
+        if callable(self.sdk_configuration.security):
+            client = utils.configure_security_client(self.sdk_configuration.client, self.sdk_configuration.security())
+        else:
+            client = utils.configure_security_client(self.sdk_configuration.client, self.sdk_configuration.security)
+        
+        http_res = client.request('POST', url, data=data, files=form, headers=headers)
+        content_type = http_res.headers.get('Content-Type')
+        
+        res = operations.PostEvaluationsResponse(status_code=http_res.status_code, content_type=content_type, raw_response=http_res)
+        
+        if http_res.status_code == 200:
+            if utils.match_content_type(content_type, 'application/json'):
+                out = utils.unmarshal_json(http_res.text, Optional[components.SuccessResponse])
+                res.success_response = out
             else:
                 raise errors.SDKError(f'unknown content-type received: {content_type}', http_res.status_code, http_res.text, http_res)
         elif http_res.status_code >= 400 and http_res.status_code < 500 or http_res.status_code >= 500 and http_res.status_code < 600:
@@ -1060,79 +1097,6 @@ class HoneyHive:
             if utils.match_content_type(content_type, 'application/json'):
                 out = utils.unmarshal_json(http_res.text, Optional[List[components.Evaluation]])
                 res.classes = out
-            else:
-                raise errors.SDKError(f'unknown content-type received: {content_type}', http_res.status_code, http_res.text, http_res)
-        elif http_res.status_code >= 400 and http_res.status_code < 500 or http_res.status_code >= 500 and http_res.status_code < 600:
-            raise errors.SDKError('API error occurred', http_res.status_code, http_res.text, http_res)
-
-        return res
-
-    
-    
-    def post_evaluations(self, request: components.EvaluationLoggingQuery) -> operations.PostEvaluationsResponse:
-        r"""Log an evaluation"""
-        base_url = utils.template_url(*self.sdk_configuration.get_server_details())
-        
-        url = base_url + '/evaluations'
-        headers = {}
-        req_content_type, data, form = utils.serialize_request_body(request, "request", False, False, 'json')
-        if req_content_type not in ('multipart/form-data', 'multipart/mixed'):
-            headers['content-type'] = req_content_type
-        if data is None and form is None:
-            raise Exception('request body is required')
-        headers['Accept'] = 'application/json'
-        headers['user-agent'] = self.sdk_configuration.user_agent
-        
-        if callable(self.sdk_configuration.security):
-            client = utils.configure_security_client(self.sdk_configuration.client, self.sdk_configuration.security())
-        else:
-            client = utils.configure_security_client(self.sdk_configuration.client, self.sdk_configuration.security)
-        
-        http_res = client.request('POST', url, data=data, files=form, headers=headers)
-        content_type = http_res.headers.get('Content-Type')
-        
-        res = operations.PostEvaluationsResponse(status_code=http_res.status_code, content_type=content_type, raw_response=http_res)
-        
-        if http_res.status_code == 200:
-            if utils.match_content_type(content_type, 'application/json'):
-                out = utils.unmarshal_json(http_res.text, Optional[components.SuccessResponse])
-                res.success_response = out
-            else:
-                raise errors.SDKError(f'unknown content-type received: {content_type}', http_res.status_code, http_res.text, http_res)
-        elif http_res.status_code >= 400 and http_res.status_code < 500 or http_res.status_code >= 500 and http_res.status_code < 600:
-            raise errors.SDKError('API error occurred', http_res.status_code, http_res.text, http_res)
-
-        return res
-
-    
-    
-    def delete_evaluations_id_(self, id: str) -> operations.DeleteEvaluationsIDResponse:
-        r"""Delete an evaluation"""
-        request = operations.DeleteEvaluationsIDRequest(
-            id=id,
-        )
-        
-        base_url = utils.template_url(*self.sdk_configuration.get_server_details())
-        
-        url = utils.generate_url(operations.DeleteEvaluationsIDRequest, base_url, '/evaluations/{id}', request)
-        headers = {}
-        headers['Accept'] = 'application/json'
-        headers['user-agent'] = self.sdk_configuration.user_agent
-        
-        if callable(self.sdk_configuration.security):
-            client = utils.configure_security_client(self.sdk_configuration.client, self.sdk_configuration.security())
-        else:
-            client = utils.configure_security_client(self.sdk_configuration.client, self.sdk_configuration.security)
-        
-        http_res = client.request('DELETE', url, headers=headers)
-        content_type = http_res.headers.get('Content-Type')
-        
-        res = operations.DeleteEvaluationsIDResponse(status_code=http_res.status_code, content_type=content_type, raw_response=http_res)
-        
-        if http_res.status_code == 200:
-            if utils.match_content_type(content_type, 'application/json'):
-                out = utils.unmarshal_json(http_res.text, Optional[components.DeleteResponse])
-                res.delete_response = out
             else:
                 raise errors.SDKError(f'unknown content-type received: {content_type}', http_res.status_code, http_res.text, http_res)
         elif http_res.status_code >= 400 and http_res.status_code < 500 or http_res.status_code >= 500 and http_res.status_code < 600:
@@ -1178,6 +1142,42 @@ class HoneyHive:
 
     
     
+    def delete_evaluations_id_(self, id: str) -> operations.DeleteEvaluationsIDResponse:
+        r"""Delete an evaluation"""
+        request = operations.DeleteEvaluationsIDRequest(
+            id=id,
+        )
+        
+        base_url = utils.template_url(*self.sdk_configuration.get_server_details())
+        
+        url = utils.generate_url(operations.DeleteEvaluationsIDRequest, base_url, '/evaluations/{id}', request)
+        headers = {}
+        headers['Accept'] = 'application/json'
+        headers['user-agent'] = self.sdk_configuration.user_agent
+        
+        if callable(self.sdk_configuration.security):
+            client = utils.configure_security_client(self.sdk_configuration.client, self.sdk_configuration.security())
+        else:
+            client = utils.configure_security_client(self.sdk_configuration.client, self.sdk_configuration.security)
+        
+        http_res = client.request('DELETE', url, headers=headers)
+        content_type = http_res.headers.get('Content-Type')
+        
+        res = operations.DeleteEvaluationsIDResponse(status_code=http_res.status_code, content_type=content_type, raw_response=http_res)
+        
+        if http_res.status_code == 200:
+            if utils.match_content_type(content_type, 'application/json'):
+                out = utils.unmarshal_json(http_res.text, Optional[components.DeleteResponse])
+                res.delete_response = out
+            else:
+                raise errors.SDKError(f'unknown content-type received: {content_type}', http_res.status_code, http_res.text, http_res)
+        elif http_res.status_code >= 400 and http_res.status_code < 500 or http_res.status_code >= 500 and http_res.status_code < 600:
+            raise errors.SDKError('API error occurred', http_res.status_code, http_res.text, http_res)
+
+        return res
+
+    
+    
     def put_evaluations_id_(self, id: str, evaluation_update_request: Optional[components.EvaluationUpdateRequest] = None) -> operations.PutEvaluationsIDResponse:
         r"""Update an evaluation"""
         request = operations.PutEvaluationsIDRequest(
@@ -1189,7 +1189,7 @@ class HoneyHive:
         
         url = utils.generate_url(operations.PutEvaluationsIDRequest, base_url, '/evaluations/{id}', request)
         headers = {}
-        req_content_type, data, form = utils.serialize_request_body(request, "evaluation_update_request", False, True, 'json')
+        req_content_type, data, form = utils.serialize_request_body(request, operations.PutEvaluationsIDRequest, "evaluation_update_request", False, True, 'json')
         if req_content_type not in ('multipart/form-data', 'multipart/mixed'):
             headers['content-type'] = req_content_type
         headers['Accept'] = 'application/json'
@@ -1224,7 +1224,7 @@ class HoneyHive:
         
         url = base_url + '/session/start'
         headers = {}
-        req_content_type, data, form = utils.serialize_request_body(request, "request", False, False, 'json')
+        req_content_type, data, form = utils.serialize_request_body(request, components.SessionStartQuery, "request", False, False, 'json')
         if req_content_type not in ('multipart/form-data', 'multipart/mixed'):
             headers['content-type'] = req_content_type
         if data is None and form is None:
@@ -1302,7 +1302,7 @@ class HoneyHive:
         
         url = utils.generate_url(operations.PostSessionSessionIDEventRequest, base_url, '/session/{session_id}/event', request)
         headers = {}
-        req_content_type, data, form = utils.serialize_request_body(request, "session_event_query", False, False, 'json')
+        req_content_type, data, form = utils.serialize_request_body(request, operations.PostSessionSessionIDEventRequest, "session_event_query", False, False, 'json')
         if req_content_type not in ('multipart/form-data', 'multipart/mixed'):
             headers['content-type'] = req_content_type
         if data is None and form is None:
@@ -1344,7 +1344,7 @@ class HoneyHive:
         
         url = utils.generate_url(operations.PostSessionSessionIDFeedbackRequest, base_url, '/session/{session_id}/feedback', request)
         headers = {}
-        req_content_type, data, form = utils.serialize_request_body(request, "session_feedback", False, False, 'json')
+        req_content_type, data, form = utils.serialize_request_body(request, operations.PostSessionSessionIDFeedbackRequest, "session_feedback", False, False, 'json')
         if req_content_type not in ('multipart/form-data', 'multipart/mixed'):
             headers['content-type'] = req_content_type
         if data is None and form is None:
@@ -1361,42 +1361,6 @@ class HoneyHive:
         content_type = http_res.headers.get('Content-Type')
         
         res = operations.PostSessionSessionIDFeedbackResponse(status_code=http_res.status_code, content_type=content_type, raw_response=http_res)
-        
-        if http_res.status_code == 200:
-            if utils.match_content_type(content_type, 'application/json'):
-                out = utils.unmarshal_json(http_res.text, Optional[components.SuccessResponse])
-                res.success_response = out
-            else:
-                raise errors.SDKError(f'unknown content-type received: {content_type}', http_res.status_code, http_res.text, http_res)
-        elif http_res.status_code >= 400 and http_res.status_code < 500 or http_res.status_code >= 500 and http_res.status_code < 600:
-            raise errors.SDKError('API error occurred', http_res.status_code, http_res.text, http_res)
-
-        return res
-
-    
-    
-    def delete_session_session_id_(self, session_id: str) -> operations.DeleteSessionSessionIDResponse:
-        r"""Delete a session"""
-        request = operations.DeleteSessionSessionIDRequest(
-            session_id=session_id,
-        )
-        
-        base_url = utils.template_url(*self.sdk_configuration.get_server_details())
-        
-        url = utils.generate_url(operations.DeleteSessionSessionIDRequest, base_url, '/session/{session_id}', request)
-        headers = {}
-        headers['Accept'] = 'application/json'
-        headers['user-agent'] = self.sdk_configuration.user_agent
-        
-        if callable(self.sdk_configuration.security):
-            client = utils.configure_security_client(self.sdk_configuration.client, self.sdk_configuration.security())
-        else:
-            client = utils.configure_security_client(self.sdk_configuration.client, self.sdk_configuration.security)
-        
-        http_res = client.request('DELETE', url, headers=headers)
-        content_type = http_res.headers.get('Content-Type')
-        
-        res = operations.DeleteSessionSessionIDResponse(status_code=http_res.status_code, content_type=content_type, raw_response=http_res)
         
         if http_res.status_code == 200:
             if utils.match_content_type(content_type, 'application/json'):
@@ -1458,7 +1422,7 @@ class HoneyHive:
         
         url = utils.generate_url(operations.PutSessionSessionIDRequest, base_url, '/session/{session_id}', request)
         headers = {}
-        req_content_type, data, form = utils.serialize_request_body(request, "session_event_update", False, True, 'json')
+        req_content_type, data, form = utils.serialize_request_body(request, operations.PutSessionSessionIDRequest, "session_event_update", False, True, 'json')
         if req_content_type not in ('multipart/form-data', 'multipart/mixed'):
             headers['content-type'] = req_content_type
         headers['Accept'] = 'application/json'
@@ -1473,6 +1437,42 @@ class HoneyHive:
         content_type = http_res.headers.get('Content-Type')
         
         res = operations.PutSessionSessionIDResponse(status_code=http_res.status_code, content_type=content_type, raw_response=http_res)
+        
+        if http_res.status_code == 200:
+            if utils.match_content_type(content_type, 'application/json'):
+                out = utils.unmarshal_json(http_res.text, Optional[components.SuccessResponse])
+                res.success_response = out
+            else:
+                raise errors.SDKError(f'unknown content-type received: {content_type}', http_res.status_code, http_res.text, http_res)
+        elif http_res.status_code >= 400 and http_res.status_code < 500 or http_res.status_code >= 500 and http_res.status_code < 600:
+            raise errors.SDKError('API error occurred', http_res.status_code, http_res.text, http_res)
+
+        return res
+
+    
+    
+    def delete_session_session_id_(self, session_id: str) -> operations.DeleteSessionSessionIDResponse:
+        r"""Delete a session"""
+        request = operations.DeleteSessionSessionIDRequest(
+            session_id=session_id,
+        )
+        
+        base_url = utils.template_url(*self.sdk_configuration.get_server_details())
+        
+        url = utils.generate_url(operations.DeleteSessionSessionIDRequest, base_url, '/session/{session_id}', request)
+        headers = {}
+        headers['Accept'] = 'application/json'
+        headers['user-agent'] = self.sdk_configuration.user_agent
+        
+        if callable(self.sdk_configuration.security):
+            client = utils.configure_security_client(self.sdk_configuration.client, self.sdk_configuration.security())
+        else:
+            client = utils.configure_security_client(self.sdk_configuration.client, self.sdk_configuration.security)
+        
+        http_res = client.request('DELETE', url, headers=headers)
+        content_type = http_res.headers.get('Content-Type')
+        
+        res = operations.DeleteSessionSessionIDResponse(status_code=http_res.status_code, content_type=content_type, raw_response=http_res)
         
         if http_res.status_code == 200:
             if utils.match_content_type(content_type, 'application/json'):
@@ -1573,7 +1573,7 @@ class HoneyHive:
         
         url = utils.generate_url(operations.PostSessionSessionIDTracesRequest, base_url, '/session/{session_id}/traces', request)
         headers = {}
-        req_content_type, data, form = utils.serialize_request_body(request, "session_trace", False, False, 'json')
+        req_content_type, data, form = utils.serialize_request_body(request, operations.PostSessionSessionIDTracesRequest, "session_trace", False, False, 'json')
         if req_content_type not in ('multipart/form-data', 'multipart/mixed'):
             headers['content-type'] = req_content_type
         if data is None and form is None:
