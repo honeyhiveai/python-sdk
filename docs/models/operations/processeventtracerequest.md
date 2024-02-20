@@ -1,0 +1,9 @@
+# ProcessEventTraceRequest
+
+
+## Fields
+
+| Field                                                                                              | Type                                                                                               | Required                                                                                           | Description                                                                                        |
+| -------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------- |
+| `session_id`                                                                                       | *str*                                                                                              | :heavy_check_mark:                                                                                 | The ID of the session to which this event trace belongs                                            |
+| `request_body`                                                                                     | [operations.ProcessEventTraceRequestBody](../../models/operations/processeventtracerequestbody.md) | :heavy_check_mark:                                                                                 | N/A                                                                                                |

@@ -81,6 +81,7 @@ if res.configurations is not None:
 * [start_session](docs/sdks/session/README.md#start_session) - Start a new session
 * [delete_session](docs/sdks/session/README.md#delete_session) - Delete a session
 * [get_session](docs/sdks/session/README.md#get_session) - Retrieve a session
+* [process_event_trace](docs/sdks/session/README.md#process_event_trace) - Process an event trace for a given session
 
 ### [tasks](docs/sdks/tasks/README.md)
 

@@ -1,12 +1,12 @@
 lockVersion: 2.0.0
 id: b027cebf-3475-4e9b-8070-6f08b389f6ed
 management:
-  docChecksum: 34d9645d6c490540ee1f8f296e4897c3
+  docChecksum: 7f5e9aaa8d42a29896b4652eff746a19
   docVersion: 1.0.1
   speakeasyVersion: internal
   generationVersion: 2.263.3
-  releaseVersion: 0.1.1
-  configChecksum: 578e5b70917477060ad2bd5980087e06
+  releaseVersion: 0.1.2
+  configChecksum: 270299c5c83b7ad4bcccfa4c29c9c84a
   repoURL: https://github.com/honeyhiveai/python-sdk.git
   repoSubDirectory: .
   installationURL: https://github.com/honeyhiveai/python-sdk.git
@@ -66,6 +66,7 @@ generatedFiles:
   - src/honeyhive/models/operations/startsession.py
   - src/honeyhive/models/operations/deletesession.py
   - src/honeyhive/models/operations/getsession.py
+  - src/honeyhive/models/operations/processeventtrace.py
   - src/honeyhive/models/operations/deletetask.py
   - src/honeyhive/models/operations/gettasks.py
   - src/honeyhive/models/operations/createtask.py
@@ -157,6 +158,10 @@ generatedFiles:
   - docs/models/operations/deletesessionresponse.md
   - docs/models/operations/getsessionrequest.md
   - docs/models/operations/getsessionresponse.md
+  - docs/models/operations/processeventtracerequestbody.md
+  - docs/models/operations/processeventtracerequest.md
+  - docs/models/operations/processeventtraceresponsebody.md
+  - docs/models/operations/processeventtraceresponse.md
   - docs/models/operations/deletetaskrequest.md
   - docs/models/operations/deletetaskresponse.md
   - docs/models/operations/gettasksrequest.md
