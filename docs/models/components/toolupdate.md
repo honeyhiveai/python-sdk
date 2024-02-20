@@ -1,0 +1,11 @@
+# ToolUpdate
+
+
+## Fields
+
+| Field                                                                                        | Type                                                                                         | Required                                                                                     | Description                                                                                  |
+| -------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------- |
+| `id`                                                                                         | *str*                                                                                        | :heavy_check_mark:                                                                           | N/A                                                                                          |
+| `name`                                                                                       | *Optional[str]*                                                                              | :heavy_minus_sign:                                                                           | N/A                                                                                          |
+| `description`                                                                                | *Optional[str]*                                                                              | :heavy_minus_sign:                                                                           | N/A                                                                                          |
+| `parameters`                                                                                 | [Optional[components.ToolUpdateParameters]](../../models/components/toolupdateparameters.md) | :heavy_minus_sign:                                                                           | N/A                                                                                          |

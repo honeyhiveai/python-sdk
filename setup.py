@@ -49,6 +49,9 @@ setup(
         'Programming Language :: Python :: 3.10',
         'Programming Language :: Python :: 3.11',
     ],
+    extras_require={
+        "dev":["pylint==2.16.2"],
+    },
     project_urls={
         'Documentation': 'https://docs.honeyhive.ai/',
     },

@@ -1,0 +1,18 @@
+# Testcase
+
+
+## Fields
+
+| Field                                                                | Type                                                                 | Required                                                             | Description                                                          |
+| -------------------------------------------------------------------- | -------------------------------------------------------------------- | -------------------------------------------------------------------- | -------------------------------------------------------------------- |
+| `project`                                                            | *Optional[str]*                                                      | :heavy_minus_sign:                                                   | N/A                                                                  |
+| `created_at`                                                         | [date](https://docs.python.org/3/library/datetime.html#date-objects) | :heavy_minus_sign:                                                   | N/A                                                                  |
+| `updated_at`                                                         | [date](https://docs.python.org/3/library/datetime.html#date-objects) | :heavy_minus_sign:                                                   | N/A                                                                  |
+| `name`                                                               | *Optional[str]*                                                      | :heavy_minus_sign:                                                   | N/A                                                                  |
+| `description`                                                        | *Optional[str]*                                                      | :heavy_minus_sign:                                                   | N/A                                                                  |
+| `type`                                                               | *Optional[str]*                                                      | :heavy_minus_sign:                                                   | N/A                                                                  |
+| `datapoints`                                                         | List[*str*]                                                          | :heavy_minus_sign:                                                   | N/A                                                                  |
+| `num_points`                                                         | *Optional[int]*                                                      | :heavy_minus_sign:                                                   | N/A                                                                  |
+| `linked_evals`                                                       | List[*str*]                                                          | :heavy_minus_sign:                                                   | N/A                                                                  |
+| `saved`                                                              | *Optional[bool]*                                                     | :heavy_minus_sign:                                                   | N/A                                                                  |
+| `pipeline_type`                                                      | *Optional[str]*                                                      | :heavy_minus_sign:                                                   | N/A                                                                  |

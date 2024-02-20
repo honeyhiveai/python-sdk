@@ -1,3 +1,4 @@
+# pylint: skip-file
 """A Tracer implementation that logs runs to HoneyHive."""
 from __future__ import annotations
 

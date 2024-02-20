@@ -7,112 +7,136 @@ pip install honeyhive
 ```
 <!-- End SDK Installation -->
 
+<!-- Start SDK Example Usage [usage] -->
 ## SDK Example Usage
-<!-- Start SDK Example Usage -->
+
 ### Example
 
 ```python
 import honeyhive
-from honeyhive.models import operations
 
 s = honeyhive.HoneyHive(
-    bearer_auth="",
+    bearer_auth="<YOUR_BEARER_TOKEN_HERE>",
 )
 
 
-res = s.delete_tasks(name='string')
+res = s.configurations.get_configurations(project='<value>', type='<value>')
 
-if res.delete_response is not None:
+if res.configurations is not None:
     # handle response
     pass
 ```
-<!-- End SDK Example Usage -->
+<!-- End SDK Example Usage [usage] -->
 
-<!-- Start SDK Available Operations -->
+<!-- Start Available Resources and Operations [operations] -->
 ## Available Resources and Operations
 
-### [HoneyHive SDK](docs/sdks/honeyhive/README.md)
+### [configurations](docs/sdks/configurations/README.md)
 
-* [delete_tasks](docs/sdks/honeyhive/README.md#delete_tasks) - Delete a task
-* [get_tasks](docs/sdks/honeyhive/README.md#get_tasks) - Get all tasks
-* [post_tasks](docs/sdks/honeyhive/README.md#post_tasks) - Create a task
-* [put_tasks](docs/sdks/honeyhive/README.md#put_tasks) - Update a task
-* [get_generations](docs/sdks/honeyhive/README.md#get_generations) - Get all generations
-* [post_generations](docs/sdks/honeyhive/README.md#post_generations) - Generate a text
-* [get_prompts](docs/sdks/honeyhive/README.md#get_prompts) - Get all prompts or filter by task and name
-* [post_prompts](docs/sdks/honeyhive/README.md#post_prompts) - Create a prompt
-* [delete_prompts_id_](docs/sdks/honeyhive/README.md#delete_prompts_id_) - Delete a prompt by name
-* [put_prompts_id_](docs/sdks/honeyhive/README.md#put_prompts_id_) - Update a prompt
-* [get_fine_tuned_models](docs/sdks/honeyhive/README.md#get_fine_tuned_models) - Get all fine-tuned models
-* [post_fine_tuned_models](docs/sdks/honeyhive/README.md#post_fine_tuned_models) - Create a new fine-tuned model
-* [delete_fine_tuned_models_id_](docs/sdks/honeyhive/README.md#delete_fine_tuned_models_id_) - Delete a fine-tuned model
-* [get_fine_tuned_models_id_](docs/sdks/honeyhive/README.md#get_fine_tuned_models_id_) - Get a fine-tuned model
-* [delete_datasets](docs/sdks/honeyhive/README.md#delete_datasets) - Delete all datasets
-* [get_datasets](docs/sdks/honeyhive/README.md#get_datasets) - Get datasets
-* [post_datasets](docs/sdks/honeyhive/README.md#post_datasets) - Create a dataset
-* [put_datasets](docs/sdks/honeyhive/README.md#put_datasets) - Update a dataset
-* [delete_datasets_name_](docs/sdks/honeyhive/README.md#delete_datasets_name_) - Delete a dataset
-* [delete_metrics](docs/sdks/honeyhive/README.md#delete_metrics) - Delete a metric
-* [get_metrics](docs/sdks/honeyhive/README.md#get_metrics) - Get all metrics
-* [post_metrics](docs/sdks/honeyhive/README.md#post_metrics) - Create a metric
-* [put_metrics](docs/sdks/honeyhive/README.md#put_metrics) - Update a metric
-* [post_metrics_compute](docs/sdks/honeyhive/README.md#post_metrics_compute) - Compute metric
-* [post_chat](docs/sdks/honeyhive/README.md#post_chat) - Create a chat completion
-* [post_generations_log](docs/sdks/honeyhive/README.md#post_generations_log) - Log a generation
-* [post_feedback](docs/sdks/honeyhive/README.md#post_feedback) - Send feedback
-* [get_evaluations](docs/sdks/honeyhive/README.md#get_evaluations) - Get all evaluations
-* [post_evaluations](docs/sdks/honeyhive/README.md#post_evaluations) - Log an evaluation
-* [delete_evaluations_id_](docs/sdks/honeyhive/README.md#delete_evaluations_id_) - Delete an evaluation
-* [get_evaluations_id_](docs/sdks/honeyhive/README.md#get_evaluations_id_) - Get an evaluation
-* [put_evaluations_id_](docs/sdks/honeyhive/README.md#put_evaluations_id_) - Update an evaluation
-* [post_session_start](docs/sdks/honeyhive/README.md#post_session_start) - Start a session
-* [post_session_session_id_end](docs/sdks/honeyhive/README.md#post_session_session_id_end) - End a session
-* [post_session_session_id_event](docs/sdks/honeyhive/README.md#post_session_session_id_event) - Log an event
-* [post_session_session_id_feedback](docs/sdks/honeyhive/README.md#post_session_session_id_feedback) - Log session feedback
-* [delete_session_session_id_](docs/sdks/honeyhive/README.md#delete_session_session_id_) - Delete a session
-* [get_session_session_id_](docs/sdks/honeyhive/README.md#get_session_session_id_) - Get a session
-* [put_session_session_id_](docs/sdks/honeyhive/README.md#put_session_session_id_) - Update a session event
-* [get_session_session_id_export](docs/sdks/honeyhive/README.md#get_session_session_id_export) - Get a session in Trace Event format
-* [get_session](docs/sdks/honeyhive/README.md#get_session) - Get all sessions
-* [post_session_session_id_traces](docs/sdks/honeyhive/README.md#post_session_session_id_traces) - Log a trace
-<!-- End SDK Available Operations -->
+* [get_configurations](docs/sdks/configurations/README.md#get_configurations) - Retrieve a list of configurations
+* [create_configuration](docs/sdks/configurations/README.md#create_configuration) - Create a new configuration
+* [delete_configuration](docs/sdks/configurations/README.md#delete_configuration) - Delete a configuration
+* [update_configuration](docs/sdks/configurations/README.md#update_configuration) - Update an existing configuration
 
-<!-- Start Error Handling -->
+### [datapoint](docs/sdks/datapoint/README.md)
+
+* [get_datapoints](docs/sdks/datapoint/README.md#get_datapoints) - Retrieve a list of datapoints
+* [update_datapoint](docs/sdks/datapoint/README.md#update_datapoint) - Update a specific datapoint
+* [create_datapoint](docs/sdks/datapoint/README.md#create_datapoint) - Create a new datapoint
+* [delete_datapoint](docs/sdks/datapoint/README.md#delete_datapoint) - Delete a specific datapoint
+* [get_datapoint](docs/sdks/datapoint/README.md#get_datapoint) - Retrieve a specific datapoint
+
+### [datasets](docs/sdks/datasets/README.md)
+
+* [get_datasets](docs/sdks/datasets/README.md#get_datasets) - Retrieve a list of datasets
+* [create_dataset](docs/sdks/datasets/README.md#create_dataset) - Create a new dataset
+* [delete_dataset](docs/sdks/datasets/README.md#delete_dataset) - Delete a dataset
+* [update_dataset](docs/sdks/datasets/README.md#update_dataset) - Update a dataset
+
+### [events](docs/sdks/events/README.md)
+
+* [get_events](docs/sdks/events/README.md#get_events) - Retrieve events based on filters
+* [post_events](docs/sdks/events/README.md#post_events) - Create a new event
+* [put_events](docs/sdks/events/README.md#put_events) - Update an event
+* [get_events_chart](docs/sdks/events/README.md#get_events_chart) - Retrieve a chart of events
+* [delete_events_event_id_](docs/sdks/events/README.md#delete_events_event_id_) - Delete an event
+
+### [metrics](docs/sdks/metrics/README.md)
+
+* [delete_metrics](docs/sdks/metrics/README.md#delete_metrics) - Delete a metric
+* [get_metrics](docs/sdks/metrics/README.md#get_metrics) - Get all metrics
+* [post_metrics](docs/sdks/metrics/README.md#post_metrics) - Create a new metric
+* [put_metrics](docs/sdks/metrics/README.md#put_metrics) - Update an existing metric
+* [post_metrics_compute](docs/sdks/metrics/README.md#post_metrics_compute) - Compute metric
+
+### [prompts](docs/sdks/prompts/README.md)
+
+* [get_prompts](docs/sdks/prompts/README.md#get_prompts) - Retrieve a list of prompts based on query parameters.
+* [post_prompts](docs/sdks/prompts/README.md#post_prompts) - Create a new prompt.
+* [delete_prompts_id_](docs/sdks/prompts/README.md#delete_prompts_id_) - Delete an existing prompt.
+* [put_prompts_id_](docs/sdks/prompts/README.md#put_prompts_id_) - Update an existing prompt.
+
+### [session](docs/sdks/session/README.md)
+
+* [start_session](docs/sdks/session/README.md#start_session) - Start a new session
+* [delete_session](docs/sdks/session/README.md#delete_session) - Delete a session
+* [get_session](docs/sdks/session/README.md#get_session) - Retrieve a session
+
+### [tasks](docs/sdks/tasks/README.md)
+
+* [delete_task](docs/sdks/tasks/README.md#delete_task) - Delete a task
+* [get_tasks](docs/sdks/tasks/README.md#get_tasks) - Get a list of tasks
+* [create_task](docs/sdks/tasks/README.md#create_task) - Create a new task
+* [update_task](docs/sdks/tasks/README.md#update_task) - Update a task
+
+### [testcases](docs/sdks/testcases/README.md)
+
+* [get_testcases](docs/sdks/testcases/README.md#get_testcases) - Get testcases
+* [post_testcases](docs/sdks/testcases/README.md#post_testcases) - Create a testcase
+* [put_testcases](docs/sdks/testcases/README.md#put_testcases) - Update a testcase
+
+### [tools](docs/sdks/tools/README.md)
+
+* [delete_tool](docs/sdks/tools/README.md#delete_tool) - Delete a tool
+* [get_tools](docs/sdks/tools/README.md#get_tools) - Retrieve a list of tools
+* [create_tool](docs/sdks/tools/README.md#create_tool) - Create a new tool
+* [update_tool](docs/sdks/tools/README.md#update_tool) - Update an existing tool
+<!-- End Available Resources and Operations [operations] -->
+
+<!-- Start Error Handling [errors] -->
 ## Error Handling
 
 Handling errors in this SDK should largely match your expectations.  All operations return a response object or raise an error.  If Error objects are specified in your OpenAPI Spec, the SDK will raise the appropriate Error type.
 
 | Error Object    | Status Code     | Content Type    |
 | --------------- | --------------- | --------------- |
-| errors.SDKError | 400-600         | */*             |
+| errors.SDKError | 4x-5xx          | */*             |
 
 ### Example
 
 ```python
 import honeyhive
-from honeyhive.models import operations
+from honeyhive.models import errors
 
 s = honeyhive.HoneyHive(
-    bearer_auth="",
+    bearer_auth="<YOUR_BEARER_TOKEN_HERE>",
 )
 
 
 res = None
 try:
-    res = s.delete_tasks(name='string')
+    res = s.configurations.get_configurations(project='<value>', type='<value>')
+except errors.SDKError as e:
+    # handle exception
+    raise(e)
 
-except (errors.SDKError) as e:
-    print(e) # handle exception
-
-
-if res.delete_response is not None:
+if res.configurations is not None:
     # handle response
     pass
 ```
+<!-- End Error Handling [errors] -->
 
-<!-- End Error Handling -->
-
-<!-- Start Server Selection -->
+<!-- Start Server Selection [server] -->
 ## Server Selection
 
 ### Select Server by Index
@@ -127,17 +151,16 @@ You can override the default server globally by passing a server index to the `s
 
 ```python
 import honeyhive
-from honeyhive.models import operations
 
 s = honeyhive.HoneyHive(
     server_idx=0,
-    bearer_auth="",
+    bearer_auth="<YOUR_BEARER_TOKEN_HERE>",
 )
 
 
-res = s.delete_tasks(name='string')
+res = s.configurations.get_configurations(project='<value>', type='<value>')
 
-if res.delete_response is not None:
+if res.configurations is not None:
     # handle response
     pass
 ```
@@ -148,26 +171,25 @@ if res.delete_response is not None:
 The default server can also be overridden globally by passing a URL to the `server_url: str` optional parameter when initializing the SDK client instance. For example:
 ```python
 import honeyhive
-from honeyhive.models import operations
 
 s = honeyhive.HoneyHive(
     server_url="https://api.honeyhive.ai",
-    bearer_auth="",
+    bearer_auth="<YOUR_BEARER_TOKEN_HERE>",
 )
 
 
-res = s.delete_tasks(name='string')
+res = s.configurations.get_configurations(project='<value>', type='<value>')
 
-if res.delete_response is not None:
+if res.configurations is not None:
     # handle response
     pass
 ```
-<!-- End Server Selection -->
+<!-- End Server Selection [server] -->
 
-<!-- Start Custom HTTP Client -->
+<!-- Start Custom HTTP Client [http-client] -->
 ## Custom HTTP Client
 
-The Python SDK makes API calls using the (requests)[https://pypi.org/project/requests/] HTTP library.  In order to provide a convenient way to configure timeouts, cookies, proxies, custom headers, and other low-level configuration, you can initialize the SDK client with a custom `requests.Session` object.
+The Python SDK makes API calls using the [requests](https://pypi.org/project/requests/) HTTP library.  In order to provide a convenient way to configure timeouts, cookies, proxies, custom headers, and other low-level configuration, you can initialize the SDK client with a custom `requests.Session` object.
 
 For example, you could specify a header for every request that this sdk makes as follows:
 ```python
@@ -178,10 +200,9 @@ http_client = requests.Session()
 http_client.headers.update({'x-custom-header': 'someValue'})
 s = honeyhive.HoneyHive(client: http_client)
 ```
-<!-- End Custom HTTP Client -->
+<!-- End Custom HTTP Client [http-client] -->
 
-<!-- Start Authentication -->
-
+<!-- Start Authentication [security] -->
 ## Authentication
 
 ### Per-Client Security Schemes
@@ -195,20 +216,27 @@ This SDK supports the following security scheme globally:
 To authenticate with the API the `bearer_auth` parameter must be set when initializing the SDK client instance. For example:
 ```python
 import honeyhive
-from honeyhive.models import operations
 
 s = honeyhive.HoneyHive(
-    bearer_auth="",
+    bearer_auth="<YOUR_BEARER_TOKEN_HERE>",
 )
 
 
-res = s.delete_tasks(name='string')
+res = s.configurations.get_configurations(project='<value>', type='<value>')
 
-if res.delete_response is not None:
+if res.configurations is not None:
     # handle response
     pass
 ```
-<!-- End Authentication -->
+<!-- End Authentication [security] -->
+
+<!-- Start SDK Installation [installation] -->
+## SDK Installation
+
+```bash
+pip install git+https://github.com/honeyhiveai/python-sdk.git
+```
+<!-- End SDK Installation [installation] -->
 
 <!-- Placeholder for Future Speakeasy SDK Sections -->
 

@@ -3,14 +3,16 @@
 from __future__ import annotations
 import dataclasses
 import requests as requests_http
-from ...models.components import promptresponse as components_promptresponse
+from ...models.components import prompt as components_prompt
 from typing import List, Optional
 
 
 @dataclasses.dataclass
 class GetPromptsRequest:
+    task: str = dataclasses.field(metadata={'query_param': { 'field_name': 'task', 'style': 'form', 'explode': True }})
+    r"""Task associated with the prompts."""
     name: Optional[str] = dataclasses.field(default=None, metadata={'query_param': { 'field_name': 'name', 'style': 'form', 'explode': True }})
-    task: Optional[str] = dataclasses.field(default=None, metadata={'query_param': { 'field_name': 'task', 'style': 'form', 'explode': True }})
+    r"""Optional name to filter prompts."""
     
 
 
@@ -19,11 +21,11 @@ class GetPromptsRequest:
 class GetPromptsResponse:
     content_type: str = dataclasses.field()
     r"""HTTP response content type for this operation"""
-    raw_response: requests_http.Response = dataclasses.field()
-    r"""Raw HTTP response; suitable for custom response parsing"""
     status_code: int = dataclasses.field()
     r"""HTTP response status code for this operation"""
-    classes: Optional[List[components_promptresponse.PromptResponse]] = dataclasses.field(default=None)
-    r"""OK"""
+    raw_response: requests_http.Response = dataclasses.field()
+    r"""Raw HTTP response; suitable for custom response parsing"""
+    prompts: Optional[List[components_prompt.Prompt]] = dataclasses.field(default=None)
+    r"""Successfully retrieved list of prompts."""
     
 
