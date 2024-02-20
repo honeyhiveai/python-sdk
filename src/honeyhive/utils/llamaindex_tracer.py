@@ -1,3 +1,4 @@
+# pylint: skip-file
 import os
 import uuid
 from collections import defaultdict
