@@ -3,7 +3,7 @@
 
 ## Fields
 
-| Field              | Type               | Required           | Description        |
-| ------------------ | ------------------ | ------------------ | ------------------ |
-| `task`             | *Optional[str]*    | :heavy_minus_sign: | N/A                |
-| `name`             | *Optional[str]*    | :heavy_minus_sign: | N/A                |
+| Field                             | Type                              | Required                          | Description                       |
+| --------------------------------- | --------------------------------- | --------------------------------- | --------------------------------- |
+| `task`                            | *str*                             | :heavy_check_mark:                | Task associated with the prompts. |
+| `name`                            | *Optional[str]*                   | :heavy_minus_sign:                | Optional name to filter prompts.  |
