@@ -5,8 +5,8 @@ management:
   docVersion: 1.0.1
   speakeasyVersion: internal
   generationVersion: 2.263.3
-  releaseVersion: 0.1.0
-  configChecksum: e5a125c186fe8e25f6381d8ff1c4c56d
+  releaseVersion: 0.1.1
+  configChecksum: 578e5b70917477060ad2bd5980087e06
   repoURL: https://github.com/honeyhiveai/python-sdk.git
   repoSubDirectory: .
   installationURL: https://github.com/honeyhiveai/python-sdk.git
