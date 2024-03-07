@@ -188,7 +188,7 @@ class HoneyHiveLangChainTracer(BaseTracer, ABC):
         """Post a trace to the HoneyHive API"""
         self._start_new_session()
         root_log = logs[0].dict()
-        root_log['session_id'] = self.session_id
+        root_log["session_id"] = self.session_id
         trace_response = requests.post(
             url=f"{self._base_url}/session/{self.session_id}/traces",
             json={"logs": [root_log]},
@@ -211,9 +211,7 @@ class HoneyHiveLangChainTracer(BaseTracer, ABC):
         return output
 
     @staticmethod
-    def _convert_chain_inputs_to_text(
-        inputs: Dict[str, Any]
-    ) -> Dict[str, str]:
+    def _convert_chain_inputs_to_text(inputs: Dict[str, Any]) -> Dict[str, str]:
         """Convert LC list inputs to a string required by the HH API."""
         new_inputs = {}
         for key, value in inputs.items():
@@ -308,9 +306,7 @@ class HoneyHiveLangChainTracer(BaseTracer, ABC):
             other=AgentOther(
                 max_iterations=run.serialized["max_iterations"],
                 stop=run.serialized["early_stopping_method"],
-                output_parser=run.serialized["agent"]["output_parser"][
-                    "_type"
-                ],
+                output_parser=run.serialized["agent"]["output_parser"]["_type"],
             ),
         )
         return Log(
@@ -366,9 +362,7 @@ class HoneyHiveLangChainTracer(BaseTracer, ABC):
         )
 
     @staticmethod
-    def _get_tool_source_from_function(
-        tool_name: str, tool_function: Callable
-    ) -> str:
+    def _get_tool_source_from_function(tool_name: str, tool_function: Callable) -> str:
         """Get the source code for a tool function."""
         try:
             return inspect.getsource(tool_function)
@@ -389,9 +383,7 @@ class HoneyHiveLangChainTracer(BaseTracer, ABC):
         else:
             parent_id = None
         description = (
-            run.serialized["description"]
-            if run.run_type != "retriever"
-            else None
+            run.serialized["description"] if run.run_type != "retriever" else None
         )
         return Log(
             project=self.project,
@@ -422,9 +414,7 @@ class HoneyHiveLangChainTracer(BaseTracer, ABC):
         )
 
     @staticmethod
-    def _convert_template_to_hl_syntax(
-        template: str, template_format: str
-    ) -> str:
+    def _convert_template_to_hl_syntax(template: str, template_format: str) -> str:
         """Converts LC template to HH double curly bracket syntax"""
         if template_format == "f-string":
             # match the f-string syntax with single curly brackets
@@ -459,9 +449,7 @@ class HoneyHiveLangChainTracer(BaseTracer, ABC):
                         ChatMessage(
                             content=self._convert_template_to_hl_syntax(
                                 template=message["prompt"]["template"],
-                                template_format=message["prompt"][
-                                    "template_format"
-                                ],
+                                template_format=message["prompt"]["template_format"],
                             ),
                             role=ROLE_MAPPING[message["role"]],
                         )
@@ -533,12 +521,8 @@ class HoneyHiveLangChainTracer(BaseTracer, ABC):
                             config=config,
                             inputs=inputs[i],
                             outputs={"text": output},
-                            start_time=int(
-                                llm_run.start_time.timestamp() * 1000000
-                            ),
-                            end_time=int(
-                                llm_run.end_time.timestamp() * 1000000
-                            ),
+                            start_time=int(llm_run.start_time.timestamp() * 1000000),
+                            end_time=int(llm_run.end_time.timestamp() * 1000000),
                             duration=duration,
                             metadata=metadata,
                         )

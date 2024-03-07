@@ -7,12 +7,13 @@ from enum import Enum
 from typing import Any, Callable, Dict, List, Optional, Tuple
 
 import requests
-from llama_index.callbacks.base import BaseCallbackHandler
-from llama_index.callbacks.schema import TIMESTAMP_FORMAT, CBEvent, CBEventType
-from llama_index.callbacks.token_counting import get_llm_token_counts
-from llama_index.utilities.token_counting import TokenCounter
+from llama_index.core.callbacks.base import BaseCallbackHandler
+from llama_index.core.callbacks.schema import TIMESTAMP_FORMAT, CBEvent, CBEventType
+from llama_index.core.callbacks.token_counting import get_llm_token_counts
+from llama_index.core.utilities.token_counting import TokenCounter
 
-from honeyhive.utils.langchain_tracer import Config, Log, log_to_dict
+from langchain_tracer import Config, Log, log_to_dict
+
 
 class HHEventType(str, Enum):
     MODEL = "model"
@@ -53,7 +54,9 @@ class HoneyHiveLlamaIndexTracer(BaseCallbackHandler):
         self._event_pairs_by_id: Dict[str, List[CBEvent]] = defaultdict(list)
         self._cur_trace_id: Optional[str] = None
         self._trace_map: Dict[str, List[str]] = defaultdict(list)
-        self.tokenizer = TokenCounter(tokenizer=tokenizer) if tokenizer else TokenCounter()
+        self.tokenizer = (
+            TokenCounter(tokenizer=tokenizer) if tokenizer else TokenCounter()
+        )
 
         self.name = name
         self.project = project
@@ -77,7 +80,7 @@ class HoneyHiveLlamaIndexTracer(BaseCallbackHandler):
         )
 
         res = session_response.json()
-        self.session_id = res['session_id']
+        self.session_id = res["session_id"]
 
     def on_event_start(
         self,
@@ -139,16 +142,14 @@ class HoneyHiveLlamaIndexTracer(BaseCallbackHandler):
             if child_nodes:
                 root_span = self._convert_event_pair_to_log(
                     self._event_pairs_by_id.get(child_nodes[0]),
-                    trace_id=self._cur_trace_id
-                    if len(child_nodes) > 1
-                    else None,
+                    trace_id=self._cur_trace_id if len(child_nodes) > 1 else None,
                 )
                 if len(child_nodes) == 1:
                     child_nodes = self._trace_map.get(child_nodes[0])
                     root_span = self._build_trace(child_nodes, root_span)
                 else:
                     root_span = self._build_trace(child_nodes, root_span)
-                if root_span and root_span.event_type == 'chain':
+                if root_span and root_span.event_type == "chain":
                     self._post_trace(root_span)
         except Exception:
             # Silently ignore errors to not break user code
@@ -192,7 +193,7 @@ class HoneyHiveLlamaIndexTracer(BaseCallbackHandler):
             source=self.source,
             event_id=str(uuid.uuid4()),
             inputs={},
-            outputs=None,
+            outputs={},
             children=None,
             error=None,
             parent_id=parent_id,
@@ -204,9 +205,7 @@ class HoneyHiveLlamaIndexTracer(BaseCallbackHandler):
             duration=(end_time_us - start_time_us) / 1000,
         )
 
-        inputs, outputs, root_log = self._add_payload_to_log(
-            root_log, event_pair
-        )
+        inputs, outputs, root_log = self._add_payload_to_log(root_log, event_pair)
         root_log.inputs = inputs
         root_log.outputs = outputs
 
@@ -240,7 +239,7 @@ class HoneyHiveLlamaIndexTracer(BaseCallbackHandler):
         assert len(event_pair) == 2
         event_type = event_pair[0].event_type
         inputs = None
-        outputs = None
+        outputs = {}
 
         if event_type == CBEventType.NODE_PARSING:
             # TODO: disabled full detailed inputs/outputs due to UI lag
@@ -259,11 +258,11 @@ class HoneyHiveLlamaIndexTracer(BaseCallbackHandler):
     def _handle_retrieve_payload(
         self, event_pair: List[CBEvent]
     ) -> Tuple[Dict[str, Any], Dict[str, Any]]:
-        inputs = {'query_str': event_pair[0].payload['query_str']}
+        inputs = {"query_str": event_pair[0].payload["query_str"]}
         chunks = []
-        for node in event_pair[1].payload['nodes']:
-            chunks.append({'score': node.score, 'text': node.node.text})
-        outputs = {'chunks': chunks}
+        for node in event_pair[1].payload["nodes"]:
+            chunks.append({"score": node.score, "text": node.node.text})
+        outputs = {"chunks": chunks}
         return inputs, outputs
 
     def _handle_node_parsing_payload(
@@ -298,9 +297,7 @@ class HoneyHiveLlamaIndexTracer(BaseCallbackHandler):
 
         # Format messages
         if "messages" in inputs:
-            inputs["messages"] = "\n".join(
-                [str(x) for x in inputs["messages"]]
-            )
+            inputs["messages"] = "\n".join([str(x) for x in inputs["messages"]])
 
         token_counts = get_llm_token_counts(self.tokenizer, outputs)
         metadata = {
@@ -369,7 +366,7 @@ class HoneyHiveLlamaIndexTracer(BaseCallbackHandler):
     def _post_trace(self, root_log: Log) -> None:
         self._start_new_session()
         root_log = log_to_dict(root_log)
-        root_log['session_id'] = str(uuid.uuid4())
+        root_log["session_id"] = str(uuid.uuid4())
         trace_response = requests.post(
             url=f"{self._base_url}/session/{self.session_id}/traces",
             json={"logs": [root_log]},
