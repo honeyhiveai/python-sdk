@@ -3,64 +3,107 @@
 from __future__ import annotations
 import dataclasses
 from dataclasses_json import Undefined, dataclass_json
+from enum import Enum
 from honeyhive import utils
 from typing import List, Optional
 
 
 @dataclasses.dataclass
-class Config:
-    pass
+class EventConfig:
+    r"""Associated configuration for the event - model, provider, etc"""
+    
+
+
+class EventEventType(str, Enum):
+    r"""Specify whether the event is of \\"model\\", \\"tool\\", \\"session\\" or \\"chain\\" type"""
+    MODEL = 'model'
+    TOOL = 'tool'
+    CHAIN = 'chain'
+    SESSION = 'session'
 
 
 @dataclasses.dataclass
-class Feedback:
-    pass
+class EventFeedback:
+    r"""Any user feedback provided for the event output"""
+    
+
 
 
 @dataclasses.dataclass
 class EventInputs:
-    pass
+    r"""Input object passed to the event - user query, text blob, etc"""
+    
+
 
 
 @dataclasses.dataclass
 class EventMetadata:
-    pass
+    r"""Any system or application metadata associated with the event"""
+    
 
-
-@dataclasses.dataclass
-class Metrics:
-    pass
 
 
 @dataclasses.dataclass
-class Outputs:
-    pass
+class EventMetrics:
+    r"""Any values computed over the output of the event"""
+    
+
+
+
+@dataclasses.dataclass
+class EventOutputs:
+    r"""Final output of the event - completion, chunks, etc"""
+    
+
 
 
 @dataclasses.dataclass
 class EventUserProperties:
-    pass
+    r"""Any user properties associated with the event"""
+    
+
 
 
 @dataclass_json(undefined=Undefined.EXCLUDE)
 @dataclasses.dataclass
 class Event:
     children_ids: Optional[List[str]] = dataclasses.field(default=None, metadata={'dataclasses_json': { 'letter_case': utils.get_field_name('children_ids'), 'exclude': lambda f: f is None }})
-    config: Optional[Config] = dataclasses.field(default=None, metadata={'dataclasses_json': { 'letter_case': utils.get_field_name('config'), 'exclude': lambda f: f is None }})
-    duration: Optional[int] = dataclasses.field(default=None, metadata={'dataclasses_json': { 'letter_case': utils.get_field_name('duration'), 'exclude': lambda f: f is None }})
+    r"""Id of events that are nested within the event"""
+    config: Optional[EventConfig] = dataclasses.field(default=None, metadata={'dataclasses_json': { 'letter_case': utils.get_field_name('config'), 'exclude': lambda f: f is None }})
+    r"""Associated configuration for the event - model, provider, etc"""
+    duration: Optional[float] = dataclasses.field(default=None, metadata={'dataclasses_json': { 'letter_case': utils.get_field_name('duration'), 'exclude': lambda f: f is None }})
+    r"""How long the event took in milliseconds"""
     end_time: Optional[int] = dataclasses.field(default=None, metadata={'dataclasses_json': { 'letter_case': utils.get_field_name('end_time'), 'exclude': lambda f: f is None }})
+    r"""UTC timestamp (in milliseconds) for the event end"""
     error: Optional[str] = dataclasses.field(default=None, metadata={'dataclasses_json': { 'letter_case': utils.get_field_name('error'), 'exclude': lambda f: f is None }})
+    r"""Any error description if the event failed"""
+    event_id: Optional[str] = dataclasses.field(default=None, metadata={'dataclasses_json': { 'letter_case': utils.get_field_name('event_id'), 'exclude': lambda f: f is None }})
+    r"""Unique id of the event, if not set, it will be auto-generated"""
     event_name: Optional[str] = dataclasses.field(default=None, metadata={'dataclasses_json': { 'letter_case': utils.get_field_name('event_name'), 'exclude': lambda f: f is None }})
-    event_type: Optional[str] = dataclasses.field(default=None, metadata={'dataclasses_json': { 'letter_case': utils.get_field_name('event_type'), 'exclude': lambda f: f is None }})
-    feedback: Optional[Feedback] = dataclasses.field(default=None, metadata={'dataclasses_json': { 'letter_case': utils.get_field_name('feedback'), 'exclude': lambda f: f is None }})
+    r"""Name of the event"""
+    event_type: Optional[EventEventType] = dataclasses.field(default=None, metadata={'dataclasses_json': { 'letter_case': utils.get_field_name('event_type'), 'exclude': lambda f: f is None }})
+    r"""Specify whether the event is of \\"model\\", \\"tool\\", \\"session\\" or \\"chain\\" type"""
+    feedback: Optional[EventFeedback] = dataclasses.field(default=None, metadata={'dataclasses_json': { 'letter_case': utils.get_field_name('feedback'), 'exclude': lambda f: f is None }})
+    r"""Any user feedback provided for the event output"""
     inputs: Optional[EventInputs] = dataclasses.field(default=None, metadata={'dataclasses_json': { 'letter_case': utils.get_field_name('inputs'), 'exclude': lambda f: f is None }})
+    r"""Input object passed to the event - user query, text blob, etc"""
     metadata: Optional[EventMetadata] = dataclasses.field(default=None, metadata={'dataclasses_json': { 'letter_case': utils.get_field_name('metadata'), 'exclude': lambda f: f is None }})
-    metrics: Optional[Metrics] = dataclasses.field(default=None, metadata={'dataclasses_json': { 'letter_case': utils.get_field_name('metrics'), 'exclude': lambda f: f is None }})
-    outputs: Optional[Outputs] = dataclasses.field(default=None, metadata={'dataclasses_json': { 'letter_case': utils.get_field_name('outputs'), 'exclude': lambda f: f is None }})
+    r"""Any system or application metadata associated with the event"""
+    metrics: Optional[EventMetrics] = dataclasses.field(default=None, metadata={'dataclasses_json': { 'letter_case': utils.get_field_name('metrics'), 'exclude': lambda f: f is None }})
+    r"""Any values computed over the output of the event"""
+    outputs: Optional[EventOutputs] = dataclasses.field(default=None, metadata={'dataclasses_json': { 'letter_case': utils.get_field_name('outputs'), 'exclude': lambda f: f is None }})
+    r"""Final output of the event - completion, chunks, etc"""
     parent_id: Optional[str] = dataclasses.field(default=None, metadata={'dataclasses_json': { 'letter_case': utils.get_field_name('parent_id'), 'exclude': lambda f: f is None }})
+    r"""Id of the parent event if nested"""
     project: Optional[str] = dataclasses.field(default=None, metadata={'dataclasses_json': { 'letter_case': utils.get_field_name('project'), 'exclude': lambda f: f is None }})
+    r"""Project associated with the event"""
+    session_id: Optional[str] = dataclasses.field(default=None, metadata={'dataclasses_json': { 'letter_case': utils.get_field_name('session_id'), 'exclude': lambda f: f is None }})
+    r"""Unique id of the session associated with the event"""
     source: Optional[str] = dataclasses.field(default=None, metadata={'dataclasses_json': { 'letter_case': utils.get_field_name('source'), 'exclude': lambda f: f is None }})
-    start_time: Optional[int] = dataclasses.field(default=None, metadata={'dataclasses_json': { 'letter_case': utils.get_field_name('start_time'), 'exclude': lambda f: f is None }})
+    r"""Source of the event - production, staging, etc"""
+    start_time: Optional[float] = dataclasses.field(default=None, metadata={'dataclasses_json': { 'letter_case': utils.get_field_name('start_time'), 'exclude': lambda f: f is None }})
+    r"""UTC timestamp (in milliseconds) for the event start"""
     user_properties: Optional[EventUserProperties] = dataclasses.field(default=None, metadata={'dataclasses_json': { 'letter_case': utils.get_field_name('user_properties'), 'exclude': lambda f: f is None }})
+    r"""Any user properties associated with the event"""
     
 

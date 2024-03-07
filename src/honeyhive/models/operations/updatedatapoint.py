@@ -3,6 +3,16 @@
 from __future__ import annotations
 import dataclasses
 import requests as requests_http
+from ...models.components import updatedatapointrequest as components_updatedatapointrequest
+
+
+@dataclasses.dataclass
+class UpdateDatapointRequest:
+    datapoint_id: str = dataclasses.field(metadata={'query_param': { 'field_name': 'datapoint_id', 'style': 'form', 'explode': True }})
+    r"""ID of datapoint to update"""
+    update_datapoint_request: components_updatedatapointrequest.UpdateDatapointRequest = dataclasses.field(metadata={'request': { 'media_type': 'application/json' }})
+    
+
 
 
 @dataclasses.dataclass

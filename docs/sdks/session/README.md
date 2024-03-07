@@ -29,6 +29,7 @@ res = s.session.start_session(req)
 if res.object is not None:
     # handle response
     pass
+
 ```
 
 ### Parameters
@@ -63,9 +64,10 @@ s = honeyhive.HoneyHive(
 
 res = s.session.delete_session(session_id='<value>')
 
-if res.status_code == 200:
+if res is not None:
     # handle response
     pass
+
 ```
 
 ### Parameters
@@ -103,6 +105,7 @@ res = s.session.get_session(session_id='<value>')
 if res.event is not None:
     # handle response
     pass
+
 ```
 
 ### Parameters
@@ -141,6 +144,7 @@ res = s.session.process_event_trace(session_id='<value>', request_body=operation
 if res.object is not None:
     # handle response
     pass
+
 ```
 
 ### Parameters

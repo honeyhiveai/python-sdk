@@ -3,7 +3,7 @@
 from __future__ import annotations
 import dataclasses
 import requests as requests_http
-from ...models.components import event as components_event
+from ...models.components import createeventrequest as components_createeventrequest
 from dataclasses_json import Undefined, dataclass_json
 from honeyhive import utils
 from typing import Optional
@@ -12,7 +12,7 @@ from typing import Optional
 @dataclass_json(undefined=Undefined.EXCLUDE)
 @dataclasses.dataclass
 class PostEventsRequestBody:
-    event: Optional[components_event.Event] = dataclasses.field(default=None, metadata={'dataclasses_json': { 'letter_case': utils.get_field_name('event'), 'exclude': lambda f: f is None }})
+    event: Optional[components_createeventrequest.CreateEventRequest] = dataclasses.field(default=None, metadata={'dataclasses_json': { 'letter_case': utils.get_field_name('event'), 'exclude': lambda f: f is None }})
     
 
 
@@ -22,6 +22,7 @@ class PostEventsRequestBody:
 class PostEventsResponseBody:
     r"""Event created"""
     event_id: Optional[str] = dataclasses.field(default=None, metadata={'dataclasses_json': { 'letter_case': utils.get_field_name('event_id'), 'exclude': lambda f: f is None }})
+    success: Optional[bool] = dataclasses.field(default=None, metadata={'dataclasses_json': { 'letter_case': utils.get_field_name('success'), 'exclude': lambda f: f is None }})
     
 
 

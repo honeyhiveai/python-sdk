@@ -8,6 +8,14 @@ from typing import List, Optional
 
 
 @dataclasses.dataclass
+class GetMetricsRequest:
+    project_name: str = dataclasses.field(metadata={'query_param': { 'field_name': 'project_name', 'style': 'form', 'explode': True }})
+    r"""Project name associated with metrics"""
+    
+
+
+
+@dataclasses.dataclass
 class GetMetricsResponse:
     content_type: str = dataclasses.field()
     r"""HTTP response content type for this operation"""

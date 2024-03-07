@@ -16,25 +16,27 @@ Retrieve a list of configurations
 
 ```python
 import honeyhive
+from honeyhive.models import operations
 
 s = honeyhive.HoneyHive(
     bearer_auth="<YOUR_BEARER_TOKEN_HERE>",
 )
 
 
-res = s.configurations.get_configurations(project='<value>', type='<value>')
+res = s.configurations.get_configurations(project_name='<value>', type=operations.Type.LLM)
 
 if res.configurations is not None:
     # handle response
     pass
+
 ```
 
 ### Parameters
 
-| Parameter          | Type               | Required           | Description        |
-| ------------------ | ------------------ | ------------------ | ------------------ |
-| `project`          | *str*              | :heavy_check_mark: | Project identifier |
-| `type`             | *str*              | :heavy_check_mark: | Configuration type |
+| Parameter                                          | Type                                               | Required                                           | Description                                        |
+| -------------------------------------------------- | -------------------------------------------------- | -------------------------------------------------- | -------------------------------------------------- |
+| `project_name`                                     | *str*                                              | :heavy_check_mark:                                 | Project name for configuration                     |
+| `type`                                             | [operations.Type](../../models/operations/type.md) | :heavy_check_mark:                                 | Configuration type - "LLM" or "pipeline"           |
 
 
 ### Response
@@ -62,16 +64,16 @@ s = honeyhive.HoneyHive(
 
 req = components.Configuration(
     project='<value>',
-    type='<value>',
     name='<value>',
     provider='<value>',
 )
 
 res = s.configurations.create_configuration(req)
 
-if res.status_code == 200:
+if res is not None:
     # handle response
     pass
+
 ```
 
 ### Parameters
@@ -106,9 +108,10 @@ s = honeyhive.HoneyHive(
 
 res = s.configurations.delete_configuration(id='<value>')
 
-if res.status_code == 200:
+if res is not None:
     # handle response
     pass
+
 ```
 
 ### Parameters
@@ -144,14 +147,14 @@ s = honeyhive.HoneyHive(
 
 res = s.configurations.update_configuration(id='<value>', configuration=components.Configuration(
     project='<value>',
-    type='<value>',
     name='<value>',
     provider='<value>',
 ))
 
-if res.status_code == 200:
+if res is not None:
     # handle response
     pass
+
 ```
 
 ### Parameters

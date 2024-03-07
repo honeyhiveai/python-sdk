@@ -14,17 +14,19 @@ pip install honeyhive
 
 ```python
 import honeyhive
+from honeyhive.models import operations
 
 s = honeyhive.HoneyHive(
     bearer_auth="<YOUR_BEARER_TOKEN_HERE>",
 )
 
 
-res = s.configurations.get_configurations(project='<value>', type='<value>')
+res = s.configurations.get_configurations(project_name='<value>', type=operations.Type.LLM)
 
 if res.configurations is not None:
     # handle response
     pass
+
 ```
 <!-- End SDK Example Usage [usage] -->
 
@@ -38,27 +40,25 @@ if res.configurations is not None:
 * [delete_configuration](docs/sdks/configurations/README.md#delete_configuration) - Delete a configuration
 * [update_configuration](docs/sdks/configurations/README.md#update_configuration) - Update an existing configuration
 
-### [datapoint](docs/sdks/datapoint/README.md)
+### [datapoints](docs/sdks/datapoints/README.md)
 
-* [get_datapoints](docs/sdks/datapoint/README.md#get_datapoints) - Retrieve a list of datapoints
-* [update_datapoint](docs/sdks/datapoint/README.md#update_datapoint) - Update a specific datapoint
-* [create_datapoint](docs/sdks/datapoint/README.md#create_datapoint) - Create a new datapoint
-* [delete_datapoint](docs/sdks/datapoint/README.md#delete_datapoint) - Delete a specific datapoint
-* [get_datapoint](docs/sdks/datapoint/README.md#get_datapoint) - Retrieve a specific datapoint
+* [get_datapoints](docs/sdks/datapoints/README.md#get_datapoints) - Retrieve a list of datapoints
+* [create_datapoint](docs/sdks/datapoints/README.md#create_datapoint) - Create a new datapoint
+* [update_datapoint](docs/sdks/datapoints/README.md#update_datapoint) - Update a specific datapoint
+* [delete_datapoint](docs/sdks/datapoints/README.md#delete_datapoint) - Delete a specific datapoint
+* [get_datapoint](docs/sdks/datapoints/README.md#get_datapoint) - Retrieve a specific datapoint
 
 ### [datasets](docs/sdks/datasets/README.md)
 
-* [get_datasets](docs/sdks/datasets/README.md#get_datasets) - Retrieve a list of datasets
-* [create_dataset](docs/sdks/datasets/README.md#create_dataset) - Create a new dataset
-* [delete_dataset](docs/sdks/datasets/README.md#delete_dataset) - Delete a dataset
-* [update_dataset](docs/sdks/datasets/README.md#update_dataset) - Update a dataset
+* [delete_datasets](docs/sdks/datasets/README.md#delete_datasets) - Delete a dataset
+* [get_datasets](docs/sdks/datasets/README.md#get_datasets) - Get datasets
+* [post_datasets](docs/sdks/datasets/README.md#post_datasets) - Create a dataset
+* [put_datasets](docs/sdks/datasets/README.md#put_datasets) - Update a dataset
 
 ### [events](docs/sdks/events/README.md)
 
-* [get_events](docs/sdks/events/README.md#get_events) - Retrieve events based on filters
 * [post_events](docs/sdks/events/README.md#post_events) - Create a new event
 * [put_events](docs/sdks/events/README.md#put_events) - Update an event
-* [get_events_chart](docs/sdks/events/README.md#get_events_chart) - Retrieve a chart of events
 * [delete_events_event_id_](docs/sdks/events/README.md#delete_events_event_id_) - Delete an event
 
 ### [metrics](docs/sdks/metrics/README.md)
@@ -67,14 +67,13 @@ if res.configurations is not None:
 * [get_metrics](docs/sdks/metrics/README.md#get_metrics) - Get all metrics
 * [post_metrics](docs/sdks/metrics/README.md#post_metrics) - Create a new metric
 * [put_metrics](docs/sdks/metrics/README.md#put_metrics) - Update an existing metric
-* [post_metrics_compute](docs/sdks/metrics/README.md#post_metrics_compute) - Compute metric
 
-### [prompts](docs/sdks/prompts/README.md)
+### [projects](docs/sdks/projects/README.md)
 
-* [get_prompts](docs/sdks/prompts/README.md#get_prompts) - Retrieve a list of prompts based on query parameters.
-* [post_prompts](docs/sdks/prompts/README.md#post_prompts) - Create a new prompt.
-* [delete_prompts_id_](docs/sdks/prompts/README.md#delete_prompts_id_) - Delete an existing prompt.
-* [put_prompts_id_](docs/sdks/prompts/README.md#put_prompts_id_) - Update an existing prompt.
+* [delete_project](docs/sdks/projects/README.md#delete_project) - Delete a project
+* [get_projects](docs/sdks/projects/README.md#get_projects) - Get a list of projects
+* [create_project](docs/sdks/projects/README.md#create_project) - Create a new project
+* [update_project](docs/sdks/projects/README.md#update_project) - Update an existing project
 
 ### [session](docs/sdks/session/README.md)
 
@@ -82,19 +81,6 @@ if res.configurations is not None:
 * [delete_session](docs/sdks/session/README.md#delete_session) - Delete a session
 * [get_session](docs/sdks/session/README.md#get_session) - Retrieve a session
 * [process_event_trace](docs/sdks/session/README.md#process_event_trace) - Process an event trace for a given session
-
-### [tasks](docs/sdks/tasks/README.md)
-
-* [delete_task](docs/sdks/tasks/README.md#delete_task) - Delete a task
-* [get_tasks](docs/sdks/tasks/README.md#get_tasks) - Get a list of tasks
-* [create_task](docs/sdks/tasks/README.md#create_task) - Create a new task
-* [update_task](docs/sdks/tasks/README.md#update_task) - Update a task
-
-### [testcases](docs/sdks/testcases/README.md)
-
-* [get_testcases](docs/sdks/testcases/README.md#get_testcases) - Get testcases
-* [post_testcases](docs/sdks/testcases/README.md#post_testcases) - Create a testcase
-* [put_testcases](docs/sdks/testcases/README.md#put_testcases) - Update a testcase
 
 ### [tools](docs/sdks/tools/README.md)
 
@@ -117,7 +103,7 @@ Handling errors in this SDK should largely match your expectations.  All operati
 
 ```python
 import honeyhive
-from honeyhive.models import errors
+from honeyhive.models import errors, operations
 
 s = honeyhive.HoneyHive(
     bearer_auth="<YOUR_BEARER_TOKEN_HERE>",
@@ -126,7 +112,7 @@ s = honeyhive.HoneyHive(
 
 res = None
 try:
-    res = s.configurations.get_configurations(project='<value>', type='<value>')
+    res = s.configurations.get_configurations(project_name='<value>', type=operations.Type.LLM)
 except errors.SDKError as e:
     # handle exception
     raise(e)
@@ -134,6 +120,7 @@ except errors.SDKError as e:
 if res.configurations is not None:
     # handle response
     pass
+
 ```
 <!-- End Error Handling [errors] -->
 
@@ -152,6 +139,7 @@ You can override the default server globally by passing a server index to the `s
 
 ```python
 import honeyhive
+from honeyhive.models import operations
 
 s = honeyhive.HoneyHive(
     server_idx=0,
@@ -159,11 +147,12 @@ s = honeyhive.HoneyHive(
 )
 
 
-res = s.configurations.get_configurations(project='<value>', type='<value>')
+res = s.configurations.get_configurations(project_name='<value>', type=operations.Type.LLM)
 
 if res.configurations is not None:
     # handle response
     pass
+
 ```
 
 
@@ -172,6 +161,7 @@ if res.configurations is not None:
 The default server can also be overridden globally by passing a URL to the `server_url: str` optional parameter when initializing the SDK client instance. For example:
 ```python
 import honeyhive
+from honeyhive.models import operations
 
 s = honeyhive.HoneyHive(
     server_url="https://api.honeyhive.ai",
@@ -179,11 +169,12 @@ s = honeyhive.HoneyHive(
 )
 
 
-res = s.configurations.get_configurations(project='<value>', type='<value>')
+res = s.configurations.get_configurations(project_name='<value>', type=operations.Type.LLM)
 
 if res.configurations is not None:
     # handle response
     pass
+
 ```
 <!-- End Server Selection [server] -->
 
@@ -217,17 +208,36 @@ This SDK supports the following security scheme globally:
 To authenticate with the API the `bearer_auth` parameter must be set when initializing the SDK client instance. For example:
 ```python
 import honeyhive
+from honeyhive.models import operations
 
 s = honeyhive.HoneyHive(
     bearer_auth="<YOUR_BEARER_TOKEN_HERE>",
 )
 
 
-res = s.configurations.get_configurations(project='<value>', type='<value>')
+res = s.configurations.get_configurations(project_name='<value>', type=operations.Type.LLM)
 
 if res.configurations is not None:
     # handle response
     pass
+
+```
+
+### Per-Operation Security Schemes
+
+Some operations in this SDK require the security scheme to be specified at the request level. For example:
+```python
+import honeyhive
+
+s = honeyhive.HoneyHive()
+
+
+res = s.tools.get_tools("<YOUR_BEARER_TOKEN_HERE>")
+
+if res.tools is not None:
+    # handle response
+    pass
+
 ```
 <!-- End Authentication [security] -->
 

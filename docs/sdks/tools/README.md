@@ -24,9 +24,10 @@ s = honeyhive.HoneyHive(
 
 res = s.tools.delete_tool(function_id='<value>')
 
-if res.status_code == 200:
+if res is not None:
     # handle response
     pass
+
 ```
 
 ### Parameters
@@ -54,17 +55,22 @@ Retrieve a list of tools
 ```python
 import honeyhive
 
-s = honeyhive.HoneyHive(
-    bearer_auth="<YOUR_BEARER_TOKEN_HERE>",
-)
+s = honeyhive.HoneyHive()
 
 
-res = s.tools.get_tools()
+res = s.tools.get_tools("<YOUR_BEARER_TOKEN_HERE>")
 
 if res.tools is not None:
     # handle response
     pass
+
 ```
+
+### Parameters
+
+| Parameter                                                                  | Type                                                                       | Required                                                                   | Description                                                                |
+| -------------------------------------------------------------------------- | -------------------------------------------------------------------------- | -------------------------------------------------------------------------- | -------------------------------------------------------------------------- |
+| `security`                                                                 | [operations.GetToolsSecurity](../../models/operations/gettoolssecurity.md) | :heavy_check_mark:                                                         | The security requirements to use for the request.                          |
 
 
 ### Response
@@ -86,30 +92,29 @@ Create a new tool
 import honeyhive
 from honeyhive.models import components
 
-s = honeyhive.HoneyHive(
-    bearer_auth="<YOUR_BEARER_TOKEN_HERE>",
-)
+s = honeyhive.HoneyHive()
 
 req = components.Tool(
-    task='<value>',
     name='<value>',
-    description='Reduced bandwidth-monitored concept',
     parameters=components.ToolParameters(),
-    type='<value>',
+    task='<value>',
+    type=components.ToolType.TOOL,
 )
 
-res = s.tools.create_tool(req)
+res = s.tools.create_tool(req, "<YOUR_BEARER_TOKEN_HERE>")
 
-if res.status_code == 200:
+if res is not None:
     # handle response
     pass
+
 ```
 
 ### Parameters
 
-| Parameter                                          | Type                                               | Required                                           | Description                                        |
-| -------------------------------------------------- | -------------------------------------------------- | -------------------------------------------------- | -------------------------------------------------- |
-| `request`                                          | [components.Tool](../../models/components/tool.md) | :heavy_check_mark:                                 | The request object to use for the request.         |
+| Parameter                                                                      | Type                                                                           | Required                                                                       | Description                                                                    |
+| ------------------------------------------------------------------------------ | ------------------------------------------------------------------------------ | ------------------------------------------------------------------------------ | ------------------------------------------------------------------------------ |
+| `request`                                                                      | [components.Tool](../../models/components/tool.md)                             | :heavy_check_mark:                                                             | The request object to use for the request.                                     |
+| `security`                                                                     | [operations.CreateToolSecurity](../../models/operations/createtoolsecurity.md) | :heavy_check_mark:                                                             | The security requirements to use for the request.                              |
 
 
 ### Response
@@ -131,26 +136,26 @@ Update an existing tool
 import honeyhive
 from honeyhive.models import components
 
-s = honeyhive.HoneyHive(
-    bearer_auth="<YOUR_BEARER_TOKEN_HERE>",
-)
+s = honeyhive.HoneyHive()
 
 req = components.ToolUpdate(
     id='<id>',
 )
 
-res = s.tools.update_tool(req)
+res = s.tools.update_tool(req, "<YOUR_BEARER_TOKEN_HERE>")
 
-if res.status_code == 200:
+if res is not None:
     # handle response
     pass
+
 ```
 
 ### Parameters
 
-| Parameter                                                      | Type                                                           | Required                                                       | Description                                                    |
-| -------------------------------------------------------------- | -------------------------------------------------------------- | -------------------------------------------------------------- | -------------------------------------------------------------- |
-| `request`                                                      | [components.ToolUpdate](../../models/components/toolupdate.md) | :heavy_check_mark:                                             | The request object to use for the request.                     |
+| Parameter                                                                      | Type                                                                           | Required                                                                       | Description                                                                    |
+| ------------------------------------------------------------------------------ | ------------------------------------------------------------------------------ | ------------------------------------------------------------------------------ | ------------------------------------------------------------------------------ |
+| `request`                                                                      | [components.ToolUpdate](../../models/components/toolupdate.md)                 | :heavy_check_mark:                                                             | The request object to use for the request.                                     |
+| `security`                                                                     | [operations.UpdateToolSecurity](../../models/operations/updatetoolsecurity.md) | :heavy_check_mark:                                                             | The security requirements to use for the request.                              |
 
 
 ### Response

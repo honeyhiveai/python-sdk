@@ -2,15 +2,13 @@
 
 import requests as requests_http
 from .configurations import Configurations
-from .datapoint import Datapoint
+from .datapoints import Datapoints
 from .datasets import Datasets
 from .events import Events
 from .metrics import Metrics
-from .prompts import Prompts
+from .projects import Projects
 from .sdkconfiguration import SDKConfiguration
 from .session import Session
-from .tasks import Tasks
-from .testcases import Testcases
 from .tools import Tools
 from honeyhive import utils
 from honeyhive._hooks import SDKHooks
@@ -19,14 +17,12 @@ from typing import Callable, Dict, Union
 
 class HoneyHive:
     configurations: Configurations
-    datapoint: Datapoint
+    datapoints: Datapoints
     datasets: Datasets
     events: Events
     metrics: Metrics
-    prompts: Prompts
+    projects: Projects
     session: Session
-    tasks: Tasks
-    testcases: Testcases
     tools: Tools
 
     sdk_configuration: SDKConfiguration
@@ -83,13 +79,11 @@ class HoneyHive:
     
     def _init_sdks(self):
         self.configurations = Configurations(self.sdk_configuration)
-        self.datapoint = Datapoint(self.sdk_configuration)
+        self.datapoints = Datapoints(self.sdk_configuration)
         self.datasets = Datasets(self.sdk_configuration)
         self.events = Events(self.sdk_configuration)
         self.metrics = Metrics(self.sdk_configuration)
-        self.prompts = Prompts(self.sdk_configuration)
+        self.projects = Projects(self.sdk_configuration)
         self.session = Session(self.sdk_configuration)
-        self.tasks = Tasks(self.sdk_configuration)
-        self.testcases = Testcases(self.sdk_configuration)
         self.tools = Tools(self.sdk_configuration)
     

@@ -4,15 +4,21 @@ from __future__ import annotations
 import dataclasses
 import requests as requests_http
 from ...models.components import configuration as components_configuration
+from enum import Enum
 from typing import List, Optional
+
+class Type(str, Enum):
+    r"""Configuration type - \\"LLM\\" or \\"pipeline\\" """
+    LLM = 'LLM'
+    PIPELINE = 'pipeline'
 
 
 @dataclasses.dataclass
 class GetConfigurationsRequest:
-    project: str = dataclasses.field(metadata={'query_param': { 'field_name': 'project', 'style': 'form', 'explode': True }})
-    r"""Project identifier"""
-    type: str = dataclasses.field(metadata={'query_param': { 'field_name': 'type', 'style': 'form', 'explode': True }})
-    r"""Configuration type"""
+    project_name: str = dataclasses.field(metadata={'query_param': { 'field_name': 'project_name', 'style': 'form', 'explode': True }})
+    r"""Project name for configuration"""
+    type: Type = dataclasses.field(metadata={'query_param': { 'field_name': 'type', 'style': 'form', 'explode': True }})
+    r"""Configuration type - \\"LLM\\" or \\"pipeline\\" """
     
 
 

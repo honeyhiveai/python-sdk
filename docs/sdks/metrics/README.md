@@ -7,7 +7,6 @@
 * [get_metrics](#get_metrics) - Get all metrics
 * [post_metrics](#post_metrics) - Create a new metric
 * [put_metrics](#put_metrics) - Update an existing metric
-* [post_metrics_compute](#post_metrics_compute) - Compute metric
 
 ## delete_metrics
 
@@ -25,9 +24,10 @@ s = honeyhive.HoneyHive(
 
 res = s.metrics.delete_metrics(metric_id='<value>')
 
-if res.status_code == 200:
+if res is not None:
     # handle response
     pass
+
 ```
 
 ### Parameters
@@ -60,12 +60,19 @@ s = honeyhive.HoneyHive(
 )
 
 
-res = s.metrics.get_metrics()
+res = s.metrics.get_metrics(project_name='<value>')
 
 if res.metrics is not None:
     # handle response
     pass
+
 ```
+
+### Parameters
+
+| Parameter                            | Type                                 | Required                             | Description                          |
+| ------------------------------------ | ------------------------------------ | ------------------------------------ | ------------------------------------ |
+| `project_name`                       | *str*                                | :heavy_check_mark:                   | Project name associated with metrics |
 
 
 ### Response
@@ -91,13 +98,20 @@ s = honeyhive.HoneyHive(
     bearer_auth="<YOUR_BEARER_TOKEN_HERE>",
 )
 
-req = components.Metric()
+req = components.Metric(
+    description='Enterprise-wide reciprocal standardization',
+    name='<value>',
+    return_type=components.ReturnType.STRING,
+    task='<value>',
+    type=components.MetricType.MODEL,
+)
 
 res = s.metrics.post_metrics(req)
 
-if res.status_code == 200:
+if res is not None:
     # handle response
     pass
+
 ```
 
 ### Parameters
@@ -134,9 +148,10 @@ req = components.MetricEdit()
 
 res = s.metrics.put_metrics(req)
 
-if res.status_code == 200:
+if res is not None:
     # handle response
     pass
+
 ```
 
 ### Parameters
@@ -149,37 +164,6 @@ if res.status_code == 200:
 ### Response
 
 **[operations.PutMetricsResponse](../../models/operations/putmetricsresponse.md)**
-### Errors
-
-| Error Object    | Status Code     | Content Type    |
-| --------------- | --------------- | --------------- |
-| errors.SDKError | 4x-5xx          | */*             |
-
-## post_metrics_compute
-
-Compute a specific metric (details not provided in the test)
-
-### Example Usage
-
-```python
-import honeyhive
-
-s = honeyhive.HoneyHive(
-    bearer_auth="<YOUR_BEARER_TOKEN_HERE>",
-)
-
-
-res = s.metrics.post_metrics_compute()
-
-if res.status_code == 200:
-    # handle response
-    pass
-```
-
-
-### Response
-
-**[operations.PostMetricsComputeResponse](../../models/operations/postmetricscomputeresponse.md)**
 ### Errors
 
 | Error Object    | Status Code     | Content Type    |

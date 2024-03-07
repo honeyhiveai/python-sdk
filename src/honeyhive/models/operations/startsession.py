@@ -3,7 +3,7 @@
 from __future__ import annotations
 import dataclasses
 import requests as requests_http
-from ...models.components import event as components_event
+from ...models.components import sessionstartrequest as components_sessionstartrequest
 from dataclasses_json import Undefined, dataclass_json
 from honeyhive import utils
 from typing import Optional
@@ -12,7 +12,7 @@ from typing import Optional
 @dataclass_json(undefined=Undefined.EXCLUDE)
 @dataclasses.dataclass
 class StartSessionRequestBody:
-    session: Optional[components_event.Event] = dataclasses.field(default=None, metadata={'dataclasses_json': { 'letter_case': utils.get_field_name('session'), 'exclude': lambda f: f is None }})
+    session: Optional[components_sessionstartrequest.SessionStartRequest] = dataclasses.field(default=None, metadata={'dataclasses_json': { 'letter_case': utils.get_field_name('session'), 'exclude': lambda f: f is None }})
     
 
 
