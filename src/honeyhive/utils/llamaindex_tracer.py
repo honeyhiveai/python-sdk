@@ -12,7 +12,7 @@ from llama_index.core.callbacks.schema import TIMESTAMP_FORMAT, CBEvent, CBEvent
 from llama_index.core.callbacks.token_counting import get_llm_token_counts
 from llama_index.core.utilities.token_counting import TokenCounter
 
-from langchain_tracer import Config, Log, log_to_dict
+from .langchain_tracer import Config, Log, log_to_dict
 
 
 class HHEventType(str, Enum):
