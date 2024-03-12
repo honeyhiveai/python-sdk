@@ -63,24 +63,21 @@ class HoneyHiveLlamaIndexTracer(BaseCallbackHandler):
         self.source = source
         self.user_properties = user_properties
 
-    def _start_new_session(self):
-        self.session_id = str(uuid.uuid4())
+    def _start_new_session(self, inputs):
         body = {
             "project": self.project,
             "source": self.source,
             "session_name": self.name,
             "session_id": self.session_id,
             "user_properties": self.user_properties,
+            "inputs": inputs,
         }
 
-        session_response = requests.post(
+        requests.post(
             url=f"{self._base_url}/session/start",
             headers=self._headers,
             json=body,
         )
-
-        res = session_response.json()
-        self.session_id = res["session_id"]
 
     def on_event_start(
         self,
@@ -364,9 +361,11 @@ class HoneyHiveLlamaIndexTracer(BaseCallbackHandler):
         return start_time_in_ms, end_time_in_ms, end_time
 
     def _post_trace(self, root_log: Log) -> None:
-        self._start_new_session()
         root_log = log_to_dict(root_log)
-        root_log["session_id"] = str(uuid.uuid4())
+        self.final_outputs = root_log["outputs"]
+        self.session_id = str(uuid.uuid4())
+        self._set_parent_ids(root_log, self.session_id)
+        self._start_new_session(root_log["inputs"])
         trace_response = requests.post(
             url=f"{self._base_url}/session/{self.session_id}/traces",
             json={"logs": [root_log]},
@@ -376,6 +375,24 @@ class HoneyHiveLlamaIndexTracer(BaseCallbackHandler):
             raise Exception(
                 f"Failed to post trace to HoneyHive with status code {trace_response.status_code}"
             )
+        requests.put(
+            url=f"{self._base_url}/events/{self.session_id}/traces",
+            json={"event_id": self.session_id, "outputs": self.final_outputs},
+            headers=self._headers,
+        )
+
+    def _set_parent_ids(self, trace, session_id) -> None:
+        def crawl(node):
+            if node is None:
+                return
+            node["session_id"] = session_id
+            self.final_outputs = node["outputs"]
+            if node["children"]:
+                for child in node["children"]:
+                    child["parent_id"] = node["event_id"]
+                    crawl(child)
+
+        crawl(trace)
 
     def finish(self) -> None:
         pass
