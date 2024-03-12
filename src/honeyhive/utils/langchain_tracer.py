@@ -67,14 +67,14 @@ class HoneyHiveLangChainTracer(BaseTracer, ABC):
         if api_key is not None:
             self._headers["Authorization"] = "Bearer " + api_key
 
-    def _start_new_session(self):
-        self.session_id = str(uuid.uuid4())
+    def _start_new_session(self, inputs):
         body = {
             "project": self.project,
             "source": self.source,
             "session_id": self.session_id,
             "session_name": self.name,
             "user_properties": self.user_properties,
+            "inputs": inputs,
         }
         requests.post(
             url=f"{self._base_url}/session/start",
@@ -186,9 +186,11 @@ class HoneyHiveLangChainTracer(BaseTracer, ABC):
 
     def _post_trace(self, logs: List[Log]) -> None:
         """Post a trace to the HoneyHive API"""
-        self._start_new_session()
         root_log = logs[0].dict()
-        root_log["session_id"] = self.session_id
+        self.final_outputs = root_log["outputs"]
+        self.session_id = str(uuid.uuid4())
+        self._set_parent_ids(root_log, self.session_id)
+        self._start_new_session(root_log["inputs"])
         trace_response = requests.post(
             url=f"{self._base_url}/session/{self.session_id}/traces",
             json={"logs": [root_log]},
@@ -198,6 +200,24 @@ class HoneyHiveLangChainTracer(BaseTracer, ABC):
             raise TracerException(
                 f"Failed to post trace to HoneyHive with status code {trace_response.status_code}"
             )
+        requests.put(
+            url=f"{self._base_url}/events",
+            json={"event_id": self.session_id, "outputs": self.final_outputs},
+            headers=self._headers,
+        )
+
+    def _set_parent_ids(self, trace, session_id) -> None:
+        def crawl(node):
+            if node is None:
+                return
+            node["session_id"] = session_id
+            self.final_outputs = node["outputs"]
+            if node["children"]:
+                for child in node["children"]:
+                    child["parent_id"] = node["event_id"]
+                    crawl(child)
+
+        crawl(trace)
 
     @staticmethod
     def _convert_chain_outputs_to_text(outputs: Dict[str, Any]) -> str:
