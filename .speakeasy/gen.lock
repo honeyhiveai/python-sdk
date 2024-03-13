@@ -3,10 +3,10 @@ id: b027cebf-3475-4e9b-8070-6f08b389f6ed
 management:
   docChecksum: 9bd3a9d1a7303ec42de5017c9b364625
   docVersion: 1.0.1
-  speakeasyVersion: 1.204.1
-  generationVersion: 2.279.1
-  releaseVersion: 0.3.0
-  configChecksum: e7e155f1d44d9b3f98046fa288e04cd5
+  speakeasyVersion: 1.207.1
+  generationVersion: 2.280.6
+  releaseVersion: 0.3.1
+  configChecksum: a18eb1833647097e44cd4a6d4fea20e4
   repoURL: https://github.com/honeyhiveai/python-sdk.git
   repoSubDirectory: .
   installationURL: https://github.com/honeyhiveai/python-sdk.git
@@ -15,7 +15,7 @@ features:
     core: 4.5.1
     flattening: 2.81.1
     globalSecurity: 2.83.4
-    globalServerURLs: 2.82.1
+    globalServerURLs: 2.82.2
     methodSecurity: 2.82.1
     responseFormat: 0.1.0
 generatedFiles:

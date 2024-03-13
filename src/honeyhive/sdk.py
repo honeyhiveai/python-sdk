@@ -13,7 +13,7 @@ from .tools import Tools
 from honeyhive import utils
 from honeyhive._hooks import SDKHooks
 from honeyhive.models import components
-from typing import Callable, Dict, Union
+from typing import Callable, Dict, Optional, Union
 
 class HoneyHive:
     configurations: Configurations
@@ -29,14 +29,14 @@ class HoneyHive:
 
     def __init__(self,
                  bearer_auth: Union[str, Callable[[], str]],
-                 server_idx: int = None,
-                 server_url: str = None,
-                 url_params: Dict[str, str] = None,
-                 client: requests_http.Session = None,
-                 retry_config: utils.RetryConfig = None
+                 server_idx: Optional[int] = None,
+                 server_url: Optional[str] = None,
+                 url_params: Optional[Dict[str, str]] = None,
+                 client: Optional[requests_http.Session] = None,
+                 retry_config: Optional[utils.RetryConfig] = None
                  ) -> None:
         """Instantiates the SDK configuring it with the provided parameters.
-        
+
         :param bearer_auth: The bearer_auth required for authentication
         :type bearer_auth: Union[str, Callable[[], str]]
         :param server_idx: The index of the server to use for all operations
@@ -52,18 +52,24 @@ class HoneyHive:
         """
         if client is None:
             client = requests_http.Session()
-        
+
         if callable(bearer_auth):
             def security():
                 return components.Security(bearer_auth = bearer_auth())
         else:
             security = components.Security(bearer_auth = bearer_auth)
-        
+
         if server_url is not None:
             if url_params is not None:
                 server_url = utils.template_url(server_url, url_params)
 
-        self.sdk_configuration = SDKConfiguration(client, security, server_url, server_idx, retry_config=retry_config)
+        self.sdk_configuration = SDKConfiguration(
+            client,
+            security,
+            server_url,
+            server_idx,
+            retry_config=retry_config
+        )
 
         hooks = SDKHooks()
 
@@ -73,10 +79,11 @@ class HoneyHive:
             self.sdk_configuration.server_url = server_url
 
         # pylint: disable=protected-access
-        self.sdk_configuration._hooks=hooks
-       
+        self.sdk_configuration._hooks = hooks
+
         self._init_sdks()
-    
+
+
     def _init_sdks(self):
         self.configurations = Configurations(self.sdk_configuration)
         self.datapoints = Datapoints(self.sdk_configuration)
@@ -86,4 +93,3 @@ class HoneyHive:
         self.projects = Projects(self.sdk_configuration)
         self.session = Session(self.sdk_configuration)
         self.tools = Tools(self.sdk_configuration)
-    
