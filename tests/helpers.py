@@ -12,12 +12,13 @@ def sort_query_parameters(url):
     query = parts[1]
     params = query.split("&")
 
-    params.sort(key=lambda x: x.split("=")[0])
+    params.sort(key=lambda x: x.split('=')[0])
 
     return parts[0] + "?" + "&".join(params)
 
 
 def sort_serialized_maps(inp: any, regex: str, delim: str):
+
     def sort_map(m):
         entire_match = m.group(0)
 
@@ -25,20 +26,20 @@ def sort_serialized_maps(inp: any, regex: str, delim: str):
 
         for group in groups:
             pairs = []
-            if "=" in group:
+            if '=' in group:
                 pairs = group.split(delim)
 
-                pairs.sort(key=lambda x: x.split("=")[0])
+                pairs.sort(key=lambda x: x.split('=')[0])
             else:
                 values = group.split(delim)
 
                 if len(values) == 1:
                     pairs = values
                 else:
-                    pairs = [""] * int(len(values) / 2)
+                    pairs = [''] * int(len(values)/2)
                     # loop though every 2nd item
                     for i in range(0, len(values), 2):
-                        pairs[int(i / 2)] = values[i] + delim + values[i + 1]
+                        pairs[int(i/2)] = values[i] + delim + values[i+1]
 
                 pairs.sort(key=lambda x: x.split(delim)[0])
 
