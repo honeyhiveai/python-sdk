@@ -63,8 +63,8 @@ s = honeyhive.HoneyHive(
 )
 
 req = components.Configuration(
-    name='<value>',
     project='<value>',
+    name='<value>',
     provider='<value>',
 )
 
@@ -146,8 +146,8 @@ s = honeyhive.HoneyHive(
 
 
 res = s.configurations.update_configuration(id='<value>', configuration=components.Configuration(
-    name='<value>',
     project='<value>',
+    name='<value>',
     provider='<value>',
 ))
 

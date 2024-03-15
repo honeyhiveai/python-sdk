@@ -96,9 +96,7 @@ s = honeyhive.HoneyHive()
 
 req = components.Tool(
     name='<value>',
-    parameters={
-        'key': '<value>',
-    },
+    parameters=components.ToolParameters(),
     task='<value>',
     type=components.ToolType.TOOL,
 )

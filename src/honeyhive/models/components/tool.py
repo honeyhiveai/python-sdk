@@ -5,7 +5,14 @@ import dataclasses
 from dataclasses_json import Undefined, dataclass_json
 from enum import Enum
 from honeyhive import utils
-from typing import Any, Dict, Optional
+from typing import Optional
+
+
+@dataclasses.dataclass
+class ToolParameters:
+    r"""These can be function call params or plugin call params"""
+    
+
 
 class ToolType(str, Enum):
     FUNCTION = 'function'
@@ -16,7 +23,7 @@ class ToolType(str, Enum):
 @dataclasses.dataclass
 class Tool:
     name: str = dataclasses.field(metadata={'dataclasses_json': { 'letter_case': utils.get_field_name('name') }})
-    parameters: Dict[str, Any] = dataclasses.field(metadata={'dataclasses_json': { 'letter_case': utils.get_field_name('parameters') }})
+    parameters: ToolParameters = dataclasses.field(metadata={'dataclasses_json': { 'letter_case': utils.get_field_name('parameters') }})
     r"""These can be function call params or plugin call params"""
     task: str = dataclasses.field(metadata={'dataclasses_json': { 'letter_case': utils.get_field_name('task') }})
     r"""Name of the project associated with this tool"""

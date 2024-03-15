@@ -7,6 +7,20 @@ from enum import Enum
 from honeyhive import utils
 from typing import Any, Dict, List, Optional
 
+
+@dataclasses.dataclass
+class CreateDatapointRequestInputs:
+    r"""Arbitrary JSON object containing the inputs for the datapoint"""
+    
+
+
+
+@dataclasses.dataclass
+class CreateDatapointRequestMetadata:
+    r"""Any additional metadata for the datapoint"""
+    
+
+
 class CreateDatapointRequestType(str, Enum):
     r"""Type of datapoint - \\"evaluation\\" or \\"fine-tuning\\" """
     EVALUATION = 'evaluation'
@@ -16,7 +30,7 @@ class CreateDatapointRequestType(str, Enum):
 @dataclass_json(undefined=Undefined.EXCLUDE)
 @dataclasses.dataclass
 class CreateDatapointRequest:
-    inputs: Dict[str, Any] = dataclasses.field(metadata={'dataclasses_json': { 'letter_case': utils.get_field_name('inputs') }})
+    inputs: CreateDatapointRequestInputs = dataclasses.field(metadata={'dataclasses_json': { 'letter_case': utils.get_field_name('inputs') }})
     r"""Arbitrary JSON object containing the inputs for the datapoint"""
     project: str = dataclasses.field(metadata={'dataclasses_json': { 'letter_case': utils.get_field_name('project') }})
     r"""UUID for the project to which the datapoint belongs"""
@@ -30,7 +44,7 @@ class CreateDatapointRequest:
     r"""Ids of evaluations where the datapoint is included"""
     linked_event: Optional[str] = dataclasses.field(default=None, metadata={'dataclasses_json': { 'letter_case': utils.get_field_name('linked_event'), 'exclude': lambda f: f is None }})
     r"""Event id for the event from which the datapoint was created"""
-    metadata: Optional[Dict[str, Any]] = dataclasses.field(default=None, metadata={'dataclasses_json': { 'letter_case': utils.get_field_name('metadata'), 'exclude': lambda f: f is None }})
+    metadata: Optional[CreateDatapointRequestMetadata] = dataclasses.field(default=None, metadata={'dataclasses_json': { 'letter_case': utils.get_field_name('metadata'), 'exclude': lambda f: f is None }})
     r"""Any additional metadata for the datapoint"""
     saved: Optional[bool] = dataclasses.field(default=None, metadata={'dataclasses_json': { 'letter_case': utils.get_field_name('saved'), 'exclude': lambda f: f is None }})
     r"""Whether the datapoint is saved or detected"""
