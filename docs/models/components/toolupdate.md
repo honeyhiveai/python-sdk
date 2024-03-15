@@ -3,9 +3,9 @@
 
 ## Fields
 
-| Field                                                                                        | Type                                                                                         | Required                                                                                     | Description                                                                                  |
-| -------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------- |
-| `id`                                                                                         | *str*                                                                                        | :heavy_check_mark:                                                                           | N/A                                                                                          |
-| `description`                                                                                | *Optional[str]*                                                                              | :heavy_minus_sign:                                                                           | N/A                                                                                          |
-| `name`                                                                                       | *Optional[str]*                                                                              | :heavy_minus_sign:                                                                           | N/A                                                                                          |
-| `parameters`                                                                                 | [Optional[components.ToolUpdateParameters]](../../models/components/toolupdateparameters.md) | :heavy_minus_sign:                                                                           | N/A                                                                                          |
+| Field              | Type               | Required           | Description        |
+| ------------------ | ------------------ | ------------------ | ------------------ |
+| `id`               | *str*              | :heavy_check_mark: | N/A                |
+| `description`      | *Optional[str]*    | :heavy_minus_sign: | N/A                |
+| `name`             | *Optional[str]*    | :heavy_minus_sign: | N/A                |
+| `parameters`       | Dict[str, *Any*]   | :heavy_minus_sign: | N/A                |

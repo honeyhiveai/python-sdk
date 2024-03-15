@@ -67,7 +67,9 @@ s = honeyhive.HoneyHive(
 )
 
 req = components.CreateDatapointRequest(
-    inputs=components.CreateDatapointRequestInputs(),
+    inputs={
+        'key': '<value>',
+    },
     project='<value>',
     type=components.CreateDatapointRequestType.EVALUATION,
 )

@@ -4,14 +4,7 @@ from __future__ import annotations
 import dataclasses
 from dataclasses_json import Undefined, dataclass_json
 from honeyhive import utils
-from typing import List, Optional
-
-
-@dataclasses.dataclass
-class DatasetUpdateMetadata:
-    r"""Updated metadata to track for the dataset"""
-    
-
+from typing import Any, Dict, List, Optional
 
 
 @dataclass_json(undefined=Undefined.EXCLUDE)
@@ -25,7 +18,7 @@ class DatasetUpdate:
     r"""Updated description for the dataset"""
     linked_evals: Optional[List[str]] = dataclasses.field(default=None, metadata={'dataclasses_json': { 'letter_case': utils.get_field_name('linked_evals'), 'exclude': lambda f: f is None }})
     r"""Updated list of unique evaluation run ids to be associated with this dataset"""
-    metadata: Optional[DatasetUpdateMetadata] = dataclasses.field(default=None, metadata={'dataclasses_json': { 'letter_case': utils.get_field_name('metadata'), 'exclude': lambda f: f is None }})
+    metadata: Optional[Dict[str, Any]] = dataclasses.field(default=None, metadata={'dataclasses_json': { 'letter_case': utils.get_field_name('metadata'), 'exclude': lambda f: f is None }})
     r"""Updated metadata to track for the dataset"""
     name: Optional[str] = dataclasses.field(default=None, metadata={'dataclasses_json': { 'letter_case': utils.get_field_name('name'), 'exclude': lambda f: f is None }})
     r"""Updated name for the dataset"""
