@@ -34,3 +34,4 @@ python:
   outputModelSuffix: output
   packageName: HoneyHive
   responseFormat: envelope
+  installationURL: https://github.com/honeyhiveai/python-sdk
