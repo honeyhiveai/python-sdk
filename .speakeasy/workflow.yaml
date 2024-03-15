@@ -7,3 +7,6 @@ targets:
     honeyhive:
         target: python
         source: my-source
+        publish:
+            pypi:
+                token: $pypi_token
