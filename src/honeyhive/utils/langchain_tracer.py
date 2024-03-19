@@ -46,6 +46,7 @@ class HoneyHiveLangChainTracer(BaseTracer, ABC):
         source: Optional[str] = None,
         user_properties: Optional[Dict[str, Any]] = None,
         api_key: Optional[str] = None,
+        metadata: Optional[Dict[str, Any]] = None,
     ):
         """Initialize the HoneyHive tracer."""
         super().__init__()
@@ -63,23 +64,54 @@ class HoneyHiveLangChainTracer(BaseTracer, ABC):
         self.source = source if source is not None else "langchain"
         self.name = name
         self.user_properties = user_properties
-
+        self.metadata = metadata
+        self.eval_info = None
+        if self.source == "evaluation":
+            try:
+                if self.metadata and "dataset_name" in self.metadata:
+                    project_res = requests.get(
+                        url=f"{self._base_url}/projects",
+                        headers=self._headers,
+                        params={"name": self.project},
+                    )
+                    if project_res.status_code == 200:
+                        project_id = project_res.json()[0]["_id"]
+                        dataset_res = requests.get(
+                            url=f"{self._base_url}/datasets",
+                            headers=self._headers,
+                            params={
+                                "name": self.metadata["dataset_name"],
+                                "project": project_id,
+                            },
+                        )
+                        if dataset_res.status_code == 200:
+                            dataset = dataset_res.json()["testcases"][0]
+                            dataset_id = dataset["_id"]
+                            datapoint_ids = dataset["datapoints"]
+                            self.eval_info = {
+                                "dataset_id": dataset_id,
+                                "datapoint_ids": datapoint_ids,
+                                "project_id": project_id,
+                            }
+            except:
+                pass
         if api_key is not None:
             self._headers["Authorization"] = "Bearer " + api_key
 
     def _start_new_session(self, inputs):
-        body = {
+        session_body = {
             "project": self.project,
             "source": self.source,
             "session_id": self.session_id,
             "session_name": self.name,
             "user_properties": self.user_properties,
+            "metadata": self.metadata,
             "inputs": inputs,
         }
         requests.post(
             url=f"{self._base_url}/session/start",
             headers=self._headers,
-            json=body,
+            json=session_body,
         )
 
     def _persist_run(self, run: Run) -> None:
@@ -205,6 +237,42 @@ class HoneyHiveLangChainTracer(BaseTracer, ABC):
             json={"event_id": self.session_id, "outputs": self.final_outputs},
             headers=self._headers,
         )
+        if self.eval_info:
+            try:
+                filters = [
+                    {"field": "session_id", "operator": "is", "value": self.session_id}
+                ]
+                events_res = requests.get(
+                    f"{self._base_url}/events",
+                    headers=self._headers,
+                    params={
+                        "filters": json.dumps(filters),
+                        "project": self.eval_info["project_id"],
+                        # TODO: Actually do paging here instead of hardcoding a large value
+                        "limit": 100000,
+                    },
+                )
+                if events_res.status_code == 200:
+                    events_res = events_res.json()
+                    event_ids = [event["event_id"] for event in events_res["events"]]
+                    body = {
+                        "event_ids": event_ids,
+                        "dataset_id": self.eval_info["dataset_id"],
+                        "datapoint_ids": self.eval_info["datapoint_ids"],
+                        "project": self.eval_info["project_id"],
+                        "status": "completed",
+                    }
+                    if "config" in root_log:
+                        body["configuration"] = root_log["config"]
+                    run_res = requests.post(
+                        url=f"{self._base_url}/runs",
+                        headers=self._headers,
+                        json=body,
+                    )
+                    run_id = run_res.json()["run_id"]
+                    self.eval_info["run_id"] = run_id
+            except:
+                pass
 
     def _set_parent_ids(self, trace, session_id) -> None:
         def crawl(node):

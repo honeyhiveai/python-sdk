@@ -8,12 +8,13 @@ from langchain.agents.react.base import DocstoreExplorer
 from langchain.callbacks import StdOutCallbackHandler
 
 
-def run_tracer():
+def run_tracer(source, metadata):
     honeyhive_tracer = HoneyHiveLangChainTracer(
         project=os.environ["HH_PROJECT"],
         name="SERP Q&A",
-        source="sdk_lc_test",
+        source=source,
         api_key=os.environ["HH_API_KEY"],
+        metadata=metadata,
     )
 
     # Initialise the OpenAI LLM and required callables for our tools
@@ -47,12 +48,24 @@ def run_tracer():
         "Which city is closest to London as the crow flies, Berlin or Munich?",
         callbacks=[honeyhive_tracer],
     )
-    return honeyhive_tracer.session_id
+    return honeyhive_tracer
 
 
 def test_tracer():
-    session_id = run_tracer()
+    tracer = run_tracer("sdk_lc_test", None)
+    session_id = tracer.session_id
     assert session_id is not None
+    sdk = honeyhive.HoneyHive(bearer_auth=os.environ["HH_API_KEY"])
+    res = sdk.session.get_session(session_id=session_id)
+    assert res.event is not None
+
+
+def test_tracer_eval():
+    tracer = run_tracer("evaluation", {"dataset_name": os.environ["HH_DATASET"]})
+    session_id = tracer.session_id
+    eval_info = tracer.eval_info
+    assert session_id is not None
+    assert eval_info is not None
     sdk = honeyhive.HoneyHive(bearer_auth=os.environ["HH_API_KEY"])
     res = sdk.session.get_session(session_id=session_id)
     assert res.event is not None
