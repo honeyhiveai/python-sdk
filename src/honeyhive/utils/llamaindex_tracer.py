@@ -88,10 +88,15 @@ class HoneyHiveLlamaIndexTracer(BaseCallbackHandler):
                             dataset = dataset_res.json()["testcases"][0]
                             dataset_id = dataset["_id"]
                             datapoint_ids = dataset["datapoints"]
+                            if "run_name" in self.metadata:
+                                run_name = self.metadata["run_name"]
+                            else:
+                                run_name = self.name
                             self.eval_info = {
                                 "dataset_id": dataset_id,
                                 "datapoint_ids": datapoint_ids,
                                 "project_id": project_id,
+                                "run_name": run_name,
                             }
             except:
                 pass
@@ -416,38 +421,23 @@ class HoneyHiveLlamaIndexTracer(BaseCallbackHandler):
         )
         if self.eval_info:
             try:
-                filters = [
-                    {"field": "session_id", "operator": "is", "value": self.session_id}
-                ]
-                events_res = requests.get(
-                    f"{self._base_url}/events",
+                body = {
+                    "event_ids": [self.session_id],
+                    "dataset_id": self.eval_info["dataset_id"],
+                    "datapoint_ids": self.eval_info["datapoint_ids"],
+                    "project": self.eval_info["project_id"],
+                    "status": "completed",
+                    "name": self.eval_info["run_name"],
+                }
+                if "config" in root_log:
+                    body["configuration"] = root_log["config"]
+                run_res = requests.post(
+                    url=f"{self._base_url}/runs",
                     headers=self._headers,
-                    params={
-                        "filters": json.dumps(filters),
-                        "project": self.eval_info["project_id"],
-                        # TODO: Actually do paging here instead of hardcoding a large value
-                        "limit": 100000,
-                    },
+                    json=body,
                 )
-                if events_res.status_code == 200:
-                    events_res = events_res.json()
-                    event_ids = [event["event_id"] for event in events_res["events"]]
-                    body = {
-                        "event_ids": event_ids,
-                        "dataset_id": self.eval_info["dataset_id"],
-                        "datapoint_ids": self.eval_info["datapoint_ids"],
-                        "project": self.eval_info["project_id"],
-                        "status": "completed",
-                    }
-                    if "config" in root_log:
-                        body["configuration"] = root_log["config"]
-                    run_res = requests.post(
-                        url=f"{self._base_url}/runs",
-                        headers=self._headers,
-                        json=body,
-                    )
-                    run_id = run_res.json()["run_id"]
-                    self.eval_info["run_id"] = run_id
+                run_id = run_res.json()["run_id"]
+                self.eval_info["run_id"] = run_id
             except:
                 pass
 
