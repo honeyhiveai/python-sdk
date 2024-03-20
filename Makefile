@@ -1,7 +1,7 @@
 .PHONY: test
 
 # The names of the required environment variables
-REQUIRED_ENV_VARS := HH_API_KEY HH_PROJECT OPENAI_API_KEY SERP_API_KEY
+REQUIRED_ENV_VARS := HH_API_KEY HH_DATASET HH_PROJECT OPENAI_API_KEY SERP_API_KEY
 
 # Function to check whether an environment variable is set
 env_var_check = $(if $(value $(1)),,$(error $(1) is not set. Please set $(1)))
