@@ -10,4 +10,4 @@ COPY . /app
 RUN pip install --no-cache-dir -r tests/requirements.txt
 RUN pip install --no-cache-dir -e .
 
-CMD ["pytest", "tests/"]
+CMD ["pytest", "-rA", "tests/"]

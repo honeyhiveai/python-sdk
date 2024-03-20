@@ -1,4 +1,5 @@
 # pylint: skip-file
+import json
 import os
 import uuid
 from collections import defaultdict
@@ -38,6 +39,7 @@ class HoneyHiveLlamaIndexTracer(BaseCallbackHandler):
         event_starts_to_ignore: Optional[List[CBEventType]] = None,
         event_ends_to_ignore: Optional[List[CBEventType]] = None,
         api_key: Optional[str] = None,
+        metadata: Optional[Dict[str, Any]] = None,
     ) -> None:
         if self._env_api_key:
             api_key = self._env_api_key
@@ -62,6 +64,44 @@ class HoneyHiveLlamaIndexTracer(BaseCallbackHandler):
         self.project = project
         self.source = source
         self.user_properties = user_properties
+        self.metadata = metadata
+        self.eval_info = None
+        if self.source == "evaluation":
+            try:
+                if self.metadata and "run_id" in self.metadata:
+                    self.eval_info = {"run_id": self.metadata["run_id"]}
+                elif self.metadata and "dataset_name" in self.metadata:
+                    project_res = requests.get(
+                        url=f"{self._base_url}/projects",
+                        headers=self._headers,
+                        params={"name": self.project},
+                    )
+                    if project_res.status_code == 200:
+                        project_id = project_res.json()[0]["_id"]
+                        dataset_res = requests.get(
+                            url=f"{self._base_url}/datasets",
+                            headers=self._headers,
+                            params={
+                                "name": self.metadata["dataset_name"],
+                                "project": project_id,
+                            },
+                        )
+                        if dataset_res.status_code == 200:
+                            dataset = dataset_res.json()["testcases"][0]
+                            dataset_id = dataset["_id"]
+                            datapoint_ids = dataset["datapoints"]
+                            if "run_name" in self.metadata:
+                                run_name = self.metadata["run_name"]
+                            else:
+                                run_name = self.name
+                            self.eval_info = {
+                                "dataset_id": dataset_id,
+                                "datapoint_ids": datapoint_ids,
+                                "project_id": project_id,
+                                "run_name": run_name,
+                            }
+            except:
+                pass
 
     def _start_new_session(self, inputs):
         body = {
@@ -70,6 +110,7 @@ class HoneyHiveLlamaIndexTracer(BaseCallbackHandler):
             "session_name": self.name,
             "session_id": self.session_id,
             "user_properties": self.user_properties,
+            "metadata": self.metadata,
             "inputs": inputs,
         }
 
@@ -380,6 +421,40 @@ class HoneyHiveLlamaIndexTracer(BaseCallbackHandler):
             json={"event_id": self.session_id, "outputs": self.final_outputs},
             headers=self._headers,
         )
+        if self.eval_info:
+            try:
+                if "run_id" in self.eval_info:
+                    run_res = requests.get(
+                        url=f"{self._base_url}/runs/{self.eval_info['run_id']}",
+                        headers=self._headers,
+                    )
+                    event_ids = run_res.json()["evaluation"]["event_ids"]
+                    event_ids.append(self.session_id)
+                    requests.put(
+                        url=f"{self._base_url}/runs/{self.eval_info['run_id']}",
+                        json={"event_ids": event_ids},
+                        headers=self._headers,
+                    )
+                else:
+                    body = {
+                        "event_ids": [self.session_id],
+                        "dataset_id": self.eval_info["dataset_id"],
+                        "datapoint_ids": self.eval_info["datapoint_ids"],
+                        "project": self.eval_info["project_id"],
+                        "status": "completed",
+                        "name": self.eval_info["run_name"],
+                    }
+                    if "config" in root_log:
+                        body["configuration"] = root_log["config"]
+                    run_res = requests.post(
+                        url=f"{self._base_url}/runs",
+                        headers=self._headers,
+                        json=body,
+                    )
+                    run_id = run_res.json()["run_id"]
+                    self.eval_info["run_id"] = run_id
+            except:
+                pass
 
     def _set_parent_ids(self, trace, session_id) -> None:
         def crawl(node):
