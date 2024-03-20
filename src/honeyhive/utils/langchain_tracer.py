@@ -68,7 +68,9 @@ class HoneyHiveLangChainTracer(BaseTracer, ABC):
         self.eval_info = None
         if self.source == "evaluation":
             try:
-                if self.metadata and "dataset_name" in self.metadata:
+                if self.metadata and "run_id" in self.metadata:
+                    self.eval_info = {"run_id": self.metadata["run_id"]}
+                elif self.metadata and "dataset_name" in self.metadata:
                     project_res = requests.get(
                         url=f"{self._base_url}/projects",
                         headers=self._headers,
@@ -244,23 +246,36 @@ class HoneyHiveLangChainTracer(BaseTracer, ABC):
         )
         if self.eval_info:
             try:
-                body = {
-                    "event_ids": [self.session_id],
-                    "dataset_id": self.eval_info["dataset_id"],
-                    "datapoint_ids": self.eval_info["datapoint_ids"],
-                    "project": self.eval_info["project_id"],
-                    "status": "completed",
-                    "name": self.eval_info["run_name"],
-                }
-                if "config" in root_log:
-                    body["configuration"] = root_log["config"]
-                run_res = requests.post(
-                    url=f"{self._base_url}/runs",
-                    headers=self._headers,
-                    json=body,
-                )
-                run_id = run_res.json()["run_id"]
-                self.eval_info["run_id"] = run_id
+                if "run_id" in self.eval_info:
+                    run_res = requests.get(
+                        url=f"{self._base_url}/runs/{self.eval_info['run_id']}",
+                        headers=self._headers,
+                    )
+                    event_ids = run_res.json()["evaluation"]["event_ids"]
+                    event_ids.append(self.session_id)
+                    requests.put(
+                        url=f"{self._base_url}/runs/{self.eval_info['run_id']}",
+                        json={"event_ids": event_ids},
+                        headers=self._headers,
+                    )
+                else:
+                    body = {
+                        "event_ids": [self.session_id],
+                        "dataset_id": self.eval_info["dataset_id"],
+                        "datapoint_ids": self.eval_info["datapoint_ids"],
+                        "project": self.eval_info["project_id"],
+                        "status": "completed",
+                        "name": self.eval_info["run_name"],
+                    }
+                    if "config" in root_log:
+                        body["configuration"] = root_log["config"]
+                    run_res = requests.post(
+                        url=f"{self._base_url}/runs",
+                        headers=self._headers,
+                        json=body,
+                    )
+                    run_id = run_res.json()["run_id"]
+                    self.eval_info["run_id"] = run_id
             except:
                 pass
 
