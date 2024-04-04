@@ -370,14 +370,19 @@ class HoneyHiveTracer:
         if self.show_trace:
             self.print_event()
 
+        if type(self.input) != dict:
+            self.input = { "input": self.input }
+        if type(self.output) != dict:
+            self.output = { "role": "assistant", "content": self.output }
+        
         event = {
             "event_name": self.event_name,
             "event_type": self.event_type,
             "project": self.project,
             "source": self.source,
             "config": self.config,
-            "inputs": {"input": self.input},
-            "outputs": {"text": self.output},
+            "inputs": self.input,
+            "outputs": self.output,
             "error": self.error,
             "duration": self.duration,
             "metadata": self.metadata,
@@ -385,6 +390,7 @@ class HoneyHiveTracer:
             "parent_id": self.session_id,
             "session_id": self.session_id,
         }
+
         res = requests.post(
             url=f"{self._base_url}/events",
             json={"event": event},
@@ -423,16 +429,52 @@ class HoneyHiveTracer:
         # check if "provider" and "endpoint" are in config
         if self.config.get("provider") == "openai":
             if self.config.get("endpoint") == "streaming":
-                self.output = ""
+                self.output = {
+                    "role": "assistant",
+                    "content": None
+                }
+                func_call = {
+                    "name": None,
+                    "arguments": "",
+                }
+                
                 for chunk in event_data["output"]:
                     if not chunk.choices:
                         continue
-                    content = chunk.choices[0].delta.content
-                    if content:
-                        self.output += content
+                    delta = chunk.choices[0].delta
+
+                    if delta.content:
+                        if not self.output.get("content"):
+                            self.output["content"] = ""
+                        
+                        self.output["content"] += delta.content
+                    elif delta.tool_calls:
+                        delta = delta.tool_calls[0]
+                        if delta.function.name:
+                            func_call["name"] = delta.function.name
+                        
+                        if delta.function.arguments:
+                            func_call["arguments"] += delta.function.arguments
+                
+                if func_call["arguments"] != "":
+                    func_call["arguments"] = json.loads(func_call["arguments"])
+                if func_call["name"]:
+                    self.output["tool_calls"] = [{
+                        "type": "function",
+                        "function": func_call
+                    }]
             else:
-                self.output = event_data["output"].choices[0].message.content
+                self.output = event_data["output"].choices[0].message
             self.duration = event_data["duration"]
+        
+        # check for pydantic models
+        try:
+            self.output = self.output.model_dump()
+            # drop any fields whose value is None from self.output
+            self.output = {k: v for k, v in self.output.items() if v is not None}
+        except:
+            pass
+
         self.log_event()
 
     def set_model_context(
