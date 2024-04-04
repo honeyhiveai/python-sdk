@@ -46,7 +46,7 @@ class HoneyHiveTraceContextManager:
         self.prepare_input()
         self.prepare_output()
         self.prepare_error(exc_type, exc_val)
-        self.tracer.log_event_with_data(self.event_data)
+        self.event_data = self.tracer.log_event_with_data(self.event_data)
 
     def prepare_input(self):
         # prepare input, output, metadata, duration, error
@@ -129,6 +129,9 @@ class HoneyHiveTraceContextManager:
             self.last_return_value = arg
 
         return self.general_trace_call
+
+    def get_output(self):
+        return self.event_data["output"]
 
 
 class HoneyHiveTracer:
@@ -475,7 +478,9 @@ class HoneyHiveTracer:
         except:
             pass
 
+        event_data["output"] = self.output
         self.log_event()
+        return event_data
 
     def set_model_context(
         self,
