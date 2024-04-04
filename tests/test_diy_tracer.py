@@ -8,7 +8,7 @@ openai_client = OpenAI(
 )
 
 
-def test_thing():
+def test_diy():
     tracer = HoneyHiveTracer(
         project=os.environ["HH_PROJECT"],
         name="DIY Test",
@@ -28,7 +28,7 @@ def test_thing():
     assert model_call.event_id is not None
 
 
-def test_streaming_thing():
+def test_streaming_diy():
     tracer = HoneyHiveTracer(
         project=os.environ["HH_PROJECT"],
         name="DIY Stream Test",
@@ -45,6 +45,7 @@ def test_streaming_thing():
         resp = openai_client.chat.completions.create(
             model="gpt-4", messages=[{"role": "user", "content": input}], stream=True
         )
+    assert len(model_call.get_output()) > 0
     assert model_call.event_id is not None
 
 def test_function_call_streaming():
@@ -92,4 +93,5 @@ def test_function_call_streaming():
             tools=tools,
             stream=True
         )
+    assert len(model_call.get_output()) > 0
     assert model_call.event_id is not None
