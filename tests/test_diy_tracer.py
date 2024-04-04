@@ -18,6 +18,7 @@ def test_thing():
   input = "Hello there"
   with tracer.model(event_name="DIY Test", description="DIY testing", input=input, config={"provider": "openai"}) as model_call:
     resp = openai_client.chat.completions.create(model="gpt-4", messages=[{"role": "user", "content": input}])
+  assert model_call.event_id is not None
 
 def test_streaming_thing():
   tracer = HoneyHiveTracer(
@@ -29,4 +30,4 @@ def test_streaming_thing():
   input = "Hello there, stream"
   with tracer.model(event_name="DIY Stream Test", description="DIY stream testing", input=input, config={"provider": "openai", "endpoint": "streaming"}) as model_call:
     resp = openai_client.chat.completions.create(model="gpt-4", messages=[{"role": "user", "content": input}], stream=True)
-
+  assert model_call.event_id is not None
