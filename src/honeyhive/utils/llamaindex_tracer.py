@@ -8,7 +8,12 @@ from typing import Any, Callable, Dict, List, Optional, Tuple
 
 import requests
 from llama_index.core.callbacks.base import BaseCallbackHandler
-from llama_index.core.callbacks.schema import TIMESTAMP_FORMAT, CBEvent, CBEventType
+from llama_index.core.callbacks.schema import (
+    TIMESTAMP_FORMAT,
+    CBEvent,
+    CBEventType,
+    LEAF_EVENTS,
+)
 from llama_index.core.callbacks.token_counting import get_llm_token_counts
 from llama_index.core.utilities.token_counting import TokenCounter
 
@@ -19,7 +24,6 @@ class HHEventType(str, Enum):
     MODEL = "model"
     CHAIN = "chain"
     TOOL = "tool"
-    GENERIC = "generic"
 
 
 class HoneyHiveLlamaIndexTracer(BaseCallbackHandler):
@@ -62,6 +66,7 @@ class HoneyHiveLlamaIndexTracer(BaseCallbackHandler):
         self.project = project
         self.source = source
         self.user_properties = user_properties
+        self.session_id = None
 
     def _start_new_session(self, inputs):
         body = {
@@ -130,44 +135,40 @@ class HoneyHiveLlamaIndexTracer(BaseCallbackHandler):
     ) -> None:
         self._trace_map = trace_map or defaultdict(list)
         self._end_time = datetime.now()
-
         self.log_trace()
 
     def log_trace(self) -> None:
         try:
-            child_nodes = self._trace_map.get("root")
-            if child_nodes:
-                root_span = self._convert_event_pair_to_log(
-                    self._event_pairs_by_id.get(child_nodes[0]),
-                    trace_id=self._cur_trace_id if len(child_nodes) > 1 else None,
-                )
-                if len(child_nodes) == 1:
-                    child_nodes = self._trace_map.get(child_nodes[0])
-                    root_span = self._build_trace(child_nodes, root_span)
-                else:
-                    root_span = self._build_trace(child_nodes, root_span)
-                if root_span and root_span.event_type == "chain":
-                    self._post_trace(root_span)
+            events = []
+            for event_list in self._trace_map.values():
+                events.extend(event_list)
+            events = set(events)
+            event_map = {}
+            for event in events:
+                event_pair = self._event_pairs_by_id[event]
+                event_log = self._convert_event_pair_to_log(event_pair)
+                event_map[event] = event_log
+            for event_id, child_event_ids in self._trace_map.items():
+                if event_id == "root":
+                    continue
+                parent_log = event_map[event_id]
+                for child_event_id in child_event_ids:
+                    child_log = event_map[child_event_id]
+                    child_log.parent_id = parent_log.event_id
+                    if parent_log.children is None:
+                        parent_log.children = [child_log]
+                    else:
+                        parent_log.children += [child_log]
+            root_events = []
+            for event_id in self._trace_map["root"]:
+                root_events.append(event_map[event_id])
+            root_events.sort(key=lambda event: event.start_time)
+            for event in root_events:
+                self._post_trace(event)
+
         except Exception:
             # Silently ignore errors to not break user code
             pass
-
-    def _build_trace(
-        self, events: List[str], span: Log, parent_id: Optional[str] = None
-    ) -> Log:
-        """Build the trace tree from the trace map."""
-        for child_event in events:
-            child_span = self._convert_event_pair_to_log(
-                self._event_pairs_by_id[child_event], parent_id=parent_id
-            )
-            child_span = self._build_trace(
-                self._trace_map[child_event], child_span, child_span.event_id
-            )
-            if span.children is None:
-                span.children = [child_span]
-            else:
-                span.children.append(child_span)
-        return span
 
     def _convert_event_pair_to_log(
         self,
@@ -178,12 +179,8 @@ class HoneyHiveLlamaIndexTracer(BaseCallbackHandler):
         """Convert a pair of events to a HoneyHive log."""
         start_time_us, end_time_us, end_time = self._get_time_in_us(event_pair)
 
-        if trace_id is None:
-            event_type = event_pair[0].event_type
-            span_kind = self._map_event_type(event_type)
-        else:
-            event_type = trace_id  # type: ignore
-            span_kind = "generic"
+        event_type = event_pair[0].event_type
+        span_kind = self._map_event_type(event_type)
 
         root_log = Log(
             project=self.project,
@@ -210,22 +207,12 @@ class HoneyHiveLlamaIndexTracer(BaseCallbackHandler):
 
     def _map_event_type(self, event_type: CBEventType) -> str:
         """Map a CBEventType to a HoneyHive event type."""
-        if event_type in [
-            CBEventType.EMBEDDING,
-            CBEventType.LLM,
-            CBEventType.SYNTHESIZE,
-        ]:
+        if event_type in [CBEventType.LLM, CBEventType.EMBEDDING]:
             hh_event_type = HHEventType.MODEL
-        elif event_type in [
-            CBEventType.QUERY,
-            CBEventType.TREE,
-            CBEventType.SUB_QUESTION,
-        ]:
-            hh_event_type = HHEventType.CHAIN
-        elif event_type == CBEventType.RETRIEVE:
+        elif event_type in LEAF_EVENTS:
             hh_event_type = HHEventType.TOOL
         else:
-            hh_event_type = HHEventType.GENERIC
+            hh_event_type = HHEventType.CHAIN
 
         return hh_event_type
 
@@ -239,7 +226,6 @@ class HoneyHiveLlamaIndexTracer(BaseCallbackHandler):
         outputs = {}
 
         if event_type == CBEventType.NODE_PARSING:
-            # TODO: disabled full detailed inputs/outputs due to UI lag
             inputs, outputs = self._handle_node_parsing_payload(event_pair)
         elif event_type == CBEventType.LLM:
             inputs, outputs, span = self._handle_llm_payload(event_pair, span)
@@ -337,7 +323,6 @@ class HoneyHiveLlamaIndexTracer(BaseCallbackHandler):
         self,
         event_pair: List[CBEvent],
     ) -> Tuple[Optional[Dict[str, Any]], Dict[str, Any]]:
-        event_pair[0].payload
         outputs = event_pair[-1].payload
 
         chunks = []
@@ -363,9 +348,10 @@ class HoneyHiveLlamaIndexTracer(BaseCallbackHandler):
     def _post_trace(self, root_log: Log) -> None:
         root_log = log_to_dict(root_log)
         self.final_outputs = root_log["outputs"]
-        self.session_id = str(uuid.uuid4())
+        if self.session_id is None:
+            self.session_id = str(uuid.uuid4())
+            self._start_new_session(root_log["inputs"])
         self._set_parent_ids(root_log, self.session_id)
-        self._start_new_session(root_log["inputs"])
         trace_response = requests.post(
             url=f"{self._base_url}/session/{self.session_id}/traces",
             json={"logs": [root_log]},
