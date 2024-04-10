@@ -17,7 +17,7 @@ from llama_index.core.callbacks.schema import (
 from llama_index.core.callbacks.token_counting import get_llm_token_counts
 from llama_index.core.utilities.token_counting import TokenCounter
 
-from .langchain_tracer import Config, Log, log_to_dict
+from .langchain_tracer import Config, LLMConfig, Log, log_to_dict
 
 
 class HHEventType(str, Enum):
@@ -207,9 +207,20 @@ class HoneyHiveLlamaIndexTracer(BaseCallbackHandler):
 
     def _map_event_type(self, event_type: CBEventType) -> str:
         """Map a CBEventType to a HoneyHive event type."""
-        if event_type in [CBEventType.LLM, CBEventType.EMBEDDING]:
+        if event_type in [
+            CBEventType.LLM,
+            CBEventType.EMBEDDING,
+            CBEventType.AGENT_STEP,
+        ]:
             hh_event_type = HHEventType.MODEL
-        elif event_type in LEAF_EVENTS:
+        elif event_type in [
+            CBEventType.CHUNKING,
+            CBEventType.NODE_PARSING,
+            CBEventType.TREE,
+            CBEventType.TEMPLATING,
+            CBEventType.FUNCTION_CALL,
+            CBEventType.EXCEPTION,
+        ]:
             hh_event_type = HHEventType.TOOL
         else:
             hh_event_type = HHEventType.CHAIN
@@ -232,11 +243,75 @@ class HoneyHiveLlamaIndexTracer(BaseCallbackHandler):
         elif event_type == CBEventType.QUERY:
             inputs, outputs = self._handle_query_payload(event_pair)
         elif event_type == CBEventType.EMBEDDING:
-            inputs, outputs = self._handle_embedding_payload(event_pair)
+            inputs, outputs, span = self._handle_embedding_payload(event_pair, span)
         elif event_type == CBEventType.RETRIEVE:
             inputs, outputs = self._handle_retrieve_payload(event_pair)
+        elif event_type == CBEventType.SYNTHESIZE:
+            inputs, outputs = self._handle_synthesize_payload(event_pair)
+        elif event_type == CBEventType.TEMPLATING:
+            inputs, outputs = self._handle_templating_payload(event_pair)
+        elif event_type == CBEventType.TREE:
+            inputs, outputs = self._handle_tree_payload(event_pair)
+        elif event_type == CBEventType.SUB_QUESTION:
+            inputs, outputs = self._handle_sub_question_payload(event_pair)
+        elif event_type == CBEventType.FUNCTION_CALL:
+            inputs, outputs = self._handle_function_call_payload(event_pair)
+        elif event_type == CBEventType.RERANKING:
+            inputs, outputs = self._handle_reranking_payload(event_pair)
+        elif event_type == CBEventType.EXCEPTION:
+            inputs, outputs = self._handle_exception_payload(event_pair)
+        elif event_type == CBEventType.AGENT_STEP:
+            inputs, outputs = self._handle_agent_step_payload(event_pair)
 
         return inputs, outputs, span
+
+    def _handle_agent_step_payload(
+        self, event_pair: List[CBEvent]
+    ) -> Tuple[Dict[str, Any], Dict[str, Any]]:
+        # TODO: Implement this
+        inputs = event_pair[0].payload
+        outputs = event_pair[-1].payload
+        return inputs or {}, outputs or {}
+
+    def _handle_exception_payload(
+        self, event_pair: List[CBEvent]
+    ) -> Tuple[Dict[str, Any], Dict[str, Any]]:
+        # TODO: Implement this
+        inputs = event_pair[0].payload
+        outputs = event_pair[-1].payload
+        return inputs or {}, outputs or {}
+
+    def _handle_reranking_payload(
+        self, event_pair: List[CBEvent]
+    ) -> Tuple[Dict[str, Any], Dict[str, Any]]:
+        # TODO: Implement this
+        inputs = event_pair[0].payload
+        outputs = event_pair[-1].payload
+        return inputs or {}, outputs or {}
+
+    def _handle_function_call_payload(
+        self, event_pair: List[CBEvent]
+    ) -> Tuple[Dict[str, Any], Dict[str, Any]]:
+        # TODO: Implement this
+        inputs = event_pair[0].payload
+        outputs = event_pair[-1].payload
+        return inputs or {}, outputs or {}
+
+    def _handle_sub_question_payload(
+        self, event_pair: List[CBEvent]
+    ) -> Tuple[Dict[str, Any], Dict[str, Any]]:
+        # TODO: Implement this
+        inputs = event_pair[0].payload
+        outputs = event_pair[-1].payload
+        return inputs or {}, outputs or {}
+
+    def _handle_tree_payload(
+        self, event_pair: List[CBEvent]
+    ) -> Tuple[Dict[str, Any], Dict[str, Any]]:
+        # TODO: Implement this
+        inputs = event_pair[0].payload
+        outputs = event_pair[-1].payload
+        return inputs or {}, outputs or {}
 
     def _handle_retrieve_payload(
         self, event_pair: List[CBEvent]
@@ -248,39 +323,60 @@ class HoneyHiveLlamaIndexTracer(BaseCallbackHandler):
         outputs = {"chunks": chunks}
         return inputs, outputs
 
+    def _handle_templating_payload(
+        self, event_pair: List[CBEvent]
+    ) -> Tuple[Dict[str, Any], Dict[str, Any]]:
+        inputs = event_pair[0].payload
+        outputs = event_pair[-1].payload
+        return inputs or {}, outputs or {}
+
+    def _handle_synthesize_payload(
+        self, event_pair: List[CBEvent]
+    ) -> Tuple[Dict[str, Any], Dict[str, Any]]:
+        inputs = event_pair[0].payload
+        outputs = event_pair[-1].payload
+        return inputs or {}, outputs or {}
+
     def _handle_node_parsing_payload(
         self, event_pair: List[CBEvent]
     ) -> Tuple[Dict[str, Any], Dict[str, Any]]:
-        """Handle the payload of a NODE_PARSING event."""
         inputs = event_pair[0].payload
         outputs = event_pair[-1].payload
-
-        if inputs and "documents" in inputs:
-            documents = inputs.pop("documents")
-            inputs["num_documents"] = len(documents)
-
-        if outputs and "nodes" in outputs:
-            nodes = outputs.pop("nodes")
-            outputs["num_nodes"] = len(nodes)
-
         return inputs or {}, outputs or {}
 
     def _handle_llm_payload(
         self, event_pair: List[CBEvent], span: Log
     ) -> Tuple[Dict[str, Any], Dict[str, Any], Log]:
         """Handle the payload of a LLM event."""
-        inputs = event_pair[0].payload
+        input_payload = event_pair[0].payload
         outputs = event_pair[-1].payload
 
-        assert isinstance(inputs, dict) and isinstance(outputs, dict)
+        inputs = {}
 
         # Get `original_template` from Prompt
-        if "formatted_prompt" in inputs:
-            inputs["formatted_prompt"] = inputs["formatted_prompt"]
+        if "formatted_prompt" in input_payload:
+            inputs["formatted_prompt"] = input_payload["formatted_prompt"]
 
         # Format messages
-        if "messages" in inputs:
-            inputs["messages"] = "\n".join([str(x) for x in inputs["messages"]])
+        if "messages" in input_payload:
+            inputs["chat_history"] = []
+            for message in input_payload["messages"]:
+                role, content = str(message).split(":", 1)
+                inputs["chat_history"].append({"role": role, "content": content})
+
+        if "serialized" in input_payload:
+            config = LLMConfig()
+            if input_payload["serialized"].get("model"):
+                config.model_name = input_payload["serialized"]["model"]
+            if input_payload["serialized"].get("model_name"):
+                config.model_name = input_payload["serialized"]["model_name"]
+            if input_payload["serialized"].get("api_base"):
+                config.api_base = input_payload["serialized"]["api_base"]
+            if input_payload["serialized"].get("api_version"):
+                config.api_version = input_payload["serialized"]["api_version"]
+            if input_payload["serialized"].get("class_name"):
+                config.class_name = input_payload["serialized"]["class_name"]
+            span.config = config
 
         token_counts = get_llm_token_counts(self.tokenizer, outputs)
         metadata = {
@@ -304,32 +400,38 @@ class HoneyHiveLlamaIndexTracer(BaseCallbackHandler):
         """Handle the payload of a QUERY event."""
         inputs = event_pair[0].payload
         outputs = event_pair[-1].payload
-
-        if outputs:
-            response = outputs["response"]
-
-            if type(response).__name__ == "Response":
-                response = response.response
-            elif type(response).__name__ == "StreamingResponse":
-                response = response.get_response().response
-        else:
-            response = " "
-
-        outputs = {"response": response}
-
         return inputs, outputs
 
     def _handle_embedding_payload(
         self,
         event_pair: List[CBEvent],
-    ) -> Tuple[Optional[Dict[str, Any]], Dict[str, Any]]:
+        span: Log,
+    ) -> Tuple[Optional[Dict[str, Any]], Dict[str, Any], Log]:
+        input_payload = event_pair[0].payload
         outputs = event_pair[-1].payload
 
         chunks = []
         if outputs:
             chunks = outputs.get("chunks", [])
 
-        return {}, {"chunks": chunks}
+        inputs = {}
+        if "serialized" in input_payload:
+            config = LLMConfig()
+            if input_payload["serialized"].get("model"):
+                config.model_name = input_payload["serialized"]["model"]
+            if input_payload["serialized"].get("model_name"):
+                config.model_name = input_payload["serialized"]["model_name"]
+            if input_payload["serialized"].get("api_base"):
+                config.api_base = input_payload["serialized"]["api_base"]
+            if input_payload["serialized"].get("api_version"):
+                config.api_version = input_payload["serialized"]["api_version"]
+            if input_payload["serialized"].get("class_name"):
+                config.class_name = input_payload["serialized"]["class_name"]
+            span.config = config
+
+        inputs["chunks"] = chunks
+
+        return inputs, {}, span
 
     def _get_time_in_us(self, event_pair: List[CBEvent]) -> Tuple[int, int]:
         """Get the start and end time of an event pair in microseconds."""

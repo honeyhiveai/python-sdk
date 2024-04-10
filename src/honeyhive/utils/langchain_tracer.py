@@ -11,7 +11,7 @@ import re
 import datetime
 from enum import Enum
 import inspect
-from pydantic import BaseModel, Field, validator
+from pydantic import BaseModel, ConfigDict, Field, validator
 from typing import Any, Dict, Optional, Union, List, Tuple, Callable
 from datetime import timedelta
 import uuid
@@ -594,6 +594,15 @@ class Config(BaseModel):
     type: str = "generic"
     name: Optional[str] = None
     description: Optional[str] = None
+    model_config = ConfigDict(protected_namespaces=())
+
+
+class LLMConfig(Config):
+    type: str = "model"
+    model_name: Optional[str] = None
+    api_base: Optional[str] = None
+    class_name: Optional[str] = None
+    api_version: Optional[str] = None
 
 
 class ModelConfig(Config):
