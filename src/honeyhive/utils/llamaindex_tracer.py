@@ -171,9 +171,6 @@ class HoneyHiveLlamaIndexTracer(BaseCallbackHandler):
 
         except Exception:
             # Silently ignore errors to not break user code
-            import traceback
-
-            traceback.print_exc()
             pass
 
     def _convert_event_pair_to_log(
