@@ -67,6 +67,7 @@ class HoneyHiveLlamaIndexTracer(BaseCallbackHandler):
         self.source = source
         self.user_properties = user_properties
         self.session_id = None
+        self.session_end_time = None
 
     def _start_new_session(self, inputs):
         body = {
@@ -78,11 +79,13 @@ class HoneyHiveLlamaIndexTracer(BaseCallbackHandler):
             "inputs": inputs,
         }
 
-        requests.post(
+        res = requests.post(
             url=f"{self._base_url}/session/start",
             headers=self._headers,
             json=body,
         )
+        session = res.json()
+        self.session_start_time = session["start_time"]
 
     def on_event_start(
         self,
@@ -168,6 +171,9 @@ class HoneyHiveLlamaIndexTracer(BaseCallbackHandler):
 
         except Exception:
             # Silently ignore errors to not break user code
+            import traceback
+
+            traceback.print_exc()
             pass
 
     def _convert_event_pair_to_log(
@@ -177,7 +183,7 @@ class HoneyHiveLlamaIndexTracer(BaseCallbackHandler):
         trace_id: Optional[str] = None,
     ) -> Log:
         """Convert a pair of events to a HoneyHive log."""
-        start_time_us, end_time_us, end_time = self._get_time_in_us(event_pair)
+        start_time_us, end_time_us = self._get_time_in_us(event_pair)
 
         event_type = event_pair[0].event_type
         span_kind = self._map_event_type(event_type)
@@ -211,6 +217,7 @@ class HoneyHiveLlamaIndexTracer(BaseCallbackHandler):
             CBEventType.LLM,
             CBEventType.EMBEDDING,
             CBEventType.AGENT_STEP,
+            CBEventType.RERANKING,
         ]:
             hh_event_type = HHEventType.MODEL
         elif event_type in [
@@ -257,7 +264,7 @@ class HoneyHiveLlamaIndexTracer(BaseCallbackHandler):
         elif event_type == CBEventType.FUNCTION_CALL:
             inputs, outputs = self._handle_function_call_payload(event_pair)
         elif event_type == CBEventType.RERANKING:
-            inputs, outputs = self._handle_reranking_payload(event_pair)
+            inputs, outputs, span = self._handle_reranking_payload(event_pair, span)
         elif event_type == CBEventType.EXCEPTION:
             inputs, outputs = self._handle_exception_payload(event_pair)
         elif event_type == CBEventType.AGENT_STEP:
@@ -282,12 +289,25 @@ class HoneyHiveLlamaIndexTracer(BaseCallbackHandler):
         return inputs or {}, outputs or {}
 
     def _handle_reranking_payload(
-        self, event_pair: List[CBEvent]
-    ) -> Tuple[Dict[str, Any], Dict[str, Any]]:
-        # TODO: Implement this
-        inputs = event_pair[0].payload
+        self, event_pair: List[CBEvent], span: Log
+    ) -> Tuple[Dict[str, Any], Dict[str, Any], Log]:
+        input_payload = event_pair[0].payload
         outputs = event_pair[-1].payload
-        return inputs or {}, outputs or {}
+
+        inputs = {}
+        if "nodes" in input_payload:
+            inputs["nodes"] = input_payload["nodes"]
+        if "query_str" in input_payload:
+            inputs["query_str"] = input_payload["query_str"]
+        if "top_k" in input_payload:
+            inputs["top_k"] = input_payload["top_k"]
+
+        if "model_name" in input_payload:
+            config = LLMConfig()
+            config.model_name = input_payload["model_name"]
+            span.config = config
+
+        return inputs, outputs or {}, span
 
     def _handle_function_call_payload(
         self, event_pair: List[CBEvent]
@@ -445,7 +465,7 @@ class HoneyHiveLlamaIndexTracer(BaseCallbackHandler):
             (end_time - datetime(1970, 1, 1)).total_seconds() * 1000000
         )
 
-        return start_time_in_ms, end_time_in_ms, end_time
+        return start_time_in_ms, end_time_in_ms
 
     def _post_trace(self, root_log: Log) -> None:
         root_log = log_to_dict(root_log)
@@ -453,7 +473,8 @@ class HoneyHiveLlamaIndexTracer(BaseCallbackHandler):
         if self.session_id is None:
             self.session_id = str(uuid.uuid4())
             self._start_new_session(root_log["inputs"])
-        self._set_parent_ids(root_log, self.session_id)
+        self._crawl(root_log, self.session_id)
+
         trace_response = requests.post(
             url=f"{self._base_url}/session/{self.session_id}/traces",
             json={"logs": [root_log]},
@@ -464,18 +485,116 @@ class HoneyHiveLlamaIndexTracer(BaseCallbackHandler):
                 f"Failed to post trace to HoneyHive with status code {trace_response.status_code}"
             )
         requests.put(
-            url=f"{self._base_url}/events/{self.session_id}/traces",
-            json={"event_id": self.session_id, "outputs": self.final_outputs},
+            url=f"{self._base_url}/events",
+            json={
+                "event_id": self.session_id,
+                "outputs": self.final_outputs,
+                "end_time": self.session_end_time,
+                "duration": self.session_end_time - self.session_start_time,
+            },
             headers=self._headers,
         )
 
-    def _set_parent_ids(self, trace, session_id) -> None:
+    def _parse_chat_history(self, chat_string):
+        # Split the string into lines
+        lines = chat_string.split("\n")
+
+        # This list will store our parsed chat history
+        chat_history = []
+
+        # Temporary variables to hold current role and content
+        current_role = None
+        content = []
+
+        # Helper function to add an entry to chat history
+        def add_entry(role, content):
+            if content:
+                chat_history.append(
+                    {"role": role, "content": "\n".join(content).strip()}
+                )
+
+        # Iterate through each line to process the content
+        for line in lines:
+            # Check if the line starts a new role section
+            if line.startswith(("system:", "user:", "assistant:")):
+                # If there is an existing role and content, save it
+                if current_role is not None:
+                    add_entry(current_role, content)
+
+                # Reset for the new role
+                parts = line.split(":", 1)
+                current_role = parts[0].strip()
+                content = [parts[1].strip()] if len(parts) > 1 else []
+            else:
+                # Continue accumulating content for the current role
+                content.append(line)
+
+        # Don't forget to add the last accumulated content to the chat history
+        add_entry(current_role, content)
+
+        return chat_history
+
+    def _crawl(self, trace, session_id) -> None:
         def crawl(node):
             if node is None:
                 return
             node["session_id"] = session_id
+            if not self.session_end_time:
+                self.session_end_time = int(node["end_time"] / 1000)
+            else:
+                self.session_end_time = max(
+                    self.session_end_time, int(node["end_time"] / 1000)
+                )
             self.final_outputs = node["outputs"]
             if node["children"]:
+                """
+                We do a pattern-match for the following pattern in the event tree:
+                synthesize
+                  llm
+                  templating
+
+                We then replace this pattern with a single event that has all of the information from these events rolled into one.
+                TODO: Look into replacing this workaround if the instrumentation from the LlamaIndex side changes.
+                """
+                if (
+                    len(node["children"]) == 2
+                    and node["event_name"] == CBEventType.SYNTHESIZE
+                ):
+                    child1, child2 = node["children"][0], node["children"][1]
+                    pattern = set([CBEventType.TEMPLATING, CBEventType.LLM])
+                    child_event_names = set(
+                        [child1["event_name"], child2["event_name"]]
+                    )
+                    if (
+                        pattern == child_event_names
+                        and not child1["children"]
+                        and not child2["children"]
+                    ):
+                        if child1["event_name"] == CBEventType.LLM:
+                            llm_event = child1
+                            templating_event = child2
+                        else:
+                            llm_event = child2
+                            templating_event = child1
+                        node["children"] = None
+                        node["outputs"] = llm_event.get("outputs")
+                        node["config"] = llm_event["config"]
+                        inputs = {}
+                        if "chat_history" in llm_event["inputs"]:
+                            inputs["chat_history"] = llm_event["inputs"]["chat_history"]
+                        if "template" in templating_event["inputs"]:
+                            node["config"]["template"] = self._parse_chat_history(
+                                templating_event["inputs"]["template"]
+                            )
+                        if "template_vars" in templating_event["inputs"]:
+                            template_vars = templating_event["inputs"]["template_vars"]
+                            if "query_str" in template_vars:
+                                inputs["query_str"] = template_vars["query_str"]
+                            if "context_str" in template_vars:
+                                inputs["context_str"] = template_vars["context_str"]
+                        node["inputs"] = inputs
+                        node["event_type"] = HHEventType.MODEL
+                        return
                 for child in node["children"]:
                     child["parent_id"] = node["event_id"]
                     crawl(child)

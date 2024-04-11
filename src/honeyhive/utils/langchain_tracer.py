@@ -319,7 +319,7 @@ class HoneyHiveLangChainTracer(BaseTracer, ABC):
                 )
                 for tool in run.serialized["tools"]
             ],
-            model_config=self._create_model_config_from_params(
+            model=self._create_model_config_from_params(
                 params=run.serialized["agent"]["llm_chain"]["llm"],
                 prompt_details=run.serialized["agent"]["llm_chain"]["prompt"],
             ),
@@ -705,7 +705,7 @@ class AgentOther(BaseModel):
 class AgentConfig(Config):
     agent_class: str
     tools: List[ToolConfig]
-    model_config: ModelConfig
+    model: ModelConfig
     other: AgentOther
     type: str = "agent"
 
