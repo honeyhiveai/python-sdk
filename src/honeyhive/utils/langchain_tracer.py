@@ -11,7 +11,7 @@ import re
 import datetime
 from enum import Enum
 import inspect
-from pydantic import BaseModel, Field, validator
+from pydantic import BaseModel, ConfigDict, Field, validator
 from typing import Any, Dict, Optional, Union, List, Tuple, Callable
 from datetime import timedelta
 import uuid
@@ -392,7 +392,7 @@ class HoneyHiveLangChainTracer(BaseTracer, ABC):
                 )
                 for tool in run.serialized["tools"]
             ],
-            model_config=self._create_model_config_from_params(
+            model=self._create_model_config_from_params(
                 params=run.serialized["agent"]["llm_chain"]["llm"],
                 prompt_details=run.serialized["agent"]["llm_chain"]["prompt"],
             ),
@@ -667,6 +667,15 @@ class Config(BaseModel):
     type: str = "generic"
     name: Optional[str] = None
     description: Optional[str] = None
+    model_config = ConfigDict(protected_namespaces=())
+
+
+class LLMConfig(Config):
+    type: str = "model"
+    model_name: Optional[str] = None
+    api_base: Optional[str] = None
+    class_name: Optional[str] = None
+    api_version: Optional[str] = None
 
 
 class ModelConfig(Config):
@@ -769,7 +778,7 @@ class AgentOther(BaseModel):
 class AgentConfig(Config):
     agent_class: str
     tools: List[ToolConfig]
-    model_config: ModelConfig
+    model: ModelConfig
     other: AgentOther
     type: str = "agent"
 

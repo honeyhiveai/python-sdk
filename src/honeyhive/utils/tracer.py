@@ -6,10 +6,13 @@ import uuid
 import traceback
 import datetime
 import inspect
-
+import requests
 import openai
 
-from .sessions import start, end, log_event
+from pathlib import Path
+
+sys.path.append(str(Path(__file__).resolve().parent.parent))
+import honeyhive
 
 
 class HoneyHiveTraceContextManager:
@@ -43,25 +46,25 @@ class HoneyHiveTraceContextManager:
         self.prepare_input()
         self.prepare_output()
         self.prepare_error(exc_type, exc_val)
-        self.tracer.log_event_with_data(self.event_data)
+        self.event_data = self.tracer.log_event_with_data(self.event_data)
 
     def prepare_input(self):
         # prepare input, output, metadata, duration, error
-        if 'kwargs' in self.first_call_value:
-            temp = dict(self.first_call_value['kwargs'])
-            del self.first_call_value['kwargs']
+        if "kwargs" in self.first_call_value:
+            temp = dict(self.first_call_value["kwargs"])
+            del self.first_call_value["kwargs"]
             for key, value in temp.items():
                 # if value is an object, convert to dict
-                if hasattr(value, '__dict__'):
+                if hasattr(value, "__dict__"):
                     self.first_call_value[key] = value.__dict__
                 else:
                     self.first_call_value[key] = value
-        if 'args' in self.first_call_value:
-            temp = self.first_call_value['args']
+        if "args" in self.first_call_value:
+            temp = self.first_call_value["args"]
             # if args is a tuple, convert to list
             if isinstance(temp, tuple):
                 temp = list(temp)
-            self.first_call_value['args'] = temp
+            self.first_call_value["args"] = temp
 
         # drop anything that's non-JSON serializable
         new_call_value = {}
@@ -73,9 +76,9 @@ class HoneyHiveTraceContextManager:
                 pass
         if self.tracer.input != None and self.tracer.input != {}:
             # put it in metadata
-            self.event_data['metadata']['input'] = new_call_value
+            self.event_data["metadata"]["input"] = new_call_value
         else:
-            self.event_data['input'] = new_call_value
+            self.event_data["input"] = new_call_value
         ##print("left call for set context")
 
     def prepare_output(self):
@@ -84,67 +87,81 @@ class HoneyHiveTraceContextManager:
         if isinstance(self.last_return_value, dict):
             for key, value in self.last_return_value.items():
                 if key == self.tracer.output_field:
-                    self.event_data['output'] = str(value)
+                    self.event_data["output"] = value
                 else:
-                    if self.event_data['metadata'] == None:
-                        self.event_data['metadata'] = {}
+                    if self.event_data["metadata"] == None:
+                        self.event_data["metadata"] = {}
                     # if value has __dict__ attribute, convert to dict
-                    if hasattr(value, '__dict__'):
-                        self.event_data['metadata'][key] = value.__dict__
+                    if hasattr(value, "__dict__"):
+                        self.event_data["metadata"][key] = value.__dict__
                     else:
-                        self.event_data['metadata'][key] = value
+                        self.event_data["metadata"][key] = value
         else:
             try:
-                self.event_data['output'] = str(self.last_return_value)
+                self.event_data["output"] = self.last_return_value
             except:
                 pass
             finally:
-                if self.event_data['metadata'] == None:
-                    self.event_data['metadata'] = {}
-                if self.event_data['output'] == "":
-                    self.event_data['metadata'][
-                        'output'
-                    ] = self.last_return_value
+                if self.event_data["metadata"] == None:
+                    self.event_data["metadata"] = {}
+                if self.event_data["output"] == "":
+                    self.event_data["metadata"]["output"] = self.last_return_value
 
-        self.event_data['duration'] = (self.end_time - self.start_time) * 1000
+        self.event_data["duration"] = (self.end_time - self.start_time) * 1000
 
     def prepare_error(self, ex_type, ex_value):
         if ex_type == None:
             return
         ex_type = str(ex_type)
         ##print(self.recorded_exception)
-        self.event_data['error'] = ex_type
-        if self.event_data['metadata'] == None:
-            self.event_data['metadata'] = {}
-        self.event_data['metadata']["error_message"] = str(ex_value)
-        self.event_data['duration'] = (self.end_time - self.start_time) * 1000
+        self.event_data["error"] = ex_type
+        if self.event_data["metadata"] == None:
+            self.event_data["metadata"] = {}
+        self.event_data["metadata"]["error_message"] = str(ex_value)
+        self.event_data["duration"] = (self.end_time - self.start_time) * 1000
 
     def general_trace_call(self, frame, event, arg):
-        if event == 'call' and self.first_call_value == None:
+        if event == "call" and self.first_call_value == None:
             self.first_call_value = frame.f_locals
-            if self.event_data['event_name'] == "":
-                self.event_data['event_name'] = frame.f_code.co_name
-        elif event == 'return':
+            if self.event_data["event_name"] == "":
+                self.event_data["event_name"] = frame.f_code.co_name
+        elif event == "return":
             self.last_return_value = arg
 
         return self.general_trace_call
 
+    def get_output(self):
+        return self.event_data["output"]
+
 
 class HoneyHiveTracer:
     def __init__(
-        self, project, name, source, user_properties={}, show_trace=False
+        self, project, name, source, api_key, user_properties={}, show_trace=False
     ):
-        honeyhive_session = start(
-            project=project,
-            source=source,
-            session_name=name,
-            user_properties=user_properties,
+        self._base_url = "https://api.honeyhive.ai"
+        self._headers = {
+            "Content-Type": "application/json",
+            "Authorization": f"Bearer {api_key}",
+        }
+        self.sdk = honeyhive.HoneyHive(bearer_auth=api_key)
+        res = self.sdk.session.start_session(
+            {
+                "session": {
+                    "project": project,
+                    "session_name": name,
+                    "source": source,
+                    "user_properties": user_properties,
+                }
+            }
         )
+        if res.object is not None:
+            self.session_id = res.object.session_id
+        else:
+            raise Exception("Unable to start session")
         self.events = []
+        self.project = project
         self.source = source
-        self.session_id = honeyhive_session.session_id
         self.event_id = None
-        self.parent_id = None
         self.event_type = "model"
         self.event_name = ""
         self.config = {"provider": "", "endpoint": ""}
@@ -169,15 +186,15 @@ class HoneyHiveTracer:
     def trace_calls(self, frame, event, arg):
         function_name = frame.f_code.co_name
         file_name = frame.f_code.co_filename
-        if event == 'call':
+        if event == "call":
             if function_name == "create" and file_name == inspect.getfile(
                 openai.Completion
             ):
                 self.start_event()
-                self.config['provider'] = "openai"
-                self.config['endpoint'] = "completion"
+                self.config["provider"] = "openai"
+                self.config["endpoint"] = "completion"
                 self.event_type = "model"
-                self.call_value = frame.f_locals['kwargs']
+                self.call_value = frame.f_locals["kwargs"]
                 for key, value in self.call_value.items():
                     if key != "prompt":
                         self.config[key] = value
@@ -188,10 +205,10 @@ class HoneyHiveTracer:
             ):
                 self.start_event()
 
-                self.config['provider'] = "openai"
-                self.config['endpoint'] = "chat"
+                self.config["provider"] = "openai"
+                self.config["endpoint"] = "chat"
                 self.event_type = "model"
-                self.call_value = frame.f_locals['kwargs']
+                self.call_value = frame.f_locals["kwargs"]
                 for key, value in self.call_value.items():
                     if key != "messages":
                         self.config[key] = value
@@ -209,17 +226,17 @@ class HoneyHiveTracer:
                 ##print(frame.f_locals)
 
                 self.call_value = frame.f_locals
-                if 'kwargs' in self.call_value:
-                    temp = dict(self.call_value['kwargs'])
-                    del self.call_value['kwargs']
+                if "kwargs" in self.call_value:
+                    temp = dict(self.call_value["kwargs"])
+                    del self.call_value["kwargs"]
                     for key, value in temp.items():
                         self.call_value[key] = value
-                if 'args' in self.call_value:
-                    temp = self.call_value['args']
+                if "args" in self.call_value:
+                    temp = self.call_value["args"]
                     # if args is a tuple, convert to list
                     if isinstance(temp, tuple):
                         temp = list(temp)
-                    self.call_value['args'] = temp
+                    self.call_value["args"] = temp
 
                 # drop anything that's non-JSON serializable
                 new_call_value = {}
@@ -231,11 +248,11 @@ class HoneyHiveTracer:
                         pass
                 if self.input:
                     # put it in metadata
-                    self.metadata['input'] = new_call_value
+                    self.metadata["input"] = new_call_value
                 else:
                     self.input = new_call_value
                 ##print("left call for set context")
-        elif event == 'exception':
+        elif event == "exception":
             if function_name == "create" and (
                 file_name == inspect.getfile(openai.ChatCompletion)
                 or file_name == inspect.getfile(openai.Completion)
@@ -266,7 +283,7 @@ class HoneyHiveTracer:
                 traceback.print_tb(ex_traceback)
                 self.log_event()
                 ##print("left exception for set context")
-        elif event == 'return':
+        elif event == "return":
             if function_name == "create" and file_name == inspect.getfile(
                 openai.Completion
             ):
@@ -288,7 +305,7 @@ class HoneyHiveTracer:
                             for key, value in value.items():
                                 self.metadata[key] = value
                 if arg:
-                    arg['event_id'] = self.event_id
+                    arg["event_id"] = self.event_id
                 self.log_event()
             elif function_name == "create" and file_name == inspect.getfile(
                 openai.ChatCompletion
@@ -302,9 +319,7 @@ class HoneyHiveTracer:
                             self.config[key] = value
                         elif key == "created_at":
                             # turn created_at from utc number to isoformat
-                            self.config[key] = datetime.fromtimestamp(
-                                value
-                            ).isoformat()
+                            self.config[key] = datetime.fromtimestamp(value).isoformat()
                         elif key == "choices":
                             self.output = value[0].message.content
                         elif key == "usage":
@@ -341,7 +356,7 @@ class HoneyHiveTracer:
 
         return self.trace_calls
 
-    def start_event(self, event_type="model", parent_id=None):
+    def start_event(self, event_type="model"):
         if self.event_id == None:
             self.event_id = str(uuid.uuid4())
         self.start_time = time.time()
@@ -352,30 +367,37 @@ class HoneyHiveTracer:
         self.return_value = None
         self.error = None
         self.metadata = {}
-        if parent_id:
-            self.parent_id = parent_id
-        else:
-            self.parent_id = self.session_id
 
     def log_event(self):
         # print("Logging event")
         if self.show_trace:
             self.print_event()
 
-        log_event(
-            session_id=self.session_id,
-            event_id=self.event_id,
-            event_name=self.event_name,
-            event_type=self.event_type,
-            config=self.config,
-            input=self.input,
-            output={"text": self.output},
-            error=self.error,
-            duration=self.duration,
-            metadata=self.metadata,
-            user_properties=self.user_properties,
-            children=self.children,
-            parent_id=self.parent_id if self.parent_id else self.session_id,
+        if type(self.input) != dict:
+            self.input = { "input": self.input }
+        if type(self.output) != dict:
+            self.output = { "role": "assistant", "content": self.output }
+        
+        event = {
+            "event_name": self.event_name,
+            "event_type": self.event_type,
+            "project": self.project,
+            "source": self.source,
+            "config": self.config,
+            "inputs": self.input,
+            "outputs": self.output,
+            "error": self.error,
+            "duration": self.duration,
+            "metadata": self.metadata,
+            "user_properties": self.user_properties,
+            "parent_id": self.session_id,
+            "session_id": self.session_id,
+        }
+
+        res = requests.post(
+            url=f"{self._base_url}/events",
+            json={"event": event},
+            headers=self._headers,
         )
 
         # reset the event
@@ -404,27 +426,61 @@ class HoneyHiveTracer:
             if value != None:
                 # check if there's already a value for the key
                 # if there is, don't overwrite it
-                if getattr(self, key) == None:
+                if not hasattr(self, key) or getattr(self, key) is None:
                     setattr(self, key, value)
-                else:
-                    if isinstance(value, dict):
-                        getattr(self, key).update(value)
-                    else:
-                        setattr(self, key, value)
 
         # check if "provider" and "endpoint" are in config
-        if 'provider' in self.config and 'endpoint' in self.config:
-            if self.config['provider'] == "openai":
-                if self.config['endpoint'] == "completion":
-                    self.output = event_data['metadata']['choices'][0]['text']
-                elif self.config['endpoint'] == "chat":
-                    self.output = event_data['metadata']['choices'][0][
-                        'message'
-                    ]['content']
-        self.log_event()
+        if self.config.get("provider") == "openai":
+            if self.config.get("endpoint") == "streaming":
+                self.output = {
+                    "role": "assistant",
+                    "content": None
+                }
+                func_call = {
+                    "name": None,
+                    "arguments": "",
+                }
+                
+                for chunk in event_data["output"]:
+                    if not chunk.choices:
+                        continue
+                    delta = chunk.choices[0].delta
 
-    def end_session(self):
-        end(session_id=self.session_id)
+                    if delta.content:
+                        if not self.output.get("content"):
+                            self.output["content"] = ""
+                        
+                        self.output["content"] += delta.content
+                    elif delta.tool_calls:
+                        delta = delta.tool_calls[0]
+                        if delta.function.name:
+                            func_call["name"] = delta.function.name
+                        
+                        if delta.function.arguments:
+                            func_call["arguments"] += delta.function.arguments
+                
+                if func_call["arguments"] != "":
+                    func_call["arguments"] = json.loads(func_call["arguments"])
+                if func_call["name"]:
+                    self.output["tool_calls"] = [{
+                        "type": "function",
+                        "function": func_call
+                    }]
+            else:
+                self.output = event_data["output"].choices[0].message
+            self.duration = event_data["duration"]
+        
+        # check for pydantic models
+        try:
+            self.output = self.output.model_dump()
+            # drop any fields whose value is None from self.output
+            self.output = {k: v for k, v in self.output.items() if v is not None}
+        except:
+            pass
+
+        event_data["output"] = self.output
+        self.log_event()
+        return event_data
 
     def set_model_context(
         self,
@@ -439,9 +495,9 @@ class HoneyHiveTracer:
         self.event_type = "model"
         self.event_name = event_name
         if chat_template != []:
-            self.config['chat_template'] = chat_template
+            self.config["chat_template"] = chat_template
         if prompt_template != "":
-            self.config['prompt_template'] = prompt_template
+            self.config["prompt_template"] = prompt_template
         self.input = input
         self.output_field = output_field
         if self.event_id == None:
@@ -458,7 +514,7 @@ class HoneyHiveTracer:
         self.event_type = "tool"
         self.event_name = event_name
         self.config = config
-        self.config['description'] = description
+        self.config["description"] = description
         self.output_field = output_field
         if self.event_id == None:
             self.event_id = str(uuid.uuid4())
@@ -477,7 +533,6 @@ class HoneyHiveTracer:
     def print_event(self):
         print("event")
         print("Event ID: " + self.event_id)
-        print("Parent ID: " + self.parent_id)
         print("Event Type: " + self.event_type)
         print("Event Name: " + self.event_name)
         print("Config:")
@@ -514,7 +569,7 @@ class HoneyHiveTracer:
         self.start_event(event_type="tool")
         self.event_name = event_name
         self.config = config
-        self.config['description'] = description
+        self.config["description"] = description
         self.output_field = output_field
 
         self.trace_context_manager = HoneyHiveTraceContextManager(self)
@@ -533,13 +588,13 @@ class HoneyHiveTracer:
         self.start_event(event_type="model")
         self.event_name = event_name
         self.config = config
-        self.config['description'] = description
+        self.config["description"] = description
         self.input = input
         self.output_field = output_field
         if chat_template != {}:
-            self.config['chat_template'] = chat_template
+            self.config["chat_template"] = chat_template
         if prompt_template != "":
-            self.config['prompt_template'] = prompt_template
+            self.config["prompt_template"] = prompt_template
 
         self.trace_context_manager = HoneyHiveTraceContextManager(self)
         return self.trace_context_manager
@@ -556,13 +611,13 @@ class HoneyHiveTracer:
         self.start_event(event_type="model")
         self.event_name = event_name
         self.config = config
-        self.config['description'] = description
-        self.config['provider'] = "openai"
-        self.config['endpoint'] = "chat"
+        self.config["description"] = description
+        self.config["provider"] = "openai"
+        self.config["endpoint"] = "chat"
         self.input = input
         self.output_field = output_field
         if chat_template != {}:
-            self.config['chat_template'] = chat_template
+            self.config["chat_template"] = chat_template
 
         self.trace_context_manager = HoneyHiveTraceContextManager(self)
         return self.trace_context_manager
@@ -579,13 +634,13 @@ class HoneyHiveTracer:
         self.start_event(event_type="model")
         self.event_name = event_name
         self.config = config
-        self.config['description'] = description
-        self.config['provider'] = "openai"
-        self.config['endpoint'] = "completion"
+        self.config["description"] = description
+        self.config["provider"] = "openai"
+        self.config["endpoint"] = "completion"
         self.input = input
         self.output_field = output_field
         if prompt_template != "":
-            self.config['prompt_template'] = prompt_template
+            self.config["prompt_template"] = prompt_template
 
         self.trace_context_manager = HoneyHiveTraceContextManager(self)
         return self.trace_context_manager
@@ -597,10 +652,9 @@ class HoneyHiveTracer:
             def wrapper(*args, **kwargs):
                 trace = HoneyHiveTracer(project, name, source, user_properties)
                 sys.settrace(trace.trace_calls)
-                kwargs['honeyhive_tracer'] = trace
+                kwargs["honeyhive_tracer"] = trace
                 result = func(*args, **kwargs)
                 sys.settrace(None)
-                trace.end_session()
                 return result
 
             return wrapper
