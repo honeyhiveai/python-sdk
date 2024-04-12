@@ -10,6 +10,7 @@ import requests
 import openai
 
 from pathlib import Path
+from .langchain_tracer import requests_retry_session
 
 sys.path.append(str(Path(__file__).resolve().parent.parent))
 import honeyhive
@@ -143,21 +144,23 @@ class HoneyHiveTracer:
             "Content-Type": "application/json",
             "Authorization": f"Bearer {api_key}",
         }
-        self.sdk = honeyhive.HoneyHive(bearer_auth=api_key)
-        res = self.sdk.session.start_session(
-            {
-                "session": {
-                    "project": project,
-                    "session_name": name,
-                    "source": source,
-                    "user_properties": user_properties,
-                }
+        body = {
+            "session": {
+                "project": project,
+                "session_name": name,
+                "source": source,
+                "user_properties": user_properties,
             }
+        }
+
+        res = requests_retry_session().post(
+            url=f"{self._base_url}/session/start",
+            headers=self._headers,
+            json=body,
         )
-        if res.object is not None:
-            self.session_id = res.object.session_id
-        else:
-            raise Exception("Unable to start session")
+        data = res.json()
+        self.session_id = data["session_id"]
+
         self.events = []
         self.project = project
         self.source = source
@@ -374,10 +377,10 @@ class HoneyHiveTracer:
             self.print_event()
 
         if type(self.input) != dict:
-            self.input = { "input": self.input }
+            self.input = {"input": self.input}
         if type(self.output) != dict:
-            self.output = { "role": "assistant", "content": self.output }
-        
+            self.output = {"role": "assistant", "content": self.output}
+
         event = {
             "event_name": self.event_name,
             "event_type": self.event_type,
@@ -394,7 +397,7 @@ class HoneyHiveTracer:
             "session_id": self.session_id,
         }
 
-        res = requests.post(
+        res = requests_retry_session().post(
             url=f"{self._base_url}/events",
             json={"event": event},
             headers=self._headers,
@@ -432,15 +435,12 @@ class HoneyHiveTracer:
         # check if "provider" and "endpoint" are in config
         if self.config.get("provider") == "openai":
             if self.config.get("endpoint") == "streaming":
-                self.output = {
-                    "role": "assistant",
-                    "content": None
-                }
+                self.output = {"role": "assistant", "content": None}
                 func_call = {
                     "name": None,
                     "arguments": "",
                 }
-                
+
                 for chunk in event_data["output"]:
                     if not chunk.choices:
                         continue
@@ -449,27 +449,26 @@ class HoneyHiveTracer:
                     if delta.content:
                         if not self.output.get("content"):
                             self.output["content"] = ""
-                        
+
                         self.output["content"] += delta.content
                     elif delta.tool_calls:
                         delta = delta.tool_calls[0]
                         if delta.function.name:
                             func_call["name"] = delta.function.name
-                        
+
                         if delta.function.arguments:
                             func_call["arguments"] += delta.function.arguments
-                
+
                 if func_call["arguments"] != "":
                     func_call["arguments"] = json.loads(func_call["arguments"])
                 if func_call["name"]:
-                    self.output["tool_calls"] = [{
-                        "type": "function",
-                        "function": func_call
-                    }]
+                    self.output["tool_calls"] = [
+                        {"type": "function", "function": func_call}
+                    ]
             else:
                 self.output = event_data["output"].choices[0].message
             self.duration = event_data["duration"]
-        
+
         # check for pydantic models
         try:
             self.output = self.output.model_dump()
