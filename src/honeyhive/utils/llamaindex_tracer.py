@@ -18,7 +18,13 @@ from llama_index.core.callbacks.schema import (
 from llama_index.core.callbacks.token_counting import get_llm_token_counts
 from llama_index.core.utilities.token_counting import TokenCounter
 
-from .langchain_tracer import Config, LLMConfig, Log, log_to_dict
+from .langchain_tracer import (
+    Config,
+    LLMConfig,
+    Log,
+    log_to_dict,
+    requests_retry_session,
+)
 
 
 class HHEventType(str, Enum):
@@ -70,19 +76,20 @@ class HoneyHiveLlamaIndexTracer(BaseCallbackHandler):
         self.user_properties = user_properties
         self.metadata = metadata
         self.eval_info = None
+        self.root_event_ids = []
         if self.source == "evaluation":
             try:
                 if self.metadata and "run_id" in self.metadata:
                     self.eval_info = {"run_id": self.metadata["run_id"]}
                 elif self.metadata and "dataset_name" in self.metadata:
-                    project_res = requests.get(
+                    project_res = requests_retry_session().get(
                         url=f"{self._base_url}/projects",
                         headers=self._headers,
                         params={"name": self.project},
                     )
                     if project_res.status_code == 200:
                         project_id = project_res.json()[0]["_id"]
-                        dataset_res = requests.get(
+                        dataset_res = requests_retry_session().get(
                             url=f"{self._base_url}/datasets",
                             headers=self._headers,
                             params={
@@ -107,7 +114,6 @@ class HoneyHiveLlamaIndexTracer(BaseCallbackHandler):
             except:
                 pass
         self.session_id = None
-        self.session_end_time = None
 
     def _start_new_session(self, inputs):
         body = {
@@ -120,13 +126,11 @@ class HoneyHiveLlamaIndexTracer(BaseCallbackHandler):
             "inputs": inputs,
         }
 
-        res = requests.post(
+        res = requests_retry_session().post(
             url=f"{self._base_url}/session/start",
             headers=self._headers,
             json=body,
         )
-        session = res.json()
-        self.session_start_time = session["start_time"]
 
     def on_event_start(
         self,
@@ -506,14 +510,17 @@ class HoneyHiveLlamaIndexTracer(BaseCallbackHandler):
         return start_time_in_ms, end_time_in_ms
 
     def _post_trace(self, root_log: Log) -> None:
+        self.root_event_ids.append(root_log.event_id)
         root_log = log_to_dict(root_log)
         self.final_outputs = root_log["outputs"]
+        first_trace = False
         if self.session_id is None:
+            first_trace = True
             self.session_id = str(uuid.uuid4())
             self._start_new_session(root_log["inputs"])
         self._crawl(root_log, self.session_id)
 
-        trace_response = requests.post(
+        trace_response = requests_retry_session().post(
             url=f"{self._base_url}/session/{self.session_id}/traces",
             json={"logs": [root_log]},
             headers=self._headers,
@@ -522,26 +529,25 @@ class HoneyHiveLlamaIndexTracer(BaseCallbackHandler):
             raise Exception(
                 f"Failed to post trace to HoneyHive with status code {trace_response.status_code}"
             )
-        requests.put(
+        requests_retry_session().put(
             url=f"{self._base_url}/events",
             json={
                 "event_id": self.session_id,
                 "outputs": self.final_outputs,
-                "end_time": self.session_end_time,
-                "duration": self.session_end_time - self.session_start_time,
+                "children_ids": self.root_event_ids,
             },
             headers=self._headers,
         )
-        if self.eval_info:
+        if self.eval_info and first_trace:
             try:
                 if "run_id" in self.eval_info:
-                    run_res = requests.get(
+                    run_res = requests_retry_session().get(
                         url=f"{self._base_url}/runs/{self.eval_info['run_id']}",
                         headers=self._headers,
                     )
                     event_ids = run_res.json()["evaluation"]["event_ids"]
                     event_ids.append(self.session_id)
-                    requests.put(
+                    requests_retry_session().put(
                         url=f"{self._base_url}/runs/{self.eval_info['run_id']}",
                         json={"event_ids": event_ids},
                         headers=self._headers,
@@ -557,7 +563,7 @@ class HoneyHiveLlamaIndexTracer(BaseCallbackHandler):
                     }
                     if "config" in root_log:
                         body["configuration"] = root_log["config"]
-                    run_res = requests.post(
+                    run_res = requests_retry_session().post(
                         url=f"{self._base_url}/runs",
                         headers=self._headers,
                         json=body,
@@ -611,12 +617,6 @@ class HoneyHiveLlamaIndexTracer(BaseCallbackHandler):
             if node is None:
                 return
             node["session_id"] = session_id
-            if not self.session_end_time:
-                self.session_end_time = int(node["end_time"] / 1000)
-            else:
-                self.session_end_time = max(
-                    self.session_end_time, int(node["end_time"] / 1000)
-                )
             self.final_outputs = node["outputs"]
             if node["children"]:
                 """

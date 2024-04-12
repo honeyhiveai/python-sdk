@@ -24,7 +24,6 @@ def run_tracer(source, metadata):
         ["http://paulgraham.com/worked.html"]
     )
 
-    # Pass the service_context to the index that you will query1
     index = VectorStoreIndex.from_documents(documents)
 
     query_engine = index.as_query_engine()

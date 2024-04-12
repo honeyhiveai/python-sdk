@@ -16,7 +16,10 @@ from typing import Any, Dict, Optional, Union, List, Tuple, Callable
 from datetime import timedelta
 import uuid
 import requests
+import random
 
+from requests.adapters import HTTPAdapter
+from urllib3.util.retry import Retry
 from langchain.callbacks.tracers.base import BaseTracer, TracerException
 from langchain.callbacks.tracers.schemas import (
     TracerSession,
@@ -71,14 +74,14 @@ class HoneyHiveLangChainTracer(BaseTracer, ABC):
                 if self.metadata and "run_id" in self.metadata:
                     self.eval_info = {"run_id": self.metadata["run_id"]}
                 elif self.metadata and "dataset_name" in self.metadata:
-                    project_res = requests.get(
+                    project_res = requests_retry_session().get(
                         url=f"{self._base_url}/projects",
                         headers=self._headers,
                         params={"name": self.project},
                     )
                     if project_res.status_code == 200:
                         project_id = project_res.json()[0]["_id"]
-                        dataset_res = requests.get(
+                        dataset_res = requests_retry_session().get(
                             url=f"{self._base_url}/datasets",
                             headers=self._headers,
                             params={
@@ -115,7 +118,7 @@ class HoneyHiveLangChainTracer(BaseTracer, ABC):
             "metadata": self.metadata,
             "inputs": inputs,
         }
-        requests.post(
+        requests_retry_session().post(
             url=f"{self._base_url}/session/start",
             headers=self._headers,
             json=session_body,
@@ -230,7 +233,7 @@ class HoneyHiveLangChainTracer(BaseTracer, ABC):
         self.session_id = str(uuid.uuid4())
         self._set_parent_ids(root_log, self.session_id)
         self._start_new_session(root_log["inputs"])
-        trace_response = requests.post(
+        trace_response = requests_retry_session().post(
             url=f"{self._base_url}/session/{self.session_id}/traces",
             json={"logs": [root_log]},
             headers=self._headers,
@@ -239,7 +242,7 @@ class HoneyHiveLangChainTracer(BaseTracer, ABC):
             raise TracerException(
                 f"Failed to post trace to HoneyHive with status code {trace_response.status_code}"
             )
-        requests.put(
+        requests_retry_session().put(
             url=f"{self._base_url}/events",
             json={"event_id": self.session_id, "outputs": self.final_outputs},
             headers=self._headers,
@@ -247,13 +250,13 @@ class HoneyHiveLangChainTracer(BaseTracer, ABC):
         if self.eval_info:
             try:
                 if "run_id" in self.eval_info:
-                    run_res = requests.get(
+                    run_res = requests_retry_session().get(
                         url=f"{self._base_url}/runs/{self.eval_info['run_id']}",
                         headers=self._headers,
                     )
                     event_ids = run_res.json()["evaluation"]["event_ids"]
                     event_ids.append(self.session_id)
-                    requests.put(
+                    requests_retry_session().put(
                         url=f"{self._base_url}/runs/{self.eval_info['run_id']}",
                         json={"event_ids": event_ids},
                         headers=self._headers,
@@ -269,7 +272,7 @@ class HoneyHiveLangChainTracer(BaseTracer, ABC):
                     }
                     if "config" in root_log:
                         body["configuration"] = root_log["config"]
-                    run_res = requests.post(
+                    run_res = requests_retry_session().post(
                         url=f"{self._base_url}/runs",
                         headers=self._headers,
                         json=body,
@@ -403,6 +406,7 @@ class HoneyHiveLangChainTracer(BaseTracer, ABC):
             ),
         )
         return Log(
+            source=self.source,
             project=self.project,
             children=None,
             event_name=event_name,
@@ -436,6 +440,7 @@ class HoneyHiveLangChainTracer(BaseTracer, ABC):
             parent_id = None
         config = Config(name=event_name)
         return Log(
+            source=self.source,
             project=self.project,
             event_name=event_name,
             event_type="generic",
@@ -479,6 +484,7 @@ class HoneyHiveLangChainTracer(BaseTracer, ABC):
             run.serialized["description"] if run.run_type != "retriever" else None
         )
         return Log(
+            source=self.source,
             project=self.project,
             children=None,
             event_name=event_name,
@@ -605,6 +611,7 @@ class HoneyHiveLangChainTracer(BaseTracer, ABC):
                         # TODO: add token usage
                         # TODO: chat serialization doesn't include messages array
                         Log(
+                            source=self.source,
                             project=self.project,
                             children=None,
                             event_name=event_name,
@@ -623,6 +630,7 @@ class HoneyHiveLangChainTracer(BaseTracer, ABC):
         else:
             logs = [
                 Log(
+                    source=self.source,
                     project=self.project,
                     children=None,
                     event_name=event_name,
@@ -917,6 +925,52 @@ def config_to_dict(config):
     if config:
         return config.dict()
     return None
+
+
+def requests_retry_session(
+    retries=8,
+    backoff_factor=0.3,
+    status_forcelist=(400, 500, 502, 503, 504),
+    session=None,
+    jitter_base=0.1,
+):
+    """
+    Creates a requests session with retry logic including exponential backoff with jitter.
+
+    Args:
+        retries (int): Number of retries.
+        backoff_factor (float): A base factor to apply for exponential backoff.
+        status_forcelist (tuple): A set of HTTP status codes that we should force a retry on.
+        session (requests.Session, optional): Use an existing session if provided, otherwise create a new one.
+
+    Returns:
+        requests.Session: A requests session configured with retry logic including jitter.
+    """
+    session = session or requests.Session()
+    retry = Retry(
+        total=retries,
+        read=retries,
+        connect=retries,
+        backoff_factor=backoff_factor,
+        status_forcelist=status_forcelist,
+        allowed_methods=["GET", "PUT", "POST"],
+        raise_on_status=False,
+    )
+
+    def backoff_with_jitter(retry, *args, **kwargs):
+        # Calculate the normal backoff
+        backoff_value = retry.get_backoff_time()
+        # Apply jitter by randomizing the backoff time
+        jittered_backoff = backoff_value + random.uniform(0, jitter_base)
+        return jittered_backoff
+
+    # Override the backoff method
+    retry.get_backoff_time = backoff_with_jitter
+
+    adapter = HTTPAdapter(max_retries=retry)
+    session.mount("http://", adapter)
+    session.mount("https://", adapter)
+    return session
 
 
 __all__ = ["HoneyHiveLangChainTracer"]
