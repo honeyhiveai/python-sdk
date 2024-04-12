@@ -41,4 +41,5 @@ jobs:
                      -e HH_DATASET="${{ secrets.HH_DATASET }}" \
                      -e OPENAI_API_KEY="${{ secrets.OPENAI_API_KEY }}" \
                      -e SERP_API_KEY="${{ secrets.SERP_API_KEY }}" \
+                     -e COHERE_API_KEY="${{ secrets.COHERE_API_KEY }}" \
                      -t my-test
