@@ -81,6 +81,8 @@ class HoneyHiveLlamaIndexTracer(BaseCallbackHandler):
             try:
                 if self.metadata and "run_id" in self.metadata:
                     self.eval_info = {"run_id": self.metadata["run_id"]}
+                    if "datapoint_id" in self.metadata:
+                        self.eval_info["datapoint_id"] = self.metadata["datapoint_id"]
                 elif self.metadata and "dataset_name" in self.metadata:
                     project_res = requests_retry_session().get(
                         url=f"{self._base_url}/projects",
@@ -547,9 +549,12 @@ class HoneyHiveLlamaIndexTracer(BaseCallbackHandler):
                     )
                     event_ids = run_res.json()["evaluation"]["event_ids"]
                     event_ids.append(self.session_id)
+                    datapoint_ids = run_res.json()["evaluation"]["event_ids"]
+                    if "datapoint_id" in self.eval_info:
+                        datapoint_ids.append(self.eval_info["datapoint_id"])
                     requests_retry_session().put(
                         url=f"{self._base_url}/runs/{self.eval_info['run_id']}",
-                        json={"event_ids": event_ids},
+                        json={"event_ids": event_ids, "datapoint_ids": datapoint_ids},
                         headers=self._headers,
                     )
                 else:
