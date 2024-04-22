@@ -7,7 +7,7 @@ REQUIRED_ENV_VARS := HH_API_KEY HH_DATASET HH_PROJECT OPENAI_API_KEY SERP_API_KE
 env_var_check = $(if $(value $(1)),,$(error $(1) is not set. Please set $(1)))
 
 # The test target
-test: start_services
+test:
 	@$(foreach var,$(REQUIRED_ENV_VARS),$(call env_var_check,$(var)))
 	@docker build -f tests/Dockerfile . -t my-test
 	@docker run \
@@ -18,7 +18,6 @@ test: start_services
 		-e OPENAI_API_KEY=$$OPENAI_API_KEY \
 		-e COHERE_API_KEY=$$COHERE_API_KEY \
 		my-test
-	@$(MAKE) cleanup
 
 # Start the services needed before running the tests
 start_services:

@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import copy
 import logging
+import inspect
 from abc import ABC
 import json
 import os
@@ -69,6 +70,8 @@ class HoneyHiveLangChainTracer(BaseTracer, ABC):
         self.user_properties = user_properties
         self.metadata = metadata
         self.eval_info = None
+        self.last_event_name = None
+        self.last_event_type = None
         if self.source == "evaluation":
             try:
                 if self.metadata and "run_id" in self.metadata:
@@ -109,6 +112,41 @@ class HoneyHiveLangChainTracer(BaseTracer, ABC):
                 pass
         if api_key is not None:
             self._headers["Authorization"] = "Bearer " + api_key
+
+    def set_metric(
+        self,
+        metric_name,
+        metric_description,
+        metric_code,
+        return_type,
+        min_threshold,
+        max_threshold,
+        enabled_in_prod=False,
+        needs_ground_truth=False,
+        pass_when=False,
+    ):
+        if not self.last_event_name or not self.last_event_type:
+            raise Exception("No events defined on session to set metric on")
+        code = inspect.getsource(metric_code)
+        body = {
+            "task": self.project,
+            "name": metric_name,
+            "description": metric_description,
+            "type": "custom",
+            "return_type": return_type,
+            "code_snippet": code,
+            "enabled_in_prod": enabled_in_prod,
+            "needs_ground_truth": needs_ground_truth,
+            "threshold": {"min": min_threshold, "max": max_threshold},
+            "pass_when": pass_when,
+            "event_name": self.last_event_name,
+            "event_type": self.last_event_type,
+        }
+        requests_retry_session().post(
+            url=f"{self._base_url}/metrics",
+            headers=self._headers,
+            json=body,
+        )
 
     def _start_new_session(self, inputs):
         session_body = {
@@ -233,7 +271,7 @@ class HoneyHiveLangChainTracer(BaseTracer, ABC):
         root_log = logs[0].dict()
         self.final_outputs = root_log["outputs"]
         self.session_id = str(uuid.uuid4())
-        self._set_parent_ids(root_log, self.session_id)
+        self._crawl(root_log, self.session_id)
         self._start_new_session(root_log["inputs"])
         trace_response = requests_retry_session().post(
             url=f"{self._base_url}/session/{self.session_id}/traces",
@@ -287,11 +325,13 @@ class HoneyHiveLangChainTracer(BaseTracer, ABC):
             except:
                 pass
 
-    def _set_parent_ids(self, trace, session_id) -> None:
+    def _crawl(self, trace, session_id) -> None:
         def crawl(node):
             if node is None:
                 return
             node["session_id"] = session_id
+            self.last_event_type = node["event_type"]
+            self.last_event_name = node["event_name"]
             self.final_outputs = node["outputs"]
             if node["children"]:
                 for child in node["children"]:

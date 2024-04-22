@@ -48,6 +48,7 @@ def test_streaming_diy():
     assert len(model_call.get_output()) > 0
     assert model_call.event_id is not None
 
+
 def test_function_call_streaming():
     tracer = HoneyHiveTracer(
         project=os.environ["HH_PROJECT"],
@@ -77,7 +78,7 @@ def test_function_call_streaming():
                     },
                     "required": ["location", "format"],
                 },
-            }
+            },
         },
     ]
 
@@ -91,7 +92,7 @@ def test_function_call_streaming():
             model="gpt-4",
             messages=[{"role": "user", "content": input}],
             tools=tools,
-            stream=True
+            stream=True,
         )
     assert len(model_call.get_output()) > 0
     assert model_call.event_id is not None

@@ -2,6 +2,7 @@
 import json
 import os
 import uuid
+import inspect
 from collections import defaultdict
 from datetime import datetime
 from enum import Enum
@@ -76,7 +77,8 @@ class HoneyHiveLlamaIndexTracer(BaseCallbackHandler):
         self.user_properties = user_properties
         self.metadata = metadata
         self.eval_info = None
-        self.root_event_ids = []
+        self.last_event_name = None
+        self.last_event_type = None
         if self.source == "evaluation":
             try:
                 if self.metadata and "run_id" in self.metadata:
@@ -116,6 +118,41 @@ class HoneyHiveLlamaIndexTracer(BaseCallbackHandler):
             except:
                 pass
         self.session_id = None
+
+    def set_metric(
+        self,
+        metric_name,
+        metric_description,
+        metric_code,
+        return_type,
+        min_threshold,
+        max_threshold,
+        enabled_in_prod=False,
+        needs_ground_truth=False,
+        pass_when=False,
+    ):
+        if not self.last_event_name or not self.last_event_type:
+            raise Exception("No events defined on session to set metric on")
+        code = inspect.getsource(metric_code)
+        body = {
+            "task": self.project,
+            "name": metric_name,
+            "description": metric_description,
+            "type": "custom",
+            "return_type": return_type,
+            "code_snippet": code,
+            "enabled_in_prod": enabled_in_prod,
+            "needs_ground_truth": needs_ground_truth,
+            "threshold": {"min": min_threshold, "max": max_threshold},
+            "pass_when": pass_when,
+            "event_name": self.last_event_name,
+            "event_type": self.last_event_type,
+        }
+        requests_retry_session().post(
+            url=f"{self._base_url}/metrics",
+            headers=self._headers,
+            json=body,
+        )
 
     def _start_new_session(self, inputs):
         body = {
@@ -512,7 +549,6 @@ class HoneyHiveLlamaIndexTracer(BaseCallbackHandler):
         return start_time_in_ms, end_time_in_ms
 
     def _post_trace(self, root_log: Log) -> None:
-        self.root_event_ids.append(root_log.event_id)
         root_log = log_to_dict(root_log)
         self.final_outputs = root_log["outputs"]
         first_trace = False
@@ -536,7 +572,6 @@ class HoneyHiveLlamaIndexTracer(BaseCallbackHandler):
             json={
                 "event_id": self.session_id,
                 "outputs": self.final_outputs,
-                "children_ids": self.root_event_ids,
             },
             headers=self._headers,
         )
@@ -622,6 +657,8 @@ class HoneyHiveLlamaIndexTracer(BaseCallbackHandler):
             if node is None:
                 return
             node["session_id"] = session_id
+            self.last_event_name = node["event_name"]
+            self.last_event_type = node["event_type"]
             self.final_outputs = node["outputs"]
             if node["children"]:
                 """
