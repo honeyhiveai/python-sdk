@@ -88,6 +88,7 @@ def test_tracer():
     sdk = honeyhive.HoneyHive(bearer_auth=os.environ["HH_API_KEY"])
     res = sdk.session.get_session(session_id=session_id)
     assert res.event is not None
+    tracer.set_metric("cost", 42, (0, 100))
 
 
 def _test_tracer_complex():

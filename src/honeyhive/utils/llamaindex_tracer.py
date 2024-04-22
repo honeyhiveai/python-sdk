@@ -77,8 +77,9 @@ class HoneyHiveLlamaIndexTracer(BaseCallbackHandler):
         self.user_properties = user_properties
         self.metadata = metadata
         self.eval_info = None
-        self.last_event_name = None
-        self.last_event_type = None
+        self.last_event_id = None
+        self.last_event_metrics = None
+        self.last_event_metadata = None
         if self.source == "evaluation":
             try:
                 if self.metadata and "run_id" in self.metadata:
@@ -122,37 +123,28 @@ class HoneyHiveLlamaIndexTracer(BaseCallbackHandler):
     def set_metric(
         self,
         metric_name,
-        metric_description,
-        metric_code,
-        return_type,
-        min_threshold,
-        max_threshold,
-        enabled_in_prod=False,
-        needs_ground_truth=False,
-        pass_when=False,
+        metric_value,
+        threshold,
     ):
-        if not self.last_event_name or not self.last_event_type:
+        if not self.last_event_id:
             raise Exception("No events defined on session to set metric on")
-        code = inspect.getsource(metric_code)
+        metrics = self.last_event_metrics.copy()
+        metadata = self.last_event_metadata.copy()
+        metrics[metric_name] = metric_value
+        metadata[f"threshold_{metric_name}"] = threshold
         body = {
-            "task": self.project,
-            "name": metric_name,
-            "description": metric_description,
-            "type": "custom",
-            "return_type": return_type,
-            "code_snippet": code,
-            "enabled_in_prod": enabled_in_prod,
-            "needs_ground_truth": needs_ground_truth,
-            "threshold": {"min": min_threshold, "max": max_threshold},
-            "pass_when": pass_when,
-            "event_name": self.last_event_name,
-            "event_type": self.last_event_type,
+            "event_id": self.last_event_id,
+            "metadata": metadata,
+            "metrics": metrics,
         }
-        requests_retry_session().post(
-            url=f"{self._base_url}/metrics",
+        res = requests_retry_session().put(
+            url=f"{self._base_url}/events",
             headers=self._headers,
             json=body,
         )
+        if res.status_code == 200:
+            self.last_event_metrics = metrics
+            self.last_event_metadata = metadata
 
     def _start_new_session(self, inputs):
         body = {
@@ -657,8 +649,9 @@ class HoneyHiveLlamaIndexTracer(BaseCallbackHandler):
             if node is None:
                 return
             node["session_id"] = session_id
-            self.last_event_name = node["event_name"]
-            self.last_event_type = node["event_type"]
+            self.last_event_id = node["event_id"]
+            self.last_event_metrics = node.get("metrics", {})
+            self.last_event_metadata = node.get("metadata", {})
             self.final_outputs = node["outputs"]
             if node["children"]:
                 """
