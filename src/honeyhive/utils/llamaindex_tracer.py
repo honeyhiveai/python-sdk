@@ -76,7 +76,9 @@ class HoneyHiveLlamaIndexTracer(BaseCallbackHandler):
         self.user_properties = user_properties
         self.metadata = metadata
         self.eval_info = None
-        self.root_event_ids = []
+        self.last_event_id = None
+        self.last_event_metrics = None
+        self.last_event_metadata = None
         if self.source == "evaluation":
             try:
                 if self.metadata and "run_id" in self.metadata:
@@ -116,6 +118,32 @@ class HoneyHiveLlamaIndexTracer(BaseCallbackHandler):
             except:
                 pass
         self.session_id = None
+
+    def set_metric(
+        self,
+        metric_name,
+        metric_value,
+        threshold,
+    ):
+        if not self.last_event_id:
+            raise Exception("No events defined on session to set metric on")
+        metrics = self.last_event_metrics.copy()
+        metadata = self.last_event_metadata.copy()
+        metrics[metric_name] = metric_value
+        metadata[f"threshold_{metric_name}"] = threshold
+        body = {
+            "event_id": self.last_event_id,
+            "metadata": metadata,
+            "metrics": metrics,
+        }
+        res = requests_retry_session().put(
+            url=f"{self._base_url}/events",
+            headers=self._headers,
+            json=body,
+        )
+        if res.status_code == 200:
+            self.last_event_metrics = metrics
+            self.last_event_metadata = metadata
 
     def _start_new_session(self, inputs):
         body = {
@@ -512,7 +540,6 @@ class HoneyHiveLlamaIndexTracer(BaseCallbackHandler):
         return start_time_in_ms, end_time_in_ms
 
     def _post_trace(self, root_log: Log) -> None:
-        self.root_event_ids.append(root_log.event_id)
         root_log = log_to_dict(root_log)
         self.final_outputs = root_log["outputs"]
         first_trace = False
@@ -536,7 +563,6 @@ class HoneyHiveLlamaIndexTracer(BaseCallbackHandler):
             json={
                 "event_id": self.session_id,
                 "outputs": self.final_outputs,
-                "children_ids": self.root_event_ids,
             },
             headers=self._headers,
         )
@@ -622,6 +648,9 @@ class HoneyHiveLlamaIndexTracer(BaseCallbackHandler):
             if node is None:
                 return
             node["session_id"] = session_id
+            self.last_event_id = node["event_id"]
+            self.last_event_metrics = node.get("metrics", {})
+            self.last_event_metadata = node.get("metadata", {})
             self.final_outputs = node["outputs"]
             if node["children"]:
                 """

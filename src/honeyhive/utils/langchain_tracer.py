@@ -69,6 +69,9 @@ class HoneyHiveLangChainTracer(BaseTracer, ABC):
         self.user_properties = user_properties
         self.metadata = metadata
         self.eval_info = None
+        self.last_event_id = None
+        self.last_event_metrics = None
+        self.last_event_metadata = None
         if self.source == "evaluation":
             try:
                 if self.metadata and "run_id" in self.metadata:
@@ -109,6 +112,32 @@ class HoneyHiveLangChainTracer(BaseTracer, ABC):
                 pass
         if api_key is not None:
             self._headers["Authorization"] = "Bearer " + api_key
+
+    def set_metric(
+        self,
+        metric_name,
+        metric_value,
+        threshold,
+    ):
+        if not self.last_event_id:
+            raise Exception("No events defined on session to set metric on")
+        metrics = self.last_event_metrics.copy()
+        metadata = self.last_event_metadata.copy()
+        metrics[metric_name] = metric_value
+        metadata[f"threshold_{metric_name}"] = threshold
+        body = {
+            "event_id": self.last_event_id,
+            "metadata": metadata,
+            "metrics": metrics,
+        }
+        res = requests_retry_session().put(
+            url=f"{self._base_url}/events",
+            headers=self._headers,
+            json=body,
+        )
+        if res.status_code == 200:
+            self.last_event_metrics = metrics
+            self.last_event_metadata = metadata
 
     def _start_new_session(self, inputs):
         session_body = {
@@ -233,7 +262,7 @@ class HoneyHiveLangChainTracer(BaseTracer, ABC):
         root_log = logs[0].dict()
         self.final_outputs = root_log["outputs"]
         self.session_id = str(uuid.uuid4())
-        self._set_parent_ids(root_log, self.session_id)
+        self._crawl(root_log, self.session_id)
         self._start_new_session(root_log["inputs"])
         trace_response = requests_retry_session().post(
             url=f"{self._base_url}/session/{self.session_id}/traces",
@@ -287,11 +316,14 @@ class HoneyHiveLangChainTracer(BaseTracer, ABC):
             except:
                 pass
 
-    def _set_parent_ids(self, trace, session_id) -> None:
+    def _crawl(self, trace, session_id) -> None:
         def crawl(node):
             if node is None:
                 return
             node["session_id"] = session_id
+            self.last_event_id = node["event_id"]
+            self.last_event_metrics = node.get("metrics", {})
+            self.last_event_metadata = node.get("metadata", {})
             self.final_outputs = node["outputs"]
             if node["children"]:
                 for child in node["children"]:
