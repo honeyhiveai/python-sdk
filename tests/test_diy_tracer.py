@@ -26,6 +26,7 @@ def test_diy():
             model="gpt-4", messages=[{"role": "user", "content": input}]
         )
     assert model_call.event_id is not None
+    tracer.set_metric("cost", 42, (0, 100))
 
 
 def test_streaming_diy():
