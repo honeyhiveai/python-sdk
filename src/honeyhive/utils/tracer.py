@@ -184,7 +184,36 @@ class HoneyHiveTracer:
         self.end_time = 0
         self.call_value = None
         self.return_value = None
+        self.last_event_id = None
+        self.last_event_metrics = None
+        self.last_event_metadata = None
         self.show_trace = show_trace
+
+    def set_metric(
+        self,
+        metric_name,
+        metric_value,
+        threshold,
+    ):
+        if not self.last_event_id:
+            raise Exception("No events defined on session to set metric on")
+        metrics = self.last_event_metrics.copy()
+        metadata = self.last_event_metadata.copy()
+        metrics[metric_name] = metric_value
+        metadata[f"threshold_{metric_name}"] = threshold
+        body = {
+            "event_id": self.last_event_id,
+            "metadata": metadata,
+            "metrics": metrics,
+        }
+        res = requests_retry_session().put(
+            url=f"{self._base_url}/events",
+            headers=self._headers,
+            json=body,
+        )
+        if res.status_code == 200:
+            self.last_event_metrics = metrics
+            self.last_event_metadata = metadata
 
     def trace_calls(self, frame, event, arg):
         function_name = frame.f_code.co_name
@@ -402,6 +431,10 @@ class HoneyHiveTracer:
             json={"event": event},
             headers=self._headers,
         )
+
+        self.last_event_id = res.json()["event_id"]
+        self.last_event_metadata = self.metadata
+        self.last_event_metrics = {}
 
         # reset the event
         self.event_id = None
