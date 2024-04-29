@@ -1,6 +1,7 @@
 import os
 import honeyhive
 from honeyhive.utils.llamaindex_tracer import HoneyHiveLlamaIndexTracer
+from llama_index.core.callbacks.schema import CBEventType
 from llama_index.core import (
     Settings,
     VectorStoreIndex,
@@ -41,11 +42,26 @@ def run_tracer(source, metadata):
 
 
 def run_tracer_complex():
+    blacklist = [
+        CBEventType.CHUNKING,
+        CBEventType.NODE_PARSING,
+        CBEventType.LLM,
+        CBEventType.QUERY,
+        CBEventType.SYNTHESIZE,
+        CBEventType.TREE,
+        CBEventType.SUB_QUESTION,
+        CBEventType.TEMPLATING,
+        CBEventType.FUNCTION_CALL,
+        CBEventType.RERANKING,
+        CBEventType.EXCEPTION,
+        CBEventType.AGENT_STEP,
+    ]
     tracer = HoneyHiveLlamaIndexTracer(
         project=os.environ["HH_PROJECT"],
         name="Complex Trace Example",
         source="sdk_li_test",
         api_key=os.environ["HH_API_KEY"],
+        event_types_to_ignore=blacklist,
     )
 
     Settings.callback_manager = CallbackManager([tracer])

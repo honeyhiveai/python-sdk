@@ -2,7 +2,7 @@
 import json
 import os
 import uuid
-from collections import defaultdict
+from collections import defaultdict, deque
 from datetime import datetime
 from enum import Enum
 from typing import Any, Callable, Dict, List, Optional, Tuple
@@ -26,7 +26,6 @@ from .langchain_tracer import (
     requests_retry_session,
 )
 
-
 class HHEventType(str, Enum):
     MODEL = "model"
     CHAIN = "chain"
@@ -46,8 +45,7 @@ class HoneyHiveLlamaIndexTracer(BaseCallbackHandler):
         source: Optional[str] = None,
         user_properties: Optional[Dict[str, Any]] = None,
         tokenizer: Optional[TokenCounter] = None,
-        event_starts_to_ignore: Optional[List[CBEventType]] = None,
-        event_ends_to_ignore: Optional[List[CBEventType]] = None,
+        event_types_to_ignore: Optional[List[CBEventType]] = None,
         api_key: Optional[str] = None,
         metadata: Optional[Dict[str, Any]] = None,
     ) -> None:
@@ -61,8 +59,8 @@ class HoneyHiveLlamaIndexTracer(BaseCallbackHandler):
         if api_key:
             self._headers["Authorization"] = f"Bearer {api_key}"
 
-        self.event_starts_to_ignore = event_starts_to_ignore or []
-        self.event_ends_to_ignore = event_ends_to_ignore or []
+        self.event_starts_to_ignore = event_types_to_ignore or []
+        self.event_ends_to_ignore = event_types_to_ignore or []
         self._event_pairs_by_id: Dict[str, List[CBEvent]] = defaultdict(list)
         self._cur_trace_id: Optional[str] = None
         self._trace_map: Dict[str, List[str]] = defaultdict(list)
@@ -215,6 +213,43 @@ class HoneyHiveLlamaIndexTracer(BaseCallbackHandler):
         self._end_time = datetime.now()
         self.log_trace()
 
+    def _percolate_up_blacklisted(self, trace_map, event_map):
+        new_trace_map = defaultdict(list)
+
+        # Create a reverse map to find parents of each event
+        parent_map = {}
+        for parent, children in trace_map.items():
+            for child in children:
+                parent_map[child] = parent
+
+        # Helper function to find the nearest non-blacklisted ancestor
+        def find_valid_parent(event_id):
+            while event_id in parent_map:
+                if event_map.get(parent_map[event_id]) is not None:
+                    return parent_map[event_id]
+                event_id = parent_map[event_id]
+            return 'root'  # Default to root if no valid parents found
+
+        # Recursively handle all children of each node
+        def handle_children(event_id, valid_parent):
+            for child in trace_map[event_id]:
+                if event_map.get(child) is not None:  # If child is not blacklisted
+                    new_trace_map[valid_parent].append(child)
+                    handle_children(child, child)  # Child becomes a new valid parent
+                else:
+                    handle_children(child, valid_parent)  # Continue with the current valid parent
+
+        # Start processing from root
+        for child in trace_map['root']:
+            if event_map.get(child) is None:  # Root's direct child is blacklisted
+                handle_children(child, 'root')  # Handle all descendants under root
+            else:
+                new_trace_map['root'].append(child)
+                handle_children(child, child)
+
+        return new_trace_map
+
+
     def log_trace(self) -> None:
         try:
             events = []
@@ -226,20 +261,25 @@ class HoneyHiveLlamaIndexTracer(BaseCallbackHandler):
                 event_pair = self._event_pairs_by_id[event]
                 event_log = self._convert_event_pair_to_log(event_pair)
                 event_map[event] = event_log
+            self._trace_map = self._percolate_up_blacklisted(self._trace_map, event_map)
             for event_id, child_event_ids in self._trace_map.items():
                 if event_id == "root":
                     continue
-                parent_log = event_map[event_id]
+                parent_log = event_map.get(event_id)
                 for child_event_id in child_event_ids:
-                    child_log = event_map[child_event_id]
-                    child_log.parent_id = parent_log.event_id
-                    if parent_log.children is None:
-                        parent_log.children = [child_log]
-                    else:
-                        parent_log.children += [child_log]
+                    child_log = event_map.get(child_event_id)
+                    if child_log:
+                        child_log.parent_id = None if parent_log is None else parent_log.event_id
+                        if parent_log:
+                            if parent_log.children is None:
+                                parent_log.children = [child_log]
+                            else:
+                                parent_log.children += [child_log]
             root_events = []
             for event_id in self._trace_map["root"]:
-                root_events.append(event_map[event_id])
+                event = event_map.get(event_id)
+                if event:
+                    root_events.append(event_map[event_id])
             root_events.sort(key=lambda event: event.start_time)
             for event in root_events:
                 self._post_trace(event)
@@ -253,8 +293,10 @@ class HoneyHiveLlamaIndexTracer(BaseCallbackHandler):
         event_pair: List[CBEvent],
         parent_id: Optional[str] = None,
         trace_id: Optional[str] = None,
-    ) -> Log:
+    ) -> Optional[Log]:
         """Convert a pair of events to a HoneyHive log."""
+        if len(event_pair) < 2:
+            return None
         start_time_us, end_time_us = self._get_time_in_us(event_pair)
 
         event_type = event_pair[0].event_type
