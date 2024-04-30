@@ -1,12 +1,12 @@
 lockVersion: 2.0.0
 id: b027cebf-3475-4e9b-8070-6f08b389f6ed
 management:
-  docChecksum: b5a0f962d6c43c6a66d73e8d4d038882
+  docChecksum: 9ba9e3482e1aa753988412af9b400475
   docVersion: 1.0.1
   speakeasyVersion: 1.277.4
   generationVersion: 2.318.3
-  releaseVersion: 0.6.0
-  configChecksum: 18d465ca523c66e73dae6a1719d867cd
+  releaseVersion: 0.6.1
+  configChecksum: bf6d39480ad9ee1ea86a92af065dbd19
   repoURL: https://github.com/honeyhiveai/python-sdk.git
   repoSubDirectory: .
   installationURL: https://github.com/honeyhiveai/python-sdk.git
@@ -168,7 +168,6 @@ generatedFiles:
   - docs/models/components/configuration.md
   - docs/models/components/history.md
   - docs/models/components/inputs.md
-  - docs/models/components/metadata.md
   - docs/models/components/datapoint.md
   - docs/models/components/createdatapointrequesttype.md
   - docs/models/components/createdatapointrequest.md
