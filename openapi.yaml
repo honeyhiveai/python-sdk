@@ -305,6 +305,7 @@ components:
           description: Event id for the event from which the datapoint was created
           type: string
         metadata:
+          additionalProperties: true
           type: object
         project_id:
           type: string
