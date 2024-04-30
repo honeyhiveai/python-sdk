@@ -1,5 +1,6 @@
 # pylint: skip-file
 import json
+import logging
 import os
 import uuid
 from collections import defaultdict, deque
@@ -26,6 +27,8 @@ from .langchain_tracer import (
     requests_retry_session,
 )
 
+import traceback
+
 class HHEventType(str, Enum):
     MODEL = "model"
     CHAIN = "chain"
@@ -48,7 +51,9 @@ class HoneyHiveLlamaIndexTracer(BaseCallbackHandler):
         event_types_to_ignore: Optional[List[CBEventType]] = None,
         api_key: Optional[str] = None,
         metadata: Optional[Dict[str, Any]] = None,
+        verbose = False,
     ) -> None:
+        self.verbose = verbose
         if self._env_api_key:
             api_key = self._env_api_key
         elif not api_key:
@@ -113,8 +118,10 @@ class HoneyHiveLlamaIndexTracer(BaseCallbackHandler):
                                 "project_id": project_id,
                                 "run_name": run_name,
                             }
-            except:
-                pass
+            except Exception as error:
+                logging.warning(f"Failed to retrieve datapoint ids: {error}")
+                if self.verbose:
+                    traceback.print_exc()
         self.session_id = None
 
     def set_metric(
@@ -284,9 +291,10 @@ class HoneyHiveLlamaIndexTracer(BaseCallbackHandler):
             for event in root_events:
                 self._post_trace(event)
 
-        except Exception:
-            # Silently ignore errors to not break user code
-            pass
+        except Exception as error:
+            logging.warning(f"Failed to log trace: {error}")
+            if self.verbose:
+                traceback.print_exc()
 
     def _convert_event_pair_to_log(
         self,
@@ -643,8 +651,10 @@ class HoneyHiveLlamaIndexTracer(BaseCallbackHandler):
                     )
                     run_id = run_res.json()["run_id"]
                     self.eval_info["run_id"] = run_id
-            except:
-                pass
+            except Exception as error:
+                logging.warning(f"Failed to process eval: {error}")
+                if self.verbose:
+                    traceback.print_exc()
 
     def _parse_chat_history(self, chat_string):
         # Split the string into lines

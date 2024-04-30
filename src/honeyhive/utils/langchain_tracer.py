@@ -50,9 +50,11 @@ class HoneyHiveLangChainTracer(BaseTracer, ABC):
         user_properties: Optional[Dict[str, Any]] = None,
         api_key: Optional[str] = None,
         metadata: Optional[Dict[str, Any]] = None,
+        verbose = False,
     ):
         """Initialize the HoneyHive tracer."""
         super().__init__()
+        self.verbose = verbose
         if self._env_api_key:
             api_key = self._env_api_key
         elif not api_key:
@@ -108,8 +110,10 @@ class HoneyHiveLangChainTracer(BaseTracer, ABC):
                                 "project_id": project_id,
                                 "run_name": run_name,
                             }
-            except:
-                pass
+            except Exception as error:
+                logging.warning(f"Failed to retrieve datapoint ids: {error}")
+                if self.verbose:
+                    traceback.print_exc()
         if api_key is not None:
             self._headers["Authorization"] = "Bearer " + api_key
 
@@ -164,7 +168,8 @@ class HoneyHiveLangChainTracer(BaseTracer, ABC):
             self._post_trace(logs=logs)
         except Exception as error:
             logging.warning(f"Failed to persist run: {error}")
-            print(traceback.format_exc())
+            if self.verbose:
+              traceback.print_exc()
 
     def _convert_run_to_logs(
         self, run: Run, parent_log: Optional[Log] = None
@@ -313,8 +318,10 @@ class HoneyHiveLangChainTracer(BaseTracer, ABC):
                     )
                     run_id = run_res.json()["run_id"]
                     self.eval_info["run_id"] = run_id
-            except:
-                pass
+            except Exception as error:
+                logging.warning(f"Failed to process eval: {error}")
+                if self.verbose:
+                    traceback.print_exc()
 
     def _crawl(self, trace, session_id) -> None:
         def crawl(node):
@@ -503,6 +510,7 @@ class HoneyHiveLangChainTracer(BaseTracer, ABC):
             return inspect.getsource(tool_function)
         except Exception as _:
             logging.info(f"Failed to get source for tool {tool_name}")
+            traceback.print_exc()
 
     def _convert_tool_run_to_log(
         self,
