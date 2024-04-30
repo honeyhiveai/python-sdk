@@ -3,12 +3,12 @@
 
 ### Available Operations
 
-* [delete_datasets](#delete_datasets) - Delete a dataset
+* [delete_dataset](#delete_dataset) - Delete a dataset
 * [get_datasets](#get_datasets) - Get datasets
-* [post_datasets](#post_datasets) - Create a dataset
-* [put_datasets](#put_datasets) - Update a dataset
+* [create_dataset](#create_dataset) - Create a dataset
+* [update_dataset](#update_dataset) - Update a dataset
 
-## delete_datasets
+## delete_dataset
 
 Delete a dataset
 
@@ -22,7 +22,7 @@ s = honeyhive.HoneyHive(
 )
 
 
-res = s.datasets.delete_datasets(dataset_id='<value>')
+res = s.datasets.delete_dataset(dataset_id='<value>')
 
 if res is not None:
     # handle response
@@ -39,12 +39,12 @@ if res is not None:
 
 ### Response
 
-**[operations.DeleteDatasetsResponse](../../models/operations/deletedatasetsresponse.md)**
+**[operations.DeleteDatasetResponse](../../models/operations/deletedatasetresponse.md)**
 ### Errors
 
 | Error Object    | Status Code     | Content Type    |
 | --------------- | --------------- | --------------- |
-| errors.SDKError | 4x-5xx          | */*             |
+| errors.SDKError | 4xx-5xx         | */*             |
 
 ## get_datasets
 
@@ -85,9 +85,9 @@ if res.object is not None:
 
 | Error Object    | Status Code     | Content Type    |
 | --------------- | --------------- | --------------- |
-| errors.SDKError | 4x-5xx          | */*             |
+| errors.SDKError | 4xx-5xx         | */*             |
 
-## post_datasets
+## create_dataset
 
 Create a dataset
 
@@ -106,7 +106,7 @@ req = components.CreateDatasetRequest(
     project='<value>',
 )
 
-res = s.datasets.post_datasets(req)
+res = s.datasets.create_dataset(req)
 
 if res.object is not None:
     # handle response
@@ -123,14 +123,14 @@ if res.object is not None:
 
 ### Response
 
-**[operations.PostDatasetsResponse](../../models/operations/postdatasetsresponse.md)**
+**[operations.CreateDatasetResponse](../../models/operations/createdatasetresponse.md)**
 ### Errors
 
 | Error Object    | Status Code     | Content Type    |
 | --------------- | --------------- | --------------- |
-| errors.SDKError | 4x-5xx          | */*             |
+| errors.SDKError | 4xx-5xx         | */*             |
 
-## put_datasets
+## update_dataset
 
 Update a dataset
 
@@ -148,7 +148,7 @@ req = components.DatasetUpdate(
     dataset_id='<value>',
 )
 
-res = s.datasets.put_datasets(req)
+res = s.datasets.update_dataset(req)
 
 if res is not None:
     # handle response
@@ -165,9 +165,9 @@ if res is not None:
 
 ### Response
 
-**[operations.PutDatasetsResponse](../../models/operations/putdatasetsresponse.md)**
+**[operations.UpdateDatasetResponse](../../models/operations/updatedatasetresponse.md)**
 ### Errors
 
 | Error Object    | Status Code     | Content Type    |
 | --------------- | --------------- | --------------- |
-| errors.SDKError | 4x-5xx          | */*             |
+| errors.SDKError | 4xx-5xx         | */*             |

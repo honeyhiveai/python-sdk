@@ -12,20 +12,6 @@ class UpdateDatapointRequestHistory:
     pass
 
 
-@dataclasses.dataclass
-class UpdateDatapointRequestInputs:
-    r"""Arbitrary JSON object containing the inputs for the datapoint"""
-    
-
-
-
-@dataclasses.dataclass
-class UpdateDatapointRequestMetadata:
-    r"""Any additional metadata for the datapoint"""
-    
-
-
-
 @dataclass_json(undefined=Undefined.EXCLUDE)
 @dataclasses.dataclass
 class UpdateDatapointRequest:
@@ -33,13 +19,13 @@ class UpdateDatapointRequest:
     r"""Expected output JSON object for the datapoint"""
     history: Optional[List[UpdateDatapointRequestHistory]] = dataclasses.field(default=None, metadata={'dataclasses_json': { 'letter_case': utils.get_field_name('history'), 'exclude': lambda f: f is None }})
     r"""Update history for the datapoint"""
-    inputs: Optional[UpdateDatapointRequestInputs] = dataclasses.field(default=None, metadata={'dataclasses_json': { 'letter_case': utils.get_field_name('inputs'), 'exclude': lambda f: f is None }})
+    inputs: Optional[Dict[str, Any]] = dataclasses.field(default=None, metadata={'dataclasses_json': { 'letter_case': utils.get_field_name('inputs'), 'exclude': lambda f: f is None }})
     r"""Arbitrary JSON object containing the inputs for the datapoint"""
     linked_datasets: Optional[List[str]] = dataclasses.field(default=None, metadata={'dataclasses_json': { 'letter_case': utils.get_field_name('linked_datasets'), 'exclude': lambda f: f is None }})
     r"""Ids of all datasets that include the datapoint"""
     linked_evals: Optional[List[str]] = dataclasses.field(default=None, metadata={'dataclasses_json': { 'letter_case': utils.get_field_name('linked_evals'), 'exclude': lambda f: f is None }})
     r"""Ids of evaluations where the datapoint is included"""
-    metadata: Optional[UpdateDatapointRequestMetadata] = dataclasses.field(default=None, metadata={'dataclasses_json': { 'letter_case': utils.get_field_name('metadata'), 'exclude': lambda f: f is None }})
+    metadata: Optional[Dict[str, Any]] = dataclasses.field(default=None, metadata={'dataclasses_json': { 'letter_case': utils.get_field_name('metadata'), 'exclude': lambda f: f is None }})
     r"""Any additional metadata for the datapoint"""
     saved: Optional[bool] = dataclasses.field(default=None, metadata={'dataclasses_json': { 'letter_case': utils.get_field_name('saved'), 'exclude': lambda f: f is None }})
     r"""Whether the datapoint is saved or detected"""
