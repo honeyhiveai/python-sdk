@@ -3,11 +3,11 @@
 
 ### Available Operations
 
-* [post_events](#post_events) - Create a new event
-* [put_events](#put_events) - Update an event
-* [delete_events_event_id_](#delete_events_event_id_) - Delete an event
+* [create_event](#create_event) - Create a new event
+* [update_event](#update_event) - Update an event
+* [delete_event](#delete_event) - Delete an event
 
-## post_events
+## create_event
 
 Please refer to our instrumentation guide for detailed information
 
@@ -21,9 +21,9 @@ s = honeyhive.HoneyHive(
     bearer_auth="<YOUR_BEARER_TOKEN_HERE>",
 )
 
-req = operations.PostEventsRequestBody()
+req = operations.CreateEventRequestBody()
 
-res = s.events.post_events(req)
+res = s.events.create_event(req)
 
 if res.object is not None:
     # handle response
@@ -33,21 +33,21 @@ if res.object is not None:
 
 ### Parameters
 
-| Parameter                                                                            | Type                                                                                 | Required                                                                             | Description                                                                          |
-| ------------------------------------------------------------------------------------ | ------------------------------------------------------------------------------------ | ------------------------------------------------------------------------------------ | ------------------------------------------------------------------------------------ |
-| `request`                                                                            | [operations.PostEventsRequestBody](../../models/operations/posteventsrequestbody.md) | :heavy_check_mark:                                                                   | The request object to use for the request.                                           |
+| Parameter                                                                              | Type                                                                                   | Required                                                                               | Description                                                                            |
+| -------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------- |
+| `request`                                                                              | [operations.CreateEventRequestBody](../../models/operations/createeventrequestbody.md) | :heavy_check_mark:                                                                     | The request object to use for the request.                                             |
 
 
 ### Response
 
-**[operations.PostEventsResponse](../../models/operations/posteventsresponse.md)**
+**[operations.CreateEventResponse](../../models/operations/createeventresponse.md)**
 ### Errors
 
 | Error Object    | Status Code     | Content Type    |
 | --------------- | --------------- | --------------- |
-| errors.SDKError | 4x-5xx          | */*             |
+| errors.SDKError | 4xx-5xx         | */*             |
 
-## put_events
+## update_event
 
 Update an event
 
@@ -61,11 +61,11 @@ s = honeyhive.HoneyHive(
     bearer_auth="<YOUR_BEARER_TOKEN_HERE>",
 )
 
-req = operations.PutEventsRequestBody(
+req = operations.UpdateEventRequestBody(
     event_id='<value>',
 )
 
-res = s.events.put_events(req)
+res = s.events.update_event(req)
 
 if res is not None:
     # handle response
@@ -75,21 +75,21 @@ if res is not None:
 
 ### Parameters
 
-| Parameter                                                                          | Type                                                                               | Required                                                                           | Description                                                                        |
-| ---------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------- |
-| `request`                                                                          | [operations.PutEventsRequestBody](../../models/operations/puteventsrequestbody.md) | :heavy_check_mark:                                                                 | The request object to use for the request.                                         |
+| Parameter                                                                              | Type                                                                                   | Required                                                                               | Description                                                                            |
+| -------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------- |
+| `request`                                                                              | [operations.UpdateEventRequestBody](../../models/operations/updateeventrequestbody.md) | :heavy_check_mark:                                                                     | The request object to use for the request.                                             |
 
 
 ### Response
 
-**[operations.PutEventsResponse](../../models/operations/puteventsresponse.md)**
+**[operations.UpdateEventResponse](../../models/operations/updateeventresponse.md)**
 ### Errors
 
 | Error Object    | Status Code     | Content Type    |
 | --------------- | --------------- | --------------- |
-| errors.SDKError | 4x-5xx          | */*             |
+| errors.SDKError | 4xx-5xx         | */*             |
 
-## delete_events_event_id_
+## delete_event
 
 Delete an event
 
@@ -103,7 +103,7 @@ s = honeyhive.HoneyHive(
 )
 
 
-res = s.events.delete_events_event_id_(event_id='<value>', project='<value>')
+res = s.events.delete_event(event_id='<value>', project='<value>')
 
 if res is not None:
     # handle response
@@ -121,9 +121,9 @@ if res is not None:
 
 ### Response
 
-**[operations.DeleteEventsEventIDResponse](../../models/operations/deleteeventseventidresponse.md)**
+**[operations.DeleteEventResponse](../../models/operations/deleteeventresponse.md)**
 ### Errors
 
 | Error Object    | Status Code     | Content Type    |
 | --------------- | --------------- | --------------- |
-| errors.SDKError | 4x-5xx          | */*             |
+| errors.SDKError | 4xx-5xx         | */*             |

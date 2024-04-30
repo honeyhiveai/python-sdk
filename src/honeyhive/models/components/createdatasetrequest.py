@@ -5,14 +5,7 @@ import dataclasses
 from dataclasses_json import Undefined, dataclass_json
 from enum import Enum
 from honeyhive import utils
-from typing import List, Optional
-
-
-@dataclasses.dataclass
-class CreateDatasetRequestMetadata:
-    r"""Any helpful metadata to track for the dataset"""
-    
-
+from typing import Any, Dict, List, Optional
 
 class PipelineType(str, Enum):
     r"""The type of data included in the dataset - \\"event\\" or \\"session\\" """
@@ -36,7 +29,7 @@ class CreateDatasetRequest:
     description: Optional[str] = dataclasses.field(default=None, metadata={'dataclasses_json': { 'letter_case': utils.get_field_name('description'), 'exclude': lambda f: f is None }})
     linked_evals: Optional[List[str]] = dataclasses.field(default=None, metadata={'dataclasses_json': { 'letter_case': utils.get_field_name('linked_evals'), 'exclude': lambda f: f is None }})
     r"""List of unique evaluation run ids to be associated with this dataset"""
-    metadata: Optional[CreateDatasetRequestMetadata] = dataclasses.field(default=None, metadata={'dataclasses_json': { 'letter_case': utils.get_field_name('metadata'), 'exclude': lambda f: f is None }})
+    metadata: Optional[Dict[str, Any]] = dataclasses.field(default=None, metadata={'dataclasses_json': { 'letter_case': utils.get_field_name('metadata'), 'exclude': lambda f: f is None }})
     r"""Any helpful metadata to track for the dataset"""
     pipeline_type: Optional[PipelineType] = dataclasses.field(default=None, metadata={'dataclasses_json': { 'letter_case': utils.get_field_name('pipeline_type'), 'exclude': lambda f: f is None }})
     r"""The type of data included in the dataset - \\"event\\" or \\"session\\" """

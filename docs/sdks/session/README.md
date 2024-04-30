@@ -46,7 +46,7 @@ if res.object is not None:
 
 | Error Object    | Status Code     | Content Type    |
 | --------------- | --------------- | --------------- |
-| errors.SDKError | 4x-5xx          | */*             |
+| errors.SDKError | 4xx-5xx         | */*             |
 
 ## delete_session
 
@@ -84,7 +84,7 @@ if res is not None:
 
 | Error Object    | Status Code     | Content Type    |
 | --------------- | --------------- | --------------- |
-| errors.SDKError | 4x-5xx          | */*             |
+| errors.SDKError | 4xx-5xx         | */*             |
 
 ## get_session
 
@@ -122,7 +122,7 @@ if res.event is not None:
 
 | Error Object    | Status Code     | Content Type    |
 | --------------- | --------------- | --------------- |
-| errors.SDKError | 4x-5xx          | */*             |
+| errors.SDKError | 4xx-5xx         | */*             |
 
 ## process_event_trace
 
@@ -162,4 +162,4 @@ if res.object is not None:
 
 | Error Object    | Status Code     | Content Type    |
 | --------------- | --------------- | --------------- |
-| errors.SDKError | 4x-5xx          | */*             |
+| errors.SDKError | 4xx-5xx         | */*             |

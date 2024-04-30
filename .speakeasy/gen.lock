@@ -1,22 +1,23 @@
 lockVersion: 2.0.0
 id: b027cebf-3475-4e9b-8070-6f08b389f6ed
 management:
-  docChecksum: 9bd3a9d1a7303ec42de5017c9b364625
+  docChecksum: b5a0f962d6c43c6a66d73e8d4d038882
   docVersion: 1.0.1
-  speakeasyVersion: 1.209.2
-  generationVersion: 2.281.2
-  releaseVersion: 0.5.0
-  configChecksum: 131e231fdbe246f3c0cd347e6f92f840
+  speakeasyVersion: 1.277.4
+  generationVersion: 2.318.3
+  releaseVersion: 0.6.0
+  configChecksum: 18d465ca523c66e73dae6a1719d867cd
   repoURL: https://github.com/honeyhiveai/python-sdk.git
   repoSubDirectory: .
   installationURL: https://github.com/honeyhiveai/python-sdk.git
+  published: true
 features:
   python:
-    core: 4.5.1
+    additionalProperties: 0.1.0
+    core: 4.6.5
     flattening: 2.81.1
-    globalSecurity: 2.83.4
+    globalSecurity: 2.83.5
     globalServerURLs: 2.82.2
-    methodSecurity: 2.82.1
     responseFormat: 0.1.0
 generatedFiles:
   - src/honeyhive/sdkconfiguration.py
@@ -46,17 +47,17 @@ generatedFiles:
   - src/honeyhive/models/operations/updatedatapoint.py
   - src/honeyhive/models/operations/deletedatapoint.py
   - src/honeyhive/models/operations/getdatapoint.py
-  - src/honeyhive/models/operations/delete_datasets.py
-  - src/honeyhive/models/operations/get_datasets.py
-  - src/honeyhive/models/operations/post_datasets.py
-  - src/honeyhive/models/operations/put_datasets.py
-  - src/honeyhive/models/operations/post_events.py
-  - src/honeyhive/models/operations/put_events.py
-  - src/honeyhive/models/operations/delete_events_event_id_.py
-  - src/honeyhive/models/operations/delete_metrics.py
-  - src/honeyhive/models/operations/get_metrics.py
-  - src/honeyhive/models/operations/post_metrics.py
-  - src/honeyhive/models/operations/put_metrics.py
+  - src/honeyhive/models/operations/deletedataset.py
+  - src/honeyhive/models/operations/getdatasets.py
+  - src/honeyhive/models/operations/createdataset.py
+  - src/honeyhive/models/operations/updatedataset.py
+  - src/honeyhive/models/operations/createevent.py
+  - src/honeyhive/models/operations/updateevent.py
+  - src/honeyhive/models/operations/deleteevent.py
+  - src/honeyhive/models/operations/deletemetric.py
+  - src/honeyhive/models/operations/getmetrics.py
+  - src/honeyhive/models/operations/createmetric.py
+  - src/honeyhive/models/operations/updatemetric.py
   - src/honeyhive/models/operations/deleteproject.py
   - src/honeyhive/models/operations/getprojects.py
   - src/honeyhive/models/operations/createproject.py
@@ -91,6 +92,7 @@ generatedFiles:
   - src/honeyhive/models/operations/__init__.py
   - src/honeyhive/models/components/__init__.py
   - docs/models/operations/type.md
+  - docs/models/operations/env.md
   - docs/models/operations/getconfigurationsrequest.md
   - docs/models/operations/getconfigurationsresponse.md
   - docs/models/operations/createconfigurationresponse.md
@@ -111,33 +113,29 @@ generatedFiles:
   - docs/models/operations/deletedatapointresponse.md
   - docs/models/operations/getdatapointrequest.md
   - docs/models/operations/getdatapointresponse.md
-  - docs/models/operations/deletedatasetsrequest.md
-  - docs/models/operations/deletedatasetsresponse.md
+  - docs/models/operations/deletedatasetrequest.md
+  - docs/models/operations/deletedatasetresponse.md
   - docs/models/operations/getdatasetsqueryparamtype.md
   - docs/models/operations/getdatasetsrequest.md
   - docs/models/operations/getdatasetsresponsebody.md
   - docs/models/operations/getdatasetsresponse.md
-  - docs/models/operations/postdatasetsresult.md
-  - docs/models/operations/postdatasetsresponsebody.md
-  - docs/models/operations/postdatasetsresponse.md
-  - docs/models/operations/putdatasetsresponse.md
-  - docs/models/operations/posteventsrequestbody.md
-  - docs/models/operations/posteventsresponsebody.md
-  - docs/models/operations/posteventsresponse.md
-  - docs/models/operations/feedback.md
-  - docs/models/operations/metadata.md
-  - docs/models/operations/metrics.md
-  - docs/models/operations/outputs.md
-  - docs/models/operations/puteventsrequestbody.md
-  - docs/models/operations/puteventsresponse.md
-  - docs/models/operations/deleteeventseventidrequest.md
-  - docs/models/operations/deleteeventseventidresponse.md
-  - docs/models/operations/deletemetricsrequest.md
-  - docs/models/operations/deletemetricsresponse.md
+  - docs/models/operations/createdatasetresult.md
+  - docs/models/operations/createdatasetresponsebody.md
+  - docs/models/operations/createdatasetresponse.md
+  - docs/models/operations/updatedatasetresponse.md
+  - docs/models/operations/createeventrequestbody.md
+  - docs/models/operations/createeventresponsebody.md
+  - docs/models/operations/createeventresponse.md
+  - docs/models/operations/updateeventrequestbody.md
+  - docs/models/operations/updateeventresponse.md
+  - docs/models/operations/deleteeventrequest.md
+  - docs/models/operations/deleteeventresponse.md
+  - docs/models/operations/deletemetricrequest.md
+  - docs/models/operations/deletemetricresponse.md
   - docs/models/operations/getmetricsrequest.md
   - docs/models/operations/getmetricsresponse.md
-  - docs/models/operations/postmetricsresponse.md
-  - docs/models/operations/putmetricsresponse.md
+  - docs/models/operations/createmetricresponse.md
+  - docs/models/operations/updatemetricresponse.md
   - docs/models/operations/deleteprojectrequest.md
   - docs/models/operations/deleteprojectresponse.md
   - docs/models/operations/getprojectsrequest.md
@@ -157,48 +155,32 @@ generatedFiles:
   - docs/models/operations/processeventtraceresponse.md
   - docs/models/operations/deletetoolrequest.md
   - docs/models/operations/deletetoolresponse.md
-  - docs/models/operations/gettoolssecurity.md
   - docs/models/operations/gettoolsresponse.md
-  - docs/models/operations/createtoolsecurity.md
   - docs/models/operations/createtoolresponse.md
-  - docs/models/operations/updatetoolsecurity.md
   - docs/models/operations/updatetoolresponse.md
-  - docs/models/components/type.md
+  - docs/models/components/env.md
   - docs/models/components/calltype.md
-  - docs/models/components/hyperparameters.md
-  - docs/models/components/selectedfunctions.md
   - docs/models/components/functioncallparams.md
+  - docs/models/components/responseformat.md
+  - docs/models/components/selectedfunctions.md
   - docs/models/components/parameters.md
-  - docs/models/components/userproperties.md
+  - docs/models/components/type.md
   - docs/models/components/configuration.md
   - docs/models/components/history.md
   - docs/models/components/inputs.md
   - docs/models/components/metadata.md
   - docs/models/components/datapoint.md
-  - docs/models/components/createdatapointrequestinputs.md
-  - docs/models/components/createdatapointrequestmetadata.md
   - docs/models/components/createdatapointrequesttype.md
   - docs/models/components/createdatapointrequest.md
   - docs/models/components/updatedatapointrequesthistory.md
-  - docs/models/components/updatedatapointrequestinputs.md
-  - docs/models/components/updatedatapointrequestmetadata.md
   - docs/models/components/updatedatapointrequest.md
   - docs/models/components/datasettype.md
   - docs/models/components/dataset.md
-  - docs/models/components/createdatasetrequestmetadata.md
   - docs/models/components/pipelinetype.md
   - docs/models/components/createdatasetrequesttype.md
   - docs/models/components/createdatasetrequest.md
-  - docs/models/components/datasetupdatemetadata.md
   - docs/models/components/datasetupdate.md
-  - docs/models/components/config.md
   - docs/models/components/eventtype.md
-  - docs/models/components/feedback.md
-  - docs/models/components/createeventrequestinputs.md
-  - docs/models/components/createeventrequestmetadata.md
-  - docs/models/components/metrics.md
-  - docs/models/components/outputs.md
-  - docs/models/components/createeventrequestuserproperties.md
   - docs/models/components/createeventrequest.md
   - docs/models/components/returntype.md
   - docs/models/components/threshold.md
@@ -213,27 +195,11 @@ generatedFiles:
   - docs/models/components/project.md
   - docs/models/components/createprojectrequesttype.md
   - docs/models/components/createprojectrequest.md
-  - docs/models/components/sessionstartrequestconfig.md
-  - docs/models/components/sessionstartrequestfeedback.md
-  - docs/models/components/sessionstartrequestinputs.md
-  - docs/models/components/sessionstartrequestmetadata.md
-  - docs/models/components/sessionstartrequestmetrics.md
-  - docs/models/components/sessionstartrequestoutputs.md
-  - docs/models/components/sessionstartrequestuserproperties.md
   - docs/models/components/sessionstartrequest.md
-  - docs/models/components/eventconfig.md
   - docs/models/components/eventeventtype.md
-  - docs/models/components/eventfeedback.md
-  - docs/models/components/eventinputs.md
-  - docs/models/components/eventmetadata.md
-  - docs/models/components/eventmetrics.md
-  - docs/models/components/eventoutputs.md
-  - docs/models/components/eventuserproperties.md
   - docs/models/components/event.md
-  - docs/models/components/toolparameters.md
   - docs/models/components/tooltype.md
   - docs/models/components/tool.md
-  - docs/models/components/toolupdateparameters.md
   - docs/models/components/toolupdate.md
   - docs/models/components/security.md
   - docs/sdks/honeyhive/README.md

@@ -8,17 +8,27 @@ from enum import Enum
 from typing import List, Optional
 
 class Type(str, Enum):
-    r"""Configuration type - \\"LLM\\" or \\"pipeline\\" """
+    r"""Configuration type - \\"LLM\\" or \\"pipeline\\" - default is \\"LLM\\" """
     LLM = 'LLM'
     PIPELINE = 'pipeline'
+
+class Env(str, Enum):
+    r"""Environment - \\"dev\\", \\"staging\\" or \\"prod\\" """
+    DEV = 'dev'
+    STAGING = 'staging'
+    PROD = 'prod'
 
 
 @dataclasses.dataclass
 class GetConfigurationsRequest:
     project_name: str = dataclasses.field(metadata={'query_param': { 'field_name': 'project_name', 'style': 'form', 'explode': True }})
     r"""Project name for configuration"""
-    type: Type = dataclasses.field(metadata={'query_param': { 'field_name': 'type', 'style': 'form', 'explode': True }})
-    r"""Configuration type - \\"LLM\\" or \\"pipeline\\" """
+    type: Optional[Type] = dataclasses.field(default=None, metadata={'query_param': { 'field_name': 'type', 'style': 'form', 'explode': True }})
+    r"""Configuration type - \\"LLM\\" or \\"pipeline\\" - default is \\"LLM\\" """
+    env: Optional[Env] = dataclasses.field(default=None, metadata={'query_param': { 'field_name': 'env', 'style': 'form', 'explode': True }})
+    r"""Environment - \\"dev\\", \\"staging\\" or \\"prod\\" """
+    name: Optional[str] = dataclasses.field(default=None, metadata={'query_param': { 'field_name': 'name', 'style': 'form', 'explode': True }})
+    r"""The name of the configuration"""
     
 
 

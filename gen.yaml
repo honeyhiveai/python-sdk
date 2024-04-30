@@ -12,7 +12,7 @@ generation:
   auth:
     oAuth2ClientCredentialsEnabled: false
 python:
-  version: 0.5.0
+  version: 0.6.0
   additionalDependencies:
     dependencies: {}
     extraDependencies:
@@ -30,8 +30,9 @@ python:
       shared: models/components
       webhooks: models/webhooks
   inputModelSuffix: input
+  installationURL: https://github.com/honeyhiveai/python-sdk
   maxMethodParams: 4
   outputModelSuffix: output
   packageName: HoneyHive
+  projectUrls: {}
   responseFormat: envelope
-  installationURL: https://github.com/honeyhiveai/python-sdk

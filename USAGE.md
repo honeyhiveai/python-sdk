@@ -8,7 +8,7 @@ s = honeyhive.HoneyHive(
 )
 
 
-res = s.configurations.get_configurations(project_name='<value>', type=operations.Type.LLM)
+res = s.configurations.get_configurations(project_name='<value>', type=operations.Type.LLM, env=operations.Env.PROD, name='<value>')
 
 if res.configurations is not None:
     # handle response

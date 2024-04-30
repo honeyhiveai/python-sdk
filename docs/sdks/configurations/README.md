@@ -23,7 +23,7 @@ s = honeyhive.HoneyHive(
 )
 
 
-res = s.configurations.get_configurations(project_name='<value>', type=operations.Type.LLM)
+res = s.configurations.get_configurations(project_name='<value>', type=operations.Type.LLM, env=operations.Env.PROD, name='<value>')
 
 if res.configurations is not None:
     # handle response
@@ -33,10 +33,12 @@ if res.configurations is not None:
 
 ### Parameters
 
-| Parameter                                          | Type                                               | Required                                           | Description                                        |
-| -------------------------------------------------- | -------------------------------------------------- | -------------------------------------------------- | -------------------------------------------------- |
-| `project_name`                                     | *str*                                              | :heavy_check_mark:                                 | Project name for configuration                     |
-| `type`                                             | [operations.Type](../../models/operations/type.md) | :heavy_check_mark:                                 | Configuration type - "LLM" or "pipeline"           |
+| Parameter                                                    | Type                                                         | Required                                                     | Description                                                  |
+| ------------------------------------------------------------ | ------------------------------------------------------------ | ------------------------------------------------------------ | ------------------------------------------------------------ |
+| `project_name`                                               | *str*                                                        | :heavy_check_mark:                                           | Project name for configuration                               |
+| `type`                                                       | [Optional[operations.Type]](../../models/operations/type.md) | :heavy_minus_sign:                                           | Configuration type - "LLM" or "pipeline" - default is "LLM"  |
+| `env`                                                        | [Optional[operations.Env]](../../models/operations/env.md)   | :heavy_minus_sign:                                           | Environment - "dev", "staging" or "prod"                     |
+| `name`                                                       | *Optional[str]*                                              | :heavy_minus_sign:                                           | The name of the configuration                                |
 
 
 ### Response
@@ -46,7 +48,7 @@ if res.configurations is not None:
 
 | Error Object    | Status Code     | Content Type    |
 | --------------- | --------------- | --------------- |
-| errors.SDKError | 4x-5xx          | */*             |
+| errors.SDKError | 4xx-5xx         | */*             |
 
 ## create_configuration
 
@@ -63,8 +65,8 @@ s = honeyhive.HoneyHive(
 )
 
 req = components.Configuration(
-    project='<value>',
     name='<value>',
+    project='<value>',
     provider='<value>',
 )
 
@@ -90,7 +92,7 @@ if res is not None:
 
 | Error Object    | Status Code     | Content Type    |
 | --------------- | --------------- | --------------- |
-| errors.SDKError | 4x-5xx          | */*             |
+| errors.SDKError | 4xx-5xx         | */*             |
 
 ## delete_configuration
 
@@ -128,7 +130,7 @@ if res is not None:
 
 | Error Object    | Status Code     | Content Type    |
 | --------------- | --------------- | --------------- |
-| errors.SDKError | 4x-5xx          | */*             |
+| errors.SDKError | 4xx-5xx         | */*             |
 
 ## update_configuration
 
@@ -146,8 +148,8 @@ s = honeyhive.HoneyHive(
 
 
 res = s.configurations.update_configuration(id='<value>', configuration=components.Configuration(
-    project='<value>',
     name='<value>',
+    project='<value>',
     provider='<value>',
 ))
 
@@ -172,4 +174,4 @@ if res is not None:
 
 | Error Object    | Status Code     | Content Type    |
 | --------------- | --------------- | --------------- |
-| errors.SDKError | 4x-5xx          | */*             |
+| errors.SDKError | 4xx-5xx         | */*             |
