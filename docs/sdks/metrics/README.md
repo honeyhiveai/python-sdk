@@ -103,7 +103,7 @@ req = components.Metric(
     name='<value>',
     return_type=components.ReturnType.FLOAT,
     task='<value>',
-    type=components.MetricType.MODEL,
+    type=components.MetricType.HUMAN,
 )
 
 res = s.metrics.create_metric(req)
