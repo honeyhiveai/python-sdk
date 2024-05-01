@@ -503,6 +503,9 @@ components:
         code_snippet:
           description: Associated code block for the metric
           type: string
+        criteria:
+          description: Criteria for human metrics
+          type: string
         description:
           description: Short description of what the metric does
           type: string
@@ -566,6 +569,9 @@ components:
       properties:
         code_snippet:
           description: Updated code block for the metric
+          type: string
+        criteria:
+          description: Criteria for human metrics
           type: string
         description:
           description: Short description of what the metric does
