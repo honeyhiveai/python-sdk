@@ -1008,7 +1008,12 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Datapoint'
+                properties:
+                  datapoint:
+                    items:
+                      $ref: '#/components/schemas/Datapoint'
+                    type: array
+                type: object
           description: Successful response
       summary: Retrieve a specific datapoint
       tags:
