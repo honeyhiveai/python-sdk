@@ -31,7 +31,7 @@ class GetDatasetsRequest:
 @dataclasses.dataclass
 class GetDatasetsResponseBody:
     r"""Successful response"""
-    datasets: Optional[List[components_dataset.Dataset]] = dataclasses.field(default=None, metadata={'dataclasses_json': { 'letter_case': utils.get_field_name('datasets'), 'exclude': lambda f: f is None }})
+    testcases: Optional[List[components_dataset.Dataset]] = dataclasses.field(default=None, metadata={'dataclasses_json': { 'letter_case': utils.get_field_name('testcases'), 'exclude': lambda f: f is None }})
     
 
 

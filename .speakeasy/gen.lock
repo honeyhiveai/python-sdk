@@ -1,12 +1,12 @@
 lockVersion: 2.0.0
 id: b027cebf-3475-4e9b-8070-6f08b389f6ed
 management:
-  docChecksum: bca981171454ac9a507794fffd40e86a
+  docChecksum: 8a52b8f419084a0bd387b806da8dc93e
   docVersion: 1.0.1
   speakeasyVersion: 1.277.4
   generationVersion: 2.318.3
-  releaseVersion: 0.6.3
-  configChecksum: 5cddd32dcf1f8410f1cd6fea1dd7a092
+  releaseVersion: 0.6.4
+  configChecksum: 7c891a53232e9821acdcd53e866412b2
   repoURL: https://github.com/honeyhiveai/python-sdk.git
   repoSubDirectory: .
   installationURL: https://github.com/honeyhiveai/python-sdk.git
