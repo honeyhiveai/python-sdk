@@ -292,8 +292,8 @@ class Datapoints:
         
         if http_res.status_code == 200:
             if utils.match_content_type(http_res.headers.get('Content-Type') or '', 'application/json'):                
-                out = utils.unmarshal_json(http_res.text, Optional[components.Datapoint])
-                res.datapoint = out
+                out = utils.unmarshal_json(http_res.text, Optional[operations.GetDatapointResponseBody])
+                res.object = out
             else:
                 content_type = http_res.headers.get('Content-Type')
                 raise errors.SDKError(f'unknown content-type received: {content_type}', http_res.status_code, http_res.text, http_res)

@@ -4,13 +4,24 @@ from __future__ import annotations
 import dataclasses
 import requests as requests_http
 from ...models.components import datapoint as components_datapoint
-from typing import Optional
+from dataclasses_json import Undefined, dataclass_json
+from honeyhive import utils
+from typing import List, Optional
 
 
 @dataclasses.dataclass
 class GetDatapointRequest:
     id: str = dataclasses.field(metadata={'path_param': { 'field_name': 'id', 'style': 'simple', 'explode': False }})
     r"""Datapoint ID"""
+    
+
+
+
+@dataclass_json(undefined=Undefined.EXCLUDE)
+@dataclasses.dataclass
+class GetDatapointResponseBody:
+    r"""Successful response"""
+    datapoint: Optional[List[components_datapoint.Datapoint]] = dataclasses.field(default=None, metadata={'dataclasses_json': { 'letter_case': utils.get_field_name('datapoint'), 'exclude': lambda f: f is None }})
     
 
 
@@ -23,7 +34,7 @@ class GetDatapointResponse:
     r"""HTTP response status code for this operation"""
     raw_response: requests_http.Response = dataclasses.field()
     r"""Raw HTTP response; suitable for custom response parsing"""
-    datapoint: Optional[components_datapoint.Datapoint] = dataclasses.field(default=None)
+    object: Optional[GetDatapointResponseBody] = dataclasses.field(default=None)
     r"""Successful response"""
     
 
