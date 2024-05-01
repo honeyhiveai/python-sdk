@@ -66,8 +66,13 @@ s = honeyhive.HoneyHive(
 
 req = components.Configuration(
     name='<value>',
+    parameters=components.Parameters(
+        call_type=components.CallType.CHAT,
+        model='Volt',
+    ),
     project='<value>',
     provider='<value>',
+    type=components.Type.LLM,
 )
 
 res = s.configurations.create_configuration(req)
@@ -149,8 +154,13 @@ s = honeyhive.HoneyHive(
 
 res = s.configurations.update_configuration(id='<value>', configuration=components.Configuration(
     name='<value>',
+    parameters=components.Parameters(
+        call_type=components.CallType.CHAT,
+        model='Charger',
+    ),
     project='<value>',
     provider='<value>',
+    type=components.Type.PIPELINE,
 ))
 
 if res is not None:
