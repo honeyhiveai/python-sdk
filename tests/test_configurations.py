@@ -36,7 +36,6 @@ def test_post_configurations():
 
     inserted_id = res.configurations[0].id
     configuration.type = components.Type.PIPELINE
-    configuration.id = inserted_id
     res = sdk.configurations.update_configuration(
         id=inserted_id, configuration=configuration
     )
@@ -55,7 +54,9 @@ def test_post_configurations():
     assert res.status_code == 200
 
     res = sdk.configurations.get_configurations(
-        project_name=os.environ["HH_PROJECT"], name=config_name
+        project_name=os.environ["HH_PROJECT"],
+        name=config_name,
+        type_=operations.Type.PIPELINE,
     )
     assert res.status_code == 200
     assert len(res.configurations) == 0
