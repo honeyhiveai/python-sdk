@@ -549,10 +549,11 @@ components:
               type: number
           type: object
         type:
-          description: Type of the metric - "custom" or "model"
+          description: Type of the metric - "custom", "model" or "human"
           enum:
           - custom
           - model
+          - human
           type: string
       required:
       - name
@@ -617,10 +618,11 @@ components:
               type: number
           type: object
         type:
-          description: Type of the metric - "custom" or "model"
+          description: Type of the metric - "custom", "model" or "human"
           enum:
           - custom
           - model
+          - human
           type: string
       type: object
     Project:
