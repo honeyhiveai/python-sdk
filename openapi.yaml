@@ -1064,7 +1064,7 @@ paths:
             application/json:
               schema:
                 properties:
-                  datasets:
+                  testcases:
                     items:
                       $ref: '#/components/schemas/Dataset'
                     type: array
