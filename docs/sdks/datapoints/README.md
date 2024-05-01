@@ -192,7 +192,7 @@ s = honeyhive.HoneyHive(
 
 res = s.datapoints.get_datapoint(id='<value>')
 
-if res.datapoint is not None:
+if res.object is not None:
     # handle response
     pass
 

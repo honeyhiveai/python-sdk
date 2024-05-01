@@ -1,12 +1,12 @@
 lockVersion: 2.0.0
 id: b027cebf-3475-4e9b-8070-6f08b389f6ed
 management:
-  docChecksum: 9ba9e3482e1aa753988412af9b400475
+  docChecksum: f402f91e660053df05340d8c067ed9db
   docVersion: 1.0.1
   speakeasyVersion: 1.277.4
   generationVersion: 2.318.3
-  releaseVersion: 0.6.1
-  configChecksum: bf6d39480ad9ee1ea86a92af065dbd19
+  releaseVersion: 0.6.2
+  configChecksum: 2fc134255b179aa03cef572794384a40
   repoURL: https://github.com/honeyhiveai/python-sdk.git
   repoSubDirectory: .
   installationURL: https://github.com/honeyhiveai/python-sdk.git
@@ -112,6 +112,7 @@ generatedFiles:
   - docs/models/operations/deletedatapointrequest.md
   - docs/models/operations/deletedatapointresponse.md
   - docs/models/operations/getdatapointrequest.md
+  - docs/models/operations/getdatapointresponsebody.md
   - docs/models/operations/getdatapointresponse.md
   - docs/models/operations/deletedatasetrequest.md
   - docs/models/operations/deletedatasetresponse.md
