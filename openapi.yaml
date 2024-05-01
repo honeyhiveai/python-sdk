@@ -93,6 +93,8 @@ components:
       - project
       - name
       - provider
+      - type
+      - parameters
       type: object
     CreateDatapointRequest:
       properties:
