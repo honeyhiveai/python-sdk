@@ -630,6 +630,8 @@ components:
           - model
           - human
           type: string
+      required:
+      - metric_id
       type: object
     Project:
       properties:
