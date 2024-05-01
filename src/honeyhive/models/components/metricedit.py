@@ -40,6 +40,8 @@ class MetricEditType(str, Enum):
 @dataclass_json(undefined=Undefined.EXCLUDE)
 @dataclasses.dataclass
 class MetricEdit:
+    metric_id: str = dataclasses.field(metadata={'dataclasses_json': { 'letter_case': utils.get_field_name('metric_id') }})
+    r"""Unique identifier of the metric"""
     code_snippet: Optional[str] = dataclasses.field(default=None, metadata={'dataclasses_json': { 'letter_case': utils.get_field_name('code_snippet'), 'exclude': lambda f: f is None }})
     r"""Updated code block for the metric"""
     criteria: Optional[str] = dataclasses.field(default=None, metadata={'dataclasses_json': { 'letter_case': utils.get_field_name('criteria'), 'exclude': lambda f: f is None }})
@@ -52,8 +54,6 @@ class MetricEdit:
     r"""Name of event that the metric is set to be computed on"""
     event_type: Optional[MetricEditEventType] = dataclasses.field(default=None, metadata={'dataclasses_json': { 'letter_case': utils.get_field_name('event_type'), 'exclude': lambda f: f is None }})
     r"""Type of event that the metric is set to be computed on"""
-    metric_id: Optional[str] = dataclasses.field(default=None, metadata={'dataclasses_json': { 'letter_case': utils.get_field_name('metric_id'), 'exclude': lambda f: f is None }})
-    r"""Unique identifier of the metric"""
     name: Optional[str] = dataclasses.field(default=None, metadata={'dataclasses_json': { 'letter_case': utils.get_field_name('name'), 'exclude': lambda f: f is None }})
     r"""Updated name of the metric"""
     needs_ground_truth: Optional[bool] = dataclasses.field(default=None, metadata={'dataclasses_json': { 'letter_case': utils.get_field_name('needs_ground_truth'), 'exclude': lambda f: f is None }})

@@ -144,7 +144,9 @@ s = honeyhive.HoneyHive(
     bearer_auth="<YOUR_BEARER_TOKEN_HERE>",
 )
 
-req = components.MetricEdit()
+req = components.MetricEdit(
+    metric_id='<value>',
+)
 
 res = s.metrics.update_metric(req)
 
