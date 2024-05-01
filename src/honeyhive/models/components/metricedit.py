@@ -31,9 +31,10 @@ class MetricEditThreshold:
 
 
 class MetricEditType(str, Enum):
-    r"""Type of the metric - \\"custom\\" or \\"model\\" """
+    r"""Type of the metric - \\"custom\\", \\"model\\" or \\"human\\" """
     CUSTOM = 'custom'
     MODEL = 'model'
+    HUMAN = 'human'
 
 
 @dataclass_json(undefined=Undefined.EXCLUDE)
@@ -64,6 +65,6 @@ class MetricEdit:
     threshold: Optional[MetricEditThreshold] = dataclasses.field(default=None, metadata={'dataclasses_json': { 'letter_case': utils.get_field_name('threshold'), 'exclude': lambda f: f is None }})
     r"""Threshold for numeric metrics to decide passing or failing in tests"""
     type: Optional[MetricEditType] = dataclasses.field(default=None, metadata={'dataclasses_json': { 'letter_case': utils.get_field_name('type'), 'exclude': lambda f: f is None }})
-    r"""Type of the metric - \\"custom\\" or \\"model\\" """
+    r"""Type of the metric - \\"custom\\", \\"model\\" or \\"human\\" """
     
 
