@@ -98,7 +98,6 @@ req = components.Tool(
         'key': '<value>',
     },
     task='<value>',
-    type=components.ToolType.TOOL,
 )
 
 res = s.tools.create_tool(req)
