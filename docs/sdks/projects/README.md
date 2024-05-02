@@ -143,7 +143,6 @@ s = honeyhive.HoneyHive(
 req = components.Project(
     description='Profit-focused even-keeled encryption',
     name='<value>',
-    type=components.ProjectType.COMPLETIONS,
 )
 
 res = s.projects.update_project(req)
