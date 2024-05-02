@@ -1,12 +1,12 @@
 lockVersion: 2.0.0
 id: b027cebf-3475-4e9b-8070-6f08b389f6ed
 management:
-  docChecksum: 84325a720c0671d903d3df4cc49d0fdc
+  docChecksum: 5587294dc35e08280c31718940c353ad
   docVersion: 1.0.1
-  speakeasyVersion: 1.277.4
-  generationVersion: 2.318.3
-  releaseVersion: 0.6.7
-  configChecksum: 0332e75393adfa98ac18b13446a8c0d1
+  speakeasyVersion: 1.277.6
+  generationVersion: 2.319.7
+  releaseVersion: 0.6.8
+  configChecksum: 572da014cce1f7647a1bb92f68018e90
   repoURL: https://github.com/honeyhiveai/python-sdk.git
   repoSubDirectory: .
   installationURL: https://github.com/honeyhiveai/python-sdk.git
@@ -14,7 +14,7 @@ management:
 features:
   python:
     additionalProperties: 0.1.0
-    core: 4.6.5
+    core: 4.6.7
     flattening: 2.81.1
     globalSecurity: 2.83.5
     globalServerURLs: 2.82.2
@@ -37,7 +37,6 @@ generatedFiles:
   - src/honeyhive/utils/retries.py
   - src/honeyhive/utils/utils.py
   - src/honeyhive/models/errors/sdkerror.py
-  - tests/helpers.py
   - src/honeyhive/models/operations/getconfigurations.py
   - src/honeyhive/models/operations/createconfiguration.py
   - src/honeyhive/models/operations/deleteconfiguration.py
@@ -191,7 +190,6 @@ generatedFiles:
   - docs/models/components/metriceditthreshold.md
   - docs/models/components/metricedittype.md
   - docs/models/components/metricedit.md
-  - docs/models/components/projecttype.md
   - docs/models/components/project.md
   - docs/models/components/createprojectrequesttype.md
   - docs/models/components/createprojectrequest.md
