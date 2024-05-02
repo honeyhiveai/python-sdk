@@ -50,7 +50,7 @@ if res.object is not None:
 
 | Error Object    | Status Code     | Content Type    |
 | --------------- | --------------- | --------------- |
-| errors.SDKError | 4x-5xx          | */*             |
+| errors.SDKError | 4xx-5xx         | */*             |
 
 ## create_datapoint
 
@@ -67,7 +67,9 @@ s = honeyhive.HoneyHive(
 )
 
 req = components.CreateDatapointRequest(
-    inputs=components.CreateDatapointRequestInputs(),
+    inputs={
+        'key': '<value>',
+    },
     project='<value>',
     type=components.CreateDatapointRequestType.EVALUATION,
 )
@@ -94,7 +96,7 @@ if res.object is not None:
 
 | Error Object    | Status Code     | Content Type    |
 | --------------- | --------------- | --------------- |
-| errors.SDKError | 4x-5xx          | */*             |
+| errors.SDKError | 4xx-5xx         | */*             |
 
 ## update_datapoint
 
@@ -134,7 +136,7 @@ if res is not None:
 
 | Error Object    | Status Code     | Content Type    |
 | --------------- | --------------- | --------------- |
-| errors.SDKError | 4x-5xx          | */*             |
+| errors.SDKError | 4xx-5xx         | */*             |
 
 ## delete_datapoint
 
@@ -172,7 +174,7 @@ if res is not None:
 
 | Error Object    | Status Code     | Content Type    |
 | --------------- | --------------- | --------------- |
-| errors.SDKError | 4x-5xx          | */*             |
+| errors.SDKError | 4xx-5xx         | */*             |
 
 ## get_datapoint
 
@@ -190,7 +192,7 @@ s = honeyhive.HoneyHive(
 
 res = s.datapoints.get_datapoint(id='<value>')
 
-if res.datapoint is not None:
+if res.object is not None:
     # handle response
     pass
 
@@ -210,4 +212,4 @@ if res.datapoint is not None:
 
 | Error Object    | Status Code     | Content Type    |
 | --------------- | --------------- | --------------- |
-| errors.SDKError | 4x-5xx          | */*             |
+| errors.SDKError | 4xx-5xx         | */*             |

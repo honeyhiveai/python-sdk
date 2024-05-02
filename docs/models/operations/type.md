@@ -1,6 +1,6 @@
 # Type
 
-Configuration type - "LLM" or "pipeline"
+Configuration type - "LLM" or "pipeline" - default is "LLM"
 
 
 ## Values

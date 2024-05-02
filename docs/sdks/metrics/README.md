@@ -3,12 +3,12 @@
 
 ### Available Operations
 
-* [delete_metrics](#delete_metrics) - Delete a metric
+* [delete_metric](#delete_metric) - Delete a metric
 * [get_metrics](#get_metrics) - Get all metrics
-* [post_metrics](#post_metrics) - Create a new metric
-* [put_metrics](#put_metrics) - Update an existing metric
+* [create_metric](#create_metric) - Create a new metric
+* [update_metric](#update_metric) - Update an existing metric
 
-## delete_metrics
+## delete_metric
 
 Remove a metric
 
@@ -22,7 +22,7 @@ s = honeyhive.HoneyHive(
 )
 
 
-res = s.metrics.delete_metrics(metric_id='<value>')
+res = s.metrics.delete_metric(metric_id='<value>')
 
 if res is not None:
     # handle response
@@ -39,12 +39,12 @@ if res is not None:
 
 ### Response
 
-**[operations.DeleteMetricsResponse](../../models/operations/deletemetricsresponse.md)**
+**[operations.DeleteMetricResponse](../../models/operations/deletemetricresponse.md)**
 ### Errors
 
 | Error Object    | Status Code     | Content Type    |
 | --------------- | --------------- | --------------- |
-| errors.SDKError | 4x-5xx          | */*             |
+| errors.SDKError | 4xx-5xx         | */*             |
 
 ## get_metrics
 
@@ -82,9 +82,9 @@ if res.metrics is not None:
 
 | Error Object    | Status Code     | Content Type    |
 | --------------- | --------------- | --------------- |
-| errors.SDKError | 4x-5xx          | */*             |
+| errors.SDKError | 4xx-5xx         | */*             |
 
-## post_metrics
+## create_metric
 
 Add a new metric
 
@@ -99,14 +99,14 @@ s = honeyhive.HoneyHive(
 )
 
 req = components.Metric(
-    description='Enterprise-wide reciprocal standardization',
+    description='Mandatory eco-centric open system',
     name='<value>',
-    return_type=components.ReturnType.STRING,
+    return_type=components.ReturnType.FLOAT,
     task='<value>',
-    type=components.MetricType.MODEL,
+    type=components.MetricType.HUMAN,
 )
 
-res = s.metrics.post_metrics(req)
+res = s.metrics.create_metric(req)
 
 if res is not None:
     # handle response
@@ -123,14 +123,14 @@ if res is not None:
 
 ### Response
 
-**[operations.PostMetricsResponse](../../models/operations/postmetricsresponse.md)**
+**[operations.CreateMetricResponse](../../models/operations/createmetricresponse.md)**
 ### Errors
 
 | Error Object    | Status Code     | Content Type    |
 | --------------- | --------------- | --------------- |
-| errors.SDKError | 4x-5xx          | */*             |
+| errors.SDKError | 4xx-5xx         | */*             |
 
-## put_metrics
+## update_metric
 
 Edit a metric
 
@@ -144,9 +144,11 @@ s = honeyhive.HoneyHive(
     bearer_auth="<YOUR_BEARER_TOKEN_HERE>",
 )
 
-req = components.MetricEdit()
+req = components.MetricEdit(
+    metric_id='<value>',
+)
 
-res = s.metrics.put_metrics(req)
+res = s.metrics.update_metric(req)
 
 if res is not None:
     # handle response
@@ -163,9 +165,9 @@ if res is not None:
 
 ### Response
 
-**[operations.PutMetricsResponse](../../models/operations/putmetricsresponse.md)**
+**[operations.UpdateMetricResponse](../../models/operations/updatemetricresponse.md)**
 ### Errors
 
 | Error Object    | Status Code     | Content Type    |
 | --------------- | --------------- | --------------- |
-| errors.SDKError | 4x-5xx          | */*             |
+| errors.SDKError | 4xx-5xx         | */*             |

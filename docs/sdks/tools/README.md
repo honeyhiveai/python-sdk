@@ -44,7 +44,7 @@ if res is not None:
 
 | Error Object    | Status Code     | Content Type    |
 | --------------- | --------------- | --------------- |
-| errors.SDKError | 4x-5xx          | */*             |
+| errors.SDKError | 4xx-5xx         | */*             |
 
 ## get_tools
 
@@ -55,22 +55,18 @@ Retrieve a list of tools
 ```python
 import honeyhive
 
-s = honeyhive.HoneyHive()
+s = honeyhive.HoneyHive(
+    bearer_auth="<YOUR_BEARER_TOKEN_HERE>",
+)
 
 
-res = s.tools.get_tools("<YOUR_BEARER_TOKEN_HERE>")
+res = s.tools.get_tools()
 
 if res.tools is not None:
     # handle response
     pass
 
 ```
-
-### Parameters
-
-| Parameter                                                                  | Type                                                                       | Required                                                                   | Description                                                                |
-| -------------------------------------------------------------------------- | -------------------------------------------------------------------------- | -------------------------------------------------------------------------- | -------------------------------------------------------------------------- |
-| `security`                                                                 | [operations.GetToolsSecurity](../../models/operations/gettoolssecurity.md) | :heavy_check_mark:                                                         | The security requirements to use for the request.                          |
 
 
 ### Response
@@ -80,7 +76,7 @@ if res.tools is not None:
 
 | Error Object    | Status Code     | Content Type    |
 | --------------- | --------------- | --------------- |
-| errors.SDKError | 4x-5xx          | */*             |
+| errors.SDKError | 4xx-5xx         | */*             |
 
 ## create_tool
 
@@ -92,18 +88,22 @@ Create a new tool
 import honeyhive
 from honeyhive.models import components
 
-s = honeyhive.HoneyHive()
-
-req = components.Tool(
-    name='<value>',
-    parameters=components.ToolParameters(),
-    task='<value>',
-    type=components.ToolType.TOOL,
+s = honeyhive.HoneyHive(
+    bearer_auth="<YOUR_BEARER_TOKEN_HERE>",
 )
 
-res = s.tools.create_tool(req, "<YOUR_BEARER_TOKEN_HERE>")
+req = components.CreateToolRequest(
+    name='<value>',
+    parameters={
+        'key': '<value>',
+    },
+    task='<value>',
+    type=components.CreateToolRequestType.TOOL,
+)
 
-if res is not None:
+res = s.tools.create_tool(req)
+
+if res.object is not None:
     # handle response
     pass
 
@@ -111,10 +111,9 @@ if res is not None:
 
 ### Parameters
 
-| Parameter                                                                      | Type                                                                           | Required                                                                       | Description                                                                    |
-| ------------------------------------------------------------------------------ | ------------------------------------------------------------------------------ | ------------------------------------------------------------------------------ | ------------------------------------------------------------------------------ |
-| `request`                                                                      | [components.Tool](../../models/components/tool.md)                             | :heavy_check_mark:                                                             | The request object to use for the request.                                     |
-| `security`                                                                     | [operations.CreateToolSecurity](../../models/operations/createtoolsecurity.md) | :heavy_check_mark:                                                             | The security requirements to use for the request.                              |
+| Parameter                                                                    | Type                                                                         | Required                                                                     | Description                                                                  |
+| ---------------------------------------------------------------------------- | ---------------------------------------------------------------------------- | ---------------------------------------------------------------------------- | ---------------------------------------------------------------------------- |
+| `request`                                                                    | [components.CreateToolRequest](../../models/components/createtoolrequest.md) | :heavy_check_mark:                                                           | The request object to use for the request.                                   |
 
 
 ### Response
@@ -124,7 +123,7 @@ if res is not None:
 
 | Error Object    | Status Code     | Content Type    |
 | --------------- | --------------- | --------------- |
-| errors.SDKError | 4x-5xx          | */*             |
+| errors.SDKError | 4xx-5xx         | */*             |
 
 ## update_tool
 
@@ -136,13 +135,19 @@ Update an existing tool
 import honeyhive
 from honeyhive.models import components
 
-s = honeyhive.HoneyHive()
-
-req = components.ToolUpdate(
-    id='<id>',
+s = honeyhive.HoneyHive(
+    bearer_auth="<YOUR_BEARER_TOKEN_HERE>",
 )
 
-res = s.tools.update_tool(req, "<YOUR_BEARER_TOKEN_HERE>")
+req = components.UpdateToolRequest(
+    id='<id>',
+    name='<value>',
+    parameters={
+        'key': '<value>',
+    },
+)
+
+res = s.tools.update_tool(req)
 
 if res is not None:
     # handle response
@@ -152,10 +157,9 @@ if res is not None:
 
 ### Parameters
 
-| Parameter                                                                      | Type                                                                           | Required                                                                       | Description                                                                    |
-| ------------------------------------------------------------------------------ | ------------------------------------------------------------------------------ | ------------------------------------------------------------------------------ | ------------------------------------------------------------------------------ |
-| `request`                                                                      | [components.ToolUpdate](../../models/components/toolupdate.md)                 | :heavy_check_mark:                                                             | The request object to use for the request.                                     |
-| `security`                                                                     | [operations.UpdateToolSecurity](../../models/operations/updatetoolsecurity.md) | :heavy_check_mark:                                                             | The security requirements to use for the request.                              |
+| Parameter                                                                    | Type                                                                         | Required                                                                     | Description                                                                  |
+| ---------------------------------------------------------------------------- | ---------------------------------------------------------------------------- | ---------------------------------------------------------------------------- | ---------------------------------------------------------------------------- |
+| `request`                                                                    | [components.UpdateToolRequest](../../models/components/updatetoolrequest.md) | :heavy_check_mark:                                                           | The request object to use for the request.                                   |
 
 
 ### Response
@@ -165,4 +169,4 @@ if res is not None:
 
 | Error Object    | Status Code     | Content Type    |
 | --------------- | --------------- | --------------- |
-| errors.SDKError | 4x-5xx          | */*             |
+| errors.SDKError | 4xx-5xx         | */*             |

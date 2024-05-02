@@ -7,7 +7,7 @@ from .utils import utils
 from .utils.retries import RetryConfig
 from dataclasses import dataclass
 from honeyhive.models import components
-from typing import Callable, Dict, Tuple, Union
+from typing import Callable, Dict, Optional, Tuple, Union
 
 
 SERVERS = [
@@ -19,18 +19,20 @@ SERVERS = [
 class SDKConfiguration:
     client: requests_http.Session
     security: Union[components.Security,Callable[[], components.Security]] = None
-    server_url: str = ''
-    server_idx: int = 0
+    server_url: Optional[str] = ''
+    server_idx: Optional[int] = 0
     language: str = 'python'
     openapi_doc_version: str = '1.0.1'
-    sdk_version: str = '0.5.0'
-    gen_version: str = '2.281.2'
-    user_agent: str = 'speakeasy-sdk/python 0.5.0 2.281.2 1.0.1 HoneyHive'
-    retry_config: RetryConfig = None
-    _hooks: SDKHooks = None
+    sdk_version: str = '0.6.14'
+    gen_version: str = '2.319.10'
+    user_agent: str = 'speakeasy-sdk/python 0.6.14 2.319.10 1.0.1 HoneyHive'
+    retry_config: Optional[RetryConfig] = None
+
+    def __post_init__(self):
+        self._hooks = SDKHooks()
 
     def get_server_details(self) -> Tuple[str, Dict[str, str]]:
-        if self.server_url:
+        if self.server_url is not None and self.server_url != '':
             return utils.remove_suffix(self.server_url, '/'), {}
         if self.server_idx is None:
             self.server_idx = 0

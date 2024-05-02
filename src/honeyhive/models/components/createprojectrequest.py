@@ -3,13 +3,8 @@
 from __future__ import annotations
 import dataclasses
 from dataclasses_json import Undefined, dataclass_json
-from enum import Enum
 from honeyhive import utils
 from typing import Optional
-
-class CreateProjectRequestType(str, Enum):
-    COMPLETIONS = 'completions'
-    CHAT = 'chat'
 
 
 @dataclass_json(undefined=Undefined.EXCLUDE)
@@ -17,6 +12,5 @@ class CreateProjectRequestType(str, Enum):
 class CreateProjectRequest:
     name: str = dataclasses.field(metadata={'dataclasses_json': { 'letter_case': utils.get_field_name('name') }})
     description: Optional[str] = dataclasses.field(default=None, metadata={'dataclasses_json': { 'letter_case': utils.get_field_name('description'), 'exclude': lambda f: f is None }})
-    type: Optional[CreateProjectRequestType] = dataclasses.field(default=None, metadata={'dataclasses_json': { 'letter_case': utils.get_field_name('type'), 'exclude': lambda f: f is None }})
     
 

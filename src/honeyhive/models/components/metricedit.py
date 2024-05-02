@@ -31,16 +31,21 @@ class MetricEditThreshold:
 
 
 class MetricEditType(str, Enum):
-    r"""Type of the metric - \\"custom\\" or \\"model\\" """
+    r"""Type of the metric - \\"custom\\", \\"model\\" or \\"human\\" """
     CUSTOM = 'custom'
     MODEL = 'model'
+    HUMAN = 'human'
 
 
 @dataclass_json(undefined=Undefined.EXCLUDE)
 @dataclasses.dataclass
 class MetricEdit:
+    metric_id: str = dataclasses.field(metadata={'dataclasses_json': { 'letter_case': utils.get_field_name('metric_id') }})
+    r"""Unique identifier of the metric"""
     code_snippet: Optional[str] = dataclasses.field(default=None, metadata={'dataclasses_json': { 'letter_case': utils.get_field_name('code_snippet'), 'exclude': lambda f: f is None }})
     r"""Updated code block for the metric"""
+    criteria: Optional[str] = dataclasses.field(default=None, metadata={'dataclasses_json': { 'letter_case': utils.get_field_name('criteria'), 'exclude': lambda f: f is None }})
+    r"""Criteria for human metrics"""
     description: Optional[str] = dataclasses.field(default=None, metadata={'dataclasses_json': { 'letter_case': utils.get_field_name('description'), 'exclude': lambda f: f is None }})
     r"""Short description of what the metric does"""
     enabled_in_prod: Optional[bool] = dataclasses.field(default=None, metadata={'dataclasses_json': { 'letter_case': utils.get_field_name('enabled_in_prod'), 'exclude': lambda f: f is None }})
@@ -49,8 +54,6 @@ class MetricEdit:
     r"""Name of event that the metric is set to be computed on"""
     event_type: Optional[MetricEditEventType] = dataclasses.field(default=None, metadata={'dataclasses_json': { 'letter_case': utils.get_field_name('event_type'), 'exclude': lambda f: f is None }})
     r"""Type of event that the metric is set to be computed on"""
-    metric_id: Optional[str] = dataclasses.field(default=None, metadata={'dataclasses_json': { 'letter_case': utils.get_field_name('metric_id'), 'exclude': lambda f: f is None }})
-    r"""Unique identifier of the metric"""
     name: Optional[str] = dataclasses.field(default=None, metadata={'dataclasses_json': { 'letter_case': utils.get_field_name('name'), 'exclude': lambda f: f is None }})
     r"""Updated name of the metric"""
     needs_ground_truth: Optional[bool] = dataclasses.field(default=None, metadata={'dataclasses_json': { 'letter_case': utils.get_field_name('needs_ground_truth'), 'exclude': lambda f: f is None }})
@@ -64,6 +67,6 @@ class MetricEdit:
     threshold: Optional[MetricEditThreshold] = dataclasses.field(default=None, metadata={'dataclasses_json': { 'letter_case': utils.get_field_name('threshold'), 'exclude': lambda f: f is None }})
     r"""Threshold for numeric metrics to decide passing or failing in tests"""
     type: Optional[MetricEditType] = dataclasses.field(default=None, metadata={'dataclasses_json': { 'letter_case': utils.get_field_name('type'), 'exclude': lambda f: f is None }})
-    r"""Type of the metric - \\"custom\\" or \\"model\\" """
+    r"""Type of the metric - \\"custom\\", \\"model\\" or \\"human\\" """
     
 

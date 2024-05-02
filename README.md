@@ -21,7 +21,7 @@ s = honeyhive.HoneyHive(
 )
 
 
-res = s.configurations.get_configurations(project_name='<value>', type=operations.Type.LLM)
+res = s.configurations.get_configurations(project_name='<value>', type=operations.Type.LLM, env=operations.Env.PROD, name='<value>')
 
 if res.configurations is not None:
     # handle response
@@ -50,23 +50,23 @@ if res.configurations is not None:
 
 ### [datasets](docs/sdks/datasets/README.md)
 
-* [delete_datasets](docs/sdks/datasets/README.md#delete_datasets) - Delete a dataset
+* [delete_dataset](docs/sdks/datasets/README.md#delete_dataset) - Delete a dataset
 * [get_datasets](docs/sdks/datasets/README.md#get_datasets) - Get datasets
-* [post_datasets](docs/sdks/datasets/README.md#post_datasets) - Create a dataset
-* [put_datasets](docs/sdks/datasets/README.md#put_datasets) - Update a dataset
+* [create_dataset](docs/sdks/datasets/README.md#create_dataset) - Create a dataset
+* [update_dataset](docs/sdks/datasets/README.md#update_dataset) - Update a dataset
 
 ### [events](docs/sdks/events/README.md)
 
-* [post_events](docs/sdks/events/README.md#post_events) - Create a new event
-* [put_events](docs/sdks/events/README.md#put_events) - Update an event
-* [delete_events_event_id_](docs/sdks/events/README.md#delete_events_event_id_) - Delete an event
+* [create_event](docs/sdks/events/README.md#create_event) - Create a new event
+* [update_event](docs/sdks/events/README.md#update_event) - Update an event
+* [delete_event](docs/sdks/events/README.md#delete_event) - Delete an event
 
 ### [metrics](docs/sdks/metrics/README.md)
 
-* [delete_metrics](docs/sdks/metrics/README.md#delete_metrics) - Delete a metric
+* [delete_metric](docs/sdks/metrics/README.md#delete_metric) - Delete a metric
 * [get_metrics](docs/sdks/metrics/README.md#get_metrics) - Get all metrics
-* [post_metrics](docs/sdks/metrics/README.md#post_metrics) - Create a new metric
-* [put_metrics](docs/sdks/metrics/README.md#put_metrics) - Update an existing metric
+* [create_metric](docs/sdks/metrics/README.md#create_metric) - Create a new metric
+* [update_metric](docs/sdks/metrics/README.md#update_metric) - Update an existing metric
 
 ### [projects](docs/sdks/projects/README.md)
 
@@ -97,7 +97,7 @@ Handling errors in this SDK should largely match your expectations.  All operati
 
 | Error Object    | Status Code     | Content Type    |
 | --------------- | --------------- | --------------- |
-| errors.SDKError | 4x-5xx          | */*             |
+| errors.SDKError | 4xx-5xx         | */*             |
 
 ### Example
 
@@ -112,7 +112,7 @@ s = honeyhive.HoneyHive(
 
 res = None
 try:
-    res = s.configurations.get_configurations(project_name='<value>', type=operations.Type.LLM)
+    res = s.configurations.get_configurations(project_name='<value>', type=operations.Type.LLM, env=operations.Env.PROD, name='<value>')
 except errors.SDKError as e:
     # handle exception
     raise(e)
@@ -147,7 +147,7 @@ s = honeyhive.HoneyHive(
 )
 
 
-res = s.configurations.get_configurations(project_name='<value>', type=operations.Type.LLM)
+res = s.configurations.get_configurations(project_name='<value>', type=operations.Type.LLM, env=operations.Env.PROD, name='<value>')
 
 if res.configurations is not None:
     # handle response
@@ -169,7 +169,7 @@ s = honeyhive.HoneyHive(
 )
 
 
-res = s.configurations.get_configurations(project_name='<value>', type=operations.Type.LLM)
+res = s.configurations.get_configurations(project_name='<value>', type=operations.Type.LLM, env=operations.Env.PROD, name='<value>')
 
 if res.configurations is not None:
     # handle response
@@ -190,7 +190,7 @@ import requests
 
 http_client = requests.Session()
 http_client.headers.update({'x-custom-header': 'someValue'})
-s = honeyhive.HoneyHive(client: http_client)
+s = honeyhive.HoneyHive(client=http_client)
 ```
 <!-- End Custom HTTP Client [http-client] -->
 
@@ -215,26 +215,9 @@ s = honeyhive.HoneyHive(
 )
 
 
-res = s.configurations.get_configurations(project_name='<value>', type=operations.Type.LLM)
+res = s.configurations.get_configurations(project_name='<value>', type=operations.Type.LLM, env=operations.Env.PROD, name='<value>')
 
 if res.configurations is not None:
-    # handle response
-    pass
-
-```
-
-### Per-Operation Security Schemes
-
-Some operations in this SDK require the security scheme to be specified at the request level. For example:
-```python
-import honeyhive
-
-s = honeyhive.HoneyHive()
-
-
-res = s.tools.get_tools("<YOUR_BEARER_TOKEN_HERE>")
-
-if res.tools is not None:
     # handle response
     pass
 
@@ -245,7 +228,7 @@ if res.tools is not None:
 ## SDK Installation
 
 ```bash
-pip install git+https://github.com/honeyhiveai/python-sdk.git
+pip install HoneyHive
 ```
 <!-- End SDK Installation [installation] -->
 

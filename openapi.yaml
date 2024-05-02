@@ -1,766 +1,19 @@
-info:
-  title: HoneyHive API
-  version: 1.0.1
-openapi: 3.0.3
-paths:
-  /configurations:
-    get:
-      operationId: getConfigurations
-      parameters:
-      - description: Project name for configuration
-        in: query
-        name: project_name
-        required: true
-        schema:
-          type: string
-      - description: Configuration type - "LLM" or "pipeline"
-        in: query
-        name: type
-        required: true
-        schema:
-          enum:
-          - LLM
-          - pipeline
-          type: string
-      responses:
-        '200':
-          content:
-            application/json:
-              schema:
-                items:
-                  $ref: '#/components/schemas/Configuration'
-                type: array
-          description: An array of configurations
-      summary: Retrieve a list of configurations
-      tags:
-      - Configurations
-    post:
-      operationId: createConfiguration
-      requestBody:
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/Configuration'
-        required: true
-      responses:
-        '200':
-          description: Configuration created successfully
-      summary: Create a new configuration
-      tags:
-      - Configurations
-  /configurations/{id}:
-    delete:
-      operationId: deleteConfiguration
-      parameters:
-      - description: Configuration ID
-        in: path
-        name: id
-        required: true
-        schema:
-          type: string
-      responses:
-        '200':
-          description: Configuration deleted successfully
-      summary: Delete a configuration
-      tags:
-      - Configurations
-    put:
-      operationId: updateConfiguration
-      parameters:
-      - description: Configuration ID
-        in: path
-        name: id
-        required: true
-        schema:
-          type: string
-      requestBody:
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/Configuration'
-        required: true
-      responses:
-        '200':
-          description: Configuration updated successfully
-      summary: Update an existing configuration
-      tags:
-      - Configurations
-  /datapoints:
-    get:
-      operationId: getDatapoints
-      parameters:
-      - description: Project ID to filter datapoints
-        in: query
-        name: project
-        required: true
-        schema:
-          type: string
-      - description: Type of data - "evaluation" or "event"
-        in: query
-        name: type
-        required: false
-        schema:
-          enum:
-          - evaluation
-          - event
-          type: string
-      - description: List of datapoint ids to fetch
-        in: query
-        name: datapoint_ids
-        required: false
-        schema:
-          items:
-            type: string
-          type: array
-      responses:
-        '200':
-          content:
-            application/json:
-              schema:
-                properties:
-                  datapoints:
-                    items:
-                      $ref: '#/components/schemas/Datapoint'
-                    type: array
-                type: object
-          description: Successful response
-      summary: Retrieve a list of datapoints
-      tags:
-      - Datapoints
-    post:
-      operationId: createDatapoint
-      requestBody:
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/CreateDatapointRequest'
-        required: true
-      responses:
-        '200':
-          content:
-            application/json:
-              schema:
-                properties:
-                  result:
-                    properties:
-                      insertedId:
-                        type: string
-                    type: object
-                type: object
-          description: Datapoint successfully created
-      summary: Create a new datapoint
-      tags:
-      - Datapoints
-    put:
-      operationId: updateDatapoint
-      parameters:
-      - description: ID of datapoint to update
-        in: query
-        name: datapoint_id
-        required: true
-        schema:
-          type: string
-      requestBody:
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/UpdateDatapointRequest'
-        required: true
-      responses:
-        '200':
-          description: Datapoint successfully updated
-        '400':
-          description: Error updating datapoint
-      summary: Update a specific datapoint
-      tags:
-      - Datapoints
-  /datapoints/{id}:
-    delete:
-      operationId: deleteDatapoint
-      parameters:
-      - description: Datapoint ID
-        in: path
-        name: id
-        required: true
-        schema:
-          type: string
-      responses:
-        '200':
-          description: Datapoint successfully deleted
-      summary: Delete a specific datapoint
-      tags:
-      - Datapoints
-    get:
-      operationId: getDatapoint
-      parameters:
-      - description: Datapoint ID
-        in: path
-        name: id
-        required: true
-        schema:
-          type: string
-      responses:
-        '200':
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Datapoint'
-          description: Successful response
-      summary: Retrieve a specific datapoint
-      tags:
-      - Datapoints
-  /datasets:
-    delete:
-      parameters:
-      - description: The unique identifier of the dataset to be deleted
-        in: query
-        name: dataset_id
-        required: true
-        schema:
-          type: string
-      responses:
-        '200':
-          description: Successful delete
-      summary: Delete a dataset
-      tags:
-      - Datasets
-    get:
-      parameters:
-      - description: Project ID associated with the datasets
-        in: query
-        name: project
-        required: true
-        schema:
-          type: string
-      - description: Type of the dataset - "evaluation" or "fine-tuning"
-        in: query
-        name: type
-        schema:
-          enum:
-          - evaluation
-          - fine-tuning
-          type: string
-      - description: Unique dataset ID for filtering specific dataset
-        in: query
-        name: dataset_id
-        schema:
-          type: string
-      responses:
-        '200':
-          content:
-            application/json:
-              schema:
-                properties:
-                  datasets:
-                    items:
-                      $ref: '#/components/schemas/Dataset'
-                    type: array
-                type: object
-          description: Successful response
-      summary: Get datasets
-      tags:
-      - Datasets
-    post:
-      requestBody:
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/CreateDatasetRequest'
-        required: true
-      responses:
-        '200':
-          content:
-            application/json:
-              schema:
-                properties:
-                  inserted:
-                    type: boolean
-                  result:
-                    properties:
-                      insertedId:
-                        type: string
-                    type: object
-                type: object
-          description: Successful creation
-      summary: Create a dataset
-      tags:
-      - Datasets
-    put:
-      requestBody:
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/DatasetUpdate'
-        required: true
-      responses:
-        '200':
-          description: Successful update
-      summary: Update a dataset
-      tags:
-      - Datasets
-  /events:
-    get:
-      parameters:
-      - in: query
-        name: project
-        required: true
-        schema:
-          type: string
-      - in: query
-        name: dateRange
-        required: false
-        schema:
-          properties:
-            $gte:
-              description: ISO String for start of date time filter
-              type: string
-            $lte:
-              description: ISO String for end of date time filter
-              type: string
-          type: object
-      - in: query
-        name: filters
-        required: true
-        schema:
-          items:
-            $ref: '#/components/schemas/EventFilter'
-          type: array
-      - in: query
-        name: limit
-        required: false
-        schema:
-          description: Limit number of results to speed up query (default is 1000)
-          type: number
-      - in: query
-        name: page
-        required: false
-        schema:
-          description: Page number of results (default is 1)
-          type: number
-      responses:
-        '200':
-          content:
-            application/json:
-              schema:
-                properties:
-                  events:
-                    items:
-                      $ref: '#/components/schemas/Event'
-                    type: array
-                  totalEvents:
-                    description: Total number of events in the specified filter
-                    type: number
-                type: object
-          description: Success
-      summary: Retrieve events based on filters
-      tags:
-      - Events
-    post:
-      description: Please refer to our instrumentation guide for detailed information
-      requestBody:
-        content:
-          application/json:
-            schema:
-              properties:
-                event:
-                  $ref: '#/components/schemas/CreateEventRequest'
-              type: object
-        required: true
-      responses:
-        '200':
-          content:
-            application/json:
-              schema:
-                properties:
-                  event_id:
-                    type: string
-                  success:
-                    type: boolean
-                type: object
-          description: Event created
-      summary: Create a new event
-      tags:
-      - Events
-    put:
-      requestBody:
-        content:
-          application/json:
-            schema:
-              properties:
-                event_id:
-                  type: string
-                feedback:
-                  additionalProperties: true
-                  type: object
-                metadata:
-                  additionalProperties: true
-                  type: object
-                metrics:
-                  additionalProperties: true
-                  type: object
-                outputs:
-                  additionalProperties: true
-                  type: object
-              required:
-              - event_id
-              type: object
-        required: true
-      responses:
-        '200':
-          description: Event updated
-        '400':
-          description: Bad request
-      summary: Update an event
-      tags:
-      - Events
-  /events/chart:
-    get:
-      parameters:
-      - in: query
-        name: project
-        required: true
-        schema:
-          type: string
-      - in: query
-        name: dateRange
-        required: false
-        schema:
-          properties:
-            $gte:
-              description: ISO String for start of date time filter
-              type: string
-            $lte:
-              description: ISO String for end of date time filter
-              type: string
-          type: object
-      - in: query
-        name: filters
-        required: true
-        schema:
-          items:
-            $ref: '#/components/schemas/EventFilter'
-          type: array
-      responses:
-        '200':
-          description: Success
-      summary: Retrieve a chart of events
-      tags:
-      - Events
-  /events/{event_id}:
-    delete:
-      parameters:
-      - in: path
-        name: event_id
-        required: true
-        schema:
-          type: string
-      - in: query
-        name: project
-        required: true
-        schema:
-          type: string
-      responses:
-        '200':
-          description: Event deleted
-      summary: Delete an event
-      tags:
-      - Events
-  /metrics:
-    delete:
-      description: Remove a metric
-      parameters:
-      - in: query
-        name: metric_id
-        required: true
-        schema:
-          description: Unique identifier of the metric
-          type: string
-      responses:
-        '200':
-          description: Metric deleted successfully
-      summary: Delete a metric
-      tags:
-      - Metrics
-    get:
-      description: Retrieve a list of all metrics
-      parameters:
-      - description: Project name associated with metrics
-        in: query
-        name: project_name
-        required: true
-        schema:
-          type: string
-      responses:
-        '200':
-          content:
-            application/json:
-              schema:
-                items:
-                  $ref: '#/components/schemas/Metric'
-                type: array
-          description: A list of metrics
-      summary: Get all metrics
-      tags:
-      - Metrics
-    post:
-      description: Add a new metric
-      requestBody:
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/Metric'
-        required: true
-      responses:
-        '200':
-          description: Metric created successfully
-      summary: Create a new metric
-      tags:
-      - Metrics
-    put:
-      description: Edit a metric
-      requestBody:
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/MetricEdit'
-        required: true
-      responses:
-        '200':
-          description: Metric updated successfully
-      summary: Update an existing metric
-      tags:
-      - Metrics
-  /projects:
-    delete:
-      operationId: deleteProject
-      parameters:
-      - in: query
-        name: name
-        required: true
-        schema:
-          type: string
-      responses:
-        '200':
-          description: Project deleted
-      summary: Delete a project
-      tags:
-      - Projects
-    get:
-      operationId: getProjects
-      parameters:
-      - in: query
-        name: name
-        required: false
-        schema:
-          type: string
-      responses:
-        '200':
-          content:
-            application/json:
-              schema:
-                items:
-                  $ref: '#/components/schemas/Project'
-                type: array
-          description: A list of projects
-      summary: Get a list of projects
-      tags:
-      - Projects
-    post:
-      operationId: createProject
-      requestBody:
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/CreateProjectRequest'
-        required: true
-      responses:
-        '200':
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Project'
-          description: The created project
-      summary: Create a new project
-      tags:
-      - Projects
-    put:
-      operationId: updateProject
-      requestBody:
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/Project'
-        required: true
-      responses:
-        '200':
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Project'
-          description: Project updated
-      summary: Update an existing project
-      tags:
-      - Projects
-  /session/start:
-    post:
-      operationId: startSession
-      requestBody:
-        content:
-          application/json:
-            schema:
-              properties:
-                session:
-                  $ref: '#/components/schemas/SessionStartRequest'
-              type: object
-        required: true
-      responses:
-        '200':
-          content:
-            application/json:
-              schema:
-                properties:
-                  session_id:
-                    type: string
-                type: object
-          description: Session successfully started
-      summary: Start a new session
-      tags:
-      - Session
-  /session/{session_id}:
-    delete:
-      operationId: deleteSession
-      parameters:
-      - in: path
-        name: session_id
-        required: true
-        schema:
-          type: string
-      responses:
-        '200':
-          description: Session successfully deleted
-      summary: Delete a session
-      tags:
-      - Session
-    get:
-      operationId: getSession
-      parameters:
-      - in: path
-        name: session_id
-        required: true
-        schema:
-          type: string
-      responses:
-        '200':
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Event'
-          description: Session details
-      summary: Retrieve a session
-      tags:
-      - Session
-  /session/{session_id}/traces:
-    post:
-      operationId: processEventTrace
-      parameters:
-      - description: The ID of the session to which this event trace belongs
-        in: path
-        name: session_id
-        required: true
-        schema:
-          type: string
-      requestBody:
-        content:
-          application/json:
-            schema:
-              properties:
-                logs:
-                  items:
-                    additionalProperties: true
-                    type: object
-                  type: array
-              type: object
-        required: true
-      responses:
-        '200':
-          content:
-            application/json:
-              schema:
-                properties:
-                  result:
-                    type: string
-                type: object
-          description: Successfully processed the event traces
-      summary: Process an event trace for a given session
-      tags:
-      - Session
-  /tools:
-    delete:
-      operationId: deleteTool
-      parameters:
-      - in: query
-        name: function_id
-        required: true
-        schema:
-          type: string
-      responses:
-        '200':
-          description: Successfully deleted the tool
-      summary: Delete a tool
-      tags:
-      - Tools
-    get:
-      operationId: getTools
-      responses:
-        '200':
-          content:
-            application/json:
-              schema:
-                items:
-                  $ref: '#/components/schemas/Tool'
-                type: array
-          description: Successfully retrieved the list of tools
-      security:
-      - BearerAuth: []
-      summary: Retrieve a list of tools
-      tags:
-      - Tools
-    post:
-      operationId: createTool
-      requestBody:
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/Tool'
-        required: true
-      responses:
-        '200':
-          description: Successfully created a new tool
-      security:
-      - BearerAuth: []
-      summary: Create a new tool
-      tags:
-      - Tools
-    put:
-      operationId: updateTool
-      requestBody:
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/ToolUpdate'
-        required: true
-      responses:
-        '200':
-          description: Successfully updated the tool
-      security:
-      - BearerAuth: []
-      summary: Update an existing tool
-      tags:
-      - Tools
 components:
   schemas:
     Configuration:
       properties:
+        _id:
+          description: ID of the configuration
+          type: string
+        env:
+          description: List of environments where the configuration is active
+          items:
+            enum:
+            - dev
+            - staging
+            - prod
+            type: string
+          type: array
         name:
           description: Name of the configuration
           type: string
@@ -785,11 +38,16 @@ components:
               - force
               type: string
             hyperparameters:
+              additionalProperties: true
               description: Model-specific hyperparameters
               type: object
             model:
               description: Model unique name
               type: string
+            responseFormat:
+              description: Response format for the model with the key "type" and value
+                "text" or "json_object"
+              type: object
             selectedFunctions:
               description: List of functions to be called by the model, refer to OpenAI
                 schema for more details
@@ -835,6 +93,8 @@ components:
       - project
       - name
       - provider
+      - type
+      - parameters
       type: object
     CreateDatapointRequest:
       properties:
@@ -1009,13 +269,32 @@ components:
           type: string
         name:
           type: string
-        type:
-          enum:
-          - completions
-          - chat
-          type: string
       required:
       - name
+      type: object
+    CreateToolRequest:
+      properties:
+        description:
+          type: string
+        name:
+          type: string
+        parameters:
+          additionalProperties: true
+          description: These can be function call params or plugin call params
+          type: object
+        task:
+          description: Name of the project associated with this tool
+          type: string
+        type:
+          enum:
+          - function
+          - tool
+          type: string
+      required:
+      - task
+      - name
+      - parameters
+      - type
       type: object
     Datapoint:
       properties:
@@ -1047,6 +326,7 @@ components:
           description: Event id for the event from which the datapoint was created
           type: string
         metadata:
+          additionalProperties: true
           type: object
         project_id:
           type: string
@@ -1242,6 +522,9 @@ components:
         code_snippet:
           description: Associated code block for the metric
           type: string
+        criteria:
+          description: Criteria for human metrics
+          type: string
         description:
           description: Short description of what the metric does
           type: string
@@ -1288,10 +571,11 @@ components:
               type: number
           type: object
         type:
-          description: Type of the metric - "custom" or "model"
+          description: Type of the metric - "custom", "model" or "human"
           enum:
           - custom
           - model
+          - human
           type: string
       required:
       - name
@@ -1304,6 +588,9 @@ components:
       properties:
         code_snippet:
           description: Updated code block for the metric
+          type: string
+        criteria:
+          description: Criteria for human metrics
           type: string
         description:
           description: Short description of what the metric does
@@ -1356,11 +643,14 @@ components:
               type: number
           type: object
         type:
-          description: Type of the metric - "custom" or "model"
+          description: Type of the metric - "custom", "model" or "human"
           enum:
           - custom
           - model
+          - human
           type: string
+      required:
+      - metric_id
       type: object
     Project:
       properties:
@@ -1369,11 +659,6 @@ components:
         id:
           type: string
         name:
-          type: string
-        type:
-          enum:
-          - completions
-          - chat
           type: string
       required:
       - name
@@ -1460,7 +745,7 @@ components:
         task:
           description: Name of the project associated with this tool
           type: string
-        type:
+        tool_type:
           enum:
           - function
           - tool
@@ -1469,21 +754,7 @@ components:
       - task
       - name
       - parameters
-      - type
-      type: object
-    ToolUpdate:
-      properties:
-        description:
-          type: string
-        id:
-          type: string
-        name:
-          type: string
-        parameters:
-          additionalProperties: true
-          type: object
-      required:
-      - id
+      - tool_type
       type: object
     UpdateDatapointRequest:
       properties:
@@ -1523,10 +794,836 @@ components:
       required:
       - datapoint_id
       type: object
+    UpdateProjectRequest:
+      properties:
+        description:
+          type: string
+        name:
+          type: string
+        project_id:
+          type: string
+      required:
+      - project_id
+      type: object
+    UpdateToolRequest:
+      properties:
+        description:
+          type: string
+        id:
+          type: string
+        name:
+          type: string
+        parameters:
+          additionalProperties: true
+          type: object
+      required:
+      - id
+      - parameters
+      - name
+      type: object
   securitySchemes:
     BearerAuth:
       scheme: bearer
       type: http
+info:
+  title: HoneyHive API
+  version: 1.0.1
+openapi: 3.0.3
+paths:
+  /configurations:
+    get:
+      operationId: getConfigurations
+      parameters:
+      - description: Project name for configuration
+        in: query
+        name: project_name
+        required: true
+        schema:
+          type: string
+      - description: Configuration type - "LLM" or "pipeline" - default is "LLM"
+        in: query
+        name: type
+        required: false
+        schema:
+          enum:
+          - LLM
+          - pipeline
+          type: string
+      - description: Environment - "dev", "staging" or "prod"
+        in: query
+        name: env
+        required: false
+        schema:
+          enum:
+          - dev
+          - staging
+          - prod
+          type: string
+      - description: The name of the configuration
+        in: query
+        name: name
+        required: false
+        schema:
+          type: string
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                items:
+                  $ref: '#/components/schemas/Configuration'
+                type: array
+          description: An array of configurations
+      summary: Retrieve a list of configurations
+      tags:
+      - Configurations
+    post:
+      operationId: createConfiguration
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Configuration'
+        required: true
+      responses:
+        '200':
+          description: Configuration created successfully
+      summary: Create a new configuration
+      tags:
+      - Configurations
+  /configurations/{id}:
+    delete:
+      operationId: deleteConfiguration
+      parameters:
+      - description: Configuration ID
+        in: path
+        name: id
+        required: true
+        schema:
+          type: string
+      responses:
+        '200':
+          description: Configuration deleted successfully
+      summary: Delete a configuration
+      tags:
+      - Configurations
+    put:
+      operationId: updateConfiguration
+      parameters:
+      - description: Configuration ID
+        in: path
+        name: id
+        required: true
+        schema:
+          type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Configuration'
+        required: true
+      responses:
+        '200':
+          description: Configuration updated successfully
+      summary: Update an existing configuration
+      tags:
+      - Configurations
+  /datapoints:
+    get:
+      operationId: getDatapoints
+      parameters:
+      - description: Project ID to filter datapoints
+        in: query
+        name: project
+        required: true
+        schema:
+          type: string
+      - description: Type of data - "evaluation" or "event"
+        in: query
+        name: type
+        required: false
+        schema:
+          enum:
+          - evaluation
+          - event
+          type: string
+      - description: List of datapoint ids to fetch
+        in: query
+        name: datapoint_ids
+        required: false
+        schema:
+          items:
+            type: string
+          type: array
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                properties:
+                  datapoints:
+                    items:
+                      $ref: '#/components/schemas/Datapoint'
+                    type: array
+                type: object
+          description: Successful response
+      summary: Retrieve a list of datapoints
+      tags:
+      - Datapoints
+    post:
+      operationId: createDatapoint
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateDatapointRequest'
+        required: true
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                properties:
+                  result:
+                    properties:
+                      insertedId:
+                        type: string
+                    type: object
+                type: object
+          description: Datapoint successfully created
+      summary: Create a new datapoint
+      tags:
+      - Datapoints
+    put:
+      operationId: updateDatapoint
+      parameters:
+      - description: ID of datapoint to update
+        in: query
+        name: datapoint_id
+        required: true
+        schema:
+          type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateDatapointRequest'
+        required: true
+      responses:
+        '200':
+          description: Datapoint successfully updated
+        '400':
+          description: Error updating datapoint
+      summary: Update a specific datapoint
+      tags:
+      - Datapoints
+  /datapoints/{id}:
+    delete:
+      operationId: deleteDatapoint
+      parameters:
+      - description: Datapoint ID
+        in: path
+        name: id
+        required: true
+        schema:
+          type: string
+      responses:
+        '200':
+          description: Datapoint successfully deleted
+      summary: Delete a specific datapoint
+      tags:
+      - Datapoints
+    get:
+      operationId: getDatapoint
+      parameters:
+      - description: Datapoint ID
+        in: path
+        name: id
+        required: true
+        schema:
+          type: string
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                properties:
+                  datapoint:
+                    items:
+                      $ref: '#/components/schemas/Datapoint'
+                    type: array
+                type: object
+          description: Successful response
+      summary: Retrieve a specific datapoint
+      tags:
+      - Datapoints
+  /datasets:
+    delete:
+      operationId: deleteDataset
+      parameters:
+      - description: The unique identifier of the dataset to be deleted
+        in: query
+        name: dataset_id
+        required: true
+        schema:
+          type: string
+      responses:
+        '200':
+          description: Successful delete
+      summary: Delete a dataset
+      tags:
+      - Datasets
+    get:
+      operationId: getDatasets
+      parameters:
+      - description: Project ID associated with the datasets
+        in: query
+        name: project
+        required: true
+        schema:
+          type: string
+      - description: Type of the dataset - "evaluation" or "fine-tuning"
+        in: query
+        name: type
+        schema:
+          enum:
+          - evaluation
+          - fine-tuning
+          type: string
+      - description: Unique dataset ID for filtering specific dataset
+        in: query
+        name: dataset_id
+        schema:
+          type: string
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                properties:
+                  testcases:
+                    items:
+                      $ref: '#/components/schemas/Dataset'
+                    type: array
+                type: object
+          description: Successful response
+      summary: Get datasets
+      tags:
+      - Datasets
+    post:
+      operationId: createDataset
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateDatasetRequest'
+        required: true
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                properties:
+                  inserted:
+                    type: boolean
+                  result:
+                    properties:
+                      insertedId:
+                        type: string
+                    type: object
+                type: object
+          description: Successful creation
+      summary: Create a dataset
+      tags:
+      - Datasets
+    put:
+      operationId: updateDataset
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/DatasetUpdate'
+        required: true
+      responses:
+        '200':
+          description: Successful update
+      summary: Update a dataset
+      tags:
+      - Datasets
+  /events:
+    get:
+      operationId: getEvents
+      parameters:
+      - in: query
+        name: project
+        required: true
+        schema:
+          type: string
+      - in: query
+        name: dateRange
+        required: false
+        schema:
+          properties:
+            $gte:
+              description: ISO String for start of date time filter
+              type: string
+            $lte:
+              description: ISO String for end of date time filter
+              type: string
+          type: object
+      - in: query
+        name: filters
+        required: true
+        schema:
+          items:
+            $ref: '#/components/schemas/EventFilter'
+          type: array
+      - in: query
+        name: limit
+        required: false
+        schema:
+          description: Limit number of results to speed up query (default is 1000)
+          type: number
+      - in: query
+        name: page
+        required: false
+        schema:
+          description: Page number of results (default is 1)
+          type: number
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                properties:
+                  events:
+                    items:
+                      $ref: '#/components/schemas/Event'
+                    type: array
+                  totalEvents:
+                    description: Total number of events in the specified filter
+                    type: number
+                type: object
+          description: Success
+      summary: Retrieve events based on filters
+      tags:
+      - Events
+    post:
+      description: Please refer to our instrumentation guide for detailed information
+      operationId: createEvent
+      requestBody:
+        content:
+          application/json:
+            schema:
+              properties:
+                event:
+                  $ref: '#/components/schemas/CreateEventRequest'
+              type: object
+        required: true
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                properties:
+                  event_id:
+                    type: string
+                  success:
+                    type: boolean
+                type: object
+          description: Event created
+      summary: Create a new event
+      tags:
+      - Events
+    put:
+      operationId: updateEvent
+      requestBody:
+        content:
+          application/json:
+            schema:
+              properties:
+                event_id:
+                  type: string
+                feedback:
+                  additionalProperties: true
+                  type: object
+                metadata:
+                  additionalProperties: true
+                  type: object
+                metrics:
+                  additionalProperties: true
+                  type: object
+                outputs:
+                  additionalProperties: true
+                  type: object
+              required:
+              - event_id
+              type: object
+        required: true
+      responses:
+        '200':
+          description: Event updated
+        '400':
+          description: Bad request
+      summary: Update an event
+      tags:
+      - Events
+  /events/chart:
+    get:
+      operationId: getChart
+      parameters:
+      - in: query
+        name: project
+        required: true
+        schema:
+          type: string
+      - in: query
+        name: dateRange
+        required: false
+        schema:
+          properties:
+            $gte:
+              description: ISO String for start of date time filter
+              type: string
+            $lte:
+              description: ISO String for end of date time filter
+              type: string
+          type: object
+      - in: query
+        name: filters
+        required: true
+        schema:
+          items:
+            $ref: '#/components/schemas/EventFilter'
+          type: array
+      responses:
+        '200':
+          description: Success
+      summary: Retrieve a chart of events
+      tags:
+      - Events
+  /events/{event_id}:
+    delete:
+      operationId: deleteEvent
+      parameters:
+      - in: path
+        name: event_id
+        required: true
+        schema:
+          type: string
+      - in: query
+        name: project
+        required: true
+        schema:
+          type: string
+      responses:
+        '200':
+          description: Event deleted
+      summary: Delete an event
+      tags:
+      - Events
+  /metrics:
+    delete:
+      description: Remove a metric
+      operationId: deleteMetric
+      parameters:
+      - in: query
+        name: metric_id
+        required: true
+        schema:
+          description: Unique identifier of the metric
+          type: string
+      responses:
+        '200':
+          description: Metric deleted successfully
+      summary: Delete a metric
+      tags:
+      - Metrics
+    get:
+      description: Retrieve a list of all metrics
+      operationId: getMetrics
+      parameters:
+      - description: Project name associated with metrics
+        in: query
+        name: project_name
+        required: true
+        schema:
+          type: string
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                items:
+                  $ref: '#/components/schemas/Metric'
+                type: array
+          description: A list of metrics
+      summary: Get all metrics
+      tags:
+      - Metrics
+    post:
+      description: Add a new metric
+      operationId: createMetric
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Metric'
+        required: true
+      responses:
+        '200':
+          description: Metric created successfully
+      summary: Create a new metric
+      tags:
+      - Metrics
+    put:
+      description: Edit a metric
+      operationId: updateMetric
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/MetricEdit'
+        required: true
+      responses:
+        '200':
+          description: Metric updated successfully
+      summary: Update an existing metric
+      tags:
+      - Metrics
+  /projects:
+    delete:
+      operationId: deleteProject
+      parameters:
+      - in: query
+        name: name
+        required: true
+        schema:
+          type: string
+      responses:
+        '200':
+          description: Project deleted
+      summary: Delete a project
+      tags:
+      - Projects
+    get:
+      operationId: getProjects
+      parameters:
+      - in: query
+        name: name
+        required: false
+        schema:
+          type: string
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                items:
+                  $ref: '#/components/schemas/Project'
+                type: array
+          description: A list of projects
+      summary: Get a list of projects
+      tags:
+      - Projects
+    post:
+      operationId: createProject
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateProjectRequest'
+        required: true
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Project'
+          description: The created project
+      summary: Create a new project
+      tags:
+      - Projects
+    put:
+      operationId: updateProject
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateProjectRequest'
+        required: true
+      responses:
+        '200':
+          description: Successfully updated the project
+      summary: Update an existing project
+      tags:
+      - Projects
+  /session/start:
+    post:
+      operationId: startSession
+      requestBody:
+        content:
+          application/json:
+            schema:
+              properties:
+                session:
+                  $ref: '#/components/schemas/SessionStartRequest'
+              type: object
+        required: true
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                properties:
+                  session_id:
+                    type: string
+                type: object
+          description: Session successfully started
+      summary: Start a new session
+      tags:
+      - Session
+  /session/{session_id}:
+    delete:
+      operationId: deleteSession
+      parameters:
+      - in: path
+        name: session_id
+        required: true
+        schema:
+          type: string
+      responses:
+        '200':
+          description: Session successfully deleted
+      summary: Delete a session
+      tags:
+      - Session
+    get:
+      operationId: getSession
+      parameters:
+      - in: path
+        name: session_id
+        required: true
+        schema:
+          type: string
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Event'
+          description: Session details
+      summary: Retrieve a session
+      tags:
+      - Session
+  /session/{session_id}/traces:
+    post:
+      operationId: processEventTrace
+      parameters:
+      - description: The ID of the session to which this event trace belongs
+        in: path
+        name: session_id
+        required: true
+        schema:
+          type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              properties:
+                logs:
+                  items:
+                    additionalProperties: true
+                    type: object
+                  type: array
+              type: object
+        required: true
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                properties:
+                  result:
+                    type: string
+                type: object
+          description: Successfully processed the event traces
+      summary: Process an event trace for a given session
+      tags:
+      - Session
+  /tools:
+    delete:
+      operationId: deleteTool
+      parameters:
+      - in: query
+        name: function_id
+        required: true
+        schema:
+          type: string
+      responses:
+        '200':
+          description: Successfully deleted the tool
+      summary: Delete a tool
+      tags:
+      - Tools
+    get:
+      operationId: getTools
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                items:
+                  $ref: '#/components/schemas/Tool'
+                type: array
+          description: Successfully retrieved the list of tools
+      security:
+      - BearerAuth: []
+      summary: Retrieve a list of tools
+      tags:
+      - Tools
+    post:
+      operationId: createTool
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateToolRequest'
+        required: true
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                properties:
+                  result:
+                    properties:
+                      insertedId:
+                        type: string
+                    type: object
+                type: object
+          description: Tool successfully created
+      security:
+      - BearerAuth: []
+      summary: Create a new tool
+      tags:
+      - Tools
+    put:
+      operationId: updateTool
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateToolRequest'
+        required: true
+      responses:
+        '200':
+          description: Successfully updated the tool
+      security:
+      - BearerAuth: []
+      summary: Update an existing tool
+      tags:
+      - Tools
 security:
 - BearerAuth: []
 servers:

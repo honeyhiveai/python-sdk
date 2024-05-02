@@ -44,7 +44,7 @@ if res is not None:
 
 | Error Object    | Status Code     | Content Type    |
 | --------------- | --------------- | --------------- |
-| errors.SDKError | 4x-5xx          | */*             |
+| errors.SDKError | 4xx-5xx         | */*             |
 
 ## get_projects
 
@@ -82,7 +82,7 @@ if res.projects is not None:
 
 | Error Object    | Status Code     | Content Type    |
 | --------------- | --------------- | --------------- |
-| errors.SDKError | 4x-5xx          | */*             |
+| errors.SDKError | 4xx-5xx         | */*             |
 
 ## create_project
 
@@ -124,7 +124,7 @@ if res.project is not None:
 
 | Error Object    | Status Code     | Content Type    |
 | --------------- | --------------- | --------------- |
-| errors.SDKError | 4x-5xx          | */*             |
+| errors.SDKError | 4xx-5xx         | */*             |
 
 ## update_project
 
@@ -140,15 +140,13 @@ s = honeyhive.HoneyHive(
     bearer_auth="<YOUR_BEARER_TOKEN_HERE>",
 )
 
-req = components.Project(
-    description='Profit-focused even-keeled encryption',
-    name='<value>',
-    type=components.ProjectType.COMPLETIONS,
+req = components.UpdateProjectRequest(
+    project_id='<value>',
 )
 
 res = s.projects.update_project(req)
 
-if res.project is not None:
+if res is not None:
     # handle response
     pass
 
@@ -156,9 +154,9 @@ if res.project is not None:
 
 ### Parameters
 
-| Parameter                                                | Type                                                     | Required                                                 | Description                                              |
-| -------------------------------------------------------- | -------------------------------------------------------- | -------------------------------------------------------- | -------------------------------------------------------- |
-| `request`                                                | [components.Project](../../models/components/project.md) | :heavy_check_mark:                                       | The request object to use for the request.               |
+| Parameter                                                                          | Type                                                                               | Required                                                                           | Description                                                                        |
+| ---------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------- |
+| `request`                                                                          | [components.UpdateProjectRequest](../../models/components/updateprojectrequest.md) | :heavy_check_mark:                                                                 | The request object to use for the request.                                         |
 
 
 ### Response
@@ -168,4 +166,4 @@ if res.project is not None:
 
 | Error Object    | Status Code     | Content Type    |
 | --------------- | --------------- | --------------- |
-| errors.SDKError | 4x-5xx          | */*             |
+| errors.SDKError | 4xx-5xx         | */*             |

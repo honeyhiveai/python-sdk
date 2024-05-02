@@ -8,13 +8,6 @@ from typing import List, Optional
 
 
 @dataclasses.dataclass
-class GetToolsSecurity:
-    bearer_auth: str = dataclasses.field(metadata={'security': { 'scheme': True, 'type': 'http', 'sub_type': 'bearer', 'field_name': 'Authorization' }})
-    
-
-
-
-@dataclasses.dataclass
 class GetToolsResponse:
     content_type: str = dataclasses.field()
     r"""HTTP response content type for this operation"""

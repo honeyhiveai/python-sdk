@@ -4,56 +4,7 @@ from __future__ import annotations
 import dataclasses
 from dataclasses_json import Undefined, dataclass_json
 from honeyhive import utils
-from typing import List, Optional
-
-
-@dataclasses.dataclass
-class SessionStartRequestConfig:
-    r"""Associated configuration for the session"""
-    
-
-
-
-@dataclasses.dataclass
-class SessionStartRequestFeedback:
-    r"""Any user feedback provided for the session output"""
-    
-
-
-
-@dataclasses.dataclass
-class SessionStartRequestInputs:
-    r"""Input object passed to the session - user query, text blob, etc"""
-    
-
-
-
-@dataclasses.dataclass
-class SessionStartRequestMetadata:
-    r"""Any system or application metadata associated with the session"""
-    
-
-
-
-@dataclasses.dataclass
-class SessionStartRequestMetrics:
-    r"""Any values computed over the output of the session"""
-    
-
-
-
-@dataclasses.dataclass
-class SessionStartRequestOutputs:
-    r"""Final output of the session - completion, chunks, etc"""
-    
-
-
-
-@dataclasses.dataclass
-class SessionStartRequestUserProperties:
-    r"""Any user properties associated with the session"""
-    
-
+from typing import Any, Dict, List, Optional
 
 
 @dataclass_json(undefined=Undefined.EXCLUDE)
@@ -67,7 +18,7 @@ class SessionStartRequest:
     r"""Source of the session - production, staging, etc"""
     children_ids: Optional[List[str]] = dataclasses.field(default=None, metadata={'dataclasses_json': { 'letter_case': utils.get_field_name('children_ids'), 'exclude': lambda f: f is None }})
     r"""Id of events that are nested within the session"""
-    config: Optional[SessionStartRequestConfig] = dataclasses.field(default=None, metadata={'dataclasses_json': { 'letter_case': utils.get_field_name('config'), 'exclude': lambda f: f is None }})
+    config: Optional[Dict[str, Any]] = dataclasses.field(default=None, metadata={'dataclasses_json': { 'letter_case': utils.get_field_name('config'), 'exclude': lambda f: f is None }})
     r"""Associated configuration for the session"""
     duration: Optional[float] = dataclasses.field(default=None, metadata={'dataclasses_json': { 'letter_case': utils.get_field_name('duration'), 'exclude': lambda f: f is None }})
     r"""How long the session took in milliseconds"""
@@ -75,21 +26,21 @@ class SessionStartRequest:
     r"""UTC timestamp (in milliseconds) for the session end"""
     error: Optional[str] = dataclasses.field(default=None, metadata={'dataclasses_json': { 'letter_case': utils.get_field_name('error'), 'exclude': lambda f: f is None }})
     r"""Any error description if session failed"""
-    feedback: Optional[SessionStartRequestFeedback] = dataclasses.field(default=None, metadata={'dataclasses_json': { 'letter_case': utils.get_field_name('feedback'), 'exclude': lambda f: f is None }})
+    feedback: Optional[Dict[str, Any]] = dataclasses.field(default=None, metadata={'dataclasses_json': { 'letter_case': utils.get_field_name('feedback'), 'exclude': lambda f: f is None }})
     r"""Any user feedback provided for the session output"""
-    inputs: Optional[SessionStartRequestInputs] = dataclasses.field(default=None, metadata={'dataclasses_json': { 'letter_case': utils.get_field_name('inputs'), 'exclude': lambda f: f is None }})
+    inputs: Optional[Dict[str, Any]] = dataclasses.field(default=None, metadata={'dataclasses_json': { 'letter_case': utils.get_field_name('inputs'), 'exclude': lambda f: f is None }})
     r"""Input object passed to the session - user query, text blob, etc"""
-    metadata: Optional[SessionStartRequestMetadata] = dataclasses.field(default=None, metadata={'dataclasses_json': { 'letter_case': utils.get_field_name('metadata'), 'exclude': lambda f: f is None }})
+    metadata: Optional[Dict[str, Any]] = dataclasses.field(default=None, metadata={'dataclasses_json': { 'letter_case': utils.get_field_name('metadata'), 'exclude': lambda f: f is None }})
     r"""Any system or application metadata associated with the session"""
-    metrics: Optional[SessionStartRequestMetrics] = dataclasses.field(default=None, metadata={'dataclasses_json': { 'letter_case': utils.get_field_name('metrics'), 'exclude': lambda f: f is None }})
+    metrics: Optional[Dict[str, Any]] = dataclasses.field(default=None, metadata={'dataclasses_json': { 'letter_case': utils.get_field_name('metrics'), 'exclude': lambda f: f is None }})
     r"""Any values computed over the output of the session"""
-    outputs: Optional[SessionStartRequestOutputs] = dataclasses.field(default=None, metadata={'dataclasses_json': { 'letter_case': utils.get_field_name('outputs'), 'exclude': lambda f: f is None }})
+    outputs: Optional[Dict[str, Any]] = dataclasses.field(default=None, metadata={'dataclasses_json': { 'letter_case': utils.get_field_name('outputs'), 'exclude': lambda f: f is None }})
     r"""Final output of the session - completion, chunks, etc"""
     session_id: Optional[str] = dataclasses.field(default=None, metadata={'dataclasses_json': { 'letter_case': utils.get_field_name('session_id'), 'exclude': lambda f: f is None }})
     r"""Unique id of the session, if not set, it will be auto-generated"""
     start_time: Optional[float] = dataclasses.field(default=None, metadata={'dataclasses_json': { 'letter_case': utils.get_field_name('start_time'), 'exclude': lambda f: f is None }})
     r"""UTC timestamp (in milliseconds) for the session start"""
-    user_properties: Optional[SessionStartRequestUserProperties] = dataclasses.field(default=None, metadata={'dataclasses_json': { 'letter_case': utils.get_field_name('user_properties'), 'exclude': lambda f: f is None }})
+    user_properties: Optional[Dict[str, Any]] = dataclasses.field(default=None, metadata={'dataclasses_json': { 'letter_case': utils.get_field_name('user_properties'), 'exclude': lambda f: f is None }})
     r"""Any user properties associated with the session"""
     
 

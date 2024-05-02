@@ -24,9 +24,10 @@ class Threshold:
 
 
 class MetricType(str, Enum):
-    r"""Type of the metric - \\"custom\\" or \\"model\\" """
+    r"""Type of the metric - \\"custom\\", \\"model\\" or \\"human\\" """
     CUSTOM = 'custom'
     MODEL = 'model'
+    HUMAN = 'human'
 
 
 @dataclass_json(undefined=Undefined.EXCLUDE)
@@ -41,11 +42,13 @@ class Metric:
     task: str = dataclasses.field(metadata={'dataclasses_json': { 'letter_case': utils.get_field_name('task') }})
     r"""Name of the project associated with metric"""
     type: MetricType = dataclasses.field(metadata={'dataclasses_json': { 'letter_case': utils.get_field_name('type') }})
-    r"""Type of the metric - \\"custom\\" or \\"model\\" """
+    r"""Type of the metric - \\"custom\\", \\"model\\" or \\"human\\" """
     id: Optional[str] = dataclasses.field(default=None, metadata={'dataclasses_json': { 'letter_case': utils.get_field_name('_id'), 'exclude': lambda f: f is None }})
     r"""Unique idenitifier"""
     code_snippet: Optional[str] = dataclasses.field(default=None, metadata={'dataclasses_json': { 'letter_case': utils.get_field_name('code_snippet'), 'exclude': lambda f: f is None }})
     r"""Associated code block for the metric"""
+    criteria: Optional[str] = dataclasses.field(default=None, metadata={'dataclasses_json': { 'letter_case': utils.get_field_name('criteria'), 'exclude': lambda f: f is None }})
+    r"""Criteria for human metrics"""
     enabled_in_prod: Optional[bool] = dataclasses.field(default=None, metadata={'dataclasses_json': { 'letter_case': utils.get_field_name('enabled_in_prod'), 'exclude': lambda f: f is None }})
     r"""Whether to compute on all production events automatically"""
     event_name: Optional[str] = dataclasses.field(default=None, metadata={'dataclasses_json': { 'letter_case': utils.get_field_name('event_name'), 'exclude': lambda f: f is None }})

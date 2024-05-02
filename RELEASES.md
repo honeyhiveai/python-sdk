@@ -79,3 +79,153 @@ Based on:
 - Speakeasy CLI 1.209.2 (2.281.2) https://github.com/speakeasy-api/speakeasy
 ### Generated
 - [python v0.5.0] .
+
+## 2024-04-30 20:25:45
+### Changes
+Based on:
+- OpenAPI Doc  
+- Speakeasy CLI 1.277.4 (2.318.3) https://github.com/speakeasy-api/speakeasy
+### Generated
+- [python v0.6.0] .
+### Releases
+- [PyPI v0.6.0] https://pypi.org/project/HoneyHive/0.6.0 - .
+
+## 2024-04-30 21:53:25
+### Changes
+Based on:
+- OpenAPI Doc  
+- Speakeasy CLI 1.277.4 (2.318.3) https://github.com/speakeasy-api/speakeasy
+### Generated
+- [python v0.6.1] .
+### Releases
+- [PyPI v0.6.1] https://pypi.org/project/HoneyHive/0.6.1 - .
+
+## 2024-05-01 00:31:23
+### Changes
+Based on:
+- OpenAPI Doc  
+- Speakeasy CLI 1.277.4 (2.318.3) https://github.com/speakeasy-api/speakeasy
+### Generated
+- [python v0.6.2] .
+### Releases
+- [PyPI v0.6.2] https://pypi.org/project/HoneyHive/0.6.2 - .
+
+## 2024-05-01 01:43:29
+### Changes
+Based on:
+- OpenAPI Doc  
+- Speakeasy CLI 1.277.4 (2.318.3) https://github.com/speakeasy-api/speakeasy
+### Generated
+- [python v0.6.3] .
+### Releases
+- [PyPI v0.6.3] https://pypi.org/project/HoneyHive/0.6.3 - .
+
+## 2024-05-01 14:03:53
+### Changes
+Based on:
+- OpenAPI Doc  
+- Speakeasy CLI 1.277.4 (2.318.3) https://github.com/speakeasy-api/speakeasy
+### Generated
+- [python v0.6.4] .
+### Releases
+- [PyPI v0.6.4] https://pypi.org/project/HoneyHive/0.6.4 - .
+
+## 2024-05-01 16:47:43
+### Changes
+Based on:
+- OpenAPI Doc  
+- Speakeasy CLI 1.277.4 (2.318.3) https://github.com/speakeasy-api/speakeasy
+### Generated
+- [python v0.6.5] .
+### Releases
+- [PyPI v0.6.5] https://pypi.org/project/HoneyHive/0.6.5 - .
+
+## 2024-05-01 17:07:17
+### Changes
+Based on:
+- OpenAPI Doc  
+- Speakeasy CLI 1.277.4 (2.318.3) https://github.com/speakeasy-api/speakeasy
+### Generated
+- [python v0.6.6] .
+### Releases
+- [PyPI v0.6.6] https://pypi.org/project/HoneyHive/0.6.6 - .
+
+## 2024-05-01 18:01:26
+### Changes
+Based on:
+- OpenAPI Doc  
+- Speakeasy CLI 1.277.4 (2.318.3) https://github.com/speakeasy-api/speakeasy
+### Generated
+- [python v0.6.7] .
+### Releases
+- [PyPI v0.6.7] https://pypi.org/project/HoneyHive/0.6.7 - .
+
+## 2024-05-02 11:16:56
+### Changes
+Based on:
+- OpenAPI Doc  
+- Speakeasy CLI 1.277.6 (2.319.7) https://github.com/speakeasy-api/speakeasy
+### Generated
+- [python v0.6.8] .
+### Releases
+- [PyPI v0.6.8] https://pypi.org/project/HoneyHive/0.6.8 - .
+
+## 2024-05-02 11:59:24
+### Changes
+Based on:
+- OpenAPI Doc  
+- Speakeasy CLI 1.277.6 (2.319.7) https://github.com/speakeasy-api/speakeasy
+### Generated
+- [python v0.6.9] .
+### Releases
+- [PyPI v0.6.9] https://pypi.org/project/HoneyHive/0.6.9 - .
+
+## 2024-05-02 12:17:11
+### Changes
+Based on:
+- OpenAPI Doc  
+- Speakeasy CLI 1.277.6 (2.319.7) https://github.com/speakeasy-api/speakeasy
+### Generated
+- [python v0.6.10] .
+### Releases
+- [PyPI v0.6.10] https://pypi.org/project/HoneyHive/0.6.10 - .
+
+## 2024-05-02 12:28:54
+### Changes
+Based on:
+- OpenAPI Doc  
+- Speakeasy CLI 1.277.6 (2.319.7) https://github.com/speakeasy-api/speakeasy
+### Generated
+- [python v0.6.11] .
+### Releases
+- [PyPI v0.6.11] https://pypi.org/project/HoneyHive/0.6.11 - .
+
+## 2024-05-02 16:20:50
+### Changes
+Based on:
+- OpenAPI Doc  
+- Speakeasy CLI 1.277.8 (2.319.10) https://github.com/speakeasy-api/speakeasy
+### Generated
+- [python v0.6.12] .
+### Releases
+- [PyPI v0.6.12] https://pypi.org/project/HoneyHive/0.6.12 - .
+
+## 2024-05-02 16:29:21
+### Changes
+Based on:
+- OpenAPI Doc  
+- Speakeasy CLI 1.277.8 (2.319.10) https://github.com/speakeasy-api/speakeasy
+### Generated
+- [python v0.6.13] .
+### Releases
+- [PyPI v0.6.13] https://pypi.org/project/HoneyHive/0.6.13 - .
+
+## 2024-05-02 16:42:25
+### Changes
+Based on:
+- OpenAPI Doc  
+- Speakeasy CLI 1.277.8 (2.319.10) https://github.com/speakeasy-api/speakeasy
+### Generated
+- [python v0.6.14] .
+### Releases
+- [PyPI v0.6.14] https://pypi.org/project/HoneyHive/0.6.14 - .
