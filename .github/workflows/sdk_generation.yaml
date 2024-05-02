@@ -26,7 +26,6 @@ jobs:
       pypi_token: ${{ secrets.PYPI_TOKEN }}
       speakeasy_api_key: ${{ secrets.SPEAKEASY_API_KEY }}
 
-
   run_tests:
     needs: generate
     runs-on: ubuntu-latest
