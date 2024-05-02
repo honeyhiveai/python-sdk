@@ -272,6 +272,30 @@ components:
       required:
       - name
       type: object
+    CreateToolRequest:
+      properties:
+        description:
+          type: string
+        name:
+          type: string
+        parameters:
+          additionalProperties: true
+          description: These can be function call params or plugin call params
+          type: object
+        task:
+          description: Name of the project associated with this tool
+          type: string
+        type:
+          enum:
+          - function
+          - tool
+          type: string
+      required:
+      - task
+      - name
+      - parameters
+      - type
+      type: object
     Datapoint:
       properties:
         created_at:
@@ -732,20 +756,6 @@ components:
       - parameters
       - tool_type
       type: object
-    ToolUpdate:
-      properties:
-        description:
-          type: string
-        id:
-          type: string
-        name:
-          type: string
-        parameters:
-          additionalProperties: true
-          type: object
-      required:
-      - id
-      type: object
     UpdateDatapointRequest:
       properties:
         ground_truth:
@@ -794,6 +804,20 @@ components:
           type: string
       required:
       - project_id
+      type: object
+    UpdateToolRequest:
+      properties:
+        description:
+          type: string
+        id:
+          type: string
+        name:
+          type: string
+        parameters:
+          additionalProperties: true
+          type: object
+      required:
+      - id
       type: object
   securitySchemes:
     BearerAuth:
@@ -1562,7 +1586,7 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/Tool'
+              $ref: '#/components/schemas/CreateToolRequest'
         required: true
       responses:
         '200':
