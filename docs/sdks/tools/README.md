@@ -141,6 +141,10 @@ s = honeyhive.HoneyHive(
 
 req = components.UpdateToolRequest(
     id='<id>',
+    name='<value>',
+    parameters={
+        'key': '<value>',
+    },
 )
 
 res = s.tools.update_tool(req)
