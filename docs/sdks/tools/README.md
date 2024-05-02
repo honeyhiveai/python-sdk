@@ -92,13 +92,13 @@ s = honeyhive.HoneyHive(
     bearer_auth="<YOUR_BEARER_TOKEN_HERE>",
 )
 
-req = components.Tool(
+req = components.CreateToolRequest(
     name='<value>',
     parameters={
         'key': '<value>',
     },
     task='<value>',
-    tool_type=components.ToolType.TOOL,
+    type=components.CreateToolRequestType.TOOL,
 )
 
 res = s.tools.create_tool(req)
@@ -111,9 +111,9 @@ if res is not None:
 
 ### Parameters
 
-| Parameter                                          | Type                                               | Required                                           | Description                                        |
-| -------------------------------------------------- | -------------------------------------------------- | -------------------------------------------------- | -------------------------------------------------- |
-| `request`                                          | [components.Tool](../../models/components/tool.md) | :heavy_check_mark:                                 | The request object to use for the request.         |
+| Parameter                                                                    | Type                                                                         | Required                                                                     | Description                                                                  |
+| ---------------------------------------------------------------------------- | ---------------------------------------------------------------------------- | ---------------------------------------------------------------------------- | ---------------------------------------------------------------------------- |
+| `request`                                                                    | [components.CreateToolRequest](../../models/components/createtoolrequest.md) | :heavy_check_mark:                                                           | The request object to use for the request.                                   |
 
 
 ### Response
@@ -139,7 +139,7 @@ s = honeyhive.HoneyHive(
     bearer_auth="<YOUR_BEARER_TOKEN_HERE>",
 )
 
-req = components.ToolUpdate(
+req = components.UpdateToolRequest(
     id='<id>',
 )
 
@@ -153,9 +153,9 @@ if res is not None:
 
 ### Parameters
 
-| Parameter                                                      | Type                                                           | Required                                                       | Description                                                    |
-| -------------------------------------------------------------- | -------------------------------------------------------------- | -------------------------------------------------------------- | -------------------------------------------------------------- |
-| `request`                                                      | [components.ToolUpdate](../../models/components/toolupdate.md) | :heavy_check_mark:                                             | The request object to use for the request.                     |
+| Parameter                                                                    | Type                                                                         | Required                                                                     | Description                                                                  |
+| ---------------------------------------------------------------------------- | ---------------------------------------------------------------------------- | ---------------------------------------------------------------------------- | ---------------------------------------------------------------------------- |
+| `request`                                                                    | [components.UpdateToolRequest](../../models/components/updatetoolrequest.md) | :heavy_check_mark:                                                           | The request object to use for the request.                                   |
 
 
 ### Response

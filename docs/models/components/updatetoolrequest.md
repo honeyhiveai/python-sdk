@@ -1,4 +1,4 @@
-# ToolUpdate
+# UpdateToolRequest
 
 
 ## Fields

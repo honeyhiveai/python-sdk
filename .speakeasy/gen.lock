@@ -1,12 +1,12 @@
 lockVersion: 2.0.0
 id: b027cebf-3475-4e9b-8070-6f08b389f6ed
 management:
-  docChecksum: bff610b18ab2d494e455a6d28125b203
+  docChecksum: 68a8d80fb9f7cdcc63afec342646979a
   docVersion: 1.0.1
-  speakeasyVersion: 1.277.6
-  generationVersion: 2.319.7
-  releaseVersion: 0.6.11
-  configChecksum: 11c5b39dbd2287101f084ad77bc6570d
+  speakeasyVersion: 1.277.8
+  generationVersion: 2.319.10
+  releaseVersion: 0.6.12
+  configChecksum: dfbae59fb5d4336fc5daf6bae8e1ea7c
   repoURL: https://github.com/honeyhiveai/python-sdk.git
   repoSubDirectory: .
   installationURL: https://github.com/honeyhiveai/python-sdk.git
@@ -85,7 +85,8 @@ generatedFiles:
   - src/honeyhive/models/components/sessionstartrequest.py
   - src/honeyhive/models/components/event.py
   - src/honeyhive/models/components/tool.py
-  - src/honeyhive/models/components/toolupdate.py
+  - src/honeyhive/models/components/createtoolrequest.py
+  - src/honeyhive/models/components/updatetoolrequest.py
   - src/honeyhive/models/components/security.py
   - src/honeyhive/models/__init__.py
   - src/honeyhive/models/errors/__init__.py
@@ -199,7 +200,9 @@ generatedFiles:
   - docs/models/components/event.md
   - docs/models/components/tooltype.md
   - docs/models/components/tool.md
-  - docs/models/components/toolupdate.md
+  - docs/models/components/createtoolrequesttype.md
+  - docs/models/components/createtoolrequest.md
+  - docs/models/components/updatetoolrequest.md
   - docs/models/components/security.md
   - docs/sdks/honeyhive/README.md
   - docs/sdks/configurations/README.md
