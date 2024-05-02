@@ -123,7 +123,7 @@ class Tools:
 
     
     
-    def create_tool(self, request: components.Tool) -> operations.CreateToolResponse:
+    def create_tool(self, request: components.CreateToolRequest) -> operations.CreateToolResponse:
         r"""Create a new tool"""
         hook_ctx = HookContext(operation_id='createTool', oauth2_scopes=[], security_source=self.sdk_configuration.security)
         base_url = utils.template_url(*self.sdk_configuration.get_server_details())
@@ -135,7 +135,7 @@ class Tools:
         else:
             headers, query_params = utils.get_security(self.sdk_configuration.security)
         
-        req_content_type, data, form = utils.serialize_request_body(request, components.Tool, "request", False, False, 'json')
+        req_content_type, data, form = utils.serialize_request_body(request, components.CreateToolRequest, "request", False, False, 'json')
         if req_content_type is not None and req_content_type not in ('multipart/form-data', 'multipart/mixed'):
             headers['content-type'] = req_content_type
         if data is None and form is None:
@@ -177,7 +177,7 @@ class Tools:
 
     
     
-    def update_tool(self, request: components.ToolUpdate) -> operations.UpdateToolResponse:
+    def update_tool(self, request: components.UpdateToolRequest) -> operations.UpdateToolResponse:
         r"""Update an existing tool"""
         hook_ctx = HookContext(operation_id='updateTool', oauth2_scopes=[], security_source=self.sdk_configuration.security)
         base_url = utils.template_url(*self.sdk_configuration.get_server_details())
@@ -189,7 +189,7 @@ class Tools:
         else:
             headers, query_params = utils.get_security(self.sdk_configuration.security)
         
-        req_content_type, data, form = utils.serialize_request_body(request, components.ToolUpdate, "request", False, False, 'json')
+        req_content_type, data, form = utils.serialize_request_body(request, components.UpdateToolRequest, "request", False, False, 'json')
         if req_content_type is not None and req_content_type not in ('multipart/form-data', 'multipart/mixed'):
             headers['content-type'] = req_content_type
         if data is None and form is None:
