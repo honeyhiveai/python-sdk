@@ -269,11 +269,6 @@ components:
           type: string
         name:
           type: string
-        type:
-          enum:
-          - completions
-          - chat
-          type: string
       required:
       - name
       type: object
@@ -788,6 +783,17 @@ components:
           type: string
       required:
       - datapoint_id
+      type: object
+    UpdateProjectRequest:
+      properties:
+        description:
+          type: string
+        name:
+          type: string
+        project_id:
+          type: string
+      required:
+      - project_id
       type: object
   securitySchemes:
     BearerAuth:
@@ -1418,15 +1424,11 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/Project'
+              $ref: '#/components/schemas/UpdateProjectRequest'
         required: true
       responses:
         '200':
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Project'
-          description: Project updated
+          description: Successfully updated the project
       summary: Update an existing project
       tags:
       - Projects
