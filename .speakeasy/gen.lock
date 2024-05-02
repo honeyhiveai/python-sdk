@@ -1,12 +1,12 @@
 lockVersion: 2.0.0
 id: b027cebf-3475-4e9b-8070-6f08b389f6ed
 management:
-  docChecksum: 5587294dc35e08280c31718940c353ad
+  docChecksum: 58c70608463412f9f6032e8659d50f06
   docVersion: 1.0.1
   speakeasyVersion: 1.277.6
   generationVersion: 2.319.7
-  releaseVersion: 0.6.8
-  configChecksum: 572da014cce1f7647a1bb92f68018e90
+  releaseVersion: 0.6.9
+  configChecksum: 157c54dbcbc8d039989897e26f3219c3
   repoURL: https://github.com/honeyhiveai/python-sdk.git
   repoSubDirectory: .
   installationURL: https://github.com/honeyhiveai/python-sdk.git
@@ -81,6 +81,7 @@ generatedFiles:
   - src/honeyhive/models/components/metricedit.py
   - src/honeyhive/models/components/project.py
   - src/honeyhive/models/components/createprojectrequest.py
+  - src/honeyhive/models/components/updateprojectrequest.py
   - src/honeyhive/models/components/sessionstartrequest.py
   - src/honeyhive/models/components/event.py
   - src/honeyhive/models/components/tool.py
@@ -191,8 +192,8 @@ generatedFiles:
   - docs/models/components/metricedittype.md
   - docs/models/components/metricedit.md
   - docs/models/components/project.md
-  - docs/models/components/createprojectrequesttype.md
   - docs/models/components/createprojectrequest.md
+  - docs/models/components/updateprojectrequest.md
   - docs/models/components/sessionstartrequest.md
   - docs/models/components/eventeventtype.md
   - docs/models/components/event.md
