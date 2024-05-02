@@ -730,7 +730,7 @@ components:
       - task
       - name
       - parameters
-      - type
+      - tool_type
       type: object
     ToolUpdate:
       properties:
