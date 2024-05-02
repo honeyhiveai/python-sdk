@@ -818,6 +818,8 @@ components:
           type: object
       required:
       - id
+      - parameters
+      - name
       type: object
   securitySchemes:
     BearerAuth:
