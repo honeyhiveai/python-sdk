@@ -17,5 +17,6 @@ from .sessionstartrequest import *
 from .tool import *
 from .toolupdate import *
 from .updatedatapointrequest import *
+from .updateprojectrequest import *
 
-__all__ = ["CallType","Configuration","CreateDatapointRequest","CreateDatapointRequestType","CreateDatasetRequest","CreateDatasetRequestType","CreateEventRequest","CreateProjectRequest","CreateProjectRequestType","Datapoint","Dataset","DatasetType","DatasetUpdate","Env","Event","EventEventType","EventType","FunctionCallParams","History","Inputs","Metric","MetricEdit","MetricEditEventType","MetricEditReturnType","MetricEditThreshold","MetricEditType","MetricType","Parameters","PipelineType","Project","ResponseFormat","ReturnType","Security","SelectedFunctions","SessionStartRequest","Threshold","Tool","ToolType","ToolUpdate","Type","UpdateDatapointRequest","UpdateDatapointRequestHistory"]
+__all__ = ["CallType","Configuration","CreateDatapointRequest","CreateDatapointRequestType","CreateDatasetRequest","CreateDatasetRequestType","CreateEventRequest","CreateProjectRequest","Datapoint","Dataset","DatasetType","DatasetUpdate","Env","Event","EventEventType","EventType","FunctionCallParams","History","Inputs","Metric","MetricEdit","MetricEditEventType","MetricEditReturnType","MetricEditThreshold","MetricEditType","MetricType","Parameters","PipelineType","Project","ResponseFormat","ReturnType","Security","SelectedFunctions","SessionStartRequest","Threshold","Tool","ToolType","ToolUpdate","Type","UpdateDatapointRequest","UpdateDatapointRequestHistory","UpdateProjectRequest"]
