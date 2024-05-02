@@ -641,11 +641,6 @@ components:
           type: string
         name:
           type: string
-        type:
-          enum:
-          - completions
-          - chat
-          type: string
       required:
       - name
       - description
