@@ -103,7 +103,7 @@ req = components.CreateToolRequest(
 
 res = s.tools.create_tool(req)
 
-if res is not None:
+if res.object is not None:
     # handle response
     pass
 
