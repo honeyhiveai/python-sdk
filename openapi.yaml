@@ -1590,7 +1590,17 @@ paths:
         required: true
       responses:
         '200':
-          description: Successfully created a new tool
+          content:
+            application/json:
+              schema:
+                properties:
+                  result:
+                    properties:
+                      insertedId:
+                        type: string
+                    type: object
+                type: object
+          description: Tool successfully created
       security:
       - BearerAuth: []
       summary: Create a new tool
