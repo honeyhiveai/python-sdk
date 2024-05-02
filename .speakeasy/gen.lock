@@ -1,12 +1,12 @@
 lockVersion: 2.0.0
 id: b027cebf-3475-4e9b-8070-6f08b389f6ed
 management:
-  docChecksum: 68a8d80fb9f7cdcc63afec342646979a
+  docChecksum: 26ea2a0a8d050cf562e6c6eadd499607
   docVersion: 1.0.1
   speakeasyVersion: 1.277.8
   generationVersion: 2.319.10
-  releaseVersion: 0.6.12
-  configChecksum: dfbae59fb5d4336fc5daf6bae8e1ea7c
+  releaseVersion: 0.6.13
+  configChecksum: f6df1ce363331451835a55d059da8225
   repoURL: https://github.com/honeyhiveai/python-sdk.git
   repoSubDirectory: .
   installationURL: https://github.com/honeyhiveai/python-sdk.git
@@ -158,6 +158,8 @@ generatedFiles:
   - docs/models/operations/deletetoolrequest.md
   - docs/models/operations/deletetoolresponse.md
   - docs/models/operations/gettoolsresponse.md
+  - docs/models/operations/createtoolresult.md
+  - docs/models/operations/createtoolresponsebody.md
   - docs/models/operations/createtoolresponse.md
   - docs/models/operations/updatetoolresponse.md
   - docs/models/components/env.md
