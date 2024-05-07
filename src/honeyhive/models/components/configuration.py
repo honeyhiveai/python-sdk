@@ -18,12 +18,6 @@ class CallType(str, Enum):
     CHAT = 'chat'
     COMPLETION = 'completion'
 
-class FunctionCallParams(str, Enum):
-    r"""Function calling mode - \\"none\\", \\"auto\\" or \\"force\\" """
-    NONE = 'none'
-    AUTO = 'auto'
-    FORCE = 'force'
-
 
 @dataclasses.dataclass
 class ResponseFormat:
@@ -35,16 +29,22 @@ class ResponseFormat:
 @dataclass_json(undefined=Undefined.EXCLUDE)
 @dataclasses.dataclass
 class SelectedFunctions:
-    description: Optional[str] = dataclasses.field(default=None, metadata={'dataclasses_json': { 'letter_case': utils.get_field_name('description'), 'exclude': lambda f: f is None }})
-    r"""Description of the function"""
     id: Optional[str] = dataclasses.field(default=None, metadata={'dataclasses_json': { 'letter_case': utils.get_field_name('id'), 'exclude': lambda f: f is None }})
     r"""UUID of the function"""
     name: Optional[str] = dataclasses.field(default=None, metadata={'dataclasses_json': { 'letter_case': utils.get_field_name('name'), 'exclude': lambda f: f is None }})
     r"""Name of the function"""
+    description: Optional[str] = dataclasses.field(default=None, metadata={'dataclasses_json': { 'letter_case': utils.get_field_name('description'), 'exclude': lambda f: f is None }})
+    r"""Description of the function"""
     parameters: Optional[Dict[str, Any]] = dataclasses.field(default=None, metadata={'dataclasses_json': { 'letter_case': utils.get_field_name('parameters'), 'exclude': lambda f: f is None }})
     r"""Parameters for the function"""
     
 
+
+class FunctionCallParams(str, Enum):
+    r"""Function calling mode - \\"none\\", \\"auto\\" or \\"force\\" """
+    NONE = 'none'
+    AUTO = 'auto'
+    FORCE = 'force'
 
 
 @dataclass_json(undefined=Undefined.EXCLUDE)
@@ -55,21 +55,21 @@ class Parameters:
     r"""Type of API calling - \\"chat\\" or \\"completion\\" """
     model: str = dataclasses.field(metadata={'dataclasses_json': { 'letter_case': utils.get_field_name('model') }})
     r"""Model unique name"""
-    force_function: Optional[Dict[str, Any]] = dataclasses.field(default=None, metadata={'dataclasses_json': { 'letter_case': utils.get_field_name('forceFunction'), 'exclude': lambda f: f is None }})
-    r"""Force function-specific parameters"""
-    function_call_params: Optional[FunctionCallParams] = dataclasses.field(default=None, metadata={'dataclasses_json': { 'letter_case': utils.get_field_name('functionCallParams'), 'exclude': lambda f: f is None }})
-    r"""Function calling mode - \\"none\\", \\"auto\\" or \\"force\\" """
     hyperparameters: Optional[Dict[str, Any]] = dataclasses.field(default=None, metadata={'dataclasses_json': { 'letter_case': utils.get_field_name('hyperparameters'), 'exclude': lambda f: f is None }})
     r"""Model-specific hyperparameters"""
     response_format: Optional[ResponseFormat] = dataclasses.field(default=None, metadata={'dataclasses_json': { 'letter_case': utils.get_field_name('responseFormat'), 'exclude': lambda f: f is None }})
     r"""Response format for the model with the key \\"type\\" and value \\"text\\" or \\"json_object\\" """
     selected_functions: Optional[List[SelectedFunctions]] = dataclasses.field(default=None, metadata={'dataclasses_json': { 'letter_case': utils.get_field_name('selectedFunctions'), 'exclude': lambda f: f is None }})
     r"""List of functions to be called by the model, refer to OpenAI schema for more details"""
+    function_call_params: Optional[FunctionCallParams] = dataclasses.field(default=None, metadata={'dataclasses_json': { 'letter_case': utils.get_field_name('functionCallParams'), 'exclude': lambda f: f is None }})
+    r"""Function calling mode - \\"none\\", \\"auto\\" or \\"force\\" """
+    force_function: Optional[Dict[str, Any]] = dataclasses.field(default=None, metadata={'dataclasses_json': { 'letter_case': utils.get_field_name('forceFunction'), 'exclude': lambda f: f is None }})
+    r"""Force function-specific parameters"""
     additional_properties: Optional[Dict[str, Any]] = dataclasses.field(default=None, metadata={'dataclasses_json': { 'exclude': lambda f: f is None }})
     
 
 
-class Type(str, Enum):
+class ConfigurationType(str, Enum):
     r"""Type of the configuration - \\"LLM\\" or \\"pipeline\\" - \\"LLM\\" by default"""
     LLM = 'LLM'
     PIPELINE = 'pipeline'
@@ -78,19 +78,19 @@ class Type(str, Enum):
 @dataclass_json(undefined=Undefined.EXCLUDE)
 @dataclasses.dataclass
 class Configuration:
-    name: str = dataclasses.field(metadata={'dataclasses_json': { 'letter_case': utils.get_field_name('name') }})
-    r"""Name of the configuration"""
-    parameters: Parameters = dataclasses.field(metadata={'dataclasses_json': { 'letter_case': utils.get_field_name('parameters') }})
     project: str = dataclasses.field(metadata={'dataclasses_json': { 'letter_case': utils.get_field_name('project') }})
     r"""ID of the project to which this configuration belongs"""
+    name: str = dataclasses.field(metadata={'dataclasses_json': { 'letter_case': utils.get_field_name('name') }})
+    r"""Name of the configuration"""
     provider: str = dataclasses.field(metadata={'dataclasses_json': { 'letter_case': utils.get_field_name('provider') }})
     r"""Name of the provider - \\"openai\\", \\"anthropic\\", etc."""
-    type: Type = dataclasses.field(metadata={'dataclasses_json': { 'letter_case': utils.get_field_name('type') }})
-    r"""Type of the configuration - \\"LLM\\" or \\"pipeline\\" - \\"LLM\\" by default"""
+    parameters: Parameters = dataclasses.field(metadata={'dataclasses_json': { 'letter_case': utils.get_field_name('parameters') }})
     id: Optional[str] = dataclasses.field(default=None, metadata={'dataclasses_json': { 'letter_case': utils.get_field_name('_id'), 'exclude': lambda f: f is None }})
     r"""ID of the configuration"""
     env: Optional[List[Env]] = dataclasses.field(default=None, metadata={'dataclasses_json': { 'letter_case': utils.get_field_name('env'), 'exclude': lambda f: f is None }})
     r"""List of environments where the configuration is active"""
+    type: Optional[ConfigurationType] = dataclasses.field(default=None, metadata={'dataclasses_json': { 'letter_case': utils.get_field_name('type'), 'exclude': lambda f: f is None }})
+    r"""Type of the configuration - \\"LLM\\" or \\"pipeline\\" - \\"LLM\\" by default"""
     user_properties: Optional[Dict[str, Any]] = dataclasses.field(default=None, metadata={'dataclasses_json': { 'letter_case': utils.get_field_name('user_properties'), 'exclude': lambda f: f is None }})
     r"""Details of user who created the configuration"""
     

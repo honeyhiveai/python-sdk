@@ -15,11 +15,11 @@ class ToolType(str, Enum):
 @dataclass_json(undefined=Undefined.EXCLUDE)
 @dataclasses.dataclass
 class Tool:
+    task: str = dataclasses.field(metadata={'dataclasses_json': { 'letter_case': utils.get_field_name('task') }})
+    r"""Name of the project associated with this tool"""
     name: str = dataclasses.field(metadata={'dataclasses_json': { 'letter_case': utils.get_field_name('name') }})
     parameters: Dict[str, Any] = dataclasses.field(metadata={'dataclasses_json': { 'letter_case': utils.get_field_name('parameters') }})
     r"""These can be function call params or plugin call params"""
-    task: str = dataclasses.field(metadata={'dataclasses_json': { 'letter_case': utils.get_field_name('task') }})
-    r"""Name of the project associated with this tool"""
     tool_type: ToolType = dataclasses.field(metadata={'dataclasses_json': { 'letter_case': utils.get_field_name('tool_type') }})
     id: Optional[str] = dataclasses.field(default=None, metadata={'dataclasses_json': { 'letter_case': utils.get_field_name('_id'), 'exclude': lambda f: f is None }})
     description: Optional[str] = dataclasses.field(default=None, metadata={'dataclasses_json': { 'letter_case': utils.get_field_name('description'), 'exclude': lambda f: f is None }})

@@ -3,12 +3,24 @@
 from __future__ import annotations
 import dataclasses
 import requests as requests_http
+from dataclasses_json import Undefined, dataclass_json
+from honeyhive import utils
+from typing import Optional
 
 
 @dataclasses.dataclass
 class DeleteDatapointRequest:
     id: str = dataclasses.field(metadata={'path_param': { 'field_name': 'id', 'style': 'simple', 'explode': False }})
-    r"""Datapoint ID"""
+    r"""Datapoint ID like `65c13dbbd65fb876b7886cdb`"""
+    
+
+
+
+@dataclass_json(undefined=Undefined.EXCLUDE)
+@dataclasses.dataclass
+class DeleteDatapointResponseBody:
+    r"""Datapoint successfully deleted"""
+    deleted: Optional[bool] = dataclasses.field(default=None, metadata={'dataclasses_json': { 'letter_case': utils.get_field_name('deleted'), 'exclude': lambda f: f is None }})
     
 
 
@@ -21,5 +33,7 @@ class DeleteDatapointResponse:
     r"""HTTP response status code for this operation"""
     raw_response: requests_http.Response = dataclasses.field()
     r"""Raw HTTP response; suitable for custom response parsing"""
+    object: Optional[DeleteDatapointResponseBody] = dataclasses.field(default=None)
+    r"""Datapoint successfully deleted"""
     
 

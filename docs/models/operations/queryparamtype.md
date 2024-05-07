@@ -1,11 +1,11 @@
 # QueryParamType
 
-Type of data - "evaluation" or "event"
+Type of the dataset - "evaluation" or "fine-tuning"
 
 
 ## Values
 
-| Name         | Value        |
-| ------------ | ------------ |
-| `EVALUATION` | evaluation   |
-| `EVENT`      | event        |
+| Name          | Value         |
+| ------------- | ------------- |
+| `EVALUATION`  | evaluation    |
+| `FINE_TUNING` | fine-tuning   |

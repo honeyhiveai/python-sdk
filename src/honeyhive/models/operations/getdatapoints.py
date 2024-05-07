@@ -9,9 +9,9 @@ from enum import Enum
 from honeyhive import utils
 from typing import List, Optional
 
-class QueryParamType(str, Enum):
-    r"""Type of data - \\"evaluation\\" or \\"event\\" """
-    EVALUATION = 'evaluation'
+class Type(str, Enum):
+    r"""Type of data - \\"session\\" or \\"event\\" """
+    SESSION = 'session'
     EVENT = 'event'
 
 
@@ -19,8 +19,8 @@ class QueryParamType(str, Enum):
 class GetDatapointsRequest:
     project: str = dataclasses.field(metadata={'query_param': { 'field_name': 'project', 'style': 'form', 'explode': True }})
     r"""Project ID to filter datapoints"""
-    type: Optional[QueryParamType] = dataclasses.field(default=None, metadata={'query_param': { 'field_name': 'type', 'style': 'form', 'explode': True }})
-    r"""Type of data - \\"evaluation\\" or \\"event\\" """
+    type: Optional[Type] = dataclasses.field(default=None, metadata={'query_param': { 'field_name': 'type', 'style': 'form', 'explode': True }})
+    r"""Type of data - \\"session\\" or \\"event\\" """
     datapoint_ids: Optional[List[str]] = dataclasses.field(default=None, metadata={'query_param': { 'field_name': 'datapoint_ids', 'style': 'form', 'explode': True }})
     r"""List of datapoint ids to fetch"""
     
