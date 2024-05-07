@@ -3,48 +3,10 @@
 
 ### Available Operations
 
-* [delete_metric](#delete_metric) - Delete a metric
 * [get_metrics](#get_metrics) - Get all metrics
 * [create_metric](#create_metric) - Create a new metric
 * [update_metric](#update_metric) - Update an existing metric
-
-## delete_metric
-
-Remove a metric
-
-### Example Usage
-
-```python
-import honeyhive
-
-s = honeyhive.HoneyHive(
-    bearer_auth="<YOUR_BEARER_TOKEN_HERE>",
-)
-
-
-res = s.metrics.delete_metric(metric_id='<value>')
-
-if res is not None:
-    # handle response
-    pass
-
-```
-
-### Parameters
-
-| Parameter          | Type               | Required           | Description        |
-| ------------------ | ------------------ | ------------------ | ------------------ |
-| `metric_id`        | *str*              | :heavy_check_mark: | N/A                |
-
-
-### Response
-
-**[operations.DeleteMetricResponse](../../models/operations/deletemetricresponse.md)**
-### Errors
-
-| Error Object    | Status Code     | Content Type    |
-| --------------- | --------------- | --------------- |
-| errors.SDKError | 4xx-5xx         | */*             |
+* [delete_metric](#delete_metric) - Delete a metric
 
 ## get_metrics
 
@@ -58,7 +20,6 @@ import honeyhive
 s = honeyhive.HoneyHive(
     bearer_auth="<YOUR_BEARER_TOKEN_HERE>",
 )
-
 
 res = s.metrics.get_metrics(project_name='<value>')
 
@@ -98,15 +59,13 @@ s = honeyhive.HoneyHive(
     bearer_auth="<YOUR_BEARER_TOKEN_HERE>",
 )
 
-req = components.Metric(
-    description='Mandatory eco-centric open system',
+res = s.metrics.create_metric(request=components.Metric(
     name='<value>',
-    return_type=components.ReturnType.FLOAT,
     task='<value>',
-    type=components.MetricType.HUMAN,
-)
-
-res = s.metrics.create_metric(req)
+    type=components.Type.MODEL,
+    description='Fully-configurable neutral framework',
+    return_type=components.ReturnType.STRING,
+))
 
 if res is not None:
     # handle response
@@ -144,11 +103,9 @@ s = honeyhive.HoneyHive(
     bearer_auth="<YOUR_BEARER_TOKEN_HERE>",
 )
 
-req = components.MetricEdit(
+res = s.metrics.update_metric(request=components.MetricEdit(
     metric_id='<value>',
-)
-
-res = s.metrics.update_metric(req)
+))
 
 if res is not None:
     # handle response
@@ -166,6 +123,43 @@ if res is not None:
 ### Response
 
 **[operations.UpdateMetricResponse](../../models/operations/updatemetricresponse.md)**
+### Errors
+
+| Error Object    | Status Code     | Content Type    |
+| --------------- | --------------- | --------------- |
+| errors.SDKError | 4xx-5xx         | */*             |
+
+## delete_metric
+
+Remove a metric
+
+### Example Usage
+
+```python
+import honeyhive
+
+s = honeyhive.HoneyHive(
+    bearer_auth="<YOUR_BEARER_TOKEN_HERE>",
+)
+
+res = s.metrics.delete_metric(metric_id='<value>')
+
+if res is not None:
+    # handle response
+    pass
+
+```
+
+### Parameters
+
+| Parameter          | Type               | Required           | Description        |
+| ------------------ | ------------------ | ------------------ | ------------------ |
+| `metric_id`        | *str*              | :heavy_check_mark: | N/A                |
+
+
+### Response
+
+**[operations.DeleteMetricResponse](../../models/operations/deletemetricresponse.md)**
 ### Errors
 
 | Error Object    | Status Code     | Content Type    |

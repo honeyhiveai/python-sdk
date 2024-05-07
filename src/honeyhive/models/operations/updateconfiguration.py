@@ -3,14 +3,14 @@
 from __future__ import annotations
 import dataclasses
 import requests as requests_http
-from ...models.components import configuration as components_configuration
+from ...models.components import putconfigurationrequest as components_putconfigurationrequest
 
 
 @dataclasses.dataclass
 class UpdateConfigurationRequest:
     id: str = dataclasses.field(metadata={'path_param': { 'field_name': 'id', 'style': 'simple', 'explode': False }})
-    r"""Configuration ID"""
-    configuration: components_configuration.Configuration = dataclasses.field(metadata={'request': { 'media_type': 'application/json' }})
+    r"""Configuration ID like `6638187d505c6812e4043f24`"""
+    put_configuration_request: components_putconfigurationrequest.PutConfigurationRequest = dataclasses.field(metadata={'request': { 'media_type': 'application/json' }})
     
 
 

@@ -8,7 +8,7 @@ import requests as requests_http
 @dataclasses.dataclass
 class DeleteDatasetRequest:
     dataset_id: str = dataclasses.field(metadata={'query_param': { 'field_name': 'dataset_id', 'style': 'form', 'explode': True }})
-    r"""The unique identifier of the dataset to be deleted"""
+    r"""The unique identifier of the dataset to be deleted like `663876ec4611c47f4970f0c3`"""
     
 
 
