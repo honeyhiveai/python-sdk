@@ -252,7 +252,7 @@ class HoneyHiveLangChainTracer(BaseTracer, ABC):
                 parent_log.children += logs
         child_runs = sorted(
             run.child_runs,
-            key=lambda x: x.execution_order,
+            key=lambda x: x.start_time,
         )
         for run in child_runs:
             # Assume the final log at this step is the parent
