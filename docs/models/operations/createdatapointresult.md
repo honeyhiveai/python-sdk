@@ -1,8 +1,8 @@
-# DeleteSessionRequest
+# CreateDatapointResult
 
 
 ## Fields
 
 | Field              | Type               | Required           | Description        |
 | ------------------ | ------------------ | ------------------ | ------------------ |
-| `session_id`       | *str*              | :heavy_check_mark: | N/A                |
+| `inserted_id`      | *Optional[str]*    | :heavy_minus_sign: | N/A                |

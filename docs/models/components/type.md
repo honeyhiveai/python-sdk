@@ -1,11 +1,12 @@
 # Type
 
-Type of the configuration - "LLM" or "pipeline" - "LLM" by default
+Type of the metric - "custom", "model" or "human"
 
 
 ## Values
 
-| Name       | Value      |
-| ---------- | ---------- |
-| `LLM`      | LLM        |
-| `PIPELINE` | pipeline   |
+| Name     | Value    |
+| -------- | -------- |
+| `CUSTOM` | custom   |
+| `MODEL`  | model    |
+| `HUMAN`  | human    |
