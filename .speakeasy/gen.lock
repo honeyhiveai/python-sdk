@@ -1,12 +1,12 @@
 lockVersion: 2.0.0
 id: b027cebf-3475-4e9b-8070-6f08b389f6ed
 management:
-  docChecksum: 45932cf3492477993f2bfe6055a911b1
+  docChecksum: 371e85f9737ae369799255cb55fe10c6
   docVersion: 1.0.1
-  speakeasyVersion: 1.282.0
-  generationVersion: 2.326.0
-  releaseVersion: 0.7.0
-  configChecksum: cc750c4edda6ed3b8ddc49141cf90b41
+  speakeasyVersion: 1.285.1
+  generationVersion: 2.326.3
+  releaseVersion: 0.7.1
+  configChecksum: 2b1948f54a699f4175c05ff256878205
   repoURL: https://github.com/honeyhiveai/python-sdk.git
   repoSubDirectory: .
   installationURL: https://github.com/honeyhiveai/python-sdk.git
@@ -56,8 +56,8 @@ generatedFiles:
   - src/honeyhive/models/operations/deletetool.py
   - src/honeyhive/models/operations/getdatapoints.py
   - src/honeyhive/models/operations/createdatapoint.py
-  - src/honeyhive/models/operations/updatedatapoint.py
   - src/honeyhive/models/operations/getdatapoint.py
+  - src/honeyhive/models/operations/updatedatapoint.py
   - src/honeyhive/models/operations/deletedatapoint.py
   - src/honeyhive/models/operations/getdatasets.py
   - src/honeyhive/models/operations/createdataset.py
@@ -130,11 +130,11 @@ generatedFiles:
   - docs/models/operations/createdatapointresult.md
   - docs/models/operations/createdatapointresponsebody.md
   - docs/models/operations/createdatapointresponse.md
-  - docs/models/operations/updatedatapointrequest.md
-  - docs/models/operations/updatedatapointresponse.md
   - docs/models/operations/getdatapointrequest.md
   - docs/models/operations/getdatapointresponsebody.md
   - docs/models/operations/getdatapointresponse.md
+  - docs/models/operations/updatedatapointrequest.md
+  - docs/models/operations/updatedatapointresponse.md
   - docs/models/operations/deletedatapointrequest.md
   - docs/models/operations/deletedatapointresponsebody.md
   - docs/models/operations/deletedatapointresponse.md
