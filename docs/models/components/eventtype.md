@@ -1,12 +1,13 @@
 # EventType
 
-Specify whether the event is of "model", "tool" or "chain" type
+Specify whether the event is of "session", "model", "tool" or "chain" type
 
 
 ## Values
 
-| Name    | Value   |
-| ------- | ------- |
-| `MODEL` | model   |
-| `TOOL`  | tool    |
-| `CHAIN` | chain   |
+| Name      | Value     |
+| --------- | --------- |
+| `SESSION` | session   |
+| `MODEL`   | model     |
+| `TOOL`    | tool      |
+| `CHAIN`   | chain     |

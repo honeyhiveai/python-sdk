@@ -8,7 +8,8 @@ from honeyhive import utils
 from typing import Any, Dict, List, Optional
 
 class EventType(str, Enum):
-    r"""Specify whether the event is of \\"model\\", \\"tool\\" or \\"chain\\" type"""
+    r"""Specify whether the event is of \\"session\\", \\"model\\", \\"tool\\" or \\"chain\\" type"""
+    SESSION = 'session'
     MODEL = 'model'
     TOOL = 'tool'
     CHAIN = 'chain'
@@ -36,7 +37,7 @@ class Event:
     event_name: Optional[str] = dataclasses.field(default=None, metadata={'dataclasses_json': { 'letter_case': utils.get_field_name('event_name'), 'exclude': lambda f: f is None }})
     r"""Name of the event"""
     event_type: Optional[EventType] = dataclasses.field(default=None, metadata={'dataclasses_json': { 'letter_case': utils.get_field_name('event_type'), 'exclude': lambda f: f is None }})
-    r"""Specify whether the event is of \\"model\\", \\"tool\\" or \\"chain\\" type"""
+    r"""Specify whether the event is of \\"session\\", \\"model\\", \\"tool\\" or \\"chain\\" type"""
     event_id: Optional[str] = dataclasses.field(default=None, metadata={'dataclasses_json': { 'letter_case': utils.get_field_name('event_id'), 'exclude': lambda f: f is None }})
     r"""Unique id of the event, if not set, it will be auto-generated"""
     session_id: Optional[str] = dataclasses.field(default=None, metadata={'dataclasses_json': { 'letter_case': utils.get_field_name('session_id'), 'exclude': lambda f: f is None }})
