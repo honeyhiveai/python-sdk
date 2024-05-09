@@ -12,6 +12,7 @@ test:
 	@docker build -f tests/Dockerfile . -t my-test
 	@docker run \
 		-e HH_API_KEY=$$HH_API_KEY \
+		-e HH_API_URL=$$HH_API_URL \
 		-e HH_PROJECT="$$HH_PROJECT" \
 		-e HH_PROJECT_ID="$$HH_PROJECT_ID" \
 		-e HH_DATASET="$$HH_DATASET" \
