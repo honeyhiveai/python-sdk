@@ -12,9 +12,7 @@ from .datasetupdate import *
 from .event import *
 from .metric import *
 from .metricedit import *
-from .postconfigurationrequest import *
 from .project import *
-from .putconfigurationrequest import *
 from .security import *
 from .sessionstartrequest import *
 from .tool import *
@@ -22,4 +20,4 @@ from .updatedatapointrequest import *
 from .updateprojectrequest import *
 from .updatetoolrequest import *
 
-__all__ = ["CallType","Configuration","ConfigurationType","CreateDatapointRequest","CreateDatapointRequestType","CreateDatasetRequest","CreateDatasetRequestPipelineType","CreateDatasetRequestType","CreateEventRequest","CreateEventRequestEventType","CreateEventRequestInputs","CreateProjectRequest","CreateToolRequest","CreateToolRequestType","Datapoint","DatapointInputs","Dataset","DatasetType","DatasetUpdate","Env","Event","EventType","FunctionCallParams","History","Inputs","Metric","MetricEdit","MetricEditEventType","MetricEditReturnType","MetricEditThreshold","MetricEditType","Parameters","PipelineType","PostConfigurationRequest","PostConfigurationRequestCallType","PostConfigurationRequestEnv","PostConfigurationRequestFunctionCallParams","PostConfigurationRequestParameters","PostConfigurationRequestResponseFormat","PostConfigurationRequestSelectedFunctions","Project","PutConfigurationRequest","PutConfigurationRequestCallType","PutConfigurationRequestEnv","PutConfigurationRequestFunctionCallParams","PutConfigurationRequestParameters","PutConfigurationRequestResponseFormat","PutConfigurationRequestSelectedFunctions","PutConfigurationRequestType","ResponseFormat","ReturnType","Security","SelectedFunctions","SessionStartRequest","Threshold","Tool","ToolType","Type","UpdateDatapointRequest","UpdateDatapointRequestHistory","UpdateProjectRequest","UpdateToolRequest"]
+__all__ = ["CallType","Configuration","CreateDatapointRequest","CreateDatapointRequestType","CreateDatasetRequest","CreateDatasetRequestType","CreateEventRequest","CreateProjectRequest","CreateToolRequest","CreateToolRequestType","Datapoint","Dataset","DatasetType","DatasetUpdate","Env","Event","EventEventType","EventType","FunctionCallParams","History","Inputs","Metric","MetricEdit","MetricEditEventType","MetricEditReturnType","MetricEditThreshold","MetricEditType","MetricType","Parameters","PipelineType","Project","ResponseFormat","ReturnType","Security","SelectedFunctions","SessionStartRequest","Threshold","Tool","ToolType","Type","UpdateDatapointRequest","UpdateDatapointRequestHistory","UpdateProjectRequest","UpdateToolRequest"]

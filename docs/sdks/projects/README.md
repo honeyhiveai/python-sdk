@@ -3,10 +3,48 @@
 
 ### Available Operations
 
+* [delete_project](#delete_project) - Delete a project
 * [get_projects](#get_projects) - Get a list of projects
 * [create_project](#create_project) - Create a new project
 * [update_project](#update_project) - Update an existing project
-* [delete_project](#delete_project) - Delete a project
+
+## delete_project
+
+Delete a project
+
+### Example Usage
+
+```python
+import honeyhive
+
+s = honeyhive.HoneyHive(
+    bearer_auth="<YOUR_BEARER_TOKEN_HERE>",
+)
+
+
+res = s.projects.delete_project(name='<value>')
+
+if res is not None:
+    # handle response
+    pass
+
+```
+
+### Parameters
+
+| Parameter          | Type               | Required           | Description        |
+| ------------------ | ------------------ | ------------------ | ------------------ |
+| `name`             | *str*              | :heavy_check_mark: | N/A                |
+
+
+### Response
+
+**[operations.DeleteProjectResponse](../../models/operations/deleteprojectresponse.md)**
+### Errors
+
+| Error Object    | Status Code     | Content Type    |
+| --------------- | --------------- | --------------- |
+| errors.SDKError | 4xx-5xx         | */*             |
 
 ## get_projects
 
@@ -20,6 +58,7 @@ import honeyhive
 s = honeyhive.HoneyHive(
     bearer_auth="<YOUR_BEARER_TOKEN_HERE>",
 )
+
 
 res = s.projects.get_projects(name='<value>')
 
@@ -59,9 +98,11 @@ s = honeyhive.HoneyHive(
     bearer_auth="<YOUR_BEARER_TOKEN_HERE>",
 )
 
-res = s.projects.create_project(request=components.CreateProjectRequest(
+req = components.CreateProjectRequest(
     name='<value>',
-))
+)
+
+res = s.projects.create_project(req)
 
 if res.project is not None:
     # handle response
@@ -99,9 +140,11 @@ s = honeyhive.HoneyHive(
     bearer_auth="<YOUR_BEARER_TOKEN_HERE>",
 )
 
-res = s.projects.update_project(request=components.UpdateProjectRequest(
+req = components.UpdateProjectRequest(
     project_id='<value>',
-))
+)
+
+res = s.projects.update_project(req)
 
 if res is not None:
     # handle response
@@ -119,43 +162,6 @@ if res is not None:
 ### Response
 
 **[operations.UpdateProjectResponse](../../models/operations/updateprojectresponse.md)**
-### Errors
-
-| Error Object    | Status Code     | Content Type    |
-| --------------- | --------------- | --------------- |
-| errors.SDKError | 4xx-5xx         | */*             |
-
-## delete_project
-
-Delete a project
-
-### Example Usage
-
-```python
-import honeyhive
-
-s = honeyhive.HoneyHive(
-    bearer_auth="<YOUR_BEARER_TOKEN_HERE>",
-)
-
-res = s.projects.delete_project(name='<value>')
-
-if res is not None:
-    # handle response
-    pass
-
-```
-
-### Parameters
-
-| Parameter          | Type               | Required           | Description        |
-| ------------------ | ------------------ | ------------------ | ------------------ |
-| `name`             | *str*              | :heavy_check_mark: | N/A                |
-
-
-### Response
-
-**[operations.DeleteProjectResponse](../../models/operations/deleteprojectresponse.md)**
 ### Errors
 
 | Error Object    | Status Code     | Content Type    |

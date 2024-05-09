@@ -1,4 +1,4 @@
-# DeleteDatapointResponse
+# DeleteSessionResponse
 
 
 ## Fields

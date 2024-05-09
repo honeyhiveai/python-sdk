@@ -1,11 +1,11 @@
 # Type
 
-Type of data - "session" or "event"
+Configuration type - "LLM" or "pipeline" - default is "LLM"
 
 
 ## Values
 
-| Name      | Value     |
-| --------- | --------- |
-| `SESSION` | session   |
-| `EVENT`   | event     |
+| Name       | Value      |
+| ---------- | ---------- |
+| `LLM`      | LLM        |
+| `PIPELINE` | pipeline   |

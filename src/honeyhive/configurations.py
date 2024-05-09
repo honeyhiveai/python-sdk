@@ -15,7 +15,7 @@ class Configurations:
         
     
     
-    def get_configurations(self, project_name: str, type_: Optional[operations.GetConfigurationsQueryParamType] = None, env: Optional[operations.Env] = None, name: Optional[str] = None) -> operations.GetConfigurationsResponse:
+    def get_configurations(self, project_name: str, type_: Optional[operations.Type] = None, env: Optional[operations.Env] = None, name: Optional[str] = None) -> operations.GetConfigurationsResponse:
         r"""Retrieve a list of configurations"""
         hook_ctx = HookContext(operation_id='getConfigurations', oauth2_scopes=[], security_source=self.sdk_configuration.security)
         request = operations.GetConfigurationsRequest(
@@ -62,7 +62,6 @@ class Configurations:
         res = operations.GetConfigurationsResponse(status_code=http_res.status_code, content_type=http_res.headers.get('Content-Type') or '', raw_response=http_res)
         
         if http_res.status_code == 200:
-            # pylint: disable=no-else-return
             if utils.match_content_type(http_res.headers.get('Content-Type') or '', 'application/json'):                
                 out = utils.unmarshal_json(http_res.text, Optional[List[components.Configuration]])
                 res.configurations = out
@@ -78,7 +77,7 @@ class Configurations:
 
     
     
-    def create_configuration(self, request: components.PostConfigurationRequest) -> operations.CreateConfigurationResponse:
+    def create_configuration(self, request: components.Configuration) -> operations.CreateConfigurationResponse:
         r"""Create a new configuration"""
         hook_ctx = HookContext(operation_id='createConfiguration', oauth2_scopes=[], security_source=self.sdk_configuration.security)
         base_url = utils.template_url(*self.sdk_configuration.get_server_details())
@@ -90,7 +89,7 @@ class Configurations:
         else:
             headers, query_params = utils.get_security(self.sdk_configuration.security)
         
-        req_content_type, data, form = utils.serialize_request_body(request, components.PostConfigurationRequest, "request", False, False, 'json')
+        req_content_type, data, form = utils.serialize_request_body(request, components.Configuration, "request", False, False, 'json')
         if req_content_type is not None and req_content_type not in ('multipart/form-data', 'multipart/mixed'):
             headers['content-type'] = req_content_type
         if data is None and form is None:
@@ -120,65 +119,6 @@ class Configurations:
         
         
         res = operations.CreateConfigurationResponse(status_code=http_res.status_code, content_type=http_res.headers.get('Content-Type') or '', raw_response=http_res)
-        
-        if http_res.status_code == 200:
-            pass
-        elif http_res.status_code >= 400 and http_res.status_code < 500 or http_res.status_code >= 500 and http_res.status_code < 600:
-            raise errors.SDKError('API error occurred', http_res.status_code, http_res.text, http_res)
-        else:
-            raise errors.SDKError('unknown status code received', http_res.status_code, http_res.text, http_res)
-
-        return res
-
-    
-    
-    def update_configuration(self, id: str, put_configuration_request: components.PutConfigurationRequest) -> operations.UpdateConfigurationResponse:
-        r"""Update an existing configuration"""
-        hook_ctx = HookContext(operation_id='updateConfiguration', oauth2_scopes=[], security_source=self.sdk_configuration.security)
-        request = operations.UpdateConfigurationRequest(
-            id=id,
-            put_configuration_request=put_configuration_request,
-        )
-        
-        base_url = utils.template_url(*self.sdk_configuration.get_server_details())
-        
-        url = utils.generate_url(base_url, '/configurations/{id}', request)
-        
-        if callable(self.sdk_configuration.security):
-            headers, query_params = utils.get_security(self.sdk_configuration.security())
-        else:
-            headers, query_params = utils.get_security(self.sdk_configuration.security)
-        
-        req_content_type, data, form = utils.serialize_request_body(request, operations.UpdateConfigurationRequest, "put_configuration_request", False, False, 'json')
-        if req_content_type is not None and req_content_type not in ('multipart/form-data', 'multipart/mixed'):
-            headers['content-type'] = req_content_type
-        if data is None and form is None:
-            raise Exception('request body is required')
-        headers['Accept'] = '*/*'
-        headers['user-agent'] = self.sdk_configuration.user_agent
-        client = self.sdk_configuration.client
-        
-        try:
-            req = client.prepare_request(requests_http.Request('PUT', url, params=query_params, data=data, files=form, headers=headers))
-            req = self.sdk_configuration.get_hooks().before_request(BeforeRequestContext(hook_ctx), req)
-            http_res = client.send(req)
-        except Exception as e:
-            _, e = self.sdk_configuration.get_hooks().after_error(AfterErrorContext(hook_ctx), None, e)
-            if e is not None:
-                raise e
-
-        if utils.match_status_codes(['4XX','5XX'], http_res.status_code):
-            result, e = self.sdk_configuration.get_hooks().after_error(AfterErrorContext(hook_ctx), http_res, None)
-            if e is not None:
-                raise e
-            if result is not None:
-                http_res = result
-        else:
-            http_res = self.sdk_configuration.get_hooks().after_success(AfterSuccessContext(hook_ctx), http_res)
-            
-        
-        
-        res = operations.UpdateConfigurationResponse(status_code=http_res.status_code, content_type=http_res.headers.get('Content-Type') or '', raw_response=http_res)
         
         if http_res.status_code == 200:
             pass
@@ -232,6 +172,65 @@ class Configurations:
         
         
         res = operations.DeleteConfigurationResponse(status_code=http_res.status_code, content_type=http_res.headers.get('Content-Type') or '', raw_response=http_res)
+        
+        if http_res.status_code == 200:
+            pass
+        elif http_res.status_code >= 400 and http_res.status_code < 500 or http_res.status_code >= 500 and http_res.status_code < 600:
+            raise errors.SDKError('API error occurred', http_res.status_code, http_res.text, http_res)
+        else:
+            raise errors.SDKError('unknown status code received', http_res.status_code, http_res.text, http_res)
+
+        return res
+
+    
+    
+    def update_configuration(self, id: str, configuration: components.Configuration) -> operations.UpdateConfigurationResponse:
+        r"""Update an existing configuration"""
+        hook_ctx = HookContext(operation_id='updateConfiguration', oauth2_scopes=[], security_source=self.sdk_configuration.security)
+        request = operations.UpdateConfigurationRequest(
+            id=id,
+            configuration=configuration,
+        )
+        
+        base_url = utils.template_url(*self.sdk_configuration.get_server_details())
+        
+        url = utils.generate_url(base_url, '/configurations/{id}', request)
+        
+        if callable(self.sdk_configuration.security):
+            headers, query_params = utils.get_security(self.sdk_configuration.security())
+        else:
+            headers, query_params = utils.get_security(self.sdk_configuration.security)
+        
+        req_content_type, data, form = utils.serialize_request_body(request, operations.UpdateConfigurationRequest, "configuration", False, False, 'json')
+        if req_content_type is not None and req_content_type not in ('multipart/form-data', 'multipart/mixed'):
+            headers['content-type'] = req_content_type
+        if data is None and form is None:
+            raise Exception('request body is required')
+        headers['Accept'] = '*/*'
+        headers['user-agent'] = self.sdk_configuration.user_agent
+        client = self.sdk_configuration.client
+        
+        try:
+            req = client.prepare_request(requests_http.Request('PUT', url, params=query_params, data=data, files=form, headers=headers))
+            req = self.sdk_configuration.get_hooks().before_request(BeforeRequestContext(hook_ctx), req)
+            http_res = client.send(req)
+        except Exception as e:
+            _, e = self.sdk_configuration.get_hooks().after_error(AfterErrorContext(hook_ctx), None, e)
+            if e is not None:
+                raise e
+
+        if utils.match_status_codes(['4XX','5XX'], http_res.status_code):
+            result, e = self.sdk_configuration.get_hooks().after_error(AfterErrorContext(hook_ctx), http_res, None)
+            if e is not None:
+                raise e
+            if result is not None:
+                http_res = result
+        else:
+            http_res = self.sdk_configuration.get_hooks().after_success(AfterSuccessContext(hook_ctx), http_res)
+            
+        
+        
+        res = operations.UpdateConfigurationResponse(status_code=http_res.status_code, content_type=http_res.headers.get('Content-Type') or '', raw_response=http_res)
         
         if http_res.status_code == 200:
             pass

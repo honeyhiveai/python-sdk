@@ -6,15 +6,15 @@ import requests as requests_http
 
 
 @dataclasses.dataclass
-class DeleteDatasetRequest:
-    dataset_id: str = dataclasses.field(metadata={'query_param': { 'field_name': 'dataset_id', 'style': 'form', 'explode': True }})
-    r"""The unique identifier of the dataset to be deleted"""
+class DeleteEventRequest:
+    event_id: str = dataclasses.field(metadata={'path_param': { 'field_name': 'event_id', 'style': 'simple', 'explode': False }})
+    project: str = dataclasses.field(metadata={'query_param': { 'field_name': 'project', 'style': 'form', 'explode': True }})
     
 
 
 
 @dataclasses.dataclass
-class DeleteDatasetResponse:
+class DeleteEventResponse:
     content_type: str = dataclasses.field()
     r"""HTTP response content type for this operation"""
     status_code: int = dataclasses.field()

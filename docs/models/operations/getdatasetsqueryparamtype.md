@@ -1,6 +1,6 @@
-# CreateDatasetRequestType
+# GetDatasetsQueryParamType
 
-What the dataset is to be used for - "evaluation" or "fine-tuning"
+Type of the dataset - "evaluation" or "fine-tuning"
 
 
 ## Values

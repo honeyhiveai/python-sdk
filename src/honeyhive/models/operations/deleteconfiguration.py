@@ -8,7 +8,7 @@ import requests as requests_http
 @dataclasses.dataclass
 class DeleteConfigurationRequest:
     id: str = dataclasses.field(metadata={'path_param': { 'field_name': 'id', 'style': 'simple', 'explode': False }})
-    r"""Configuration ID like `6638187d505c6812e4043f24`"""
+    r"""Configuration ID"""
     
 
 

@@ -3,10 +3,48 @@
 
 ### Available Operations
 
+* [delete_dataset](#delete_dataset) - Delete a dataset
 * [get_datasets](#get_datasets) - Get datasets
 * [create_dataset](#create_dataset) - Create a dataset
 * [update_dataset](#update_dataset) - Update a dataset
-* [delete_dataset](#delete_dataset) - Delete a dataset
+
+## delete_dataset
+
+Delete a dataset
+
+### Example Usage
+
+```python
+import honeyhive
+
+s = honeyhive.HoneyHive(
+    bearer_auth="<YOUR_BEARER_TOKEN_HERE>",
+)
+
+
+res = s.datasets.delete_dataset(dataset_id='<value>')
+
+if res is not None:
+    # handle response
+    pass
+
+```
+
+### Parameters
+
+| Parameter                                          | Type                                               | Required                                           | Description                                        |
+| -------------------------------------------------- | -------------------------------------------------- | -------------------------------------------------- | -------------------------------------------------- |
+| `dataset_id`                                       | *str*                                              | :heavy_check_mark:                                 | The unique identifier of the dataset to be deleted |
+
+
+### Response
+
+**[operations.DeleteDatasetResponse](../../models/operations/deletedatasetresponse.md)**
+### Errors
+
+| Error Object    | Status Code     | Content Type    |
+| --------------- | --------------- | --------------- |
+| errors.SDKError | 4xx-5xx         | */*             |
 
 ## get_datasets
 
@@ -22,7 +60,8 @@ s = honeyhive.HoneyHive(
     bearer_auth="<YOUR_BEARER_TOKEN_HERE>",
 )
 
-res = s.datasets.get_datasets(project='<value>', type=operations.QueryParamType.EVALUATION, dataset_id='<value>')
+
+res = s.datasets.get_datasets(project='<value>', type=operations.GetDatasetsQueryParamType.EVALUATION, dataset_id='<value>')
 
 if res.object is not None:
     # handle response
@@ -32,11 +71,11 @@ if res.object is not None:
 
 ### Parameters
 
-| Parameter                                                                        | Type                                                                             | Required                                                                         | Description                                                                      |
-| -------------------------------------------------------------------------------- | -------------------------------------------------------------------------------- | -------------------------------------------------------------------------------- | -------------------------------------------------------------------------------- |
-| `project`                                                                        | *str*                                                                            | :heavy_check_mark:                                                               | Project ID associated with the datasets like `65e0fc2d6a2eb95f55a92cbc`          |
-| `type`                                                                           | [Optional[operations.QueryParamType]](../../models/operations/queryparamtype.md) | :heavy_minus_sign:                                                               | Type of the dataset - "evaluation" or "fine-tuning"                              |
-| `dataset_id`                                                                     | *Optional[str]*                                                                  | :heavy_minus_sign:                                                               | Unique dataset ID for filtering specific dataset like `663876ec4611c47f4970f0c3` |
+| Parameter                                                                                              | Type                                                                                                   | Required                                                                                               | Description                                                                                            |
+| ------------------------------------------------------------------------------------------------------ | ------------------------------------------------------------------------------------------------------ | ------------------------------------------------------------------------------------------------------ | ------------------------------------------------------------------------------------------------------ |
+| `project`                                                                                              | *str*                                                                                                  | :heavy_check_mark:                                                                                     | Project ID associated with the datasets                                                                |
+| `type`                                                                                                 | [Optional[operations.GetDatasetsQueryParamType]](../../models/operations/getdatasetsqueryparamtype.md) | :heavy_minus_sign:                                                                                     | Type of the dataset - "evaluation" or "fine-tuning"                                                    |
+| `dataset_id`                                                                                           | *Optional[str]*                                                                                        | :heavy_minus_sign:                                                                                     | Unique dataset ID for filtering specific dataset                                                       |
 
 
 ### Response
@@ -62,23 +101,12 @@ s = honeyhive.HoneyHive(
     bearer_auth="<YOUR_BEARER_TOKEN_HERE>",
 )
 
-res = s.datasets.create_dataset(request=components.CreateDatasetRequest(
-    project='65e0fc2d6a2eb95f55a92cbc',
-    name='test-dataset',
-    description='A test dataset',
-    type=components.CreateDatasetRequestType.EVALUATION,
-    datapoints=[
-        '66369748b5773befbdc661e2',
-    ],
-    linked_evals=[
-        '<value>',
-    ],
-    saved=False,
-    pipeline_type=components.CreateDatasetRequestPipelineType.EVENT,
-    metadata={
-        'source': 'dev',
-    },
-))
+req = components.CreateDatasetRequest(
+    name='<value>',
+    project='<value>',
+)
+
+res = s.datasets.create_dataset(req)
 
 if res.object is not None:
     # handle response
@@ -116,21 +144,11 @@ s = honeyhive.HoneyHive(
     bearer_auth="<YOUR_BEARER_TOKEN_HERE>",
 )
 
-res = s.datasets.update_dataset(request=components.DatasetUpdate(
-    dataset_id='663876ec4611c47f4970f0c3',
-    name='new-dataset-name',
-    description='An updated dataset description',
-    datapoints=[
-        '66369748b5773befbdc661e',
-    ],
-    linked_evals=[
-        '66369748b5773befbdasdk1',
-    ],
-    metadata={
-        'updated': True,
-        'source': 'prod',
-    },
-))
+req = components.DatasetUpdate(
+    dataset_id='<value>',
+)
+
+res = s.datasets.update_dataset(req)
 
 if res is not None:
     # handle response
@@ -148,43 +166,6 @@ if res is not None:
 ### Response
 
 **[operations.UpdateDatasetResponse](../../models/operations/updatedatasetresponse.md)**
-### Errors
-
-| Error Object    | Status Code     | Content Type    |
-| --------------- | --------------- | --------------- |
-| errors.SDKError | 4xx-5xx         | */*             |
-
-## delete_dataset
-
-Delete a dataset
-
-### Example Usage
-
-```python
-import honeyhive
-
-s = honeyhive.HoneyHive(
-    bearer_auth="<YOUR_BEARER_TOKEN_HERE>",
-)
-
-res = s.datasets.delete_dataset(dataset_id='<value>')
-
-if res is not None:
-    # handle response
-    pass
-
-```
-
-### Parameters
-
-| Parameter                                                                          | Type                                                                               | Required                                                                           | Description                                                                        |
-| ---------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------- |
-| `dataset_id`                                                                       | *str*                                                                              | :heavy_check_mark:                                                                 | The unique identifier of the dataset to be deleted like `663876ec4611c47f4970f0c3` |
-
-
-### Response
-
-**[operations.DeleteDatasetResponse](../../models/operations/deletedatasetresponse.md)**
 ### Errors
 
 | Error Object    | Status Code     | Content Type    |

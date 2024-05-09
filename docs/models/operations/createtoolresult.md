@@ -1,10 +1,8 @@
-# DeleteDatapointResponseBody
-
-Datapoint successfully deleted
+# CreateToolResult
 
 
 ## Fields
 
 | Field              | Type               | Required           | Description        |
 | ------------------ | ------------------ | ------------------ | ------------------ |
-| `deleted`          | *Optional[bool]*   | :heavy_minus_sign: | N/A                |
+| `inserted_id`      | *Optional[str]*    | :heavy_minus_sign: | N/A                |
