@@ -96,8 +96,8 @@ if res.object is not None:
 
 * [get_datapoints](docs/sdks/datapoints/README.md#get_datapoints) - Retrieve a list of datapoints
 * [create_datapoint](docs/sdks/datapoints/README.md#create_datapoint) - Create a new datapoint
-* [update_datapoint](docs/sdks/datapoints/README.md#update_datapoint) - Update a specific datapoint
 * [get_datapoint](docs/sdks/datapoints/README.md#get_datapoint) - Retrieve a specific datapoint
+* [update_datapoint](docs/sdks/datapoints/README.md#update_datapoint) - Update a specific datapoint
 * [delete_datapoint](docs/sdks/datapoints/README.md#delete_datapoint) - Delete a specific datapoint
 
 ### [datasets](docs/sdks/datasets/README.md)

@@ -8,7 +8,7 @@ from ...models.components import updatedatapointrequest as components_updatedata
 
 @dataclasses.dataclass
 class UpdateDatapointRequest:
-    datapoint_id: str = dataclasses.field(metadata={'query_param': { 'field_name': 'datapoint_id', 'style': 'form', 'explode': True }})
+    id: str = dataclasses.field(metadata={'path_param': { 'field_name': 'id', 'style': 'simple', 'explode': False }})
     r"""ID of datapoint to update"""
     update_datapoint_request: components_updatedatapointrequest.UpdateDatapointRequest = dataclasses.field(metadata={'request': { 'media_type': 'application/json' }})
     
