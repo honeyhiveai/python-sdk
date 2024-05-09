@@ -12,6 +12,7 @@ from typing import Optional
 @dataclasses.dataclass
 class CreateDatasetResult:
     inserted_id: Optional[str] = dataclasses.field(default=None, metadata={'dataclasses_json': { 'letter_case': utils.get_field_name('insertedId'), 'exclude': lambda f: f is None }})
+    r"""UUID for the created dataset"""
     
 
 

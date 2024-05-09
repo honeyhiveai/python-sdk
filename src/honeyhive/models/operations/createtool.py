@@ -10,7 +10,7 @@ from typing import Optional
 
 @dataclass_json(undefined=Undefined.EXCLUDE)
 @dataclasses.dataclass
-class CreateToolResult:
+class Result:
     inserted_id: Optional[str] = dataclasses.field(default=None, metadata={'dataclasses_json': { 'letter_case': utils.get_field_name('insertedId'), 'exclude': lambda f: f is None }})
     
 
@@ -20,7 +20,7 @@ class CreateToolResult:
 @dataclasses.dataclass
 class CreateToolResponseBody:
     r"""Tool successfully created"""
-    result: Optional[CreateToolResult] = dataclasses.field(default=None, metadata={'dataclasses_json': { 'letter_case': utils.get_field_name('result'), 'exclude': lambda f: f is None }})
+    result: Optional[Result] = dataclasses.field(default=None, metadata={'dataclasses_json': { 'letter_case': utils.get_field_name('result'), 'exclude': lambda f: f is None }})
     
 
 

@@ -17,14 +17,14 @@ from honeyhive.models import components
 from typing import Callable, Dict, Optional, Union
 
 class HoneyHive:
-    configurations: Configurations
-    datapoints: Datapoints
-    datasets: Datasets
+    session: Session
     events: Events
     metrics: Metrics
-    projects: Projects
-    session: Session
     tools: Tools
+    datapoints: Datapoints
+    datasets: Datasets
+    projects: Projects
+    configurations: Configurations
 
     sdk_configuration: SDKConfiguration
 
@@ -87,11 +87,11 @@ class HoneyHive:
 
 
     def _init_sdks(self):
-        self.configurations = Configurations(self.sdk_configuration)
-        self.datapoints = Datapoints(self.sdk_configuration)
-        self.datasets = Datasets(self.sdk_configuration)
+        self.session = Session(self.sdk_configuration)
         self.events = Events(self.sdk_configuration)
         self.metrics = Metrics(self.sdk_configuration)
-        self.projects = Projects(self.sdk_configuration)
-        self.session = Session(self.sdk_configuration)
         self.tools = Tools(self.sdk_configuration)
+        self.datapoints = Datapoints(self.sdk_configuration)
+        self.datasets = Datasets(self.sdk_configuration)
+        self.projects = Projects(self.sdk_configuration)
+        self.configurations = Configurations(self.sdk_configuration)
