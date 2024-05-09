@@ -115,65 +115,6 @@ paths:
                 example:
                   event_id: 7f22137a-6911-4ed3-bc36-110f1dde6b66
                   success: true
-    get:
-      tags:
-      - Events
-      operationId: getEvents
-      summary: Retrieve events based on filters
-      parameters:
-      - in: query
-        name: project
-        required: true
-        schema:
-          type: string
-        description: UUID of the project associated with the event like `65e0fc2d6a2eb95f55a92cbc`
-      - in: query
-        name: filters
-        required: true
-        schema:
-          type: array
-          items:
-            $ref: '#/components/schemas/EventFilter'
-      - in: query
-        name: dateRange
-        required: false
-        schema:
-          type: object
-          properties:
-            $gte:
-              type: string
-              description: ISO String for start of date time filter like `2024-04-01T22:38:19.000Z`
-            $lte:
-              type: string
-              description: ISO String for end of date time filter like `2024-04-01T22:38:19.000Z`
-      - in: query
-        name: limit
-        required: false
-        schema:
-          type: number
-          description: Limit number of results to speed up query (default is 1000,
-            max is 7500)
-      - in: query
-        name: page
-        required: false
-        schema:
-          type: number
-          description: Page number of results (default is 1)
-      responses:
-        '200':
-          description: Success
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  events:
-                    type: array
-                    items:
-                      $ref: '#/components/schemas/Event'
-                  totalEvents:
-                    type: number
-                    description: Total number of events in the specified filter
     put:
       tags:
       - Events
@@ -221,6 +162,61 @@ paths:
           description: Event updated
         '400':
           description: Bad request
+  /events/export:
+    post:
+      tags:
+      - Events
+      operationId: getEvents
+      summary: Retrieve events based on filters
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                project:
+                  type: string
+                  description: UUID of the project associated with the event like
+                    `65e0fc2d6a2eb95f55a92cbc`
+                filters:
+                  type: array
+                  items:
+                    $ref: '#/components/schemas/EventFilter'
+                dateRange:
+                  type: object
+                  properties:
+                    $gte:
+                      type: string
+                      description: ISO String for start of date time filter like `2024-04-01T22:38:19.000Z`
+                    $lte:
+                      type: string
+                      description: ISO String for end of date time filter like `2024-04-01T22:38:19.000Z`
+                limit:
+                  type: number
+                  description: Limit number of results to speed up query (default
+                    is 1000, max is 7500)
+                page:
+                  type: number
+                  description: Page number of results (default is 1)
+              required:
+              - project
+              - filters
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  events:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Event'
+                  totalEvents:
+                    type: number
+                    description: Total number of events in the specified filter
   /metrics:
     get:
       tags:
