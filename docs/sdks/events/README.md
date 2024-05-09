@@ -5,6 +5,7 @@
 
 * [create_event](#create_event) - Create a new event
 * [update_event](#update_event) - Update an event
+* [get_events](#get_events) - Retrieve events based on filters
 
 ## create_event
 
@@ -154,6 +155,54 @@ if res is not None:
 ### Response
 
 **[operations.UpdateEventResponse](../../models/operations/updateeventresponse.md)**
+### Errors
+
+| Error Object    | Status Code     | Content Type    |
+| --------------- | --------------- | --------------- |
+| errors.SDKError | 4xx-5xx         | */*             |
+
+## get_events
+
+Retrieve events based on filters
+
+### Example Usage
+
+```python
+import honeyhive
+from honeyhive.models import components, operations
+
+s = honeyhive.HoneyHive(
+    bearer_auth="<YOUR_BEARER_TOKEN_HERE>",
+)
+
+res = s.events.get_events(request=operations.GetEventsRequestBody(
+    project='<value>',
+    filters=[
+        components.EventFilter(
+            field='event_type',
+            value='model',
+            operator=components.Operator.IS,
+            type=components.Type.STRING,
+        ),
+    ],
+))
+
+if res.object is not None:
+    # handle response
+    pass
+
+```
+
+### Parameters
+
+| Parameter                                                                          | Type                                                                               | Required                                                                           | Description                                                                        |
+| ---------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------- |
+| `request`                                                                          | [operations.GetEventsRequestBody](../../models/operations/geteventsrequestbody.md) | :heavy_check_mark:                                                                 | The request object to use for the request.                                         |
+
+
+### Response
+
+**[operations.GetEventsResponse](../../models/operations/geteventsresponse.md)**
 ### Errors
 
 | Error Object    | Status Code     | Content Type    |

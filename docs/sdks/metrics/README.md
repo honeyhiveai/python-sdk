@@ -62,7 +62,7 @@ s = honeyhive.HoneyHive(
 res = s.metrics.create_metric(request=components.Metric(
     name='<value>',
     task='<value>',
-    type=components.Type.MODEL,
+    type=components.MetricType.MODEL,
     description='Fully-configurable neutral framework',
     return_type=components.ReturnType.STRING,
 ))

@@ -77,6 +77,7 @@ if res.object is not None:
 
 * [create_event](docs/sdks/events/README.md#create_event) - Create a new event
 * [update_event](docs/sdks/events/README.md#update_event) - Update an event
+* [get_events](docs/sdks/events/README.md#get_events) - Retrieve events based on filters
 
 ### [metrics](docs/sdks/metrics/README.md)
 
