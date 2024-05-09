@@ -12,7 +12,7 @@ from typing import List, Optional
 @dataclasses.dataclass
 class GetDatapointRequest:
     id: str = dataclasses.field(metadata={'path_param': { 'field_name': 'id', 'style': 'simple', 'explode': False }})
-    r"""Datapoint ID like `65c13dbbd65fb876b7886cdb`"""
+    r"""Datapoint ID"""
     
 
 

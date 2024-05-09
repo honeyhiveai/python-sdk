@@ -5,6 +5,7 @@
 
 * [create_event](#create_event) - Create a new event
 * [update_event](#update_event) - Update an event
+* [delete_event](#delete_event) - Delete an event
 
 ## create_event
 
@@ -14,73 +15,15 @@ Please refer to our instrumentation guide for detailed information
 
 ```python
 import honeyhive
-from honeyhive.models import components, operations
+from honeyhive.models import operations
 
 s = honeyhive.HoneyHive(
     bearer_auth="<YOUR_BEARER_TOKEN_HERE>",
 )
 
-res = s.events.create_event(request=operations.CreateEventRequestBody(
-    event=components.CreateEventRequest(
-        project='Simple RAG',
-        source='playground',
-        event_name='Model Completion',
-        event_type=components.CreateEventRequestEventType.MODEL,
-        event_id='7f22137a-6911-4ed3-bc36-110f1dde6b66',
-        session_id='caf77ace-3417-4da4-944d-f4a0688f3c23',
-        parent_id='caf77ace-3417-4da4-944d-f4a0688f3c23',
-        children_ids=[
-            '<value>',
-        ],
-        config={
-            'model': 'gpt-3.5-turbo',
-            'version': 'v0.1',
-            'provider': 'openai',
-            'hyperparameters': '<value>',
-            'template': '<value>',
-            'type': 'chat',
-        },
-        inputs=components.CreateEventRequestInputs(
-            chat_history=[
-                {
-                    'role': 'system',
-                    'content': 'Answer the user\'s question only using provided context.
+req = operations.CreateEventRequestBody()
 
-                    Context: Hello world',
-                },
-                {
-                    'role': 'user',
-                    'content': 'What is in the context?',
-                },
-            ],
-        ),
-        outputs={
-            'role': 'assistant',
-            'content': 'Hello world',
-        },
-        error=None,
-        start_time=1714978764301,
-        end_time=1714978765301,
-        duration=999.8056,
-        metadata={
-            'cost': 0.00008,
-            'completion_tokens': 23,
-            'prompt_tokens': 35,
-            'total_tokens': 58,
-        },
-        feedback={
-
-        },
-        metrics={
-            'Answer Faithfulness': 5,
-            'Answer Faithfulness_explanation': 'The AI assistant\'s answer is a concise and accurate description of Ramp\'s API. It provides a clear explanation of what the API does and how developers can use it to integrate Ramp\'s financial services into their own applications. The answer is faithful to the provided context.',
-            'Number of words': 18,
-        },
-        user_properties={
-            'user': 'google-oauth2|111840237613341303366',
-        },
-    ),
-))
+res = s.events.create_event(req)
 
 if res.object is not None:
     # handle response
@@ -118,25 +61,11 @@ s = honeyhive.HoneyHive(
     bearer_auth="<YOUR_BEARER_TOKEN_HERE>",
 )
 
-res = s.events.update_event(request=operations.UpdateEventRequestBody(
-    event_id='7f22137a-6911-4ed3-bc36-110f1dde6b66',
-    metadata={
-        'cost': 0.00008,
-        'completion_tokens': 23,
-        'prompt_tokens': 35,
-        'total_tokens': 58,
-    },
-    feedback={
-        'rating': 5,
-    },
-    metrics={
-        'num_words': 2,
-    },
-    outputs={
-        'role': 'assistant',
-        'content': 'Hello world',
-    },
-))
+req = operations.UpdateEventRequestBody(
+    event_id='<value>',
+)
+
+res = s.events.update_event(req)
 
 if res is not None:
     # handle response
@@ -154,6 +83,45 @@ if res is not None:
 ### Response
 
 **[operations.UpdateEventResponse](../../models/operations/updateeventresponse.md)**
+### Errors
+
+| Error Object    | Status Code     | Content Type    |
+| --------------- | --------------- | --------------- |
+| errors.SDKError | 4xx-5xx         | */*             |
+
+## delete_event
+
+Delete an event
+
+### Example Usage
+
+```python
+import honeyhive
+
+s = honeyhive.HoneyHive(
+    bearer_auth="<YOUR_BEARER_TOKEN_HERE>",
+)
+
+
+res = s.events.delete_event(event_id='<value>', project='<value>')
+
+if res is not None:
+    # handle response
+    pass
+
+```
+
+### Parameters
+
+| Parameter          | Type               | Required           | Description        |
+| ------------------ | ------------------ | ------------------ | ------------------ |
+| `event_id`         | *str*              | :heavy_check_mark: | N/A                |
+| `project`          | *str*              | :heavy_check_mark: | N/A                |
+
+
+### Response
+
+**[operations.DeleteEventResponse](../../models/operations/deleteeventresponse.md)**
 ### Errors
 
 | Error Object    | Status Code     | Content Type    |

@@ -14,50 +14,16 @@ pip install honeyhive
 
 ```python
 import honeyhive
-from honeyhive.models import components, operations
+from honeyhive.models import operations
 
 s = honeyhive.HoneyHive(
     bearer_auth="<YOUR_BEARER_TOKEN_HERE>",
 )
 
-res = s.session.start_session(request=operations.StartSessionRequestBody(
-    session=components.SessionStartRequest(
-        project='Simple RAG Project',
-        session_name='Playground Session',
-        source='playground',
-        session_id='caf77ace-3417-4da4-944d-f4a0688f3c23',
-        children_ids=[
-            '7f22137a-6911-4ed3-bc36-110f1dde6b66',
-        ],
-        inputs={
-            'context': 'Hello world',
-            'question': 'What is in the context?',
-            'chat_history': '<value>',
-        },
-        outputs={
-            'role': 'assistant',
-            'content': 'Hello world',
-        },
-        error=None,
-        duration=824.8056,
-        user_properties={
-            'user': 'google-oauth2|111840237613341303366',
-        },
-        metrics={
 
-        },
-        feedback={
+res = s.configurations.get_configurations(project_name='<value>', type=operations.Type.LLM, env=operations.Env.PROD, name='<value>')
 
-        },
-        metadata={
-
-        },
-        start_time=1712025501605,
-        end_time=1712025499832,
-    ),
-))
-
-if res.object is not None:
+if res.configurations is not None:
     # handle response
     pass
 
@@ -67,59 +33,61 @@ if res.object is not None:
 <!-- Start Available Resources and Operations [operations] -->
 ## Available Resources and Operations
 
-### [session](docs/sdks/session/README.md)
+### [configurations](docs/sdks/configurations/README.md)
 
-* [start_session](docs/sdks/session/README.md#start_session) - Start a new session
-* [get_session](docs/sdks/session/README.md#get_session) - Retrieve a session
-* [process_event_trace](docs/sdks/session/README.md#process_event_trace) - Process an event trace for a given session
-
-### [events](docs/sdks/events/README.md)
-
-* [create_event](docs/sdks/events/README.md#create_event) - Create a new event
-* [update_event](docs/sdks/events/README.md#update_event) - Update an event
-
-### [metrics](docs/sdks/metrics/README.md)
-
-* [get_metrics](docs/sdks/metrics/README.md#get_metrics) - Get all metrics
-* [create_metric](docs/sdks/metrics/README.md#create_metric) - Create a new metric
-* [update_metric](docs/sdks/metrics/README.md#update_metric) - Update an existing metric
-* [delete_metric](docs/sdks/metrics/README.md#delete_metric) - Delete a metric
-
-### [tools](docs/sdks/tools/README.md)
-
-* [get_tools](docs/sdks/tools/README.md#get_tools) - Retrieve a list of tools
-* [create_tool](docs/sdks/tools/README.md#create_tool) - Create a new tool
-* [update_tool](docs/sdks/tools/README.md#update_tool) - Update an existing tool
-* [delete_tool](docs/sdks/tools/README.md#delete_tool) - Delete a tool
+* [get_configurations](docs/sdks/configurations/README.md#get_configurations) - Retrieve a list of configurations
+* [create_configuration](docs/sdks/configurations/README.md#create_configuration) - Create a new configuration
+* [delete_configuration](docs/sdks/configurations/README.md#delete_configuration) - Delete a configuration
+* [update_configuration](docs/sdks/configurations/README.md#update_configuration) - Update an existing configuration
 
 ### [datapoints](docs/sdks/datapoints/README.md)
 
 * [get_datapoints](docs/sdks/datapoints/README.md#get_datapoints) - Retrieve a list of datapoints
 * [create_datapoint](docs/sdks/datapoints/README.md#create_datapoint) - Create a new datapoint
-* [get_datapoint](docs/sdks/datapoints/README.md#get_datapoint) - Retrieve a specific datapoint
 * [update_datapoint](docs/sdks/datapoints/README.md#update_datapoint) - Update a specific datapoint
 * [delete_datapoint](docs/sdks/datapoints/README.md#delete_datapoint) - Delete a specific datapoint
+* [get_datapoint](docs/sdks/datapoints/README.md#get_datapoint) - Retrieve a specific datapoint
 
 ### [datasets](docs/sdks/datasets/README.md)
 
+* [delete_dataset](docs/sdks/datasets/README.md#delete_dataset) - Delete a dataset
 * [get_datasets](docs/sdks/datasets/README.md#get_datasets) - Get datasets
 * [create_dataset](docs/sdks/datasets/README.md#create_dataset) - Create a dataset
 * [update_dataset](docs/sdks/datasets/README.md#update_dataset) - Update a dataset
-* [delete_dataset](docs/sdks/datasets/README.md#delete_dataset) - Delete a dataset
+
+### [events](docs/sdks/events/README.md)
+
+* [create_event](docs/sdks/events/README.md#create_event) - Create a new event
+* [update_event](docs/sdks/events/README.md#update_event) - Update an event
+* [delete_event](docs/sdks/events/README.md#delete_event) - Delete an event
+
+### [metrics](docs/sdks/metrics/README.md)
+
+* [delete_metric](docs/sdks/metrics/README.md#delete_metric) - Delete a metric
+* [get_metrics](docs/sdks/metrics/README.md#get_metrics) - Get all metrics
+* [create_metric](docs/sdks/metrics/README.md#create_metric) - Create a new metric
+* [update_metric](docs/sdks/metrics/README.md#update_metric) - Update an existing metric
 
 ### [projects](docs/sdks/projects/README.md)
 
+* [delete_project](docs/sdks/projects/README.md#delete_project) - Delete a project
 * [get_projects](docs/sdks/projects/README.md#get_projects) - Get a list of projects
 * [create_project](docs/sdks/projects/README.md#create_project) - Create a new project
 * [update_project](docs/sdks/projects/README.md#update_project) - Update an existing project
-* [delete_project](docs/sdks/projects/README.md#delete_project) - Delete a project
 
-### [configurations](docs/sdks/configurations/README.md)
+### [session](docs/sdks/session/README.md)
 
-* [get_configurations](docs/sdks/configurations/README.md#get_configurations) - Retrieve a list of configurations
-* [create_configuration](docs/sdks/configurations/README.md#create_configuration) - Create a new configuration
-* [update_configuration](docs/sdks/configurations/README.md#update_configuration) - Update an existing configuration
-* [delete_configuration](docs/sdks/configurations/README.md#delete_configuration) - Delete a configuration
+* [start_session](docs/sdks/session/README.md#start_session) - Start a new session
+* [delete_session](docs/sdks/session/README.md#delete_session) - Delete a session
+* [get_session](docs/sdks/session/README.md#get_session) - Retrieve a session
+* [process_event_trace](docs/sdks/session/README.md#process_event_trace) - Process an event trace for a given session
+
+### [tools](docs/sdks/tools/README.md)
+
+* [delete_tool](docs/sdks/tools/README.md#delete_tool) - Delete a tool
+* [get_tools](docs/sdks/tools/README.md#get_tools) - Retrieve a list of tools
+* [create_tool](docs/sdks/tools/README.md#create_tool) - Create a new tool
+* [update_tool](docs/sdks/tools/README.md#update_tool) - Update an existing tool
 <!-- End Available Resources and Operations [operations] -->
 
 <!-- Start Error Handling [errors] -->
@@ -135,55 +103,21 @@ Handling errors in this SDK should largely match your expectations.  All operati
 
 ```python
 import honeyhive
-from honeyhive.models import components, errors, operations
+from honeyhive.models import errors, operations
 
 s = honeyhive.HoneyHive(
     bearer_auth="<YOUR_BEARER_TOKEN_HERE>",
 )
 
+
 res = None
 try:
-    res = s.session.start_session(request=operations.StartSessionRequestBody(
-    session=components.SessionStartRequest(
-        project='Simple RAG Project',
-        session_name='Playground Session',
-        source='playground',
-        session_id='caf77ace-3417-4da4-944d-f4a0688f3c23',
-        children_ids=[
-            '7f22137a-6911-4ed3-bc36-110f1dde6b66',
-        ],
-        inputs={
-            'context': 'Hello world',
-            'question': 'What is in the context?',
-            'chat_history': '<value>',
-        },
-        outputs={
-            'role': 'assistant',
-            'content': 'Hello world',
-        },
-        error=None,
-        duration=824.8056,
-        user_properties={
-            'user': 'google-oauth2|111840237613341303366',
-        },
-        metrics={
-
-        },
-        feedback={
-
-        },
-        metadata={
-
-        },
-        start_time=1712025501605,
-        end_time=1712025499832,
-    ),
-))
+    res = s.configurations.get_configurations(project_name='<value>', type=operations.Type.LLM, env=operations.Env.PROD, name='<value>')
 except errors.SDKError as e:
     # handle exception
     raise(e)
 
-if res.object is not None:
+if res.configurations is not None:
     # handle response
     pass
 
@@ -205,51 +139,17 @@ You can override the default server globally by passing a server index to the `s
 
 ```python
 import honeyhive
-from honeyhive.models import components, operations
+from honeyhive.models import operations
 
 s = honeyhive.HoneyHive(
     server_idx=0,
     bearer_auth="<YOUR_BEARER_TOKEN_HERE>",
 )
 
-res = s.session.start_session(request=operations.StartSessionRequestBody(
-    session=components.SessionStartRequest(
-        project='Simple RAG Project',
-        session_name='Playground Session',
-        source='playground',
-        session_id='caf77ace-3417-4da4-944d-f4a0688f3c23',
-        children_ids=[
-            '7f22137a-6911-4ed3-bc36-110f1dde6b66',
-        ],
-        inputs={
-            'context': 'Hello world',
-            'question': 'What is in the context?',
-            'chat_history': '<value>',
-        },
-        outputs={
-            'role': 'assistant',
-            'content': 'Hello world',
-        },
-        error=None,
-        duration=824.8056,
-        user_properties={
-            'user': 'google-oauth2|111840237613341303366',
-        },
-        metrics={
 
-        },
-        feedback={
+res = s.configurations.get_configurations(project_name='<value>', type=operations.Type.LLM, env=operations.Env.PROD, name='<value>')
 
-        },
-        metadata={
-
-        },
-        start_time=1712025501605,
-        end_time=1712025499832,
-    ),
-))
-
-if res.object is not None:
+if res.configurations is not None:
     # handle response
     pass
 
@@ -261,51 +161,17 @@ if res.object is not None:
 The default server can also be overridden globally by passing a URL to the `server_url: str` optional parameter when initializing the SDK client instance. For example:
 ```python
 import honeyhive
-from honeyhive.models import components, operations
+from honeyhive.models import operations
 
 s = honeyhive.HoneyHive(
     server_url="https://api.honeyhive.ai",
     bearer_auth="<YOUR_BEARER_TOKEN_HERE>",
 )
 
-res = s.session.start_session(request=operations.StartSessionRequestBody(
-    session=components.SessionStartRequest(
-        project='Simple RAG Project',
-        session_name='Playground Session',
-        source='playground',
-        session_id='caf77ace-3417-4da4-944d-f4a0688f3c23',
-        children_ids=[
-            '7f22137a-6911-4ed3-bc36-110f1dde6b66',
-        ],
-        inputs={
-            'context': 'Hello world',
-            'question': 'What is in the context?',
-            'chat_history': '<value>',
-        },
-        outputs={
-            'role': 'assistant',
-            'content': 'Hello world',
-        },
-        error=None,
-        duration=824.8056,
-        user_properties={
-            'user': 'google-oauth2|111840237613341303366',
-        },
-        metrics={
 
-        },
-        feedback={
+res = s.configurations.get_configurations(project_name='<value>', type=operations.Type.LLM, env=operations.Env.PROD, name='<value>')
 
-        },
-        metadata={
-
-        },
-        start_time=1712025501605,
-        end_time=1712025499832,
-    ),
-))
-
-if res.object is not None:
+if res.configurations is not None:
     # handle response
     pass
 
@@ -342,50 +208,16 @@ This SDK supports the following security scheme globally:
 To authenticate with the API the `bearer_auth` parameter must be set when initializing the SDK client instance. For example:
 ```python
 import honeyhive
-from honeyhive.models import components, operations
+from honeyhive.models import operations
 
 s = honeyhive.HoneyHive(
     bearer_auth="<YOUR_BEARER_TOKEN_HERE>",
 )
 
-res = s.session.start_session(request=operations.StartSessionRequestBody(
-    session=components.SessionStartRequest(
-        project='Simple RAG Project',
-        session_name='Playground Session',
-        source='playground',
-        session_id='caf77ace-3417-4da4-944d-f4a0688f3c23',
-        children_ids=[
-            '7f22137a-6911-4ed3-bc36-110f1dde6b66',
-        ],
-        inputs={
-            'context': 'Hello world',
-            'question': 'What is in the context?',
-            'chat_history': '<value>',
-        },
-        outputs={
-            'role': 'assistant',
-            'content': 'Hello world',
-        },
-        error=None,
-        duration=824.8056,
-        user_properties={
-            'user': 'google-oauth2|111840237613341303366',
-        },
-        metrics={
 
-        },
-        feedback={
+res = s.configurations.get_configurations(project_name='<value>', type=operations.Type.LLM, env=operations.Env.PROD, name='<value>')
 
-        },
-        metadata={
-
-        },
-        start_time=1712025501605,
-        end_time=1712025499832,
-    ),
-))
-
-if res.object is not None:
+if res.configurations is not None:
     # handle response
     pass
 

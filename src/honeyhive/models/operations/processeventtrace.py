@@ -3,17 +3,15 @@
 from __future__ import annotations
 import dataclasses
 import requests as requests_http
-from ...models.components import event as components_event
 from dataclasses_json import Undefined, dataclass_json
 from honeyhive import utils
-from typing import List, Optional
+from typing import Any, Dict, List, Optional
 
 
 @dataclass_json(undefined=Undefined.EXCLUDE)
 @dataclasses.dataclass
 class ProcessEventTraceRequestBody:
-    logs: Optional[List[components_event.Event]] = dataclasses.field(default=None, metadata={'dataclasses_json': { 'letter_case': utils.get_field_name('logs'), 'exclude': lambda f: f is None }})
-    r"""Please refer to the events POST docs for required fields"""
+    logs: Optional[List[Dict[str, Any]]] = dataclasses.field(default=None, metadata={'dataclasses_json': { 'letter_case': utils.get_field_name('logs'), 'exclude': lambda f: f is None }})
     
 
 
