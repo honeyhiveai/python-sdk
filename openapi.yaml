@@ -429,29 +429,6 @@ paths:
                     properties:
                       insertedId:
                         type: string
-    put:
-      summary: Update a specific datapoint
-      parameters:
-      - name: datapoint_id
-        in: query
-        required: true
-        schema:
-          type: string
-        description: ID of datapoint to update
-      operationId: updateDatapoint
-      tags:
-      - Datapoints
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/UpdateDatapointRequest'
-      responses:
-        '200':
-          description: Datapoint successfully updated
-        '400':
-          description: Error updating datapoint
   /datapoints/{id}:
     get:
       summary: Retrieve a specific datapoint
@@ -477,6 +454,29 @@ paths:
                     items:
                       $ref: '#/components/schemas/Datapoint'
           description: Successful response
+    put:
+      summary: Update a specific datapoint
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: string
+        description: ID of datapoint to update
+      operationId: updateDatapoint
+      tags:
+      - Datapoints
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateDatapointRequest'
+      responses:
+        '200':
+          description: Datapoint successfully updated
+        '400':
+          description: Error updating datapoint
     delete:
       summary: Delete a specific datapoint
       operationId: deleteDatapoint
