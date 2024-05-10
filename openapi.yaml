@@ -49,41 +49,6 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Event'
-  /session/{session_id}/traces:
-    post:
-      summary: Process an event trace for a given session
-      operationId: processEventTrace
-      tags:
-      - Session
-      parameters:
-      - name: session_id
-        in: path
-        required: true
-        schema:
-          type: string
-        description: The ID of the session to which this event trace belongs
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              type: object
-              properties:
-                logs:
-                  type: array
-                  description: Please refer to the events POST docs for required fields
-                  items:
-                    $ref: '#/components/schemas/Event'
-      responses:
-        '200':
-          description: Successfully processed the event traces
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  result:
-                    type: string
   /events:
     post:
       tags:
