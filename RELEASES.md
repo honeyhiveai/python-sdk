@@ -269,3 +269,13 @@ Based on:
 - [python v0.7.3] .
 ### Releases
 - [PyPI v0.7.3] https://pypi.org/project/HoneyHive/0.7.3 - .
+
+## 2024-05-10 16:54:03
+### Changes
+Based on:
+- OpenAPI Doc  
+- Speakeasy CLI 1.285.6 (2.326.3) https://github.com/speakeasy-api/speakeasy
+### Generated
+- [python v0.7.4] .
+### Releases
+- [PyPI v0.7.4] https://pypi.org/project/HoneyHive/0.7.4 - .
