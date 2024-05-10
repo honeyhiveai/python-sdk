@@ -1,12 +1,12 @@
 lockVersion: 2.0.0
 id: b027cebf-3475-4e9b-8070-6f08b389f6ed
 management:
-  docChecksum: 297e2da2966fde61c07016a25258476a
+  docChecksum: 58958b269db4ecb0727de14196731699
   docVersion: 1.0.1
   speakeasyVersion: 1.285.6
   generationVersion: 2.326.3
-  releaseVersion: 0.7.4
-  configChecksum: 394279024e36c54e029dc008cc9e6c94
+  releaseVersion: 0.7.5
+  configChecksum: 139a45b5f130228a4f58548c1b964111
   repoURL: https://github.com/honeyhiveai/python-sdk.git
   repoSubDirectory: .
   installationURL: https://github.com/honeyhiveai/python-sdk.git
@@ -43,7 +43,6 @@ generatedFiles:
   - src/honeyhive/models/errors/sdkerror.py
   - src/honeyhive/models/operations/startsession.py
   - src/honeyhive/models/operations/getsession.py
-  - src/honeyhive/models/operations/processeventtrace.py
   - src/honeyhive/models/operations/createevent.py
   - src/honeyhive/models/operations/updateevent.py
   - src/honeyhive/models/operations/getevents.py
@@ -103,10 +102,6 @@ generatedFiles:
   - docs/models/operations/startsessionresponse.md
   - docs/models/operations/getsessionrequest.md
   - docs/models/operations/getsessionresponse.md
-  - docs/models/operations/processeventtracerequestbody.md
-  - docs/models/operations/processeventtracerequest.md
-  - docs/models/operations/processeventtraceresponsebody.md
-  - docs/models/operations/processeventtraceresponse.md
   - docs/models/operations/createeventrequestbody.md
   - docs/models/operations/createeventresponsebody.md
   - docs/models/operations/createeventresponse.md

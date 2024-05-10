@@ -71,7 +71,6 @@ if res.object is not None:
 
 * [start_session](docs/sdks/session/README.md#start_session) - Start a new session
 * [get_session](docs/sdks/session/README.md#get_session) - Retrieve a session
-* [process_event_trace](docs/sdks/session/README.md#process_event_trace) - Process an event trace for a given session
 
 ### [events](docs/sdks/events/README.md)
 
