@@ -71,12 +71,12 @@ if res.object is not None:
 
 * [start_session](docs/sdks/session/README.md#start_session) - Start a new session
 * [get_session](docs/sdks/session/README.md#get_session) - Retrieve a session
-* [process_event_trace](docs/sdks/session/README.md#process_event_trace) - Process an event trace for a given session
 
 ### [events](docs/sdks/events/README.md)
 
 * [create_event](docs/sdks/events/README.md#create_event) - Create a new event
 * [update_event](docs/sdks/events/README.md#update_event) - Update an event
+* [get_events](docs/sdks/events/README.md#get_events) - Retrieve events based on filters
 
 ### [metrics](docs/sdks/metrics/README.md)
 

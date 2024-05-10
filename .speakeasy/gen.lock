@@ -1,12 +1,12 @@
 lockVersion: 2.0.0
 id: b027cebf-3475-4e9b-8070-6f08b389f6ed
 management:
-  docChecksum: 736587751b6c4d323c06d961bac1522a
+  docChecksum: 58958b269db4ecb0727de14196731699
   docVersion: 1.0.1
-  speakeasyVersion: 1.285.1
+  speakeasyVersion: 1.285.6
   generationVersion: 2.326.3
-  releaseVersion: 0.7.2
-  configChecksum: 59ab6a131c042d1e979e842a5d564afb
+  releaseVersion: 0.7.5
+  configChecksum: 139a45b5f130228a4f58548c1b964111
   repoURL: https://github.com/honeyhiveai/python-sdk.git
   repoSubDirectory: .
   installationURL: https://github.com/honeyhiveai/python-sdk.git
@@ -43,9 +43,9 @@ generatedFiles:
   - src/honeyhive/models/errors/sdkerror.py
   - src/honeyhive/models/operations/startsession.py
   - src/honeyhive/models/operations/getsession.py
-  - src/honeyhive/models/operations/processeventtrace.py
   - src/honeyhive/models/operations/createevent.py
   - src/honeyhive/models/operations/updateevent.py
+  - src/honeyhive/models/operations/getevents.py
   - src/honeyhive/models/operations/getmetrics.py
   - src/honeyhive/models/operations/createmetric.py
   - src/honeyhive/models/operations/updatemetric.py
@@ -74,6 +74,7 @@ generatedFiles:
   - src/honeyhive/models/components/sessionstartrequest.py
   - src/honeyhive/models/components/event.py
   - src/honeyhive/models/components/createeventrequest.py
+  - src/honeyhive/models/components/eventfilter.py
   - src/honeyhive/models/components/metric.py
   - src/honeyhive/models/components/metricedit.py
   - src/honeyhive/models/components/tool.py
@@ -101,15 +102,15 @@ generatedFiles:
   - docs/models/operations/startsessionresponse.md
   - docs/models/operations/getsessionrequest.md
   - docs/models/operations/getsessionresponse.md
-  - docs/models/operations/processeventtracerequestbody.md
-  - docs/models/operations/processeventtracerequest.md
-  - docs/models/operations/processeventtraceresponsebody.md
-  - docs/models/operations/processeventtraceresponse.md
   - docs/models/operations/createeventrequestbody.md
   - docs/models/operations/createeventresponsebody.md
   - docs/models/operations/createeventresponse.md
   - docs/models/operations/updateeventrequestbody.md
   - docs/models/operations/updateeventresponse.md
+  - docs/models/operations/daterange.md
+  - docs/models/operations/geteventsrequestbody.md
+  - docs/models/operations/geteventsresponsebody.md
+  - docs/models/operations/geteventsresponse.md
   - docs/models/operations/getmetricsrequest.md
   - docs/models/operations/getmetricsresponse.md
   - docs/models/operations/createmetricresponse.md
@@ -170,7 +171,10 @@ generatedFiles:
   - docs/models/components/createeventrequesteventtype.md
   - docs/models/components/createeventrequestinputs.md
   - docs/models/components/createeventrequest.md
+  - docs/models/components/operator.md
   - docs/models/components/type.md
+  - docs/models/components/eventfilter.md
+  - docs/models/components/metrictype.md
   - docs/models/components/returntype.md
   - docs/models/components/threshold.md
   - docs/models/components/metric.md

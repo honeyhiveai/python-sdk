@@ -7,7 +7,7 @@ from enum import Enum
 from honeyhive import utils
 from typing import Optional
 
-class Type(str, Enum):
+class MetricType(str, Enum):
     r"""Type of the metric - \\"custom\\", \\"model\\" or \\"human\\" """
     CUSTOM = 'custom'
     MODEL = 'model'
@@ -37,7 +37,7 @@ class Metric:
     r"""Name of the metric"""
     task: str = dataclasses.field(metadata={'dataclasses_json': { 'letter_case': utils.get_field_name('task') }})
     r"""Name of the project associated with metric"""
-    type: Type = dataclasses.field(metadata={'dataclasses_json': { 'letter_case': utils.get_field_name('type') }})
+    type: MetricType = dataclasses.field(metadata={'dataclasses_json': { 'letter_case': utils.get_field_name('type') }})
     r"""Type of the metric - \\"custom\\", \\"model\\" or \\"human\\" """
     description: str = dataclasses.field(metadata={'dataclasses_json': { 'letter_case': utils.get_field_name('description') }})
     r"""Short description of what the metric does"""

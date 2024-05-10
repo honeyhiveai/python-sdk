@@ -17,11 +17,11 @@ from .getconfigurations import *
 from .getdatapoint import *
 from .getdatapoints import *
 from .getdatasets import *
+from .getevents import *
 from .getmetrics import *
 from .getprojects import *
 from .getsession import *
 from .gettools import *
-from .processeventtrace import *
 from .startsession import *
 from .updateconfiguration import *
 from .updatedatapoint import *
@@ -31,4 +31,4 @@ from .updatemetric import *
 from .updateproject import *
 from .updatetool import *
 
-__all__ = ["CreateConfigurationResponse","CreateDatapointResponse","CreateDatapointResponseBody","CreateDatapointResult","CreateDatasetResponse","CreateDatasetResponseBody","CreateDatasetResult","CreateEventRequestBody","CreateEventResponse","CreateEventResponseBody","CreateMetricResponse","CreateProjectResponse","CreateToolResponse","CreateToolResponseBody","DeleteConfigurationRequest","DeleteConfigurationResponse","DeleteDatapointRequest","DeleteDatapointResponse","DeleteDatapointResponseBody","DeleteDatasetRequest","DeleteDatasetResponse","DeleteMetricRequest","DeleteMetricResponse","DeleteProjectRequest","DeleteProjectResponse","DeleteToolRequest","DeleteToolResponse","Env","GetConfigurationsQueryParamType","GetConfigurationsRequest","GetConfigurationsResponse","GetDatapointRequest","GetDatapointResponse","GetDatapointResponseBody","GetDatapointsRequest","GetDatapointsResponse","GetDatapointsResponseBody","GetDatasetsRequest","GetDatasetsResponse","GetDatasetsResponseBody","GetMetricsRequest","GetMetricsResponse","GetProjectsRequest","GetProjectsResponse","GetSessionRequest","GetSessionResponse","GetToolsResponse","ProcessEventTraceRequest","ProcessEventTraceRequestBody","ProcessEventTraceResponse","ProcessEventTraceResponseBody","QueryParamType","Result","StartSessionRequestBody","StartSessionResponse","StartSessionResponseBody","Type","UpdateConfigurationRequest","UpdateConfigurationResponse","UpdateDatapointRequest","UpdateDatapointResponse","UpdateDatasetResponse","UpdateEventRequestBody","UpdateEventResponse","UpdateMetricResponse","UpdateProjectResponse","UpdateToolResponse"]
+__all__ = ["CreateConfigurationResponse","CreateDatapointResponse","CreateDatapointResponseBody","CreateDatapointResult","CreateDatasetResponse","CreateDatasetResponseBody","CreateDatasetResult","CreateEventRequestBody","CreateEventResponse","CreateEventResponseBody","CreateMetricResponse","CreateProjectResponse","CreateToolResponse","CreateToolResponseBody","DateRange","DeleteConfigurationRequest","DeleteConfigurationResponse","DeleteDatapointRequest","DeleteDatapointResponse","DeleteDatapointResponseBody","DeleteDatasetRequest","DeleteDatasetResponse","DeleteMetricRequest","DeleteMetricResponse","DeleteProjectRequest","DeleteProjectResponse","DeleteToolRequest","DeleteToolResponse","Env","GetConfigurationsQueryParamType","GetConfigurationsRequest","GetConfigurationsResponse","GetDatapointRequest","GetDatapointResponse","GetDatapointResponseBody","GetDatapointsRequest","GetDatapointsResponse","GetDatapointsResponseBody","GetDatasetsRequest","GetDatasetsResponse","GetDatasetsResponseBody","GetEventsRequestBody","GetEventsResponse","GetEventsResponseBody","GetMetricsRequest","GetMetricsResponse","GetProjectsRequest","GetProjectsResponse","GetSessionRequest","GetSessionResponse","GetToolsResponse","QueryParamType","Result","StartSessionRequestBody","StartSessionResponse","StartSessionResponseBody","Type","UpdateConfigurationRequest","UpdateConfigurationResponse","UpdateDatapointRequest","UpdateDatapointResponse","UpdateDatasetResponse","UpdateEventRequestBody","UpdateEventResponse","UpdateMetricResponse","UpdateProjectResponse","UpdateToolResponse"]

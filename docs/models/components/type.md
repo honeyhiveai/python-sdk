@@ -1,12 +1,13 @@
 # Type
 
-Type of the metric - "custom", "model" or "human"
+The data type you are using - "string", "number", "boolean", "id" (for object ids)
 
 
 ## Values
 
-| Name     | Value    |
-| -------- | -------- |
-| `CUSTOM` | custom   |
-| `MODEL`  | model    |
-| `HUMAN`  | human    |
+| Name      | Value     |
+| --------- | --------- |
+| `STRING`  | string    |
+| `NUMBER`  | number    |
+| `BOOLEAN` | boolean   |
+| `ID`      | id        |

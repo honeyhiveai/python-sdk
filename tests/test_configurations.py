@@ -3,9 +3,7 @@ import os
 import uuid
 from honeyhive.models import components, operations
 
-sdk = honeyhive.HoneyHive(
-    bearer_auth=os.environ["HH_API_KEY"], server_url=os.environ["HH_API_URL"]
-)
+sdk = honeyhive.HoneyHive(bearer_auth=os.environ["HH_API_KEY"])
 
 
 def test_get_configurations():

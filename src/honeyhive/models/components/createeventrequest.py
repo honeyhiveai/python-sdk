@@ -37,6 +37,12 @@ class CreateEventRequest:
     r"""Name of the event"""
     event_type: CreateEventRequestEventType = dataclasses.field(metadata={'dataclasses_json': { 'letter_case': utils.get_field_name('event_type') }})
     r"""Specify whether the event is of \\"model\\", \\"tool\\" or \\"chain\\" type"""
+    config: Dict[str, Any] = dataclasses.field(metadata={'dataclasses_json': { 'letter_case': utils.get_field_name('config') }})
+    r"""Associated configuration JSON for the event - model name, vector index name, etc"""
+    inputs: CreateEventRequestInputs = dataclasses.field(metadata={'dataclasses_json': { 'letter_case': utils.get_field_name('inputs') }})
+    r"""Input JSON given to the event - prompt, chunks, etc"""
+    duration: float = dataclasses.field(metadata={'dataclasses_json': { 'letter_case': utils.get_field_name('duration') }})
+    r"""How long the event took in milliseconds"""
     event_id: Optional[str] = dataclasses.field(default=None, metadata={'dataclasses_json': { 'letter_case': utils.get_field_name('event_id'), 'exclude': lambda f: f is None }})
     r"""Unique id of the event, if not set, it will be auto-generated"""
     session_id: Optional[str] = dataclasses.field(default=None, metadata={'dataclasses_json': { 'letter_case': utils.get_field_name('session_id'), 'exclude': lambda f: f is None }})
@@ -45,10 +51,6 @@ class CreateEventRequest:
     r"""Id of the parent event if nested"""
     children_ids: Optional[List[str]] = dataclasses.field(default=None, metadata={'dataclasses_json': { 'letter_case': utils.get_field_name('children_ids'), 'exclude': lambda f: f is None }})
     r"""Id of events that are nested within the event"""
-    config: Optional[Dict[str, Any]] = dataclasses.field(default=None, metadata={'dataclasses_json': { 'letter_case': utils.get_field_name('config'), 'exclude': lambda f: f is None }})
-    r"""Associated configuration JSON for the event - model name, vector index name, etc"""
-    inputs: Optional[CreateEventRequestInputs] = dataclasses.field(default=None, metadata={'dataclasses_json': { 'letter_case': utils.get_field_name('inputs'), 'exclude': lambda f: f is None }})
-    r"""Input JSON given to the event - prompt, chunks, etc"""
     outputs: Optional[Dict[str, Any]] = dataclasses.field(default=None, metadata={'dataclasses_json': { 'letter_case': utils.get_field_name('outputs'), 'exclude': lambda f: f is None }})
     r"""Final output JSON of the event"""
     error: Optional[str] = dataclasses.field(default=None, metadata={'dataclasses_json': { 'letter_case': utils.get_field_name('error'), 'exclude': lambda f: f is None }})
@@ -57,8 +59,6 @@ class CreateEventRequest:
     r"""UTC timestamp (in milliseconds) for the event start"""
     end_time: Optional[int] = dataclasses.field(default=None, metadata={'dataclasses_json': { 'letter_case': utils.get_field_name('end_time'), 'exclude': lambda f: f is None }})
     r"""UTC timestamp (in milliseconds) for the event end"""
-    duration: Optional[float] = dataclasses.field(default=None, metadata={'dataclasses_json': { 'letter_case': utils.get_field_name('duration'), 'exclude': lambda f: f is None }})
-    r"""How long the event took in milliseconds"""
     metadata: Optional[Dict[str, Any]] = dataclasses.field(default=None, metadata={'dataclasses_json': { 'letter_case': utils.get_field_name('metadata'), 'exclude': lambda f: f is None }})
     r"""Any system or application metadata associated with the event"""
     feedback: Optional[Dict[str, Any]] = dataclasses.field(default=None, metadata={'dataclasses_json': { 'letter_case': utils.get_field_name('feedback'), 'exclude': lambda f: f is None }})
