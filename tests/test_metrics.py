@@ -20,7 +20,7 @@ def test_create_metrics():
         name=name,
         return_type=components.ReturnType.FLOAT,
         task=os.environ["HH_PROJECT"],
-        type=components.Type.HUMAN,
+        type=components.MetricType.HUMAN,
         criteria="Dummy criteria",
     )
     res = sdk.metrics.create_metric(req)
