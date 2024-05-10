@@ -1130,6 +1130,9 @@ components:
       - event_type
       - event_name
       - source
+      - config
+      - inputs
+      - duration
       example:
         project: Simple RAG
         event_type: model
