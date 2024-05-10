@@ -27,12 +27,6 @@ res = s.events.create_event(request=operations.CreateEventRequestBody(
         source='playground',
         event_name='Model Completion',
         event_type=components.CreateEventRequestEventType.MODEL,
-        event_id='7f22137a-6911-4ed3-bc36-110f1dde6b66',
-        session_id='caf77ace-3417-4da4-944d-f4a0688f3c23',
-        parent_id='caf77ace-3417-4da4-944d-f4a0688f3c23',
-        children_ids=[
-            '<value>',
-        ],
         config={
             'model': 'gpt-3.5-turbo',
             'version': 'v0.1',
@@ -55,6 +49,13 @@ res = s.events.create_event(request=operations.CreateEventRequestBody(
                 },
             ],
         ),
+        duration=999.8056,
+        event_id='7f22137a-6911-4ed3-bc36-110f1dde6b66',
+        session_id='caf77ace-3417-4da4-944d-f4a0688f3c23',
+        parent_id='caf77ace-3417-4da4-944d-f4a0688f3c23',
+        children_ids=[
+            '<value>',
+        ],
         outputs={
             'role': 'assistant',
             'content': 'Hello world',
@@ -62,7 +63,6 @@ res = s.events.create_event(request=operations.CreateEventRequestBody(
         error=None,
         start_time=1714978764301,
         end_time=1714978765301,
-        duration=999.8056,
         metadata={
             'cost': 0.00008,
             'completion_tokens': 23,
