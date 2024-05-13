@@ -50,7 +50,8 @@ class HoneyHiveLangChainTracer(BaseTracer, ABC):
         user_properties: Optional[Dict[str, Any]] = None,
         api_key: Optional[str] = None,
         metadata: Optional[Dict[str, Any]] = None,
-        verbose = False,
+        verbose: bool = False,
+        base_url: Optional[str] = None,
     ):
         """Initialize the HoneyHive tracer."""
         super().__init__()
@@ -61,6 +62,9 @@ class HoneyHiveLangChainTracer(BaseTracer, ABC):
             raise ValueError(
                 "HoneyHive API key is not set! Please set the HONEYHIVE_API_KEY environment variable or pass in the api_key value."
             )
+
+        if base_url:
+            self._base_url = base_url
 
         if api_key:
             self._headers["Authorization"] = f"Bearer {api_key}"
@@ -169,7 +173,7 @@ class HoneyHiveLangChainTracer(BaseTracer, ABC):
         except Exception as error:
             logging.warning(f"Failed to persist run: {error}")
             if self.verbose:
-              traceback.print_exc()
+                traceback.print_exc()
 
     def _convert_run_to_logs(
         self, run: Run, parent_log: Optional[Log] = None

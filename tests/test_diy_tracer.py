@@ -14,6 +14,7 @@ def test_diy():
         name="DIY Test",
         source="diy_test",
         api_key=os.environ["HH_API_KEY"],
+        base_url=os.environ["HH_API_URL"],
     )
     input = "Hello there"
     with tracer.model(
@@ -35,6 +36,7 @@ def test_streaming_diy():
         name="DIY Stream Test",
         source="diy_stream_test",
         api_key=os.environ["HH_API_KEY"],
+        base_url=os.environ["HH_API_URL"],
     )
     input = "Hello there, stream"
     with tracer.model(
@@ -56,6 +58,7 @@ def test_function_call_streaming():
         name="DIY Function Call Stream Test",
         source="diy_function_stream_test",
         api_key=os.environ["HH_API_KEY"],
+        base_url=os.environ["HH_API_URL"],
     )
     input = "Hello, what's the weather in Beijing in celsius?"
     tools = [

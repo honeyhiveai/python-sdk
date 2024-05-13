@@ -2,7 +2,9 @@ import honeyhive
 import os
 from honeyhive.models import components
 
-sdk = honeyhive.HoneyHive(bearer_auth=os.environ["HH_API_KEY"])
+sdk = honeyhive.HoneyHive(
+    bearer_auth=os.environ["HH_API_KEY"], server_url=os.environ["HH_API_URL"]
+)
 
 
 def test_get_datasets():

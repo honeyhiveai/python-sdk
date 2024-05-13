@@ -24,6 +24,7 @@ def run_tracer(source, metadata):
         source=source,
         api_key=os.environ["HH_API_KEY"],
         metadata=metadata,
+        base_url=os.environ["HH_API_URL"],
     )
 
     openai.api_key = os.environ["OPENAI_API_KEY"]
@@ -62,6 +63,7 @@ def run_tracer_complex():
         source="sdk_li_test",
         api_key=os.environ["HH_API_KEY"],
         event_types_to_ignore=blacklist,
+        base_url=os.environ["HH_API_URL"],
     )
 
     Settings.callback_manager = CallbackManager([tracer])
