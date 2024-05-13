@@ -4,7 +4,9 @@ import time
 import uuid
 from honeyhive.models import components, operations
 
-sdk = honeyhive.HoneyHive(bearer_auth=os.environ["HH_API_KEY"])
+sdk = honeyhive.HoneyHive(
+    bearer_auth=os.environ["HH_API_KEY"], server_url=os.environ["HH_API_URL"]
+)
 
 
 def test_post_event():

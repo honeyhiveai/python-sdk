@@ -137,9 +137,16 @@ class HoneyHiveTraceContextManager:
 
 class HoneyHiveTracer:
     def __init__(
-        self, project, name, source, api_key, user_properties={}, show_trace=False
+        self,
+        project,
+        name,
+        source,
+        api_key,
+        user_properties={},
+        show_trace=False,
+        base_url=None,
     ):
-        self._base_url = "https://api.honeyhive.ai"
+        self._base_url = "https://api.honeyhive.ai" if not base_url else base_url
         self._headers = {
             "Content-Type": "application/json",
             "Authorization": f"Bearer {api_key}",

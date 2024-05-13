@@ -17,6 +17,7 @@ def run_tracer(source, metadata):
         source=source,
         api_key=os.environ["HH_API_KEY"],
         metadata=metadata,
+        base_url=os.environ["HH_API_URL"],
     )
 
     # Initialise the OpenAI LLM and required callables for our tools

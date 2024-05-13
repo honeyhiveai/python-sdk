@@ -29,6 +29,7 @@ from .langchain_tracer import (
 
 import traceback
 
+
 class HHEventType(str, Enum):
     MODEL = "model"
     CHAIN = "chain"
@@ -51,7 +52,8 @@ class HoneyHiveLlamaIndexTracer(BaseCallbackHandler):
         event_types_to_ignore: Optional[List[CBEventType]] = None,
         api_key: Optional[str] = None,
         metadata: Optional[Dict[str, Any]] = None,
-        verbose = False,
+        verbose: bool = False,
+        base_url: Optional[str] = None,
     ) -> None:
         self.verbose = verbose
         if self._env_api_key:
@@ -63,6 +65,9 @@ class HoneyHiveLlamaIndexTracer(BaseCallbackHandler):
 
         if api_key:
             self._headers["Authorization"] = f"Bearer {api_key}"
+
+        if base_url:
+            self._base_url = base_url
 
         self.event_starts_to_ignore = event_types_to_ignore or []
         self.event_ends_to_ignore = event_types_to_ignore or []
@@ -235,7 +240,7 @@ class HoneyHiveLlamaIndexTracer(BaseCallbackHandler):
                 if event_map.get(parent_map[event_id]) is not None:
                     return parent_map[event_id]
                 event_id = parent_map[event_id]
-            return 'root'  # Default to root if no valid parents found
+            return "root"  # Default to root if no valid parents found
 
         # Recursively handle all children of each node
         def handle_children(event_id, valid_parent):
@@ -244,18 +249,19 @@ class HoneyHiveLlamaIndexTracer(BaseCallbackHandler):
                     new_trace_map[valid_parent].append(child)
                     handle_children(child, child)  # Child becomes a new valid parent
                 else:
-                    handle_children(child, valid_parent)  # Continue with the current valid parent
+                    handle_children(
+                        child, valid_parent
+                    )  # Continue with the current valid parent
 
         # Start processing from root
-        for child in trace_map['root']:
+        for child in trace_map["root"]:
             if event_map.get(child) is None:  # Root's direct child is blacklisted
-                handle_children(child, 'root')  # Handle all descendants under root
+                handle_children(child, "root")  # Handle all descendants under root
             else:
-                new_trace_map['root'].append(child)
+                new_trace_map["root"].append(child)
                 handle_children(child, child)
 
         return new_trace_map
-
 
     def log_trace(self) -> None:
         try:
@@ -276,7 +282,9 @@ class HoneyHiveLlamaIndexTracer(BaseCallbackHandler):
                 for child_event_id in child_event_ids:
                     child_log = event_map.get(child_event_id)
                     if child_log:
-                        child_log.parent_id = None if parent_log is None else parent_log.event_id
+                        child_log.parent_id = (
+                            None if parent_log is None else parent_log.event_id
+                        )
                         if parent_log:
                             if parent_log.children is None:
                                 parent_log.children = [child_log]
