@@ -7,7 +7,7 @@ s = honeyhive.HoneyHive(
     bearer_auth="<YOUR_BEARER_TOKEN_HERE>",
 )
 
-res = s.session.start_session(request=operations.StartSessionRequestBody(
+req = operations.StartSessionRequestBody(
     session=components.SessionStartRequest(
         project='Simple RAG Project',
         session_name='Playground Session',
@@ -42,7 +42,9 @@ res = s.session.start_session(request=operations.StartSessionRequestBody(
         start_time=1712025501605,
         end_time=1712025499832,
     ),
-))
+)
+
+res = s.session.start_session(req)
 
 if res.object is not None:
     # handle response

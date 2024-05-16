@@ -22,7 +22,8 @@ s = honeyhive.HoneyHive(
     bearer_auth="<YOUR_BEARER_TOKEN_HERE>",
 )
 
-res = s.configurations.get_configurations(project_name='<value>', type=operations.GetConfigurationsQueryParamType.LLM, env=operations.Env.PROD, name='<value>')
+
+res = s.configurations.get_configurations(project_name='<value>', env=operations.Env.DEV, name='<value>')
 
 if res.configurations is not None:
     # handle response
@@ -32,12 +33,11 @@ if res.configurations is not None:
 
 ### Parameters
 
-| Parameter                                                                                                          | Type                                                                                                               | Required                                                                                                           | Description                                                                                                        |
-| ------------------------------------------------------------------------------------------------------------------ | ------------------------------------------------------------------------------------------------------------------ | ------------------------------------------------------------------------------------------------------------------ | ------------------------------------------------------------------------------------------------------------------ |
-| `project_name`                                                                                                     | *str*                                                                                                              | :heavy_check_mark:                                                                                                 | Project name for configuration like `Example Project`                                                              |
-| `type`                                                                                                             | [Optional[operations.GetConfigurationsQueryParamType]](../../models/operations/getconfigurationsqueryparamtype.md) | :heavy_minus_sign:                                                                                                 | Configuration type - "LLM" or "pipeline" - default is "LLM"                                                        |
-| `env`                                                                                                              | [Optional[operations.Env]](../../models/operations/env.md)                                                         | :heavy_minus_sign:                                                                                                 | Environment - "dev", "staging" or "prod"                                                                           |
-| `name`                                                                                                             | *Optional[str]*                                                                                                    | :heavy_minus_sign:                                                                                                 | The name of the configuration like `v0`                                                                            |
+| Parameter                                                  | Type                                                       | Required                                                   | Description                                                |
+| ---------------------------------------------------------- | ---------------------------------------------------------- | ---------------------------------------------------------- | ---------------------------------------------------------- |
+| `project_name`                                             | *str*                                                      | :heavy_check_mark:                                         | Project name for configuration like `Example Project`      |
+| `env`                                                      | [Optional[operations.Env]](../../models/operations/env.md) | :heavy_minus_sign:                                         | Environment - "dev", "staging" or "prod"                   |
+| `name`                                                     | *Optional[str]*                                            | :heavy_minus_sign:                                         | The name of the configuration like `v0`                    |
 
 
 ### Response
@@ -47,7 +47,7 @@ if res.configurations is not None:
 
 | Error Object    | Status Code     | Content Type    |
 | --------------- | --------------- | --------------- |
-| errors.SDKError | 4xx-5xx         | */*             |
+| errors.SDKError | 4x-5xx          | */*             |
 
 ## create_configuration
 
@@ -63,7 +63,7 @@ s = honeyhive.HoneyHive(
     bearer_auth="<YOUR_BEARER_TOKEN_HERE>",
 )
 
-res = s.configurations.create_configuration(request=components.PostConfigurationRequest(
+req = components.PostConfigurationRequest(
     project='660d7ba7995cacccce4d299e',
     name='function-v0',
     provider='openai',
@@ -105,7 +105,9 @@ res = s.configurations.create_configuration(request=components.PostConfiguration
         'user_picture': 'https://lh3.googleusercontent.com/a/ACg8ocLyQilNtK9RIv4M0p-0FBSbxljBP0p5JabnStku1AQKtFSK=s96-c',
         'user_email': 'dhruv@honeyhive.ai',
     },
-))
+)
+
+res = s.configurations.create_configuration(req)
 
 if res is not None:
     # handle response
@@ -127,7 +129,7 @@ if res is not None:
 
 | Error Object    | Status Code     | Content Type    |
 | --------------- | --------------- | --------------- |
-| errors.SDKError | 4xx-5xx         | */*             |
+| errors.SDKError | 4x-5xx          | */*             |
 
 ## update_configuration
 
@@ -142,6 +144,7 @@ from honeyhive.models import components
 s = honeyhive.HoneyHive(
     bearer_auth="<YOUR_BEARER_TOKEN_HERE>",
 )
+
 
 res = s.configurations.update_configuration(id='<value>', put_configuration_request=components.PutConfigurationRequest(
     project='660d7ba7995cacccce4d299e',
@@ -210,7 +213,7 @@ if res is not None:
 
 | Error Object    | Status Code     | Content Type    |
 | --------------- | --------------- | --------------- |
-| errors.SDKError | 4xx-5xx         | */*             |
+| errors.SDKError | 4x-5xx          | */*             |
 
 ## delete_configuration
 
@@ -224,6 +227,7 @@ import honeyhive
 s = honeyhive.HoneyHive(
     bearer_auth="<YOUR_BEARER_TOKEN_HERE>",
 )
+
 
 res = s.configurations.delete_configuration(id='<value>')
 
@@ -247,4 +251,4 @@ if res is not None:
 
 | Error Object    | Status Code     | Content Type    |
 | --------------- | --------------- | --------------- |
-| errors.SDKError | 4xx-5xx         | */*             |
+| errors.SDKError | 4x-5xx          | */*             |

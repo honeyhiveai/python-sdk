@@ -21,6 +21,7 @@ s = honeyhive.HoneyHive(
     bearer_auth="<YOUR_BEARER_TOKEN_HERE>",
 )
 
+
 res = s.metrics.get_metrics(project_name='<value>')
 
 if res.metrics is not None:
@@ -43,7 +44,7 @@ if res.metrics is not None:
 
 | Error Object    | Status Code     | Content Type    |
 | --------------- | --------------- | --------------- |
-| errors.SDKError | 4xx-5xx         | */*             |
+| errors.SDKError | 4x-5xx          | */*             |
 
 ## create_metric
 
@@ -59,13 +60,15 @@ s = honeyhive.HoneyHive(
     bearer_auth="<YOUR_BEARER_TOKEN_HERE>",
 )
 
-res = s.metrics.create_metric(request=components.Metric(
+req = components.Metric(
     name='<value>',
     task='<value>',
     type=components.MetricType.MODEL,
     description='Fully-configurable neutral framework',
     return_type=components.ReturnType.STRING,
-))
+)
+
+res = s.metrics.create_metric(req)
 
 if res is not None:
     # handle response
@@ -87,7 +90,7 @@ if res is not None:
 
 | Error Object    | Status Code     | Content Type    |
 | --------------- | --------------- | --------------- |
-| errors.SDKError | 4xx-5xx         | */*             |
+| errors.SDKError | 4x-5xx          | */*             |
 
 ## update_metric
 
@@ -103,9 +106,11 @@ s = honeyhive.HoneyHive(
     bearer_auth="<YOUR_BEARER_TOKEN_HERE>",
 )
 
-res = s.metrics.update_metric(request=components.MetricEdit(
+req = components.MetricEdit(
     metric_id='<value>',
-))
+)
+
+res = s.metrics.update_metric(req)
 
 if res is not None:
     # handle response
@@ -127,7 +132,7 @@ if res is not None:
 
 | Error Object    | Status Code     | Content Type    |
 | --------------- | --------------- | --------------- |
-| errors.SDKError | 4xx-5xx         | */*             |
+| errors.SDKError | 4x-5xx          | */*             |
 
 ## delete_metric
 
@@ -141,6 +146,7 @@ import honeyhive
 s = honeyhive.HoneyHive(
     bearer_auth="<YOUR_BEARER_TOKEN_HERE>",
 )
+
 
 res = s.metrics.delete_metric(metric_id='<value>')
 
@@ -164,4 +170,4 @@ if res is not None:
 
 | Error Object    | Status Code     | Content Type    |
 | --------------- | --------------- | --------------- |
-| errors.SDKError | 4xx-5xx         | */*             |
+| errors.SDKError | 4x-5xx          | */*             |

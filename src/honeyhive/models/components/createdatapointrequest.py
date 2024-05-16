@@ -3,14 +3,8 @@
 from __future__ import annotations
 import dataclasses
 from dataclasses_json import Undefined, dataclass_json
-from enum import Enum
 from honeyhive import utils
 from typing import Any, Dict, List, Optional
-
-class CreateDatapointRequestType(str, Enum):
-    r"""Type of datapoint - \\"event\\" or \\"session\\" """
-    EVENT = 'event'
-    SESSION = 'session'
 
 
 @dataclass_json(undefined=Undefined.EXCLUDE)
@@ -20,14 +14,12 @@ class CreateDatapointRequest:
     r"""UUID for the project to which the datapoint belongs"""
     inputs: Dict[str, Any] = dataclasses.field(metadata={'dataclasses_json': { 'letter_case': utils.get_field_name('inputs') }})
     r"""Arbitrary JSON object containing the inputs for the datapoint"""
-    type: CreateDatapointRequestType = dataclasses.field(metadata={'dataclasses_json': { 'letter_case': utils.get_field_name('type') }})
-    r"""Type of datapoint - \\"event\\" or \\"session\\" """
+    history: Optional[List[Dict[str, Any]]] = dataclasses.field(default=None, metadata={'dataclasses_json': { 'letter_case': utils.get_field_name('history'), 'exclude': lambda f: f is None }})
+    r"""Conversation history associated with the datapoint"""
     ground_truth: Optional[Dict[str, Any]] = dataclasses.field(default=None, metadata={'dataclasses_json': { 'letter_case': utils.get_field_name('ground_truth'), 'exclude': lambda f: f is None }})
     r"""Expected output JSON object for the datapoint"""
     linked_event: Optional[str] = dataclasses.field(default=None, metadata={'dataclasses_json': { 'letter_case': utils.get_field_name('linked_event'), 'exclude': lambda f: f is None }})
     r"""Event id for the event from which the datapoint was created"""
-    linked_evals: Optional[List[str]] = dataclasses.field(default=None, metadata={'dataclasses_json': { 'letter_case': utils.get_field_name('linked_evals'), 'exclude': lambda f: f is None }})
-    r"""Ids of evaluations where the datapoint is included"""
     linked_datasets: Optional[List[str]] = dataclasses.field(default=None, metadata={'dataclasses_json': { 'letter_case': utils.get_field_name('linked_datasets'), 'exclude': lambda f: f is None }})
     r"""Ids of all datasets that include the datapoint"""
     metadata: Optional[Dict[str, Any]] = dataclasses.field(default=None, metadata={'dataclasses_json': { 'letter_case': utils.get_field_name('metadata'), 'exclude': lambda f: f is None }})

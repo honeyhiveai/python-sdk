@@ -22,7 +22,8 @@ s = honeyhive.HoneyHive(
     bearer_auth="<YOUR_BEARER_TOKEN_HERE>",
 )
 
-res = s.datasets.get_datasets(project='<value>', type=operations.QueryParamType.EVALUATION, dataset_id='<value>')
+
+res = s.datasets.get_datasets(project='<value>', type=operations.Type.EVALUATION, dataset_id='<value>')
 
 if res.object is not None:
     # handle response
@@ -35,7 +36,7 @@ if res.object is not None:
 | Parameter                                                                        | Type                                                                             | Required                                                                         | Description                                                                      |
 | -------------------------------------------------------------------------------- | -------------------------------------------------------------------------------- | -------------------------------------------------------------------------------- | -------------------------------------------------------------------------------- |
 | `project`                                                                        | *str*                                                                            | :heavy_check_mark:                                                               | Project ID associated with the datasets like `65e0fc2d6a2eb95f55a92cbc`          |
-| `type`                                                                           | [Optional[operations.QueryParamType]](../../models/operations/queryparamtype.md) | :heavy_minus_sign:                                                               | Type of the dataset - "evaluation" or "fine-tuning"                              |
+| `type`                                                                           | [Optional[operations.Type]](../../models/operations/type.md)                     | :heavy_minus_sign:                                                               | Type of the dataset - "evaluation" or "fine-tuning"                              |
 | `dataset_id`                                                                     | *Optional[str]*                                                                  | :heavy_minus_sign:                                                               | Unique dataset ID for filtering specific dataset like `663876ec4611c47f4970f0c3` |
 
 
@@ -46,7 +47,7 @@ if res.object is not None:
 
 | Error Object    | Status Code     | Content Type    |
 | --------------- | --------------- | --------------- |
-| errors.SDKError | 4xx-5xx         | */*             |
+| errors.SDKError | 4x-5xx          | */*             |
 
 ## create_dataset
 
@@ -62,7 +63,7 @@ s = honeyhive.HoneyHive(
     bearer_auth="<YOUR_BEARER_TOKEN_HERE>",
 )
 
-res = s.datasets.create_dataset(request=components.CreateDatasetRequest(
+req = components.CreateDatasetRequest(
     project='65e0fc2d6a2eb95f55a92cbc',
     name='test-dataset',
     description='A test dataset',
@@ -78,7 +79,9 @@ res = s.datasets.create_dataset(request=components.CreateDatasetRequest(
     metadata={
         'source': 'dev',
     },
-))
+)
+
+res = s.datasets.create_dataset(req)
 
 if res.object is not None:
     # handle response
@@ -100,7 +103,7 @@ if res.object is not None:
 
 | Error Object    | Status Code     | Content Type    |
 | --------------- | --------------- | --------------- |
-| errors.SDKError | 4xx-5xx         | */*             |
+| errors.SDKError | 4x-5xx          | */*             |
 
 ## update_dataset
 
@@ -116,7 +119,7 @@ s = honeyhive.HoneyHive(
     bearer_auth="<YOUR_BEARER_TOKEN_HERE>",
 )
 
-res = s.datasets.update_dataset(request=components.DatasetUpdate(
+req = components.DatasetUpdate(
     dataset_id='663876ec4611c47f4970f0c3',
     name='new-dataset-name',
     description='An updated dataset description',
@@ -130,7 +133,9 @@ res = s.datasets.update_dataset(request=components.DatasetUpdate(
         'updated': True,
         'source': 'prod',
     },
-))
+)
+
+res = s.datasets.update_dataset(req)
 
 if res is not None:
     # handle response
@@ -152,7 +157,7 @@ if res is not None:
 
 | Error Object    | Status Code     | Content Type    |
 | --------------- | --------------- | --------------- |
-| errors.SDKError | 4xx-5xx         | */*             |
+| errors.SDKError | 4x-5xx          | */*             |
 
 ## delete_dataset
 
@@ -166,6 +171,7 @@ import honeyhive
 s = honeyhive.HoneyHive(
     bearer_auth="<YOUR_BEARER_TOKEN_HERE>",
 )
+
 
 res = s.datasets.delete_dataset(dataset_id='<value>')
 
@@ -189,4 +195,4 @@ if res is not None:
 
 | Error Object    | Status Code     | Content Type    |
 | --------------- | --------------- | --------------- |
-| errors.SDKError | 4xx-5xx         | */*             |
+| errors.SDKError | 4x-5xx          | */*             |

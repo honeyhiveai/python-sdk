@@ -20,7 +20,7 @@ s = honeyhive.HoneyHive(
     bearer_auth="<YOUR_BEARER_TOKEN_HERE>",
 )
 
-res = s.session.start_session(request=operations.StartSessionRequestBody(
+req = operations.StartSessionRequestBody(
     session=components.SessionStartRequest(
         project='Simple RAG Project',
         session_name='Playground Session',
@@ -55,7 +55,9 @@ res = s.session.start_session(request=operations.StartSessionRequestBody(
         start_time=1712025501605,
         end_time=1712025499832,
     ),
-))
+)
+
+res = s.session.start_session(req)
 
 if res.object is not None:
     # handle response
@@ -129,7 +131,7 @@ Handling errors in this SDK should largely match your expectations.  All operati
 
 | Error Object    | Status Code     | Content Type    |
 | --------------- | --------------- | --------------- |
-| errors.SDKError | 4xx-5xx         | */*             |
+| errors.SDKError | 4x-5xx          | */*             |
 
 ### Example
 
@@ -141,9 +143,7 @@ s = honeyhive.HoneyHive(
     bearer_auth="<YOUR_BEARER_TOKEN_HERE>",
 )
 
-res = None
-try:
-    res = s.session.start_session(request=operations.StartSessionRequestBody(
+req = operations.StartSessionRequestBody(
     session=components.SessionStartRequest(
         project='Simple RAG Project',
         session_name='Playground Session',
@@ -178,7 +178,11 @@ try:
         start_time=1712025501605,
         end_time=1712025499832,
     ),
-))
+)
+
+res = None
+try:
+    res = s.session.start_session(req)
 except errors.SDKError as e:
     # handle exception
     raise(e)
@@ -212,7 +216,7 @@ s = honeyhive.HoneyHive(
     bearer_auth="<YOUR_BEARER_TOKEN_HERE>",
 )
 
-res = s.session.start_session(request=operations.StartSessionRequestBody(
+req = operations.StartSessionRequestBody(
     session=components.SessionStartRequest(
         project='Simple RAG Project',
         session_name='Playground Session',
@@ -247,7 +251,9 @@ res = s.session.start_session(request=operations.StartSessionRequestBody(
         start_time=1712025501605,
         end_time=1712025499832,
     ),
-))
+)
+
+res = s.session.start_session(req)
 
 if res.object is not None:
     # handle response
@@ -268,7 +274,7 @@ s = honeyhive.HoneyHive(
     bearer_auth="<YOUR_BEARER_TOKEN_HERE>",
 )
 
-res = s.session.start_session(request=operations.StartSessionRequestBody(
+req = operations.StartSessionRequestBody(
     session=components.SessionStartRequest(
         project='Simple RAG Project',
         session_name='Playground Session',
@@ -303,7 +309,9 @@ res = s.session.start_session(request=operations.StartSessionRequestBody(
         start_time=1712025501605,
         end_time=1712025499832,
     ),
-))
+)
+
+res = s.session.start_session(req)
 
 if res.object is not None:
     # handle response
@@ -324,7 +332,7 @@ import requests
 
 http_client = requests.Session()
 http_client.headers.update({'x-custom-header': 'someValue'})
-s = honeyhive.HoneyHive(client=http_client)
+s = honeyhive.HoneyHive(client: http_client)
 ```
 <!-- End Custom HTTP Client [http-client] -->
 
@@ -348,7 +356,7 @@ s = honeyhive.HoneyHive(
     bearer_auth="<YOUR_BEARER_TOKEN_HERE>",
 )
 
-res = s.session.start_session(request=operations.StartSessionRequestBody(
+req = operations.StartSessionRequestBody(
     session=components.SessionStartRequest(
         project='Simple RAG Project',
         session_name='Playground Session',
@@ -383,9 +391,28 @@ res = s.session.start_session(request=operations.StartSessionRequestBody(
         start_time=1712025501605,
         end_time=1712025499832,
     ),
-))
+)
+
+res = s.session.start_session(req)
 
 if res.object is not None:
+    # handle response
+    pass
+
+```
+
+### Per-Operation Security Schemes
+
+Some operations in this SDK require the security scheme to be specified at the request level. For example:
+```python
+import honeyhive
+
+s = honeyhive.HoneyHive()
+
+
+res = s.tools.get_tools("<YOUR_BEARER_TOKEN_HERE>")
+
+if res.tools is not None:
     # handle response
     pass
 
