@@ -15,14 +15,17 @@ class Tools:
         
     
     
-    def get_tools(self, security: operations.GetToolsSecurity) -> operations.GetToolsResponse:
+    def get_tools(self) -> operations.GetToolsResponse:
         r"""Retrieve a list of tools"""
-        hook_ctx = HookContext(operation_id='getTools', oauth2_scopes=[], security_source=security)
+        hook_ctx = HookContext(operation_id='getTools', oauth2_scopes=[], security_source=self.sdk_configuration.security)
         base_url = utils.template_url(*self.sdk_configuration.get_server_details())
         
         url = base_url + '/tools'
         
-        headers, query_params = utils.get_security(security)
+        if callable(self.sdk_configuration.security):
+            headers, query_params = utils.get_security(self.sdk_configuration.security())
+        else:
+            headers, query_params = utils.get_security(self.sdk_configuration.security)
         
         headers['Accept'] = 'application/json'
         headers['user-agent'] = self.sdk_configuration.user_agent
@@ -67,14 +70,17 @@ class Tools:
 
     
     
-    def create_tool(self, request: components.CreateToolRequest, security: operations.CreateToolSecurity) -> operations.CreateToolResponse:
+    def create_tool(self, request: components.CreateToolRequest) -> operations.CreateToolResponse:
         r"""Create a new tool"""
-        hook_ctx = HookContext(operation_id='createTool', oauth2_scopes=[], security_source=security)
+        hook_ctx = HookContext(operation_id='createTool', oauth2_scopes=[], security_source=self.sdk_configuration.security)
         base_url = utils.template_url(*self.sdk_configuration.get_server_details())
         
         url = base_url + '/tools'
         
-        headers, query_params = utils.get_security(security)
+        if callable(self.sdk_configuration.security):
+            headers, query_params = utils.get_security(self.sdk_configuration.security())
+        else:
+            headers, query_params = utils.get_security(self.sdk_configuration.security)
         
         req_content_type, data, form = utils.serialize_request_body(request, components.CreateToolRequest, "request", False, False, 'json')
         if req_content_type is not None and req_content_type not in ('multipart/form-data', 'multipart/mixed'):
@@ -124,14 +130,17 @@ class Tools:
 
     
     
-    def update_tool(self, request: components.UpdateToolRequest, security: operations.UpdateToolSecurity) -> operations.UpdateToolResponse:
+    def update_tool(self, request: components.UpdateToolRequest) -> operations.UpdateToolResponse:
         r"""Update an existing tool"""
-        hook_ctx = HookContext(operation_id='updateTool', oauth2_scopes=[], security_source=security)
+        hook_ctx = HookContext(operation_id='updateTool', oauth2_scopes=[], security_source=self.sdk_configuration.security)
         base_url = utils.template_url(*self.sdk_configuration.get_server_details())
         
         url = base_url + '/tools'
         
-        headers, query_params = utils.get_security(security)
+        if callable(self.sdk_configuration.security):
+            headers, query_params = utils.get_security(self.sdk_configuration.security())
+        else:
+            headers, query_params = utils.get_security(self.sdk_configuration.security)
         
         req_content_type, data, form = utils.serialize_request_body(request, components.UpdateToolRequest, "request", False, False, 'json')
         if req_content_type is not None and req_content_type not in ('multipart/form-data', 'multipart/mixed'):

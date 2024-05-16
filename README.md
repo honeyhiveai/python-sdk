@@ -400,23 +400,6 @@ if res.object is not None:
     pass
 
 ```
-
-### Per-Operation Security Schemes
-
-Some operations in this SDK require the security scheme to be specified at the request level. For example:
-```python
-import honeyhive
-
-s = honeyhive.HoneyHive()
-
-
-res = s.tools.get_tools("<YOUR_BEARER_TOKEN_HERE>")
-
-if res.tools is not None:
-    # handle response
-    pass
-
-```
 <!-- End Authentication [security] -->
 
 <!-- Start SDK Installation [installation] -->

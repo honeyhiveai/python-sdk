@@ -257,8 +257,6 @@ paths:
       - Tools
       summary: Retrieve a list of tools
       operationId: getTools
-      security:
-      - BearerAuth: []
       responses:
         '200':
           description: Successfully retrieved the list of tools
@@ -273,8 +271,6 @@ paths:
       - Tools
       summary: Create a new tool
       operationId: createTool
-      security:
-      - BearerAuth: []
       requestBody:
         required: true
         content:
@@ -299,8 +295,6 @@ paths:
       - Tools
       summary: Update an existing tool
       operationId: updateTool
-      security:
-      - BearerAuth: []
       requestBody:
         required: true
         content:

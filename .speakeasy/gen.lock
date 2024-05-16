@@ -1,12 +1,12 @@
 lockVersion: 2.0.0
 id: b027cebf-3475-4e9b-8070-6f08b389f6ed
 management:
-  docChecksum: 9e560b351b348d49260c53e36a7c66cc
+  docChecksum: 8409b9ebd940b18bdbd40d2d8cde9c29
   docVersion: 1.0.1
   speakeasyVersion: 1.209.2
   generationVersion: 2.281.2
-  releaseVersion: 0.8.0
-  configChecksum: 76c84c6e46064074886dbb901f20f9a2
+  releaseVersion: 0.9.0
+  configChecksum: 85852e33394c37fa3aecb52c0905601e
   repoURL: https://github.com/honeyhiveai/python-sdk.git
   repoSubDirectory: .
   installationURL: https://github.com/honeyhiveai/python-sdk.git
@@ -18,7 +18,6 @@ features:
     flattening: 2.81.1
     globalSecurity: 2.83.4
     globalServerURLs: 2.82.2
-    methodSecurity: 2.82.1
     responseFormat: 0.1.0
 generatedFiles:
   - src/honeyhive/sdkconfiguration.py
@@ -115,13 +114,10 @@ generatedFiles:
   - docs/models/operations/updatemetricresponse.md
   - docs/models/operations/deletemetricrequest.md
   - docs/models/operations/deletemetricresponse.md
-  - docs/models/operations/gettoolssecurity.md
   - docs/models/operations/gettoolsresponse.md
-  - docs/models/operations/createtoolsecurity.md
   - docs/models/operations/result.md
   - docs/models/operations/createtoolresponsebody.md
   - docs/models/operations/createtoolresponse.md
-  - docs/models/operations/updatetoolsecurity.md
   - docs/models/operations/updatetoolresponse.md
   - docs/models/operations/deletetoolrequest.md
   - docs/models/operations/deletetoolresponse.md

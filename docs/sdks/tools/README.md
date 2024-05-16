@@ -17,22 +17,18 @@ Retrieve a list of tools
 ```python
 import honeyhive
 
-s = honeyhive.HoneyHive()
+s = honeyhive.HoneyHive(
+    bearer_auth="<YOUR_BEARER_TOKEN_HERE>",
+)
 
 
-res = s.tools.get_tools("<YOUR_BEARER_TOKEN_HERE>")
+res = s.tools.get_tools()
 
 if res.tools is not None:
     # handle response
     pass
 
 ```
-
-### Parameters
-
-| Parameter                                                                  | Type                                                                       | Required                                                                   | Description                                                                |
-| -------------------------------------------------------------------------- | -------------------------------------------------------------------------- | -------------------------------------------------------------------------- | -------------------------------------------------------------------------- |
-| `security`                                                                 | [operations.GetToolsSecurity](../../models/operations/gettoolssecurity.md) | :heavy_check_mark:                                                         | The security requirements to use for the request.                          |
 
 
 ### Response
@@ -54,7 +50,9 @@ Create a new tool
 import honeyhive
 from honeyhive.models import components
 
-s = honeyhive.HoneyHive()
+s = honeyhive.HoneyHive(
+    bearer_auth="<YOUR_BEARER_TOKEN_HERE>",
+)
 
 req = components.CreateToolRequest(
     task='<value>',
@@ -65,7 +63,7 @@ req = components.CreateToolRequest(
     type=components.CreateToolRequestType.TOOL,
 )
 
-res = s.tools.create_tool(req, "<YOUR_BEARER_TOKEN_HERE>")
+res = s.tools.create_tool(req)
 
 if res.object is not None:
     # handle response
@@ -75,10 +73,9 @@ if res.object is not None:
 
 ### Parameters
 
-| Parameter                                                                      | Type                                                                           | Required                                                                       | Description                                                                    |
-| ------------------------------------------------------------------------------ | ------------------------------------------------------------------------------ | ------------------------------------------------------------------------------ | ------------------------------------------------------------------------------ |
-| `request`                                                                      | [components.CreateToolRequest](../../models/components/createtoolrequest.md)   | :heavy_check_mark:                                                             | The request object to use for the request.                                     |
-| `security`                                                                     | [operations.CreateToolSecurity](../../models/operations/createtoolsecurity.md) | :heavy_check_mark:                                                             | The security requirements to use for the request.                              |
+| Parameter                                                                    | Type                                                                         | Required                                                                     | Description                                                                  |
+| ---------------------------------------------------------------------------- | ---------------------------------------------------------------------------- | ---------------------------------------------------------------------------- | ---------------------------------------------------------------------------- |
+| `request`                                                                    | [components.CreateToolRequest](../../models/components/createtoolrequest.md) | :heavy_check_mark:                                                           | The request object to use for the request.                                   |
 
 
 ### Response
@@ -100,7 +97,9 @@ Update an existing tool
 import honeyhive
 from honeyhive.models import components
 
-s = honeyhive.HoneyHive()
+s = honeyhive.HoneyHive(
+    bearer_auth="<YOUR_BEARER_TOKEN_HERE>",
+)
 
 req = components.UpdateToolRequest(
     id='<id>',
@@ -110,7 +109,7 @@ req = components.UpdateToolRequest(
     },
 )
 
-res = s.tools.update_tool(req, "<YOUR_BEARER_TOKEN_HERE>")
+res = s.tools.update_tool(req)
 
 if res is not None:
     # handle response
@@ -120,10 +119,9 @@ if res is not None:
 
 ### Parameters
 
-| Parameter                                                                      | Type                                                                           | Required                                                                       | Description                                                                    |
-| ------------------------------------------------------------------------------ | ------------------------------------------------------------------------------ | ------------------------------------------------------------------------------ | ------------------------------------------------------------------------------ |
-| `request`                                                                      | [components.UpdateToolRequest](../../models/components/updatetoolrequest.md)   | :heavy_check_mark:                                                             | The request object to use for the request.                                     |
-| `security`                                                                     | [operations.UpdateToolSecurity](../../models/operations/updatetoolsecurity.md) | :heavy_check_mark:                                                             | The security requirements to use for the request.                              |
+| Parameter                                                                    | Type                                                                         | Required                                                                     | Description                                                                  |
+| ---------------------------------------------------------------------------- | ---------------------------------------------------------------------------- | ---------------------------------------------------------------------------- | ---------------------------------------------------------------------------- |
+| `request`                                                                    | [components.UpdateToolRequest](../../models/components/updatetoolrequest.md) | :heavy_check_mark:                                                           | The request object to use for the request.                                   |
 
 
 ### Response
