@@ -19,7 +19,6 @@ def test_create_datapoints():
         inputs={},
         ground_truth={"text": "This is part of the Python SDK test suite."},
         project="64d69442f9fa4485aa1cc582",
-        type=components.CreateDatapointRequestType.EVENT,
     )
     res = sdk.datapoints.create_datapoint(req)
     assert res.status_code == 200
