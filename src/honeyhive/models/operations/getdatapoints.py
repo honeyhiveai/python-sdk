@@ -5,24 +5,18 @@ import dataclasses
 import requests as requests_http
 from ...models.components import datapoint as components_datapoint
 from dataclasses_json import Undefined, dataclass_json
-from enum import Enum
 from honeyhive import utils
 from typing import List, Optional
-
-class Type(str, Enum):
-    r"""Type of data - \\"session\\" or \\"event\\" """
-    SESSION = 'session'
-    EVENT = 'event'
 
 
 @dataclasses.dataclass
 class GetDatapointsRequest:
     project: str = dataclasses.field(metadata={'query_param': { 'field_name': 'project', 'style': 'form', 'explode': True }})
     r"""Project ID to filter datapoints"""
-    type: Optional[Type] = dataclasses.field(default=None, metadata={'query_param': { 'field_name': 'type', 'style': 'form', 'explode': True }})
-    r"""Type of data - \\"session\\" or \\"event\\" """
     datapoint_ids: Optional[List[str]] = dataclasses.field(default=None, metadata={'query_param': { 'field_name': 'datapoint_ids', 'style': 'form', 'explode': True }})
     r"""List of datapoint ids to fetch"""
+    dataset_name: Optional[str] = dataclasses.field(default=None, metadata={'query_param': { 'field_name': 'dataset_name', 'style': 'form', 'explode': True }})
+    r"""Name of the dataset to get datapoints from"""
     
 
 

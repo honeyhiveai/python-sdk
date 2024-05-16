@@ -25,10 +25,6 @@ class UpdateDatapointRequest:
     r"""Ids of evaluations where the datapoint is included"""
     linked_datasets: Optional[List[str]] = dataclasses.field(default=None, metadata={'dataclasses_json': { 'letter_case': utils.get_field_name('linked_datasets'), 'exclude': lambda f: f is None }})
     r"""Ids of all datasets that include the datapoint"""
-    saved: Optional[bool] = dataclasses.field(default=None, metadata={'dataclasses_json': { 'letter_case': utils.get_field_name('saved'), 'exclude': lambda f: f is None }})
-    r"""Whether the datapoint is saved or detected"""
-    type: Optional[str] = dataclasses.field(default=None, metadata={'dataclasses_json': { 'letter_case': utils.get_field_name('type'), 'exclude': lambda f: f is None }})
-    r"""session or event - specify the type of datapoint"""
     metadata: Optional[Dict[str, Any]] = dataclasses.field(default=None, metadata={'dataclasses_json': { 'letter_case': utils.get_field_name('metadata'), 'exclude': lambda f: f is None }})
     r"""Any additional metadata for the datapoint"""
     

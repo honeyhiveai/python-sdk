@@ -7,11 +7,6 @@ from ...models.components import configuration as components_configuration
 from enum import Enum
 from typing import List, Optional
 
-class GetConfigurationsQueryParamType(str, Enum):
-    r"""Configuration type - \\"LLM\\" or \\"pipeline\\" - default is \\"LLM\\" """
-    LLM = 'LLM'
-    PIPELINE = 'pipeline'
-
 class Env(str, Enum):
     r"""Environment - \\"dev\\", \\"staging\\" or \\"prod\\" """
     DEV = 'dev'
@@ -23,8 +18,6 @@ class Env(str, Enum):
 class GetConfigurationsRequest:
     project_name: str = dataclasses.field(metadata={'query_param': { 'field_name': 'project_name', 'style': 'form', 'explode': True }})
     r"""Project name for configuration like `Example Project`"""
-    type: Optional[GetConfigurationsQueryParamType] = dataclasses.field(default=None, metadata={'query_param': { 'field_name': 'type', 'style': 'form', 'explode': True }})
-    r"""Configuration type - \\"LLM\\" or \\"pipeline\\" - default is \\"LLM\\" """
     env: Optional[Env] = dataclasses.field(default=None, metadata={'query_param': { 'field_name': 'env', 'style': 'form', 'explode': True }})
     r"""Environment - \\"dev\\", \\"staging\\" or \\"prod\\" """
     name: Optional[str] = dataclasses.field(default=None, metadata={'query_param': { 'field_name': 'name', 'style': 'form', 'explode': True }})

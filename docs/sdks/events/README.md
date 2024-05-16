@@ -21,7 +21,7 @@ s = honeyhive.HoneyHive(
     bearer_auth="<YOUR_BEARER_TOKEN_HERE>",
 )
 
-res = s.events.create_event(request=operations.CreateEventRequestBody(
+req = operations.CreateEventRequestBody(
     event=components.CreateEventRequest(
         project='Simple RAG',
         source='playground',
@@ -81,7 +81,9 @@ res = s.events.create_event(request=operations.CreateEventRequestBody(
             'user': 'google-oauth2|111840237613341303366',
         },
     ),
-))
+)
+
+res = s.events.create_event(req)
 
 if res.object is not None:
     # handle response
@@ -103,7 +105,7 @@ if res.object is not None:
 
 | Error Object    | Status Code     | Content Type    |
 | --------------- | --------------- | --------------- |
-| errors.SDKError | 4xx-5xx         | */*             |
+| errors.SDKError | 4x-5xx          | */*             |
 
 ## update_event
 
@@ -119,25 +121,11 @@ s = honeyhive.HoneyHive(
     bearer_auth="<YOUR_BEARER_TOKEN_HERE>",
 )
 
-res = s.events.update_event(request=operations.UpdateEventRequestBody(
-    event_id='7f22137a-6911-4ed3-bc36-110f1dde6b66',
-    metadata={
-        'cost': 0.00008,
-        'completion_tokens': 23,
-        'prompt_tokens': 35,
-        'total_tokens': 58,
-    },
-    feedback={
-        'rating': 5,
-    },
-    metrics={
-        'num_words': 2,
-    },
-    outputs={
-        'role': 'assistant',
-        'content': 'Hello world',
-    },
-))
+req = operations.UpdateEventRequestBody(
+    event_id='<value>',
+)
+
+res = s.events.update_event(req)
 
 if res is not None:
     # handle response
@@ -159,7 +147,7 @@ if res is not None:
 
 | Error Object    | Status Code     | Content Type    |
 | --------------- | --------------- | --------------- |
-| errors.SDKError | 4xx-5xx         | */*             |
+| errors.SDKError | 4x-5xx          | */*             |
 
 ## get_events
 
@@ -175,7 +163,7 @@ s = honeyhive.HoneyHive(
     bearer_auth="<YOUR_BEARER_TOKEN_HERE>",
 )
 
-res = s.events.get_events(request=operations.GetEventsRequestBody(
+req = operations.GetEventsRequestBody(
     project='<value>',
     filters=[
         components.EventFilter(
@@ -185,7 +173,9 @@ res = s.events.get_events(request=operations.GetEventsRequestBody(
             type=components.Type.STRING,
         ),
     ],
-))
+)
+
+res = s.events.get_events(req)
 
 if res.object is not None:
     # handle response
@@ -207,4 +197,4 @@ if res.object is not None:
 
 | Error Object    | Status Code     | Content Type    |
 | --------------- | --------------- | --------------- |
-| errors.SDKError | 4xx-5xx         | */*             |
+| errors.SDKError | 4x-5xx          | */*             |

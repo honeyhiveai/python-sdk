@@ -44,7 +44,6 @@ def test_post_configurations():
             name=configuration.name,
             provider=configuration.provider,
             parameters=configuration.parameters,
-            type=components.PutConfigurationRequestType.PIPELINE,
         ),
     )
     assert res.status_code == 200
@@ -52,14 +51,9 @@ def test_post_configurations():
     res = sdk.configurations.get_configurations(
         project_name=os.environ["HH_PROJECT"],
         name=config_name,
-        type_=operations.GetConfigurationsQueryParamType.PIPELINE,
     )
     assert res.status_code == 200
     assert len(res.configurations) == 1
-    assert (
-        res.configurations[0].type
-        == operations.GetConfigurationsQueryParamType.PIPELINE
-    )
 
     res = sdk.configurations.delete_configuration(id=inserted_id)
     assert res.status_code == 200
@@ -67,7 +61,6 @@ def test_post_configurations():
     res = sdk.configurations.get_configurations(
         project_name=os.environ["HH_PROJECT"],
         name=config_name,
-        type_=operations.GetConfigurationsQueryParamType.PIPELINE,
     )
     assert res.status_code == 200
     assert len(res.configurations) == 0
