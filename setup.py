@@ -15,7 +15,8 @@ requires = [
     'pandas>=1.3.2',
     'openai>=0.27.8',
     'langchain>=0.0.251',
-    'llama_index>=0.8.13'
+    'llama_index>=0.8.13',
+    'traceloop-sdk>=0.18.2'
 ]
 
 entry_points = {'console_scripts': ['honeyhive = honeyhive.cli:honeyhive']}
