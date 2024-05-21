@@ -58,3 +58,19 @@ def test_tracer():
     assert res.status_code == 200
     assert res.object is not None
     assert len(res.object.events) == 1
+
+    session_id = res.object.events[0].session_id
+    req = operations.GetEventsRequestBody(
+        project=os.environ["HH_PROJECT_ID"],
+        filters=[
+            components.EventFilter(
+                field="session_id",
+                value=session_id,
+                operator=components.Operator.IS,
+            ),
+        ],
+    )
+    res = sdk.events.get_events(request=req)
+    assert res.status_code == 200
+    assert res.object is not None
+    assert len(res.object.events) > 1
