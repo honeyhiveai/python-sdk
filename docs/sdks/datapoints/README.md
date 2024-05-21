@@ -22,7 +22,6 @@ s = honeyhive.HoneyHive(
     bearer_auth="<YOUR_BEARER_TOKEN_HERE>",
 )
 
-
 res = s.datapoints.get_datapoints(project='<value>', datapoint_ids=[
     '<value>',
 ], dataset_name='<value>')
@@ -49,7 +48,7 @@ if res.object is not None:
 
 | Error Object    | Status Code     | Content Type    |
 | --------------- | --------------- | --------------- |
-| errors.SDKError | 4x-5xx          | */*             |
+| errors.SDKError | 4xx-5xx         | */*             |
 
 ## create_datapoint
 
@@ -65,7 +64,7 @@ s = honeyhive.HoneyHive(
     bearer_auth="<YOUR_BEARER_TOKEN_HERE>",
 )
 
-req = components.CreateDatapointRequest(
+res = s.datapoints.create_datapoint(request=components.CreateDatapointRequest(
     project='653454f3138a956964341c07',
     inputs={
         'query': 'what\'s the temperature in Iceland?',
@@ -94,9 +93,7 @@ req = components.CreateDatapointRequest(
         'prompt_tokens': 696,
         'total_tokens': 743,
     },
-)
-
-res = s.datapoints.create_datapoint(req)
+))
 
 if res.object is not None:
     # handle response
@@ -118,7 +115,7 @@ if res.object is not None:
 
 | Error Object    | Status Code     | Content Type    |
 | --------------- | --------------- | --------------- |
-| errors.SDKError | 4x-5xx          | */*             |
+| errors.SDKError | 4xx-5xx         | */*             |
 
 ## get_datapoint
 
@@ -132,7 +129,6 @@ import honeyhive
 s = honeyhive.HoneyHive(
     bearer_auth="<YOUR_BEARER_TOKEN_HERE>",
 )
-
 
 res = s.datapoints.get_datapoint(id='<value>')
 
@@ -156,7 +152,7 @@ if res.object is not None:
 
 | Error Object    | Status Code     | Content Type    |
 | --------------- | --------------- | --------------- |
-| errors.SDKError | 4x-5xx          | */*             |
+| errors.SDKError | 4xx-5xx         | */*             |
 
 ## update_datapoint
 
@@ -171,7 +167,6 @@ from honeyhive.models import components
 s = honeyhive.HoneyHive(
     bearer_auth="<YOUR_BEARER_TOKEN_HERE>",
 )
-
 
 res = s.datapoints.update_datapoint(id='<value>', update_datapoint_request=components.UpdateDatapointRequest(
     inputs={
@@ -218,7 +213,7 @@ if res is not None:
 
 | Error Object    | Status Code     | Content Type    |
 | --------------- | --------------- | --------------- |
-| errors.SDKError | 4x-5xx          | */*             |
+| errors.SDKError | 4xx-5xx         | */*             |
 
 ## delete_datapoint
 
@@ -232,7 +227,6 @@ import honeyhive
 s = honeyhive.HoneyHive(
     bearer_auth="<YOUR_BEARER_TOKEN_HERE>",
 )
-
 
 res = s.datapoints.delete_datapoint(id='<value>')
 
@@ -256,4 +250,4 @@ if res.object is not None:
 
 | Error Object    | Status Code     | Content Type    |
 | --------------- | --------------- | --------------- |
-| errors.SDKError | 4x-5xx          | */*             |
+| errors.SDKError | 4xx-5xx         | */*             |

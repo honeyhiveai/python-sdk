@@ -20,7 +20,7 @@ s = honeyhive.HoneyHive(
     bearer_auth="<YOUR_BEARER_TOKEN_HERE>",
 )
 
-req = operations.StartSessionRequestBody(
+res = s.session.start_session(request=operations.StartSessionRequestBody(
     session=components.SessionStartRequest(
         project='Simple RAG Project',
         session_name='Playground Session',
@@ -32,7 +32,18 @@ req = operations.StartSessionRequestBody(
         inputs={
             'context': 'Hello world',
             'question': 'What is in the context?',
-            'chat_history': '<value>',
+            'chat_history': [
+                {
+                    'role': 'system',
+                    'content': 'Answer the user\'s question only using provided context.
+
+                    Context: Hello world',
+                },
+                {
+                    'role': 'user',
+                    'content': 'What is in the context?',
+                },
+            ],
         },
         outputs={
             'role': 'assistant',
@@ -55,9 +66,7 @@ req = operations.StartSessionRequestBody(
         start_time=1712025501605,
         end_time=1712025499832,
     ),
-)
-
-res = s.session.start_session(req)
+))
 
 if res.object is not None:
     # handle response
@@ -131,7 +140,7 @@ Handling errors in this SDK should largely match your expectations.  All operati
 
 | Error Object    | Status Code     | Content Type    |
 | --------------- | --------------- | --------------- |
-| errors.SDKError | 4x-5xx          | */*             |
+| errors.SDKError | 4xx-5xx         | */*             |
 
 ### Example
 
@@ -143,7 +152,9 @@ s = honeyhive.HoneyHive(
     bearer_auth="<YOUR_BEARER_TOKEN_HERE>",
 )
 
-req = operations.StartSessionRequestBody(
+res = None
+try:
+    res = s.session.start_session(request=operations.StartSessionRequestBody(
     session=components.SessionStartRequest(
         project='Simple RAG Project',
         session_name='Playground Session',
@@ -155,7 +166,18 @@ req = operations.StartSessionRequestBody(
         inputs={
             'context': 'Hello world',
             'question': 'What is in the context?',
-            'chat_history': '<value>',
+            'chat_history': [
+                {
+                    'role': 'system',
+                    'content': 'Answer the user\'s question only using provided context.
+
+                    Context: Hello world',
+                },
+                {
+                    'role': 'user',
+                    'content': 'What is in the context?',
+                },
+            ],
         },
         outputs={
             'role': 'assistant',
@@ -178,11 +200,7 @@ req = operations.StartSessionRequestBody(
         start_time=1712025501605,
         end_time=1712025499832,
     ),
-)
-
-res = None
-try:
-    res = s.session.start_session(req)
+))
 except errors.SDKError as e:
     # handle exception
     raise(e)
@@ -216,7 +234,7 @@ s = honeyhive.HoneyHive(
     bearer_auth="<YOUR_BEARER_TOKEN_HERE>",
 )
 
-req = operations.StartSessionRequestBody(
+res = s.session.start_session(request=operations.StartSessionRequestBody(
     session=components.SessionStartRequest(
         project='Simple RAG Project',
         session_name='Playground Session',
@@ -228,7 +246,18 @@ req = operations.StartSessionRequestBody(
         inputs={
             'context': 'Hello world',
             'question': 'What is in the context?',
-            'chat_history': '<value>',
+            'chat_history': [
+                {
+                    'role': 'system',
+                    'content': 'Answer the user\'s question only using provided context.
+
+                    Context: Hello world',
+                },
+                {
+                    'role': 'user',
+                    'content': 'What is in the context?',
+                },
+            ],
         },
         outputs={
             'role': 'assistant',
@@ -251,9 +280,7 @@ req = operations.StartSessionRequestBody(
         start_time=1712025501605,
         end_time=1712025499832,
     ),
-)
-
-res = s.session.start_session(req)
+))
 
 if res.object is not None:
     # handle response
@@ -274,7 +301,7 @@ s = honeyhive.HoneyHive(
     bearer_auth="<YOUR_BEARER_TOKEN_HERE>",
 )
 
-req = operations.StartSessionRequestBody(
+res = s.session.start_session(request=operations.StartSessionRequestBody(
     session=components.SessionStartRequest(
         project='Simple RAG Project',
         session_name='Playground Session',
@@ -286,7 +313,18 @@ req = operations.StartSessionRequestBody(
         inputs={
             'context': 'Hello world',
             'question': 'What is in the context?',
-            'chat_history': '<value>',
+            'chat_history': [
+                {
+                    'role': 'system',
+                    'content': 'Answer the user\'s question only using provided context.
+
+                    Context: Hello world',
+                },
+                {
+                    'role': 'user',
+                    'content': 'What is in the context?',
+                },
+            ],
         },
         outputs={
             'role': 'assistant',
@@ -309,9 +347,7 @@ req = operations.StartSessionRequestBody(
         start_time=1712025501605,
         end_time=1712025499832,
     ),
-)
-
-res = s.session.start_session(req)
+))
 
 if res.object is not None:
     # handle response
@@ -332,7 +368,7 @@ import requests
 
 http_client = requests.Session()
 http_client.headers.update({'x-custom-header': 'someValue'})
-s = honeyhive.HoneyHive(client: http_client)
+s = honeyhive.HoneyHive(client=http_client)
 ```
 <!-- End Custom HTTP Client [http-client] -->
 
@@ -356,7 +392,7 @@ s = honeyhive.HoneyHive(
     bearer_auth="<YOUR_BEARER_TOKEN_HERE>",
 )
 
-req = operations.StartSessionRequestBody(
+res = s.session.start_session(request=operations.StartSessionRequestBody(
     session=components.SessionStartRequest(
         project='Simple RAG Project',
         session_name='Playground Session',
@@ -368,7 +404,18 @@ req = operations.StartSessionRequestBody(
         inputs={
             'context': 'Hello world',
             'question': 'What is in the context?',
-            'chat_history': '<value>',
+            'chat_history': [
+                {
+                    'role': 'system',
+                    'content': 'Answer the user\'s question only using provided context.
+
+                    Context: Hello world',
+                },
+                {
+                    'role': 'user',
+                    'content': 'What is in the context?',
+                },
+            ],
         },
         outputs={
             'role': 'assistant',
@@ -391,9 +438,7 @@ req = operations.StartSessionRequestBody(
         start_time=1712025501605,
         end_time=1712025499832,
     ),
-)
-
-res = s.session.start_session(req)
+))
 
 if res.object is not None:
     # handle response

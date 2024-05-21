@@ -1,6 +1,19 @@
-speakeasyVersion: 1.285.6
-sources: {}
-targets: {}
+speakeasyVersion: 1.294.0
+sources:
+    my-source:
+        sourceNamespace: my-source
+        sourceRevisionDigest: sha256:985fda8cfea3f0b0fed1d09b76549ece6db0ed837d0700435d1842e9d2cb3952
+        sourceBlobDigest: sha256:f2036664c8465ef96bf42a268263a7e1c73df82103b70fb10f790810e2b141f6
+        tags:
+            - latest
+            - main
+targets:
+    honeyhive:
+        source: my-source
+        sourceNamespace: my-source
+        sourceRevisionDigest: sha256:985fda8cfea3f0b0fed1d09b76549ece6db0ed837d0700435d1842e9d2cb3952
+        sourceBlobDigest: sha256:f2036664c8465ef96bf42a268263a7e1c73df82103b70fb10f790810e2b141f6
+        outLocation: /github/workspace/repo
 workflow:
     workflowVersion: 1.0.0
     speakeasyVersion: latest
@@ -8,6 +21,8 @@ workflow:
         my-source:
             inputs:
                 - location: openapi.yaml
+            registry:
+                location: registry.speakeasyapi.dev/honey-hive/honeyhive-jxo/my-source
     targets:
         honeyhive:
             target: python
