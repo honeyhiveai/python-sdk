@@ -27,6 +27,7 @@ class HoneyHiveTracer:
             )
             assert res.object.session_id is not None
             session_id = res.object.session_id
+            os.environ['OTEL_EXPORTER_OTLP_INSECURE'] = 'True'
             Traceloop.init(
                 api_endpoint=f"{server_url}/opentelemetry",
                 app_name=session_id,
