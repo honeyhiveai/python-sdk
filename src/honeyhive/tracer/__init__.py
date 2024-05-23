@@ -1,5 +1,7 @@
 import honeyhive
+import os
 from honeyhive.models import components, operations
+from opentelemetry.sdk.metrics.export import ConsoleMetricExporter
 from traceloop.sdk import Traceloop
 
 
@@ -29,6 +31,7 @@ class HoneyHiveTracer:
                 api_endpoint=f"{server_url}/opentelemetry",
                 app_name=session_id,
                 api_key=api_key,
+                metrics_exporter=ConsoleMetricExporter(out=open(os.devnull, "w")),
             )
         except:
             pass
