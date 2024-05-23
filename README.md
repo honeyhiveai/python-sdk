@@ -20,6 +20,7 @@ s = honeyhive.HoneyHive(
     bearer_auth="<YOUR_BEARER_TOKEN_HERE>",
 )
 
+
 res = s.session.start_session(request=operations.StartSessionRequestBody(
     session=components.SessionStartRequest(
         project='Simple RAG Project',
@@ -201,6 +202,7 @@ try:
         end_time=1712025499832,
     ),
 ))
+
 except errors.SDKError as e:
     # handle exception
     raise(e)
@@ -233,6 +235,7 @@ s = honeyhive.HoneyHive(
     server_idx=0,
     bearer_auth="<YOUR_BEARER_TOKEN_HERE>",
 )
+
 
 res = s.session.start_session(request=operations.StartSessionRequestBody(
     session=components.SessionStartRequest(
@@ -300,6 +303,7 @@ s = honeyhive.HoneyHive(
     server_url="https://api.honeyhive.ai",
     bearer_auth="<YOUR_BEARER_TOKEN_HERE>",
 )
+
 
 res = s.session.start_session(request=operations.StartSessionRequestBody(
     session=components.SessionStartRequest(
@@ -391,6 +395,7 @@ from honeyhive.models import components, operations
 s = honeyhive.HoneyHive(
     bearer_auth="<YOUR_BEARER_TOKEN_HERE>",
 )
+
 
 res = s.session.start_session(request=operations.StartSessionRequestBody(
     session=components.SessionStartRequest(

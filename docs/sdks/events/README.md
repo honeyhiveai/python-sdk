@@ -21,6 +21,7 @@ s = honeyhive.HoneyHive(
     bearer_auth="<YOUR_BEARER_TOKEN_HERE>",
 )
 
+
 res = s.events.create_event(request=operations.CreateEventRequestBody(
     event=components.CreateEventRequest(
         project='Simple RAG',
@@ -144,6 +145,7 @@ s = honeyhive.HoneyHive(
     bearer_auth="<YOUR_BEARER_TOKEN_HERE>",
 )
 
+
 res = s.events.update_event(request=operations.UpdateEventRequestBody(
     event_id='7f22137a-6911-4ed3-bc36-110f1dde6b66',
     metadata={
@@ -199,6 +201,7 @@ from honeyhive.models import components, operations
 s = honeyhive.HoneyHive(
     bearer_auth="<YOUR_BEARER_TOKEN_HERE>",
 )
+
 
 res = s.events.get_events(request=operations.GetEventsRequestBody(
     project='<value>',

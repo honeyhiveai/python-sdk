@@ -21,6 +21,7 @@ s = honeyhive.HoneyHive(
     bearer_auth="<YOUR_BEARER_TOKEN_HERE>",
 )
 
+
 res = s.projects.get_projects(name='<value>')
 
 if res.projects is not None:
@@ -58,6 +59,7 @@ from honeyhive.models import components
 s = honeyhive.HoneyHive(
     bearer_auth="<YOUR_BEARER_TOKEN_HERE>",
 )
+
 
 res = s.projects.create_project(request=components.CreateProjectRequest(
     name='<value>',
@@ -99,6 +101,7 @@ s = honeyhive.HoneyHive(
     bearer_auth="<YOUR_BEARER_TOKEN_HERE>",
 )
 
+
 res = s.projects.update_project(request=components.UpdateProjectRequest(
     project_id='<value>',
 ))
@@ -137,6 +140,7 @@ import honeyhive
 s = honeyhive.HoneyHive(
     bearer_auth="<YOUR_BEARER_TOKEN_HERE>",
 )
+
 
 res = s.projects.delete_project(name='<value>')
 

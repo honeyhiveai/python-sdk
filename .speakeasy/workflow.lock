@@ -1,8 +1,8 @@
-speakeasyVersion: 1.294.0
+speakeasyVersion: 1.295.1
 sources:
     my-source:
         sourceNamespace: my-source
-        sourceRevisionDigest: sha256:985fda8cfea3f0b0fed1d09b76549ece6db0ed837d0700435d1842e9d2cb3952
+        sourceRevisionDigest: sha256:a913363784fc62abd34024f39863bc1807497c8563c3852ba89e82fdcb72c2a6
         sourceBlobDigest: sha256:f2036664c8465ef96bf42a268263a7e1c73df82103b70fb10f790810e2b141f6
         tags:
             - latest
@@ -11,7 +11,7 @@ targets:
     honeyhive:
         source: my-source
         sourceNamespace: my-source
-        sourceRevisionDigest: sha256:985fda8cfea3f0b0fed1d09b76549ece6db0ed837d0700435d1842e9d2cb3952
+        sourceRevisionDigest: sha256:a913363784fc62abd34024f39863bc1807497c8563c3852ba89e82fdcb72c2a6
         sourceBlobDigest: sha256:f2036664c8465ef96bf42a268263a7e1c73df82103b70fb10f790810e2b141f6
         outLocation: /github/workspace/repo
 workflow:
