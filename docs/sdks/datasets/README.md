@@ -22,6 +22,7 @@ s = honeyhive.HoneyHive(
     bearer_auth="<YOUR_BEARER_TOKEN_HERE>",
 )
 
+
 res = s.datasets.get_datasets(project='<value>', type=operations.Type.EVALUATION, dataset_id='<value>')
 
 if res.object is not None:
@@ -61,6 +62,7 @@ from honeyhive.models import components
 s = honeyhive.HoneyHive(
     bearer_auth="<YOUR_BEARER_TOKEN_HERE>",
 )
+
 
 res = s.datasets.create_dataset(request=components.CreateDatasetRequest(
     project='65e0fc2d6a2eb95f55a92cbc',
@@ -116,6 +118,7 @@ s = honeyhive.HoneyHive(
     bearer_auth="<YOUR_BEARER_TOKEN_HERE>",
 )
 
+
 res = s.datasets.update_dataset(request=components.DatasetUpdate(
     dataset_id='663876ec4611c47f4970f0c3',
     name='new-dataset-name',
@@ -166,6 +169,7 @@ import honeyhive
 s = honeyhive.HoneyHive(
     bearer_auth="<YOUR_BEARER_TOKEN_HERE>",
 )
+
 
 res = s.datasets.delete_dataset(dataset_id='<value>')
 

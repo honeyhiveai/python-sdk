@@ -22,6 +22,7 @@ s = honeyhive.HoneyHive(
     bearer_auth="<YOUR_BEARER_TOKEN_HERE>",
 )
 
+
 res = s.configurations.get_configurations(project_name='<value>', env=operations.Env.DEV, name='<value>')
 
 if res.configurations is not None:
@@ -61,6 +62,7 @@ from honeyhive.models import components
 s = honeyhive.HoneyHive(
     bearer_auth="<YOUR_BEARER_TOKEN_HERE>",
 )
+
 
 res = s.configurations.create_configuration(request=components.PostConfigurationRequest(
     project='660d7ba7995cacccce4d299e',
@@ -162,6 +164,7 @@ from honeyhive.models import components
 s = honeyhive.HoneyHive(
     bearer_auth="<YOUR_BEARER_TOKEN_HERE>",
 )
+
 
 res = s.configurations.update_configuration(id='<value>', put_configuration_request=components.PutConfigurationRequest(
     project='660d7ba7995cacccce4d299e',
@@ -265,6 +268,7 @@ import honeyhive
 s = honeyhive.HoneyHive(
     bearer_auth="<YOUR_BEARER_TOKEN_HERE>",
 )
+
 
 res = s.configurations.delete_configuration(id='<value>')
 

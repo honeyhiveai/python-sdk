@@ -22,6 +22,7 @@ s = honeyhive.HoneyHive(
     bearer_auth="<YOUR_BEARER_TOKEN_HERE>",
 )
 
+
 res = s.datapoints.get_datapoints(project='<value>', datapoint_ids=[
     '<value>',
 ], dataset_name='<value>')
@@ -63,6 +64,7 @@ from honeyhive.models import components
 s = honeyhive.HoneyHive(
     bearer_auth="<YOUR_BEARER_TOKEN_HERE>",
 )
+
 
 res = s.datapoints.create_datapoint(request=components.CreateDatapointRequest(
     project='653454f3138a956964341c07',
@@ -130,6 +132,7 @@ s = honeyhive.HoneyHive(
     bearer_auth="<YOUR_BEARER_TOKEN_HERE>",
 )
 
+
 res = s.datapoints.get_datapoint(id='<value>')
 
 if res.object is not None:
@@ -167,6 +170,7 @@ from honeyhive.models import components
 s = honeyhive.HoneyHive(
     bearer_auth="<YOUR_BEARER_TOKEN_HERE>",
 )
+
 
 res = s.datapoints.update_datapoint(id='<value>', update_datapoint_request=components.UpdateDatapointRequest(
     inputs={
@@ -227,6 +231,7 @@ import honeyhive
 s = honeyhive.HoneyHive(
     bearer_auth="<YOUR_BEARER_TOKEN_HERE>",
 )
+
 
 res = s.datapoints.delete_datapoint(id='<value>')
 

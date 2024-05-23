@@ -21,6 +21,7 @@ s = honeyhive.HoneyHive(
     bearer_auth="<YOUR_BEARER_TOKEN_HERE>",
 )
 
+
 res = s.tools.get_tools()
 
 if res.tools is not None:
@@ -52,6 +53,7 @@ from honeyhive.models import components
 s = honeyhive.HoneyHive(
     bearer_auth="<YOUR_BEARER_TOKEN_HERE>",
 )
+
 
 res = s.tools.create_tool(request=components.CreateToolRequest(
     task='<value>',
@@ -98,6 +100,7 @@ s = honeyhive.HoneyHive(
     bearer_auth="<YOUR_BEARER_TOKEN_HERE>",
 )
 
+
 res = s.tools.update_tool(request=components.UpdateToolRequest(
     id='<id>',
     name='<value>',
@@ -140,6 +143,7 @@ import honeyhive
 s = honeyhive.HoneyHive(
     bearer_auth="<YOUR_BEARER_TOKEN_HERE>",
 )
+
 
 res = s.tools.delete_tool(function_id='<value>')
 

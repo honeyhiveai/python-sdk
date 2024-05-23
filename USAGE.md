@@ -7,6 +7,7 @@ s = honeyhive.HoneyHive(
     bearer_auth="<YOUR_BEARER_TOKEN_HERE>",
 )
 
+
 res = s.session.start_session(request=operations.StartSessionRequestBody(
     session=components.SessionStartRequest(
         project='Simple RAG Project',

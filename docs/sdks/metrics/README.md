@@ -21,6 +21,7 @@ s = honeyhive.HoneyHive(
     bearer_auth="<YOUR_BEARER_TOKEN_HERE>",
 )
 
+
 res = s.metrics.get_metrics(project_name='<value>')
 
 if res.metrics is not None:
@@ -58,6 +59,7 @@ from honeyhive.models import components
 s = honeyhive.HoneyHive(
     bearer_auth="<YOUR_BEARER_TOKEN_HERE>",
 )
+
 
 res = s.metrics.create_metric(request=components.Metric(
     name='<value>',
@@ -103,6 +105,7 @@ s = honeyhive.HoneyHive(
     bearer_auth="<YOUR_BEARER_TOKEN_HERE>",
 )
 
+
 res = s.metrics.update_metric(request=components.MetricEdit(
     metric_id='<value>',
 ))
@@ -141,6 +144,7 @@ import honeyhive
 s = honeyhive.HoneyHive(
     bearer_auth="<YOUR_BEARER_TOKEN_HERE>",
 )
+
 
 res = s.metrics.delete_metric(metric_id='<value>')
 
