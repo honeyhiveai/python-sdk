@@ -31,7 +31,7 @@ class HoneyHiveTracer:
                 api_endpoint=f"{server_url}/opentelemetry",
                 app_name=session_id,
                 metrics_exporter=ConsoleMetricExporter(out=open(os.devnull, "w")),
-                headers={"Authorization": f"Bearer {api_key}"},
+                headers={"authorization": f"Bearer {api_key}"},
             )
         except:
             pass
