@@ -38,7 +38,7 @@ def test_tracer():
     tracer = run_tracer()
 
     # Get session
-    time.sleep(5)
+    time.sleep(10)
     req = operations.GetEventsRequestBody(
         project=os.environ["HH_PROJECT_ID"],
         filters=[
@@ -66,6 +66,74 @@ def test_tracer():
             components.EventFilter(
                 field="session_id",
                 value=session_id,
+                operator=components.Operator.IS,
+            ),
+        ],
+    )
+    res = sdk.events.get_events(request=req)
+    assert res.status_code == 200
+    assert res.object is not None
+    assert len(res.object.events) > 1
+    num_events = len(res.object.events)
+
+    # Run it a second time in a new session
+    HoneyHiveTracer.init(
+        server_url=os.environ["HH_API_URL"],
+        api_key=os.environ["HH_API_KEY"],
+        project=os.environ["HH_PROJECT"],
+        source="HoneyHive Tracer Test",
+        session_name=session_name,
+    )
+    run_tracer()
+
+    time.sleep(5)
+    req = operations.GetEventsRequestBody(
+        project=os.environ["HH_PROJECT_ID"],
+        filters=[
+            components.EventFilter(
+                field="event_name",
+                value=session_name,
+                operator=components.Operator.IS,
+            ),
+            components.EventFilter(
+                field="event_type",
+                value="session",
+                operator=components.Operator.IS,
+            ),
+        ],
+    )
+    res = sdk.events.get_events(request=req)
+    assert res.status_code == 200
+    assert res.object is not None
+    assert len(res.object.events) == 2
+
+    new_session_id = None
+    for event in res.object.events:
+      if event.session_id is not None and event.session_id != session_id:
+        new_session_id = event.session_id
+    assert new_session_id is not None
+
+    req = operations.GetEventsRequestBody(
+        project=os.environ["HH_PROJECT_ID"],
+        filters=[
+            components.EventFilter(
+                field="session_id",
+                value=session_id,
+                operator=components.Operator.IS,
+            ),
+        ],
+    )
+    res = sdk.events.get_events(request=req)
+    assert res.status_code == 200
+    assert res.object is not None
+    assert len(res.object.events) == num_events + 3
+
+    req = operations.GetEventsRequestBody(
+        project=os.environ["HH_PROJECT_ID"],
+        filters=[
+            components.EventFilter(
+                field="session_id",
+                value=new_session_id,
                 operator=components.Operator.IS,
             ),
         ],
