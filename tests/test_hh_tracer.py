@@ -38,7 +38,7 @@ def test_tracer():
     tracer = run_tracer()
 
     # Get session
-    time.sleep(10)
+    time.sleep(5)
     req = operations.GetEventsRequestBody(
         project=os.environ["HH_PROJECT_ID"],
         filters=[
@@ -74,7 +74,6 @@ def test_tracer():
     assert res.status_code == 200
     assert res.object is not None
     assert len(res.object.events) > 1
-    num_events = len(res.object.events)
 
     # Run it a second time in a new session
     HoneyHiveTracer.init(
@@ -121,12 +120,17 @@ def test_tracer():
                 value=session_id,
                 operator=components.Operator.IS,
             ),
+            components.EventFilter(
+                field="event_name",
+                value="openai.chat",
+                operator=components.Operator.IS,
+            ),
         ],
     )
     res = sdk.events.get_events(request=req)
     assert res.status_code == 200
     assert res.object is not None
-    assert len(res.object.events) == num_events + 3
+    assert len(res.object.events) == 1
 
     req = operations.GetEventsRequestBody(
         project=os.environ["HH_PROJECT_ID"],
