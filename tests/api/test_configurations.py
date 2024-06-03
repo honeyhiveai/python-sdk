@@ -9,7 +9,7 @@ sdk = honeyhive.HoneyHive(
 
 
 def test_get_configurations():
-    res = sdk.configurations.get_configurations(project_name=os.environ["HH_PROJECT"])
+    res = sdk.configurations.get_configurations(project=os.environ["HH_PROJECT"])
     assert res.status_code == 200
     assert len(res.configurations) > 0
 
@@ -30,7 +30,7 @@ def test_post_configurations():
     assert res.status_code == 200
 
     res = sdk.configurations.get_configurations(
-        project_name=os.environ["HH_PROJECT"], name=config_name
+        project=os.environ["HH_PROJECT"], name=config_name
     )
     assert res.status_code == 200
     assert len(res.configurations) == 1
@@ -49,7 +49,7 @@ def test_post_configurations():
     assert res.status_code == 200
 
     res = sdk.configurations.get_configurations(
-        project_name=os.environ["HH_PROJECT"],
+        project=os.environ["HH_PROJECT"],
         name=config_name,
     )
     assert res.status_code == 200
@@ -59,7 +59,7 @@ def test_post_configurations():
     assert res.status_code == 200
 
     res = sdk.configurations.get_configurations(
-        project_name=os.environ["HH_PROJECT"],
+        project=os.environ["HH_PROJECT"],
         name=config_name,
     )
     assert res.status_code == 200
