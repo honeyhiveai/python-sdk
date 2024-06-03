@@ -2,16 +2,16 @@ speakeasyVersion: 1.295.1
 sources:
     my-source:
         sourceNamespace: my-source
-        sourceRevisionDigest: sha256:d184956179ec9876b594f300ec95b9db09ff4f3ffaf5be18c09dd7b852a60f88
+        sourceRevisionDigest: sha256:42f25b749869aecf75578f27363bf22bab96992ca97993986e303e8008228268
         sourceBlobDigest: sha256:9220b55ef5bddf46e5e94a14c3223886197318487bf4443fd49ba1f6fe4a703c
         tags:
             - latest
-            - update-spec
+            - mintlify-integration
 targets:
     honeyhive:
         source: my-source
         sourceNamespace: my-source
-        sourceRevisionDigest: sha256:d184956179ec9876b594f300ec95b9db09ff4f3ffaf5be18c09dd7b852a60f88
+        sourceRevisionDigest: sha256:42f25b749869aecf75578f27363bf22bab96992ca97993986e303e8008228268
         sourceBlobDigest: sha256:9220b55ef5bddf46e5e94a14c3223886197318487bf4443fd49ba1f6fe4a703c
         outLocation: /github/workspace/repo
 workflow:
@@ -30,3 +30,5 @@ workflow:
             publish:
                 pypi:
                     token: $pypi_token
+            codeSamples:
+                output: codeSamples.yaml
