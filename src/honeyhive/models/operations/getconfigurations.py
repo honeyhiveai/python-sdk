@@ -17,7 +17,7 @@ class Env(str, Enum):
 
 @dataclasses.dataclass
 class GetConfigurationsRequest:
-    project_name: str = dataclasses.field(metadata={'query_param': { 'field_name': 'project_name', 'style': 'form', 'explode': True }})
+    project: str = dataclasses.field(metadata={'query_param': { 'field_name': 'project', 'style': 'form', 'explode': True }})
     r"""Project name for configuration like `Example Project`"""
     env: Optional[Env] = dataclasses.field(default=None, metadata={'query_param': { 'field_name': 'env', 'style': 'form', 'explode': True }})
     r"""Environment - \\"dev\\", \\"staging\\" or \\"prod\\" """

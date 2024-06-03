@@ -7,6 +7,7 @@
 * [create_dataset](#create_dataset) - Create a dataset
 * [update_dataset](#update_dataset) - Update a dataset
 * [delete_dataset](#delete_dataset) - Delete a dataset
+* [add_datapoints](#add_datapoints) - Add datapoints to a dataset
 
 ## get_datasets
 
@@ -35,7 +36,7 @@ if res.object is not None:
 
 | Parameter                                                                        | Type                                                                             | Required                                                                         | Description                                                                      |
 | -------------------------------------------------------------------------------- | -------------------------------------------------------------------------------- | -------------------------------------------------------------------------------- | -------------------------------------------------------------------------------- |
-| `project`                                                                        | *str*                                                                            | :heavy_check_mark:                                                               | Project ID associated with the datasets like `65e0fc2d6a2eb95f55a92cbc`          |
+| `project`                                                                        | *str*                                                                            | :heavy_check_mark:                                                               | Project Name associated with the datasets like `New Project`                     |
 | `type`                                                                           | [Optional[operations.Type]](../../models/operations/type.md)                     | :heavy_minus_sign:                                                               | Type of the dataset - "evaluation" or "fine-tuning"                              |
 | `dataset_id`                                                                     | *Optional[str]*                                                                  | :heavy_minus_sign:                                                               | Unique dataset ID for filtering specific dataset like `663876ec4611c47f4970f0c3` |
 
@@ -65,7 +66,7 @@ s = honeyhive.HoneyHive(
 
 
 res = s.datasets.create_dataset(request=components.CreateDatasetRequest(
-    project='65e0fc2d6a2eb95f55a92cbc',
+    project='New Project',
     name='test-dataset',
     description='A test dataset',
     type=components.CreateDatasetRequestType.EVALUATION,
@@ -189,6 +190,46 @@ if res is not None:
 ### Response
 
 **[operations.DeleteDatasetResponse](../../models/operations/deletedatasetresponse.md)**
+### Errors
+
+| Error Object    | Status Code     | Content Type    |
+| --------------- | --------------- | --------------- |
+| errors.SDKError | 4xx-5xx         | */*             |
+
+## add_datapoints
+
+Add datapoints to a dataset
+
+### Example Usage
+
+```python
+import honeyhive
+from honeyhive.models import operations
+
+s = honeyhive.HoneyHive(
+    bearer_auth="<YOUR_BEARER_TOKEN_HERE>",
+)
+
+
+res = s.datasets.add_datapoints(dataset_id='<value>', request_body=operations.AddDatapointsRequestBody())
+
+if res.object is not None:
+    # handle response
+    pass
+
+```
+
+### Parameters
+
+| Parameter                                                                                  | Type                                                                                       | Required                                                                                   | Description                                                                                |
+| ------------------------------------------------------------------------------------------ | ------------------------------------------------------------------------------------------ | ------------------------------------------------------------------------------------------ | ------------------------------------------------------------------------------------------ |
+| `dataset_id`                                                                               | *str*                                                                                      | :heavy_check_mark:                                                                         | The unique identifier of the dataset to add datapoints to like  `663876ec4611c47f4970f0c3` |
+| `request_body`                                                                             | [operations.AddDatapointsRequestBody](../../models/operations/adddatapointsrequestbody.md) | :heavy_check_mark:                                                                         | N/A                                                                                        |
+
+
+### Response
+
+**[operations.AddDatapointsResponse](../../models/operations/adddatapointsresponse.md)**
 ### Errors
 
 | Error Object    | Status Code     | Content Type    |

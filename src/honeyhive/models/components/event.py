@@ -32,7 +32,7 @@ class Inputs:
 @dataclasses.dataclass
 class Event:
     project_id: Optional[str] = dataclasses.field(default=None, metadata={'dataclasses_json': { 'letter_case': utils.get_field_name('project_id'), 'exclude': lambda f: f is None }})
-    r"""UUID of project associated with the event"""
+    r"""Name of project associated with the event"""
     source: Optional[str] = dataclasses.field(default=None, metadata={'dataclasses_json': { 'letter_case': utils.get_field_name('source'), 'exclude': lambda f: f is None }})
     r"""Source of the event - production, staging, etc"""
     event_name: Optional[str] = dataclasses.field(default=None, metadata={'dataclasses_json': { 'letter_case': utils.get_field_name('event_name'), 'exclude': lambda f: f is None }})

@@ -25,7 +25,7 @@ class DateRange:
 @dataclasses.dataclass
 class GetEventsRequestBody:
     project: str = dataclasses.field(metadata={'dataclasses_json': { 'letter_case': utils.get_field_name('project') }})
-    r"""UUID of the project associated with the event like `65e0fc2d6a2eb95f55a92cbc`"""
+    r"""Name of the project associated with the event like `New Project`"""
     filters: List[components_eventfilter.EventFilter] = dataclasses.field(metadata={'dataclasses_json': { 'letter_case': utils.get_field_name('filters') }})
     date_range: Optional[DateRange] = dataclasses.field(default=None, metadata={'dataclasses_json': { 'letter_case': utils.get_field_name('dateRange'), 'exclude': lambda f: f is None }})
     limit: Optional[float] = dataclasses.field(default=None, metadata={'dataclasses_json': { 'letter_case': utils.get_field_name('limit'), 'exclude': lambda f: f is None }})
