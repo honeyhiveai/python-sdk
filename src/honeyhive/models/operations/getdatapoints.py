@@ -12,7 +12,7 @@ from typing import List, Optional
 @dataclasses.dataclass
 class GetDatapointsRequest:
     project: str = dataclasses.field(metadata={'query_param': { 'field_name': 'project', 'style': 'form', 'explode': True }})
-    r"""Project ID to filter datapoints"""
+    r"""Project name to filter datapoints"""
     datapoint_ids: Optional[List[str]] = dataclasses.field(default=None, metadata={'query_param': { 'field_name': 'datapoint_ids', 'style': 'form', 'explode': True }})
     r"""List of datapoint ids to fetch"""
     dataset_name: Optional[str] = dataclasses.field(default=None, metadata={'query_param': { 'field_name': 'dataset_name', 'style': 'form', 'explode': True }})

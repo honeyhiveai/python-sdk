@@ -11,7 +11,7 @@ from typing import Any, Dict, List, Optional
 @dataclasses.dataclass
 class CreateDatapointRequest:
     project: str = dataclasses.field(metadata={'dataclasses_json': { 'letter_case': utils.get_field_name('project') }})
-    r"""UUID for the project to which the datapoint belongs"""
+    r"""Name for the project to which the datapoint belongs"""
     inputs: Dict[str, Any] = dataclasses.field(metadata={'dataclasses_json': { 'letter_case': utils.get_field_name('inputs') }})
     r"""Arbitrary JSON object containing the inputs for the datapoint"""
     history: Optional[List[Dict[str, Any]]] = dataclasses.field(default=None, metadata={'dataclasses_json': { 'letter_case': utils.get_field_name('history'), 'exclude': lambda f: f is None }})

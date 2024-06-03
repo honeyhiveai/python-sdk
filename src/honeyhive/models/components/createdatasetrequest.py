@@ -24,7 +24,7 @@ class CreateDatasetRequestPipelineType(str, Enum):
 @dataclasses.dataclass
 class CreateDatasetRequest:
     project: str = dataclasses.field(metadata={'dataclasses_json': { 'letter_case': utils.get_field_name('project') }})
-    r"""UUID of the project associated with this dataset like `65e0fc2d6a2eb95f55a92cbc`"""
+    r"""Name of the project associated with this dataset like `New Project`"""
     name: str = dataclasses.field(metadata={'dataclasses_json': { 'letter_case': utils.get_field_name('name') }})
     r"""Name of the dataset"""
     description: Optional[str] = dataclasses.field(default=None, metadata={'dataclasses_json': { 'letter_case': utils.get_field_name('description'), 'exclude': lambda f: f is None }})

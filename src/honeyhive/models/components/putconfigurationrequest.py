@@ -82,7 +82,7 @@ class PutConfigurationRequestType(str, Enum):
 @dataclasses.dataclass
 class PutConfigurationRequest:
     project: str = dataclasses.field(metadata={'dataclasses_json': { 'letter_case': utils.get_field_name('project') }})
-    r"""ID of the project to which this configuration belongs"""
+    r"""Name of the project to which this configuration belongs"""
     name: str = dataclasses.field(metadata={'dataclasses_json': { 'letter_case': utils.get_field_name('name') }})
     r"""Name of the configuration"""
     provider: str = dataclasses.field(metadata={'dataclasses_json': { 'letter_case': utils.get_field_name('provider') }})
