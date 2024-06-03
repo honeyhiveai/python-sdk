@@ -7,12 +7,10 @@ from enum import Enum
 from honeyhive import utils
 from typing import Any, Dict, List, Optional
 
-
 class CreateDatasetRequestType(str, Enum):
     r"""What the dataset is to be used for - \\"evaluation\\" (default) or \\"fine-tuning\\" """
     EVALUATION = 'evaluation'
     FINE_TUNING = 'fine-tuning'
-
 
 class CreateDatasetRequestPipelineType(str, Enum):
     r"""The type of data included in the dataset - \\"event\\" (default) or \\"session\\" """
@@ -24,7 +22,7 @@ class CreateDatasetRequestPipelineType(str, Enum):
 @dataclasses.dataclass
 class CreateDatasetRequest:
     project: str = dataclasses.field(metadata={'dataclasses_json': { 'letter_case': utils.get_field_name('project') }})
-    r"""UUID of the project associated with this dataset like `65e0fc2d6a2eb95f55a92cbc`"""
+    r"""Name of the project associated with this dataset like `New Project`"""
     name: str = dataclasses.field(metadata={'dataclasses_json': { 'letter_case': utils.get_field_name('name') }})
     r"""Name of the dataset"""
     description: Optional[str] = dataclasses.field(default=None, metadata={'dataclasses_json': { 'letter_case': utils.get_field_name('description'), 'exclude': lambda f: f is None }})

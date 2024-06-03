@@ -37,7 +37,7 @@ if res.object is not None:
 
 | Parameter                                  | Type                                       | Required                                   | Description                                |
 | ------------------------------------------ | ------------------------------------------ | ------------------------------------------ | ------------------------------------------ |
-| `project`                                  | *str*                                      | :heavy_check_mark:                         | Project ID to filter datapoints            |
+| `project`                                  | *str*                                      | :heavy_check_mark:                         | Project name to filter datapoints          |
 | `datapoint_ids`                            | List[*str*]                                | :heavy_minus_sign:                         | List of datapoint ids to fetch             |
 | `dataset_name`                             | *Optional[str]*                            | :heavy_minus_sign:                         | Name of the dataset to get datapoints from |
 
@@ -49,7 +49,7 @@ if res.object is not None:
 
 | Error Object    | Status Code     | Content Type    |
 | --------------- | --------------- | --------------- |
-| errors.SDKError | 4xx-5xx         | */*             |
+| errors.SDKError | 4x-5xx          | */*             |
 
 ## create_datapoint
 
@@ -65,9 +65,8 @@ s = honeyhive.HoneyHive(
     bearer_auth="<YOUR_BEARER_TOKEN_HERE>",
 )
 
-
-res = s.datapoints.create_datapoint(request=components.CreateDatapointRequest(
-    project='653454f3138a956964341c07',
+req = components.CreateDatapointRequest(
+    project='New Project',
     inputs={
         'query': 'what\'s the temperature in Iceland?',
     },
@@ -95,7 +94,9 @@ res = s.datapoints.create_datapoint(request=components.CreateDatapointRequest(
         'prompt_tokens': 696,
         'total_tokens': 743,
     },
-))
+)
+
+res = s.datapoints.create_datapoint(req)
 
 if res.object is not None:
     # handle response
@@ -117,7 +118,7 @@ if res.object is not None:
 
 | Error Object    | Status Code     | Content Type    |
 | --------------- | --------------- | --------------- |
-| errors.SDKError | 4xx-5xx         | */*             |
+| errors.SDKError | 4x-5xx          | */*             |
 
 ## get_datapoint
 
@@ -155,7 +156,7 @@ if res.object is not None:
 
 | Error Object    | Status Code     | Content Type    |
 | --------------- | --------------- | --------------- |
-| errors.SDKError | 4xx-5xx         | */*             |
+| errors.SDKError | 4x-5xx          | */*             |
 
 ## update_datapoint
 
@@ -217,7 +218,7 @@ if res is not None:
 
 | Error Object    | Status Code     | Content Type    |
 | --------------- | --------------- | --------------- |
-| errors.SDKError | 4xx-5xx         | */*             |
+| errors.SDKError | 4x-5xx          | */*             |
 
 ## delete_datapoint
 
@@ -255,4 +256,4 @@ if res.object is not None:
 
 | Error Object    | Status Code     | Content Type    |
 | --------------- | --------------- | --------------- |
-| errors.SDKError | 4xx-5xx         | */*             |
+| errors.SDKError | 4x-5xx          | */*             |

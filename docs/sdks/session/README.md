@@ -20,8 +20,7 @@ s = honeyhive.HoneyHive(
     bearer_auth="<YOUR_BEARER_TOKEN_HERE>",
 )
 
-
-res = s.session.start_session(request=operations.StartSessionRequestBody(
+req = operations.StartSessionRequestBody(
     session=components.SessionStartRequest(
         project='Simple RAG Project',
         session_name='Playground Session',
@@ -33,18 +32,7 @@ res = s.session.start_session(request=operations.StartSessionRequestBody(
         inputs={
             'context': 'Hello world',
             'question': 'What is in the context?',
-            'chat_history': [
-                {
-                    'role': 'system',
-                    'content': 'Answer the user\'s question only using provided context.
-
-                    Context: Hello world',
-                },
-                {
-                    'role': 'user',
-                    'content': 'What is in the context?',
-                },
-            ],
+            'chat_history': '<value>',
         },
         outputs={
             'role': 'assistant',
@@ -67,7 +55,9 @@ res = s.session.start_session(request=operations.StartSessionRequestBody(
         start_time=1712025501605,
         end_time=1712025499832,
     ),
-))
+)
+
+res = s.session.start_session(req)
 
 if res.object is not None:
     # handle response
@@ -89,7 +79,7 @@ if res.object is not None:
 
 | Error Object    | Status Code     | Content Type    |
 | --------------- | --------------- | --------------- |
-| errors.SDKError | 4xx-5xx         | */*             |
+| errors.SDKError | 4x-5xx          | */*             |
 
 ## get_session
 
@@ -127,4 +117,4 @@ if res.event is not None:
 
 | Error Object    | Status Code     | Content Type    |
 | --------------- | --------------- | --------------- |
-| errors.SDKError | 4xx-5xx         | */*             |
+| errors.SDKError | 4x-5xx          | */*             |

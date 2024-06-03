@@ -1,28 +1,24 @@
 lockVersion: 2.0.0
 id: b027cebf-3475-4e9b-8070-6f08b389f6ed
 management:
-  docChecksum: 8409b9ebd940b18bdbd40d2d8cde9c29
+  docChecksum: b07bf4f49350ef9baf5c123bf85f59fb
   docVersion: 1.0.1
-  speakeasyVersion: 1.295.1
-  generationVersion: 2.335.5
-  releaseVersion: 0.10.1
-  configChecksum: 24a652d441377def5765767451ce1fa6
+  speakeasyVersion: 1.209.2
+  generationVersion: 2.281.2
+  releaseVersion: 0.11.0
+  configChecksum: 9c5d7b9adaf773961725ef675421267c
   repoURL: https://github.com/honeyhiveai/python-sdk.git
   repoSubDirectory: .
   installationURL: https://github.com/honeyhiveai/python-sdk.git
   published: true
 features:
   python:
-    additionalDependencies: 0.1.0
     additionalProperties: 0.1.0
-    core: 4.6.8
+    core: 4.5.1
     flattening: 2.81.1
-    globalSecurity: 2.83.5
-    globalSecurityCallbacks: 0.1.0
-    globalSecurityFlattening: 0.1.0
+    globalSecurity: 2.83.4
     globalServerURLs: 2.82.2
     responseFormat: 0.1.0
-    sdkHooks: 0.1.0
 generatedFiles:
   - src/honeyhive/sdkconfiguration.py
   - src/honeyhive/session.py
@@ -41,11 +37,20 @@ generatedFiles:
   - src/honeyhive/utils/retries.py
   - src/honeyhive/utils/utils.py
   - src/honeyhive/models/errors/sdkerror.py
+  - tests/helpers.py
+  - src/honeyhive/models/operations/post_runs.py
+  - src/honeyhive/models/operations/get_runs.py
+  - src/honeyhive/models/operations/get_runs_runid_.py
+  - src/honeyhive/models/operations/put_runs_runid_.py
+  - src/honeyhive/models/operations/delete_runs_runid_.py
   - src/honeyhive/models/operations/startsession.py
   - src/honeyhive/models/operations/getsession.py
   - src/honeyhive/models/operations/createevent.py
   - src/honeyhive/models/operations/updateevent.py
   - src/honeyhive/models/operations/getevents.py
+  - src/honeyhive/models/operations/createmodelevent.py
+  - src/honeyhive/models/operations/createeventbatch.py
+  - src/honeyhive/models/operations/createmodeleventbatch.py
   - src/honeyhive/models/operations/getmetrics.py
   - src/honeyhive/models/operations/createmetric.py
   - src/honeyhive/models/operations/updatemetric.py
@@ -63,6 +68,7 @@ generatedFiles:
   - src/honeyhive/models/operations/createdataset.py
   - src/honeyhive/models/operations/updatedataset.py
   - src/honeyhive/models/operations/deletedataset.py
+  - src/honeyhive/models/operations/adddatapoints.py
   - src/honeyhive/models/operations/getprojects.py
   - src/honeyhive/models/operations/createproject.py
   - src/honeyhive/models/operations/updateproject.py
@@ -71,10 +77,19 @@ generatedFiles:
   - src/honeyhive/models/operations/createconfiguration.py
   - src/honeyhive/models/operations/updateconfiguration.py
   - src/honeyhive/models/operations/deleteconfiguration.py
+  - src/honeyhive/models/components/createrunresponse.py
+  - src/honeyhive/models/components/evaluationrun.py
+  - src/honeyhive/models/components/createrunrequest.py
+  - src/honeyhive/models/components/getrunsresponse.py
+  - src/honeyhive/models/components/getrunresponse.py
+  - src/honeyhive/models/components/updaterunresponse.py
+  - src/honeyhive/models/components/updaterunrequest.py
+  - src/honeyhive/models/components/deleterunresponse.py
   - src/honeyhive/models/components/sessionstartrequest.py
   - src/honeyhive/models/components/event.py
   - src/honeyhive/models/components/createeventrequest.py
   - src/honeyhive/models/components/eventfilter.py
+  - src/honeyhive/models/components/createmodelevent.py
   - src/honeyhive/models/components/metric.py
   - src/honeyhive/models/components/metricedit.py
   - src/honeyhive/models/components/tool.py
@@ -93,10 +108,21 @@ generatedFiles:
   - src/honeyhive/models/components/postconfigurationrequest.py
   - src/honeyhive/models/components/putconfigurationrequest.py
   - src/honeyhive/models/components/security.py
+  - src/honeyhive/models/errors/createeventbatch.py
+  - src/honeyhive/models/errors/createmodeleventbatch.py
   - src/honeyhive/models/__init__.py
   - src/honeyhive/models/errors/__init__.py
   - src/honeyhive/models/operations/__init__.py
   - src/honeyhive/models/components/__init__.py
+  - docs/models/operations/postrunsresponse.md
+  - docs/models/operations/getrunsrequest.md
+  - docs/models/operations/getrunsresponse.md
+  - docs/models/operations/getrunsrunidrequest.md
+  - docs/models/operations/getrunsrunidresponse.md
+  - docs/models/operations/putrunsrunidrequest.md
+  - docs/models/operations/putrunsrunidresponse.md
+  - docs/models/operations/deleterunsrunidrequest.md
+  - docs/models/operations/deleterunsrunidresponse.md
   - docs/models/operations/startsessionrequestbody.md
   - docs/models/operations/startsessionresponsebody.md
   - docs/models/operations/startsessionresponse.md
@@ -111,6 +137,15 @@ generatedFiles:
   - docs/models/operations/geteventsrequestbody.md
   - docs/models/operations/geteventsresponsebody.md
   - docs/models/operations/geteventsresponse.md
+  - docs/models/operations/createmodeleventrequestbody.md
+  - docs/models/operations/createmodeleventresponsebody.md
+  - docs/models/operations/createmodeleventresponse.md
+  - docs/models/operations/createeventbatchrequestbody.md
+  - docs/models/operations/createeventbatchresponsebody.md
+  - docs/models/operations/createeventbatchresponse.md
+  - docs/models/operations/createmodeleventbatchrequestbody.md
+  - docs/models/operations/createmodeleventbatchresponsebody.md
+  - docs/models/operations/createmodeleventbatchresponse.md
   - docs/models/operations/getmetricsrequest.md
   - docs/models/operations/getmetricsresponse.md
   - docs/models/operations/createmetricresponse.md
@@ -148,6 +183,11 @@ generatedFiles:
   - docs/models/operations/updatedatasetresponse.md
   - docs/models/operations/deletedatasetrequest.md
   - docs/models/operations/deletedatasetresponse.md
+  - docs/models/operations/mapping.md
+  - docs/models/operations/adddatapointsrequestbody.md
+  - docs/models/operations/adddatapointsrequest.md
+  - docs/models/operations/adddatapointsresponsebody.md
+  - docs/models/operations/adddatapointsresponse.md
   - docs/models/operations/getprojectsrequest.md
   - docs/models/operations/getprojectsresponse.md
   - docs/models/operations/createprojectresponse.md
@@ -162,6 +202,18 @@ generatedFiles:
   - docs/models/operations/updateconfigurationresponse.md
   - docs/models/operations/deleteconfigurationrequest.md
   - docs/models/operations/deleteconfigurationresponse.md
+  - docs/models/components/createrunresponse.md
+  - docs/models/components/results.md
+  - docs/models/components/evaluationrunstatus.md
+  - docs/models/components/evaluationrun.md
+  - docs/models/components/status.md
+  - docs/models/components/createrunrequest.md
+  - docs/models/components/getrunsresponse.md
+  - docs/models/components/getrunresponse.md
+  - docs/models/components/updaterunresponse.md
+  - docs/models/components/updaterunrequeststatus.md
+  - docs/models/components/updaterunrequest.md
+  - docs/models/components/deleterunresponse.md
   - docs/models/components/sessionstartrequest.md
   - docs/models/components/eventtype.md
   - docs/models/components/inputs.md
@@ -172,6 +224,7 @@ generatedFiles:
   - docs/models/components/operator.md
   - docs/models/components/type.md
   - docs/models/components/eventfilter.md
+  - docs/models/components/createmodelevent.md
   - docs/models/components/metrictype.md
   - docs/models/components/returntype.md
   - docs/models/components/threshold.md
@@ -226,6 +279,8 @@ generatedFiles:
   - docs/models/components/putconfigurationrequesttype.md
   - docs/models/components/putconfigurationrequest.md
   - docs/models/components/security.md
+  - docs/models/errors/createeventbatchresponsebody.md
+  - docs/models/errors/createmodeleventbatchresponsebody.md
   - docs/sdks/honeyhive/README.md
   - docs/sdks/session/README.md
   - docs/sdks/events/README.md

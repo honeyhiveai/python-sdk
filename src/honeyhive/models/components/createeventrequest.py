@@ -7,7 +7,6 @@ from enum import Enum
 from honeyhive import utils
 from typing import Any, Dict, List, Optional
 
-
 class CreateEventRequestEventType(str, Enum):
     r"""Specify whether the event is of \\"model\\", \\"tool\\" or \\"chain\\" type"""
     MODEL = 'model'

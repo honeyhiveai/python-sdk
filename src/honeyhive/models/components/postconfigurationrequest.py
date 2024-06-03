@@ -7,7 +7,6 @@ from enum import Enum
 from honeyhive import utils
 from typing import Any, Dict, List, Optional
 
-
 class PostConfigurationRequestCallType(str, Enum):
     r"""Type of API calling - \\"chat\\" or \\"completion\\" """
     CHAT = 'chat'
@@ -33,7 +32,6 @@ class PostConfigurationRequestSelectedFunctions:
     parameters: Optional[Dict[str, Any]] = dataclasses.field(default=None, metadata={'dataclasses_json': { 'letter_case': utils.get_field_name('parameters'), 'exclude': lambda f: f is None }})
     r"""Parameters for the function"""
     
-
 
 
 class PostConfigurationRequestFunctionCallParams(str, Enum):
@@ -65,7 +63,6 @@ class PostConfigurationRequestParameters:
     
 
 
-
 class PostConfigurationRequestEnv(str, Enum):
     DEV = 'dev'
     STAGING = 'staging'
@@ -76,7 +73,7 @@ class PostConfigurationRequestEnv(str, Enum):
 @dataclasses.dataclass
 class PostConfigurationRequest:
     project: str = dataclasses.field(metadata={'dataclasses_json': { 'letter_case': utils.get_field_name('project') }})
-    r"""ID of the project to which this configuration belongs"""
+    r"""Name of the project to which this configuration belongs"""
     name: str = dataclasses.field(metadata={'dataclasses_json': { 'letter_case': utils.get_field_name('name') }})
     r"""Name of the configuration"""
     provider: str = dataclasses.field(metadata={'dataclasses_json': { 'letter_case': utils.get_field_name('provider') }})
