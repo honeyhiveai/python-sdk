@@ -19,7 +19,7 @@ class Type(str, Enum):
 @dataclasses.dataclass
 class GetDatasetsRequest:
     project: str = dataclasses.field(metadata={'query_param': { 'field_name': 'project', 'style': 'form', 'explode': True }})
-    r"""Project ID associated with the datasets like `65e0fc2d6a2eb95f55a92cbc`"""
+    r"""Project Name associated with the datasets like `New Project`"""
     type: Optional[Type] = dataclasses.field(default=None, metadata={'query_param': { 'field_name': 'type', 'style': 'form', 'explode': True }})
     r"""Type of the dataset - \\"evaluation\\" or \\"fine-tuning\\" """
     dataset_id: Optional[str] = dataclasses.field(default=None, metadata={'query_param': { 'field_name': 'dataset_id', 'style': 'form', 'explode': True }})

@@ -89,6 +89,9 @@ if res.object is not None:
 * [create_event](docs/sdks/events/README.md#create_event) - Create a new event
 * [update_event](docs/sdks/events/README.md#update_event) - Update an event
 * [get_events](docs/sdks/events/README.md#get_events) - Retrieve events based on filters
+* [create_model_event](docs/sdks/events/README.md#create_model_event) - Create a new model event
+* [create_event_batch](docs/sdks/events/README.md#create_event_batch) - Create a batch of events
+* [create_model_event_batch](docs/sdks/events/README.md#create_model_event_batch) - Create a batch of model events
 
 ### [metrics](docs/sdks/metrics/README.md)
 
@@ -118,6 +121,7 @@ if res.object is not None:
 * [create_dataset](docs/sdks/datasets/README.md#create_dataset) - Create a dataset
 * [update_dataset](docs/sdks/datasets/README.md#update_dataset) - Update a dataset
 * [delete_dataset](docs/sdks/datasets/README.md#delete_dataset) - Delete a dataset
+* [add_datapoints](docs/sdks/datasets/README.md#add_datapoints) - Add datapoints to a dataset
 
 ### [projects](docs/sdks/projects/README.md)
 
@@ -125,6 +129,14 @@ if res.object is not None:
 * [create_project](docs/sdks/projects/README.md#create_project) - Create a new project
 * [update_project](docs/sdks/projects/README.md#update_project) - Update an existing project
 * [delete_project](docs/sdks/projects/README.md#delete_project) - Delete a project
+
+### [runs](docs/sdks/runs/README.md)
+
+* [create_run](docs/sdks/runs/README.md#create_run) - Create a new evaluation run
+* [get_runs](docs/sdks/runs/README.md#get_runs) - Get a list of evaluation runs
+* [get_run](docs/sdks/runs/README.md#get_run) - Get details of an evaluation run
+* [update_run](docs/sdks/runs/README.md#update_run) - Update an evaluation run
+* [delete_run](docs/sdks/runs/README.md#delete_run) - Delete an evaluation run
 
 ### [configurations](docs/sdks/configurations/README.md)
 
@@ -139,9 +151,10 @@ if res.object is not None:
 
 Handling errors in this SDK should largely match your expectations.  All operations return a response object or raise an error.  If Error objects are specified in your OpenAPI Spec, the SDK will raise the appropriate Error type.
 
-| Error Object    | Status Code     | Content Type    |
-| --------------- | --------------- | --------------- |
-| errors.SDKError | 4xx-5xx         | */*             |
+| Error Object                        | Status Code                         | Content Type                        |
+| ----------------------------------- | ----------------------------------- | ----------------------------------- |
+| errors.CreateEventBatchResponseBody | 500                                 | application/json                    |
+| errors.SDKError                     | 4xx-5xx                             | */*                                 |
 
 ### Example
 
@@ -155,54 +168,98 @@ s = honeyhive.HoneyHive(
 
 res = None
 try:
-    res = s.session.start_session(request=operations.StartSessionRequestBody(
-    session=components.SessionStartRequest(
-        project='Simple RAG Project',
-        session_name='Playground Session',
-        source='playground',
-        session_id='caf77ace-3417-4da4-944d-f4a0688f3c23',
-        children_ids=[
-            '7f22137a-6911-4ed3-bc36-110f1dde6b66',
-        ],
-        inputs={
-            'context': 'Hello world',
-            'question': 'What is in the context?',
-            'chat_history': [
-                {
-                    'role': 'system',
-                    'content': 'Answer the user\'s question only using provided context.
+    res = s.events.create_event_batch(request=operations.CreateEventBatchRequestBody(
+    events=[
+        components.CreateEventRequest(
+            project='Simple RAG',
+            source='playground',
+            event_name='Model Completion',
+            event_type=components.CreateEventRequestEventType.MODEL,
+            config={
+                'model': 'gpt-3.5-turbo',
+                'version': 'v0.1',
+                'provider': 'openai',
+                'hyperparameters': {
+                    'temperature': 0,
+                    'top_p': 1,
+                    'max_tokens': 1000,
+                    'presence_penalty': 0,
+                    'frequency_penalty': 0,
+                    'stop': [
+                        '<value>',
+                    ],
+                    'n': 1,
+                },
+                'template': [
+                    {
+                        'role': 'system',
+                        'content': 'Answer the user\'s question only using provided context.
 
-                    Context: Hello world',
+                        Context: {{ context }}',
+                    },
+                    {
+                        'role': 'user',
+                        'content': '{{question}}',
+                    },
+                ],
+                'type': 'chat',
+            },
+            inputs=components.CreateEventRequestInputs(
+                chat_history=[
+                    {
+                        'role': 'system',
+                        'content': 'Answer the user\'s question only using provided context.
+
+                        Context: Hello world',
+                    },
+                    {
+                        'role': 'user',
+                        'content': 'What is in the context?',
+                    },
+                ],
+                additional_properties={
+                    'context': 'Hello world',
+                    'question': 'What is in the context?',
                 },
-                {
-                    'role': 'user',
-                    'content': 'What is in the context?',
-                },
+            ),
+            duration=999.8056,
+            event_id='7f22137a-6911-4ed3-bc36-110f1dde6b66',
+            session_id='caf77ace-3417-4da4-944d-f4a0688f3c23',
+            parent_id='caf77ace-3417-4da4-944d-f4a0688f3c23',
+            children_ids=[
+                '<value>',
             ],
-        },
-        outputs={
-            'role': 'assistant',
-            'content': 'Hello world',
-        },
-        error=None,
-        duration=824.8056,
-        user_properties={
-            'user': 'google-oauth2|111840237613341303366',
-        },
-        metrics={
+            outputs={
+                'role': 'assistant',
+                'content': 'Hello world',
+            },
+            error=None,
+            start_time=1714978764301,
+            end_time=1714978765301,
+            metadata={
+                'cost': 0.00008,
+                'completion_tokens': 23,
+                'prompt_tokens': 35,
+                'total_tokens': 58,
+            },
+            feedback={
 
-        },
-        feedback={
-
-        },
-        metadata={
-
-        },
-        start_time=1712025501605,
-        end_time=1712025499832,
-    ),
+            },
+            metrics={
+                'Answer Faithfulness': 5,
+                'Answer Faithfulness_explanation': 'The AI assistant\'s answer is a concise and accurate description of Ramp\'s API. It provides a clear explanation of what the API does and how developers can use it to integrate Ramp\'s financial services into their own applications. The answer is faithful to the provided context.',
+                'Number of words': 18,
+            },
+            user_properties={
+                'user': 'google-oauth2|111840237613341303366',
+            },
+        ),
+    ],
 ))
 
+except errors.CreateEventBatchResponseBody as e:
+    # handle exception
+    raise(e)
 except errors.SDKError as e:
     # handle exception
     raise(e)

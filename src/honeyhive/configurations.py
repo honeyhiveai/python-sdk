@@ -15,11 +15,11 @@ class Configurations:
         
     
     
-    def get_configurations(self, project_name: str, env: Optional[operations.Env] = None, name: Optional[str] = None) -> operations.GetConfigurationsResponse:
+    def get_configurations(self, project: str, env: Optional[operations.Env] = None, name: Optional[str] = None) -> operations.GetConfigurationsResponse:
         r"""Retrieve a list of configurations"""
         hook_ctx = HookContext(operation_id='getConfigurations', oauth2_scopes=[], security_source=self.sdk_configuration.security)
         request = operations.GetConfigurationsRequest(
-            project_name=project_name,
+            project=project,
             env=env,
             name=name,
         )
