@@ -947,7 +947,7 @@ paths:
       - runs
       parameters:
       - in: path
-        name: runId
+        name: run_id
         required: true
         schema:
           type: string
