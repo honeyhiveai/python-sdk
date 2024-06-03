@@ -10,6 +10,8 @@ targets:
     honeyhive:
         target: python
         source: my-source
+        codeSamples:
+            output: codeSamples.yaml
         publish:
             pypi:
                 token: $pypi_token
