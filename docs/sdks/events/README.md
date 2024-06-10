@@ -24,8 +24,7 @@ s = honeyhive.HoneyHive(
     bearer_auth="<YOUR_BEARER_TOKEN_HERE>",
 )
 
-
-res = s.events.create_event(request=operations.CreateEventRequestBody(
+req = operations.CreateEventRequestBody(
     event=components.CreateEventRequest(
         project='Simple RAG',
         source='playground',
@@ -35,29 +34,8 @@ res = s.events.create_event(request=operations.CreateEventRequestBody(
             'model': 'gpt-3.5-turbo',
             'version': 'v0.1',
             'provider': 'openai',
-            'hyperparameters': {
-                'temperature': 0,
-                'top_p': 1,
-                'max_tokens': 1000,
-                'presence_penalty': 0,
-                'frequency_penalty': 0,
-                'stop': [
-                    '<value>',
-                ],
-                'n': 1,
-            },
-            'template': [
-                {
-                    'role': 'system',
-                    'content': 'Answer the user\'s question only using provided context.
-
-                    Context: {{ context }}',
-                },
-                {
-                    'role': 'user',
-                    'content': '{{question}}',
-                },
-            ],
+            'hyperparameters': '<value>',
+            'template': '<value>',
             'type': 'chat',
         },
         inputs=components.CreateEventRequestInputs(
@@ -73,10 +51,6 @@ res = s.events.create_event(request=operations.CreateEventRequestBody(
                     'content': 'What is in the context?',
                 },
             ],
-            additional_properties={
-                'context': 'Hello world',
-                'question': 'What is in the context?',
-            },
         ),
         duration=999.8056,
         event_id='7f22137a-6911-4ed3-bc36-110f1dde6b66',
@@ -110,7 +84,9 @@ res = s.events.create_event(request=operations.CreateEventRequestBody(
             'user': 'google-oauth2|111840237613341303366',
         },
     ),
-))
+)
+
+res = s.events.create_event(req)
 
 if res.object is not None:
     # handle response
@@ -132,7 +108,7 @@ if res.object is not None:
 
 | Error Object    | Status Code     | Content Type    |
 | --------------- | --------------- | --------------- |
-| errors.SDKError | 4xx-5xx         | */*             |
+| errors.SDKError | 4x-5xx          | */*             |
 
 ## update_event
 
@@ -148,26 +124,11 @@ s = honeyhive.HoneyHive(
     bearer_auth="<YOUR_BEARER_TOKEN_HERE>",
 )
 
+req = operations.UpdateEventRequestBody(
+    event_id='<value>',
+)
 
-res = s.events.update_event(request=operations.UpdateEventRequestBody(
-    event_id='7f22137a-6911-4ed3-bc36-110f1dde6b66',
-    metadata={
-        'cost': 0.00008,
-        'completion_tokens': 23,
-        'prompt_tokens': 35,
-        'total_tokens': 58,
-    },
-    feedback={
-        'rating': 5,
-    },
-    metrics={
-        'num_words': 2,
-    },
-    outputs={
-        'role': 'assistant',
-        'content': 'Hello world',
-    },
-))
+res = s.events.update_event(req)
 
 if res is not None:
     # handle response
@@ -189,7 +150,7 @@ if res is not None:
 
 | Error Object    | Status Code     | Content Type    |
 | --------------- | --------------- | --------------- |
-| errors.SDKError | 4xx-5xx         | */*             |
+| errors.SDKError | 4x-5xx          | */*             |
 
 ## get_events
 
@@ -205,8 +166,7 @@ s = honeyhive.HoneyHive(
     bearer_auth="<YOUR_BEARER_TOKEN_HERE>",
 )
 
-
-res = s.events.get_events(request=operations.GetEventsRequestBody(
+req = operations.GetEventsRequestBody(
     project='<value>',
     filters=[
         components.EventFilter(
@@ -216,7 +176,9 @@ res = s.events.get_events(request=operations.GetEventsRequestBody(
             type=components.Type.STRING,
         ),
     ],
-))
+)
+
+res = s.events.get_events(req)
 
 if res.object is not None:
     # handle response
@@ -238,7 +200,7 @@ if res.object is not None:
 
 | Error Object    | Status Code     | Content Type    |
 | --------------- | --------------- | --------------- |
-| errors.SDKError | 4xx-5xx         | */*             |
+| errors.SDKError | 4x-5xx          | */*             |
 
 ## create_model_event
 
@@ -254,8 +216,7 @@ s = honeyhive.HoneyHive(
     bearer_auth="<YOUR_BEARER_TOKEN_HERE>",
 )
 
-
-res = s.events.create_model_event(request=operations.CreateModelEventRequestBody(
+req = operations.CreateModelEventRequestBody(
     event=components.CreateModelEvent(
         project='New Project',
         model='gpt-4o',
@@ -286,9 +247,7 @@ res = s.events.create_model_event(request=operations.CreateModelEventRequestBody
             'max_tokens': 1000,
             'presence_penalty': 0,
             'frequency_penalty': 0,
-            'stop': [
-                '<value>',
-            ],
+            'stop': '<value>',
             'n': 1,
         },
         template=[
@@ -310,7 +269,9 @@ res = s.events.create_model_event(request=operations.CreateModelEventRequestBody
             'type': 'text',
         },
     ),
-))
+)
+
+res = s.events.create_model_event(req)
 
 if res.object is not None:
     # handle response
@@ -332,7 +293,7 @@ if res.object is not None:
 
 | Error Object    | Status Code     | Content Type    |
 | --------------- | --------------- | --------------- |
-| errors.SDKError | 4xx-5xx         | */*             |
+| errors.SDKError | 4x-5xx          | */*             |
 
 ## create_event_batch
 
@@ -348,8 +309,7 @@ s = honeyhive.HoneyHive(
     bearer_auth="<YOUR_BEARER_TOKEN_HERE>",
 )
 
-
-res = s.events.create_event_batch(request=operations.CreateEventBatchRequestBody(
+req = operations.CreateEventBatchRequestBody(
     events=[
         components.CreateEventRequest(
             project='Simple RAG',
@@ -360,29 +320,8 @@ res = s.events.create_event_batch(request=operations.CreateEventBatchRequestBody
                 'model': 'gpt-3.5-turbo',
                 'version': 'v0.1',
                 'provider': 'openai',
-                'hyperparameters': {
-                    'temperature': 0,
-                    'top_p': 1,
-                    'max_tokens': 1000,
-                    'presence_penalty': 0,
-                    'frequency_penalty': 0,
-                    'stop': [
-                        '<value>',
-                    ],
-                    'n': 1,
-                },
-                'template': [
-                    {
-                        'role': 'system',
-                        'content': 'Answer the user\'s question only using provided context.
-
-                        Context: {{ context }}',
-                    },
-                    {
-                        'role': 'user',
-                        'content': '{{question}}',
-                    },
-                ],
+                'hyperparameters': '<value>',
+                'template': '<value>',
                 'type': 'chat',
             },
             inputs=components.CreateEventRequestInputs(
@@ -398,10 +337,6 @@ res = s.events.create_event_batch(request=operations.CreateEventBatchRequestBody
                         'content': 'What is in the context?',
                     },
                 ],
-                additional_properties={
-                    'context': 'Hello world',
-                    'question': 'What is in the context?',
-                },
             ),
             duration=999.8056,
             event_id='7f22137a-6911-4ed3-bc36-110f1dde6b66',
@@ -436,7 +371,9 @@ res = s.events.create_event_batch(request=operations.CreateEventBatchRequestBody
             },
         ),
     ],
-))
+)
+
+res = s.events.create_event_batch(req)
 
 if res.object is not None:
     # handle response
@@ -459,7 +396,7 @@ if res.object is not None:
 | Error Object                        | Status Code                         | Content Type                        |
 | ----------------------------------- | ----------------------------------- | ----------------------------------- |
 | errors.CreateEventBatchResponseBody | 500                                 | application/json                    |
-| errors.SDKError                     | 4xx-5xx                             | */*                                 |
+| errors.SDKError                     | 4x-5xx                              | */*                                 |
 
 ## create_model_event_batch
 
@@ -469,71 +406,15 @@ Please refer to our instrumentation guide for detailed information
 
 ```python
 import honeyhive
-from honeyhive.models import components, operations
+from honeyhive.models import operations
 
 s = honeyhive.HoneyHive(
     bearer_auth="<YOUR_BEARER_TOKEN_HERE>",
 )
 
+req = operations.CreateModelEventBatchRequestBody()
 
-res = s.events.create_model_event_batch(request=operations.CreateModelEventBatchRequestBody(
-    model_events=[
-        components.CreateModelEvent(
-            project='New Project',
-            model='gpt-4o',
-            provider='openai',
-            messages=[
-                {
-                    'role': 'system',
-                    'content': 'Hello, world!',
-                },
-            ],
-            response={
-                'role': 'assistant',
-                'content': 'Hello, world!',
-            },
-            duration=42,
-            usage={
-                'prompt_tokens': 10,
-                'completion_tokens': 10,
-                'total_tokens': 20,
-            },
-            cost=0.00008,
-            error=None,
-            source='playground',
-            event_name='Model Completion',
-            hyperparameters={
-                'temperature': 0,
-                'top_p': 1,
-                'max_tokens': 1000,
-                'presence_penalty': 0,
-                'frequency_penalty': 0,
-                'stop': [
-                    '<value>',
-                ],
-                'n': 1,
-            },
-            template=[
-                {
-                    'role': 'system',
-                    'content': 'Hello, {{ name }}!',
-                },
-            ],
-            template_inputs={
-                'name': 'world',
-            },
-            tools=[
-                {
-                    'key': '<value>',
-                },
-            ],
-            tool_choice='none',
-            response_format={
-                'type': 'text',
-            },
-        ),
-    ],
-))
+res = s.events.create_model_event_batch(req)
 
 if res.object is not None:
     # handle response
@@ -556,4 +437,4 @@ if res.object is not None:
 | Error Object                             | Status Code                              | Content Type                             |
 | ---------------------------------------- | ---------------------------------------- | ---------------------------------------- |
 | errors.CreateModelEventBatchResponseBody | 500                                      | application/json                         |
-| errors.SDKError                          | 4xx-5xx                                  | */*                                      |
+| errors.SDKError                          | 4x-5xx                                   | */*                                      |

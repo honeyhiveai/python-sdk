@@ -7,7 +7,6 @@ from enum import Enum
 from honeyhive import utils
 from typing import Optional
 
-
 class Operator(str, Enum):
     r"""The type of filter you are performing - \\"is\\", \\"is not\\", \\"contains\\", \\"not contains\\", \\"greater than\\" """
     IS = 'is'
@@ -15,7 +14,6 @@ class Operator(str, Enum):
     CONTAINS = 'contains'
     NOT_CONTAINS = 'not contains'
     GREATER_THAN = 'greater than'
-
 
 class Type(str, Enum):
     r"""The data type you are using - \\"string\\", \\"number\\", \\"boolean\\", \\"id\\" (for object ids)"""

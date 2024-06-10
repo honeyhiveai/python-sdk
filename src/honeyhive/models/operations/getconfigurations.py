@@ -7,7 +7,6 @@ from ...models.components import configuration as components_configuration
 from enum import Enum
 from typing import List, Optional
 
-
 class Env(str, Enum):
     r"""Environment - \\"dev\\", \\"staging\\" or \\"prod\\" """
     DEV = 'dev'

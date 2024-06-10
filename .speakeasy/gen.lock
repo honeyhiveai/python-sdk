@@ -1,29 +1,24 @@
 lockVersion: 2.0.0
 id: b027cebf-3475-4e9b-8070-6f08b389f6ed
 management:
-  docChecksum: abf23eff5ce129c759516146ef3e7ac8
+  docChecksum: 5b0a8c07dee193be5d3c1e4db79da5e8
   docVersion: 1.0.1
-  speakeasyVersion: 1.299.6
-  generationVersion: 2.338.12
-  releaseVersion: 0.11.1
-  configChecksum: fb085081c34bd011c231e441fa0669d7
+  speakeasyVersion: 1.209.2
+  generationVersion: 2.281.2
+  releaseVersion: 0.12.0
+  configChecksum: 9a91e3b816299b4da02159e9b4493e13
   repoURL: https://github.com/honeyhiveai/python-sdk.git
   repoSubDirectory: .
   installationURL: https://github.com/honeyhiveai/python-sdk.git
   published: true
 features:
   python:
-    additionalDependencies: 0.1.0
     additionalProperties: 0.1.0
-    core: 4.6.9
+    core: 4.5.1
     flattening: 2.81.1
-    globalSecurity: 2.83.5
-    globalSecurityCallbacks: 0.1.0
-    globalSecurityFlattening: 0.1.0
+    globalSecurity: 2.83.4
     globalServerURLs: 2.82.2
-    nullables: 0.1.0
     responseFormat: 0.1.0
-    sdkHooks: 0.1.0
 generatedFiles:
   - src/honeyhive/sdkconfiguration.py
   - src/honeyhive/session.py
@@ -43,6 +38,7 @@ generatedFiles:
   - src/honeyhive/utils/retries.py
   - src/honeyhive/utils/utils.py
   - src/honeyhive/models/errors/sdkerror.py
+  - tests/helpers.py
   - src/honeyhive/models/operations/startsession.py
   - src/honeyhive/models/operations/getsession.py
   - src/honeyhive/models/operations/createevent.py
@@ -232,11 +228,8 @@ generatedFiles:
   - docs/models/components/createtoolrequesttype.md
   - docs/models/components/createtoolrequest.md
   - docs/models/components/updatetoolrequest.md
-  - docs/models/components/datapointinputs.md
-  - docs/models/components/history.md
   - docs/models/components/datapoint.md
   - docs/models/components/createdatapointrequest.md
-  - docs/models/components/updatedatapointrequesthistory.md
   - docs/models/components/updatedatapointrequest.md
   - docs/models/components/datasettype.md
   - docs/models/components/pipelinetype.md

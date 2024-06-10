@@ -7,7 +7,6 @@ from enum import Enum
 from honeyhive import utils
 from typing import Any, Dict, List, Optional
 
-
 class UpdateRunRequestStatus(str, Enum):
     PENDING = 'pending'
     COMPLETED = 'completed'

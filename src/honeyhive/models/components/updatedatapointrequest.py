@@ -7,17 +7,12 @@ from honeyhive import utils
 from typing import Any, Dict, List, Optional
 
 
-@dataclasses.dataclass
-class UpdateDatapointRequestHistory:
-    pass
-
-
 @dataclass_json(undefined=Undefined.EXCLUDE)
 @dataclasses.dataclass
 class UpdateDatapointRequest:
     inputs: Optional[Dict[str, Any]] = dataclasses.field(default=None, metadata={'dataclasses_json': { 'letter_case': utils.get_field_name('inputs'), 'exclude': lambda f: f is None }})
     r"""Arbitrary JSON object containing the inputs for the datapoint"""
-    history: Optional[List[UpdateDatapointRequestHistory]] = dataclasses.field(default=None, metadata={'dataclasses_json': { 'letter_case': utils.get_field_name('history'), 'exclude': lambda f: f is None }})
+    history: Optional[List[Dict[str, Any]]] = dataclasses.field(default=None, metadata={'dataclasses_json': { 'letter_case': utils.get_field_name('history'), 'exclude': lambda f: f is None }})
     r"""Conversation history associated with the datapoint"""
     ground_truth: Optional[Dict[str, Any]] = dataclasses.field(default=None, metadata={'dataclasses_json': { 'letter_case': utils.get_field_name('ground_truth'), 'exclude': lambda f: f is None }})
     r"""Expected output JSON object for the datapoint"""
