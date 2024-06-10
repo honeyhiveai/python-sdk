@@ -1,17 +1,17 @@
-speakeasyVersion: 1.295.1
+speakeasyVersion: 1.300.1
 sources:
     my-source:
         sourceNamespace: my-source
-        sourceRevisionDigest: sha256:42f25b749869aecf75578f27363bf22bab96992ca97993986e303e8008228268
+        sourceRevisionDigest: sha256:c2f4d85478ab8bf0f99cc9bd17a2d70ea9974b7cb6084ccad450d9a17864c6c4
         sourceBlobDigest: sha256:9220b55ef5bddf46e5e94a14c3223886197318487bf4443fd49ba1f6fe4a703c
         tags:
             - latest
-            - mintlify-integration
+            - main
 targets:
     honeyhive:
         source: my-source
         sourceNamespace: my-source
-        sourceRevisionDigest: sha256:42f25b749869aecf75578f27363bf22bab96992ca97993986e303e8008228268
+        sourceRevisionDigest: sha256:c2f4d85478ab8bf0f99cc9bd17a2d70ea9974b7cb6084ccad450d9a17864c6c4
         sourceBlobDigest: sha256:9220b55ef5bddf46e5e94a14c3223886197318487bf4443fd49ba1f6fe4a703c
         outLocation: /github/workspace/repo
 workflow:
