@@ -31,6 +31,7 @@ class HoneyHiveTracer:
                 HoneyHiveTracer._is_traceloop_initialized = True
             Traceloop.set_association_properties({"session_id": session_id})
             HoneyHiveTracer.session_id = session_id
+            HoneyHiveTracer.api_key = api_key
         except:
             pass
 
