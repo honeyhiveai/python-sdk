@@ -23,14 +23,15 @@ s = honeyhive.HoneyHive(
     bearer_auth="<YOUR_BEARER_TOKEN_HERE>",
 )
 
-
-res = s.runs.create_run(request=components.CreateRunRequest(
+req = components.CreateRunRequest(
     project='<value>',
     name='<value>',
     event_ids=[
         '1b590040-fd4d-40db-a8d8-d6e550cfa9f3',
     ],
-))
+)
+
+res = s.runs.create_run(req)
 
 if res.create_run_response is not None:
     # handle response
@@ -52,7 +53,7 @@ if res.create_run_response is not None:
 
 | Error Object    | Status Code     | Content Type    |
 | --------------- | --------------- | --------------- |
-| errors.SDKError | 4xx-5xx         | */*             |
+| errors.SDKError | 4x-5xx          | */*             |
 
 ## get_runs
 
@@ -90,7 +91,7 @@ if res.get_runs_response is not None:
 
 | Error Object    | Status Code     | Content Type    |
 | --------------- | --------------- | --------------- |
-| errors.SDKError | 4xx-5xx         | */*             |
+| errors.SDKError | 4x-5xx          | */*             |
 
 ## get_run
 
@@ -128,7 +129,7 @@ if res.get_run_response is not None:
 
 | Error Object    | Status Code     | Content Type    |
 | --------------- | --------------- | --------------- |
-| errors.SDKError | 4xx-5xx         | */*             |
+| errors.SDKError | 4x-5xx          | */*             |
 
 ## update_run
 
@@ -168,7 +169,7 @@ if res.update_run_response is not None:
 
 | Error Object    | Status Code     | Content Type    |
 | --------------- | --------------- | --------------- |
-| errors.SDKError | 4xx-5xx         | */*             |
+| errors.SDKError | 4x-5xx          | */*             |
 
 ## delete_run
 
@@ -206,4 +207,4 @@ if res.delete_run_response is not None:
 
 | Error Object    | Status Code     | Content Type    |
 | --------------- | --------------- | --------------- |
-| errors.SDKError | 4xx-5xx         | */*             |
+| errors.SDKError | 4x-5xx          | */*             |

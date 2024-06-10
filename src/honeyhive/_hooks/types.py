@@ -17,19 +17,15 @@ class HookContext:
 
 
 class BeforeRequestContext(HookContext):
-    def __init__(self, hook_ctx: HookContext):
-        super().__init__(hook_ctx.operation_id, hook_ctx.oauth2_scopes, hook_ctx.security_source)
+    pass
 
 
 class AfterSuccessContext(HookContext):
-    def __init__(self, hook_ctx: HookContext):
-        super().__init__(hook_ctx.operation_id, hook_ctx.oauth2_scopes, hook_ctx.security_source)
-    
+    pass
 
 
 class AfterErrorContext(HookContext):
-    def __init__(self, hook_ctx: HookContext):
-        super().__init__(hook_ctx.operation_id, hook_ctx.oauth2_scopes, hook_ctx.security_source)
+    pass
 
 
 class SDKInitHook(ABC):
@@ -46,13 +42,13 @@ class BeforeRequestHook(ABC):
 
 class AfterSuccessHook(ABC):
     @abstractmethod
-    def after_success(self, hook_ctx: AfterSuccessContext, response: requests_http.Response) -> Union[requests_http.Response, Exception]:
+    def after_success(self, hook_ctx: AfterSuccessContext, response: requests_http.Response) -> Union[requests_http.PreparedRequest, Exception]:
         pass
 
 
 class AfterErrorHook(ABC):
     @abstractmethod
-    def after_error(self, hook_ctx: AfterErrorContext, response: Optional[requests_http.Response], error: Optional[Exception]) -> Union[Tuple[Optional[requests_http.Response], Optional[Exception]], Exception]:
+    def after_error(self, hook_ctx: AfterErrorContext, response: Optional[requests_http.Response], error: Optional[Exception]) -> Union[Tuple[Optional[requests_http.PreparedRequest], Optional[Exception]], Exception]:
         pass
 
 

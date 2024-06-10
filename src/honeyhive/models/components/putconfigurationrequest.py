@@ -7,7 +7,6 @@ from enum import Enum
 from honeyhive import utils
 from typing import Any, Dict, List, Optional
 
-
 class PutConfigurationRequestCallType(str, Enum):
     r"""Type of API calling - \\"chat\\" or \\"completion\\" """
     CHAT = 'chat'
@@ -33,7 +32,6 @@ class PutConfigurationRequestSelectedFunctions:
     parameters: Optional[Dict[str, Any]] = dataclasses.field(default=None, metadata={'dataclasses_json': { 'letter_case': utils.get_field_name('parameters'), 'exclude': lambda f: f is None }})
     r"""Parameters for the function"""
     
-
 
 
 class PutConfigurationRequestFunctionCallParams(str, Enum):
@@ -65,12 +63,10 @@ class PutConfigurationRequestParameters:
     
 
 
-
 class PutConfigurationRequestEnv(str, Enum):
     DEV = 'dev'
     STAGING = 'staging'
     PROD = 'prod'
-
 
 class PutConfigurationRequestType(str, Enum):
     r"""Type of the configuration - \\"LLM\\" or \\"pipeline\\" - \\"LLM\\" by default"""

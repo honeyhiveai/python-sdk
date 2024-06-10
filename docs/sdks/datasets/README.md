@@ -48,7 +48,7 @@ if res.object is not None:
 
 | Error Object    | Status Code     | Content Type    |
 | --------------- | --------------- | --------------- |
-| errors.SDKError | 4xx-5xx         | */*             |
+| errors.SDKError | 4x-5xx          | */*             |
 
 ## create_dataset
 
@@ -64,8 +64,7 @@ s = honeyhive.HoneyHive(
     bearer_auth="<YOUR_BEARER_TOKEN_HERE>",
 )
 
-
-res = s.datasets.create_dataset(request=components.CreateDatasetRequest(
+req = components.CreateDatasetRequest(
     project='New Project',
     name='test-dataset',
     description='A test dataset',
@@ -81,7 +80,9 @@ res = s.datasets.create_dataset(request=components.CreateDatasetRequest(
     metadata={
         'source': 'dev',
     },
-))
+)
+
+res = s.datasets.create_dataset(req)
 
 if res.object is not None:
     # handle response
@@ -103,7 +104,7 @@ if res.object is not None:
 
 | Error Object    | Status Code     | Content Type    |
 | --------------- | --------------- | --------------- |
-| errors.SDKError | 4xx-5xx         | */*             |
+| errors.SDKError | 4x-5xx          | */*             |
 
 ## update_dataset
 
@@ -119,8 +120,7 @@ s = honeyhive.HoneyHive(
     bearer_auth="<YOUR_BEARER_TOKEN_HERE>",
 )
 
-
-res = s.datasets.update_dataset(request=components.DatasetUpdate(
+req = components.DatasetUpdate(
     dataset_id='663876ec4611c47f4970f0c3',
     name='new-dataset-name',
     description='An updated dataset description',
@@ -134,7 +134,9 @@ res = s.datasets.update_dataset(request=components.DatasetUpdate(
         'updated': True,
         'source': 'prod',
     },
-))
+)
+
+res = s.datasets.update_dataset(req)
 
 if res is not None:
     # handle response
@@ -156,7 +158,7 @@ if res is not None:
 
 | Error Object    | Status Code     | Content Type    |
 | --------------- | --------------- | --------------- |
-| errors.SDKError | 4xx-5xx         | */*             |
+| errors.SDKError | 4x-5xx          | */*             |
 
 ## delete_dataset
 
@@ -194,7 +196,7 @@ if res is not None:
 
 | Error Object    | Status Code     | Content Type    |
 | --------------- | --------------- | --------------- |
-| errors.SDKError | 4xx-5xx         | */*             |
+| errors.SDKError | 4x-5xx          | */*             |
 
 ## add_datapoints
 
@@ -234,4 +236,4 @@ if res.object is not None:
 
 | Error Object    | Status Code     | Content Type    |
 | --------------- | --------------- | --------------- |
-| errors.SDKError | 4xx-5xx         | */*             |
+| errors.SDKError | 4x-5xx          | */*             |

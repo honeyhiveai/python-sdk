@@ -49,7 +49,7 @@ if res.object is not None:
 
 | Error Object    | Status Code     | Content Type    |
 | --------------- | --------------- | --------------- |
-| errors.SDKError | 4xx-5xx         | */*             |
+| errors.SDKError | 4x-5xx          | */*             |
 
 ## create_datapoint
 
@@ -65,8 +65,7 @@ s = honeyhive.HoneyHive(
     bearer_auth="<YOUR_BEARER_TOKEN_HERE>",
 )
 
-
-res = s.datapoints.create_datapoint(request=components.CreateDatapointRequest(
+req = components.CreateDatapointRequest(
     project='New Project',
     inputs={
         'query': 'what\'s the temperature in Iceland?',
@@ -95,7 +94,9 @@ res = s.datapoints.create_datapoint(request=components.CreateDatapointRequest(
         'prompt_tokens': 696,
         'total_tokens': 743,
     },
-))
+)
+
+res = s.datapoints.create_datapoint(req)
 
 if res.object is not None:
     # handle response
@@ -117,7 +118,7 @@ if res.object is not None:
 
 | Error Object    | Status Code     | Content Type    |
 | --------------- | --------------- | --------------- |
-| errors.SDKError | 4xx-5xx         | */*             |
+| errors.SDKError | 4x-5xx          | */*             |
 
 ## get_datapoint
 
@@ -155,7 +156,7 @@ if res.object is not None:
 
 | Error Object    | Status Code     | Content Type    |
 | --------------- | --------------- | --------------- |
-| errors.SDKError | 4xx-5xx         | */*             |
+| errors.SDKError | 4x-5xx          | */*             |
 
 ## update_datapoint
 
@@ -177,8 +178,14 @@ res = s.datapoints.update_datapoint(id='<value>', update_datapoint_request=compo
         'query': 'what\'s the temperature in Reykjavik?',
     },
     history=[
-        components.UpdateDatapointRequestHistory(),
-        components.UpdateDatapointRequestHistory(),
+        {
+            'role': 'system',
+            'content': 'You are a helpful web assistant that helps users answer questions about the world based on the information provided to you by Google\'s search API. Answer the questions as truthfully as you can. In case you are unsure about the correct answer, please respond with "I apologize but I\'m not sure."',
+        },
+        {
+            'role': 'user',
+            'content': 'what\'s the temperature in Reykjavik?\n\n\n--Google search API results below:---\n\n"snippet":"2 Week Extended Forecast in Reykjavik, Iceland ; Feb 4, 29 / 20 °F · Snow showers early. Broken clouds. ; Feb 5, 27 / 16 °F · Light snow. Decreasing cloudiness.","snippet_highlighted_words":["Feb 4, 29 / 20 °F"]',
+        },
     ],
     ground_truth={
         'role': 'assistant',
@@ -217,7 +224,7 @@ if res is not None:
 
 | Error Object    | Status Code     | Content Type    |
 | --------------- | --------------- | --------------- |
-| errors.SDKError | 4xx-5xx         | */*             |
+| errors.SDKError | 4x-5xx          | */*             |
 
 ## delete_datapoint
 
@@ -255,4 +262,4 @@ if res.object is not None:
 
 | Error Object    | Status Code     | Content Type    |
 | --------------- | --------------- | --------------- |
-| errors.SDKError | 4xx-5xx         | */*             |
+| errors.SDKError | 4x-5xx          | */*             |

@@ -7,12 +7,10 @@ from enum import Enum
 from honeyhive import utils
 from typing import Any, Dict, List, Optional
 
-
 class CreateDatasetRequestType(str, Enum):
     r"""What the dataset is to be used for - \\"evaluation\\" (default) or \\"fine-tuning\\" """
     EVALUATION = 'evaluation'
     FINE_TUNING = 'fine-tuning'
-
 
 class CreateDatasetRequestPipelineType(str, Enum):
     r"""The type of data included in the dataset - \\"event\\" (default) or \\"session\\" """

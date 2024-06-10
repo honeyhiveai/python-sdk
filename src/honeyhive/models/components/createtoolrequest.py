@@ -7,7 +7,6 @@ from enum import Enum
 from honeyhive import utils
 from typing import Any, Dict, Optional
 
-
 class CreateToolRequestType(str, Enum):
     FUNCTION = 'function'
     TOOL = 'tool'

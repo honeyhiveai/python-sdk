@@ -20,8 +20,7 @@ s = honeyhive.HoneyHive(
     bearer_auth="<YOUR_BEARER_TOKEN_HERE>",
 )
 
-
-res = s.session.start_session(request=operations.StartSessionRequestBody(
+req = operations.StartSessionRequestBody(
     session=components.SessionStartRequest(
         project='Simple RAG Project',
         session_name='Playground Session',
@@ -33,18 +32,7 @@ res = s.session.start_session(request=operations.StartSessionRequestBody(
         inputs={
             'context': 'Hello world',
             'question': 'What is in the context?',
-            'chat_history': [
-                {
-                    'role': 'system',
-                    'content': 'Answer the user\'s question only using provided context.
-
-                    Context: Hello world',
-                },
-                {
-                    'role': 'user',
-                    'content': 'What is in the context?',
-                },
-            ],
+            'chat_history': '<value>',
         },
         outputs={
             'role': 'assistant',
@@ -67,7 +55,9 @@ res = s.session.start_session(request=operations.StartSessionRequestBody(
         start_time=1712025501605,
         end_time=1712025499832,
     ),
-))
+)
+
+res = s.session.start_session(req)
 
 if res.object is not None:
     # handle response
@@ -154,7 +144,7 @@ Handling errors in this SDK should largely match your expectations.  All operati
 | Error Object                        | Status Code                         | Content Type                        |
 | ----------------------------------- | ----------------------------------- | ----------------------------------- |
 | errors.CreateEventBatchResponseBody | 500                                 | application/json                    |
-| errors.SDKError                     | 4xx-5xx                             | */*                                 |
+| errors.SDKError                     | 4x-5xx                              | */*                                 |
 
 ### Example
 
@@ -166,9 +156,7 @@ s = honeyhive.HoneyHive(
     bearer_auth="<YOUR_BEARER_TOKEN_HERE>",
 )
 
-res = None
-try:
-    res = s.events.create_event_batch(request=operations.CreateEventBatchRequestBody(
+req = operations.CreateEventBatchRequestBody(
     events=[
         components.CreateEventRequest(
             project='Simple RAG',
@@ -179,29 +167,8 @@ try:
                 'model': 'gpt-3.5-turbo',
                 'version': 'v0.1',
                 'provider': 'openai',
-                'hyperparameters': {
-                    'temperature': 0,
-                    'top_p': 1,
-                    'max_tokens': 1000,
-                    'presence_penalty': 0,
-                    'frequency_penalty': 0,
-                    'stop': [
-                        '<value>',
-                    ],
-                    'n': 1,
-                },
-                'template': [
-                    {
-                        'role': 'system',
-                        'content': 'Answer the user\'s question only using provided context.
-
-                        Context: {{ context }}',
-                    },
-                    {
-                        'role': 'user',
-                        'content': '{{question}}',
-                    },
-                ],
+                'hyperparameters': '<value>',
+                'template': '<value>',
                 'type': 'chat',
             },
             inputs=components.CreateEventRequestInputs(
@@ -217,10 +184,6 @@ try:
                         'content': 'What is in the context?',
                     },
                 ],
-                additional_properties={
-                    'context': 'Hello world',
-                    'question': 'What is in the context?',
-                },
             ),
             duration=999.8056,
             event_id='7f22137a-6911-4ed3-bc36-110f1dde6b66',
@@ -255,8 +218,11 @@ try:
             },
         ),
     ],
-))
+)
 
+res = None
+try:
+    res = s.events.create_event_batch(req)
 except errors.CreateEventBatchResponseBody as e:
     # handle exception
     raise(e)
@@ -293,8 +259,7 @@ s = honeyhive.HoneyHive(
     bearer_auth="<YOUR_BEARER_TOKEN_HERE>",
 )
 
-
-res = s.session.start_session(request=operations.StartSessionRequestBody(
+req = operations.StartSessionRequestBody(
     session=components.SessionStartRequest(
         project='Simple RAG Project',
         session_name='Playground Session',
@@ -306,18 +271,7 @@ res = s.session.start_session(request=operations.StartSessionRequestBody(
         inputs={
             'context': 'Hello world',
             'question': 'What is in the context?',
-            'chat_history': [
-                {
-                    'role': 'system',
-                    'content': 'Answer the user\'s question only using provided context.
-
-                    Context: Hello world',
-                },
-                {
-                    'role': 'user',
-                    'content': 'What is in the context?',
-                },
-            ],
+            'chat_history': '<value>',
         },
         outputs={
             'role': 'assistant',
@@ -340,7 +294,9 @@ res = s.session.start_session(request=operations.StartSessionRequestBody(
         start_time=1712025501605,
         end_time=1712025499832,
     ),
-))
+)
+
+res = s.session.start_session(req)
 
 if res.object is not None:
     # handle response
@@ -361,8 +317,7 @@ s = honeyhive.HoneyHive(
     bearer_auth="<YOUR_BEARER_TOKEN_HERE>",
 )
 
-
-res = s.session.start_session(request=operations.StartSessionRequestBody(
+req = operations.StartSessionRequestBody(
     session=components.SessionStartRequest(
         project='Simple RAG Project',
         session_name='Playground Session',
@@ -374,18 +329,7 @@ res = s.session.start_session(request=operations.StartSessionRequestBody(
         inputs={
             'context': 'Hello world',
             'question': 'What is in the context?',
-            'chat_history': [
-                {
-                    'role': 'system',
-                    'content': 'Answer the user\'s question only using provided context.
-
-                    Context: Hello world',
-                },
-                {
-                    'role': 'user',
-                    'content': 'What is in the context?',
-                },
-            ],
+            'chat_history': '<value>',
         },
         outputs={
             'role': 'assistant',
@@ -408,7 +352,9 @@ res = s.session.start_session(request=operations.StartSessionRequestBody(
         start_time=1712025501605,
         end_time=1712025499832,
     ),
-))
+)
+
+res = s.session.start_session(req)
 
 if res.object is not None:
     # handle response
@@ -429,7 +375,7 @@ import requests
 
 http_client = requests.Session()
 http_client.headers.update({'x-custom-header': 'someValue'})
-s = honeyhive.HoneyHive(client=http_client)
+s = honeyhive.HoneyHive(client: http_client)
 ```
 <!-- End Custom HTTP Client [http-client] -->
 
@@ -453,8 +399,7 @@ s = honeyhive.HoneyHive(
     bearer_auth="<YOUR_BEARER_TOKEN_HERE>",
 )
 
-
-res = s.session.start_session(request=operations.StartSessionRequestBody(
+req = operations.StartSessionRequestBody(
     session=components.SessionStartRequest(
         project='Simple RAG Project',
         session_name='Playground Session',
@@ -466,18 +411,7 @@ res = s.session.start_session(request=operations.StartSessionRequestBody(
         inputs={
             'context': 'Hello world',
             'question': 'What is in the context?',
-            'chat_history': [
-                {
-                    'role': 'system',
-                    'content': 'Answer the user\'s question only using provided context.
-
-                    Context: Hello world',
-                },
-                {
-                    'role': 'user',
-                    'content': 'What is in the context?',
-                },
-            ],
+            'chat_history': '<value>',
         },
         outputs={
             'role': 'assistant',
@@ -500,7 +434,9 @@ res = s.session.start_session(request=operations.StartSessionRequestBody(
         start_time=1712025501605,
         end_time=1712025499832,
     ),
-))
+)
+
+res = s.session.start_session(req)
 
 if res.object is not None:
     # handle response

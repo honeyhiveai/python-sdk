@@ -9,18 +9,6 @@ from honeyhive import utils
 from typing import Any, Dict, List, Optional
 
 
-@dataclasses.dataclass
-class DatapointInputs:
-    r"""Arbitrary JSON object containing the inputs for the datapoint"""
-    
-
-
-
-@dataclasses.dataclass
-class History:
-    pass
-
-
 @dataclass_json(undefined=Undefined.EXCLUDE)
 @dataclasses.dataclass
 class Datapoint:
@@ -31,9 +19,9 @@ class Datapoint:
     r"""UUID for the project where the datapoint is stored"""
     created_at: Optional[datetime] = dataclasses.field(default=None, metadata={'dataclasses_json': { 'letter_case': utils.get_field_name('created_at'), 'encoder': utils.datetimeisoformat(True), 'decoder': dateutil.parser.isoparse, 'exclude': lambda f: f is None }})
     updated_at: Optional[datetime] = dataclasses.field(default=None, metadata={'dataclasses_json': { 'letter_case': utils.get_field_name('updated_at'), 'encoder': utils.datetimeisoformat(True), 'decoder': dateutil.parser.isoparse, 'exclude': lambda f: f is None }})
-    inputs: Optional[DatapointInputs] = dataclasses.field(default=None, metadata={'dataclasses_json': { 'letter_case': utils.get_field_name('inputs'), 'exclude': lambda f: f is None }})
+    inputs: Optional[Dict[str, Any]] = dataclasses.field(default=None, metadata={'dataclasses_json': { 'letter_case': utils.get_field_name('inputs'), 'exclude': lambda f: f is None }})
     r"""Arbitrary JSON object containing the inputs for the datapoint"""
-    history: Optional[List[History]] = dataclasses.field(default=None, metadata={'dataclasses_json': { 'letter_case': utils.get_field_name('history'), 'exclude': lambda f: f is None }})
+    history: Optional[List[Dict[str, Any]]] = dataclasses.field(default=None, metadata={'dataclasses_json': { 'letter_case': utils.get_field_name('history'), 'exclude': lambda f: f is None }})
     r"""Conversation history associated with the datapoint"""
     ground_truth: Optional[Dict[str, Any]] = dataclasses.field(default=None, metadata={'dataclasses_json': { 'letter_case': utils.get_field_name('ground_truth'), 'exclude': lambda f: f is None }})
     linked_event: Optional[str] = dataclasses.field(default=None, metadata={'dataclasses_json': { 'letter_case': utils.get_field_name('linked_event'), 'exclude': lambda f: f is None }})

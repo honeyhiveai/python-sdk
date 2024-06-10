@@ -7,13 +7,11 @@ from enum import Enum
 from honeyhive import utils
 from typing import Optional
 
-
 class MetricType(str, Enum):
     r"""Type of the metric - \\"custom\\", \\"model\\" or \\"human\\" """
     CUSTOM = 'custom'
     MODEL = 'model'
     HUMAN = 'human'
-
 
 class ReturnType(str, Enum):
     r"""The data type of the metric value - \\"boolean\\", \\"float\\", \\"string\\" """
