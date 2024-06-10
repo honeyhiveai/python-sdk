@@ -13,6 +13,14 @@ def test_get_datapoints():
     assert res.object is not None
     assert len(res.object.datapoints) > 0
 
+def test_populated_datapoint():
+    res = sdk.datapoints.get_datapoints(project=os.environ["HH_PROJECT_ID"], dataset_name="dont-delete-dataset")
+    assert res.status_code == 200
+    assert res.object is not None
+    assert len(res.object.datapoints[-1].inputs.keys()) > 0
+    assert len(res.object.datapoints[-1].ground_truth.keys()) > 0
+    assert len(res.object.datapoints[-1].metadata.keys()) > 0
+    assert len(res.object.datapoints[-1].history) > 0
 
 def test_create_datapoints():
     req = components.CreateDatapointRequest(
