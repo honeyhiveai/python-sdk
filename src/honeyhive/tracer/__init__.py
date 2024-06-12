@@ -7,6 +7,8 @@ from traceloop.sdk import Traceloop
 
 class HoneyHiveTracer:
     _is_traceloop_initialized = False
+    session_id = None
+    api_key = None
 
     @staticmethod
     def init(
@@ -28,6 +30,8 @@ class HoneyHiveTracer:
                 )
                 HoneyHiveTracer._is_traceloop_initialized = True
             Traceloop.set_association_properties({"session_id": session_id})
+            HoneyHiveTracer.session_id = session_id
+            HoneyHiveTracer.api_key = api_key
         except:
             pass
 
@@ -45,3 +49,51 @@ class HoneyHiveTracer:
         )
         assert res.object.session_id is not None
         return res.object.session_id
+
+    @staticmethod
+    def set_feedback(feedback):
+        if HoneyHiveTracer.session_id is None:
+            raise Exception("HoneyHiveTracer is not initialized")
+        session_id = HoneyHiveTracer.session_id
+        try:
+            sdk = honeyhive.HoneyHive(HoneyHiveTracer.api_key)
+            sdk.events.update_event(
+                request=operations.UpdateEventRequestBody(
+                    event_id=session_id,
+                    feedback=feedback
+                )
+            )
+        except:
+            pass
+
+    @staticmethod
+    def set_evaluator(metrics):
+        if HoneyHiveTracer.session_id is None:
+            raise Exception("HoneyHiveTracer is not initialized")
+        session_id = HoneyHiveTracer.session_id
+        try:
+            sdk = honeyhive.HoneyHive(HoneyHiveTracer.api_key)
+            sdk.events.update_event(
+                request=operations.UpdateEventRequestBody(
+                    event_id=session_id,
+                    metrics=metrics
+                )
+            )
+        except:
+            pass
+
+    @staticmethod
+    def set_metadata(metadata):
+        if HoneyHiveTracer.session_id is None:
+            raise Exception("HoneyHiveTracer is not initialized")
+        session_id = HoneyHiveTracer.session_id
+        try:
+            sdk = honeyhive.HoneyHive(HoneyHiveTracer.api_key)
+            sdk.events.update_event(
+                request=operations.UpdateEventRequestBody(
+                    event_id=session_id,
+                    metadata=metadata
+                )
+            )
+        except:
+            pass
