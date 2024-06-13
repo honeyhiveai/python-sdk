@@ -20,7 +20,6 @@ sdk = honeyhive.HoneyHive(
     bearer_auth=os.environ["HH_API_KEY"], server_url=os.environ["HH_API_URL"]
 )
 
-
 def run_tracer():
     openai.api_key = os.environ["OPENAI_API_KEY"]
 
@@ -35,7 +34,7 @@ def run_tracer():
 
 
 def test_tracer():
-    tracer = run_tracer()
+    run_tracer()
 
     # Get session
     time.sleep(5)
@@ -146,3 +145,90 @@ def test_tracer():
     assert res.status_code == 200
     assert res.object is not None
     assert len(res.object.events) > 1
+
+def test_tracer_metadata_update():
+    run_tracer()
+
+    HoneyHiveTracer.set_metadata({ "test": "value" })
+
+    session_id = HoneyHiveTracer.session_id
+    req = operations.GetEventsRequestBody(
+        project=os.environ["HH_PROJECT_ID"],
+        filters=[
+            components.EventFilter(
+                field="session_id",
+                value=session_id,
+                operator=components.Operator.IS,
+            ),
+            components.EventFilter(
+                field="event_type",
+                value="session",
+                operator=components.Operator.IS,
+            ),
+        ],
+    )
+    res = sdk.events.get_events(request=req)
+    assert res.status_code == 200
+    assert res.object is not None
+    assert len(res.object.events) == 1
+
+    logged_event = res.object.events[0]
+    assert logged_event.metadata == { "test": "value" }
+
+def test_tracer_feedback_update():
+    run_tracer()
+
+    HoneyHiveTracer.set_feedback({ "comment": "test feedback" })
+
+    session_id = HoneyHiveTracer.session_id
+    req = operations.GetEventsRequestBody(
+        project=os.environ["HH_PROJECT_ID"],
+        filters=[
+            components.EventFilter(
+                field="session_id",
+                value=session_id,
+                operator=components.Operator.IS,
+            ),
+            components.EventFilter(
+                field="event_type",
+                value="session",
+                operator=components.Operator.IS,
+            ),
+        ],
+    )
+    res = sdk.events.get_events(request=req)
+    assert res.status_code == 200
+    assert res.object is not None
+    assert len(res.object.events) == 1
+
+    logged_event = res.object.events[0]
+    assert logged_event.feedback == { "comment": "test feedback" }
+
+def test_tracer_evaluator_update():
+    run_tracer()
+
+    HoneyHiveTracer.set_evaluator({ "tps": 1.78 })
+
+    session_id = HoneyHiveTracer.session_id
+    req = operations.GetEventsRequestBody(
+        project=os.environ["HH_PROJECT_ID"],
+        filters=[
+            components.EventFilter(
+                field="session_id",
+                value=session_id,
+                operator=components.Operator.IS,
+            ),
+            components.EventFilter(
+                field="event_type",
+                value="session",
+                operator=components.Operator.IS,
+            ),
+        ],
+    )
+    res = sdk.events.get_events(request=req)
+    assert res.status_code == 200
+    assert res.object is not None
+    assert len(res.object.events) == 1
+
+    logged_event = res.object.events[0]
+    assert logged_event.metrics == { "tps": 1.78 }
