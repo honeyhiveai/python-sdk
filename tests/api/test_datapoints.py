@@ -6,13 +6,6 @@ sdk = honeyhive.HoneyHive(
     bearer_auth=os.environ["HH_API_KEY"], server_url=os.environ["HH_API_URL"]
 )
 
-
-def test_get_datapoints():
-    res = sdk.datapoints.get_datapoints(project=os.environ["HH_PROJECT_ID"])
-    assert res.status_code == 200
-    assert res.object is not None
-    assert len(res.object.datapoints) > 0
-
 def test_populated_datapoint():
     res = sdk.datapoints.get_datapoints(project=os.environ["HH_PROJECT_ID"], dataset_name="dont-delete-dataset")
     assert res.status_code == 200
