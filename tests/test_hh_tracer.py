@@ -147,6 +147,14 @@ def test_tracer():
     assert len(res.object.events) > 1
 
 def test_tracer_metadata_update():
+    HoneyHiveTracer.init(
+        server_url=os.environ["HH_API_URL"],
+        api_key=os.environ["HH_API_KEY"],
+        project=os.environ["HH_PROJECT"],
+        source="HoneyHive Tracer Test",
+        session_name=session_name,
+    )
+
     run_tracer()
 
     HoneyHiveTracer.set_metadata({ "test": "value" })
@@ -176,6 +184,15 @@ def test_tracer_metadata_update():
     assert logged_event.metadata == { "test": "value" }
 
 def test_tracer_feedback_update():
+    HoneyHiveTracer.init(
+        server_url=os.environ["HH_API_URL"],
+        api_key=os.environ["HH_API_KEY"],
+        project=os.environ["HH_PROJECT"],
+        source="HoneyHive Tracer Test",
+        session_name=session_name,
+    )
+
+
     run_tracer()
 
     HoneyHiveTracer.set_feedback({ "comment": "test feedback" })
@@ -205,6 +222,14 @@ def test_tracer_feedback_update():
     assert logged_event.feedback == { "comment": "test feedback" }
 
 def test_tracer_evaluator_update():
+    HoneyHiveTracer.init(
+        server_url=os.environ["HH_API_URL"],
+        api_key=os.environ["HH_API_KEY"],
+        project=os.environ["HH_PROJECT"],
+        source="HoneyHive Tracer Test",
+        session_name=session_name,
+    )
+
     run_tracer()
 
     HoneyHiveTracer.set_evaluator({ "tps": 1.78 })
