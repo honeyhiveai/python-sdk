@@ -180,6 +180,8 @@ def test_tracer_feedback_update():
 
     HoneyHiveTracer.set_feedback({ "comment": "test feedback" })
 
+    time.sleep(5)
+
     session_id = HoneyHiveTracer.session_id
     req = operations.GetEventsRequestBody(
         project=os.environ["HH_PROJECT_ID"],
@@ -258,7 +260,7 @@ def test_distributed_tracing():
     )
     run_tracer()
 
-    time.sleep(20)
+    time.sleep(15)
     req = operations.GetEventsRequestBody(
         project=os.environ["HH_PROJECT_ID"],
         filters=[
