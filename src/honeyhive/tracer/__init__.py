@@ -15,17 +15,12 @@ class HoneyHiveTracer:
         project,
         session_name,
         source,
-        session_id=None,
         server_url="https://api.honeyhive.ai",
     ):
         try:
-            if session_id is not None:
-                HoneyHiveTracer.session_id = session_id
-            else:
-                session_id = HoneyHiveTracer.__start_session(
-                    api_key, project, session_name, source, server_url
-                )
-                HoneyHiveTracer.session_id = session_id
+            session_id = HoneyHiveTracer.__start_session(
+                api_key, project, session_name, source, server_url
+            )
             if not HoneyHiveTracer._is_traceloop_initialized:
                 Traceloop.init(
                     api_endpoint=f"{server_url}/opentelemetry",
@@ -34,6 +29,27 @@ class HoneyHiveTracer:
                 )
                 HoneyHiveTracer._is_traceloop_initialized = True
             Traceloop.set_association_properties({"session_id": session_id})
+            HoneyHiveTracer.session_id = session_id
+            HoneyHiveTracer.api_key = api_key
+        except:
+            pass
+
+    @staticmethod
+    def init_from_session_id(
+        api_key,
+        session_id,
+        server_url="https://api.honeyhive.ai",
+    ):
+        try:
+            if not HoneyHiveTracer._is_traceloop_initialized:
+                Traceloop.init(
+                    api_endpoint=f"{server_url}/opentelemetry",
+                    api_key=api_key,
+                    metrics_exporter=ConsoleMetricExporter(out=open(os.devnull, "w")),
+                )
+                HoneyHiveTracer._is_traceloop_initialized = True
+            Traceloop.set_association_properties({"session_id": session_id})
+            HoneyHiveTracer.session_id = session_id
             HoneyHiveTracer.api_key = api_key
         except:
             pass

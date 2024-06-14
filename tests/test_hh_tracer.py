@@ -251,12 +251,9 @@ def test_distributed_tracing():
     assert len(res.object.events) > 1
     prev_event_count = len(res.object.events)
 
-    HoneyHiveTracer.init(
+    HoneyHiveTracer.init_from_session_id(
         server_url=os.environ["HH_API_URL"],
         api_key=os.environ["HH_API_KEY"],
-        project=os.environ["HH_PROJECT"],
-        source="HoneyHive Tracer Test",
-        session_name=session_name,
         session_id=pre_existing_session_id,
     )
     run_tracer()
