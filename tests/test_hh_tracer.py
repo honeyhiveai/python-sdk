@@ -258,7 +258,7 @@ def test_distributed_tracing():
     )
     run_tracer()
 
-    time.sleep(10)
+    time.sleep(20)
     req = operations.GetEventsRequestBody(
         project=os.environ["HH_PROJECT_ID"],
         filters=[
