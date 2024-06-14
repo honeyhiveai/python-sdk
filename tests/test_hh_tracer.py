@@ -145,3 +145,133 @@ def test_tracer():
     assert res.status_code == 200
     assert res.object is not None
     assert len(res.object.events) > 1
+
+def test_tracer_metadata_update():
+    run_tracer()
+
+    HoneyHiveTracer.set_metadata({ "test": "value" })
+
+    session_id = HoneyHiveTracer.session_id
+    req = operations.GetEventsRequestBody(
+        project=os.environ["HH_PROJECT_ID"],
+        filters=[
+            components.EventFilter(
+                field="session_id",
+                value=session_id,
+                operator=components.Operator.IS,
+            ),
+            components.EventFilter(
+                field="event_type",
+                value="session",
+                operator=components.Operator.IS,
+            ),
+        ],
+    )
+    res = sdk.events.get_events(request=req)
+    assert res.status_code == 200
+    assert res.object is not None
+    assert len(res.object.events) == 1
+
+    logged_event = res.object.events[0]
+    assert logged_event.metadata == { "test": "value" }
+
+def test_tracer_feedback_update():
+    run_tracer()
+
+    HoneyHiveTracer.set_feedback({ "comment": "test feedback" })
+
+    time.sleep(5)
+
+    session_id = HoneyHiveTracer.session_id
+    req = operations.GetEventsRequestBody(
+        project=os.environ["HH_PROJECT_ID"],
+        filters=[
+            components.EventFilter(
+                field="session_id",
+                value=session_id,
+                operator=components.Operator.IS,
+            ),
+            components.EventFilter(
+                field="event_type",
+                value="session",
+                operator=components.Operator.IS,
+            ),
+        ],
+    )
+    res = sdk.events.get_events(request=req)
+    assert res.status_code == 200
+    assert res.object is not None
+    assert len(res.object.events) == 1
+
+    logged_event = res.object.events[0]
+    assert logged_event.feedback == { "comment": "test feedback" }
+
+def test_tracer_evaluator_update():
+    run_tracer()
+
+    HoneyHiveTracer.set_evaluator({ "tps": 1.78 })
+
+    session_id = HoneyHiveTracer.session_id
+    req = operations.GetEventsRequestBody(
+        project=os.environ["HH_PROJECT_ID"],
+        filters=[
+            components.EventFilter(
+                field="session_id",
+                value=session_id,
+                operator=components.Operator.IS,
+            ),
+            components.EventFilter(
+                field="event_type",
+                value="session",
+                operator=components.Operator.IS,
+            ),
+        ],
+    )
+    res = sdk.events.get_events(request=req)
+    assert res.status_code == 200
+    assert res.object is not None
+    assert len(res.object.events) == 1
+
+    logged_event = res.object.events[0]
+    assert logged_event.metrics == { "tps": 1.78 }
+
+def test_distributed_tracing():
+    pre_existing_session_id = "fb0a4180-c998-45a6-ba0a-b19bf46e966b"
+    req = operations.GetEventsRequestBody(
+        project=os.environ["HH_PROJECT_ID"],
+        filters=[
+            components.EventFilter(
+                field="session_id",
+                value=pre_existing_session_id,
+                operator=components.Operator.IS,
+            ),
+        ],
+    )
+    res = sdk.events.get_events(request=req)
+    assert res.status_code == 200
+    assert res.object is not None
+    assert len(res.object.events) > 1
+    prev_event_count = len(res.object.events)
+
+    HoneyHiveTracer.init_from_session_id(
+        server_url=os.environ["HH_API_URL"],
+        api_key=os.environ["HH_API_KEY"],
+        session_id=pre_existing_session_id,
+    )
+    run_tracer()
+
+    time.sleep(15)
+    req = operations.GetEventsRequestBody(
+        project=os.environ["HH_PROJECT_ID"],
+        filters=[
+            components.EventFilter(
+                field="session_id",
+                value=pre_existing_session_id,
+                operator=components.Operator.IS,
+            ),
+        ],
+    )
+    res = sdk.events.get_events(request=req)
+    assert res.status_code == 200
+    assert res.object is not None
+    assert len(res.object.events) > prev_event_count
