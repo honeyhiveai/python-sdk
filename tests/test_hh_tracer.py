@@ -232,3 +232,47 @@ def test_tracer_evaluator_update():
 
     logged_event = res.object.events[0]
     assert logged_event.metrics == { "tps": 1.78 }
+
+def test_distributed_tracing():
+    pre_existing_session_id = "fb0a4180-c998-45a6-ba0a-b19bf46e966b"
+    req = operations.GetEventsRequestBody(
+        project=os.environ["HH_PROJECT_ID"],
+        filters=[
+            components.EventFilter(
+                field="session_id",
+                value=pre_existing_session_id,
+                operator=components.Operator.IS,
+            ),
+        ],
+    )
+    res = sdk.events.get_events(request=req)
+    assert res.status_code == 200
+    assert res.object is not None
+    assert len(res.object.events) > 1
+    prev_event_count = len(res.object.events)
+
+    HoneyHiveTracer.init(
+        server_url=os.environ["HH_API_URL"],
+        api_key=os.environ["HH_API_KEY"],
+        project=os.environ["HH_PROJECT"],
+        source="HoneyHive Tracer Test",
+        session_name=session_name,
+        session_id=pre_existing_session_id,
+    )
+    run_tracer()
+
+    time.sleep(5)
+    req = operations.GetEventsRequestBody(
+        project=os.environ["HH_PROJECT_ID"],
+        filters=[
+            components.EventFilter(
+                field="session_id",
+                value=pre_existing_session_id,
+                operator=components.Operator.IS,
+            ),
+        ],
+    )
+    res = sdk.events.get_events(request=req)
+    assert res.status_code == 200
+    assert res.object is not None
+    assert len(res.object.events) > prev_event_count
