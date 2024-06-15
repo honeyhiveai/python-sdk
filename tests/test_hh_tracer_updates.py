@@ -114,7 +114,7 @@ def test_tracer_evaluator_update():
 
     run_tracer()
 
-    HoneyHiveTracer.set_evaluator({ "tps": 1.78 })
+    HoneyHiveTracer.set_metric({ "tps": 1.78 })
 
     session_id = HoneyHiveTracer.session_id
     req = operations.GetEventsRequestBody(

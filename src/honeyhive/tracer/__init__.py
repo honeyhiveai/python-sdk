@@ -86,7 +86,7 @@ class HoneyHiveTracer:
             pass
 
     @staticmethod
-    def set_evaluator(metrics):
+    def set_metric(metrics):
         if HoneyHiveTracer.session_id is None:
             raise Exception("HoneyHiveTracer is not initialized")
         session_id = HoneyHiveTracer.session_id
@@ -95,7 +95,7 @@ class HoneyHiveTracer:
             sdk.events.update_event(
                 request=operations.UpdateEventRequestBody(
                     event_id=session_id,
-                    metrics=metrics
+                    metrics=metrics,
                 )
             )
         except:
