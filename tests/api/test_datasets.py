@@ -84,6 +84,6 @@ def test_push_datapoint_to_dataset():
     datapoint = res.object.datapoint[0]
 
     assert datapoint.inputs["input1"] == "test"
-    assert datapoint.outputs["output1"] == 10
+    assert datapoint.ground_truth["output1"] == 10
     assert len(datapoint.history) == 1
     assert datapoint.metadata["random_field"] == 1.0
