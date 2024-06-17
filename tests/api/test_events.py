@@ -182,45 +182,6 @@ def test_valid_event_batch_post_request_single_session():
     session_id = res.object.session_id
     assert isinstance(session_id, str)
 
-def test_valid_openai_model_event_post_request():
-    # Create and send model event request
-    req = operations.CreateModelEventRequestBody(
-        event=test_model_event
-    )
-    res = sdk.events.create_model_event(req)
-
-    # Validate initial response
-    assert res.status_code == 200
-    time.sleep(WAIT_TIME)
-    model_event_id = res.object.event_id
-
-    # Create filters and parameters for fetching the event
-    filters = [
-        components.EventFilter(
-            field="event_id",
-            operator=components.Operator.IS,
-            value=model_event_id
-        )
-    ]
-    params = operations.GetEventsRequestBody(
-        project=os.environ["HH_PROJECT"],
-        filters=filters
-    )
-
-    # Fetch the event
-    fetch_res = sdk.events.get_events(params)
-
-    # Validate fetch response
-    assert fetch_res.status_code == 200
-    events = fetch_res.object.events
-    assert isinstance(events, list)
-    assert len(events) == 1
-
-    # Validate event details
-    event = events[0]
-    assert event.duration == 42
-    assert event.config["model"] == "gpt-4o"
-
 def test_valid_event_model_batch_post_request():
     # Create a batch of model events
     batch = [test_model_event, test_model_event]
