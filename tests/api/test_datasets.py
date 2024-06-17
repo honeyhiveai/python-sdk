@@ -55,6 +55,7 @@ def test_push_datapoint_to_dataset():
     dataset_id = "6643b41552d5bf0e7ba34719"
 
     request_body = operations.AddDatapointsRequestBody(
+        project=os.environ["HH_PROJECT"],
         data=[
             {
                 "input1": "test",
