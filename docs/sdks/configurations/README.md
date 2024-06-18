@@ -47,7 +47,7 @@ if res.configurations is not None:
 
 | Error Object    | Status Code     | Content Type    |
 | --------------- | --------------- | --------------- |
-| errors.SDKError | 4x-5xx          | */*             |
+| errors.SDKError | 4xx-5xx         | */*             |
 
 ## create_configuration
 
@@ -63,7 +63,8 @@ s = honeyhive.HoneyHive(
     bearer_auth="<YOUR_BEARER_TOKEN_HERE>",
 )
 
-req = components.PostConfigurationRequest(
+
+res = s.configurations.create_configuration(request=components.PostConfigurationRequest(
     project='660d7ba7995cacccce4d299e',
     name='function-v0',
     provider='openai',
@@ -77,7 +78,9 @@ req = components.PostConfigurationRequest(
             'top_k': -1,
             'frequency_penalty': 0,
             'presence_penalty': 0,
-            'stop_sequences': '<value>',
+            'stop_sequences': [
+                '<value>',
+            ],
         },
         selected_functions=[
             components.PostConfigurationRequestSelectedFunctions(
@@ -86,14 +89,33 @@ req = components.PostConfigurationRequest(
                 description='Get information from Google when you do not have that information in your context',
                 parameters={
                     'type': 'object',
-                    'properties': '<value>',
-                    'required': '<value>',
+                    'properties': {
+                        'query': {
+                            'type': 'string',
+                            'description': 'The query asked by the user',
+                        },
+                    },
+                    'required': [
+                        'query',
+                    ],
                 },
             ),
         ],
         function_call_params=components.PostConfigurationRequestFunctionCallParams.AUTO,
         force_function={
 
+        },
+        additional_properties={
+            'template': [
+                {
+                    'role': 'system',
+                    'content': 'You are a web search assistant.',
+                },
+                {
+                    'role': 'user',
+                    'content': '{{ query }}',
+                },
+            ],
         },
     ),
     env=[
@@ -105,9 +127,7 @@ req = components.PostConfigurationRequest(
         'user_picture': 'https://lh3.googleusercontent.com/a/ACg8ocLyQilNtK9RIv4M0p-0FBSbxljBP0p5JabnStku1AQKtFSK=s96-c',
         'user_email': 'dhruv@honeyhive.ai',
     },
-)
-
-res = s.configurations.create_configuration(req)
+))
 
 if res is not None:
     # handle response
@@ -129,7 +149,7 @@ if res is not None:
 
 | Error Object    | Status Code     | Content Type    |
 | --------------- | --------------- | --------------- |
-| errors.SDKError | 4x-5xx          | */*             |
+| errors.SDKError | 4xx-5xx         | */*             |
 
 ## update_configuration
 
@@ -160,7 +180,9 @@ res = s.configurations.update_configuration(id='<value>', put_configuration_requ
             'top_k': -1,
             'frequency_penalty': 0,
             'presence_penalty': 0,
-            'stop_sequences': '<value>',
+            'stop_sequences': [
+                '<value>',
+            ],
         },
         response_format=components.PutConfigurationRequestResponseFormat(),
         selected_functions=[
@@ -170,14 +192,33 @@ res = s.configurations.update_configuration(id='<value>', put_configuration_requ
                 description='Get information from Google when you do not have that information in your context',
                 parameters={
                     'type': 'object',
-                    'properties': '<value>',
-                    'required': '<value>',
+                    'properties': {
+                        'query': {
+                            'type': 'string',
+                            'description': 'The query asked by the user',
+                        },
+                    },
+                    'required': [
+                        'query',
+                    ],
                 },
             ),
         ],
         function_call_params=components.PutConfigurationRequestFunctionCallParams.AUTO,
         force_function={
 
+        },
+        additional_properties={
+            'template': [
+                {
+                    'role': 'system',
+                    'content': 'You are a web search assistant.',
+                },
+                {
+                    'role': 'user',
+                    'content': '{{ query }}',
+                },
+            ],
         },
     ),
     env=[
@@ -213,7 +254,7 @@ if res is not None:
 
 | Error Object    | Status Code     | Content Type    |
 | --------------- | --------------- | --------------- |
-| errors.SDKError | 4x-5xx          | */*             |
+| errors.SDKError | 4xx-5xx         | */*             |
 
 ## delete_configuration
 
@@ -251,4 +292,4 @@ if res is not None:
 
 | Error Object    | Status Code     | Content Type    |
 | --------------- | --------------- | --------------- |
-| errors.SDKError | 4x-5xx          | */*             |
+| errors.SDKError | 4xx-5xx         | */*             |
