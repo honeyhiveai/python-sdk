@@ -7,11 +7,13 @@ from enum import Enum
 from honeyhive import utils
 from typing import Optional
 
+
 class MetricEditType(str, Enum):
     r"""Type of the metric - \\"custom\\", \\"model\\" or \\"human\\" """
     CUSTOM = 'custom'
     MODEL = 'model'
     HUMAN = 'human'
+
 
 class MetricEditReturnType(str, Enum):
     r"""The data type of the metric value - \\"boolean\\", \\"float\\", \\"string\\" """
@@ -27,6 +29,7 @@ class MetricEditThreshold:
     min: Optional[float] = dataclasses.field(default=None, metadata={'dataclasses_json': { 'letter_case': utils.get_field_name('min'), 'exclude': lambda f: f is None }})
     max: Optional[float] = dataclasses.field(default=None, metadata={'dataclasses_json': { 'letter_case': utils.get_field_name('max'), 'exclude': lambda f: f is None }})
     
+
 
 
 class MetricEditEventType(str, Enum):

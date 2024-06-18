@@ -9,10 +9,12 @@ from enum import Enum
 from honeyhive import utils
 from typing import List, Optional
 
+
 class DatasetType(str, Enum):
     r"""What the dataset is to be used for - \\"evaluation\\" or \\"fine-tuning\\" """
     EVALUATION = 'evaluation'
     FINE_TUNING = 'fine-tuning'
+
 
 class PipelineType(str, Enum):
     r"""The type of data included in the dataset - \\"event\\" (default) or \\"session\\" """

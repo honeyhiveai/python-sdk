@@ -9,6 +9,7 @@ from enum import Enum
 from honeyhive import utils
 from typing import List, Optional
 
+
 class Type(str, Enum):
     r"""Type of the dataset - \\"evaluation\\" or \\"fine-tuning\\" """
     EVALUATION = 'evaluation'

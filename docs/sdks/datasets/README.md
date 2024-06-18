@@ -48,7 +48,7 @@ if res.object is not None:
 
 | Error Object    | Status Code     | Content Type    |
 | --------------- | --------------- | --------------- |
-| errors.SDKError | 4x-5xx          | */*             |
+| errors.SDKError | 4xx-5xx         | */*             |
 
 ## create_dataset
 
@@ -64,7 +64,8 @@ s = honeyhive.HoneyHive(
     bearer_auth="<YOUR_BEARER_TOKEN_HERE>",
 )
 
-req = components.CreateDatasetRequest(
+
+res = s.datasets.create_dataset(request=components.CreateDatasetRequest(
     project='New Project',
     name='test-dataset',
     description='A test dataset',
@@ -80,9 +81,7 @@ req = components.CreateDatasetRequest(
     metadata={
         'source': 'dev',
     },
-)
-
-res = s.datasets.create_dataset(req)
+))
 
 if res.object is not None:
     # handle response
@@ -104,7 +103,7 @@ if res.object is not None:
 
 | Error Object    | Status Code     | Content Type    |
 | --------------- | --------------- | --------------- |
-| errors.SDKError | 4x-5xx          | */*             |
+| errors.SDKError | 4xx-5xx         | */*             |
 
 ## update_dataset
 
@@ -120,7 +119,8 @@ s = honeyhive.HoneyHive(
     bearer_auth="<YOUR_BEARER_TOKEN_HERE>",
 )
 
-req = components.DatasetUpdate(
+
+res = s.datasets.update_dataset(request=components.DatasetUpdate(
     dataset_id='663876ec4611c47f4970f0c3',
     name='new-dataset-name',
     description='An updated dataset description',
@@ -134,9 +134,7 @@ req = components.DatasetUpdate(
         'updated': True,
         'source': 'prod',
     },
-)
-
-res = s.datasets.update_dataset(req)
+))
 
 if res is not None:
     # handle response
@@ -158,7 +156,7 @@ if res is not None:
 
 | Error Object    | Status Code     | Content Type    |
 | --------------- | --------------- | --------------- |
-| errors.SDKError | 4x-5xx          | */*             |
+| errors.SDKError | 4xx-5xx         | */*             |
 
 ## delete_dataset
 
@@ -196,7 +194,7 @@ if res is not None:
 
 | Error Object    | Status Code     | Content Type    |
 | --------------- | --------------- | --------------- |
-| errors.SDKError | 4x-5xx          | */*             |
+| errors.SDKError | 4xx-5xx         | */*             |
 
 ## add_datapoints
 
@@ -213,7 +211,25 @@ s = honeyhive.HoneyHive(
 )
 
 
-res = s.datasets.add_datapoints(dataset_id='<value>', request_body=operations.AddDatapointsRequestBody())
+res = s.datasets.add_datapoints(dataset_id='<value>', request_body=operations.AddDatapointsRequestBody(
+    project='<value>',
+    data=[
+        {
+            'key': '<value>',
+        },
+    ],
+    mapping=operations.Mapping(
+        inputs=[
+            '<value>',
+        ],
+        ground_truth=[
+            '<value>',
+        ],
+        history=[
+            '<value>',
+        ],
+    ),
+))
 
 if res.object is not None:
     # handle response
@@ -236,4 +252,4 @@ if res.object is not None:
 
 | Error Object    | Status Code     | Content Type    |
 | --------------- | --------------- | --------------- |
-| errors.SDKError | 4x-5xx          | */*             |
+| errors.SDKError | 4xx-5xx         | */*             |

@@ -7,6 +7,7 @@ from enum import Enum
 from honeyhive import utils
 from typing import Any, Dict, List, Optional
 
+
 class EventType(str, Enum):
     r"""Specify whether the event is of \\"session\\", \\"model\\", \\"tool\\" or \\"chain\\" type"""
     SESSION = 'session'

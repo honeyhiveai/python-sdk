@@ -12,7 +12,7 @@ from typing import Optional
 @dataclass_json(undefined=Undefined.EXCLUDE)
 @dataclasses.dataclass
 class CreateModelEventRequestBody:
-    event: Optional[components_createmodelevent.CreateModelEvent] = dataclasses.field(default=None, metadata={'dataclasses_json': { 'letter_case': utils.get_field_name('event'), 'exclude': lambda f: f is None }})
+    model_event: Optional[components_createmodelevent.CreateModelEvent] = dataclasses.field(default=None, metadata={'dataclasses_json': { 'letter_case': utils.get_field_name('model_event'), 'exclude': lambda f: f is None }})
     
 
 

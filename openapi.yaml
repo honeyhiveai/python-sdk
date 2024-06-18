@@ -106,6 +106,14 @@ paths:
                 outputs:
                   type: object
                   additionalProperties: true
+                config:
+                  type: object
+                  additionalProperties: true
+                user_properties:
+                  type: object
+                  additionalProperties: true
+                duration:
+                  type: number
               required:
               - event_id
             example:
@@ -122,6 +130,13 @@ paths:
               outputs:
                 role: assistant
                 content: Hello world
+              config:
+                template:
+                - role: system
+                  content: Hello, {{ name }}!
+              user_properties:
+                user_id: 691b1f94-d38c-4e92-b051-5e03fee9ff86
+              duration: 42
       responses:
         '200':
           description: Event updated
@@ -196,7 +211,7 @@ paths:
             schema:
               type: object
               properties:
-                event:
+                model_event:
                   $ref: '#/components/schemas/CreateModelEvent'
       responses:
         '200':
@@ -771,6 +786,10 @@ paths:
                   - inputs
                   - ground_truth
                   - history
+              required:
+              - project
+              - data
+              - mapping
       responses:
         '200':
           description: Successful addition
