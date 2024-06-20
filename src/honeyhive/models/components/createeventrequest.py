@@ -7,23 +7,12 @@ from enum import Enum
 from honeyhive import utils
 from typing import Any, Dict, List, Optional
 
+
 class CreateEventRequestEventType(str, Enum):
     r"""Specify whether the event is of \\"model\\", \\"tool\\" or \\"chain\\" type"""
     MODEL = 'model'
     TOOL = 'tool'
     CHAIN = 'chain'
-
-
-@dataclass_json(undefined=Undefined.EXCLUDE)
-@dataclasses.dataclass
-class CreateEventRequestInputs:
-    r"""Input JSON given to the event - prompt, chunks, etc"""
-    UNSET='__SPEAKEASY_UNSET__'
-    chat_history: Optional[List[Dict[str, Any]]] = dataclasses.field(default=None, metadata={'dataclasses_json': { 'letter_case': utils.get_field_name('chat_history'), 'exclude': lambda f: f is None }})
-    r"""Messages passed to the model"""
-    additional_properties: Optional[Dict[str, Any]] = dataclasses.field(default=None, metadata={'dataclasses_json': { 'exclude': lambda f: f is None }})
-    
-
 
 
 @dataclass_json(undefined=Undefined.EXCLUDE)
@@ -39,7 +28,7 @@ class CreateEventRequest:
     r"""Specify whether the event is of \\"model\\", \\"tool\\" or \\"chain\\" type"""
     config: Dict[str, Any] = dataclasses.field(metadata={'dataclasses_json': { 'letter_case': utils.get_field_name('config') }})
     r"""Associated configuration JSON for the event - model name, vector index name, etc"""
-    inputs: CreateEventRequestInputs = dataclasses.field(metadata={'dataclasses_json': { 'letter_case': utils.get_field_name('inputs') }})
+    inputs: Dict[str, Any] = dataclasses.field(metadata={'dataclasses_json': { 'letter_case': utils.get_field_name('inputs') }})
     r"""Input JSON given to the event - prompt, chunks, etc"""
     duration: float = dataclasses.field(metadata={'dataclasses_json': { 'letter_case': utils.get_field_name('duration') }})
     r"""How long the event took in milliseconds"""

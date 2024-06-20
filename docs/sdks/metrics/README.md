@@ -44,7 +44,7 @@ if res.metrics is not None:
 
 | Error Object    | Status Code     | Content Type    |
 | --------------- | --------------- | --------------- |
-| errors.SDKError | 4x-5xx          | */*             |
+| errors.SDKError | 4xx-5xx         | */*             |
 
 ## create_metric
 
@@ -60,15 +60,14 @@ s = honeyhive.HoneyHive(
     bearer_auth="<YOUR_BEARER_TOKEN_HERE>",
 )
 
-req = components.Metric(
+
+res = s.metrics.create_metric(request=components.Metric(
     name='<value>',
     task='<value>',
     type=components.MetricType.MODEL,
     description='Fully-configurable neutral framework',
     return_type=components.ReturnType.STRING,
-)
-
-res = s.metrics.create_metric(req)
+))
 
 if res is not None:
     # handle response
@@ -90,7 +89,7 @@ if res is not None:
 
 | Error Object    | Status Code     | Content Type    |
 | --------------- | --------------- | --------------- |
-| errors.SDKError | 4x-5xx          | */*             |
+| errors.SDKError | 4xx-5xx         | */*             |
 
 ## update_metric
 
@@ -106,11 +105,10 @@ s = honeyhive.HoneyHive(
     bearer_auth="<YOUR_BEARER_TOKEN_HERE>",
 )
 
-req = components.MetricEdit(
-    metric_id='<value>',
-)
 
-res = s.metrics.update_metric(req)
+res = s.metrics.update_metric(request=components.MetricEdit(
+    metric_id='<value>',
+))
 
 if res is not None:
     # handle response
@@ -132,7 +130,7 @@ if res is not None:
 
 | Error Object    | Status Code     | Content Type    |
 | --------------- | --------------- | --------------- |
-| errors.SDKError | 4x-5xx          | */*             |
+| errors.SDKError | 4xx-5xx         | */*             |
 
 ## delete_metric
 
@@ -170,4 +168,4 @@ if res is not None:
 
 | Error Object    | Status Code     | Content Type    |
 | --------------- | --------------- | --------------- |
-| errors.SDKError | 4x-5xx          | */*             |
+| errors.SDKError | 4xx-5xx         | */*             |

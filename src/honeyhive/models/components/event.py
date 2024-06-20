@@ -7,24 +7,13 @@ from enum import Enum
 from honeyhive import utils
 from typing import Any, Dict, List, Optional
 
+
 class EventType(str, Enum):
     r"""Specify whether the event is of \\"session\\", \\"model\\", \\"tool\\" or \\"chain\\" type"""
     SESSION = 'session'
     MODEL = 'model'
     TOOL = 'tool'
     CHAIN = 'chain'
-
-
-@dataclass_json(undefined=Undefined.EXCLUDE)
-@dataclasses.dataclass
-class Inputs:
-    r"""Input JSON given to the event - prompt, chunks, etc"""
-    UNSET='__SPEAKEASY_UNSET__'
-    chat_history: Optional[List[Dict[str, Any]]] = dataclasses.field(default=None, metadata={'dataclasses_json': { 'letter_case': utils.get_field_name('chat_history'), 'exclude': lambda f: f is None }})
-    r"""Messages passed to the model"""
-    additional_properties: Optional[Dict[str, Any]] = dataclasses.field(default=None, metadata={'dataclasses_json': { 'exclude': lambda f: f is None }})
-    
-
 
 
 @dataclass_json(undefined=Undefined.EXCLUDE)
@@ -48,7 +37,7 @@ class Event:
     r"""Id of events that are nested within the event"""
     config: Optional[Dict[str, Any]] = dataclasses.field(default=None, metadata={'dataclasses_json': { 'letter_case': utils.get_field_name('config'), 'exclude': lambda f: f is None }})
     r"""Associated configuration JSON for the event - model name, vector index name, etc"""
-    inputs: Optional[Inputs] = dataclasses.field(default=None, metadata={'dataclasses_json': { 'letter_case': utils.get_field_name('inputs'), 'exclude': lambda f: f is None }})
+    inputs: Optional[Dict[str, Any]] = dataclasses.field(default=None, metadata={'dataclasses_json': { 'letter_case': utils.get_field_name('inputs'), 'exclude': lambda f: f is None }})
     r"""Input JSON given to the event - prompt, chunks, etc"""
     outputs: Optional[Dict[str, Any]] = dataclasses.field(default=None, metadata={'dataclasses_json': { 'letter_case': utils.get_field_name('outputs'), 'exclude': lambda f: f is None }})
     r"""Final output JSON of the event"""

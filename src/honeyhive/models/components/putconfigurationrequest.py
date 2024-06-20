@@ -7,6 +7,7 @@ from enum import Enum
 from honeyhive import utils
 from typing import Any, Dict, List, Optional
 
+
 class PutConfigurationRequestCallType(str, Enum):
     r"""Type of API calling - \\"chat\\" or \\"completion\\" """
     CHAT = 'chat'
@@ -34,6 +35,7 @@ class PutConfigurationRequestSelectedFunctions:
     
 
 
+
 class PutConfigurationRequestFunctionCallParams(str, Enum):
     r"""Function calling mode - \\"none\\", \\"auto\\" or \\"force\\" """
     NONE = 'none'
@@ -44,7 +46,6 @@ class PutConfigurationRequestFunctionCallParams(str, Enum):
 @dataclass_json(undefined=Undefined.EXCLUDE)
 @dataclasses.dataclass
 class PutConfigurationRequestParameters:
-    UNSET='__SPEAKEASY_UNSET__'
     call_type: PutConfigurationRequestCallType = dataclasses.field(metadata={'dataclasses_json': { 'letter_case': utils.get_field_name('call_type') }})
     r"""Type of API calling - \\"chat\\" or \\"completion\\" """
     model: str = dataclasses.field(metadata={'dataclasses_json': { 'letter_case': utils.get_field_name('model') }})
@@ -63,10 +64,12 @@ class PutConfigurationRequestParameters:
     
 
 
+
 class PutConfigurationRequestEnv(str, Enum):
     DEV = 'dev'
     STAGING = 'staging'
     PROD = 'prod'
+
 
 class PutConfigurationRequestType(str, Enum):
     r"""Type of the configuration - \\"LLM\\" or \\"pipeline\\" - \\"LLM\\" by default"""
