@@ -44,7 +44,7 @@ if res.projects is not None:
 
 | Error Object    | Status Code     | Content Type    |
 | --------------- | --------------- | --------------- |
-| errors.SDKError | 4x-5xx          | */*             |
+| errors.SDKError | 4xx-5xx         | */*             |
 
 ## create_project
 
@@ -60,11 +60,10 @@ s = honeyhive.HoneyHive(
     bearer_auth="<YOUR_BEARER_TOKEN_HERE>",
 )
 
-req = components.CreateProjectRequest(
-    name='<value>',
-)
 
-res = s.projects.create_project(req)
+res = s.projects.create_project(request=components.CreateProjectRequest(
+    name='<value>',
+))
 
 if res.project is not None:
     # handle response
@@ -86,7 +85,7 @@ if res.project is not None:
 
 | Error Object    | Status Code     | Content Type    |
 | --------------- | --------------- | --------------- |
-| errors.SDKError | 4x-5xx          | */*             |
+| errors.SDKError | 4xx-5xx         | */*             |
 
 ## update_project
 
@@ -102,11 +101,10 @@ s = honeyhive.HoneyHive(
     bearer_auth="<YOUR_BEARER_TOKEN_HERE>",
 )
 
-req = components.UpdateProjectRequest(
-    project_id='<value>',
-)
 
-res = s.projects.update_project(req)
+res = s.projects.update_project(request=components.UpdateProjectRequest(
+    project_id='<value>',
+))
 
 if res is not None:
     # handle response
@@ -128,7 +126,7 @@ if res is not None:
 
 | Error Object    | Status Code     | Content Type    |
 | --------------- | --------------- | --------------- |
-| errors.SDKError | 4x-5xx          | */*             |
+| errors.SDKError | 4xx-5xx         | */*             |
 
 ## delete_project
 
@@ -166,4 +164,4 @@ if res is not None:
 
 | Error Object    | Status Code     | Content Type    |
 | --------------- | --------------- | --------------- |
-| errors.SDKError | 4x-5xx          | */*             |
+| errors.SDKError | 4xx-5xx         | */*             |

@@ -7,11 +7,13 @@ from enum import Enum
 from honeyhive import utils
 from typing import Any, Dict, List, Optional
 
+
 class Env(str, Enum):
     r"""Environment - \\"dev\\", \\"staging\\" or \\"prod\\" """
     DEV = 'dev'
     STAGING = 'staging'
     PROD = 'prod'
+
 
 class CallType(str, Enum):
     r"""Type of API calling - \\"chat\\" or \\"completion\\" """
@@ -40,6 +42,7 @@ class SelectedFunctions:
     
 
 
+
 class FunctionCallParams(str, Enum):
     r"""Function calling mode - \\"none\\", \\"auto\\" or \\"force\\" """
     NONE = 'none'
@@ -50,7 +53,6 @@ class FunctionCallParams(str, Enum):
 @dataclass_json(undefined=Undefined.EXCLUDE)
 @dataclasses.dataclass
 class Parameters:
-    UNSET='__SPEAKEASY_UNSET__'
     call_type: CallType = dataclasses.field(metadata={'dataclasses_json': { 'letter_case': utils.get_field_name('call_type') }})
     r"""Type of API calling - \\"chat\\" or \\"completion\\" """
     model: str = dataclasses.field(metadata={'dataclasses_json': { 'letter_case': utils.get_field_name('model') }})
@@ -67,6 +69,7 @@ class Parameters:
     r"""Force function-specific parameters"""
     additional_properties: Optional[Dict[str, Any]] = dataclasses.field(default=None, metadata={'dataclasses_json': { 'exclude': lambda f: f is None }})
     
+
 
 
 class ConfigurationType(str, Enum):

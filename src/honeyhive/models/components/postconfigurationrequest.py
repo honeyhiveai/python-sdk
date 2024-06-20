@@ -7,6 +7,7 @@ from enum import Enum
 from honeyhive import utils
 from typing import Any, Dict, List, Optional
 
+
 class PostConfigurationRequestCallType(str, Enum):
     r"""Type of API calling - \\"chat\\" or \\"completion\\" """
     CHAT = 'chat'
@@ -34,6 +35,7 @@ class PostConfigurationRequestSelectedFunctions:
     
 
 
+
 class PostConfigurationRequestFunctionCallParams(str, Enum):
     r"""Function calling mode - \\"none\\", \\"auto\\" or \\"force\\" """
     NONE = 'none'
@@ -44,7 +46,6 @@ class PostConfigurationRequestFunctionCallParams(str, Enum):
 @dataclass_json(undefined=Undefined.EXCLUDE)
 @dataclasses.dataclass
 class PostConfigurationRequestParameters:
-    UNSET='__SPEAKEASY_UNSET__'
     call_type: PostConfigurationRequestCallType = dataclasses.field(metadata={'dataclasses_json': { 'letter_case': utils.get_field_name('call_type') }})
     r"""Type of API calling - \\"chat\\" or \\"completion\\" """
     model: str = dataclasses.field(metadata={'dataclasses_json': { 'letter_case': utils.get_field_name('model') }})
@@ -61,6 +62,7 @@ class PostConfigurationRequestParameters:
     r"""Force function-specific parameters"""
     additional_properties: Optional[Dict[str, Any]] = dataclasses.field(default=None, metadata={'dataclasses_json': { 'exclude': lambda f: f is None }})
     
+
 
 
 class PostConfigurationRequestEnv(str, Enum):
