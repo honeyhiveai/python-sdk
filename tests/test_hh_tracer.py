@@ -109,9 +109,8 @@ def test_tracer():
     assert res.object is not None
     assert len(res.object.events) == 1
     event = res.object.events[0]
-    # assert event.inputs is not None
-    # print(event.inputs)
-    # assert "_params_" in event.inputs.additional_properties
+    assert event.inputs is not None
+    assert "_params_" in event.inputs
     assert event.outputs is not None
     assert "result" in event.outputs
     assert event.config.get("thing") == "stuff"
@@ -189,7 +188,6 @@ def test_tracer():
     assert res.object is not None
     assert len(res.object.events) > 1
 
-"""
 def test_tracer_metadata_update():
     run_tracer()
 
@@ -319,4 +317,3 @@ def test_distributed_tracing():
     assert res.status_code == 200
     assert res.object is not None
     assert len(res.object.events) > prev_event_count
-"""
