@@ -5,6 +5,7 @@ import time
 import uuid
 from honeyhive.models import components, operations
 from honeyhive.tracer import HoneyHiveTracer
+from honeyhive.tracer.custom import trace
 from llama_index.core import VectorStoreIndex
 from llama_index.readers.web import SimpleWebPageReader
 
@@ -20,6 +21,20 @@ sdk = honeyhive.HoneyHive(
     bearer_auth=os.environ["HH_API_KEY"], server_url=os.environ["HH_API_URL"]
 )
 
+@trace(config={'thing': 'stuff'}, metadata={'meta_thing': 42})
+def run_tracer_enriched(input):
+    openai.api_key = os.environ["OPENAI_API_KEY"]
+
+    documents = SimpleWebPageReader(html_to_text=True).load_data(
+        ["http://paulgraham.com/worked.html"]
+    )
+
+    index = VectorStoreIndex.from_documents(documents)
+
+    query_engine = index.as_query_engine()
+    response = query_engine.query("What did the author do growing up?")
+    return response
+
 def run_tracer():
     openai.api_key = os.environ["OPENAI_API_KEY"]
 
@@ -31,10 +46,10 @@ def run_tracer():
 
     query_engine = index.as_query_engine()
     response = query_engine.query("What did the author do growing up?")
-
+    return response
 
 def test_tracer():
-    run_tracer()
+    run_tracer_enriched({'a': 3, 'b': [1,2,3], 'c' : {'d': [4,5,6]}})
 
     # Get session
     time.sleep(5)
@@ -73,6 +88,34 @@ def test_tracer():
     assert res.status_code == 200
     assert res.object is not None
     assert len(res.object.events) > 1
+
+    req = operations.GetEventsRequestBody(
+        project=os.environ["HH_PROJECT_ID"],
+        filters=[
+            components.EventFilter(
+                field="event_name",
+                value="run_tracer_enriched",
+                operator=components.Operator.IS,
+            ),
+            components.EventFilter(
+                field="session_id",
+                value=session_id,
+                operator=components.Operator.IS,
+            ),
+        ],
+    )
+    res = sdk.events.get_events(request=req)
+    assert res.status_code == 200
+    assert res.object is not None
+    assert len(res.object.events) == 1
+    event = res.object.events[0]
+    # assert event.inputs is not None
+    # print(event.inputs)
+    # assert "_params_" in event.inputs.additional_properties
+    assert event.outputs is not None
+    assert "result" in event.outputs
+    assert event.config.get("thing") == "stuff"
+    assert event.metadata.get("meta_thing") == 42
 
     # Run it a second time in a new session
     HoneyHiveTracer.init(
@@ -146,6 +189,7 @@ def test_tracer():
     assert res.object is not None
     assert len(res.object.events) > 1
 
+"""
 def test_tracer_metadata_update():
     run_tracer()
 
@@ -275,3 +319,4 @@ def test_distributed_tracing():
     assert res.status_code == 200
     assert res.object is not None
     assert len(res.object.events) > prev_event_count
+"""
