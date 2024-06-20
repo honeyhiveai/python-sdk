@@ -40,7 +40,7 @@ def test_post_event():
             event_name="Python SDK Test Event",
             event_type=components.CreateEventRequestEventType.TOOL,
             config={},
-            inputs=components.CreateEventRequestInputs(),
+            inputs={},
             duration=0,
         )
     )
