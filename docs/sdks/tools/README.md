@@ -38,7 +38,7 @@ if res.tools is not None:
 
 | Error Object    | Status Code     | Content Type    |
 | --------------- | --------------- | --------------- |
-| errors.SDKError | 4x-5xx          | */*             |
+| errors.SDKError | 4xx-5xx         | */*             |
 
 ## create_tool
 
@@ -54,16 +54,15 @@ s = honeyhive.HoneyHive(
     bearer_auth="<YOUR_BEARER_TOKEN_HERE>",
 )
 
-req = components.CreateToolRequest(
+
+res = s.tools.create_tool(request=components.CreateToolRequest(
     task='<value>',
     name='<value>',
     parameters={
         'key': '<value>',
     },
     type=components.CreateToolRequestType.TOOL,
-)
-
-res = s.tools.create_tool(req)
+))
 
 if res.object is not None:
     # handle response
@@ -85,7 +84,7 @@ if res.object is not None:
 
 | Error Object    | Status Code     | Content Type    |
 | --------------- | --------------- | --------------- |
-| errors.SDKError | 4x-5xx          | */*             |
+| errors.SDKError | 4xx-5xx         | */*             |
 
 ## update_tool
 
@@ -101,15 +100,14 @@ s = honeyhive.HoneyHive(
     bearer_auth="<YOUR_BEARER_TOKEN_HERE>",
 )
 
-req = components.UpdateToolRequest(
+
+res = s.tools.update_tool(request=components.UpdateToolRequest(
     id='<id>',
     name='<value>',
     parameters={
         'key': '<value>',
     },
-)
-
-res = s.tools.update_tool(req)
+))
 
 if res is not None:
     # handle response
@@ -131,7 +129,7 @@ if res is not None:
 
 | Error Object    | Status Code     | Content Type    |
 | --------------- | --------------- | --------------- |
-| errors.SDKError | 4x-5xx          | */*             |
+| errors.SDKError | 4xx-5xx         | */*             |
 
 ## delete_tool
 
@@ -169,4 +167,4 @@ if res is not None:
 
 | Error Object    | Status Code     | Content Type    |
 | --------------- | --------------- | --------------- |
-| errors.SDKError | 4x-5xx          | */*             |
+| errors.SDKError | 4xx-5xx         | */*             |

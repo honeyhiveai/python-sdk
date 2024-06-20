@@ -25,11 +25,11 @@ class Mapping:
 @dataclass_json(undefined=Undefined.EXCLUDE)
 @dataclasses.dataclass
 class AddDatapointsRequestBody:
-    project: Optional[str] = dataclasses.field(default=None, metadata={'dataclasses_json': { 'letter_case': utils.get_field_name('project'), 'exclude': lambda f: f is None }})
+    project: str = dataclasses.field(metadata={'dataclasses_json': { 'letter_case': utils.get_field_name('project') }})
     r"""Name of the project associated with this dataset like `New Project`"""
-    data: Optional[List[Dict[str, Any]]] = dataclasses.field(default=None, metadata={'dataclasses_json': { 'letter_case': utils.get_field_name('data'), 'exclude': lambda f: f is None }})
+    data: List[Dict[str, Any]] = dataclasses.field(metadata={'dataclasses_json': { 'letter_case': utils.get_field_name('data') }})
     r"""List of JSON objects to be added as datapoints"""
-    mapping: Optional[Mapping] = dataclasses.field(default=None, metadata={'dataclasses_json': { 'letter_case': utils.get_field_name('mapping'), 'exclude': lambda f: f is None }})
+    mapping: Mapping = dataclasses.field(metadata={'dataclasses_json': { 'letter_case': utils.get_field_name('mapping') }})
     r"""Mapping of keys in the data object to be used as inputs, ground truth, and history, everything else goes into metadata"""
     
 
