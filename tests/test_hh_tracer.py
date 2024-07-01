@@ -21,8 +21,9 @@ sdk = honeyhive.HoneyHive(
     bearer_auth=os.environ["HH_API_KEY"], server_url=os.environ["HH_API_URL"]
 )
 
-@trace(config={'thing': 'stuff'}, metadata={'meta_thing': 42})
-def run_tracer_enriched(input):
+
+@trace(config={"thing": "stuff"}, metadata={"meta_thing": 42})
+def run_tracer_enriched(input, prompt_template):
     openai.api_key = os.environ["OPENAI_API_KEY"]
 
     documents = SimpleWebPageReader(html_to_text=True).load_data(
@@ -32,8 +33,9 @@ def run_tracer_enriched(input):
     index = VectorStoreIndex.from_documents(documents)
 
     query_engine = index.as_query_engine()
-    response = query_engine.query("What did the author do growing up?")
+    response = query_engine.query(prompt_template["prompt"][0]["content"])
     return response
+
 
 def run_tracer():
     openai.api_key = os.environ["OPENAI_API_KEY"]
@@ -48,8 +50,19 @@ def run_tracer():
     response = query_engine.query("What did the author do growing up?")
     return response
 
+
 def test_tracer():
-    run_tracer_enriched({'a': 3, 'b': [1,2,3], 'c' : {'d': [4,5,6]}})
+    run_tracer_enriched(
+        {"a": 3, "b": [1, 2, 3], "c": {"d": [4, 5, 6]}},
+        {
+            "template": [
+                {"role": "user", "content": "What did {{subject}} do {{participial}}?"}
+            ],
+            "prompt": [
+                {"role": "user", "content": "What did the author do growing up?"}
+            ],
+        },
+    )
 
     # Get session
     time.sleep(5)
@@ -149,8 +162,8 @@ def test_tracer():
 
     new_session_id = None
     for event in res.object.events:
-      if event.session_id is not None and event.session_id != session_id:
-        new_session_id = event.session_id
+        if event.session_id is not None and event.session_id != session_id:
+            new_session_id = event.session_id
     assert new_session_id is not None
 
     req = operations.GetEventsRequestBody(
@@ -188,10 +201,11 @@ def test_tracer():
     assert res.object is not None
     assert len(res.object.events) > 1
 
+
 def test_tracer_metadata_update():
     run_tracer()
 
-    HoneyHiveTracer.set_metadata({ "test": "value" })
+    HoneyHiveTracer.set_metadata({"test": "value"})
 
     session_id = HoneyHiveTracer.session_id
     req = operations.GetEventsRequestBody(
@@ -215,12 +229,13 @@ def test_tracer_metadata_update():
     assert len(res.object.events) == 1
 
     logged_event = res.object.events[0]
-    assert logged_event.metadata == { "test": "value" }
+    assert logged_event.metadata == {"test": "value"}
+
 
 def test_tracer_feedback_update():
     run_tracer()
 
-    HoneyHiveTracer.set_feedback({ "comment": "test feedback" })
+    HoneyHiveTracer.set_feedback({"comment": "test feedback"})
 
     time.sleep(5)
 
@@ -246,12 +261,13 @@ def test_tracer_feedback_update():
     assert len(res.object.events) == 1
 
     logged_event = res.object.events[0]
-    assert logged_event.feedback == { "comment": "test feedback" }
+    assert logged_event.feedback == {"comment": "test feedback"}
+
 
 def test_tracer_evaluator_update():
     run_tracer()
 
-    HoneyHiveTracer.set_metric({ "tps": 1.78 })
+    HoneyHiveTracer.set_metric({"tps": 1.78})
 
     session_id = HoneyHiveTracer.session_id
     req = operations.GetEventsRequestBody(
@@ -275,7 +291,8 @@ def test_tracer_evaluator_update():
     assert len(res.object.events) == 1
 
     logged_event = res.object.events[0]
-    assert logged_event.metrics == { "tps": 1.78 }
+    assert logged_event.metrics == {"tps": 1.78}
+
 
 def test_distributed_tracing():
     pre_existing_session_id = "fb0a4180-c998-45a6-ba0a-b19bf46e966b"
