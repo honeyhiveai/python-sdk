@@ -16,6 +16,7 @@ class HoneyHiveTracer:
         session_name,
         source,
         server_url="https://api.honeyhive.ai",
+        disable_batch=False,
     ):
         try:
             session_id = HoneyHiveTracer.__start_session(
@@ -26,6 +27,7 @@ class HoneyHiveTracer:
                     api_endpoint=f"{server_url}/opentelemetry",
                     api_key=api_key,
                     metrics_exporter=ConsoleMetricExporter(out=open(os.devnull, "w")),
+                    disable_batch=disable_batch,
                 )
                 HoneyHiveTracer._is_traceloop_initialized = True
             Traceloop.set_association_properties({"session_id": session_id})
