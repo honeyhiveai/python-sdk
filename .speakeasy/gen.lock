@@ -1,12 +1,12 @@
 lockVersion: 2.0.0
 id: b027cebf-3475-4e9b-8070-6f08b389f6ed
 management:
-  docChecksum: fbfe26308ed66ab751c99533c3149a24
-  docVersion: 1.0.1
-  speakeasyVersion: 1.310.0
-  generationVersion: 2.347.4
-  releaseVersion: 0.13.0
-  configChecksum: 747ac86b7f1b2142683d46b105d63742
+  docChecksum: e7172ad1fdf98934b580c71825d3e481
+  docVersion: 1.0.2
+  speakeasyVersion: 1.340.0
+  generationVersion: 2.375.5
+  releaseVersion: 0.14.0
+  configChecksum: 23a632da3cf54bfcfaaeab277e04bec0
   repoURL: https://github.com/honeyhiveai/python-sdk.git
   repoSubDirectory: .
   installationURL: https://github.com/honeyhiveai/python-sdk.git
@@ -15,7 +15,7 @@ features:
   python:
     additionalDependencies: 0.1.0
     additionalProperties: 0.1.0
-    core: 4.6.11
+    core: 4.8.2
     flattening: 2.81.1
     globalSecurity: 2.83.5
     globalSecurityCallbacks: 0.1.0
@@ -297,3 +297,4 @@ generatedFiles:
   - src/honeyhive/_hooks/sdkhooks.py
   - src/honeyhive/_hooks/types.py
   - src/honeyhive/_hooks/__init__.py
+  - CONTRIBUTING.md

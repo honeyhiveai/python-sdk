@@ -28,6 +28,8 @@ class GetEventsRequestBody:
     r"""Name of the project associated with the event like `New Project`"""
     filters: List[components_eventfilter.EventFilter] = dataclasses.field(metadata={'dataclasses_json': { 'letter_case': utils.get_field_name('filters') }})
     date_range: Optional[DateRange] = dataclasses.field(default=None, metadata={'dataclasses_json': { 'letter_case': utils.get_field_name('dateRange'), 'exclude': lambda f: f is None }})
+    projections: Optional[List[str]] = dataclasses.field(default=None, metadata={'dataclasses_json': { 'letter_case': utils.get_field_name('projections'), 'exclude': lambda f: f is None }})
+    r"""Fields to include in the response"""
     limit: Optional[float] = dataclasses.field(default=None, metadata={'dataclasses_json': { 'letter_case': utils.get_field_name('limit'), 'exclude': lambda f: f is None }})
     r"""Limit number of results to speed up query (default is 1000, max is 7500)"""
     page: Optional[float] = dataclasses.field(default=None, metadata={'dataclasses_json': { 'letter_case': utils.get_field_name('page'), 'exclude': lambda f: f is None }})

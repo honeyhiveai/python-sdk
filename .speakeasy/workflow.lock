@@ -1,19 +1,18 @@
-speakeasyVersion: 1.295.1
+speakeasyVersion: 1.340.0
 sources:
     my-source:
         sourceNamespace: my-source
-        sourceRevisionDigest: sha256:117389842f478d8d62f45c1b4c55fb00d95db2f5bc4e3adb7de983b17dc2cc44
-        sourceBlobDigest: sha256:a06a05da7948e697fefb8b21b4cd7f11d5fa6f0b385fb5bb607c2d6dd9781598
+        sourceRevisionDigest: sha256:ba0ba8b18389fc63158d0216dbc50238a66fd83e7a37ca94d01981878fbecd16
+        sourceBlobDigest: sha256:5084a096603574c78bfb312482439befe187cdb3a40fafc04456d2067f4cb947
         tags:
             - latest
-            - span-enrichment
 targets:
     honeyhive:
         source: my-source
         sourceNamespace: my-source
-        sourceRevisionDigest: sha256:117389842f478d8d62f45c1b4c55fb00d95db2f5bc4e3adb7de983b17dc2cc44
-        sourceBlobDigest: sha256:a06a05da7948e697fefb8b21b4cd7f11d5fa6f0b385fb5bb607c2d6dd9781598
-        outLocation: /github/workspace/repo
+        sourceRevisionDigest: sha256:ba0ba8b18389fc63158d0216dbc50238a66fd83e7a37ca94d01981878fbecd16
+        sourceBlobDigest: sha256:5084a096603574c78bfb312482439befe187cdb3a40fafc04456d2067f4cb947
+        outLocation: /Users/dhruvsingh/honeyhive/python-sdk
 workflow:
     workflowVersion: 1.0.0
     speakeasyVersion: latest
