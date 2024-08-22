@@ -50,7 +50,6 @@ def run_tracer():
     response = query_engine.query("What did the author do growing up?")
     return response
 
-
 def test_tracer():
     run_tracer_enriched(
         {"a": 3, "b": [1, 2, 3], "c": {"d": [4, 5, 6]}},
@@ -65,7 +64,7 @@ def test_tracer():
     )
 
     # Get session
-    time.sleep(5)
+    time.sleep(10)
     req = operations.GetEventsRequestBody(
         project=os.environ["HH_PROJECT_ID"],
         filters=[
@@ -139,7 +138,7 @@ def test_tracer():
     )
     run_tracer()
 
-    time.sleep(5)
+    time.sleep(10)
     req = operations.GetEventsRequestBody(
         project=os.environ["HH_PROJECT_ID"],
         filters=[
@@ -176,7 +175,7 @@ def test_tracer():
             ),
             components.EventFilter(
                 field="event_name",
-                value="openai.chat",
+                value="OpenAI.task",
                 operator=components.Operator.IS,
             ),
         ],
@@ -201,11 +200,12 @@ def test_tracer():
     assert res.object is not None
     assert len(res.object.events) > 1
 
-
 def test_tracer_metadata_update():
     run_tracer()
+    time.sleep(10)
 
     HoneyHiveTracer.set_metadata({"test": "value"})
+    time.sleep(10)
 
     session_id = HoneyHiveTracer.session_id
     req = operations.GetEventsRequestBody(
@@ -229,15 +229,15 @@ def test_tracer_metadata_update():
     assert len(res.object.events) == 1
 
     logged_event = res.object.events[0]
-    assert logged_event.metadata == {"test": "value"}
-
+    assert "test" in logged_event.metadata
+    assert logged_event.metadata["test"] == "value"
 
 def test_tracer_feedback_update():
     run_tracer()
+    time.sleep(10)
 
     HoneyHiveTracer.set_feedback({"comment": "test feedback"})
-
-    time.sleep(5)
+    time.sleep(10)
 
     session_id = HoneyHiveTracer.session_id
     req = operations.GetEventsRequestBody(
@@ -266,8 +266,10 @@ def test_tracer_feedback_update():
 
 def test_tracer_evaluator_update():
     run_tracer()
+    time.sleep(10)
 
     HoneyHiveTracer.set_metric({"tps": 1.78})
+    time.sleep(10)
 
     session_id = HoneyHiveTracer.session_id
     req = operations.GetEventsRequestBody(

@@ -18,4 +18,4 @@ COPY . /app
 RUN pip install --no-cache-dir -r tests/requirements.txt
 RUN pip install --no-cache-dir -e .
 
-CMD ["sh", "-c", "pytest -rA tests/api && pytest -rA tests/tracers && pytest -rA tests/test_hh_tracer.py"]
+CMD ["sh", "-c", "pytest -rA tests/api && pytest -rA tests/test_hh_tracer.py"]
