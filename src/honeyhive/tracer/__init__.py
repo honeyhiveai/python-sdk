@@ -3,6 +3,8 @@ import os
 from honeyhive.models import components, operations
 from opentelemetry.sdk.metrics.export import ConsoleMetricExporter
 from traceloop.sdk import Traceloop
+from traceloop.sdk.tracing.tracing import TracerWrapper
+
 
 class HoneyHiveTracer:
     _is_traceloop_initialized = False
@@ -80,8 +82,7 @@ class HoneyHiveTracer:
             sdk = honeyhive.HoneyHive(HoneyHiveTracer.api_key)
             sdk.events.update_event(
                 request=operations.UpdateEventRequestBody(
-                    event_id=session_id,
-                    feedback=feedback
+                    event_id=session_id, feedback=feedback
                 )
             )
         except:
@@ -112,9 +113,12 @@ class HoneyHiveTracer:
             sdk = honeyhive.HoneyHive(HoneyHiveTracer.api_key)
             sdk.events.update_event(
                 request=operations.UpdateEventRequestBody(
-                    event_id=session_id,
-                    metadata=metadata
+                    event_id=session_id, metadata=metadata
                 )
             )
         except:
             pass
+
+    @staticmethod
+    def flush():
+        TracerWrapper().flush()
