@@ -1,6 +1,7 @@
 import honeyhive
 import os
 from honeyhive.models import components, operations
+from honeyhive.utils.telemetry import Telemetry
 from opentelemetry.sdk.metrics.export import ConsoleMetricExporter
 from traceloop.sdk import Traceloop
 from traceloop.sdk.tracing.tracing import TracerWrapper
@@ -21,6 +22,7 @@ class HoneyHiveTracer:
         disable_batch=False,
     ):
         try:
+            Telemetry().capture("tracer_init")
             session_id = HoneyHiveTracer.__start_session(
                 api_key, project, session_name, source, server_url
             )
