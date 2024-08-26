@@ -22,10 +22,10 @@ class HoneyHiveTracer:
         disable_batch=False,
     ):
         try:
-            Telemetry().capture("tracer_init")
             session_id = HoneyHiveTracer.__start_session(
                 api_key, project, session_name, source, server_url
             )
+            Telemetry().capture("tracer_init", { "hhai_session_id": session_id })
             if not HoneyHiveTracer._is_traceloop_initialized:
                 Traceloop.init(
                     api_endpoint=f"{server_url}/opentelemetry",
