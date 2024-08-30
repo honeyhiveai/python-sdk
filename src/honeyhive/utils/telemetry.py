@@ -8,7 +8,7 @@ import requests
 from posthog import Posthog
 import pkg_resources
 
-POSTHOG_API_KEY = "phc_KcTsebtDijhneE25BxiqXoG2W2pJ8rNJUJel2fy7KqR"
+POSTHOG_API_KEY = "phc_yeqaIP07fjwZ5n3w47wPtSz7G58igfczuQ9X3zKhuxa"
 
 class Telemetry:
     ANON_ID_PATH = str(Path.home() / ".cache" / "honeyhive" / "telemetry_anon_id")
