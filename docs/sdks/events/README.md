@@ -1,6 +1,8 @@
 # Events
 (*events*)
 
+## Overview
+
 ### Available Operations
 
 * [create_event](#create_event) - Create a new event
@@ -49,9 +51,9 @@ res = s.events.create_event(request=operations.CreateEventRequestBody(
             'template': [
                 {
                     'role': 'system',
-                    'content': 'Answer the user\'s question only using provided context.
-
-                    Context: {{ context }}',
+                    'content': 'Answer the user\'s question only using provided context.\n' +
+                    '\n' +
+                    'Context: {{ context }}',
                 },
                 {
                     'role': 'user',
@@ -66,9 +68,9 @@ res = s.events.create_event(request=operations.CreateEventRequestBody(
             'chat_history': [
                 {
                     'role': 'system',
-                    'content': 'Answer the user\'s question only using provided context.
-
-                    Context: Hello world',
+                    'content': 'Answer the user\'s question only using provided context.\n' +
+                    '\n' +
+                    'Context: Hello world',
                 },
                 {
                     'role': 'user',
@@ -87,7 +89,7 @@ res = s.events.create_event(request=operations.CreateEventRequestBody(
             'role': 'assistant',
             'content': 'Hello world',
         },
-        error=None,
+        error='<value>',
         start_time=1714978764301,
         end_time=1714978765301,
         metadata={
@@ -122,15 +124,16 @@ if res.object is not None:
 | -------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------- |
 | `request`                                                                              | [operations.CreateEventRequestBody](../../models/operations/createeventrequestbody.md) | :heavy_check_mark:                                                                     | The request object to use for the request.                                             |
 
-
 ### Response
 
 **[operations.CreateEventResponse](../../models/operations/createeventresponse.md)**
+
 ### Errors
 
 | Error Object    | Status Code     | Content Type    |
 | --------------- | --------------- | --------------- |
 | errors.SDKError | 4xx-5xx         | */*             |
+
 
 ## update_event
 
@@ -191,15 +194,16 @@ if res is not None:
 | -------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------- |
 | `request`                                                                              | [operations.UpdateEventRequestBody](../../models/operations/updateeventrequestbody.md) | :heavy_check_mark:                                                                     | The request object to use for the request.                                             |
 
-
 ### Response
 
 **[operations.UpdateEventResponse](../../models/operations/updateeventresponse.md)**
+
 ### Errors
 
 | Error Object    | Status Code     | Content Type    |
 | --------------- | --------------- | --------------- |
 | errors.SDKError | 4xx-5xx         | */*             |
+
 
 ## get_events
 
@@ -240,15 +244,16 @@ if res.object is not None:
 | ---------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------- |
 | `request`                                                                          | [operations.GetEventsRequestBody](../../models/operations/geteventsrequestbody.md) | :heavy_check_mark:                                                                 | The request object to use for the request.                                         |
 
-
 ### Response
 
 **[operations.GetEventsResponse](../../models/operations/geteventsresponse.md)**
+
 ### Errors
 
 | Error Object    | Status Code     | Content Type    |
 | --------------- | --------------- | --------------- |
 | errors.SDKError | 4xx-5xx         | */*             |
+
 
 ## create_model_event
 
@@ -287,7 +292,7 @@ res = s.events.create_model_event(request=operations.CreateModelEventRequestBody
             'total_tokens': 20,
         },
         cost=0.00008,
-        error=None,
+        error='<value>',
         source='playground',
         event_name='Model Completion',
         hyperparameters={
@@ -312,7 +317,32 @@ res = s.events.create_model_event(request=operations.CreateModelEventRequestBody
         },
         tools=[
             {
-                'key': '<value>',
+                'type': 'function',
+                'function': {
+                    'name': 'get_current_weather',
+                    'description': 'Get the current weather',
+                    'parameters': {
+                        'type': 'object',
+                        'properties': {
+                            'location': {
+                                'type': 'string',
+                                'description': 'The city and state, e.g. San Francisco, CA',
+                            },
+                            'format': {
+                                'type': 'string',
+                                'enum': [
+                                    'celsius',
+                                    'fahrenheit',
+                                ],
+                                'description': 'The temperature unit to use. Infer this from the users location.',
+                            },
+                        },
+                        'required': [
+                            'location',
+                            'format',
+                        ],
+                    },
+                },
             },
         ],
         tool_choice='none',
@@ -334,15 +364,16 @@ if res.object is not None:
 | ------------------------------------------------------------------------------------------------ | ------------------------------------------------------------------------------------------------ | ------------------------------------------------------------------------------------------------ | ------------------------------------------------------------------------------------------------ |
 | `request`                                                                                        | [operations.CreateModelEventRequestBody](../../models/operations/createmodeleventrequestbody.md) | :heavy_check_mark:                                                                               | The request object to use for the request.                                                       |
 
-
 ### Response
 
 **[operations.CreateModelEventResponse](../../models/operations/createmodeleventresponse.md)**
+
 ### Errors
 
 | Error Object    | Status Code     | Content Type    |
 | --------------- | --------------- | --------------- |
 | errors.SDKError | 4xx-5xx         | */*             |
+
 
 ## create_event_batch
 
@@ -384,9 +415,9 @@ res = s.events.create_event_batch(request=operations.CreateEventBatchRequestBody
                 'template': [
                     {
                         'role': 'system',
-                        'content': 'Answer the user\'s question only using provided context.
-
-                        Context: {{ context }}',
+                        'content': 'Answer the user\'s question only using provided context.\n' +
+                        '\n' +
+                        'Context: {{ context }}',
                     },
                     {
                         'role': 'user',
@@ -401,9 +432,9 @@ res = s.events.create_event_batch(request=operations.CreateEventBatchRequestBody
                 'chat_history': [
                     {
                         'role': 'system',
-                        'content': 'Answer the user\'s question only using provided context.
-
-                        Context: Hello world',
+                        'content': 'Answer the user\'s question only using provided context.\n' +
+                        '\n' +
+                        'Context: Hello world',
                     },
                     {
                         'role': 'user',
@@ -422,7 +453,7 @@ res = s.events.create_event_batch(request=operations.CreateEventBatchRequestBody
                 'role': 'assistant',
                 'content': 'Hello world',
             },
-            error=None,
+            error='<value>',
             start_time=1714978764301,
             end_time=1714978765301,
             metadata={
@@ -458,16 +489,17 @@ if res.object is not None:
 | ------------------------------------------------------------------------------------------------ | ------------------------------------------------------------------------------------------------ | ------------------------------------------------------------------------------------------------ | ------------------------------------------------------------------------------------------------ |
 | `request`                                                                                        | [operations.CreateEventBatchRequestBody](../../models/operations/createeventbatchrequestbody.md) | :heavy_check_mark:                                                                               | The request object to use for the request.                                                       |
 
-
 ### Response
 
 **[operations.CreateEventBatchResponse](../../models/operations/createeventbatchresponse.md)**
+
 ### Errors
 
 | Error Object                        | Status Code                         | Content Type                        |
 | ----------------------------------- | ----------------------------------- | ----------------------------------- |
 | errors.CreateEventBatchResponseBody | 500                                 | application/json                    |
 | errors.SDKError                     | 4xx-5xx                             | */*                                 |
+
 
 ## create_model_event_batch
 
@@ -507,7 +539,7 @@ res = s.events.create_model_event_batch(request=operations.CreateModelEventBatch
                 'total_tokens': 20,
             },
             cost=0.00008,
-            error=None,
+            error='<value>',
             source='playground',
             event_name='Model Completion',
             hyperparameters={
@@ -532,7 +564,32 @@ res = s.events.create_model_event_batch(request=operations.CreateModelEventBatch
             },
             tools=[
                 {
-                    'key': '<value>',
+                    'type': 'function',
+                    'function': {
+                        'name': 'get_current_weather',
+                        'description': 'Get the current weather',
+                        'parameters': {
+                            'type': 'object',
+                            'properties': {
+                                'location': {
+                                    'type': 'string',
+                                    'description': 'The city and state, e.g. San Francisco, CA',
+                                },
+                                'format': {
+                                    'type': 'string',
+                                    'enum': [
+                                        'celsius',
+                                        'fahrenheit',
+                                    ],
+                                    'description': 'The temperature unit to use. Infer this from the users location.',
+                                },
+                            },
+                            'required': [
+                                'location',
+                                'format',
+                            ],
+                        },
+                    },
                 },
             ],
             tool_choice='none',
@@ -555,10 +612,10 @@ if res.object is not None:
 | ---------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------- |
 | `request`                                                                                                  | [operations.CreateModelEventBatchRequestBody](../../models/operations/createmodeleventbatchrequestbody.md) | :heavy_check_mark:                                                                                         | The request object to use for the request.                                                                 |
 
-
 ### Response
 
 **[operations.CreateModelEventBatchResponse](../../models/operations/createmodeleventbatchresponse.md)**
+
 ### Errors
 
 | Error Object                             | Status Code                              | Content Type                             |

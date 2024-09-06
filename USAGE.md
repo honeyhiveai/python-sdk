@@ -23,9 +23,9 @@ res = s.session.start_session(request=operations.StartSessionRequestBody(
             'chat_history': [
                 {
                     'role': 'system',
-                    'content': 'Answer the user\'s question only using provided context.
-
-                    Context: Hello world',
+                    'content': 'Answer the user\'s question only using provided context.\n' +
+                    '\n' +
+                    'Context: Hello world',
                 },
                 {
                     'role': 'user',
@@ -37,7 +37,7 @@ res = s.session.start_session(request=operations.StartSessionRequestBody(
             'role': 'assistant',
             'content': 'Hello world',
         },
-        error=None,
+        error='<value>',
         duration=824.8056,
         user_properties={
             'user': 'google-oauth2|111840237613341303366',

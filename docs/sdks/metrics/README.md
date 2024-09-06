@@ -1,6 +1,8 @@
 # Metrics
 (*metrics*)
 
+## Overview
+
 ### Available Operations
 
 * [get_metrics](#get_metrics) - Get all metrics
@@ -36,15 +38,16 @@ if res.metrics is not None:
 | ------------------------------------ | ------------------------------------ | ------------------------------------ | ------------------------------------ |
 | `project_name`                       | *str*                                | :heavy_check_mark:                   | Project name associated with metrics |
 
-
 ### Response
 
 **[operations.GetMetricsResponse](../../models/operations/getmetricsresponse.md)**
+
 ### Errors
 
 | Error Object    | Status Code     | Content Type    |
 | --------------- | --------------- | --------------- |
 | errors.SDKError | 4xx-5xx         | */*             |
+
 
 ## create_metric
 
@@ -81,15 +84,16 @@ if res is not None:
 | ------------------------------------------------------ | ------------------------------------------------------ | ------------------------------------------------------ | ------------------------------------------------------ |
 | `request`                                              | [components.Metric](../../models/components/metric.md) | :heavy_check_mark:                                     | The request object to use for the request.             |
 
-
 ### Response
 
 **[operations.CreateMetricResponse](../../models/operations/createmetricresponse.md)**
+
 ### Errors
 
 | Error Object    | Status Code     | Content Type    |
 | --------------- | --------------- | --------------- |
 | errors.SDKError | 4xx-5xx         | */*             |
+
 
 ## update_metric
 
@@ -122,15 +126,16 @@ if res is not None:
 | -------------------------------------------------------------- | -------------------------------------------------------------- | -------------------------------------------------------------- | -------------------------------------------------------------- |
 | `request`                                                      | [components.MetricEdit](../../models/components/metricedit.md) | :heavy_check_mark:                                             | The request object to use for the request.                     |
 
-
 ### Response
 
 **[operations.UpdateMetricResponse](../../models/operations/updatemetricresponse.md)**
+
 ### Errors
 
 | Error Object    | Status Code     | Content Type    |
 | --------------- | --------------- | --------------- |
 | errors.SDKError | 4xx-5xx         | */*             |
+
 
 ## delete_metric
 
@@ -160,10 +165,10 @@ if res is not None:
 | ------------------ | ------------------ | ------------------ | ------------------ |
 | `metric_id`        | *str*              | :heavy_check_mark: | N/A                |
 
-
 ### Response
 
 **[operations.DeleteMetricResponse](../../models/operations/deletemetricresponse.md)**
+
 ### Errors
 
 | Error Object    | Status Code     | Content Type    |

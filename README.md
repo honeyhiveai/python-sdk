@@ -36,9 +36,9 @@ res = s.session.start_session(request=operations.StartSessionRequestBody(
             'chat_history': [
                 {
                     'role': 'system',
-                    'content': 'Answer the user\'s question only using provided context.
-
-                    Context: Hello world',
+                    'content': 'Answer the user\'s question only using provided context.\n' +
+                    '\n' +
+                    'Context: Hello world',
                 },
                 {
                     'role': 'user',
@@ -50,7 +50,7 @@ res = s.session.start_session(request=operations.StartSessionRequestBody(
             'role': 'assistant',
             'content': 'Hello world',
         },
-        error=None,
+        error='<value>',
         duration=824.8056,
         user_properties={
             'user': 'google-oauth2|111840237613341303366',
@@ -193,9 +193,9 @@ try:
                 'template': [
                     {
                         'role': 'system',
-                        'content': 'Answer the user\'s question only using provided context.
-
-                        Context: {{ context }}',
+                        'content': 'Answer the user\'s question only using provided context.\n' +
+                        '\n' +
+                        'Context: {{ context }}',
                     },
                     {
                         'role': 'user',
@@ -210,9 +210,9 @@ try:
                 'chat_history': [
                     {
                         'role': 'system',
-                        'content': 'Answer the user\'s question only using provided context.
-
-                        Context: Hello world',
+                        'content': 'Answer the user\'s question only using provided context.\n' +
+                        '\n' +
+                        'Context: Hello world',
                     },
                     {
                         'role': 'user',
@@ -231,7 +231,7 @@ try:
                 'role': 'assistant',
                 'content': 'Hello world',
             },
-            error=None,
+            error='<value>',
             start_time=1714978764301,
             end_time=1714978765301,
             metadata={
@@ -307,9 +307,9 @@ res = s.session.start_session(request=operations.StartSessionRequestBody(
             'chat_history': [
                 {
                     'role': 'system',
-                    'content': 'Answer the user\'s question only using provided context.
-
-                    Context: Hello world',
+                    'content': 'Answer the user\'s question only using provided context.\n' +
+                    '\n' +
+                    'Context: Hello world',
                 },
                 {
                     'role': 'user',
@@ -321,7 +321,7 @@ res = s.session.start_session(request=operations.StartSessionRequestBody(
             'role': 'assistant',
             'content': 'Hello world',
         },
-        error=None,
+        error='<value>',
         duration=824.8056,
         user_properties={
             'user': 'google-oauth2|111840237613341303366',
@@ -375,9 +375,9 @@ res = s.session.start_session(request=operations.StartSessionRequestBody(
             'chat_history': [
                 {
                     'role': 'system',
-                    'content': 'Answer the user\'s question only using provided context.
-
-                    Context: Hello world',
+                    'content': 'Answer the user\'s question only using provided context.\n' +
+                    '\n' +
+                    'Context: Hello world',
                 },
                 {
                     'role': 'user',
@@ -389,7 +389,7 @@ res = s.session.start_session(request=operations.StartSessionRequestBody(
             'role': 'assistant',
             'content': 'Hello world',
         },
-        error=None,
+        error='<value>',
         duration=824.8056,
         user_properties={
             'user': 'google-oauth2|111840237613341303366',
@@ -467,9 +467,9 @@ res = s.session.start_session(request=operations.StartSessionRequestBody(
             'chat_history': [
                 {
                     'role': 'system',
-                    'content': 'Answer the user\'s question only using provided context.
-
-                    Context: Hello world',
+                    'content': 'Answer the user\'s question only using provided context.\n' +
+                    '\n' +
+                    'Context: Hello world',
                 },
                 {
                     'role': 'user',
@@ -481,7 +481,7 @@ res = s.session.start_session(request=operations.StartSessionRequestBody(
             'role': 'assistant',
             'content': 'Hello world',
         },
-        error=None,
+        error='<value>',
         duration=824.8056,
         user_properties={
             'user': 'google-oauth2|111840237613341303366',
@@ -507,8 +507,28 @@ if res.object is not None:
 ```
 <!-- End Authentication [security] -->
 
+<!-- Start Summary [summary] -->
+## Summary
+
+
+<!-- End Summary [summary] -->
+
+<!-- Start Table of Contents [toc] -->
+## Table of Contents
+
+* [SDK Installation](#sdk-installation)
+* [SDK Example Usage](#sdk-example-usage)
+* [Available Resources and Operations](#available-resources-and-operations)
+* [Error Handling](#error-handling)
+* [Server Selection](#server-selection)
+* [Custom HTTP Client](#custom-http-client)
+* [Authentication](#authentication)
+<!-- End Table of Contents [toc] -->
+
 <!-- Start SDK Installation [installation] -->
 ## SDK Installation
+
+The SDK can be installed using the *pip* package manager, with dependencies and metadata stored in the `setup.py` file.
 
 ```bash
 pip install HoneyHive

@@ -1,6 +1,8 @@
 # Runs
 (*runs*)
 
+## Overview
+
 ### Available Operations
 
 * [create_run](#create_run) - Create a new evaluation run
@@ -44,15 +46,16 @@ if res.create_run_response is not None:
 | -------------------------------------------------------------------------- | -------------------------------------------------------------------------- | -------------------------------------------------------------------------- | -------------------------------------------------------------------------- |
 | `request`                                                                  | [components.CreateRunRequest](../../models/components/createrunrequest.md) | :heavy_check_mark:                                                         | The request object to use for the request.                                 |
 
-
 ### Response
 
 **[operations.CreateRunResponse](../../models/operations/createrunresponse.md)**
+
 ### Errors
 
 | Error Object    | Status Code     | Content Type    |
 | --------------- | --------------- | --------------- |
 | errors.SDKError | 4xx-5xx         | */*             |
+
 
 ## get_runs
 
@@ -68,7 +71,7 @@ s = honeyhive.HoneyHive(
 )
 
 
-res = s.runs.get_runs(project='<value>')
+res = s.runs.get_runs()
 
 if res.get_runs_response is not None:
     # handle response
@@ -82,15 +85,16 @@ if res.get_runs_response is not None:
 | ------------------ | ------------------ | ------------------ | ------------------ |
 | `project`          | *Optional[str]*    | :heavy_minus_sign: | N/A                |
 
-
 ### Response
 
 **[operations.GetRunsResponse](../../models/operations/getrunsresponse.md)**
+
 ### Errors
 
 | Error Object    | Status Code     | Content Type    |
 | --------------- | --------------- | --------------- |
 | errors.SDKError | 4xx-5xx         | */*             |
+
 
 ## get_run
 
@@ -120,15 +124,16 @@ if res.get_run_response is not None:
 | ------------------ | ------------------ | ------------------ | ------------------ |
 | `run_id`           | *str*              | :heavy_check_mark: | N/A                |
 
-
 ### Response
 
 **[operations.GetRunResponse](../../models/operations/getrunresponse.md)**
+
 ### Errors
 
 | Error Object    | Status Code     | Content Type    |
 | --------------- | --------------- | --------------- |
 | errors.SDKError | 4xx-5xx         | */*             |
+
 
 ## update_run
 
@@ -160,15 +165,16 @@ if res.update_run_response is not None:
 | `run_id`                                                                   | *str*                                                                      | :heavy_check_mark:                                                         | N/A                                                                        |
 | `update_run_request`                                                       | [components.UpdateRunRequest](../../models/components/updaterunrequest.md) | :heavy_check_mark:                                                         | N/A                                                                        |
 
-
 ### Response
 
 **[operations.UpdateRunResponse](../../models/operations/updaterunresponse.md)**
+
 ### Errors
 
 | Error Object    | Status Code     | Content Type    |
 | --------------- | --------------- | --------------- |
 | errors.SDKError | 4xx-5xx         | */*             |
+
 
 ## delete_run
 
@@ -198,10 +204,10 @@ if res.delete_run_response is not None:
 | ------------------ | ------------------ | ------------------ | ------------------ |
 | `run_id`           | *str*              | :heavy_check_mark: | N/A                |
 
-
 ### Response
 
 **[operations.DeleteRunResponse](../../models/operations/deleterunresponse.md)**
+
 ### Errors
 
 | Error Object    | Status Code     | Content Type    |

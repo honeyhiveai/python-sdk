@@ -1,6 +1,8 @@
 # Datasets
 (*datasets*)
 
+## Overview
+
 ### Available Operations
 
 * [get_datasets](#get_datasets) - Get datasets
@@ -17,14 +19,13 @@ Get datasets
 
 ```python
 import honeyhive
-from honeyhive.models import operations
 
 s = honeyhive.HoneyHive(
     bearer_auth="<YOUR_BEARER_TOKEN_HERE>",
 )
 
 
-res = s.datasets.get_datasets(project='<value>', type=operations.Type.EVALUATION, dataset_id='<value>')
+res = s.datasets.get_datasets(project='<value>')
 
 if res.object is not None:
     # handle response
@@ -40,15 +41,16 @@ if res.object is not None:
 | `type`                                                                           | [Optional[operations.Type]](../../models/operations/type.md)                     | :heavy_minus_sign:                                                               | Type of the dataset - "evaluation" or "fine-tuning"                              |
 | `dataset_id`                                                                     | *Optional[str]*                                                                  | :heavy_minus_sign:                                                               | Unique dataset ID for filtering specific dataset like `663876ec4611c47f4970f0c3` |
 
-
 ### Response
 
 **[operations.GetDatasetsResponse](../../models/operations/getdatasetsresponse.md)**
+
 ### Errors
 
 | Error Object    | Status Code     | Content Type    |
 | --------------- | --------------- | --------------- |
 | errors.SDKError | 4xx-5xx         | */*             |
+
 
 ## create_dataset
 
@@ -95,15 +97,16 @@ if res.object is not None:
 | ---------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------- |
 | `request`                                                                          | [components.CreateDatasetRequest](../../models/components/createdatasetrequest.md) | :heavy_check_mark:                                                                 | The request object to use for the request.                                         |
 
-
 ### Response
 
 **[operations.CreateDatasetResponse](../../models/operations/createdatasetresponse.md)**
+
 ### Errors
 
 | Error Object    | Status Code     | Content Type    |
 | --------------- | --------------- | --------------- |
 | errors.SDKError | 4xx-5xx         | */*             |
+
 
 ## update_dataset
 
@@ -148,15 +151,16 @@ if res is not None:
 | -------------------------------------------------------------------- | -------------------------------------------------------------------- | -------------------------------------------------------------------- | -------------------------------------------------------------------- |
 | `request`                                                            | [components.DatasetUpdate](../../models/components/datasetupdate.md) | :heavy_check_mark:                                                   | The request object to use for the request.                           |
 
-
 ### Response
 
 **[operations.UpdateDatasetResponse](../../models/operations/updatedatasetresponse.md)**
+
 ### Errors
 
 | Error Object    | Status Code     | Content Type    |
 | --------------- | --------------- | --------------- |
 | errors.SDKError | 4xx-5xx         | */*             |
+
 
 ## delete_dataset
 
@@ -186,15 +190,16 @@ if res is not None:
 | ---------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------- |
 | `dataset_id`                                                                       | *str*                                                                              | :heavy_check_mark:                                                                 | The unique identifier of the dataset to be deleted like `663876ec4611c47f4970f0c3` |
 
-
 ### Response
 
 **[operations.DeleteDatasetResponse](../../models/operations/deletedatasetresponse.md)**
+
 ### Errors
 
 | Error Object    | Status Code     | Content Type    |
 | --------------- | --------------- | --------------- |
 | errors.SDKError | 4xx-5xx         | */*             |
+
 
 ## add_datapoints
 
@@ -244,10 +249,10 @@ if res.object is not None:
 | `dataset_id`                                                                               | *str*                                                                                      | :heavy_check_mark:                                                                         | The unique identifier of the dataset to add datapoints to like  `663876ec4611c47f4970f0c3` |
 | `request_body`                                                                             | [operations.AddDatapointsRequestBody](../../models/operations/adddatapointsrequestbody.md) | :heavy_check_mark:                                                                         | N/A                                                                                        |
 
-
 ### Response
 
 **[operations.AddDatapointsResponse](../../models/operations/adddatapointsresponse.md)**
+
 ### Errors
 
 | Error Object    | Status Code     | Content Type    |
