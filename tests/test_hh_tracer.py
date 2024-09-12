@@ -307,6 +307,7 @@ def test_distributed_tracing():
                 operator=components.Operator.IS,
             ),
         ],
+        limit=7500,
     )
     res = sdk.events.get_events(request=req)
     assert res.status_code == 200
@@ -331,6 +332,7 @@ def test_distributed_tracing():
                 operator=components.Operator.IS,
             ),
         ],
+        limit=7500,
     )
     res = sdk.events.get_events(request=req)
     assert res.status_code == 200
