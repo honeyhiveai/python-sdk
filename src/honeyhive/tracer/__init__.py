@@ -5,6 +5,7 @@ from honeyhive.utils.telemetry import Telemetry
 from opentelemetry.sdk.metrics.export import ConsoleMetricExporter
 from traceloop.sdk import Traceloop
 from traceloop.sdk.tracing.tracing import TracerWrapper
+from traceback import print_exc
 
 
 class HoneyHiveTracer:
@@ -20,12 +21,14 @@ class HoneyHiveTracer:
         source,
         server_url="https://api.honeyhive.ai",
         disable_batch=False,
+        verbose=False,
     ):
         try:
+            HoneyHiveTracer.verbose = verbose
             session_id = HoneyHiveTracer.__start_session(
                 api_key, project, session_name, source, server_url
             )
-            Telemetry().capture("tracer_init", { "hhai_session_id": session_id })
+            Telemetry().capture("tracer_init", {"hhai_session_id": session_id})
             if not HoneyHiveTracer._is_traceloop_initialized:
                 Traceloop.init(
                     api_endpoint=f"{server_url}/opentelemetry",
@@ -38,7 +41,10 @@ class HoneyHiveTracer:
             HoneyHiveTracer.session_id = session_id
             HoneyHiveTracer.api_key = api_key
         except:
-            pass
+            if HoneyHiveTracer.verbose:
+                print_exc()
+            else:
+                pass
 
     @staticmethod
     def init_from_session_id(
@@ -58,7 +64,10 @@ class HoneyHiveTracer:
             HoneyHiveTracer.session_id = session_id
             HoneyHiveTracer.api_key = api_key
         except:
-            pass
+            if HoneyHiveTracer.verbose:
+                print_exc()
+            else:
+                pass
 
     @staticmethod
     def __start_session(api_key, project, session_name, source, server_url):
@@ -88,7 +97,10 @@ class HoneyHiveTracer:
                 )
             )
         except:
-            pass
+            if HoneyHiveTracer.verbose:
+                print_exc()
+            else:
+                pass
 
     @staticmethod
     def set_metric(metrics):
@@ -104,7 +116,10 @@ class HoneyHiveTracer:
                 )
             )
         except:
-            pass
+            if HoneyHiveTracer.verbose:
+                print_exc()
+            else:
+                pass
 
     @staticmethod
     def set_metadata(metadata):
@@ -119,7 +134,10 @@ class HoneyHiveTracer:
                 )
             )
         except:
-            pass
+            if HoneyHiveTracer.verbose:
+                print_exc()
+            else:
+                pass
 
     @staticmethod
     def flush():
