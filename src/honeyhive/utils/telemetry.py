@@ -99,24 +99,30 @@ class Telemetry:
         
         # Package versions
         context["package_versions"] = {
-            "openai": self._get_package_version("openai"),
-            "anthropic": self._get_package_version("anthropic"),
-            "qdrant": self._get_package_version("qdrant-client"),
-            "ollama": self._get_package_version("ollama"),
-            "mistralai": self._get_package_version("mistralai"),
-            "milvus": self._get_package_version("pymilvus"),
+            # orchestration frameworks
+            "langchain": self._get_package_version("langchain"),
             "llamaindex": self._get_package_version("llama-index"),
             "haystack": self._get_package_version("haystack"),
-            "groq": self._get_package_version("groq"),
             "boto3": self._get_package_version("boto3"),
+
+            # llms
+            "openai": self._get_package_version("openai"),
+            "anthropic": self._get_package_version("anthropic"),
+            "ollama": self._get_package_version("ollama"),
+            "mistralai": self._get_package_version("mistralai"),
             "google-generativeai": self._get_package_version("google-generativeai"),
-            "pinecone": self._get_package_version("pinecone-client"),
-            "weaviate": self._get_package_version("weaviate-client"),
             "watsonx": self._get_package_version("ibm-watson-machine-learning"),
             "vertexai": self._get_package_version("google-cloud-aiplatform"),
             "transformers": self._get_package_version("transformers"),
             "together": self._get_package_version("together"),
             "replicate": self._get_package_version("replicate"),
+            "groq": self._get_package_version("groq"),
+
+            # vector dbs
+            "qdrant": self._get_package_version("qdrant-client"),
+            "weaviate": self._get_package_version("weaviate-client"),
+            "milvus": self._get_package_version("pymilvus"),
+            "pinecone": self._get_package_version("pinecone-client"),
         }
         
         return context
