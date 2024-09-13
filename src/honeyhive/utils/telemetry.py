@@ -52,16 +52,16 @@ class Telemetry:
             self._curr_anon_id = self.UNKNOWN_ANON_ID
         return self._curr_anon_id
 
-    def _get_honeyhive_version(self) -> str:
+    def _get_package_version(self, package_name: str) -> str:
         try:
-            return pkg_resources.get_distribution("honeyhive").version
+            return pkg_resources.get_distribution(package_name).version
         except pkg_resources.DistributionNotFound:
             return "Not installed"
 
     def _context(self) -> dict:
         context = {
             "sdk": "honeyhive",
-            "sdk_version": self._get_honeyhive_version(),
+            "sdk_version": self._get_package_version("honeyhive"),
         }
         
         # Language settings
@@ -96,6 +96,28 @@ class Telemetry:
 
         # Execution Info
         context["execution_info"] = self._get_execution_info()
+        
+        # Package versions
+        context["package_versions"] = {
+            "openai": self._get_package_version("openai"),
+            "anthropic": self._get_package_version("anthropic"),
+            "qdrant": self._get_package_version("qdrant-client"),
+            "ollama": self._get_package_version("ollama"),
+            "mistralai": self._get_package_version("mistralai"),
+            "milvus": self._get_package_version("pymilvus"),
+            "llamaindex": self._get_package_version("llama-index"),
+            "haystack": self._get_package_version("haystack"),
+            "groq": self._get_package_version("groq"),
+            "boto3": self._get_package_version("boto3"),
+            "google-generativeai": self._get_package_version("google-generativeai"),
+            "pinecone": self._get_package_version("pinecone-client"),
+            "weaviate": self._get_package_version("weaviate-client"),
+            "watsonx": self._get_package_version("ibm-watson-machine-learning"),
+            "vertexai": self._get_package_version("google-cloud-aiplatform"),
+            "transformers": self._get_package_version("transformers"),
+            "together": self._get_package_version("together"),
+            "replicate": self._get_package_version("replicate"),
+        }
         
         return context
 
