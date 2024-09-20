@@ -1,5 +1,6 @@
 import honeyhive
 import os
+import sys
 from honeyhive.models import components, operations
 from honeyhive.utils.telemetry import Telemetry
 from opentelemetry.sdk.metrics.export import ConsoleMetricExporter
@@ -17,14 +18,19 @@ class HoneyHiveTracer:
     def init(
         api_key,
         project,
-        session_name,
-        source,
+        session_name=None,
+        source='dev',
         server_url="https://api.honeyhive.ai",
         disable_batch=False,
         verbose=False,
     ):
         try:
             HoneyHiveTracer.verbose = verbose
+            
+            # Set session_name to the main module name if not provided
+            if session_name is None:
+                session_name = os.path.basename(sys.argv[0])
+            
             session_id = HoneyHiveTracer.__start_session(
                 api_key, project, session_name, source, server_url
             )
@@ -142,3 +148,14 @@ class HoneyHiveTracer:
     @staticmethod
     def flush():
         TracerWrapper().flush()
+
+# TODO: this currently leads to PUT tool events being created
+def enrich_session(metadata=None, feedback=None, metrics=None):
+    if metadata:
+        HoneyHiveTracer.set_metadata(metadata)
+
+    if feedback:
+        HoneyHiveTracer.set_feedback(feedback)
+
+    if metrics:
+        HoneyHiveTracer.set_metric(metrics)

@@ -2,15 +2,25 @@ import inspect
 import logging
 import re
 from functools import wraps
+from contextlib import contextmanager
+
 from opentelemetry import trace
 from opentelemetry.sdk.trace import TracerProvider
-from opentelemetry.sdk.trace.export import SimpleSpanProcessor, ConsoleSpanExporter
 from opentelemetry.instrumentation.instrumentor import BaseInstrumentor
 
 _instruments = ()
 
+logger = logging.getLogger(__name__)
+
+class SpanProxy:
+    def _enrich_span(self, *args, **kwargs): 
+        logger.warning('Please use enrich_span inside a traced function.')
 
 class FunctionInstrumentor(BaseInstrumentor):
+    def __init__(self):
+        super().__init__()
+        self._span_proxy = SpanProxy()
+
     def _instrument(self, **kwargs):
         tracer_provider = TracerProvider()
         trace.set_tracer_provider(tracer_provider)
@@ -85,7 +95,53 @@ class FunctionInstrumentor(BaseInstrumentor):
         prompt = prompt_template["prompt"]
         self._set_span_attributes(span, "honeyhive_prompt_template.prompt", prompt)
 
-    def trace(self, config=None, metadata=None):
+    def _enrich_span(
+        self,
+        span, 
+        config=None,
+        metadata=None,
+        metrics=None,
+        feedback=None,
+        inputs=None,
+        outputs=None,
+        error=None,
+    ):
+        if config:
+            self._set_span_attributes(span, "honeyhive_config", config)
+        if metadata:
+            self._set_span_attributes(span, "honeyhive_metadata", metadata)
+        if metrics:
+            self._set_span_attributes(span, "honeyhive_metrics", metrics)
+        if feedback:
+            self._set_span_attributes(span, "honeyhive_feedback", feedback)
+        if inputs:
+            self._set_span_attributes(span, "honeyhive_inputs", inputs)
+        if outputs:
+            self._set_span_attributes(span, "honeyhive_outputs", outputs)
+        if error:
+            self._set_span_attributes(span, "honeyhive_error", error)
+            
+    @contextmanager
+    def _span_context(self, span):
+        # save the current span attributes
+        current_enrich_span = self._span_proxy._enrich_span
+        
+        # call _enrich_span with the current span
+        self._span_proxy._enrich_span = \
+            lambda *args, **kwargs: self._enrich_span(span, *args, **kwargs)
+        
+        try:
+            yield
+        finally:
+            # restore the original enrich_span
+            self._span_proxy._enrich_span = current_enrich_span
+        
+    def trace(
+        self, 
+        event_type=None,
+        config=None, 
+        metadata=None, 
+    ):
         def decorator(func):
             @wraps(func)
             def wrapper(*args, **kwargs):
@@ -104,13 +160,21 @@ class FunctionInstrumentor(BaseInstrumentor):
                                 span, f"honeyhive_inputs._params_.{param}", value
                             )
 
+                    if event_type:
+                        if isinstance(event_type, str) and event_type in ['tool', 'model', 'chain']:
+                            self._set_span_attributes(span, "honeyhive_event_type", event_type)
+                        else:
+                            logger.warning("event_type could not be set. Must be 'tool', 'model', or 'chain'.")
+                    
                     if config:
                         self._set_span_attributes(span, "honeyhive_config", config)
                     if metadata:
                         self._set_span_attributes(span, "honeyhive_metadata", metadata)
-
-                    result = func(*args, **kwargs)
-
+                                        
+                    # This context allows us to enrich the span from within the decorated function
+                    with self._span_context(span):
+                        result = func(*args, **kwargs)
+                    
                     # Log the function output
                     self._set_span_attributes(span, "honeyhive_outputs.result", result)
 
@@ -127,3 +191,7 @@ instrumentor.instrument()
 
 # Create the log_and_trace decorator for external use
 trace = instrumentor.trace
+
+# Enrich a span from within a traced function
+def enrich_span(*args, **kwargs):
+    return instrumentor._span_proxy._enrich_span(*args, **kwargs)
