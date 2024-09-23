@@ -18,26 +18,26 @@ res = s.session.start_session(request=operations.StartSessionRequestBody(
             '7f22137a-6911-4ed3-bc36-110f1dde6b66',
         ],
         inputs={
-            'context': 'Hello world',
-            'question': 'What is in the context?',
             'chat_history': [
                 {
                     'role': 'system',
-                    'content': 'Answer the user\'s question only using provided context.
-
-                    Context: Hello world',
+                    'content': 'Answer the user\'s question only using provided context.\n' +
+                    '\n' +
+                    'Context: Hello world',
                 },
                 {
                     'role': 'user',
                     'content': 'What is in the context?',
                 },
             ],
+            'context': 'Hello world',
+            'question': 'What is in the context?',
         },
         outputs={
-            'role': 'assistant',
             'content': 'Hello world',
+            'role': 'assistant',
         },
-        error=None,
+        error='<value>',
         duration=824.8056,
         user_properties={
             'user': 'google-oauth2|111840237613341303366',

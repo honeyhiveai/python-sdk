@@ -1,6 +1,8 @@
 # Datapoints
 (*datapoints*)
 
+## Overview
+
 ### Available Operations
 
 * [get_datapoints](#get_datapoints) - Retrieve a list of datapoints
@@ -23,9 +25,7 @@ s = honeyhive.HoneyHive(
 )
 
 
-res = s.datapoints.get_datapoints(project='<value>', datapoint_ids=[
-    '<value>',
-], dataset_name='<value>')
+res = s.datapoints.get_datapoints(project='<value>')
 
 if res.object is not None:
     # handle response
@@ -41,15 +41,16 @@ if res.object is not None:
 | `datapoint_ids`                            | List[*str*]                                | :heavy_minus_sign:                         | List of datapoint ids to fetch             |
 | `dataset_name`                             | *Optional[str]*                            | :heavy_minus_sign:                         | Name of the dataset to get datapoints from |
 
-
 ### Response
 
 **[operations.GetDatapointsResponse](../../models/operations/getdatapointsresponse.md)**
+
 ### Errors
 
 | Error Object    | Status Code     | Content Type    |
 | --------------- | --------------- | --------------- |
 | errors.SDKError | 4xx-5xx         | */*             |
+
 
 ## create_datapoint
 
@@ -82,17 +83,17 @@ res = s.datapoints.create_datapoint(request=components.CreateDatapointRequest(
         },
     ],
     ground_truth={
-        'role': 'assistant',
         'content': 'The temperature in Reykjavik, Iceland is currently around 5F or -15C. Please note that weather conditions can change rapidly, so it\'s best to check a reliable source for the most up-to-date information.',
+        'role': 'assistant',
     },
     linked_event='6bba5182-d4b1-4b29-a64a-f0a8bd964f76',
     linked_datasets=[
         '<value>',
     ],
     metadata={
-        'question_type': 'weather',
         'completion_tokens': 47,
         'prompt_tokens': 696,
+        'question_type': 'weather',
         'total_tokens': 743,
     },
 ))
@@ -109,15 +110,16 @@ if res.object is not None:
 | -------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------- |
 | `request`                                                                              | [components.CreateDatapointRequest](../../models/components/createdatapointrequest.md) | :heavy_check_mark:                                                                     | The request object to use for the request.                                             |
 
-
 ### Response
 
 **[operations.CreateDatapointResponse](../../models/operations/createdatapointresponse.md)**
+
 ### Errors
 
 | Error Object    | Status Code     | Content Type    |
 | --------------- | --------------- | --------------- |
 | errors.SDKError | 4xx-5xx         | */*             |
+
 
 ## get_datapoint
 
@@ -133,7 +135,7 @@ s = honeyhive.HoneyHive(
 )
 
 
-res = s.datapoints.get_datapoint(id='<value>')
+res = s.datapoints.get_datapoint(id='<id>')
 
 if res.object is not None:
     # handle response
@@ -147,15 +149,16 @@ if res.object is not None:
 | -------------------------------------------- | -------------------------------------------- | -------------------------------------------- | -------------------------------------------- |
 | `id`                                         | *str*                                        | :heavy_check_mark:                           | Datapoint ID like `65c13dbbd65fb876b7886cdb` |
 
-
 ### Response
 
 **[operations.GetDatapointResponse](../../models/operations/getdatapointresponse.md)**
+
 ### Errors
 
 | Error Object    | Status Code     | Content Type    |
 | --------------- | --------------- | --------------- |
 | errors.SDKError | 4xx-5xx         | */*             |
+
 
 ## update_datapoint
 
@@ -172,7 +175,7 @@ s = honeyhive.HoneyHive(
 )
 
 
-res = s.datapoints.update_datapoint(id='<value>', update_datapoint_request=components.UpdateDatapointRequest(
+res = s.datapoints.update_datapoint(id='<id>', update_datapoint_request=components.UpdateDatapointRequest(
     inputs={
         'query': 'what\'s the temperature in Reykjavik?',
     },
@@ -187,8 +190,8 @@ res = s.datapoints.update_datapoint(id='<value>', update_datapoint_request=compo
         },
     ],
     ground_truth={
-        'role': 'assistant',
         'content': 'The temperature in Reykjavik, Iceland is currently around 5F or -15C. Please note that weather conditions can change rapidly, so it\'s best to check a reliable source for the most up-to-date information.',
+        'role': 'assistant',
     },
     linked_evals=[
         '<value>',
@@ -215,15 +218,16 @@ if res is not None:
 | `id`                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                       | *str*                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                      | :heavy_check_mark:                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                         | ID of datapoint to update                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                  |                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                            |
 | `update_datapoint_request`                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                 | [components.UpdateDatapointRequest](../../models/components/updatedatapointrequest.md)                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                     | :heavy_check_mark:                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                         | N/A                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                        | {<br/>"inputs": {<br/>"query": "what's the temperature in Reykjavik?"<br/>},<br/>"history": [<br/>{<br/>"role": "system",<br/>"content": "You are a helpful web assistant that helps users answer questions about the world based on the information provided to you by Google's search API. Answer the questions as truthfully as you can. In case you are unsure about the correct answer, please respond with \"I apologize but I'm not sure.\""<br/>},<br/>{<br/>"role": "user",<br/>"content": "what's the temperature in Reykjavik?\\n\\n\\n--Google search API results below:---\\n\\n\"snippet\":\"2 Week Extended Forecast in Reykjavik, Iceland ; Feb 4, 29 / 20 °F · Snow showers early. Broken clouds. ; Feb 5, 27 / 16 °F · Light snow. Decreasing cloudiness.\",\"snippet_highlighted_words\":[\"Feb 4, 29 / 20 °F\"]"<br/>}<br/>],<br/>"ground_truth": {<br/>"role": "assistant",<br/>"content": "The temperature in Reykjavik, Iceland is currently around 5F or -15C. Please note that weather conditions can change rapidly, so it's best to check a reliable source for the most up-to-date information."<br/>},<br/>"linked_event": "6bba5182-d4b1-4b29-a64a-f0a8bd964f76",<br/>"linked_evals": [],<br/>"linked_datasets": [],<br/>"metadata": {<br/>"question_type": "capital-weather",<br/>"random_field": 0<br/>}<br/>} |
 
-
 ### Response
 
 **[operations.UpdateDatapointResponse](../../models/operations/updatedatapointresponse.md)**
+
 ### Errors
 
 | Error Object    | Status Code     | Content Type    |
 | --------------- | --------------- | --------------- |
 | errors.SDKError | 4xx-5xx         | */*             |
+
 
 ## delete_datapoint
 
@@ -239,7 +243,7 @@ s = honeyhive.HoneyHive(
 )
 
 
-res = s.datapoints.delete_datapoint(id='<value>')
+res = s.datapoints.delete_datapoint(id='<id>')
 
 if res.object is not None:
     # handle response
@@ -253,10 +257,10 @@ if res.object is not None:
 | -------------------------------------------- | -------------------------------------------- | -------------------------------------------- | -------------------------------------------- |
 | `id`                                         | *str*                                        | :heavy_check_mark:                           | Datapoint ID like `65c13dbbd65fb876b7886cdb` |
 
-
 ### Response
 
 **[operations.DeleteDatapointResponse](../../models/operations/deletedatapointresponse.md)**
+
 ### Errors
 
 | Error Object    | Status Code     | Content Type    |

@@ -1,6 +1,8 @@
 # Tools
 (*tools*)
 
+## Overview
+
 ### Available Operations
 
 * [get_tools](#get_tools) - Retrieve a list of tools
@@ -30,15 +32,16 @@ if res.tools is not None:
 
 ```
 
-
 ### Response
 
 **[operations.GetToolsResponse](../../models/operations/gettoolsresponse.md)**
+
 ### Errors
 
 | Error Object    | Status Code     | Content Type    |
 | --------------- | --------------- | --------------- |
 | errors.SDKError | 4xx-5xx         | */*             |
+
 
 ## create_tool
 
@@ -60,8 +63,9 @@ res = s.tools.create_tool(request=components.CreateToolRequest(
     name='<value>',
     parameters={
         'key': '<value>',
+        'key1': '<value>',
     },
-    type=components.CreateToolRequestType.TOOL,
+    type=components.CreateToolRequestType.FUNCTION,
 ))
 
 if res.object is not None:
@@ -76,15 +80,16 @@ if res.object is not None:
 | ---------------------------------------------------------------------------- | ---------------------------------------------------------------------------- | ---------------------------------------------------------------------------- | ---------------------------------------------------------------------------- |
 | `request`                                                                    | [components.CreateToolRequest](../../models/components/createtoolrequest.md) | :heavy_check_mark:                                                           | The request object to use for the request.                                   |
 
-
 ### Response
 
 **[operations.CreateToolResponse](../../models/operations/createtoolresponse.md)**
+
 ### Errors
 
 | Error Object    | Status Code     | Content Type    |
 | --------------- | --------------- | --------------- |
 | errors.SDKError | 4xx-5xx         | */*             |
+
 
 ## update_tool
 
@@ -105,7 +110,7 @@ res = s.tools.update_tool(request=components.UpdateToolRequest(
     id='<id>',
     name='<value>',
     parameters={
-        'key': '<value>',
+
     },
 ))
 
@@ -121,15 +126,16 @@ if res is not None:
 | ---------------------------------------------------------------------------- | ---------------------------------------------------------------------------- | ---------------------------------------------------------------------------- | ---------------------------------------------------------------------------- |
 | `request`                                                                    | [components.UpdateToolRequest](../../models/components/updatetoolrequest.md) | :heavy_check_mark:                                                           | The request object to use for the request.                                   |
 
-
 ### Response
 
 **[operations.UpdateToolResponse](../../models/operations/updatetoolresponse.md)**
+
 ### Errors
 
 | Error Object    | Status Code     | Content Type    |
 | --------------- | --------------- | --------------- |
 | errors.SDKError | 4xx-5xx         | */*             |
+
 
 ## delete_tool
 
@@ -159,10 +165,10 @@ if res is not None:
 | ------------------ | ------------------ | ------------------ | ------------------ |
 | `function_id`      | *str*              | :heavy_check_mark: | N/A                |
 
-
 ### Response
 
 **[operations.DeleteToolResponse](../../models/operations/deletetoolresponse.md)**
+
 ### Errors
 
 | Error Object    | Status Code     | Content Type    |
