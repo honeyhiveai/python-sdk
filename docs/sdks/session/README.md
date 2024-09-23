@@ -1,6 +1,8 @@
 # Session
 (*session*)
 
+## Overview
+
 ### Available Operations
 
 * [start_session](#start_session) - Start a new session
@@ -31,26 +33,26 @@ res = s.session.start_session(request=operations.StartSessionRequestBody(
             '7f22137a-6911-4ed3-bc36-110f1dde6b66',
         ],
         inputs={
-            'context': 'Hello world',
-            'question': 'What is in the context?',
             'chat_history': [
                 {
                     'role': 'system',
-                    'content': 'Answer the user\'s question only using provided context.
-
-                    Context: Hello world',
+                    'content': 'Answer the user\'s question only using provided context.\n' +
+                    '\n' +
+                    'Context: Hello world',
                 },
                 {
                     'role': 'user',
                     'content': 'What is in the context?',
                 },
             ],
+            'context': 'Hello world',
+            'question': 'What is in the context?',
         },
         outputs={
-            'role': 'assistant',
             'content': 'Hello world',
+            'role': 'assistant',
         },
-        error=None,
+        error='<value>',
         duration=824.8056,
         user_properties={
             'user': 'google-oauth2|111840237613341303366',
@@ -81,15 +83,16 @@ if res.object is not None:
 | ---------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------- |
 | `request`                                                                                | [operations.StartSessionRequestBody](../../models/operations/startsessionrequestbody.md) | :heavy_check_mark:                                                                       | The request object to use for the request.                                               |
 
-
 ### Response
 
 **[operations.StartSessionResponse](../../models/operations/startsessionresponse.md)**
+
 ### Errors
 
 | Error Object    | Status Code     | Content Type    |
 | --------------- | --------------- | --------------- |
 | errors.SDKError | 4xx-5xx         | */*             |
+
 
 ## get_session
 
@@ -119,10 +122,10 @@ if res.event is not None:
 | ------------------ | ------------------ | ------------------ | ------------------ |
 | `session_id`       | *str*              | :heavy_check_mark: | N/A                |
 
-
 ### Response
 
 **[operations.GetSessionResponse](../../models/operations/getsessionresponse.md)**
+
 ### Errors
 
 | Error Object    | Status Code     | Content Type    |

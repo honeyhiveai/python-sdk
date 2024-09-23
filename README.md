@@ -31,26 +31,26 @@ res = s.session.start_session(request=operations.StartSessionRequestBody(
             '7f22137a-6911-4ed3-bc36-110f1dde6b66',
         ],
         inputs={
-            'context': 'Hello world',
-            'question': 'What is in the context?',
             'chat_history': [
                 {
                     'role': 'system',
-                    'content': 'Answer the user\'s question only using provided context.
-
-                    Context: Hello world',
+                    'content': 'Answer the user\'s question only using provided context.\n' +
+                    '\n' +
+                    'Context: Hello world',
                 },
                 {
                     'role': 'user',
                     'content': 'What is in the context?',
                 },
             ],
+            'context': 'Hello world',
+            'question': 'What is in the context?',
         },
         outputs={
-            'role': 'assistant',
             'content': 'Hello world',
+            'role': 'assistant',
         },
-        error=None,
+        error='<value>',
         duration=824.8056,
         user_properties={
             'user': 'google-oauth2|111840237613341303366',
@@ -79,33 +79,15 @@ if res.object is not None:
 <!-- Start Available Resources and Operations [operations] -->
 ## Available Resources and Operations
 
-### [session](docs/sdks/session/README.md)
+<details open>
+<summary>Available methods</summary>
 
-* [start_session](docs/sdks/session/README.md#start_session) - Start a new session
-* [get_session](docs/sdks/session/README.md#get_session) - Retrieve a session
+### [configurations](docs/sdks/configurations/README.md)
 
-### [events](docs/sdks/events/README.md)
-
-* [create_event](docs/sdks/events/README.md#create_event) - Create a new event
-* [update_event](docs/sdks/events/README.md#update_event) - Update an event
-* [get_events](docs/sdks/events/README.md#get_events) - Retrieve events based on filters
-* [create_model_event](docs/sdks/events/README.md#create_model_event) - Create a new model event
-* [create_event_batch](docs/sdks/events/README.md#create_event_batch) - Create a batch of events
-* [create_model_event_batch](docs/sdks/events/README.md#create_model_event_batch) - Create a batch of model events
-
-### [metrics](docs/sdks/metrics/README.md)
-
-* [get_metrics](docs/sdks/metrics/README.md#get_metrics) - Get all metrics
-* [create_metric](docs/sdks/metrics/README.md#create_metric) - Create a new metric
-* [update_metric](docs/sdks/metrics/README.md#update_metric) - Update an existing metric
-* [delete_metric](docs/sdks/metrics/README.md#delete_metric) - Delete a metric
-
-### [tools](docs/sdks/tools/README.md)
-
-* [get_tools](docs/sdks/tools/README.md#get_tools) - Retrieve a list of tools
-* [create_tool](docs/sdks/tools/README.md#create_tool) - Create a new tool
-* [update_tool](docs/sdks/tools/README.md#update_tool) - Update an existing tool
-* [delete_tool](docs/sdks/tools/README.md#delete_tool) - Delete a tool
+* [get_configurations](docs/sdks/configurations/README.md#get_configurations) - Retrieve a list of configurations
+* [create_configuration](docs/sdks/configurations/README.md#create_configuration) - Create a new configuration
+* [update_configuration](docs/sdks/configurations/README.md#update_configuration) - Update an existing configuration
+* [delete_configuration](docs/sdks/configurations/README.md#delete_configuration) - Delete a configuration
 
 ### [datapoints](docs/sdks/datapoints/README.md)
 
@@ -123,6 +105,23 @@ if res.object is not None:
 * [delete_dataset](docs/sdks/datasets/README.md#delete_dataset) - Delete a dataset
 * [add_datapoints](docs/sdks/datasets/README.md#add_datapoints) - Add datapoints to a dataset
 
+### [events](docs/sdks/events/README.md)
+
+* [create_event](docs/sdks/events/README.md#create_event) - Create a new event
+* [update_event](docs/sdks/events/README.md#update_event) - Update an event
+* [get_events](docs/sdks/events/README.md#get_events) - Retrieve events based on filters
+* [create_model_event](docs/sdks/events/README.md#create_model_event) - Create a new model event
+* [create_event_batch](docs/sdks/events/README.md#create_event_batch) - Create a batch of events
+* [create_model_event_batch](docs/sdks/events/README.md#create_model_event_batch) - Create a batch of model events
+
+
+### [metrics](docs/sdks/metrics/README.md)
+
+* [get_metrics](docs/sdks/metrics/README.md#get_metrics) - Get all metrics
+* [create_metric](docs/sdks/metrics/README.md#create_metric) - Create a new metric
+* [update_metric](docs/sdks/metrics/README.md#update_metric) - Update an existing metric
+* [delete_metric](docs/sdks/metrics/README.md#delete_metric) - Delete a metric
+
 ### [projects](docs/sdks/projects/README.md)
 
 * [get_projects](docs/sdks/projects/README.md#get_projects) - Get a list of projects
@@ -138,12 +137,19 @@ if res.object is not None:
 * [update_run](docs/sdks/runs/README.md#update_run) - Update an evaluation run
 * [delete_run](docs/sdks/runs/README.md#delete_run) - Delete an evaluation run
 
-### [configurations](docs/sdks/configurations/README.md)
+### [session](docs/sdks/session/README.md)
 
-* [get_configurations](docs/sdks/configurations/README.md#get_configurations) - Retrieve a list of configurations
-* [create_configuration](docs/sdks/configurations/README.md#create_configuration) - Create a new configuration
-* [update_configuration](docs/sdks/configurations/README.md#update_configuration) - Update an existing configuration
-* [delete_configuration](docs/sdks/configurations/README.md#delete_configuration) - Delete a configuration
+* [start_session](docs/sdks/session/README.md#start_session) - Start a new session
+* [get_session](docs/sdks/session/README.md#get_session) - Retrieve a session
+
+### [tools](docs/sdks/tools/README.md)
+
+* [get_tools](docs/sdks/tools/README.md#get_tools) - Retrieve a list of tools
+* [create_tool](docs/sdks/tools/README.md#create_tool) - Create a new tool
+* [update_tool](docs/sdks/tools/README.md#update_tool) - Update an existing tool
+* [delete_tool](docs/sdks/tools/README.md#delete_tool) - Delete a tool
+
+</details>
 <!-- End Available Resources and Operations [operations] -->
 
 <!-- Start Error Handling [errors] -->
@@ -193,9 +199,9 @@ try:
                 'template': [
                     {
                         'role': 'system',
-                        'content': 'Answer the user\'s question only using provided context.
-
-                        Context: {{ context }}',
+                        'content': 'Answer the user\'s question only using provided context.\n' +
+                        '\n' +
+                        'Context: {{ context }}',
                     },
                     {
                         'role': 'user',
@@ -210,9 +216,9 @@ try:
                 'chat_history': [
                     {
                         'role': 'system',
-                        'content': 'Answer the user\'s question only using provided context.
-
-                        Context: Hello world',
+                        'content': 'Answer the user\'s question only using provided context.\n' +
+                        '\n' +
+                        'Context: Hello world',
                     },
                     {
                         'role': 'user',
@@ -231,7 +237,7 @@ try:
                 'role': 'assistant',
                 'content': 'Hello world',
             },
-            error=None,
+            error='<value>',
             start_time=1714978764301,
             end_time=1714978765301,
             metadata={
@@ -302,26 +308,26 @@ res = s.session.start_session(request=operations.StartSessionRequestBody(
             '7f22137a-6911-4ed3-bc36-110f1dde6b66',
         ],
         inputs={
-            'context': 'Hello world',
-            'question': 'What is in the context?',
             'chat_history': [
                 {
                     'role': 'system',
-                    'content': 'Answer the user\'s question only using provided context.
-
-                    Context: Hello world',
+                    'content': 'Answer the user\'s question only using provided context.\n' +
+                    '\n' +
+                    'Context: Hello world',
                 },
                 {
                     'role': 'user',
                     'content': 'What is in the context?',
                 },
             ],
+            'context': 'Hello world',
+            'question': 'What is in the context?',
         },
         outputs={
-            'role': 'assistant',
             'content': 'Hello world',
+            'role': 'assistant',
         },
-        error=None,
+        error='<value>',
         duration=824.8056,
         user_properties={
             'user': 'google-oauth2|111840237613341303366',
@@ -370,26 +376,26 @@ res = s.session.start_session(request=operations.StartSessionRequestBody(
             '7f22137a-6911-4ed3-bc36-110f1dde6b66',
         ],
         inputs={
-            'context': 'Hello world',
-            'question': 'What is in the context?',
             'chat_history': [
                 {
                     'role': 'system',
-                    'content': 'Answer the user\'s question only using provided context.
-
-                    Context: Hello world',
+                    'content': 'Answer the user\'s question only using provided context.\n' +
+                    '\n' +
+                    'Context: Hello world',
                 },
                 {
                     'role': 'user',
                     'content': 'What is in the context?',
                 },
             ],
+            'context': 'Hello world',
+            'question': 'What is in the context?',
         },
         outputs={
-            'role': 'assistant',
             'content': 'Hello world',
+            'role': 'assistant',
         },
-        error=None,
+        error='<value>',
         duration=824.8056,
         user_properties={
             'user': 'google-oauth2|111840237613341303366',
@@ -462,26 +468,26 @@ res = s.session.start_session(request=operations.StartSessionRequestBody(
             '7f22137a-6911-4ed3-bc36-110f1dde6b66',
         ],
         inputs={
-            'context': 'Hello world',
-            'question': 'What is in the context?',
             'chat_history': [
                 {
                     'role': 'system',
-                    'content': 'Answer the user\'s question only using provided context.
-
-                    Context: Hello world',
+                    'content': 'Answer the user\'s question only using provided context.\n' +
+                    '\n' +
+                    'Context: Hello world',
                 },
                 {
                     'role': 'user',
                     'content': 'What is in the context?',
                 },
             ],
+            'context': 'Hello world',
+            'question': 'What is in the context?',
         },
         outputs={
-            'role': 'assistant',
             'content': 'Hello world',
+            'role': 'assistant',
         },
-        error=None,
+        error='<value>',
         duration=824.8056,
         user_properties={
             'user': 'google-oauth2|111840237613341303366',
@@ -507,8 +513,28 @@ if res.object is not None:
 ```
 <!-- End Authentication [security] -->
 
+<!-- Start Summary [summary] -->
+## Summary
+
+
+<!-- End Summary [summary] -->
+
+<!-- Start Table of Contents [toc] -->
+## Table of Contents
+
+* [SDK Installation](#sdk-installation)
+* [SDK Example Usage](#sdk-example-usage)
+* [Available Resources and Operations](#available-resources-and-operations)
+* [Error Handling](#error-handling)
+* [Server Selection](#server-selection)
+* [Custom HTTP Client](#custom-http-client)
+* [Authentication](#authentication)
+<!-- End Table of Contents [toc] -->
+
 <!-- Start SDK Installation [installation] -->
 ## SDK Installation
+
+The SDK can be installed using the *pip* package manager, with dependencies and metadata stored in the `setup.py` file.
 
 ```bash
 pip install HoneyHive

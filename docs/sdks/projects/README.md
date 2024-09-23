@@ -1,6 +1,8 @@
 # Projects
 (*projects*)
 
+## Overview
+
 ### Available Operations
 
 * [get_projects](#get_projects) - Get a list of projects
@@ -22,7 +24,7 @@ s = honeyhive.HoneyHive(
 )
 
 
-res = s.projects.get_projects(name='<value>')
+res = s.projects.get_projects()
 
 if res.projects is not None:
     # handle response
@@ -36,15 +38,16 @@ if res.projects is not None:
 | ------------------ | ------------------ | ------------------ | ------------------ |
 | `name`             | *Optional[str]*    | :heavy_minus_sign: | N/A                |
 
-
 ### Response
 
 **[operations.GetProjectsResponse](../../models/operations/getprojectsresponse.md)**
+
 ### Errors
 
 | Error Object    | Status Code     | Content Type    |
 | --------------- | --------------- | --------------- |
 | errors.SDKError | 4xx-5xx         | */*             |
+
 
 ## create_project
 
@@ -77,15 +80,16 @@ if res.project is not None:
 | ---------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------- |
 | `request`                                                                          | [components.CreateProjectRequest](../../models/components/createprojectrequest.md) | :heavy_check_mark:                                                                 | The request object to use for the request.                                         |
 
-
 ### Response
 
 **[operations.CreateProjectResponse](../../models/operations/createprojectresponse.md)**
+
 ### Errors
 
 | Error Object    | Status Code     | Content Type    |
 | --------------- | --------------- | --------------- |
 | errors.SDKError | 4xx-5xx         | */*             |
+
 
 ## update_project
 
@@ -118,15 +122,16 @@ if res is not None:
 | ---------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------- |
 | `request`                                                                          | [components.UpdateProjectRequest](../../models/components/updateprojectrequest.md) | :heavy_check_mark:                                                                 | The request object to use for the request.                                         |
 
-
 ### Response
 
 **[operations.UpdateProjectResponse](../../models/operations/updateprojectresponse.md)**
+
 ### Errors
 
 | Error Object    | Status Code     | Content Type    |
 | --------------- | --------------- | --------------- |
 | errors.SDKError | 4xx-5xx         | */*             |
+
 
 ## delete_project
 
@@ -156,10 +161,10 @@ if res is not None:
 | ------------------ | ------------------ | ------------------ | ------------------ |
 | `name`             | *str*              | :heavy_check_mark: | N/A                |
 
-
 ### Response
 
 **[operations.DeleteProjectResponse](../../models/operations/deleteprojectresponse.md)**
+
 ### Errors
 
 | Error Object    | Status Code     | Content Type    |
