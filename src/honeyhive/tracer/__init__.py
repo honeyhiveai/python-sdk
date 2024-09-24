@@ -29,7 +29,12 @@ class HoneyHiveTracer:
             
             # Set session_name to the main module name if not provided
             if session_name is None:
-                session_name = os.path.basename(sys.argv[0])
+                try:
+                    session_name = os.path.basename(sys.argv[0])
+                except Exception as e:
+                    if HoneyHiveTracer.verbose:
+                        print(f"Error setting session_name: {e}")
+                    session_name = "unknown"
             
             session_id = HoneyHiveTracer.__start_session(
                 api_key, project, session_name, source, server_url
@@ -91,71 +96,41 @@ class HoneyHiveTracer:
         return res.object.session_id
 
     @staticmethod
-    def set_feedback(feedback):
-        if HoneyHiveTracer.session_id is None:
-            raise Exception("HoneyHiveTracer is not initialized")
-        session_id = HoneyHiveTracer.session_id
-        try:
-            sdk = honeyhive.HoneyHive(HoneyHiveTracer.api_key)
-            sdk.events.update_event(
-                request=operations.UpdateEventRequestBody(
-                    event_id=session_id, feedback=feedback
-                )
-            )
-        except:
-            if HoneyHiveTracer.verbose:
-                print_exc()
-            else:
-                pass
-
-    @staticmethod
-    def set_metric(metrics):
-        if HoneyHiveTracer.session_id is None:
-            raise Exception("HoneyHiveTracer is not initialized")
-        session_id = HoneyHiveTracer.session_id
-        try:
-            sdk = honeyhive.HoneyHive(HoneyHiveTracer.api_key)
-            sdk.events.update_event(
-                request=operations.UpdateEventRequestBody(
-                    event_id=session_id,
-                    metrics=metrics,
-                )
-            )
-        except:
-            if HoneyHiveTracer.verbose:
-                print_exc()
-            else:
-                pass
-
-    @staticmethod
-    def set_metadata(metadata):
-        if HoneyHiveTracer.session_id is None:
-            raise Exception("HoneyHiveTracer is not initialized")
-        session_id = HoneyHiveTracer.session_id
-        try:
-            sdk = honeyhive.HoneyHive(HoneyHiveTracer.api_key)
-            sdk.events.update_event(
-                request=operations.UpdateEventRequestBody(
-                    event_id=session_id, metadata=metadata
-                )
-            )
-        except:
-            if HoneyHiveTracer.verbose:
-                print_exc()
-            else:
-                pass
-
-    @staticmethod
     def flush():
         TracerWrapper().flush()
 
-# TODO: this currently leads to PUT tool events being created
-def enrich_session(metadata=None, feedback=None, metrics=None):
-    if metadata:
-        HoneyHiveTracer.set_metadata(metadata)
-
-    if feedback:
-        HoneyHiveTracer.set_feedback(feedback)
-
-    if metrics:
-        HoneyHiveTracer.set_metric(metrics)
+def enrich_session(
+    metadata=None, 
+    feedback=None, 
+    metrics=None, 
+    config=None, 
+    inputs=None, 
+    outputs=None, 
+    user_properties=None
+):
+    if HoneyHiveTracer.session_id is None:
+        raise Exception("HoneyHiveTracer is not initialized")
+    session_id = HoneyHiveTracer.session_id
+    try:
+        sdk = honeyhive.HoneyHive(HoneyHiveTracer.api_key)
+        update_request = operations.UpdateEventRequestBody(event_id=session_id)
+        if feedback is not None:
+            update_request.feedback = feedback
+        if metrics is not None:
+            update_request.metrics = metrics
+        if metadata is not None:
+            update_request.metadata = metadata
+        if config is not None:
+            update_request.config = config
+        if inputs is not None:
+            print('inputs are not supported in enrich_session') # TODO: add support for inputs (type change)
+        if outputs is not None:
+            update_request.outputs = outputs
+        if user_properties is not None:
+            update_request.user_properties = user_properties
+        sdk.events.update_event(request=update_request)
+    except:
+        if HoneyHiveTracer.verbose:
+            print_exc()
+        else:
+            pass
