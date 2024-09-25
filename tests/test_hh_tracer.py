@@ -4,8 +4,8 @@ import honeyhive
 import time
 import uuid
 from honeyhive.models import components, operations
-from honeyhive.tracer import HoneyHiveTracer
-from honeyhive.tracer.custom import trace
+from honeyhive.tracer import HoneyHiveTracer, enrich_session
+from honeyhive.tracer.custom import trace, enrich_span
 from llama_index.core import VectorStoreIndex
 from llama_index.readers.web import SimpleWebPageReader
 
@@ -204,7 +204,7 @@ def test_tracer_metadata_update():
     run_tracer()
     time.sleep(10)
 
-    HoneyHiveTracer.set_metadata({"test": "value"})
+    enrich_session(metadata={"test": "value"})
     time.sleep(10)
 
     session_id = HoneyHiveTracer.session_id
@@ -236,7 +236,7 @@ def test_tracer_feedback_update():
     run_tracer()
     time.sleep(10)
 
-    HoneyHiveTracer.set_feedback({"comment": "test feedback"})
+    enrich_session(feedback={"comment": "test feedback"})
     time.sleep(10)
 
     session_id = HoneyHiveTracer.session_id
@@ -268,7 +268,7 @@ def test_tracer_evaluator_update():
     run_tracer()
     time.sleep(10)
 
-    HoneyHiveTracer.set_metric({"tps": 1.78})
+    enrich_session(metrics={"tps": 1.78})
     time.sleep(10)
 
     session_id = HoneyHiveTracer.session_id
