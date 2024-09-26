@@ -3,11 +3,11 @@ info:
   title: CodeSamples overlay for python target
   version: 0.0.0
 actions:
-  - target: $["paths"]["/session/{session_id}"]["get"]
+  - target: $["paths"]["/projects"]["get"]
     update:
       x-codeSamples:
         - lang: python
-          label: getSession
+          label: getProjects
           source: |-
             import honeyhive
 
@@ -16,9 +16,9 @@ actions:
             )
 
 
-            res = s.session.get_session(session_id='<value>')
+            res = s.projects.get_projects(name='<value>')
 
-            if res.event is not None:
+            if res.projects is not None:
                 # handle response
                 pass
   - target: $["paths"]["/events/model/batch"]["post"]
@@ -97,11 +97,29 @@ actions:
             if res.object is not None:
                 # handle response
                 pass
-  - target: $["paths"]["/runs"]["post"]
+  - target: $["paths"]["/metrics"]["get"]
     update:
       x-codeSamples:
         - lang: python
-          label: createRun
+          label: getMetrics
+          source: |-
+            import honeyhive
+
+            s = honeyhive.HoneyHive(
+                bearer_auth="<YOUR_BEARER_TOKEN_HERE>",
+            )
+
+
+            res = s.metrics.get_metrics(project_name='<value>')
+
+            if res.metrics is not None:
+                # handle response
+                pass
+  - target: $["paths"]["/datasets"]["put"]
+    update:
+      x-codeSamples:
+        - lang: python
+          label: updateDataset
           source: |-
             import honeyhive
             from honeyhive.models import components
@@ -111,22 +129,30 @@ actions:
             )
 
 
-            res = s.runs.create_run(request=components.CreateRunRequest(
-                project='<value>',
-                name='<value>',
-                event_ids=[
-                    '1b590040-fd4d-40db-a8d8-d6e550cfa9f3',
+            res = s.datasets.update_dataset(request=components.DatasetUpdate(
+                dataset_id='663876ec4611c47f4970f0c3',
+                name='new-dataset-name',
+                description='An updated dataset description',
+                datapoints=[
+                    '66369748b5773befbdc661e',
                 ],
+                linked_evals=[
+                    '66369748b5773befbdasdk1',
+                ],
+                metadata={
+                    'updated': True,
+                    'source': 'prod',
+                },
             ))
 
-            if res.create_run_response is not None:
+            if res is not None:
                 # handle response
                 pass
-  - target: $["paths"]["/configurations"]["get"]
+  - target: $["paths"]["/datasets/{dataset_id}/datapoints"]["post"]
     update:
       x-codeSamples:
         - lang: python
-          label: getConfigurations
+          label: addDatapoints
           source: |-
             import honeyhive
             from honeyhive.models import operations
@@ -136,301 +162,24 @@ actions:
             )
 
 
-            res = s.configurations.get_configurations(project='<value>', env=operations.Env.DEV, name='<value>')
-
-            if res.configurations is not None:
-                # handle response
-                pass
-  - target: $["paths"]["/configurations/{id}"]["put"]
-    update:
-      x-codeSamples:
-        - lang: python
-          label: updateConfiguration
-          source: |-
-            import honeyhive
-            from honeyhive.models import components
-
-            s = honeyhive.HoneyHive(
-                bearer_auth="<YOUR_BEARER_TOKEN_HERE>",
-            )
-
-
-            res = s.configurations.update_configuration(id='<value>', put_configuration_request=components.PutConfigurationRequest(
-                project='New Project',
-                name='function-v0',
-                provider='openai',
-                parameters=components.PutConfigurationRequestParameters(
-                    call_type=components.PutConfigurationRequestCallType.CHAT,
-                    model='gpt-4-turbo-preview',
-                    hyperparameters={
-                        'temperature': 0,
-                        'max_tokens': 1000,
-                        'top_p': 1,
-                        'top_k': -1,
-                        'frequency_penalty': 0,
-                        'presence_penalty': 0,
-                        'stop_sequences': [
-                            '<value>',
-                        ],
+            res = s.datasets.add_datapoints(dataset_id='<value>', request_body=operations.AddDatapointsRequestBody(
+                project='<value>',
+                data=[
+                    {
+                        'key': '<value>',
                     },
-                    response_format=components.PutConfigurationRequestResponseFormat(),
-                    selected_functions=[
-                        components.PutConfigurationRequestSelectedFunctions(
-                            id='64e3ba90e81f9b3a3808c27f',
-                            name='get_google_information',
-                            description='Get information from Google when you do not have that information in your context',
-                            parameters={
-                                'type': 'object',
-                                'properties': {
-                                    'query': {
-                                        'type': 'string',
-                                        'description': 'The query asked by the user',
-                                    },
-                                },
-                                'required': [
-                                    'query',
-                                ],
-                            },
-                        ),
-                    ],
-                    function_call_params=components.PutConfigurationRequestFunctionCallParams.AUTO,
-                    force_function={
-
-                    },
-                    additional_properties={
-                        'template': [
-                            {
-                                'role': 'system',
-                                'content': 'You are a web search assistant.',
-                            },
-                            {
-                                'role': 'user',
-                                'content': '{{ query }}',
-                            },
-                        ],
-                    },
-                ),
-                env=[
-                    components.PutConfigurationRequestEnv.STAGING,
                 ],
-                type=components.PutConfigurationRequestType.LLM,
-                user_properties={
-                    'user_id': 'google-oauth2|108897808434934946583',
-                    'user_name': 'Dhruv Singh',
-                    'user_picture': 'https://lh3.googleusercontent.com/a/ACg8ocLyQilNtK9RIv4M0p-0FBSbxljBP0p5JabnStku1AQKtFSK=s96-c',
-                    'user_email': 'dhruv@honeyhive.ai',
-                },
-            ))
-
-            if res is not None:
-                # handle response
-                pass
-  - target: $["paths"]["/events"]["post"]
-    update:
-      x-codeSamples:
-        - lang: python
-          label: createEvent
-          source: |-
-            import honeyhive
-            from honeyhive.models import components, operations
-
-            s = honeyhive.HoneyHive(
-                bearer_auth="<YOUR_BEARER_TOKEN_HERE>",
-            )
-
-
-            res = s.events.create_event(request=operations.CreateEventRequestBody(
-                event=components.CreateEventRequest(
-                    project='Simple RAG',
-                    source='playground',
-                    event_name='Model Completion',
-                    event_type=components.CreateEventRequestEventType.MODEL,
-                    event_id='7f22137a-6911-4ed3-bc36-110f1dde6b66',
-                    session_id='caf77ace-3417-4da4-944d-f4a0688f3c23',
-                    parent_id='caf77ace-3417-4da4-944d-f4a0688f3c23',
-                    children_ids=[
+                mapping=operations.Mapping(
+                    inputs=[
                         '<value>',
                     ],
-                    config={
-                        'model': 'gpt-3.5-turbo',
-                        'version': 'v0.1',
-                        'provider': 'openai',
-                        'hyperparameters': {
-                            'temperature': 0,
-                            'top_p': 1,
-                            'max_tokens': 1000,
-                            'presence_penalty': 0,
-                            'frequency_penalty': 0,
-                            'stop': [
-                                '<value>',
-                            ],
-                            'n': 1,
-                        },
-                        'template': [
-                            {
-                                'role': 'system',
-                                'content': 'Answer the user\'s question only using provided context.
-
-                                Context: {{ context }}',
-                            },
-                            {
-                                'role': 'user',
-                                'content': '{{question}}',
-                            },
-                        ],
-                        'type': 'chat',
-                    },
-                    inputs={
-                        'context': 'Hello world',
-                        'question': 'What is in the context?',
-                        'chat_history': [
-                            {
-                                'role': 'system',
-                                'content': 'Answer the user\'s question only using provided context.
-
-                                Context: Hello world',
-                            },
-                            {
-                                'role': 'user',
-                                'content': 'What is in the context?',
-                            },
-                        ],
-                    },
-                    outputs={
-                        'role': 'assistant',
-                        'content': 'Hello world',
-                    },
-                    error=None,
-                    start_time=1714978764301,
-                    end_time=1714978765301,
-                    duration=999.8056,
-                    metadata={
-                        'cost': 0.00008,
-                        'completion_tokens': 23,
-                        'prompt_tokens': 35,
-                        'total_tokens': 58,
-                    },
-                    feedback={
-
-                    },
-                    metrics={
-                        'Answer Faithfulness': 5,
-                        'Answer Faithfulness_explanation': 'The AI assistant\'s answer is a concise and accurate description of Ramp\'s API. It provides a clear explanation of what the API does and how developers can use it to integrate Ramp\'s financial services into their own applications. The answer is faithful to the provided context.',
-                        'Number of words': 18,
-                    },
-                    user_properties={
-                        'user': 'google-oauth2|111840237613341303366',
-                    },
+                    ground_truth=[
+                        '<value>',
+                    ],
+                    history=[
+                        '<value>',
+                    ],
                 ),
-            ))
-
-            if res.object is not None:
-                # handle response
-                pass
-  - target: $["paths"]["/metrics"]["post"]
-    update:
-      x-codeSamples:
-        - lang: python
-          label: createMetric
-          source: |-
-            import honeyhive
-            from honeyhive.models import components
-
-            s = honeyhive.HoneyHive(
-                bearer_auth="<YOUR_BEARER_TOKEN_HERE>",
-            )
-
-
-            res = s.metrics.create_metric(request=components.Metric(
-                name='<value>',
-                task='<value>',
-                type=components.MetricType.MODEL,
-                description='Fully-configurable neutral framework',
-                return_type=components.ReturnType.STRING,
-            ))
-
-            if res is not None:
-                # handle response
-                pass
-  - target: $["paths"]["/metrics"]["delete"]
-    update:
-      x-codeSamples:
-        - lang: python
-          label: deleteMetric
-          source: |-
-            import honeyhive
-
-            s = honeyhive.HoneyHive(
-                bearer_auth="<YOUR_BEARER_TOKEN_HERE>",
-            )
-
-
-            res = s.metrics.delete_metric(metric_id='<value>')
-
-            if res is not None:
-                # handle response
-                pass
-  - target: $["paths"]["/tools"]["delete"]
-    update:
-      x-codeSamples:
-        - lang: python
-          label: deleteTool
-          source: |-
-            import honeyhive
-
-            s = honeyhive.HoneyHive(
-                bearer_auth="<YOUR_BEARER_TOKEN_HERE>",
-            )
-
-
-            res = s.tools.delete_tool(function_id='<value>')
-
-            if res is not None:
-                # handle response
-                pass
-  - target: $["paths"]["/datapoints"]["post"]
-    update:
-      x-codeSamples:
-        - lang: python
-          label: createDatapoint
-          source: |-
-            import honeyhive
-            from honeyhive.models import components
-
-            s = honeyhive.HoneyHive(
-                bearer_auth="<YOUR_BEARER_TOKEN_HERE>",
-            )
-
-
-            res = s.datapoints.create_datapoint(request=components.CreateDatapointRequest(
-                project='New Project',
-                inputs={
-                    'query': 'what\'s the temperature in Iceland?',
-                },
-                history=[
-                    {
-                        'role': 'system',
-                        'content': 'You are a helpful web assistant that helps users answer questions about the world based on the information provided to you by Google\'s search API. Answer the questions as truthfully as you can. In case you are unsure about the correct answer, please respond with "I apologize but I\'m not sure."',
-                    },
-                    {
-                        'role': 'user',
-                        'content': 'what\'s the temperature in Iceland?\n\n\n--Google search API results below:---\n\n"snippet":"2 Week Extended Forecast in Reykjavik, Iceland ; Feb 4, 29 / 20 °F · Snow showers early. Broken clouds. ; Feb 5, 27 / 16 °F · Light snow. Decreasing cloudiness.","snippet_highlighted_words":["Feb 4, 29 / 20 °F"]',
-                    },
-                ],
-                ground_truth={
-                    'role': 'assistant',
-                    'content': 'The temperature in Reykjavik, Iceland is currently around 5F or -15C. Please note that weather conditions can change rapidly, so it\'s best to check a reliable source for the most up-to-date information.',
-                },
-                linked_event='6bba5182-d4b1-4b29-a64a-f0a8bd964f76',
-                linked_datasets=[
-                    '<value>',
-                ],
-                metadata={
-                    'question_type': 'weather',
-                    'completion_tokens': 47,
-                    'prompt_tokens': 696,
-                    'total_tokens': 743,
-                },
             ))
 
             if res.object is not None:
@@ -454,23 +203,22 @@ actions:
             if res is not None:
                 # handle response
                 pass
-  - target: $["paths"]["/runs/{run_id}"]["put"]
+  - target: $["paths"]["/runs/{run_id}"]["delete"]
     update:
       x-codeSamples:
         - lang: python
-          label: updateRun
+          label: deleteRun
           source: |-
             import honeyhive
-            from honeyhive.models import components
 
             s = honeyhive.HoneyHive(
                 bearer_auth="<YOUR_BEARER_TOKEN_HERE>",
             )
 
 
-            res = s.runs.update_run(run_id='<value>', update_run_request=components.UpdateRunRequest())
+            res = s.runs.delete_run(run_id='<value>')
 
-            if res.update_run_response is not None:
+            if res.delete_run_response is not None:
                 # handle response
                 pass
   - target: $["paths"]["/configurations"]["post"]
@@ -584,11 +332,29 @@ actions:
             if res.object is not None:
                 # handle response
                 pass
-  - target: $["paths"]["/tools"]["post"]
+  - target: $["paths"]["/runs"]["get"]
     update:
       x-codeSamples:
         - lang: python
-          label: createTool
+          label: getRuns
+          source: |-
+            import honeyhive
+
+            s = honeyhive.HoneyHive(
+                bearer_auth="<YOUR_BEARER_TOKEN_HERE>",
+            )
+
+
+            res = s.runs.get_runs(project='<value>')
+
+            if res.get_runs_response is not None:
+                # handle response
+                pass
+  - target: $["paths"]["/configurations/{id}"]["put"]
+    update:
+      x-codeSamples:
+        - lang: python
+          label: updateConfiguration
           source: |-
             import honeyhive
             from honeyhive.models import components
@@ -598,16 +364,383 @@ actions:
             )
 
 
-            res = s.tools.create_tool(request=components.CreateToolRequest(
-                task='<value>',
+            res = s.configurations.update_configuration(id='<value>', put_configuration_request=components.PutConfigurationRequest(
+                project='New Project',
+                name='function-v0',
+                provider='openai',
+                parameters=components.PutConfigurationRequestParameters(
+                    call_type=components.PutConfigurationRequestCallType.CHAT,
+                    model='gpt-4-turbo-preview',
+                    hyperparameters={
+                        'temperature': 0,
+                        'max_tokens': 1000,
+                        'top_p': 1,
+                        'top_k': -1,
+                        'frequency_penalty': 0,
+                        'presence_penalty': 0,
+                        'stop_sequences': [
+                            '<value>',
+                        ],
+                    },
+                    response_format=components.PutConfigurationRequestResponseFormat(),
+                    selected_functions=[
+                        components.PutConfigurationRequestSelectedFunctions(
+                            id='64e3ba90e81f9b3a3808c27f',
+                            name='get_google_information',
+                            description='Get information from Google when you do not have that information in your context',
+                            parameters={
+                                'type': 'object',
+                                'properties': {
+                                    'query': {
+                                        'type': 'string',
+                                        'description': 'The query asked by the user',
+                                    },
+                                },
+                                'required': [
+                                    'query',
+                                ],
+                            },
+                        ),
+                    ],
+                    function_call_params=components.PutConfigurationRequestFunctionCallParams.AUTO,
+                    force_function={
+
+                    },
+                    additional_properties={
+                        'template': [
+                            {
+                                'role': 'system',
+                                'content': 'You are a web search assistant.',
+                            },
+                            {
+                                'role': 'user',
+                                'content': '{{ query }}',
+                            },
+                        ],
+                    },
+                ),
+                env=[
+                    components.PutConfigurationRequestEnv.STAGING,
+                ],
+                type=components.PutConfigurationRequestType.LLM,
+                user_properties={
+                    'user_id': 'google-oauth2|108897808434934946583',
+                    'user_name': 'Dhruv Singh',
+                    'user_picture': 'https://lh3.googleusercontent.com/a/ACg8ocLyQilNtK9RIv4M0p-0FBSbxljBP0p5JabnStku1AQKtFSK=s96-c',
+                    'user_email': 'dhruv@honeyhive.ai',
+                },
+            ))
+
+            if res is not None:
+                # handle response
+                pass
+  - target: $["paths"]["/configurations/{id}"]["delete"]
+    update:
+      x-codeSamples:
+        - lang: python
+          label: deleteConfiguration
+          source: |-
+            import honeyhive
+
+            s = honeyhive.HoneyHive(
+                bearer_auth="<YOUR_BEARER_TOKEN_HERE>",
+            )
+
+
+            res = s.configurations.delete_configuration(id='<value>')
+
+            if res is not None:
+                # handle response
+                pass
+  - target: $["paths"]["/events"]["post"]
+    update:
+      x-codeSamples:
+        - lang: python
+          label: createEvent
+          source: |-
+            import honeyhive
+            from honeyhive.models import components, operations
+
+            s = honeyhive.HoneyHive(
+                bearer_auth="<YOUR_BEARER_TOKEN_HERE>",
+            )
+
+
+            res = s.events.create_event(request=operations.CreateEventRequestBody(
+                event=components.CreateEventRequest(
+                    project='Simple RAG',
+                    source='playground',
+                    event_name='Model Completion',
+                    event_type=components.CreateEventRequestEventType.MODEL,
+                    event_id='7f22137a-6911-4ed3-bc36-110f1dde6b66',
+                    session_id='caf77ace-3417-4da4-944d-f4a0688f3c23',
+                    parent_id='caf77ace-3417-4da4-944d-f4a0688f3c23',
+                    children_ids=[
+                        '<value>',
+                    ],
+                    config={
+                        'model': 'gpt-3.5-turbo',
+                        'version': 'v0.1',
+                        'provider': 'openai',
+                        'hyperparameters': {
+                            'temperature': 0,
+                            'top_p': 1,
+                            'max_tokens': 1000,
+                            'presence_penalty': 0,
+                            'frequency_penalty': 0,
+                            'stop': [
+                                '<value>',
+                            ],
+                            'n': 1,
+                        },
+                        'template': [
+                            {
+                                'role': 'system',
+                                'content': 'Answer the user\'s question only using provided context.
+
+                                Context: {{ context }}',
+                            },
+                            {
+                                'role': 'user',
+                                'content': '{{question}}',
+                            },
+                        ],
+                        'type': 'chat',
+                    },
+                    inputs={
+                        'context': 'Hello world',
+                        'question': 'What is in the context?',
+                        'chat_history': [
+                            {
+                                'role': 'system',
+                                'content': 'Answer the user\'s question only using provided context.
+
+                                Context: Hello world',
+                            },
+                            {
+                                'role': 'user',
+                                'content': 'What is in the context?',
+                            },
+                        ],
+                    },
+                    outputs={
+                        'role': 'assistant',
+                        'content': 'Hello world',
+                    },
+                    error=None,
+                    start_time=1714978764301,
+                    end_time=1714978765301,
+                    duration=999.8056,
+                    metadata={
+                        'cost': 0.00008,
+                        'completion_tokens': 23,
+                        'prompt_tokens': 35,
+                        'total_tokens': 58,
+                    },
+                    feedback={
+
+                    },
+                    metrics={
+                        'Answer Faithfulness': 5,
+                        'Answer Faithfulness_explanation': 'The AI assistant\'s answer is a concise and accurate description of Ramp\'s API. It provides a clear explanation of what the API does and how developers can use it to integrate Ramp\'s financial services into their own applications. The answer is faithful to the provided context.',
+                        'Number of words': 18,
+                    },
+                    user_properties={
+                        'user': 'google-oauth2|111840237613341303366',
+                    },
+                ),
+            ))
+
+            if res.object is not None:
+                # handle response
+                pass
+  - target: $["paths"]["/events/batch"]["post"]
+    update:
+      x-codeSamples:
+        - lang: python
+          label: createEventBatch
+          source: |-
+            import honeyhive
+            from honeyhive.models import components, operations
+
+            s = honeyhive.HoneyHive(
+                bearer_auth="<YOUR_BEARER_TOKEN_HERE>",
+            )
+
+
+            res = s.events.create_event_batch(request=operations.CreateEventBatchRequestBody(
+                events=[
+                    components.CreateEventRequest(
+                        project='Simple RAG',
+                        source='playground',
+                        event_name='Model Completion',
+                        event_type=components.CreateEventRequestEventType.MODEL,
+                        event_id='7f22137a-6911-4ed3-bc36-110f1dde6b66',
+                        session_id='caf77ace-3417-4da4-944d-f4a0688f3c23',
+                        parent_id='caf77ace-3417-4da4-944d-f4a0688f3c23',
+                        children_ids=[
+                            '<value>',
+                        ],
+                        config={
+                            'model': 'gpt-3.5-turbo',
+                            'version': 'v0.1',
+                            'provider': 'openai',
+                            'hyperparameters': {
+                                'temperature': 0,
+                                'top_p': 1,
+                                'max_tokens': 1000,
+                                'presence_penalty': 0,
+                                'frequency_penalty': 0,
+                                'stop': [
+                                    '<value>',
+                                ],
+                                'n': 1,
+                            },
+                            'template': [
+                                {
+                                    'role': 'system',
+                                    'content': 'Answer the user\'s question only using provided context.
+
+                                    Context: {{ context }}',
+                                },
+                                {
+                                    'role': 'user',
+                                    'content': '{{question}}',
+                                },
+                            ],
+                            'type': 'chat',
+                        },
+                        inputs={
+                            'context': 'Hello world',
+                            'question': 'What is in the context?',
+                            'chat_history': [
+                                {
+                                    'role': 'system',
+                                    'content': 'Answer the user\'s question only using provided context.
+
+                                    Context: Hello world',
+                                },
+                                {
+                                    'role': 'user',
+                                    'content': 'What is in the context?',
+                                },
+                            ],
+                        },
+                        outputs={
+                            'role': 'assistant',
+                            'content': 'Hello world',
+                        },
+                        error=None,
+                        start_time=1714978764301,
+                        end_time=1714978765301,
+                        duration=999.8056,
+                        metadata={
+                            'cost': 0.00008,
+                            'completion_tokens': 23,
+                            'prompt_tokens': 35,
+                            'total_tokens': 58,
+                        },
+                        feedback={
+
+                        },
+                        metrics={
+                            'Answer Faithfulness': 5,
+                            'Answer Faithfulness_explanation': 'The AI assistant\'s answer is a concise and accurate description of Ramp\'s API. It provides a clear explanation of what the API does and how developers can use it to integrate Ramp\'s financial services into their own applications. The answer is faithful to the provided context.',
+                            'Number of words': 18,
+                        },
+                        user_properties={
+                            'user': 'google-oauth2|111840237613341303366',
+                        },
+                    ),
+                ],
+            ))
+
+            if res.object is not None:
+                # handle response
+                pass
+  - target: $["paths"]["/datapoints"]["get"]
+    update:
+      x-codeSamples:
+        - lang: python
+          label: getDatapoints
+          source: |-
+            import honeyhive
+
+            s = honeyhive.HoneyHive(
+                bearer_auth="<YOUR_BEARER_TOKEN_HERE>",
+            )
+
+
+            res = s.datapoints.get_datapoints(project='<value>', datapoint_ids=[
+                '<value>',
+            ], dataset_name='<value>')
+
+            if res.object is not None:
+                # handle response
+                pass
+  - target: $["paths"]["/configurations"]["get"]
+    update:
+      x-codeSamples:
+        - lang: python
+          label: getConfigurations
+          source: |-
+            import honeyhive
+            from honeyhive.models import operations
+
+            s = honeyhive.HoneyHive(
+                bearer_auth="<YOUR_BEARER_TOKEN_HERE>",
+            )
+
+
+            res = s.configurations.get_configurations(project='<value>', env=operations.Env.DEV, name='<value>')
+
+            if res.configurations is not None:
+                # handle response
+                pass
+  - target: $["paths"]["/projects"]["post"]
+    update:
+      x-codeSamples:
+        - lang: python
+          label: createProject
+          source: |-
+            import honeyhive
+            from honeyhive.models import components
+
+            s = honeyhive.HoneyHive(
+                bearer_auth="<YOUR_BEARER_TOKEN_HERE>",
+            )
+
+
+            res = s.projects.create_project(request=components.CreateProjectRequest(
+                name='<value>',
+            ))
+
+            if res.project is not None:
+                # handle response
+                pass
+  - target: $["paths"]["/tools"]["put"]
+    update:
+      x-codeSamples:
+        - lang: python
+          label: updateTool
+          source: |-
+            import honeyhive
+            from honeyhive.models import components
+
+            s = honeyhive.HoneyHive(
+                bearer_auth="<YOUR_BEARER_TOKEN_HERE>",
+            )
+
+
+            res = s.tools.update_tool(request=components.UpdateToolRequest(
+                id='<id>',
                 name='<value>',
                 parameters={
                     'key': '<value>',
                 },
-                type=components.CreateToolRequestType.TOOL,
             ))
 
-            if res.object is not None:
+            if res is not None:
                 # handle response
                 pass
   - target: $["paths"]["/datapoints/{id}"]["get"]
@@ -624,6 +757,24 @@ actions:
 
 
             res = s.datapoints.get_datapoint(id='<value>')
+
+            if res.object is not None:
+                # handle response
+                pass
+  - target: $["paths"]["/datapoints/{id}"]["delete"]
+    update:
+      x-codeSamples:
+        - lang: python
+          label: deleteDatapoint
+          source: |-
+            import honeyhive
+
+            s = honeyhive.HoneyHive(
+                bearer_auth="<YOUR_BEARER_TOKEN_HERE>",
+            )
+
+
+            res = s.datapoints.delete_datapoint(id='<value>')
 
             if res.object is not None:
                 # handle response
@@ -647,11 +798,11 @@ actions:
             if res.object is not None:
                 # handle response
                 pass
-  - target: $["paths"]["/projects"]["get"]
+  - target: $["paths"]["/projects"]["delete"]
     update:
       x-codeSamples:
         - lang: python
-          label: getProjects
+          label: deleteProject
           source: |-
             import honeyhive
 
@@ -660,66 +811,27 @@ actions:
             )
 
 
-            res = s.projects.get_projects(name='<value>')
-
-            if res.projects is not None:
-                # handle response
-                pass
-  - target: $["paths"]["/runs"]["get"]
-    update:
-      x-codeSamples:
-        - lang: python
-          label: getRuns
-          source: |-
-            import honeyhive
-
-            s = honeyhive.HoneyHive(
-                bearer_auth="<YOUR_BEARER_TOKEN_HERE>",
-            )
-
-
-            res = s.runs.get_runs(project='<value>')
-
-            if res.get_runs_response is not None:
-                # handle response
-                pass
-  - target: $["paths"]["/configurations/{id}"]["delete"]
-    update:
-      x-codeSamples:
-        - lang: python
-          label: deleteConfiguration
-          source: |-
-            import honeyhive
-
-            s = honeyhive.HoneyHive(
-                bearer_auth="<YOUR_BEARER_TOKEN_HERE>",
-            )
-
-
-            res = s.configurations.delete_configuration(id='<value>')
+            res = s.projects.delete_project(name='<value>')
 
             if res is not None:
                 # handle response
                 pass
-  - target: $["paths"]["/projects"]["put"]
+  - target: $["paths"]["/runs/{run_id}"]["get"]
     update:
       x-codeSamples:
         - lang: python
-          label: updateProject
+          label: getRun
           source: |-
             import honeyhive
-            from honeyhive.models import components
 
             s = honeyhive.HoneyHive(
                 bearer_auth="<YOUR_BEARER_TOKEN_HERE>",
             )
 
 
-            res = s.projects.update_project(request=components.UpdateProjectRequest(
-                project_id='<value>',
-            ))
+            res = s.runs.get_run(run_id='<value>')
 
-            if res is not None:
+            if res.get_run_response is not None:
                 # handle response
                 pass
   - target: $["paths"]["/session/start"]["post"]
@@ -861,108 +973,231 @@ actions:
             if res.object is not None:
                 # handle response
                 pass
-  - target: $["paths"]["/events/batch"]["post"]
+  - target: $["paths"]["/tools"]["post"]
     update:
       x-codeSamples:
         - lang: python
-          label: createEventBatch
+          label: createTool
           source: |-
             import honeyhive
-            from honeyhive.models import components, operations
+            from honeyhive.models import components
 
             s = honeyhive.HoneyHive(
                 bearer_auth="<YOUR_BEARER_TOKEN_HERE>",
             )
 
 
-            res = s.events.create_event_batch(request=operations.CreateEventBatchRequestBody(
-                events=[
-                    components.CreateEventRequest(
-                        project='Simple RAG',
-                        source='playground',
-                        event_name='Model Completion',
-                        event_type=components.CreateEventRequestEventType.MODEL,
-                        event_id='7f22137a-6911-4ed3-bc36-110f1dde6b66',
-                        session_id='caf77ace-3417-4da4-944d-f4a0688f3c23',
-                        parent_id='caf77ace-3417-4da4-944d-f4a0688f3c23',
-                        children_ids=[
-                            '<value>',
-                        ],
-                        config={
-                            'model': 'gpt-3.5-turbo',
-                            'version': 'v0.1',
-                            'provider': 'openai',
-                            'hyperparameters': {
-                                'temperature': 0,
-                                'top_p': 1,
-                                'max_tokens': 1000,
-                                'presence_penalty': 0,
-                                'frequency_penalty': 0,
-                                'stop': [
-                                    '<value>',
-                                ],
-                                'n': 1,
-                            },
-                            'template': [
-                                {
-                                    'role': 'system',
-                                    'content': 'Answer the user\'s question only using provided context.
-
-                                    Context: {{ context }}',
-                                },
-                                {
-                                    'role': 'user',
-                                    'content': '{{question}}',
-                                },
-                            ],
-                            'type': 'chat',
-                        },
-                        inputs={
-                            'context': 'Hello world',
-                            'question': 'What is in the context?',
-                            'chat_history': [
-                                {
-                                    'role': 'system',
-                                    'content': 'Answer the user\'s question only using provided context.
-
-                                    Context: Hello world',
-                                },
-                                {
-                                    'role': 'user',
-                                    'content': 'What is in the context?',
-                                },
-                            ],
-                        },
-                        outputs={
-                            'role': 'assistant',
-                            'content': 'Hello world',
-                        },
-                        error=None,
-                        start_time=1714978764301,
-                        end_time=1714978765301,
-                        duration=999.8056,
-                        metadata={
-                            'cost': 0.00008,
-                            'completion_tokens': 23,
-                            'prompt_tokens': 35,
-                            'total_tokens': 58,
-                        },
-                        feedback={
-
-                        },
-                        metrics={
-                            'Answer Faithfulness': 5,
-                            'Answer Faithfulness_explanation': 'The AI assistant\'s answer is a concise and accurate description of Ramp\'s API. It provides a clear explanation of what the API does and how developers can use it to integrate Ramp\'s financial services into their own applications. The answer is faithful to the provided context.',
-                            'Number of words': 18,
-                        },
-                        user_properties={
-                            'user': 'google-oauth2|111840237613341303366',
-                        },
-                    ),
-                ],
+            res = s.tools.create_tool(request=components.CreateToolRequest(
+                task='<value>',
+                name='<value>',
+                parameters={
+                    'key': '<value>',
+                },
+                type=components.CreateToolRequestType.TOOL,
             ))
 
             if res.object is not None:
+                # handle response
+                pass
+  - target: $["paths"]["/datapoints/{id}"]["put"]
+    update:
+      x-codeSamples:
+        - lang: python
+          label: updateDatapoint
+          source: |-
+            import honeyhive
+            from honeyhive.models import components
+
+            s = honeyhive.HoneyHive(
+                bearer_auth="<YOUR_BEARER_TOKEN_HERE>",
+            )
+
+
+            res = s.datapoints.update_datapoint(id='<value>', update_datapoint_request=components.UpdateDatapointRequest(
+                inputs={
+                    'query': 'what\'s the temperature in Reykjavik?',
+                },
+                history=[
+                    {
+                        'role': 'system',
+                        'content': 'You are a helpful web assistant that helps users answer questions about the world based on the information provided to you by Google\'s search API. Answer the questions as truthfully as you can. In case you are unsure about the correct answer, please respond with "I apologize but I\'m not sure."',
+                    },
+                    {
+                        'role': 'user',
+                        'content': 'what\'s the temperature in Reykjavik?\n\n\n--Google search API results below:---\n\n"snippet":"2 Week Extended Forecast in Reykjavik, Iceland ; Feb 4, 29 / 20 °F · Snow showers early. Broken clouds. ; Feb 5, 27 / 16 °F · Light snow. Decreasing cloudiness.","snippet_highlighted_words":["Feb 4, 29 / 20 °F"]',
+                    },
+                ],
+                ground_truth={
+                    'role': 'assistant',
+                    'content': 'The temperature in Reykjavik, Iceland is currently around 5F or -15C. Please note that weather conditions can change rapidly, so it\'s best to check a reliable source for the most up-to-date information.',
+                },
+                linked_evals=[
+                    '<value>',
+                ],
+                linked_datasets=[
+                    '<value>',
+                ],
+                metadata={
+                    'question_type': 'capital-weather',
+                    'random_field': 0,
+                },
+            ))
+
+            if res is not None:
+                # handle response
+                pass
+  - target: $["paths"]["/datapoints"]["post"]
+    update:
+      x-codeSamples:
+        - lang: python
+          label: createDatapoint
+          source: |-
+            import honeyhive
+            from honeyhive.models import components
+
+            s = honeyhive.HoneyHive(
+                bearer_auth="<YOUR_BEARER_TOKEN_HERE>",
+            )
+
+
+            res = s.datapoints.create_datapoint(request=components.CreateDatapointRequest(
+                project='New Project',
+                inputs={
+                    'query': 'what\'s the temperature in Iceland?',
+                },
+                history=[
+                    {
+                        'role': 'system',
+                        'content': 'You are a helpful web assistant that helps users answer questions about the world based on the information provided to you by Google\'s search API. Answer the questions as truthfully as you can. In case you are unsure about the correct answer, please respond with "I apologize but I\'m not sure."',
+                    },
+                    {
+                        'role': 'user',
+                        'content': 'what\'s the temperature in Iceland?\n\n\n--Google search API results below:---\n\n"snippet":"2 Week Extended Forecast in Reykjavik, Iceland ; Feb 4, 29 / 20 °F · Snow showers early. Broken clouds. ; Feb 5, 27 / 16 °F · Light snow. Decreasing cloudiness.","snippet_highlighted_words":["Feb 4, 29 / 20 °F"]',
+                    },
+                ],
+                ground_truth={
+                    'role': 'assistant',
+                    'content': 'The temperature in Reykjavik, Iceland is currently around 5F or -15C. Please note that weather conditions can change rapidly, so it\'s best to check a reliable source for the most up-to-date information.',
+                },
+                linked_event='6bba5182-d4b1-4b29-a64a-f0a8bd964f76',
+                linked_datasets=[
+                    '<value>',
+                ],
+                metadata={
+                    'question_type': 'weather',
+                    'completion_tokens': 47,
+                    'prompt_tokens': 696,
+                    'total_tokens': 743,
+                },
+            ))
+
+            if res.object is not None:
+                # handle response
+                pass
+  - target: $["paths"]["/datasets"]["post"]
+    update:
+      x-codeSamples:
+        - lang: python
+          label: createDataset
+          source: |-
+            import honeyhive
+            from honeyhive.models import components
+
+            s = honeyhive.HoneyHive(
+                bearer_auth="<YOUR_BEARER_TOKEN_HERE>",
+            )
+
+
+            res = s.datasets.create_dataset(request=components.CreateDatasetRequest(
+                project='New Project',
+                name='test-dataset',
+                description='A test dataset',
+                type=components.CreateDatasetRequestType.EVALUATION,
+                datapoints=[
+                    '66369748b5773befbdc661e2',
+                ],
+                linked_evals=[
+                    '<value>',
+                ],
+                saved=False,
+                pipeline_type=components.CreateDatasetRequestPipelineType.EVENT,
+                metadata={
+                    'source': 'dev',
+                },
+            ))
+
+            if res.object is not None:
+                # handle response
+                pass
+  - target: $["paths"]["/projects"]["put"]
+    update:
+      x-codeSamples:
+        - lang: python
+          label: updateProject
+          source: |-
+            import honeyhive
+            from honeyhive.models import components
+
+            s = honeyhive.HoneyHive(
+                bearer_auth="<YOUR_BEARER_TOKEN_HERE>",
+            )
+
+
+            res = s.projects.update_project(request=components.UpdateProjectRequest(
+                project_id='<value>',
+            ))
+
+            if res is not None:
+                # handle response
+                pass
+  - target: $["paths"]["/runs"]["post"]
+    update:
+      x-codeSamples:
+        - lang: python
+          label: createRun
+          source: |-
+            import honeyhive
+            from honeyhive.models import components
+
+            s = honeyhive.HoneyHive(
+                bearer_auth="<YOUR_BEARER_TOKEN_HERE>",
+            )
+
+
+            res = s.runs.create_run(request=components.CreateRunRequest(
+                project='<value>',
+                name='<value>',
+                event_ids=[
+                    '1b590040-fd4d-40db-a8d8-d6e550cfa9f3',
+                ],
+            ))
+
+            if res.create_run_response is not None:
+                # handle response
+                pass
+  - target: $["paths"]["/metrics"]["post"]
+    update:
+      x-codeSamples:
+        - lang: python
+          label: createMetric
+          source: |-
+            import honeyhive
+            from honeyhive.models import components
+
+            s = honeyhive.HoneyHive(
+                bearer_auth="<YOUR_BEARER_TOKEN_HERE>",
+            )
+
+
+            res = s.metrics.create_metric(request=components.Metric(
+                name='<value>',
+                task='<value>',
+                type=components.MetricType.MODEL,
+                description='Fully-configurable neutral framework',
+                return_type=components.ReturnType.STRING,
+            ))
+
+            if res is not None:
                 # handle response
                 pass
   - target: $["paths"]["/metrics"]["put"]
@@ -986,6 +1221,24 @@ actions:
             if res is not None:
                 # handle response
                 pass
+  - target: $["paths"]["/metrics"]["delete"]
+    update:
+      x-codeSamples:
+        - lang: python
+          label: deleteMetric
+          source: |-
+            import honeyhive
+
+            s = honeyhive.HoneyHive(
+                bearer_auth="<YOUR_BEARER_TOKEN_HERE>",
+            )
+
+
+            res = s.metrics.delete_metric(metric_id='<value>')
+
+            if res is not None:
+                # handle response
+                pass
   - target: $["paths"]["/tools"]["get"]
     update:
       x-codeSamples:
@@ -1004,11 +1257,11 @@ actions:
             if res.tools is not None:
                 # handle response
                 pass
-  - target: $["paths"]["/tools"]["put"]
+  - target: $["paths"]["/runs/{run_id}"]["put"]
     update:
       x-codeSamples:
         - lang: python
-          label: updateTool
+          label: updateRun
           source: |-
             import honeyhive
             from honeyhive.models import components
@@ -1018,22 +1271,16 @@ actions:
             )
 
 
-            res = s.tools.update_tool(request=components.UpdateToolRequest(
-                id='<id>',
-                name='<value>',
-                parameters={
-                    'key': '<value>',
-                },
-            ))
+            res = s.runs.update_run(run_id='<value>', update_run_request=components.UpdateRunRequest())
 
-            if res is not None:
+            if res.update_run_response is not None:
                 # handle response
                 pass
-  - target: $["paths"]["/datapoints/{id}"]["delete"]
+  - target: $["paths"]["/session/{session_id}"]["get"]
     update:
       x-codeSamples:
         - lang: python
-          label: deleteDatapoint
+          label: getSession
           source: |-
             import honeyhive
 
@@ -1042,9 +1289,9 @@ actions:
             )
 
 
-            res = s.datapoints.delete_datapoint(id='<value>')
+            res = s.session.get_session(session_id='<value>')
 
-            if res.object is not None:
+            if res.event is not None:
                 # handle response
                 pass
   - target: $["paths"]["/events"]["put"]
@@ -1096,11 +1343,11 @@ actions:
             if res is not None:
                 # handle response
                 pass
-  - target: $["paths"]["/datapoints"]["get"]
+  - target: $["paths"]["/tools"]["delete"]
     update:
       x-codeSamples:
         - lang: python
-          label: getDatapoints
+          label: deleteTool
           source: |-
             import honeyhive
 
@@ -1109,255 +1356,8 @@ actions:
             )
 
 
-            res = s.datapoints.get_datapoints(project='<value>', datapoint_ids=[
-                '<value>',
-            ], dataset_name='<value>')
-
-            if res.object is not None:
-                # handle response
-                pass
-  - target: $["paths"]["/datasets"]["post"]
-    update:
-      x-codeSamples:
-        - lang: python
-          label: createDataset
-          source: |-
-            import honeyhive
-            from honeyhive.models import components
-
-            s = honeyhive.HoneyHive(
-                bearer_auth="<YOUR_BEARER_TOKEN_HERE>",
-            )
-
-
-            res = s.datasets.create_dataset(request=components.CreateDatasetRequest(
-                project='New Project',
-                name='test-dataset',
-                description='A test dataset',
-                type=components.CreateDatasetRequestType.EVALUATION,
-                datapoints=[
-                    '66369748b5773befbdc661e2',
-                ],
-                linked_evals=[
-                    '<value>',
-                ],
-                saved=False,
-                pipeline_type=components.CreateDatasetRequestPipelineType.EVENT,
-                metadata={
-                    'source': 'dev',
-                },
-            ))
-
-            if res.object is not None:
-                # handle response
-                pass
-  - target: $["paths"]["/datasets/{dataset_id}/datapoints"]["post"]
-    update:
-      x-codeSamples:
-        - lang: python
-          label: addDatapoints
-          source: |-
-            import honeyhive
-            from honeyhive.models import operations
-
-            s = honeyhive.HoneyHive(
-                bearer_auth="<YOUR_BEARER_TOKEN_HERE>",
-            )
-
-
-            res = s.datasets.add_datapoints(dataset_id='<value>', request_body=operations.AddDatapointsRequestBody(
-                project='<value>',
-                data=[
-                    {
-                        'key': '<value>',
-                    },
-                ],
-                mapping=operations.Mapping(
-                    inputs=[
-                        '<value>',
-                    ],
-                    ground_truth=[
-                        '<value>',
-                    ],
-                    history=[
-                        '<value>',
-                    ],
-                ),
-            ))
-
-            if res.object is not None:
-                # handle response
-                pass
-  - target: $["paths"]["/runs/{run_id}"]["delete"]
-    update:
-      x-codeSamples:
-        - lang: python
-          label: deleteRun
-          source: |-
-            import honeyhive
-
-            s = honeyhive.HoneyHive(
-                bearer_auth="<YOUR_BEARER_TOKEN_HERE>",
-            )
-
-
-            res = s.runs.delete_run(run_id='<value>')
-
-            if res.delete_run_response is not None:
-                # handle response
-                pass
-  - target: $["paths"]["/metrics"]["get"]
-    update:
-      x-codeSamples:
-        - lang: python
-          label: getMetrics
-          source: |-
-            import honeyhive
-
-            s = honeyhive.HoneyHive(
-                bearer_auth="<YOUR_BEARER_TOKEN_HERE>",
-            )
-
-
-            res = s.metrics.get_metrics(project_name='<value>')
-
-            if res.metrics is not None:
-                # handle response
-                pass
-  - target: $["paths"]["/datapoints/{id}"]["put"]
-    update:
-      x-codeSamples:
-        - lang: python
-          label: updateDatapoint
-          source: |-
-            import honeyhive
-            from honeyhive.models import components
-
-            s = honeyhive.HoneyHive(
-                bearer_auth="<YOUR_BEARER_TOKEN_HERE>",
-            )
-
-
-            res = s.datapoints.update_datapoint(id='<value>', update_datapoint_request=components.UpdateDatapointRequest(
-                inputs={
-                    'query': 'what\'s the temperature in Reykjavik?',
-                },
-                history=[
-                    {
-                        'role': 'system',
-                        'content': 'You are a helpful web assistant that helps users answer questions about the world based on the information provided to you by Google\'s search API. Answer the questions as truthfully as you can. In case you are unsure about the correct answer, please respond with "I apologize but I\'m not sure."',
-                    },
-                    {
-                        'role': 'user',
-                        'content': 'what\'s the temperature in Reykjavik?\n\n\n--Google search API results below:---\n\n"snippet":"2 Week Extended Forecast in Reykjavik, Iceland ; Feb 4, 29 / 20 °F · Snow showers early. Broken clouds. ; Feb 5, 27 / 16 °F · Light snow. Decreasing cloudiness.","snippet_highlighted_words":["Feb 4, 29 / 20 °F"]',
-                    },
-                ],
-                ground_truth={
-                    'role': 'assistant',
-                    'content': 'The temperature in Reykjavik, Iceland is currently around 5F or -15C. Please note that weather conditions can change rapidly, so it\'s best to check a reliable source for the most up-to-date information.',
-                },
-                linked_evals=[
-                    '<value>',
-                ],
-                linked_datasets=[
-                    '<value>',
-                ],
-                metadata={
-                    'question_type': 'capital-weather',
-                    'random_field': 0,
-                },
-            ))
+            res = s.tools.delete_tool(function_id='<value>')
 
             if res is not None:
-                # handle response
-                pass
-  - target: $["paths"]["/datasets"]["put"]
-    update:
-      x-codeSamples:
-        - lang: python
-          label: updateDataset
-          source: |-
-            import honeyhive
-            from honeyhive.models import components
-
-            s = honeyhive.HoneyHive(
-                bearer_auth="<YOUR_BEARER_TOKEN_HERE>",
-            )
-
-
-            res = s.datasets.update_dataset(request=components.DatasetUpdate(
-                dataset_id='663876ec4611c47f4970f0c3',
-                name='new-dataset-name',
-                description='An updated dataset description',
-                datapoints=[
-                    '66369748b5773befbdc661e',
-                ],
-                linked_evals=[
-                    '66369748b5773befbdasdk1',
-                ],
-                metadata={
-                    'updated': True,
-                    'source': 'prod',
-                },
-            ))
-
-            if res is not None:
-                # handle response
-                pass
-  - target: $["paths"]["/projects"]["delete"]
-    update:
-      x-codeSamples:
-        - lang: python
-          label: deleteProject
-          source: |-
-            import honeyhive
-
-            s = honeyhive.HoneyHive(
-                bearer_auth="<YOUR_BEARER_TOKEN_HERE>",
-            )
-
-
-            res = s.projects.delete_project(name='<value>')
-
-            if res is not None:
-                # handle response
-                pass
-  - target: $["paths"]["/projects"]["post"]
-    update:
-      x-codeSamples:
-        - lang: python
-          label: createProject
-          source: |-
-            import honeyhive
-            from honeyhive.models import components
-
-            s = honeyhive.HoneyHive(
-                bearer_auth="<YOUR_BEARER_TOKEN_HERE>",
-            )
-
-
-            res = s.projects.create_project(request=components.CreateProjectRequest(
-                name='<value>',
-            ))
-
-            if res.project is not None:
-                # handle response
-                pass
-  - target: $["paths"]["/runs/{run_id}"]["get"]
-    update:
-      x-codeSamples:
-        - lang: python
-          label: getRun
-          source: |-
-            import honeyhive
-
-            s = honeyhive.HoneyHive(
-                bearer_auth="<YOUR_BEARER_TOKEN_HERE>",
-            )
-
-
-            res = s.runs.get_run(run_id='<value>')
-
-            if res.get_run_response is not None:
                 # handle response
                 pass

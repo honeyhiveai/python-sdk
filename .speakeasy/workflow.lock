@@ -2,17 +2,18 @@ speakeasyVersion: 1.340.0
 sources:
     my-source:
         sourceNamespace: my-source
-        sourceRevisionDigest: sha256:2447b8253d03c967f03f56c07599d6bb88ac34db288168d47f1920be44505b57
-        sourceBlobDigest: sha256:c3e7a2c686d66fa3550317afd5c717d6d2a5bb158ce13723a20485ebe17d1faf
+        sourceRevisionDigest: sha256:9b9cf2c0cc0e5c3f0c86b76be8d45b8a2a4526a84cb39af9e095c75c0cfabbe3
+        sourceBlobDigest: sha256:4669acc1a61f654bcc46b0322f1a9c73e0ad51268fbb8d56be8194245c06dde5
         tags:
             - latest
+            - main
 targets:
     honeyhive:
         source: my-source
         sourceNamespace: my-source
-        sourceRevisionDigest: sha256:2447b8253d03c967f03f56c07599d6bb88ac34db288168d47f1920be44505b57
-        sourceBlobDigest: sha256:c3e7a2c686d66fa3550317afd5c717d6d2a5bb158ce13723a20485ebe17d1faf
-        outLocation: /Users/dhruvsingh/honeyhive/python-sdk
+        sourceRevisionDigest: sha256:9b9cf2c0cc0e5c3f0c86b76be8d45b8a2a4526a84cb39af9e095c75c0cfabbe3
+        sourceBlobDigest: sha256:4669acc1a61f654bcc46b0322f1a9c73e0ad51268fbb8d56be8194245c06dde5
+        outLocation: /github/workspace/repo
 workflow:
     workflowVersion: 1.0.0
     speakeasyVersion: latest
