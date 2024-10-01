@@ -1,18 +1,17 @@
-speakeasyVersion: 1.340.0
+speakeasyVersion: 1.405.6
 sources:
     my-source:
         sourceNamespace: my-source
-        sourceRevisionDigest: sha256:2447b8253d03c967f03f56c07599d6bb88ac34db288168d47f1920be44505b57
-        sourceBlobDigest: sha256:c3e7a2c686d66fa3550317afd5c717d6d2a5bb158ce13723a20485ebe17d1faf
+        sourceRevisionDigest: sha256:7524813c2a33ad3bea32df61ceb2ee0926d108647381388ccbe589e6e6314f74
+        sourceBlobDigest: sha256:a48266be84f89290773362273a31b3bb1c5bee57eaa8cfa54d32106800fa4efa
         tags:
             - latest
 targets:
     honeyhive:
         source: my-source
         sourceNamespace: my-source
-        sourceRevisionDigest: sha256:2447b8253d03c967f03f56c07599d6bb88ac34db288168d47f1920be44505b57
-        sourceBlobDigest: sha256:c3e7a2c686d66fa3550317afd5c717d6d2a5bb158ce13723a20485ebe17d1faf
-        outLocation: /Users/dhruvsingh/honeyhive/python-sdk
+        sourceRevisionDigest: sha256:7524813c2a33ad3bea32df61ceb2ee0926d108647381388ccbe589e6e6314f74
+        sourceBlobDigest: sha256:a48266be84f89290773362273a31b3bb1c5bee57eaa8cfa54d32106800fa4efa
 workflow:
     workflowVersion: 1.0.0
     speakeasyVersion: latest
