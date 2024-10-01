@@ -5,11 +5,13 @@ from .sdkconfiguration import *
 
 from .tracer import HoneyHiveTracer, enrich_session
 from .tracer.custom import trace, enrich_span
+from .evaluation import evaluate
 
 # export
 __all__ = [
     "HoneyHiveTracer", 
     "enrich_session",
     "trace", 
-    "enrich_span"
+    "enrich_span",
+    "evaluate"
 ]
