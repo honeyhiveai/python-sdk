@@ -4,6 +4,7 @@ from __future__ import annotations
 import dataclasses
 import requests as requests_http
 from ...models.components import createmodelevent as components_createmodelevent
+from ...models.components import sessionpropertiesbatch as components_sessionpropertiesbatch
 from dataclasses_json import Undefined, dataclass_json
 from honeyhive import utils
 from typing import List, Optional
@@ -11,8 +12,19 @@ from typing import List, Optional
 
 @dataclass_json(undefined=Undefined.EXCLUDE)
 @dataclasses.dataclass
+class CreateModelEventBatchSessionProperties:
+    model_event: Optional[components_sessionpropertiesbatch.SessionPropertiesBatch] = dataclasses.field(default=None, metadata={'dataclasses_json': { 'letter_case': utils.get_field_name('model_event'), 'exclude': lambda f: f is None }})
+    
+
+
+
+@dataclass_json(undefined=Undefined.EXCLUDE)
+@dataclasses.dataclass
 class CreateModelEventBatchRequestBody:
     model_events: Optional[List[components_createmodelevent.CreateModelEvent]] = dataclasses.field(default=None, metadata={'dataclasses_json': { 'letter_case': utils.get_field_name('model_events'), 'exclude': lambda f: f is None }})
+    is_single_session: Optional[bool] = dataclasses.field(default=None, metadata={'dataclasses_json': { 'letter_case': utils.get_field_name('is_single_session'), 'exclude': lambda f: f is None }})
+    r"""Default is false. If true, all events will be associated with the same session"""
+    session_properties: Optional[CreateModelEventBatchSessionProperties] = dataclasses.field(default=None, metadata={'dataclasses_json': { 'letter_case': utils.get_field_name('session_properties'), 'exclude': lambda f: f is None }})
     
 
 

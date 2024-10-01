@@ -1,0 +1,18 @@
+# SessionPropertiesBatch
+
+
+## Fields
+
+| Field                                                           | Type                                                            | Required                                                        | Description                                                     |
+| --------------------------------------------------------------- | --------------------------------------------------------------- | --------------------------------------------------------------- | --------------------------------------------------------------- |
+| `session_name`                                                  | *Optional[str]*                                                 | :heavy_minus_sign:                                              | Name of the session                                             |
+| `source`                                                        | *Optional[str]*                                                 | :heavy_minus_sign:                                              | Source of the session - production, staging, etc                |
+| `session_id`                                                    | *Optional[str]*                                                 | :heavy_minus_sign:                                              | Unique id of the session, if not set, it will be auto-generated |
+| `config`                                                        | Dict[str, *Any*]                                                | :heavy_minus_sign:                                              | Associated configuration for the session                        |
+| `inputs`                                                        | Dict[str, *Any*]                                                | :heavy_minus_sign:                                              | Input object passed to the session - user query, text blob, etc |
+| `outputs`                                                       | Dict[str, *Any*]                                                | :heavy_minus_sign:                                              | Final output of the session - completion, chunks, etc           |
+| `error`                                                         | *Optional[str]*                                                 | :heavy_minus_sign:                                              | Any error description if session failed                         |
+| `user_properties`                                               | Dict[str, *Any*]                                                | :heavy_minus_sign:                                              | Any user properties associated with the session                 |
+| `metrics`                                                       | Dict[str, *Any*]                                                | :heavy_minus_sign:                                              | Any values computed over the output of the session              |
+| `feedback`                                                      | Dict[str, *Any*]                                                | :heavy_minus_sign:                                              | Any user feedback provided for the session output               |
+| `metadata`                                                      | Dict[str, *Any*]                                                | :heavy_minus_sign:                                              | Any system or application metadata associated with the session  |

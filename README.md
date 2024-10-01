@@ -155,12 +155,23 @@ if res.object is not None:
 <!-- Start Error Handling [errors] -->
 ## Error Handling
 
-Handling errors in this SDK should largely match your expectations.  All operations return a response object or raise an error.  If Error objects are specified in your OpenAPI Spec, the SDK will raise the appropriate Error type.
+Handling errors in this SDK should largely match your expectations. All operations return a response object or raise an exception.
 
-| Error Object                        | Status Code                         | Content Type                        |
+By default, an API error will raise a errors.SDKError exception, which has the following properties:
+
+| Property        | Type             | Description           |
+|-----------------|------------------|-----------------------|
+| `.status_code`  | *int*            | The HTTP status code  |
+| `.message`      | *str*            | The error message     |
+| `.raw_response` | *httpx.Response* | The raw HTTP response |
+| `.body`         | *str*            | The response content  |
+
+When custom error responses are specified for an operation, the SDK may also raise their associated exception. You can refer to respective *Errors* tables in SDK docs for more details on possible exception types for each operation. For example, the `create_event_batch` method may raise the following exceptions:
+
+| Error Type                          | Status Code                         | Content Type                        |
 | ----------------------------------- | ----------------------------------- | ----------------------------------- |
 | errors.CreateEventBatchResponseBody | 500                                 | application/json                    |
-| errors.SDKError                     | 4xx-5xx                             | */*                                 |
+| errors.SDKError                     | 4XX, 5XX                            | \*/\*                               |
 
 ### Example
 
@@ -259,6 +270,46 @@ try:
             },
         ),
     ],
+    session_properties=operations.SessionProperties(
+        model_event=components.SessionPropertiesBatch(
+            session_name='Playground Session',
+            source='playground',
+            session_id='caf77ace-3417-4da4-944d-f4a0688f3c23',
+            inputs={
+                'context': 'Hello world',
+                'question': 'What is in the context?',
+                'chat_history': [
+                    {
+                        'role': 'system',
+                        'content': 'Answer the user\'s question only using provided context.\n' +
+                        '\n' +
+                        'Context: Hello world',
+                    },
+                    {
+                        'role': 'user',
+                        'content': 'What is in the context?',
+                    },
+                ],
+            },
+            outputs={
+                'role': 'assistant',
+                'content': 'Hello world',
+            },
+            error='<value>',
+            user_properties={
+                'user': 'google-oauth2|111840237613341303366',
+            },
+            metrics={
+
+            },
+            feedback={
+
+            },
+            metadata={
+
+            },
+        ),
+    ),
 ))
 
 except errors.CreateEventBatchResponseBody as e:
