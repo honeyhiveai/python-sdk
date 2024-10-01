@@ -130,10 +130,9 @@ if res.object is not None:
 
 ### Errors
 
-| Error Object    | Status Code     | Content Type    |
+| Error Type      | Status Code     | Content Type    |
 | --------------- | --------------- | --------------- |
-| errors.SDKError | 4xx-5xx         | */*             |
-
+| errors.SDKError | 4XX, 5XX        | \*/\*           |
 
 ## update_event
 
@@ -200,10 +199,9 @@ if res is not None:
 
 ### Errors
 
-| Error Object    | Status Code     | Content Type    |
+| Error Type      | Status Code     | Content Type    |
 | --------------- | --------------- | --------------- |
-| errors.SDKError | 4xx-5xx         | */*             |
-
+| errors.SDKError | 4XX, 5XX        | \*/\*           |
 
 ## get_events
 
@@ -250,10 +248,9 @@ if res.object is not None:
 
 ### Errors
 
-| Error Object    | Status Code     | Content Type    |
+| Error Type      | Status Code     | Content Type    |
 | --------------- | --------------- | --------------- |
-| errors.SDKError | 4xx-5xx         | */*             |
-
+| errors.SDKError | 4XX, 5XX        | \*/\*           |
 
 ## create_model_event
 
@@ -370,10 +367,9 @@ if res.object is not None:
 
 ### Errors
 
-| Error Object    | Status Code     | Content Type    |
+| Error Type      | Status Code     | Content Type    |
 | --------------- | --------------- | --------------- |
-| errors.SDKError | 4xx-5xx         | */*             |
-
+| errors.SDKError | 4XX, 5XX        | \*/\*           |
 
 ## create_event_batch
 
@@ -475,6 +471,46 @@ res = s.events.create_event_batch(request=operations.CreateEventBatchRequestBody
             },
         ),
     ],
+    session_properties=operations.SessionProperties(
+        model_event=components.SessionPropertiesBatch(
+            session_name='Playground Session',
+            source='playground',
+            session_id='caf77ace-3417-4da4-944d-f4a0688f3c23',
+            inputs={
+                'context': 'Hello world',
+                'question': 'What is in the context?',
+                'chat_history': [
+                    {
+                        'role': 'system',
+                        'content': 'Answer the user\'s question only using provided context.\n' +
+                        '\n' +
+                        'Context: Hello world',
+                    },
+                    {
+                        'role': 'user',
+                        'content': 'What is in the context?',
+                    },
+                ],
+            },
+            outputs={
+                'role': 'assistant',
+                'content': 'Hello world',
+            },
+            error='<value>',
+            user_properties={
+                'user': 'google-oauth2|111840237613341303366',
+            },
+            metrics={
+
+            },
+            feedback={
+
+            },
+            metadata={
+
+            },
+        ),
+    ),
 ))
 
 if res.object is not None:
@@ -495,11 +531,10 @@ if res.object is not None:
 
 ### Errors
 
-| Error Object                        | Status Code                         | Content Type                        |
+| Error Type                          | Status Code                         | Content Type                        |
 | ----------------------------------- | ----------------------------------- | ----------------------------------- |
 | errors.CreateEventBatchResponseBody | 500                                 | application/json                    |
-| errors.SDKError                     | 4xx-5xx                             | */*                                 |
-
+| errors.SDKError                     | 4XX, 5XX                            | \*/\*                               |
 
 ## create_model_event_batch
 
@@ -598,6 +633,46 @@ res = s.events.create_model_event_batch(request=operations.CreateModelEventBatch
             },
         ),
     ],
+    session_properties=operations.CreateModelEventBatchSessionProperties(
+        model_event=components.SessionPropertiesBatch(
+            session_name='Playground Session',
+            source='playground',
+            session_id='caf77ace-3417-4da4-944d-f4a0688f3c23',
+            inputs={
+                'context': 'Hello world',
+                'question': 'What is in the context?',
+                'chat_history': [
+                    {
+                        'role': 'system',
+                        'content': 'Answer the user\'s question only using provided context.\n' +
+                        '\n' +
+                        'Context: Hello world',
+                    },
+                    {
+                        'role': 'user',
+                        'content': 'What is in the context?',
+                    },
+                ],
+            },
+            outputs={
+                'role': 'assistant',
+                'content': 'Hello world',
+            },
+            error='<value>',
+            user_properties={
+                'user': 'google-oauth2|111840237613341303366',
+            },
+            metrics={
+
+            },
+            feedback={
+
+            },
+            metadata={
+
+            },
+        ),
+    ),
 ))
 
 if res.object is not None:
@@ -618,7 +693,7 @@ if res.object is not None:
 
 ### Errors
 
-| Error Object                             | Status Code                              | Content Type                             |
+| Error Type                               | Status Code                              | Content Type                             |
 | ---------------------------------------- | ---------------------------------------- | ---------------------------------------- |
 | errors.CreateModelEventBatchResponseBody | 500                                      | application/json                         |
-| errors.SDKError                          | 4xx-5xx                                  | */*                                      |
+| errors.SDKError                          | 4XX, 5XX                                 | \*/\*                                    |
