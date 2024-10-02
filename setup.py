@@ -12,7 +12,6 @@ requires = [
     'requests>=2.25.1',
     'pydantic>=1.8.2',
     'uplink>=0.0.2',
-    'pandas>=1.3.2',
     'openai>=0.27.8',
     'langchain>=0.0.251',
     'llama_index>=0.8.13',
