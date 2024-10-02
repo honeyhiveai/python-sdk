@@ -4,7 +4,7 @@ import os
 
 import honeyhive
 from honeyhive.models import components
-from honeyhive.tracer import HoneyHiveTracer
+from honeyhive import HoneyHiveTracer, enrich_session
 
 from realign.simulation import Simulation, Context
 
@@ -28,10 +28,10 @@ class Evaluation(Simulation):
         self.query_list = query_list
         
         self._validate_requirements()
+        self.hhai = honeyhive.HoneyHive(bearer_auth=self.hh_api_key)
         self.hh_dataset = self._load_dataset()
         self.runs = runs or len(self.hh_dataset.datapoints) if self.hh_dataset else len(query_list) if query_list else 0
 
-        self.hhai = honeyhive.HoneyHive(bearer_auth=self.hh_api_key)
         self.evaluation_session_ids: List[str] = []
         self.eval_run: Optional[components.CreateRunResponse] = None
         self.disable_auto_tracing = True
@@ -107,7 +107,10 @@ class Evaluation(Simulation):
             if evaluation_output:
                 tracing_metadata["outputs"] = evaluation_output
 
-            HoneyHiveTracer.set_metadata(tracing_metadata)
+            enrich_session(
+                metadata=tracing_metadata,
+                outputs=evaluation_output
+            )
         except Exception as e:
             print(f"Error adding trace metadata: {e}")
 
