@@ -2,16 +2,16 @@ speakeasyVersion: 1.405.6
 sources:
     my-source:
         sourceNamespace: my-source
-        sourceRevisionDigest: sha256:7524813c2a33ad3bea32df61ceb2ee0926d108647381388ccbe589e6e6314f74
-        sourceBlobDigest: sha256:a48266be84f89290773362273a31b3bb1c5bee57eaa8cfa54d32106800fa4efa
+        sourceRevisionDigest: sha256:5018b8e5d6392fc525886cb0a0604d7d74a60673e5011235940e9795554d8edd
+        sourceBlobDigest: sha256:bcba661029e16b8af4d1c82426b46574401970d1aacd2ffea66723a52ea774fe
         tags:
             - latest
 targets:
     honeyhive:
         source: my-source
         sourceNamespace: my-source
-        sourceRevisionDigest: sha256:7524813c2a33ad3bea32df61ceb2ee0926d108647381388ccbe589e6e6314f74
-        sourceBlobDigest: sha256:a48266be84f89290773362273a31b3bb1c5bee57eaa8cfa54d32106800fa4efa
+        sourceRevisionDigest: sha256:5018b8e5d6392fc525886cb0a0604d7d74a60673e5011235940e9795554d8edd
+        sourceBlobDigest: sha256:bcba661029e16b8af4d1c82426b46574401970d1aacd2ffea66723a52ea774fe
 workflow:
     workflowVersion: 1.0.0
     speakeasyVersion: latest
