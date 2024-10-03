@@ -13,17 +13,15 @@ requires = [
     'pydantic>=1.8.2',
     'uplink>=0.0.2',
     'openai>=0.27.8',
-    'langchain>=0.0.251',
-    'llama_index>=0.8.13',
     'traceloop-sdk>=0.18.2',
-    'realign==0.1.44'
+    # 'realign==0.1.44'
 ]
 
 entry_points = {'console_scripts': ['honeyhive = honeyhive.cli:honeyhive']}
 
 setup(
     name='honeyhive',
-    version='0.2.14',
+    version='0.2.15',
     description='The HoneyHive SDK for Python',
     long_description=open('README.md').read(),
     long_description_content_type='text/markdown',
@@ -52,6 +50,9 @@ setup(
     ],
     extras_require={
         "dev":["pylint==2.16.2"],
+        "langchain":["langchain>=0.0.251"],
+        "llama_index":["llama_index>=0.8.13"],
+        "all": ["langchain>=0.0.251", "llama_index>=0.8.13"]
     },
     project_urls={
         'Documentation': 'https://docs.honeyhive.ai/',

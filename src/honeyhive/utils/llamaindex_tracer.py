@@ -1,5 +1,4 @@
 # pylint: skip-file
-import json
 import logging
 import os
 import uuid
@@ -8,16 +7,18 @@ from datetime import datetime
 from enum import Enum
 from typing import Any, Callable, Dict, List, Optional, Tuple
 
-import requests
-from llama_index.core.callbacks.base import BaseCallbackHandler
-from llama_index.core.callbacks.schema import (
-    TIMESTAMP_FORMAT,
-    CBEvent,
-    CBEventType,
-    LEAF_EVENTS,
-)
-from llama_index.core.callbacks.token_counting import get_llm_token_counts
-from llama_index.core.utilities.token_counting import TokenCounter
+try:
+    from llama_index.core.callbacks.base import BaseCallbackHandler
+    from llama_index.core.callbacks.schema import (
+        TIMESTAMP_FORMAT,
+        CBEvent,
+        CBEventType,
+        LEAF_EVENTS,
+    )
+    from llama_index.core.callbacks.token_counting import get_llm_token_counts
+    from llama_index.core.utilities.token_counting import TokenCounter
+except ImportError:
+    raise ImportError("Please install our llama_index tracer. You can install it with `pip install honeyhive[llama_index]`")
 
 from .langchain_tracer import (
     Config,
@@ -28,7 +29,6 @@ from .langchain_tracer import (
 )
 
 import traceback
-
 
 class HHEventType(str, Enum):
     MODEL = "model"
@@ -55,6 +55,9 @@ class HoneyHiveLlamaIndexTracer(BaseCallbackHandler):
         verbose: bool = False,
         base_url: Optional[str] = None,
     ) -> None:
+        if not LLAMAINDEX_INSTALLED:
+            raise ImportError("Please install our llama_index tracer. You can install it with `pip install honeyhive[llama_index]`")
+        
         self.verbose = verbose
         if self._env_api_key:
             api_key = self._env_api_key
