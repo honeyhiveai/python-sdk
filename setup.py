@@ -14,14 +14,14 @@ requires = [
     'uplink>=0.0.2',
     'openai>=0.27.8',
     'traceloop-sdk>=0.18.2',
-    # 'realign==0.1.44'
+    'realign==0.1.47',
 ]
 
 entry_points = {'console_scripts': ['honeyhive = honeyhive.cli:honeyhive']}
 
 setup(
     name='honeyhive',
-    version='0.2.15',
+    version='0.2.17',
     description='The HoneyHive SDK for Python',
     long_description=open('README.md').read(),
     long_description_content_type='text/markdown',
