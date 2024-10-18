@@ -12,7 +12,7 @@ requires = [
     'requests>=2.25.1',
     'pydantic>=1.8.2',
     'uplink>=0.0.2',
-    'traceloop-sdk>=0.18.2',
+    'traceloop-sdk>=0.18.2,<=0.30',
     'typing-inspect>=0.9.0',
     'dataclasses-json>=0.6.7',
     'realign==0.1.47',
