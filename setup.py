@@ -15,7 +15,7 @@ requires = [
     'traceloop-sdk>=0.18.2,<=0.30',
     'typing-inspect>=0.9.0',
     'dataclasses-json>=0.6.7',
-    'realign==0.1.47',
+    'realign==0.1.48',
 ]
 
 entry_points = {'console_scripts': ['honeyhive = honeyhive.cli:honeyhive']}
