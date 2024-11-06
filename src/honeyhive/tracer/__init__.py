@@ -23,6 +23,7 @@ class HoneyHiveTracer:
         server_url="https://api.honeyhive.ai",
         disable_batch=False,
         verbose=False,
+        inputs=None,
     ):
         try:
             HoneyHiveTracer.verbose = verbose
@@ -37,7 +38,7 @@ class HoneyHiveTracer:
                     session_name = "unknown"
             
             session_id = HoneyHiveTracer.__start_session(
-                api_key, project, session_name, source, server_url
+                api_key, project, session_name, source, server_url, inputs
             )
             Telemetry().capture("tracer_init", {"hhai_session_id": session_id})
             if not HoneyHiveTracer._is_traceloop_initialized:
@@ -86,7 +87,7 @@ class HoneyHiveTracer:
                 pass
 
     @staticmethod
-    def __start_session(api_key, project, session_name, source, server_url):
+    def __start_session(api_key, project, session_name, source, server_url, inputs=None):
         sdk = honeyhive.HoneyHive(bearer_auth=api_key, server_url=server_url)
         res = sdk.session.start_session(
             request=operations.StartSessionRequestBody(
@@ -94,6 +95,7 @@ class HoneyHiveTracer:
                     project=project,
                     session_name=session_name,
                     source=source,
+                    inputs=inputs or {},
                 )
             )
         )
