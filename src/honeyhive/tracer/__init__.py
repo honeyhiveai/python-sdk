@@ -13,6 +13,7 @@ class HoneyHiveTracer:
     _is_traceloop_initialized = False
     session_id = None
     api_key = None
+    is_evaluation = False
 
     @staticmethod
     def init(
@@ -24,10 +25,16 @@ class HoneyHiveTracer:
         disable_batch=False,
         verbose=False,
         inputs=None,
+        is_evaluation=False,
     ):
         try:
             HoneyHiveTracer.verbose = verbose
-            
+
+            if HoneyHiveTracer.is_evaluation:
+                # If we're in an evaluation, only new evaluate sessions are allowed
+                if not is_evaluation:
+                    return
+
             # Set session_name to the main module name if not provided
             if session_name is None:
                 try:
@@ -49,6 +56,7 @@ class HoneyHiveTracer:
                     disable_batch=disable_batch,
                 )
                 HoneyHiveTracer._is_traceloop_initialized = True
+                HoneyHiveTracer.is_evaluation = is_evaluation
             Traceloop.set_association_properties({"session_id": session_id})
             HoneyHiveTracer.session_id = session_id
             HoneyHiveTracer.api_key = api_key

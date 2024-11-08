@@ -108,6 +108,7 @@ class Evaluation(Simulation):
                 source="evaluation",
                 session_name=self.eval_name,
                 inputs=inputs,
+                is_evaluation=True,
             )
         except:
             raise Exception(
