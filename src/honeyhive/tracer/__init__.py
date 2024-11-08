@@ -13,6 +13,7 @@ class HoneyHiveTracer:
     _is_traceloop_initialized = False
     session_id = None
     api_key = None
+    is_evaluation = False
 
     @staticmethod
     def init(
@@ -23,10 +24,17 @@ class HoneyHiveTracer:
         server_url="https://api.honeyhive.ai",
         disable_batch=False,
         verbose=False,
+        inputs=None,
+        is_evaluation=False,
     ):
         try:
             HoneyHiveTracer.verbose = verbose
-            
+
+            if HoneyHiveTracer.is_evaluation:
+                # If we're in an evaluation, only new evaluate sessions are allowed
+                if not is_evaluation:
+                    return
+
             # Set session_name to the main module name if not provided
             if session_name is None:
                 try:
@@ -37,7 +45,7 @@ class HoneyHiveTracer:
                     session_name = "unknown"
             
             session_id = HoneyHiveTracer.__start_session(
-                api_key, project, session_name, source, server_url
+                api_key, project, session_name, source, server_url, inputs
             )
             Telemetry().capture("tracer_init", {"hhai_session_id": session_id})
             if not HoneyHiveTracer._is_traceloop_initialized:
@@ -48,6 +56,7 @@ class HoneyHiveTracer:
                     disable_batch=disable_batch,
                 )
                 HoneyHiveTracer._is_traceloop_initialized = True
+                HoneyHiveTracer.is_evaluation = is_evaluation
             Traceloop.set_association_properties({"session_id": session_id})
             HoneyHiveTracer.session_id = session_id
             HoneyHiveTracer.api_key = api_key
@@ -86,7 +95,7 @@ class HoneyHiveTracer:
                 pass
 
     @staticmethod
-    def __start_session(api_key, project, session_name, source, server_url):
+    def __start_session(api_key, project, session_name, source, server_url, inputs=None):
         sdk = honeyhive.HoneyHive(bearer_auth=api_key, server_url=server_url)
         res = sdk.session.start_session(
             request=operations.StartSessionRequestBody(
@@ -94,6 +103,7 @@ class HoneyHiveTracer:
                     project=project,
                     session_name=session_name,
                     source=source,
+                    inputs=inputs or {},
                 )
             )
         )
