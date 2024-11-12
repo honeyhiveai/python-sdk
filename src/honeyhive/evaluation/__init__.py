@@ -185,7 +185,7 @@ class Evaluation(Simulation):
 
     async def setup(self, *args, **kwargs):
         """Custom instrumentation for inherited function. Initiate an evaluation run in Honeyhive."""
-        eval_run = self.hhai.runs.create_run(
+        eval_run = self.hhai.experiments.create_run(
             request=components.CreateRunRequest(
                 project=self.hh_project,
                 name=self.eval_name,
@@ -199,7 +199,7 @@ class Evaluation(Simulation):
         """Custom instrumentation for inherited function. Orchestrate the HoneyHive evaluation flow."""
         try:
             if self.eval_run:
-                self.hhai.runs.update_run(
+                self.hhai.experiments.update_run(
                     run_id=self.eval_run.run_id,
                     update_run_request=components.UpdateRunRequest(
                         event_ids=self.evaluation_session_ids, status="completed"
