@@ -1,7 +1,7 @@
 openapi: 3.0.3
 info:
   title: HoneyHive API
-  version: 1.0.2
+  version: 1.0.4
 servers:
 - url: https://api.honeyhive.ai
 paths:
@@ -256,10 +256,7 @@ paths:
                   description: Default is false. If true, all events will be associated
                     with the same session
                 session_properties:
-                  type: object
-                  properties:
-                    model_event:
-                      $ref: '#/components/schemas/SessionPropertiesBatch'
+                  $ref: '#/components/schemas/SessionPropertiesBatch'
               required:
               - events
       responses:
@@ -334,10 +331,7 @@ paths:
                   description: Default is false. If true, all events will be associated
                     with the same session
                 session_properties:
-                  type: object
-                  properties:
-                    model_event:
-                      $ref: '#/components/schemas/SessionPropertiesBatch'
+                  $ref: '#/components/schemas/SessionPropertiesBatch'
       responses:
         '200':
           description: Model events created
@@ -896,7 +890,7 @@ paths:
       summary: Create a new evaluation run
       operationId: createRun
       tags:
-      - Runs
+      - Experiments
       requestBody:
         required: true
         content:
@@ -916,7 +910,7 @@ paths:
       summary: Get a list of evaluation runs
       operationId: getRuns
       tags:
-      - Runs
+      - Experiments
       parameters:
       - in: query
         name: project
@@ -936,7 +930,7 @@ paths:
       summary: Get details of an evaluation run
       operationId: getRun
       tags:
-      - Runs
+      - Experiments
       parameters:
       - in: path
         name: run_id
@@ -956,7 +950,7 @@ paths:
       summary: Update an evaluation run
       operationId: updateRun
       tags:
-      - Runs
+      - Experiments
       parameters:
       - in: path
         name: run_id
@@ -982,7 +976,7 @@ paths:
       summary: Delete an evaluation run
       operationId: deleteRun
       tags:
-      - Runs
+      - Experiments
       parameters:
       - in: path
         name: run_id
@@ -998,6 +992,75 @@ paths:
                 $ref: '#/components/schemas/DeleteRunResponse'
         '400':
           description: Error deleting evaluation
+  /runs/{run_id}/result:
+    get:
+      summary: Retrieve experiment result
+      operationId: getExperimentResult
+      tags:
+      - Experiments
+      parameters:
+      - name: run_id
+        in: path
+        required: true
+        schema:
+          type: string
+      - name: project_id
+        in: query
+        required: true
+        schema:
+          type: string
+      - name: aggregate_function
+        in: query
+        required: false
+        schema:
+          type: string
+          enum: [average, min, max, median, p95, p99, p90, sum, count]
+      responses:
+        '200':
+          description: Experiment result retrieved successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ExperimentResultResponse'
+        '400':
+          description: Error processing experiment result      
+  /runs/{run_id_1}/compare-with/{run_id_2}:
+    get:
+      summary: Retrieve experiment comparison
+      operationId: getExperimentComparison
+      tags:
+      - Experiments
+      parameters:
+      - name: project_id
+        in: query
+        required: true
+        schema:
+          type: string
+      - name: run_id_1
+        in: path
+        required: true
+        schema:
+          type: string
+      - name: run_id_2
+        in: path
+        required: true
+        schema:
+          type: string
+      - name: aggregate_function
+        in: query
+        required: false
+        schema:
+          type: string
+          enum: [average, min, max, median, p95, p99, p90, sum, count]
+      responses:
+        '200':
+          description: Experiment comparison retrieved successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ExperimentComparisonResponse'
+        '400':
+          description: Error processing experiment comparison      
   /configurations:
     get:
       summary: Retrieve a list of configurations
@@ -1290,6 +1353,7 @@ components:
         parent_id:
           type: string
           description: Id of the parent event if nested
+          nullable: true
         children_ids:
           type: array
           items:
@@ -1311,6 +1375,7 @@ components:
         error:
           type: string
           description: Any error description if event failed
+          nullable: true
         start_time:
           type: number
           description: UTC timestamp (in milliseconds) for the event start
@@ -1945,10 +2010,8 @@ components:
           description: UUID for the project where the datapoint is stored
         created_at:
           type: string
-          format: date-time
         updated_at:
           type: string
-          format: date-time
         inputs:
           type: object
           description: Arbitrary JSON object containing the inputs for the datapoint
@@ -2243,11 +2306,9 @@ components:
             or "session"
         created_at:
           type: string
-          format: date-time
           description: Timestamp of when the dataset was created
         updated_at:
           type: string
-          format: date-time
           description: Timestamp of when the dataset was last updated
       example:
         project: New Project
@@ -2497,6 +2558,241 @@ components:
         name:
           type: string
           description: The name of the run to be displayed
+    ExperimentResultResponse:
+      type: object
+      properties:
+        status:
+          type: string
+        success:
+          type: boolean
+        passed:
+          type: array
+          items:
+            type: string
+        failed:
+          type: array
+          items:
+            type: string
+        metrics:
+          type: object
+          properties:
+            aggregation_function:
+              type: string
+            details:
+              type: array
+              items:
+                type: object
+                properties:
+                  metric_name:
+                    type: string
+                  metric_type:
+                    type: string
+                  event_name:
+                    type: string
+                  event_type:
+                    type: string
+                  aggregate:
+                    type: number
+                  values:
+                    type: array
+                    items:
+                      oneOf:
+                      - type: number
+                      - type: boolean
+                  datapoints:
+                    type: object
+                    properties:
+                      passed:
+                        type: array
+                        items:
+                          type: string
+                      failed:
+                        type: array
+                        items:
+                          type: string
+        datapoints:
+          type: array
+          items:
+            type: object
+            properties:
+              datapoint_id:
+                type: string
+              session_id:
+                type: string
+              passed:
+                type: boolean
+              metrics:
+                type: array
+                items:
+                  type: object
+                  properties:
+                    name:
+                      type: string
+                    event_name:
+                      type: string
+                    event_type:
+                      type: string
+                    value:
+                      oneOf:
+                      - type: number
+                      - type: boolean
+                    passed:
+                      type: boolean
+    ExperimentComparisonResponse:
+      type: object
+      properties:
+        metrics:
+          type: array
+          items:
+            type: object
+            properties:
+              metric_name:
+                type: string
+              event_name:
+                type: string
+              metric_type:
+                type: string
+              event_type:
+                type: string
+              old_aggregate:
+                type: number
+              new_aggregate:
+                type: number
+              found_count:
+                type: integer
+              improved_count:
+                type: integer
+              degraded_count:
+                type: integer
+              same_count:
+                type: integer
+              improved:
+                type: array
+                items:
+                  type: string
+              degraded:
+                type: array
+                items:
+                  type: string
+              same:
+                type: array
+                items:
+                  type: string
+              old_values:
+                type: array
+                items:
+                  oneOf:
+                    - type: number
+                    - type: boolean
+              new_values:
+                type: array
+                items:
+                  oneOf:
+                    - type: number
+                    - type: boolean
+        commonDatapoints:
+          type: array
+          items:
+            type: string
+        event_details:
+          type: array
+          items:
+            type: object
+            properties:
+              event_name:
+                type: string
+              event_type:
+                type: string
+              presence:
+                type: string
+        old_run:
+          type: object
+          properties:
+            _id:
+              type: string
+            run_id:
+              type: string
+            project:
+              type: string
+            tenant:
+              type: string
+            created_at:
+              type: string
+              format: date-time
+            event_ids:
+              type: array
+              items:
+                type: string
+            session_ids:
+              type: array
+              items:
+                type: string
+            dataset_id:
+              type: string
+            datapoint_ids:
+              type: array
+              items:
+                type: string
+            evaluators:
+              type: array
+              items:
+                type: object
+            results:
+              type: object
+            configuration:
+              type: object
+            metadata:
+              type: object
+            passing_ranges:
+              type: object
+            status:
+              type: string
+            name:
+              type: string
+        new_run:
+          type: object
+          properties:
+            _id:
+              type: string
+            run_id:
+              type: string
+            project:
+              type: string
+            tenant:
+              type: string
+            created_at:
+              type: string
+              format: date-time
+            event_ids:
+              type: array
+              items:
+                type: string
+            session_ids:
+              type: array
+              items:
+                type: string
+            dataset_id:
+              type: string
+            datapoint_ids:
+              type: array
+              items:
+                type: string
+            evaluators:
+              type: array
+              items:
+                type: object
+            results:
+              type: object
+            configuration:
+              type: object
+            metadata:
+              type: object
+            passing_ranges:
+              type: object
+            status:
+              type: string
+            name:
+              type: string
     UUIDType:
       type: string
       format: uuid

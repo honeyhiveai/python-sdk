@@ -114,6 +114,16 @@ if res.object is not None:
 * [create_event_batch](docs/sdks/events/README.md#create_event_batch) - Create a batch of events
 * [create_model_event_batch](docs/sdks/events/README.md#create_model_event_batch) - Create a batch of model events
 
+### [experiments](docs/sdks/experiments/README.md)
+
+* [create_run](docs/sdks/experiments/README.md#create_run) - Create a new evaluation run
+* [get_runs](docs/sdks/experiments/README.md#get_runs) - Get a list of evaluation runs
+* [get_run](docs/sdks/experiments/README.md#get_run) - Get details of an evaluation run
+* [update_run](docs/sdks/experiments/README.md#update_run) - Update an evaluation run
+* [delete_run](docs/sdks/experiments/README.md#delete_run) - Delete an evaluation run
+* [get_experiment_result](docs/sdks/experiments/README.md#get_experiment_result) - Retrieve experiment result
+* [get_experiment_comparison](docs/sdks/experiments/README.md#get_experiment_comparison) - Retrieve experiment comparison
+
 
 ### [metrics](docs/sdks/metrics/README.md)
 
@@ -128,14 +138,6 @@ if res.object is not None:
 * [create_project](docs/sdks/projects/README.md#create_project) - Create a new project
 * [update_project](docs/sdks/projects/README.md#update_project) - Update an existing project
 * [delete_project](docs/sdks/projects/README.md#delete_project) - Delete a project
-
-### [runs](docs/sdks/runs/README.md)
-
-* [create_run](docs/sdks/runs/README.md#create_run) - Create a new evaluation run
-* [get_runs](docs/sdks/runs/README.md#get_runs) - Get a list of evaluation runs
-* [get_run](docs/sdks/runs/README.md#get_run) - Get details of an evaluation run
-* [update_run](docs/sdks/runs/README.md#update_run) - Update an evaluation run
-* [delete_run](docs/sdks/runs/README.md#delete_run) - Delete an evaluation run
 
 ### [session](docs/sdks/session/README.md)
 
@@ -270,45 +272,43 @@ try:
             },
         ),
     ],
-    session_properties=operations.SessionProperties(
-        model_event=components.SessionPropertiesBatch(
-            session_name='Playground Session',
-            source='playground',
-            session_id='caf77ace-3417-4da4-944d-f4a0688f3c23',
-            inputs={
-                'context': 'Hello world',
-                'question': 'What is in the context?',
-                'chat_history': [
-                    {
-                        'role': 'system',
-                        'content': 'Answer the user\'s question only using provided context.\n' +
-                        '\n' +
-                        'Context: Hello world',
-                    },
-                    {
-                        'role': 'user',
-                        'content': 'What is in the context?',
-                    },
-                ],
-            },
-            outputs={
-                'role': 'assistant',
-                'content': 'Hello world',
-            },
-            error='<value>',
-            user_properties={
-                'user': 'google-oauth2|111840237613341303366',
-            },
-            metrics={
+    session_properties=components.SessionPropertiesBatch(
+        session_name='Playground Session',
+        source='playground',
+        session_id='caf77ace-3417-4da4-944d-f4a0688f3c23',
+        inputs={
+            'context': 'Hello world',
+            'question': 'What is in the context?',
+            'chat_history': [
+                {
+                    'role': 'system',
+                    'content': 'Answer the user\'s question only using provided context.\n' +
+                    '\n' +
+                    'Context: Hello world',
+                },
+                {
+                    'role': 'user',
+                    'content': 'What is in the context?',
+                },
+            ],
+        },
+        outputs={
+            'role': 'assistant',
+            'content': 'Hello world',
+        },
+        error='<value>',
+        user_properties={
+            'user': 'google-oauth2|111840237613341303366',
+        },
+        metrics={
 
-            },
-            feedback={
+        },
+        feedback={
 
-            },
-            metadata={
+        },
+        metadata={
 
-            },
-        ),
+        },
     ),
 ))
 

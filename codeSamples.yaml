@@ -747,45 +747,43 @@ actions:
                         },
                     ),
                 ],
-                session_properties=operations.SessionProperties(
-                    model_event=components.SessionPropertiesBatch(
-                        session_name='Playground Session',
-                        source='playground',
-                        session_id='caf77ace-3417-4da4-944d-f4a0688f3c23',
-                        inputs={
-                            'context': 'Hello world',
-                            'question': 'What is in the context?',
-                            'chat_history': [
-                                {
-                                    'role': 'system',
-                                    'content': 'Answer the user\'s question only using provided context.\n' +
-                                    '\n' +
-                                    'Context: Hello world',
-                                },
-                                {
-                                    'role': 'user',
-                                    'content': 'What is in the context?',
-                                },
-                            ],
-                        },
-                        outputs={
-                            'role': 'assistant',
-                            'content': 'Hello world',
-                        },
-                        error='<value>',
-                        user_properties={
-                            'user': 'google-oauth2|111840237613341303366',
-                        },
-                        metrics={
+                session_properties=components.SessionPropertiesBatch(
+                    session_name='Playground Session',
+                    source='playground',
+                    session_id='caf77ace-3417-4da4-944d-f4a0688f3c23',
+                    inputs={
+                        'context': 'Hello world',
+                        'question': 'What is in the context?',
+                        'chat_history': [
+                            {
+                                'role': 'system',
+                                'content': 'Answer the user\'s question only using provided context.\n' +
+                                '\n' +
+                                'Context: Hello world',
+                            },
+                            {
+                                'role': 'user',
+                                'content': 'What is in the context?',
+                            },
+                        ],
+                    },
+                    outputs={
+                        'role': 'assistant',
+                        'content': 'Hello world',
+                    },
+                    error='<value>',
+                    user_properties={
+                        'user': 'google-oauth2|111840237613341303366',
+                    },
+                    metrics={
 
-                        },
-                        feedback={
+                    },
+                    feedback={
 
-                        },
-                        metadata={
+                    },
+                    metadata={
 
-                        },
-                    ),
+                    },
                 ),
             ))
 
@@ -1016,45 +1014,43 @@ actions:
                         },
                     ),
                 ],
-                session_properties=operations.CreateModelEventBatchSessionProperties(
-                    model_event=components.SessionPropertiesBatch(
-                        session_name='Playground Session',
-                        source='playground',
-                        session_id='caf77ace-3417-4da4-944d-f4a0688f3c23',
-                        inputs={
-                            'context': 'Hello world',
-                            'question': 'What is in the context?',
-                            'chat_history': [
-                                {
-                                    'role': 'system',
-                                    'content': 'Answer the user\'s question only using provided context.\n' +
-                                    '\n' +
-                                    'Context: Hello world',
-                                },
-                                {
-                                    'role': 'user',
-                                    'content': 'What is in the context?',
-                                },
-                            ],
-                        },
-                        outputs={
-                            'role': 'assistant',
-                            'content': 'Hello world',
-                        },
-                        error='<value>',
-                        user_properties={
-                            'user': 'google-oauth2|111840237613341303366',
-                        },
-                        metrics={
+                session_properties=components.SessionPropertiesBatch(
+                    session_name='Playground Session',
+                    source='playground',
+                    session_id='caf77ace-3417-4da4-944d-f4a0688f3c23',
+                    inputs={
+                        'context': 'Hello world',
+                        'question': 'What is in the context?',
+                        'chat_history': [
+                            {
+                                'role': 'system',
+                                'content': 'Answer the user\'s question only using provided context.\n' +
+                                '\n' +
+                                'Context: Hello world',
+                            },
+                            {
+                                'role': 'user',
+                                'content': 'What is in the context?',
+                            },
+                        ],
+                    },
+                    outputs={
+                        'role': 'assistant',
+                        'content': 'Hello world',
+                    },
+                    error='<value>',
+                    user_properties={
+                        'user': 'google-oauth2|111840237613341303366',
+                    },
+                    metrics={
 
-                        },
-                        feedback={
+                    },
+                    feedback={
 
-                        },
-                        metadata={
+                    },
+                    metadata={
 
-                        },
-                    ),
+                    },
                 ),
             ))
 
@@ -1234,7 +1230,7 @@ actions:
             )
 
 
-            res = s.runs.get_runs()
+            res = s.experiments.get_runs()
 
             if res.get_runs_response is not None:
                 # handle response
@@ -1253,7 +1249,7 @@ actions:
             )
 
 
-            res = s.runs.create_run(request=components.CreateRunRequest(
+            res = s.experiments.create_run(request=components.CreateRunRequest(
                 project='<value>',
                 name='<value>',
                 event_ids=[
@@ -1262,6 +1258,24 @@ actions:
             ))
 
             if res.create_run_response is not None:
+                # handle response
+                pass
+  - target: $["paths"]["/runs/{run_id_1}/compare-with/{run_id_2}"]["get"]
+    update:
+      x-codeSamples:
+        - lang: python
+          label: getExperimentComparison
+          source: |-
+            import honeyhive
+
+            s = honeyhive.HoneyHive(
+                bearer_auth="<YOUR_BEARER_TOKEN_HERE>",
+            )
+
+
+            res = s.experiments.get_experiment_comparison(run_id_1='<value>', run_id_2='<value>', project_id='<id>')
+
+            if res.experiment_comparison_response is not None:
                 # handle response
                 pass
   - target: $["paths"]["/runs/{run_id}"]["delete"]
@@ -1277,7 +1291,7 @@ actions:
             )
 
 
-            res = s.runs.delete_run(run_id='<id>')
+            res = s.experiments.delete_run(run_id='<id>')
 
             if res.delete_run_response is not None:
                 # handle response
@@ -1295,7 +1309,7 @@ actions:
             )
 
 
-            res = s.runs.get_run(run_id='<id>')
+            res = s.experiments.get_run(run_id='<id>')
 
             if res.get_run_response is not None:
                 # handle response
@@ -1314,9 +1328,27 @@ actions:
             )
 
 
-            res = s.runs.update_run(run_id='<id>', update_run_request=components.UpdateRunRequest())
+            res = s.experiments.update_run(run_id='<id>', update_run_request=components.UpdateRunRequest())
 
             if res.update_run_response is not None:
+                # handle response
+                pass
+  - target: $["paths"]["/runs/{run_id}/result"]["get"]
+    update:
+      x-codeSamples:
+        - lang: python
+          label: getExperimentResult
+          source: |-
+            import honeyhive
+
+            s = honeyhive.HoneyHive(
+                bearer_auth="<YOUR_BEARER_TOKEN_HERE>",
+            )
+
+
+            res = s.experiments.get_experiment_result(run_id='<id>', project_id='<id>')
+
+            if res.experiment_result_response is not None:
                 # handle response
                 pass
   - target: $["paths"]["/session/start"]["post"]

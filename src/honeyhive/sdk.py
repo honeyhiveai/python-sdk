@@ -5,9 +5,9 @@ from .configurations import Configurations
 from .datapoints import Datapoints
 from .datasets import Datasets
 from .events import Events
+from .experiments import Experiments
 from .metrics import Metrics
 from .projects import Projects
-from .runs import Runs
 from .sdkconfiguration import SDKConfiguration
 from .session import Session
 from .tools import Tools
@@ -25,7 +25,7 @@ class HoneyHive:
     datapoints: Datapoints
     datasets: Datasets
     projects: Projects
-    runs: Runs
+    experiments: Experiments
     configurations: Configurations
 
     sdk_configuration: SDKConfiguration
@@ -96,5 +96,5 @@ class HoneyHive:
         self.datapoints = Datapoints(self.sdk_configuration)
         self.datasets = Datasets(self.sdk_configuration)
         self.projects = Projects(self.sdk_configuration)
-        self.runs = Runs(self.sdk_configuration)
+        self.experiments = Experiments(self.sdk_configuration)
         self.configurations = Configurations(self.sdk_configuration)
