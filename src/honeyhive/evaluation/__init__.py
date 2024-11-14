@@ -1,5 +1,7 @@
 from typing import Optional, List, Dict, Any
 import os
+import hashlib
+import json
 
 import honeyhive
 from honeyhive.models import components
@@ -29,6 +31,7 @@ class Evaluation(Simulation):
         self.hh_dataset_id: str = dataset_id
         self.query_list = query_list
         self.client_side_evaluators = evaluators or []
+        self.status: str = "pending"
 
         self._validate_requirements()
         self.hhai = honeyhive.HoneyHive(bearer_auth=self.hh_api_key)
@@ -42,6 +45,9 @@ class Evaluation(Simulation):
         self.evaluation_session_ids: List[str] = []
         self.eval_run: Optional[components.CreateRunResponse] = None
         self.disable_auto_tracing = True
+        self.external_dataset_id: str = (
+            self._generate_hash(json.dumps(query_list)) if query_list else None
+        )
 
     def _validate_requirements(self) -> None:
         """Sanity check of requirements for HoneyHive evaluations and tracing."""
@@ -61,6 +67,10 @@ class Evaluation(Simulation):
             raise Exception(
                 "No valid 'dataset_id' or 'query_list' found. Please provide one to iterate the evaluation over."
             )
+
+    def _generate_hash(self, input_string: str) -> str:
+        hash_object = hashlib.md5(input_string.encode("utf-8"))
+        return f"EXT-{hash_object.hexdigest()[:24]}"
 
     def _load_dataset(self) -> Optional[Any]:
         """Private function to acquire Honeyhive dataset based on dataset_id."""
@@ -135,6 +145,11 @@ class Evaluation(Simulation):
             if self.hh_dataset:
                 tracing_metadata["datapoint_id"] = self.hh_dataset.datapoints[run_id]
                 tracing_metadata["dataset_id"] = self.hh_dataset_id
+            if self.external_dataset_id:
+                tracing_metadata["datapoint_id"] = self._generate_hash(
+                    json.dumps(self.query_list[run_id])
+                )
+                tracing_metadata["dataset_id"] = self.external_dataset_id
 
             if not isinstance(evaluation_output, dict):
                 evaluation_output = {"output": evaluation_output}
@@ -189,8 +204,9 @@ class Evaluation(Simulation):
             request=components.CreateRunRequest(
                 project=self.hh_project,
                 name=self.eval_name,
-                dataset_id=self.hh_dataset_id,
+                dataset_id=self.hh_dataset_id or self.external_dataset_id,
                 event_ids=[],
+                status=self.status,
             )
         )
         self.eval_run = eval_run.create_run_response
@@ -199,10 +215,11 @@ class Evaluation(Simulation):
         """Custom instrumentation for inherited function. Orchestrate the HoneyHive evaluation flow."""
         try:
             if self.eval_run:
+                self.status = "completed"
                 self.hhai.experiments.update_run(
                     run_id=self.eval_run.run_id,
                     update_run_request=components.UpdateRunRequest(
-                        event_ids=self.evaluation_session_ids, status="completed"
+                        event_ids=self.evaluation_session_ids, status=self.status
                     ),
                 )
         except Exception:
@@ -242,3 +259,10 @@ def evaluate(
         evaluators=evaluators,
     )
     eval.run()
+
+    return {
+        "run_id": eval.eval_run.run_id,
+        "dataset_id": eval.hh_dataset_id or eval.external_dataset_id,
+        "session_ids": eval.evaluation_session_ids,
+        "status": eval.status,
+    }
