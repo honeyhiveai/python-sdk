@@ -6,6 +6,7 @@ from .tracer import HoneyHiveTracer, enrich_session
 # from .tracer.asyncio_tracer import AsyncioInstrumentor
 from .tracer.custom import trace, atrace, enrich_span
 from .evaluation import evaluate
+from .utils.dotdict import dotdict
 
 # export
 __all__ = [
@@ -14,5 +15,6 @@ __all__ = [
     "trace",
     "atrace",
     "enrich_span",
-    "evaluate"
+    "evaluate",
+    "dotdict"
 ]
