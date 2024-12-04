@@ -5,7 +5,7 @@ import json
 
 import honeyhive
 from honeyhive.models import components
-from honeyhive import HoneyHiveTracer, enrich_session
+from honeyhive import HoneyHiveTracer
 
 from realign.simulation import Simulation, Context
 
@@ -112,7 +112,7 @@ class Evaluation(Simulation):
     def _initialize_tracer(self, inputs: Optional[Dict[str, Any]]):
         """Private function to instrument Honeyhive Tracer."""
         try:
-            HoneyHiveTracer.init(
+            self.hive = HoneyHiveTracer.init(
                 api_key=self.hh_api_key,
                 project=self.hh_project,
                 source="evaluation",
@@ -154,8 +154,9 @@ class Evaluation(Simulation):
             if not isinstance(evaluation_output, dict):
                 evaluation_output = {"output": evaluation_output}
 
-            enrich_session(
-                metadata=tracing_metadata, outputs=evaluation_output, metrics=metrics
+            self.hive.enrich_session(
+                metadata=tracing_metadata,
+                outputs=evaluation_output
             )
         except Exception as e:
             print(f"Error adding trace metadata: {e}")
@@ -194,7 +195,7 @@ class Evaluation(Simulation):
             run_context.inputs, run_context.final_state
         )
         self._add_trace_metadata(run_context.final_state, run_context.run_id, metrics)
-        self.evaluation_session_ids.append(HoneyHiveTracer.session_id)
+        self.evaluation_session_ids.append(self.hive.session_id)
 
         return await super()._after_each(run_context)
 

@@ -10,7 +10,7 @@ from .utils.dotdict import dotdict
 
 # export
 __all__ = [
-    "HoneyHiveTracer", 
+    "HoneyHiveTracer",
     "enrich_session",
     "trace",
     "atrace",
