@@ -17,8 +17,8 @@ class HoneyHiveTracer:
 
     @staticmethod
     def init(
-        api_key,
-        project,
+        api_key=None,
+        project=None,
         session_name=None,
         source='dev',
         server_url="https://api.honeyhive.ai",
@@ -34,7 +34,18 @@ class HoneyHiveTracer:
                 # If we're in an evaluation, only new evaluate sessions are allowed
                 if not is_evaluation:
                     return
-
+            
+            # Check for api_key and project in the arguments or environment variables
+            if api_key is None:
+                # check os env for api key
+                api_key = os.getenv("HONEYHIVE_API_KEY")
+                if api_key is None:
+                    raise Exception("api_key must be specified or set in environment variable HH_API_KEY.")
+            if project is None:
+                project = os.getenv("HH_PROJECT")
+                if project is None:
+                    raise Exception("project must be specified or set in environment variable HH_PROJECT.")
+            
             # Set session_name to the main module name if not provided
             if session_name is None:
                 try:
