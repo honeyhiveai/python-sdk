@@ -1,16 +1,16 @@
-from typing import Optional, List, Dict, Any
+from typing import Optional, List, Dict, Any, Callable
 import os
 import hashlib
 import json
+import time
 
-import honeyhive
+from honeyhive.sdk import HoneyHive
 from honeyhive.models import components
 from honeyhive import HoneyHiveTracer
+from concurrent.futures import ThreadPoolExecutor
+import collections
 
-from realign.simulation import Simulation, Context
-
-
-class Evaluation(Simulation):
+class Evaluation:
     """This class is for automated honeyhive evaluation with tracing"""
 
     def __init__(
@@ -18,35 +18,41 @@ class Evaluation(Simulation):
         hh_api_key: str = None,
         hh_project: str = None,
         name: str = None,
-        dataset_id: Optional[str] = None,
-        query_list: Optional[List[Dict[str, Any]]] = None,
-        runs: int = None,  # can be used to run for part of the dataset
+        function: Optional[Callable] = None,
+        dataset: Optional[List[Dict[str, Any]]] = None,
         evaluators: Optional[List[Any]] = None,
+        dataset_id: Optional[str] = None,
     ):
-        super().__init__()
-
         self.hh_api_key = hh_api_key or os.environ["HH_API_KEY"]
         self.hh_project = hh_project or os.environ["HH_PROJECT"]
         self.eval_name: str = name
         self.hh_dataset_id: str = dataset_id
-        self.query_list = query_list
+        self.dataset = dataset
         self.client_side_evaluators = evaluators or []
         self.status: str = "pending"
 
         self._validate_requirements()
-        self.hhai = honeyhive.HoneyHive(bearer_auth=self.hh_api_key)
+        self.hhai = HoneyHive(bearer_auth=self.hh_api_key)
         self.hh_dataset = self._load_dataset()
-        self.runs = (
-            runs or len(self.hh_dataset.datapoints)
-            if self.hh_dataset
-            else len(query_list) if query_list else 0
-        )
+        self.func_to_evaluate: Callable = function
 
-        self.evaluation_session_ids: List[str] = []
+        # self.runs = (
+        #     runs or len(self.hh_dataset.datapoints)
+        #     if self.hh_dataset
+        #     else len(query_list) if query_list else 0
+        # )
+
+        # session ids of each run in a thread-safe collection
+        self.evaluation_session_ids: collections.deque = collections.deque()
+
+        # run response
         self.eval_run: Optional[components.CreateRunResponse] = None
+        # disable auto tracing
         self.disable_auto_tracing = True
+        # generated id for external datasets
+        # TODO: large dataset optimization
         self.external_dataset_id: str = (
-            self._generate_hash(json.dumps(query_list)) if query_list else None
+            self._generate_hash(json.dumps(dataset)) if dataset else None
         )
 
     def _validate_requirements(self) -> None:
@@ -63,9 +69,9 @@ class Evaluation(Simulation):
             raise Exception(
                 "Evaluation name not found. Please set 'name' to initiate Honeyhive Evaluation."
             )
-        if not self.hh_dataset_id and not self.query_list:
+        if not self.hh_dataset_id and not self.dataset:
             raise Exception(
-                "No valid 'dataset_id' or 'query_list' found. Please provide one to iterate the evaluation over."
+                "No valid 'dataset_id' or 'dataset' found. Please provide one to iterate the evaluation over."
             )
 
     def _generate_hash(self, input_string: str) -> str:
@@ -92,51 +98,13 @@ class Evaluation(Simulation):
                 f"No dataset found with id - {self.hh_dataset_id} for project - {self.hh_project}"
             )
 
-    def _get_inputs(self, run_id: int) -> Optional[Dict[str, Any]]:
-        """Private function to process and iterate over HoneyHive datapoints from Honeyhive dataset"""
-        if (
-            self.hh_dataset
-            and self.hh_dataset.datapoints
-            and len(self.hh_dataset.datapoints) > 0
-        ):
-            try:
-                datapoint_id = self.hh_dataset.datapoints[run_id]
-                datapoint_response = self.hhai.datapoints.get_datapoint(id=datapoint_id)
-                return datapoint_response.object.datapoint[0].inputs
-            except Exception as e:
-                print(f"Error getting datapoint: {e}")
-        elif self.query_list:
-            return self.query_list[run_id]
-        return None
-
-    def _initialize_tracer(self, inputs: Optional[Dict[str, Any]]):
-        """Private function to instrument Honeyhive Tracer."""
-        try:
-            self.hive = HoneyHiveTracer.init(
-                api_key=self.hh_api_key,
-                project=self.hh_project,
-                source="evaluation",
-                session_name=self.eval_name,
-                inputs=inputs,
-                is_evaluation=True,
-            )
-        except:
-            raise Exception(
-                "Unable to initiate Honeyhive Tracer. Cannot run Evaluation"
-            )
-
-    async def _run_evaluation(self, inputs: Optional[Dict[str, Any]]) -> Optional[Any]:
-        """Private function to safely execute the evaluating function"""
-        try:
-            return await self.eval_function(inputs)
-        except Exception as error:
-            print(f"Error in evaluation function: {error}")
-            return None
+    # ------------------------------------------------------------
 
     def _add_trace_metadata(
         self,
         evaluation_output: Optional[Any],
         run_id: int,
+        hh: HoneyHiveTracer,
         metrics: Optional[Dict[str, Any]] = None,
     ):
         """Private function to enrich the session data post flow completion."""
@@ -147,21 +115,21 @@ class Evaluation(Simulation):
                 tracing_metadata["dataset_id"] = self.hh_dataset_id
             if self.external_dataset_id:
                 tracing_metadata["datapoint_id"] = self._generate_hash(
-                    json.dumps(self.query_list[run_id])
+                    json.dumps(self.dataset[run_id])
                 )
                 tracing_metadata["dataset_id"] = self.external_dataset_id
 
             if not isinstance(evaluation_output, dict):
                 evaluation_output = {"output": evaluation_output}
 
-            self.hive.enrich_session(
+            hh.enrich_session(
                 metadata=tracing_metadata,
                 outputs=evaluation_output
             )
         except Exception as e:
             print(f"Error adding trace metadata: {e}")
 
-    async def _run_evaluators(
+    def _run_evaluators(
         self, inputs: Optional[Dict[str, Any]], evaluation_output: Optional[Any]
     ):
         """Private function to run evaluators and collect metrics."""
@@ -181,26 +149,56 @@ class Evaluation(Simulation):
                 except Exception as e:
                     print(f"Error in evaluator: {str(e)}")
         return metrics
+    
+    def run_each(self, eval_index: int):
+        """Private function to run the evaluation for each datapoint."""
+        print('Running evaluation: ', eval_index)
+        # Get inputs from either honeyhive dataset or provided dataset
+        inputs = None
+        if (
+            self.hh_dataset
+            and self.hh_dataset.datapoints
+            and len(self.hh_dataset.datapoints) > 0
+        ):
+            try:
+                datapoint_id = self.hh_dataset.datapoints[eval_index]
+                datapoint_response = self.hhai.datapoints.get_datapoint(id=datapoint_id)
+                inputs = datapoint_response.object.datapoint[0].inputs
+            except Exception as e:
+                print(f"Error getting datapoint: {e}")
+        elif self.dataset:
+            inputs = self.dataset[eval_index]
 
-    async def _before_each(self, run_context: Context):
-        """Private function to load inputs and initialize session for evaluation run."""
-        run_context.inputs = self._get_inputs(run_context.run_id)
-        self._initialize_tracer(run_context.inputs)
+        try:
+            hh = HoneyHiveTracer(
+                api_key=self.hh_api_key,
+                project=self.hh_project,
+                source="evaluation",
+                session_name=self.eval_name,
+                inputs=inputs,
+                is_evaluation=True,
+            )
+            self.evaluation_session_ids.append(hh.session_id)
+        except:
+            raise Exception(
+                "Unable to initiate Honeyhive Tracer. Cannot run Evaluation"
+            )
+        
+        try:
+            evaluation_output = self.func_to_evaluate(inputs)
+        except Exception as error:
+            print(f"Error in evaluation function: {error}")
+            evaluation_output = None
 
-        return await super()._before_each(run_context)
-
-    async def _after_each(self, run_context: Context):
-        """Private function to tag session and append to evaluation run."""
-        metrics = await self._run_evaluators(
-            run_context.inputs, run_context.final_state
+        # TODO: the trace of the evaluator is being captured in the main trace
+        metrics = self._run_evaluators(
+            inputs, evaluation_output
         )
-        self._add_trace_metadata(run_context.final_state, run_context.run_id, metrics)
-        self.evaluation_session_ids.append(self.hive.session_id)
+        
+        self._add_trace_metadata(evaluation_output, eval_index, hh, metrics)
 
-        return await super()._after_each(run_context)
-
-    async def setup(self, *args, **kwargs):
-        """Custom instrumentation for inherited function. Initiate an evaluation run in Honeyhive."""
+    def run(self):
+        """Public function to run the evaluation."""
         eval_run = self.hhai.experiments.create_run(
             request=components.CreateRunRequest(
                 project=self.hh_project,
@@ -212,8 +210,24 @@ class Evaluation(Simulation):
         )
         self.eval_run = eval_run.create_run_response
 
-    async def windup(self):
-        """Custom instrumentation for inherited function. Orchestrate the HoneyHive evaluation flow."""
+        start_time = time.time()
+        
+        # TODO: remove this flag
+        run_concurrently = True
+        if run_concurrently:
+            # Use ThreadPoolExecutor to run evaluations concurrently
+            with ThreadPoolExecutor() as executor:
+                executor.map(lambda i: self.run_each(i), range(len(self.dataset)))
+        else:
+            for i in range(len(self.dataset)):
+                self.run_each(i)
+        
+        end_time = time.time()
+        print(f"Evaluation completed in {round(end_time - start_time, 3)} seconds")
+
+        # convert deque to list after all threads have completed
+        self.evaluation_session_ids = list(self.evaluation_session_ids)
+
         try:
             if self.eval_run:
                 self.status = "completed"
@@ -225,8 +239,6 @@ class Evaluation(Simulation):
                 )
         except Exception:
             print("Warning: Unable to mark evaluation as `Completed`")
-        await super().windup()
-
 
 def evaluate(
     function=None,
@@ -234,8 +246,7 @@ def evaluate(
     hh_project: str = None,
     name: str = None,
     dataset_id: Optional[str] = None,
-    query_list: Optional[List[Dict[str, Any]]] = None,
-    runs: int = None,  # can be used to run for part of the dataset
+    dataset: Optional[List[Dict[str, Any]]] = None,
     evaluators: Optional[List[Any]] = None,
 ):
 
@@ -244,20 +255,14 @@ def evaluate(
             "No evaluation function found. Please define 'function' parameter."
         )
 
-    class FunctionEvaluation(Evaluation):
-        async def main(self, run_context):
-            inputs = run_context.inputs
-            output = function(inputs)
-            return output
-
-    eval = FunctionEvaluation(
+    eval = Evaluation(
         hh_api_key=hh_api_key,
         hh_project=hh_project,
         name=name,
-        dataset_id=dataset_id,
-        query_list=query_list,
-        runs=runs,
+        function=function,
+        dataset=dataset,
         evaluators=evaluators,
+        dataset_id=dataset_id,
     )
     eval.run()
 

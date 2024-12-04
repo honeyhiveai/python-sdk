@@ -15,6 +15,7 @@ from opentelemetry.trace.status import Status, StatusCode
 ASYNCIO_PREFIX = "asyncio"
 VERSION = "1.0.0"
 
+# TODO: this instrumentor does not work as expected
 
 class AsyncioInstrumentor(BaseInstrumentor):
     """
