@@ -16,15 +16,27 @@ jobs:
       id: checkout
       uses: actions/checkout@v4
 
+    - name: Set up Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: '3.x'
+
+    - name: Install dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install .
+
     - name: Run HoneyHive Evaluation
       id: evaluate
       uses: honeyhiveai/honeyhive-eval@main
       with:
+        runtime: 'python'
         runId: 'a1ac2cb9-2034-469b-9149-3e6452120201'
-        projectId: 'agi'
+        project: ${{ secrets.HH_PROJECT }}
         aggregateFunction: 'average'
-        apiUrl: 'https://api.honeyhive.ai'
+        root: '.'
         apiKey: ${{ secrets.HH_API_KEY }}
+        openaiApiKey: ${{ secrets.OPENAI_API_KEY }}
 
     - name: Display Evaluation Results
       run: |
