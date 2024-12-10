@@ -78,7 +78,6 @@ class HoneyHiveTracer:
             self.session_id = HoneyHiveTracer.__start_session(
                 api_key, project, session_name, source, server_url, inputs
             )
-            print(f"Started session_id {self.session_id}")
 
             # baggage
             self.baggage = BaggageDict().update({
@@ -140,7 +139,7 @@ class HoneyHiveTracer:
             #     "instrumentation_id": HoneyHiveTracer.instrumentation_id,
             # }
             
-            # log the session initialization
+            # # log the session initialization
             # @trace
             # def __session_init():
             #     enrich_span(metadata={
@@ -172,7 +171,8 @@ class HoneyHiveTracer:
                 )
             )
         )
-        assert res.object.session_id is not None
+        assert res.status_code == 200, f"Failed to start session: {res.raw_response.text}"
+        assert res.object.session_id is not None, "Failure initializing session"
         return res.object.session_id
     
     def _sanitize_carrier(carrier, getter):

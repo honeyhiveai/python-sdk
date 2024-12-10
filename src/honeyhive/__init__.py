@@ -5,8 +5,9 @@ from .sdkconfiguration import *
 from .tracer import HoneyHiveTracer
 # from .tracer.asyncio_tracer import AsyncioInstrumentor
 from .tracer.custom import trace, atrace, enrich_span
-from .evaluation import evaluate
+from .evaluation import evaluate, evaluator, aevaluator
 from .utils.dotdict import dotdict
+from .utils.config import config
 
 # export
 __all__ = [
@@ -16,5 +17,8 @@ __all__ = [
     "atrace",
     "enrich_span",
     "evaluate",
-    "dotdict"
+    "evaluator",
+    "aevaluator",
+    "dotdict",
+    "config"
 ]

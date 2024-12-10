@@ -1,18 +1,47 @@
 import copy
+import jinja2
+
+from typing import Any
+
+class TemplateString(str):
+    def render(self, **kwargs):
+        return jinja2.Template(self).render(**kwargs)
 
 class dotdict(dict):
     def __init__(self, d=None):
-        super().__init__({} if d is None else d)
+        # TODO: handle YAMLs that are not dictionaries
+        try:
+            super().__init__({} if d is None else d)
+        except Exception as e:
+            raise ValueError(f"Error initializing dotdict. Ensure that the YAML is a valid dictionary.")
+
+    @staticmethod
+    def _is_dict(value):
+        return isinstance(value, dict) and not isinstance(value, dotdict)
     
-    def __getattr__(self, key):
+    def __getattr__(self, key) -> jinja2.Template | dict | list | Any:
         if key.startswith('__') and key.endswith('__'):
             return super().__getattr__(key)
         try:
             if key in self:
                 value = self[key]
-                if isinstance(value, dict) and not isinstance(value, dotdict):
+                if dotdict._is_dict(value):
                     value = dotdict(value)
                     self[key] = value
+                elif isinstance(value, list):
+                    value = [
+                        dotdict(item) if dotdict._is_dict(item) else item
+                        for item in value
+                    ]
+                    self[key] = value
+                
+                # make string renderable
+                if isinstance(value, str):
+                    try:
+                        value = TemplateString(value)
+                    except Exception as e:
+                        pass
+
                 return value
             return super().__getattr__(key)
         except KeyError:
@@ -23,6 +52,13 @@ class dotdict(dict):
             super().__setattr__(key, value)
         else:
             self[key] = value
+
+    def __getitem__(self, key):
+        value = super().__getitem__(key)
+        if dotdict._is_dict(value):
+            value = dotdict(value)
+            self[key] = value
+        return value
 
     def __setitem__(self, key, value):
         # Convert nested dictionaries in lists

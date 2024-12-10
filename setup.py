@@ -15,9 +15,10 @@ requires = [
     'traceloop-sdk>=0.18.2,<=0.30',
     'typing-inspect>=0.9.0',
     'dataclasses-json>=0.6.7',
+    'pyyaml>=6.0.1',
 ]
 
-entry_points = {'console_scripts': ['honeyhive = honeyhive.cli:honeyhive']}
+entry_points = {'console_scripts': ['honeyhive = honeyhive.cli.__main__:main']}
 
 setup(
     name='honeyhive',
@@ -28,7 +29,7 @@ setup(
     author='HoneyHive',
     author_email="support@honeyhive.ai",
     scripts=[],
-    packages=find_packages(where='src', exclude=['tests*']),
+    packages=find_packages(where='src'),
     package_dir={'': 'src'},
     package_data=package_data,
     include_package_data=True,

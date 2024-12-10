@@ -26,6 +26,13 @@ jobs:
     - name: Run HoneyHive eval
       id: honeyhive_eval
       run: |
+        # Add debugging information
+        echo "Python path:"
+        python -c "import sys; print(sys.path)"
+        echo "Installed packages:"
+        pip list
+        echo "Running honeyhive eval:"
+        honeyhive eval
         OUTPUT=$(honeyhive eval)
         echo "${OUTPUT}"
         echo "::set-output name=eval_output::${OUTPUT}"

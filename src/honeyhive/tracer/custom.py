@@ -150,11 +150,12 @@ class FunctionInstrumentor(BaseInstrumentor):
 
         _func_instrumentor = None
 
-        def __init__(self, func, event_type=None, config=None, metadata=None):
+        def __init__(self, func, event_type=None, config=None, metadata=None, eval=None):
             self.func = func
             self.event_type = event_type
             self.config = config
             self.metadata = metadata
+            self.eval = eval
 
             if func is not None:
                 functools.update_wrapper(self, func)
@@ -165,9 +166,10 @@ class FunctionInstrumentor(BaseInstrumentor):
             event_type=None,
             config=None,
             metadata=None,
+            eval=None,
         ):
             if func is None:
-                return lambda f: cls(f, event_type, config, metadata)
+                return lambda f: cls(f, event_type, config, metadata, eval)
             return super().__new__(cls)
 
         def __get__(self, instance, owner):
@@ -179,8 +181,11 @@ class FunctionInstrumentor(BaseInstrumentor):
         def __call__(self, *args, **kwargs):
             if asyncio.iscoroutinefunction(self.func):
                 raise TypeError("please use @atrace for tracing async functions")
-            return self.sync_call(*args, **kwargs)
-
+            ret = self.sync_call(*args, **kwargs)
+            # if self.eval:
+            #     self.eval(ret)
+            return ret
+        
         async def __acall__(self, *args, **kwargs):
             if asyncio.iscoroutinefunction(self.func):
                 return await self.async_call(*args, **kwargs)
