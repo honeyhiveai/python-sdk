@@ -44,7 +44,7 @@ class HoneyHiveLangChainTracer(BaseTracer, ABC):
 
     _headers: Dict[str, Any] = {"Content-Type": "application/json"}
     _base_url: str = "https://api.honeyhive.ai"
-    _env_api_key = os.getenv("HONEYHIVE_API_KEY")
+    _env_api_key = os.getenv("HH_API_KEY")
 
     def __init__(
         self,
@@ -64,7 +64,7 @@ class HoneyHiveLangChainTracer(BaseTracer, ABC):
             api_key = self._env_api_key
         elif not api_key:
             raise ValueError(
-                "HoneyHive API key is not set! Please set the HONEYHIVE_API_KEY environment variable or pass in the api_key value."
+                "HoneyHive API key is not set! Please set the HH_API_KEY environment variable or pass in the api_key value."
             )
 
         if base_url:

@@ -50,7 +50,7 @@ class HoneyHiveTracer:
             # api_key
             if api_key is None:
                 # check os env for api key
-                api_key = os.getenv("HONEYHIVE_API_KEY")
+                api_key = os.getenv("HH_API_KEY")
                 if api_key is None:
                     raise Exception("api_key must be specified or set in environment variable HH_API_KEY.")
             HoneyHiveTracer.api_key = api_key

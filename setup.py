@@ -17,6 +17,7 @@ requires = [
     'dataclasses-json>=0.6.7',
     'pyyaml>=6.0.1',
     'rich>=13.9.4',
+    'openai>=1.57.2'
 ]
 
 entry_points = {'console_scripts': ['honeyhive = honeyhive.cli.__main__:main']}

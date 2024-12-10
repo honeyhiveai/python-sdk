@@ -1,0 +1,54 @@
+name: HoneyHive Evaluation
+
+on:
+  pull_request:
+    branches:
+      - "main"
+
+jobs:
+  evaluate:
+    runs-on: ubuntu-latest
+    permissions:
+      pull-requests: write
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v3
+
+    - name: Set up Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: '3.x'
+
+    - name: Install dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install .
+
+    - name: Run HoneyHive eval
+      id: honeyhive_eval
+      env:
+        HH_API_KEY: ${{ secrets.HH_API_KEY }}
+        HH_PROJECT: ${{ secrets.HH_PROJECT }}
+        OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+      run: |
+        # Save output to a file to preserve newlines
+        honeyhive eval > eval_output.txt
+        # Read the file content
+        OUTPUT=$(cat eval_output.txt)
+        echo "${OUTPUT}"
+        # Properly escape newlines and other special characters for GitHub Actions
+        OUTPUT="${OUTPUT//'%'/'%25'}"
+        OUTPUT="${OUTPUT//$'\n'/'%0A'}"
+        OUTPUT="${OUTPUT//$'\r'/'%0D'}"
+        # Remove any markdown code block formatting
+        OUTPUT="${OUTPUT//\`\`\`/}"
+        echo "eval_output=${OUTPUT}" >> $GITHUB_OUTPUT
+
+    - name: Post comment on PR
+      uses: mshick/add-pr-comment@v2
+      with:
+        message: |
+          ```
+          ${{ steps.honeyhive_eval.outputs.eval_output }}
+          ```
