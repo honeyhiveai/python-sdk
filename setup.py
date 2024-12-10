@@ -16,6 +16,7 @@ requires = [
     'typing-inspect>=0.9.0',
     'dataclasses-json>=0.6.7',
     'pyyaml>=6.0.1',
+    'rich>=13.9.4',
 ]
 
 entry_points = {'console_scripts': ['honeyhive = honeyhive.cli.__main__:main']}
