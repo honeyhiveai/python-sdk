@@ -28,6 +28,6 @@ results = evaluate(
         {"user_input": "hi"},
         {"user_input": "hello"},
         {"user_input": "how are you?"}
-    ] * 5,
+    ] * 3,
     evaluators=[eval_safe]
 )

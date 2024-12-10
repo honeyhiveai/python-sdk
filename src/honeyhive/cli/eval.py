@@ -33,7 +33,8 @@ _import_lock = Lock()
 @dataclass
 class FileHandle:
     in_file: str
-
+    dir: str
+    
     def rebuild(self):
         in_file = os.path.abspath(self.in_file)
 
@@ -55,10 +56,11 @@ def initialize_handles(files):
 
     fnames = set()
     for path in input_paths:
-        for fname in collect_files(path, INCLUDE, EXCLUDE):
+        for dir, fname in collect_files(path, INCLUDE, EXCLUDE):
+            print(dir, fname)
             fnames.add(os.path.abspath(fname))
 
-    return [FileHandle(in_file=fname) for fname in fnames]
+    return [FileHandle(in_file=fname, dir=dir) for fname in fnames]
 
 def run_once(handles: List[FileHandle]):
     terminate_on_failure = True
