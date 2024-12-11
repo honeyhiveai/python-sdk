@@ -3,7 +3,7 @@ name: HoneyHive Evaluation
 on:
   pull_request:
     branches:
-      - "main"
+      - "dev" # "main"
 
 jobs:
   evaluate:

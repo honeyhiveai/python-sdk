@@ -7,7 +7,7 @@ import json
 
 client = OpenAI()
 
-@evaluator(repeat=5, aggregate='sum(values)/len(values)')
+@evaluator # (repeat=5, aggregate='sum(values)/len(values)')
 def eval_sentiment(output):
     
     prompt = config.sentiment_score.render(output=output)
@@ -35,6 +35,6 @@ def eval_sentiment(output):
 
 evaluate(
     function=get_ai_response,
-    dataset=config.datasets.sentiment,
+    dataset=config.datasets.sentiment * 5,
     evaluators=[eval_sentiment]
 )

@@ -10,6 +10,7 @@ import json
 
 client = OpenAI()
 
+@evaluator(repeat=3, aggregate='sum(values)/len(values)')
 def eval_profanity(output):
     
     prompt = config.profanity_eval.render(output=output)
