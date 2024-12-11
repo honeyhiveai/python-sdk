@@ -24,7 +24,7 @@ class EvaluationResult:
     status: str
     data: list
 
-console = Console()
+console = Console(width=55)
 
 class Evaluation:
     """This class is for automated honeyhive evaluation with tracing"""

@@ -10,6 +10,7 @@ import json
 
 client = OpenAI()
 
+@evaluator(repeat=3, aggregate='sum(values)/len(values)')
 def eval_profanity(output):
     
     prompt = config.profanity_eval.render(output=output)
@@ -36,3 +37,6 @@ results = evaluate(
 print(results.data)
 
 # assert categorical_mean(results.data) > 0.5
+
+
+# inputs x evaluators
