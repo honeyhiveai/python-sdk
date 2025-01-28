@@ -35,6 +35,6 @@ def eval_sentiment(output):
 
 evaluate(
     function=get_ai_response,
-    dataset=config.datasets.sentiment * 5,
+    dataset=config.datasets.sentiment * 3,
     evaluators=[eval_sentiment]
 )

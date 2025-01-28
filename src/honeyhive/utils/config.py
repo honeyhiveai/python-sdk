@@ -62,14 +62,14 @@ def collect_files(input_path, include_patterns, exclude_patterns):
             for file in files:
                 fname = os.path.join(root, file)
                 if check_match(fname, include_patterns, exclude_patterns):
-                    yield fname
+                    yield (os.path.dirname(fname), fname)
     else:
         if not check_match(input_path, include_patterns, exclude_patterns):
             print(
                 f"Reading {input_path} because it was specified directly. Rename it to *.eval.py "
                 + "to include it automatically when you specify a directory."
             )
-        yield input_path
+        yield (os.path.dirname(input_path), input_path)
 
 # TODO: parse evaluators from yaml and add them to the evaluators registry
 
@@ -89,7 +89,7 @@ def load_yaml(_yaml) -> dict:
 
 def get_yaml_dotdict(path: str | None = None) -> dotdict:
     if path is None:
-        path = next(collect_files(os.getcwd(), CONFIG_PATTERN, ["**/site-packages/**"]))
+        _, path = next(collect_files(os.getcwd(), CONFIG_PATTERN, ["**/site-packages/**"]))
 
     if not path:
         # TODO: create one
