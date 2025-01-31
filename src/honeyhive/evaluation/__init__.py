@@ -127,7 +127,7 @@ class Evaluation:
 
     @staticmethod
     def generate_hash(input_string: str) -> str:
-        return f"EXT-{hashlib.md5(input_string.encode("utf-8")).hexdigest()[:24]}"
+        return f"EXT-{hashlib.md5(input_string.encode('utf-8')).hexdigest()[:24]}"
 
     # ------------------------------------------------------------
 

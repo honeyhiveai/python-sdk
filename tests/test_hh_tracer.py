@@ -4,13 +4,13 @@ import honeyhive
 import time
 import uuid
 from honeyhive.models import components, operations
-from honeyhive.tracer import HoneyHiveTracer, enrich_session
-from honeyhive.tracer.custom import trace, enrich_span
+from honeyhive.tracer import HoneyHiveTracer
+from honeyhive.tracer.custom import trace
 from llama_index.core import VectorStoreIndex
 from llama_index.readers.web import SimpleWebPageReader
 
 session_name = f"HoneyHive Tracer Test {str(uuid.uuid4())}"
-HoneyHiveTracer.init(
+hhtracer = HoneyHiveTracer.init(
     server_url=os.environ["HH_API_URL"],
     api_key=os.environ["HH_API_KEY"],
     project=os.environ["HH_PROJECT"],
@@ -66,7 +66,7 @@ def test_tracer():
     # Get session
     time.sleep(10)
     req = operations.GetEventsRequestBody(
-        project=os.environ["HH_PROJECT_ID"],
+        project=os.environ["HH_PROJECT"],
         filters=[
             components.EventFilter(
                 field="event_name",
@@ -87,7 +87,7 @@ def test_tracer():
 
     session_id = res.object.events[0].session_id
     req = operations.GetEventsRequestBody(
-        project=os.environ["HH_PROJECT_ID"],
+        project=os.environ["HH_PROJECT"],
         filters=[
             components.EventFilter(
                 field="session_id",
@@ -102,7 +102,7 @@ def test_tracer():
     assert len(res.object.events) > 1
 
     req = operations.GetEventsRequestBody(
-        project=os.environ["HH_PROJECT_ID"],
+        project=os.environ["HH_PROJECT"],
         filters=[
             components.EventFilter(
                 field="event_name",
@@ -139,8 +139,9 @@ def test_tracer():
     run_tracer()
 
     time.sleep(10)
+
     req = operations.GetEventsRequestBody(
-        project=os.environ["HH_PROJECT_ID"],
+        project=os.environ["HH_PROJECT"],
         filters=[
             components.EventFilter(
                 field="event_name",
@@ -166,7 +167,7 @@ def test_tracer():
     assert new_session_id is not None
 
     req = operations.GetEventsRequestBody(
-        project=os.environ["HH_PROJECT_ID"],
+        project=os.environ["HH_PROJECT"],
         filters=[
             components.EventFilter(
                 field="session_id",
@@ -186,7 +187,7 @@ def test_tracer():
     assert len(res.object.events) == 1
 
     req = operations.GetEventsRequestBody(
-        project=os.environ["HH_PROJECT_ID"],
+        project=os.environ["HH_PROJECT"],
         filters=[
             components.EventFilter(
                 field="session_id",
@@ -204,12 +205,12 @@ def test_tracer_metadata_update():
     run_tracer()
     time.sleep(10)
 
-    enrich_session(metadata={"test": "value"})
+    hhtracer.enrich_session(metadata={"test": "value"})
     time.sleep(10)
 
-    session_id = HoneyHiveTracer.session_id
+    session_id = hhtracer.session_id
     req = operations.GetEventsRequestBody(
-        project=os.environ["HH_PROJECT_ID"],
+        project=os.environ["HH_PROJECT"],
         filters=[
             components.EventFilter(
                 field="session_id",
@@ -236,12 +237,12 @@ def test_tracer_feedback_update():
     run_tracer()
     time.sleep(10)
 
-    enrich_session(feedback={"comment": "test feedback"})
+    hhtracer.enrich_session(feedback={"comment": "test feedback"})
     time.sleep(10)
 
-    session_id = HoneyHiveTracer.session_id
+    session_id = hhtracer.session_id
     req = operations.GetEventsRequestBody(
-        project=os.environ["HH_PROJECT_ID"],
+        project=os.environ["HH_PROJECT"],
         filters=[
             components.EventFilter(
                 field="session_id",
@@ -268,12 +269,12 @@ def test_tracer_evaluator_update():
     run_tracer()
     time.sleep(10)
 
-    enrich_session(metrics={"tps": 1.78})
+    hhtracer.enrich_session(metrics={"tps": 1.78})
     time.sleep(10)
 
-    session_id = HoneyHiveTracer.session_id
+    session_id = hhtracer.session_id
     req = operations.GetEventsRequestBody(
-        project=os.environ["HH_PROJECT_ID"],
+        project=os.environ["HH_PROJECT"],
         filters=[
             components.EventFilter(
                 field="session_id",
@@ -299,7 +300,7 @@ def test_tracer_evaluator_update():
 def test_distributed_tracing():
     pre_existing_session_id = "fb0a4180-c998-45a6-ba0a-b19bf46e966b"
     req = operations.GetEventsRequestBody(
-        project=os.environ["HH_PROJECT_ID"],
+        project=os.environ["HH_PROJECT"],
         filters=[
             components.EventFilter(
                 field="session_id",
@@ -315,7 +316,7 @@ def test_distributed_tracing():
     assert len(res.object.events) > 1
     prev_event_count = len(res.object.events)
 
-    HoneyHiveTracer.init_from_session_id(
+    hhtracer.init_from_session_id(
         server_url=os.environ["HH_API_URL"],
         api_key=os.environ["HH_API_KEY"],
         session_id=pre_existing_session_id,
@@ -324,7 +325,7 @@ def test_distributed_tracing():
 
     time.sleep(15)
     req = operations.GetEventsRequestBody(
-        project=os.environ["HH_PROJECT_ID"],
+        project=os.environ["HH_PROJECT"],
         filters=[
             components.EventFilter(
                 field="session_id",
