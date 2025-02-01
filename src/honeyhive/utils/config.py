@@ -88,11 +88,13 @@ def load_yaml(_yaml) -> dict:
     return content
 
 def get_yaml_dotdict(path: str | None = None) -> dotdict:
-    if path is None:
-        _, path = next(collect_files(os.getcwd(), CONFIG_PATTERN, ["**/site-packages/**"]))
+    try:
+        if path is None:
+            _, path = next(collect_files(os.getcwd(), CONFIG_PATTERN, ["**/site-packages/**"]))
+    except StopIteration:
+        return dotdict()
 
     if not path:
-        # TODO: create one
         return dotdict()
 
     with open(path) as f:

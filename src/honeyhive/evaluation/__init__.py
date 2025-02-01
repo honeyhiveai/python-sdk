@@ -450,10 +450,12 @@ class Evaluation:
                 row_values.append(truncated(str(self.eval_result.data['metadata'][idx].get(k, ''))))
             table.add_row(*row_values)
 
+        console.print(table)
+
         # add footer with evaluation duration
         print(f"Evaluation Duration: {self.eval_result.stats['duration_s']} seconds\n")
 
-        console.print(table)
+        print('Exporting traces to HoneyHive...')
 
 
 def evaluate(
