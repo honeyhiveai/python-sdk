@@ -32,8 +32,8 @@ class HoneyHiveTracer:
         api_key=None,
         project=None,
         session_name=None,
-        source='dev',
-        server_url=os.environ.get("HH_API_URL", "https://api.honeyhive.ai"),
+        source=None,
+        server_url=None,
         disable_batch=False,
         verbose=False,
         inputs=None,
@@ -55,6 +55,10 @@ class HoneyHiveTracer:
                     raise Exception("api_key must be specified or set in environment variable HH_API_KEY.")
             HoneyHiveTracer.api_key = api_key
             
+            # server_url
+            if server_url is None:
+                server_url = os.getenv("HH_API_URL", "https://api.honeyhive.ai")
+            
             # project
             if project is None:
                 project = os.getenv("HH_PROJECT")
@@ -69,6 +73,10 @@ class HoneyHiveTracer:
                     if HoneyHiveTracer.verbose:
                         print(f"Error setting session_name: {e}")
                     session_name = "unknown"
+            
+            # source
+            if source is None:
+                source = os.getenv("HH_SOURCE", "dev")
             
             # verbose
             HoneyHiveTracer.verbose = verbose

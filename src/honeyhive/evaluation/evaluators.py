@@ -154,7 +154,7 @@ class EvaluatorSettings:
         self.default_settings.asserts = False
         self.default_settings.weight = 1.0
 
-    def resolve_settings(self, settings: EvalSettings | None = None):
+    def resolve_settings(self, settings: EvalSettings | None = None) -> EvalSettings:
         if self.explicit_settings:
             return self.explicit_settings
         
@@ -169,7 +169,7 @@ class EvaluatorSettings:
         
         return final_settings
     
-    def resolve_kwargs(self, kwargs: dict | None = None):
+    def resolve_kwargs(self, kwargs: dict | None = None) -> dict:
         if self.explicit_kwargs:
             return self.explicit_kwargs
         

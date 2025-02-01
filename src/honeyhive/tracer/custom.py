@@ -13,15 +13,6 @@ _instruments = ()
 
 logger = logging.getLogger(__name__)
 
-
-class SpanProxy:
-    def _enrich_span(self, *args, **kwargs):
-        logger.warning("Please use enrich_span inside a traced function.")
-
-    def _get_span_context(self):
-        logger.warning("Please use get_span_context inside a traced function.")
-
-
 class FunctionInstrumentor(BaseInstrumentor):
 
     def _instrument(self, **kwargs):
@@ -125,25 +116,6 @@ class FunctionInstrumentor(BaseInstrumentor):
         if error:
             self._set_span_attributes(span, "honeyhive_error", error)
 
-    @contextmanager
-    def _span_context(self, span):
-        # save the current span attributes
-        current_enrich_span = self._span_proxy._enrich_span
-
-        # call _enrich_span with the current span
-        self._span_proxy._enrich_span = lambda *args, **kwargs: self._enrich_span(
-            span, *args, **kwargs
-        )
-
-        self._span_proxy._get_span_context = (
-            lambda *args, **kwargs: self._get_span_context(span, *args, **kwargs)
-        )
-
-        try:
-            yield
-        finally:
-            # restore the original enrich_span
-            self._span_proxy._enrich_span = current_enrich_span
 
     class trace:
         """Decorator for tracing synchronous functions"""
@@ -182,8 +154,6 @@ class FunctionInstrumentor(BaseInstrumentor):
             if asyncio.iscoroutinefunction(self.func):
                 raise TypeError("please use @atrace for tracing async functions")
             ret = self.sync_call(*args, **kwargs)
-            # if self.eval:
-            #     self.eval(ret)
             return ret
         
         async def __acall__(self, *args, **kwargs):
@@ -235,9 +205,7 @@ class FunctionInstrumentor(BaseInstrumentor):
                         span, "honeyhive_metadata", self.metadata
                     )
 
-                # This context allows us to enrich the span from within the decorated function
-                with self._func_instrumentor._span_context(span):
-                    result = self.func(*args, **kwargs)
+                result = self.func(*args, **kwargs)
 
                 # Log the function output
                 self._func_instrumentor._set_span_attributes(
@@ -289,9 +257,7 @@ class FunctionInstrumentor(BaseInstrumentor):
                         span, "honeyhive_metadata", self.metadata
                     )
 
-                # This context allows us to enrich the span from within the decorated function
-                with self._func_instrumentor._span_context(span):
-                    result = await self.func(*args, **kwargs)
+                result = await self.func(*args, **kwargs)
 
                 # Log the function output
                 self._func_instrumentor._set_span_attributes(
@@ -308,7 +274,6 @@ class FunctionInstrumentor(BaseInstrumentor):
 
     def __init__(self):
         super().__init__()
-        self._span_proxy = SpanProxy()
 
         self.trace._func_instrumentor = self
 
@@ -323,5 +288,8 @@ atrace = instrumentor.atrace
 
 
 # Enrich a span from within a traced function
-def enrich_span(*args, **kwargs):
-    return instrumentor._span_proxy._enrich_span(*args, **kwargs)
+def enrich_span(**properties):
+    span = otel_trace.get_current_span()
+    if span is None:
+        logger.warning("Please use enrich_span inside a traced function.")
+    instrumentor._enrich_span(span, **properties)

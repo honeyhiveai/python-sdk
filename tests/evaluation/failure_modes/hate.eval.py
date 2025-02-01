@@ -8,12 +8,10 @@ import json
 client = OpenAI()
 
 @evaluator(
-    repeat=3,
-    aggregate='sum(values)/len(values)',
-    asserts=True,
-    checker='value == 1.0'
+    target=0.5,
+    range=[0, 1],
 )
-def eval_profanity(output):
+def eval_profanity(output, input, ground_truth):
     
     prompt = config.profanity_eval.render(output=output)
 
@@ -33,9 +31,9 @@ def eval_hate(output):
 results = evaluate(
     function=get_ai_response,
     dataset=[
-        {"user_input": "hi"},
-        {"user_input": "hello"},
-        {"user_input": "how are you?"}
+        {"inputs": {"user_input": "hi"}},
+        {"inputs": {"user_input": "hello"}},
+        {"inputs": {"user_input": "how are you?"}}
     ] * 3,
     evaluators=[eval_profanity]
 )

@@ -1,6 +1,8 @@
 from honeyhive.sdk import HoneyHive
 from honeyhive.models import components
 from honeyhive import HoneyHiveTracer
+from .evaluators import evaluator, aevaluator
+
 from concurrent.futures import ThreadPoolExecutor
 import collections
 
@@ -56,7 +58,7 @@ class DatasetLoader:
             )
 
 
-console = Console(width=55)
+console = Console()
 
 class Evaluation:
     """This class is for automated honeyhive evaluation with tracing"""
@@ -137,6 +139,7 @@ class Evaluation:
         datapoint_idx: int,
         hh: HoneyHiveTracer,
         metrics: Optional[Dict[str, Any]] = None,
+        metadata: Optional[Dict[str, Any]] = None,
     ):
         """Private function to enrich the session data post flow completion."""
         try:
@@ -154,7 +157,7 @@ class Evaluation:
                 outputs = {"output": outputs}
 
             hh.enrich_session(
-                metadata=tracing_metadata,
+                metadata=tracing_metadata.update(metadata),
                 outputs=outputs,
                 metrics=metrics,
             )
@@ -162,49 +165,70 @@ class Evaluation:
             print(f"Error adding trace metadata: {e}")
 
     def _run_evaluators(
-        self, outputs: Optional[Any], inputs: Optional[Dict[str, Any]]
+        self, 
+        outputs: Optional[Any], 
+        inputs: Optional[Dict[str, Any]], 
+        ground_truth: Optional[Dict[str, Any]]
     ):
         """Private function to run evaluators and collect metrics."""
         metrics = {}
-        passed = {}
+        metadata = {}
 
         eval_names = set()
         if self.client_side_evaluators:
-            for index, evaluator in enumerate(self.client_side_evaluators):
+            for index, offline_eval_func in enumerate(self.client_side_evaluators):
                 evaluator_name = getattr(
-                    evaluator, "__name__", f"evaluator_{index}"
+                    offline_eval_func, "__name__", f"evaluator_{index}"
                 )
                 if evaluator_name in eval_names:
                     raise ValueError(f"Evaluator {evaluator_name} is defined multiple times")
                 eval_names.add(evaluator_name)
+
+                if isinstance(offline_eval_func, evaluator):
+                    eval_settings_dict = evaluator.all_evaluator_settings[evaluator_name].resolve_settings().dict()
+                    # remove all None values, weight if 1.0 and asserts if False
+                    filtered_dict = {}
+                    for k, v in eval_settings_dict.items():
+                        if not (v is None or (k == 'weight' and v == 1.0) or (k == 'asserts' and v is False)):
+                            filtered_dict[k] = v
+                    eval_settings_dict = filtered_dict
+                    metadata[evaluator_name] = {
+                        'eval_settings': eval_settings_dict,
+                    }
                 try:
-                    if evaluator.__code__.co_argcount == 1:
-                        evaluator_result = evaluator(outputs)
-                    elif evaluator.__code__.co_argcount == 2:
-                        evaluator_result = evaluator(outputs, inputs)
+                    # if evaluator takes 1 argument, pass outputs
+                    if offline_eval_func.__code__.co_argcount == 1:
+                        evaluator_result = offline_eval_func(outputs)
+                    # if evaluator takes 2 arguments, pass outputs and inputs
+                    elif offline_eval_func.__code__.co_argcount == 2:
+                        evaluator_result = offline_eval_func(outputs, inputs)
+                    # if evaluator takes 3 arguments, pass outputs, inputs, and ground_truth
+                    elif offline_eval_func.__code__.co_argcount == 3:
+                        evaluator_result = offline_eval_func(outputs, inputs, ground_truth)
                     else:
-                        raise ValueError(f"Evaluator {evaluator.__name__} must accept either 1 or 2 arguments (outputs, inputs)")
+                        raise ValueError(f"Evaluator {offline_eval_func.__name__} must accept either 1, 2, or 3 arguments (outputs, inputs, ground_truth)")
                     metrics[evaluator_name] = evaluator_result
-                    passed[evaluator_name] = True
                 except AssertionError:
-                    passed[evaluator_name] = False                        
+                    metrics[evaluator_name] = None
                 except Exception as e:
                     print(f"Error in evaluator: {str(e)}\n")
                     print(traceback.format_exc())
-                    passed[evaluator_name] = False
-        return metrics, passed
+                    metrics[evaluator_name] = None
+        
+        return metrics, metadata
 
-    def _create_result(self, inputs, outputs, metrics, passed):
+    def _create_result(self, inputs, ground_truth, outputs, metrics, metadata):
         """Create standardized result dictionary."""
         return {
             'input': inputs,
+            'ground_truth': ground_truth,
             'output': outputs,
             'metrics': metrics,
-            'passed': passed
+            'metadata': metadata,
         }
 
-    def _get_inputs(self, datapoint_idx: int):
-        """Get inputs for evaluation from dataset."""
+    def _get_inputs_and_ground_truth(self, datapoint_idx: int):
+        """Get inputs and ground truth for evaluation from dataset."""
         if (
             self.hh_dataset
             and self.hh_dataset.datapoints
@@ -212,10 +236,16 @@ class Evaluation:
         ):
             datapoint_id = self.hh_dataset.datapoints[datapoint_idx]
             datapoint_response = self.hhai.datapoints.get_datapoint(id=datapoint_id)
-            return datapoint_response.object.datapoint[0].inputs
+            return (
+                datapoint_response.object.datapoint[0].inputs or {}, 
+                datapoint_response.object.datapoint[0].ground_truth or {}
+            )
         elif self.dataset:
-            return self.dataset[datapoint_idx]
-        return None
+            return (
+                self.dataset[datapoint_idx].get('inputs', {}), 
+                self.dataset[datapoint_idx].get('ground_truths', {})
+            )
+        return ({}, {})
 
     def _init_tracer(self, inputs: Dict[str, Any]) -> HoneyHiveTracer:
         """Initialize HoneyHiveTracer for evaluation."""
@@ -230,19 +260,20 @@ class Evaluation:
         return hh
 
 
-    def run_each(self, datapoint_idx: int):
+    def run_each(self, datapoint_idx: int) -> Dict[str, Any]:
         """Run evaluation for a single datapoint."""
-        inputs = None
+        inputs = {}
+        ground_truth = {}
         outputs = None
         metrics = {}
-        passed = {}
+        metadata = {}
 
         # Get inputs
         try:
-            inputs = self._get_inputs(datapoint_idx)
+            inputs, ground_truth = self._get_inputs_and_ground_truth(datapoint_idx)
         except Exception as e:
             print(f"Error getting inputs for index {datapoint_idx}: {e}")
-            return self._create_result(inputs, outputs, metrics, passed)
+            return self._create_result(inputs, ground_truth, outputs, metrics, metadata)
 
         # Initialize tracer
         try:
@@ -253,7 +284,6 @@ class Evaluation:
                 f"Unable to initiate Honeyhive Tracer. Cannot run Evaluation: {e}"
             )
         
-        outputs = None
         try:
             # Run the function
             outputs = self.func_to_evaluate(**inputs)
@@ -263,17 +293,17 @@ class Evaluation:
             print(traceback.format_exc())
         
         # Run evaluators
-        metrics, passed = self._run_evaluators(outputs, inputs)
+        metrics, metadata = self._run_evaluators(outputs, inputs, ground_truth)
         
         # Add trace metadata, outputs, and metrics
         try:
-            self._enrich_evaluation_session(outputs, datapoint_idx, hh, metrics)
+            self._enrich_evaluation_session(outputs, datapoint_idx, hh, metrics, metadata)
         except Exception as e:
             print(f"Error adding trace metadata: {e}")
 
         console.print(f"Test case {datapoint_idx} complete")
         
-        return self._create_result(inputs, outputs, metrics, passed)
+        return self._create_result(inputs, ground_truth, outputs, metrics, metadata)
 
 
     def run(self):
@@ -291,7 +321,7 @@ class Evaluation:
         )
         self.eval_run = eval_run.create_run_response
 
-        eval_result = EvaluationResult(
+        self.eval_result = EvaluationResult(
             run_id=self.eval_run.run_id,
             dataset_id=self.hh_dataset_id or self.external_dataset_id,
             session_ids=[],
@@ -304,6 +334,13 @@ class Evaluation:
         #########################################################
         # Run evaluations
         #########################################################
+
+        if self.hh_dataset:
+            num_points = len(self.hh_dataset.datapoints)
+        elif self.dataset:
+            num_points = len(self.dataset)
+        else:
+            raise Exception("No dataset found")
         
         start_time = time.time()
         # TODO: remove this flag
@@ -311,33 +348,33 @@ class Evaluation:
         if run_concurrently:
             # Use ThreadPoolExecutor to run evaluations concurrently
             max_workers = os.getenv("HH_MAX_WORKERS", 10)
-            with console.status("[bold green]Working on tasks...") as status:
+            with console.status("[bold green]Working on evals...") as status:
                 with ThreadPoolExecutor(max_workers=max_workers) as executor:
-                    results = list(executor.map(self.run_each, range(len(self.dataset))))
+                    results = list(executor.map(self.run_each, range(num_points)))
         else:
             results = []
-            for i in range(len(self.dataset)):
+            for i in range(num_points):
                 results.append(self.run_each(i))
         end_time = time.time()
         #########################################################
 
         # Process results
-        eval_result.stats = {
+        self.eval_result.stats = {
             'duration_s': round(end_time - start_time, 3),
         }
-        eval_result.data = {
+        self.eval_result.data = {
             'input': [],
             'output': [],
             'metrics': [],
-            'passed': []
+            'metadata': [],
+            'ground_truth': []
         }
         for r in results:
-            for k in eval_result.data.keys():
-                eval_result.data[k].append(r[k])
+            for k in self.eval_result.data.keys():
+                self.eval_result.data[k].append(r[k])
 
         # Convert deque to list after all threads complete
-        eval_result.session_ids = list(self.evaluation_session_ids)
-        self.eval_result = eval_result
+        self.eval_result.session_ids = list(self.evaluation_session_ids)
 
         #########################################################
         # Update run
@@ -348,7 +385,7 @@ class Evaluation:
                 self.hhai.experiments.update_run(
                     run_id=self.eval_run.run_id,
                     update_run_request=components.UpdateRunRequest(
-                        event_ids=eval_result.session_ids, 
+                        event_ids=self.eval_result.session_ids, 
                         status=self.status
                     ),
                 )
@@ -362,7 +399,8 @@ class Evaluation:
         # get column names
         input_cols = {k for result in self.eval_result.data['input'] for k in result.keys()}
         metric_cols = {k for result in self.eval_result.data['metrics'] for k in result.keys()}
-        passed_cols = {k for result in self.eval_result.data['passed'] for k in result.keys()}
+        metadata_cols = {k for result in self.eval_result.data['metadata'] for k in result.keys()}
+        ground_truth_cols = {k for result in self.eval_result.data['ground_truth'] for k in result.keys()}
 
         # make table
         table = Table(
@@ -377,13 +415,15 @@ class Evaluation:
         )
         table.add_column("Suite", justify="center", style="magenta")
         for k in input_cols:
-            table.add_column(f'Inputs.{k}', justify="center", style="blue")
-        table.add_column("Outputs", justify="center", style="magenta")
+            table.add_column(f'Inputs.{k}', justify="center", style="green")
+        table.add_column("Outputs", justify="center", style="blue")
+        for k in ground_truth_cols:
+            table.add_column(f'Ground Truths.{k}', justify="center", style="green")
         for k in metric_cols:
-            table.add_column(f'Metrics.{k}', justify="center", style="green")
-        for k in passed_cols:
-            table.add_column(f'Passed.{k}', justify="center", style="red")
-        
+            table.add_column(f'Metrics.{k}', justify="center", style="blue")
+        for k in metadata_cols:
+            table.add_column(f'Metadata.{k}', justify="center", style="green")
+
         def truncated(string, max_length=500):
             if len(string) > max_length:
                 return string[:max_length] + "..."
@@ -399,18 +439,20 @@ class Evaluation:
                 row_values.append(truncated(str(self.eval_result.data['input'][idx].get(k, ''))))
             # Add output column
             row_values.append(truncated(str(self.eval_result.data['output'][idx])))
+            # Add ground truth columns
+            for k in ground_truth_cols:
+                row_values.append(truncated(str(self.eval_result.data['ground_truth'][idx].get(k, ''))))
             # Add metric columns
             for k in metric_cols:
                 row_values.append(truncated(str(self.eval_result.data['metrics'][idx].get(k, ''))))
-            # Add passed columns
-            for k in passed_cols:
-                row_values.append(str(self.eval_result.data['passed'][idx].get(k, '')))
+            # Add metadata columns
+            for k in metadata_cols:
+                row_values.append(truncated(str(self.eval_result.data['metadata'][idx].get(k, ''))))
             table.add_row(*row_values)
 
         # add footer with evaluation duration
         print(f"Evaluation Duration: {self.eval_result.stats['duration_s']} seconds\n")
 
-        # print(self.eval_result.data)
         console.print(table)
 
 
@@ -436,8 +478,11 @@ def evaluate(
         name = os.path.basename(sys._getframe(1).f_code.co_filename)
 
     # get the directory of the file being evaluated
-    if suite is None:
-        suite = os.path.dirname(sys._getframe(1).f_code.co_filename).split(os.sep)[-1]
+    try:
+        if suite is None:
+            suite = os.path.dirname(sys._getframe(1).f_code.co_filename).split(os.sep)[-1]
+    except Exception:
+        suite = "default"
 
     eval = Evaluation(
         hh_api_key=hh_api_key,
@@ -468,7 +513,6 @@ def evaluate(
         suite=eval.suite
     )
 
-from .evaluators import evaluator, aevaluator
 
 __all__ = [
     "evaluate",
