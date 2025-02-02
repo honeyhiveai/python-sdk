@@ -156,8 +156,10 @@ class Evaluation:
             if not isinstance(outputs, dict):
                 outputs = {"output": outputs}
 
+            tracing_metadata.update(metadata)
+
             hh.enrich_session(
-                metadata=tracing_metadata.update(metadata),
+                metadata=tracing_metadata,
                 outputs=outputs,
                 metrics=metrics,
             )
@@ -286,7 +288,12 @@ class Evaluation:
         
         try:
             # Run the function
-            outputs = self.func_to_evaluate(**inputs)
+            if len(self.func_to_evaluate.__code__.co_varnames) == 2:
+                outputs = self.func_to_evaluate(inputs, ground_truth)
+            elif len(self.func_to_evaluate.__code__.co_varnames) == 1:
+                outputs = self.func_to_evaluate(inputs)
+            else:
+                raise ValueError(f"Evaluation function must accept either 1 or 2 arguments (inputs, ground_truth)")
 
         except Exception as e:
             print(f"Error in evaluation function: {e}")
