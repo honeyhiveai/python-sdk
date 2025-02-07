@@ -34,19 +34,20 @@ res = s.events.create_event(request=operations.CreateEventRequestBody(
         event_name='Model Completion',
         event_type=components.CreateEventRequestEventType.MODEL,
         config={
+            'model': 'gpt-3.5-turbo',
+            'version': 'v0.1',
+            'provider': 'openai',
             'hyperparameters': {
-                'frequency_penalty': 0,
+                'temperature': 0,
+                'top_p': 1,
                 'max_tokens': 1000,
-                'n': 1,
                 'presence_penalty': 0,
+                'frequency_penalty': 0,
                 'stop': [
                     '<value>',
                 ],
-                'temperature': 0,
-                'top_p': 1,
+                'n': 1,
             },
-            'model': 'gpt-3.5-turbo',
-            'provider': 'openai',
             'template': [
                 {
                     'role': 'system',
@@ -60,9 +61,10 @@ res = s.events.create_event(request=operations.CreateEventRequestBody(
                 },
             ],
             'type': 'chat',
-            'version': 'v0.1',
         },
         inputs={
+            'context': 'Hello world',
+            'question': 'What is in the context?',
             'chat_history': [
                 {
                     'role': 'system',
@@ -75,8 +77,6 @@ res = s.events.create_event(request=operations.CreateEventRequestBody(
                     'content': 'What is in the context?',
                 },
             ],
-            'context': 'Hello world',
-            'question': 'What is in the context?',
         },
         duration=999.8056,
         event_id='7f22137a-6911-4ed3-bc36-110f1dde6b66',
@@ -86,15 +86,15 @@ res = s.events.create_event(request=operations.CreateEventRequestBody(
             '<value>',
         ],
         outputs={
-            'content': 'Hello world',
             'role': 'assistant',
+            'content': 'Hello world',
         },
         error='<value>',
         start_time=1714978764301,
         end_time=1714978765301,
         metadata={
-            'completion_tokens': 23,
             'cost': 0.00008,
+            'completion_tokens': 23,
             'prompt_tokens': 35,
             'total_tokens': 58,
         },
@@ -152,8 +152,8 @@ s = honeyhive.HoneyHive(
 res = s.events.update_event(request=operations.UpdateEventRequestBody(
     event_id='7f22137a-6911-4ed3-bc36-110f1dde6b66',
     metadata={
-        'completion_tokens': 23,
         'cost': 0.00008,
+        'completion_tokens': 23,
         'prompt_tokens': 35,
         'total_tokens': 58,
     },
@@ -164,8 +164,8 @@ res = s.events.update_event(request=operations.UpdateEventRequestBody(
         'num_words': 2,
     },
     outputs={
-        'content': 'Hello world',
         'role': 'assistant',
+        'content': 'Hello world',
     },
     config={
         'template': [
@@ -279,13 +279,13 @@ res = s.events.create_model_event(request=operations.CreateModelEventRequestBody
             },
         ],
         response={
-            'content': 'Hello, world!',
             'role': 'assistant',
+            'content': 'Hello, world!',
         },
         duration=42,
         usage={
-            'completion_tokens': 10,
             'prompt_tokens': 10,
+            'completion_tokens': 10,
             'total_tokens': 20,
         },
         cost=0.00008,
@@ -293,15 +293,15 @@ res = s.events.create_model_event(request=operations.CreateModelEventRequestBody
         source='playground',
         event_name='Model Completion',
         hyperparameters={
-            'frequency_penalty': 0,
+            'temperature': 0,
+            'top_p': 1,
             'max_tokens': 1000,
-            'n': 1,
             'presence_penalty': 0,
+            'frequency_penalty': 0,
             'stop': [
                 '<value>',
             ],
-            'temperature': 0,
-            'top_p': 1,
+            'n': 1,
         },
         template=[
             {

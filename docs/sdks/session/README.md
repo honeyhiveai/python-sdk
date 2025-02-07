@@ -33,6 +33,8 @@ res = s.session.start_session(request=operations.StartSessionRequestBody(
             '7f22137a-6911-4ed3-bc36-110f1dde6b66',
         ],
         inputs={
+            'context': 'Hello world',
+            'question': 'What is in the context?',
             'chat_history': [
                 {
                     'role': 'system',
@@ -45,12 +47,10 @@ res = s.session.start_session(request=operations.StartSessionRequestBody(
                     'content': 'What is in the context?',
                 },
             ],
-            'context': 'Hello world',
-            'question': 'What is in the context?',
         },
         outputs={
-            'content': 'Hello world',
             'role': 'assistant',
+            'content': 'Hello world',
         },
         error='<value>',
         duration=824.8056,
@@ -107,7 +107,7 @@ s = honeyhive.HoneyHive(
 )
 
 
-res = s.session.get_session(session_id='<value>')
+res = s.session.get_session(session_id='<id>')
 
 if res.event is not None:
     # handle response

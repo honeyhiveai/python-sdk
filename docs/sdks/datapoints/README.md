@@ -82,17 +82,17 @@ res = s.datapoints.create_datapoint(request=components.CreateDatapointRequest(
         },
     ],
     ground_truth={
-        'content': 'The temperature in Reykjavik, Iceland is currently around 5F or -15C. Please note that weather conditions can change rapidly, so it\'s best to check a reliable source for the most up-to-date information.',
         'role': 'assistant',
+        'content': 'The temperature in Reykjavik, Iceland is currently around 5F or -15C. Please note that weather conditions can change rapidly, so it\'s best to check a reliable source for the most up-to-date information.',
     },
     linked_event='6bba5182-d4b1-4b29-a64a-f0a8bd964f76',
     linked_datasets=[
         '<value>',
     ],
     metadata={
+        'question_type': 'weather',
         'completion_tokens': 47,
         'prompt_tokens': 696,
-        'question_type': 'weather',
         'total_tokens': 743,
     },
 ))
@@ -187,8 +187,8 @@ res = s.datapoints.update_datapoint(id='<id>', update_datapoint_request=componen
         },
     ],
     ground_truth={
-        'content': 'The temperature in Reykjavik, Iceland is currently around 5F or -15C. Please note that weather conditions can change rapidly, so it\'s best to check a reliable source for the most up-to-date information.',
         'role': 'assistant',
+        'content': 'The temperature in Reykjavik, Iceland is currently around 5F or -15C. Please note that weather conditions can change rapidly, so it\'s best to check a reliable source for the most up-to-date information.',
     },
     linked_evals=[
         '<value>',

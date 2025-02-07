@@ -73,15 +73,15 @@ res = s.configurations.create_configuration(request=components.PostConfiguration
         call_type=components.PostConfigurationRequestCallType.CHAT,
         model='gpt-4-turbo-preview',
         hyperparameters={
-            'frequency_penalty': 0,
+            'temperature': 0,
             'max_tokens': 1000,
+            'top_p': 1,
+            'top_k': -1,
+            'frequency_penalty': 0,
             'presence_penalty': 0,
             'stop_sequences': [
                 '<value>',
             ],
-            'temperature': 0,
-            'top_k': -1,
-            'top_p': 1,
         },
         selected_functions=[
             components.PostConfigurationRequestSelectedFunctions(
@@ -123,10 +123,10 @@ res = s.configurations.create_configuration(request=components.PostConfiguration
         components.PostConfigurationRequestEnv.STAGING,
     ],
     user_properties={
-        'user_email': 'dhruv@honeyhive.ai',
         'user_id': 'google-oauth2|108897808434934946583',
         'user_name': 'Dhruv Singh',
         'user_picture': 'https://lh3.googleusercontent.com/a/ACg8ocLyQilNtK9RIv4M0p-0FBSbxljBP0p5JabnStku1AQKtFSK=s96-c',
+        'user_email': 'dhruv@honeyhive.ai',
     },
 ))
 
@@ -175,15 +175,15 @@ res = s.configurations.update_configuration(id='<id>', put_configuration_request
         call_type=components.PutConfigurationRequestCallType.CHAT,
         model='gpt-4-turbo-preview',
         hyperparameters={
-            'frequency_penalty': 0,
+            'temperature': 0,
             'max_tokens': 1000,
+            'top_p': 1,
+            'top_k': -1,
+            'frequency_penalty': 0,
             'presence_penalty': 0,
             'stop_sequences': [
                 '<value>',
             ],
-            'temperature': 0,
-            'top_k': -1,
-            'top_p': 1,
         },
         selected_functions=[
             components.PutConfigurationRequestSelectedFunctions(
@@ -226,10 +226,10 @@ res = s.configurations.update_configuration(id='<id>', put_configuration_request
     ],
     type=components.PutConfigurationRequestType.LLM,
     user_properties={
-        'user_email': 'dhruv@honeyhive.ai',
         'user_id': 'google-oauth2|108897808434934946583',
         'user_name': 'Dhruv Singh',
         'user_picture': 'https://lh3.googleusercontent.com/a/ACg8ocLyQilNtK9RIv4M0p-0FBSbxljBP0p5JabnStku1AQKtFSK=s96-c',
+        'user_email': 'dhruv@honeyhive.ai',
     },
 ))
 

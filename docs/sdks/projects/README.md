@@ -105,7 +105,7 @@ s = honeyhive.HoneyHive(
 
 
 res = s.projects.update_project(request=components.UpdateProjectRequest(
-    project_id='<value>',
+    project_id='<id>',
 ))
 
 if res is not None:

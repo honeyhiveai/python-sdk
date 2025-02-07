@@ -148,7 +148,7 @@ s = honeyhive.HoneyHive(
 )
 
 
-res = s.tools.delete_tool(function_id='<value>')
+res = s.tools.delete_tool(function_id='<id>')
 
 if res is not None:
     # handle response

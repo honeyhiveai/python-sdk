@@ -132,8 +132,8 @@ res = s.datasets.update_dataset(request=components.DatasetUpdate(
         '66369748b5773befbdasdk1',
     ],
     metadata={
-        'source': 'prod',
         'updated': True,
+        'source': 'prod',
     },
 ))
 
@@ -173,7 +173,7 @@ s = honeyhive.HoneyHive(
 )
 
 
-res = s.datasets.delete_dataset(dataset_id='<value>')
+res = s.datasets.delete_dataset(dataset_id='<id>')
 
 if res is not None:
     # handle response
@@ -212,7 +212,7 @@ s = honeyhive.HoneyHive(
 )
 
 
-res = s.datasets.add_datapoints(dataset_id='<value>', request_body=operations.AddDatapointsRequestBody(
+res = s.datasets.add_datapoints(dataset_id='<id>', request_body=operations.AddDatapointsRequestBody(
     project='<value>',
     data=[
         {

@@ -67,7 +67,7 @@ res = s.metrics.create_metric(request=components.Metric(
     name='<value>',
     task='<value>',
     type=components.MetricType.MODEL,
-    description='Quality-focused next generation focus group',
+    description='ack oh faithfully annually bloom ha because instead',
     return_type=components.ReturnType.BOOLEAN,
 ))
 
@@ -109,7 +109,7 @@ s = honeyhive.HoneyHive(
 
 
 res = s.metrics.update_metric(request=components.MetricEdit(
-    metric_id='<value>',
+    metric_id='<id>',
 ))
 
 if res is not None:
@@ -148,7 +148,7 @@ s = honeyhive.HoneyHive(
 )
 
 
-res = s.metrics.delete_metric(metric_id='<value>')
+res = s.metrics.delete_metric(metric_id='<id>')
 
 if res is not None:
     # handle response

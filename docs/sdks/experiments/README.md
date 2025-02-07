@@ -110,7 +110,7 @@ s = honeyhive.HoneyHive(
 )
 
 
-res = s.experiments.get_run(run_id='<value>')
+res = s.experiments.get_run(run_id='<id>')
 
 if res.get_run_response is not None:
     # handle response
@@ -149,7 +149,7 @@ s = honeyhive.HoneyHive(
 )
 
 
-res = s.experiments.update_run(run_id='<value>', update_run_request=components.UpdateRunRequest())
+res = s.experiments.update_run(run_id='<id>', update_run_request=components.UpdateRunRequest())
 
 if res.update_run_response is not None:
     # handle response
@@ -188,7 +188,7 @@ s = honeyhive.HoneyHive(
 )
 
 
-res = s.experiments.delete_run(run_id='<value>')
+res = s.experiments.delete_run(run_id='<id>')
 
 if res.delete_run_response is not None:
     # handle response
