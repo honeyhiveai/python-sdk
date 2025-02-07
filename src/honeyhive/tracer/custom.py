@@ -1,7 +1,6 @@
 import inspect
 import logging
 import re
-from contextlib import contextmanager
 import functools
 import asyncio
 
@@ -292,4 +291,5 @@ def enrich_span(**properties):
     span = otel_trace.get_current_span()
     if span is None:
         logger.warning("Please use enrich_span inside a traced function.")
-    instrumentor._enrich_span(span, **properties)
+    else:
+        instrumentor._enrich_span(span, **properties)

@@ -18,6 +18,8 @@ import json
 import time
 import sys
 import traceback
+import asyncio
+import inspect
 
 @dataclass
 class EvaluationResult:
@@ -74,6 +76,8 @@ class Evaluation:
         evaluators: Optional[List[Any]] = None,
         dataset_id: Optional[str] = None,
         max_workers: int = 10,
+        server_url: Optional[str] = None,
+        verbose: bool = False,
     ):
         self.hh_api_key = hh_api_key or os.environ["HH_API_KEY"]
         self.hh_project = hh_project or os.environ["HH_PROJECT"]
@@ -92,7 +96,10 @@ class Evaluation:
 
         self.hhai = HoneyHive(bearer_auth=self.hh_api_key)
         self.hh_dataset = DatasetLoader.load_dataset(self.hhai, self.hh_project, self.hh_dataset_id)
-        
+
+        self.server_url = server_url
+        self.verbose = verbose
+
         # generated id for external datasets
         # TODO: large dataset optimization
         # TODO: dataset might not be json serializable
@@ -258,6 +265,8 @@ class Evaluation:
             session_name=self.eval_name,
             inputs={'inputs': inputs},
             is_evaluation=True,
+            verbose=self.verbose,
+            server_url=self.server_url,
         )
         return hh
 
@@ -288,12 +297,22 @@ class Evaluation:
         
         try:
             # Run the function
-            if len(self.func_to_evaluate.__code__.co_varnames) == 2:
-                outputs = self.func_to_evaluate(inputs, ground_truth)
-            elif len(self.func_to_evaluate.__code__.co_varnames) == 1:
-                outputs = self.func_to_evaluate(inputs)
+            if inspect.iscoroutinefunction(self.func_to_evaluate):
+                # For async functions, use asyncio.run()
+                if self.func_to_evaluate.__code__.co_argcount == 2:
+                    outputs = asyncio.run(self.func_to_evaluate(inputs, ground_truth))
+                elif self.func_to_evaluate.__code__.co_argcount == 1:
+                    outputs = asyncio.run(self.func_to_evaluate(inputs))
+                else:
+                    raise ValueError(f"Evaluation function must accept either 1 or 2 arguments (inputs, ground_truth)")
             else:
-                raise ValueError(f"Evaluation function must accept either 1 or 2 arguments (inputs, ground_truth)")
+                # For regular sync functions
+                if self.func_to_evaluate.__code__.co_argcount == 2:
+                    outputs = self.func_to_evaluate(inputs, ground_truth)
+                elif self.func_to_evaluate.__code__.co_argcount == 1:
+                    outputs = self.func_to_evaluate(inputs)
+                else:
+                    raise ValueError(f"Evaluation function must accept either 1 or 2 arguments (inputs, ground_truth)")
 
         except Exception as e:
             print(f"Error in evaluation function: {e}")
@@ -475,6 +494,8 @@ def evaluate(
     dataset: Optional[List[Dict[str, Any]]] = None,
     evaluators: Optional[List[Any]] = None,
     max_workers: int = 10,
+    verbose: bool = False,
+    server_url: Optional[str] = None,
 ):
 
     if function is None:
@@ -503,6 +524,8 @@ def evaluate(
         evaluators=evaluators,
         dataset_id=dataset_id,
         max_workers=max_workers,
+        verbose=verbose,
+        server_url=server_url,
     )
 
     # run evaluation
