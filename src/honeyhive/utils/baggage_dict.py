@@ -4,7 +4,8 @@ class BaggageDict(dict):
 
     valid_baggage_keys = [
         'session_id', 
-        # 'project',
+        'project',
+        'source',
     ]
     
     class DefaultGetter:

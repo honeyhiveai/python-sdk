@@ -149,7 +149,11 @@ class Telemetry:
                 import flask
                 runtime_info['framework'] = f"Flask {flask.__version__}"
             except ImportError:
-                runtime_info['framework'] = "Unknown"
+                try:
+                    import fastapi
+                    runtime_info['framework'] = f"FastAPI {fastapi.__version__}"
+                except ImportError:
+                    runtime_info['framework'] = "Unknown"
 
         return runtime_info
 

@@ -90,7 +90,8 @@ class HoneyHiveTracer:
             # baggage
             self.baggage = BaggageDict().update({
                 "session_id": self.session_id,
-                # "project": project,
+                "project": project,
+                "source": source,
             })
 
             # Initialize the Composite Propagator
@@ -115,7 +116,7 @@ class HoneyHiveTracer:
                     HoneyHiveTracer._is_traceloop_initialized = True
                     HoneyHiveTracer.instrumentation_id = str(uuid.uuid4()).upper()
                     HoneyHiveTracer.is_evaluation = is_evaluation
-                Telemetry().capture("tracer_init", {"hhai_session_id": self.session_id})
+                Telemetry().capture("tracer_init", {"hhai_session_id": self.session_id, "hhai_project": project})
                     
             # link_carrier
             if link_carrier is not None:
@@ -130,6 +131,7 @@ class HoneyHiveTracer:
             # however it is not propagated since it doesn't follow the W3C spec for Baggage
             # since traceloop stamps "association_properties" from the context into every span when it starts, 
             # we must attach the baggage in traceloop format as well
+            # Traceloop.set_baggage_properties(self.baggage)
             Traceloop.set_association_properties(self.baggage)
             
             # ------------------------------------------------------------
