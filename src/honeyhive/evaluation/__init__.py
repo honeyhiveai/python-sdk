@@ -1,6 +1,6 @@
 from honeyhive.sdk import HoneyHive
 from honeyhive.models import components
-from honeyhive import HoneyHiveTracer
+from honeyhive import HoneyHiveTracer, enrich_session
 from .evaluators import evaluator, aevaluator
 
 from concurrent.futures import ThreadPoolExecutor
@@ -218,9 +218,7 @@ class Evaluation:
 
                 tracing_metadata.update(result['metadata'])
 
-                print(f"Enriching session {idx}")
-
-                HoneyHiveTracer.enrich_session(
+                enrich_session(
                     session_id=self.evaluation_session_ids[idx],
                     metadata=tracing_metadata,
                     outputs=result['output'],

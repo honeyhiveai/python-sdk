@@ -134,6 +134,9 @@ class HoneyHiveTracer:
             # we must attach the baggage in traceloop format as well
             # Traceloop.set_baggage_properties(self.baggage)
             Traceloop.set_association_properties(self.baggage)
+
+            # save the instance
+            HoneyHiveTracer.instance = self
             
             # ------------------------------------------------------------
             # TODO: log-based session initialization
@@ -236,6 +239,7 @@ class HoneyHiveTracer:
 
     def enrich_session(
         self,
+        session_id=None,
         metadata=None, 
         feedback=None, 
         metrics=None, 
@@ -268,7 +272,7 @@ class HoneyHiveTracer:
         #     })
         # __enrich_session()
 
-        session_id = self.session_id
+        session_id = session_id or self.session_id
         try:
             sdk = HoneyHive(bearer_auth=HoneyHiveTracer.api_key)
             update_request = operations.UpdateEventRequestBody(event_id=session_id)
