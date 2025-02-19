@@ -69,23 +69,45 @@ class Evaluation:
         self,
         hh_api_key: str = None,
         hh_project: str = None,
-        name: str = None,
-        suite: str = None,
+        name: Optional[str] = None,
+        suite: Optional[str] = None,
         function: Optional[Callable] = None,
         dataset: Optional[List[Any]] = None,
         evaluators: Optional[List[Any]] = None,
         dataset_id: Optional[str] = None,
         max_workers: int = 10,
+        run_concurrently: bool = True,
         server_url: Optional[str] = None,
         verbose: bool = False,
     ):
+        
+        if function is None:
+            raise Exception(
+                "Please provide a function to evaluate."
+            )
+        
+        # if name is not provided, use the file name
+        try:
+            if name is None:
+                name = os.path.basename(sys._getframe(1).f_code.co_filename)
+        except Exception:
+            name = "default"
+
+        # get the directory of the file being evaluated
+        try:
+            if suite is None:
+                suite = os.path.dirname(sys._getframe(1).f_code.co_filename).split(os.sep)[-1]
+        except Exception:
+            suite = "default"
+        
         self.hh_api_key = hh_api_key or os.environ["HH_API_KEY"]
         self.hh_project = hh_project or os.environ["HH_PROJECT"]
         self.eval_name: str = name
-        self.hh_dataset_id: str = dataset_id
+        self.hh_dataset_id: Optional[str] = dataset_id
         self.client_side_evaluators = evaluators or []
         self.status: str = "pending"
         self.max_workers: int = max_workers
+        self.run_concurrently: bool = run_concurrently
         self.dataset = dataset
         self.func_to_evaluate: Callable = function
         self.suite = suite
@@ -172,6 +194,121 @@ class Evaluation:
             )
         except Exception as e:
             print(f"Error adding trace metadata: {e}")
+    
+    def _enrich_sessions(
+        self,
+        results: List[Dict[str, Any]],
+    ):
+        """Private function to enrich the session data post flow completion."""
+        try:
+            for idx, result in enumerate(results):
+                tracing_metadata = {"run_id": self.eval_run.run_id}
+                if self.hh_dataset:
+                    tracing_metadata["datapoint_id"] = self.hh_dataset.datapoints[idx]
+                tracing_metadata["dataset_id"] = self.hh_dataset_id
+
+                if self.external_dataset_id:
+                    tracing_metadata["datapoint_id"] = Evaluation.generate_hash(
+                        json.dumps(self.dataset[idx])
+                    )
+                    tracing_metadata["dataset_id"] = self.external_dataset_id
+
+                if not isinstance(result['output'], dict):
+                    result['output'] = {"output": result['output']}
+
+                tracing_metadata.update(result['metadata'])
+
+                print(f"Enriching session {idx}")
+
+                HoneyHiveTracer.enrich_session(
+                    session_id=self.evaluation_session_ids[idx],
+                    metadata=tracing_metadata,
+                    outputs=result['output'],
+                    metrics=result['metrics'],
+                )
+        except Exception as e:
+            print(f"Error adding trace metadata: {e}")
+
+    def _get_evaluator_metadata(self, eval_func, evaluator_name: str) -> dict:
+        """Get metadata for an evaluator if it's decorated."""
+        if not isinstance(eval_func, evaluator):
+            return {}
+            
+        eval_settings_dict = evaluator.all_evaluator_settings[evaluator_name].resolve_settings().dict()
+        # remove all None values, weight if 1.0 and asserts if False
+        filtered_dict = {}
+        for k, v in eval_settings_dict.items():
+            if not (v is None or (k == 'weight' and v == 1.0) or (k == 'asserts' and v is False)):
+                filtered_dict[k] = v
+        return {
+            'eval_settings': filtered_dict,
+        }
+
+    def _run_single_evaluator(
+        self,
+        eval_func,
+        evaluator_name: str,
+        outputs: Any,
+        inputs: Dict[str, Any],
+        ground_truth: Dict[str, Any]
+    ) -> tuple[str, Any, dict]:
+        """Run a single evaluator and return its name, result and metadata."""
+        metadata = self._get_evaluator_metadata(eval_func, evaluator_name)
+
+        try:
+            # if evaluator takes 1 argument, pass outputs
+            if eval_func.__code__.co_argcount == 1:
+                evaluator_result = eval_func(outputs)
+            # if evaluator takes 2 arguments, pass outputs and inputs
+            elif eval_func.__code__.co_argcount == 2:
+                evaluator_result = eval_func(outputs, inputs)
+            # if evaluator takes 3 arguments, pass outputs, inputs, and ground_truth
+            elif eval_func.__code__.co_argcount == 3:
+                evaluator_result = eval_func(outputs, inputs, ground_truth)
+            else:
+                raise ValueError(f"Evaluator {evaluator_name} must accept either 1, 2, or 3 arguments (outputs, inputs, ground_truth)")
+            
+            return evaluator_name, evaluator_result, metadata
+
+        except AssertionError:
+            return evaluator_name, None, metadata
+        except Exception as e:
+            print(f"Error in evaluator: {str(e)}\n")
+            print(traceback.format_exc())
+            return evaluator_name, None, metadata
+
+    async def _arun_single_evaluator(
+        self,
+        eval_func,
+        evaluator_name: str,
+        outputs: Any,
+        inputs: Dict[str, Any],
+        ground_truth: Dict[str, Any]
+    ) -> tuple[str, Any, dict]:
+        """Run a single async evaluator and return its name, result and metadata."""
+        metadata = self._get_evaluator_metadata(eval_func, evaluator_name)
+
+        try:
+            # if evaluator takes 1 argument, pass outputs
+            if eval_func.__code__.co_argcount == 1:
+                evaluator_result = await eval_func(outputs)
+            # if evaluator takes 2 arguments, pass outputs and inputs
+            elif eval_func.__code__.co_argcount == 2:
+                evaluator_result = await eval_func(outputs, inputs)
+            # if evaluator takes 3 arguments, pass outputs, inputs, and ground_truth
+            elif eval_func.__code__.co_argcount == 3:
+                evaluator_result = await eval_func(outputs, inputs, ground_truth)
+            else:
+                raise ValueError(f"Evaluator {evaluator_name} must accept either 1, 2, or 3 arguments (outputs, inputs, ground_truth)")
+            
+            return evaluator_name, evaluator_result, metadata
+
+        except AssertionError:
+            return evaluator_name, None, metadata
+        except Exception as e:
+            print(f"Error in evaluator: {str(e)}\n")
+            print(traceback.format_exc())
+            return evaluator_name, None, metadata
 
     def _run_evaluators(
         self, 
@@ -179,51 +316,57 @@ class Evaluation:
         inputs: Optional[Dict[str, Any]], 
         ground_truth: Optional[Dict[str, Any]]
     ):
-        """Private function to run evaluators and collect metrics."""
+        """Run evaluators and collect metrics."""
         metrics = {}
         metadata = {}
 
-        eval_names = set()
-        if self.client_side_evaluators:
-            for index, offline_eval_func in enumerate(self.client_side_evaluators):
-                evaluator_name = getattr(
-                    offline_eval_func, "__name__", f"evaluator_{index}"
-                )
-                if evaluator_name in eval_names:
-                    raise ValueError(f"Evaluator {evaluator_name} is defined multiple times")
-                eval_names.add(evaluator_name)
+        if not self.client_side_evaluators:
+            return metrics, metadata
 
-                if isinstance(offline_eval_func, evaluator):
-                    eval_settings_dict = evaluator.all_evaluator_settings[evaluator_name].resolve_settings().dict()
-                    # remove all None values, weight if 1.0 and asserts if False
-                    filtered_dict = {}
-                    for k, v in eval_settings_dict.items():
-                        if not (v is None or (k == 'weight' and v == 1.0) or (k == 'asserts' and v is False)):
-                            filtered_dict[k] = v
-                    eval_settings_dict = filtered_dict
-                    metadata[evaluator_name] = {
-                        'eval_settings': eval_settings_dict,
-                    }
-                try:
-                    # if evaluator takes 1 argument, pass outputs
-                    if offline_eval_func.__code__.co_argcount == 1:
-                        evaluator_result = offline_eval_func(outputs)
-                    # if evaluator takes 2 arguments, pass outputs and inputs
-                    elif offline_eval_func.__code__.co_argcount == 2:
-                        evaluator_result = offline_eval_func(outputs, inputs)
-                    # if evaluator takes 3 arguments, pass outputs, inputs, and ground_truth
-                    elif offline_eval_func.__code__.co_argcount == 3:
-                        evaluator_result = offline_eval_func(outputs, inputs, ground_truth)
-                    else:
-                        raise ValueError(f"Evaluator {offline_eval_func.__name__} must accept either 1, 2, or 3 arguments (outputs, inputs, ground_truth)")
-                    metrics[evaluator_name] = evaluator_result
-                except AssertionError:
-                    metrics[evaluator_name] = None
-                except Exception as e:
-                    print(f"Error in evaluator: {str(e)}\n")
-                    print(traceback.format_exc())
-                    metrics[evaluator_name] = None
-        
+        # Separate sync and async evaluators
+        sync_evaluators = []
+        async_evaluators = []
+        eval_names = set()
+
+        for index, eval_func in enumerate(self.client_side_evaluators):
+            evaluator_name = getattr(eval_func, "__name__", f"evaluator_{index}")
+            if evaluator_name in eval_names:
+                raise ValueError(f"Evaluator {evaluator_name} is defined multiple times")
+            eval_names.add(evaluator_name)
+
+            if inspect.iscoroutinefunction(eval_func):
+                async_evaluators.append((eval_func, evaluator_name))
+            else:
+                sync_evaluators.append((eval_func, evaluator_name))
+
+        # Run sync evaluators first
+        for eval_func, name in sync_evaluators:
+            name, result, meta = self._run_single_evaluator(
+                eval_func, name, outputs, inputs, ground_truth
+            )
+            metrics[name] = result
+            if meta:
+                metadata[name] = meta
+
+        # Run async evaluators concurrently if any exist
+        if async_evaluators:
+            print('Evaluators cannot be run async. Please use sync evaluators only.')
+        # if async_evaluators:
+
+        #     async def arun_async_evaluators():
+        #         async_tasks = [
+        #             self._arun_single_evaluator(eval_func, name, outputs, inputs, ground_truth)
+        #             for eval_func, name in async_evaluators
+        #         ]
+        #         return await asyncio.gather(*async_tasks)
+
+        #     async_results = asyncio.run(arun_async_evaluators())
+
+        #     for name, result, meta in async_results:
+        #         metrics[name] = result
+        #         if meta:
+        #             metadata[name] = meta
+
         return metrics, metadata
 
     def _create_result(self, inputs, ground_truth, outputs, metrics, metadata):
@@ -270,7 +413,6 @@ class Evaluation:
         )
         return hh
 
-
     def run_each(self, datapoint_idx: int) -> Dict[str, Any]:
         """Run evaluation for a single datapoint."""
         inputs = {}
@@ -298,15 +440,8 @@ class Evaluation:
         try:
             # Run the function
             if inspect.iscoroutinefunction(self.func_to_evaluate):
-                # For async functions, use asyncio.run()
-                if self.func_to_evaluate.__code__.co_argcount == 2:
-                    outputs = asyncio.run(self.func_to_evaluate(inputs, ground_truth))
-                elif self.func_to_evaluate.__code__.co_argcount == 1:
-                    outputs = asyncio.run(self.func_to_evaluate(inputs))
-                else:
-                    raise ValueError(f"Evaluation function must accept either 1 or 2 arguments (inputs, ground_truth)")
+                raise ValueError("Evaluation task must be sync. Please use asyncio.run() to run coroutines inside the task.")
             else:
-                # For regular sync functions
                 if self.func_to_evaluate.__code__.co_argcount == 2:
                     outputs = self.func_to_evaluate(inputs, ground_truth)
                 elif self.func_to_evaluate.__code__.co_argcount == 1:
@@ -322,15 +457,14 @@ class Evaluation:
         metrics, metadata = self._run_evaluators(outputs, inputs, ground_truth)
         
         # Add trace metadata, outputs, and metrics
-        try:
-            self._enrich_evaluation_session(outputs, datapoint_idx, hh, metrics, metadata)
-        except Exception as e:
-            print(f"Error adding trace metadata: {e}")
+        # try:
+        #     self._enrich_evaluation_session(outputs, datapoint_idx, hh, metrics, metadata)
+        # except Exception as e:
+        #     print(f"Error adding trace metadata: {e}")
 
         console.print(f"Test case {datapoint_idx} complete")
         
         return self._create_result(inputs, ground_truth, outputs, metrics, metadata)
-
 
     def run(self):
         """Public function to run the evaluation."""
@@ -369,20 +503,29 @@ class Evaluation:
             raise Exception("No dataset found")
         
         start_time = time.time()
-        # TODO: remove this flag
-        run_concurrently = True
-        if run_concurrently:
+        if self.run_concurrently:
             # Use ThreadPoolExecutor to run evaluations concurrently
             max_workers = os.getenv("HH_MAX_WORKERS", 10)
             with console.status("[bold green]Working on evals...") as status:
                 with ThreadPoolExecutor(max_workers=max_workers) as executor:
-                    results = list(executor.map(self.run_each, range(num_points)))
+                    try:
+                        results = list(executor.map(self.run_each, range(num_points)))
+                    except KeyboardInterrupt:
+                        executor.shutdown(wait=False)
+                        raise
         else:
             results = []
             for i in range(num_points):
                 results.append(self.run_each(i))
         end_time = time.time()
         #########################################################
+
+        # enrich the sessions
+        # Add trace metadata, outputs, and metrics
+        try:
+            self._enrich_sessions(results)
+        except Exception as e:
+            print(f"Error adding trace metadata: {e}")
 
         # Process results
         self.eval_result.stats = {
@@ -484,49 +627,9 @@ class Evaluation:
         print('Exporting traces to HoneyHive...')
 
 
-def evaluate(
-    function=None,
-    hh_api_key: str = None,
-    hh_project: str = None,
-    name: Optional[str] = None,
-    suite: Optional[str] = None,
-    dataset_id: Optional[str] = None,
-    dataset: Optional[List[Dict[str, Any]]] = None,
-    evaluators: Optional[List[Any]] = None,
-    max_workers: int = 10,
-    verbose: bool = False,
-    server_url: Optional[str] = None,
-):
+def evaluate(*args, **kwargs):
 
-    if function is None:
-        raise Exception(
-            "Please provide a function to evaluate."
-        )
-    
-    # if name is not provided, use the file name
-    if name is None:
-        name = os.path.basename(sys._getframe(1).f_code.co_filename)
-
-    # get the directory of the file being evaluated
-    try:
-        if suite is None:
-            suite = os.path.dirname(sys._getframe(1).f_code.co_filename).split(os.sep)[-1]
-    except Exception:
-        suite = "default"
-
-    eval = Evaluation(
-        hh_api_key=hh_api_key,
-        hh_project=hh_project,
-        name=name,
-        suite=suite,
-        function=function,
-        dataset=dataset,
-        evaluators=evaluators,
-        dataset_id=dataset_id,
-        max_workers=max_workers,
-        verbose=verbose,
-        server_url=server_url,
-    )
+    eval = Evaluation(*args, **kwargs)
 
     # run evaluation
     eval.run()
@@ -535,7 +638,6 @@ def evaluate(
     eval.print_run()
 
     return EvaluationResult(
-        # git_tag=suite,
         run_id=eval.eval_run.run_id,
         dataset_id=eval.hh_dataset_id or eval.external_dataset_id,
         session_ids=eval.evaluation_session_ids,

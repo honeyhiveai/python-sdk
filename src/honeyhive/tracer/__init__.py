@@ -26,6 +26,7 @@ class HoneyHiveTracer:
     api_key = None
     is_evaluation = False
     instrumentation_id = None
+    instance = None
     
     def __init__(
         self,
@@ -166,7 +167,8 @@ class HoneyHiveTracer:
     # TODO: remove this, legacy DX
     @staticmethod
     def init(*args, **kwargs):
-        return HoneyHiveTracer(*args, **kwargs)
+        HoneyHiveTracer.instance = HoneyHiveTracer(*args, **kwargs)
+        return HoneyHiveTracer.instance
     
     @staticmethod
     def __start_session(api_key, project, session_name, source, server_url, inputs=None):
@@ -290,3 +292,41 @@ class HoneyHiveTracer:
                 print_exc()
             else:
                 pass
+
+
+def enrich_session(
+    session_id=None,
+    metadata=None,
+    feedback=None,
+    metrics=None,
+    config=None,
+    inputs=None,
+    outputs=None,
+    user_properties=None
+):
+    try:
+        sdk = HoneyHive(bearer_auth=HoneyHiveTracer.api_key)
+        if not session_id and HoneyHiveTracer.instance is None:
+            raise Exception("Please initialize HoneyHiveTracer before calling enrich_session")
+        session_id = session_id or HoneyHiveTracer.instance.session_id
+        update_request = operations.UpdateEventRequestBody(event_id=session_id)
+        if feedback is not None:
+            update_request.feedback = feedback
+        if metrics is not None:
+            update_request.metrics = metrics
+        if metadata is not None:
+            update_request.metadata = metadata
+        if config is not None:
+            update_request.config = config
+        if inputs is not None:
+            print('inputs are not supported in enrich_session') # TODO: add support for inputs (type change)
+        if outputs is not None:
+            update_request.outputs = outputs
+        if user_properties is not None:
+            update_request.user_properties = user_properties
+        sdk.events.update_event(request=update_request)
+    except:
+        if HoneyHiveTracer.verbose:
+            print_exc()
+        else:
+            pass
