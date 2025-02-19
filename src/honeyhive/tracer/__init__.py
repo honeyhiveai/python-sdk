@@ -60,6 +60,8 @@ class HoneyHiveTracer:
             if server_url is None:
                 server_url = os.getenv("HH_API_URL", "https://api.honeyhive.ai")
             
+            self.server_url = server_url
+            
             # project
             if project is None:
                 project = os.getenv("HH_PROJECT")
@@ -274,7 +276,7 @@ class HoneyHiveTracer:
 
         session_id = session_id or self.session_id
         try:
-            sdk = HoneyHive(bearer_auth=HoneyHiveTracer.api_key)
+            sdk = HoneyHive(bearer_auth=HoneyHiveTracer.api_key, server_url=self.server_url)
             update_request = operations.UpdateEventRequestBody(event_id=session_id)
             if feedback is not None:
                 update_request.feedback = feedback
@@ -309,7 +311,7 @@ def enrich_session(
     user_properties=None
 ):
     try:
-        sdk = HoneyHive(bearer_auth=HoneyHiveTracer.api_key)
+        sdk = HoneyHive(bearer_auth=HoneyHiveTracer.api_key, server_url=HoneyHiveTracer.instance.server_url)
         if not session_id and HoneyHiveTracer.instance is None:
             raise Exception("Please initialize HoneyHiveTracer before calling enrich_session")
         session_id = session_id or HoneyHiveTracer.instance.session_id
