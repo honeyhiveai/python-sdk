@@ -18,6 +18,8 @@ from opentelemetry.propagators.composite import CompositePropagator
 from opentelemetry.trace.propagation.tracecontext import TraceContextTextMapPropagator
 from opentelemetry.baggage.propagation import W3CBaggagePropagator
 
+DEFAULT_SERVER_URL = "https://api.honeyhive.ai"
+
 class HoneyHiveTracer:
     
     # static variables
@@ -27,7 +29,8 @@ class HoneyHiveTracer:
     is_evaluation = False
     instrumentation_id = None
     instance = None
-    
+    server_url = None
+
     def __init__(
         self,
         api_key=None,
@@ -46,21 +49,38 @@ class HoneyHiveTracer:
             if HoneyHiveTracer.is_evaluation:
                 # If we're in an evaluation, only new evaluate sessions are allowed
                 if not is_evaluation:
-                    return
+                    raise Exception("Evaluation sessions can only be started by the evaluate function.")
             
             # api_key
-            if api_key is None:
-                # check os env for api key
-                api_key = os.getenv("HH_API_KEY")
+            if HoneyHiveTracer.api_key is None:
                 if api_key is None:
-                    raise Exception("api_key must be specified or set in environment variable HH_API_KEY.")
-            HoneyHiveTracer.api_key = api_key
+                    # get and validate api key from os env
+                    env_api_key = os.getenv("HH_API_KEY")
+                    if not HoneyHiveTracer._validate_api_key(env_api_key):
+                        raise Exception("api_key must be specified or set in environment variable HH_API_KEY.")
+                    api_key = env_api_key
+                else:
+                    # validate user-provided api key
+                    if not HoneyHiveTracer._validate_api_key(api_key):
+                        raise Exception("api_key must be a string.")
+                    
+                # set api key
+                HoneyHiveTracer.api_key = api_key
             
             # server_url
-            if server_url is None:
-                server_url = os.getenv("HH_API_URL", "https://api.honeyhive.ai")
-            
-            self.server_url = server_url
+            if HoneyHiveTracer.server_url is None:
+                if server_url is None:
+                    # get server url from os env with default
+                    env_server_url = os.getenv("HH_API_URL", DEFAULT_SERVER_URL)
+                    if not HoneyHiveTracer._validate_server_url(env_server_url):
+                        raise Exception("Invalid server URL in environment variable HH_API_URL.")
+                    server_url = env_server_url
+                else:
+                    # validate user-provided server url
+                    if not HoneyHiveTracer._validate_server_url(server_url):
+                        raise Exception("server_url must be a valid URL string.")
+                # set server url
+                HoneyHiveTracer.server_url = server_url
             
             # project
             if project is None:
@@ -76,7 +96,7 @@ class HoneyHiveTracer:
                     if HoneyHiveTracer.verbose:
                         print(f"Error setting session_name: {e}")
                     session_name = "unknown"
-            
+
             # source
             if source is None:
                 source = os.getenv("HH_SOURCE", "dev")
@@ -89,6 +109,7 @@ class HoneyHiveTracer:
             self.session_id = HoneyHiveTracer.__start_session(
                 api_key, project, session_name, source, server_url, inputs
             )
+            
 
             # baggage
             self.baggage = BaggageDict().update({
@@ -110,8 +131,8 @@ class HoneyHiveTracer:
                 # Initialize Traceloop with CompositePropagator
                 if not HoneyHiveTracer._is_traceloop_initialized:
                     Traceloop.init(
-                        api_endpoint=f"{server_url}/opentelemetry",
-                        api_key=api_key,
+                        api_endpoint=f"{HoneyHiveTracer.server_url}/opentelemetry",
+                        api_key=HoneyHiveTracer.api_key,
                         metrics_exporter=ConsoleMetricExporter(out=open(os.devnull, "w")),
                         disable_batch=disable_batch,
                         propagator=HoneyHiveTracer.propagator
@@ -174,6 +195,14 @@ class HoneyHiveTracer:
     def init(*args, **kwargs):
         HoneyHiveTracer.instance = HoneyHiveTracer(*args, **kwargs)
         return HoneyHiveTracer.instance
+    
+    @staticmethod
+    def _validate_api_key(api_key):
+        return api_key and type(api_key) == str
+    
+    @staticmethod
+    def _validate_server_url(server_url):
+        return server_url and type(server_url) == str
     
     @staticmethod
     def __start_session(api_key, project, session_name, source, server_url, inputs=None):
@@ -276,7 +305,7 @@ class HoneyHiveTracer:
 
         session_id = session_id or self.session_id
         try:
-            sdk = HoneyHive(bearer_auth=HoneyHiveTracer.api_key, server_url=self.server_url)
+            sdk = HoneyHive(bearer_auth=HoneyHiveTracer.api_key, server_url=HoneyHiveTracer.server_url)
             update_request = operations.UpdateEventRequestBody(event_id=session_id)
             if feedback is not None:
                 update_request.feedback = feedback
@@ -292,7 +321,9 @@ class HoneyHiveTracer:
                 update_request.outputs = outputs
             if user_properties is not None:
                 update_request.user_properties = user_properties
-            sdk.events.update_event(request=update_request)
+            response: operations.UpdateEventResponse = sdk.events.update_event(request=update_request)
+            if response.status_code != 200:
+                raise Exception(f"Failed to enrich session: {response.raw_response.text}")
         except:
             if HoneyHiveTracer.verbose:
                 print_exc()
@@ -312,7 +343,7 @@ def enrich_session(
 ):
     try:
         sdk = HoneyHive(bearer_auth=HoneyHiveTracer.api_key, server_url=HoneyHiveTracer.instance.server_url)
-        if not session_id and HoneyHiveTracer.instance is None:
+        if session_id is None and HoneyHiveTracer.instance is None:
             raise Exception("Please initialize HoneyHiveTracer before calling enrich_session")
         session_id = session_id or HoneyHiveTracer.instance.session_id
         update_request = operations.UpdateEventRequestBody(event_id=session_id)
@@ -330,7 +361,9 @@ def enrich_session(
             update_request.outputs = outputs
         if user_properties is not None:
             update_request.user_properties = user_properties
-        sdk.events.update_event(request=update_request)
+        response: operations.UpdateEventResponse = sdk.events.update_event(request=update_request)
+        if response.status_code != 200:
+            raise Exception(f"Failed to enrich session: {response.raw_response.text}")
     except:
         if HoneyHiveTracer.verbose:
             print_exc()

@@ -164,9 +164,9 @@ class Evaluation:
 
     def _enrich_evaluation_session(
         self,
-        outputs: Optional[Any],
         datapoint_idx: int,
-        hh: HoneyHiveTracer,
+        session_id: str,
+        outputs: Optional[Any],
         metrics: Optional[Dict[str, Any]] = None,
         metadata: Optional[Dict[str, Any]] = None,
     ):
@@ -187,7 +187,8 @@ class Evaluation:
 
             tracing_metadata.update(metadata)
 
-            hh.enrich_session(
+            enrich_session(
+                session_id=session_id,
                 metadata=tracing_metadata,
                 outputs=outputs,
                 metrics=metrics,
@@ -412,12 +413,14 @@ class Evaluation:
         return hh
 
     def run_each(self, datapoint_idx: int) -> Dict[str, Any]:
-        """Run evaluation for a single datapoint."""
+        """Run evaluation for a single datapoint in its own thread."""
+
         inputs = {}
         ground_truth = {}
         outputs = None
         metrics = {}
         metadata = {}
+        session_id = None
 
         # Get inputs
         try:
@@ -429,14 +432,15 @@ class Evaluation:
         # Initialize tracer
         try:
             hh = self._init_tracer(inputs)
-            self.evaluation_session_ids.append(hh.session_id)
+            session_id = hh.session_id
+            self.evaluation_session_ids.append(session_id)
         except Exception as e:
+            print(traceback.format_exc())
             raise Exception(
                 f"Unable to initiate Honeyhive Tracer. Cannot run Evaluation: {e}"
             )
-        
+        # Run the function
         try:
-            # Run the function
             if inspect.iscoroutinefunction(self.func_to_evaluate):
                 raise ValueError("Evaluation task must be sync. Please use asyncio.run() to run coroutines inside the task.")
             else:
@@ -446,7 +450,6 @@ class Evaluation:
                     outputs = self.func_to_evaluate(inputs)
                 else:
                     raise ValueError(f"Evaluation function must accept either 1 or 2 arguments (inputs, ground_truth)")
-
         except Exception as e:
             print(f"Error in evaluation function: {e}")
             print(traceback.format_exc())
@@ -454,11 +457,15 @@ class Evaluation:
         # Run evaluators
         metrics, metadata = self._run_evaluators(outputs, inputs, ground_truth)
         
-        # Add trace metadata, outputs, and metrics
-        # try:
-        #     self._enrich_evaluation_session(outputs, datapoint_idx, hh, metrics, metadata)
-        # except Exception as e:
-        #     print(f"Error adding trace metadata: {e}")
+        # Add trace metadata, outputs, and metrics to session
+
+        self._enrich_evaluation_session(
+            datapoint_idx,
+            session_id, 
+            outputs,
+            metrics,
+            metadata
+        )
 
         console.print(f"Test case {datapoint_idx} complete")
         
@@ -501,29 +508,35 @@ class Evaluation:
             raise Exception("No dataset found")
         
         start_time = time.time()
-        if self.run_concurrently:
-            # Use ThreadPoolExecutor to run evaluations concurrently
-            max_workers = os.getenv("HH_MAX_WORKERS", 10)
-            with console.status("[bold green]Working on evals...") as status:
-                with ThreadPoolExecutor(max_workers=max_workers) as executor:
-                    try:
-                        results = list(executor.map(self.run_each, range(num_points)))
-                    except KeyboardInterrupt:
-                        executor.shutdown(wait=False)
-                        raise
-        else:
-            results = []
-            for i in range(num_points):
-                results.append(self.run_each(i))
+        # Use ThreadPoolExecutor to run evaluations concurrently
+        max_workers = os.getenv("HH_MAX_WORKERS", 10)
+        with console.status("[bold green]Working on evals...") as status:
+            with ThreadPoolExecutor(max_workers=max_workers) as executor:
+                try:
+                    # Submit tasks and get futures
+                    futures = [executor.submit(self.run_each, i) for i in range(num_points)]
+                    
+                    # Collect results and log any errors
+                    results = []
+                    for future in futures:
+                        try:
+                            results.append(future.result())
+                        except Exception as e:
+                            print(f"Error in evaluation thread: {e}")
+                            # Still add None result to maintain ordering
+                            results.append(None)
+                except KeyboardInterrupt:
+                    executor.shutdown(wait=False)
+                    raise
         end_time = time.time()
         #########################################################
 
         # enrich the sessions
         # Add trace metadata, outputs, and metrics
-        try:
-            self._enrich_sessions(results)
-        except Exception as e:
-            print(f"Error adding trace metadata: {e}")
+        # try:
+        #     self._enrich_sessions(results)
+        # except Exception as e:
+        #     print(f"Error adding trace metadata: {e}")
 
         # Process results
         self.eval_result.stats = {
