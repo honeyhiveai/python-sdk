@@ -32,6 +32,15 @@ except ImportError:
     raise ImportError("Please install our langchain tracer. You can install it with `pip install honeyhive[langchain]`")
 
 import traceback
+import sys
+
+# Configure logging
+logging.basicConfig(
+    level=logging.DEBUG,
+    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
+    stream=sys.stdout
+)
+logger = logging.getLogger(__name__)
 
 HONEYHIVE_APP_URL = "https://api.honeyhive.ai"
 LLM_CHAIN_TYPE = "llm_chain"
@@ -175,7 +184,7 @@ class HoneyHiveLangChainTracer(BaseTracer, ABC):
                 logs[0].project = self.project
             self._post_trace(logs=logs)
         except Exception as error:
-            logging.warning(f"Failed to persist run: {error}")
+            logger.error(f"Failed to persist run: {error}", exc_info=True)
             if self.verbose:
                 traceback.print_exc()
 
@@ -185,32 +194,64 @@ class HoneyHiveLangChainTracer(BaseTracer, ABC):
         logs: List[Log] = []
         duration = (run.end_time - run.start_time) / timedelta(milliseconds=1)
         metadata = {"langchain_trace_id": str(run.id), **run.extra}
-        run_type = run.serialized.get("_type")
+        # Handle serialized field with proper error handling
+        if run.serialized is None:
+            logger.warning(f"Run serialized is None for run type {run.run_type}.")
+            run_type = None
+        else:
+            try:
+                run_type = run.serialized.get("_type")
+                logger.debug(f"Extracted run_type from serialized: {run_type}")
+            except Exception as e:
+                logger.error(f"Error accessing serialized field: {e}")
+                run_type = None
+
         if run.run_type == "chain":
             if run_type == LLM_CHAIN_TYPE:
-                child_llm_runs = [
-                    child_run
-                    for child_run in run.child_runs
-                    if child_run.run_type == "llm"
-                ]
-                run.child_runs = [
-                    child_run
-                    for child_run in run.child_runs
-                    if child_run.run_type != "llm"
-                ]
-                inputs = {
-                    input_: value
-                    for input_, value in run.inputs.items()
-                    if input_ in run.serialized["prompt"]["input_variables"]
-                }
-                for llm_run in child_llm_runs:
-                    logs += self._convert_llm_run_to_log(
-                        llm_run=llm_run,
-                        event_name=run.name,
-                        inputs=[inputs],
-                        prompt_details=run.serialized["prompt"],
-                        duration=duration,
-                        parent_log=parent_log,
+                try:
+                    child_llm_runs = [
+                        child_run
+                        for child_run in run.child_runs
+                        if child_run.run_type == "llm"
+                    ]
+                    run.child_runs = [
+                        child_run
+                        for child_run in run.child_runs
+                        if child_run.run_type != "llm"
+                    ]
+                    inputs = {
+                        input_: value
+                        for input_, value in run.inputs.items()
+                        if input_ in run.serialized.get("prompt", {}).get("input_variables", [])
+                    }
+                    for llm_run in child_llm_runs:
+                        logs += self._convert_llm_run_to_log(
+                            llm_run=llm_run,
+                            event_name=run.name,
+                            inputs=[inputs],
+                            prompt_details=run.serialized.get("prompt"),
+                            duration=duration,
+                            parent_log=parent_log,
+                        )
+                except Exception as e:
+                    logger.error(f"Error processing LLM chain: {e}", exc_info=True)
+                    # Create a basic log entry with error information
+                    logs.append(
+                        Log(
+                            source=self.source,
+                            project=self.project,
+                            event_name=run.name or "unknown",
+                            event_type="chain",
+                            event_id=str(uuid.uuid4()),
+                            parent_id=parent_log.event_id if parent_log else None,
+                            config=Config(name=run.name),
+                            inputs=run.inputs,
+                            error=str(e),
+                            start_time=int(run.start_time.timestamp() * 1000000),
+                            end_time=int(run.end_time.timestamp() * 1000000),
+                            duration=duration,
+                            metadata=metadata,
+                        )
                     )
             elif run_type == AGENT_CHAIN_TYPE:
                 logs.append(
