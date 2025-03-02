@@ -6,6 +6,9 @@ class BaggageDict(dict):
         'session_id', 
         'project',
         'source',
+        'run_id',
+        'dataset_id',
+        'datapoint_id',
     ]
     
     class DefaultGetter:

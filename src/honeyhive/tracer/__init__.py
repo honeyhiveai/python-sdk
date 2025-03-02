@@ -42,6 +42,9 @@ class HoneyHiveTracer:
         verbose=False,
         inputs=None,
         is_evaluation=False,
+        run_id=None,
+        dataset_id=None,
+        datapoint_id=None,
         link_carrier=None
     ):
         try:
@@ -109,7 +112,6 @@ class HoneyHiveTracer:
             self.session_id = HoneyHiveTracer.__start_session(
                 api_key, project, session_name, source, server_url, inputs
             )
-            
 
             # baggage
             self.baggage = BaggageDict().update({
@@ -117,6 +119,14 @@ class HoneyHiveTracer:
                 "project": project,
                 "source": source,
             })
+
+            # evaluation
+            if is_evaluation:
+                self.baggage.update({
+                    "run_id": run_id,
+                    "dataset_id": dataset_id,
+                    "datapoint_id": datapoint_id,
+                })
 
             # Initialize the Composite Propagator
             HoneyHiveTracer.propagator = CompositePropagator(

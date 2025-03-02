@@ -116,7 +116,7 @@ class Evaluation:
         self.evaluation_session_ids: collections.deque = collections.deque()
         self._validate_requirements()
 
-        self.hhai = HoneyHive(bearer_auth=self.hh_api_key)
+        self.hhai = HoneyHive(bearer_auth=self.hh_api_key, server_url=server_url)
         self.hh_dataset = DatasetLoader.load_dataset(self.hhai, self.hh_project, self.hh_dataset_id)
 
         self.server_url = server_url
@@ -130,7 +130,7 @@ class Evaluation:
         )
 
         # increase the OTEL export timeout to 30 seconds
-        os.environ["OTEL_EXPORTER_OTLP_TIMEOUT"] = "30000"
+        # os.environ["OTEL_EXPORTER_OTLP_TIMEOUT"] = "30000"
 
     def _validate_requirements(self) -> None:
         """Sanity check of requirements for HoneyHive evaluations and tracing."""
@@ -162,6 +162,23 @@ class Evaluation:
 
     # ------------------------------------------------------------
 
+    def _get_tracing_metadata(
+        self,
+        datapoint_idx: int,
+    ):
+        """Get tracing metadata for evaluation."""
+        tracing_metadata = {"run_id": self.eval_run.run_id}
+        if self.hh_dataset:
+            tracing_metadata["datapoint_id"] = self.hh_dataset.datapoints[datapoint_idx]
+            tracing_metadata["dataset_id"] = self.hh_dataset_id
+        if self.external_dataset_id:
+            tracing_metadata["datapoint_id"] = Evaluation.generate_hash(
+                json.dumps(self.dataset[datapoint_idx])
+            )
+            tracing_metadata["dataset_id"] = self.external_dataset_id
+
+        return tracing_metadata
+
     def _enrich_evaluation_session(
         self,
         datapoint_idx: int,
@@ -172,20 +189,11 @@ class Evaluation:
     ):
         """Private function to enrich the session data post flow completion."""
         try:
-            tracing_metadata = {"run_id": self.eval_run.run_id}
-            if self.hh_dataset:
-                tracing_metadata["datapoint_id"] = self.hh_dataset.datapoints[datapoint_idx]
-                tracing_metadata["dataset_id"] = self.hh_dataset_id
-            if self.external_dataset_id:
-                tracing_metadata["datapoint_id"] = Evaluation.generate_hash(
-                    json.dumps(self.dataset[datapoint_idx])
-                )
-                tracing_metadata["dataset_id"] = self.external_dataset_id
+            tracing_metadata = self._get_tracing_metadata(datapoint_idx)
+            tracing_metadata.update(metadata)
 
             if not isinstance(outputs, dict):
                 outputs = {"output": outputs}
-
-            tracing_metadata.update(metadata)
 
             enrich_session(
                 session_id=session_id,
@@ -398,7 +406,7 @@ class Evaluation:
             )
         return ({}, {})
 
-    def _init_tracer(self, inputs: Dict[str, Any]) -> HoneyHiveTracer:
+    def _init_tracer(self, datapoint_idx: int, inputs: Dict[str, Any]) -> HoneyHiveTracer:
         """Initialize HoneyHiveTracer for evaluation."""
         hh = HoneyHiveTracer(
             api_key=self.hh_api_key,
@@ -409,6 +417,7 @@ class Evaluation:
             is_evaluation=True,
             verbose=self.verbose,
             server_url=self.server_url,
+            **self._get_tracing_metadata(datapoint_idx)
         )
         return hh
 
@@ -431,7 +440,7 @@ class Evaluation:
 
         # Initialize tracer
         try:
-            hh = self._init_tracer(inputs)
+            hh = self._init_tracer(datapoint_idx, inputs)
             session_id = hh.session_id
             self.evaluation_session_ids.append(session_id)
         except Exception as e:
