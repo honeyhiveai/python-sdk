@@ -5,6 +5,8 @@ from .evaluators import evaluator, aevaluator
 
 from concurrent.futures import ThreadPoolExecutor
 import collections
+import contextvars
+import functools
 
 from rich.style import Style
 from rich.console import Console
@@ -204,37 +206,37 @@ class Evaluation:
         except Exception as e:
             print(f"Error adding trace metadata: {e}")
     
-    def _enrich_sessions(
-        self,
-        results: List[Dict[str, Any]],
-    ):
-        """Private function to enrich the session data post flow completion."""
-        try:
-            for idx, result in enumerate(results):
-                tracing_metadata = {"run_id": self.eval_run.run_id}
-                if self.hh_dataset:
-                    tracing_metadata["datapoint_id"] = self.hh_dataset.datapoints[idx]
-                tracing_metadata["dataset_id"] = self.hh_dataset_id
+    # def _enrich_sessions(
+    #     self,
+    #     results: List[Dict[str, Any]],
+    # ):
+    #     """Private function to enrich the session data post flow completion."""
+    #     try:
+    #         for idx, result in enumerate(results):
+    #             tracing_metadata = {"run_id": self.eval_run.run_id}
+    #             if self.hh_dataset:
+    #                 tracing_metadata["datapoint_id"] = self.hh_dataset.datapoints[idx]
+    #             tracing_metadata["dataset_id"] = self.hh_dataset_id
 
-                if self.external_dataset_id:
-                    tracing_metadata["datapoint_id"] = Evaluation.generate_hash(
-                        json.dumps(self.dataset[idx])
-                    )
-                    tracing_metadata["dataset_id"] = self.external_dataset_id
+    #             if self.external_dataset_id:
+    #                 tracing_metadata["datapoint_id"] = Evaluation.generate_hash(
+    #                     json.dumps(self.dataset[idx])
+    #                 )
+    #                 tracing_metadata["dataset_id"] = self.external_dataset_id
 
-                if not isinstance(result['output'], dict):
-                    result['output'] = {"output": result['output']}
+    #             if not isinstance(result['output'], dict):
+    #                 result['output'] = {"output": result['output']}
 
-                tracing_metadata.update(result['metadata'])
+    #             tracing_metadata.update(result['metadata'])
 
-                enrich_session(
-                    session_id=self.evaluation_session_ids[idx],
-                    metadata=tracing_metadata,
-                    outputs=result['output'],
-                    metrics=result['metrics'],
-                )
-        except Exception as e:
-            print(f"Error adding trace metadata: {e}")
+    #             enrich_session(
+    #                 session_id=self.evaluation_session_ids[idx],
+    #                 metadata=tracing_metadata,
+    #                 outputs=result['output'],
+    #                 metrics=result['metrics'],
+    #             )
+    #     except Exception as e:
+    #         print(f"Error adding trace metadata: {e}")
 
     def _get_evaluator_metadata(self, eval_func, evaluator_name: str) -> dict:
         """Get metadata for an evaluator if it's decorated."""
@@ -517,26 +519,41 @@ class Evaluation:
             raise Exception("No dataset found")
         
         start_time = time.time()
-        # Use ThreadPoolExecutor to run evaluations concurrently
-        max_workers = os.getenv("HH_MAX_WORKERS", 10)
-        with console.status("[bold green]Working on evals...") as status:
-            with ThreadPoolExecutor(max_workers=max_workers) as executor:
-                try:
-                    # Submit tasks and get futures
-                    futures = [executor.submit(self.run_each, i) for i in range(num_points)]
-                    
-                    # Collect results and log any errors
-                    results = []
-                    for future in futures:
-                        try:
-                            results.append(future.result())
-                        except Exception as e:
-                            print(f"Error in evaluation thread: {e}")
-                            # Still add None result to maintain ordering
-                            results.append(None)
-                except KeyboardInterrupt:
-                    executor.shutdown(wait=False)
-                    raise
+        if self.run_concurrently:
+            # Use ThreadPoolExecutor to run evaluations concurrently
+            max_workers = int(os.getenv("HH_MAX_WORKERS", self.max_workers))
+            with console.status("[bold green]Working on evals...") as status:
+                with ThreadPoolExecutor(max_workers=max_workers) as executor:
+                    try:
+                        # Submit tasks and get futures with proper context propagation
+                        futures = []
+                        for i in range(num_points):
+                            ctx = contextvars.copy_context()
+                            futures.append(
+                                executor.submit(
+                                    ctx.run,
+                                    functools.partial(self.run_each, i)
+                                )
+                            )
+                        
+                        # Collect results and log any errors
+                        results = []
+                        for future in futures:
+                            try:
+                                results.append(future.result())
+                            except Exception as e:
+                                print(f"Error in evaluation thread: {e}")
+                                # Still add None result to maintain ordering
+                                results.append(None)
+                    except KeyboardInterrupt:
+                        executor.shutdown(wait=False)
+                        raise
+        else:
+            results = []
+            for i in range(num_points):
+                result = self.run_each(i)
+                results.append(result)
+
         end_time = time.time()
         #########################################################
 
