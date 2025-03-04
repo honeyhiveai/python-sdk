@@ -1,4 +1,5 @@
 import uuid
+import json
 from traceback import print_exc
 import os
 import sys
@@ -6,7 +7,7 @@ import threading
 
 from honeyhive.utils.telemetry import Telemetry
 from honeyhive.utils.baggage_dict import BaggageDict
-from honeyhive.models import operations, components
+from honeyhive.models import operations, components, errors
 from honeyhive.sdk import HoneyHive
 
 from traceloop.sdk import Traceloop
@@ -42,6 +43,9 @@ class HoneyHiveTracer:
         verbose=False,
         inputs=None,
         is_evaluation=False,
+        run_id=None,
+        dataset_id=None,
+        datapoint_id=None,
         link_carrier=None
     ):
         try:
@@ -106,10 +110,18 @@ class HoneyHiveTracer:
             
             # TODO: migrate to log-based session initialization
             # self.session_id = str(uuid.uuid4()).upper()
-            self.session_id = HoneyHiveTracer.__start_session(
-                api_key, project, session_name, source, server_url, inputs
-            )
-            
+            try:
+                self.session_id = HoneyHiveTracer.__start_session(
+                    api_key, project, session_name, source, server_url, inputs
+                )
+            except errors.SDKError as e:
+                try:
+                    error_data = json.loads(e.raw_response.text)
+                    error_message = error_data.get('error', 'Unknown error')
+                    print(f"Error starting session: {error_message}")
+                except json.JSONDecodeError:
+                    print(f"Error starting session: {e.raw_response.text}")
+
 
             # baggage
             self.baggage = BaggageDict().update({
@@ -117,6 +129,14 @@ class HoneyHiveTracer:
                 "project": project,
                 "source": source,
             })
+
+            # evaluation
+            if is_evaluation:
+                self.baggage.update({
+                    "run_id": run_id,
+                    "dataset_id": dataset_id,
+                    "datapoint_id": datapoint_id,
+                })
 
             # Initialize the Composite Propagator
             HoneyHiveTracer.propagator = CompositePropagator(

@@ -6,6 +6,9 @@ class BaggageDict(dict):
         'session_id', 
         'project',
         'source',
+        'run_id',
+        'dataset_id',
+        'datapoint_id',
     ]
     
     class DefaultGetter:
@@ -32,6 +35,8 @@ class BaggageDict(dict):
         super().__setitem__(key, str(value))
     
     def __getitem__(self, key: str):
+        if key not in self:
+            return None
         value = super().__getitem__(key)
         if value == "True":
             return True
@@ -39,13 +44,14 @@ class BaggageDict(dict):
             return False
         return value
     
-    def get(self, key: str):
-        return self.__getitem__(key)
+    def get(self, key: str, default=None):
+        value = self[key]  # This will use our __getitem__ which already handles missing keys
+        return default if value is None else value
     
     def set_all_baggage(self, ctx=None):
         if ctx is None:
             ctx = context.get_current()
-        for key in BaggageDict.valid_baggage_keys:            
+        for key in BaggageDict.valid_baggage_keys:
             value = self.get(key)
             if value is not None:
                 ctx = baggage.set_baggage(key, value, ctx)

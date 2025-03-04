@@ -1,3 +1,6 @@
+README-PYPI.md
+pyrightconfig.json
+.speakeasy/reports
 venv/
 .venv/
 src/*.egg-info/
@@ -10,3 +13,4 @@ build/
 dist/
 .aider*
 lab/
+.vscode

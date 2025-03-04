@@ -5,6 +5,8 @@ from .evaluators import evaluator, aevaluator
 
 from concurrent.futures import ThreadPoolExecutor
 import collections
+import contextvars
+import functools
 
 from rich.style import Style
 from rich.console import Console
@@ -56,7 +58,7 @@ class DatasetLoader:
                 return dataset.object.testcases[0]
         except Exception:
             raise RuntimeError(
-                f"No dataset found with id - {dataset_id} for project - {project}"
+                f"No dataset found with id - {dataset_id} for project - {project}. Please use the correct dataset id and project name."
             )
 
 
@@ -116,7 +118,7 @@ class Evaluation:
         self.evaluation_session_ids: collections.deque = collections.deque()
         self._validate_requirements()
 
-        self.hhai = HoneyHive(bearer_auth=self.hh_api_key)
+        self.hhai = HoneyHive(bearer_auth=self.hh_api_key, server_url=server_url)
         self.hh_dataset = DatasetLoader.load_dataset(self.hhai, self.hh_project, self.hh_dataset_id)
 
         self.server_url = server_url
@@ -130,7 +132,7 @@ class Evaluation:
         )
 
         # increase the OTEL export timeout to 30 seconds
-        os.environ["OTEL_EXPORTER_OTLP_TIMEOUT"] = "30000"
+        # os.environ["OTEL_EXPORTER_OTLP_TIMEOUT"] = "30000"
 
     def _validate_requirements(self) -> None:
         """Sanity check of requirements for HoneyHive evaluations and tracing."""
@@ -162,6 +164,23 @@ class Evaluation:
 
     # ------------------------------------------------------------
 
+    def _get_tracing_metadata(
+        self,
+        datapoint_idx: int,
+    ):
+        """Get tracing metadata for evaluation."""
+        tracing_metadata = {"run_id": self.eval_run.run_id}
+        if self.hh_dataset:
+            tracing_metadata["datapoint_id"] = self.hh_dataset.datapoints[datapoint_idx]
+            tracing_metadata["dataset_id"] = self.hh_dataset_id
+        if self.external_dataset_id:
+            tracing_metadata["datapoint_id"] = Evaluation.generate_hash(
+                json.dumps(self.dataset[datapoint_idx])
+            )
+            tracing_metadata["dataset_id"] = self.external_dataset_id
+
+        return tracing_metadata
+
     def _enrich_evaluation_session(
         self,
         datapoint_idx: int,
@@ -172,20 +191,11 @@ class Evaluation:
     ):
         """Private function to enrich the session data post flow completion."""
         try:
-            tracing_metadata = {"run_id": self.eval_run.run_id}
-            if self.hh_dataset:
-                tracing_metadata["datapoint_id"] = self.hh_dataset.datapoints[datapoint_idx]
-                tracing_metadata["dataset_id"] = self.hh_dataset_id
-            if self.external_dataset_id:
-                tracing_metadata["datapoint_id"] = Evaluation.generate_hash(
-                    json.dumps(self.dataset[datapoint_idx])
-                )
-                tracing_metadata["dataset_id"] = self.external_dataset_id
+            tracing_metadata = self._get_tracing_metadata(datapoint_idx)
+            tracing_metadata.update(metadata)
 
             if not isinstance(outputs, dict):
                 outputs = {"output": outputs}
-
-            tracing_metadata.update(metadata)
 
             enrich_session(
                 session_id=session_id,
@@ -193,38 +203,6 @@ class Evaluation:
                 outputs=outputs,
                 metrics=metrics,
             )
-        except Exception as e:
-            print(f"Error adding trace metadata: {e}")
-    
-    def _enrich_sessions(
-        self,
-        results: List[Dict[str, Any]],
-    ):
-        """Private function to enrich the session data post flow completion."""
-        try:
-            for idx, result in enumerate(results):
-                tracing_metadata = {"run_id": self.eval_run.run_id}
-                if self.hh_dataset:
-                    tracing_metadata["datapoint_id"] = self.hh_dataset.datapoints[idx]
-                tracing_metadata["dataset_id"] = self.hh_dataset_id
-
-                if self.external_dataset_id:
-                    tracing_metadata["datapoint_id"] = Evaluation.generate_hash(
-                        json.dumps(self.dataset[idx])
-                    )
-                    tracing_metadata["dataset_id"] = self.external_dataset_id
-
-                if not isinstance(result['output'], dict):
-                    result['output'] = {"output": result['output']}
-
-                tracing_metadata.update(result['metadata'])
-
-                enrich_session(
-                    session_id=self.evaluation_session_ids[idx],
-                    metadata=tracing_metadata,
-                    outputs=result['output'],
-                    metrics=result['metrics'],
-                )
         except Exception as e:
             print(f"Error adding trace metadata: {e}")
 
@@ -398,7 +376,7 @@ class Evaluation:
             )
         return ({}, {})
 
-    def _init_tracer(self, inputs: Dict[str, Any]) -> HoneyHiveTracer:
+    def _init_tracer(self, datapoint_idx: int, inputs: Dict[str, Any]) -> HoneyHiveTracer:
         """Initialize HoneyHiveTracer for evaluation."""
         hh = HoneyHiveTracer(
             api_key=self.hh_api_key,
@@ -409,6 +387,7 @@ class Evaluation:
             is_evaluation=True,
             verbose=self.verbose,
             server_url=self.server_url,
+            **self._get_tracing_metadata(datapoint_idx)
         )
         return hh
 
@@ -431,7 +410,7 @@ class Evaluation:
 
         # Initialize tracer
         try:
-            hh = self._init_tracer(inputs)
+            hh = self._init_tracer(datapoint_idx, inputs)
             session_id = hh.session_id
             self.evaluation_session_ids.append(session_id)
         except Exception as e:
@@ -508,35 +487,43 @@ class Evaluation:
             raise Exception("No dataset found")
         
         start_time = time.time()
-        # Use ThreadPoolExecutor to run evaluations concurrently
-        max_workers = os.getenv("HH_MAX_WORKERS", 10)
-        with console.status("[bold green]Working on evals...") as status:
-            with ThreadPoolExecutor(max_workers=max_workers) as executor:
-                try:
-                    # Submit tasks and get futures
-                    futures = [executor.submit(self.run_each, i) for i in range(num_points)]
-                    
-                    # Collect results and log any errors
-                    results = []
-                    for future in futures:
-                        try:
-                            results.append(future.result())
-                        except Exception as e:
-                            print(f"Error in evaluation thread: {e}")
-                            # Still add None result to maintain ordering
-                            results.append(None)
-                except KeyboardInterrupt:
-                    executor.shutdown(wait=False)
-                    raise
+        if self.run_concurrently:
+            # Use ThreadPoolExecutor to run evaluations concurrently
+            max_workers = int(os.getenv("HH_MAX_WORKERS", self.max_workers))
+            with console.status("[bold green]Working on evals...") as status:
+                with ThreadPoolExecutor(max_workers=max_workers) as executor:
+                    try:
+                        # Submit tasks and get futures with proper context propagation
+                        futures = []
+                        for i in range(num_points):
+                            ctx = contextvars.copy_context()
+                            futures.append(
+                                executor.submit(
+                                    ctx.run,
+                                    functools.partial(self.run_each, i)
+                                )
+                            )
+                        
+                        # Collect results and log any errors
+                        results = []
+                        for future in futures:
+                            try:
+                                results.append(future.result())
+                            except Exception as e:
+                                print(f"Error in evaluation thread: {e}")
+                                # Still add None result to maintain ordering
+                                results.append(None)
+                    except KeyboardInterrupt:
+                        executor.shutdown(wait=False)
+                        raise
+        else:
+            results = []
+            for i in range(num_points):
+                result = self.run_each(i)
+                results.append(result)
+
         end_time = time.time()
         #########################################################
-
-        # enrich the sessions
-        # Add trace metadata, outputs, and metrics
-        # try:
-        #     self._enrich_sessions(results)
-        # except Exception as e:
-        #     print(f"Error adding trace metadata: {e}")
 
         # Process results
         self.eval_result.stats = {
