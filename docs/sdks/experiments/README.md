@@ -20,21 +20,19 @@ Create a new evaluation run
 ### Example Usage
 
 ```python
-import honeyhive
-from honeyhive.models import components
+from honeyhive import HoneyHive
 
-s = honeyhive.HoneyHive(
+s = HoneyHive(
     bearer_auth="<YOUR_BEARER_TOKEN_HERE>",
 )
 
-
-res = s.experiments.create_run(request=components.CreateRunRequest(
-    project='<value>',
-    name='<value>',
-    event_ids=[
-        '1504f40b-8865-40f9-b343-513d7da481bd',
+res = s.experiments.create_run(request={
+    "project": "<value>",
+    "name": "<value>",
+    "event_ids": [
+        "1504f40b-8865-40f9-b343-513d7da481bd",
     ],
-))
+})
 
 if res.create_run_response is not None:
     # handle response
@@ -47,6 +45,7 @@ if res.create_run_response is not None:
 | Parameter                                                                  | Type                                                                       | Required                                                                   | Description                                                                |
 | -------------------------------------------------------------------------- | -------------------------------------------------------------------------- | -------------------------------------------------------------------------- | -------------------------------------------------------------------------- |
 | `request`                                                                  | [components.CreateRunRequest](../../models/components/createrunrequest.md) | :heavy_check_mark:                                                         | The request object to use for the request.                                 |
+| `retries`                                                                  | [Optional[utils.RetryConfig]](../../models/utils/retryconfig.md)           | :heavy_minus_sign:                                                         | Configuration to override the default retry behavior of the client.        |
 
 ### Response
 
@@ -65,12 +64,11 @@ Get a list of evaluation runs
 ### Example Usage
 
 ```python
-import honeyhive
+from honeyhive import HoneyHive
 
-s = honeyhive.HoneyHive(
+s = HoneyHive(
     bearer_auth="<YOUR_BEARER_TOKEN_HERE>",
 )
-
 
 res = s.experiments.get_runs()
 
@@ -82,9 +80,10 @@ if res.get_runs_response is not None:
 
 ### Parameters
 
-| Parameter          | Type               | Required           | Description        |
-| ------------------ | ------------------ | ------------------ | ------------------ |
-| `project`          | *Optional[str]*    | :heavy_minus_sign: | N/A                |
+| Parameter                                                           | Type                                                                | Required                                                            | Description                                                         |
+| ------------------------------------------------------------------- | ------------------------------------------------------------------- | ------------------------------------------------------------------- | ------------------------------------------------------------------- |
+| `project`                                                           | *Optional[str]*                                                     | :heavy_minus_sign:                                                  | N/A                                                                 |
+| `retries`                                                           | [Optional[utils.RetryConfig]](../../models/utils/retryconfig.md)    | :heavy_minus_sign:                                                  | Configuration to override the default retry behavior of the client. |
 
 ### Response
 
@@ -103,14 +102,13 @@ Get details of an evaluation run
 ### Example Usage
 
 ```python
-import honeyhive
+from honeyhive import HoneyHive
 
-s = honeyhive.HoneyHive(
+s = HoneyHive(
     bearer_auth="<YOUR_BEARER_TOKEN_HERE>",
 )
 
-
-res = s.experiments.get_run(run_id='<value>')
+res = s.experiments.get_run(run_id="<id>")
 
 if res.get_run_response is not None:
     # handle response
@@ -120,9 +118,10 @@ if res.get_run_response is not None:
 
 ### Parameters
 
-| Parameter          | Type               | Required           | Description        |
-| ------------------ | ------------------ | ------------------ | ------------------ |
-| `run_id`           | *str*              | :heavy_check_mark: | N/A                |
+| Parameter                                                           | Type                                                                | Required                                                            | Description                                                         |
+| ------------------------------------------------------------------- | ------------------------------------------------------------------- | ------------------------------------------------------------------- | ------------------------------------------------------------------- |
+| `run_id`                                                            | *str*                                                               | :heavy_check_mark:                                                  | N/A                                                                 |
+| `retries`                                                           | [Optional[utils.RetryConfig]](../../models/utils/retryconfig.md)    | :heavy_minus_sign:                                                  | Configuration to override the default retry behavior of the client. |
 
 ### Response
 
@@ -141,15 +140,13 @@ Update an evaluation run
 ### Example Usage
 
 ```python
-import honeyhive
-from honeyhive.models import components
+from honeyhive import HoneyHive
 
-s = honeyhive.HoneyHive(
+s = HoneyHive(
     bearer_auth="<YOUR_BEARER_TOKEN_HERE>",
 )
 
-
-res = s.experiments.update_run(run_id='<value>', update_run_request=components.UpdateRunRequest())
+res = s.experiments.update_run(run_id="<id>", update_run_request={})
 
 if res.update_run_response is not None:
     # handle response
@@ -163,6 +160,7 @@ if res.update_run_response is not None:
 | -------------------------------------------------------------------------- | -------------------------------------------------------------------------- | -------------------------------------------------------------------------- | -------------------------------------------------------------------------- |
 | `run_id`                                                                   | *str*                                                                      | :heavy_check_mark:                                                         | N/A                                                                        |
 | `update_run_request`                                                       | [components.UpdateRunRequest](../../models/components/updaterunrequest.md) | :heavy_check_mark:                                                         | N/A                                                                        |
+| `retries`                                                                  | [Optional[utils.RetryConfig]](../../models/utils/retryconfig.md)           | :heavy_minus_sign:                                                         | Configuration to override the default retry behavior of the client.        |
 
 ### Response
 
@@ -181,14 +179,13 @@ Delete an evaluation run
 ### Example Usage
 
 ```python
-import honeyhive
+from honeyhive import HoneyHive
 
-s = honeyhive.HoneyHive(
+s = HoneyHive(
     bearer_auth="<YOUR_BEARER_TOKEN_HERE>",
 )
 
-
-res = s.experiments.delete_run(run_id='<value>')
+res = s.experiments.delete_run(run_id="<id>")
 
 if res.delete_run_response is not None:
     # handle response
@@ -198,9 +195,10 @@ if res.delete_run_response is not None:
 
 ### Parameters
 
-| Parameter          | Type               | Required           | Description        |
-| ------------------ | ------------------ | ------------------ | ------------------ |
-| `run_id`           | *str*              | :heavy_check_mark: | N/A                |
+| Parameter                                                           | Type                                                                | Required                                                            | Description                                                         |
+| ------------------------------------------------------------------- | ------------------------------------------------------------------- | ------------------------------------------------------------------- | ------------------------------------------------------------------- |
+| `run_id`                                                            | *str*                                                               | :heavy_check_mark:                                                  | N/A                                                                 |
+| `retries`                                                           | [Optional[utils.RetryConfig]](../../models/utils/retryconfig.md)    | :heavy_minus_sign:                                                  | Configuration to override the default retry behavior of the client. |
 
 ### Response
 
@@ -219,14 +217,13 @@ Retrieve experiment result
 ### Example Usage
 
 ```python
-import honeyhive
+from honeyhive import HoneyHive
 
-s = honeyhive.HoneyHive(
+s = HoneyHive(
     bearer_auth="<YOUR_BEARER_TOKEN_HERE>",
 )
 
-
-res = s.experiments.get_experiment_result(run_id='<id>', project_id='<id>')
+res = s.experiments.get_experiment_result(run_id="<id>", project_id="<id>")
 
 if res.experiment_result_response is not None:
     # handle response
@@ -241,6 +238,7 @@ if res.experiment_result_response is not None:
 | `run_id`                                                                               | *str*                                                                                  | :heavy_check_mark:                                                                     | N/A                                                                                    |
 | `project_id`                                                                           | *str*                                                                                  | :heavy_check_mark:                                                                     | N/A                                                                                    |
 | `aggregate_function`                                                                   | [Optional[operations.AggregateFunction]](../../models/operations/aggregatefunction.md) | :heavy_minus_sign:                                                                     | N/A                                                                                    |
+| `retries`                                                                              | [Optional[utils.RetryConfig]](../../models/utils/retryconfig.md)                       | :heavy_minus_sign:                                                                     | Configuration to override the default retry behavior of the client.                    |
 
 ### Response
 
@@ -259,14 +257,13 @@ Retrieve experiment comparison
 ### Example Usage
 
 ```python
-import honeyhive
+from honeyhive import HoneyHive
 
-s = honeyhive.HoneyHive(
+s = HoneyHive(
     bearer_auth="<YOUR_BEARER_TOKEN_HERE>",
 )
 
-
-res = s.experiments.get_experiment_comparison(run_id_1='<value>', run_id_2='<value>', project_id='<id>')
+res = s.experiments.get_experiment_comparison(run_id_1="<value>", run_id_2="<value>", project_id="<id>")
 
 if res.experiment_comparison_response is not None:
     # handle response
@@ -282,6 +279,7 @@ if res.experiment_comparison_response is not None:
 | `run_id_2`                                                                                                 | *str*                                                                                                      | :heavy_check_mark:                                                                                         | N/A                                                                                                        |
 | `project_id`                                                                                               | *str*                                                                                                      | :heavy_check_mark:                                                                                         | N/A                                                                                                        |
 | `aggregate_function`                                                                                       | [Optional[operations.QueryParamAggregateFunction]](../../models/operations/queryparamaggregatefunction.md) | :heavy_minus_sign:                                                                                         | N/A                                                                                                        |
+| `retries`                                                                                                  | [Optional[utils.RetryConfig]](../../models/utils/retryconfig.md)                                           | :heavy_minus_sign:                                                                                         | Configuration to override the default retry behavior of the client.                                        |
 
 ### Response
 

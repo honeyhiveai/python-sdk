@@ -10,8 +10,10 @@ targets:
     honeyhive:
         target: python
         source: my-source
-        codeSamples:
-            output: codeSamples.yaml
         publish:
             pypi:
                 token: $pypi_token
+        codeSamples:
+            output: codeSamples.yaml
+            registry:
+                location: registry.speakeasyapi.dev/honey-hive/honeyhive-jxo/my-source-python-code-samples

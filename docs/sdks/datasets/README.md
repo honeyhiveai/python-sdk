@@ -18,14 +18,13 @@ Get datasets
 ### Example Usage
 
 ```python
-import honeyhive
+from honeyhive import HoneyHive
 
-s = honeyhive.HoneyHive(
+s = HoneyHive(
     bearer_auth="<YOUR_BEARER_TOKEN_HERE>",
 )
 
-
-res = s.datasets.get_datasets(project='<value>')
+res = s.datasets.get_datasets(project="<value>")
 
 if res.object is not None:
     # handle response
@@ -40,6 +39,7 @@ if res.object is not None:
 | `project`                                                                        | *str*                                                                            | :heavy_check_mark:                                                               | Project Name associated with the datasets like `New Project`                     |
 | `type`                                                                           | [Optional[operations.Type]](../../models/operations/type.md)                     | :heavy_minus_sign:                                                               | Type of the dataset - "evaluation" or "fine-tuning"                              |
 | `dataset_id`                                                                     | *Optional[str]*                                                                  | :heavy_minus_sign:                                                               | Unique dataset ID for filtering specific dataset like `663876ec4611c47f4970f0c3` |
+| `retries`                                                                        | [Optional[utils.RetryConfig]](../../models/utils/retryconfig.md)                 | :heavy_minus_sign:                                                               | Configuration to override the default retry behavior of the client.              |
 
 ### Response
 
@@ -58,31 +58,30 @@ Create a dataset
 ### Example Usage
 
 ```python
-import honeyhive
+from honeyhive import HoneyHive
 from honeyhive.models import components
 
-s = honeyhive.HoneyHive(
+s = HoneyHive(
     bearer_auth="<YOUR_BEARER_TOKEN_HERE>",
 )
 
-
-res = s.datasets.create_dataset(request=components.CreateDatasetRequest(
-    project='New Project',
-    name='test-dataset',
-    description='A test dataset',
-    type=components.CreateDatasetRequestType.EVALUATION,
-    datapoints=[
-        '66369748b5773befbdc661e2',
+res = s.datasets.create_dataset(request={
+    "project": "New Project",
+    "name": "test-dataset",
+    "description": "A test dataset",
+    "type": components.CreateDatasetRequestType.EVALUATION,
+    "datapoints": [
+        "66369748b5773befbdc661e2",
     ],
-    linked_evals=[
-        '<value>',
+    "linked_evals": [
+        "<value>",
     ],
-    saved=False,
-    pipeline_type=components.CreateDatasetRequestPipelineType.EVENT,
-    metadata={
-        'source': 'dev',
+    "saved": False,
+    "pipeline_type": components.CreateDatasetRequestPipelineType.EVENT,
+    "metadata": {
+        "source": "dev",
     },
-))
+})
 
 if res.object is not None:
     # handle response
@@ -95,6 +94,7 @@ if res.object is not None:
 | Parameter                                                                          | Type                                                                               | Required                                                                           | Description                                                                        |
 | ---------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------- |
 | `request`                                                                          | [components.CreateDatasetRequest](../../models/components/createdatasetrequest.md) | :heavy_check_mark:                                                                 | The request object to use for the request.                                         |
+| `retries`                                                                          | [Optional[utils.RetryConfig]](../../models/utils/retryconfig.md)                   | :heavy_minus_sign:                                                                 | Configuration to override the default retry behavior of the client.                |
 
 ### Response
 
@@ -113,29 +113,27 @@ Update a dataset
 ### Example Usage
 
 ```python
-import honeyhive
-from honeyhive.models import components
+from honeyhive import HoneyHive
 
-s = honeyhive.HoneyHive(
+s = HoneyHive(
     bearer_auth="<YOUR_BEARER_TOKEN_HERE>",
 )
 
-
-res = s.datasets.update_dataset(request=components.DatasetUpdate(
-    dataset_id='663876ec4611c47f4970f0c3',
-    name='new-dataset-name',
-    description='An updated dataset description',
-    datapoints=[
-        '66369748b5773befbdc661e',
+res = s.datasets.update_dataset(request={
+    "dataset_id": "663876ec4611c47f4970f0c3",
+    "name": "new-dataset-name",
+    "description": "An updated dataset description",
+    "datapoints": [
+        "66369748b5773befbdc661e",
     ],
-    linked_evals=[
-        '66369748b5773befbdasdk1',
+    "linked_evals": [
+        "66369748b5773befbdasdk1",
     ],
-    metadata={
-        'source': 'prod',
-        'updated': True,
+    "metadata": {
+        "updated": True,
+        "source": "prod",
     },
-))
+})
 
 if res is not None:
     # handle response
@@ -148,6 +146,7 @@ if res is not None:
 | Parameter                                                            | Type                                                                 | Required                                                             | Description                                                          |
 | -------------------------------------------------------------------- | -------------------------------------------------------------------- | -------------------------------------------------------------------- | -------------------------------------------------------------------- |
 | `request`                                                            | [components.DatasetUpdate](../../models/components/datasetupdate.md) | :heavy_check_mark:                                                   | The request object to use for the request.                           |
+| `retries`                                                            | [Optional[utils.RetryConfig]](../../models/utils/retryconfig.md)     | :heavy_minus_sign:                                                   | Configuration to override the default retry behavior of the client.  |
 
 ### Response
 
@@ -166,14 +165,13 @@ Delete a dataset
 ### Example Usage
 
 ```python
-import honeyhive
+from honeyhive import HoneyHive
 
-s = honeyhive.HoneyHive(
+s = HoneyHive(
     bearer_auth="<YOUR_BEARER_TOKEN_HERE>",
 )
 
-
-res = s.datasets.delete_dataset(dataset_id='<value>')
+res = s.datasets.delete_dataset(dataset_id="<id>")
 
 if res is not None:
     # handle response
@@ -186,6 +184,7 @@ if res is not None:
 | Parameter                                                                          | Type                                                                               | Required                                                                           | Description                                                                        |
 | ---------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------- |
 | `dataset_id`                                                                       | *str*                                                                              | :heavy_check_mark:                                                                 | The unique identifier of the dataset to be deleted like `663876ec4611c47f4970f0c3` |
+| `retries`                                                                          | [Optional[utils.RetryConfig]](../../models/utils/retryconfig.md)                   | :heavy_minus_sign:                                                                 | Configuration to override the default retry behavior of the client.                |
 
 ### Response
 
@@ -204,36 +203,34 @@ Add datapoints to a dataset
 ### Example Usage
 
 ```python
-import honeyhive
-from honeyhive.models import operations
+from honeyhive import HoneyHive
 
-s = honeyhive.HoneyHive(
+s = HoneyHive(
     bearer_auth="<YOUR_BEARER_TOKEN_HERE>",
 )
 
-
-res = s.datasets.add_datapoints(dataset_id='<value>', request_body=operations.AddDatapointsRequestBody(
-    project='<value>',
-    data=[
+res = s.datasets.add_datapoints(dataset_id="<id>", request_body={
+    "project": "<value>",
+    "data": [
         {
-            'key': '<value>',
-            'key1': '<value>',
-            'key2': '<value>',
+            "key": "<value>",
+            "key1": "<value>",
+            "key2": "<value>",
         },
     ],
-    mapping=operations.Mapping(
-        inputs=[
-            '<value>',
+    "mapping": {
+        "inputs": [
+            "<value>",
         ],
-        ground_truth=[
-            '<value>',
-            '<value>',
+        "ground_truth": [
+            "<value>",
+            "<value>",
         ],
-        history=[
-            '<value>',
+        "history": [
+            "<value>",
         ],
-    ),
-))
+    },
+})
 
 if res.object is not None:
     # handle response
@@ -247,6 +244,7 @@ if res.object is not None:
 | ------------------------------------------------------------------------------------------ | ------------------------------------------------------------------------------------------ | ------------------------------------------------------------------------------------------ | ------------------------------------------------------------------------------------------ |
 | `dataset_id`                                                                               | *str*                                                                                      | :heavy_check_mark:                                                                         | The unique identifier of the dataset to add datapoints to like  `663876ec4611c47f4970f0c3` |
 | `request_body`                                                                             | [operations.AddDatapointsRequestBody](../../models/operations/adddatapointsrequestbody.md) | :heavy_check_mark:                                                                         | N/A                                                                                        |
+| `retries`                                                                                  | [Optional[utils.RetryConfig]](../../models/utils/retryconfig.md)                           | :heavy_minus_sign:                                                                         | Configuration to override the default retry behavior of the client.                        |
 
 ### Response
 

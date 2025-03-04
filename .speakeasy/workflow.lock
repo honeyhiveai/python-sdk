@@ -2,16 +2,18 @@ speakeasyVersion: 1.405.6
 sources:
     my-source:
         sourceNamespace: my-source
-        sourceRevisionDigest: sha256:7524813c2a33ad3bea32df61ceb2ee0926d108647381388ccbe589e6e6314f74
-        sourceBlobDigest: sha256:a48266be84f89290773362273a31b3bb1c5bee57eaa8cfa54d32106800fa4efa
+        sourceRevisionDigest: sha256:83bd859617b8331618ecead8903de80da56b3c1a8da543f9cbef74ba98816456
+        sourceBlobDigest: sha256:8d45e0e8f61e57871389b0833527c508f668a956b683a7fe265717754ec0b734
         tags:
             - latest
 targets:
     honeyhive:
         source: my-source
         sourceNamespace: my-source
-        sourceRevisionDigest: sha256:7524813c2a33ad3bea32df61ceb2ee0926d108647381388ccbe589e6e6314f74
-        sourceBlobDigest: sha256:a48266be84f89290773362273a31b3bb1c5bee57eaa8cfa54d32106800fa4efa
+        sourceRevisionDigest: sha256:83bd859617b8331618ecead8903de80da56b3c1a8da543f9cbef74ba98816456
+        sourceBlobDigest: sha256:8d45e0e8f61e57871389b0833527c508f668a956b683a7fe265717754ec0b734
+        codeSamplesNamespace: my-source-python-code-samples
+        codeSamplesRevisionDigest: sha256:3fe86b9e3a5105df6165d1aecbf0ea35d07436c931b82f383e6596490cfb57be
 workflow:
     workflowVersion: 1.0.0
     speakeasyVersion: latest
@@ -30,3 +32,5 @@ workflow:
                     token: $pypi_token
             codeSamples:
                 output: codeSamples.yaml
+                registry:
+                    location: registry.speakeasyapi.dev/honey-hive/honeyhive-jxo/my-source-python-code-samples

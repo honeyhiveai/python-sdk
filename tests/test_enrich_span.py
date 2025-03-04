@@ -70,4 +70,4 @@ def test_enrich_span():
 
 test_enrich_span()
 
-HoneyHiveTracer.flush()
+# HoneyHiveTracer.flush()

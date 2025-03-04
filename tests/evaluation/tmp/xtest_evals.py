@@ -1,4 +1,4 @@
-from honeyhive import evaluate, config
+from honeyhive import evaluate, config, evaluator, trace
 
 import openai
 import json

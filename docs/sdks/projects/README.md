@@ -17,12 +17,11 @@ Get a list of projects
 ### Example Usage
 
 ```python
-import honeyhive
+from honeyhive import HoneyHive
 
-s = honeyhive.HoneyHive(
+s = HoneyHive(
     bearer_auth="<YOUR_BEARER_TOKEN_HERE>",
 )
-
 
 res = s.projects.get_projects()
 
@@ -34,9 +33,10 @@ if res.projects is not None:
 
 ### Parameters
 
-| Parameter          | Type               | Required           | Description        |
-| ------------------ | ------------------ | ------------------ | ------------------ |
-| `name`             | *Optional[str]*    | :heavy_minus_sign: | N/A                |
+| Parameter                                                           | Type                                                                | Required                                                            | Description                                                         |
+| ------------------------------------------------------------------- | ------------------------------------------------------------------- | ------------------------------------------------------------------- | ------------------------------------------------------------------- |
+| `name`                                                              | *Optional[str]*                                                     | :heavy_minus_sign:                                                  | N/A                                                                 |
+| `retries`                                                           | [Optional[utils.RetryConfig]](../../models/utils/retryconfig.md)    | :heavy_minus_sign:                                                  | Configuration to override the default retry behavior of the client. |
 
 ### Response
 
@@ -55,17 +55,15 @@ Create a new project
 ### Example Usage
 
 ```python
-import honeyhive
-from honeyhive.models import components
+from honeyhive import HoneyHive
 
-s = honeyhive.HoneyHive(
+s = HoneyHive(
     bearer_auth="<YOUR_BEARER_TOKEN_HERE>",
 )
 
-
-res = s.projects.create_project(request=components.CreateProjectRequest(
-    name='<value>',
-))
+res = s.projects.create_project(request={
+    "name": "<value>",
+})
 
 if res.project is not None:
     # handle response
@@ -78,6 +76,7 @@ if res.project is not None:
 | Parameter                                                                          | Type                                                                               | Required                                                                           | Description                                                                        |
 | ---------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------- |
 | `request`                                                                          | [components.CreateProjectRequest](../../models/components/createprojectrequest.md) | :heavy_check_mark:                                                                 | The request object to use for the request.                                         |
+| `retries`                                                                          | [Optional[utils.RetryConfig]](../../models/utils/retryconfig.md)                   | :heavy_minus_sign:                                                                 | Configuration to override the default retry behavior of the client.                |
 
 ### Response
 
@@ -96,17 +95,15 @@ Update an existing project
 ### Example Usage
 
 ```python
-import honeyhive
-from honeyhive.models import components
+from honeyhive import HoneyHive
 
-s = honeyhive.HoneyHive(
+s = HoneyHive(
     bearer_auth="<YOUR_BEARER_TOKEN_HERE>",
 )
 
-
-res = s.projects.update_project(request=components.UpdateProjectRequest(
-    project_id='<value>',
-))
+res = s.projects.update_project(request={
+    "project_id": "<id>",
+})
 
 if res is not None:
     # handle response
@@ -119,6 +116,7 @@ if res is not None:
 | Parameter                                                                          | Type                                                                               | Required                                                                           | Description                                                                        |
 | ---------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------- |
 | `request`                                                                          | [components.UpdateProjectRequest](../../models/components/updateprojectrequest.md) | :heavy_check_mark:                                                                 | The request object to use for the request.                                         |
+| `retries`                                                                          | [Optional[utils.RetryConfig]](../../models/utils/retryconfig.md)                   | :heavy_minus_sign:                                                                 | Configuration to override the default retry behavior of the client.                |
 
 ### Response
 
@@ -137,14 +135,13 @@ Delete a project
 ### Example Usage
 
 ```python
-import honeyhive
+from honeyhive import HoneyHive
 
-s = honeyhive.HoneyHive(
+s = HoneyHive(
     bearer_auth="<YOUR_BEARER_TOKEN_HERE>",
 )
 
-
-res = s.projects.delete_project(name='<value>')
+res = s.projects.delete_project(name="<value>")
 
 if res is not None:
     # handle response
@@ -154,9 +151,10 @@ if res is not None:
 
 ### Parameters
 
-| Parameter          | Type               | Required           | Description        |
-| ------------------ | ------------------ | ------------------ | ------------------ |
-| `name`             | *str*              | :heavy_check_mark: | N/A                |
+| Parameter                                                           | Type                                                                | Required                                                            | Description                                                         |
+| ------------------------------------------------------------------- | ------------------------------------------------------------------- | ------------------------------------------------------------------- | ------------------------------------------------------------------- |
+| `name`                                                              | *str*                                                               | :heavy_check_mark:                                                  | N/A                                                                 |
+| `retries`                                                           | [Optional[utils.RetryConfig]](../../models/utils/retryconfig.md)    | :heavy_minus_sign:                                                  | Configuration to override the default retry behavior of the client. |
 
 ### Response
 
