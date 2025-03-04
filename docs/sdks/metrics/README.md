@@ -17,14 +17,13 @@ Retrieve a list of all metrics
 ### Example Usage
 
 ```python
-import honeyhive
+from honeyhive import HoneyHive
 
-s = honeyhive.HoneyHive(
+s = HoneyHive(
     bearer_auth="<YOUR_BEARER_TOKEN_HERE>",
 )
 
-
-res = s.metrics.get_metrics(project_name='<value>')
+res = s.metrics.get_metrics(project_name="<value>")
 
 if res.metrics is not None:
     # handle response
@@ -34,9 +33,10 @@ if res.metrics is not None:
 
 ### Parameters
 
-| Parameter                            | Type                                 | Required                             | Description                          |
-| ------------------------------------ | ------------------------------------ | ------------------------------------ | ------------------------------------ |
-| `project_name`                       | *str*                                | :heavy_check_mark:                   | Project name associated with metrics |
+| Parameter                                                           | Type                                                                | Required                                                            | Description                                                         |
+| ------------------------------------------------------------------- | ------------------------------------------------------------------- | ------------------------------------------------------------------- | ------------------------------------------------------------------- |
+| `project_name`                                                      | *str*                                                               | :heavy_check_mark:                                                  | Project name associated with metrics                                |
+| `retries`                                                           | [Optional[utils.RetryConfig]](../../models/utils/retryconfig.md)    | :heavy_minus_sign:                                                  | Configuration to override the default retry behavior of the client. |
 
 ### Response
 
@@ -55,21 +55,20 @@ Add a new metric
 ### Example Usage
 
 ```python
-import honeyhive
+from honeyhive import HoneyHive
 from honeyhive.models import components
 
-s = honeyhive.HoneyHive(
+s = HoneyHive(
     bearer_auth="<YOUR_BEARER_TOKEN_HERE>",
 )
 
-
-res = s.metrics.create_metric(request=components.Metric(
-    name='<value>',
-    task='<value>',
-    type=components.MetricType.MODEL,
-    description='Quality-focused next generation focus group',
-    return_type=components.ReturnType.BOOLEAN,
-))
+res = s.metrics.create_metric(request={
+    "name": "<value>",
+    "task": "<value>",
+    "type": components.MetricType.MODEL,
+    "description": "ack oh faithfully annually bloom ha because instead",
+    "return_type": components.ReturnType.BOOLEAN,
+})
 
 if res is not None:
     # handle response
@@ -79,9 +78,10 @@ if res is not None:
 
 ### Parameters
 
-| Parameter                                              | Type                                                   | Required                                               | Description                                            |
-| ------------------------------------------------------ | ------------------------------------------------------ | ------------------------------------------------------ | ------------------------------------------------------ |
-| `request`                                              | [components.Metric](../../models/components/metric.md) | :heavy_check_mark:                                     | The request object to use for the request.             |
+| Parameter                                                           | Type                                                                | Required                                                            | Description                                                         |
+| ------------------------------------------------------------------- | ------------------------------------------------------------------- | ------------------------------------------------------------------- | ------------------------------------------------------------------- |
+| `request`                                                           | [components.Metric](../../models/components/metric.md)              | :heavy_check_mark:                                                  | The request object to use for the request.                          |
+| `retries`                                                           | [Optional[utils.RetryConfig]](../../models/utils/retryconfig.md)    | :heavy_minus_sign:                                                  | Configuration to override the default retry behavior of the client. |
 
 ### Response
 
@@ -100,17 +100,15 @@ Edit a metric
 ### Example Usage
 
 ```python
-import honeyhive
-from honeyhive.models import components
+from honeyhive import HoneyHive
 
-s = honeyhive.HoneyHive(
+s = HoneyHive(
     bearer_auth="<YOUR_BEARER_TOKEN_HERE>",
 )
 
-
-res = s.metrics.update_metric(request=components.MetricEdit(
-    metric_id='<value>',
-))
+res = s.metrics.update_metric(request={
+    "metric_id": "<id>",
+})
 
 if res is not None:
     # handle response
@@ -120,9 +118,10 @@ if res is not None:
 
 ### Parameters
 
-| Parameter                                                      | Type                                                           | Required                                                       | Description                                                    |
-| -------------------------------------------------------------- | -------------------------------------------------------------- | -------------------------------------------------------------- | -------------------------------------------------------------- |
-| `request`                                                      | [components.MetricEdit](../../models/components/metricedit.md) | :heavy_check_mark:                                             | The request object to use for the request.                     |
+| Parameter                                                           | Type                                                                | Required                                                            | Description                                                         |
+| ------------------------------------------------------------------- | ------------------------------------------------------------------- | ------------------------------------------------------------------- | ------------------------------------------------------------------- |
+| `request`                                                           | [components.MetricEdit](../../models/components/metricedit.md)      | :heavy_check_mark:                                                  | The request object to use for the request.                          |
+| `retries`                                                           | [Optional[utils.RetryConfig]](../../models/utils/retryconfig.md)    | :heavy_minus_sign:                                                  | Configuration to override the default retry behavior of the client. |
 
 ### Response
 
@@ -141,14 +140,13 @@ Remove a metric
 ### Example Usage
 
 ```python
-import honeyhive
+from honeyhive import HoneyHive
 
-s = honeyhive.HoneyHive(
+s = HoneyHive(
     bearer_auth="<YOUR_BEARER_TOKEN_HERE>",
 )
 
-
-res = s.metrics.delete_metric(metric_id='<value>')
+res = s.metrics.delete_metric(metric_id="<id>")
 
 if res is not None:
     # handle response
@@ -158,9 +156,10 @@ if res is not None:
 
 ### Parameters
 
-| Parameter          | Type               | Required           | Description        |
-| ------------------ | ------------------ | ------------------ | ------------------ |
-| `metric_id`        | *str*              | :heavy_check_mark: | N/A                |
+| Parameter                                                           | Type                                                                | Required                                                            | Description                                                         |
+| ------------------------------------------------------------------- | ------------------------------------------------------------------- | ------------------------------------------------------------------- | ------------------------------------------------------------------- |
+| `metric_id`                                                         | *str*                                                               | :heavy_check_mark:                                                  | N/A                                                                 |
+| `retries`                                                           | [Optional[utils.RetryConfig]](../../models/utils/retryconfig.md)    | :heavy_minus_sign:                                                  | Configuration to override the default retry behavior of the client. |
 
 ### Response
 

@@ -17,12 +17,11 @@ Retrieve a list of tools
 ### Example Usage
 
 ```python
-import honeyhive
+from honeyhive import HoneyHive
 
-s = honeyhive.HoneyHive(
+s = HoneyHive(
     bearer_auth="<YOUR_BEARER_TOKEN_HERE>",
 )
-
 
 res = s.tools.get_tools()
 
@@ -31,6 +30,12 @@ if res.tools is not None:
     pass
 
 ```
+
+### Parameters
+
+| Parameter                                                           | Type                                                                | Required                                                            | Description                                                         |
+| ------------------------------------------------------------------- | ------------------------------------------------------------------- | ------------------------------------------------------------------- | ------------------------------------------------------------------- |
+| `retries`                                                           | [Optional[utils.RetryConfig]](../../models/utils/retryconfig.md)    | :heavy_minus_sign:                                                  | Configuration to override the default retry behavior of the client. |
 
 ### Response
 
@@ -49,23 +54,22 @@ Create a new tool
 ### Example Usage
 
 ```python
-import honeyhive
+from honeyhive import HoneyHive
 from honeyhive.models import components
 
-s = honeyhive.HoneyHive(
+s = HoneyHive(
     bearer_auth="<YOUR_BEARER_TOKEN_HERE>",
 )
 
-
-res = s.tools.create_tool(request=components.CreateToolRequest(
-    task='<value>',
-    name='<value>',
-    parameters={
-        'key': '<value>',
-        'key1': '<value>',
+res = s.tools.create_tool(request={
+    "task": "<value>",
+    "name": "<value>",
+    "parameters": {
+        "key": "<value>",
+        "key1": "<value>",
     },
-    type=components.CreateToolRequestType.FUNCTION,
-))
+    "type": components.CreateToolRequestType.FUNCTION,
+})
 
 if res.object is not None:
     # handle response
@@ -78,6 +82,7 @@ if res.object is not None:
 | Parameter                                                                    | Type                                                                         | Required                                                                     | Description                                                                  |
 | ---------------------------------------------------------------------------- | ---------------------------------------------------------------------------- | ---------------------------------------------------------------------------- | ---------------------------------------------------------------------------- |
 | `request`                                                                    | [components.CreateToolRequest](../../models/components/createtoolrequest.md) | :heavy_check_mark:                                                           | The request object to use for the request.                                   |
+| `retries`                                                                    | [Optional[utils.RetryConfig]](../../models/utils/retryconfig.md)             | :heavy_minus_sign:                                                           | Configuration to override the default retry behavior of the client.          |
 
 ### Response
 
@@ -96,21 +101,19 @@ Update an existing tool
 ### Example Usage
 
 ```python
-import honeyhive
-from honeyhive.models import components
+from honeyhive import HoneyHive
 
-s = honeyhive.HoneyHive(
+s = HoneyHive(
     bearer_auth="<YOUR_BEARER_TOKEN_HERE>",
 )
 
-
-res = s.tools.update_tool(request=components.UpdateToolRequest(
-    id='<id>',
-    name='<value>',
-    parameters={
+res = s.tools.update_tool(request={
+    "id": "<id>",
+    "name": "<value>",
+    "parameters": {
 
     },
-))
+})
 
 if res is not None:
     # handle response
@@ -123,6 +126,7 @@ if res is not None:
 | Parameter                                                                    | Type                                                                         | Required                                                                     | Description                                                                  |
 | ---------------------------------------------------------------------------- | ---------------------------------------------------------------------------- | ---------------------------------------------------------------------------- | ---------------------------------------------------------------------------- |
 | `request`                                                                    | [components.UpdateToolRequest](../../models/components/updatetoolrequest.md) | :heavy_check_mark:                                                           | The request object to use for the request.                                   |
+| `retries`                                                                    | [Optional[utils.RetryConfig]](../../models/utils/retryconfig.md)             | :heavy_minus_sign:                                                           | Configuration to override the default retry behavior of the client.          |
 
 ### Response
 
@@ -141,14 +145,13 @@ Delete a tool
 ### Example Usage
 
 ```python
-import honeyhive
+from honeyhive import HoneyHive
 
-s = honeyhive.HoneyHive(
+s = HoneyHive(
     bearer_auth="<YOUR_BEARER_TOKEN_HERE>",
 )
 
-
-res = s.tools.delete_tool(function_id='<value>')
+res = s.tools.delete_tool(function_id="<id>")
 
 if res is not None:
     # handle response
@@ -158,9 +161,10 @@ if res is not None:
 
 ### Parameters
 
-| Parameter          | Type               | Required           | Description        |
-| ------------------ | ------------------ | ------------------ | ------------------ |
-| `function_id`      | *str*              | :heavy_check_mark: | N/A                |
+| Parameter                                                           | Type                                                                | Required                                                            | Description                                                         |
+| ------------------------------------------------------------------- | ------------------------------------------------------------------- | ------------------------------------------------------------------- | ------------------------------------------------------------------- |
+| `function_id`                                                       | *str*                                                               | :heavy_check_mark:                                                  | N/A                                                                 |
+| `retries`                                                           | [Optional[utils.RetryConfig]](../../models/utils/retryconfig.md)    | :heavy_minus_sign:                                                  | Configuration to override the default retry behavior of the client. |
 
 ### Response
 

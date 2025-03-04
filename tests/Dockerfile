@@ -15,7 +15,21 @@ WORKDIR /app
 # Copy the entire repository into the container
 COPY . /app
 
-RUN pip install --no-cache-dir -r tests/requirements.txt
-RUN pip install --no-cache-dir -e .
+# Install poetry
+RUN pip install poetry
 
-CMD ["sh", "-c", "pytest -rA tests/test_hh_tracer.py"]
+ENV POETRY_NO_INTERACTION=1 \
+    POETRY_VIRTUALENVS_IN_PROJECT=1 \
+    POETRY_VIRTUALENVS_CREATE=1 \
+    POETRY_CACHE_DIR=/tmp/poetry_cache
+
+# COPY pyproject.toml poetry.lock ./
+
+RUN poetry install --without dev --no-root && rm -rf $POETRY_CACHE_DIR
+RUN poetry add $(cat tests/requirements.txt)
+
+ENV VIRTUAL_ENV=/app/.venv \
+    PATH="/app/.venv/bin:$PATH"
+
+# Run tests
+# CMD ["poetry", "run", "pytest -rA tests/test_hh_tracer.py"]
