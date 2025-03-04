@@ -58,7 +58,7 @@ class DatasetLoader:
                 return dataset.object.testcases[0]
         except Exception:
             raise RuntimeError(
-                f"No dataset found with id - {dataset_id} for project - {project}"
+                f"No dataset found with id - {dataset_id} for project - {project}. Please use the correct dataset id and project name."
             )
 
 
@@ -205,38 +205,6 @@ class Evaluation:
             )
         except Exception as e:
             print(f"Error adding trace metadata: {e}")
-    
-    # def _enrich_sessions(
-    #     self,
-    #     results: List[Dict[str, Any]],
-    # ):
-    #     """Private function to enrich the session data post flow completion."""
-    #     try:
-    #         for idx, result in enumerate(results):
-    #             tracing_metadata = {"run_id": self.eval_run.run_id}
-    #             if self.hh_dataset:
-    #                 tracing_metadata["datapoint_id"] = self.hh_dataset.datapoints[idx]
-    #             tracing_metadata["dataset_id"] = self.hh_dataset_id
-
-    #             if self.external_dataset_id:
-    #                 tracing_metadata["datapoint_id"] = Evaluation.generate_hash(
-    #                     json.dumps(self.dataset[idx])
-    #                 )
-    #                 tracing_metadata["dataset_id"] = self.external_dataset_id
-
-    #             if not isinstance(result['output'], dict):
-    #                 result['output'] = {"output": result['output']}
-
-    #             tracing_metadata.update(result['metadata'])
-
-    #             enrich_session(
-    #                 session_id=self.evaluation_session_ids[idx],
-    #                 metadata=tracing_metadata,
-    #                 outputs=result['output'],
-    #                 metrics=result['metrics'],
-    #             )
-    #     except Exception as e:
-    #         print(f"Error adding trace metadata: {e}")
 
     def _get_evaluator_metadata(self, eval_func, evaluator_name: str) -> dict:
         """Get metadata for an evaluator if it's decorated."""
@@ -556,13 +524,6 @@ class Evaluation:
 
         end_time = time.time()
         #########################################################
-
-        # enrich the sessions
-        # Add trace metadata, outputs, and metrics
-        # try:
-        #     self._enrich_sessions(results)
-        # except Exception as e:
-        #     print(f"Error adding trace metadata: {e}")
 
         # Process results
         self.eval_result.stats = {
