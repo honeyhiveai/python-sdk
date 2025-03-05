@@ -110,18 +110,9 @@ class HoneyHiveTracer:
             
             # TODO: migrate to log-based session initialization
             # self.session_id = str(uuid.uuid4()).upper()
-            try:
-                self.session_id = HoneyHiveTracer.__start_session(
-                    api_key, project, session_name, source, server_url, inputs
-                )
-            except errors.SDKError as e:
-                try:
-                    error_data = json.loads(e.raw_response.text)
-                    error_message = error_data.get('error', 'Unknown error')
-                    print(f"Error starting session: {error_message}")
-                except json.JSONDecodeError:
-                    print(f"Error starting session: {e.raw_response.text}")
-
+            self.session_id = HoneyHiveTracer.__start_session(
+                api_key, project, session_name, source, server_url, inputs
+            )
 
             # baggage
             self.baggage = BaggageDict().update({
@@ -204,11 +195,16 @@ class HoneyHiveTracer:
             #     })
             # __session_init()
             # ------------------------------------------------------------
+        except errors.SDKError as e:
+            # Raise SDK exceptions as-is but without traceback
+            print(f"\033[91mHoneyHive SDK Error: {str(e)}\033[0m")
         except:
+            # Log other exceptions if verbose is enabled
             if HoneyHiveTracer.verbose:
                 print_exc()
             else:
                 pass
+
 
     # TODO: remove this, legacy DX
     @staticmethod
@@ -286,7 +282,10 @@ class HoneyHiveTracer:
 
     @staticmethod
     def flush():
-        TracerWrapper().flush()
+        if HoneyHiveTracer._is_traceloop_initialized:
+            TracerWrapper().flush()
+        else:
+            print("\033[91mCould not flush: HoneyHiveTracer not initialized successfully\033[0m")
 
     def enrich_session(
         self,
@@ -322,7 +321,10 @@ class HoneyHiveTracer:
         #         '_init_metadata': self._init_metadata
         #     })
         # __enrich_session()
-
+        if not HoneyHiveTracer._is_traceloop_initialized:
+            print("\033[91mCould not enrich session: HoneyHiveTracer not initialized successfully\033[0m")
+            return
+        
         session_id = session_id or self.session_id
         try:
             sdk = HoneyHive(bearer_auth=HoneyHiveTracer.api_key, server_url=HoneyHiveTracer.server_url)
@@ -361,6 +363,9 @@ def enrich_session(
     outputs=None,
     user_properties=None
 ):
+    if not HoneyHiveTracer._is_traceloop_initialized:
+        print("\033[91mCould not enrich session: HoneyHiveTracer not initialized successfully\033[0m")
+        return
     try:
         sdk = HoneyHive(bearer_auth=HoneyHiveTracer.api_key, server_url=HoneyHiveTracer.instance.server_url)
         if session_id is None and HoneyHiveTracer.instance is None:
