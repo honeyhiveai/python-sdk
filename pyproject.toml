@@ -1,6 +1,6 @@
 [tool.poetry]
-name = "Honeyhive"
-version = "0.2.33"
+name = "HoneyHive"
+version = "0.2.34"
 description = "The HoneyHive SDK for Python"
 authors = ["HoneyHive <support@honeyhive.ai>"]
 readme = "README.md"
