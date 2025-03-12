@@ -27,26 +27,75 @@ classifiers = [
 [virtualenvs]
 in-project = true
 
+############################################################
+# The "main" group provides a complete installation
+# uncompressed size = 145MB
+############################################################
 [tool.poetry.dependencies]
 python = ">=3.9,<4.0"
 eval-type-backport = "^0.2.0"
 httpx = "^0.27.0"
 jsonpath-python = "^1.0.6"
-pydantic = "~2.9.0"
+pydantic = "2.10.0"
 python-dateutil = "2.8.2"
 typing-inspect = "^0.9.0"
 requests = "^2.25.1"
 uplink = "^0.1.0"
-traceloop-sdk = ">=0.18.2,<=0.30"
 dataclasses-json = "^0.6.7"
-pyyaml = "^6.0.1"
+traceloop-sdk = ">=0.18.2,<=0.30"
 rich = "^13.9.4"
-openai = "^1.57.2"
+pyyaml = "^6.0.1"
+############################################################
+
+
+
+############################################################
+# The "lambda" group provides a minimal installation without traceloop
+# uncompressed size = 86MB
+############################################################
+[tool.poetry.group.lambda]
+optional = true
+[tool.poetry.group.lambda.dependencies]
+python = ">=3.9,<4.0"
+eval-type-backport = "^0.2.0"
+httpx = "^0.27.0"
+jsonpath-python = "^1.0.6"
+pydantic = "2.10.0"
+python-dateutil = "2.8.2"
+typing-inspect = "^0.9.0"
+requests = "^2.25.1"
+uplink = "^0.1.0"
+dataclasses-json = "^0.6.7"
+traceloop-sdk = ">=0.18.2,<=0.30"
+############################################################
+
+
+
+############################################################
+# The "core" group installs the SDK only without autotracing
+# uncompressed size = 37MB
+############################################################
+[tool.poetry.group.core]
+optional = true
+[tool.poetry.group.core.dependencies]
+python = ">=3.9,<4.0"
+eval-type-backport = "^0.2.0"
+httpx = "^0.27.0"
+jsonpath-python = "^1.0.6"
+pydantic = "2.10.0"
+python-dateutil = "2.8.2"
+typing-inspect = "^0.9.0"
+requests = "^2.25.1"
+uplink = "^0.1.0"
+dataclasses-json = "^0.6.7"
+############################################################
+
 
 [tool.poetry.group.dev.dependencies]
 mypy = "==1.10.1"
 pylint = "==3.2.3"
 types-python-dateutil = "^2.9.0.20240316"
+pytest = ">=8.1.1"
 
 [build-system]
 requires = ["poetry-core"]
@@ -70,15 +119,8 @@ ignore_missing_imports = true
 venvPath = "."
 venv = ".venv"
 
-# [tool.poetry.extras]
-# langchain = ["langchain>=0.0.251"]
-# llama_index = ["llama_index>=0.8.13"]
-# all = ["langchain>=0.0.251", "llama_index>=0.8.13"]
-
 [tool.poetry.urls]
 Documentation = "https://docs.honeyhive.ai/"
 
 [tool.poetry.scripts]
 honeyhive = "honeyhive.cli.__main__:main"
-
-
