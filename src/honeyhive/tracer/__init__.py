@@ -128,7 +128,7 @@ class HoneyHiveTracer:
                 "session_id": self.session_id,
                 "project": project,
                 "source": source,
-                "disable_http_tracing": disable_http_tracing,
+                "disable_http_tracing": str(disable_http_tracing).lower(),
             })
 
             # evaluation
