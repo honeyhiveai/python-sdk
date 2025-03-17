@@ -1,5 +1,4 @@
 import uuid
-import json
 from traceback import print_exc
 import os
 import sys
@@ -39,6 +38,8 @@ class HoneyHiveTracer:
         session_name=None,
         source=None,
         server_url=None,
+        session_id=None,
+        disable_http_tracing=False,
         disable_batch=False,
         verbose=False,
         inputs=None,
@@ -110,15 +111,24 @@ class HoneyHiveTracer:
             
             # TODO: migrate to log-based session initialization
             # self.session_id = str(uuid.uuid4()).upper()
-            self.session_id = HoneyHiveTracer.__start_session(
-                api_key, project, session_name, source, server_url, inputs
-            )
+            if session_id is None:
+                self.session_id = HoneyHiveTracer.__start_session(
+                    api_key, project, session_name, source, server_url, inputs
+                )
+            else:
+                # Validate that session_id is a valid UUID
+                try:
+                    uuid.UUID(session_id)
+                    self.session_id = session_id.lower()
+                except (ValueError, AttributeError, TypeError):
+                    raise errors.SDKError("session_id must be a valid UUID string.")
 
             # baggage
             self.baggage = BaggageDict().update({
                 "session_id": self.session_id,
                 "project": project,
                 "source": source,
+                "disable_http_tracing": disable_http_tracing,
             })
 
             # evaluation

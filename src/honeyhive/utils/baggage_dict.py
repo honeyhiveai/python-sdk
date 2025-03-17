@@ -9,6 +9,7 @@ class BaggageDict(dict):
         'run_id',
         'dataset_id',
         'datapoint_id',
+        'disable_http_tracing',
     ]
     
     class DefaultGetter:
