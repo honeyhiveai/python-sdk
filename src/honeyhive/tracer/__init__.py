@@ -3,6 +3,8 @@ from traceback import print_exc
 import os
 import sys
 import threading
+import io
+from contextlib import redirect_stdout
 
 from honeyhive.utils.telemetry import Telemetry
 from honeyhive.utils.baggage_dict import BaggageDict
@@ -151,13 +153,15 @@ class HoneyHiveTracer:
             with threading.Lock():
                 # Initialize Traceloop with CompositePropagator
                 if not HoneyHiveTracer._is_traceloop_initialized:
-                    Traceloop.init(
-                        api_endpoint=f"{HoneyHiveTracer.server_url}/opentelemetry",
-                        api_key=HoneyHiveTracer.api_key,
-                        metrics_exporter=ConsoleMetricExporter(out=open(os.devnull, "w")),
-                        disable_batch=disable_batch,
-                        propagator=HoneyHiveTracer.propagator
-                    )
+                    # Temporarily redirect stdout to suppress Traceloop init messages
+                    with redirect_stdout(io.StringIO()):
+                        Traceloop.init(
+                            api_endpoint=f"{HoneyHiveTracer.server_url}/opentelemetry",
+                            api_key=HoneyHiveTracer.api_key,
+                            metrics_exporter=ConsoleMetricExporter(out=open(os.devnull, "w")),
+                            disable_batch=disable_batch,
+                            propagator=HoneyHiveTracer.propagator
+                        )
                     HoneyHiveTracer._is_traceloop_initialized = True
                     HoneyHiveTracer.instrumentation_id = str(uuid.uuid4()).upper()
                     HoneyHiveTracer.is_evaluation = is_evaluation
