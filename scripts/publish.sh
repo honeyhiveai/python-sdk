@@ -22,3 +22,7 @@ poetry run python scripts/prepare-readme.py
 
 # Build and publish
 poetry publish --build --skip-existing
+
+# Commit the new version
+git add pyproject.toml README.md
+git commit -m "v$new_version"
