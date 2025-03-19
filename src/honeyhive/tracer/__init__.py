@@ -162,6 +162,8 @@ class HoneyHiveTracer:
                             disable_batch=disable_batch,
                             propagator=HoneyHiveTracer.propagator
                         )
+                    # Print initialization message in orange color (works in both bash and Windows)
+                    print("\033[38;5;208mHoneyHive is initialized\033[0m")
                     HoneyHiveTracer._is_traceloop_initialized = True
                     HoneyHiveTracer.instrumentation_id = str(uuid.uuid4()).upper()
                     HoneyHiveTracer.is_evaluation = is_evaluation
