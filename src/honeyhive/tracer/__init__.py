@@ -117,7 +117,6 @@ class HoneyHiveTracer:
             if session_id is None:
                 # Add git information to metadata only if successful
                 git_info = HoneyHiveTracer._get_git_info()
-                print("Git info:", git_info)
                 metadata = git_info if "error" not in git_info else None
                 
                 self.session_id = HoneyHiveTracer.__start_session(
