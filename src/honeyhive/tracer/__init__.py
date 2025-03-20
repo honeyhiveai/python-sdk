@@ -5,6 +5,7 @@ import sys
 import threading
 import io
 from contextlib import redirect_stdout
+import subprocess
 
 from honeyhive.utils.telemetry import Telemetry
 from honeyhive.utils.baggage_dict import BaggageDict
@@ -114,8 +115,13 @@ class HoneyHiveTracer:
             # TODO: migrate to log-based session initialization
             # self.session_id = str(uuid.uuid4()).upper()
             if session_id is None:
+                # Add git information to metadata only if successful
+                git_info = HoneyHiveTracer._get_git_info()
+                print("Git info:", git_info)
+                metadata = git_info if "error" not in git_info else None
+                
                 self.session_id = HoneyHiveTracer.__start_session(
-                    api_key, project, session_name, source, server_url, inputs
+                    api_key, project, session_name, source, server_url, inputs, metadata
                 )
             else:
                 # Validate that session_id is a valid UUID
@@ -237,7 +243,68 @@ class HoneyHiveTracer:
         return server_url and type(server_url) == str
     
     @staticmethod
-    def __start_session(api_key, project, session_name, source, server_url, inputs=None):
+    def _get_git_info():
+        try:
+            cwd = os.getcwd()
+            commit_hash = subprocess.run(
+                ["git", "rev-parse", "HEAD"],
+                cwd=cwd, capture_output=True, text=True, check=True
+            ).stdout.strip()
+
+            branch = subprocess.run(
+                ["git", "rev-parse", "--abbrev-ref", "HEAD"],
+                cwd=cwd, capture_output=True, text=True, check=True
+            ).stdout.strip()
+
+            repo_url = subprocess.run(
+                ["git", "config", "--get", "remote.origin.url"],
+                cwd=cwd, capture_output=True, text=True, check=True
+            ).stdout.strip().rstrip('.git')
+
+            commit_link = f"{repo_url}/commit/{commit_hash}" if "github.com" in repo_url else repo_url
+
+            status = subprocess.run(
+                ["git", "status", "--porcelain"],
+                cwd=cwd, capture_output=True, text=True, check=True
+            ).stdout.strip()
+
+            has_uncommitted_changes = bool(status)
+
+            repo_root = subprocess.run(
+                ["git", "rev-parse", "--show-toplevel"],
+                cwd=cwd, capture_output=True, text=True, check=True
+            ).stdout.strip()
+            
+            # Get relative path of the main module
+            main_module = sys.modules.get('__main__')
+            relative_path = None
+            if main_module and hasattr(main_module, '__file__'):
+                absolute_path = os.path.abspath(main_module.__file__)
+                relative_path = os.path.relpath(absolute_path, repo_root)
+
+            return {
+                "commit_hash": commit_hash,
+                "branch": branch,
+                "repo_url": repo_url,
+                "commit_link": commit_link,
+                "uncommitted_changes": has_uncommitted_changes,
+                "relative_path": relative_path
+            }
+        except subprocess.CalledProcessError:
+            if HoneyHiveTracer.verbose:
+                print("Failed to retrieve Git info. Is this a valid repo?")
+            return {"error": "Failed to retrieve Git info. Is this a valid repo?"}
+        except FileNotFoundError:
+            if HoneyHiveTracer.verbose:
+                print("Git is not installed or not in PATH.")
+            return {"error": "Git is not installed or not in PATH."}
+        except Exception as e:
+            if HoneyHiveTracer.verbose:
+                print(f"Error getting git info: {e}")
+            return {"error": f"Error getting git info: {e}"}
+    
+    @staticmethod
+    def __start_session(api_key, project, session_name, source, server_url, inputs=None, metadata=None):
         sdk = HoneyHive(bearer_auth=api_key, server_url=server_url)
         res = sdk.session.start_session(
             request=operations.StartSessionRequestBody(
@@ -246,6 +313,7 @@ class HoneyHiveTracer:
                     session_name=session_name,
                     source=source,
                     inputs=inputs or {},
+                    metadata=metadata or {}
                 )
             )
         )
