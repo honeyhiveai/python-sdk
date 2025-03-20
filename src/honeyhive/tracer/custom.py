@@ -204,14 +204,22 @@ class FunctionInstrumentor(BaseInstrumentor):
                         span, "honeyhive_metadata", self.metadata
                     )
 
-                result = self.func(*args, **kwargs)
+                try:
+                    result = self.func(*args, **kwargs)
 
-                # Log the function output
-                self._func_instrumentor._set_span_attributes(
-                    span, "honeyhive_outputs.result", result
-                )
+                    # Log the function output
+                    self._func_instrumentor._set_span_attributes(
+                        span, "honeyhive_outputs.result", result
+                    )
 
-                return result
+                    return result
+                except Exception as e:
+                    # Capture exception in the span
+                    self._func_instrumentor._set_span_attributes(
+                        span, "honeyhive_error", str(e)
+                    )
+                    # Re-raise the exception to maintain normal error propagation
+                    raise
 
         async def async_call(self, *args, **kwargs):
 
@@ -256,14 +264,22 @@ class FunctionInstrumentor(BaseInstrumentor):
                         span, "honeyhive_metadata", self.metadata
                     )
 
-                result = await self.func(*args, **kwargs)
+                try:
+                    result = await self.func(*args, **kwargs)
 
-                # Log the function output
-                self._func_instrumentor._set_span_attributes(
-                    span, "honeyhive_outputs.result", result
-                )
+                    # Log the function output
+                    self._func_instrumentor._set_span_attributes(
+                        span, "honeyhive_outputs.result", result
+                    )
 
-                return result
+                    return result
+                except Exception as e:
+                    # Capture exception in the span
+                    self._func_instrumentor._set_span_attributes(
+                        span, "honeyhive_error", str(e)
+                    )
+                    # Re-raise the exception to maintain normal error propagation
+                    raise
 
     class atrace(trace):
         """Decorator for tracing asynchronous functions"""
