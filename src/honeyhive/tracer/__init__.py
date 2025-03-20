@@ -244,7 +244,27 @@ class HoneyHiveTracer:
     @staticmethod
     def _get_git_info():
         try:
+            # Check if telemetry is disabled
+            telemetry_disabled = os.getenv("HONEYHIVE_TELEMETRY", "true").lower() in ["false", "0", "f", "no", "n"]
+            if telemetry_disabled:
+                if HoneyHiveTracer.verbose:
+                    print("Telemetry disabled. Skipping git information collection.")
+                return {"error": "Telemetry disabled"}
+                
             cwd = os.getcwd()
+            
+            # First check if this is a git repository
+            is_git_repo = subprocess.run(
+                ["git", "rev-parse", "--is-inside-work-tree"],
+                cwd=cwd, capture_output=True, text=True, check=False
+            )
+            
+            # If not a git repo, return early with an error
+            if is_git_repo.returncode != 0:
+                if HoneyHiveTracer.verbose:
+                    print("Not a git repository. Skipping git information collection.")
+                return {"error": "Not a git repository"}
+                
             commit_hash = subprocess.run(
                 ["git", "rev-parse", "HEAD"],
                 cwd=cwd, capture_output=True, text=True, check=True
