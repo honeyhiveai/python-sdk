@@ -81,6 +81,7 @@ class Evaluation:
         run_concurrently: bool = True,
         server_url: Optional[str] = None,
         verbose: bool = False,
+        metadata: Optional[Dict[str, Any]] = None,
     ):
         
         if function is None:
@@ -123,6 +124,19 @@ class Evaluation:
 
         self.server_url = server_url
         self.verbose = verbose
+        if metadata:
+            self.metadata = metadata
+        else:
+            self.metadata = {}
+            
+        # Add git information to metadata if available
+        try:
+            git_info = HoneyHiveTracer._get_git_info()
+            if "error" not in git_info:
+                self.metadata["git"] = git_info
+        except Exception as e:
+            if self.verbose:
+                print(f"Error getting git info: {e}")
 
         # generated id for external datasets
         # TODO: large dataset optimization
@@ -461,6 +475,7 @@ class Evaluation:
                 dataset_id=self.hh_dataset_id or self.external_dataset_id,
                 event_ids=[],
                 status=self.status,
+                metadata=self.metadata
             )
         )
         self.eval_run = eval_run.create_run_response
@@ -549,12 +564,16 @@ class Evaluation:
         try:
             if self.eval_run:
                 self.status = "completed"
+                
+                # Only update with event_ids and status
+                update_request = components.UpdateRunRequest(
+                    event_ids=self.eval_result.session_ids, 
+                    status=self.status
+                )
+                
                 self.hhai.experiments.update_run(
                     run_id=self.eval_run.run_id,
-                    update_run_request=components.UpdateRunRequest(
-                        event_ids=self.eval_result.session_ids, 
-                        status=self.status
-                    ),
+                    update_run_request=update_request
                 )
         except Exception:
             print("Warning: Unable to mark evaluation as `Completed`")
