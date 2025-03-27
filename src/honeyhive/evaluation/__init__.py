@@ -7,6 +7,7 @@ from concurrent.futures import ThreadPoolExecutor
 import collections
 import contextvars
 import functools
+import datetime
 
 from rich.style import Style
 from rich.console import Console
@@ -23,6 +24,9 @@ import traceback
 import asyncio
 import inspect
 
+from opentelemetry import context
+from opentelemetry.context import Context
+
 @dataclass
 class EvaluationResult:
     run_id: str
@@ -38,30 +42,6 @@ class EvaluationResult:
         with open(f"{self.suite}.json", "w") as f:
             json.dump(self.data, f, indent=4)
 
-class DatasetLoader:
-
-    @staticmethod
-    def load_dataset(hhai: HoneyHive, project: str, dataset_id: str) -> Optional[Dict[str, Any]]:
-        """Private function to acquire Honeyhive dataset based on dataset_id."""
-        if not dataset_id:
-            return None
-        try:
-            dataset = hhai.datasets.get_datasets(
-                project=project,
-                dataset_id=dataset_id,
-            )
-            if (
-                dataset
-                and dataset.object.testcases
-                and len(dataset.object.testcases) > 0
-            ):
-                return dataset.object.testcases[0]
-        except Exception:
-            raise RuntimeError(
-                f"No dataset found with id - {dataset_id} for project - {project}. Please use the correct dataset id and project name."
-            )
-
-
 console = Console()
 
 class Evaluation:
@@ -69,8 +49,8 @@ class Evaluation:
 
     def __init__(
         self,
-        hh_api_key: str = None,
-        hh_project: str = None,
+        api_key: str = None,
+        project: str = None,
         name: Optional[str] = None,
         suite: Optional[str] = None,
         function: Optional[Callable] = None,
@@ -79,22 +59,33 @@ class Evaluation:
         dataset_id: Optional[str] = None,
         max_workers: int = 10,
         run_concurrently: bool = True,
+        disable_http_tracing: bool = False,
         server_url: Optional[str] = None,
         verbose: bool = False,
         metadata: Optional[Dict[str, Any]] = None,
     ):
+        if HoneyHiveTracer._is_traceloop_initialized:
+            # undo traceloop initialization
+            ctx: Context = context.get_current()
+            ctx = context.set_value('association_properties', None)
+            context.attach(ctx)
+            HoneyHiveTracer._is_traceloop_initialized = False
         
         if function is None:
             raise Exception(
                 "Please provide a function to evaluate."
             )
         
-        # if name is not provided, use the file name
+        # if name is not provided, use the file name of the caller
         try:
             if name is None:
-                name = os.path.basename(sys._getframe(1).f_code.co_filename)
+                # Get the frame of the caller (1 level up in the stack)
+                caller_frame = sys._getframe(2)
+                # Extract the filename of the caller
+                name = os.path.basename(caller_frame.f_code.co_filename)
         except Exception:
-            name = "default"
+            current_mm_dd = datetime.datetime.now().strftime("%m/%d")
+            name = f"Offline Eval {current_mm_dd}"
 
         # get the directory of the file being evaluated
         try:
@@ -103,32 +94,36 @@ class Evaluation:
         except Exception:
             suite = "default"
         
-        self.hh_api_key = hh_api_key or os.environ["HH_API_KEY"]
-        self.hh_project = hh_project or os.environ["HH_PROJECT"]
-        self.eval_name: str = name
-        self.hh_dataset_id: Optional[str] = dataset_id
-        self.client_side_evaluators = evaluators or []
+        self.api_key = api_key or os.environ["HH_API_KEY"]
+        self.project = project or os.environ["HH_PROJECT"]
+        self.name: str = name 
+        self.evaluators = evaluators or []
         self.status: str = "pending"
-        self.max_workers: int = max_workers
+        self.max_workers: int = max(1, max_workers if max_workers else int(os.getenv("HH_MAX_WORKERS", 10)))
         self.run_concurrently: bool = run_concurrently
-        self.dataset = dataset
-        self.func_to_evaluate: Callable = function
+        self.function: Callable = function
         self.suite = suite
         self.disable_auto_tracing = True
         self.eval_run: Optional[components.CreateRunResponse] = None
         self.evaluation_session_ids: collections.deque = collections.deque()
-        self._validate_requirements()
-
-        self.hhai = HoneyHive(bearer_auth=self.hh_api_key, server_url=server_url)
-        self.hh_dataset = DatasetLoader.load_dataset(self.hhai, self.hh_project, self.hh_dataset_id)
-
-        self.server_url = server_url
+        self.server_url = server_url or os.environ["HH_API_URL"] or "https://api.honeyhive.ai"
         self.verbose = verbose
-        if metadata:
-            self.metadata = metadata
-        else:
-            self.metadata = {}
-            
+        self.disable_http_tracing = disable_http_tracing
+        self.metadata = metadata or {}
+
+        # only one of dataset_id or dataset should be provided
+        self.dataset_id: Optional[str] = dataset_id
+        self.dataset: Optional[List[Any]] = dataset
+        if not self.dataset_id and not self.dataset:
+            raise Exception(
+                "No valid 'dataset_id' or 'dataset' found. Please provide one to iterate the evaluation over."
+            )
+        elif self.dataset_id and self.dataset:
+            raise Exception(
+                "Both 'dataset_id' and 'dataset' were provided. Please provide only one of them for evaluation."
+            )
+        self.use_hh_dataset: bool = self.dataset_id is not None
+
         # Add git information to metadata if available
         try:
             git_info = HoneyHiveTracer._get_git_info()
@@ -138,39 +133,75 @@ class Evaluation:
             if self.verbose:
                 print(f"Error getting git info: {e}")
 
-        # generated id for external datasets
-        # TODO: large dataset optimization
-        # TODO: dataset might not be json serializable
-        self.external_dataset_id: str = (
-            Evaluation.generate_hash(json.dumps(dataset)) if dataset else None
-        )
+        self._validate_requirements()
+        self.hhai = HoneyHive(bearer_auth=self.api_key, server_url=server_url)
+
+        self._setup_dataset()
 
         # increase the OTEL export timeout to 30 seconds
         # os.environ["OTEL_EXPORTER_OTLP_TIMEOUT"] = "30000"
 
-    def _validate_requirements(self) -> None:
-        """Sanity check of requirements for HoneyHive evaluations and tracing."""
-        if not self.hh_api_key:
-            raise Exception(
-                "Honeyhive API key not found. Please set 'hh_api_key' to initiate Honeyhive Tracer. Cannot run Evaluation"
-            )
-        if not self.hh_project:
-            raise Exception(
-                "Honeyhive Project not found. Please set 'hh_project' to initiate Honeyhive Tracer. Cannot run Evaluation"
-            )
-        if not self.eval_name:
-            raise Exception(
-                "Evaluation name not found. Please set 'name' to initiate Honeyhive Evaluation."
-            )
-        if not self.hh_dataset_id and not self.dataset:
-            raise Exception(
-                "No valid 'dataset_id' or 'dataset' found. Please provide one to iterate the evaluation over."
-            )
-        if self.dataset is not None:
+        # mark the tracer for evaluation tracing
+        HoneyHiveTracer.is_evaluation = True
+
+    def _setup_dataset(self) -> None:
+        """
+        Set up the dataset for evaluation:
+        - Loads dataset from HoneyHive using dataset_id if provided
+        - Uses provided dataset list if passed directly
+        - Generates an external dataset ID for custom datasets
+        - Validates dataset format (must be a list of dictionaries)
+        - Raises exceptions if no dataset is provided or format is invalid
+        """
+
+        assert (self.dataset_id is None) != (self.dataset is None), "Either dataset_id or dataset must be defined but not both"
+        
+        # load the dataset from HoneyHive
+        if self.use_hh_dataset:
+            try:
+                dataset = self.hhai.datasets.get_datasets(
+                    project=self.project,
+                    dataset_id=self.dataset_id,
+                )
+                if (
+                    dataset
+                    and dataset.object.testcases
+                    and len(dataset.object.testcases) > 0
+                ):
+                    self.dataset = dataset.object.testcases[0]
+                else:
+                    raise RuntimeError(f"No valid testcases found in dataset {self.dataset_id}")
+            except Exception:
+                raise RuntimeError(
+                    f"No dataset found with id - {self.dataset_id} for project - {self.project}. Please use the correct dataset id and project name."
+                )
+        # use provided dataset
+        else:
+
+            # validate dataset format
             if not isinstance(self.dataset, list):
                 raise Exception("Dataset must be a list")
             if not all(isinstance(item, dict) for item in self.dataset):
-                raise Exception("All items in dataset must be dictionaries")
+                raise Exception("All items in dataset must be dictionaries")            
+
+            # generated id for external datasets
+            # TODO: large dataset optimization
+            # TODO: dataset might not be json serializable
+            self.dataset_id: str = (
+                Evaluation.generate_hash(json.dumps(self.dataset)) if self.dataset else None
+            )
+        assert self.dataset_id is not None and self.dataset is not None
+
+    def _validate_requirements(self) -> None:
+        """Sanity check of requirements for HoneyHive evaluations and tracing."""
+        if not self.api_key:
+            raise Exception(
+                "Honeyhive API key not found. Please set 'api_key' to initiate Honeyhive Tracer. Cannot run Evaluation"
+            )
+        if not self.project:
+            raise Exception(
+                "Honeyhive Project not found. Please set 'project' to initiate Honeyhive Tracer. Cannot run Evaluation"
+            )
 
     @staticmethod
     def generate_hash(input_string: str) -> str:
@@ -184,14 +215,14 @@ class Evaluation:
     ):
         """Get tracing metadata for evaluation."""
         tracing_metadata = {"run_id": self.eval_run.run_id}
-        if self.hh_dataset:
-            tracing_metadata["datapoint_id"] = self.hh_dataset.datapoints[datapoint_idx]
-            tracing_metadata["dataset_id"] = self.hh_dataset_id
-        if self.external_dataset_id:
+        if self.use_hh_dataset:
+            tracing_metadata["datapoint_id"] = self.dataset.datapoints[datapoint_idx]
+        else:
             tracing_metadata["datapoint_id"] = Evaluation.generate_hash(
                 json.dumps(self.dataset[datapoint_idx])
             )
-            tracing_metadata["dataset_id"] = self.external_dataset_id
+        
+        tracing_metadata["dataset_id"] = self.dataset_id
 
         return tracing_metadata
 
@@ -239,63 +270,37 @@ class Evaluation:
         self,
         eval_func,
         evaluator_name: str,
-        outputs: Any,
-        inputs: Dict[str, Any],
-        ground_truth: Dict[str, Any]
+        outputs: Any = None,
+        inputs: Dict[str, Any] = None,
+        ground_truth: Dict[str, Any] = None
     ) -> tuple[str, Any, dict]:
         """Run a single evaluator and return its name, result and metadata."""
         metadata = self._get_evaluator_metadata(eval_func, evaluator_name)
 
         try:
-            # if evaluator takes 1 argument, pass outputs
-            if eval_func.__code__.co_argcount == 1:
-                evaluator_result = eval_func(outputs)
-            # if evaluator takes 2 arguments, pass outputs and inputs
-            elif eval_func.__code__.co_argcount == 2:
-                evaluator_result = eval_func(outputs, inputs)
-            # if evaluator takes 3 arguments, pass outputs, inputs, and ground_truth
-            elif eval_func.__code__.co_argcount == 3:
-                evaluator_result = eval_func(outputs, inputs, ground_truth)
-            else:
-                raise ValueError(f"Evaluator {evaluator_name} must accept either 1, 2, or 3 arguments (outputs, inputs, ground_truth)")
-            
+            evaluator_result = eval_func(outputs, inputs, ground_truth)
             return evaluator_name, evaluator_result, metadata
 
-        except AssertionError:
-            return evaluator_name, None, metadata
         except Exception as e:
             print(f"Error in evaluator: {str(e)}\n")
             print(traceback.format_exc())
             return evaluator_name, None, metadata
 
     async def _arun_single_evaluator(
-        self,
+       self,
         eval_func,
         evaluator_name: str,
-        outputs: Any,
-        inputs: Dict[str, Any],
-        ground_truth: Dict[str, Any]
+        outputs: Any = None,
+        inputs: Dict[str, Any] = None,
+        ground_truth: Dict[str, Any] = None
     ) -> tuple[str, Any, dict]:
         """Run a single async evaluator and return its name, result and metadata."""
         metadata = self._get_evaluator_metadata(eval_func, evaluator_name)
 
         try:
-            # if evaluator takes 1 argument, pass outputs
-            if eval_func.__code__.co_argcount == 1:
-                evaluator_result = await eval_func(outputs)
-            # if evaluator takes 2 arguments, pass outputs and inputs
-            elif eval_func.__code__.co_argcount == 2:
-                evaluator_result = await eval_func(outputs, inputs)
-            # if evaluator takes 3 arguments, pass outputs, inputs, and ground_truth
-            elif eval_func.__code__.co_argcount == 3:
-                evaluator_result = await eval_func(outputs, inputs, ground_truth)
-            else:
-                raise ValueError(f"Evaluator {evaluator_name} must accept either 1, 2, or 3 arguments (outputs, inputs, ground_truth)")
-            
+            evaluator_result = await eval_func(outputs, inputs, ground_truth)
             return evaluator_name, evaluator_result, metadata
 
-        except AssertionError:
-            return evaluator_name, None, metadata
         except Exception as e:
             print(f"Error in evaluator: {str(e)}\n")
             print(traceback.format_exc())
@@ -311,7 +316,7 @@ class Evaluation:
         metrics = {}
         metadata = {}
 
-        if not self.client_side_evaluators:
+        if not self.evaluators:
             return metrics, metadata
 
         # Separate sync and async evaluators
@@ -319,7 +324,7 @@ class Evaluation:
         async_evaluators = []
         eval_names = set()
 
-        for index, eval_func in enumerate(self.client_side_evaluators):
+        for index, eval_func in enumerate(self.evaluators):
             evaluator_name = getattr(eval_func, "__name__", f"evaluator_{index}")
             if evaluator_name in eval_names:
                 raise ValueError(f"Evaluator {evaluator_name} is defined multiple times")
@@ -373,17 +378,20 @@ class Evaluation:
     def _get_inputs_and_ground_truth(self, datapoint_idx: int):
         """Get inputs and ground truth for evaluation from dataset."""
         if (
-            self.hh_dataset
-            and self.hh_dataset.datapoints
-            and len(self.hh_dataset.datapoints) > 0
+            self.use_hh_dataset
+            and self.dataset.datapoints
+            and len(self.dataset.datapoints) > 0
         ):
-            datapoint_id = self.hh_dataset.datapoints[datapoint_idx]
+            datapoint_id = self.dataset.datapoints[datapoint_idx]
             datapoint_response = self.hhai.datapoints.get_datapoint(id=datapoint_id)
             return (
                 datapoint_response.object.datapoint[0].inputs or {}, 
                 datapoint_response.object.datapoint[0].ground_truth or {}
             )
-        elif self.dataset:
+        elif (
+            self.dataset
+            and len(self.dataset) > 0
+        ):
             return (
                 self.dataset[datapoint_idx].get('inputs', {}), 
                 self.dataset[datapoint_idx].get('ground_truths', {})
@@ -393,14 +401,15 @@ class Evaluation:
     def _init_tracer(self, datapoint_idx: int, inputs: Dict[str, Any]) -> HoneyHiveTracer:
         """Initialize HoneyHiveTracer for evaluation."""
         hh = HoneyHiveTracer(
-            api_key=self.hh_api_key,
-            project=self.hh_project,
+            api_key=self.api_key,
+            project=self.project,
             source="evaluation",
-            session_name=self.eval_name,
+            session_name=self.name,
             inputs={'inputs': inputs},
             is_evaluation=True,
             verbose=self.verbose,
             server_url=self.server_url,
+            disable_http_tracing=self.disable_http_tracing,
             **self._get_tracing_metadata(datapoint_idx)
         )
         return hh
@@ -424,34 +433,31 @@ class Evaluation:
 
         # Initialize tracer
         try:
-            hh = self._init_tracer(datapoint_idx, inputs)
-            session_id = hh.session_id
+            tracer = self._init_tracer(datapoint_idx, inputs)
+            session_id = tracer.session_id
             self.evaluation_session_ids.append(session_id)
         except Exception as e:
-            print(traceback.format_exc())
+            self.verbose and print(traceback.format_exc())
             raise Exception(
                 f"Unable to initiate Honeyhive Tracer. Cannot run Evaluation: {e}"
             )
+
         # Run the function
         try:
-            if inspect.iscoroutinefunction(self.func_to_evaluate):
+            if inspect.iscoroutinefunction(self.function):
                 raise ValueError("Evaluation task must be sync. Please use asyncio.run() to run coroutines inside the task.")
             else:
-                if self.func_to_evaluate.__code__.co_argcount == 2:
-                    outputs = self.func_to_evaluate(inputs, ground_truth)
-                elif self.func_to_evaluate.__code__.co_argcount == 1:
-                    outputs = self.func_to_evaluate(inputs)
-                else:
-                    raise ValueError(f"Evaluation function must accept either 1 or 2 arguments (inputs, ground_truth)")
+                outputs = self.function(inputs, ground_truth)
         except Exception as e:
             print(f"Error in evaluation function: {e}")
             print(traceback.format_exc())
+        finally:
+            HoneyHiveTracer.flush()
         
         # Run evaluators
         metrics, metadata = self._run_evaluators(outputs, inputs, ground_truth)
         
         # Add trace metadata, outputs, and metrics to session
-
         self._enrich_evaluation_session(
             datapoint_idx,
             session_id, 
@@ -470,9 +476,9 @@ class Evaluation:
         # create run
         eval_run = self.hhai.experiments.create_run(
             request=components.CreateRunRequest(
-                project=self.hh_project,
-                name=self.eval_name,
-                dataset_id=self.hh_dataset_id or self.external_dataset_id,
+                project=self.project,
+                name=self.name,
+                dataset_id=self.dataset_id,
                 event_ids=[],
                 status=self.status,
                 metadata=self.metadata
@@ -482,7 +488,7 @@ class Evaluation:
 
         self.eval_result = EvaluationResult(
             run_id=self.eval_run.run_id,
-            dataset_id=self.hh_dataset_id or self.external_dataset_id,
+            dataset_id=self.dataset_id,
             session_ids=[],
             status=self.status,
             suite=self.suite,
@@ -494,19 +500,17 @@ class Evaluation:
         # Run evaluations
         #########################################################
 
-        if self.hh_dataset:
-            num_points = len(self.hh_dataset.datapoints)
-        elif self.dataset:
-            num_points = len(self.dataset)
+        if self.use_hh_dataset:
+            num_points = len(self.dataset.datapoints)
         else:
-            raise Exception("No dataset found")
+            num_points = len(self.dataset)
+
         
         start_time = time.time()
         if self.run_concurrently:
-            # Use ThreadPoolExecutor to run evaluations concurrently
-            max_workers = int(os.getenv("HH_MAX_WORKERS", self.max_workers))
-            with console.status("[bold green]Working on evals...") as status:
-                with ThreadPoolExecutor(max_workers=max_workers) as executor:
+            with console.status("[bold green]Working on evals..."):
+                # Use ThreadPoolExecutor to run evaluations concurrently
+                with ThreadPoolExecutor(max_workers=self.max_workers) as executor:
                     try:
                         # Submit tasks and get futures with proper context propagation
                         futures = []
@@ -531,6 +535,9 @@ class Evaluation:
                     except KeyboardInterrupt:
                         executor.shutdown(wait=False)
                         raise
+                    finally:
+                        HoneyHiveTracer.flush()
+
         else:
             results = []
             for i in range(num_points):
@@ -590,7 +597,7 @@ class Evaluation:
 
         # make table
         table = Table(
-            title=f"Evaluation Results: {self.eval_name}",
+            title=f"Evaluation Results: {self.name}",
             show_lines=True,
             title_style=Style(
                 color="black",
@@ -656,7 +663,7 @@ def evaluate(*args, **kwargs):
 
     return EvaluationResult(
         run_id=eval.eval_run.run_id,
-        dataset_id=eval.hh_dataset_id or eval.external_dataset_id,
+        dataset_id=eval.dataset_id,
         session_ids=eval.evaluation_session_ids,
         status=eval.status,
         data=eval.eval_result.data,

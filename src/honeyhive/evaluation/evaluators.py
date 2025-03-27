@@ -1,3 +1,6 @@
+
+from honeyhive.tracer.custom import trace, atrace, enrich_span
+
 import asyncio
 from dataclasses import dataclass, field, fields
 from typing import Any, Optional, Callable, Coroutine
@@ -208,117 +211,15 @@ class EvalResult:
         self.func_impl: Callable = None
         self.func_args: tuple = None
         self.func_kwargs: dict = None
-        self.call_depth = 0
-
-        self.str = self.trace()
-
-    def trace(self, indent=0):
-        if "transform" in self.init_method or "aggregate" in self.init_method:
-            method_color = bcolors.OKBLUE
-        else:
-            method_color = bcolors.WARNING
-
-        result = f"{method_color}{self.init_method}{bcolors.ENDC}:\n"
-
-        # function implementation
-        if self.func_impl is not None:
-            result += f'{" " * (indent + 4)}func_impl: {self.func_impl}\n'
-        if self.func_args and len(self.func_args) > 0:
-            if len(self.func_args) == 1:
-                func_args = self.func_args[0]
-            result += f'{" " * (indent + 4)}func_args: \n{bcolors.OKGREEN}{func_args}{bcolors.ENDC}\n'
-        if self.func_kwargs and len(self.func_kwargs) > 0:
-            result += f'{" " * (indent + 4)}func_kwargs: {self.func_kwargs}\n'
-        if self.call_depth > 0:
-            result += f'{" " * (indent + 4)}call_depth: {self.call_depth}\n'
-
-        result += (
-            f'{" " * (indent + 4)}score: {bcolors.FAIL}{self.score}{bcolors.ENDC}\n'
-        )
-
-        if self.eval_settings:
-            result += f'{" " * (indent + 4)}eval_settings:\n'
-            for key in EVALUATOR_SETTINGS_KEYS:
-                if (
-                    hasattr(self.eval_settings, key)
-                    and (value := getattr(self.eval_settings, key)) is not None
-                ):
-                    if (
-                        key in EVALUATOR_SETTINGS_KEYS
-                        and value is not None
-                    ):
-                        result += f'{" " * (indent + 8)}{key}: {value}\n'
-
-        if self.eval_kwargs:
-            result += f'{" " * (indent + 4)}eval_kwargs:\n'
-            for key, value in self.eval_kwargs.items():
-                if value is not None:
-                    result += f'{" " * (indent + 8)}{key}: {value}\n'
-
-        if self.metadata:
-            result += f'\n{" " * (indent + 4)}metadata:'
-            first_item = True
-            for key, value in self.metadata.items():
-                if not first_item:
-                    result += ","
-                result += f'\n{" " * (indent + 8)}'
-                if key in ("prev_result", "prev_results"):
-                    result += f"{key}: "
-                    if isinstance(value, EvalResult):
-                        result += f'\n{" " * (indent + 12)}{value.trace(indent + 12)}'
-                    elif (
-                        isinstance(value, tuple)
-                        or isinstance(value, list)
-                        and len(value) > 0
-                    ):
-                        result += "[\n"
-                        for _, item in enumerate(value):
-                            if isinstance(item, EvalResult):
-                                result += (
-                                    f'\n{" " * (indent + 12)}{item.trace(indent + 12)}'
-                                )
-                            elif isinstance(item, tuple) or isinstance(item, list):
-                                result += f'{" " * (indent + 12)}['
-                                for _, item in enumerate(item):
-                                    if isinstance(item, EvalResult):
-                                        result += f'\n{" " * (indent + 16)}{item.trace(indent + 16)}'
-                                    else:
-                                        result += str(item)
-                                result += f'\n{" " * (indent + 12)}]'
-                            else:
-                                result += f'\n{" " * (indent + 12)}{item}'
-                        result += f'\n{" " * (indent + 8)}]'
-                    else:
-                        result += str(value)
-                else:
-                    result += str(value)
-                first_item = False
-            result += f'\n{" " * (indent + 4)}'
-
-        self.str = result
-        return result
 
     def to_dict(self) -> dict:
         return {"score": self.score, "metadata": self.metadata}
-
-    def __str__(self):
-        self.trace()
-        return self.str
-
-    def __repr__(self):
-        self.trace()
-        return self.str
 
     def copy(self) -> "EvalResult":
         copy_result = EvalResult(score=self.score,
                           init_method=self.init_method,
                           **self.metadata)
-        copy_result.str = self.trace()
         return copy_result
-
-# map of task_id to context
-call_context: dict[str, Any] = {"depth": 0, "calls": []}
-
 
 class EvaluatorMeta(type):
     
@@ -403,9 +304,6 @@ class evaluator(metaclass=EvaluatorMeta):
         functools.update_wrapper(self, func)
         functools.update_wrapper(func, self)
 
-        # traces
-        self.prev_runs = []
-        self._prev_run = None
 
     # ------------------------------------------------------------------------------
     # AGGREGATION
@@ -657,6 +555,19 @@ class evaluator(metaclass=EvaluatorMeta):
 
         return checker_result
 
+    def run_asserts(
+        self,
+        eval_score: Any,
+        final_settings: EvalSettings,
+    ) -> bool:
+        
+        if final_settings.target is None:
+            failure_message = f"Assertion failed: score {eval_score}"
+        else:
+            failure_message = f"Assertion failed: score {eval_score} is not in range {final_settings.target}"
+        
+        assert eval_score, failure_message
+
     def run_checker(
         self,
         eval_result: EvalResult,
@@ -668,7 +579,7 @@ class evaluator(metaclass=EvaluatorMeta):
             if not final_settings.asserts:
                 return eval_result, eval_score
 
-            assert eval_score, f"Assertion failed: score {eval_score} is not in range {final_settings.target}"
+            self.run_asserts(eval_score, final_settings)
 
             return eval_result, eval_score
 
@@ -700,7 +611,7 @@ class evaluator(metaclass=EvaluatorMeta):
             if not final_settings.asserts:
                 return eval_result, eval_score
 
-            assert eval_score, f"Assertion failed: score {eval_score} is not in range {final_settings.target}"
+            self.run_asserts(eval_score, final_settings)
 
             return eval_result, eval_score
 
@@ -913,6 +824,7 @@ class evaluator(metaclass=EvaluatorMeta):
         
         return final_settings, final_kwargs
 
+    @atrace(event_type='chain', event_name='Evaluation')
     async def async_call(self, *call_args, **call_kwargs):
         
         final_settings, final_kwargs = self.get_final_settings_and_kwargs(call_kwargs)
@@ -920,7 +832,8 @@ class evaluator(metaclass=EvaluatorMeta):
         async def asingle_evaluation() -> tuple[EvalResult, Any]:
 
             # run the evaluator
-            score = await self.func(*call_args, **final_kwargs)
+            score = await atrace(self.func)(*call_args, **final_kwargs)
+
             result = EvalResult(
                 score=score, 
                 init_method=self.name,
@@ -929,7 +842,25 @@ class evaluator(metaclass=EvaluatorMeta):
                 func_impl=f"{self.func.__module__}.{self.func.__name__}",
                 func_args=call_args,
                 func_kwargs=call_kwargs,
-                call_depth=call_context["depth"]
+            )
+
+            enrich_span(
+                inputs={
+                    "score": score,
+                },
+                outputs={
+                    "result": result,
+                },
+                config={
+                    "final_settings": str(final_settings),
+                    "final_kwargs": final_kwargs,
+                },
+                metadata={
+                    "func": self.name,
+                    "func_impl": f"{self.func.__module__}.{self.func.__name__}",
+                    "func_args": call_args,
+                    "func_kwargs": call_kwargs,
+                }
             )
 
             # transform
@@ -987,6 +918,7 @@ class evaluator(metaclass=EvaluatorMeta):
 
         return aggregate_result, aggregate_score
 
+    @trace(event_type='chain', event_name='Evaluation')
     def sync_call(self, *call_args, **call_kwargs):
         
         final_settings, final_kwargs = self.get_final_settings_and_kwargs(call_kwargs)
@@ -1004,7 +936,25 @@ class evaluator(metaclass=EvaluatorMeta):
                 func_impl=f"{self.func.__module__}.{self.func.__name__}",
                 func_args=call_args,
                 func_kwargs=call_kwargs,
-                call_depth=call_context["depth"]
+            )
+
+            enrich_span(
+                inputs={
+                    "score": score,
+                },
+                outputs={
+                    "result": result,
+                },
+                config={
+                    "final_settings": str(final_settings),
+                    "final_kwargs": final_kwargs,
+                },
+                metadata={
+                    "func": self.name,
+                    "func_impl": f"{self.func.__module__}.{self.func.__name__}",
+                    "func_args": call_args,
+                    "func_kwargs": call_kwargs,
+                }
             )
 
             # transform
@@ -1064,29 +1014,22 @@ class evaluator(metaclass=EvaluatorMeta):
     def __call__(self, *args, **kwargs) -> Any:
         
         # RUN EVALUATOR
-        try:
-            call_context["depth"] += 1
-            results, scores = None, None
-            assert not asyncio.iscoroutinefunction(
-                self.func
-            ), "please use @aevaluator instead of @evaluator for this function"
-            results, scores = self.sync_call(*args, **kwargs)
-        finally:
-            self.process_trace(results)
+        results, scores = None, None
+        assert not asyncio.iscoroutinefunction(
+            self.func
+        ), "please use @aevaluator instead of @evaluator for this function"
+        results, scores = self.sync_call(*args, **kwargs)
+
         return scores
 
     async def __acall__(self, *args, **kwargs) -> Any:
         
         # RUN EVALUATOR
-        try:
-            call_context["depth"] += 1
-            results, scores = None, None
-            if asyncio.iscoroutinefunction(self.func):
-                results, scores = await self.async_call(*args, **kwargs)
-            else:
-                results, scores = self.sync_call(*args, **kwargs)
-        finally:
-            self.process_trace(results)
+        results, scores = None, None
+        if asyncio.iscoroutinefunction(self.func):
+            results, scores = await self.async_call(*args, **kwargs)
+        else:
+            results, scores = self.sync_call(*args, **kwargs)
         return scores    
 
     def raw(self, *args, **kwargs):
@@ -1095,40 +1038,6 @@ class evaluator(metaclass=EvaluatorMeta):
     async def araw(self, *args, **kwargs):
         return await self.func(*args, **kwargs)
     
-    # ------------------------------------------------------------------------------
-    # TRACING
-    def process_trace(self, results):
-        if results is None: return
-        # if this is the first call, save the result.  Otherwise, add it to the list of previous runs
-        if call_context["depth"] == 1:
-            self._prev_run = results
-        else:
-            call_context["calls"].append(results)
-
-        call_context["calls"].reverse()
-        call_context["depth"] -= 1
-
-        # TODO: this is only needed for recursion
-        if call_context["depth"] < 0:
-            if self._prev_run is not None:
-                if isinstance(self._prev_run, (list, tuple)):
-                    if len(self._prev_run) > 0:
-                        # add the repeats to calls
-                        for i, result in enumerate(self._prev_run):
-                            if isinstance(result, EvalResult):
-                                self._prev_run[i].metadata = {
-                                    "prev_results": call_context["calls"]
-                                }
-                    else:
-                        raise ValueError("Error tracing results: no results found!")
-                else:
-                    self._prev_run.metadata = {"prev_results": call_context["calls"]}
-            else:
-                print("Error tracing results!")
-    # ------------------------------------------------------------------------------
-
-
-
     # ------------------------------------------------------------------------------
     # PROPERTIES
     # ------------------------------------------------------------------------------
@@ -1175,16 +1084,6 @@ class evaluator(metaclass=EvaluatorMeta):
         else:
             raise NotImplementedError
 
-    @property
-    def prev_run(self):
-        if isinstance(self._prev_run, EvalResult):
-            self._prev_run.trace()
-        return self._prev_run
-
-    @prev_run.setter
-    def prev_run(self, value):
-        call_context["calls"].append(self._prev_run)
-        self._prev_run = value
     
     # ------------------------------------------------------------------------------
     # ACCESSORS
@@ -1241,7 +1140,6 @@ class evaluator(metaclass=EvaluatorMeta):
     def __code__(self):
         return self.func.__code__
 
-
 class aevaluator(evaluator):
 
     async def __call__(self, *args, **kwargs):
@@ -1249,4 +1147,21 @@ class aevaluator(evaluator):
 
     async def raw(self, *args, **kwargs):
         return await self.araw(*args, **kwargs)
+
+
+# ------------------------------------------------------------------------------
+# EVALUATORS
+# ------------------------------------------------------------------------------
+
+@evaluator
+def mean(scores: list[float]) -> float:
+    return sum(scores) / len(scores)
+
+@evaluator
+def median(scores: list[float]) -> float:
+    return sorted(scores)[len(scores) // 2]
+
+@evaluator
+def mode(scores: list[float]) -> float:
+    return max(set(scores), key=scores.count)
 
