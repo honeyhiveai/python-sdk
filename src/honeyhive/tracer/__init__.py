@@ -16,12 +16,13 @@ from traceloop.sdk import Traceloop
 from traceloop.sdk.tracing.tracing import TracerWrapper
 
 from opentelemetry import context, baggage
+from opentelemetry.context import Context
 from opentelemetry.sdk.metrics.export import ConsoleMetricExporter
 from opentelemetry.propagators.composite import CompositePropagator
 from opentelemetry.trace.propagation.tracecontext import TraceContextTextMapPropagator
 from opentelemetry.baggage.propagation import W3CBaggagePropagator
 
-DEFAULT_SERVER_URL = "https://api.honeyhive.ai"
+DEFAULT_API_URL = "https://api.honeyhive.ai"
 
 class HoneyHiveTracer:
     
@@ -30,9 +31,8 @@ class HoneyHiveTracer:
     _is_traceloop_initialized = False
     api_key = None
     is_evaluation = False
-    instrumentation_id = None
-    instance = None
     server_url = None
+    _flush_lock = threading.RLock()
 
     def __init__(
         self,
@@ -52,13 +52,21 @@ class HoneyHiveTracer:
         datapoint_id=None,
         link_carrier=None
     ):
+        
+        # if HoneyHiveTracer is already initialized, get association properties from the context
+        ctx: Context = context.get_current()
+        association_properties = ctx.get('association_properties') if ctx is not None else None
+        if association_properties is not None:
+            # Unpack association properties by name
+            session_id = association_properties.get('session_id')
+            project = association_properties.get('project')
+            source = association_properties.get('source')
+            disable_http_tracing = association_properties.get('disable_http_tracing') or False
+            run_id = association_properties.get('run_id')
+            dataset_id = association_properties.get('dataset_id')
+            datapoint_id = association_properties.get('datapoint_id')
+
         try:
-            # is_evaluation
-            if HoneyHiveTracer.is_evaluation:
-                # If we're in an evaluation, only new evaluate sessions are allowed
-                if not is_evaluation:
-                    raise Exception("Evaluation sessions can only be started by the evaluate function.")
-            
             # api_key
             if HoneyHiveTracer.api_key is None:
                 if api_key is None:
@@ -79,7 +87,7 @@ class HoneyHiveTracer:
             if HoneyHiveTracer.server_url is None:
                 if server_url is None:
                     # get server url from os env with default
-                    env_server_url = os.getenv("HH_API_URL", DEFAULT_SERVER_URL)
+                    env_server_url = os.getenv("HH_API_URL", DEFAULT_API_URL)
                     if not HoneyHiveTracer._validate_server_url(env_server_url):
                         raise Exception("Invalid server URL in environment variable HH_API_URL.")
                     server_url = env_server_url
@@ -119,18 +127,26 @@ class HoneyHiveTracer:
                 git_info = HoneyHiveTracer._get_git_info()
                 metadata = git_info if "error" not in git_info else None
                 
-                self.session_id = HoneyHiveTracer.__start_session(
-                    api_key, project, session_name, source, server_url, inputs, metadata
-                )
+                # Store necessary parameters as instance variables
+                self.session_name = session_name
+                self.inputs = inputs
+                self.metadata = metadata
+                self.project = project
+                self.source = source
+                
+                # Start the session and get session_id
+                self.session_start()
             else:
                 # Validate that session_id is a valid UUID
                 try:
                     uuid.UUID(session_id)
                     self.session_id = session_id.lower()
+                    self.project = project
+                    self.source = source
                 except (ValueError, AttributeError, TypeError):
                     raise errors.SDKError("session_id must be a valid UUID string.")
 
-            # baggage
+            # Initialize baggage with all parameters
             self.baggage = BaggageDict().update({
                 "session_id": self.session_id,
                 "project": project,
@@ -138,7 +154,7 @@ class HoneyHiveTracer:
                 "disable_http_tracing": str(disable_http_tracing).lower(),
             })
 
-            # evaluation
+            # Add evaluation specific properties if needed
             if is_evaluation:
                 self.baggage.update({
                     "run_id": run_id,
@@ -158,22 +174,28 @@ class HoneyHiveTracer:
             with threading.Lock():
                 # Initialize Traceloop with CompositePropagator
                 if not HoneyHiveTracer._is_traceloop_initialized:
-                    # Temporarily redirect stdout to suppress Traceloop init messages
-                    with redirect_stdout(io.StringIO()):
-                        Traceloop.init(
-                            api_endpoint=f"{HoneyHiveTracer.server_url}/opentelemetry",
-                            api_key=HoneyHiveTracer.api_key,
-                            metrics_exporter=ConsoleMetricExporter(out=open(os.devnull, "w")),
-                            disable_batch=disable_batch,
-                            propagator=HoneyHiveTracer.propagator
-                        )
+                    traceloop_args = {
+                        "api_endpoint": f"{HoneyHiveTracer.server_url}/opentelemetry",
+                        "api_key": HoneyHiveTracer.api_key,
+                        "metrics_exporter": ConsoleMetricExporter(out=open(os.devnull, "w")),
+                        "disable_batch": disable_batch,
+                        "propagator": HoneyHiveTracer.propagator
+                    }
+
+                    # Only redirect stdout if verbose is False
+                    if not HoneyHiveTracer.verbose:
+                        with redirect_stdout(io.StringIO()):
+                            Traceloop.init(**traceloop_args)
+                    else:
+                        Traceloop.init(**traceloop_args)
+                    
                     # Print initialization message in orange color (works in both bash and Windows)
-                    print("\033[38;5;208mHoneyHive is initialized\033[0m")
+                    if not HoneyHiveTracer.is_evaluation:
+                        print("\033[38;5;208mHoneyHive is initialized\033[0m")
                     HoneyHiveTracer._is_traceloop_initialized = True
-                    HoneyHiveTracer.instrumentation_id = str(uuid.uuid4()).upper()
                     HoneyHiveTracer.is_evaluation = is_evaluation
                 Telemetry().capture("tracer_init", {"hhai_session_id": self.session_id, "hhai_project": project})
-                    
+
             # link_carrier
             if link_carrier is not None:
                 self.link(link_carrier)
@@ -189,9 +211,6 @@ class HoneyHiveTracer:
             # we must attach the baggage in traceloop format as well
             # Traceloop.set_baggage_properties(self.baggage)
             Traceloop.set_association_properties(self.baggage)
-
-            # save the instance
-            HoneyHiveTracer.instance = self
             
             # ------------------------------------------------------------
             # TODO: log-based session initialization
@@ -230,8 +249,7 @@ class HoneyHiveTracer:
     # TODO: remove this, legacy DX
     @staticmethod
     def init(*args, **kwargs):
-        HoneyHiveTracer.instance = HoneyHiveTracer(*args, **kwargs)
-        return HoneyHiveTracer.instance
+        return HoneyHiveTracer(*args, **kwargs)
     
     @staticmethod
     def _validate_api_key(api_key):
@@ -240,6 +258,19 @@ class HoneyHiveTracer:
     @staticmethod
     def _validate_server_url(server_url):
         return server_url and type(server_url) == str
+    
+    def session_start(self) -> str:
+        """Start a session using the tracer's parameters"""
+        self.session_id = HoneyHiveTracer.__start_session(
+            HoneyHiveTracer.api_key, 
+            self.project, 
+            self.session_name, 
+            self.source, 
+            HoneyHiveTracer.server_url, 
+            self.inputs, 
+            self.metadata
+        )
+        return self.session_id
     
     @staticmethod
     def _get_git_info():
@@ -385,10 +416,28 @@ class HoneyHiveTracer:
 
     @staticmethod
     def flush():
-        if HoneyHiveTracer._is_traceloop_initialized:
-            TracerWrapper().flush()
-        else:
+        """
+        Flush the tracer.
+        Thread-safe and coroutine-safe - can be called from both threaded and async contexts.
+        
+        In async context, call with:
+          await asyncio.to_thread(HoneyHiveTracer.flush)
+        """
+        if not HoneyHiveTracer._is_traceloop_initialized:
             print("\033[91mCould not flush: HoneyHiveTracer not initialized successfully\033[0m")
+            return
+        
+        # Try to acquire the lock without blocking
+        # If already locked, return immediately instead of waiting
+        if not HoneyHiveTracer._flush_lock.acquire(blocking=False):
+            # Lock already taken, another flush is in progress
+            return
+        
+        try:
+            TracerWrapper().flush()
+        finally:
+            # Always release the lock
+            HoneyHiveTracer._flush_lock.release()
 
     def enrich_session(
         self,
@@ -466,15 +515,21 @@ def enrich_session(
     outputs=None,
     user_properties=None
 ):
+    print()
     if not HoneyHiveTracer._is_traceloop_initialized:
         print("\033[91mCould not enrich session: HoneyHiveTracer not initialized successfully\033[0m")
         return
     try:
-        sdk = HoneyHive(bearer_auth=HoneyHiveTracer.api_key, server_url=HoneyHiveTracer.instance.server_url)
-        if session_id is None and HoneyHiveTracer.instance is None:
-            raise Exception("Please initialize HoneyHiveTracer before calling enrich_session")
-        session_id = session_id or HoneyHiveTracer.instance.session_id
-        update_request = operations.UpdateEventRequestBody(event_id=session_id)
+        sdk = HoneyHive(bearer_auth=HoneyHiveTracer.api_key, server_url=HoneyHiveTracer.server_url)
+        if session_id is None:
+            ctx: Context = context.get_current()
+            association_properties = ctx.get('association_properties') if ctx is not None else None
+            if association_properties is not None:
+                session_id = association_properties.get('session_id')
+            if session_id is None:
+                raise Exception("Please initialize HoneyHiveTracer before calling enrich_session")
+            
+        update_request = operations.UpdateEventRequestBody(event_id=session_id.lower())
         if feedback is not None:
             update_request.feedback = feedback
         if metrics is not None:

@@ -98,7 +98,7 @@ class FunctionInstrumentor(BaseInstrumentor):
         inputs=None,
         outputs=None,
         error=None,
-        headers=None,
+        # headers=None,
     ):
         if config:
             self._set_span_attributes(span, "honeyhive_config", config)
@@ -121,12 +121,21 @@ class FunctionInstrumentor(BaseInstrumentor):
 
         _func_instrumentor = None
 
-        def __init__(self, func, event_type=None, config=None, metadata=None, eval=None):
+        def __init__(
+            self,
+            func,
+            event_type=None,
+            config=None,
+            metadata=None,
+            evaluator=None,
+            event_name=None,
+        ):
             self.func = func
             self.event_type = event_type
             self.config = config
             self.metadata = metadata
-            self.eval = eval
+            self.evaluator = evaluator
+            self.event_name = event_name
 
             if func is not None:
                 functools.update_wrapper(self, func)
@@ -137,10 +146,11 @@ class FunctionInstrumentor(BaseInstrumentor):
             event_type=None,
             config=None,
             metadata=None,
-            eval=None,
+            evaluator=None,
+            event_name=None,
         ):
             if func is None:
-                return lambda f: cls(f, event_type, config, metadata, eval)
+                return lambda f: cls(f, event_type, config, metadata, evaluator, event_name)
             return super().__new__(cls)
 
         def __get__(self, instance, owner):
@@ -161,125 +171,80 @@ class FunctionInstrumentor(BaseInstrumentor):
             else:
                 return self.sync_call(*args, **kwargs)
 
+        def _setup_span(self, span, args, kwargs):
+            # Extract function signature
+            sig = inspect.signature(self.func)
+            bound_args = sig.bind(*args, **kwargs)
+            bound_args.apply_defaults()
+
+            # Log the function inputs with parameter names
+            for param, value in bound_args.arguments.items():
+                if param == "prompt_template":
+                    self._func_instrumentor._set_prompt_template(span, value)
+                else:
+                    self._func_instrumentor._set_span_attributes(
+                        span, f"honeyhive_inputs._params_.{param}", value
+                    )
+
+            if self.event_type:
+                if isinstance(self.event_type, str) and self.event_type in [
+                    "tool",
+                    "model",
+                    "chain",
+                ]:
+                    self._func_instrumentor._set_span_attributes(
+                        span, "honeyhive_event_type", self.event_type
+                    )
+                else:
+                    logger.warning(
+                        "event_type could not be set. Must be 'tool', 'model', or 'chain'."
+                    )
+
+            if self.config:
+                self._func_instrumentor._set_span_attributes(
+                    span, "honeyhive_config", self.config
+                )
+            if self.metadata:
+                self._func_instrumentor._set_span_attributes(
+                    span, "honeyhive_metadata", self.metadata
+                )
+
+        def _handle_result(self, span, result):
+            # Log the function output
+            self._func_instrumentor._set_span_attributes(
+                span, "honeyhive_outputs.result", result
+            )
+            return result
+
+        def _handle_exception(self, span, exception):
+            # Capture exception in the span
+            self._func_instrumentor._set_span_attributes(
+                span, "honeyhive_error", str(exception)
+            )
+            # Re-raise the exception to maintain normal error propagation
+            raise exception
+
         def sync_call(self, *args, **kwargs):
-
             with self._func_instrumentor._tracer.start_as_current_span(
-                self.func.__name__
+                self.event_name or self.func.__name__
             ) as span:
-
-                # Extract function signature
-                sig = inspect.signature(self.func)
-                bound_args = sig.bind(*args, **kwargs)
-                bound_args.apply_defaults()
-
-                # Log the function inputs with parameter names
-                for param, value in bound_args.arguments.items():
-                    if param == "prompt_template":
-                        self._func_instrumentor._set_prompt_template(span, value)
-                    else:
-                        self._func_instrumentor._set_span_attributes(
-                            span, f"honeyhive_inputs._params_.{param}", value
-                        )
-
-                if self.event_type:
-                    if isinstance(self.event_type, str) and self.event_type in [
-                        "tool",
-                        "model",
-                        "chain",
-                    ]:
-                        self._func_instrumentor._set_span_attributes(
-                            span, "honeyhive_event_type", self.event_type
-                        )
-                    else:
-                        logger.warning(
-                            "event_type could not be set. Must be 'tool', 'model', or 'chain'."
-                        )
-
-                if self.config:
-                    self._func_instrumentor._set_span_attributes(
-                        span, "honeyhive_config", self.config
-                    )
-                if self.metadata:
-                    self._func_instrumentor._set_span_attributes(
-                        span, "honeyhive_metadata", self.metadata
-                    )
-
+                self._setup_span(span, args, kwargs)
                 try:
                     result = self.func(*args, **kwargs)
-
-                    # Log the function output
-                    self._func_instrumentor._set_span_attributes(
-                        span, "honeyhive_outputs.result", result
-                    )
-
-                    return result
+                    return self._handle_result(span, result)
                 except Exception as e:
-                    # Capture exception in the span
-                    self._func_instrumentor._set_span_attributes(
-                        span, "honeyhive_error", str(e)
-                    )
-                    # Re-raise the exception to maintain normal error propagation
-                    raise
+                    return self._handle_exception(span, e)
 
         async def async_call(self, *args, **kwargs):
-
             with self._func_instrumentor._tracer.start_as_current_span(
-                self.func.__name__
+                self.event_name or self.func.__name__
             ) as span:
-
-                # Extract function signature
-                sig = inspect.signature(self.func)
-                bound_args = sig.bind(*args, **kwargs)
-                bound_args.apply_defaults()
-
-                # Log the function inputs with parameter names
-                for param, value in bound_args.arguments.items():
-                    if param == "prompt_template":
-                        self._func_instrumentor._set_prompt_template(span, value)
-                    else:
-                        self._func_instrumentor._set_span_attributes(
-                            span, f"honeyhive_inputs._params_.{param}", value
-                        )
-
-                if self.event_type:
-                    if isinstance(self.event_type, str) and self.event_type in [
-                        "tool",
-                        "model",
-                        "chain",
-                    ]:
-                        self._func_instrumentor._set_span_attributes(
-                            span, "honeyhive_event_type", self.event_type
-                        )
-                    else:
-                        logger.warning(
-                            "event_type could not be set. Must be 'tool', 'model', or 'chain'."
-                        )
-
-                if self.config:
-                    self._func_instrumentor._set_span_attributes(
-                        span, "honeyhive_config", self.config
-                    )
-                if self.metadata:
-                    self._func_instrumentor._set_span_attributes(
-                        span, "honeyhive_metadata", self.metadata
-                    )
-
+                self._setup_span(span, args, kwargs)
                 try:
                     result = await self.func(*args, **kwargs)
-
-                    # Log the function output
-                    self._func_instrumentor._set_span_attributes(
-                        span, "honeyhive_outputs.result", result
-                    )
-
-                    return result
+                    return self._handle_result(span, result)
                 except Exception as e:
-                    # Capture exception in the span
-                    self._func_instrumentor._set_span_attributes(
-                        span, "honeyhive_error", str(e)
-                    )
-                    # Re-raise the exception to maintain normal error propagation
-                    raise
+                    return self._handle_exception(span, e)
 
     class atrace(trace):
         """Decorator for tracing asynchronous functions"""
@@ -303,9 +268,17 @@ atrace = instrumentor.atrace
 
 
 # Enrich a span from within a traced function
-def enrich_span(**properties):
+def enrich_span(
+    config=None,
+    metadata=None,
+    metrics=None,
+    feedback=None,
+    inputs=None,
+    outputs=None,
+    error=None
+):
     span = otel_trace.get_current_span()
     if span is None:
         logger.warning("Please use enrich_span inside a traced function.")
     else:
-        instrumentor._enrich_span(span, **properties)
+        instrumentor._enrich_span(span, config, metadata, metrics, feedback, inputs, outputs, error)
