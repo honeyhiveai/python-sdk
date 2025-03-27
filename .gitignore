@@ -3,6 +3,8 @@ pyrightconfig.json
 .speakeasy/reports
 venv/
 .venv/
+.env
+*.tar.gz
 src/*.egg-info/
 *.egg-info/
 __pycache__/

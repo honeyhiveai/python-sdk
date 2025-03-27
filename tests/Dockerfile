@@ -6,30 +6,23 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     gcc \
     libc-dev \
     libffi-dev \
+    git \
     && apt-get clean \
     && rm -rf /var/lib/apt/lists/*
 
 # Set the working directory in the container
 WORKDIR /app
 
-# Copy the entire repository into the container
-COPY . /app
+# Copy the test file
+COPY __init__.py /app/
 
-# Install poetry
-RUN pip install poetry
+# Install honeyhive SDK from the tarball
+COPY honeyhive.tar.gz /app/
+RUN pip install honeyhive.tar.gz
 
-ENV POETRY_NO_INTERACTION=1 \
-    POETRY_VIRTUALENVS_IN_PROJECT=1 \
-    POETRY_VIRTUALENVS_CREATE=1 \
-    POETRY_CACHE_DIR=/tmp/poetry_cache
+# Install any additional requirements
+COPY requirements.txt /app/
+RUN pip install -r requirements.txt
 
-# COPY pyproject.toml poetry.lock ./
-
-RUN poetry install --without dev --no-root && rm -rf $POETRY_CACHE_DIR
-RUN poetry add $(cat tests/requirements.txt)
-
-ENV VIRTUAL_ENV=/app/.venv \
-    PATH="/app/.venv/bin:$PATH"
-
-# Run tests
-# CMD ["poetry", "run", "pytest -rA tests/test_hh_tracer.py"]
+# Run the test file
+CMD ["python", "__init__.py"]
