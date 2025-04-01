@@ -106,7 +106,7 @@ class Evaluation:
         self.disable_auto_tracing = True
         self.eval_run: Optional[components.CreateRunResponse] = None
         self.evaluation_session_ids: collections.deque = collections.deque()
-        self.server_url = server_url or os.environ.get("HONEYHIVE_SERVER_URL") or "https://api.honeyhive.ai"
+        self.server_url = server_url or os.environ.get("HH_API_URL") or "https://api.honeyhive.ai"
         self.verbose = verbose
         self.disable_http_tracing = disable_http_tracing
         self.metadata = metadata or {}
