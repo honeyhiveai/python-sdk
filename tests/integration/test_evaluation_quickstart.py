@@ -1,8 +1,8 @@
 import os
-from honeyhive import evaluate, evaluator
-import os
+from honeyhive import evaluate, evaluator, HoneyHive
 from openai import OpenAI
 import random
+from honeyhive.models import components, operations
 
 MY_HONEYHIVE_API_KEY = os.getenv("HH_API_KEY")
 MY_HONEYHIVE_PROJECT_NAME = os.getenv("HH_PROJECT")
@@ -72,7 +72,7 @@ def sample_evaluator(outputs, inputs, ground_truths):
 
 if __name__ == "__main__":
     # Run experiment
-    evaluate(
+    evaluation_results = evaluate(
         function = function_to_evaluate,               # Function to be evaluated
         api_key = MY_HONEYHIVE_API_KEY,
         project = MY_HONEYHIVE_PROJECT_NAME,
@@ -81,3 +81,29 @@ if __name__ == "__main__":
         evaluators=[sample_evaluator],                 # to compute client-side metrics on each run
         server_url=HONEYHIVE_SERVER_URL  # Optional / Required for self-hosted or dedicated deployments
     )
+    session_ids = evaluation_results.session_ids
+    sdk = HoneyHive(
+        bearer_auth=MY_HONEYHIVE_API_KEY,
+        server_url=HONEYHIVE_SERVER_URL
+    )
+
+    for session_id in session_ids:
+
+        req = operations.GetEventsRequestBody(
+            project=MY_HONEYHIVE_PROJECT_NAME,
+            filters=[
+                components.EventFilter(
+                    field="session_id",
+                    value=session_id,  # Use the session_id from the tracer
+                    operator=components.Operator.IS,
+                )
+            ],
+        )
+
+        print(f"Fetching events for session {session_id}...")
+        res = sdk.events.get_events(request=req)
+        assert len(res.object.events) == 3
+        
+        # Check if at least one event has the 'sample_evaluator' metric
+        assert any('sample_evaluator' in event.metrics for event in res.object.events if event.metrics), \
+            f"No event found with 'sample_evaluator' metric for session {session_id}"
