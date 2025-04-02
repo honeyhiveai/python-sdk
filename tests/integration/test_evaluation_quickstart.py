@@ -1,4 +1,5 @@
 import os
+import time
 from honeyhive import evaluate, evaluator, HoneyHive
 from openai import OpenAI
 import random
@@ -81,6 +82,7 @@ if __name__ == "__main__":
         evaluators=[sample_evaluator],                 # to compute client-side metrics on each run
         server_url=HONEYHIVE_SERVER_URL  # Optional / Required for self-hosted or dedicated deployments
     )
+    time.sleep(10)
     session_ids = evaluation_results.session_ids
     sdk = HoneyHive(
         bearer_auth=MY_HONEYHIVE_API_KEY,

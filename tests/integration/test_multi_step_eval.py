@@ -1,7 +1,11 @@
 import os
+import time
+from honeyhive import HoneyHive
+from honeyhive.models import components, operations
 
 MY_HONEYHIVE_API_KEY = os.getenv("HH_API_KEY")
 MY_HONEYHIVE_PROJECT_NAME = os.getenv("HH_PROJECT")
+HONEYHIVE_SERVER_URL = os.getenv("HH_API_URL")
 
 from honeyhive import evaluate, evaluator
 from honeyhive import trace, enrich_span
@@ -54,11 +58,40 @@ dataset = [
 
 if __name__ == "__main__":
     # Run experiment
-    evaluate(
+    evaluation_results = evaluate(
         function = rag_pipeline,               # Function to be evaluated
-        hh_api_key = MY_HONEYHIVE_API_KEY,
-        hh_project = MY_HONEYHIVE_PROJECT_NAME,
+        api_key = MY_HONEYHIVE_API_KEY,
+        project = MY_HONEYHIVE_PROJECT_NAME,
         name = 'Multi Step Evals',
         dataset = dataset,
         evaluators=[consistency_evaluator],                 # to compute client-side metrics on each run
+        server_url=HONEYHIVE_SERVER_URL # Optional / Required for self-hosted or dedicated deployments
     )
+    time.sleep(5)
+    session_ids = evaluation_results.session_ids
+    sdk = HoneyHive(
+        bearer_auth=MY_HONEYHIVE_API_KEY,
+        server_url=HONEYHIVE_SERVER_URL
+    )
+
+    session_id = session_ids[0]
+    req = operations.GetEventsRequestBody(
+        project=MY_HONEYHIVE_PROJECT_NAME,
+            filters=[
+                components.EventFilter(
+                    field="session_id",
+                    value=session_id,
+                    operator=components.Operator.IS,
+                )
+            ],
+        )
+    res = sdk.events.get_events(request=req)
+    assert len(res.object.events) >= 3, f"Expected at least 3 events for session {session_id}, found {len(res.object.events)}"
+
+    # Check if at least one event has the 'retrieval_relevance' metric from enrich_span
+    assert any('retrieval_relevance' in event.metrics for event in res.object.events if event.metrics), \
+        f"No event found with 'retrieval_relevance' metric for session {session_id}"
+
+    # Check if at least one event has the 'consistency_evaluator' metric from the evaluator
+    assert any('consistency_evaluator' in event.metrics for event in res.object.events if event.metrics), \
+        f"No event found with 'consistency_evaluator' metric for session {session_id}"

@@ -1,4 +1,5 @@
 import os
+import time
 from honeyhive import HoneyHiveTracer, enrich_session, HoneyHive
 from honeyhive.models import components, operations
 
@@ -27,6 +28,7 @@ if __name__ == "__main__":
     ],
     })
 
+    time.sleep(5)
     sdk = HoneyHive(
         bearer_auth=MY_HONEYHIVE_API_KEY,
         server_url=MY_HONEYHIVE_API_URL
