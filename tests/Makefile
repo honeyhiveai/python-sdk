@@ -2,7 +2,7 @@
 .DEFAULT_GOAL := help
 
 # Declare phony targets
-.PHONY: help clean test dev
+.PHONY: help clean test dev lambda
 
 # Help target
 help:
@@ -37,6 +37,47 @@ define build_and_run
 		environments/$(2)/Dockerfile
 endef
 
+# Function to build Lambda package
+define build_lambda_package
+	@echo "Setting up Lambda environment..."
+	@if [ ! -f honeyhive.tar.gz ]; then \
+		echo "Building package..." && \
+		cd .. && poetry build && \
+		LATEST_TARBALL=$$(ls -t dist/honeyhive-*.tar.gz | head -1) && \
+		cp $$LATEST_TARBALL tests/honeyhive.tar.gz && \
+		cd tests; \
+	fi
+	@echo "Creating Lambda package in $(2)..."
+	@mkdir -p environments/$(2)/lambda_package
+	@cp $(1) environments/$(2)/lambda_package/lambda_function.py
+	@cp honeyhive.tar.gz environments/$(2)/lambda_package/
+	@cp environments/$(2)/requirements.txt environments/$(2)/lambda_package/
+	@cp .env environments/$(2)/lambda_package/
+	@echo "Building Lambda package in Docker container..."
+	@cd environments/$(2) && \
+		docker run --rm -v $$(pwd)/lambda_package:/var/task --platform=linux/amd64 python:3.11-slim bash -c " \
+			cd /var/task && \
+			pip install \
+			  --platform manylinux2014_x86_64 \
+			  --target . \
+			  --implementation cp \
+			  --python-version 3.11 \
+			  --only-binary=:all: \
+			  --upgrade -r requirements.txt && \
+			pip install \
+			  --platform manylinux2014_x86_64 \
+			  --target . \
+			  --implementation cp \
+			  --python-version 3.11 \
+			  --only-binary=:all: \
+			  honeyhive.tar.gz && \
+			rm -f honeyhive.tar.gz \
+		" && \
+		cd lambda_package && zip -r ../lambda.zip . && \
+		cd ../..
+	@echo "Lambda package created at environments/$(2)/lambda.zip"
+endef
+
 # Test target
 test:
 	@if [ -z "$(FILE)" ] || [ -z "$(ENV)" ]; then \
@@ -59,6 +100,15 @@ dev:
 	cd tests
 	$(call build_and_run,$(FILE),$(ENV))
 
+# Lambda target
+lambda:
+	@if [ -z "$(FILE)" ] || [ -z "$(ENV)" ]; then \
+		echo "Error: Both FILE and ENV must be specified."; \
+		echo "Usage: make lambda FILE=<test-file> ENV=<environment>"; \
+		exit 1; \
+	fi
+	$(call build_lambda_package,$(FILE),$(ENV))
+
 # Clean target
 clean:
 	@echo "Cleaning up..."
@@ -67,4 +117,5 @@ clean:
 		rm -f $$dir/honeyhive.tar.gz; \
 		rm -f $$dir/__init__.py; \
 		rm -f $$dir/Dockerfile; \
+		rm -f $$dir/lambda.zip;
 	done 

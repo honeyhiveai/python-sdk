@@ -16,10 +16,17 @@ For development (builds the package first):
 make dev FILE=integration/sanity.py ENV=openai
 ```
 
+To create a Lambda deployment package:
+
+```bash
+make lambda FILE=integration/test_lambda.py ENV=openai
+```
+
 Or use the test.sh script:
 
 ```bash
 ./test.sh test integration/sanity.py openai
+./test.sh lambda integration/test_lambda.py openai
 ```
 
 ## Overview
@@ -30,6 +37,8 @@ This testing framework solves the challenge of testing across multiple environme
 2. Copies the test file, environment config, and Dockerfile to the target environment directory
 3. Builds and runs a Docker container with the specific environment 
 4. Cleans up after the test completes
+
+For Lambda deployments, it creates a zip package with all dependencies that can be directly uploaded to AWS Lambda.
 
 ## Directory Structure
 
@@ -64,6 +73,16 @@ make help
 ```bash
 make test FILE=<path-to-test-file> ENV=<environment-name>
 ```
+
+### Creating Lambda Deployment Packages
+
+1. Create a Lambda function file in the `integration/` directory
+2. Run the lambda target:
+```bash
+make lambda FILE=<path-to-lambda-file> ENV=<environment-name>
+```
+3. The Lambda deployment package will be created at `environments/<env>/lambda.zip`
+4. Upload this zip file to AWS Lambda
 
 ### Creating New Environments
 

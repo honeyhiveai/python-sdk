@@ -7,7 +7,7 @@ import io
 from contextlib import redirect_stdout
 import subprocess
 
-from honeyhive.utils.telemetry import Telemetry
+# from honeyhive.utils.telemetry import Telemetry
 from honeyhive.utils.baggage_dict import BaggageDict
 from honeyhive.models import operations, components, errors
 from honeyhive.sdk import HoneyHive
@@ -194,7 +194,7 @@ class HoneyHiveTracer:
                         print("\033[38;5;208mHoneyHive is initialized\033[0m")
                     HoneyHiveTracer._is_traceloop_initialized = True
                     HoneyHiveTracer.is_evaluation = is_evaluation
-                Telemetry().capture("tracer_init", {"hhai_session_id": self.session_id, "hhai_project": project})
+                # Telemetry().capture("tracer_init", {"hhai_session_id": self.session_id, "hhai_project": project})
 
             # link_carrier
             if link_carrier is not None:
