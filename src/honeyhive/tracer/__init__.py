@@ -259,6 +259,46 @@ class HoneyHiveTracer:
     def _validate_server_url(server_url):
         return server_url and type(server_url) == str
     
+    @staticmethod
+    def _validate_project(project):
+        return project and type(project) == str
+    
+    @staticmethod
+    def _validate_source(source):
+        return source and type(source) == str
+    
+    @staticmethod
+    def _get_validated_api_key(api_key=None):
+        if api_key is None:
+            api_key = os.getenv("HH_API_KEY")
+        if not HoneyHiveTracer._validate_api_key(api_key):
+            raise Exception("api_key must be specified or set in environment variable HH_API_KEY.")
+        return api_key
+    
+    @staticmethod
+    def _get_validated_server_url(server_url=None):
+        if server_url is None or server_url == 'https://api.honeyhive.ai':
+            server_url = os.getenv("HH_API_URL", 'https://api.honeyhive.ai')
+        if not HoneyHiveTracer._validate_server_url(server_url):
+            raise Exception("server_url must be a valid URL string.")
+        return server_url
+    
+    @staticmethod
+    def _get_validated_project(project=None):
+        if project is None:
+            project = os.getenv("HH_PROJECT")
+        if not HoneyHiveTracer._validate_project(project):
+            raise Exception("project must be specified or set in environment variable HH_PROJECT.")
+        return project
+    
+    @staticmethod
+    def _get_validated_source(source=None):
+        if source is None:
+            source = os.getenv("HH_SOURCE", "dev")
+        if not HoneyHiveTracer._validate_source(source):
+            raise Exception("source must be a non-empty string.")
+        return source
+    
     def session_start(self) -> str:
         """Start a session using the tracer's parameters"""
         self.session_id = HoneyHiveTracer.__start_session(
@@ -620,24 +660,11 @@ def start_session(
         '123e4567-e89b-12d3-a456-426614174000'
     """
     try:
-        # Get server URL from env if not provided
-        if server_url == 'https://api.honeyhive.ai':
-            server_url = os.getenv("HH_API_URL", server_url)
-        
-        if api_key is None:
-            api_key = os.getenv("HH_API_KEY")
-            if api_key is None:
-                raise Exception("api_key must be specified or set in environment variable HH_API_KEY.")
-        
-        # Get project from env if not provided
-        if project is None:
-            project = os.getenv("HH_PROJECT")
-            if project is None:
-                raise Exception("project must be specified or set in environment variable HH_PROJECT.")
-        
-        # Get source from env if not provided
-        if source is None:
-            source = os.getenv("HH_SOURCE", "dev")   
+        # Validate and get required parameters
+        api_key = HoneyHiveTracer._get_validated_api_key(api_key)
+        server_url = HoneyHiveTracer._get_validated_server_url(server_url)
+        project = HoneyHiveTracer._get_validated_project(project)
+        source = HoneyHiveTracer._get_validated_source(source)
 
         if capture_git_info:
             git_info = HoneyHiveTracer._get_git_info()
@@ -730,21 +757,11 @@ def log(
         '123e4567-e89b-12d3-a456-426614174000'
     """
     try:
-        # Get server URL from env if not provided
-        if server_url == 'https://api.honeyhive.ai':
-            server_url = os.getenv("HH_API_URL", server_url)
-        
-        # Get API key from env if not provided
-        if api_key is None:
-            api_key = os.getenv("HH_API_KEY")
-            if api_key is None:
-                raise Exception("api_key must be specified or set in environment variable HH_API_KEY.")
-        
-        # Get project from env if not provided
-        if project is None:
-            project = os.getenv("HH_PROJECT")
-            if project is None:
-                raise Exception("project must be specified or set in environment variable HH_PROJECT.")
+        # Validate and get required parameters
+        api_key = HoneyHiveTracer._get_validated_api_key(api_key)
+        server_url = HoneyHiveTracer._get_validated_server_url(server_url)
+        project = HoneyHiveTracer._get_validated_project(project)
+        source = HoneyHiveTracer._get_validated_source(source)
         
         # Validate session_id
         if session_id is not None:
@@ -759,9 +776,6 @@ def log(
         if event_type not in ["tool", "model", "chain"]:
             raise Exception("event_type must be one of: tool, model, chain")
         
-        if not source:
-            source = os.getenv("HH_SOURCE", "dev")
-
         if not duration:
             duration = 10
         
