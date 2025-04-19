@@ -688,6 +688,7 @@ def log(
     config: dict = None,
     inputs: dict = None,
     outputs: dict = None,
+    duration: int = None,
     metadata: dict = None,
     feedback: dict = None,
     metrics: dict = None,
@@ -708,6 +709,7 @@ def log(
         config (dict, optional): Configuration for the event.
         inputs (dict, optional): Input parameters for the event.
         outputs (dict, optional): Output results from the event.
+        duration (int, optional): Duration of the event in milliseconds.
         metadata (dict, optional): Additional metadata for the event.
         feedback (dict, optional): Feedback data for the event.
         metrics (dict, optional): Metrics data for the event.
@@ -757,6 +759,9 @@ def log(
         
         if not source:
             source = os.getenv("HH_SOURCE", "dev")
+
+        if not duration:
+            duration = 10
         
         # Create the event using the SDK
         sdk = HoneyHive(bearer_auth=api_key, server_url=server_url)
@@ -771,6 +776,7 @@ def log(
                     config=config or {},
                     inputs=inputs or {},
                     outputs=outputs or {},
+                    duration=duration,
                     metadata=metadata or {},
                     feedback=feedback or {},
                     metrics=metrics or {},

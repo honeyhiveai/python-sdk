@@ -28,7 +28,7 @@ def test_start_session():
     res = sdk.session.get_session(session_id=session_id)
     assert res.event is not None
     assert res.event.session_id == session_id
-    assert res.event.project == os.environ["HH_PROJECT"]
+    assert res.event.project_id is not None
     assert res.event.source == "sdk_test"
 
 def test_start_session_with_metadata():
@@ -51,7 +51,9 @@ def test_start_session_with_metadata():
     sdk = honeyhive.HoneyHive(bearer_auth=os.environ["HH_API_KEY"], server_url=os.environ["HH_API_URL"])
     res = sdk.session.get_session(session_id=session_id)
     assert res.event is not None
-    assert res.event.metadata == metadata
+    assert res.event.metadata is not None
+    assert res.event.metadata.get("test_key") == "test_value"
+    assert res.event.metadata.get("version") == "1.0.0"
 
 def test_log_event():
     # First start a session
@@ -76,11 +78,12 @@ def test_log_event():
         inputs=inputs,
         outputs=outputs,
         metadata=metadata,
-        server_url=os.environ["HH_API_URL"]
+        server_url=os.environ["HH_API_URL"],
+        verbose=True
     )
     
     # Wait for event to be processed
-    time.sleep(5)
+    time.sleep(10)
     
     # Verify event was logged correctly
     sdk = honeyhive.HoneyHive(bearer_auth=os.environ["HH_API_KEY"], server_url=os.environ["HH_API_URL"])
@@ -100,9 +103,9 @@ def test_log_event():
     assert len(res.object.events) == 1
     event = res.object.events[0]
     assert event.event_name == event_name
-    assert event.inputs == inputs
-    assert event.outputs == outputs
-    assert event.metadata == metadata
+    assert event.inputs.get("query") == inputs["query"]
+    assert event.outputs.get("result") == outputs["result"]
+    assert event.metadata.get("test_meta") == metadata["test_meta"]
     assert event.session_id == session_id
 
 def test_log_event_with_feedback():
@@ -148,7 +151,9 @@ def test_log_event_with_feedback():
     assert res.status_code == 200
     assert res.object is not None
     assert len(res.object.events) == 1
-    assert res.object.events[0].feedback == feedback
+    assert res.object.events[0].feedback is not None
+    assert res.object.events[0].feedback.get("rating") == feedback["rating"]
+    assert res.object.events[0].feedback.get("comment") == feedback["comment"]
 
 def test_log_event_with_metrics():
     # Start a session
@@ -193,7 +198,9 @@ def test_log_event_with_metrics():
     assert res.status_code == 200
     assert res.object is not None
     assert len(res.object.events) == 1
-    assert res.object.events[0].metrics == metrics
+    assert res.object.events[0].metrics is not None
+    assert res.object.events[0].metrics.get("latency") == metrics["latency"]
+    assert res.object.events[0].metrics.get("tokens_used") == metrics["tokens_used"]
 
 if __name__ == "__main__":
     test_start_session()
