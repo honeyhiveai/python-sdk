@@ -642,6 +642,8 @@ def start_session(
         if capture_git_info:
             git_info = HoneyHiveTracer._get_git_info()
             if "error" not in git_info:
+                if metadata is None:
+                    metadata = {}
                 metadata = {**metadata, **git_info}
         
         # Validate session_id if provided
