@@ -2,7 +2,7 @@
 
 from .sdk import *
 from .sdkconfiguration import *
-from .tracer import HoneyHiveTracer, enrich_session
+from .tracer import HoneyHiveTracer, enrich_session, start_session, log
 from .tracer.custom import trace, atrace, enrich_span
 from .evaluation import evaluate, evaluator, aevaluator
 from .utils.dotdict import dotdict
@@ -14,6 +14,8 @@ __all__ = [
     "trace",
     "atrace",
     "enrich_span",
+    "start_session",
+    "log",
     "evaluate",
     "evaluator",
     "aevaluator",
