@@ -36,3 +36,6 @@ def handler(event, context):
     print(f"OpenAI response: {response}")
 
     print('Completed test')
+
+if __name__ == "__main__":
+    handler({}, {})
