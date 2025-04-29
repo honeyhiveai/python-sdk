@@ -190,7 +190,7 @@ def start(
     except Exception as e:
         if verbose:
             print(f"Error starting session: {str(e)}")
-        raise
+            raise
 
 def log(
     api_key: str = None,
