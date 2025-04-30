@@ -1,16 +1,18 @@
 import os
 import honeyhive
-from honeyhive.logger import start, log, update
+from honeyhive.logger import start, log, update, _retry_with_backoff
 import uuid
 from honeyhive.models import components, operations
 import time
+import urllib.error
+import socket
 
 def test_start_session():
     # Start a new session
     session_id = start(
         api_key=os.environ["HH_API_KEY"],
         project=os.environ["HH_PROJECT"],
-        env="sdk_test",
+        source="sdk_test",
         session_name="test_session",
         server_url=os.environ["HH_API_URL"]
     )
@@ -50,7 +52,7 @@ def test_start_session_with_metadata():
     session_id = start(
         api_key=os.environ["HH_API_KEY"],
         project=os.environ["HH_PROJECT"],
-        env="sdk_test",
+        source="sdk_test",
         session_name="test_session_with_metadata",
         metadata=metadata,
         server_url=os.environ["HH_API_URL"]
@@ -70,7 +72,7 @@ def test_start_session_with_metadata():
 def test_log_event():
     # First start a session
     session_id = start(
-        env="sdk_test",
+        source="sdk_test",
         session_name="test_log_event"
     )
     
@@ -128,7 +130,7 @@ def test_log_event():
 def test_log_event_with_metrics():
     # Start a session
     session_id = start(
-        env="sdk_test",
+        source="sdk_test",
         session_name="test_log_event_with_metrics"
     )
     
@@ -182,7 +184,7 @@ def test_update_with_session_id():
     session_id = start(
         api_key=os.environ["HH_API_KEY"],
         project=os.environ["HH_PROJECT"],
-        env="sdk_test",
+        source="sdk_test",
         session_name="test_session",
         server_url=os.environ["HH_API_URL"]
     )
@@ -208,7 +210,7 @@ def test_update_session():
     session_id = start(
         api_key=os.environ["HH_API_KEY"],
         project=os.environ["HH_PROJECT"],
-        env="sdk_test",
+        source="sdk_test",
         session_name="test_session",
         server_url=os.environ["HH_API_URL"]
     )
@@ -228,10 +230,136 @@ def test_update_session():
     assert res.event is not None
     assert res.event.session_id == session_id
     assert res.event.metadata.get("test") == "value"
+
+def test_retry_with_backoff_time_constraint():
+    """Test that retry_with_backoff never exceeds 5 seconds total"""
+    import time
     
+    def fail_until_timeout():
+        time.sleep(0.05)  # Reduced sleep time
+        raise urllib.error.URLError("Connection failed")
+    
+    start_time = time.time()
+    try:
+        _retry_with_backoff(
+            fail_until_timeout,
+            max_retries=8,      # Reduced retries
+            base_delay=0.05,    # Reduced base delay
+            max_delay=0.2,      # Reduced max delay
+            timeout=0.5         # Reduced timeout
+        )
+        assert False, "Should have raised an exception"
+    except urllib.error.URLError:
+        total_time = time.time() - start_time
+        assert total_time < 5.0, f"Total time {total_time:.2f}s exceeded 5 second limit"
+
+def test_retry_with_backoff_success():
+    """Test that retry_with_backoff succeeds on first attempt"""
+    def success_func():
+        return "success"
+    
+    result = _retry_with_backoff(
+        success_func,
+        max_retries=3,
+        base_delay=0.1,
+        max_delay=0.5,
+        timeout=1.0
+    )
+    assert result == "success"
+
+def test_retry_with_backoff_retries():
+    """Test that retry_with_backoff retries on failure and eventually succeeds"""
+    attempts = 0
+    
+    def fail_then_succeed():
+        nonlocal attempts
+        attempts += 1
+        if attempts < 3:
+            raise urllib.error.URLError("Connection failed")
+        return "success"
+    
+    result = _retry_with_backoff(
+        fail_then_succeed,
+        max_retries=3,
+        base_delay=0.1,
+        max_delay=0.5,
+        timeout=1.0
+    )
+    assert result == "success"
+    assert attempts == 3
+
+def test_retry_with_backoff_max_retries():
+    """Test that retry_with_backoff gives up after max retries"""
+    attempts = 0
+    
+    def always_fail():
+        nonlocal attempts
+        attempts += 1
+        raise urllib.error.URLError("Connection failed")
+    
+    try:
+        _retry_with_backoff(
+            always_fail,
+            max_retries=2,
+            base_delay=0.1,
+            max_delay=0.5,
+            timeout=1.0
+        )
+        assert False, "Should have raised an exception"
+    except urllib.error.URLError:
+        assert attempts == 3  # Initial attempt + 2 retries
+
+def test_retry_with_backoff_non_retryable_error():
+    """Test that retry_with_backoff immediately raises non-retryable errors"""
+    attempts = 0
+    
+    def raise_value_error():
+        nonlocal attempts
+        attempts += 1
+        raise ValueError("Non-retryable error")
+    
+    try:
+        _retry_with_backoff(
+            raise_value_error,
+            max_retries=3,
+            base_delay=0.1,
+            max_delay=0.5,
+            timeout=1.0
+        )
+        assert False, "Should have raised an exception"
+    except ValueError:
+        assert attempts == 1  # Should not retry for non-retryable errors
+
+def test_retry_with_backoff_timeout():
+    """Test that retry_with_backoff handles socket timeouts"""
+    attempts = 0
+    
+    def timeout_then_succeed():
+        nonlocal attempts
+        attempts += 1
+        if attempts < 2:
+            raise socket.timeout("Connection timed out")
+        return "success"
+    
+    result = _retry_with_backoff(
+        timeout_then_succeed,
+        max_retries=3,
+        base_delay=0.1,
+        max_delay=0.5,
+        timeout=1.0
+    )
+    assert result == "success"
+    assert attempts == 2
+
 if __name__ == "__main__":
     test_start_session()
     test_start_session_with_metadata()
     test_log_event()
     test_log_event_with_metrics()
     test_update_session()
+    test_retry_with_backoff_success()
+    test_retry_with_backoff_retries()
+    test_retry_with_backoff_max_retries()
+    test_retry_with_backoff_non_retryable_error()
+    test_retry_with_backoff_timeout()
+    test_retry_with_backoff_time_constraint()

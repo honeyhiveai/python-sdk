@@ -11,7 +11,7 @@ from typing import Dict, Any, Callable, TypeVar
 T = TypeVar('T')
 
 def _retry_with_backoff(
-    func: Callable[..., T],
+    http_request_func: Callable[..., T],
     max_retries: int = 3,
     base_delay: float = 1.0,
     max_delay: float = 5.0,
@@ -22,7 +22,7 @@ def _retry_with_backoff(
     Retry a function with exponential backoff and jitter.
     
     Args:
-        func: The function to retry
+        http_request_func: The function that makes the HTTP request to retry
         max_retries: Maximum number of retry attempts
         base_delay: Base delay in seconds for exponential backoff
         max_delay: Maximum delay in seconds
@@ -43,7 +43,7 @@ def _retry_with_backoff(
             socket.setdefaulttimeout(timeout)
             
             # Try the function
-            return func()
+            return http_request_func()
             
         except (urllib.error.URLError, socket.timeout) as e:
             last_exception = e
@@ -71,7 +71,7 @@ def _retry_with_backoff(
 def start(
     api_key: str = None,
     project: str = None,
-    session_name: str = "unknown",
+    session_name: str = None,
     source: str = "dev",
     config: Dict[str, Any] = None,
     inputs: Dict[str, Any] = None,
@@ -91,7 +91,7 @@ def start(
     Args:
         api_key (str, optional): Your HoneyHive API key. Must be provided or set via HH_API_KEY env var.
         project (str, optional): The project name. Must be provided or set via HH_PROJECT env var.
-        session_name (str, optional): Optional tag to filter sessions on "v1", "au1i249c" (commit hash), etc. Defaults to "unknown".
+        session_name (str, optional): Optional tag to filter sessions on "v1", "au1i249c" (commit hash), etc. Defaults to project name.
         source (str, optional): Environment where the code is running. Defaults to "dev" or HH_SOURCE env var.
         config (dict, optional): Configuration details for the session like experiment versions, model names, etc.
         inputs (dict, optional): Input parameters for the session.
@@ -111,7 +111,8 @@ def start(
         source = source or os.getenv("HH_SOURCE", "dev")
         server_url = server_url or os.getenv("HH_API_URL", "https://api.honeyhive.ai")
 
-        session_name = project
+        if not session_name:
+            session_name = project
 
         if not api_key:
             raise Exception(
@@ -198,7 +199,7 @@ def log(
     project: str = None,
     source: str = "dev",
     event_name: str = None,
-    event_type: str = "model",
+    event_type: str = "tool",
     config: Dict[str, Any] = None,
     inputs: Dict[str, Any] = None,
     outputs: Dict[str, Any] = None,
@@ -220,7 +221,7 @@ def log(
         project (str, optional): The project name. Must be provided or set via HH_PROJECT env var.
         source (str, optional): Environment where the code is running. Defaults to "dev" or HH_SOURCE env var.
         event_name (str): Name of the event being logged. Required.
-        event_type (str, optional): Type of event - "model", "tool", or "chain". Defaults to "model".
+        event_type (str, optional): Type of event - "model", "tool", or "chain". Defaults to "tool".
         config (dict, optional): Configuration details for the event like model name, vector index name, etc.
         inputs (dict, optional): Input parameters for the event.
         outputs (dict, optional): Output data from the event.
