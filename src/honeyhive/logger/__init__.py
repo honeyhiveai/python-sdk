@@ -188,6 +188,7 @@ def start(
         return _retry_with_backoff(make_request, verbose=verbose)
 
     except Exception as e:
+        print("HoneyHive: Failed to start session. Please enable verbose mode to debug.")
         if verbose:
             print(f"Error starting session: {str(e)}")
             raise
@@ -336,6 +337,7 @@ def log(
         return _retry_with_backoff(make_request, verbose=verbose)
 
     except Exception as e:
+        print("HoneyHive: Failed to log event. Please enable verbose mode to debug.")
         if verbose:
             print(f"Error logging event: {str(e)}")
             raise
@@ -475,6 +477,7 @@ def update(
         _retry_with_backoff(make_request, verbose=verbose)
 
     except Exception as e:
+        print("HoneyHive: Failed to update event. Please enable verbose mode to debug.")
         if verbose:
             print(f"Error updating event: {str(e)}")
             raise
