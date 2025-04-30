@@ -351,6 +351,204 @@ def test_retry_with_backoff_timeout():
     assert result == "success"
     assert attempts == 2
 
+def test_concurrent_logging():
+    """Test that multiple log calls work correctly in concurrent environments"""
+    import threading
+    import time
+    
+    # Start a session
+    session_id = start(
+        source="sdk_test",
+        session_name="test_concurrent_logging"
+    )
+    
+    # Create a function to log events
+    def log_event(event_num):
+        event_id = log(
+            session_id=session_id,
+            event_name=f"concurrent_event_{event_num}",
+            event_type="tool",
+            inputs={"number": event_num},
+            outputs={"result": f"result_{event_num}"}
+        )
+        return event_id
+    
+    # Create multiple threads to log events
+    threads = []
+    event_ids = []
+    num_events = 5
+    
+    for i in range(num_events):
+        thread = threading.Thread(target=lambda i=i: event_ids.append(log_event(i)))
+        threads.append(thread)
+        thread.start()
+    
+    # Wait for all threads to complete
+    for thread in threads:
+        thread.join()
+    
+    # Verify all events were logged
+    assert len(event_ids) == num_events
+    assert len(set(event_ids)) == num_events  # All event IDs should be unique
+    
+    # Wait for events to be processed
+    time.sleep(5)
+    
+    # Verify events in API
+    sdk = honeyhive.HoneyHive(bearer_auth=os.environ["HH_API_KEY"], server_url=os.environ["HH_API_URL"])
+    for event_id in event_ids:
+        req = operations.GetEventsRequestBody(
+            project=os.environ["HH_PROJECT"],
+            filters=[
+                components.EventFilter(
+                    field="event_id",
+                    value=event_id,
+                    operator=components.Operator.IS,
+                )
+            ],
+        )
+        res = sdk.events.get_events(request=req)
+        assert res.status_code == 200
+        assert res.object is not None
+        assert len(res.object.events) == 1
+        event = res.object.events[0]
+        assert event.session_id == session_id
+
+def test_concurrent_sessions():
+    """Test that multiple sessions can be created and logged to concurrently"""
+    import threading
+    import time
+    
+    # Create a function to start a session and log an event
+    def create_and_log_session(session_num):
+        session_id = start(
+            source="sdk_test",
+            session_name=f"concurrent_session_{session_num}"
+        )
+        
+        event_id = log(
+            session_id=session_id,
+            event_name=f"session_{session_num}_event",
+            event_type="tool",
+            inputs={"session": session_num},
+            outputs={"result": f"session_{session_num}_result"}
+        )
+        return session_id, event_id
+    
+    # Create multiple threads to create sessions and log events
+    threads = []
+    results = []
+    num_sessions = 3
+    
+    for i in range(num_sessions):
+        thread = threading.Thread(target=lambda i=i: results.append(create_and_log_session(i)))
+        threads.append(thread)
+        thread.start()
+    
+    # Wait for all threads to complete
+    for thread in threads:
+        thread.join()
+    
+    # Verify all sessions and events were created
+    assert len(results) == num_sessions
+    session_ids = [r[0] for r in results]
+    event_ids = [r[1] for r in results]
+    assert len(set(session_ids)) == num_sessions  # All session IDs should be unique
+    assert len(set(event_ids)) == num_sessions   # All event IDs should be unique
+    
+    # Wait for events to be processed
+    time.sleep(5)
+    
+    # Verify sessions and events in API
+    sdk = honeyhive.HoneyHive(bearer_auth=os.environ["HH_API_KEY"], server_url=os.environ["HH_API_URL"])
+    for session_id, event_id in results:
+        # Verify session
+        res = sdk.session.get_session(session_id=session_id)
+        assert res.event is not None
+        assert res.event.session_id == session_id
+        
+        # Verify event
+        req = operations.GetEventsRequestBody(
+            project=os.environ["HH_PROJECT"],
+            filters=[
+                components.EventFilter(
+                    field="event_id",
+                    value=event_id,
+                    operator=components.Operator.IS,
+                )
+            ],
+        )
+        res = sdk.events.get_events(request=req)
+        assert res.status_code == 200
+        assert res.object is not None
+        assert len(res.object.events) == 1
+        event = res.object.events[0]
+        assert event.session_id == session_id
+
+def test_concurrent_updates():
+    """Test that updates to events work correctly in concurrent environments"""
+    import threading
+    import time
+    
+    # Start a session and log an event
+    session_id = start(
+        source="sdk_test",
+        session_name="test_concurrent_updates"
+    )
+    
+    event_id = log(
+        session_id=session_id,
+        event_name="concurrent_update_event",
+        event_type="tool"
+    )
+    
+    # Create a function to update the event
+    def update_event(update_num):
+        update(
+            event_id=event_id,
+            metadata={"update_num": update_num},
+            metrics={"metric": update_num}
+        )
+    
+    # Create multiple threads to update the event
+    threads = []
+    num_updates = 3
+    
+    for i in range(num_updates):
+        thread = threading.Thread(target=lambda i=i: update_event(i))
+        threads.append(thread)
+        thread.start()
+    
+    # Wait for all threads to complete
+    for thread in threads:
+        thread.join()
+    
+    # Wait for updates to be processed
+    time.sleep(5)
+    
+    # Verify event in API
+    sdk = honeyhive.HoneyHive(bearer_auth=os.environ["HH_API_KEY"], server_url=os.environ["HH_API_URL"])
+    req = operations.GetEventsRequestBody(
+        project=os.environ["HH_PROJECT"],
+        filters=[
+            components.EventFilter(
+                field="event_id",
+                value=event_id,
+                operator=components.Operator.IS,
+            )
+        ],
+    )
+    res = sdk.events.get_events(request=req)
+    assert res.status_code == 200
+    assert res.object is not None
+    assert len(res.object.events) == 1
+    event = res.object.events[0]
+    assert event.session_id == session_id
+    assert event.metadata is not None
+    assert "update_num" in event.metadata
+    assert event.metrics is not None
+    assert "metric" in event.metrics
+
 if __name__ == "__main__":
     test_start_session()
     test_start_session_with_metadata()
@@ -363,3 +561,6 @@ if __name__ == "__main__":
     test_retry_with_backoff_non_retryable_error()
     test_retry_with_backoff_timeout()
     test_retry_with_backoff_time_constraint()
+    test_concurrent_logging()
+    test_concurrent_sessions()
+    test_concurrent_updates()
