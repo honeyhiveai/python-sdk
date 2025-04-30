@@ -72,7 +72,7 @@ def start(
     api_key: str = None,
     project: str = None,
     session_name: str = "unknown",
-    env: str = "dev",
+    source: str = "dev",
     config: Dict[str, Any] = None,
     inputs: Dict[str, Any] = None,
     metadata: Dict[str, Any] = None,
@@ -92,7 +92,7 @@ def start(
         api_key (str, optional): Your HoneyHive API key. Must be provided or set via HH_API_KEY env var.
         project (str, optional): The project name. Must be provided or set via HH_PROJECT env var.
         session_name (str, optional): Optional tag to filter sessions on "v1", "au1i249c" (commit hash), etc. Defaults to "unknown".
-        environment (str, optional): Environment where the code is running. Defaults to "dev" or HH_SOURCE env var.
+        source (str, optional): Environment where the code is running. Defaults to "dev" or HH_SOURCE env var.
         config (dict, optional): Configuration details for the session like experiment versions, model names, etc.
         inputs (dict, optional): Input parameters for the session.
         metadata (dict, optional): Additional metadata for the session.
@@ -108,7 +108,7 @@ def start(
         # Get required parameters from environment if not provided
         api_key = api_key or os.getenv("HH_API_KEY")
         project = project or os.getenv("HH_PROJECT")
-        source = env or os.getenv("HH_SOURCE", "dev")
+        source = source or os.getenv("HH_SOURCE", "dev")
         server_url = server_url or os.getenv("HH_API_URL", "https://api.honeyhive.ai")
 
         session_name = project
@@ -196,7 +196,7 @@ def start(
 def log(
     api_key: str = None,
     project: str = None,
-    env: str = "dev",
+    source: str = "dev",
     event_name: str = None,
     event_type: str = "model",
     config: Dict[str, Any] = None,
@@ -218,7 +218,7 @@ def log(
     Args:
         api_key (str, optional): Your HoneyHive API key. Must be provided or set via HH_API_KEY env var.
         project (str, optional): The project name. Must be provided or set via HH_PROJECT env var.
-        env (str, optional): Environment where the code is running. Defaults to "dev" or HH_SOURCE env var.
+        source (str, optional): Environment where the code is running. Defaults to "dev" or HH_SOURCE env var.
         event_name (str): Name of the event being logged. Required.
         event_type (str, optional): Type of event - "model", "tool", or "chain". Defaults to "model".
         config (dict, optional): Configuration details for the event like model name, vector index name, etc.
@@ -284,7 +284,7 @@ def log(
             "event": {
                 "session_id": session_id,
                 "project": project,
-                "source": env,
+                "source": source,
                 "event_name": event_name,
                 "event_type": event_type.lower(),  # Normalize to lowercase
                 "config": config or {},
