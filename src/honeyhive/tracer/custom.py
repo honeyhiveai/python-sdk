@@ -127,14 +127,12 @@ class FunctionInstrumentor(BaseInstrumentor):
             event_type=None,
             config=None,
             metadata=None,
-            evaluator=None,
             event_name=None,
         ):
             self.func = func
             self.event_type = event_type
             self.config = config
             self.metadata = metadata
-            self.evaluator = evaluator
             self.event_name = event_name
 
             if func is not None:
@@ -146,11 +144,10 @@ class FunctionInstrumentor(BaseInstrumentor):
             event_type=None,
             config=None,
             metadata=None,
-            evaluator=None,
             event_name=None,
         ):
             if func is None:
-                return lambda f: cls(f, event_type, config, metadata, evaluator, event_name)
+                return lambda f: cls(f, event_type, config, metadata, event_name)
             return super().__new__(cls)
 
         def __get__(self, instance, owner):
