@@ -14,7 +14,7 @@ from rich.console import Console
 from rich.table import Table
 
 from dataclasses import dataclass
-from typing import Optional, List, Dict, Any, Callable
+from typing import Optional, List, Dict, Any, Callable, Union
 import os
 import hashlib
 import json
@@ -54,7 +54,7 @@ class Evaluation:
         name: Optional[str] = None,
         suite: Optional[str] = None,
         function: Optional[Callable] = None,
-        dataset: Optional[List[Any]] = None,
+        dataset: Optional[Union[List[Any], Dict[str, Any]]] = None,
         evaluators: Optional[List[Any]] = None,
         dataset_id: Optional[str] = None,
         max_workers: int = 10,
