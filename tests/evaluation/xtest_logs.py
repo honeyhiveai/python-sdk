@@ -123,13 +123,11 @@ if __name__ == "__main__":
     # Run the experiment
     evaluate(
         function=summarize_claim,
-        hh_api_key="MGc0cnl6MWh3MDk5OXhndGgycm92Y3A=",
-        hh_project="e2e",
+        hh_api_key=os.environ["HH_API_KEY"],
+        hh_project=os.environ["HH_PROJECT"],
         name="Claims Summarizer Experiment",
-        dataset_id="67c60a93d3333713242d30e0",
+        dataset_id=os.environ["HH_DATASET"],
         evaluators=[test_eval],
         run_concurrently=True,
         verbose=True,
-        server_url='https://nationwide.api.honeyhive.ai'
-        # server_url='http://localhost:3000'
     )

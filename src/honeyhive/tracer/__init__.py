@@ -7,7 +7,7 @@ import io
 from contextlib import redirect_stdout
 import subprocess
 
-from honeyhive.utils.telemetry import Telemetry
+# from honeyhive.utils.telemetry import Telemetry
 from honeyhive.utils.baggage_dict import BaggageDict
 from honeyhive.models import operations, components, errors
 from honeyhive.sdk import HoneyHive
@@ -194,7 +194,7 @@ class HoneyHiveTracer:
                         print("\033[38;5;208mHoneyHive is initialized\033[0m")
                     HoneyHiveTracer._is_traceloop_initialized = True
                     HoneyHiveTracer.is_evaluation = is_evaluation
-                Telemetry().capture("tracer_init", {"hhai_session_id": self.session_id, "hhai_project": project})
+                # Telemetry().capture("tracer_init", {"hhai_session_id": self.session_id, "hhai_project": project})
 
             # link_carrier
             if link_carrier is not None:
@@ -258,6 +258,46 @@ class HoneyHiveTracer:
     @staticmethod
     def _validate_server_url(server_url):
         return server_url and type(server_url) == str
+    
+    @staticmethod
+    def _validate_project(project):
+        return project and type(project) == str
+    
+    @staticmethod
+    def _validate_source(source):
+        return source and type(source) == str
+    
+    @staticmethod
+    def _get_validated_api_key(api_key=None):
+        if api_key is None:
+            api_key = os.getenv("HH_API_KEY")
+        if not HoneyHiveTracer._validate_api_key(api_key):
+            raise Exception("api_key must be specified or set in environment variable HH_API_KEY.")
+        return api_key
+    
+    @staticmethod
+    def _get_validated_server_url(server_url=None):
+        if server_url is None or server_url == 'https://api.honeyhive.ai':
+            server_url = os.getenv("HH_API_URL", 'https://api.honeyhive.ai')
+        if not HoneyHiveTracer._validate_server_url(server_url):
+            raise Exception("server_url must be a valid URL string.")
+        return server_url
+    
+    @staticmethod
+    def _get_validated_project(project=None):
+        if project is None:
+            project = os.getenv("HH_PROJECT")
+        if not HoneyHiveTracer._validate_project(project):
+            raise Exception("project must be specified or set in environment variable HH_PROJECT.")
+        return project
+    
+    @staticmethod
+    def _get_validated_source(source=None):
+        if source is None:
+            source = os.getenv("HH_SOURCE", "dev")
+        if not HoneyHiveTracer._validate_source(source):
+            raise Exception("source must be a non-empty string.")
+        return source
     
     def session_start(self) -> str:
         """Start a session using the tracer's parameters"""

@@ -14,7 +14,7 @@ from rich.console import Console
 from rich.table import Table
 
 from dataclasses import dataclass
-from typing import Optional, List, Dict, Any, Callable
+from typing import Optional, List, Dict, Any, Callable, Union
 import os
 import hashlib
 import json
@@ -54,7 +54,7 @@ class Evaluation:
         name: Optional[str] = None,
         suite: Optional[str] = None,
         function: Optional[Callable] = None,
-        dataset: Optional[List[Any]] = None,
+        dataset: Optional[Union[List[Any], Dict[str, Any]]] = None,
         evaluators: Optional[List[Any]] = None,
         dataset_id: Optional[str] = None,
         max_workers: int = 10,
@@ -106,14 +106,19 @@ class Evaluation:
         self.disable_auto_tracing = True
         self.eval_run: Optional[components.CreateRunResponse] = None
         self.evaluation_session_ids: collections.deque = collections.deque()
-        self.server_url = server_url or os.environ.get("HH_API_URL") or "https://api.honeyhive.ai"
+        self.server_url = server_url or os.environ.get("HH_API_URL", "https://api.honeyhive.ai")
         self.verbose = verbose
         self.disable_http_tracing = disable_http_tracing
         self.metadata = metadata or {}
 
         # only one of dataset_id or dataset should be provided
         self.dataset_id: Optional[str] = dataset_id
-        self.dataset: Optional[List[Any]] = dataset
+        self.dataset: Optional[List[Any]] = dataset if isinstance(dataset, list) else dataset["data"] if isinstance(dataset, dict) else None
+        self.external_dataset_params: Optional[Dict[str, str]] = {
+            "id": dataset["id"],
+            "name": dataset.get("name"),
+        } if isinstance(dataset, dict) and "id" in dataset else None
+        
         if not self.dataset_id and not self.dataset:
             raise Exception(
                 "No valid 'dataset_id' or 'dataset' found. Please provide one to iterate the evaluation over."
@@ -132,6 +137,9 @@ class Evaluation:
         except Exception as e:
             if self.verbose:
                 print(f"Error getting git info: {e}")
+
+        if self.external_dataset_params and self.external_dataset_params.get('name'): 
+            self.metadata['dataset_name'] = self.external_dataset_params['name']
 
         self._validate_requirements()
         self.hhai = HoneyHive(bearer_auth=self.api_key, server_url=server_url)
@@ -188,7 +196,9 @@ class Evaluation:
             # TODO: large dataset optimization
             # TODO: dataset might not be json serializable
             self.dataset_id: str = (
-                Evaluation.generate_hash(json.dumps(self.dataset)) if self.dataset else None
+                self._add_ext_prefix(self.external_dataset_params["id"]) if self.external_dataset_params and "id" in self.external_dataset_params
+                else Evaluation.generate_hash(json.dumps(self.dataset)) if self.dataset 
+                else None
             )
         assert self.dataset_id is not None and self.dataset is not None
 
@@ -204,8 +214,15 @@ class Evaluation:
             )
 
     @staticmethod
+    def _add_ext_prefix(id_string: str) -> str:
+        """Add EXT- prefix to an ID if it doesn't already have it"""
+        if not id_string.startswith("EXT-"):
+            return f"EXT-{id_string}"
+        return id_string
+
+    @staticmethod
     def generate_hash(input_string: str) -> str:
-        return f"EXT-{hashlib.md5(input_string.encode('utf-8')).hexdigest()[:24]}"
+        return Evaluation._add_ext_prefix(hashlib.md5(input_string.encode('utf-8')).hexdigest()[:24])
 
     # ------------------------------------------------------------
 
@@ -218,8 +235,9 @@ class Evaluation:
         if self.use_hh_dataset:
             tracing_metadata["datapoint_id"] = self.dataset.datapoints[datapoint_idx]
         else:
-            tracing_metadata["datapoint_id"] = Evaluation.generate_hash(
-                json.dumps(self.dataset[datapoint_idx])
+            tracing_metadata["datapoint_id"] = (
+                self._add_ext_prefix(self.dataset[datapoint_idx]["id"]) if isinstance(self.dataset[datapoint_idx], dict) and "id" in self.dataset[datapoint_idx]
+                else Evaluation.generate_hash(json.dumps(self.dataset[datapoint_idx]))
             )
         
         tracing_metadata["dataset_id"] = self.dataset_id

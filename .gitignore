@@ -5,6 +5,7 @@ venv/
 .venv/
 .env
 *.tar.gz
+*.zip
 src/*.egg-info/
 *.egg-info/
 __pycache__/
