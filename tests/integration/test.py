@@ -10,11 +10,10 @@ import os
 oai_client = openai.OpenAI()
 
 hh = HoneyHiveTracer(
-    api_key='MGc0cnl6MWh3MDk5OXhndGgycm92Y3A=',
-    project='agi',
-    server_url='https://api.staging.honeyhive.ai',
-    session_name='Mar 26',
-    source='test',
+    api_key=os.environ["HH_API_KEY"],
+    project=os.environ["HH_PROJECT"],
+    session_name='YOUR_SESSION_NAME',
+    server_url=os.environ["HH_API_URL"]
 )
 
 model = 'gpt-4o-mini'
@@ -84,8 +83,8 @@ if __name__ == "__main__":
     evaluate(
         function = pipeline,
         dataset = dataset * 3,
-        api_key = 'MGc0cnl6MWh3MDk5OXhndGgycm92Y3A=',
-        project = 'agi',
+        api_key = os.environ["HH_API_KEY"],
+        project = os.environ["HH_PROJECT"],
         evaluators = [check_answer],
-        server_url = 'https://api.staging.honeyhive.ai'
+        server_url = os.environ["HH_API_URL"]
     )
