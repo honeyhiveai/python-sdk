@@ -3,6 +3,7 @@ import logging
 import re
 import functools
 import asyncio
+from typing import Callable, Optional, Dict, Any
 
 from opentelemetry import trace as otel_trace
 from opentelemetry.sdk.trace import TracerProvider
@@ -123,18 +124,16 @@ class FunctionInstrumentor(BaseInstrumentor):
 
         def __init__(
             self,
-            func,
-            event_type=None,
-            config=None,
-            metadata=None,
-            evaluator=None,
-            event_name=None,
+            func: Callable,
+            event_type: Optional[str] = "tool",
+            config: Optional[Dict[str, Any]] = None,
+            metadata: Optional[Dict[str, Any]] = None,
+            event_name: Optional[str] = None,
         ):
             self.func = func
             self.event_type = event_type
             self.config = config
             self.metadata = metadata
-            self.evaluator = evaluator
             self.event_name = event_name
 
             if func is not None:
@@ -142,15 +141,14 @@ class FunctionInstrumentor(BaseInstrumentor):
 
         def __new__(
             cls,
-            func=None,
-            event_type=None,
-            config=None,
-            metadata=None,
-            evaluator=None,
-            event_name=None,
+            func: Optional[Callable] = None,
+            event_type: Optional[str] = "tool",
+            config: Optional[Dict[str, Any]] = None,
+            metadata: Optional[Dict[str, Any]] = None,
+            event_name: Optional[str] = None,
         ):
             if func is None:
-                return lambda f: cls(f, event_type, config, metadata, evaluator, event_name)
+                return lambda f: cls(f, event_type, config, metadata, event_name)
             return super().__new__(cls)
 
         def __get__(self, instance, owner):
@@ -269,13 +267,13 @@ atrace = instrumentor.atrace
 
 # Enrich a span from within a traced function
 def enrich_span(
-    config=None,
-    metadata=None,
-    metrics=None,
-    feedback=None,
-    inputs=None,
-    outputs=None,
-    error=None
+    config: Optional[Dict[str, Any]] = None,
+    metadata: Optional[Dict[str, Any]] = None,
+    metrics: Optional[Dict[str, Any]] = None,
+    feedback: Optional[Dict[str, Any]] = None,
+    inputs: Optional[Dict[str, Any]] = None,
+    outputs: Optional[Dict[str, Any]] = None,
+    error: Optional[str] = None
 ):
     span = otel_trace.get_current_span()
     if span is None:
