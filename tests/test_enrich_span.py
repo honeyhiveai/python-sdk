@@ -1,7 +1,9 @@
-from honeyhive import HoneyHiveTracer, trace, enrich_span, enrich_session
+from honeyhive import HoneyHiveTracer, trace, atrace, enrich_span, enrich_session
+from typing import Literal, Dict, Any, Awaitable
 
 import time
 import os
+import asyncio
 
 import openai
 
@@ -21,7 +23,7 @@ enrich_session(
 )
 
 @trace(event_type="chain")
-def get_meaning_of_life():
+def get_meaning_of_life() -> Literal["42"]:
     enrich_span(
         metadata={"dataset2": "lifeee"}, 
         feedback={"score": "good"}, 
@@ -50,6 +52,18 @@ def main():
     )
 
     print(response.choices[0].message.content)
+
+@atrace(event_type="chain")
+async def get_meaning_of_life_async() -> Awaitable[Literal["42"]]:
+    enrich_span(
+        metadata={"dataset2": "lifeee"}, 
+        feedback={"score": "good"}, 
+        inputs={"a": 1}, 
+        outputs={"b": 2}, 
+        error="this is malarky"
+    )
+    await asyncio.sleep(0.1)
+    return "42"
 
 @trace()
 def test_enrich_span():

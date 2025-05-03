@@ -3,13 +3,15 @@ import logging
 import re
 import functools
 import asyncio
-from typing import Callable, Optional, Dict, Any
+from typing import Callable, Optional, Dict, Any, TypeVar, cast, ParamSpec, Concatenate
 
 from opentelemetry import trace as otel_trace
 from opentelemetry.sdk.trace import TracerProvider
 from opentelemetry.instrumentation.instrumentor import BaseInstrumentor
 
 _instruments = ()
+P = ParamSpec('P')
+R = TypeVar('R')
 
 logger = logging.getLogger(__name__)
 
@@ -124,7 +126,7 @@ class FunctionInstrumentor(BaseInstrumentor):
 
         def __init__(
             self,
-            func: Callable,
+            func: Optional[Callable[P, R]] = None,
             event_type: Optional[str] = "tool",
             config: Optional[Dict[str, Any]] = None,
             metadata: Optional[Dict[str, Any]] = None,
@@ -141,7 +143,7 @@ class FunctionInstrumentor(BaseInstrumentor):
 
         def __new__(
             cls,
-            func: Optional[Callable] = None,
+            func: Optional[Callable[P, R]] = None,
             event_type: Optional[str] = "tool",
             config: Optional[Dict[str, Any]] = None,
             metadata: Optional[Dict[str, Any]] = None,
@@ -157,13 +159,13 @@ class FunctionInstrumentor(BaseInstrumentor):
             functools.update_wrapper(bound_method, self.func)
             return bound_method
 
-        def __call__(self, *args, **kwargs):
+        def __call__(self, *args: P.args, **kwargs: P.kwargs) -> R:
             if asyncio.iscoroutinefunction(self.func):
                 raise TypeError("please use @atrace for tracing async functions")
             ret = self.sync_call(*args, **kwargs)
             return ret
         
-        async def __acall__(self, *args, **kwargs):
+        async def __acall__(self, *args: P.args, **kwargs: P.kwargs) -> R:
             if asyncio.iscoroutinefunction(self.func):
                 return await self.async_call(*args, **kwargs)
             else:
@@ -246,8 +248,30 @@ class FunctionInstrumentor(BaseInstrumentor):
 
     class atrace(trace):
         """Decorator for tracing asynchronous functions"""
+        
+        def __init__(
+            self,
+            func: Optional[Callable[P, R]] = None,
+            event_type: Optional[str] = "tool",
+            config: Optional[Dict[str, Any]] = None,
+            metadata: Optional[Dict[str, Any]] = None,
+            event_name: Optional[str] = None,
+        ):
+            super().__init__(func, event_type, config, metadata, event_name)
 
-        async def __call__(self, *args, **kwargs):
+        def __new__(
+            cls,
+            func: Optional[Callable[P, R]] = None,
+            event_type: Optional[str] = "tool",
+            config: Optional[Dict[str, Any]] = None,
+            metadata: Optional[Dict[str, Any]] = None,
+            event_name: Optional[str] = None,
+        ):
+            if func is None:
+                return lambda f: cls(f, event_type, config, metadata, event_name)
+            return super().__new__(cls)
+
+        async def __call__(self, *args: P.args, **kwargs: P.kwargs) -> R:
             return await self.__acall__(*args, **kwargs)
 
     def __init__(self):
