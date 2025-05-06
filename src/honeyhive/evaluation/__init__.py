@@ -214,8 +214,10 @@ class Evaluation:
             )
 
     @staticmethod
-    def _add_ext_prefix(id_string: str) -> str:
+    def _add_ext_prefix(id_string) -> str:
         """Add EXT- prefix to an ID if it doesn't already have it"""
+        if not isinstance(id_string, str):
+            id_string = str(id_string)
         if not id_string.startswith("EXT-"):
             return f"EXT-{id_string}"
         return id_string
