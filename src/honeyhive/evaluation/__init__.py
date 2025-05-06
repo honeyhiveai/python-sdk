@@ -233,7 +233,11 @@ class Evaluation:
         """Get tracing metadata for evaluation."""
         tracing_metadata = {"run_id": self.eval_run.run_id}
         if self.use_hh_dataset:
-            tracing_metadata["datapoint_id"] = self.dataset.datapoints[datapoint_idx]
+            datapoint_id = self.dataset.datapoints[datapoint_idx]
+            # Convert to string if it's an integer
+            if isinstance(datapoint_id, int):
+                datapoint_id = str(datapoint_id)
+            tracing_metadata["datapoint_id"] = datapoint_id
         else:
             tracing_metadata["datapoint_id"] = (
                 self._add_ext_prefix(self.dataset[datapoint_idx]["id"]) if isinstance(self.dataset[datapoint_idx], dict) and "id" in self.dataset[datapoint_idx]
