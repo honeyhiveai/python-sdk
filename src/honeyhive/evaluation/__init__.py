@@ -63,6 +63,7 @@ class Evaluation:
         server_url: Optional[str] = None,
         verbose: bool = False,
         metadata: Optional[Dict[str, Any]] = None,
+        print_results: bool = True,
     ):
         if HoneyHiveTracer._is_traceloop_initialized:
             # undo traceloop initialization
@@ -110,6 +111,7 @@ class Evaluation:
         self.verbose = verbose
         self.disable_http_tracing = disable_http_tracing
         self.metadata = metadata or {}
+        self.print_results = print_results
 
         # only one of dataset_id or dataset should be provided
         self.dataset_id: Optional[str] = dataset_id
@@ -609,6 +611,8 @@ class Evaluation:
         except Exception:
             print("Warning: Unable to mark evaluation as `Completed`")
 
+        if self.print_results:
+            self.print_run()
 
     def print_run(self):
         """Print the results of the evaluation."""
@@ -683,7 +687,8 @@ def evaluate(*args, **kwargs):
     eval.run()
 
     # print evaluation results
-    eval.print_run()
+    if eval.print_results:
+        eval.print_run()
 
     return EvaluationResult(
         run_id=eval.eval_run.run_id,
