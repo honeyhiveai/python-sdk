@@ -198,12 +198,12 @@ class HoneyHiveTracer:
 
             # link_carrier
             if link_carrier is not None:
-                self.link(link_carrier)
+                self._context_token = self.link(link_carrier)
             else:
                 # attach baggage to the current context
                 ctx = context.get_current() # deep copy of the current context
                 ctx = self.baggage.set_all_baggage(ctx)
-                context.attach(ctx)
+                self._context_token = context.attach(ctx)
             
             # traceloop sets "association_properties" in the context
             # however it is not propagated since it doesn't follow the W3C spec for Baggage
@@ -543,6 +543,24 @@ class HoneyHiveTracer:
                 print_exc()
             else:
                 pass
+
+    def close(self):
+        """
+        Cleanly detach context associated with this instance.
+        """
+        token = getattr(self, "_context_token", None)
+        if token is not None:
+            try:
+                context.detach(token)
+            except Exception as e:
+                if self.verbose:
+                    print(f"Failed to detach context: {e}")
+
+    def __enter__(self):
+        return self
+
+    def __exit__(self, exc_type, exc_val, exc_tb):
+        self.close()
 
 
 def enrich_session(
