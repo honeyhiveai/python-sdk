@@ -57,7 +57,7 @@ class Evaluation:
         dataset: Optional[Union[List[Any], Dict[str, Any]]] = None,
         evaluators: Optional[List[Any]] = None,
         dataset_id: Optional[str] = None,
-        max_workers: int = 10,
+        max_workers: int = 1,
         run_concurrently: bool = True,
         disable_http_tracing: bool = False,
         server_url: Optional[str] = None,
@@ -100,7 +100,7 @@ class Evaluation:
         self.name: str = name 
         self.evaluators = evaluators or []
         self.status: str = "pending"
-        self.max_workers: int = max(1, max_workers if max_workers else int(os.getenv("HH_MAX_WORKERS", 10)))
+        self.max_workers: int = max(1, max_workers if max_workers else int(os.getenv("HH_MAX_WORKERS", 1)))
         self.run_concurrently: bool = run_concurrently
         self.function: Callable = function
         self.suite = suite
