@@ -12,8 +12,8 @@ class dotdict(dict):
         # TODO: handle YAMLs that are not dictionaries
         try:
             super().__init__({} if d is None else d)
-        except Exception as e:
-            raise ValueError(f"Error initializing dotdict. Ensure that the YAML is a valid dictionary.")
+        except Exception:
+            raise ValueError("Error initializing dotdict. Ensure that the YAML is a valid dictionary.")
 
     @staticmethod
     def _is_dict(value):
@@ -39,7 +39,7 @@ class dotdict(dict):
                 if isinstance(value, str):
                     try:
                         value = TemplateString(value)
-                    except Exception as e:
+                    except Exception:
                         pass
 
                 return value

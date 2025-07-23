@@ -15,7 +15,7 @@ from honeyhive.sdk import HoneyHive
 from traceloop.sdk import Traceloop
 from traceloop.sdk.tracing.tracing import TracerWrapper
 
-from opentelemetry import context, baggage
+from opentelemetry import context
 from opentelemetry.context import Context
 from opentelemetry.sdk.metrics.export import ConsoleMetricExporter
 from opentelemetry.propagators.composite import CompositePropagator
@@ -238,7 +238,7 @@ class HoneyHiveTracer:
         except errors.SDKError as e:
             # Raise SDK exceptions as-is but without traceback
             print(f"\033[91mHoneyHive SDK Error: {str(e)}\033[0m")
-        except:
+        except Exception:
             # Log other exceptions if verbose is enabled
             if HoneyHiveTracer.verbose:
                 print_exc()
@@ -253,19 +253,19 @@ class HoneyHiveTracer:
     
     @staticmethod
     def _validate_api_key(api_key):
-        return api_key and type(api_key) == str
+        return api_key and isinstance(api_key, str)
     
     @staticmethod
     def _validate_server_url(server_url):
-        return server_url and type(server_url) == str
+        return server_url and isinstance(server_url, str)
     
     @staticmethod
     def _validate_project(project):
-        return project and type(project) == str
+        return project and isinstance(project, str)
     
     @staticmethod
     def _validate_source(source):
-        return source and type(source) == str
+        return source and isinstance(source, str)
     
     @staticmethod
     def _get_validated_api_key(api_key=None):
@@ -538,7 +538,7 @@ class HoneyHiveTracer:
             response: operations.UpdateEventResponse = sdk.events.update_event(request=update_request)
             if response.status_code != 200:
                 raise Exception(f"Failed to enrich session: {response.raw_response.text}")
-        except:
+        except Exception:
             if HoneyHiveTracer.verbose:
                 print_exc()
             else:
@@ -587,7 +587,55 @@ def enrich_session(
         response: operations.UpdateEventResponse = sdk.events.update_event(request=update_request)
         if response.status_code != 200:
             raise Exception(f"Failed to enrich session: {response.raw_response.text}")
-    except:
+    except Exception:
+        if HoneyHiveTracer.verbose:
+            print_exc()
+        else:
+            pass
+
+
+async def aenrich_session(
+    session_id=None,
+    metadata=None,
+    feedback=None,
+    metrics=None,
+    config=None,
+    inputs=None,
+    outputs=None,
+    user_properties=None
+):
+    if not HoneyHiveTracer._is_traceloop_initialized:
+        print("\033[91mCould not enrich session: HoneyHiveTracer not initialized successfully\033[0m")
+        return
+    try:
+        sdk = HoneyHive(bearer_auth=HoneyHiveTracer.api_key, server_url=HoneyHiveTracer.server_url)
+        if session_id is None:
+            ctx: Context = context.get_current()
+            association_properties = ctx.get('association_properties') if ctx is not None else None
+            if association_properties is not None:
+                session_id = association_properties.get('session_id')
+            if session_id is None:
+                raise Exception("Please initialize HoneyHiveTracer before calling aenrich_session")
+            
+        update_request = operations.UpdateEventRequestBody(event_id=session_id.lower())
+        if feedback is not None:
+            update_request.feedback = feedback
+        if metrics is not None:
+            update_request.metrics = metrics
+        if metadata is not None:
+            update_request.metadata = metadata
+        if config is not None:
+            update_request.config = config
+        if inputs is not None:
+            print('inputs are not supported in aenrich_session') # TODO: add support for inputs (type change)
+        if outputs is not None:
+            update_request.outputs = outputs
+        if user_properties is not None:
+            update_request.user_properties = user_properties
+        response: operations.UpdateEventResponse = await sdk.events.update_event_async(request=update_request)
+        if response.status_code != 200:
+            raise Exception(f"Failed to enrich session: {response.raw_response.text}")
+    except Exception:
         if HoneyHiveTracer.verbose:
             print_exc()
         else:

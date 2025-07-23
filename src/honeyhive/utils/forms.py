@@ -72,7 +72,7 @@ def _populate_form(
                 continue
 
             if explode:
-                if not field_name in form:
+                if field_name not in form:
                     form[field_name] = []
                 form[field_name].append(_val_to_string(value))
             else:

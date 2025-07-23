@@ -243,7 +243,7 @@ class evaluator(metaclass=EvaluatorMeta):
     all_evaluator_settings: dict[str, EvaluatorSettings] = dict()
 
     def __unnamed__(self, *args, **kwargs):
-        raise NotImplementedError(f"Please decorate with an evaluator implementation.")
+        raise NotImplementedError("Please decorate with an evaluator implementation.")
 
     def __new__(
         cls, 

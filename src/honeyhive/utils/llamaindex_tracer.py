@@ -2,10 +2,10 @@
 import logging
 import os
 import uuid
-from collections import defaultdict, deque
+from collections import defaultdict
 from datetime import datetime
 from enum import Enum
-from typing import Any, Callable, Dict, List, Optional, Tuple
+from typing import Any, Dict, List, Optional, Tuple
 
 try:
     from llama_index.core.callbacks.base import BaseCallbackHandler
@@ -13,7 +13,6 @@ try:
         TIMESTAMP_FORMAT,
         CBEvent,
         CBEventType,
-        LEAF_EVENTS,
     )
     from llama_index.core.callbacks.token_counting import get_llm_token_counts
     from llama_index.core.utilities.token_counting import TokenCounter
@@ -169,7 +168,7 @@ class HoneyHiveLlamaIndexTracer(BaseCallbackHandler):
             "inputs": inputs,
         }
 
-        res = requests_retry_session().post(
+        requests_retry_session().post(
             url=f"{self._base_url}/session/start",
             headers=self._headers,
             json=body,

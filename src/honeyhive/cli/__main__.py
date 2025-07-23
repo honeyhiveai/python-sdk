@@ -50,6 +50,6 @@ if __name__ == "__main__":
         ret = main()
         if ret:
             os._exit(1)
-    except:
+    except Exception:
         traceback.print_exc()
         os._exit(1)

@@ -27,7 +27,6 @@ try:
         TracerSession,
         Run,
     )
-    from langchain.input import get_colored_text
 except ImportError:
     raise ImportError("Please install our langchain tracer. You can install it with `pip install honeyhive[langchain]`")
 

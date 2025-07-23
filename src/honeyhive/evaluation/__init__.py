@@ -21,7 +21,6 @@ import json
 import time
 import sys
 import traceback
-import asyncio
 import inspect
 
 from opentelemetry import context

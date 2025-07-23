@@ -3,7 +3,7 @@ import logging
 import re
 import functools
 import asyncio
-from typing import Callable, Optional, Dict, Any, TypeVar, cast, ParamSpec, Concatenate
+from typing import Callable, Optional, Dict, Any, TypeVar, ParamSpec
 
 from opentelemetry import trace as otel_trace
 from opentelemetry.sdk.trace import TracerProvider

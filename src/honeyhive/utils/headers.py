@@ -129,7 +129,7 @@ def _serialize_header(explode: bool, obj: Any) -> str:
 def get_response_headers(headers: Headers) -> Dict[str, List[str]]:
     res: Dict[str, List[str]] = {}
     for k, v in headers.items():
-        if not k in res:
+        if k not in res:
             res[k] = []
 
         res[k].append(v)
