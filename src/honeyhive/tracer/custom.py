@@ -94,6 +94,7 @@ class FunctionInstrumentor(BaseInstrumentor):
     def _enrich_span(
         self,
         span,
+        custom_event_id=None,
         config=None,
         metadata=None,
         metrics=None,
@@ -117,6 +118,8 @@ class FunctionInstrumentor(BaseInstrumentor):
             self._set_span_attributes(span, "honeyhive_outputs", outputs)
         if error:
             self._set_span_attributes(span, "honeyhive_error", error)
+        if custom_event_id:
+            self._set_span_attributes(span, "honeyhive_event_id", custom_event_id)
 
 
     class trace:
