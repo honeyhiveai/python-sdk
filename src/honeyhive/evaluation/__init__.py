@@ -145,11 +145,12 @@ class Evaluation:
 
         self._validate_requirements()
         self.hhai = HoneyHive(bearer_auth=self.api_key, server_url=server_url)
+        self.datapoint_cache = {}  # Cache for fetched datapoints
 
         self._setup_dataset()
 
         # increase the OTEL export timeout to 30 seconds
-        # os.environ["OTEL_EXPORTER_OTLP_TIMEOUT"] = "30000"
+        os.environ["OTEL_EXPORTER_OTLP_TIMEOUT"] = "30000"
 
         # mark the tracer for evaluation tracing
         HoneyHiveTracer.is_evaluation = True
@@ -179,6 +180,8 @@ class Evaluation:
                     and len(dataset.object.testcases) > 0
                 ):
                     self.dataset = dataset.object.testcases[0]
+                    # Batch fetch all datapoints upfront to avoid the 100+ datapoint limit issue
+                    self._batch_fetch_datapoints()
                 else:
                     raise RuntimeError(f"No valid testcases found in dataset {self.dataset_id}")
             except Exception:
@@ -401,6 +404,32 @@ class Evaluation:
             'metadata': metadata,
         }
 
+    def _batch_fetch_datapoints(self):
+        """Batch fetch all datapoints upfront to avoid N+1 query problem."""
+        if not (self.dataset.datapoints and len(self.dataset.datapoints) > 0):
+            return
+            
+        try:
+            # Fetch all datapoints in batch using get_datapoints
+            datapoint_response = self.hhai.datapoints.get_datapoints(
+                project=self.project,
+                datapoint_ids=self.dataset.datapoints
+            )
+            
+            if datapoint_response.object and datapoint_response.object.datapoints:
+                # Cache datapoints by their ID for fast lookup
+                for datapoint in datapoint_response.object.datapoints:
+                    self.datapoint_cache[datapoint.id] = datapoint
+                    
+                if self.verbose:
+                    print(f"Successfully cached {len(self.datapoint_cache)} datapoints")
+            else:
+                print("Warning: No datapoints returned from batch fetch")
+                
+        except Exception as e:
+            print(f"Warning: Failed to batch fetch datapoints, falling back to individual fetch: {e}")
+            # Continue without caching - individual fetches will still work
+
     def _get_inputs_and_ground_truth(self, datapoint_idx: int):
         """Get inputs and ground truth for evaluation from dataset."""
         if (
@@ -409,11 +438,26 @@ class Evaluation:
             and len(self.dataset.datapoints) > 0
         ):
             datapoint_id = self.dataset.datapoints[datapoint_idx]
-            datapoint_response = self.hhai.datapoints.get_datapoint(id=datapoint_id)
-            return (
-                datapoint_response.object.datapoint[0].inputs or {}, 
-                datapoint_response.object.datapoint[0].ground_truth or {}
-            )
+            
+            # Try to get from cache first (batch fetch)
+            if datapoint_id in self.datapoint_cache:
+                cached_datapoint = self.datapoint_cache[datapoint_id]
+                return (
+                    cached_datapoint.inputs or {},
+                    cached_datapoint.ground_truth or {}
+                )
+            
+            # Fallback to individual fetch if not in cache
+            try:
+                datapoint_response = self.hhai.datapoints.get_datapoint(id=datapoint_id)
+                return (
+                    datapoint_response.object.datapoint[0].inputs or {}, 
+                    datapoint_response.object.datapoint[0].ground_truth or {}
+                )
+            except Exception as e:
+                print(f"Error fetching datapoint {datapoint_id}: {e}")
+                return ({}, {})
+                
         elif (
             self.dataset
             and len(self.dataset) > 0
@@ -457,16 +501,20 @@ class Evaluation:
             print(f"Error getting inputs for index {datapoint_idx}: {e}")
             return self._create_result(inputs, ground_truth, outputs, metrics, metadata)
 
-        # Initialize tracer
+        # Initialize tracer with graceful fallback
+        tracer = None
+        session_id = None
         try:
             tracer = self._init_tracer(datapoint_idx, inputs)
             session_id = tracer.session_id
             self.evaluation_session_ids.append(session_id)
         except Exception as e:
-            self.verbose and print(traceback.format_exc())
-            raise Exception(
-                f"Unable to initiate Honeyhive Tracer. Cannot run Evaluation: {e}"
-            )
+            print(f"Warning: Failed to initialize tracer for datapoint {datapoint_idx}: {e}")
+            if "TracerWrapper" in str(e):
+                print("TracerWrapper concurrency issue - evaluation will continue without tracing")
+            # Continue evaluation without tracing rather than failing completely
+            if self.verbose:
+                print(traceback.format_exc())
 
         # Run the function
         try:
@@ -483,14 +531,15 @@ class Evaluation:
         # Run evaluators
         metrics, metadata = self._run_evaluators(outputs, inputs, ground_truth)
         
-        # Add trace metadata, outputs, and metrics to session
-        self._enrich_evaluation_session(
-            datapoint_idx,
-            session_id, 
-            outputs,
-            metrics,
-            metadata
-        )
+        # Add trace metadata, outputs, and metrics to session (if tracing is available)
+        if session_id is not None:
+            self._enrich_evaluation_session(
+                datapoint_idx,
+                session_id, 
+                outputs,
+                metrics,
+                metadata
+            )
 
         console.print(f"Test case {datapoint_idx} complete")
         
@@ -551,18 +600,27 @@ class Evaluation:
                         
                         # Collect results and log any errors
                         results = []
-                        for future in futures:
+                        for i, future in enumerate(futures):
                             try:
-                                results.append(future.result())
+                                result = future.result(timeout=300)  # 5 minute timeout per eval
+                                if result is None:
+                                    print(f"Warning: Evaluation {i} returned None - may indicate tracer failure")
+                                results.append(result)
                             except Exception as e:
-                                print(f"Error in evaluation thread: {e}")
-                                # Still add None result to maintain ordering
-                                results.append(None)
+                                print(f"Error in evaluation thread {i}: {e}")
+                                if "TracerWrapper" in str(e):
+                                    print(f"TracerWrapper concurrency issue detected - consider reducing max_workers")
+                                # Create a default result to maintain ordering
+                                results.append(self._create_result({}, {}, None, {}, {}))
                     except KeyboardInterrupt:
                         executor.shutdown(wait=False)
                         raise
                     finally:
+                        # Wait a bit for any remaining spans to be created before flushing
+                        time.sleep(0.1)
                         HoneyHiveTracer.flush()
+                        # Give flush some time to complete
+                        time.sleep(0.5)
 
         else:
             results = []

@@ -52,18 +52,34 @@ class BaggageDict(dict):
     def set_all_baggage(self, ctx=None):
         if ctx is None:
             ctx = context.get_current()
+            
+        # Set standard baggage keys
         for key in BaggageDict.valid_baggage_keys:
             value = self.get(key)
             if value is not None:
                 ctx = baggage.set_baggage(key, value, ctx)
+                
+        # Set tag keys
+        for key, value in self.items():
+            if key.startswith('tag_') and value is not None:
+                ctx = baggage.set_baggage(key, value, ctx)
+                
         return ctx
 
     def get_all_baggage(self, ctx=None):
         if ctx is None:
             ctx = context.get_current()
         bags = {}
+        
+        # Get standard baggage keys
         for key in BaggageDict.valid_baggage_keys:
             value = baggage.get_baggage(key, ctx)
             if value is not None:
                 bags[key] = value
+                
+        # Get tag keys from the dictionary itself
+        for key, value in self.items():
+            if key.startswith('tag_') and value is not None:
+                bags[key] = value
+                
         return bags

@@ -3,7 +3,7 @@ import logging
 import re
 import functools
 import asyncio
-from typing import Callable, Optional, Dict, Any, TypeVar, cast, ParamSpec, Concatenate
+from typing import Callable, Optional, Dict, Any, TypeVar, cast, ParamSpec, Concatenate, Union
 
 from opentelemetry import trace as otel_trace
 from opentelemetry.sdk.trace import TracerProvider
@@ -15,38 +15,57 @@ R = TypeVar('R')
 
 logger = logging.getLogger(__name__)
 
-class FunctionInstrumentor(BaseInstrumentor):
 
-    def _instrument(self, **kwargs):
-        tracer_provider = TracerProvider()
-        otel_trace.set_tracer_provider(tracer_provider)
-
-        self._tracer = otel_trace.get_tracer(__name__)
-
-    def _uninstrument(self, **kwargs):
-        pass
-
-    def instrumentation_dependencies(self):
-        return _instruments
-
-    def _set_span_attributes(self, span, prefix, value):
+class SpanAttributeHandler:
+    """Helper class for handling span attribute setting with different data types."""
+    
+    @staticmethod
+    def set_span_attributes(span, prefix: str, value: Any) -> None:
+        """Set span attributes, handling nested dictionaries, lists, and primitive types."""
         if isinstance(value, dict):
-            for k, v in value.items():
-                self._set_span_attributes(span, f"{prefix}.{k}", v)
+            SpanAttributeHandler._set_dict_attributes(span, prefix, value)
         elif isinstance(value, list):
-            for i, v in enumerate(value):
-                self._set_span_attributes(span, f"{prefix}.{i}", v)
-        elif (
-            isinstance(value, int)
-            or isinstance(value, bool)
-            or isinstance(value, float)
-            or isinstance(value, str)
-        ):
+            SpanAttributeHandler._set_list_attributes(span, prefix, value)
+        elif SpanAttributeHandler._is_primitive_type(value):
             span.set_attribute(prefix, value)
         else:
             span.set_attribute(prefix, str(value))
+    
+    @staticmethod
+    def _set_dict_attributes(span, prefix: str, value_dict: Dict[str, Any]) -> None:
+        """Handle dictionary attributes recursively."""
+        for key, val in value_dict.items():
+            SpanAttributeHandler.set_span_attributes(span, f"{prefix}.{key}", val)
+    
+    @staticmethod
+    def _set_list_attributes(span, prefix: str, value_list: list) -> None:
+        """Handle list attributes by indexing."""
+        for index, val in enumerate(value_list):
+            SpanAttributeHandler.set_span_attributes(span, f"{prefix}.{index}", val)
+    
+    @staticmethod
+    def _is_primitive_type(value: Any) -> bool:
+        """Check if value is a primitive type supported by OpenTelemetry."""
+        return isinstance(value, (int, bool, float, str))
 
-    def _parse_and_match(self, template, text):
+
+class TemplateParser:
+    """Helper class for parsing prompt templates."""
+    
+    @staticmethod
+    def parse_and_match(template: str, text: str) -> Dict[str, str]:
+        """Parse template placeholders and match against text.
+        
+        Args:
+            template: Template string with {{placeholder}} format
+            text: Text to match against template
+            
+        Returns:
+            Dictionary mapping placeholder names to their values
+            
+        Raises:
+            ValueError: If text doesn't match template pattern
+        """
         # Extract placeholders from the template
         placeholders = re.findall(r"\{\{(.*?)\}\}", template)
 
@@ -54,7 +73,7 @@ class FunctionInstrumentor(BaseInstrumentor):
         regex_pattern = re.escape(template)
         for placeholder in placeholders:
             regex_pattern = regex_pattern.replace(
-                r"\{\{" + placeholder + r"\}\}", "(.*?)"
+                r"\{\{" + placeholder + r"\}\}", "(.*)"
             )
 
         # Match the pattern against the text
@@ -73,23 +92,204 @@ class FunctionInstrumentor(BaseInstrumentor):
 
         return result
 
-    def _set_prompt_template(self, span, prompt_template):
-        combined_template = "".join(
-            [chat["content"] for chat in prompt_template["template"]]
-        )
-        combined_prompt = "".join(
-            [chat["content"] for chat in prompt_template["prompt"]]
-        )
-        result = self._parse_and_match(combined_template, combined_prompt)
-        for param, value in result.items():
-            self._set_span_attributes(
-                span, f"honeyhive_prompt_template.inputs.{param}", value
-            )
 
-        template = prompt_template["template"]
-        self._set_span_attributes(span, "honeyhive_prompt_template.template", template)
-        prompt = prompt_template["prompt"]
-        self._set_span_attributes(span, "honeyhive_prompt_template.prompt", prompt)
+class SpanEnricher:
+    """Helper class for enriching spans with various metadata."""
+    
+    def __init__(self, attribute_handler: SpanAttributeHandler):
+        self.attribute_handler = attribute_handler
+    
+    def enrich_span(
+        self,
+        span,
+        config: Optional[Dict[str, Any]] = None,
+        metadata: Optional[Dict[str, Any]] = None,
+        metrics: Optional[Dict[str, Any]] = None,
+        feedback: Optional[Dict[str, Any]] = None,
+        inputs: Optional[Dict[str, Any]] = None,
+        outputs: Optional[Dict[str, Any]] = None,
+        error: Optional[str] = None,
+        tags: Optional[Dict[str, Any]] = None,
+    ) -> None:
+        """Enrich span with various metadata attributes."""
+        attribute_mappings = [
+            (config, "honeyhive_config"),
+            (metadata, "honeyhive_metadata"),
+            (metrics, "honeyhive_metrics"),
+            (feedback, "honeyhive_feedback"),
+            (inputs, "honeyhive_inputs"),
+            (outputs, "honeyhive_outputs"),
+            (error, "honeyhive_error"),
+            (tags, "honeyhive_tags"),
+        ]
+        
+        for value, prefix in attribute_mappings:
+            if value is not None:
+                self.attribute_handler.set_span_attributes(span, prefix, value)
+    
+    def set_prompt_template(self, span, prompt_template: Dict[str, Any]) -> None:
+        """Set prompt template attributes on span."""
+        try:
+            combined_template = "".join(
+                [chat["content"] for chat in prompt_template["template"]]
+            )
+            combined_prompt = "".join(
+                [chat["content"] for chat in prompt_template["prompt"]]
+            )
+            
+            result = TemplateParser.parse_and_match(combined_template, combined_prompt)
+            
+            for param, value in result.items():
+                self.attribute_handler.set_span_attributes(
+                    span, f"honeyhive_prompt_template.inputs.{param}", value
+                )
+            
+            template = prompt_template["template"]
+            self.attribute_handler.set_span_attributes(
+                span, "honeyhive_prompt_template.template", template
+            )
+            
+            prompt = prompt_template["prompt"]
+            self.attribute_handler.set_span_attributes(
+                span, "honeyhive_prompt_template.prompt", prompt
+            )
+            
+        except Exception as e:
+            logger.warning(f"Failed to set prompt template: {e}")
+
+
+class TracingDecorator:
+    """Base class for tracing decorators with common functionality."""
+    
+    def __init__(
+        self,
+        func: Optional[Callable[P, R]] = None,
+        event_type: Optional[str] = "tool",
+        config: Optional[Dict[str, Any]] = None,
+        metadata: Optional[Dict[str, Any]] = None,
+        event_name: Optional[str] = None,
+        tags: Optional[Dict[str, Any]] = None,
+        instrumentor_instance=None,
+    ):
+        self.func = func
+        self.event_type = event_type
+        self.config = config
+        self.metadata = metadata
+        self.event_name = event_name
+        self.tags = tags
+        self._instrumentor = instrumentor_instance
+        
+        if func is not None:
+            functools.update_wrapper(self, func)
+    
+    def __get__(self, instance, owner):
+        """Implement descriptor protocol to handle method binding."""
+        bound_method = functools.partial(self.__call__, instance)
+        functools.update_wrapper(bound_method, self.func)
+        return bound_method
+    
+    def _setup_span(self, span, args, kwargs) -> None:
+        """Setup span with function parameters and decorator attributes."""
+        try:
+            # Extract function signature
+            sig = inspect.signature(self.func)
+            bound_args = sig.bind(*args, **kwargs)
+            bound_args.apply_defaults()
+            
+            # Log the function inputs with parameter names
+            for param, value in bound_args.arguments.items():
+                if param == "prompt_template":
+                    self._instrumentor.span_enricher.set_prompt_template(span, value)
+                else:
+                    self._instrumentor.attribute_handler.set_span_attributes(
+                        span, f"honeyhive_inputs._params_.{param}", value
+                    )
+            
+            self._set_event_type(span)
+            self._set_decorator_attributes(span)
+            
+        except Exception as e:
+            logger.warning(f"Failed to setup span: {e}")
+    
+    def _set_event_type(self, span) -> None:
+        """Set event type attribute if valid."""
+        if self.event_type and isinstance(self.event_type, str):
+            if self.event_type in ["tool", "model", "chain"]:
+                self._instrumentor.attribute_handler.set_span_attributes(
+                    span, "honeyhive_event_type", self.event_type
+                )
+            else:
+                logger.warning(
+                    "event_type could not be set. Must be 'tool', 'model', or 'chain'."
+                )
+    
+    def _set_decorator_attributes(self, span) -> None:
+        """Set attributes from decorator parameters."""
+        attribute_mappings = [
+            (self.config, "honeyhive_config"),
+            (self.metadata, "honeyhive_metadata"),
+            (self.tags, "honeyhive_tags"),
+        ]
+        
+        for value, prefix in attribute_mappings:
+            if value is not None:
+                self._instrumentor.attribute_handler.set_span_attributes(span, prefix, value)
+    
+    def _handle_result(self, span, result: Any) -> Any:
+        """Handle successful function result."""
+        try:
+            self._instrumentor.attribute_handler.set_span_attributes(
+                span, "honeyhive_outputs.result", result
+            )
+        except Exception as e:
+            logger.warning(f"Failed to set result attribute: {e}")
+        return result
+    
+    def _handle_exception(self, span, exception: Exception) -> None:
+        """Handle function exception."""
+        try:
+            self._instrumentor.attribute_handler.set_span_attributes(
+                span, "honeyhive_error", str(exception)
+            )
+        except Exception as e:
+            logger.warning(f"Failed to set error attribute: {e}")
+        # Re-raise the exception to maintain normal error propagation
+        raise exception
+
+
+class FunctionInstrumentor(BaseInstrumentor):
+    """Main instrumentor class that manages tracing functionality."""
+
+    def __init__(self):
+        super().__init__()
+        self.attribute_handler = SpanAttributeHandler()
+        self.span_enricher = SpanEnricher(self.attribute_handler)
+
+    def _instrument(self, **kwargs):
+        """Initialize the tracer."""
+        tracer_provider = TracerProvider()
+        otel_trace.set_tracer_provider(tracer_provider)
+        self._tracer = otel_trace.get_tracer(__name__)
+
+    def _uninstrument(self, **kwargs):
+        """Clean up instrumentation."""
+        pass
+
+    def instrumentation_dependencies(self):
+        """Return instrumentation dependencies."""
+        return _instruments
+
+    def _set_span_attributes(self, span, prefix: str, value: Any) -> None:
+        """Legacy method for backward compatibility."""
+        self.attribute_handler.set_span_attributes(span, prefix, value)
+
+    def _parse_and_match(self, template: str, text: str) -> Dict[str, str]:
+        """Legacy method for backward compatibility."""
+        return TemplateParser.parse_and_match(template, text)
+
+    def _set_prompt_template(self, span, prompt_template: Dict[str, Any]) -> None:
+        """Legacy method for backward compatibility."""
+        self.span_enricher.set_prompt_template(span, prompt_template)
 
     def _enrich_span(
         self,
@@ -101,190 +301,100 @@ class FunctionInstrumentor(BaseInstrumentor):
         inputs=None,
         outputs=None,
         error=None,
-        # headers=None,
+        tags=None,
     ):
-        if config:
-            self._set_span_attributes(span, "honeyhive_config", config)
-        if metadata:
-            self._set_span_attributes(span, "honeyhive_metadata", metadata)
-        if metrics:
-            self._set_span_attributes(span, "honeyhive_metrics", metrics)
-        if feedback:
-            self._set_span_attributes(span, "honeyhive_feedback", feedback)
-        if inputs:
-            self._set_span_attributes(span, "honeyhive_inputs", inputs)
-        if outputs:
-            self._set_span_attributes(span, "honeyhive_outputs", outputs)
-        if error:
-            self._set_span_attributes(span, "honeyhive_error", error)
+        """Legacy method for backward compatibility."""
+        self.span_enricher.enrich_span(
+            span, config, metadata, metrics, feedback, inputs, outputs, error, tags
+        )
 
-
-    class trace:
-        """Decorator for tracing synchronous functions"""
-
-        _func_instrumentor = None
-
-        def __init__(
-            self,
-            func: Optional[Callable[P, R]] = None,
-            event_type: Optional[str] = "tool",
-            config: Optional[Dict[str, Any]] = None,
-            metadata: Optional[Dict[str, Any]] = None,
-            event_name: Optional[str] = None,
-        ):
-            self.func = func
-            self.event_type = event_type
-            self.config = config
-            self.metadata = metadata
-            self.event_name = event_name
-
-            if func is not None:
-                functools.update_wrapper(self, func)
-
-        def __new__(
-            cls,
-            func: Optional[Callable[P, R]] = None,
-            event_type: Optional[str] = "tool",
-            config: Optional[Dict[str, Any]] = None,
-            metadata: Optional[Dict[str, Any]] = None,
-            event_name: Optional[str] = None,
-        ):
-            if func is None:
-                return lambda f: cls(f, event_type, config, metadata, event_name)
-            return super().__new__(cls)
-
-        def __get__(self, instance, owner):
-            # Implement descriptor protocol to handle method binding
-            bound_method = functools.partial(self.__call__, instance)
-            functools.update_wrapper(bound_method, self.func)
-            return bound_method
-
-        def __call__(self, *args: P.args, **kwargs: P.kwargs) -> R:
-            if asyncio.iscoroutinefunction(self.func):
-                raise TypeError("please use @atrace for tracing async functions")
-            ret = self.sync_call(*args, **kwargs)
-            return ret
+    def create_trace_decorator(self, is_async: bool = False):
+        """Factory method to create trace decorators."""
         
-        async def __acall__(self, *args: P.args, **kwargs: P.kwargs) -> R:
-            if asyncio.iscoroutinefunction(self.func):
-                return await self.async_call(*args, **kwargs)
-            else:
-                return self.sync_call(*args, **kwargs)
-
-        def _setup_span(self, span, args, kwargs):
-            # Extract function signature
-            sig = inspect.signature(self.func)
-            bound_args = sig.bind(*args, **kwargs)
-            bound_args.apply_defaults()
-
-            # Log the function inputs with parameter names
-            for param, value in bound_args.arguments.items():
-                if param == "prompt_template":
-                    self._func_instrumentor._set_prompt_template(span, value)
+        class TraceDecoratorImpl(TracingDecorator):
+            def __init__(
+                decorator_self,
+                func: Optional[Callable[P, R]] = None,
+                event_type: Optional[str] = "tool",
+                config: Optional[Dict[str, Any]] = None,
+                metadata: Optional[Dict[str, Any]] = None,
+                event_name: Optional[str] = None,
+                tags: Optional[Dict[str, Any]] = None,
+            ):
+                super().__init__(func, event_type, config, metadata, event_name, tags, self)
+                decorator_self.is_async = is_async
+            
+            def __new__(
+                cls,
+                func: Optional[Callable[P, R]] = None,
+                event_type: Optional[str] = "tool",
+                config: Optional[Dict[str, Any]] = None,
+                metadata: Optional[Dict[str, Any]] = None,
+                event_name: Optional[str] = None,
+                tags: Optional[Dict[str, Any]] = None,
+            ):
+                if func is None:
+                    return lambda f: cls(f, event_type, config, metadata, event_name, tags)
+                return super().__new__(cls)
+            
+            def __call__(decorator_self, *args: P.args, **kwargs: P.kwargs) -> R:
+                if decorator_self.is_async:
+                    # For async decorator, always return awaitable
+                    return decorator_self.__acall__(*args, **kwargs)
                 else:
-                    self._func_instrumentor._set_span_attributes(
-                        span, f"honeyhive_inputs._params_.{param}", value
-                    )
-
-            if self.event_type:
-                if isinstance(self.event_type, str) and self.event_type in [
-                    "tool",
-                    "model",
-                    "chain",
-                ]:
-                    self._func_instrumentor._set_span_attributes(
-                        span, "honeyhive_event_type", self.event_type
-                    )
+                    # For sync decorator, check if function is async and raise error
+                    if asyncio.iscoroutinefunction(decorator_self.func):
+                        raise TypeError("please use @atrace for tracing async functions")
+                    return decorator_self._sync_call(*args, **kwargs)
+            
+            async def __acall__(decorator_self, *args: P.args, **kwargs: P.kwargs) -> R:
+                if asyncio.iscoroutinefunction(decorator_self.func):
+                    return await decorator_self._async_call(*args, **kwargs)
                 else:
-                    logger.warning(
-                        "event_type could not be set. Must be 'tool', 'model', or 'chain'."
-                    )
-
-            if self.config:
-                self._func_instrumentor._set_span_attributes(
-                    span, "honeyhive_config", self.config
-                )
-            if self.metadata:
-                self._func_instrumentor._set_span_attributes(
-                    span, "honeyhive_metadata", self.metadata
-                )
-
-        def _handle_result(self, span, result):
-            # Log the function output
-            self._func_instrumentor._set_span_attributes(
-                span, "honeyhive_outputs.result", result
-            )
-            return result
-
-        def _handle_exception(self, span, exception):
-            # Capture exception in the span
-            self._func_instrumentor._set_span_attributes(
-                span, "honeyhive_error", str(exception)
-            )
-            # Re-raise the exception to maintain normal error propagation
-            raise exception
-
-        def sync_call(self, *args, **kwargs):
-            with self._func_instrumentor._tracer.start_as_current_span(
-                self.event_name or self.func.__name__
-            ) as span:
-                self._setup_span(span, args, kwargs)
-                try:
-                    result = self.func(*args, **kwargs)
-                    return self._handle_result(span, result)
-                except Exception as e:
-                    return self._handle_exception(span, e)
-
-        async def async_call(self, *args, **kwargs):
-            with self._func_instrumentor._tracer.start_as_current_span(
-                self.event_name or self.func.__name__
-            ) as span:
-                self._setup_span(span, args, kwargs)
-                try:
-                    result = await self.func(*args, **kwargs)
-                    return self._handle_result(span, result)
-                except Exception as e:
-                    return self._handle_exception(span, e)
-
-    class atrace(trace):
-        """Decorator for tracing asynchronous functions"""
+                    return decorator_self._sync_call(*args, **kwargs)
+            
+            def _sync_call(decorator_self, *args, **kwargs):
+                """Execute synchronous function with tracing."""
+                with decorator_self._instrumentor._tracer.start_as_current_span(
+                    decorator_self.event_name or decorator_self.func.__name__
+                ) as span:
+                    decorator_self._setup_span(span, args, kwargs)
+                    try:
+                        result = decorator_self.func(*args, **kwargs)
+                        return decorator_self._handle_result(span, result)
+                    except Exception as e:
+                        decorator_self._handle_exception(span, e)
+            
+            async def _async_call(decorator_self, *args, **kwargs):
+                """Execute asynchronous function with tracing."""
+                with decorator_self._instrumentor._tracer.start_as_current_span(
+                    decorator_self.event_name or decorator_self.func.__name__
+                ) as span:
+                    decorator_self._setup_span(span, args, kwargs)
+                    try:
+                        result = await decorator_self.func(*args, **kwargs)
+                        return decorator_self._handle_result(span, result)
+                    except Exception as e:
+                        decorator_self._handle_exception(span, e)
         
-        def __init__(
-            self,
-            func: Optional[Callable[P, R]] = None,
-            event_type: Optional[str] = "tool",
-            config: Optional[Dict[str, Any]] = None,
-            metadata: Optional[Dict[str, Any]] = None,
-            event_name: Optional[str] = None,
-        ):
-            super().__init__(func, event_type, config, metadata, event_name)
-
-        def __new__(
-            cls,
-            func: Optional[Callable[P, R]] = None,
-            event_type: Optional[str] = "tool",
-            config: Optional[Dict[str, Any]] = None,
-            metadata: Optional[Dict[str, Any]] = None,
-            event_name: Optional[str] = None,
-        ):
-            if func is None:
-                return lambda f: cls(f, event_type, config, metadata, event_name)
-            return super().__new__(cls)
-
-        async def __call__(self, *args: P.args, **kwargs: P.kwargs) -> R:
-            return await self.__acall__(*args, **kwargs)
-
-    def __init__(self):
-        super().__init__()
-
-        self.trace._func_instrumentor = self
+        return TraceDecoratorImpl
+    
+    @property
+    def trace(self):
+        """Synchronous tracing decorator."""
+        return self.create_trace_decorator(is_async=False)
+    
+    @property
+    def atrace(self):
+        """Asynchronous tracing decorator."""
+        return self.create_trace_decorator(is_async=True)
 
 
 # Instantiate and instrument the FunctionInstrumentor
 instrumentor = FunctionInstrumentor()
 instrumentor.instrument()
 
-# Create the log_and_trace decorator for external use
+# Create the trace decorators for external use
 trace = instrumentor.trace
 atrace = instrumentor.atrace
 
@@ -297,10 +407,16 @@ def enrich_span(
     feedback: Optional[Dict[str, Any]] = None,
     inputs: Optional[Dict[str, Any]] = None,
     outputs: Optional[Dict[str, Any]] = None,
-    error: Optional[str] = None
+    error: Optional[str] = None,
+    tags: Optional[Dict[str, Any]] = None
 ):
+    """Enrich the current span with additional attributes."""
     span = otel_trace.get_current_span()
     if span is None:
         logger.warning("Please use enrich_span inside a traced function.")
     else:
-        instrumentor._enrich_span(span, config, metadata, metrics, feedback, inputs, outputs, error)
+        # For backward compatibility, only pass tags if it's not None
+        if tags is not None:
+            instrumentor._enrich_span(span, config, metadata, metrics, feedback, inputs, outputs, error, tags)
+        else:
+            instrumentor._enrich_span(span, config, metadata, metrics, feedback, inputs, outputs, error)
