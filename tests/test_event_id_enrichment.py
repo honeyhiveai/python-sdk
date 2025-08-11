@@ -9,8 +9,8 @@ import time
 
 # Set up SDK client for event validation
 sdk = honeyhive.HoneyHive(
-    bearer_auth="hh_Dhi9z2EY0tmUtgKinW1mOkKCEYKqkQ8W", # os.getenv("HH_API_KEY"),
-    server_url="http://localhost:3000"
+    bearer_auth=os.getenv("HH_API_KEY"),
+    server_url=os.getenv("HH_API_URL")
 )
 
 def start_conversation():
@@ -18,11 +18,9 @@ def start_conversation():
     print("Starting conversation with ID:", conversation_id)
 
     tracer = HoneyHiveTracer.init(
-        api_key="hh_Dhi9z2EY0tmUtgKinW1mOkKCEYKqkQ8W",#os.getenv("HH_API_KEY"),
-        project="New Project",#os.getenv("HH_PROJECT"),
-        session_id=conversation_id,
-        server_url="http://localhost:3000",
-        verbose=True
+        api_key=os.getenv("HH_API_KEY"),
+        project=os.getenv("HH_PROJECT"),
+        session_id=conversation_id
     )
     # all future spans in this call stack will have conversation_id as session_id
 
@@ -47,7 +45,7 @@ def test_event_id_enrichment():
     
     # Query events to validate that the turn_id was set as event_id
     req = operations.GetEventsRequestBody(
-        project="New Project",  # os.getenv("HH_PROJECT"),
+        project=os.getenv("HH_PROJECT"),
         filters=[
             components.EventFilter(
                 field="session_id",
