@@ -3,6 +3,7 @@ import logging
 import re
 import functools
 import asyncio
+import uuid
 from typing import Callable, Optional, Dict, Any, TypeVar, cast, ParamSpec, Concatenate
 
 from opentelemetry import trace as otel_trace
@@ -306,6 +307,16 @@ def enrich_span(
     """Enrich the current span with additional attributes.
     Note: event_id argument is used to override the auto-generated id of the current span.
     """
+    # Validate event_id is a valid UUID v4 if provided
+    if event_id is not None:
+        try:
+            parsed_uuid = uuid.UUID(event_id, version=4)
+            if str(parsed_uuid) != event_id:
+                raise ValueError(f"Invalid UUID v4 format: {event_id}")
+        except (ValueError, TypeError) as e:
+            logger.error(f"Invalid event_id provided: {e}")
+            raise ValueError(f"event_id must be a valid UUID v4 string, got: {event_id}")
+    
     span = otel_trace.get_current_span()
     if span is None:
         logger.warning("Please use enrich_span inside a traced function.")
