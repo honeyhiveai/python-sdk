@@ -3,6 +3,7 @@ import logging
 import re
 import functools
 import asyncio
+import uuid
 from typing import Callable, Optional, Dict, Any, TypeVar, cast, ParamSpec, Concatenate
 
 from opentelemetry import trace as otel_trace
@@ -101,6 +102,7 @@ class FunctionInstrumentor(BaseInstrumentor):
         inputs=None,
         outputs=None,
         error=None,
+        event_id=None,
         # headers=None,
     ):
         if config:
@@ -117,6 +119,8 @@ class FunctionInstrumentor(BaseInstrumentor):
             self._set_span_attributes(span, "honeyhive_outputs", outputs)
         if error:
             self._set_span_attributes(span, "honeyhive_error", error)
+        if event_id:
+            self._set_span_attributes(span, "honeyhive_event_id", event_id)
 
 
     class trace:
@@ -297,10 +301,24 @@ def enrich_span(
     feedback: Optional[Dict[str, Any]] = None,
     inputs: Optional[Dict[str, Any]] = None,
     outputs: Optional[Dict[str, Any]] = None,
-    error: Optional[str] = None
+    error: Optional[str] = None,
+    event_id: Optional[str] = None
 ):
+    """Enrich the current span with additional attributes.
+    Note: event_id argument is used to override the auto-generated id of the current span.
+    """
+    # Validate event_id is a valid UUID v4 if provided
+    if event_id is not None:
+        try:
+            parsed_uuid = uuid.UUID(event_id, version=4)
+            if str(parsed_uuid) != event_id:
+                raise ValueError(f"Invalid UUID v4 format: {event_id}")
+        except (ValueError, TypeError) as e:
+            logger.error(f"Invalid event_id provided: {e}")
+            raise ValueError(f"event_id must be a valid UUID v4 string, got: {event_id}")
+    
     span = otel_trace.get_current_span()
     if span is None:
         logger.warning("Please use enrich_span inside a traced function.")
     else:
-        instrumentor._enrich_span(span, config, metadata, metrics, feedback, inputs, outputs, error)
+        instrumentor._enrich_span(span, config, metadata, metrics, feedback, inputs, outputs, error, event_id)

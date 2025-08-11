@@ -4,6 +4,8 @@
 
 The HoneyHive Python SDK is a comprehensive tool for AI/ML observability, tracing, evaluation, and experimentation. It provides developers with the capability to monitor, trace, and evaluate AI applications with built-in support for popular frameworks like OpenAI, LangChain, and LlamaIndex.
 
+Find the base traceloop-sdk at `~/honeyhive/openllmetry/packages/traceloop-sdk`.
+
 ## Project Structure
 
 ```
