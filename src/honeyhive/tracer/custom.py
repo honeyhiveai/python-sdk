@@ -94,7 +94,6 @@ class FunctionInstrumentor(BaseInstrumentor):
     def _enrich_span(
         self,
         span,
-        custom_event_id=None,
         config=None,
         metadata=None,
         metrics=None,
@@ -102,6 +101,7 @@ class FunctionInstrumentor(BaseInstrumentor):
         inputs=None,
         outputs=None,
         error=None,
+        event_id=None,
         # headers=None,
     ):
         if config:
@@ -118,8 +118,8 @@ class FunctionInstrumentor(BaseInstrumentor):
             self._set_span_attributes(span, "honeyhive_outputs", outputs)
         if error:
             self._set_span_attributes(span, "honeyhive_error", error)
-        if custom_event_id:
-            self._set_span_attributes(span, "honeyhive_event_id", custom_event_id)
+        if event_id:
+            self._set_span_attributes(span, "honeyhive_event_id", event_id)
 
 
     class trace:
@@ -300,10 +300,14 @@ def enrich_span(
     feedback: Optional[Dict[str, Any]] = None,
     inputs: Optional[Dict[str, Any]] = None,
     outputs: Optional[Dict[str, Any]] = None,
-    error: Optional[str] = None
+    error: Optional[str] = None,
+    event_id: Optional[str] = None
 ):
+    """Enrich the current span with additional attributes.
+    Note: event_id argument is used to override the auto-generated id of the current span.
+    """
     span = otel_trace.get_current_span()
     if span is None:
         logger.warning("Please use enrich_span inside a traced function.")
     else:
-        instrumentor._enrich_span(span, config, metadata, metrics, feedback, inputs, outputs, error)
+        instrumentor._enrich_span(span, config, metadata, metrics, feedback, inputs, outputs, error, event_id)
