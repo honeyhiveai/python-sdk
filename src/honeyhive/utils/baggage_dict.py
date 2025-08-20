@@ -10,6 +10,9 @@ class BaggageDict(dict):
         'dataset_id',
         'datapoint_id',
         'disable_http_tracing',
+        'metadata',
+        'feedback',
+        'metrics',
     ]
     
     class DefaultGetter:
@@ -33,7 +36,11 @@ class BaggageDict(dict):
     def __setitem__(self, key: str, value: str | None):
         if value is None:
             return
-        super().__setitem__(key, str(value))
+        # Preserve dictionaries and other complex types for metadata, feedback, and metrics
+        if key in ['metadata', 'feedback', 'metrics'] and isinstance(value, dict):
+            super().__setitem__(key, value)
+        else:
+            super().__setitem__(key, str(value))
     
     def __getitem__(self, key: str):
         if key not in self:

@@ -65,12 +65,16 @@ class Evaluation:
         metadata: Optional[Dict[str, Any]] = None,
         print_results: bool = True,
     ):
-        if HoneyHiveTracer._is_traceloop_initialized:
+        # Check if we're using the new OpenTelemetry tracer or old traceloop
+        if hasattr(HoneyHiveTracer, '_is_traceloop_initialized') and HoneyHiveTracer._is_traceloop_initialized:
             # undo traceloop initialization
             ctx: Context = context.get_current()
             ctx = context.set_value('association_properties', None)
             context.attach(ctx)
             HoneyHiveTracer._is_traceloop_initialized = False
+        elif hasattr(HoneyHiveTracer, '_is_initialized') and HoneyHiveTracer._is_initialized:
+            # We're using the new OpenTelemetry tracer, no need to undo anything
+            pass
         
         if function is None:
             raise Exception(
@@ -268,12 +272,71 @@ class Evaluation:
             if not isinstance(outputs, dict):
                 outputs = {"output": outputs}
 
-            enrich_session(
-                session_id=session_id,
-                metadata=tracing_metadata,
-                outputs=outputs,
-                metrics=metrics,
-            )
+            # Create spans for evaluator results using OpenTelemetry
+            if metrics:
+                from honeyhive.tracer.custom import enrich_span
+                # Create a span for each evaluator result
+                for evaluator_name, evaluator_result in metrics.items():
+                    if evaluator_result is not None:
+                        # Create a span for the evaluator result
+                        from opentelemetry import trace
+                        tracer = trace.get_tracer(__name__)
+                        with tracer.start_as_current_span(f"evaluator.{evaluator_name}") as span:
+                            # Set span attributes for the evaluator result
+                            span.set_attribute("honeyhive.evaluator_name", evaluator_name)
+                            span.set_attribute("honeyhive.session_id", session_id)
+                            span.set_attribute("honeyhive.project", self.project)
+                            span.set_attribute("honeyhive.source", "evaluation")
+                            
+                            # Store the evaluator result as span attributes
+                            if isinstance(evaluator_result, dict):
+                                for key, value in evaluator_result.items():
+                                    if isinstance(value, (int, float, str, bool)):
+                                        span.set_attribute(f"honeyhive.evaluator_result.{key}", value)
+                                    else:
+                                        # Convert complex types to JSON strings
+                                        try:
+                                            import json
+                                            span.set_attribute(f"honeyhive.evaluator_result.{key}", json.dumps(value, default=str))
+                                        except (TypeError, ValueError):
+                                            span.set_attribute(f"honeyhive.evaluator_result.{key}", str(value))
+                            else:
+                                # Store the result directly if it's a simple type
+                                if isinstance(evaluator_result, (int, float, str, bool)):
+                                    span.set_attribute("honeyhive.evaluator_result.value", evaluator_result)
+                                else:
+                                    try:
+                                        import json
+                                        span.set_attribute("honeyhive.evaluator_result.value", json.dumps(evaluator_result, default=str))
+                                    except (TypeError, ValueError):
+                                        span.set_attribute("honeyhive.evaluator_result.value", str(evaluator_result))
+
+            # Also call the original enrich_session for API compatibility
+            try:
+                # Ensure metrics are properly formatted for HoneyHive events
+                formatted_metrics = {}
+                if metrics:
+                    for evaluator_name, evaluator_result in metrics.items():
+                        if evaluator_result is not None:
+                            # Convert evaluator results to the format expected by HoneyHive
+                            if isinstance(evaluator_result, dict):
+                                # If it's already a dict, use it directly
+                                formatted_metrics[evaluator_name] = evaluator_result
+                            else:
+                                # If it's a simple value, wrap it in a dict
+                                formatted_metrics[evaluator_name] = {"score": evaluator_result}
+                
+                enrich_session(
+                    session_id=session_id,
+                    metadata=tracing_metadata,
+                    outputs=outputs,
+                    metrics=formatted_metrics,
+                )
+            except Exception as e:
+                # Silently fail if API call fails, but spans are already created
+                if self.verbose:
+                    print(f"Warning: API enrich_session failed: {e}")
+                
         except Exception as e:
             print(f"Error adding trace metadata: {e}")
 
@@ -482,6 +545,10 @@ class Evaluation:
         
         # Run evaluators
         metrics, metadata = self._run_evaluators(outputs, inputs, ground_truth)
+        
+        if self.verbose:
+            print(f"Evaluators run complete. Metrics: {metrics}")
+            print(f"Metadata: {metadata}")
         
         # Add trace metadata, outputs, and metrics to session
         self._enrich_evaluation_session(

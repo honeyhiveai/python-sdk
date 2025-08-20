@@ -1,3 +1,14 @@
 langchain>=0.1.0
 langchain-openai>=0.0.1
 openai>=1.2.0
+jinja2
+pydantic
+dataclasses-json
+python-dateutil
+typing-inspect
+requests
+uplink
+jsonpath-python
+httpx
+rich
+pyyaml

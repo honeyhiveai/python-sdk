@@ -26,7 +26,7 @@ def test_post_configurations():
             model="Test Model",
         ),
     )
-    res = sdk.configurations.create_configuration(configuration)
+    res = sdk.configurations.create_configuration(request=configuration)
     assert res.status_code == 200
 
     res = sdk.configurations.get_configurations(
@@ -43,7 +43,10 @@ def test_post_configurations():
             project=configuration.project,
             name=configuration.name,
             provider=configuration.provider,
-            parameters=configuration.parameters,
+            parameters=components.PutConfigurationRequestParameters(
+                call_type=components.PutConfigurationRequestCallType.CHAT,
+                model="Test Model",
+            ),
         ),
     )
     assert res.status_code == 200

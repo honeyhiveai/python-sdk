@@ -25,7 +25,7 @@ def test_create_metrics():
         type=components.MetricType.HUMAN,
         criteria="Dummy criteria",
     )
-    res = sdk.metrics.create_metric(req)
+    res = sdk.metrics.create_metric(request=req)
     assert res.status_code == 200
 
     res = sdk.metrics.get_metrics(project_name=os.environ["HH_PROJECT"])
