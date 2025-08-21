@@ -1,3 +1,0 @@
-[console_scripts]
-honeyhive=honeyhive.cli.__main__:main
-
