@@ -247,7 +247,7 @@ class HoneyHiveOTelTracer:
     span_processor = None
     
     # OTLP exporter configuration
-    otlp_enabled = True
+    otlp_enabled = False  # Disable by default to prevent export warnings
     otlp_endpoint = None
     otlp_headers = None
     
@@ -509,24 +509,32 @@ class HoneyHiveOTelTracer:
                     endpoint = HoneyHiveOTelTracer.otlp_endpoint or f"{HoneyHiveOTelTracer.server_url}/opentelemetry/v1/traces"
                     headers = HoneyHiveOTelTracer.otlp_headers or {"Authorization": f"Bearer {HoneyHiveOTelTracer.api_key}"}
                     
-                    otlp_span_exporter = OTLPSpanExporter(
-                        endpoint=endpoint,
-                        headers=headers
-                    )
-                    # Configure BatchSpanProcessor with shorter timeout for better shutdown handling
-                    otlp_processor = BatchSpanProcessor(
-                        otlp_span_exporter,
-                        max_queue_size=2048,
-                        max_export_batch_size=512,
-                        schedule_delay_millis=5000,  # 5 seconds
-                        export_timeout_millis=30000  # 30 seconds
-                    )
-                    HoneyHiveOTelTracer.tracer_provider.add_span_processor(otlp_processor)
-                    if HoneyHiveOTelTracer.verbose:
-                        print(f"🔍 Added OTLP span exporter to: {endpoint}")
+                    # Validate endpoint before creating exporter
+                    if not endpoint or endpoint == f"{HoneyHiveOTelTracer.server_url}/opentelemetry/v1/traces":
+                        if HoneyHiveOTelTracer.verbose:
+                            print(f"🔍 Skipping OTLP exporter: HoneyHive API doesn't support OTLP format")
+                        HoneyHiveOTelTracer.otlp_enabled = False
+                    else:
+                        otlp_span_exporter = OTLPSpanExporter(
+                            endpoint=endpoint,
+                            headers=headers
+                        )
+                        # Configure BatchSpanProcessor with shorter timeout for better shutdown handling
+                        otlp_processor = BatchSpanProcessor(
+                            otlp_span_exporter,
+                            max_queue_size=2048,
+                            max_export_batch_size=512,
+                            schedule_delay_millis=5000,  # 5 seconds
+                            export_timeout_millis=30000  # 30 seconds
+                        )
+                        HoneyHiveOTelTracer.tracer_provider.add_span_processor(otlp_processor)
+                        if HoneyHiveOTelTracer.verbose:
+                            print(f"🔍 Added OTLP span exporter to: {endpoint}")
                 except Exception as e:
                     if HoneyHiveOTelTracer.verbose:
                         print(f"Warning: Could not add OTLP span exporter: {e}")
+                    # Disable OTLP if there's an error
+                    HoneyHiveOTelTracer.otlp_enabled = False
             
             # Configure span exporters
             if HoneyHiveOTelTracer.verbose:
@@ -651,24 +659,30 @@ class HoneyHiveOTelTracer:
                     endpoint = HoneyHiveOTelTracer.otlp_endpoint or "http://localhost:4318/v1/traces"
                     headers = HoneyHiveOTelTracer.otlp_headers or {"Authorization": f"Bearer test-api-key"}
                     
-                    otlp_span_exporter = OTLPSpanExporter(
-                        endpoint=endpoint,
-                        headers=headers
-                    )
-                    # Only add span processor if the tracer provider supports it
-                    if hasattr(HoneyHiveOTelTracer.tracer_provider, 'add_span_processor'):
-                        # Configure OTLP processor with shorter timeout for testing
-                        otlp_processor = BatchSpanProcessor(
-                            otlp_span_exporter,
-                            max_queue_size=512,
-                            max_export_batch_size=128,
-                            schedule_delay_millis=500,   # 0.5 seconds
-                            export_timeout_millis=2000   # 2 seconds
+                    # Skip OTLP in test mode unless explicitly configured with a valid endpoint
+                    if endpoint == "http://localhost:4318/v1/traces" and not HoneyHiveOTelTracer.otlp_endpoint:
+                        if HoneyHiveOTelTracer.verbose:
+                            print(f"🔍 Skipping OTLP exporter in test mode: no valid endpoint configured")
+                        HoneyHiveOTelTracer.otlp_enabled = False
+                    else:
+                        otlp_span_exporter = OTLPSpanExporter(
+                            endpoint=endpoint,
+                            headers=headers
                         )
-                        HoneyHiveOTelTracer.tracer_provider.add_span_processor(otlp_processor)
+                        # Only add span processor if the tracer provider supports it
+                        if hasattr(HoneyHiveOTelTracer.tracer_provider, 'add_span_processor'):
+                            # Configure OTLP processor with shorter timeout for testing
+                            otlp_processor = BatchSpanProcessor(
+                                otlp_span_exporter,
+                                max_queue_size=512,
+                                max_export_batch_size=128,
+                                schedule_delay_millis=500,   # 0.5 seconds
+                                export_timeout_millis=2000   # 2 seconds
+                            )
+                            HoneyHiveOTelTracer.tracer_provider.add_span_processor(otlp_processor)
                 except Exception as e:
-                    # Silently fail in test mode
-                    pass
+                    # Silently fail in test mode and disable OTLP
+                    HoneyHiveOTelTracer.otlp_enabled = False
             
             # Check if meter provider is already set
             try:
@@ -825,7 +839,7 @@ class HoneyHiveOTelTracer:
         HoneyHiveOTelTracer.span_processor = None
         
         # Reset OTLP exporter configuration
-        HoneyHiveOTelTracer.otlp_enabled = True
+        HoneyHiveOTelTracer.otlp_enabled = False
         HoneyHiveOTelTracer.otlp_endpoint = None
         HoneyHiveOTelTracer.otlp_headers = None
         

@@ -296,8 +296,18 @@ class FunctionInstrumentor(BaseInstrumentor):
                     # Execute function
                     result = self.func(*args, **kwargs)
                     
-                    # Set result attribute
-                    span.set_attribute("honeyhive_outputs.result", result)
+                    # Set result attribute using the proper method for complex types
+                    if isinstance(result, (dict, list)) or not isinstance(result, (int, bool, float, str)):
+                        # Convert complex types to JSON strings for OpenTelemetry compatibility
+                        try:
+                            import json
+                            span.set_attribute("honeyhive_outputs.result", json.dumps(result, default=str))
+                        except (TypeError, ValueError):
+                            # Fallback to string representation if JSON serialization fails
+                            span.set_attribute("honeyhive_outputs.result", str(result))
+                    else:
+                        # Simple types can be set directly
+                        span.set_attribute("honeyhive_outputs.result", result)
                     
                     # End span
                     span.end()
@@ -334,8 +344,18 @@ class FunctionInstrumentor(BaseInstrumentor):
                     # Execute function
                     result = await self.func(*args, **kwargs)
                     
-                    # Set result attribute
-                    span.set_attribute("honeyhive_outputs.result", result)
+                    # Set result attribute using the proper method for complex types
+                    if isinstance(result, (dict, list)) or not isinstance(result, (int, bool, float, str)):
+                        # Convert complex types to JSON strings for OpenTelemetry compatibility
+                        try:
+                            import json
+                            span.set_attribute("honeyhive_outputs.result", json.dumps(result, default=str))
+                        except (TypeError, ValueError):
+                            # Fallback to string representation if JSON serialization fails
+                            span.set_attribute("honeyhive_outputs.result", str(result))
+                    else:
+                        # Simple types can be set directly
+                        span.set_attribute("honeyhive_outputs.result", result)
                     
                     # End span
                     span.end()
