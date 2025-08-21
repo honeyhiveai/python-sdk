@@ -192,6 +192,39 @@ class TestCoreTracerFunctionality:
         assert tracer is not None
         assert HoneyHiveOTelTracer._is_initialized is True
 
+    @patch.dict(os.environ, TEST_CONFIG, clear=True)
+    def test_tracer_shutdown(self):
+        """Test tracer shutdown functionality"""
+        from honeyhive.tracer import shutdown
+        
+        # Initialize tracer
+        tracer = HoneyHiveTracer(
+            api_key=TEST_CONFIG['HH_API_KEY'],
+            project=TEST_CONFIG['HH_PROJECT'],
+            test_mode=True
+        )
+        
+        # Verify tracer is initialized
+        assert HoneyHiveOTelTracer._is_initialized is True
+        assert HoneyHiveOTelTracer.tracer_provider is not None
+        
+        # Test shutdown
+        shutdown()
+        
+        # Verify shutdown completed without errors
+        # Note: We don't check if providers are None because shutdown doesn't reset them
+        # It just flushes and shuts down the exporters
+        
+        # Test that we can reinitialize after shutdown
+        tracer2 = HoneyHiveTracer(
+            api_key=TEST_CONFIG['HH_API_KEY'],
+            project=TEST_CONFIG['HH_PROJECT'],
+            test_mode=True
+        )
+        
+        assert tracer2 is not None
+        assert HoneyHiveOTelTracer._is_initialized is True
+
 
 class TestSpanProcessor:
     """Test the custom HoneyHive span processor"""

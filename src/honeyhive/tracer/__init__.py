@@ -37,7 +37,8 @@ __all__ = [
     'disable_tracing',
     'enable_tracing',
     'reset_tracer_state',
-    'configure_otlp_exporter'
+    'configure_otlp_exporter',
+    'shutdown'
 ]
 
 # Global function to enrich a session (re-exported from otel_tracer)
@@ -98,6 +99,11 @@ def reset_tracer_state():
 def configure_otlp_exporter(enabled=True, endpoint=None, headers=None):
     """Configure OTLP span exporter settings"""
     HoneyHiveTracer.configure_otlp_exporter(enabled=enabled, endpoint=endpoint, headers=headers)
+
+# Global function to shutdown OpenTelemetry components
+def shutdown():
+    """Properly shutdown OpenTelemetry components and flush remaining spans"""
+    HoneyHiveTracer.shutdown()
 
 # Initialize HTTP instrumentation when the module is imported
 def _initialize_http_instrumentation():

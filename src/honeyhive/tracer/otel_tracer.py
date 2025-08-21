@@ -513,9 +513,15 @@ class HoneyHiveOTelTracer:
                         endpoint=endpoint,
                         headers=headers
                     )
-                    HoneyHiveOTelTracer.tracer_provider.add_span_processor(
-                        BatchSpanProcessor(otlp_span_exporter)
+                    # Configure BatchSpanProcessor with shorter timeout for better shutdown handling
+                    otlp_processor = BatchSpanProcessor(
+                        otlp_span_exporter,
+                        max_queue_size=2048,
+                        max_export_batch_size=512,
+                        schedule_delay_millis=5000,  # 5 seconds
+                        export_timeout_millis=30000  # 30 seconds
                     )
+                    HoneyHiveOTelTracer.tracer_provider.add_span_processor(otlp_processor)
                     if HoneyHiveOTelTracer.verbose:
                         print(f"🔍 Added OTLP span exporter to: {endpoint}")
                 except Exception as e:
@@ -525,9 +531,15 @@ class HoneyHiveOTelTracer:
             # Configure span exporters
             if HoneyHiveOTelTracer.verbose:
                 console_exporter = ConsoleSpanExporter()
-                HoneyHiveOTelTracer.tracer_provider.add_span_processor(
-                    BatchSpanProcessor(console_exporter)
+                # Configure console processor with shorter timeout
+                console_processor = BatchSpanProcessor(
+                    console_exporter,
+                    max_queue_size=1024,
+                    max_export_batch_size=256,
+                    schedule_delay_millis=1000,  # 1 second
+                    export_timeout_millis=5000   # 5 seconds
                 )
+                HoneyHiveOTelTracer.tracer_provider.add_span_processor(console_processor)
             
             # Note: We handle span-to-event conversion via HoneyHiveSpanProcessor
             # No need for OTLP trace exporter since we're using custom event creation
@@ -622,9 +634,15 @@ class HoneyHiveOTelTracer:
             console_exporter = ConsoleSpanExporter()
             # Only add span processor if the tracer provider supports it
             if hasattr(HoneyHiveOTelTracer.tracer_provider, 'add_span_processor'):
-                HoneyHiveOTelTracer.tracer_provider.add_span_processor(
-                    BatchSpanProcessor(console_exporter)
+                # Configure console processor with shorter timeout for testing
+                console_processor = BatchSpanProcessor(
+                    console_exporter,
+                    max_queue_size=512,
+                    max_export_batch_size=128,
+                    schedule_delay_millis=500,   # 0.5 seconds
+                    export_timeout_millis=2000   # 2 seconds
                 )
+                HoneyHiveOTelTracer.tracer_provider.add_span_processor(console_processor)
             
             # Add OTLP span exporter for testing (with null endpoint to avoid external calls)
             if HoneyHiveOTelTracer.otlp_enabled:
@@ -639,9 +657,15 @@ class HoneyHiveOTelTracer:
                     )
                     # Only add span processor if the tracer provider supports it
                     if hasattr(HoneyHiveOTelTracer.tracer_provider, 'add_span_processor'):
-                        HoneyHiveOTelTracer.tracer_provider.add_span_processor(
-                            BatchSpanProcessor(otlp_span_exporter)
+                        # Configure OTLP processor with shorter timeout for testing
+                        otlp_processor = BatchSpanProcessor(
+                            otlp_span_exporter,
+                            max_queue_size=512,
+                            max_export_batch_size=128,
+                            schedule_delay_millis=500,   # 0.5 seconds
+                            export_timeout_millis=2000   # 2 seconds
                         )
+                        HoneyHiveOTelTracer.tracer_provider.add_span_processor(otlp_processor)
                 except Exception as e:
                     # Silently fail in test mode
                     pass
@@ -701,6 +725,35 @@ class HoneyHiveOTelTracer:
             print(f"🔍 OTLP exporter configured: enabled={enabled}, endpoint={endpoint}")
     
     @staticmethod
+    def shutdown():
+        """Properly shutdown OpenTelemetry components and flush remaining spans"""
+        try:
+            if HoneyHiveOTelTracer.tracer_provider is not None:
+                # Force flush any remaining spans before shutdown
+                if hasattr(HoneyHiveOTelTracer.tracer_provider, 'force_flush'):
+                    HoneyHiveOTelTracer.tracer_provider.force_flush()
+                
+                # Shutdown the tracer provider
+                if hasattr(HoneyHiveOTelTracer.tracer_provider, 'shutdown'):
+                    HoneyHiveOTelTracer.tracer_provider.shutdown()
+            
+            if HoneyHiveOTelTracer.meter_provider is not None:
+                # Force flush any remaining metrics before shutdown
+                if hasattr(HoneyHiveOTelTracer.meter_provider, 'force_flush'):
+                    HoneyHiveOTelTracer.meter_provider.force_flush()
+                
+                # Shutdown the meter provider
+                if hasattr(HoneyHiveOTelTracer.meter_provider, 'shutdown'):
+                    HoneyHiveOTelTracer.meter_provider.shutdown()
+            
+            if HoneyHiveOTelTracer.verbose:
+                print("🔍 OpenTelemetry components shut down successfully")
+                
+        except Exception as e:
+            if HoneyHiveOTelTracer.verbose:
+                print(f"Warning: Error during OpenTelemetry shutdown: {e}")
+    
+    @staticmethod
     def _validate_api_key(api_key):
         if not api_key or not isinstance(api_key, str) or api_key.strip() == "":
             raise Exception("api_key must be a non-empty string")
@@ -754,6 +807,9 @@ class HoneyHiveOTelTracer:
     @staticmethod
     def _reset_static_state():
         """Reset static state for testing purposes"""
+        # First, properly shutdown OpenTelemetry components
+        HoneyHiveOTelTracer.shutdown()
+        
         # Reset HoneyHive tracer static variables
         HoneyHiveOTelTracer.api_key = None
         HoneyHiveOTelTracer.server_url = None
