@@ -160,6 +160,38 @@ class TestCoreTracerFunctionality:
         tracer.inject(carrier)
         assert 'traceparent' in carrier or 'baggage' in carrier
 
+    @patch.dict(os.environ, TEST_CONFIG, clear=True)
+    def test_otlp_exporter_configuration(self):
+        """Test OTLP exporter configuration"""
+        from honeyhive.tracer import configure_otlp_exporter
+        
+        # Test enabling OTLP exporter with custom endpoint
+        configure_otlp_exporter(
+            enabled=True,
+            endpoint="http://localhost:4318/v1/traces",
+            headers={"Authorization": "Bearer test-token"}
+        )
+        
+        # Verify configuration is set
+        assert HoneyHiveOTelTracer.otlp_enabled is True
+        assert HoneyHiveOTelTracer.otlp_endpoint == "http://localhost:4318/v1/traces"
+        assert HoneyHiveOTelTracer.otlp_headers == {"Authorization": "Bearer test-token"}
+        
+        # Test disabling OTLP exporter
+        configure_otlp_exporter(enabled=False)
+        assert HoneyHiveOTelTracer.otlp_enabled is False
+        
+        # Test tracer initialization with OTLP exporter
+        tracer = HoneyHiveTracer(
+            api_key=TEST_CONFIG['HH_API_KEY'],
+            project=TEST_CONFIG['HH_PROJECT'],
+            test_mode=True
+        )
+        
+        # Verify tracer initializes successfully
+        assert tracer is not None
+        assert HoneyHiveOTelTracer._is_initialized is True
+
 
 class TestSpanProcessor:
     """Test the custom HoneyHive span processor"""

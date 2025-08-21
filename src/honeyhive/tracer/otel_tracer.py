@@ -232,12 +232,26 @@ class HoneyHiveOTelTracer:
     Replaces the traceloop dependency with native OpenTelemetry.
     """
     
-    # Static variables
-    verbose = False
-    _is_initialized = False
+    # Static variables for OpenTelemetry components
     api_key = None
-    is_evaluation = False
     server_url = None
+    _is_initialized = False
+    _is_traceloop_initialized = False
+    verbose = False
+    is_evaluation = False
+    tracer_provider = None
+    meter_provider = None
+    propagator = None
+    tracer = None
+    meter = None
+    span_processor = None
+    
+    # OTLP exporter configuration
+    otlp_enabled = True
+    otlp_endpoint = None
+    otlp_headers = None
+    
+    # Internal locks
     _flush_lock = threading.RLock()
     
     # Traceloop compatibility attributes
@@ -488,6 +502,26 @@ class HoneyHiveOTelTracer:
             HoneyHiveOTelTracer.span_processor = HoneyHiveSpanProcessor()
             HoneyHiveOTelTracer.tracer_provider.add_span_processor(HoneyHiveOTelTracer.span_processor)
             
+            # Add OTLP span exporter for external observability backends
+            if HoneyHiveOTelTracer.otlp_enabled:
+                try:
+                    # Use configured endpoint or default to HoneyHive API
+                    endpoint = HoneyHiveOTelTracer.otlp_endpoint or f"{HoneyHiveOTelTracer.server_url}/opentelemetry/v1/traces"
+                    headers = HoneyHiveOTelTracer.otlp_headers or {"Authorization": f"Bearer {HoneyHiveOTelTracer.api_key}"}
+                    
+                    otlp_span_exporter = OTLPSpanExporter(
+                        endpoint=endpoint,
+                        headers=headers
+                    )
+                    HoneyHiveOTelTracer.tracer_provider.add_span_processor(
+                        BatchSpanProcessor(otlp_span_exporter)
+                    )
+                    if HoneyHiveOTelTracer.verbose:
+                        print(f"🔍 Added OTLP span exporter to: {endpoint}")
+                except Exception as e:
+                    if HoneyHiveOTelTracer.verbose:
+                        print(f"Warning: Could not add OTLP span exporter: {e}")
+            
             # Configure span exporters
             if HoneyHiveOTelTracer.verbose:
                 console_exporter = ConsoleSpanExporter()
@@ -554,6 +588,9 @@ class HoneyHiveOTelTracer:
     def _initialize_otel_test_mode():
         """Initialize OpenTelemetry components in test mode (no external dependencies)"""
         with threading.Lock():
+            # Disable OTLP exporter in test mode by default to avoid HTTP errors
+            HoneyHiveOTelTracer.otlp_enabled = False
+            
             # Initialize propagator
             HoneyHiveOTelTracer.propagator = CompositePropagator([
                 TraceContextTextMapPropagator(),
@@ -588,6 +625,26 @@ class HoneyHiveOTelTracer:
                 HoneyHiveOTelTracer.tracer_provider.add_span_processor(
                     BatchSpanProcessor(console_exporter)
                 )
+            
+            # Add OTLP span exporter for testing (with null endpoint to avoid external calls)
+            if HoneyHiveOTelTracer.otlp_enabled:
+                try:
+                    # In test mode, use a local endpoint to avoid external API calls
+                    endpoint = HoneyHiveOTelTracer.otlp_endpoint or "http://localhost:4318/v1/traces"
+                    headers = HoneyHiveOTelTracer.otlp_headers or {"Authorization": f"Bearer test-api-key"}
+                    
+                    otlp_span_exporter = OTLPSpanExporter(
+                        endpoint=endpoint,
+                        headers=headers
+                    )
+                    # Only add span processor if the tracer provider supports it
+                    if hasattr(HoneyHiveOTelTracer.tracer_provider, 'add_span_processor'):
+                        HoneyHiveOTelTracer.tracer_provider.add_span_processor(
+                            BatchSpanProcessor(otlp_span_exporter)
+                        )
+                except Exception as e:
+                    # Silently fail in test mode
+                    pass
             
             # Check if meter provider is already set
             try:
@@ -630,6 +687,18 @@ class HoneyHiveOTelTracer:
     def init(*args, **kwargs):
         """Legacy compatibility method"""
         return HoneyHiveOTelTracer(*args, **kwargs)
+    
+    @staticmethod
+    def configure_otlp_exporter(enabled=True, endpoint=None, headers=None):
+        """Configure OTLP span exporter settings"""
+        HoneyHiveOTelTracer.otlp_enabled = enabled
+        if endpoint is not None:
+            HoneyHiveOTelTracer.otlp_endpoint = endpoint
+        if headers is not None:
+            HoneyHiveOTelTracer.otlp_headers = headers
+        
+        if HoneyHiveOTelTracer.verbose:
+            print(f"🔍 OTLP exporter configured: enabled={enabled}, endpoint={endpoint}")
     
     @staticmethod
     def _validate_api_key(api_key):
@@ -698,6 +767,11 @@ class HoneyHiveOTelTracer:
         HoneyHiveOTelTracer.tracer = None
         HoneyHiveOTelTracer.meter = None
         HoneyHiveOTelTracer.span_processor = None
+        
+        # Reset OTLP exporter configuration
+        HoneyHiveOTelTracer.otlp_enabled = True
+        HoneyHiveOTelTracer.otlp_endpoint = None
+        HoneyHiveOTelTracer.otlp_headers = None
         
         # Reset OpenTelemetry global state - ALL LAYERS
         try:

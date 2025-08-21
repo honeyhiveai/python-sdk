@@ -36,7 +36,8 @@ __all__ = [
     'atrace',
     'disable_tracing',
     'enable_tracing',
-    'reset_tracer_state'
+    'reset_tracer_state',
+    'configure_otlp_exporter'
 ]
 
 # Global function to enrich a session (re-exported from otel_tracer)
@@ -92,6 +93,11 @@ def enrich_session(
 def reset_tracer_state():
     """Reset tracer static state for testing purposes"""
     HoneyHiveTracer._reset_static_state()
+
+# Global function to configure OTLP exporter
+def configure_otlp_exporter(enabled=True, endpoint=None, headers=None):
+    """Configure OTLP span exporter settings"""
+    HoneyHiveTracer.configure_otlp_exporter(enabled=enabled, endpoint=endpoint, headers=headers)
 
 # Initialize HTTP instrumentation when the module is imported
 def _initialize_http_instrumentation():
