@@ -480,11 +480,17 @@ class HoneyHiveOTelTracer:
     @staticmethod
     def _initialize_otel(disable_batch=False):
         """Initialize OpenTelemetry components"""
+        # Check if already initialized to avoid duplicate initialization
         if HoneyHiveOTelTracer._is_initialized:
+            if HoneyHiveOTelTracer.verbose:
+                print("🔍 OpenTelemetry already initialized, skipping initialization")
             return
             
         with threading.Lock():
+            # Double-check pattern to prevent race conditions
             if HoneyHiveOTelTracer._is_initialized:
+                if HoneyHiveOTelTracer.verbose:
+                    print("🔍 OpenTelemetry already initialized (double-check), skipping initialization")
                 return
                 
             # Initialize propagator
@@ -565,7 +571,18 @@ class HoneyHiveOTelTracer:
     @staticmethod
     def _initialize_otel_test_mode():
         """Initialize OpenTelemetry components in test mode (no external dependencies)"""
+        # Check if already initialized to avoid duplicate initialization
+        if HoneyHiveOTelTracer._is_initialized:
+            if HoneyHiveOTelTracer.verbose:
+                print("🔍 OpenTelemetry test mode already initialized, skipping initialization")
+            return
+            
         with threading.Lock():
+            # Double-check pattern to prevent race conditions
+            if HoneyHiveOTelTracer._is_initialized:
+                if HoneyHiveOTelTracer.verbose:
+                    print("🔍 OpenTelemetry test mode already initialized (double-check), skipping initialization")
+                return
             # Disable OTLP exporter in test mode by default to avoid HTTP errors
             HoneyHiveOTelTracer.otlp_enabled = False
             
