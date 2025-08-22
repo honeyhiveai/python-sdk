@@ -2,6 +2,7 @@ import uuid
 import os
 import sys
 import threading
+import time
 import io
 import subprocess
 from contextlib import redirect_stdout
@@ -26,201 +27,135 @@ DEFAULT_API_URL = "https://api.honeyhive.ai"
 
 class HoneyHiveSpanProcessor(SpanProcessor):
     """
-    Custom span processor that automatically adds session_id and other association properties
-    as attributes to every span.
+    Optimized span processor with conditional attribute setting and reduced overhead.
+    
+    The actual HTTP API calls are now handled by HoneyHiveSpanExporter
+    following proper OpenTelemetry architecture.
     """
     
-    def on_start(self, span: ReadableSpan, parent_context: Optional[Context] = None) -> None:
-        """Called when a span starts"""
-        if HoneyHiveOTelTracer.verbose:
-            print(f"🚀 Span started: {span.name}")
-        
-        # Get association properties from context
-        if parent_context is not None:
-            association_properties = parent_context.get('association_properties')
-            if association_properties and isinstance(association_properties, dict):
-                # Set session_id and other properties as span attributes
-                for key, value in association_properties.items():
-                    if value is not None:
-                        span.set_attribute(f"honeyhive.{key}", str(value))
-                        if HoneyHiveOTelTracer.verbose:
-                            print(f"🔍 Set attribute: honeyhive.{key} = {value}")
-        else:
-            if HoneyHiveOTelTracer.verbose:
-                print(f"⚠️ No parent context for span: {span.name}")
+    def __init__(self):
+        """Initialize with performance optimizations"""
+        self._context_cache = {}  # Cache context lookups
+        self._cache_ttl = 1000    # Cache TTL in operations
+        self._operation_count = 0
     
-    def on_end(self, span: ReadableSpan) -> None:
-        """Called when a span ends"""
+    def on_start(self, span: ReadableSpan, parent_context: Optional[Context] = None) -> None:
+        """Called when a span starts - optimized attribute setting with conditional processing"""
         try:
-            if HoneyHiveOTelTracer.verbose:
-                print(f"🔍 Span ended: {span.name} with attributes: {dict(span.attributes) if span.attributes else {}}")
+            # Increment operation counter for cache management
+            self._operation_count += 1
             
-            # Convert OpenTelemetry span to HoneyHive event
-            if HoneyHiveOTelTracer.api_key and HoneyHiveOTelTracer.server_url:
-                # Extract span attributes
-                span_attributes = dict(span.attributes) if span.attributes else {}
+            # Get current context (use parent_context if provided, otherwise get_current)
+            ctx = parent_context if parent_context is not None else context.get_current()
+            if not ctx:
+                return
+            
+            # Check if we have cached attributes for this context
+            ctx_id = id(ctx)
+            if ctx_id in self._context_cache:
+                cached_attrs = self._context_cache[ctx_id]
+                # Apply cached attributes directly
+                for key, value in cached_attrs.items():
+                    span.set_attribute(key, value)
+                return
+            
+            # Cache miss - compute attributes with early exit optimization
+            attributes_to_set = {}
+            
+            # Add session_id from baggage (most important) - early exit if missing
+            from opentelemetry import baggage
+            session_id = baggage.get_baggage('session_id', ctx)
+            if not session_id:
+                # No session_id means no HoneyHive context, skip processing
+                return
+            
+            attributes_to_set["honeyhive.session_id"] = session_id
+            
+            # Add project from baggage - early exit if missing
+            project = baggage.get_baggage('project', ctx)
+            if not project:
+                # No project means no HoneyHive context, skip processing
+                return
                 
-                # Get session_id from span attributes or context
-                session_id = span_attributes.get("honeyhive.session_id")
-                if not session_id:
-                    # Try to get from context baggage
-                    ctx = context.get_current()
-                    if ctx is not None:
-                        # Try to get from baggage
-                        from opentelemetry import baggage
-                        session_id = baggage.get_baggage('session_id', ctx)
-                        
-                        if not session_id:
-                            # Try to get from association_properties (legacy)
-                            association_properties = ctx.get('association_properties')
-                            if association_properties and isinstance(association_properties, dict):
-                                session_id = association_properties.get('session_id')
+            attributes_to_set["honeyhive.project"] = project
+            
+            # Add source from baggage
+            source = baggage.get_baggage('source', ctx)
+            if source:
+                attributes_to_set["honeyhive.source"] = source
+            
+            # Also check for association_properties (legacy support) - only if needed
+            association_properties = ctx.get('association_properties')
+            if association_properties and isinstance(association_properties, dict):
+                for key, value in association_properties.items():
+                    if value is not None and not baggage.get_baggage(key, ctx):
+                        # Only set if not already set via baggage
+                        attributes_to_set[f"honeyhive.{key}"] = str(value)
+            
+            # Set all attributes at once (more efficient)
+            for key, value in attributes_to_set.items():
+                span.set_attribute(key, value)
+            
+            # Cache the attributes for future use
+            if len(attributes_to_set) > 0:
+                self._context_cache[ctx_id] = attributes_to_set
                 
-                if HoneyHiveOTelTracer.verbose:
-                    print(f"🔍 Session ID: {session_id}")
-                
-                if session_id:
-                    # Create event via HoneyHive API
-                    try:
-                        from honeyhive.sdk import HoneyHive
-                        from honeyhive.models import operations, components
-                        
-                        sdk = HoneyHive(
-                            bearer_auth=HoneyHiveOTelTracer.api_key, 
-                            server_url=HoneyHiveOTelTracer.server_url
-                        )
-                        
-                        # Determine event type from span attributes
-                        raw_event_type = span_attributes.get("honeyhive_event_type", "tool")
-                        
-                        # Map session_start to a valid event type
-                        if raw_event_type == "session_start":
-                            event_type = "tool"  # Use 'tool' as the default for session events
-                        else:
-                            event_type = raw_event_type
-                        
-                        if HoneyHiveOTelTracer.verbose:
-                            print(f"🔍 Creating event: {span.name} of type {event_type}")
-                        
-                        # Create event request
-                        from honeyhive.models.components.createeventrequest import CreateEventRequest
-                        
-                        # Calculate duration from span start/end time (timestamps are in nanoseconds)
-                        duration = None
-                        if hasattr(span, 'start_time') and hasattr(span, 'end_time'):
-                            # Convert nanoseconds to milliseconds
-                            duration = (span.end_time - span.start_time) / 1_000_000
-                        
-                        # Extract and structure metadata from span attributes
-                        metadata = {}
-                        inputs = {}
-                        outputs = {}
-                        feedback = {}
-                        metrics = {}
-                        config = {}
-                        user_properties = {}
-                        
-                        for key, value in span_attributes.items():
-                            if key.startswith("honeyhive_metadata."):
-                                # Extract metadata key (remove prefix)
-                                meta_key = key.replace("honeyhive_metadata.", "")
-                                metadata[meta_key] = value
-                            elif key.startswith("honeyhive_inputs."):
-                                # Extract inputs key
-                                input_key = key.replace("honeyhive_inputs.", "")
-                                inputs[input_key] = value
-                            elif key.startswith("honeyhive_outputs."):
-                                # Extract outputs key
-                                output_key = key.replace("honeyhive_outputs.", "")
-                                outputs[output_key] = value
-                            elif key.startswith("honeyhive_feedback."):
-                                # Extract feedback key
-                                feedback_key = key.replace("honeyhive_feedback.", "")
-                                feedback[feedback_key] = value
-                            elif key.startswith("honeyhive_metrics."):
-                                # Extract metrics key
-                                metric_key = key.replace("honeyhive_metrics.", "")
-                                metrics[metric_key] = value
-                            elif key.startswith("honeyhive_config."):
-                                # Extract config key
-                                config_key = key.replace("honeyhive_config.", "")
-                                config[config_key] = value
-                            elif key.startswith("honeyhive_user_properties."):
-                                # Extract user properties key
-                                prop_key = key.replace("honeyhive_user_properties.", "")
-                                user_properties[prop_key] = value
-                        
-                        # Also check for direct attributes and JSON attributes
-                        if not metadata:
-                            if "honeyhive_metadata" in span_attributes:
-                                metadata = span_attributes.get("honeyhive_metadata") or {}
-                            elif "honeyhive_metadata_json" in span_attributes:
-                                # Parse JSON metadata
-                                try:
-                                    import json
-                                    metadata = json.loads(span_attributes.get("honeyhive_metadata_json", "{}"))
-                                except (json.JSONDecodeError, TypeError):
-                                    metadata = {}
-                        
-                        if not inputs:
-                            if "honeyhive_inputs" in span_attributes:
-                                inputs = span_attributes.get("honeyhive_inputs") or {}
-                            elif "honeyhive_inputs_json" in span_attributes:
-                                # Parse JSON inputs
-                                try:
-                                    import json
-                                    inputs = json.loads(span_attributes.get("honeyhive_inputs_json", "{}"))
-                                except (json.JSONDecodeError, TypeError):
-                                    inputs = {}
-                        
-                        if not outputs and "honeyhive_outputs" in span_attributes:
-                            outputs = span_attributes.get("honeyhive_outputs") or {}
-                        
-                        event_request = operations.CreateEventRequestBody(
-                            event=CreateEventRequest(
-                                project=span_attributes.get("honeyhive.project", "unknown"),
-                                session_id=session_id,
-                                event_name=span.name,
-                                event_type=event_type,
-                                source=span_attributes.get("honeyhive.source", "unknown"),
-                                metadata=metadata,
-                                inputs=inputs,
-                                outputs=outputs,
-                                feedback=feedback,
-                                metrics=metrics,
-                                config=config,
-                                user_properties=user_properties,
-                                duration=duration or 0
-                            )
-                        )
-                        
-                        # Send event to HoneyHive
-                        response = sdk.events.create_event(request=event_request)
-                        if response.status_code != 200:
-                            if HoneyHiveOTelTracer.verbose:
-                                print(f"❌ Failed to create event: {response.raw_response.text}")
-                        else:
-                            if HoneyHiveOTelTracer.verbose:
-                                print(f"✅ Event created successfully: {span.name}")
-                    except Exception as e:
-                        if HoneyHiveOTelTracer.verbose:
-                            print(f"❌ Error creating HoneyHive event: {e}")
-                else:
-                    if HoneyHiveOTelTracer.verbose:
-                        print(f"⚠️ No session_id found for span: {span.name}")
+                # Clean up cache periodically
+                if self._operation_count % self._cache_ttl == 0:
+                    self._cleanup_cache()
+            
+            if HoneyHiveOTelTracer.verbose:
+                print(f"🚀 Span started: {span.name} with {len(attributes_to_set)} attributes")
+                                
         except Exception as e:
             # Silently fail to avoid breaking OpenTelemetry
             if HoneyHiveOTelTracer.verbose:
-                print(f"❌ Error in HoneyHiveSpanProcessor.on_end: {e}")
-            pass
+                print(f"❌ Error in HoneyHiveSpanProcessor.on_start: {e}")
+    
+    def should_process_span(self, span: ReadableSpan) -> bool:
+        """
+        Determine if a span should be processed based on performance criteria.
+        This is called before on_start to avoid unnecessary processing.
+        """
+        try:
+            # Check if tracing is enabled
+            if not HoneyHiveOTelTracer._tracing_enabled:
+                return False
+            
+            # Check minimum duration threshold (if we can estimate it)
+            # For now, we'll process all spans, but this can be enhanced
+            # to check span metadata or context for duration estimates
+            
+            return True
+            
+        except Exception:
+            # If we can't determine, process the span to be safe
+            return True
+    
+    def on_end(self, span: ReadableSpan) -> None:
+        """Called when a span ends - minimal processing"""
+        # No verbose logging in on_end to reduce overhead
+        pass
+    
+    def _cleanup_cache(self):
+        """Clean up old cache entries to prevent memory leaks"""
+        if len(self._context_cache) > 1000:  # Keep cache under 1000 entries
+            # Remove oldest entries
+            keys_to_remove = list(self._context_cache.keys())[:100]
+            for key in keys_to_remove:
+                del self._context_cache[key]
     
     def shutdown(self) -> None:
         """Called when the span processor is shut down"""
-        pass
+        # Clear cache on shutdown
+        self._context_cache.clear()
     
     def force_flush(self, timeout_millis: float = 30000) -> bool:
         """Force flush any pending spans"""
         return True
+
+
+# Removed unused optimization classes - integrating optimizations directly
 
 
 class HoneyHiveOTelTracer:
@@ -234,6 +169,7 @@ class HoneyHiveOTelTracer:
     server_url = None
     _is_initialized = False
     _is_traceloop_initialized = False
+    _test_mode = False
     verbose = False
     is_evaluation = False
     tracer_provider = None
@@ -242,6 +178,13 @@ class HoneyHiveOTelTracer:
     tracer = None
     meter = None
     span_processor = None
+    
+# Removed unused span pool variable
+    
+    # Performance optimization flags
+    _tracing_enabled = True
+    _min_span_duration_ms = 1.0  # Only trace spans longer than 1ms
+    _max_spans_per_second = 1000  # Rate limiting for high-frequency operations
     
     # OTLP exporter configuration
     otlp_enabled = False  # Disable by default to prevent export warnings
@@ -351,8 +294,9 @@ class HoneyHiveOTelTracer:
             self.project = project
             self.source = source
             
-            # Store test mode flag
+            # Store test mode flag both as instance and class attribute
             self._test_mode = test_mode
+            HoneyHiveOTelTracer._test_mode = test_mode
             
             # Set verbose flag
             HoneyHiveOTelTracer.verbose = verbose
@@ -478,6 +422,54 @@ class HoneyHiveOTelTracer:
                 pass
 
     @staticmethod
+    def enable_tracing(enabled: bool = True, min_duration_ms: float = 1.0, max_spans_per_second: int = 1000):
+        """
+        Enable or disable tracing with performance optimizations.
+        
+        Args:
+            enabled: Whether to enable tracing
+            min_duration_ms: Minimum span duration to trace (in milliseconds)
+            max_spans_per_second: Maximum spans per second to prevent overwhelming
+        """
+        HoneyHiveOTelTracer._tracing_enabled = enabled
+        HoneyHiveOTelTracer._min_span_duration_ms = min_duration_ms
+        HoneyHiveOTelTracer._max_spans_per_second = max_spans_per_second
+        
+        if HoneyHiveOTelTracer.verbose:
+            status = "enabled" if enabled else "disabled"
+            print(f"🔧 Tracing {status} with min_duration={min_duration_ms}ms, max_rate={max_spans_per_second}/s")
+    
+    @staticmethod
+    def is_tracing_enabled() -> bool:
+        """Check if tracing is currently enabled"""
+        return HoneyHiveOTelTracer._tracing_enabled
+    
+    @staticmethod
+    def should_trace_span(estimated_duration_ms: float = 0.0) -> bool:
+        """
+        Check if a span should be traced based on performance criteria.
+        
+        Args:
+            estimated_duration_ms: Estimated duration of the operation in milliseconds
+            
+        Returns:
+            True if the span should be traced, False otherwise
+        """
+        if not HoneyHiveOTelTracer._tracing_enabled:
+            return False
+        
+        # Check minimum duration threshold
+        if estimated_duration_ms < HoneyHiveOTelTracer._min_span_duration_ms:
+            return False
+        
+        # TODO: Implement rate limiting logic
+        # For now, always allow if duration threshold is met
+        
+        return True
+    
+# Removed unused optimization methods - integrating optimizations directly
+    
+    @staticmethod
     def _initialize_otel(disable_batch=False):
         """Initialize OpenTelemetry components"""
         # Check if already initialized to avoid duplicate initialization
@@ -502,9 +494,44 @@ class HoneyHiveOTelTracer:
             # Initialize tracer provider
             HoneyHiveOTelTracer.tracer_provider = TracerProvider()
             
-            # Add custom span processor for session_id and association properties
+            # Add custom span processor for session_id and association properties (simplified)
             HoneyHiveOTelTracer.span_processor = HoneyHiveSpanProcessor()
             HoneyHiveOTelTracer.tracer_provider.add_span_processor(HoneyHiveOTelTracer.span_processor)
+            
+            # Add HoneyHive span exporter for sending events to HoneyHive API
+            if HoneyHiveOTelTracer.api_key and HoneyHiveOTelTracer.server_url:
+                try:
+                    from honeyhive.tracer.honeyhive_span_exporter import HoneyHiveSpanExporter
+                    from opentelemetry.sdk.trace.export import BatchSpanProcessor
+                    
+                    honeyhive_exporter = HoneyHiveSpanExporter(
+                        api_key=HoneyHiveOTelTracer.api_key,
+                        server_url=HoneyHiveOTelTracer.server_url,
+                        test_mode=HoneyHiveOTelTracer._test_mode,
+                        verbose=HoneyHiveOTelTracer.verbose,
+                        min_span_duration_ms=HoneyHiveOTelTracer._min_span_duration_ms,
+                        max_spans_per_batch=100  # Optimize batch size for performance
+                    )
+                    
+                    # Configure BatchSpanProcessor for HoneyHive events
+                    honeyhive_processor = BatchSpanProcessor(
+                        honeyhive_exporter,
+                        max_queue_size=2048,
+                        max_export_batch_size=100,  # Batch 100 spans per HTTP call
+                        schedule_delay_millis=2000,  # Max 2 second delay
+                        export_timeout_millis=30000  # 30 seconds
+                    )
+                    HoneyHiveOTelTracer.tracer_provider.add_span_processor(honeyhive_processor)
+                    
+                    if HoneyHiveOTelTracer.verbose:
+                        print(f"🔍 Added HoneyHive span exporter with batching (batch_size=100, delay=2s)")
+                        
+                except Exception as e:
+                    if HoneyHiveOTelTracer.verbose:
+                        print(f"Warning: Could not add HoneyHive span exporter: {e}")
+            else:
+                if HoneyHiveOTelTracer.verbose:
+                    print("🔍 Skipping HoneyHive span exporter: missing api_key or server_url")
             
             # Add OTLP span exporter for external observability backends
             if HoneyHiveOTelTracer.otlp_enabled:
@@ -553,10 +580,10 @@ class HoneyHiveOTelTracer:
                 )
                 HoneyHiveOTelTracer.tracer_provider.add_span_processor(console_processor)
             
-            # Note: We handle span-to-event conversion via HoneyHiveSpanProcessor
-            # No need for OTLP trace exporter since we're using custom event creation
+            # Note: We now use HoneyHiveSpanExporter for batched event creation
+            # HoneyHiveSpanProcessor only adds attributes, exporter handles HTTP calls
             if HoneyHiveOTelTracer.verbose:
-                print("🔍 Using HoneyHiveSpanProcessor for event creation instead of OTLP exporter")
+                print("🔍 Using HoneyHiveSpanExporter for batched event creation")
             
             # Set the tracer provider
             trace.set_tracer_provider(HoneyHiveOTelTracer.tracer_provider)
@@ -612,6 +639,38 @@ class HoneyHiveOTelTracer:
             # Only add span processor if the tracer provider supports it
             if hasattr(HoneyHiveOTelTracer.tracer_provider, 'add_span_processor'):
                 HoneyHiveOTelTracer.tracer_provider.add_span_processor(HoneyHiveOTelTracer.span_processor)
+            
+            # Add HoneyHive span exporter in test mode (no HTTP calls)
+            try:
+                from honeyhive.tracer.honeyhive_span_exporter import HoneyHiveSpanExporter
+                from opentelemetry.sdk.trace.export import BatchSpanProcessor
+                
+                honeyhive_exporter = HoneyHiveSpanExporter(
+                    api_key="test-key",
+                    server_url="http://localhost:8000",
+                    test_mode=True,  # Always test mode
+                    verbose=HoneyHiveOTelTracer.verbose,
+                    min_span_duration_ms=HoneyHiveOTelTracer._min_span_duration_ms,
+                    max_spans_per_batch=50  # Smaller batches for testing
+                )
+                
+                # Configure BatchSpanProcessor for test mode
+                if hasattr(HoneyHiveOTelTracer.tracer_provider, 'add_span_processor'):
+                    honeyhive_processor = BatchSpanProcessor(
+                        honeyhive_exporter,
+                        max_queue_size=512,
+                        max_export_batch_size=50,  # Smaller batches for testing
+                        schedule_delay_millis=500,  # Faster for testing
+                        export_timeout_millis=2000  # Shorter timeout
+                    )
+                    HoneyHiveOTelTracer.tracer_provider.add_span_processor(honeyhive_processor)
+                
+                if HoneyHiveOTelTracer.verbose:
+                    print(f"🔍 Added HoneyHive span exporter in test mode (no HTTP calls)")
+                    
+            except Exception as e:
+                if HoneyHiveOTelTracer.verbose:
+                    print(f"Warning: Could not add HoneyHive span exporter in test mode: {e}")
             
             # Add console exporter for testing
             console_exporter = ConsoleSpanExporter()
@@ -766,6 +825,7 @@ class HoneyHiveOTelTracer:
         HoneyHiveOTelTracer.server_url = None
         HoneyHiveOTelTracer._is_initialized = False
         HoneyHiveOTelTracer._is_traceloop_initialized = False
+        HoneyHiveOTelTracer._test_mode = False
         HoneyHiveOTelTracer.verbose = False
         HoneyHiveOTelTracer.is_evaluation = False
         HoneyHiveOTelTracer.tracer_provider = None

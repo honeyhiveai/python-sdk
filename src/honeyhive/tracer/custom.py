@@ -415,15 +415,61 @@ def _get_instrumentor():
         _instrumentor_instance.instrument()
     return _instrumentor_instance
 
-# Create dynamic decorators that check tracing state at runtime
+# Create dynamic decorators that check tracing state at runtime with async-conditional handling
 def trace(*args, **kwargs):
-    """Dynamic trace decorator that checks tracing state at runtime"""
+    """
+    Dynamic trace decorator that automatically handles both sync and async functions.
+    
+    This decorator follows the A2A SDK approach of using inspect.iscoroutinefunction()
+    to automatically detect async functions and handle them appropriately.
+    
+    Usage:
+        @trace                    # Basic usage
+        @trace(event_type="tool") # With parameters
+    """
     if len(args) == 1 and callable(args[0]):
         # Used as @trace
         func = args[0]
+        return _create_traced_function(func, **kwargs)
+    else:
+        # Used as @trace(...)
+        def decorator(func):
+            return _create_traced_function(func, *args, **kwargs)
+        return decorator
+
+def _create_traced_function(func, *args, **kwargs):
+    """
+    Create a traced function that automatically handles sync vs async.
+    
+    Args:
+        func: The function to trace
+        *args, **kwargs: Decorator arguments
         
-        # Create a proxy function that checks tracing state at call time
-        def traced_function(*func_args, **func_kwargs):
+    Returns:
+        Wrapped function that handles both sync and async automatically
+    """
+    # Check if the function is async using inspect.iscoroutinefunction()
+    is_async_func = inspect.iscoroutinefunction(func)
+    
+    if is_async_func:
+        # Async function - create async wrapper
+        async def async_traced_function(*func_args, **func_kwargs):
+            # Ultra-fast path: check tracing state with minimal overhead
+            instrumentor = _get_instrumentor()
+            if instrumentor._tracing_disabled:
+                # Direct function call with zero overhead
+                return await func(*func_args, **func_kwargs)
+            
+            # Full tracing path - optimized for performance
+            trace_instance = instrumentor.trace(func, *args, **kwargs)
+            return await trace_instance.async_call(*func_args, **func_kwargs)
+        
+        # Preserve function metadata
+        functools.update_wrapper(async_traced_function, func)
+        return async_traced_function
+    else:
+        # Sync function - create sync wrapper
+        def sync_traced_function(*func_args, **func_kwargs):
             # Ultra-fast path: check tracing state with minimal overhead
             instrumentor = _get_instrumentor()
             if instrumentor._tracing_disabled:
@@ -431,40 +477,34 @@ def trace(*args, **kwargs):
                 return func(*func_args, **func_kwargs)
             
             # Full tracing path - optimized for performance
-            trace_instance = instrumentor.trace(func, **kwargs)
+            trace_instance = instrumentor.trace(func, *args, **kwargs)
             return trace_instance.sync_call(*func_args, **func_kwargs)
         
         # Preserve function metadata
-        functools.update_wrapper(traced_function, func)
-        return traced_function
-    else:
-        # Used as @trace(...)
-        def decorator(func):
-            # Create a proxy function that checks tracing state at call time
-            def traced_function(*func_args, **func_kwargs):
-                # Ultra-fast path: check tracing state with minimal overhead
-                instrumentor = _get_instrumentor()
-                if instrumentor._tracing_disabled:
-                    # Direct function call with zero overhead
-                    return func(*func_args, **func_kwargs)
-                
-                # Full tracing path - optimized for performance
-                trace_instance = instrumentor.trace(func, *args, **kwargs)
-                return trace_instance.sync_call(*func_args, **func_kwargs)
-            
-            # Preserve function metadata
-            functools.update_wrapper(traced_function, func)
-            return traced_function
-        return decorator
+        functools.update_wrapper(sync_traced_function, func)
+        return sync_traced_function
 
 def atrace(*args, **kwargs):
-    """Dynamic atrace decorator that checks tracing state at runtime"""
+    """
+    Legacy atrace decorator for explicit async tracing.
+    
+    Note: The @trace decorator now automatically handles both sync and async functions.
+    This decorator is maintained for backward compatibility.
+    
+    Usage:
+        @atrace                    # Basic usage
+        @atrace(event_type="tool") # With parameters
+    """
     if len(args) == 1 and callable(args[0]):
         # Used as @atrace
         func = args[0]
         
-        # Create a proxy function that checks tracing state at call time
-        async def traced_function(*func_args, **func_kwargs):
+        # Ensure the function is async
+        if not inspect.iscoroutinefunction(func):
+            raise ValueError(f"@atrace decorator can only be used with async functions. Function {func.__name__} is not async.")
+        
+        # Create async wrapper
+        async def async_traced_function(*func_args, **func_kwargs):
             # Ultra-fast path: check tracing state with minimal overhead
             instrumentor = _get_instrumentor()
             if instrumentor._tracing_disabled:
@@ -476,26 +516,30 @@ def atrace(*args, **kwargs):
             return await atrace_instance.async_call(*func_args, **func_kwargs)
         
         # Preserve function metadata
-        functools.update_wrapper(traced_function, func)
-        return traced_function
+        functools.update_wrapper(async_traced_function, func)
+        return async_traced_function
     else:
         # Used as @atrace(...)
         def decorator(func):
-            # Create a proxy function that checks tracing state at call time
-            async def traced_function(*func_args, **func_kwargs):
+            # Ensure the function is async
+            if not inspect.iscoroutinefunction(func):
+                raise ValueError(f"@atrace decorator can only be used with async functions. Function {func.__name__} is not async.")
+            
+            # Create async wrapper
+            async def async_traced_function(*func_args, **func_kwargs):
                 # Ultra-fast path: check tracing state with minimal overhead
                 instrumentor = _get_instrumentor()
                 if instrumentor._tracing_disabled:
                     # Direct function call with zero overhead
                     return await func(*func_args, **func_kwargs)
-                
+            
                 # Full tracing path - optimized for performance
                 atrace_instance = instrumentor.atrace(func, *args, **kwargs)
                 return await atrace_instance.async_call(*func_args, **func_kwargs)
             
             # Preserve function metadata
-            functools.update_wrapper(traced_function, func)
-            return traced_function
+            functools.update_wrapper(async_traced_function, func)
+            return async_traced_function
         return decorator
 
 # Global functions to control tracing

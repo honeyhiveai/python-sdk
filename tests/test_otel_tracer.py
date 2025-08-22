@@ -196,10 +196,40 @@ class TestCustomTracing:
         'HH_PROJECT': 'test-project'
     }, clear=True)
     def test_atrace_decorator(self):
-        """Test the atrace decorator"""
+        """Test the atrace decorator (legacy support)"""
         from honeyhive.tracer.custom import atrace
         
         @atrace
+        async def test_async_function(x, y):
+            return x + y
+        
+        # Should not raise an exception
+        import asyncio
+        result = asyncio.run(test_async_function(1, 2))
+        assert result == 3
+    
+    @patch.dict(os.environ, {
+        'HH_API_KEY': 'test-api-key',
+        'HH_PROJECT': 'test-project'
+    }, clear=True)
+    def test_atrace_decorator_sync_function_error(self):
+        """Test that @atrace decorator raises error for sync functions"""
+        from honeyhive.tracer.custom import atrace
+        
+        with pytest.raises(ValueError, match="@atrace decorator can only be used with async functions"):
+            @atrace
+            def test_sync_function(x, y):
+                return x + y
+    
+    @patch.dict(os.environ, {
+        'HH_API_KEY': 'test-api-key',
+        'HH_PROJECT': 'test-project'
+    }, clear=True)
+    def test_trace_decorator_async_function(self):
+        """Test that @trace decorator automatically handles async functions"""
+        from honeyhive.tracer.custom import trace
+        
+        @trace
         async def test_async_function(x, y):
             return x + y
         

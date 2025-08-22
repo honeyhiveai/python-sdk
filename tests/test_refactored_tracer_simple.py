@@ -295,7 +295,7 @@ class TestTraceDecorators:
     
     @patch.dict(os.environ, TEST_CONFIG, clear=True)
     def test_atrace_decorator_basic(self):
-        """Test basic atrace decorator functionality"""
+        """Test basic atrace decorator functionality (legacy support)"""
         @atrace
         async def async_function(x, y):
             await asyncio.sleep(0.01)  # Small delay to simulate async work
@@ -306,8 +306,38 @@ class TestTraceDecorators:
     
     @patch.dict(os.environ, TEST_CONFIG, clear=True)
     def test_atrace_decorator_with_config(self):
-        """Test atrace decorator with configuration"""
+        """Test atrace decorator with configuration (legacy support)"""
         @atrace(config={"operation": "power"}, metadata={"async": True})
+        async def configured_async_function(base, exponent):
+            await asyncio.sleep(0.01)
+            return base ** exponent
+        
+        result = asyncio.run(configured_async_function(3, 4))
+        assert result == 81
+    
+    @patch.dict(os.environ, TEST_CONFIG, clear=True)
+    def test_atrace_decorator_sync_function_error(self):
+        """Test that @atrace decorator raises error for sync functions"""
+        with pytest.raises(ValueError, match="@atrace decorator can only be used with async functions"):
+            @atrace
+            def sync_function():
+                return "this should fail"
+    
+    @patch.dict(os.environ, TEST_CONFIG, clear=True)
+    def test_trace_decorator_async_function(self):
+        """Test that @trace decorator automatically handles async functions"""
+        @trace
+        async def async_function(x, y):
+            await asyncio.sleep(0.01)
+            return x ** y
+        
+        result = asyncio.run(async_function(2, 3))
+        assert result == 8
+    
+    @patch.dict(os.environ, TEST_CONFIG, clear=True)
+    def test_trace_decorator_async_function_with_params(self):
+        """Test that @trace decorator handles async functions with parameters"""
+        @trace(config={"operation": "power"}, metadata={"async": True})
         async def configured_async_function(base, exponent):
             await asyncio.sleep(0.01)
             return base ** exponent
@@ -327,6 +357,18 @@ class TestTraceDecorators:
         assert result == "chained"
     
     @patch.dict(os.environ, TEST_CONFIG, clear=True)
+    def test_decorator_chaining_async(self):
+        """Test that decorators can be chained with async functions"""
+        @trace(config={"level": "outer"})
+        @trace(config={"level": "inner"})
+        async def chained_async_function():
+            await asyncio.sleep(0.01)
+            return "chained_async"
+        
+        result = asyncio.run(chained_async_function())
+        assert result == "chained_async"
+    
+    @patch.dict(os.environ, TEST_CONFIG, clear=True)
     def test_decorator_with_class_method(self):
         """Test decorators with class methods"""
         class TestClass:
@@ -342,6 +384,27 @@ class TestTraceDecorators:
         obj = TestClass()
         assert obj.instance_method(5) == 10
         assert TestClass.class_method(5) == 15
+    
+    @patch.dict(os.environ, TEST_CONFIG, clear=True)
+    def test_decorator_with_async_class_method(self):
+        """Test decorators with async class methods"""
+        class TestClass:
+            @trace
+            async def async_instance_method(self, value):
+                await asyncio.sleep(0.01)
+                return value * 2
+            
+            @classmethod
+            @trace
+            async def async_class_method(cls, value):
+                await asyncio.sleep(0.01)
+                return value + 10
+        
+        obj = TestClass()
+        result1 = asyncio.run(obj.async_instance_method(5))
+        result2 = asyncio.run(TestClass.async_class_method(5))
+        assert result1 == 10
+        assert result2 == 15
 
 
 class TestHTTPInstrumentation:

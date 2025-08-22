@@ -251,7 +251,7 @@ class TestDecorators:
     
     @patch.dict(os.environ, TEST_CONFIG, clear=True)
     def test_atrace_decorator_basic(self):
-        """Test basic atrace decorator functionality"""
+        """Test basic atrace decorator functionality (legacy support)"""
         @atrace
         async def async_traced_function():
             await asyncio.sleep(0.01)
@@ -262,7 +262,7 @@ class TestDecorators:
     
     @patch.dict(os.environ, TEST_CONFIG, clear=True)
     def test_atrace_decorator_with_config(self):
-        """Test atrace decorator with custom configuration"""
+        """Test atrace decorator with custom configuration (legacy support)"""
         @atrace(config={"async": "config"})
         async def async_traced_function():
             await asyncio.sleep(0.01)
@@ -270,6 +270,36 @@ class TestDecorators:
         
         result = asyncio.run(async_traced_function())
         assert result == "async_test"
+    
+    @patch.dict(os.environ, TEST_CONFIG, clear=True)
+    def test_atrace_decorator_sync_function_error(self):
+        """Test that @atrace decorator raises error for sync functions"""
+        with pytest.raises(ValueError, match="@atrace decorator can only be used with async functions"):
+            @atrace
+            def sync_function():
+                return "this should fail"
+    
+    @patch.dict(os.environ, TEST_CONFIG, clear=True)
+    def test_trace_decorator_async_function(self):
+        """Test that @trace decorator automatically handles async functions"""
+        @trace
+        async def async_traced_function():
+            await asyncio.sleep(0.01)
+            return "async_with_trace"
+        
+        result = asyncio.run(async_traced_function())
+        assert result == "async_with_trace"
+    
+    @patch.dict(os.environ, TEST_CONFIG, clear=True)
+    def test_trace_decorator_async_function_with_params(self):
+        """Test that @trace decorator handles async functions with parameters"""
+        @trace(event_type="model", event_name="async_model")
+        async def async_traced_function():
+            await asyncio.sleep(0.01)
+            return "async_model_result"
+        
+        result = asyncio.run(async_traced_function())
+        assert result == "async_model_result"
     
     @patch.dict(os.environ, TEST_CONFIG, clear=True)
     def test_decorator_chaining(self):
@@ -283,6 +313,18 @@ class TestDecorators:
         assert result == "chained"
     
     @patch.dict(os.environ, TEST_CONFIG, clear=True)
+    def test_decorator_chaining_async(self):
+        """Test chaining multiple decorators with async functions"""
+        @trace
+        @trace(event_name="chained_async")
+        async def chained_async_function():
+            await asyncio.sleep(0.01)
+            return "chained_async"
+        
+        result = asyncio.run(chained_async_function())
+        assert result == "chained_async"
+    
+    @patch.dict(os.environ, TEST_CONFIG, clear=True)
     def test_decorator_with_class_method(self):
         """Test decorators with class methods"""
         class TestClass:
@@ -293,6 +335,19 @@ class TestDecorators:
         obj = TestClass()
         result = obj.traced_method()
         assert result == "method"
+    
+    @patch.dict(os.environ, TEST_CONFIG, clear=True)
+    def test_decorator_with_async_class_method(self):
+        """Test decorators with async class methods"""
+        class TestClass:
+            @trace
+            async def traced_async_method(self):
+                await asyncio.sleep(0.01)
+                return "async_method"
+        
+        obj = TestClass()
+        result = asyncio.run(obj.traced_async_method())
+        assert result == "async_method"
 
 
 class TestHTTPInstrumentation:
@@ -582,6 +637,14 @@ class TestPerformance:
     @patch.dict(os.environ, TEST_CONFIG, clear=True)
     def test_decorator_overhead(self):
         """Test decorator overhead performance"""
+        # Initialize tracer in test mode to avoid HTTP calls
+        tracer = HoneyHiveTracer(
+            api_key=TEST_CONFIG['HH_API_KEY'],
+            project=TEST_CONFIG['HH_PROJECT'],
+            source=TEST_CONFIG['HH_SOURCE'],
+            test_mode=True
+        )
+        
         def plain_function():
             return 42
         
@@ -604,13 +667,82 @@ class TestPerformance:
         # Calculate overhead ratio
         overhead_ratio = traced_time / plain_time if plain_time > 0 else float('inf')
         
-        # Overhead should be reasonable (< 15000x for 1000 iterations)
-        assert overhead_ratio < 15000.0, f"Decorator overhead too high: {overhead_ratio}x"
+        # Add detailed timing output
+        print(f"\n🔍 DETAILED TIMING ANALYSIS:")
+        print(f"  📊 Plain function time: {plain_time:.9f}s")
+        print(f"  📊 Traced function time: {traced_time:.9f}s")
+        print(f"  ⚡ Overhead ratio: {overhead_ratio:.2f}x")
+        print(f"  🔢 Iterations: 1000")
         
-        print(f"Performance Summary:")
+        if plain_time < 0.000001:
+            print(f"  ⚠️  WARNING: Plain function time is extremely small: {plain_time:.9f}s")
+            print(f"  💡 This may cause inflated overhead ratios")
+        
+        if traced_time > 1.0:
+            print(f"  ⚠️  WARNING: Traced function time is very high: {traced_time:.6f}s")
+            print(f"  💡 This suggests significant performance issues")
+        
+        # Updated overhead thresholds based on new optimizations
+        # Previous threshold: 15000x (catastrophic)
+        # New thresholds based on optimization levels:
+        
+        if overhead_ratio < 10.0:
+            print(f"  🟢 EXCELLENT: Minimal overhead ({overhead_ratio:.2f}x)")
+        elif overhead_ratio < 50.0:
+            print(f"  🟡 GOOD: Acceptable overhead ({overhead_ratio:.2f}x)")
+        elif overhead_ratio < 200.0:
+            print(f"  🟠 MODERATE: Noticeable overhead ({overhead_ratio:.2f}x)")
+        elif overhead_ratio < 1000.0:
+            print(f"  🔴 HIGH: Significant overhead ({overhead_ratio:.2f}x)")
+        else:
+            print(f"  💀 CRITICAL: Excessive overhead ({overhead_ratio:.2f}x)")
+        
+        # New threshold: 1000x (much more reasonable than 15000x)
+        assert overhead_ratio < 1000.0, f"Decorator overhead too high: {overhead_ratio}x (threshold: 1000x)"
+        
+        print(f"\nPerformance Summary:")
         print(f"  Plain function time: {plain_time:.6f}s")
         print(f"  Traced function time: {traced_time:.6f}s")
         print(f"  Overhead ratio: {overhead_ratio:.2f}x")
+        print(f"  Threshold: 1000x (previously 15000x)")
+    
+    @patch.dict(os.environ, TEST_CONFIG, clear=True)
+    def test_conditional_tracing_optimization(self):
+        """Test conditional tracing optimization features"""
+        # Initialize tracer with optimizations
+        tracer = HoneyHiveTracer(
+            api_key=TEST_CONFIG['HH_API_KEY'],
+            project=TEST_CONFIG['HH_PROJECT'],
+            source=TEST_CONFIG['HH_SOURCE'],
+            test_mode=True,
+            verbose=True
+        )
+        
+        # Test tracing enable/disable
+        from honeyhive.tracer.otel_tracer import HoneyHiveOTelTracer
+        
+        # Enable tracing with performance thresholds
+        HoneyHiveOTelTracer.enable_tracing(
+            enabled=True,
+            min_duration_ms=5.0,  # Only trace operations > 5ms
+            max_spans_per_second=500
+        )
+        
+        assert HoneyHiveOTelTracer.is_tracing_enabled() is True
+        assert HoneyHiveOTelTracer._min_span_duration_ms == 5.0
+        assert HoneyHiveOTelTracer._max_spans_per_second == 500
+        
+        # Test should_trace_span logic
+        assert HoneyHiveOTelTracer.should_trace_span(1.0) is False   # Below threshold
+        assert HoneyHiveOTelTracer.should_trace_span(5.0) is True    # At threshold
+        assert HoneyHiveOTelTracer.should_trace_span(10.0) is True   # Above threshold
+        
+        # Disable tracing
+        HoneyHiveOTelTracer.enable_tracing(enabled=False)
+        assert HoneyHiveOTelTracer.is_tracing_enabled() is False
+        assert HoneyHiveOTelTracer.should_trace_span(100.0) is False  # Should not trace when disabled
+        
+        print("✅ Conditional tracing optimization tests passed")
 
 
 class TestOTLPIntegration:
