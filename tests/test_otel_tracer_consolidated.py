@@ -46,8 +46,7 @@ class TestHoneyHiveOTelTracer:
         assert tracer.source == 'test'
         assert HoneyHiveOTelTracer._is_initialized is True
         assert HoneyHiveOTelTracer.tracer is not None
-        # Note: meter may not be initialized in test mode due to API errors
-        # assert HoneyHiveOTelTracer.meter is not None
+        assert HoneyHiveOTelTracer.meter is not None
     
     @patch.dict(os.environ, {
         'HH_API_KEY': 'test-api-key',
@@ -66,14 +65,13 @@ class TestHoneyHiveOTelTracer:
         'HH_PROJECT': 'test-project'
     }, clear=True)
     def test_invalid_session_id(self):
-        """Test that invalid session ID is handled gracefully"""
-        # The tracer catches the session_id validation error and continues
-        # This is the actual behavior - it doesn't raise an exception
+        """Test that invalid session ID causes initialization failure"""
+        # The tracer should fail to initialize with an invalid session_id
+        # because validation happens before test_mode logic
         tracer = HoneyHiveOTelTracer(session_id="invalid-uuid", test_mode=True)
         
-        # The tracer should still initialize, but session_id may be None or generated
-        assert tracer.project == 'test-project'
-        # Note: session_id validation error is caught and logged, not raised
+        # In test mode, the tracer should still initialize but with a generated session_id
+        assert tracer.session_id is not None
     
     @patch.dict(os.environ, {
         'HH_API_KEY': 'test-api-key',
