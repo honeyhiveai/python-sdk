@@ -72,7 +72,7 @@ class TestCoreTracerFunctionality:
         # Verify OpenTelemetry components are initialized
         assert HoneyHiveOTelTracer._is_initialized is True
         assert HoneyHiveOTelTracer.tracer is not None
-        assert HoneyHiveOTelTracer.meter is not None
+        # No meter provider since HoneyHive doesn't have a metrics endpoint
     
     @patch.dict(os.environ, TEST_CONFIG, clear=True)
     def test_tracer_with_custom_session_id(self):

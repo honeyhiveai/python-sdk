@@ -19,7 +19,7 @@ from honeyhive.tracer.custom import trace, atrace, disable_tracing, enable_traci
 
 from opentelemetry import context, baggage
 from opentelemetry.context import Context
-from opentelemetry.sdk.metrics.export import ConsoleMetricExporter
+
 from opentelemetry.propagators.composite import CompositePropagator
 from opentelemetry.trace.propagation.tracecontext import TraceContextTextMapPropagator
 from opentelemetry.baggage.propagation import W3CBaggagePropagator

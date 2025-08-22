@@ -12,13 +12,10 @@ from opentelemetry.context import Context
 from opentelemetry.sdk.trace import TracerProvider
 from opentelemetry.sdk.trace.export import BatchSpanProcessor, ConsoleSpanExporter
 from opentelemetry.sdk.trace import ReadableSpan, SpanProcessor
-from opentelemetry.sdk.metrics import MeterProvider
-from opentelemetry.sdk.metrics.export import ConsoleMetricExporter, PeriodicExportingMetricReader
 from opentelemetry.propagators.composite import CompositePropagator
 from opentelemetry.trace.propagation.tracecontext import TraceContextTextMapPropagator
 from opentelemetry.baggage.propagation import W3CBaggagePropagator
 from opentelemetry.exporter.otlp.proto.http.trace_exporter import OTLPSpanExporter
-from opentelemetry.exporter.otlp.proto.http.metric_exporter import OTLPMetricExporter
 
 from honeyhive.utils.baggage_dict import BaggageDict
 from honeyhive.models import operations, components, errors
@@ -259,10 +256,8 @@ class HoneyHiveOTelTracer:
     
     # OpenTelemetry components
     tracer_provider: Optional[TracerProvider] = None
-    meter_provider: Optional[MeterProvider] = None
     propagator: Optional[CompositePropagator] = None
     tracer: Optional[trace.Tracer] = None
-    meter: Optional[Any] = None
     span_processor: Optional[HoneyHiveSpanProcessor] = None
 
     def __init__(
@@ -560,48 +555,8 @@ class HoneyHiveOTelTracer:
             # Set the tracer provider
             trace.set_tracer_provider(HoneyHiveOTelTracer.tracer_provider)
             
-            # Initialize meter provider
-            HoneyHiveOTelTracer.meter_provider = MeterProvider()
-            
-            # Configure metric exporters
-            if HoneyHiveOTelTracer.verbose:
-                try:
-                    console_metric_reader = PeriodicExportingMetricReader(
-                        ConsoleMetricExporter(out=open(os.devnull, "w"))
-                    )
-                    # Check if the meter provider supports add_metric_reader
-                    if hasattr(HoneyHiveOTelTracer.meter_provider, 'add_metric_reader'):
-                        HoneyHiveOTelTracer.meter_provider.add_metric_reader(console_metric_reader)
-                except Exception as e:
-                    # Skip metric reader if there's an issue
-                    if HoneyHiveOTelTracer.verbose:
-                        print(f"Warning: Could not add console metric reader: {e}")
-                    pass
-            
-            # Add OTLP metric exporter
-            try:
-                otlp_metric_reader = PeriodicExportingMetricReader(
-                    OTLPMetricExporter(
-                        endpoint=f"{HoneyHiveOTelTracer.server_url}/opentelemetry/v1/metrics",
-                        headers={"Authorization": f"Bearer {HoneyHiveOTelTracer.api_key}"}
-                    )
-                )
-                # Check if the meter provider supports add_metric_reader
-                if hasattr(HoneyHiveOTelTracer.meter_provider, 'add_metric_reader'):
-                    HoneyHiveOTelTracer.meter_provider.add_metric_reader(otlp_metric_reader)
-            except Exception as e:
-                # Skip metric reader if there's an issue
-                if HoneyHiveOTelTracer.verbose:
-                    print(f"Warning: Could not add metric reader: {e}")
-                pass
-            
-            # Set the meter provider
-            from opentelemetry.metrics import set_meter_provider
-            set_meter_provider(HoneyHiveOTelTracer.meter_provider)
-            
-            # Get tracer and meter
+            # Get tracer (no metrics endpoint, so no meter provider)
             HoneyHiveOTelTracer.tracer = trace.get_tracer("honeyhive", "1.0.0")
-            HoneyHiveOTelTracer.meter = HoneyHiveOTelTracer.meter_provider.get_meter("honeyhive", "1.0.0")
             
             HoneyHiveOTelTracer._is_initialized = True
             HoneyHiveOTelTracer._is_traceloop_initialized = True
@@ -687,39 +642,8 @@ class HoneyHiveOTelTracer:
                     # Silently fail in test mode and disable OTLP
                     HoneyHiveOTelTracer.otlp_enabled = False
             
-            # Check if meter provider is already set
-            try:
-                from opentelemetry.metrics import get_meter_provider
-                existing_meter_provider = get_meter_provider()
-                if existing_meter_provider is not None:
-                    # Use existing provider
-                    HoneyHiveOTelTracer.meter_provider = existing_meter_provider
-                else:
-                    # Create new provider
-                    HoneyHiveOTelTracer.meter_provider = MeterProvider()
-                    from opentelemetry.metrics import set_meter_provider
-                    set_meter_provider(HoneyHiveOTelTracer.meter_provider)
-            except Exception:
-                # Create new provider if there's an issue
-                HoneyHiveOTelTracer.meter_provider = MeterProvider()
-                from opentelemetry.metrics import set_meter_provider
-                set_meter_provider(HoneyHiveOTelTracer.meter_provider)
-            
-            # Configure metric exporters for testing
-            try:
-                console_metric_reader = PeriodicExportingMetricReader(
-                    ConsoleMetricExporter(out=open(os.devnull, "w"))
-                )
-                # Only add metric reader if the provider supports it
-                if hasattr(HoneyHiveOTelTracer.meter_provider, 'add_metric_reader'):
-                    HoneyHiveOTelTracer.meter_provider.add_metric_reader(console_metric_reader)
-            except Exception as e:
-                # Skip metric reader if there's an issue
-                pass
-            
-            # Get tracer and meter
+            # Get tracer (no metrics endpoint, so no meter provider)
             HoneyHiveOTelTracer.tracer = trace.get_tracer("honeyhive", "1.0.0")
-            HoneyHiveOTelTracer.meter = HoneyHiveOTelTracer.meter_provider.get_meter("honeyhive", "1.0.0")
             
             HoneyHiveOTelTracer._is_initialized = True
             HoneyHiveOTelTracer._is_traceloop_initialized = True
@@ -754,14 +678,7 @@ class HoneyHiveOTelTracer:
                 if hasattr(HoneyHiveOTelTracer.tracer_provider, 'shutdown'):
                     HoneyHiveOTelTracer.tracer_provider.shutdown()
             
-            if HoneyHiveOTelTracer.meter_provider is not None:
-                # Force flush any remaining metrics before shutdown
-                if hasattr(HoneyHiveOTelTracer.meter_provider, 'force_flush'):
-                    HoneyHiveOTelTracer.meter_provider.force_flush()
-                
-                # Shutdown the meter provider
-                if hasattr(HoneyHiveOTelTracer.meter_provider, 'shutdown'):
-                    HoneyHiveOTelTracer.meter_provider.shutdown()
+
             
             if HoneyHiveOTelTracer.verbose:
                 print("🔍 OpenTelemetry components shut down successfully")
@@ -835,10 +752,8 @@ class HoneyHiveOTelTracer:
         HoneyHiveOTelTracer.verbose = False
         HoneyHiveOTelTracer.is_evaluation = False
         HoneyHiveOTelTracer.tracer_provider = None
-        HoneyHiveOTelTracer.meter_provider = None
         HoneyHiveOTelTracer.propagator = None
         HoneyHiveOTelTracer.tracer = None
-        HoneyHiveOTelTracer.meter = None
         HoneyHiveOTelTracer.span_processor = None
         
         # Reset OTLP exporter configuration
@@ -850,19 +765,17 @@ class HoneyHiveOTelTracer:
         try:
             from opentelemetry import trace, metrics, context
             from opentelemetry.sdk.trace import TracerProvider
-            from opentelemetry.sdk.metrics import MeterProvider
+
             from opentelemetry.sdk.trace.export import ConsoleSpanExporter
-            from opentelemetry.sdk.metrics.export import ConsoleMetricExporter
+
             from opentelemetry.sdk.trace.export import BatchSpanProcessor
-            from opentelemetry.sdk.metrics.export import PeriodicExportingMetricReader
+
             
             # 1. Reset trace provider with clean state
             new_trace_provider = TracerProvider()
             trace.set_tracer_provider(new_trace_provider)
             
-            # 2. Reset meter provider with clean state
-            new_meter_provider = MeterProvider()
-            metrics.set_meter_provider(new_meter_provider)
+
             
             # 3. Clear ALL existing contexts (not just detach current)
             # This is crucial for complete isolation
@@ -912,8 +825,7 @@ class HoneyHiveOTelTracer:
             try:
                 if hasattr(new_trace_provider, 'force_flush'):
                     new_trace_provider.force_flush()
-                if hasattr(new_meter_provider, 'force_flush'):
-                    new_meter_provider.force_flush()
+
             except Exception:
                 # Silently fail if flush operations fail
                 pass
@@ -1142,10 +1054,7 @@ class HoneyHiveOTelTracer:
                 # Check if the tracer provider supports force_flush
                 if hasattr(HoneyHiveOTelTracer.tracer_provider, 'force_flush'):
                     HoneyHiveOTelTracer.tracer_provider.force_flush()
-            if HoneyHiveOTelTracer.meter_provider:
-                # Check if the meter provider supports force_flush
-                if hasattr(HoneyHiveOTelTracer.meter_provider, 'force_flush'):
-                    HoneyHiveOTelTracer.meter_provider.force_flush()
+
         finally:
             HoneyHiveOTelTracer._flush_lock.release()
 
@@ -1189,17 +1098,21 @@ class HoneyHiveOTelTracer:
                 server_url=HoneyHiveOTelTracer.server_url
             )
             
-            update_request = operations.UpdateEventRequestBody(
-                event_id=session_id,
-                metadata=metadata,
-                feedback=feedback,
-                metrics=metrics,
-                config=config,
-                inputs=inputs,
-                outputs=outputs,
-                user_properties=user_properties
-            )
-            
+            update_request = operations.UpdateEventRequestBody(event_id=session_id.lower())
+            if feedback is not None:
+                update_request.feedback = feedback
+            if metrics is not None:
+                update_request.metrics = metrics
+            if metadata is not None:
+                update_request.metadata = metadata
+            if config is not None:
+                update_request.config = config
+            if inputs is not None:
+                print('inputs are not supported in enrich_session')
+            if outputs is not None:
+                update_request.outputs = outputs
+            if user_properties is not None:
+                update_request.user_properties = user_properties
             response: operations.UpdateEventResponse = sdk.events.update_event(request=update_request)
             
             if response.status_code != 200:
