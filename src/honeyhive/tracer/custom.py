@@ -551,6 +551,112 @@ def enable_tracing():
     """Enable tracing globally"""
     _get_instrumentor().enable_tracing()
 
+def trace_class(
+    include_list: list[str] | None = None,
+    exclude_list: list[str] | None = None,
+    event_type: str = "tool",
+    kind: str = "internal"
+) -> Callable:
+    """
+    Class decorator to automatically trace specified methods of a class.
+    
+    This decorator iterates over the methods of a class and applies the @trace
+    decorator to them, based on the include_list and exclude_list criteria.
+    Methods starting or ending with double underscores (dunder methods, e.g.,
+    __init__, __call__) are always excluded by default.
+    
+    Args:
+        include_list (list[str], optional): A list of method names to explicitly 
+            include for tracing. If provided, only methods in this list (that are 
+            not dunder methods) will be traced. Defaults to None (trace all 
+            non-dunder methods).
+        exclude_list (list[str], optional): A list of method names to exclude 
+            from tracing. This is only considered if include_list is not provided.
+            Dunder methods are implicitly excluded. Defaults to an empty list.
+        event_type (str, optional): The event type for all traced methods.
+            Defaults to "tool".
+        kind (str, optional): The kind of operation for all traced methods.
+            Defaults to "internal".
+    
+    Returns:
+        callable: A decorator function that, when applied to a class, modifies
+            the class to wrap its specified methods with tracing.
+    
+    Example:
+        To trace all methods except 'internal_method':
+        ```python
+        @trace_class(exclude_list=['internal_method'])
+        class MyService:
+            def public_api(self):
+                pass
+            def internal_method(self):
+                pass
+        ```
+        
+        To trace only 'method_one' and 'method_two':
+        ```python
+        @trace_class(include_list=['method_one', 'method_two'])
+        class AnotherService:
+            def method_one(self):
+                pass
+            def method_two(self):
+                pass
+            def not_traced_method(self):
+                pass
+        ```
+    """
+    # Check if the first argument is a class (called as @trace_class)
+    if (include_list is not None and 
+        isinstance(include_list, type) and 
+        exclude_list is None and 
+        event_type == "tool" and 
+        kind == "internal"):
+        # Called as @trace_class (without parentheses)
+        cls = include_list
+        return _apply_trace_class(cls, None, None, "tool", "internal")
+    
+    # Called as @trace_class(...) (with parameters)
+    def decorator(cls: Any) -> Any:
+        return _apply_trace_class(cls, include_list, exclude_list, event_type, kind)
+    return decorator
+
+
+def _apply_trace_class(
+    cls: Any,
+    include_list: list[str] | None,
+    exclude_list: list[str] | None,
+    event_type: str,
+    kind: str
+) -> Any:
+    """Helper function to apply trace_class decoration to a class"""
+    exclude_list = exclude_list or []
+    
+    for name, method in inspect.getmembers(cls, inspect.isfunction):
+        # Always exclude dunder methods
+        if name.startswith('__') and name.endswith('__'):
+            continue
+        
+        # Apply include/exclude logic
+        if include_list and name not in include_list:
+            continue
+        if not include_list and name in exclude_list:
+            continue
+        
+        # Create span name using module.class.method pattern
+        span_name = f"{cls.__module__}.{cls.__name__}.{name}"
+        
+        # Apply the trace decorator with consistent configuration
+        traced_method = trace(
+            event_type=event_type,
+            event_name=span_name
+        )(method)
+        
+        # Replace the original method with the traced version
+        setattr(cls, name, traced_method)
+    
+    return cls
+
+
 
 # Enrich a span from within a traced function
 def enrich_span(

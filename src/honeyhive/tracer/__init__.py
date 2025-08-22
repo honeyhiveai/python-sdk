@@ -15,7 +15,7 @@ from honeyhive.sdk import HoneyHive
 # Import the new OpenTelemetry tracer
 from honeyhive.tracer.otel_tracer import HoneyHiveOTelTracer as HoneyHiveTracer
 from honeyhive.tracer.http_instrumentation import instrument_http, uninstrument_http
-from honeyhive.tracer.custom import trace, atrace, disable_tracing, enable_tracing
+from honeyhive.tracer.custom import trace, atrace, trace_class, disable_tracing, enable_tracing
 
 from opentelemetry import context, baggage
 from opentelemetry.context import Context
@@ -34,6 +34,7 @@ __all__ = [
     'uninstrument_http',
     'trace',
     'atrace',
+    'trace_class',
     'disable_tracing',
     'enable_tracing',
     'reset_tracer_state',
