@@ -356,6 +356,9 @@ class HoneyHiveOTelTracer:
             self.project = project
             self.source = source
             
+            # Store test mode flag
+            self._test_mode = test_mode
+            
             # Set verbose flag
             HoneyHiveOTelTracer.verbose = verbose
             
@@ -1158,43 +1161,50 @@ class HoneyHiveOTelTracer:
         user_properties=None
     ):
         """Enrich a session with additional data"""
-        if not HoneyHiveOTelTracer._is_initialized:
-            print("\033[91mCould not enrich session: HoneyHiveOTelTracer not initialized successfully\033[0m")
-            return
-        
-        session_id = session_id or self.session_id
         try:
-            if HoneyHiveOTelTracer.verbose:
-                print(f"enrich_session: Updating event {session_id} with metrics: {metrics}")
-            
-            sdk = HoneyHive(bearer_auth=HoneyHiveOTelTracer.api_key, server_url=HoneyHiveOTelTracer.server_url)
-            update_request = operations.UpdateEventRequestBody(event_id=session_id)
-            if feedback is not None:
-                update_request.feedback = feedback
-            if metrics is not None:
-                update_request.metrics = metrics
+            # Store values in baggage for context propagation
             if metadata is not None:
-                update_request.metadata = metadata
-            if config is not None:
-                update_request.config = config
-            if inputs is not None:
-                print('inputs are not supported in enrich_session')
-            if outputs is not None:
-                update_request.outputs = outputs
-            if user_properties is not None:
-                update_request.user_properties = user_properties
+                self.baggage['metadata'] = metadata
+            if feedback is not None:
+                self.baggage['feedback'] = feedback
+            if metrics is not None:
+                self.baggage['metrics'] = metrics
             
-            if HoneyHiveOTelTracer.verbose:
-                print(f"enrich_session: Sending update request: {update_request}")
+            # In test mode, skip API calls
+            if hasattr(self, '_test_mode') and self._test_mode:
+                return
+                
+            if not HoneyHiveOTelTracer._is_initialized:
+                if HoneyHiveOTelTracer.verbose:
+                    print("Warning: HoneyHiveOTelTracer not initialized, skipping API call")
+                return
+            
+            # Use current session_id if not provided
+            if session_id is None:
+                session_id = self.session_id
+            
+            # Make API call to update session
+            sdk = HoneyHive(
+                bearer_auth=HoneyHiveOTelTracer.api_key,
+                server_url=HoneyHiveOTelTracer.server_url
+            )
+            
+            update_request = operations.UpdateEventRequestBody(
+                event_id=session_id,
+                metadata=metadata,
+                feedback=feedback,
+                metrics=metrics,
+                config=config,
+                inputs=inputs,
+                outputs=outputs,
+                user_properties=user_properties
+            )
             
             response: operations.UpdateEventResponse = sdk.events.update_event(request=update_request)
             
-            if HoneyHiveOTelTracer.verbose:
-                print(f"enrich_session: API response status: {response.status_code}")
-                print(f"enrich_session: API response: {response}")
-            
             if response.status_code != 200:
                 raise Exception(f"Failed to enrich session: {response.raw_response.text}")
+                
         except Exception as e:
             if HoneyHiveOTelTracer.verbose:
                 import traceback
@@ -1202,59 +1212,7 @@ class HoneyHiveOTelTracer:
             else:
                 pass
 
-    def set_metadata(self, metadata: Dict[str, Any]) -> None:
-        """Set metadata for the current session"""
-        if not metadata:
-            return
-        
-        try:
-            # Store in baggage for context propagation
-            # Store the actual dictionary, not string representation
-            self.baggage['metadata'] = metadata
-            
-            # Update the session via API
-            self.enrich_session(metadata=metadata)
-        except Exception as e:
-            if HoneyHiveOTelTracer.verbose:
-                print(f"Error setting metadata: {e}")
-            else:
-                pass
 
-    def set_feedback(self, feedback: Dict[str, Any]) -> None:
-        """Set feedback for the current session"""
-        if not feedback:
-            return
-        
-        try:
-            # Store in baggage for context propagation
-            # Store the actual dictionary, not string representation
-            self.baggage['feedback'] = feedback
-            
-            # Update the session via API
-            self.enrich_session(feedback=feedback)
-        except Exception as e:
-            if HoneyHiveOTelTracer.verbose:
-                print(f"Error setting feedback: {e}")
-            else:
-                pass
-
-    def set_metric(self, metrics: Dict[str, Any]) -> None:
-        """Set metrics for the current session"""
-        if not metrics:
-            return
-        
-        try:
-            # Store in baggage for context propagation
-            # Store the actual dictionary, not string representation
-            self.baggage['metrics'] = metrics
-            
-            # Update the session via API
-            self.enrich_session(metrics=metrics)
-        except Exception as e:
-            if HoneyHiveOTelTracer.verbose:
-                print(f"Error setting metrics: {e}")
-            else:
-                pass
 
     # Note: api_key is accessed as HoneyHiveOTelTracer.api_key (class attribute)
     # No property needed since tests can access the class attribute directly

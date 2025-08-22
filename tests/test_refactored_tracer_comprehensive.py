@@ -127,17 +127,17 @@ class TestRefactoredTracerCore:
             test_mode=True
         )
         
-        # Test setting metadata
+        # Test setting metadata, feedback, and metrics via enrich_session
         test_metadata = {"test_key": "test_value", "number": 42}
-        tracer.set_metadata(test_metadata)
-        
-        # Test setting feedback
         test_feedback = {"rating": 5, "comment": "Excellent test"}
-        tracer.set_feedback(test_feedback)
-        
-        # Test setting metrics
         test_metrics = {"accuracy": 0.95, "latency": 150}
-        tracer.set_metric(test_metrics)
+        
+        # Use enrich_session instead of individual setter functions
+        tracer.enrich_session(
+            metadata=test_metadata,
+            feedback=test_feedback,
+            metrics=test_metrics
+        )
         
         # Verify baggage contains the values
         assert tracer.baggage.get('metadata') == test_metadata
@@ -743,11 +743,11 @@ class TestAPICompatibility:
         assert hasattr(tracer, 'project')
         assert hasattr(tracer, 'source')
         assert hasattr(tracer, 'baggage')
-        assert hasattr(tracer, 'set_metadata')
-        assert hasattr(tracer, 'set_feedback')
-        assert hasattr(tracer, 'set_metric')
-        assert hasattr(tracer, 'flush')
+        assert hasattr(tracer, 'enrich_session')
+        assert hasattr(tracer, 'link')
+        assert hasattr(tracer, 'unlink')
         assert hasattr(tracer, 'inject')
+        assert hasattr(tracer, 'flush')
         
         # Test that cleanup method exists (it might be inherited or not present)
         # This is optional as it depends on the implementation

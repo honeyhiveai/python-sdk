@@ -121,17 +121,17 @@ class TestCoreTracerFunctionality:
             test_mode=True
         )
         
-        # Test setting metadata
+        # Test setting metadata, feedback, and metrics via enrich_session
         test_metadata = {"test_key": "test_value", "number": 42}
-        tracer.set_metadata(test_metadata)
-        
-        # Test setting feedback
         test_feedback = {"rating": 5, "comment": "Excellent test"}
-        tracer.set_feedback(test_feedback)
-        
-        # Test setting metrics
         test_metrics = {"accuracy": 0.95, "latency": 150}
-        tracer.set_metric(test_metrics)
+        
+        # Use enrich_session instead of individual setter functions
+        tracer.enrich_session(
+            metadata=test_metadata,
+            feedback=test_feedback,
+            metrics=test_metrics
+        )
         
         # Verify baggage contains the values
         assert tracer.baggage.get('metadata') == test_metadata
@@ -462,8 +462,12 @@ class TestIntegrationScenarios:
             source=TEST_CONFIG['HH_SOURCE']
         )
         
-        # Set metadata
-        tracer.set_metadata({"workflow": "test", "version": "1.0"})
+        # Test setting metadata, feedback, and metrics via enrich_session
+        tracer.enrich_session(
+            metadata={"workflow": "test", "version": "1.0"},
+            feedback={"status": "completed", "quality": "good"},
+            metrics={"execution_time": 0.5, "success_rate": 1.0}
+        )
         
         # Use trace decorator
         @trace(config={"operation": "workflow_step"})
@@ -473,11 +477,11 @@ class TestIntegrationScenarios:
         result = workflow_step(21)
         assert result == 42
         
-        # Set feedback
-        tracer.set_feedback({"status": "completed", "quality": "good"})
-        
-        # Set metrics
-        tracer.set_metric({"execution_time": 0.5, "success_rate": 1.0})
+        # Set feedback and metrics via enrich_session
+        tracer.enrich_session(
+            feedback={"status": "completed", "quality": "good"},
+            metrics={"execution_time": 0.5, "success_rate": 1.0}
+        )
         
         # Flush
         HoneyHiveOTelTracer.flush()
@@ -716,8 +720,7 @@ class TestCompatibility:
         )
         
         expected_methods = [
-            'set_metadata', 'set_feedback', 'set_metric',
-            'link', 'unlink', 'inject', 'flush'
+            'enrich_session', 'link', 'unlink', 'inject', 'flush'
         ]
         
         for method_name in expected_methods:

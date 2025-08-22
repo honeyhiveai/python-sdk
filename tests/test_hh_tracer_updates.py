@@ -37,7 +37,8 @@ def test_tracer_metadata_update():
 
     run_tracer()
 
-    HoneyHiveTracer.set_metadata({ "test": "value" })
+    # Use enrich_session instead of individual setter functions
+    HoneyHiveTracer.enrich_session(metadata={ "test": "value" })
 
     session_id = HoneyHiveTracer.session_id
     req = operations.GetEventsRequestBody(
@@ -76,7 +77,8 @@ def test_tracer_feedback_update():
 
     run_tracer()
 
-    HoneyHiveTracer.set_feedback({ "comment": "test feedback" })
+    # Use enrich_session instead of individual setter functions
+    HoneyHiveTracer.enrich_session(feedback={ "comment": "test feedback" })
 
     session_id = HoneyHiveTracer.session_id
     req = operations.GetEventsRequestBody(
@@ -114,7 +116,8 @@ def test_tracer_evaluator_update():
 
     run_tracer()
 
-    HoneyHiveTracer.set_metric({ "tps": 1.78 })
+    # Use enrich_session instead of individual setter functions
+    HoneyHiveTracer.enrich_session(metrics={ "tps": 1.78 })
 
     session_id = HoneyHiveTracer.session_id
     req = operations.GetEventsRequestBody(
