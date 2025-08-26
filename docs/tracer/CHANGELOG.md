@@ -149,3 +149,4 @@ This document tracks the major changes and improvements made to the HoneyHive tr
 ---
 
 *This changelog reflects the current state of the HoneyHive tracer module. For the most up-to-date information, refer to the source code and test suite.*
+

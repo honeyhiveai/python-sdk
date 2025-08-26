@@ -21,7 +21,7 @@ def test_create_datapoints():
         ground_truth={"text": "This is part of the Python SDK test suite."},
         project="64d69442f9fa4485aa1cc582",
     )
-    res = sdk.datapoints.create_datapoint(request=req)
+    res = sdk.datapoints.create_datapoint(req)
     assert res.status_code == 200
     assert res.object is not None
     assert res.object.result is not None

@@ -15,8 +15,7 @@ if __name__ == "__main__":
     tracer = HoneyHiveTracer.init(
         api_key=MY_HONEYHIVE_API_KEY,
         project=MY_HONEYHIVE_PROJECT_NAME,
-        server_url=HONEYHIVE_SERVER_URL, # Optional / Required for self-hosted or dedicated deployments
-        verbose=True  # Enable verbose mode for debugging
+        server_url=HONEYHIVE_SERVER_URL # Optional / Required for self-hosted or dedicated deployments
     )
 
     current_session_id = tracer.session_id

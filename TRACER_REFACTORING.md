@@ -195,3 +195,4 @@ tracer = HoneyHiveTracer(verbose=True)
 3. **Sampling**: Configurable sampling strategies
 4. **Metrics**: Enhanced metrics collection and export
 5. **Distributed Tracing**: Better support for distributed tracing scenarios
+

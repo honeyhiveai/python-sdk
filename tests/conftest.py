@@ -20,3 +20,4 @@ def reset_tracer_state_between_tests():
     
     # Reset after test
     reset_tracer_state()
+
