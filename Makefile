@@ -1,4 +1,4 @@
-.PHONY: test cleanup
+.PHONY: test cleanup tox
 
 # The names of the required environment variables
 REQUIRED_ENV_VARS := HH_API_KEY HH_DATASET HH_PROJECT OPENAI_API_KEY SERP_API_KEY COHERE_API_KEY HH_PROJECT_ID
@@ -35,3 +35,37 @@ stop_services:
 # Delete the services
 delete_services:
 	@bash ./tests/standalone_embed.sh delete
+
+# Run tests with tox across multiple Python versions
+tox:
+	@echo "Running tests with tox across Python 3.10-3.12..."
+	@python scripts/run_tox.py test
+
+# Run specific Python version tests
+
+tox-py310:
+	@echo "Running tests with Python 3.10..."
+	@python scripts/run_tox.py test -e py310
+
+tox-py311:
+	@echo "Running tests with Python 3.11..."
+	@python scripts/run_tox.py test -e py311
+
+tox-py312:
+	@echo "Running tests with Python 3.12..."
+	@python scripts/run_tox.py test -e py312
+
+# Run linting checks
+tox-lint:
+	@echo "Running linting checks..."
+	@python scripts/run_tox.py lint
+
+# Run code formatting checks
+tox-format:
+	@echo "Running code formatting checks..."
+	@python scripts/run_tox.py format
+
+# Install tox
+tox-install:
+	@echo "Installing tox..."
+	@python scripts/run_tox.py install

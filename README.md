@@ -919,6 +919,66 @@ s = HoneyHive(debug_logger=logging.getLogger("honeyhive"))
 
 # Development
 
+## Testing
+
+The HoneyHive Python SDK uses tox to run tests across multiple Python versions (3.10, 3.11, 3.12).
+
+### Quick Start
+
+```bash
+# Install tox
+pip install tox>=4.0
+
+# Run all tests across all Python versions
+tox
+
+# Run tests for a specific Python version
+tox -e py311
+
+# Run linting checks
+tox -e lint
+
+# Run code formatting checks
+tox -e format
+```
+
+### Using Helper Scripts
+
+```bash
+# List available test environments
+python scripts/run_tox.py list
+
+# Run tests with specific Python version
+python scripts/run_tox.py test -e py311
+
+# Run linting
+python scripts/run_tox.py lint
+```
+
+### Using Make
+
+```bash
+# Run all tests
+make tox
+
+# Run specific Python version
+make tox-py311
+
+# Run linting
+make tox-lint
+```
+
+### Installing Python Versions
+
+If you don't have all required Python versions installed, use the helper script:
+
+```bash
+# Install required Python versions
+./scripts/install_python_versions.sh
+```
+
+For more detailed testing information, see [TOX_README.md](TOX_README.md).
+
 ## Maturity
 
 This SDK is in beta, and there may be breaking changes between versions without a major version update. Therefore, we recommend pinning usage
