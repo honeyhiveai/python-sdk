@@ -4,6 +4,7 @@ pyrightconfig.json
 venv/
 .venv/
 .env
+.env.docker
 *.tar.gz
 *.zip
 src/*.egg-info/
@@ -17,3 +18,5 @@ dist/
 .aider*
 lab/
 .vscode
+.coverage
+coverage.xml

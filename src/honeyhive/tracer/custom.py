@@ -19,10 +19,28 @@ logger = logging.getLogger(__name__)
 class FunctionInstrumentor(BaseInstrumentor):
 
     def _instrument(self, **kwargs):
-        tracer_provider = TracerProvider()
-        otel_trace.set_tracer_provider(tracer_provider)
-
-        self._tracer = otel_trace.get_tracer(__name__)
+        # Use the tracer from the main HoneyHiveOTelTracer if available
+        from honeyhive.tracer.otel_tracer import HoneyHiveOTelTracer
+        
+        # Wait for the tracer to be available (with timeout)
+        import time
+        start_time = time.time()
+        timeout = 5.0  # 5 second timeout
+        
+        while HoneyHiveOTelTracer.tracer is None and (time.time() - start_time) < timeout:
+            time.sleep(0.1)
+        
+        if HoneyHiveOTelTracer.tracer is not None:
+            self._tracer = HoneyHiveOTelTracer.tracer
+            if HoneyHiveOTelTracer.verbose:
+                print(f"🔗 FunctionInstrumentor using HoneyHiveOTelTracer.tracer")
+        else:
+            # Fallback to creating a new tracer provider
+            if HoneyHiveOTelTracer.verbose:
+                print(f"⚠️ FunctionInstrumentor creating fallback tracer provider")
+            tracer_provider = TracerProvider()
+            otel_trace.set_tracer_provider(tracer_provider)
+            self._tracer = otel_trace.get_tracer(__name__)
 
     def _uninstrument(self, **kwargs):
         pass
@@ -45,7 +63,13 @@ class FunctionInstrumentor(BaseInstrumentor):
         ):
             span.set_attribute(prefix, value)
         else:
-            span.set_attribute(prefix, str(value))
+            # Convert complex types to JSON strings for OpenTelemetry compatibility
+            try:
+                import json
+                span.set_attribute(prefix, json.dumps(value, default=str))
+            except (TypeError, ValueError):
+                # Fallback to string representation if JSON serialization fails
+                span.set_attribute(prefix, str(value))
 
     def _parse_and_match(self, template, text):
         # Extract placeholders from the template
@@ -145,17 +169,22 @@ class FunctionInstrumentor(BaseInstrumentor):
             if func is not None:
                 functools.update_wrapper(self, func)
 
-        def __new__(
-            cls,
-            func: Optional[Callable[P, R]] = None,
-            event_type: Optional[str] = "tool",
-            config: Optional[Dict[str, Any]] = None,
-            metadata: Optional[Dict[str, Any]] = None,
-            event_name: Optional[str] = None,
-        ):
-            if func is None:
-                return lambda f: cls(f, event_type, config, metadata, event_name)
-            return super().__new__(cls)
+        def __call__(self, *args, **kwargs):
+            # If we have a function and this is being called with function arguments
+            if self.func is not None:
+                # Check if tracing is disabled at call time for maximum performance
+                if hasattr(self._func_instrumentor, '_tracing_disabled') and self._func_instrumentor._tracing_disabled:
+                    # Ultra-fast path: direct function call with zero overhead
+                    return self.func(*args, **kwargs)
+                return self.sync_call(*args, **kwargs)
+            # If we don't have a function, this is being used as a decorator
+            else:
+                func = args[0]
+                # Check if tracing is disabled when creating the decorator
+                if hasattr(self._func_instrumentor, '_tracing_disabled') and self._func_instrumentor._tracing_disabled:
+                    # Return a no-op decorator for maximum performance
+                    return func
+                return self.__class__(func, self.event_type, self.config, self.metadata, self.event_name)
 
         def __get__(self, instance, owner):
             # Implement descriptor protocol to handle method binding
@@ -163,19 +192,10 @@ class FunctionInstrumentor(BaseInstrumentor):
             functools.update_wrapper(bound_method, self.func)
             return bound_method
 
-        def __call__(self, *args: P.args, **kwargs: P.kwargs) -> R:
-            if asyncio.iscoroutinefunction(self.func):
-                raise TypeError("please use @atrace for tracing async functions")
-            ret = self.sync_call(*args, **kwargs)
-            return ret
-        
-        async def __acall__(self, *args: P.args, **kwargs: P.kwargs) -> R:
-            if asyncio.iscoroutinefunction(self.func):
-                return await self.async_call(*args, **kwargs)
-            else:
-                return self.sync_call(*args, **kwargs)
-
         def _setup_span(self, span, args, kwargs):
+            if self.func is None:
+                return
+                
             # Extract function signature
             sig = inspect.signature(self.func)
             bound_args = sig.bind(*args, **kwargs)
@@ -229,26 +249,127 @@ class FunctionInstrumentor(BaseInstrumentor):
             raise exception
 
         def sync_call(self, *args, **kwargs):
-            with self._func_instrumentor._tracer.start_as_current_span(
-                self.event_name or self.func.__name__
-            ) as span:
-                self._setup_span(span, args, kwargs)
-                try:
+            # Performance optimization: check if tracing is globally disabled
+            if hasattr(self._func_instrumentor, '_tracing_disabled') and self._func_instrumentor._tracing_disabled:
+                # Ultra-fast path: direct function call with zero overhead
+                return self.func(*args, **kwargs)
+                
+            # Check if tracer exists and is available
+            if not hasattr(self._func_instrumentor, '_tracer') or self._func_instrumentor._tracer is None:
+                return self.func(*args, **kwargs)
+                
+            # Create comprehensive span for better event tracking
+            try:
+                # Get current context and add session information
+                from opentelemetry import context
+                from honeyhive.tracer.otel_tracer import HoneyHiveOTelTracer
+                
+                current_ctx = context.get_current()
+                
+                # Add session context if available
+                if hasattr(HoneyHiveOTelTracer, 'api_key') and HoneyHiveOTelTracer.api_key:
+                    # Try to get session_id from context or create a new one
+                    session_id = None
+                    if current_ctx is not None:
+                        association_properties = current_ctx.get('association_properties')
+                        if association_properties and isinstance(association_properties, dict):
+                            session_id = association_properties.get('session_id')
+                    
+                    # If no session_id in context, try to get from current tracer instance
+                    if not session_id:
+                        # This is a bit of a hack, but we need to get the session_id somehow
+                        # For now, let's try to get it from the global context
+                        pass
+                
+                # Get the current context with session information
+                from opentelemetry import context
+                current_ctx = context.get_current()
+                
+                # Create span with the current context
+                span = self._func_instrumentor._tracer.start_span(
+                    self.event_name or self.func.__name__,
+                    context=current_ctx
+                )
+                
+                # Set comprehensive attributes for better event tracking
+                if self.event_type:
+                    span.set_attribute("honeyhive_event_type", self.event_type)
+                
+                # Set up span context for enrichment
+                with otel_trace.use_span(span):
+                    # Execute function
                     result = self.func(*args, **kwargs)
-                    return self._handle_result(span, result)
-                except Exception as e:
-                    return self._handle_exception(span, e)
+                    
+                    # Set result attribute using the proper method for complex types
+                    if isinstance(result, (dict, list)) or not isinstance(result, (int, bool, float, str)):
+                        # Convert complex types to JSON strings for OpenTelemetry compatibility
+                        try:
+                            import json
+                            span.set_attribute("honeyhive_outputs.result", json.dumps(result, default=str))
+                        except (TypeError, ValueError):
+                            # Fallback to string representation if JSON serialization fails
+                            span.set_attribute("honeyhive_outputs.result", str(result))
+                    else:
+                        # Simple types can be set directly
+                        span.set_attribute("honeyhive_outputs.result", result)
+                    
+                    # End span
+                    span.end()
+                    return result
+                
+            except Exception as e:
+                if 'span' in locals():
+                    span.set_attribute("honeyhive_error", str(e))
+                    span.end()
+                raise
 
         async def async_call(self, *args, **kwargs):
-            with self._func_instrumentor._tracer.start_as_current_span(
-                self.event_name or self.func.__name__
-            ) as span:
-                self._setup_span(span, args, kwargs)
-                try:
+            # Performance optimization: check if tracing is globally disabled
+            if hasattr(self._func_instrumentor, '_tracing_disabled') and self._func_instrumentor._tracing_disabled:
+                # Ultra-fast path: direct function call with zero overhead
+                return await self.func(*args, **kwargs)
+                
+            # Check if tracer exists and is available
+            if not hasattr(self._func_instrumentor, '_tracer') or self._func_instrumentor._tracer is None:
+                return await self.func(*args, **kwargs)
+                
+            # Create comprehensive span for better event tracking
+            try:
+                span = self._func_instrumentor._tracer.start_span(
+                    self.event_name or self.func.__name__
+                )
+                
+                # Set comprehensive attributes for better event tracking
+                if self.event_type:
+                    span.set_attribute("honeyhive_event_type", self.event_type)
+                
+                # Set up span context for enrichment
+                with otel_trace.use_span(span):
+                    # Execute function
                     result = await self.func(*args, **kwargs)
-                    return self._handle_result(span, result)
-                except Exception as e:
-                    return self._handle_exception(span, e)
+                    
+                    # Set result attribute using the proper method for complex types
+                    if isinstance(result, (dict, list)) or not isinstance(result, (int, bool, float, str)):
+                        # Convert complex types to JSON strings for OpenTelemetry compatibility
+                        try:
+                            import json
+                            span.set_attribute("honeyhive_outputs.result", json.dumps(result, default=str))
+                        except (TypeError, ValueError):
+                            # Fallback to string representation if JSON serialization fails
+                            span.set_attribute("honeyhive_outputs.result", str(result))
+                    else:
+                        # Simple types can be set directly
+                        span.set_attribute("honeyhive_outputs.result", result)
+                    
+                    # End span
+                    span.end()
+                    return result
+                
+            except Exception as e:
+                if 'span' in locals():
+                    span.set_attribute("honeyhive_error", str(e))
+                    span.end()
+                raise
 
     class atrace(trace):
         """Decorator for tracing asynchronous functions"""
@@ -257,40 +378,288 @@ class FunctionInstrumentor(BaseInstrumentor):
             self,
             func: Optional[Callable[P, R]] = None,
             event_type: Optional[str] = "tool",
-            config: Optional[Dict[str, Any]] = None,
+            config: Optional[str] = None,
             metadata: Optional[Dict[str, Any]] = None,
             event_name: Optional[str] = None,
         ):
             super().__init__(func, event_type, config, metadata, event_name)
 
-        def __new__(
-            cls,
-            func: Optional[Callable[P, R]] = None,
-            event_type: Optional[str] = "tool",
-            config: Optional[Dict[str, Any]] = None,
-            metadata: Optional[Dict[str, Any]] = None,
-            event_name: Optional[str] = None,
-        ):
-            if func is None:
-                return lambda f: cls(f, event_type, config, metadata, event_name)
-            return super().__new__(cls)
-
-        async def __call__(self, *args: P.args, **kwargs: P.kwargs) -> R:
-            return await self.__acall__(*args, **kwargs)
+        def __call__(self, *args, **kwargs):
+            # If we have a function and this is being called with function arguments
+            if self.func is not None:
+                return self.async_call(*args, **kwargs)
+            # If we don't have a function, this is being used as a decorator
+            else:
+                func = args[0]
+                return self.__class__(func, self.event_type, self.config, self.metadata, self.event_name)
 
     def __init__(self):
         super().__init__()
 
         self.trace._func_instrumentor = self
+        self._tracing_disabled = False
+
+    def disable_tracing(self):
+        """Disable tracing globally for performance optimization"""
+        self._tracing_disabled = True
+
+    def enable_tracing(self):
+        """Enable tracing globally"""
+        self._tracing_disabled = False
 
 
-# Instantiate and instrument the FunctionInstrumentor
-instrumentor = FunctionInstrumentor()
-instrumentor.instrument()
+# Lazy initialization of FunctionInstrumentor
+_instrumentor_instance = None
 
-# Create the log_and_trace decorator for external use
-trace = instrumentor.trace
-atrace = instrumentor.atrace
+def _get_instrumentor():
+    """Get or create the instrumentor instance"""
+    global _instrumentor_instance
+    if _instrumentor_instance is None:
+        _instrumentor_instance = FunctionInstrumentor()
+        _instrumentor_instance.instrument()
+    return _instrumentor_instance
+
+# Create dynamic decorators that check tracing state at runtime with async-conditional handling
+def trace(*args, **kwargs):
+    """
+    Dynamic trace decorator that automatically handles both sync and async functions.
+    
+    This decorator follows the A2A SDK approach of using inspect.iscoroutinefunction()
+    to automatically detect async functions and handle them appropriately.
+    
+    Usage:
+        @trace                    # Basic usage
+        @trace(event_type="tool") # With parameters
+    """
+    if len(args) == 1 and callable(args[0]):
+        # Used as @trace
+        func = args[0]
+        return _create_traced_function(func, **kwargs)
+    else:
+        # Used as @trace(...)
+        def decorator(func):
+            return _create_traced_function(func, *args, **kwargs)
+        return decorator
+
+def _create_traced_function(func, *args, **kwargs):
+    """
+    Create a traced function that automatically handles sync vs async.
+    
+    Args:
+        func: The function to trace
+        *args, **kwargs: Decorator arguments
+        
+    Returns:
+        Wrapped function that handles both sync and async automatically
+    """
+    # Check if the function is async using inspect.iscoroutinefunction()
+    is_async_func = inspect.iscoroutinefunction(func)
+    
+    if is_async_func:
+        # Async function - create async wrapper
+        async def async_traced_function(*func_args, **func_kwargs):
+            # Ultra-fast path: check tracing state with minimal overhead
+            instrumentor = _get_instrumentor()
+            if instrumentor._tracing_disabled:
+                # Direct function call with zero overhead
+                return await func(*func_args, **func_kwargs)
+            
+            # Full tracing path - optimized for performance
+            trace_instance = instrumentor.trace(func, *args, **kwargs)
+            return await trace_instance.async_call(*func_args, **func_kwargs)
+        
+        # Preserve function metadata
+        functools.update_wrapper(async_traced_function, func)
+        return async_traced_function
+    else:
+        # Sync function - create sync wrapper
+        def sync_traced_function(*func_args, **func_kwargs):
+            # Ultra-fast path: check tracing state with minimal overhead
+            instrumentor = _get_instrumentor()
+            if instrumentor._tracing_disabled:
+                # Direct function call with zero overhead
+                return func(*func_args, **func_kwargs)
+            
+            # Full tracing path - optimized for performance
+            trace_instance = instrumentor.trace(func, *args, **kwargs)
+            return trace_instance.sync_call(*func_args, **func_kwargs)
+        
+        # Preserve function metadata
+        functools.update_wrapper(sync_traced_function, func)
+        return sync_traced_function
+
+def atrace(*args, **kwargs):
+    """
+    Legacy atrace decorator for explicit async tracing.
+    
+    Note: The @trace decorator now automatically handles both sync and async functions.
+    This decorator is maintained for backward compatibility.
+    
+    Usage:
+        @atrace                    # Basic usage
+        @atrace(event_type="tool") # With parameters
+    """
+    if len(args) == 1 and callable(args[0]):
+        # Used as @atrace
+        func = args[0]
+        
+        # Ensure the function is async
+        if not inspect.iscoroutinefunction(func):
+            raise ValueError(f"@atrace decorator can only be used with async functions. Function {func.__name__} is not async.")
+        
+        # Create async wrapper
+        async def async_traced_function(*func_args, **func_kwargs):
+            # Ultra-fast path: check tracing state with minimal overhead
+            instrumentor = _get_instrumentor()
+            if instrumentor._tracing_disabled:
+                # Direct function call with zero overhead
+                return await func(*func_args, **func_kwargs)
+            
+            # Full tracing path - optimized for performance
+            atrace_instance = instrumentor.atrace(func, **kwargs)
+            return await atrace_instance.async_call(*func_args, **func_kwargs)
+        
+        # Preserve function metadata
+        functools.update_wrapper(async_traced_function, func)
+        return async_traced_function
+    else:
+        # Used as @atrace(...)
+        def decorator(func):
+            # Ensure the function is async
+            if not inspect.iscoroutinefunction(func):
+                raise ValueError(f"@atrace decorator can only be used with async functions. Function {func.__name__} is not async.")
+            
+            # Create async wrapper
+            async def async_traced_function(*func_args, **func_kwargs):
+                # Ultra-fast path: check tracing state with minimal overhead
+                instrumentor = _get_instrumentor()
+                if instrumentor._tracing_disabled:
+                    # Direct function call with zero overhead
+                    return await func(*func_args, **func_kwargs)
+            
+                # Full tracing path - optimized for performance
+                atrace_instance = instrumentor.atrace(func, *args, **kwargs)
+                return await atrace_instance.async_call(*func_args, **func_kwargs)
+            
+            # Preserve function metadata
+            functools.update_wrapper(async_traced_function, func)
+            return async_traced_function
+        return decorator
+
+# Global functions to control tracing
+def disable_tracing():
+    """Disable tracing globally for performance optimization"""
+    _get_instrumentor().disable_tracing()
+
+def enable_tracing():
+    """Enable tracing globally"""
+    _get_instrumentor().enable_tracing()
+
+def trace_class(
+    include_list: list[str] | None = None,
+    exclude_list: list[str] | None = None,
+    event_type: str = "tool",
+    kind: str = "internal"
+) -> Callable:
+    """
+    Class decorator to automatically trace specified methods of a class.
+    
+    This decorator iterates over the methods of a class and applies the @trace
+    decorator to them, based on the include_list and exclude_list criteria.
+    Methods starting or ending with double underscores (dunder methods, e.g.,
+    __init__, __call__) are always excluded by default.
+    
+    Args:
+        include_list (list[str], optional): A list of method names to explicitly 
+            include for tracing. If provided, only methods in this list (that are 
+            not dunder methods) will be traced. Defaults to None (trace all 
+            non-dunder methods).
+        exclude_list (list[str], optional): A list of method names to exclude 
+            from tracing. This is only considered if include_list is not provided.
+            Dunder methods are implicitly excluded. Defaults to an empty list.
+        event_type (str, optional): The event type for all traced methods.
+            Defaults to "tool".
+        kind (str, optional): The kind of operation for all traced methods.
+            Defaults to "internal".
+    
+    Returns:
+        callable: A decorator function that, when applied to a class, modifies
+            the class to wrap its specified methods with tracing.
+    
+    Example:
+        To trace all methods except 'internal_method':
+        ```python
+        @trace_class(exclude_list=['internal_method'])
+        class MyService:
+            def public_api(self):
+                pass
+            def internal_method(self):
+                pass
+        ```
+        
+        To trace only 'method_one' and 'method_two':
+        ```python
+        @trace_class(include_list=['method_one', 'method_two'])
+        class AnotherService:
+            def method_one(self):
+                pass
+            def method_two(self):
+                pass
+            def not_traced_method(self):
+                pass
+        ```
+    """
+    # Check if the first argument is a class (called as @trace_class)
+    if (include_list is not None and 
+        isinstance(include_list, type) and 
+        exclude_list is None and 
+        event_type == "tool" and 
+        kind == "internal"):
+        # Called as @trace_class (without parentheses)
+        cls = include_list
+        return _apply_trace_class(cls, None, None, "tool", "internal")
+    
+    # Called as @trace_class(...) (with parameters)
+    def decorator(cls: Any) -> Any:
+        return _apply_trace_class(cls, include_list, exclude_list, event_type, kind)
+    return decorator
+
+
+def _apply_trace_class(
+    cls: Any,
+    include_list: list[str] | None,
+    exclude_list: list[str] | None,
+    event_type: str,
+    kind: str
+) -> Any:
+    """Helper function to apply trace_class decoration to a class"""
+    exclude_list = exclude_list or []
+    
+    for name, method in inspect.getmembers(cls, inspect.isfunction):
+        # Always exclude dunder methods
+        if name.startswith('__') and name.endswith('__'):
+            continue
+        
+        # Apply include/exclude logic
+        if include_list and name not in include_list:
+            continue
+        if not include_list and name in exclude_list:
+            continue
+        
+        # Create span name using module.class.method pattern
+        span_name = f"{cls.__module__}.{cls.__name__}.{name}"
+        
+        # Apply the trace decorator with consistent configuration
+        traced_method = trace(
+            event_type=event_type,
+            event_name=span_name
+        )(method)
+        
+        # Replace the original method with the traced version
+        setattr(cls, name, traced_method)
+    
+    return cls
+
 
 
 # Enrich a span from within a traced function
@@ -321,4 +690,5 @@ def enrich_span(
     if span is None:
         logger.warning("Please use enrich_span inside a traced function.")
     else:
-        instrumentor._enrich_span(span, config, metadata, metrics, feedback, inputs, outputs, error, event_id)
+        _get_instrumentor()._enrich_span(span, config, metadata, metrics, feedback, inputs, outputs, error)
+

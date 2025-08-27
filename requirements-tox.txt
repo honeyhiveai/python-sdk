@@ -1,0 +1,31 @@
+# Tox requirements for HoneyHive Python SDK testing
+# This file contains dependencies needed for running tests with tox
+
+# Core testing dependencies
+pytest>=8.1.1
+pytest-cov
+pytest-asyncio
+pytest-mock
+
+# Coverage reporting
+coverage[toml]
+
+# Linting and formatting
+pylint==3.2.3
+mypy==1.10.1
+black
+isort
+flake8
+
+# Type checking
+types-python-dateutil>=2.9.0.20240316
+
+# Documentation building
+sphinx
+sphinx-rtd-theme
+
+# Additional test utilities
+responses
+freezegun
+pytest-xdist
+pytest-timeout

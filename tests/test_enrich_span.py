@@ -53,7 +53,7 @@ def main():
 
     print(response.choices[0].message.content)
 
-@atrace(event_type="chain")
+@trace(event_type="chain")
 async def get_meaning_of_life_async() -> Awaitable[Literal["42"]]:
     enrich_span(
         metadata={"dataset2": "lifeee"}, 

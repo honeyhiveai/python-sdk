@@ -2,6 +2,7 @@ import asyncio
 from asyncio import futures
 from timeit import default_timer
 from typing import Collection
+import os
 
 from wrapt import wrap_function_wrapper as _wrap
 
@@ -211,5 +212,20 @@ class AsyncioInstrumentor(BaseInstrumentor):
         unwrap(asyncio, coro_name)
 
 
+# Global instance
 instrumentor = AsyncioInstrumentor()
-instrumentor.instrument()
+
+# Only auto-instrument if not in test mode
+# This allows testing individual methods without interference
+if not os.environ.get('HH_TEST_MODE', '').lower() == 'true':
+    instrumentor.instrument()
+
+
+def instrument_asyncio():
+    """Instrument asyncio libraries"""
+    instrumentor.instrument()
+
+
+def uninstrument_asyncio():
+    """Uninstrument asyncio libraries"""
+    instrumentor.uninstrument()

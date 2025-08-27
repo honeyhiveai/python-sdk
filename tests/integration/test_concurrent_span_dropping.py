@@ -158,7 +158,7 @@ def test_concurrent_evaluation_span_completeness():
     # Validate span completeness for each session
     print("Starting span completeness validation...")
     sdk = HoneyHive(
-        bearer_auth=MY_HONEYHIVE_API_KEY,
+        bearer_auth=MY_HONEYHIVE_API_KEY or "",
         server_url=HONEYHIVE_SERVER_URL
     )
     
@@ -187,7 +187,10 @@ def test_concurrent_evaluation_span_completeness():
         )
         
         res = sdk.events.get_events(request=req)
-        events = res.object.events
+        if res.object and res.object.events:
+            events = res.object.events
+        else:
+            events = []
         total_actual_events += len(events)
         
         # Track span types for analysis
@@ -199,10 +202,44 @@ def test_concurrent_evaluation_span_completeness():
             
             # Check for evaluator results
             if event.metrics:
+                print(f"DEBUG: Event has metrics: {event.metrics}")
                 if 'validation_score' in event.metrics:
                     evaluator_results_found['validation_evaluator'] += 1
                 if 'consistency_score' in event.metrics:
                     evaluator_results_found['consistency_evaluator'] += 1
+                # Also check for nested evaluator results in metrics
+                if 'validation_evaluator' in event.metrics and isinstance(event.metrics['validation_evaluator'], dict):
+                    if 'validation_score' in event.metrics['validation_evaluator']:
+                        evaluator_results_found['validation_evaluator'] += 1
+                if 'consistency_evaluator' in event.metrics and isinstance(event.metrics['consistency_evaluator'], dict):
+                    if 'consistency_score' in event.metrics['consistency_evaluator']:
+                        evaluator_results_found['consistency_evaluator'] += 1
+            else:
+                print(f"DEBUG: Event has no metrics, event_type: {event.event_type}")
+                # Check if metrics might be in inputs (for evaluation events)
+                if hasattr(event, 'inputs') and event.inputs:
+                    print(f"DEBUG: Event inputs: {event.inputs}")
+                    # Look for validation_score and consistency_score in inputs
+                    if isinstance(event.inputs, dict):
+                        if 'validation_score' in event.inputs:
+                            evaluator_results_found['validation_evaluator'] += 1
+                            print(f"DEBUG: Found validation_score in inputs: {event.inputs['validation_score']}")
+                        if 'consistency_score' in event.inputs:
+                            evaluator_results_found['consistency_evaluator'] += 1
+                            print(f"DEBUG: Found consistency_score in inputs: {event.inputs['consistency_score']}")
+                        # Also check for nested scores like 'score.validation_score'
+                        for key, value in event.inputs.items():
+                            if key == 'score.validation_score' or key.endswith('.validation_score'):
+                                evaluator_results_found['validation_evaluator'] += 1
+                                print(f"DEBUG: Found validation_score in nested inputs: {key} = {value}")
+                            if key == 'score.consistency_score' or key.endswith('.consistency_score'):
+                                evaluator_results_found['consistency_evaluator'] += 1
+                                print(f"DEBUG: Found consistency_score in nested inputs: {key} = {value}")
+                # Also check user_properties and metadata
+                if hasattr(event, 'user_properties') and event.user_properties:
+                    print(f"DEBUG: Event user_properties: {event.user_properties}")
+                if hasattr(event, 'metadata') and event.metadata:
+                    print(f"DEBUG: Event metadata: {event.metadata}")
         
         # Check if this session has missing spans
         if len(events) < EXPECTED_SPANS_PER_SESSION:

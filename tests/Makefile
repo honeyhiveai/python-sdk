@@ -27,7 +27,7 @@ define build_and_run
 	@cp $(1) environments/$(2)/__init__.py
 	@cp Dockerfile environments/$(2)/
 	@echo "Building and running Docker container..."
-	@cd environments/$(2) && docker build -t python-sdk-$(2) . && docker run --rm --env-file ../../.env python-sdk-$(2)
+	@cd environments/$(2) && docker build -t python-sdk-$(2) . && docker run --rm --env-file ../../../.env.docker python-sdk-$(2)
 	@echo "Cleaning up Docker image..."
 	@docker rmi python-sdk-$(2)
 	@echo "Cleaning up environment..."
@@ -52,7 +52,7 @@ define build_lambda_package
 	@cp $(1) environments/$(2)/lambda_package/lambda_function.py
 	@cp honeyhive.tar.gz environments/$(2)/lambda_package/
 	@cp environments/$(2)/requirements.txt environments/$(2)/lambda_package/
-	@cp .env environments/$(2)/lambda_package/
+	@cp ../.env.docker environments/$(2)/lambda_package/.env
 	@echo "Building Lambda package in Docker container..."
 	@cd environments/$(2) && \
 		docker run --rm -v $$(pwd)/lambda_package:/var/task --platform=linux/amd64 python:3.11-slim bash -c " \

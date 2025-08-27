@@ -1,2 +1,15 @@
 llama-index>=0.10.0
 openai>=1.2.0
+jinja2
+pydantic
+dataclasses-json
+python-dateutil
+typing-inspect
+requests
+uplink
+jsonpath-python
+httpx
+rich
+pyyaml
+pytest>=8.0.0
+pytest-asyncio>=0.21.0

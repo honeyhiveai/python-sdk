@@ -19,7 +19,7 @@ def test_create_projects():
         name="Python SDK Test",
         description="A project created in the Python SDK test suite",
     )
-    res = sdk.projects.create_project(req)
+    res = sdk.projects.create_project(request=req)
     assert res.status_code == 200
     assert res.project is not None
     assert res.project.id is not None

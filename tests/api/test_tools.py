@@ -21,7 +21,7 @@ def test_create_tools():
         task=os.environ["HH_PROJECT"],
         type=components.CreateToolRequestType.TOOL,
     )
-    res = sdk.tools.create_tool(req)
+    res = sdk.tools.create_tool(request=req)
     assert res.status_code == 200
     assert res.object is not None
     assert res.object.result is not None
