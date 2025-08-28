@@ -10,7 +10,7 @@ class DatapointsAPI(BaseAPI):
     """API for datapoint operations."""
 
     def create_datapoint(self, request: CreateDatapointRequest) -> Datapoint:
-        """Create a new datapoint."""
+        """Create a new datapoint using CreateDatapointRequest model."""
         response = self.client.request(
             "POST", 
             "/datapoints", 
@@ -20,12 +20,34 @@ class DatapointsAPI(BaseAPI):
         data = response.json()
         return Datapoint(**data)
 
+    def create_datapoint_from_dict(self, datapoint_data: dict) -> Datapoint:
+        """Create a new datapoint from dictionary (legacy method)."""
+        response = self.client.request(
+            "POST", 
+            "/datapoints", 
+            json={"datapoint": datapoint_data}
+        )
+        
+        data = response.json()
+        return Datapoint(**data)
+
     async def create_datapoint_async(self, request: CreateDatapointRequest) -> Datapoint:
-        """Create a new datapoint asynchronously."""
+        """Create a new datapoint asynchronously using CreateDatapointRequest model."""
         response = await self.client.request_async(
             "POST", 
             "/datapoints", 
             json={"datapoint": request.model_dump(exclude_none=True)}
+        )
+        
+        data = response.json()
+        return Datapoint(**data)
+
+    async def create_datapoint_from_dict_async(self, datapoint_data: dict) -> Datapoint:
+        """Create a new datapoint asynchronously from dictionary (legacy method)."""
+        response = await self.client.request_async(
+            "POST", 
+            "/datapoints", 
+            json={"datapoint": datapoint_data}
         )
         
         data = response.json()
@@ -66,7 +88,7 @@ class DatapointsAPI(BaseAPI):
         dataset: Optional[str] = None,
         limit: int = 100
     ) -> List[Datapoint]:
-        """List datapoints with optional filtering asynchronously."""
+        """List datapoints asynchronously with optional filtering."""
         params = {"limit": limit}
         if project:
             params["project"] = project
@@ -78,7 +100,7 @@ class DatapointsAPI(BaseAPI):
         return [Datapoint(**datapoint_data) for datapoint_data in data.get("datapoints", [])]
 
     def update_datapoint(self, datapoint_id: str, request: UpdateDatapointRequest) -> Datapoint:
-        """Update a datapoint."""
+        """Update a datapoint using UpdateDatapointRequest model."""
         response = self.client.request(
             "PUT", 
             f"/datapoints/{datapoint_id}", 
@@ -88,8 +110,19 @@ class DatapointsAPI(BaseAPI):
         data = response.json()
         return Datapoint(**data)
 
+    def update_datapoint_from_dict(self, datapoint_id: str, datapoint_data: dict) -> Datapoint:
+        """Update a datapoint from dictionary (legacy method)."""
+        response = self.client.request(
+            "PUT", 
+            f"/datapoints/{datapoint_id}", 
+            json=datapoint_data
+        )
+        
+        data = response.json()
+        return Datapoint(**data)
+
     async def update_datapoint_async(self, datapoint_id: str, request: UpdateDatapointRequest) -> Datapoint:
-        """Update a datapoint asynchronously."""
+        """Update a datapoint asynchronously using UpdateDatapointRequest model."""
         response = await self.client.request_async(
             "PUT", 
             f"/datapoints/{datapoint_id}", 
@@ -99,12 +132,13 @@ class DatapointsAPI(BaseAPI):
         data = response.json()
         return Datapoint(**data)
 
-    def delete_datapoint(self, datapoint_id: str) -> bool:
-        """Delete a datapoint."""
-        response = self.client.request("DELETE", f"/datapoints/{datapoint_id}")
-        return response.status_code == 200
-
-    async def delete_datapoint_async(self, datapoint_id: str) -> bool:
-        """Delete a datapoint asynchronously."""
-        response = await self.client.request_async("DELETE", f"/datapoints/{datapoint_id}")
-        return response.status_code == 200
+    async def update_datapoint_from_dict_async(self, datapoint_id: str, datapoint_data: dict) -> Datapoint:
+        """Update a datapoint asynchronously from dictionary (legacy method)."""
+        response = await self.client.request_async(
+            "PUT", 
+            f"/datapoints/{datapoint_id}", 
+            json=datapoint_data
+        )
+        
+        data = response.json()
+        return Datapoint(**data)

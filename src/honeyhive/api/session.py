@@ -33,8 +33,19 @@ class SessionResponse:
 class SessionAPI(BaseAPI):
     """API for session operations."""
 
-    def create_session(self, session_data: dict) -> SessionStartResponse:
-        """Create a new session from session data dictionary."""
+    def create_session(self, session: SessionStartRequest) -> SessionStartResponse:
+        """Create a new session using SessionStartRequest model."""
+        response = self.client.request(
+            "POST", 
+            "/session/start", 
+            json={"session": session.model_dump(exclude_none=True)}
+        )
+        
+        data = response.json()
+        return SessionStartResponse(session_id=data["session_id"])
+
+    def create_session_from_dict(self, session_data: dict) -> SessionStartResponse:
+        """Create a new session from session data dictionary (legacy method)."""
         # Handle both direct session data and nested session data
         if 'session' in session_data:
             request_data = session_data
@@ -58,7 +69,7 @@ class SessionAPI(BaseAPI):
         session_id: Optional[str] = None,
         **kwargs
     ) -> SessionStartResponse:
-        """Start a new session."""
+        """Start a new session using SessionStartRequest model."""
         request_data = SessionStartRequest(
             project=project,
             session_name=session_name,
@@ -100,7 +111,7 @@ class SessionAPI(BaseAPI):
         session_id: Optional[str] = None,
         **kwargs
     ) -> SessionStartResponse:
-        """Start a new session asynchronously."""
+        """Start a new session asynchronously using SessionStartRequest model."""
         request_data = SessionStartRequest(
             project=project,
             session_name=session_name,

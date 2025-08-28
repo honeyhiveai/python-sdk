@@ -9,7 +9,7 @@ from enum import Enum
 from typing import Any, Dict, List, Optional, Union
 from uuid import UUID
 
-from pydantic import BaseModel, Extra, Field
+from pydantic import BaseModel, Extra, Field, ConfigDict
 
 
 class SessionStartRequest(BaseModel):
@@ -707,7 +707,7 @@ class ExperimentComparisonResponse(BaseModel):
 
 
 class UUIDType(BaseModel):
-    model_config = {"arbitrary_types_allowed": True}
+    model_config = ConfigDict(arbitrary_types_allowed=True)
     
     def __init__(self, value: UUID):
         super().__init__()
@@ -749,7 +749,7 @@ class FunctionCallParams(Enum):
 
 
 class Parameters(BaseModel):
-    model_config = {"extra": "allow"}
+    model_config = ConfigDict(extra="allow")
 
     call_type: CallType = Field(..., description='Type of API calling - "chat" or "completion"')
     model: str = Field(..., description='Model unique name')
@@ -795,7 +795,7 @@ class Configuration(BaseModel):
 
 
 class Parameters1(BaseModel):
-    model_config = {"extra": "allow"}
+    model_config = ConfigDict(extra="allow")
 
     call_type: CallType = Field(..., description='Type of API calling - "chat" or "completion"')
     model: str = Field(..., description='Model unique name')
@@ -835,7 +835,7 @@ class PutConfigurationRequest(BaseModel):
 
 
 class Parameters2(BaseModel):
-    model_config = {"extra": "allow"}
+    model_config = ConfigDict(extra="allow")
 
     call_type: CallType = Field(..., description='Type of API calling - "chat" or "completion"')
     model: str = Field(..., description='Model unique name')

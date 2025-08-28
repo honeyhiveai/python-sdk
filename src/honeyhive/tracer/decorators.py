@@ -4,13 +4,32 @@ import functools
 import inspect
 import json
 import time
-from typing import Any, Callable, Dict, Optional, TypeVar, cast
+from typing import Any, Callable, Dict, Optional, TypeVar, cast, Union
 from contextlib import contextmanager
 
+from pydantic import BaseModel, ValidationError, ConfigDict
+
 from .otel_tracer import get_tracer
+from ..models.generated import CreateEventRequest, EventType
 
 T = TypeVar('T')
 P = TypeVar('P')
+
+
+class TracingParams(BaseModel):
+    """Model for tracing decorator parameters using existing Pydantic models."""
+    event_type: Optional[str] = None
+    event_name: Optional[str] = None
+    inputs: Optional[Dict[str, Any]] = None
+    outputs: Optional[Dict[str, Any]] = None
+    metadata: Optional[Dict[str, Any]] = None
+    config: Optional[Dict[str, Any]] = None
+    metrics: Optional[Dict[str, Any]] = None
+    feedback: Optional[Dict[str, Any]] = None
+    error: Optional[Exception] = None
+    event_id: Optional[str] = None
+    
+    model_config = ConfigDict(arbitrary_types_allowed=True, extra="allow")
 
 
 def _set_span_attributes(span, prefix: str, value: Any) -> None:
@@ -37,12 +56,7 @@ def _set_span_attributes(span, prefix: str, value: Any) -> None:
             span.set_attribute(prefix, str(value))
 
 
-def _create_sync_wrapper(func: Callable[..., T], span_name: str, event_type: Optional[str], 
-                        event_name: Optional[str], inputs: Optional[Dict[str, Any]], 
-                        outputs: Optional[Dict[str, Any]], metadata: Optional[Dict[str, Any]], 
-                        config: Optional[Dict[str, Any]], metrics: Optional[Dict[str, Any]], 
-                        feedback: Optional[Dict[str, Any]], error: Optional[Exception], 
-                        event_id: Optional[str], **kwargs) -> Callable[..., T]:
+def _create_sync_wrapper(func: Callable[..., T], params: TracingParams, **kwargs) -> Callable[..., T]:
     """Create a synchronous wrapper for the trace decorator."""
     @functools.wraps(func)
     def wrapper(*args, **func_kwargs) -> T:
@@ -57,37 +71,37 @@ def _create_sync_wrapper(func: Callable[..., T], span_name: str, event_type: Opt
         start_time = time.time()
         
         try:
-            with tracer.start_span(span_name) as span:
+            with tracer.start_span(params.event_name or f"{func.__module__}.{func.__name__}") as span:
                 if span is not None:
                     # Set comprehensive attributes
-                    if event_type:
-                        span.set_attribute("honeyhive_event_type", event_type)
+                    if params.event_type:
+                        span.set_attribute("honeyhive_event_type", params.event_type)
                     
-                    if event_name:
-                        span.set_attribute("honeyhive_event_name", event_name)
+                    if params.event_name:
+                        span.set_attribute("honeyhive_event_name", params.event_name)
                     
-                    if event_id:
-                        span.set_attribute("honeyhive_event_id", event_id)
+                    if params.event_id:
+                        span.set_attribute("honeyhive_event_id", params.event_id)
                     
                     # Set inputs if provided
-                    if inputs:
-                        _set_span_attributes(span, "honeyhive_inputs", inputs)
+                    if params.inputs:
+                        _set_span_attributes(span, "honeyhive_inputs", params.inputs)
                     
                     # Set config if provided
-                    if config:
-                        _set_span_attributes(span, "honeyhive_config", config)
+                    if params.config:
+                        _set_span_attributes(span, "honeyhive_config", params.config)
                     
                     # Set metadata if provided
-                    if metadata:
-                        _set_span_attributes(span, "honeyhive_metadata", metadata)
+                    if params.metadata:
+                        _set_span_attributes(span, "honeyhive_metadata", params.metadata)
                     
                     # Set metrics if provided
-                    if metrics:
-                        _set_span_attributes(span, "honeyhive_metrics", metrics)
+                    if params.metrics:
+                        _set_span_attributes(span, "honeyhive_metrics", params.metrics)
                     
                     # Set feedback if provided
-                    if feedback:
-                        _set_span_attributes(span, "honeyhive_feedback", feedback)
+                    if params.feedback:
+                        _set_span_attributes(span, "honeyhive_feedback", params.feedback)
                     
                     # Add experiment harness information if available
                     try:
@@ -121,9 +135,9 @@ def _create_sync_wrapper(func: Callable[..., T], span_name: str, event_type: Opt
                 result = func(*args, **func_kwargs)
                 
                 # Set outputs if provided or use function result
-                if span is not None and outputs:
+                if span is not None and params.outputs:
                     try:
-                        _set_span_attributes(span, "honeyhive_outputs", outputs)
+                        _set_span_attributes(span, "honeyhive_outputs", params.outputs)
                     except Exception:
                         # Silently handle any exceptions when setting span attributes
                         pass
@@ -146,15 +160,15 @@ def _create_sync_wrapper(func: Callable[..., T], span_name: str, event_type: Opt
             
             # Create error span
             try:
-                with tracer.start_span(f"{span_name}_error") as error_span:
+                with tracer.start_span(f"{params.event_name or f'{func.__module__}.{func.__name__}'}_error") as error_span:
                     if error_span is not None:
                         error_span.set_attribute("honeyhive_error", str(e))
                         error_span.set_attribute("honeyhive_error_type", type(e).__name__)
                         error_span.set_attribute("honeyhive_duration_ms", duration)
                         
                         # Set error context
-                        if error:
-                            error_span.set_attribute("honeyhive_error", str(error))
+                        if params.error:
+                            error_span.set_attribute("honeyhive_error", str(params.error))
                         else:
                             error_span.set_attribute("honeyhive_error", str(e))
                     
@@ -167,12 +181,7 @@ def _create_sync_wrapper(func: Callable[..., T], span_name: str, event_type: Opt
     return wrapper
 
 
-def _create_async_wrapper(func: Callable[..., Any], span_name: str, event_type: Optional[str], 
-                         event_name: Optional[str], inputs: Optional[Dict[str, Any]], 
-                         outputs: Optional[Dict[str, Any]], metadata: Optional[Dict[str, Any]], 
-                         config: Optional[Dict[str, Any]], metrics: Optional[Dict[str, Any]], 
-                         feedback: Optional[Dict[str, Any]], error: Optional[Exception], 
-                         event_id: Optional[str], **kwargs) -> Callable[..., Any]:
+def _create_async_wrapper(func: Callable[..., Any], params: TracingParams, **kwargs) -> Callable[..., Any]:
     """Create an asynchronous wrapper for the trace decorator."""
     @functools.wraps(func)
     async def async_wrapper(*args, **func_kwargs) -> Any:
@@ -187,37 +196,37 @@ def _create_async_wrapper(func: Callable[..., Any], span_name: str, event_type: 
         start_time = time.time()
         
         try:
-            with tracer.start_span(span_name) as span:
+            with tracer.start_span(params.event_name or f"{func.__module__}.{func.__name__}") as span:
                 if span is not None:
                     # Set comprehensive attributes
-                    if event_type:
-                        span.set_attribute("honeyhive_event_type", event_type)
+                    if params.event_type:
+                        span.set_attribute("honeyhive_event_type", params.event_type)
                     
-                    if event_name:
-                        span.set_attribute("honeyhive_event_name", event_name)
+                    if params.event_name:
+                        span.set_attribute("honeyhive_event_name", params.event_name)
                     
-                    if event_id:
-                        span.set_attribute("honeyhive_event_id", event_id)
+                    if params.event_id:
+                        span.set_attribute("honeyhive_event_id", params.event_id)
                     
                     # Set inputs if provided
-                    if inputs:
-                        _set_span_attributes(span, "honeyhive_inputs", inputs)
+                    if params.inputs:
+                        _set_span_attributes(span, "honeyhive_inputs", params.inputs)
                     
                     # Set config if provided
-                    if config:
-                        _set_span_attributes(span, "honeyhive_config", config)
+                    if params.config:
+                        _set_span_attributes(span, "honeyhive_config", params.config)
                     
                     # Set metadata if provided
-                    if metadata:
-                        _set_span_attributes(span, "honeyhive_metadata", metadata)
+                    if params.metadata:
+                        _set_span_attributes(span, "honeyhive_metadata", params.metadata)
                     
                     # Set metrics if provided
-                    if metrics:
-                        _set_span_attributes(span, "honeyhive_metrics", metrics)
+                    if params.metrics:
+                        _set_span_attributes(span, "honeyhive_metrics", params.metrics)
                     
                     # Set feedback if provided
-                    if feedback:
-                        _set_span_attributes(span, "honeyhive_feedback", feedback)
+                    if params.feedback:
+                        _set_span_attributes(span, "honeyhive_feedback", params.feedback)
                     
                     # Add experiment harness information if available
                     try:
@@ -251,9 +260,9 @@ def _create_async_wrapper(func: Callable[..., Any], span_name: str, event_type: 
                 result = await func(*args, **func_kwargs)
                 
                 # Set outputs if provided or use function result
-                if span is not None and outputs:
+                if span is not None and params.outputs:
                     try:
-                        _set_span_attributes(span, "honeyhive_outputs", outputs)
+                        _set_span_attributes(span, "honeyhive_outputs", params.outputs)
                     except Exception:
                         # Silently handle any exceptions when setting span attributes
                         pass
@@ -276,15 +285,15 @@ def _create_async_wrapper(func: Callable[..., Any], span_name: str, event_type: 
             
             # Create error span
             try:
-                with tracer.start_span(f"{span_name}_error") as error_span:
+                with tracer.start_span(f"{params.event_name or f'{func.__module__}.{func.__name__}'}_error") as error_span:
                     if error_span is not None:
                         error_span.set_attribute("honeyhive_error", str(e))
                         error_span.set_attribute("honeyhive_error_type", type(e).__name__)
                         error_span.set_attribute("honeyhive_duration_ms", duration)
                         
                         # Set error context
-                        if error:
-                            error_span.set_attribute("honeyhive_error", str(error))
+                        if params.error:
+                            error_span.set_attribute("honeyhive_error", str(params.error))
                         else:
                             error_span.set_attribute("honeyhive_error", str(e))
                     
@@ -330,20 +339,31 @@ def dynamic_trace(
         **kwargs: Additional attributes to set on the span
     """
     def decorator(func: Callable[..., Any]) -> Callable[..., Any]:
-        # Create span name from function
-        span_name = event_name or f"{func.__module__}.{func.__name__}"
+        # Validate parameters using Pydantic model
+        try:
+            params = TracingParams(
+                event_type=event_type,
+                event_name=event_name,
+                inputs=inputs,
+                outputs=outputs,
+                metadata=metadata,
+                config=config,
+                metrics=metrics,
+                feedback=feedback,
+                error=error,
+                event_id=event_id
+            )
+        except ValidationError as e:
+            # If validation fails, log the error but continue with default values
+            import logging
+            logging.warning(f"Tracing parameter validation failed: {e}")
+            params = TracingParams()
         
         # Check if the function is async
         if inspect.iscoroutinefunction(func):
-            return _create_async_wrapper(
-                func, span_name, event_type, event_name, inputs, outputs,
-                metadata, config, metrics, feedback, error, event_id, **kwargs
-            )
+            return _create_async_wrapper(func, params, **kwargs)
         else:
-            return _create_sync_wrapper(
-                func, span_name, event_type, event_name, inputs, outputs,
-                metadata, config, metrics, feedback, error, event_id, **kwargs
-            )
+            return _create_sync_wrapper(func, params, **kwargs)
     
     # Handle both @dynamic_trace and @dynamic_trace(...) usage
     if callable(event_type):
@@ -384,13 +404,27 @@ def trace(
         **kwargs: Additional attributes to set on the span
     """
     def decorator(func: Callable[..., T]) -> Callable[..., T]:
-        # Create span name from function
-        span_name = event_name or f"{func.__module__}.{func.__name__}"
+        # Validate parameters using Pydantic model
+        try:
+            params = TracingParams(
+                event_type=event_type,
+                event_name=event_name,
+                inputs=inputs,
+                outputs=outputs,
+                metadata=metadata,
+                config=config,
+                metrics=metrics,
+                feedback=feedback,
+                error=error,
+                event_id=event_id
+            )
+        except ValidationError as e:
+            # If validation fails, log the error but continue with default values
+            import logging
+            logging.warning(f"Tracing parameter validation failed: {e}")
+            params = TracingParams()
         
-        return _create_sync_wrapper(
-            func, span_name, event_type, event_name, inputs, outputs,
-            metadata, config, metrics, feedback, error, event_id, **kwargs
-        )
+        return _create_sync_wrapper(func, params, **kwargs)
     
     # Handle both @trace and @trace(...) usage
     if callable(event_type):
@@ -431,13 +465,27 @@ def atrace(
         **kwargs: Additional attributes to set on the span
     """
     def decorator(func: Callable[..., Any]) -> Callable[..., Any]:
-        # Create span name from function
-        span_name = event_name or f"{func.__module__}.{func.__name__}"
+        # Validate parameters using Pydantic model
+        try:
+            params = TracingParams(
+                event_type=event_type,
+                event_name=event_name,
+                inputs=inputs,
+                outputs=outputs,
+                metadata=metadata,
+                config=config,
+                metrics=metrics,
+                feedback=feedback,
+                error=error,
+                event_id=event_id
+            )
+        except ValidationError as e:
+            # If validation fails, log the error but continue with default values
+            import logging
+            logging.warning(f"Tracing parameter validation failed: {e}")
+            params = TracingParams()
         
-        return _create_async_wrapper(
-            func, span_name, event_type, event_name, inputs, outputs,
-            metadata, config, metrics, feedback, error, event_id, **kwargs
-        )
+        return _create_async_wrapper(func, params, **kwargs)
     
     # Handle both @atrace and @atrace(...) usage
     if callable(event_type):

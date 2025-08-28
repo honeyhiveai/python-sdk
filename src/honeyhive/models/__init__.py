@@ -71,6 +71,9 @@ from .generated import (
     Detail,
 )
 
+# Tracing models
+from ..tracer.decorators import TracingParams
+
 __all__ = [
     # Session models
     "SessionStartRequest",
@@ -140,4 +143,7 @@ __all__ = [
     "UUIDType",
     "SelectedFunction",
     "Detail",
+    
+    # Tracing models
+    "TracingParams",
 ]

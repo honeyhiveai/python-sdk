@@ -2,103 +2,155 @@
 
 from typing import List, Optional
 
-from ..models import EvaluationRun, CreateRunRequest, UpdateRunRequest, GetRunsResponse
+from ..models import EvaluationRun, CreateRunRequest, UpdateRunRequest, UpdateRunResponse, CreateRunResponse, GetRunsResponse, GetRunResponse, DeleteRunResponse
 from .base import BaseAPI
 
 
 class EvaluationsAPI(BaseAPI):
     """API for evaluation operations."""
 
-    def create_evaluation_run(self, request: CreateRunRequest) -> EvaluationRun:
-        """Create a new evaluation run."""
+    def create_run(self, request: CreateRunRequest) -> CreateRunResponse:
+        """Create a new evaluation run using CreateRunRequest model."""
         response = self.client.request(
             "POST", 
-            "/evaluations/runs", 
+            "/runs", 
             json={"run": request.model_dump(exclude_none=True)}
         )
         
         data = response.json()
-        return EvaluationRun(**data)
+        return CreateRunResponse(**data)
 
-    async def create_evaluation_run_async(self, request: CreateRunRequest) -> EvaluationRun:
-        """Create a new evaluation run asynchronously."""
+    def create_run_from_dict(self, run_data: dict) -> CreateRunResponse:
+        """Create a new evaluation run from dictionary (legacy method)."""
+        response = self.client.request(
+            "POST", 
+            "/runs", 
+            json={"run": run_data}
+        )
+        
+        data = response.json()
+        return CreateRunResponse(**data)
+
+    async def create_run_async(self, request: CreateRunRequest) -> CreateRunResponse:
+        """Create a new evaluation run asynchronously using CreateRunRequest model."""
         response = await self.client.request_async(
             "POST", 
-            "/evaluations/runs", 
+            "/runs", 
             json={"run": request.model_dump(exclude_none=True)}
         )
         
         data = response.json()
-        return EvaluationRun(**data)
+        return CreateRunResponse(**data)
 
-    def get_evaluation_run(self, run_id: str) -> EvaluationRun:
+    async def create_run_from_dict_async(self, run_data: dict) -> CreateRunResponse:
+        """Create a new evaluation run asynchronously from dictionary (legacy method)."""
+        response = await self.client.request_async(
+            "POST", 
+            "/runs", 
+            json={"run": run_data}
+        )
+        
+        data = response.json()
+        return CreateRunResponse(**data)
+
+    def get_run(self, run_id: str) -> GetRunResponse:
         """Get an evaluation run by ID."""
-        response = self.client.request("GET", f"/evaluations/runs/{run_id}")
+        response = self.client.request("GET", f"/runs/{run_id}")
         data = response.json()
-        return EvaluationRun(**data)
+        return GetRunResponse(**data)
 
-    async def get_evaluation_run_async(self, run_id: str) -> EvaluationRun:
+    async def get_run_async(self, run_id: str) -> GetRunResponse:
         """Get an evaluation run by ID asynchronously."""
-        response = await self.client.request_async("GET", f"/evaluations/runs/{run_id}")
+        response = await self.client.request_async("GET", f"/runs/{run_id}")
         data = response.json()
-        return EvaluationRun(**data)
+        return GetRunResponse(**data)
 
-    def list_evaluation_runs(
+    def list_runs(
         self, 
         project: Optional[str] = None, 
         limit: int = 100
-    ) -> List[EvaluationRun]:
+    ) -> GetRunsResponse:
         """List evaluation runs with optional filtering."""
-        params = {"limit": limit}
+        params: dict = {"limit": limit}
         if project:
             params["project"] = project
         
-        response = self.client.request("GET", "/evaluations/runs", params=params)
+        response = self.client.request("GET", "/runs", params=params)
         data = response.json()
-        return [EvaluationRun(**run_data) for run_data in data.get("runs", [])]
+        return GetRunsResponse(**data)
 
-    async def list_evaluation_runs_async(
+    async def list_runs_async(
         self, 
         project: Optional[str] = None, 
         limit: int = 100
-    ) -> List[EvaluationRun]:
-        """List evaluation runs with optional filtering asynchronously."""
-        params = {"limit": limit}
+    ) -> GetRunsResponse:
+        """List evaluation runs asynchronously with optional filtering."""
+        params: dict = {"limit": limit}
         if project:
             params["project"] = project
         
-        response = await self.client.request_async("GET", "/evaluations/runs", params=params)
+        response = await self.client.request_async("GET", "/runs", params=params)
         data = response.json()
-        return [EvaluationRun(**run_data) for run_data in data.get("runs", [])]
+        return GetRunsResponse(**data)
 
-    def update_evaluation_run(self, run_id: str, request: UpdateRunRequest) -> EvaluationRun:
-        """Update an evaluation run."""
+    def update_run(self, run_id: str, request: UpdateRunRequest) -> UpdateRunResponse:
+        """Update an evaluation run using UpdateRunRequest model."""
         response = self.client.request(
             "PUT", 
-            f"/evaluations/runs/{run_id}", 
+            f"/runs/{run_id}", 
             json=request.model_dump(exclude_none=True)
         )
         
         data = response.json()
-        return EvaluationRun(**data)
+        return UpdateRunResponse(**data)
 
-    async def update_evaluation_run_async(self, run_id: str, request: UpdateRunRequest) -> EvaluationRun:
-        """Update an evaluation run asynchronously."""
+    def update_run_from_dict(self, run_id: str, run_data: dict) -> UpdateRunResponse:
+        """Update an evaluation run from dictionary (legacy method)."""
+        response = self.client.request(
+            "PUT", 
+            f"/runs/{run_id}", 
+            json=run_data
+        )
+        
+        data = response.json()
+        return UpdateRunResponse(**data)
+
+    async def update_run_async(self, run_id: str, request: UpdateRunRequest) -> UpdateRunResponse:
+        """Update an evaluation run asynchronously using UpdateRunRequest model."""
         response = await self.client.request_async(
             "PUT", 
-            f"/evaluations/runs/{run_id}", 
+            f"/runs/{run_id}", 
             json=request.model_dump(exclude_none=True)
         )
         
         data = response.json()
-        return EvaluationRun(**data)
+        return UpdateRunResponse(**data)
 
-    def delete_evaluation_run(self, run_id: str) -> bool:
-        """Delete an evaluation run."""
-        response = self.client.request("DELETE", f"/evaluations/runs/{run_id}")
-        return response.status_code == 200
+    async def update_run_from_dict_async(self, run_id: str, run_data: dict) -> UpdateRunResponse:
+        """Update an evaluation run asynchronously from dictionary (legacy method)."""
+        response = await self.client.request_async(
+            "PUT", 
+            f"/runs/{run_id}", 
+            json=run_data
+        )
+        
+        data = response.json()
+        return UpdateRunResponse(**data)
 
-    async def delete_evaluation_run_async(self, run_id: str) -> bool:
-        """Delete an evaluation run asynchronously."""
-        response = await self.client.request_async("DELETE", f"/evaluations/runs/{run_id}")
-        return response.status_code == 200
+    def delete_run(self, run_id: str) -> DeleteRunResponse:
+        """Delete an evaluation run by ID."""
+        try:
+            response = self.client.request("DELETE", f"/runs/{run_id}")
+            data = response.json()
+            return DeleteRunResponse(**data)
+        except Exception:
+            return DeleteRunResponse(id=run_id, deleted=False)
+
+    async def delete_run_async(self, run_id: str) -> DeleteRunResponse:
+        """Delete an evaluation run by ID asynchronously."""
+        try:
+            response = await self.client.request_async("DELETE", f"/runs/{run_id}")
+            data = response.json()
+            return DeleteRunResponse(**data)
+        except Exception:
+            return DeleteRunResponse(id=run_id, deleted=False)

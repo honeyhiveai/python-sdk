@@ -2,7 +2,7 @@
 
 from typing import List, Optional
 
-from ..models import Configuration, PostConfigurationRequest, PutConfigurationRequest
+from ..models import Configuration, Parameters, Parameters1, Parameters2, PutConfigurationRequest, PostConfigurationRequest
 from .base import BaseAPI
 
 
@@ -10,7 +10,7 @@ class ConfigurationsAPI(BaseAPI):
     """API for configuration operations."""
 
     def create_configuration(self, request: PostConfigurationRequest) -> Configuration:
-        """Create a new configuration."""
+        """Create a new configuration using PostConfigurationRequest model."""
         response = self.client.request(
             "POST", 
             "/configurations", 
@@ -20,8 +20,19 @@ class ConfigurationsAPI(BaseAPI):
         data = response.json()
         return Configuration(**data)
 
+    def create_configuration_from_dict(self, config_data: dict) -> Configuration:
+        """Create a new configuration from dictionary (legacy method)."""
+        response = self.client.request(
+            "POST", 
+            "/configurations", 
+            json={"configuration": config_data}
+        )
+        
+        data = response.json()
+        return Configuration(**data)
+
     async def create_configuration_async(self, request: PostConfigurationRequest) -> Configuration:
-        """Create a new configuration asynchronously."""
+        """Create a new configuration asynchronously using PostConfigurationRequest model."""
         response = await self.client.request_async(
             "POST", 
             "/configurations", 
@@ -31,30 +42,38 @@ class ConfigurationsAPI(BaseAPI):
         data = response.json()
         return Configuration(**data)
 
-    def get_configuration(self, configuration_id: str) -> Configuration:
-        """Get a configuration by ID."""
-        response = self.client.request("GET", f"/configurations/{configuration_id}")
+    async def create_configuration_from_dict_async(self, config_data: dict) -> Configuration:
+        """Create a new configuration asynchronously from dictionary (legacy method)."""
+        response = await self.client.request_async(
+            "POST", 
+            "/configurations", 
+            json={"configuration": config_data}
+        )
+        
         data = response.json()
         return Configuration(**data)
 
-    async def get_configuration_async(self, configuration_id: str) -> Configuration:
+    def get_configuration(self, config_id: str) -> Configuration:
+        """Get a configuration by ID."""
+        response = self.client.request("GET", f"/configurations/{config_id}")
+        data = response.json()
+        return Configuration(**data)
+
+    async def get_configuration_async(self, config_id: str) -> Configuration:
         """Get a configuration by ID asynchronously."""
-        response = await self.client.request_async("GET", f"/configurations/{configuration_id}")
+        response = await self.client.request_async("GET", f"/configurations/{config_id}")
         data = response.json()
         return Configuration(**data)
 
     def list_configurations(
         self, 
         project: Optional[str] = None, 
-        env: Optional[str] = None,
         limit: int = 100
     ) -> List[Configuration]:
         """List configurations with optional filtering."""
-        params = {"limit": limit}
+        params: dict = {"limit": limit}
         if project:
             params["project"] = project
-        if env:
-            params["env"] = env
         
         response = self.client.request("GET", "/configurations", params=params)
         data = response.json()
@@ -63,48 +82,73 @@ class ConfigurationsAPI(BaseAPI):
     async def list_configurations_async(
         self, 
         project: Optional[str] = None, 
-        env: Optional[str] = None,
         limit: int = 100
     ) -> List[Configuration]:
-        """List configurations with optional filtering asynchronously."""
-        params = {"limit": limit}
+        """List configurations asynchronously with optional filtering."""
+        params: dict = {"limit": limit}
         if project:
             params["project"] = project
-        if env:
-            params["env"] = env
         
         response = await self.client.request_async("GET", "/configurations", params=params)
         data = response.json()
         return [Configuration(**config_data) for config_data in data.get("configurations", [])]
 
-    def update_configuration(self, configuration_id: str, request: PutConfigurationRequest) -> Configuration:
-        """Update a configuration."""
+    def update_configuration(self, config_id: str, request: PutConfigurationRequest) -> Configuration:
+        """Update a configuration using PutConfigurationRequest model."""
         response = self.client.request(
             "PUT", 
-            f"/configurations/{configuration_id}", 
+            f"/configurations/{config_id}", 
             json=request.model_dump(exclude_none=True)
         )
         
         data = response.json()
         return Configuration(**data)
 
-    async def update_configuration_async(self, configuration_id: str, request: PutConfigurationRequest) -> Configuration:
-        """Update a configuration asynchronously."""
+    def update_configuration_from_dict(self, config_id: str, config_data: dict) -> Configuration:
+        """Update a configuration from dictionary (legacy method)."""
+        response = self.client.request(
+            "PUT", 
+            f"/configurations/{config_id}", 
+            json=config_data
+        )
+        
+        data = response.json()
+        return Configuration(**data)
+
+    async def update_configuration_async(self, config_id: str, request: PutConfigurationRequest) -> Configuration:
+        """Update a configuration asynchronously using PutConfigurationRequest model."""
         response = await self.client.request_async(
             "PUT", 
-            f"/configurations/{configuration_id}", 
+            f"/configurations/{config_id}", 
             json=request.model_dump(exclude_none=True)
         )
         
         data = response.json()
         return Configuration(**data)
 
-    def delete_configuration(self, configuration_id: str) -> bool:
-        """Delete a configuration."""
-        response = self.client.request("DELETE", f"/configurations/{configuration_id}")
-        return response.status_code == 200
+    async def update_configuration_from_dict_async(self, config_id: str, config_data: dict) -> Configuration:
+        """Update a configuration asynchronously from dictionary (legacy method)."""
+        response = await self.client.request_async(
+            "PUT", 
+            f"/configurations/{config_id}", 
+            json=config_data
+        )
+        
+        data = response.json()
+        return Configuration(**data)
 
-    async def delete_configuration_async(self, configuration_id: str) -> bool:
-        """Delete a configuration asynchronously."""
-        response = await self.client.request_async("DELETE", f"/configurations/{configuration_id}")
-        return response.status_code == 200
+    def delete_configuration(self, config_id: str) -> bool:
+        """Delete a configuration by ID."""
+        try:
+            response = self.client.request("DELETE", f"/configurations/{config_id}")
+            return response.status_code == 200
+        except Exception:
+            return False
+
+    async def delete_configuration_async(self, config_id: str) -> bool:
+        """Delete a configuration by ID asynchronously."""
+        try:
+            response = await self.client.request_async("DELETE", f"/configurations/{config_id}")
+            return response.status_code == 200
+        except Exception:
+            return False

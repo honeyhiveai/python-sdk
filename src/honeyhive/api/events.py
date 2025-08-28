@@ -2,7 +2,7 @@
 
 from typing import List, Optional, Dict, Any
 
-from ..models import CreateEventRequest, EventFilter
+from ..models import CreateEventRequest, EventFilter, Event
 from .base import BaseAPI
 
 
@@ -66,8 +66,22 @@ class BatchCreateEventResponse:
 class EventsAPI(BaseAPI):
     """API for event operations."""
 
-    def create_event(self, event_data: dict) -> CreateEventResponse:
-        """Create a new event from event data dictionary."""
+    def create_event(self, event: CreateEventRequest) -> CreateEventResponse:
+        """Create a new event using CreateEventRequest model."""
+        response = self.client.request(
+            "POST", 
+            "/events", 
+            json={"event": event.model_dump(exclude_none=True)}
+        )
+        
+        data = response.json()
+        return CreateEventResponse(
+            event_id=data["event_id"],
+            success=data["success"]
+        )
+
+    def create_event_from_dict(self, event_data: dict) -> CreateEventResponse:
+        """Create a new event from event data dictionary (legacy method)."""
         # Handle both direct event data and nested event data
         if 'event' in event_data:
             request_data = event_data
@@ -100,8 +114,22 @@ class EventsAPI(BaseAPI):
             success=data["success"]
         )
 
-    async def create_event_async(self, event_data: dict) -> CreateEventResponse:
-        """Create a new event asynchronously from event data dictionary."""
+    async def create_event_async(self, event: CreateEventRequest) -> CreateEventResponse:
+        """Create a new event asynchronously using CreateEventRequest model."""
+        response = await self.client.request_async(
+            "POST", 
+            "/events", 
+            json={"event": event.model_dump(exclude_none=True)}
+        )
+        
+        data = response.json()
+        return CreateEventResponse(
+            event_id=data["event_id"],
+            success=data["success"]
+        )
+
+    async def create_event_from_dict_async(self, event_data: dict) -> CreateEventResponse:
+        """Create a new event asynchronously from event data dictionary (legacy method)."""
         # Handle both direct event data and nested event data
         if 'event' in event_data:
             request_data = event_data
@@ -187,7 +215,7 @@ class EventsAPI(BaseAPI):
         await self.client.request_async("PUT", "/events", json=request_data)
 
     def create_event_batch(self, request: BatchCreateEventRequest) -> BatchCreateEventResponse:
-        """Create multiple events."""
+        """Create multiple events using BatchCreateEventRequest model."""
         events_data = [event.model_dump(exclude_none=True) for event in request.events]
         response = self.client.request("POST", "/events/batch", json={"events": events_data})
         
@@ -197,8 +225,19 @@ class EventsAPI(BaseAPI):
             success=data["success"]
         )
 
+    def create_event_batch_from_list(self, events: List[CreateEventRequest]) -> BatchCreateEventResponse:
+        """Create multiple events from a list of CreateEventRequest objects."""
+        events_data = [event.model_dump(exclude_none=True) for event in events]
+        response = self.client.request("POST", "/events/batch", json={"events": events_data})
+        
+        data = response.json()
+        return BatchCreateEventResponse(
+            event_ids=data["event_ids"],
+            success=data["success"]
+        )
+
     async def create_event_batch_async(self, request: BatchCreateEventRequest) -> BatchCreateEventResponse:
-        """Create multiple events asynchronously."""
+        """Create multiple events asynchronously using BatchCreateEventRequest model."""
         events_data = [event.model_dump(exclude_none=True) for event in request.events]
         response = await self.client.request_async("POST", "/events/batch", json={"events": events_data})
         
@@ -207,3 +246,66 @@ class EventsAPI(BaseAPI):
             event_ids=data["event_ids"],
             success=data["success"]
         )
+
+    async def create_event_batch_from_list_async(self, events: List[CreateEventRequest]) -> BatchCreateEventResponse:
+        """Create multiple events asynchronously from a list of CreateEventRequest objects."""
+        events_data = [event.model_dump(exclude_none=True) for event in events]
+        response = await self.client.request_async("POST", "/events/batch", json={"events": events_data})
+        
+        data = response.json()
+        return BatchCreateEventResponse(
+            event_ids=data["event_ids"],
+            success=data["success"]
+        )
+
+    def list_events(self, event_filter: EventFilter, limit: int = 100) -> List[Event]:
+        """List events using EventFilter model."""
+        # Convert EventFilter to query parameters
+        params = {"limit": limit}
+        if event_filter.field:
+            params["field"] = event_filter.field
+        if event_filter.value:
+            params["value"] = event_filter.value
+        if event_filter.operator:
+            params["operator"] = event_filter.operator
+        if event_filter.type:
+            params["type"] = event_filter.type
+        
+        response = self.client.request("GET", "/events", params=params)
+        data = response.json()
+        return [Event(**event_data) for event_data in data.get("events", [])]
+
+    def list_events_from_dict(self, event_filter: dict, limit: int = 100) -> List[Event]:
+        """List events from filter dictionary (legacy method)."""
+        params = {"limit": limit}
+        params.update(event_filter)
+        
+        response = self.client.request("GET", "/events", params=params)
+        data = response.json()
+        return [Event(**event_data) for event_data in data.get("events", [])]
+
+    async def list_events_async(self, event_filter: EventFilter, limit: int = 100) -> List[Event]:
+        """List events asynchronously using EventFilter model."""
+        # Convert EventFilter to query parameters
+        params = {"limit": limit}
+        if event_filter.field:
+            params["field"] = event_filter.field
+        if event_filter.value:
+            params["value"] = event_filter.value
+        if event_filter.operator:
+            params["operator"] = event_filter.operator
+        if event_filter.type:
+            params["type"] = event_filter.type
+        
+        response = await self.client.request_async("GET", "/events", params=params)
+        data = response.json()
+        return [Event(**event_data) for event_data in data.get("events", [])]
+
+    async def list_events_from_dict_async(self, event_filter: dict, limit: int = 100) -> List[Event]:
+        """List events asynchronously from filter dictionary (legacy method)."""
+        params = {"limit": limit}
+        params.update(event_filter)
+        
+        response = await self.client.request_async("GET", "/events", params=params)
+        data = response.json()
+        return [Event(**event_data) for event_data in data.get("events", [])]
