@@ -75,7 +75,7 @@ class TestCLI:
 
     def test_api_request(self):
         """Test API request command."""
-        with patch('honeyhive.cli.main.HoneyHiveClient') as mock_client_class:
+        with patch('honeyhive.cli.main.HoneyHive') as mock_client_class:
             mock_client = Mock()
             mock_response = Mock()
             mock_response.status_code = 200
@@ -91,7 +91,7 @@ class TestCLI:
 
     def test_monitor_status(self):
         """Test monitor status command."""
-        with patch('honeyhive.api.client.HoneyHiveClient') as mock_client_class:
+        with patch('honeyhive.api.client.HoneyHive') as mock_client_class:
             mock_client = Mock()
             mock_client.get_health.return_value = {"status": "healthy"}
             mock_client_class.return_value = mock_client
@@ -105,7 +105,7 @@ class TestCLI:
 
     def test_monitor_watch(self):
         """Test monitor watch command."""
-        with patch('honeyhive.api.client.HoneyHiveClient') as mock_client_class:
+        with patch('honeyhive.api.client.HoneyHive') as mock_client_class:
             mock_client = Mock()
             mock_client.get_health.return_value = {"status": "healthy"}
             mock_client_class.return_value = mock_client
@@ -207,7 +207,7 @@ class TestCLI:
 
     def test_api_request_with_headers(self):
         """Test API request with custom headers."""
-        with patch('honeyhive.cli.main.HoneyHiveClient') as mock_client_class:
+        with patch('honeyhive.cli.main.HoneyHive') as mock_client_class:
             mock_client = Mock()
             mock_response = Mock()
             mock_response.status_code = 200
@@ -228,7 +228,7 @@ class TestCLI:
 
     def test_monitor_status_with_format(self):
         """Test monitor status command."""
-        with patch('honeyhive.api.client.HoneyHiveClient') as mock_client_class:
+        with patch('honeyhive.api.client.HoneyHive') as mock_client_class:
             mock_client = Mock()
             mock_client.get_health.return_value = {"status": "healthy", "version": "1.0.0"}
             mock_client_class.return_value = mock_client

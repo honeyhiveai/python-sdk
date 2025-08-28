@@ -214,21 +214,20 @@ class CustomProcessor:
 
 ## API Client
 
-### HoneyHiveClient
+### HoneyHive
 
 Main API client for interacting with HoneyHive services.
 
 #### Constructor
 
 ```python
-HoneyHiveClient(
+HoneyHive(
     api_key: str,
     base_url: Optional[str] = None,
     test_mode: bool = False,
     timeout: float = 30.0,
     retry_config: Optional[RetryConfig] = None
 )
-```
 
 **Parameters:**
 - `api_key`: HoneyHive API key
@@ -239,12 +238,11 @@ HoneyHiveClient(
 
 **Example:**
 ```python
-client = HoneyHiveClient(
+client = HoneyHive(
     api_key="your-api-key",
     base_url="https://api.honeyhive.ai",
     timeout=60.0
 )
-```
 
 #### Methods
 
@@ -516,7 +514,7 @@ result = process_data("hello world")
 
 ```python
 from honeyhive import HoneyHiveTracer
-from honeyhive.api.client import HoneyHiveClient
+from honeyhive.api.client import HoneyHive
 
 # Initialize tracer and client
 tracer = HoneyHiveTracer(
@@ -525,7 +523,7 @@ tracer = HoneyHiveTracer(
     source="production"
 )
 
-client = HoneyHiveClient(
+client = HoneyHive(
     api_key="your-api-key",
     base_url="https://api.honeyhive.ai"
 )

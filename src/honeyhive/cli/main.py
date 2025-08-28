@@ -8,7 +8,7 @@ from typing import Optional, Dict, Any
 from pathlib import Path
 
 from ..tracer import HoneyHiveTracer
-from ..api.client import HoneyHiveClient
+from ..api.client import HoneyHive
 from ..utils.config import Config
 from ..utils.logger import get_logger
 from ..utils.cache import get_global_cache, close_global_cache
@@ -167,7 +167,7 @@ def api():
 def request(method: str, url: str, headers: Optional[str], data: Optional[str], timeout: float):
     """Make an API request."""
     try:
-        client = HoneyHiveClient()
+        client = HoneyHive()
         
         # Parse headers and data
         request_headers = {}

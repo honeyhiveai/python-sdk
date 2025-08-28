@@ -340,10 +340,10 @@ def _initialize_session(self):
     try:
         # 1. Import session API
         from ..api.session import SessionAPI
-        from ..api.client import HoneyHiveClient
+        from ..api.client import HoneyHive
         
         # 2. Create client and session API
-        self.client = HoneyHiveClient(
+                    self.client = HoneyHive(
             api_key=self.api_key,
             base_url=config.api_url,
             test_mode=self.test_mode
@@ -956,7 +956,7 @@ def health_check():
             return {"status": "unhealthy", "reason": "tracer_not_initialized"}
         
         # 2. Check API connectivity
-        client = HoneyHiveClient(api_key=config.api_key)
+        client = HoneyHive(api_key=config.api_key)
         health = client.get_health()
         client.close()
         

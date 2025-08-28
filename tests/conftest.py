@@ -4,7 +4,7 @@ import os
 import pytest
 from unittest.mock import Mock, patch
 
-from honeyhive.api.client import HoneyHiveClient
+from honeyhive.api.client import HoneyHive
 from honeyhive.tracer import HoneyHiveTracer
 
 
@@ -41,7 +41,7 @@ def event_id():
 @pytest.fixture
 def honeyhive_client(api_key):
     """HoneyHive client fixture."""
-    return HoneyHiveClient(api_key=api_key, test_mode=True)
+    return HoneyHive(api_key=api_key, test_mode=True)
 
 
 @pytest.fixture

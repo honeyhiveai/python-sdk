@@ -1,7 +1,7 @@
 """Basic usage example for HoneyHive Python SDK."""
 
 import asyncio
-from honeyhive import HoneyHiveClient, HoneyHiveTracer
+from honeyhive import HoneyHive, HoneyHiveTracer
 from honeyhive.api.session import SessionStartRequest
 from honeyhive.api.events import CreateEventRequest
 
@@ -11,7 +11,7 @@ def sync_example():
     print("=== Synchronous Example ===")
     
     # Initialize client
-    client = HoneyHiveClient(api_key="your-api-key")
+    client = HoneyHive(api_key="your-api-key")
     
     # Start a session
     session_request = SessionStartRequest(
@@ -52,7 +52,7 @@ async def async_example():
     print("\n=== Asynchronous Example ===")
     
     # Initialize client
-    client = HoneyHiveClient(api_key="your-api-key")
+    client = HoneyHive(api_key="your-api-key")
     
     # Start a session
     session_request = SessionStartRequest(

@@ -125,11 +125,6 @@ def main():
     # 2. Run tox tests for all Python versions
     print("\n📋 Phase 2: Multi-Python Tests (Tox)")
     test_results.append((
-        "Tox - Python 3.10",
-        run_tox_tests("py310", "Python 3.10 compatibility")
-    ))
-    
-    test_results.append((
         "Tox - Python 3.11",
         run_tox_tests("py311", "Python 3.11 compatibility")
     ))
@@ -137,6 +132,11 @@ def main():
     test_results.append((
         "Tox - Python 3.12",
         run_tox_tests("py312", "Python 3.12 compatibility")
+    ))
+    
+    test_results.append((
+        "Tox - Python 3.13",
+        run_tox_tests("py313", "Python 3.13 compatibility")
     ))
     
     # 3. Run comprehensive tox test

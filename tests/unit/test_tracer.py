@@ -229,7 +229,7 @@ class TestHoneyHiveTracer:
     def test_enrich_session_error_handling(self):
         """Test enrich_session error handling."""
         # Mock the API client to simulate an error
-        with patch('honeyhive.api.client.HoneyHiveClient') as mock_client_class:
+        with patch('honeyhive.api.client.HoneyHive') as mock_client_class:
             mock_client = MagicMock()
             mock_client_class.return_value = mock_client
             

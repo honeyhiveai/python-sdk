@@ -2,7 +2,7 @@
 
 import pytest
 from unittest.mock import Mock, patch, MagicMock
-from honeyhive.api.client import HoneyHiveClient
+from honeyhive.api.client import HoneyHive
 from honeyhive.api.session import SessionAPI, SessionStartResponse, SessionResponse
 from honeyhive.api.events import EventsAPI, CreateEventResponse, UpdateEventRequest, BatchCreateEventRequest, BatchCreateEventResponse
 from honeyhive.api.tools import ToolsAPI
@@ -29,13 +29,13 @@ class TestSessionAPI:
     
     def test_session_api_initialization(self, api_key):
         """Test SessionAPI initialization."""
-        client = HoneyHiveClient(api_key=api_key)
+        client = HoneyHive(api_key=api_key)
         session_api = SessionAPI(client)
         assert session_api.client == client
     
     def test_start_session(self, api_key):
         """Test starting a session."""
-        client = HoneyHiveClient(api_key=api_key)
+        client = HoneyHive(api_key=api_key)
         session_api = SessionAPI(client)
         
         with patch.object(client, 'request') as mock_request:
@@ -56,7 +56,7 @@ class TestSessionAPI:
     @pytest.mark.asyncio
     async def test_start_session_async(self, api_key):
         """Test starting a session asynchronously."""
-        client = HoneyHiveClient(api_key=api_key)
+        client = HoneyHive(api_key=api_key)
         session_api = SessionAPI(client)
         
         with patch.object(client, 'request_async') as mock_request:
@@ -76,7 +76,7 @@ class TestSessionAPI:
     
     def test_get_session(self, api_key):
         """Test getting a session."""
-        client = HoneyHiveClient(api_key=api_key)
+        client = HoneyHive(api_key=api_key)
         session_api = SessionAPI(client)
         
         with patch.object(client, 'request') as mock_request:
@@ -96,13 +96,13 @@ class TestEventsAPI:
     
     def test_events_api_initialization(self, api_key):
         """Test EventsAPI initialization."""
-        client = HoneyHiveClient(api_key=api_key)
+        client = HoneyHive(api_key=api_key)
         events_api = EventsAPI(client)
         assert events_api.client == client
     
     def test_create_event(self, api_key):
         """Test creating an event."""
-        client = HoneyHiveClient(api_key=api_key)
+        client = HoneyHive(api_key=api_key)
         events_api = EventsAPI(client)
         
         event_request = CreateEventRequest(
@@ -132,7 +132,7 @@ class TestEventsAPI:
     
     def test_update_event(self, api_key):
         """Test updating an event."""
-        client = HoneyHiveClient(api_key=api_key)
+        client = HoneyHive(api_key=api_key)
         events_api = EventsAPI(client)
         
         update_request = UpdateEventRequest(
@@ -149,7 +149,7 @@ class TestEventsAPI:
     
     def test_create_event_batch(self, api_key):
         """Test creating multiple events."""
-        client = HoneyHiveClient(api_key=api_key)
+        client = HoneyHive(api_key=api_key)
         events_api = EventsAPI(client)
         
         events = [
@@ -194,13 +194,13 @@ class TestToolsAPI:
     
     def test_tools_api_initialization(self, api_key):
         """Test ToolsAPI initialization."""
-        client = HoneyHiveClient(api_key=api_key)
+        client = HoneyHive(api_key=api_key)
         tools_api = ToolsAPI(client)
         assert tools_api.client == client
     
     def test_create_tool(self, api_key):
         """Test creating a tool."""
-        client = HoneyHiveClient(api_key=api_key)
+        client = HoneyHive(api_key=api_key)
         tools_api = ToolsAPI(client)
         
         tool_request = CreateToolRequest(
@@ -230,7 +230,7 @@ class TestToolsAPI:
     
     def test_get_tool(self, api_key):
         """Test getting a tool."""
-        client = HoneyHiveClient(api_key=api_key)
+        client = HoneyHive(api_key=api_key)
         tools_api = ToolsAPI(client)
         
         with patch.object(client, 'request') as mock_request:
@@ -252,7 +252,7 @@ class TestToolsAPI:
     
     def test_list_tools(self, api_key):
         """Test listing tools."""
-        client = HoneyHiveClient(api_key=api_key)
+        client = HoneyHive(api_key=api_key)
         tools_api = ToolsAPI(client)
         
         with patch.object(client, 'request') as mock_request:
@@ -285,7 +285,7 @@ class TestToolsAPI:
     
     def test_update_tool(self, api_key):
         """Test updating a tool."""
-        client = HoneyHiveClient(api_key=api_key)
+        client = HoneyHive(api_key=api_key)
         tools_api = ToolsAPI(client)
         
         update_request = UpdateToolRequest(
@@ -314,7 +314,7 @@ class TestToolsAPI:
     
     def test_delete_tool(self, api_key):
         """Test deleting a tool."""
-        client = HoneyHiveClient(api_key=api_key)
+        client = HoneyHive(api_key=api_key)
         tools_api = ToolsAPI(client)
         
         with patch.object(client, 'request') as mock_request:
@@ -333,13 +333,13 @@ class TestDatapointsAPI:
     
     def test_datapoints_api_initialization(self, api_key):
         """Test DatapointsAPI initialization."""
-        client = HoneyHiveClient(api_key=api_key)
+        client = HoneyHive(api_key=api_key)
         datapoints_api = DatapointsAPI(client)
         assert datapoints_api.client == client
     
     def test_create_datapoint(self, api_key):
         """Test creating a datapoint."""
-        client = HoneyHiveClient(api_key=api_key)
+        client = HoneyHive(api_key=api_key)
         datapoints_api = DatapointsAPI(client)
         
         datapoint_request = CreateDatapointRequest(
@@ -364,7 +364,7 @@ class TestDatapointsAPI:
     
     def test_list_datapoints(self, api_key):
         """Test listing datapoints."""
-        client = HoneyHiveClient(api_key=api_key)
+        client = HoneyHive(api_key=api_key)
         datapoints_api = DatapointsAPI(client)
         
         with patch.object(client, 'request') as mock_request:
@@ -389,13 +389,13 @@ class TestDatasetsAPI:
     
     def test_datasets_api_initialization(self, api_key):
         """Test DatasetsAPI initialization."""
-        client = HoneyHiveClient(api_key=api_key)
+        client = HoneyHive(api_key=api_key)
         datasets_api = DatasetsAPI(client)
         assert datasets_api.client == client
     
     def test_create_dataset(self, api_key):
         """Test creating a dataset."""
-        client = HoneyHiveClient(api_key=api_key)
+        client = HoneyHive(api_key=api_key)
         datasets_api = DatasetsAPI(client)
         
         dataset_request = CreateDatasetRequest(
@@ -421,13 +421,13 @@ class TestConfigurationsAPI:
     
     def test_configurations_api_initialization(self, api_key):
         """Test ConfigurationsAPI initialization."""
-        client = HoneyHiveClient(api_key=api_key)
+        client = HoneyHive(api_key=api_key)
         configs_api = ConfigurationsAPI(client)
         assert configs_api.client == client
     
     def test_create_configuration(self, api_key):
         """Test creating a configuration."""
-        client = HoneyHiveClient(api_key=api_key)
+        client = HoneyHive(api_key=api_key)
         configs_api = ConfigurationsAPI(client)
         
         from honeyhive.models.generated import Parameters2
@@ -467,13 +467,13 @@ class TestProjectsAPI:
     
     def test_projects_api_initialization(self, api_key):
         """Test ProjectsAPI initialization."""
-        client = HoneyHiveClient(api_key=api_key)
+        client = HoneyHive(api_key=api_key)
         projects_api = ProjectsAPI(client)
         assert projects_api.client == client
     
     def test_create_project(self, api_key):
         """Test creating a project."""
-        client = HoneyHiveClient(api_key=api_key)
+        client = HoneyHive(api_key=api_key)
         projects_api = ProjectsAPI(client)
         
         project_request = CreateProjectRequest(
@@ -498,13 +498,13 @@ class TestMetricsAPI:
     
     def test_metrics_api_initialization(self, api_key):
         """Test MetricsAPI initialization."""
-        client = HoneyHiveClient(api_key=api_key)
+        client = HoneyHive(api_key=api_key)
         metrics_api = MetricsAPI(client)
         assert metrics_api.client == client
     
     def test_create_metric(self, api_key):
         """Test creating a metric."""
-        client = HoneyHiveClient(api_key=api_key)
+        client = HoneyHive(api_key=api_key)
         metrics_api = MetricsAPI(client)
         
         metric = Metric(
@@ -539,13 +539,13 @@ class TestEvaluationsAPI:
     
     def test_evaluations_api_initialization(self, api_key):
         """Test EvaluationsAPI initialization."""
-        client = HoneyHiveClient(api_key=api_key)
+        client = HoneyHive(api_key=api_key)
         evaluations_api = EvaluationsAPI(client)
         assert evaluations_api.client == client
     
     def test_create_evaluation_run(self, api_key):
         """Test creating an evaluation run."""
-        client = HoneyHiveClient(api_key=api_key)
+        client = HoneyHive(api_key=api_key)
         evaluations_api = EvaluationsAPI(client)
         
         from honeyhive.models.generated import UUIDType
@@ -573,7 +573,7 @@ class TestAPIErrorHandling:
     
     def test_api_error_handling(self, api_key):
         """Test API error handling."""
-        client = HoneyHiveClient(api_key=api_key)
+        client = HoneyHive(api_key=api_key)
         session_api = SessionAPI(client)
         
         with patch.object(client, 'request') as mock_request:
@@ -588,7 +588,7 @@ class TestAPIErrorHandling:
     
     def test_api_invalid_response(self, api_key):
         """Test API invalid response handling."""
-        client = HoneyHiveClient(api_key=api_key)
+        client = HoneyHive(api_key=api_key)
         session_api = SessionAPI(client)
         
         with patch.object(client, 'request') as mock_request:
@@ -609,7 +609,7 @@ class TestAPIPerformance:
     
     def test_api_batch_operations(self, api_key):
         """Test API batch operations performance."""
-        client = HoneyHiveClient(api_key=api_key)
+        client = HoneyHive(api_key=api_key)
         events_api = EventsAPI(client)
         
         # Create many events

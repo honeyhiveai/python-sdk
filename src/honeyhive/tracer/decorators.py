@@ -123,13 +123,21 @@ def trace(
                     
                     # Set outputs if provided or use function result
                     if outputs:
-                        _set_span_attributes(span, "honeyhive_outputs", outputs)
+                        try:
+                            _set_span_attributes(span, "honeyhive_outputs", outputs)
+                        except Exception:
+                            # Silently handle any exceptions when setting span attributes
+                            pass
                     else:
-                        # Try to set function result as output
+                        # Try to set function result as output, handle all exceptions silently
                         try:
                             span.set_attribute("honeyhive_outputs.result", json.dumps(result, default=str))
-                        except (TypeError, ValueError):
-                            span.set_attribute("honeyhive_outputs.result", str(result))
+                        except Exception:
+                            try:
+                                span.set_attribute("honeyhive_outputs.result", str(result))
+                            except Exception:
+                                # Silently handle any exceptions when setting span attributes
+                                pass
                     
                     return result
                     
@@ -253,13 +261,21 @@ def atrace(
                     
                     # Set outputs if provided or use function result
                     if outputs:
-                        _set_span_attributes(span, "honeyhive_outputs", outputs)
+                        try:
+                            _set_span_attributes(span, "honeyhive_outputs", outputs)
+                        except Exception:
+                            # Silently handle any exceptions when setting span attributes
+                            pass
                     else:
-                        # Try to set function result as output
+                        # Try to set function result as output, handle all exceptions silently
                         try:
                             span.set_attribute("honeyhive_outputs.result", json.dumps(result, default=str))
-                        except (TypeError, ValueError):
-                            span.set_attribute("honeyhive_outputs.result", str(result))
+                        except Exception:
+                            try:
+                                span.set_attribute("honeyhive_outputs.result", str(result))
+                            except Exception:
+                                # Silently handle any exceptions when setting span attributes
+                                pass
                     
                     return result
                     

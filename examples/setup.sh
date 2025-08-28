@@ -69,7 +69,7 @@ echo "🧪 Testing basic imports..."
 python3 -c "
 try:
     from honeyhive.tracer import HoneyHiveTracer
-    from honeyhive.api.client import HoneyHiveClient
+    from honeyhive.api.client import HoneyHive
     print('✅ HoneyHive imports successful')
 except ImportError as e:
     print(f'❌ HoneyHive import error: {e}')

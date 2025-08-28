@@ -233,10 +233,10 @@ def _initialize_session(self):
     try:
         # Import session API here to avoid circular imports
         from ..api.session import SessionAPI
-        from ..api.client import HoneyHiveClient
+        from ..api.client import HoneyHive
         
         # Create client and session API
-        self.client = HoneyHiveClient(
+                    self.client = HoneyHive(
             api_key=self.api_key,
             base_url=config.api_url,
             test_mode=self.test_mode

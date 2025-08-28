@@ -5,7 +5,7 @@ import functools
 from typing import Any, Callable, Dict, List, Optional, Union
 from dataclasses import dataclass
 
-from ..api.client import HoneyHiveClient
+from ..api.client import HoneyHive
 from ..api.events import CreateEventRequest
 
 
@@ -103,7 +103,7 @@ def evaluator(
                     
                     # Send event
                     if not tracer.test_mode:
-                        client = HoneyHiveClient(api_key=tracer.api_key)
+                        client = HoneyHive(api_key=tracer.api_key)
                         client.events.create_event(event)
             
             except Exception as e:
@@ -160,7 +160,7 @@ def aevaluator(
                     
                     # Send event
                     if not tracer.test_mode:
-                        client = HoneyHiveClient(api_key=tracer.api_key)
+                        client = HoneyHive(api_key=tracer.api_key)
                         await client.events.create_event_async(event)
             
             except Exception as e:

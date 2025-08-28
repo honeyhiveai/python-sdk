@@ -1,6 +1,6 @@
 """HoneyHive API Client Module"""
 
-from .client import HoneyHiveClient
+from .client import HoneyHive
 from .session import SessionAPI
 from .events import EventsAPI
 from .tools import ToolsAPI
@@ -12,7 +12,7 @@ from .metrics import MetricsAPI
 from .evaluations import EvaluationsAPI
 
 __all__ = [
-    "HoneyHiveClient",
+    "HoneyHive",
     "SessionAPI",
     "EventsAPI",
     "ToolsAPI",

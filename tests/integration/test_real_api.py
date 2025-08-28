@@ -6,7 +6,7 @@ import time
 from unittest.mock import patch
 import httpx
 
-from honeyhive.api.client import HoneyHiveClient
+from honeyhive.api.client import HoneyHive
 from honeyhive.tracer import HoneyHiveTracer
 from honeyhive.utils.config import get_config
 
@@ -21,7 +21,7 @@ class TestRealAPIIntegration:
         if not config.api_key or config.api_key == "test-api-key-12345":
             pytest.skip("Real API key not configured")
         
-        client = HoneyHiveClient(
+        client = HoneyHive(
             api_key=config.api_key,
             base_url=config.api_url,
             test_mode=False
@@ -231,7 +231,7 @@ class TestRealAPIIntegration:
         
         try:
             # Test async client creation
-            async_client = HoneyHiveClient(
+            async_client = HoneyHive(
                 api_key=config.api_key,
                 base_url=config.api_url,
                 test_mode=False

@@ -64,7 +64,7 @@ class ConnectionPool:
         }
 
 
-class HoneyHiveClient:
+class HoneyHive:
     """Main HoneyHive API client."""
     
     def __init__(

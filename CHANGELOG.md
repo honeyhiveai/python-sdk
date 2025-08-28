@@ -36,7 +36,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Utilities**: Helper utilities for common operations
 
 ### Technical Details
-- Python 3.10+ support
+- Python 3.11+ support
 - OpenTelemetry 1.21.0+ integration
 - Pydantic 2.10.0+ for data validation
 - httpx for HTTP client operations

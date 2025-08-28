@@ -3,18 +3,18 @@
 import pytest
 from unittest.mock import Mock, patch
 
-from honeyhive.api.client import HoneyHiveClient
+from honeyhive.api.client import HoneyHive
 from honeyhive.utils.retry import RetryConfig
 
 
 
 
-class TestHoneyHiveClient:
+class TestHoneyHive:
     """Test HoneyHive API client."""
     
     def test_client_initialization(self, api_key):
         """Test client initialization."""
-        client = HoneyHiveClient(api_key=api_key)
+        client = HoneyHive(api_key=api_key)
         
         assert client.api_key == api_key
         assert client.base_url == "https://api.honeyhive.ai"
@@ -25,7 +25,7 @@ class TestHoneyHiveClient:
         """Test client initialization with environment variable."""
         # This test is simplified since the config is imported at module level
         # We'll test that the client can be initialized with an explicit API key
-        client = HoneyHiveClient(api_key="test-api-key")
+        client = HoneyHive(api_key="test-api-key")
         assert client.api_key == "test-api-key"
     
     def test_client_initialization_missing_api_key(self, monkeypatch):
@@ -35,13 +35,13 @@ class TestHoneyHiveClient:
         monkeypatch.setattr(config, 'api_key', None)
         
         with pytest.raises(ValueError, match="API key is required"):
-            HoneyHiveClient(api_key=None)
+            HoneyHive(api_key=None)
     
     def test_client_initialization_custom_config(self, api_key):
         """Test client initialization with custom configuration."""
         retry_config = RetryConfig.exponential(max_retries=5)
         
-        client = HoneyHiveClient(
+        client = HoneyHive(
             api_key=api_key,
             base_url="https://custom-api.honeyhive.ai",
             timeout=60.0,
@@ -54,7 +54,7 @@ class TestHoneyHiveClient:
     
     def test_make_url(self, api_key):
         """Test URL creation."""
-        client = HoneyHiveClient(api_key=api_key)
+        client = HoneyHive(api_key=api_key)
         
         url = client._make_url("/test/path")
         assert url == "https://api.honeyhive.ai/test/path"
@@ -64,7 +64,7 @@ class TestHoneyHiveClient:
     
     def test_sync_client_property(self, api_key):
         """Test sync client property."""
-        client = HoneyHiveClient(api_key=api_key)
+        client = HoneyHive(api_key=api_key)
         
         # First access should create client
         sync_client = client.sync_client
@@ -76,7 +76,7 @@ class TestHoneyHiveClient:
     
     def test_async_client_property(self, api_key):
         """Test async client property."""
-        client = HoneyHiveClient(api_key=api_key)
+        client = HoneyHive(api_key=api_key)
         
         # First access should create client
         async_client = client.async_client
@@ -88,7 +88,7 @@ class TestHoneyHiveClient:
     
     def test_close(self, api_key):
         """Test client close."""
-        client = HoneyHiveClient(api_key=api_key)
+        client = HoneyHive(api_key=api_key)
         
         # Create clients
         sync_client = client.sync_client
@@ -102,7 +102,7 @@ class TestHoneyHiveClient:
     @pytest.mark.asyncio
     async def test_aclose(self, api_key):
         """Test async client close."""
-        client = HoneyHiveClient(api_key=api_key)
+        client = HoneyHive(api_key=api_key)
         
         # Create async client
         async_client = client.async_client
@@ -113,7 +113,7 @@ class TestHoneyHiveClient:
     
     def test_context_manager(self, api_key):
         """Test client context manager."""
-        with HoneyHiveClient(api_key=api_key) as client:
+        with HoneyHive(api_key=api_key) as client:
             assert client.api_key == api_key
         
         # Client should be closed after context exit
@@ -123,7 +123,7 @@ class TestHoneyHiveClient:
     @pytest.mark.asyncio
     async def test_async_context_manager(self, api_key):
         """Test async client context manager."""
-        async with HoneyHiveClient(api_key=api_key) as client:
+        async with HoneyHive(api_key=api_key) as client:
             assert client.api_key == api_key
         
         # Client should be closed after context exit
@@ -131,7 +131,7 @@ class TestHoneyHiveClient:
     
     def test_request_headers(self, api_key):
         """Test request headers."""
-        client = HoneyHiveClient(api_key=api_key)
+        client = HoneyHive(api_key=api_key)
         
         headers = client.client_kwargs["headers"]
         assert headers["Authorization"] == f"Bearer {api_key}"
@@ -140,7 +140,7 @@ class TestHoneyHiveClient:
     
     def test_api_modules_initialization(self, api_key):
         """Test API modules initialization."""
-        client = HoneyHiveClient(api_key=api_key)
+        client = HoneyHive(api_key=api_key)
         
         assert client.sessions is not None
         assert client.events is not None
