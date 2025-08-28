@@ -24,7 +24,35 @@ This directory contains practical examples demonstrating how to use the HoneyHiv
 
 ## Available Examples
 
-### 1. Simple Agent Integration (`simple_agent_integration.py`)
+### 1. Dynamic Trace Decorator (`dynamic_trace_demo.py`)
+
+A demonstration of the new unified trace decorator that automatically handles both synchronous and asynchronous functions:
+
+**Key Features:**
+- Single decorator for both sync and async functions
+- Automatic detection of function type
+- Comprehensive tracing with all existing features
+- Backward compatibility with existing `@trace` and `@atrace` decorators
+
+**Usage:**
+```bash
+python examples/dynamic_trace_demo.py
+```
+
+**Example:**
+```python
+from honeyhive.tracer.decorators import dynamic_trace
+
+@dynamic_trace(event_type="demo", event_name="my_function")
+def sync_function():
+    return "sync result"
+
+@dynamic_trace(event_type="demo", event_name="my_async_function")
+async def async_function():
+    return "async result"
+```
+
+### 2. Simple Agent Integration (`simple_agent_integration.py`)
 
 A basic example showing:
 - HoneyHive tracer initialization
