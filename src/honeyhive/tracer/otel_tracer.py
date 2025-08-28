@@ -29,7 +29,6 @@ except ImportError:
 from ..utils.config import config
 from ..utils.baggage_dict import BaggageDict
 from .span_processor import HoneyHiveSpanProcessor
-from .span_exporter import HoneyHiveSpanExporter
 
 
 class HoneyHiveTracer:
@@ -412,36 +411,191 @@ class HoneyHiveTracer:
             return False
         
         try:
-            # Create enrichment event
-            enrichment_data = {
-                "session_id": session_id or self.session_id,
-                "project": getattr(self, 'project', None),
-                "source": getattr(self, 'source', None),
-            }
+            # Try to get the existing event ID from baggage context
+            event_id = None
+            if OTEL_AVAILABLE:
+                try:
+                    from opentelemetry import baggage
+                    ctx = baggage.get_current()
+                    event_id = baggage.get_baggage('event_id', ctx)
+                except Exception:
+                    pass
             
-            if metadata:
-                enrichment_data["metadata"] = metadata
-            if feedback:
-                enrichment_data["feedback"] = feedback
-            if metrics:
-                enrichment_data["metrics"] = metrics
-            if config:
-                enrichment_data["config"] = config
-            if inputs:
-                enrichment_data["inputs"] = inputs
-            if outputs:
-                enrichment_data["outputs"] = outputs
-            if user_properties:
-                enrichment_data["user_properties"] = user_properties
-            
-            # Send enrichment data via span exporter
-            self.span_exporter.enrich_session(enrichment_data)
-            return True
+            if event_id:
+                # Update existing event using UpdateEventRequest
+                from ..api.events import UpdateEventRequest
+                
+                if self.test_mode:
+                    print(f"🔍 Updating event {event_id} with baggage context")
+                
+                update_request = UpdateEventRequest(
+                    event_id=event_id,
+                    metadata=metadata,
+                    feedback=feedback,
+                    metrics=metrics,
+                    outputs=outputs,
+                    config=config,
+                    user_properties=user_properties,
+                )
+                
+                if self.test_mode:
+                    print(f"🔍 UpdateEventRequest created: {update_request}")
+                
+                # Send update request via the events API
+                try:
+                    self.client.events.update_event(update_request)
+                    if self.test_mode:
+                        print(f"🔍 update_event called successfully")
+                    return True
+                except Exception as e:
+                    if self.test_mode:
+                        print(f"🔍 Exception in update_event: {e}")
+                    raise
+            else:
+                # Fallback: create a new enrichment event if no event ID found
+                # AND also set all fields as span attributes for the current span
+                from ..api.events import CreateEventRequest
+                
+                # First, try to set all fields as span attributes if we have an active span
+                if OTEL_AVAILABLE:
+                    try:
+                        current_span = trace.get_current_span()
+                        if current_span and current_span.get_span_context().span_id != 0:
+                            # Set all enrichment data as span attributes
+                            if metadata:
+                                for key, value in metadata.items():
+                                    current_span.set_attribute(f"honeyhive.session.metadata.{key}", str(value))
+                            
+                            if feedback:
+                                for key, value in feedback.items():
+                                    current_span.set_attribute(f"honeyhive.session.feedback.{key}", str(value))
+                            
+                            if metrics:
+                                for key, value in metrics.items():
+                                    current_span.set_attribute(f"honeyhive.session.metrics.{key}", str(value))
+                            
+                            if config:
+                                for key, value in config.items():
+                                    current_span.set_attribute(f"honeyhive.session.config.{key}", str(value))
+                            
+                            if inputs:
+                                for key, value in inputs.items():
+                                    current_span.set_attribute(f"honeyhive.session.inputs.{key}", str(value))
+                            
+                            if outputs:
+                                for key, value in outputs.items():
+                                    current_span.set_attribute(f"honeyhive.session.outputs.{key}", str(value))
+                            
+                            if user_properties:
+                                for key, value in user_properties.items():
+                                    current_span.set_attribute(f"honeyhive.session.user_properties.{key}", str(value))
+                    except Exception:
+                        pass
+                
+                # Create enrichment event
+                event = CreateEventRequest(
+                    project=self.project,
+                    source=self.source,
+                    event_name="session_enrichment",
+                    event_type="session",
+                    session_id=session_id or self.session_id,
+                    metadata=metadata,
+                    feedback=feedback,
+                    metrics=metrics,
+                    config=config,
+                    inputs=inputs,
+                    outputs=outputs,
+                    user_properties=user_properties,
+                )
+                
+                # Send enrichment event via the events API
+                response = self.client.events.create_event(event)
+                if response.success:
+                    return True
+                else:
+                    if not self.test_mode:
+                        print(f"Failed to enrich session {session_id}: API error")
+                    return False
             
         except Exception as e:
             if not self.test_mode:
                 print(f"Failed to enrich session {session_id}: {e}")
             return False
+    
+    def enrich_span(
+        self,
+        span_name: Optional[str] = None,
+        metadata: Optional[Dict[str, Any]] = None,
+        metrics: Optional[Dict[str, Any]] = None,
+        attributes: Optional[Dict[str, Any]] = None,
+    ) -> bool:
+        """Enrich the current active span with additional data.
+        
+        Args:
+            span_name: Name of the span to enrich (defaults to current active span)
+            metadata: Span metadata
+            metrics: Span metrics
+            attributes: Span attributes
+            
+        Returns:
+            Whether the enrichment was successful
+        """
+        if not OTEL_AVAILABLE:
+            return False
+        
+        try:
+            # Try to get the existing event ID from baggage context first
+            event_id = None
+            try:
+                from opentelemetry import baggage
+                ctx = baggage.get_current()
+                event_id = baggage.get_baggage('event_id', ctx)
+            except Exception:
+                pass
+            
+            if event_id:
+                # Update existing event using UpdateEventRequest
+                from ..api.events import UpdateEventRequest
+                
+                update_request = UpdateEventRequest(
+                    event_id=event_id,
+                    metadata=metadata,
+                    metrics=metrics,
+                )
+                
+                # Send update request via the events API
+                self.client.events.update_event(update_request)
+                return True
+            else:
+                # Fallback: enrich the current OpenTelemetry span directly
+                current_span = trace.get_current_span()
+                if not current_span or current_span.get_span_context().span_id == 0:
+                    if not self.test_mode:
+                        print("Warning: No active span to enrich")
+                    return False
+                
+                # Set all enrichment data as span attributes with comprehensive coverage
+                if metadata:
+                    for key, value in metadata.items():
+                        current_span.set_attribute(f"honeyhive.span.metadata.{key}", str(value))
+                
+                if metrics:
+                    for key, value in metrics.items():
+                        current_span.set_attribute(f"honeyhive.span.metrics.{key}", str(value))
+                
+                # Add custom attributes (these are already properly prefixed)
+                if attributes:
+                    for key, value in attributes.items():
+                        current_span.set_attribute(key, str(value))
+                
+                return True
+            
+        except Exception as e:
+            if not self.test_mode:
+                print(f"Failed to enrich span: {e}")
+            return False
+    
+
     
     def get_baggage(self, key: str, context: Optional[Context] = None) -> Optional[str]:
         """Get baggage value.
@@ -537,7 +691,7 @@ class HoneyHiveTracer:
             return
         
         # This would be implemented to configure OTLP exporter
-        # For now, we'll use the HoneyHive span exporter
+        # For now, we'll use the HoneyHive span processor
         pass
 
 
@@ -586,6 +740,44 @@ def enrich_session(
     except Exception as e:
         print(f"Warning: enrich_session failed: {e}")
         return False
+
+
+# Global function for span enrichment
+def enrich_span(
+    span_name: Optional[str] = None,
+    metadata: Optional[Dict[str, Any]] = None,
+    metrics: Optional[Dict[str, Any]] = None,
+    attributes: Optional[Dict[str, Any]] = None,
+) -> bool:
+    """Global function to enrich the current active span.
+    
+    Args:
+        span_name: Name of the span to enrich (defaults to current active span)
+        metadata: Span metadata
+        metrics: Span metrics
+        attributes: Span attributes
+        
+    Returns:
+        Whether the enrichment was successful
+    """
+    try:
+        if HoneyHiveTracer._is_initialized:
+            tracer = HoneyHiveTracer._instance
+            return tracer.enrich_span(
+                span_name=span_name,
+                metadata=metadata,
+                metrics=metrics,
+                attributes=attributes,
+            )
+        else:
+            print("Warning: HoneyHiveTracer not initialized, skipping enrich_span")
+            return False
+    except Exception as e:
+        print(f"Warning: enrich_span failed: {e}")
+        return False
+
+
+
 
 
 def get_tracer() -> HoneyHiveTracer:

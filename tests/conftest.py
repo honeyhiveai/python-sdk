@@ -56,6 +56,24 @@ def honeyhive_tracer(api_key, project, source):
 
 
 @pytest.fixture
+def fresh_honeyhive_tracer(api_key, project, source):
+    """Create a fresh HoneyHive tracer for each test to ensure isolation."""
+    # Reset any global state that might persist
+    try:
+        from opentelemetry import context
+        context.attach(context.Context())
+    except ImportError:
+        pass
+    
+    return HoneyHiveTracer(
+        api_key=api_key,
+        project=project,
+        source=source,
+        test_mode=True
+    )
+
+
+@pytest.fixture
 def mock_response():
     """Mock HTTP response."""
     mock = Mock()
@@ -107,4 +125,35 @@ def mock_otel():
         with patch("honeyhive.tracer.span_processor.OTEL_AVAILABLE", True):
             with patch("honeyhive.tracer.span_exporter.OTEL_AVAILABLE", True):
                 yield
+
+
+@pytest.fixture(autouse=True)
+def reset_opentelemetry_context():
+    """Reset OpenTelemetry context between tests to prevent isolation issues."""
+    try:
+        from opentelemetry import context
+        from opentelemetry import baggage
+        
+        # Get the current context
+        current_context = context.get_current()
+        
+        # Clear any baggage items that might persist between tests
+        baggage_keys = ["event_id", "session_id", "project", "source", "parent_id"]
+        for key in baggage_keys:
+            try:
+                current_context = baggage.set_baggage(key, None, current_context)
+            except Exception:
+                pass
+        
+        # Reset to a clean context
+        context.attach(context.Context())
+        
+        yield
+        
+        # Cleanup after test
+        context.attach(context.Context())
+        
+    except ImportError:
+        # OpenTelemetry not available, skip context reset
+        yield
 
