@@ -4,6 +4,7 @@ import os
 import time
 import uuid
 import threading
+import json
 from typing import Optional, Dict, Any, Callable, Union
 from contextlib import contextmanager
 
@@ -73,13 +74,19 @@ class HoneyHiveTracer:
         if self._is_initialized:
             return
         
-        self.api_key = api_key or config.api_key
-        if not self.api_key:
-            raise ValueError("API key is required for HoneyHiveTracer")
+        self.test_mode = test_mode
+        
+        # In test mode, we can proceed without an API key
+        if not test_mode:
+            self.api_key = api_key or config.api_key
+            if not self.api_key:
+                raise ValueError("API key is required for HoneyHiveTracer")
+        else:
+            # Use a dummy API key for test mode
+            self.api_key = api_key or config.api_key or "test-api-key"
         
         self.project = project or config.project or "default"
         self.source = source
-        self.test_mode = test_mode
         self.session_name = session_name or f"tracer_session_{int(time.time())}"
         
         # Initialize OpenTelemetry components
@@ -234,6 +241,33 @@ class HoneyHiveTracer:
             baggage_items["project"] = self.project
             baggage_items["source"] = self.source
             
+            # Add experiment harness information to baggage if available
+            if config.experiment_id:
+                baggage_items["experiment_id"] = config.experiment_id
+                print(f"✓ Experiment ID injected: {config.experiment_id}")
+            
+            if config.experiment_name:
+                baggage_items["experiment_name"] = config.experiment_name
+                print(f"✓ Experiment name injected: {config.experiment_name}")
+            
+            if config.experiment_variant:
+                baggage_items["experiment_variant"] = config.experiment_variant
+                print(f"✓ Experiment variant injected: {config.experiment_variant}")
+            
+            if config.experiment_group:
+                baggage_items["experiment_group"] = config.experiment_group
+                print(f"✓ Experiment group injected: {config.experiment_group}")
+            
+            if config.experiment_metadata:
+                # Add experiment metadata as JSON string for baggage compatibility
+                try:
+                    baggage_items["experiment_metadata"] = json.dumps(config.experiment_metadata)
+                    print(f"✓ Experiment metadata injected: {len(config.experiment_metadata)} items")
+                except Exception:
+                    # Fallback to string representation
+                    baggage_items["experiment_metadata"] = str(config.experiment_metadata)
+                    print(f"✓ Experiment metadata injected (string format)")
+            
             # Set up baggage context
             ctx = context.get_current()
             for key, value in baggage_items.items():
@@ -300,6 +334,24 @@ class HoneyHiveTracer:
             span_attributes["honeyhive.session_id"] = session_id
             span_attributes["honeyhive.project"] = self.project
             span_attributes["honeyhive.source"] = self.source
+        
+        # Add experiment harness information to attributes if available
+        if config.experiment_id:
+            span_attributes["honeyhive.experiment_id"] = config.experiment_id
+        
+        if config.experiment_name:
+            span_attributes["honeyhive.experiment_name"] = config.experiment_name
+        
+        if config.experiment_variant:
+            span_attributes["honeyhive.experiment_variant"] = config.experiment_variant
+        
+        if config.experiment_group:
+            span_attributes["honeyhive.experiment_group"] = config.experiment_group
+        
+        if config.experiment_metadata:
+            # Add experiment metadata as individual attributes for better observability
+            for key, value in config.experiment_metadata.items():
+                span_attributes[f"honeyhive.experiment_metadata.{key}"] = str(value)
         
         # Add parent_id if provided
         if parent_id:

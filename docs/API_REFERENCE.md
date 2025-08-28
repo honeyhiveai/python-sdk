@@ -119,60 +119,168 @@ tracer.reset()
 
 ## Tracing Decorators
 
-### @trace
+### @dynamic_trace (Recommended)
 
-Decorator for tracing synchronous functions.
+**NEW**: Unified decorator that automatically detects whether a function is synchronous or asynchronous and applies the appropriate tracing wrapper.
 
 **Signature:**
 ```python
-@trace(name: Optional[str] = None, attributes: Optional[Dict[str, Any]] = None)
-def function_name():
-    pass
+@dynamic_trace(
+    event_type: Optional[str] = None,
+    event_name: Optional[str] = None,
+    inputs: Optional[Dict[str, Any]] = None,
+    outputs: Optional[Dict[str, Any]] = None,
+    metadata: Optional[Dict[str, Any]] = None,
+    config: Optional[Dict[str, Any]] = None,
+    metrics: Optional[Dict[str, Any]] = None,
+    feedback: Optional[Dict[str, Any]] = None,
+    error: Optional[Exception] = None,
+    event_id: Optional[str] = None,
+    **kwargs
+)
 ```
 
 **Parameters:**
-- `name`: Optional custom span name (defaults to function name)
-- `attributes`: Optional dictionary of span attributes
+- `event_type`: Type of traced event (e.g., 'model', 'tool', 'chain')
+- `event_name`: Name of the traced event
+- `inputs`: Input data for the event
+- `outputs`: Output data for the event
+- `metadata`: Additional metadata
+- `config`: Configuration data
+- `metrics`: Performance metrics
+- `feedback`: User feedback
+- `error`: Error information
+- `event_id`: Unique event identifier
+- `**kwargs`: Additional attributes to set on the span
 
 **Example:**
 ```python
-from honeyhive import trace
+from honeyhive.tracer.decorators import dynamic_trace
 
-@trace
+# Automatically detected as sync function
+@dynamic_trace(event_type="demo", event_name="sync_function")
+def sync_function(name: str) -> str:
+    return f"Hello, {name}!"
+
+# Automatically detected as async function
+@dynamic_trace(event_type="demo", event_name="async_function")
+async def async_function(name: str) -> str:
+    await asyncio.sleep(0.1)
+    return f"Hello, {name}!"
+
+# Both work with the same decorator!
+result1 = sync_function("Alice")
+result2 = await async_function("Bob")
+```
+
+**Benefits:**
+- Single decorator for both sync and async functions
+- Automatic function type detection
+- No need to remember which decorator to use
+- Consistent interface across all function types
+
+### @trace
+
+Decorator for tracing synchronous functions. (Legacy - consider using `@dynamic_trace` instead)
+
+**Signature:**
+```python
+@trace(
+    event_type: Optional[str] = None,
+    event_name: Optional[str] = None,
+    inputs: Optional[Dict[str, Any]] = None,
+    outputs: Optional[Dict[str, Any]] = None,
+    metadata: Optional[Dict[str, Any]] = None,
+    config: Optional[Dict[str, Any]] = None,
+    metrics: Optional[Dict[str, Any]] = None,
+    feedback: Optional[Dict[str, Any]] = None,
+    error: Optional[Exception] = None,
+    event_id: Optional[str] = None,
+    **kwargs
+)
+```
+
+**Parameters:**
+- `event_type`: Type of traced event (e.g., 'model', 'tool', 'chain')
+- `event_name`: Name of the traced event
+- `inputs`: Input data for the event
+- `outputs`: Output data for the event
+- `metadata`: Additional metadata
+- `config`: Configuration data
+- `metrics`: Performance metrics
+- `feedback`: User feedback
+- `error`: Error information
+- `event_id`: Unique event identifier
+- `**kwargs`: Additional attributes to set on the span
+
+**Example:**
+```python
+from honeyhive.tracer.decorators import trace
+
+@trace(event_type="demo", event_name="sync_function")
 def process_data(data):
     return data.upper()
 
-@trace(name="custom-operation", attributes={"operation_type": "data_processing"})
+@trace(
+    event_type="demo", 
+    event_name="custom-operation", 
+    inputs={"data": "input_data"},
+    metadata={"operation_type": "data_processing"}
+)
 def custom_function():
     return "result"
 ```
 
 ### @atrace
 
-Decorator for tracing asynchronous functions.
+Decorator for tracing asynchronous functions. (Legacy - consider using `@dynamic_trace` instead)
 
 **Signature:**
 ```python
-@atrace(name: Optional[str] = None, attributes: Optional[Dict[str, Any]] = None)
-async def async_function_name():
-    pass
+@atrace(
+    event_type: Optional[str] = None,
+    event_name: Optional[str] = None,
+    inputs: Optional[Dict[str, Any]] = None,
+    outputs: Optional[Dict[str, Any]] = None,
+    metadata: Optional[Dict[str, Any]] = None,
+    config: Optional[Dict[str, Any]] = None,
+    metrics: Optional[Dict[str, Any]] = None,
+    feedback: Optional[Dict[str, Any]] = None,
+    error: Optional[Exception] = None,
+    event_id: Optional[str] = None,
+    **kwargs
+)
 ```
 
 **Parameters:**
-- `name`: Optional custom span name (defaults to function name)
-- `attributes`: Optional dictionary of span attributes
+- `event_type`: Type of traced event (e.g., 'model', 'tool', 'chain')
+- `event_name`: Name of the traced event
+- `inputs`: Input data for the event
+- `outputs`: Output data for the event
+- `metadata`: Additional metadata
+- `config`: Configuration data
+- `metrics`: Performance metrics
+- `feedback`: User feedback
+- `error`: Error information
+- `event_id`: Unique event identifier
+- `**kwargs`: Additional attributes to set on the span
 
 **Example:**
 ```python
-from honeyhive import atrace
+from honeyhive.tracer.decorators import atrace
 
-@atrace
+@atrace(event_type="demo", event_name="async_function")
 async def fetch_data(url):
     async with httpx.AsyncClient() as client:
         response = await client.get(url)
         return response.json()
 
-@atrace(name="async-operation", attributes={"operation_type": "http_request"})
+@atrace(
+    event_type="demo", 
+    event_name="async-operation", 
+    inputs={"url": "target_url"},
+    metadata={"operation_type": "http_request"}
+)
 async def custom_async_function():
     return "async result"
 ```
@@ -358,6 +466,45 @@ client.close()
 | `HH_DISABLE_TRACING` | Disable tracing | `false` | No |
 | `HH_DISABLE_HTTP_TRACING` | Disable HTTP instrumentation | `false` | No |
 | `HH_OTLP_ENABLED` | Enable OTLP export | `true` | No |
+
+#### Experiment Harness Variables
+
+| Variable | Description | Default | Required |
+|----------|-------------|---------|----------|
+| `HH_EXPERIMENT_ID` | Unique experiment identifier | None | No |
+| `HH_EXPERIMENT_NAME` | Human-readable experiment name | None | No |
+| `HH_EXPERIMENT_VARIANT` | Experiment variant/treatment | None | No |
+| `HH_EXPERIMENT_GROUP` | Experiment group/cohort | None | No |
+| `HH_EXPERIMENT_METADATA` | JSON experiment metadata | None | No |
+
+**Note:** The SDK also supports standard experiment environment variables for compatibility with popular ML tools:
+
+| Variable | Description | Maps to |
+|----------|-------------|---------|
+| `EXPERIMENT_ID` | Standard experiment ID | `HH_EXPERIMENT_ID` |
+| `EXPERIMENT_NAME` | Standard experiment name | `HH_EXPERIMENT_NAME` |
+| `MLFLOW_EXPERIMENT_ID` | MLflow experiment ID | `HH_EXPERIMENT_ID` |
+| `MLFLOW_EXPERIMENT_NAME` | MLflow experiment name | `HH_EXPERIMENT_NAME` |
+| `WANDB_RUN_ID` | Weights & Biases run ID | `HH_EXPERIMENT_ID` |
+| `WANDB_PROJECT` | Weights & Biases project | `HH_EXPERIMENT_NAME` |
+| `COMET_EXPERIMENT_KEY` | Comet experiment key | `HH_EXPERIMENT_ID` |
+| `COMET_PROJECT_NAME` | Comet project name | `HH_EXPERIMENT_NAME` |
+
+#### HTTP Client Configuration
+
+| Variable | Description | Default | Required |
+|----------|-------------|---------|----------|
+| `HH_MAX_CONNECTIONS` | Maximum HTTP connections | `100` | No |
+| `HH_MAX_KEEPALIVE_CONNECTIONS` | Keepalive connections | `20` | No |
+| `HH_KEEPALIVE_EXPIRY` | Keepalive expiry (seconds) | `30.0` | No |
+| `HH_POOL_TIMEOUT` | Connection pool timeout | `30.0` | No |
+| `HH_RATE_LIMIT_CALLS` | Rate limit calls per window | `1000` | No |
+| `HH_RATE_LIMIT_WINDOW` | Rate limit window (seconds) | `60.0` | No |
+| `HH_HTTP_PROXY` | HTTP proxy URL | None | No |
+| `HH_HTTPS_PROXY` | HTTPS proxy URL | None | No |
+| `HH_NO_PROXY` | Proxy bypass list | None | No |
+| `HH_VERIFY_SSL` | SSL verification | `true` | No |
+| `HH_FOLLOW_REDIRECTS` | Follow HTTP redirects | `true` | No |
 
 ### Configuration Object
 

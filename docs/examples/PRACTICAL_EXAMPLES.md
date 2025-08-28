@@ -8,6 +8,7 @@ Real-world examples and use cases for the HoneyHive SDK.
 - [Data Processing Pipeline](#data-processing-pipeline)
 - [AI Service](#ai-service)
 - [Microservice](#microservice)
+- [Experiment Tracking](#experiment-tracking)
 
 ---
 
@@ -578,6 +579,207 @@ new_user = await user_service.create_user({
 
 # Batch get users
 batch_results = await user_service.batch_get_users(["123", "456", "789"])
+```
+
+---
+
+## Experiment Tracking
+
+### MLflow Integration
+
+Automatically track experiments with MLflow:
+
+```python
+import os
+from honeyhive import HoneyHiveTracer, trace
+import mlflow
+
+# MLflow automatically sets environment variables
+# MLFLOW_EXPERIMENT_ID and MLFLOW_EXPERIMENT_NAME
+
+# Initialize tracer (automatically detects MLflow variables)
+tracer = HoneyHiveTracer(
+    api_key="your-api-key",
+    project="ml-experiments",
+    source="research"
+)
+
+@trace(event_type="model_training", event_name="train_model")
+def train_model(model_config: dict):
+    """Train a machine learning model with experiment tracking."""
+    
+    # MLflow experiment context automatically available in all spans
+    with tracer.start_span("model_training") as span:
+        span.set_attribute("model.type", model_config["type"])
+        span.set_attribute("model.parameters", str(model_config["parameters"]))
+        
+        # Your training code here
+        model = create_model(model_config)
+        history = model.fit(
+            X_train, y_train,
+            validation_data=(X_val, y_val),
+            epochs=model_config["epochs"]
+        )
+        
+        # Log metrics
+        span.set_attribute("training.epochs", model_config["epochs"])
+        span.set_attribute("training.final_loss", float(history.history["loss"][-1]))
+        span.set_attribute("training.final_val_loss", float(history.history["val_loss"][-1]))
+        
+        return model
+
+# Usage
+mlflow.set_experiment("my_experiment")
+with mlflow.start_run():
+    # MLflow automatically sets MLFLOW_EXPERIMENT_ID and MLFLOW_EXPERIMENT_NAME
+    model = train_model({
+        "type": "neural_network",
+        "parameters": {"layers": [64, 32], "dropout": 0.2},
+        "epochs": 100
+    })
+```
+
+### A/B Testing with Experiment Variants
+
+Track different experiment variants:
+
+```python
+import os
+from honeyhive import HoneyHiveTracer, trace
+
+# Set experiment variant for A/B testing
+os.environ["HH_EXPERIMENT_ID"] = "ab_test_001"
+os.environ["HH_EXPERIMENT_NAME"] = "recommendation_algorithm"
+os.environ["HH_EXPERIMENT_VARIANT"] = "collaborative_filtering"
+os.environ["HH_EXPERIMENT_GROUP"] = "treatment"
+
+tracer = HoneyHiveTracer(
+    api_key="your-api-key",
+    project="recommendation_system",
+    source="production"
+)
+
+@trace(event_type="recommendation", event_name="generate_recommendations")
+def generate_recommendations(user_id: str, algorithm: str):
+    """Generate recommendations with experiment tracking."""
+    
+    with tracer.start_span("recommendation_generation") as span:
+        span.set_attribute("user.id", user_id)
+        span.set_attribute("algorithm.type", algorithm)
+        
+        # Your recommendation logic here
+        if algorithm == "collaborative_filtering":
+            recommendations = collaborative_filtering_recommend(user_id)
+        else:
+            recommendations = content_based_recommend(user_id)
+        
+        span.set_attribute("recommendations.count", len(recommendations))
+        span.set_attribute("recommendations.algorithm", algorithm)
+        
+        return recommendations
+
+# Usage
+recommendations = generate_recommendations("user_123", "collaborative_filtering")
+```
+
+### Hyperparameter Optimization
+
+Track hyperparameter experiments:
+
+```python
+import os
+from honeyhive import HoneyHiveTracer, trace
+import optuna
+
+# Set experiment metadata for hyperparameter optimization
+os.environ["HH_EXPERIMENT_ID"] = "hyperopt_001"
+os.environ["HH_EXPERIMENT_NAME"] = "transformer_optimization"
+os.environ["HH_EXPERIMENT_METADATA"] = '{"optimization_type": "hyperopt", "search_space": "transformer"}'
+
+tracer = HoneyHiveTracer(
+    api_key="your-api-key",
+    project="nlp_optimization",
+    source="research"
+)
+
+@trace(event_type="hyperparameter_optimization", event_name="optimize_model")
+def optimize_hyperparameters(trial: optuna.Trial):
+    """Optimize model hyperparameters with experiment tracking."""
+    
+    with tracer.start_span("hyperparameter_trial") as span:
+        # Suggest hyperparameters
+        learning_rate = trial.suggest_float("learning_rate", 1e-5, 1e-2, log=True)
+        batch_size = trial.suggest_categorical("batch_size", [16, 32, 64, 128])
+        num_layers = trial.suggest_int("num_layers", 2, 6)
+        
+        # Set trial attributes
+        span.set_attribute("trial.number", trial.number)
+        span.set_attribute("hyperparameters.learning_rate", learning_rate)
+        span.set_attribute("hyperparameters.batch_size", batch_size)
+        span.set_attribute("hyperparameters.num_layers", num_layers)
+        
+        # Train model with suggested hyperparameters
+        model = create_model(learning_rate=learning_rate, num_layers=num_layers)
+        history = train_model(model, batch_size=batch_size)
+        
+        # Log performance metrics
+        final_accuracy = history.history["accuracy"][-1]
+        span.set_attribute("performance.final_accuracy", final_accuracy)
+        
+        return final_accuracy
+
+# Usage
+study = optuna.create_study(direction="maximize")
+study.optimize(optimize_hyperparameters, n_trials=100)
+```
+
+### Multi-Environment Experiment Tracking
+
+Track experiments across different environments:
+
+```python
+import os
+from honeyhive import HoneyHiveTracer, trace
+
+def setup_experiment_tracking(environment: str, experiment_name: str):
+    """Setup experiment tracking for different environments."""
+    
+    # Common experiment variables
+    os.environ["HH_EXPERIMENT_NAME"] = experiment_name
+    
+    if environment == "development":
+        os.environ["HH_EXPERIMENT_ID"] = f"dev_{experiment_name}_001"
+        os.environ["HH_EXPERIMENT_GROUP"] = "development"
+        os.environ["HH_EXPERIMENT_METADATA"] = '{"environment": "dev", "debug": true}'
+        
+    elif environment == "staging":
+        os.environ["HH_EXPERIMENT_ID"] = f"staging_{experiment_name}_001"
+        os.environ["HH_EXPERIMENT_GROUP"] = "staging"
+        os.environ["HH_EXPERIMENT_METADATA"] = '{"environment": "staging", "debug": false}'
+        
+    elif environment == "production":
+        os.environ["HH_EXPERIMENT_ID"] = f"prod_{experiment_name}_001"
+        os.environ["HH_EXPERIMENT_GROUP"] = "production"
+        os.environ["HH_EXPERIMENT_METADATA"] = '{"environment": "prod", "debug": false}'
+    
+    # Initialize tracer
+    return HoneyHiveTracer(
+        api_key=os.getenv("HH_API_KEY"),
+        project=f"{environment}-experiments",
+        source=environment
+    )
+
+# Usage
+tracer = setup_experiment_tracking("staging", "model_evaluation")
+
+with tracer.start_span("model_evaluation") as span:
+    # All spans automatically include experiment context
+    # - honeyhive.experiment_id: "staging_model_evaluation_001"
+    # - honeyhive.experiment_name: "model_evaluation"
+    # - honeyhive.experiment_group: "staging"
+    # - honeyhive.experiment_metadata.environment: "staging"
+    # - honeyhive.experiment_metadata.debug: "false"
+    pass
 ```
 
 ---

@@ -140,6 +140,36 @@ class HoneyHiveSpanProcessor(SpanProcessor):
                 if parent_id:
                     attributes_to_set["honeyhive.parent_id"] = parent_id
                 
+                # Add experiment harness information from configuration
+                try:
+                    from honeyhive.utils.config import config
+                    
+                    if config.experiment_id:
+                        attributes_to_set["honeyhive.experiment_id"] = config.experiment_id
+                        print(f"   ✅ Added experiment ID: {config.experiment_id}")
+                    
+                    if config.experiment_name:
+                        attributes_to_set["honeyhive.experiment_name"] = config.experiment_name
+                        print(f"   ✅ Added experiment name: {config.experiment_name}")
+                    
+                    if config.experiment_variant:
+                        attributes_to_set["honeyhive.experiment_variant"] = config.experiment_variant
+                        print(f"   ✅ Added experiment variant: {config.experiment_variant}")
+                    
+                    if config.experiment_group:
+                        attributes_to_set["honeyhive.experiment_group"] = config.experiment_group
+                        print(f"   ✅ Added experiment group: {config.experiment_group}")
+                    
+                    if config.experiment_metadata:
+                        # Add experiment metadata as individual attributes for better observability
+                        for key, value in config.experiment_metadata.items():
+                            attr_key = f"honeyhive.experiment_metadata.{key}"
+                            attributes_to_set[attr_key] = str(value)
+                        print(f"   ✅ Added experiment metadata: {len(config.experiment_metadata)} items")
+                        
+                except Exception as e:
+                    print(f"   ⚠️  Error adding experiment attributes: {e}")
+                
                 # Set traceloop.association.properties.* attributes for backend compatibility
                 # BUT avoid duplicates with what's already set from association_properties
                 attributes_to_set["traceloop.association.properties.session_id"] = session_id
@@ -153,6 +183,36 @@ class HoneyHiveSpanProcessor(SpanProcessor):
             else:
                 # No session_id, but we might have association_properties
                 print(f"   ℹ️  No session_id in baggage, only processing association_properties")
+                
+                # Even without session_id, we can still add experiment attributes
+                try:
+                    from honeyhive.utils.config import config
+                    
+                    if config.experiment_id:
+                        attributes_to_set["honeyhive.experiment_id"] = config.experiment_id
+                        print(f"   ✅ Added experiment ID (no session): {config.experiment_id}")
+                    
+                    if config.experiment_name:
+                        attributes_to_set["honeyhive.experiment_name"] = config.experiment_name
+                        print(f"   ✅ Added experiment name (no session): {config.experiment_name}")
+                    
+                    if config.experiment_variant:
+                        attributes_to_set["honeyhive.experiment_variant"] = config.experiment_variant
+                        print(f"   ✅ Added experiment variant (no session): {config.experiment_variant}")
+                    
+                    if config.experiment_group:
+                        attributes_to_set["honeyhive.experiment_group"] = config.experiment_group
+                        print(f"   ✅ Added experiment group (no session): {config.experiment_group}")
+                    
+                    if config.experiment_metadata:
+                        # Add experiment metadata as individual attributes for better observability
+                        for key, value in config.experiment_metadata.items():
+                            attr_key = f"honeyhive.experiment_metadata.{key}"
+                            attributes_to_set[attr_key] = str(value)
+                        print(f"   ✅ Added experiment metadata (no session): {len(config.experiment_metadata)} items")
+                        
+                except Exception as e:
+                    print(f"   ⚠️  Error adding experiment attributes (no session): {e}")
             
             print(f"   📝 Final attributes to set: {attributes_to_set}")
             

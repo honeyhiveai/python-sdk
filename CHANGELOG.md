@@ -12,7 +12,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - OpenTelemetry integration with custom span processor and exporter
 - Session management with start and retrieve operations
 - Event creation and batch operations
-- Tracing decorators for sync and async functions
+- **NEW**: Dynamic trace decorator (`@dynamic_trace`) for unified sync/async function tracing
+- Tracing decorators for sync and async functions (`@trace`, `@atrace`)
 - HTTP instrumentation for automatic request tracing
 - Evaluation tools with built-in metrics
 - CLI interface for common operations
@@ -27,7 +28,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Features
 - **API Client**: Full-featured HTTP client with retry support
-- **Tracing**: OpenTelemetry-based tracing with automatic span creation
+- **Tracing**: OpenTelemetry-based tracing with automatic span creation and unified decorators
 - **Sessions**: Track and manage LLM sessions with rich metadata
 - **Events**: Create and manage events with batch support
 - **Evaluation**: Built-in evaluation metrics and scoring functions

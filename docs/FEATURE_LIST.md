@@ -16,14 +16,22 @@
 - **Context Propagation**: Automatic context propagation across operations
 - **Baggage Support**: Custom metadata propagation
 - **HTTP Instrumentation**: Automatic HTTP request tracing
-- **Decorators**: `@trace`, `@atrace`, `@trace_class` decorators
+- **Decorators**: 
+  - `@dynamic_trace` - **NEW**: Unified decorator for both sync and async functions
+  - `@trace` - Legacy decorator for synchronous functions
+  - `@atrace` - Legacy decorator for asynchronous functions
+  - `@trace_class` - Class-level tracing decorator
 - **Context Managers**: Span context management
+- **Experiment Tracking**: Automatic experiment context injection into all spans
+- **Span Enrichment**: Automatic addition of experiment ID, name, variant, group, and metadata
 
 ### Configuration Management
 - **Environment Variables**: Support for `HH_*` environment variables
 - **Dynamic Reloading**: Runtime configuration updates
 - **Project Management**: Multi-project support
 - **Source Tracking**: Environment and source identification
+- **HTTP Client Configuration**: Configurable connection pooling, rate limiting, and proxy settings
+- **Experiment Harness Integration**: Support for MLflow, Weights & Biases, Comet, and standard experiment variables
 
 ## Provider Integrations
 
@@ -31,6 +39,14 @@
 - **OpenAI**: OpenAI API integration with automatic tracing
 - **Anthropic**: Anthropic Claude API integration with tracing
 - **Custom Providers**: Framework for wrapping any LLM provider
+
+### Experiment Harness Integration
+- **MLflow**: Automatic detection of `MLFLOW_EXPERIMENT_ID` and `MLFLOW_EXPERIMENT_NAME`
+- **Weights & Biases**: Automatic detection of `WANDB_RUN_ID` and `WANDB_PROJECT`
+- **Comet**: Automatic detection of `COMET_EXPERIMENT_KEY` and `COMET_PROJECT_NAME`
+- **Standard Variables**: Support for `EXPERIMENT_ID`, `EXPERIMENT_NAME`, `EXPERIMENT_VARIANT`, `EXPERIMENT_GROUP`
+- **Metadata Parsing**: Support for JSON, key-value, and comma-separated metadata formats
+- **Automatic Span Enrichment**: All spans automatically include experiment context
 
 ### Framework Integrations
 - **FastAPI**: Middleware and utilities for FastAPI applications

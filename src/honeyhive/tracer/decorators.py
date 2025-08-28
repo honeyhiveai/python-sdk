@@ -89,6 +89,30 @@ def _create_sync_wrapper(func: Callable[..., T], span_name: str, event_type: Opt
                     if feedback:
                         _set_span_attributes(span, "honeyhive_feedback", feedback)
                     
+                    # Add experiment harness information if available
+                    try:
+                        from honeyhive.utils.config import config as global_config
+                        
+                        if global_config.experiment_id:
+                            span.set_attribute("honeyhive_experiment_id", global_config.experiment_id)
+                        
+                        if global_config.experiment_name:
+                            span.set_attribute("honeyhive_experiment_name", global_config.experiment_name)
+                        
+                        if global_config.experiment_variant:
+                            span.set_attribute("honeyhive_experiment_variant", global_config.experiment_variant)
+                        
+                        if global_config.experiment_group:
+                            span.set_attribute("honeyhive_experiment_group", global_config.experiment_group)
+                        
+                        if global_config.experiment_metadata:
+                            # Add experiment metadata as individual attributes
+                            for key, value in global_config.experiment_metadata.items():
+                                span.set_attribute(f"honeyhive_experiment_metadata_{key}", str(value))
+                    except Exception:
+                        # Silently handle any exceptions when setting experiment attributes
+                        pass
+                    
                     # Set additional kwargs as attributes
                     for key, value in kwargs.items():
                         span.set_attribute(f"honeyhive_{key}", value)
@@ -194,6 +218,30 @@ def _create_async_wrapper(func: Callable[..., Any], span_name: str, event_type: 
                     # Set feedback if provided
                     if feedback:
                         _set_span_attributes(span, "honeyhive_feedback", feedback)
+                    
+                    # Add experiment harness information if available
+                    try:
+                        from honeyhive.utils.config import config as global_config
+                        
+                        if global_config.experiment_id:
+                            span.set_attribute("honeyhive_experiment_id", global_config.experiment_id)
+                        
+                        if global_config.experiment_name:
+                            span.set_attribute("honeyhive_experiment_name", global_config.experiment_name)
+                        
+                        if global_config.experiment_variant:
+                            span.set_attribute("honeyhive_experiment_variant", global_config.experiment_variant)
+                        
+                        if global_config.experiment_group:
+                            span.set_attribute("honeyhive_experiment_group", global_config.experiment_group)
+                        
+                        if global_config.experiment_metadata:
+                            # Add experiment metadata as individual attributes
+                            for key, value in global_config.experiment_metadata.items():
+                                span.set_attribute(f"honeyhive_experiment_metadata_{key}", str(value))
+                    except Exception:
+                        # Silently handle any exceptions when setting experiment attributes
+                        pass
                     
                     # Set additional kwargs as attributes
                     for key, value in kwargs.items():
@@ -517,6 +565,30 @@ def enrich_span(
                 # Set additional kwargs as attributes
                 for key, value in kwargs.items():
                     current_span.set_attribute(f"honeyhive_{key}", value)
+                
+                # Add experiment harness information if available
+                try:
+                    from honeyhive.utils.config import config as global_config
+                    
+                    if global_config.experiment_id:
+                        current_span.set_attribute("honeyhive_experiment_id", global_config.experiment_id)
+                    
+                    if global_config.experiment_name:
+                        current_span.set_attribute("honeyhive_experiment_name", global_config.experiment_name)
+                    
+                    if global_config.experiment_variant:
+                        current_span.set_attribute("honeyhive_experiment_variant", global_config.experiment_variant)
+                    
+                    if global_config.experiment_group:
+                        current_span.set_attribute("honeyhive_experiment_group", global_config.experiment_group)
+                    
+                    if global_config.experiment_metadata:
+                        # Add experiment metadata as individual attributes
+                        for key, value in global_config.experiment_metadata.items():
+                            current_span.set_attribute(f"honeyhive_experiment_metadata_{key}", str(value))
+                except Exception:
+                    # Silently handle any exceptions when setting experiment attributes
+                    pass
             
             yield current_span
             

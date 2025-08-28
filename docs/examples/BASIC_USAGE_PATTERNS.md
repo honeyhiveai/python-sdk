@@ -507,6 +507,95 @@ class DynamicTracer:
     def __init__(self):
         self.tracer = HoneyHiveTracer()
         self.config = get_config()
+```
+
+### 4. Experiment Environment Variables
+
+Configure experiment tracking using environment variables:
+
+```python
+import os
+from honeyhive import HoneyHiveTracer
+
+# Set experiment environment variables
+os.environ["HH_EXPERIMENT_ID"] = "exp_12345"
+os.environ["HH_EXPERIMENT_NAME"] = "model_comparison"
+os.environ["HH_EXPERIMENT_VARIANT"] = "baseline"
+os.environ["HH_EXPERIMENT_GROUP"] = "control"
+os.environ["HH_EXPERIMENT_METADATA"] = '{"model_type": "gpt-4", "temperature": 0.7}'
+
+# Initialize tracer (automatically picks up experiment variables)
+tracer = HoneyHiveTracer(
+    api_key="your-api-key",
+    project="my-project",
+    source="production"
+)
+
+# All spans automatically include experiment attributes
+with tracer.start_span("model_inference") as span:
+    # span.attributes automatically includes:
+    # - honeyhive.experiment_id: "exp_12345"
+    # - honeyhive.experiment_name: "model_comparison"
+    # - honeyhive.experiment_variant: "baseline"
+    # - honeyhive.experiment_group: "control"
+    # - honeyhive.experiment_metadata.model_type: "gpt-4"
+    # - honeyhive.experiment_metadata.temperature: "0.7"
+    pass
+```
+
+### 5. MLflow Integration
+
+Automatically detect MLflow experiment variables:
+
+```python
+import os
+from honeyhive import HoneyHiveTracer
+
+# MLflow automatically sets these environment variables
+# os.environ["MLFLOW_EXPERIMENT_ID"] = "mlflow_exp_123"
+# os.environ["MLFLOW_EXPERIMENT_NAME"] = "my_mlflow_experiment"
+
+# Initialize tracer (automatically detects MLflow variables)
+tracer = HoneyHiveTracer(
+    api_key="your-api-key",
+    project="my-project",
+    source="production"
+)
+
+# Experiment context automatically available in all spans
+with tracer.start_span("mlflow_training") as span:
+    # span.attributes automatically includes:
+    # - honeyhive.experiment_id: "mlflow_exp_123"
+    # - honeyhive.experiment_name: "my_mlflow_experiment"
+    pass
+```
+
+### 6. Weights & Biases Integration
+
+Automatically detect Weights & Biases environment variables:
+
+```python
+import os
+from honeyhive import HoneyHiveTracer
+
+# Weights & Biases automatically sets these environment variables
+# os.environ["WANDB_RUN_ID"] = "wandb_run_456"
+# os.environ["WANDB_PROJECT"] = "my_wandb_project"
+
+# Initialize tracer (automatically detects W&B variables)
+tracer = HoneyHiveTracer(
+    api_key="your-api-key",
+    project="my-project",
+    source="production"
+)
+
+# Experiment context automatically available in all spans
+with tracer.start_span("wandb_training") as span:
+    # span.attributes automatically includes:
+    # - honeyhive.experiment_id: "wandb_run_456"
+    # - honeyhive.experiment_name: "my_wandb_project"
+    pass
+```
     
     def update_project(self, new_project):
         """Update the project dynamically."""

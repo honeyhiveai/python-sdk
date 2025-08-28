@@ -6,10 +6,11 @@ A comprehensive Python SDK for HoneyHive, providing LLM observability, evaluatio
 
 - **OpenTelemetry Integration** - Full OTEL compliance with custom span processor and exporter
 - **Automatic Session Management** - Seamless session creation and management
-- **Decorator Support** - Easy-to-use `@trace`, `@atrace`, and `@trace_class` decorators
+- **Decorator Support** - Easy-to-use `@dynamic_trace` (unified sync/async), `@trace`, `@atrace`, and `@trace_class` decorators
 - **Context Managers** - `start_span` and `enrich_span` for manual span management
 - **HTTP Instrumentation** - Automatic HTTP request tracing
 - **Baggage Support** - Context propagation across service boundaries
+- **Experiment Harness Integration** - Automatic experiment tracking with MLflow, Weights & Biases, and Comet support
 - **Real-time API Integration** - Direct integration with HoneyHive backend services
 - **Comprehensive Testing** - Full test suite with 203 passing tests
 
@@ -32,7 +33,8 @@ pip install -e .
 ### Basic Usage
 
 ```python
-from honeyhive import HoneyHiveTracer, trace
+from honeyhive import HoneyHiveTracer
+from honeyhive.tracer.decorators import dynamic_trace
 
 # Initialize tracer (automatically creates session)
 tracer = HoneyHiveTracer(
@@ -41,10 +43,15 @@ tracer = HoneyHiveTracer(
     source="production"
 )
 
-# Use decorator for automatic tracing
-@trace
+# Use unified decorator for automatic tracing (works with both sync and async)
+@dynamic_trace(event_type="demo", event_name="my_function")
 def my_function():
     return "Hello, World!"
+
+@dynamic_trace(event_type="demo", event_name="my_async_function")
+async def my_async_function():
+    await asyncio.sleep(0.1)
+    return "Hello, Async World!"
 
 # Manual span management
 with tracer.start_span("custom-operation"):
@@ -130,6 +137,32 @@ src/honeyhive/
 | `HH_DISABLE_TRACING` | Disable tracing | `false` |
 | `HH_DISABLE_HTTP_TRACING` | Disable HTTP instrumentation | `false` |
 | `HH_OTLP_ENABLED` | Enable OTLP export | `true` |
+
+#### Experiment Harness Variables
+
+| Variable | Description | Default |
+|----------|-------------|---------|
+| `HH_EXPERIMENT_ID` | Unique experiment identifier | `None` |
+| `HH_EXPERIMENT_NAME` | Human-readable experiment name | `None` |
+| `HH_EXPERIMENT_VARIANT` | Experiment variant/treatment | `None` |
+| `HH_EXPERIMENT_GROUP` | Experiment group/cohort | `None` |
+| `HH_EXPERIMENT_METADATA` | JSON experiment metadata | `None` |
+
+#### HTTP Client Configuration
+
+| Variable | Description | Default |
+|----------|-------------|---------|
+| `HH_MAX_CONNECTIONS` | Maximum HTTP connections | `100` |
+| `HH_MAX_KEEPALIVE_CONNECTIONS` | Keepalive connections | `20` |
+| `HH_KEEPALIVE_EXPIRY` | Keepalive expiry (seconds) | `30.0` |
+| `HH_POOL_TIMEOUT` | Connection pool timeout | `30.0` |
+| `HH_RATE_LIMIT_CALLS` | Rate limit calls per window | `1000` |
+| `HH_RATE_LIMIT_WINDOW` | Rate limit window (seconds) | `60.0` |
+| `HH_HTTP_PROXY` | HTTP proxy URL | `None` |
+| `HH_HTTPS_PROXY` | HTTPS proxy URL | `None` |
+| `HH_NO_PROXY` | Proxy bypass list | `None` |
+| `HH_VERIFY_SSL` | SSL verification | `true` |
+| `HH_FOLLOW_REDIRECTS` | Follow HTTP redirects | `true` |
 
 ### Configuration File
 
@@ -220,6 +253,88 @@ with tracer.enrich_span("data-processing", {"batch_size": 1000}):
     pass
 ```
 
+## 🧪 Experiment Harness Integration
+
+### Automatic Experiment Tracking
+
+The SDK automatically tracks experiments and adds experiment context to all spans:
+
+```python
+# Set experiment environment variables
+import os
+os.environ['HH_EXPERIMENT_ID'] = 'exp_12345'
+os.environ['HH_EXPERIMENT_NAME'] = 'model_comparison'
+os.environ['HH_EXPERIMENT_VARIANT'] = 'baseline'
+os.environ['HH_EXPERIMENT_GROUP'] = 'control'
+os.environ['HH_EXPERIMENT_METADATA'] = '{"model_type": "gpt-4", "temperature": 0.7}'
+
+# All spans automatically include experiment attributes
+with tracer.start_span("model_inference") as span:
+    # span.attributes automatically includes:
+    # - honeyhive.experiment_id: "exp_12345"
+    # - honeyhive.experiment_name: "model_comparison"
+    # - honeyhive.experiment_variant: "baseline"
+    # - honeyhive.experiment_group: "control"
+    # - honeyhive.experiment_metadata.model_type: "gpt-4"
+    # - honeyhive.experiment_metadata.temperature: "0.7"
+    pass
+```
+
+### MLflow Integration
+
+```bash
+# MLflow environment variables are automatically detected
+export MLFLOW_EXPERIMENT_ID="mlflow_exp_123"
+export MLFLOW_EXPERIMENT_NAME="my_mlflow_experiment"
+
+# These become honeyhive.experiment_id and honeyhive.experiment_name
+```
+
+### Weights & Biases Integration
+
+```bash
+# Weights & Biases environment variables are automatically detected
+export WANDB_RUN_ID="wandb_run_456"
+export WANDB_PROJECT="my_wandb_project"
+
+# These become honeyhive.experiment_id and honeyhive.experiment_name
+```
+
+### Comet Integration
+
+```bash
+# Comet environment variables are automatically detected
+export COMET_EXPERIMENT_KEY="comet_exp_789"
+export COMET_PROJECT_NAME="my_comet_project"
+
+# These become honeyhive.experiment_id and honeyhive.experiment_name
+```
+
+### Standard Experiment Variables
+
+```bash
+# Standard experiment environment variables
+export EXPERIMENT_ID="std_exp_101"
+export EXPERIMENT_NAME="standard_experiment"
+export EXPERIMENT_VARIANT="treatment_a"
+export EXPERIMENT_GROUP="test_group"
+```
+
+### Metadata Formats
+
+The SDK supports multiple metadata formats:
+
+```bash
+# JSON format (recommended)
+export HH_EXPERIMENT_METADATA='{"model_type": "gpt-4", "temperature": 0.7, "max_tokens": 1000}'
+
+# Key-value format
+export HH_EXPERIMENT_METADATA="model_type=gpt-4,temperature=0.7,max_tokens=1000"
+
+# Comma-separated tags
+export HH_EXPERIMENT_METADATA="gpt-4,high-temperature,long-context"
+```
+
 ## 🌐 HTTP Instrumentation
 
 ### Automatic HTTP Tracing
@@ -255,6 +370,16 @@ export HH_DISABLE_HTTP_TRACING=true
 | `honeyhive_inputs` | Input data | `{"prompt": "Hello"}` |
 | `honeyhive_outputs` | Output data | `{"response": "Hi!"}` |
 | `honeyhive_error` | Error information | `"Connection failed"` |
+
+### Experiment Attributes
+
+| Attribute | Description | Example |
+|-----------|-------------|---------|
+| `honeyhive.experiment_id` | Experiment identifier | `"exp_12345"` |
+| `honeyhive.experiment_name` | Experiment name | `"model_comparison"` |
+| `honeyhive.experiment_variant` | Experiment variant | `"baseline"` |
+| `honeyhive.experiment_group` | Experiment group | `"control"` |
+| `honeyhive.experiment_metadata.{key}` | Metadata items | `"honeyhive.experiment_metadata.model_type": "gpt-4"` |
 
 ### Legacy Compatibility
 

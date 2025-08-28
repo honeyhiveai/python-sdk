@@ -101,9 +101,15 @@ class HoneyHive:
         self.retry_config = retry_config or RetryConfig()
         self.test_mode = test_mode or config.test_mode
         
-        # Initialize rate limiter and connection pool
-        self.rate_limiter = RateLimiter(rate_limit_calls, rate_limit_window)
-        self.connection_pool = ConnectionPool(max_connections, max_keepalive)
+        # Initialize rate limiter and connection pool with configuration values
+        self.rate_limiter = RateLimiter(
+            rate_limit_calls or config.rate_limit_calls, 
+            rate_limit_window or config.rate_limit_window
+        )
+        self.connection_pool = ConnectionPool(
+            max_connections or config.max_connections, 
+            max_keepalive or config.max_keepalive_connections
+        )
         
         # Initialize logger
         self.logger = get_logger("honeyhive.client")

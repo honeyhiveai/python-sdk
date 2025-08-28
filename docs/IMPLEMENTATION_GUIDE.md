@@ -463,7 +463,7 @@ def _handle_api_error(self, error, operation_name):
 
 ### 4. Configuration Management
 
-Environment-based configuration with fallback values.
+Environment-based configuration with fallback values and experiment harness integration.
 
 #### Configuration Loading
 
@@ -490,10 +490,179 @@ class Config:
         self.disable_tracing = os.getenv("HH_DISABLE_TRACING", "false").lower() == "true"
         self.disable_http_tracing = os.getenv("HH_DISABLE_HTTP_TRACING", "false").lower() == "true"
         self.otlp_enabled = os.getenv("HH_OTLP_ENABLED", "true").lower() != "false"
+        
+        # 4. HTTP client configuration
+        self._load_http_client_config()
+        
+        # 5. Experiment harness configuration
+        self._load_experiment_config()
     
     def reload(self):
         """Reload configuration from environment."""
         self._load_from_env()
+    
+    def _load_http_client_config(self):
+        """Load HTTP client configuration from environment variables."""
+        # Support both HoneyHive-specific and standard HTTP client environment variables
+        max_connections_str = os.getenv("HH_MAX_CONNECTIONS") or os.getenv("HTTP_MAX_CONNECTIONS")
+        if max_connections_str:
+            try:
+                self.max_connections = int(max_connections_str)
+            except (ValueError, TypeError):
+                pass
+        
+        # Additional HTTP client settings...
+        self.http_proxy = (
+            os.getenv("HH_HTTP_PROXY") or
+            os.getenv("HTTP_PROXY") or
+            os.getenv("http_proxy")
+        )
+        
+        self.https_proxy = (
+            os.getenv("HH_HTTPS_PROXY") or
+            os.getenv("HTTPS_PROXY") or
+            os.getenv("https_proxy")
+        )
+    
+    def _load_experiment_config(self):
+        """Load experiment harness configuration from environment variables."""
+        # Support both HoneyHive-specific and standard experiment harness environment variables
+        self.experiment_id = (
+            os.getenv("HH_EXPERIMENT_ID") or
+            os.getenv("EXPERIMENT_ID") or
+            os.getenv("MLFLOW_EXPERIMENT_ID") or
+            os.getenv("WANDB_RUN_ID") or
+            os.getenv("COMET_EXPERIMENT_KEY")
+        )
+        
+        self.experiment_name = (
+            os.getenv("HH_EXPERIMENT_NAME") or
+            os.getenv("EXPERIMENT_NAME") or
+            os.getenv("MLFLOW_EXPERIMENT_NAME") or
+            os.getenv("WANDB_PROJECT") or
+            os.getenv("COMET_PROJECT_NAME")
+        )
+        
+        # Parse experiment metadata if provided
+        experiment_metadata_str = (
+            os.getenv("HH_EXPERIMENT_METADATA") or
+            os.getenv("EXPERIMENT_METADATA") or
+            os.getenv("MLFLOW_TAGS") or
+            os.getenv("WANDB_TAGS") or
+            os.getenv("COMET_TAGS")
+        )
+        
+        if experiment_metadata_str:
+            try:
+                # Handle different formats: JSON, comma-separated, key=value
+                if experiment_metadata_str.startswith('{') and experiment_metadata_str.endswith('}'):
+                    # JSON format
+                    self.experiment_metadata = json.loads(experiment_metadata_str)
+                elif '=' in experiment_metadata_str:
+                    # key=value format
+                    metadata = {}
+                    for item in experiment_metadata_str.split(','):
+                        if '=' in item:
+                            key, value = item.split('=', 1)
+                            metadata[key.strip()] = value.strip()
+                    self.experiment_metadata = metadata
+                else:
+                    # Comma-separated format
+                    self.experiment_metadata = {
+                        "tags": [tag.strip() for tag in experiment_metadata_str.split(',')]
+                    }
+            except (json.JSONDecodeError, Exception):
+                # Fallback to simple string format
+                self.experiment_metadata = {"raw": experiment_metadata_str}
+
+### 5. Experiment Tracing
+
+Automatic experiment context injection into all spans for comprehensive experiment tracking.
+
+#### Experiment Context Injection
+
+```python
+def _setup_baggage_context(self):
+    """Set up baggage with session context and experiment information."""
+    baggage_items = {}
+    
+    # Add experiment harness information to baggage if available
+    if config.experiment_id:
+        baggage_items["experiment_id"] = config.experiment_id
+    
+    if config.experiment_name:
+        baggage_items["experiment_name"] = config.experiment_name
+    
+    if config.experiment_variant:
+        baggage_items["experiment_variant"] = config.experiment_variant
+    
+    if config.experiment_group:
+        baggage_items["experiment_group"] = config.experiment_group
+    
+    if config.experiment_metadata:
+        # Add experiment metadata as JSON string for baggage compatibility
+        try:
+            baggage_items["experiment_metadata"] = json.dumps(config.experiment_metadata)
+        except Exception:
+            baggage_items["experiment_metadata"] = str(config.experiment_metadata)
+```
+
+#### Span Attribute Enrichment
+
+```python
+def start_span(self, name, **kwargs):
+    """Start a new span with experiment attributes."""
+    span_attributes = kwargs.get('attributes', {})
+    
+    # Add experiment harness information to attributes if available
+    if config.experiment_id:
+        span_attributes["honeyhive.experiment_id"] = config.experiment_id
+    
+    if config.experiment_name:
+        span_attributes["honeyhive.experiment_name"] = config.experiment_name
+    
+    if config.experiment_variant:
+        span_attributes["honeyhive.experiment_variant"] = config.experiment_variant
+    
+    if config.experiment_group:
+        span_attributes["honeyhive.experiment_group"] = config.experiment_group
+    
+    if config.experiment_metadata:
+        # Add experiment metadata as individual attributes
+        for key, value in config.experiment_metadata.items():
+            span_attributes[f"honeyhive.experiment_metadata.{key}"] = str(value)
+```
+
+#### Span Processor Integration
+
+The `HoneyHiveSpanProcessor` automatically adds experiment attributes to all spans:
+
+```python
+def on_start(self, span, parent_context=None):
+    """Add experiment attributes to spans."""
+    try:
+        from honeyhive.utils.config import config
+        
+        # Add experiment attributes even without session context
+        if config.experiment_id:
+            span.set_attribute("honeyhive.experiment_id", config.experiment_id)
+        
+        if config.experiment_name:
+            span.set_attribute("honeyhive.experiment_name", config.experiment_name)
+        
+        if config.experiment_variant:
+            span.set_attribute("honeyhive.experiment_variant", config.experiment_variant)
+        
+        if config.experiment_group:
+            span.set_attribute("honeyhive.experiment_group", config.experiment_group)
+        
+        if config.experiment_metadata:
+            # Add experiment metadata as individual attributes
+            for key, value in config.experiment_metadata.items():
+                span.set_attribute(f"honeyhive.experiment_metadata.{key}", str(value))
+    except Exception:
+        # Silently handle any exceptions when setting experiment attributes
+        pass
 ```
 
 ---

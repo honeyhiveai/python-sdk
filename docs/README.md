@@ -7,6 +7,7 @@ Welcome to the HoneyHive SDK documentation. This directory contains comprehensiv
 ### Getting Started
 - **[README.md](../README.md)** - Main project overview and quick start guide
 - **[API Reference](API_REFERENCE.md)** - Complete API reference with examples
+- **[Dynamic Trace Decorator](DYNAMIC_TRACE_DECORATOR.md)** - **NEW**: Unified tracing decorator documentation
 - **[Implementation Guide](IMPLEMENTATION_GUIDE.md)** - Technical implementation details
 - **[OpenInference Integration](OPENINFERENCE_INTEGRATION.md)** - Using SDK with OpenInference instrumentors
 
