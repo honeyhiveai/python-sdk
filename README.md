@@ -133,9 +133,11 @@ src/honeyhive/
 | `HH_API_URL` | API base URL | `https://api.honeyhive.ai` |
 | `HH_PROJECT` | Project name | `default` |
 | `HH_SOURCE` | Source environment | `production` |
+| `HH_DISABLE_TRACING` | Disable tracing completely | `false` |
+| `HH_DISABLE_HTTP_TRACING` | Disable HTTP request tracing | `false` |
 | `HH_TEST_MODE` | Enable test mode | `false` |
-| `HH_DISABLE_TRACING` | Disable tracing | `false` |
-| `HH_DISABLE_HTTP_TRACING` | Disable HTTP instrumentation | `false` |
+| `HH_DEBUG_MODE` | Enable debug mode | `false` |
+| `HH_VERBOSE` | Enable verbose API logging | `false` |
 | `HH_OTLP_ENABLED` | Enable OTLP export | `true` |
 
 #### Experiment Harness Variables
@@ -173,6 +175,76 @@ config = get_config()
 print(f"API Key: {config.api_key}")
 print(f"Project: {config.project}")
 print(f"Source: {config.source}")
+```
+
+## 🚀 API Client Usage
+
+### Basic API Client
+
+The HoneyHive SDK provides a comprehensive API client for direct integration with HoneyHive services:
+
+```python
+from honeyhive import HoneyHive
+
+# Initialize the API client
+client = HoneyHive(
+    api_key="your-api-key",
+    project="your-project",
+    source="production"
+)
+
+# Use various API endpoints
+sessions = client.sessions
+events = client.events
+datasets = client.datasets
+metrics = client.metrics
+```
+
+### Verbose Debugging
+
+Enable detailed API debugging to troubleshoot issues and monitor API calls:
+
+```python
+from honeyhive import HoneyHive
+
+# Enable verbose logging for debugging
+client = HoneyHive(
+    api_key="your-api-key",
+    verbose=True  # Enables detailed request/response logging
+)
+
+# All API calls will now log:
+# - Request details (method, URL, headers, body)
+# - Response details (status code, headers, timing)
+# - Error details (error type, message, context)
+# - Retry attempts and delays
+```
+
+**Environment Variable Alternative:**
+```bash
+export HH_VERBOSE=true
+export HH_DEBUG_MODE=true
+
+# Then initialize normally
+client = HoneyHive()  # Automatically uses verbose mode
+```
+
+**Verbose Logging Output:**
+```json
+{
+  "timestamp": "2024-01-15T10:30:00Z",
+  "level": "INFO",
+  "logger": "honeyhive.client",
+  "message": "API Request Details",
+  "honeyhive_data": {
+    "method": "POST",
+    "url": "https://api.honeyhive.ai/api/v1/sessions",
+    "params": null,
+    "json": {"project": "my-project", "session_name": "test"},
+    "headers": {"Authorization": "Bearer ***", "Content-Type": "application/json"},
+    "timeout": 30.0
+  }
+}
 ```
 
 ## 🔍 Tracing Features

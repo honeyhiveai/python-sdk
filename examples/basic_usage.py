@@ -120,6 +120,40 @@ def tracing_example():
     print(f"Session enrichment successful: {success}")
 
 
+def verbose_example():
+    """Verbose logging example for debugging API calls."""
+    print("\n=== Verbose Logging Example ===")
+    
+    # Initialize client with verbose mode enabled
+    client = HoneyHive(
+        api_key="your-api-key",
+        verbose=True  # Enable verbose logging for API debugging
+    )
+    
+    print("Client initialized with verbose mode enabled.")
+    print("All API requests and responses will be logged with detailed information.")
+    
+    # Start a session (this will show detailed request/response logs)
+    session_request = SessionStartRequest(
+        project="Verbose Example Project",
+        session_name="Verbose Logging Session",
+        source="example",
+        inputs={"user_query": "Debug this API call"}
+    )
+    
+    try:
+        response = client.session.start_session(session_request)
+        session_id = response.session_id
+        print(f"Session started successfully: {session_id}")
+    except Exception as e:
+        print(f"Session creation failed: {e}")
+        print("Check the verbose logs above for detailed error information.")
+    
+    # Close client
+    client.close()
+    print("Verbose example completed. Check the logs above for detailed API information.")
+
+
 def main():
     """Run all examples."""
     # Synchronous example
@@ -130,6 +164,9 @@ def main():
     
     # Tracing example
     tracing_example()
+    
+    # Verbose example
+    verbose_example()
 
 
 if __name__ == "__main__":

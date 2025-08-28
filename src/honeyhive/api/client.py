@@ -77,7 +77,8 @@ class HoneyHive:
         rate_limit_window: float = 60.0,
         max_connections: int = 10,
         max_keepalive: int = 20,
-        test_mode: bool = False
+        test_mode: bool = False,
+        verbose: bool = False
     ):
         """Initialize the HoneyHive client.
         
@@ -91,6 +92,7 @@ class HoneyHive:
             max_connections: Maximum connections in pool
             max_keepalive: Maximum keepalive connections
             test_mode: Enable test mode
+            verbose: Enable verbose logging for API debugging
         """
         self.api_key = api_key or config.api_key
         if not self.api_key:
@@ -100,6 +102,7 @@ class HoneyHive:
         self.timeout = timeout or config.timeout
         self.retry_config = retry_config or RetryConfig()
         self.test_mode = test_mode or config.test_mode
+        self.verbose = verbose or config.verbose
         
         # Initialize rate limiter and connection pool with configuration values
         self.rate_limiter = RateLimiter(
@@ -112,7 +115,10 @@ class HoneyHive:
         )
         
         # Initialize logger
-        self.logger = get_logger("honeyhive.client")
+        if self.verbose:
+            self.logger = get_logger("honeyhive.client", level="DEBUG")
+        else:
+            self.logger = get_logger("honeyhive.client")
         
         # Lazy initialization of HTTP clients
         self._sync_client: Optional[httpx.Client] = None
@@ -131,7 +137,8 @@ class HoneyHive:
         
         self.logger.info("HoneyHive client initialized", honeyhive_data={
             "base_url": self.base_url,
-            "test_mode": self.test_mode
+            "test_mode": self.test_mode,
+            "verbose": self.verbose
         })
     
     @property
@@ -206,10 +213,29 @@ class HoneyHive:
             "json": json
         })
         
+        if self.verbose:
+            self.logger.info("API Request Details", honeyhive_data={
+                "method": method,
+                "url": url,
+                "params": params,
+                "json": json,
+                "headers": self.client_kwargs.get("headers", {}),
+                "timeout": self.timeout
+            })
+        
         try:
             response = self.sync_client.request(
                 method, url, params=params, json=json, **kwargs
             )
+            
+            if self.verbose:
+                self.logger.info("API Response Details", honeyhive_data={
+                    "method": method,
+                    "url": url,
+                    "status_code": response.status_code,
+                    "headers": dict(response.headers),
+                    "elapsed_time": response.elapsed.total_seconds() if hasattr(response, 'elapsed') else None
+                })
             
             if self.retry_config.should_retry(response):
                 return self._retry_request(method, path, params, json, **kwargs)
@@ -217,6 +243,16 @@ class HoneyHive:
             return response
             
         except Exception as e:
+            if self.verbose:
+                self.logger.error("API Request Failed", honeyhive_data={
+                    "method": method,
+                    "url": url,
+                    "error": str(e),
+                    "error_type": type(e).__name__,
+                    "params": params,
+                    "json": json
+                })
+            
             if self.retry_config.should_retry_exception(e):
                 return self._retry_request(method, path, params, json, **kwargs)
             raise
@@ -242,10 +278,29 @@ class HoneyHive:
             "json": json
         })
         
+        if self.verbose:
+            self.logger.info("API Request Details", honeyhive_data={
+                "method": method,
+                "url": url,
+                "params": params,
+                "json": json,
+                "headers": self.client_kwargs.get("headers", {}),
+                "timeout": self.timeout
+            })
+        
         try:
             response = await self.async_client.request(
                 method, url, params=params, json=json, **kwargs
             )
+            
+            if self.verbose:
+                self.logger.info("API Async Response Details", honeyhive_data={
+                    "method": method,
+                    "url": url,
+                    "status_code": response.status_code,
+                    "headers": dict(response.headers),
+                    "elapsed_time": response.elapsed.total_seconds() if hasattr(response, 'elapsed') else None
+                })
             
             if self.retry_config.should_retry(response):
                 return await self._retry_request_async(method, path, params, json, **kwargs)
@@ -253,6 +308,16 @@ class HoneyHive:
             return response
             
         except Exception as e:
+            if self.verbose:
+                self.logger.error("API Async Request Failed", honeyhive_data={
+                    "method": method,
+                    "url": url,
+                    "error": str(e),
+                    "error_type": type(e).__name__,
+                    "params": params,
+                    "json": json
+                })
+            
             if self.retry_config.should_retry_exception(e):
                 return await self._retry_request_async(method, path, params, json, **kwargs)
             raise
@@ -279,6 +344,16 @@ class HoneyHive:
                         "path": path,
                         "attempt": attempt
                     })
+                    
+                    if self.verbose:
+                        self.logger.info("Retry Request Details", honeyhive_data={
+                            "method": method,
+                            "path": path,
+                            "attempt": attempt,
+                            "delay": delay,
+                            "params": params,
+                            "json": json
+                        })
                 except (ValueError, OSError, AttributeError):
                     # Ignore logging errors during shutdown
                     pass
@@ -318,6 +393,16 @@ class HoneyHive:
                         "path": path,
                         "attempt": attempt
                     })
+                    
+                    if self.verbose:
+                        self.logger.info("Retry Async Request Details", honeyhive_data={
+                            "method": method,
+                            "path": path,
+                            "attempt": attempt,
+                            "delay": delay,
+                            "params": params,
+                            "json": json
+                        })
                 except (ValueError, OSError, AttributeError):
                     # Ignore logging errors during shutdown
                     pass

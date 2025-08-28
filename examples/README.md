@@ -92,6 +92,42 @@ A comprehensive example demonstrating:
 python examples/agent_google_ai_integration.py
 ```
 
+### 3. Verbose Debugging (`verbose_debugging_example.py`)
+
+A dedicated example for debugging API calls and troubleshooting issues:
+
+**Key Features:**
+- Enable verbose logging for detailed API debugging
+- Request/response logging with headers, timing, and error details
+- Environment variable configuration
+- Comprehensive error information for troubleshooting
+
+**Usage:**
+```bash
+python examples/verbose_debugging_example.py
+```
+
+**Example:**
+```python
+from honeyhive import HoneyHive
+
+# Enable verbose logging for debugging
+client = HoneyHive(
+    api_key="your-api-key",
+    verbose=True  # This enables detailed API logging
+)
+
+# All API calls will now log detailed request/response information
+response = client.session.start_session(session_request)
+```
+
+**Environment Variable Alternative:**
+```bash
+export HH_VERBOSE=true
+export HH_DEBUG_MODE=true
+client = HoneyHive()  # Automatically uses verbose mode
+```
+
 ## What Gets Traced
 
 ### Agent Operations

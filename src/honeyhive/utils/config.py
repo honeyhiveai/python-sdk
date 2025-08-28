@@ -21,6 +21,7 @@ class Config:
     disable_http_tracing: bool = False
     test_mode: bool = False
     debug_mode: bool = False
+    verbose: bool = False  # Enable verbose logging for API debugging
     
     # OTLP Configuration
     otlp_enabled: bool = True
@@ -206,6 +207,7 @@ class Config:
         self.disable_http_tracing = os.getenv("HH_DISABLE_HTTP_TRACING", "false").lower() == "true"
         self.test_mode = os.getenv("HH_TEST_MODE", "false").lower() == "true"
         self.debug_mode = os.getenv("HH_DEBUG_MODE", "false").lower() == "true"
+        self.verbose = os.getenv("HH_VERBOSE", "false").lower() == "true"
         
         # OTLP configuration
         self.otlp_enabled = os.getenv("HH_OTLP_ENABLED", "true").lower() == "true"
@@ -237,6 +239,7 @@ class Config:
         self.disable_http_tracing = os.getenv("HH_DISABLE_HTTP_TRACING", "false").lower() == "true"
         self.test_mode = os.getenv("HH_TEST_MODE", "false").lower() == "true"
         self.debug_mode = os.getenv("HH_DEBUG_MODE", "false").lower() == "true"
+        self.verbose = os.getenv("HH_VERBOSE", "false").lower() == "true"
         
         # OTLP configuration
         self.otlp_enabled = os.getenv("HH_OTLP_ENABLED", "true").lower() == "true"
