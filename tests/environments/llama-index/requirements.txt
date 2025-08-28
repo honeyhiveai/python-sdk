@@ -1,2 +1,0 @@
-llama-index>=0.10.0
-openai>=1.2.0

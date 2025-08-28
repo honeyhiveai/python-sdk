@@ -1,3 +1,7 @@
-from . import eval
+"""HoneyHive CLI Module"""
 
-__all__ = ['eval']
+from .main import cli
+
+__all__ = [
+    "cli",
+]

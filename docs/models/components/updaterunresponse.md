@@ -1,9 +1,0 @@
-# UpdateRunResponse
-
-
-## Fields
-
-| Field                                                                                              | Type                                                                                               | Required                                                                                           | Description                                                                                        |
-| -------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------- |
-| `evaluation`                                                                                       | Dict[str, *Any*]                                                                                   | :heavy_minus_sign:                                                                                 | Database update success message                                                                    |
-| `warning`                                                                                          | *OptionalNullable[str]*                                                                            | :heavy_minus_sign:                                                                                 | A warning message if the logged events don't have an associated datapoint id on the event metadata |

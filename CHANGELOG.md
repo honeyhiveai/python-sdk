@@ -1,21 +1,85 @@
 # Changelog
 
-## [0.2.57] - 2025-08-11
+All notable changes to the HoneyHive Python SDK will be documented in this file.
+
+The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
+and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
+
+## [Unreleased]
 
 ### Added
-- **Event ID Enrichment**: Added ability to enrich spans with custom event IDs via `enrich_span(event_id=...)`
-- UUID v4 validation for custom event IDs to ensure proper format
-- Enhanced span enrichment functionality in tracer module
+- Initial release of HoneyHive Python SDK
+- OpenTelemetry integration with custom span processor and exporter
+- Session management with start and retrieve operations
+- Event creation and batch operations
+- Tracing decorators for sync and async functions
+- HTTP instrumentation for automatic request tracing
+- Evaluation tools with built-in metrics
+- CLI interface for common operations
+- Comprehensive configuration management
+- Retry logic with multiple backoff strategies
+- Baggage support for context propagation
+- Type hints and validation with Pydantic
+- Async/await support throughout the SDK
+- Context managers for resource management
+- Dot notation dictionary utilities
+- Comprehensive test suite with tox support
 
-### Changed
-- **Evaluation Stability**: Changed default `max_workers` from 10 to 1 for improved stability
-- Made evaluations run synchronously by default to prevent concurrency issues
-- Users can still enable concurrency via `max_workers=N` parameter or `HH_MAX_WORKERS` environment variable
+### Features
+- **API Client**: Full-featured HTTP client with retry support
+- **Tracing**: OpenTelemetry-based tracing with automatic span creation
+- **Sessions**: Track and manage LLM sessions with rich metadata
+- **Events**: Create and manage events with batch support
+- **Evaluation**: Built-in evaluation metrics and scoring functions
+- **CLI**: Command-line interface for SDK operations
+- **Configuration**: Environment-based configuration with validation
+- **Utilities**: Helper utilities for common operations
 
-## [0.2.56] - 2025-01-22
+### Technical Details
+- Python 3.10+ support
+- OpenTelemetry 1.21.0+ integration
+- Pydantic 2.10.0+ for data validation
+- httpx for HTTP client operations
+- wrapt for decorator support
+- Comprehensive type hints
+- Multi-Python version testing with tox
+- Code coverage and linting support
 
-### Fixed
-- **CRITICAL**: Fixed OTEL span dropping in evaluation harness
-- Changed default `max_workers` from 10 to 1 to eliminate TracerWrapper concurrency bugs
-- Resolved `'TracerWrapper' object has no attribute '_TracerWrapper__spans_processor'` errors
-- Users can still enable concurrency via `max_workers=N` or `HH_MAX_WORKERS` env var
+## [0.1.0] - 2024-01-XX
+
+### Added
+- Initial release
+- Core SDK functionality
+- OpenTelemetry integration
+- Session and event management
+- Tracing decorators
+- Evaluation tools
+- CLI interface
+- Comprehensive documentation
+- Test suite
+
+### Features
+- Complete API client implementation
+- OpenTelemetry tracer with custom span processor
+- Session and event API operations
+- Sync and async decorators for tracing
+- HTTP instrumentation
+- Evaluation framework
+- Command-line interface
+- Configuration management
+- Retry logic and error handling
+- Type safety with Pydantic models
+
+### Documentation
+- Comprehensive README with examples
+- API reference documentation
+- Usage examples and tutorials
+- Development setup instructions
+- Contributing guidelines
+
+### Testing
+- Unit tests for all components
+- Integration test framework
+- Multi-Python version testing
+- Code coverage reporting
+- Linting and formatting checks

@@ -1,107 +1,97 @@
+"""Configuration utilities for HoneyHive SDK."""
 
 import os
-import sys
+import json
 from typing import Optional
-import yaml
-import fnmatch
-from .dotdict import dotdict
+from dataclasses import dataclass
 
 
-CONFIG_PATTERN = ["**/honeyhive.yaml"]
-
-def get_assumed_config_path() -> Optional[str]:
-    try:
-        # Get the directory containing the file being run
-        if getattr(sys, 'frozen', False):
-            # If the application is run as a bundle, use the sys._MEIPASS
-            running_dir = sys._MEIPASS
-        else:
-            # If it's not bundled, use the directory containing the script
-            running_dir = os.path.dirname(os.path.abspath(sys.argv[0]))
-
-        print(running_dir)
-
-        return running_dir
-
-        # Prepend the directory containing the running file to config.path
-        config_path = os.path.join(running_dir, USER_CONFIG_PATH)
-        if os.path.exists(config_path):
-            return config_path
-        
-
-    except Exception as e:
-        print(f'Error while loading config file: {e}')
-        print('Continuing...')
-        
-    return None
-
-def check_match(path_input, include_patterns, exclude_patterns):
-    p = os.path.abspath(path_input)
-    if include_patterns:
-        include = False
-        for pattern in include_patterns:
-            if fnmatch.fnmatch(p, pattern):
-                include = True
-                break
-        if not include:
-            return False
-
-    if exclude_patterns:
-        exclude = False
-        for pattern in exclude_patterns:
-            if fnmatch.fnmatch(p, pattern):
-                exclude = True
-                break
-        return not exclude
-
-    return True
-
-def collect_files(input_path, include_patterns, exclude_patterns):
-    if os.path.isdir(input_path):
-        for root, dirs, files in os.walk(input_path):
-            for file in files:
-                fname = os.path.join(root, file)
-                if check_match(fname, include_patterns, exclude_patterns):
-                    yield (os.path.dirname(fname), fname)
-    else:
-        if not check_match(input_path, include_patterns, exclude_patterns):
-            print(
-                f"Reading {input_path} because it was specified directly. Rename it to *.eval.py "
-                + "to include it automatically when you specify a directory."
-            )
-        yield (os.path.dirname(input_path), input_path)
-
-# TODO: parse evaluators from yaml and add them to the evaluators registry
-
-def load_yaml(_yaml) -> dict:
-    if _yaml is None:
-        return None
+@dataclass
+class Config:
+    """Configuration for HoneyHive SDK."""
     
-    content = None
-    try:
-        content = yaml.safe_load(_yaml)
-    except yaml.YAMLError as e:
-        raise ValueError(f"Error parsing YAML: {str(e)}")
-    except ValueError as e:
-        raise ValueError(f"Validation error: {str(e)}")
+    # API Configuration
+    api_key: Optional[str] = None
+    api_url: str = "https://api.honeyhive.ai"
+    project: Optional[str] = None
+    source: str = "production"
+    
+    # Tracing Configuration
+    disable_tracing: bool = False
+    disable_http_tracing: bool = False
+    test_mode: bool = False
+    debug_mode: bool = False
+    
+    # OTLP Configuration
+    otlp_enabled: bool = True
+    otlp_endpoint: Optional[str] = None
+    otlp_headers: Optional[dict] = None
+    
+    # SDK Configuration
+    version: str = "0.1.0"
+    timeout: float = 30.0
+    max_retries: int = 3
+    
+    def __post_init__(self):
+        """Load configuration from environment variables."""
+        self.api_key = self.api_key or os.getenv("HH_API_KEY")
+        self.api_url = os.getenv("HH_API_URL", self.api_url)
+        self.project = self.project or os.getenv("HH_PROJECT")
+        self.source = os.getenv("HH_SOURCE", self.source)
         
-    return content
-
-def get_yaml_dotdict(path: str | None = None) -> dotdict:
-    try:
-        if path is None:
-            _, path = next(collect_files(os.getcwd(), CONFIG_PATTERN, ["**/site-packages/**"]))
-    except StopIteration:
-        return dotdict()
-
-    if not path:
-        return dotdict()
-
-    with open(path) as f:
-        content = load_yaml(f)
+        # Tracing configuration
+        self.disable_tracing = os.getenv("HH_DISABLE_TRACING", "false").lower() == "true"
+        self.disable_http_tracing = os.getenv("HH_DISABLE_HTTP_TRACING", "false").lower() == "true"
+        self.test_mode = os.getenv("HH_TEST_MODE", "false").lower() == "true"
+        self.debug_mode = os.getenv("HH_DEBUG_MODE", "false").lower() == "true"
+        
+        # OTLP configuration
+        self.otlp_enabled = os.getenv("HH_OTLP_ENABLED", "true").lower() == "true"
+        self.otlp_endpoint = os.getenv("HH_OTLP_ENDPOINT")
+        
+        # Parse OTLP headers if provided
+        otlp_headers_str = os.getenv("HH_OTLP_HEADERS")
+        if otlp_headers_str:
+            try:
+                self.otlp_headers = json.loads(otlp_headers_str)
+            except (json.JSONDecodeError, ImportError):
+                self.otlp_headers = None
     
-    content = content or dict()
-    
-    return dotdict(content)
+    def reload(self):
+        """Reload configuration from environment variables."""
+        # Update instance attributes from environment variables
+        self.api_key = os.getenv("HH_API_KEY") or self.api_key
+        self.api_url = os.getenv("HH_API_URL", self.api_url)
+        self.project = os.getenv("HH_PROJECT") or self.project
+        self.source = os.getenv("HH_SOURCE", self.source)
+        
+        # Tracing configuration
+        self.disable_tracing = os.getenv("HH_DISABLE_TRACING", "false").lower() == "true"
+        self.disable_http_tracing = os.getenv("HH_DISABLE_HTTP_TRACING", "false").lower() == "true"
+        self.test_mode = os.getenv("HH_TEST_MODE", "false").lower() == "true"
+        self.debug_mode = os.getenv("HH_DEBUG_MODE", "false").lower() == "true"
+        
+        # OTLP configuration
+        self.otlp_enabled = os.getenv("HH_OTLP_ENABLED", "true").lower() == "true"
+        self.otlp_endpoint = os.getenv("HH_OTLP_ENDPOINT")
+        
+        # Parse OTLP headers if provided
+        otlp_headers_str = os.getenv("HH_OTLP_HEADERS")
+        if otlp_headers_str:
+            try:
+                self.otlp_headers = json.loads(otlp_headers_str)
+            except (json.JSONDecodeError, ImportError):
+                self.otlp_headers = None
 
-config = get_yaml_dotdict()
+
+# Global configuration instance
+config = Config()
+
+def reload_config():
+    """Reload configuration from environment variables."""
+    global config
+    config = Config()
+
+def get_config() -> Config:
+    """Get the global configuration instance."""
+    return config
