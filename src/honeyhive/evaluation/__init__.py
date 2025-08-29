@@ -5,6 +5,9 @@ including built-in evaluators, custom evaluator support, threading support,
 and integration with the HoneyHive API for storing evaluation results.
 """
 
+from .evaluators import evaluate_batch  # New threading function
+from .evaluators import evaluate_decorator  # Main @evaluate decorator
+from .evaluators import evaluate_with_evaluators  # Enhanced with threading
 from .evaluators import (
     BaseEvaluator,
     EvaluationContext,
@@ -16,9 +19,6 @@ from .evaluators import (
     aevaluator,
     create_evaluation_run,
     evaluate,
-    evaluate_batch,  # New threading function
-    evaluate_decorator,  # Main @evaluate decorator
-    evaluate_with_evaluators,  # Enhanced with threading
     evaluator,
     get_evaluator,
 )

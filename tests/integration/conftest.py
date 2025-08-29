@@ -30,7 +30,9 @@ def real_api_key():
     """Get real API key for integration tests from .env file."""
     api_key = os.environ.get("HH_API_KEY")
     if not api_key:
-        pytest.skip("HH_API_KEY not found in environment. Create a .env file with real credentials.")
+        pytest.skip(
+            "HH_API_KEY not found in environment. Create a .env file with real credentials."
+        )
     return api_key
 
 
@@ -64,7 +66,7 @@ def integration_client(real_api_key, real_api_url):
     return HoneyHive(
         api_key=real_api_key,
         base_url=real_api_url,
-        test_mode=False  # Use real API mode
+        test_mode=False,  # Use real API mode
     )
 
 
@@ -114,4 +116,6 @@ def setup_integration_env():
 def skip_if_no_real_credentials(real_api_key):
     """Skip tests if no real credentials are available."""
     if not real_api_key or real_api_key == "test-api-key-12345":
-        pytest.skip("Real API credentials required for integration tests. Check .env file.")
+        pytest.skip(
+            "Real API credentials required for integration tests. Check .env file."
+        )

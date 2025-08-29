@@ -1,5 +1,6 @@
 """OpenTelemetry tracer implementation for HoneyHive."""
 
+import inspect
 import json
 import os
 import threading
@@ -110,7 +111,34 @@ class HoneyHiveTracer:
 
         self.project = project or config.project or "default"
         self.source = source
-        self.session_name = session_name or f"tracer_session_{int(time.time())}"
+
+        # Set default session name to the calling file name if not provided
+        if session_name is None:
+            try:
+                # Get the calling frame to find the file where tracer was initialized
+                frame = inspect.currentframe()
+                if frame:
+                    # Go up the call stack to find the caller
+                    caller_frame = frame.f_back
+                    if caller_frame:
+                        # Get the filename from the caller frame
+                        filename = caller_frame.f_code.co_filename
+                        if filename and filename != "<string>":
+                            # Extract just the filename without path and extension
+                            session_name = os.path.splitext(os.path.basename(filename))[
+                                0
+                            ]
+                        else:
+                            session_name = f"tracer_session_{int(time.time())}"
+                    else:
+                        session_name = f"tracer_session_{int(time.time())}"
+                else:
+                    session_name = f"tracer_session_{int(time.time())}"
+            except Exception:
+                # Fallback to timestamp-based name if anything goes wrong
+                session_name = f"tracer_session_{int(time.time())}"
+
+        self.session_name = session_name
 
         # Initialize OpenTelemetry components
         self._initialize_otel()
@@ -130,6 +158,7 @@ class HoneyHiveTracer:
             self._integrate_instrumentors(instrumentors)
 
         print(f"✓ HoneyHiveTracer initialized for project: {self.project}")
+        print(f"✓ Session name: {self.session_name}")
         if disable_http_tracing:
             print("✓ HTTP tracing disabled")
         else:

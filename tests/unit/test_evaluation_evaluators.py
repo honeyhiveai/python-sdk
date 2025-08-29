@@ -6,24 +6,24 @@ from unittest.mock import Mock, patch
 import pytest
 
 from honeyhive.evaluation import (
-    aevaluator,
-    evaluate,
-    evaluator,
-    evaluate_decorator,
-    evaluate_with_evaluators,
-    get_evaluator,
     BaseEvaluator,
     EvaluationContext,
+    aevaluator,
     create_evaluation_run,
+    evaluate,
     evaluate_batch,
+    evaluate_decorator,
+    evaluate_with_evaluators,
+    evaluator,
+    get_evaluator,
 )
 from honeyhive.evaluation.evaluators import (
+    BUILTIN_EVALUATORS,
     EvaluationResult,
     ExactMatchEvaluator,
     F1ScoreEvaluator,
     LengthEvaluator,
     SemanticSimilarityEvaluator,
-    BUILTIN_EVALUATORS,
 )
 
 # Type variable for function return types

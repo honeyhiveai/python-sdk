@@ -16,8 +16,8 @@ from honeyhive import HoneyHive
 from honeyhive.api.evaluations import EvaluationsAPI
 from honeyhive.models.generated import (
     CreateRunRequest,
-    EvaluationRun,
     CreateRunResponse,
+    EvaluationRun,
 )
 from honeyhive.utils.config import config
 

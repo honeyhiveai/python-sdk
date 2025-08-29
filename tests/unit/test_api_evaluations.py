@@ -1,7 +1,7 @@
 """Unit tests for HoneyHive API evaluations module."""
 
 import uuid
-from unittest.mock import Mock, AsyncMock, patch
+from unittest.mock import AsyncMock, Mock, patch
 
 import pytest
 
@@ -15,7 +15,7 @@ from honeyhive.models import (
     UpdateRunRequest,
     UpdateRunResponse,
 )
-from honeyhive.models.generated import UUIDType, Status
+from honeyhive.models.generated import Status, UUIDType
 
 
 class TestEvaluationsAPI:
@@ -36,16 +36,14 @@ class TestEvaluationsAPI:
                 "run_id": str(uuid.uuid4()),
                 "name": "test-run",
                 "project": "test-project",
-                "status": "pending"  # Changed from "created" to valid enum value
-            }
+                "status": "pending",  # Changed from "created" to valid enum value
+            },
         }
         self.mock_client.request.return_value = mock_response
 
         # Create request with required fields
         request = CreateRunRequest(
-            project="test-project",
-            name="test-run",
-            event_ids=[UUIDType(uuid.uuid4())]
+            project="test-project", name="test-run", event_ids=[UUIDType(uuid.uuid4())]
         )
 
         # Call method
@@ -70,9 +68,7 @@ class TestEvaluationsAPI:
         self.mock_client.request.return_value = mock_response
 
         request = CreateRunRequest(
-            project="test-project", 
-            name="test-run",
-            event_ids=[UUIDType(uuid.uuid4())]
+            project="test-project", name="test-run", event_ids=[UUIDType(uuid.uuid4())]
         )
         result = self.api.create_run(request)
 
@@ -86,11 +82,9 @@ class TestEvaluationsAPI:
         self.mock_client.request.return_value = mock_response
 
         request = CreateRunRequest(
-            project="test-project", 
-            name="test-run",
-            event_ids=[UUIDType(uuid.uuid4())]
+            project="test-project", name="test-run", event_ids=[UUIDType(uuid.uuid4())]
         )
-        
+
         # Should raise an error when invalid UUID is provided
         with pytest.raises(Exception):
             self.api.create_run(request)
@@ -100,7 +94,9 @@ class TestEvaluationsAPI:
         mock_response = Mock()
         mock_response.json.return_value = {
             "run_id": str(uuid.uuid4()),
-            "evaluation": {"status": "pending"}  # Changed from "created" to valid enum value
+            "evaluation": {
+                "status": "pending"
+            },  # Changed from "created" to valid enum value
         }
         self.mock_client.request.return_value = mock_response
 
@@ -108,7 +104,7 @@ class TestEvaluationsAPI:
             "project": "test-project",
             "name": "test-run",
             "event_ids": [str(uuid.uuid4())],
-            "description": "Test run"
+            "description": "Test run",
         }
 
         result = self.api.create_run_from_dict(run_data)
@@ -124,14 +120,14 @@ class TestEvaluationsAPI:
         mock_response = Mock()
         mock_response.json.return_value = {
             "run_id": str(uuid.uuid4()),
-            "evaluation": {"status": "pending"}  # Changed from "created" to valid enum value
+            "evaluation": {
+                "status": "pending"
+            },  # Changed from "created" to valid enum value
         }
         self.mock_client.request_async = AsyncMock(return_value=mock_response)
 
         request = CreateRunRequest(
-            project="test-project", 
-            name="test-run",
-            event_ids=[UUIDType(uuid.uuid4())]
+            project="test-project", name="test-run", event_ids=[UUIDType(uuid.uuid4())]
         )
         result = await self.api.create_run_async(request)
 
@@ -146,14 +142,16 @@ class TestEvaluationsAPI:
         mock_response = Mock()
         mock_response.json.return_value = {
             "run_id": str(uuid.uuid4()),
-            "evaluation": {"status": "pending"}  # Changed from "created" to valid enum value
+            "evaluation": {
+                "status": "pending"
+            },  # Changed from "created" to valid enum value
         }
         self.mock_client.request_async = AsyncMock(return_value=mock_response)
 
         run_data = {
-            "project": "test-project", 
+            "project": "test-project",
             "name": "test-run",
-            "event_ids": [str(uuid.uuid4())]
+            "event_ids": [str(uuid.uuid4())],
         }
         result = await self.api.create_run_from_dict_async(run_data)
 
@@ -169,7 +167,7 @@ class TestEvaluationsAPI:
             "evaluation": {
                 "run_id": str(uuid.uuid4()),
                 "name": "test-run",
-                "status": "completed"
+                "status": "completed",
             }
         }
         self.mock_client.request.return_value = mock_response
@@ -191,7 +189,7 @@ class TestEvaluationsAPI:
             "evaluation": {
                 "run_id": str(uuid.uuid4()),
                 "name": "test-run",
-                "status": "completed"
+                "status": "completed",
             }
         }
         self.mock_client.request_async = AsyncMock(return_value=mock_response)
@@ -208,7 +206,7 @@ class TestEvaluationsAPI:
         mock_response.json.return_value = {
             "evaluations": [
                 {"run_id": str(uuid.uuid4()), "name": "run-1"},
-                {"run_id": str(uuid.uuid4()), "name": "run-2"}
+                {"run_id": str(uuid.uuid4()), "name": "run-2"},
             ]
         }
         self.mock_client.request.return_value = mock_response
@@ -258,7 +256,9 @@ class TestEvaluationsAPI:
         result = await self.api.list_runs_async(project="test-project", limit=25)
 
         assert isinstance(result, GetRunsResponse)
-        self.mock_client.request_async.assert_called_once_with("GET", "/runs", params={"limit": 25, "project": "test-project"})
+        self.mock_client.request_async.assert_called_once_with(
+            "GET", "/runs", params={"limit": 25, "project": "test-project"}
+        )
 
     def test_update_run_success(self) -> None:
         """Test successful run update."""
@@ -267,12 +267,14 @@ class TestEvaluationsAPI:
             "evaluation": {
                 "run_id": str(uuid.uuid4()),
                 "name": "updated-run",
-                "status": "updated"
+                "status": "updated",
             }
         }
         self.mock_client.request.return_value = mock_response
 
-        request = UpdateRunRequest(name="updated-run", description="Updated description")
+        request = UpdateRunRequest(
+            name="updated-run", description="Updated description"
+        )
         run_id = "test-run-id"
 
         result = self.api.update_run(run_id, request)
@@ -289,7 +291,7 @@ class TestEvaluationsAPI:
         mock_response = Mock()
         mock_response.json.return_value = {
             "run_id": str(uuid.uuid4()),
-            "name": "updated-run"
+            "name": "updated-run",
         }
         self.mock_client.request.return_value = mock_response
 
@@ -309,7 +311,7 @@ class TestEvaluationsAPI:
         mock_response = Mock()
         mock_response.json.return_value = {
             "run_id": str(uuid.uuid4()),
-            "name": "updated-run"
+            "name": "updated-run",
         }
         self.mock_client.request_async = AsyncMock(return_value=mock_response)
 
@@ -329,7 +331,7 @@ class TestEvaluationsAPI:
         mock_response = Mock()
         mock_response.json.return_value = {
             "run_id": str(uuid.uuid4()),
-            "name": "updated-run"
+            "name": "updated-run",
         }
         self.mock_client.request_async = AsyncMock(return_value=mock_response)
 
@@ -346,10 +348,7 @@ class TestEvaluationsAPI:
     def test_delete_run_success(self) -> None:
         """Test successful run deletion."""
         mock_response = Mock()
-        mock_response.json.return_value = {
-            "id": str(uuid.uuid4()),
-            "deleted": True
-        }
+        mock_response.json.return_value = {"id": str(uuid.uuid4()), "deleted": True}
         self.mock_client.request.return_value = mock_response
 
         run_id = "test-run-id"
@@ -387,10 +386,7 @@ class TestEvaluationsAPI:
     async def test_delete_run_async_success(self) -> None:
         """Test successful asynchronous run deletion."""
         mock_response = Mock()
-        mock_response.json.return_value = {
-            "id": str(uuid.uuid4()),
-            "deleted": True
-        }
+        mock_response.json.return_value = {"id": str(uuid.uuid4()), "deleted": True}
         self.mock_client.request_async = AsyncMock(return_value=mock_response)
 
         run_id = "test-run-id"
@@ -398,7 +394,9 @@ class TestEvaluationsAPI:
 
         assert isinstance(result, DeleteRunResponse)
         assert result.deleted is True
-        self.mock_client.request_async.assert_called_once_with("DELETE", f"/runs/{run_id}")
+        self.mock_client.request_async.assert_called_once_with(
+            "DELETE", f"/runs/{run_id}"
+        )
 
     @pytest.mark.asyncio
     async def test_delete_run_async_exception_handling(self) -> None:
@@ -439,9 +437,7 @@ class TestEvaluationsAPIErrorScenarios:
         self.mock_client.request.side_effect = Exception("API Error")
 
         request = CreateRunRequest(
-            project="test-project", 
-            name="test-run",
-            event_ids=[UUIDType(uuid.uuid4())]
+            project="test-project", name="test-run", event_ids=[UUIDType(uuid.uuid4())]
         )
 
         with pytest.raises(Exception, match="API Error"):
@@ -453,9 +449,7 @@ class TestEvaluationsAPIErrorScenarios:
         self.mock_client.request_async.side_effect = Exception("API Error")
 
         request = CreateRunRequest(
-            project="test-project", 
-            name="test-run",
-            event_ids=[UUIDType(uuid.uuid4())]
+            project="test-project", name="test-run", event_ids=[UUIDType(uuid.uuid4())]
         )
 
         with pytest.raises(Exception, match="API Error"):
@@ -510,27 +504,39 @@ class TestEvaluationsAPIIntegration:
 
         # Mock responses for each operation
         create_response = Mock()
-        create_response.json.return_value = {"run_id": run_id, "evaluation": {"status": "pending"}}
+        create_response.json.return_value = {
+            "run_id": run_id,
+            "evaluation": {"status": "pending"},
+        }
 
         get_response = Mock()
-        get_response.json.return_value = {"evaluation": {"run_id": run_id, "name": "test-run", "status": "pending"}}
+        get_response.json.return_value = {
+            "evaluation": {"run_id": run_id, "name": "test-run", "status": "pending"}
+        }
 
         update_response = Mock()
-        update_response.json.return_value = {"evaluation": {"run_id": run_id, "name": "updated-run", "status": "completed"}}
+        update_response.json.return_value = {
+            "evaluation": {
+                "run_id": run_id,
+                "name": "updated-run",
+                "status": "completed",
+            }
+        }
 
         delete_response = Mock()
         delete_response.json.return_value = {"id": run_id, "deleted": True}
 
         # Set up mock to return different responses for different calls
         self.mock_client.request.side_effect = [
-            create_response, get_response, update_response, delete_response
+            create_response,
+            get_response,
+            update_response,
+            delete_response,
         ]
 
         # Create run
         create_request = CreateRunRequest(
-            project="test-project",
-            name="test-run",
-            event_ids=[UUIDType(uuid.uuid4())]
+            project="test-project", name="test-run", event_ids=[UUIDType(uuid.uuid4())]
         )
         created_run = self.api.create_run(create_request)
         assert isinstance(created_run, CreateRunResponse)

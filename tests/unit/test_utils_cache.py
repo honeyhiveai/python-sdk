@@ -1,22 +1,22 @@
 """Unit tests for HoneyHive cache utilities."""
 
-import time
 import threading
-from unittest.mock import Mock, patch, MagicMock
+import time
 from typing import Any, Dict, Optional
+from unittest.mock import MagicMock, Mock, patch
 
 import pytest
 
 from honeyhive.utils.cache import (
+    AsyncFunctionCache,
+    Cache,
     CacheConfig,
     CacheEntry,
-    Cache,
-    get_global_cache,
-    close_global_cache,
-    cache_function,
-    cache_async_function,
     FunctionCache,
-    AsyncFunctionCache,
+    cache_async_function,
+    cache_function,
+    close_global_cache,
+    get_global_cache,
 )
 
 
@@ -437,11 +437,11 @@ class TestFunctionCache:
     def test_function_cache_decorator(self) -> None:
         """Test function cache decorator."""
         cache = Cache()
-        
+
         @cache_function(ttl=60.0, cache=cache)
         def test_function(x: int) -> int:
             return x * 2
-        
+
         result1 = test_function(5)
         result2 = test_function(5)
         assert result1 == 10
@@ -453,11 +453,11 @@ class TestFunctionCache:
     def test_function_cache_with_ttl(self) -> None:
         """Test function cache decorator with TTL."""
         cache = Cache()
-        
+
         @cache_function(ttl=0.1, cache=cache)
         def test_function(x: int) -> int:
             return x * 2
-        
+
         result1 = test_function(5)
         assert result1 == 10
         time.sleep(0.2)
@@ -467,11 +467,11 @@ class TestFunctionCache:
     def test_function_cache_different_args(self) -> None:
         """Test function cache decorator with different arguments."""
         cache = Cache()
-        
+
         @cache_function(cache=cache)
         def test_function(x: int, y: str) -> str:
             return f"{x}_{y}"
-        
+
         result1 = test_function(5, "test")
         result2 = test_function(5, "test")
         result3 = test_function(6, "test")
@@ -482,11 +482,11 @@ class TestFunctionCache:
     def test_function_cache_with_kwargs(self) -> None:
         """Test function cache decorator with keyword arguments."""
         cache = Cache()
-        
+
         @cache_function(cache=cache)
         def test_function(x: int, y: str = "default") -> str:
             return f"{x}_{y}"
-        
+
         result1 = test_function(5, y="custom")
         result2 = test_function(5, y="custom")
         assert result1 == "5_custom"
@@ -495,11 +495,11 @@ class TestFunctionCache:
     def test_function_cache_with_none_args(self) -> None:
         """Test function cache decorator with None arguments."""
         cache = Cache()
-        
+
         @cache_function(cache=cache)
         def test_function(x: Optional[int]) -> str:
             return f"value_{x}"
-        
+
         result1 = test_function(None)
         result2 = test_function(None)
         assert result1 == "value_None"
@@ -508,11 +508,11 @@ class TestFunctionCache:
     def test_function_cache_with_complex_args(self) -> None:
         """Test function cache decorator with complex arguments."""
         cache = Cache()
-        
+
         @cache_function(cache=cache)
         def test_function(data: Dict[str, Any]) -> str:
             return f"processed_{data.get('key', 'default')}"
-        
+
         data1 = {"key": "value1"}
         data2 = {"key": "value2"}
         result1 = test_function(data1)
@@ -529,11 +529,11 @@ class TestAsyncFunctionCache:
     def test_async_function_cache_decorator(self) -> None:
         """Test async function cache decorator."""
         cache = Cache()
-        
+
         @cache_async_function(ttl=60.0, cache=cache)
         async def test_async_function(x: int) -> int:
             return x * 2
-        
+
         # This would need to be tested in an async context
         # For now, just test that the decorator creates a function
         assert callable(test_async_function)
@@ -541,11 +541,11 @@ class TestAsyncFunctionCache:
     def test_async_function_cache_with_ttl(self) -> None:
         """Test async function cache decorator with TTL."""
         cache = Cache()
-        
+
         @cache_async_function(ttl=0.1, cache=cache)
         async def test_async_function(x: int) -> int:
             return x * 2
-        
+
         # This would need to be tested in an async context
         # For now, just test that the decorator creates a function
         assert callable(test_async_function)
@@ -553,11 +553,11 @@ class TestAsyncFunctionCache:
     def test_async_function_cache_different_args(self) -> None:
         """Test async function cache decorator with different arguments."""
         cache = Cache()
-        
+
         @cache_async_function(cache=cache)
         async def test_async_function(x: int, y: str) -> str:
             return f"{x}_{y}"
-        
+
         # This would need to be tested in an async context
         # For now, just test that the decorator creates a function
         assert callable(test_async_function)

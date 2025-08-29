@@ -158,7 +158,7 @@ def disable_tracing_during_tests():
     os.environ["HH_DISABLE_TRACING"] = "true"
     os.environ["HH_DISABLE_HTTP_TRACING"] = "true"
     os.environ["HH_OTLP_ENABLED"] = "false"
-    
+
     # Mock the get_tracer function to return None during tests
     with patch("honeyhive.tracer.decorators.get_tracer") as mock_get_tracer:
         mock_get_tracer.return_value = None

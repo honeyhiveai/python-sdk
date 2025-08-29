@@ -125,21 +125,29 @@ class TestCLIConfigCommands:
     def test_config_show_json_format(self) -> None:
         """Test config show command with JSON format."""
         output = StringIO()
-        
+
         with patch("sys.stdout", output):
             try:
                 cli(["config", "show", "--format", "json"])
             except SystemExit:
                 pass
-        
+
         result = output.getvalue()
         config_data = json.loads(result)
-        
+
         # Verify expected config keys are present
         expected_keys = [
-            "api_key", "api_url", "project", "source", "debug_mode", 
-            "test_mode", "experiment_id", "experiment_name", 
-            "experiment_variant", "experiment_group", "experiment_metadata"
+            "api_key",
+            "api_url",
+            "project",
+            "source",
+            "debug_mode",
+            "test_mode",
+            "experiment_id",
+            "experiment_name",
+            "experiment_variant",
+            "experiment_group",
+            "experiment_metadata",
         ]
         for key in expected_keys:
             assert key in config_data
@@ -147,21 +155,29 @@ class TestCLIConfigCommands:
     def test_config_show_yaml_format(self) -> None:
         """Test config show command with YAML format."""
         output = StringIO()
-        
+
         with patch("sys.stdout", output):
             try:
                 cli(["config", "show", "--format", "yaml"])
             except SystemExit:
                 pass
-        
+
         result = output.getvalue()
         config_data = yaml.safe_load(result)
-        
+
         # Verify expected config keys are present
         expected_keys = [
-            "api_key", "api_url", "project", "source", "debug_mode", 
-            "test_mode", "experiment_id", "experiment_name", 
-            "experiment_variant", "experiment_group", "experiment_metadata"
+            "api_key",
+            "api_url",
+            "project",
+            "source",
+            "debug_mode",
+            "test_mode",
+            "experiment_id",
+            "experiment_name",
+            "experiment_variant",
+            "experiment_group",
+            "experiment_metadata",
         ]
         for key in expected_keys:
             assert key in config_data
@@ -169,15 +185,15 @@ class TestCLIConfigCommands:
     def test_config_show_env_format(self) -> None:
         """Test config show command with environment format."""
         output = StringIO()
-        
+
         with patch("sys.stdout", output):
             try:
                 cli(["config", "show", "--format", "env"])
             except SystemExit:
                 pass
-        
+
         result = output.getvalue()
-        
+
         # The config might not have all keys set, so check for what's available
         # The config structure has nested objects, so not all keys are direct attributes
         assert "HH_API_URL=" in result
@@ -186,52 +202,52 @@ class TestCLIConfigCommands:
     def test_config_set_valid_key(self) -> None:
         """Test config set command with valid key."""
         output = StringIO()
-        
+
         with patch("sys.stdout", output):
             try:
                 cli(["config", "set", "--key", "timeout", "--value", "60.0"])
             except SystemExit:
                 pass
-        
+
         result = output.getvalue()
         assert "Set timeout = 60.0" in result
 
     def test_config_set_invalid_key(self) -> None:
         """Test config set command with invalid key."""
         output = StringIO()
-        
+
         with patch("sys.stderr", output):
             try:
                 cli(["config", "set", "--key", "invalid_key", "--value", "test_value"])
             except SystemExit:
                 pass
-        
+
         result = output.getvalue()
         assert "Unknown configuration key" in result
 
     def test_config_set_missing_value(self) -> None:
         """Test config set command with missing value."""
         output = StringIO()
-        
+
         with patch("sys.stderr", output):
             try:
                 cli(["config", "set", "--key", "timeout"])
             except SystemExit:
                 pass
-        
+
         result = output.getvalue()
         assert "Missing option" in result
 
     def test_config_set_missing_key(self) -> None:
         """Test config set command with missing key."""
         output = StringIO()
-        
+
         with patch("sys.stderr", output):
             try:
                 cli(["config", "set", "--value", "test_value"])
             except SystemExit:
                 pass
-        
+
         result = output.getvalue()
         assert "Missing option" in result
 
@@ -252,13 +268,13 @@ class TestCLITraceCommands:
     def test_trace_start_basic(self) -> None:
         """Test trace start command with basic parameters."""
         output = StringIO()
-        
+
         with patch("sys.stdout", output):
             try:
                 cli(["trace", "start", "--name", "test-trace"])
             except SystemExit:
                 pass
-        
+
         result = output.getvalue()
         # The command will fail because API key is required, but we can test the structure
         assert len(result) >= 0
@@ -266,13 +282,22 @@ class TestCLITraceCommands:
     def test_trace_start_with_metadata(self) -> None:
         """Test trace start command with metadata."""
         output = StringIO()
-        
+
         with patch("sys.stdout", output):
             try:
-                cli(["trace", "start", "--name", "test-trace", "--attributes", '{"key": "value"}'])
+                cli(
+                    [
+                        "trace",
+                        "start",
+                        "--name",
+                        "test-trace",
+                        "--attributes",
+                        '{"key": "value"}',
+                    ]
+                )
             except SystemExit:
                 pass
-        
+
         result = output.getvalue()
         # The command will fail because API key is required, but we can test the structure
         assert len(result) >= 0
@@ -280,13 +305,22 @@ class TestCLITraceCommands:
     def test_trace_start_invalid_metadata(self) -> None:
         """Test trace start command with invalid metadata."""
         output = StringIO()
-        
+
         with patch("sys.stderr", output):
             try:
-                cli(["trace", "start", "--name", "test-trace", "--attributes", "invalid-json"])
+                cli(
+                    [
+                        "trace",
+                        "start",
+                        "--name",
+                        "test-trace",
+                        "--attributes",
+                        "invalid-json",
+                    ]
+                )
             except SystemExit:
                 pass
-        
+
         result = output.getvalue()
         # The command will fail because API key is required, but we can test the structure
         assert len(result) >= 0
@@ -294,13 +328,22 @@ class TestCLITraceCommands:
     def test_trace_enrich_basic(self) -> None:
         """Test trace enrich command with basic parameters."""
         output = StringIO()
-        
+
         with patch("sys.stdout", output):
             try:
-                cli(["trace", "enrich", "--session-id", "test-123", "--metadata", '{"key": "value"}'])
+                cli(
+                    [
+                        "trace",
+                        "enrich",
+                        "--session-id",
+                        "test-123",
+                        "--metadata",
+                        '{"key": "value"}',
+                    ]
+                )
             except SystemExit:
                 pass
-        
+
         result = output.getvalue()
         # The command will fail because API key is required, but we can test the structure
         assert len(result) >= 0
@@ -308,13 +351,22 @@ class TestCLITraceCommands:
     def test_trace_enrich_invalid_metadata(self) -> None:
         """Test trace enrich command with invalid metadata."""
         output = StringIO()
-        
+
         with patch("sys.stderr", output):
             try:
-                cli(["trace", "enrich", "--session-id", "test-123", "--metadata", "invalid-json"])
+                cli(
+                    [
+                        "trace",
+                        "enrich",
+                        "--session-id",
+                        "test-123",
+                        "--metadata",
+                        "invalid-json",
+                    ]
+                )
             except SystemExit:
                 pass
-        
+
         result = output.getvalue()
         # The command will fail because API key is required, but we can test the structure
         assert len(result) >= 0
@@ -322,13 +374,13 @@ class TestCLITraceCommands:
     def test_trace_enrich_missing_trace_id(self) -> None:
         """Test trace enrich command with missing session ID."""
         output = StringIO()
-        
+
         with patch("sys.stderr", output):
             try:
                 cli(["trace", "enrich", "--metadata", '{"key": "value"}'])
             except SystemExit:
                 pass
-        
+
         result = output.getvalue()
         # The command will fail because API key is required, but we can test the structure
         assert len(result) >= 0
@@ -336,13 +388,13 @@ class TestCLITraceCommands:
     def test_trace_enrich_missing_metadata(self) -> None:
         """Test trace enrich command with missing metadata."""
         output = StringIO()
-        
+
         with patch("sys.stderr", output):
             try:
                 cli(["trace", "enrich", "--session-id", "test-123"])
             except SystemExit:
                 pass
-        
+
         result = output.getvalue()
         # The command will fail because API key is required, but we can test the structure
         assert len(result) >= 0
@@ -402,52 +454,52 @@ class TestCLIErrorHandling:
     def test_invalid_command(self) -> None:
         """Test invalid command handling."""
         output = StringIO()
-        
+
         with patch("sys.stderr", output):
             try:
                 cli(["invalid-command"])
             except SystemExit:
                 pass
-        
+
         result = output.getvalue()
         assert "No such command" in result
 
     def test_missing_required_argument(self) -> None:
         """Test missing required argument handling."""
         output = StringIO()
-        
+
         with patch("sys.stderr", output):
             try:
                 cli(["config", "set"])
             except SystemExit:
                 pass
-        
+
         result = output.getvalue()
         assert "Missing option" in result
 
     def test_invalid_option_value(self) -> None:
         """Test invalid option value handling."""
         output = StringIO()
-        
+
         with patch("sys.stderr", output):
             try:
                 cli(["config", "show", "--format", "invalid"])
             except SystemExit:
                 pass
-        
+
         result = output.getvalue()
         assert "Invalid value" in result
 
     def test_api_error_handling(self) -> None:
         """Test API error handling."""
         output = StringIO()
-        
+
         with patch("sys.stderr", output):
             try:
                 cli(["event", "get", "--event-id", "invalid-id"])
             except SystemExit:
                 pass
-        
+
         result = output.getvalue()
         # Should handle API errors gracefully
         assert len(result) > 0
@@ -460,13 +512,13 @@ class TestCLIEnvironmentVariables:
         """Test environment variable override."""
         with patch.dict(os.environ, {"HH_API_KEY": "env-api-key"}):
             output = StringIO()
-            
+
             with patch("sys.stdout", output):
                 try:
                     cli(["config", "show", "--format", "json"])
                 except SystemExit:
                     pass
-            
+
             result = output.getvalue()
             config_data = json.loads(result)
             # The config might not pick up the environment variable in test mode
@@ -476,13 +528,13 @@ class TestCLIEnvironmentVariables:
         """Test debug mode environment variable."""
         with patch.dict(os.environ, {"HH_DEBUG": "true"}):
             output = StringIO()
-            
+
             with patch("sys.stdout", output):
                 try:
                     cli(["config", "show"])
                 except SystemExit:
                     pass
-            
+
             result = output.getvalue()
             # Should show debug information
             assert len(result) > 0
@@ -491,13 +543,13 @@ class TestCLIEnvironmentVariables:
         """Test test mode environment variable."""
         with patch.dict(os.environ, {"HH_TEST_MODE": "true"}):
             output = StringIO()
-            
+
             with patch("sys.stdout", output):
                 try:
                     cli(["config", "show"])
                 except SystemExit:
                     pass
-            
+
             result = output.getvalue()
             # Should show test mode configuration
             assert len(result) > 0
