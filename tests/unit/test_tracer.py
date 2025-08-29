@@ -233,7 +233,7 @@ class TestHoneyHiveTracer:
                 mock_config.project = "test_project"
 
                 tracer = HoneyHiveTracer(api_key="test_key", project="test_project")
-                
+
                 # Mock the propagator
                 mock_propagator = Mock()
                 mock_context = Mock()
@@ -241,7 +241,7 @@ class TestHoneyHiveTracer:
                 tracer.propagator = mock_propagator
 
                 # Mock the extract_context method to return our mock context
-                with patch.object(tracer, 'extract_context', return_value=mock_context):
+                with patch.object(tracer, "extract_context", return_value=mock_context):
                     result = tracer.extract_context({"traceparent": "test"})
                     assert result == mock_context
 
@@ -253,7 +253,7 @@ class TestHoneyHiveTracer:
                 mock_config.project = "test_project"
 
                 tracer = HoneyHiveTracer(api_key="test_key", project="test_project")
-                
+
                 # Mock the provider
                 mock_provider = Mock()
                 tracer.provider = mock_provider
@@ -281,7 +281,9 @@ class TestHoneyHiveTracer:
                 assert tracer1.project == "test_project"
 
                 # Initialize second tracer
-                tracer2 = HoneyHiveTracer(api_key="different_key", project="different_project")
+                tracer2 = HoneyHiveTracer(
+                    api_key="different_key", project="different_project"
+                )
                 assert tracer2.api_key == "different_key"
                 assert tracer2.project == "different_project"
 
@@ -438,9 +440,7 @@ class TestHoneyHiveTracer:
         # Test that we can call it with basic parameters
         # This method is simpler and doesn't depend on complex OpenTelemetry context
         try:
-            result = self.tracer.enrich_span(
-                attributes={"key": "value"}
-            )
+            result = self.tracer.enrich_span(attributes={"key": "value"})
             # The method should not crash
             assert result is not None
         except Exception as e:

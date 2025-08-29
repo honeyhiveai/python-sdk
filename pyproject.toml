@@ -154,7 +154,7 @@ max-statements = 100
 good-names = ["i", "j", "k", "ex", "Run", "_", "id", "db", "api", "ui", "ui_", "id_", "ip_", "ip"]
 
 [tool.pylint.master]
-fail-under = 9.5
+fail-under = 9.99
 
 [tool.pylint.files]
 ignore-patterns = [

@@ -15,7 +15,6 @@ from honeyhive.tracer.decorators import (
     atrace,
     trace,
 )
-from honeyhive.tracer.otel_tracer import get_tracer
 
 
 class TestSetSpanAttributes:
@@ -172,16 +171,16 @@ class TestCreateSyncWrapper:
         mock_tracer.start_span.assert_called_once_with("test_event")
 
     def test_create_sync_wrapper_no_tracer(self) -> None:
-        """Test creating sync wrapper when no tracer is available."""
+        """Test creating sync wrapper when no tracer is provided."""
 
         def test_func() -> str:
             return "success"
 
         params = TracingParams(event_name="test_event")
 
-        with patch("honeyhive.tracer.decorators.get_tracer", return_value=None):
-            wrapper = _create_sync_wrapper(test_func, params)
-            result = wrapper()
+        # No tracer provided in params
+        wrapper = _create_sync_wrapper(test_func, params)
+        result = wrapper()
 
         assert result == "success"
 
@@ -193,12 +192,12 @@ class TestCreateSyncWrapper:
 
         params = TracingParams(event_name="test_event")
 
-        with patch(
-            "honeyhive.tracer.decorators.get_tracer",
-            side_effect=Exception("Tracer error"),
-        ):
-            wrapper = _create_sync_wrapper(test_func, params)
-            result = wrapper()
+        # Provide a tracer that will raise an exception during span creation
+        mock_tracer = Mock()
+        mock_tracer.start_span.side_effect = Exception("Tracer error")
+
+        wrapper = _create_sync_wrapper(test_func, params, tracer=mock_tracer)
+        result = wrapper()
 
         assert result == "success"
 
@@ -239,7 +238,7 @@ class TestCreateSyncWrapper:
             metadata={"user_id": "user-123"},
             metrics={"latency": 100},
             feedback={"rating": 5},
-            tracer=mock_tracer
+            tracer=mock_tracer,
         )
         def decorated_func() -> str:
             return "success"
@@ -268,11 +267,10 @@ class TestCreateSyncWrapper:
         mock_context.__exit__ = Mock(return_value=None)
         mock_tracer.start_span.return_value = mock_context
 
-        with patch("honeyhive.tracer.decorators.get_tracer", return_value=mock_tracer):
-            wrapper = _create_sync_wrapper(test_func, params)
+        wrapper = _create_sync_wrapper(test_func, params, tracer=mock_tracer)
 
-            with pytest.raises(ValueError, match="Test error"):
-                wrapper()
+        with pytest.raises(ValueError, match="Test error"):
+            wrapper()
 
     def test_create_sync_wrapper_with_kwargs(self) -> None:
         """Test creating sync wrapper with additional kwargs."""
@@ -366,9 +364,9 @@ class TestCreateAsyncWrapper:
 
         params = TracingParams(event_name="test_event")
 
-        with patch("honeyhive.tracer.decorators.get_tracer", return_value=None):
-            wrapper = _create_async_wrapper(test_func, params)
-            result = await wrapper()
+        # No tracer provided in params
+        wrapper = _create_async_wrapper(test_func, params)
+        result = await wrapper()
 
         assert result == "success"
 
@@ -381,12 +379,12 @@ class TestCreateAsyncWrapper:
 
         params = TracingParams(event_name="test_event")
 
-        with patch(
-            "honeyhive.tracer.decorators.get_tracer",
-            side_effect=Exception("Tracer error"),
-        ):
-            wrapper = _create_async_wrapper(test_func, params)
-            result = await wrapper()
+        # Provide a tracer that will raise an exception during span creation
+        mock_tracer = Mock()
+        mock_tracer.start_span.side_effect = Exception("Tracer error")
+
+        wrapper = _create_async_wrapper(test_func, params, tracer=mock_tracer)
+        result = await wrapper()
 
         assert result == "success"
 
@@ -407,11 +405,10 @@ class TestCreateAsyncWrapper:
         mock_context.__exit__ = Mock(return_value=None)
         mock_tracer.start_span.return_value = mock_context
 
-        with patch("honeyhive.tracer.decorators.get_tracer", return_value=mock_tracer):
-            wrapper = _create_async_wrapper(test_func, params)
+        wrapper = _create_async_wrapper(test_func, params, tracer=mock_tracer)
 
-            with pytest.raises(ValueError, match="Test error"):
-                await wrapper()
+        with pytest.raises(ValueError, match="Test error"):
+            await wrapper()
 
 
 class TestTraceDecorator:
@@ -608,10 +605,6 @@ class TestTraceDecorator:
     def test_trace_decorator_with_none_span(self) -> None:
         """Test trace decorator when span is None."""
 
-        @trace(event_name="test_event")
-        def test_func() -> str:
-            return "success"
-
         # Mock tracer that returns None span
         mock_tracer = Mock()
         mock_context = Mock()
@@ -619,19 +612,16 @@ class TestTraceDecorator:
         mock_context.__exit__ = Mock(return_value=None)
         mock_tracer.start_span.return_value = mock_context
 
-        with patch("honeyhive.tracer.decorators.get_tracer", return_value=mock_tracer):
-            result = test_func()
+        @trace(event_name="test_event", tracer=mock_tracer)
+        def test_func() -> str:
+            return "success"
+
+        result = test_func()
 
         assert result == "success"
 
     def test_trace_decorator_with_span_attribute_exceptions(self) -> None:
         """Test trace decorator handles span attribute setting exceptions."""
-
-        @trace(
-            event_name="test_event", inputs={"key": "value"}, outputs={"result": "data"}
-        )
-        def test_func() -> str:
-            return "success"
 
         # Mock span that raises exceptions when setting attributes
         mock_span = Mock()
@@ -642,6 +632,15 @@ class TestTraceDecorator:
         mock_context.__enter__ = Mock(return_value=mock_span)
         mock_context.__exit__ = Mock(return_value=None)
         mock_tracer.start_span.return_value = mock_context
+
+        @trace(
+            event_name="test_event",
+            inputs={"key": "value"},
+            outputs={"result": "data"},
+            tracer=mock_tracer,
+        )
+        def test_func() -> str:
+            return "success"
 
         # In the new multi-instance approach, the decorator handles exceptions gracefully
         # The function should still work despite span attribute errors
@@ -658,10 +657,6 @@ class TestTraceDecorator:
 
         non_serializable = NonSerializable()
 
-        @trace(event_name="test_event", inputs={"data": non_serializable})
-        def test_func() -> str:
-            return "success"
-
         # Mock tracer
         mock_tracer = Mock()
         mock_span = Mock()
@@ -670,8 +665,15 @@ class TestTraceDecorator:
         mock_context.__exit__ = Mock(return_value=None)
         mock_tracer.start_span.return_value = mock_context
 
-        with patch("honeyhive.tracer.decorators.get_tracer", return_value=mock_tracer):
-            result = test_func()
+        @trace(
+            event_name="test_event",
+            inputs={"data": non_serializable},
+            tracer=mock_tracer,
+        )
+        def test_func() -> str:
+            return "success"
+
+        result = test_func()
 
         # Function should still work despite JSON serialization errors
         assert result == "success"

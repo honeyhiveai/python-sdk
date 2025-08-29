@@ -159,16 +159,13 @@ def disable_tracing_during_tests():
     os.environ["HH_DISABLE_HTTP_TRACING"] = "true"
     os.environ["HH_OTLP_ENABLED"] = "false"
 
-    # Mock the get_tracer function to return None during tests
-    with patch("honeyhive.tracer.decorators.get_tracer") as mock_get_tracer:
-        mock_get_tracer.return_value = None
-        # Mock OpenTelemetry trace module to prevent span creation
-        with patch("honeyhive.tracer.otel_tracer.trace") as mock_trace:
-            # Create a proper mock tracer that supports context manager protocol
-            mock_tracer = Mock()
-            mock_span = Mock()
-            mock_span.__enter__ = Mock(return_value=mock_span)
-            mock_span.__exit__ = Mock(return_value=None)
-            mock_tracer.start_as_current_span.return_value = mock_span
-            mock_trace.get_tracer.return_value = mock_tracer
-            yield
+    # Mock OpenTelemetry trace module to prevent span creation
+    with patch("honeyhive.tracer.otel_tracer.trace") as mock_trace:
+        # Create a proper mock tracer that supports context manager protocol
+        mock_tracer = Mock()
+        mock_span = Mock()
+        mock_span.__enter__ = Mock(return_value=mock_span)
+        mock_span.__exit__ = Mock(return_value=None)
+        mock_tracer.start_as_current_span.return_value = mock_span
+        mock_trace.get_tracer.return_value = mock_tracer
+        yield

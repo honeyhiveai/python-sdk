@@ -13,7 +13,9 @@ from honeyhive.tracer.decorators import trace
 class TestTracerIntegration:
     """Test tracer integration and end-to-end functionality."""
 
-    def test_tracer_initialization_integration(self, integration_tracer, real_project, real_source):
+    def test_tracer_initialization_integration(
+        self, integration_tracer, real_project, real_source
+    ):
         """Test tracer initialization and configuration."""
         assert integration_tracer.project == real_project
         assert integration_tracer.source == real_source
@@ -22,7 +24,9 @@ class TestTracerIntegration:
     def test_function_tracing_integration(self, integration_tracer):
         """Test function tracing integration."""
 
-        @trace(event_type="model", event_name="test_function", tracer=integration_tracer)
+        @trace(
+            event_type="model", event_name="test_function", tracer=integration_tracer
+        )
         def test_function(x, y):
             return x + y
 
@@ -40,7 +44,9 @@ class TestTracerIntegration:
         class TestClass:
             """Test class for method tracing integration."""
 
-            @trace(event_type="model", event_name="test_method", tracer=integration_tracer)
+            @trace(
+                event_type="model", event_name="test_method", tracer=integration_tracer
+            )
             def test_method(self, value):
                 """Test method that doubles the input value.
 
@@ -207,3 +213,153 @@ class TestTracerIntegration:
             # Verify the span has the expected attributes
             assert hasattr(span, "set_attribute")
             assert hasattr(span, "is_recording")
+
+
+@pytest.mark.integration
+@pytest.mark.tracer
+class TestUnifiedEnrichSpanIntegration:
+    """Integration tests for unified enrich_span functionality."""
+
+    def test_enrich_span_context_manager_integration(self, integration_tracer):
+        """Test enrich_span context manager in integration environment."""
+        from honeyhive.tracer.otel_tracer import enrich_span
+
+        with integration_tracer.start_span("test_span") as span:
+            assert span.is_recording()
+
+            # Test enhanced_tracing_demo.py pattern
+            with enrich_span(
+                event_type="integration_test",
+                event_name="context_manager_test",
+                inputs={"test_input": "integration_value"},
+                metadata={"test_type": "integration", "pattern": "context_manager"},
+                metrics={"execution_time": 0.1},
+            ):
+                # Simulate some work
+                time.sleep(0.01)
+
+        # Verify that no exceptions were thrown
+        assert True
+
+    def test_enrich_span_basic_usage_integration(self, integration_tracer):
+        """Test enrich_span basic_usage.py pattern in integration environment."""
+        with integration_tracer.start_span("test_span") as span:
+            assert span.is_recording()
+
+            # Test basic_usage.py pattern: tracer.enrich_span("session_name", {"key": "value"})
+            with integration_tracer.enrich_span(
+                "integration_session", {"test_type": "integration"}
+            ):
+                # Simulate some work
+                time.sleep(0.01)
+
+        # Verify that no exceptions were thrown
+        assert True
+
+    def test_enrich_span_direct_call_integration(self, integration_tracer):
+        """Test enrich_span direct method call in integration environment."""
+        with integration_tracer.start_span("test_span"):
+            # Test direct method call
+            result = integration_tracer.enrich_span(
+                metadata={"test_type": "integration", "call_type": "direct"},
+                metrics={"test_metric": 42},
+            )
+
+            # Should return boolean indicating success/failure
+            assert isinstance(result, bool)
+
+    def test_enrich_span_global_function_integration(self, integration_tracer):
+        """Test global enrich_span function in integration environment."""
+        from honeyhive.tracer.otel_tracer import enrich_span
+
+        with integration_tracer.start_span("test_span"):
+            # Test global function with tracer parameter
+            result = enrich_span(
+                metadata={"test_type": "integration", "call_type": "global"},
+                tracer=integration_tracer,
+            )
+
+            # Should return boolean indicating success/failure
+            assert isinstance(result, bool)
+
+    def test_enrich_span_import_paths_integration(self, integration_tracer):
+        """Test all import paths work in integration environment."""
+        # Test all import paths
+        from honeyhive.tracer import enrich_span as init_enrich_span
+        from honeyhive.tracer.decorators import enrich_span as decorators_enrich_span
+        from honeyhive.tracer.otel_tracer import enrich_span as otel_enrich_span
+
+        with integration_tracer.start_span("test_span"):
+            # Test that all import paths work
+            with otel_enrich_span(event_type="import_test_1"):
+                pass
+
+            with decorators_enrich_span(event_type="import_test_2"):
+                pass
+
+            with init_enrich_span(event_type="import_test_3"):
+                pass
+
+        # Verify that no exceptions were thrown
+        assert True
+
+    def test_enrich_span_real_world_workflow_integration(self, integration_tracer):
+        """Test enrich_span in a realistic workflow scenario."""
+        from honeyhive.tracer.otel_tracer import enrich_span
+
+        # Simulate a realistic AI application workflow
+        with integration_tracer.start_span("ai_workflow") as main_span:
+            assert main_span.is_recording()
+
+            # Step 1: Data preprocessing
+            with enrich_span(
+                event_type="preprocessing",
+                event_name="data_preparation",
+                inputs={"raw_data": "user_query"},
+                metadata={"stage": "preprocessing", "version": "1.0"},
+            ):
+                time.sleep(0.01)  # Simulate preprocessing work
+
+            # Step 2: Model inference
+            with enrich_span(
+                event_type="inference",
+                event_name="model_prediction",
+                inputs={"processed_data": "cleaned_query"},
+                config_data={"model": "gpt-3.5", "temperature": 0.7},
+                metadata={"stage": "inference"},
+            ):
+                time.sleep(0.02)  # Simulate model inference
+
+            # Step 3: Post-processing with direct call
+            result = integration_tracer.enrich_span(
+                metadata={"stage": "postprocessing", "output_format": "json"},
+                metrics={"response_length": 150, "confidence": 0.95},
+            )
+            assert isinstance(result, bool)
+
+        # Verify that the complete workflow executed without errors
+        assert True
+
+    def test_enrich_span_error_scenarios_integration(self, integration_tracer):
+        """Test enrich_span error handling in integration environment."""
+        from honeyhive.tracer.otel_tracer import enrich_span
+
+        # Test with no active span (should handle gracefully)
+        with enrich_span(event_type="no_span_test"):
+            pass
+
+        # Test with invalid parameters (should handle gracefully)
+        with enrich_span(
+            event_type="error_test",
+            metadata={"complex_object": {"nested": {"deeply": "value"}}},
+            inputs=["list", "of", "items"],
+            invalid_param="should_be_ignored",
+        ):
+            pass
+
+        # Test direct call without tracer (should return False)
+        result = enrich_span(metadata={"test": "no_tracer"})
+        assert result is False
+
+        # Verify that error scenarios don't crash the application
+        assert True

@@ -36,7 +36,7 @@ class TestHoneyHiveTracer:
                 tracer = HoneyHiveTracer(api_key="test_key", project="test_project")
                 assert tracer.api_key == "test_key"
                 assert tracer.project == "test_project"
-                assert tracer.source == "production"
+                assert tracer.source == "dev"
                 assert tracer.test_mode is False
                 assert tracer.disable_http_tracing is True
 
@@ -640,7 +640,9 @@ class TestGlobalFunctions:
                 {"key": "value"}, {"metric": 42}, {"attr": "test"}, tracer=mock_tracer
             )
             mock_tracer.enrich_span.assert_called_once_with(
-                {"key": "value"}, {"metric": 42}, {"attr": "test"}
+                metadata={"key": "value"},
+                metrics={"metric": 42},
+                attributes={"attr": "test"},
             )
 
     def test_enrich_span_without_tracer(self) -> None:
@@ -651,11 +653,381 @@ class TestGlobalFunctions:
             # Should handle gracefully when no tracer provided
             enrich_span({"key": "value"}, {"metric": 42}, {"attr": "test"})
 
-    def test_get_tracer_deprecated(self) -> None:
-        """Test that get_tracer returns None and provides guidance."""
-        with patch("honeyhive.tracer.otel_tracer.OTEL_AVAILABLE", True):
-            from honeyhive.tracer.otel_tracer import get_tracer
 
-            # Should return None and provide guidance
-            result = get_tracer()
-            assert result is None
+class TestUnifiedEnrichSpan:
+    """Test cases for the unified enrich_span implementation."""
+
+    def setup_method(self) -> None:
+        """Set up test fixtures."""
+        self.tracer = Mock()
+        self.tracer.enrich_span = Mock(return_value=True)
+
+    def test_enrich_span_context_manager_basic(self) -> None:
+        """Test basic context manager pattern."""
+        from honeyhive.tracer.otel_tracer import enrich_span
+
+        with patch("honeyhive.tracer.otel_tracer.trace") as mock_trace:
+            mock_span = Mock()
+            mock_span.is_recording.return_value = True
+            mock_trace.get_current_span.return_value = mock_span
+
+            # Test basic context manager usage
+            with enrich_span(event_type="test_event", metadata={"key": "value"}):
+                pass
+
+            # Verify span attributes were set
+            mock_span.set_attribute.assert_any_call(
+                "honeyhive_event_type", "test_event"
+            )
+
+    def test_enrich_span_context_manager_enhanced(self) -> None:
+        """Test enhanced context manager pattern from enhanced_tracing_demo.py."""
+        from honeyhive.tracer.otel_tracer import enrich_span
+
+        with patch("honeyhive.tracer.otel_tracer.trace") as mock_trace:
+            with patch(
+                "honeyhive.tracer.otel_tracer._set_span_attributes"
+            ) as mock_set_attrs:
+                mock_span = Mock()
+                mock_span.is_recording.return_value = True
+                mock_trace.get_current_span.return_value = mock_span
+
+                # Test enhanced pattern
+                with enrich_span(
+                    event_type="enrichment_demo",
+                    event_name="attribute_enrichment",
+                    inputs={"source": "demo", "operation": "enrichment"},
+                    metadata={"enrichment_type": "context_manager"},
+                    metrics={"enrichment_count": 5},
+                ):
+                    pass
+
+                # Verify comprehensive attributes were set
+                mock_span.set_attribute.assert_any_call(
+                    "honeyhive_event_type", "enrichment_demo"
+                )
+                mock_span.set_attribute.assert_any_call(
+                    "honeyhive_event_name", "attribute_enrichment"
+                )
+                mock_set_attrs.assert_any_call(
+                    mock_span,
+                    "honeyhive_inputs",
+                    {"source": "demo", "operation": "enrichment"},
+                )
+                mock_set_attrs.assert_any_call(
+                    mock_span,
+                    "honeyhive_metadata",
+                    {"enrichment_type": "context_manager"},
+                )
+                mock_set_attrs.assert_any_call(
+                    mock_span, "honeyhive_metrics", {"enrichment_count": 5}
+                )
+
+    def test_enrich_span_backwards_compatibility_basic_usage(self) -> None:
+        """Test backwards compatibility with basic_usage.py pattern."""
+        from honeyhive.tracer.otel_tracer import enrich_span
+
+        with patch("honeyhive.tracer.otel_tracer.trace") as mock_trace:
+            with patch(
+                "honeyhive.tracer.otel_tracer._set_span_attributes"
+            ) as mock_set_attrs:
+                mock_span = Mock()
+                mock_span.is_recording.return_value = True
+                mock_trace.get_current_span.return_value = mock_span
+
+                # Test basic_usage.py pattern: enrich_span("session_enrichment", {"enrichment_type": "session_data"})
+                with enrich_span(
+                    "session_enrichment", {"enrichment_type": "session_data"}
+                ):
+                    pass
+
+                # Verify attributes were set correctly
+                mock_span.set_attribute.assert_any_call(
+                    "honeyhive_event_type", "session_enrichment"
+                )
+                mock_set_attrs.assert_any_call(
+                    mock_span, "honeyhive_metadata", {"enrichment_type": "session_data"}
+                )
+
+    def test_enrich_span_direct_call_with_tracer(self) -> None:
+        """Test direct method call with tracer parameter."""
+        from honeyhive.tracer.otel_tracer import enrich_span
+
+        # Test direct call with tracer
+        result = enrich_span(
+            metadata={"key": "value"}, metrics={"latency": 100}, tracer=self.tracer
+        )
+
+        # Should delegate to tracer instance
+        self.tracer.enrich_span.assert_called_once_with(
+            metadata={"key": "value"}, metrics={"latency": 100}, attributes=None
+        )
+        assert result is True
+
+    def test_enrich_span_direct_call_without_tracer(self) -> None:
+        """Test direct method call without tracer parameter (should fail gracefully)."""
+        from honeyhive.tracer.otel_tracer import enrich_span
+
+        with patch("builtins.print") as mock_print:
+            result = enrich_span(metadata={"key": "value"})
+
+            # Should return False and print error message
+            assert result is False
+            mock_print.assert_called()
+
+    def test_enrich_span_experiment_attributes(self) -> None:
+        """Test experiment harness attributes are properly set."""
+        from honeyhive.tracer.otel_tracer import enrich_span
+
+        with patch("honeyhive.tracer.otel_tracer.trace") as mock_trace:
+            mock_span = Mock()
+            mock_span.is_recording.return_value = True
+            mock_trace.get_current_span.return_value = mock_span
+
+            config_data = {
+                "experiment_id": "exp-123",
+                "experiment_name": "test_experiment",
+                "experiment_variant": "control",
+                "experiment_group": "A",
+                "experiment_metadata": {"version": "1.0", "feature": "enabled"},
+            }
+
+            with enrich_span(event_type="experiment", config_data=config_data):
+                pass
+
+            # Verify experiment attributes were set
+            mock_span.set_attribute.assert_any_call(
+                "honeyhive_experiment_id", "exp-123"
+            )
+            mock_span.set_attribute.assert_any_call(
+                "honeyhive_experiment_name", "test_experiment"
+            )
+            mock_span.set_attribute.assert_any_call(
+                "honeyhive_experiment_variant", "control"
+            )
+            mock_span.set_attribute.assert_any_call("honeyhive_experiment_group", "A")
+            mock_span.set_attribute.assert_any_call(
+                "honeyhive_experiment_metadata_version", "1.0"
+            )
+            mock_span.set_attribute.assert_any_call(
+                "honeyhive_experiment_metadata_feature", "enabled"
+            )
+
+    def test_enrich_span_no_active_span(self) -> None:
+        """Test enrich_span when no active span exists."""
+        from honeyhive.tracer.otel_tracer import enrich_span
+
+        with patch("honeyhive.tracer.otel_tracer.trace") as mock_trace:
+            mock_trace.get_current_span.return_value = None
+
+            # Should handle gracefully when no span exists
+            with enrich_span(event_type="test"):
+                pass
+
+    def test_enrich_span_span_not_recording(self) -> None:
+        """Test enrich_span when span is not recording."""
+        from honeyhive.tracer.otel_tracer import enrich_span
+
+        with patch("honeyhive.tracer.otel_tracer.trace") as mock_trace:
+            mock_span = Mock()
+            mock_span.is_recording.return_value = False
+            mock_trace.get_current_span.return_value = mock_span
+
+            # Should handle gracefully when span is not recording
+            with enrich_span(event_type="test"):
+                pass
+
+            # Verify no attributes were set
+            mock_span.set_attribute.assert_not_called()
+
+    def test_enrich_span_exception_handling(self) -> None:
+        """Test enrich_span handles exceptions gracefully."""
+        from honeyhive.tracer.otel_tracer import enrich_span
+
+        with patch("honeyhive.tracer.otel_tracer.trace") as mock_trace:
+            mock_span = Mock()
+            mock_span.is_recording.return_value = True
+            mock_span.set_attribute.side_effect = Exception("Test exception")
+            mock_trace.get_current_span.return_value = mock_span
+
+            # Should handle exceptions gracefully
+            with enrich_span(event_type="test"):
+                pass
+
+    def test_enrich_span_kwargs_attributes(self) -> None:
+        """Test enrich_span sets kwargs as honeyhive_ attributes."""
+        from honeyhive.tracer.otel_tracer import enrich_span
+
+        with patch("honeyhive.tracer.otel_tracer.trace") as mock_trace:
+            mock_span = Mock()
+            mock_span.is_recording.return_value = True
+            mock_trace.get_current_span.return_value = mock_span
+
+            with enrich_span(
+                event_type="test",
+                custom_attr="custom_value",
+                user_id="123",
+                session_id="session-456",
+            ):
+                pass
+
+            # Verify kwargs were set as honeyhive_ attributes
+            mock_span.set_attribute.assert_any_call(
+                "honeyhive_custom_attr", "custom_value"
+            )
+            mock_span.set_attribute.assert_any_call("honeyhive_user_id", "123")
+            mock_span.set_attribute.assert_any_call(
+                "honeyhive_session_id", "session-456"
+            )
+
+    def test_enrich_span_import_compatibility(self) -> None:
+        """Test enrich_span can be imported from different modules."""
+        # Test import from otel_tracer (main implementation)
+        # Test import from __init__ (public API)
+        from honeyhive.tracer import enrich_span as init_enrich_span
+
+        # Test import from decorators (should delegate)
+        from honeyhive.tracer.decorators import enrich_span as decorators_enrich_span
+        from honeyhive.tracer.otel_tracer import enrich_span as otel_enrich_span
+
+        # All should be callable
+        assert callable(otel_enrich_span)
+        assert callable(decorators_enrich_span)
+        assert callable(init_enrich_span)
+
+
+class TestSetSpanAttributes:
+    """Test cases for _set_span_attributes helper function."""
+
+    def test_set_span_attributes_dict(self) -> None:
+        """Test setting span attributes with dictionary."""
+        from honeyhive.tracer.otel_tracer import _set_span_attributes
+
+        mock_span = Mock()
+        data = {"key1": "value1", "key2": 42, "key3": True}
+
+        _set_span_attributes(mock_span, "test", data)
+
+        # Should set attributes for each key in the dict
+        mock_span.set_attribute.assert_any_call("test.key1", "value1")
+        mock_span.set_attribute.assert_any_call("test.key2", 42)
+        mock_span.set_attribute.assert_any_call("test.key3", True)
+
+    def test_set_span_attributes_list(self) -> None:
+        """Test setting span attributes with list."""
+        from honeyhive.tracer.otel_tracer import _set_span_attributes
+
+        mock_span = Mock()
+        data = ["item1", "item2", 42]
+
+        _set_span_attributes(mock_span, "test", data)
+
+        # Should set attributes for each item in the list
+        mock_span.set_attribute.assert_any_call("test.0", "item1")
+        mock_span.set_attribute.assert_any_call("test.1", "item2")
+        mock_span.set_attribute.assert_any_call("test.2", 42)
+
+    def test_set_span_attributes_nested_dict(self) -> None:
+        """Test setting span attributes with nested dictionary."""
+        from honeyhive.tracer.otel_tracer import _set_span_attributes
+
+        mock_span = Mock()
+        data = {"outer": {"inner": "value", "number": 123}}
+
+        _set_span_attributes(mock_span, "test", data)
+
+        # Should set attributes for nested structure
+        mock_span.set_attribute.assert_any_call("test.outer.inner", "value")
+        mock_span.set_attribute.assert_any_call("test.outer.number", 123)
+
+    def test_set_span_attributes_complex_object(self) -> None:
+        """Test setting span attributes with complex object (JSON serialization)."""
+        from honeyhive.tracer.otel_tracer import _set_span_attributes
+
+        mock_span = Mock()
+
+        class CustomObject:
+            def __init__(self):
+                self.value = "test"
+
+        data = CustomObject()
+
+        _set_span_attributes(mock_span, "test", data)
+
+        # Should call set_attribute once (either JSON or string representation)
+        mock_span.set_attribute.assert_called_once()
+
+    def test_set_span_attributes_none_value(self) -> None:
+        """Test setting span attributes with None value."""
+        from honeyhive.tracer.otel_tracer import _set_span_attributes
+
+        mock_span = Mock()
+
+        _set_span_attributes(mock_span, "test", None)
+
+        # Should not set any attributes for None
+        mock_span.set_attribute.assert_not_called()
+
+    def test_set_span_attributes_exception_handling(self) -> None:
+        """Test _set_span_attributes handles exceptions gracefully."""
+        from honeyhive.tracer.otel_tracer import _set_span_attributes
+
+        mock_span = Mock()
+        mock_span.set_attribute.side_effect = Exception("Test exception")
+
+        # Should handle exceptions gracefully
+        _set_span_attributes(mock_span, "test", "value")
+
+
+class TestHoneyHiveTracerEnrichSpanUnified:
+    """Test cases for HoneyHiveTracer.enrich_span unified implementation."""
+
+    def setup_method(self) -> None:
+        """Set up test fixtures."""
+        self.tracer = Mock()
+        self.tracer.enrich_span = Mock()
+
+    def test_tracer_enrich_span_context_manager_pattern(self) -> None:
+        """Test HoneyHiveTracer.enrich_span with context manager pattern (backwards compatibility)."""
+        from honeyhive.tracer.otel_tracer import HoneyHiveTracer
+
+        tracer = HoneyHiveTracer(api_key="test", project="test", test_mode=True)
+
+        with patch(
+            "honeyhive.tracer.otel_tracer._enrich_span_context_manager"
+        ) as mock_context_manager:
+            mock_context_manager.return_value.__enter__ = Mock()
+            mock_context_manager.return_value.__exit__ = Mock()
+
+            # Test basic_usage.py pattern: tracer.enrich_span("session_name", {"key": "value"})
+            with tracer.enrich_span(
+                "session_enrichment", {"enrichment_type": "session_data"}
+            ):
+                pass
+
+            # Should call context manager with correct parameters
+            mock_context_manager.assert_called_once()
+            args, kwargs = mock_context_manager.call_args
+            assert kwargs["event_type"] == "session_enrichment"
+            assert kwargs["metadata"] == {"enrichment_type": "session_data"}
+            assert kwargs["tracer"] == tracer
+
+    def test_tracer_enrich_span_direct_method_call(self) -> None:
+        """Test HoneyHiveTracer.enrich_span direct method call."""
+        from honeyhive.tracer.otel_tracer import HoneyHiveTracer
+
+        tracer = HoneyHiveTracer(api_key="test", project="test", test_mode=True)
+
+        with patch("honeyhive.tracer.otel_tracer.OTEL_AVAILABLE", True):
+            with patch("honeyhive.tracer.otel_tracer.trace") as mock_trace:
+                mock_span = Mock()
+                mock_span.get_span_context.return_value = Mock(span_id=123)
+                mock_trace.get_current_span.return_value = mock_span
+
+                # Test direct method call (no positional args)
+                result = tracer.enrich_span(metadata={"key": "value"})
+
+                # Should return the result from the actual implementation
+                assert isinstance(
+                    result, bool
+                )  # Should return boolean for direct calls

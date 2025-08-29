@@ -54,7 +54,7 @@ class TestHTTPInstrumentation:
         """Test creating request spans."""
         # In the current simplified implementation, HTTP instrumentation is simplified
         # and doesn't create spans. This test verifies the current behavior.
-        
+
         # Instrument
         self.instrumentation.instrument()
 
@@ -65,7 +65,7 @@ class TestHTTPInstrumentation:
         """Test creating response spans."""
         # In the current simplified implementation, HTTP instrumentation is simplified
         # and doesn't create spans. This test verifies the current behavior.
-        
+
         # Instrument
         self.instrumentation.instrument()
 
@@ -76,7 +76,7 @@ class TestHTTPInstrumentation:
         """Test adding request attributes to spans."""
         # In the current simplified implementation, HTTP instrumentation is simplified
         # and doesn't add attributes to spans. This test verifies the current behavior.
-        
+
         # Instrument
         self.instrumentation.instrument()
 
@@ -87,7 +87,7 @@ class TestHTTPInstrumentation:
         """Test adding response attributes to spans."""
         # In the current simplified implementation, HTTP instrumentation is simplified
         # and doesn't add attributes to spans. This test verifies the current behavior.
-        
+
         # Instrument
         self.instrumentation.instrument()
 
@@ -98,7 +98,7 @@ class TestHTTPInstrumentation:
         """Test instrumenting HTTP requests."""
         # In the current simplified implementation, HTTP instrumentation is simplified
         # and doesn't create spans. This test verifies the current behavior.
-        
+
         # Instrument
         self.instrumentation.instrument()
 
@@ -109,7 +109,7 @@ class TestHTTPInstrumentation:
         """Test instrumenting async HTTP requests."""
         # In the current simplified implementation, HTTP instrumentation is simplified
         # and doesn't create spans. This test verifies the current behavior.
-        
+
         # Instrument
         self.instrumentation.instrument()
 
@@ -188,7 +188,7 @@ class TestHTTPInstrumentation:
         """Test that instrumentation adds correct attributes."""
         # In the current simplified implementation, HTTP instrumentation is simplified
         # and doesn't add attributes. This test verifies the current behavior.
-        
+
         # Instrument
         self.instrumentation.instrument()
 

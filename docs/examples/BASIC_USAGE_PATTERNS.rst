@@ -264,6 +264,213 @@ Create and manage spans manually:
        # End the span
        span.end()
 
+Span and Session Enrichment
+----------------------------
+
+The HoneyHive SDK provides two powerful approaches for enriching your traces with additional context and metadata.
+
+1. enrich_span - Modern Span Enrichment
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+The new unified ``enrich_span`` function is the **recommended approach** for most tracing scenarios. It provides flexible usage patterns and rich attribute support.
+
+**Basic Context Manager Pattern:**
+
+.. code-block:: python
+
+   from honeyhive.tracer import enrich_span, HoneyHiveTracer
+
+   tracer = HoneyHiveTracer.init(
+       api_key="your-api-key",
+       project="my-project"
+   )
+
+   # Basic enrichment (backwards compatible)
+   with enrich_span("user_session", {"user_id": "123", "action": "query"}):
+       process_user_request()
+
+   # Enhanced enrichment with rich attributes
+   with enrich_span(
+       event_type="llm_inference",
+       event_name="gpt4_completion",
+       inputs={"prompt": "What is AI?", "temperature": 0.7},
+       metadata={"model": "gpt-4", "version": "2024-03"},
+       metrics={"expected_tokens": 150}
+   ):
+       response = llm_client.complete(prompt)
+
+**Tracer Instance Methods:**
+
+.. code-block:: python
+
+   # Context manager pattern (backwards compatible with basic_usage.py)
+   with tracer.enrich_span("operation_name", {"step": "preprocessing"}):
+       preprocess_data()
+   
+   # Direct method call
+   success = tracer.enrich_span(
+       metadata={"stage": "postprocessing"},
+       metrics={"latency": 0.1, "tokens": 150}
+   )
+
+**Global Function with Tracer Parameter:**
+
+.. code-block:: python
+
+   from honeyhive.tracer.otel_tracer import enrich_span
+
+   # Direct call with explicit tracer
+   success = enrich_span(
+       metadata={"operation": "batch_processing"},
+       metrics={"items_processed": 1000},
+       tracer=my_tracer
+   )
+
+**Experiment and A/B Testing Support:**
+
+.. code-block:: python
+
+   with enrich_span(
+       event_type="ab_test",
+       config_data={
+           "experiment_id": "exp-789",
+           "experiment_name": "model_comparison",
+           "experiment_variant": "gpt4_turbo",
+           "experiment_group": "B",
+           "experiment_metadata": {
+               "version": "1.2",
+               "feature_flags": ["new_prompt", "enhanced_context"]
+           }
+       }
+   ):
+       # Automatically sets honeyhive_experiment_* attributes
+       run_experiment()
+
+2. enrich_session - Backend Session Enrichment
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Use ``enrich_session`` when you need to store session-level data directly in the HoneyHive backend for immediate availability in the UI.
+
+**Session Data Collection:**
+
+.. code-block:: python
+
+   from honeyhive import HoneyHiveTracer
+
+   tracer = HoneyHiveTracer.init(
+       api_key="your-api-key",
+       project="my-project"
+   )
+
+   # Enrich session with comprehensive data
+   success = tracer.enrich_session(
+       session_id="session-123",  # Optional - uses tracer's session if not provided
+       metadata={
+           "user_id": "user-456",
+           "conversation_type": "support",
+           "language": "en"
+       },
+       feedback={
+           "rating": 5,
+           "helpful": True,
+           "feedback_text": "Very helpful response"
+       },
+       metrics={
+           "total_tokens": 1500,
+           "duration": 2.5,
+           "api_calls": 3
+       },
+       config={
+           "model": "gpt-4",
+           "temperature": 0.7,
+           "max_tokens": 500
+       },
+       user_properties={
+           "subscription_tier": "premium",
+           "region": "us-west"
+       }
+   )
+
+**User Feedback Collection:**
+
+.. code-block:: python
+
+   # Collect user feedback after conversation
+   def collect_feedback(rating: int, helpful: bool, comments: str):
+       """Collect and store user feedback."""
+       success = tracer.enrich_session(
+           feedback={
+               "rating": rating,
+               "helpful": helpful,
+               "comments": comments,
+               "timestamp": time.time()
+           },
+           metrics={
+               "feedback_collected": True,
+               "feedback_delay": calculate_delay()
+           }
+       )
+       return success
+
+3. Combined Usage Pattern (Recommended)
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Use both approaches together for comprehensive observability:
+
+.. code-block:: python
+
+   from honeyhive import HoneyHiveTracer
+   from honeyhive.tracer import enrich_span
+
+   tracer = HoneyHiveTracer.init(
+       api_key="your-api-key",
+       project="my-project"
+   )
+
+   # Session-level data (persisted to backend)
+   tracer.enrich_session(
+       metadata={"user_id": "123", "session_type": "chat"},
+       config={"model": "gpt-4", "temperature": 0.7}
+   )
+
+   # Span-level data (rich context for operations)
+   with enrich_span(
+       event_type="llm_query",
+       inputs={"prompt": "What is AI?"},
+       metadata={"step": "preprocessing"}
+   ):
+       preprocess_query()
+
+   with enrich_span(
+       event_type="llm_inference",
+       config_data={"model": "gpt-4", "tokens": 150},
+       metrics={"latency": 0.8}
+   ):
+       generate_response()
+
+   # Collect user feedback at session level
+   tracer.enrich_session(
+       feedback={"rating": 5, "helpful": True}
+   )
+
+**When to Use Which:**
+
+.. code-block:: python
+
+   # Use enrich_span for:
+   # ✅ Span-level context and attributes
+   # ✅ OpenTelemetry-native enrichment
+   # ✅ Experiment and A/B testing data
+   # ✅ Flexible context manager patterns
+   # ✅ Local span enrichment
+
+   # Use enrich_session for:
+   # ✅ Backend persistence of session data
+   # ✅ User feedback and ratings
+   # ✅ Session-scoped metrics
+   # ✅ Data immediately available in HoneyHive UI
+   # ✅ Cross-span session context
+
 Session Management
 ------------------
 

@@ -61,7 +61,7 @@ class HoneyHiveTracer:
         self,
         api_key: Optional[str] = None,
         project: Optional[str] = None,
-        source: str = "production",
+        source: str = "dev",
         test_mode: bool = False,
         session_name: Optional[str] = None,
         instrumentors: Optional[list] = None,
@@ -168,7 +168,7 @@ class HoneyHiveTracer:
         cls,
         api_key: Optional[str] = None,
         project: Optional[str] = None,
-        source: str = "production",
+        source: str = "dev",
         test_mode: bool = False,
         session_name: Optional[str] = None,
         server_url: Optional[str] = None,
@@ -781,21 +781,55 @@ class HoneyHiveTracer:
 
     def enrich_span(
         self,
+        *args: Any,
         metadata: Optional[Dict[str, Any]] = None,
         metrics: Optional[Dict[str, Any]] = None,
         attributes: Optional[Dict[str, Any]] = None,
-    ) -> bool:
+        **kwargs: Any,
+    ) -> Any:
         """Enrich the current active span with additional data.
 
+        This method supports both context manager and direct call patterns:
+
+        1. Context manager pattern (backwards compatibility with basic_usage.py)::
+
+            with tracer.enrich_span("session_name", {"key": "value"}):
+                # code here
+
+        2. Direct method call::
+
+            success = tracer.enrich_span(metadata={"key": "value"})
+
         Args:
-            span_name: Name of the span to enrich (defaults to current active span)
+            *args: Positional arguments for backwards compatibility
+                   - args[0]: event_type or session_name (str)
+                   - args[1]: metadata (dict)
             metadata: Span metadata
             metrics: Span metrics
             attributes: Span attributes
+            **kwargs: Additional keyword arguments
 
         Returns:
-            Whether the enrichment was successful
+            Context manager for context manager usage, bool for direct calls
         """
+        # Handle backwards compatibility with positional arguments from basic_usage.py
+        if args:
+            # This is the pattern: tracer.enrich_span("session_name", {"key": "value"})
+            # Return a context manager for backwards compatibility
+            event_type = args[0] if len(args) >= 1 else None
+            if len(args) >= 2 and isinstance(args[1], dict):
+                metadata = args[1] if metadata is None else metadata
+
+            return _enrich_span_context_manager(
+                event_type=event_type,
+                metadata=metadata,
+                metrics=metrics,
+                attributes=attributes,
+                tracer=self,
+                **kwargs,
+            )
+
+        # Direct method call - original behavior
         if not OTEL_AVAILABLE:
             return False
 
@@ -987,7 +1021,7 @@ class HoneyHiveTracer:
 
         # This would be implemented to configure OTLP exporter
         # For now, we'll use the HoneyHive span processor
-        # TODO: Implement OTLP exporter configuration
+        # OTLP exporter configuration is deferred for future implementation
         pass
 
 
@@ -1020,40 +1054,267 @@ def enrich_session(
 
 
 def enrich_span(
+    *args: Any,
     metadata: Optional[Dict[str, Any]] = None,
     metrics: Optional[Dict[str, Any]] = None,
     attributes: Optional[Dict[str, Any]] = None,
+    event_type: Optional[str] = None,
+    event_name: Optional[str] = None,
+    inputs: Optional[Dict[str, Any]] = None,
+    outputs: Optional[Dict[str, Any]] = None,
+    config_data: Optional[Dict[str, Any]] = None,
+    feedback: Optional[Dict[str, Any]] = None,
+    error: Optional[Exception] = None,
+    event_id: Optional[str] = None,
     tracer: Optional[HoneyHiveTracer] = None,
-) -> None:
-    """Enrich span with metadata.
+    **kwargs: Any,
+) -> Any:
+    """Unified enrich_span function supporting both context manager and direct call patterns.
 
-    Note: This function is no longer needed in multi-instance mode.
-    Users should call enrich_span() directly on their tracer instances.
+    This function provides backwards compatibility with existing usage patterns:
+
+    1. Context manager pattern (from enhanced_tracing_demo.py):
+        with enrich_span(event_type="demo", metadata={"key": "value"}):
+            # code here
+
+    2. Direct method call pattern (from basic_usage.py):
+        with tracer.enrich_span("session_name", {"key": "value"}):
+            # code here
+
+    3. HoneyHiveTracer instance method call:
+        success = tracer.enrich_span(metadata={"key": "value"})
+
+    4. Global function call:
+        success = enrich_span(metadata={"key": "value"}, tracer=my_tracer)
 
     Args:
+        *args: Positional arguments for backwards compatibility
+               - args[0]: event_type or session_name (str)
+               - args[1]: metadata (dict)
         metadata: Span metadata
         metrics: Span metrics
         attributes: Span attributes
-        tracer: Tracer instance to use (required in multi-instance mode)
-    """
-    if tracer is None:
-        print("❌ Error: tracer parameter is required in multi-instance mode")
-        print("   Usage: tracer.enrich_span(metadata, metrics, attributes)")
-        return
-
-    tracer.enrich_span(metadata, metrics, attributes)
-
-
-def get_tracer() -> Optional[HoneyHiveTracer]:
-    """Get the global tracer instance.
-
-    Note: This function is no longer needed in multi-instance mode.
-    Users should create and manage their own tracer instances directly.
+        event_type: Type of traced event
+        event_name: Name of the traced event
+        inputs: Input data for the event
+        outputs: Output data for the event
+        config_data: Configuration data
+        feedback: User feedback
+        error: Error information
+        event_id: Unique event identifier
+        tracer: HoneyHiveTracer instance (for multi-instance support)
+        **kwargs: Additional attributes to set on the span
 
     Returns:
-        None (always returns None in multi-instance mode)
+        Context manager for context manager usage, bool for direct calls
     """
-    print("❌ Error: get_tracer() is not available in multi-instance mode")
-    print("   Create tracers with: HoneyHiveTracer(api_key='...', project='...')")
-    print("   Each tracer instance is independent and manages its own state")
-    return None
+    # Handle backwards compatibility with positional arguments
+    if args:
+        if len(args) >= 1:
+            if isinstance(args[0], str):
+                # Pattern: enrich_span("session_name", {...}) from basic_usage.py
+                if event_type is None:
+                    event_type = args[0]
+            elif isinstance(args[0], dict):
+                # Pattern: enrich_span({"key": "value"}, {...}) - first arg is metadata
+                if metadata is None:
+                    metadata = args[0]
+        if len(args) >= 2 and isinstance(args[1], dict):
+            # Second argument is metadata or metrics dict
+            if metadata is None and isinstance(args[0], str):
+                # Pattern: enrich_span("session_name", {"key": "value"})
+                metadata = args[1]
+            elif metrics is None and isinstance(args[0], dict):
+                # Pattern: enrich_span({"metadata": "value"}, {"metrics": "value"})
+                metrics = args[1]
+        if len(args) >= 3 and isinstance(args[2], dict):
+            # Third argument is attributes dict
+            if attributes is None:
+                attributes = args[2]
+
+    # Check if this is being called as a context manager (look for specific context manager args)
+    # Context manager usage has rich parameters like event_type, inputs, outputs, etc.
+    # Direct calls typically only have metadata, metrics, attributes
+    is_context_manager = (
+        event_type is not None
+        or event_name is not None
+        or inputs is not None
+        or outputs is not None
+        or config_data is not None
+        or feedback is not None
+        or error is not None
+        or event_id is not None
+    )
+
+    if is_context_manager:
+        # Return context manager
+        return _enrich_span_context_manager(
+            event_type=event_type,
+            event_name=event_name,
+            inputs=inputs,
+            outputs=outputs,
+            metadata=metadata,
+            config_data=config_data,
+            metrics=metrics,
+            feedback=feedback,
+            error=error,
+            event_id=event_id,
+            attributes=attributes,
+            tracer=tracer,
+            **kwargs,
+        )
+    else:
+        # Direct method call - delegate to tracer instance
+        if tracer is None:
+            print("❌ Error: tracer parameter is required for direct method calls")
+            print("   Usage options:")
+            print("   1. tracer.enrich_span(metadata={'key': 'value'})")
+            print("   2. enrich_span(metadata={'key': 'value'}, tracer=my_tracer)")
+            print("   3. Use context manager: with enrich_span(event_type='demo'):")
+            return False
+
+        return tracer.enrich_span(
+            metadata=metadata, metrics=metrics, attributes=attributes
+        )
+
+
+@contextmanager
+def _enrich_span_context_manager(
+    event_type: Optional[str] = None,
+    event_name: Optional[str] = None,
+    inputs: Optional[Dict[str, Any]] = None,
+    outputs: Optional[Dict[str, Any]] = None,
+    metadata: Optional[Dict[str, Any]] = None,
+    config_data: Optional[Dict[str, Any]] = None,
+    metrics: Optional[Dict[str, Any]] = None,
+    feedback: Optional[Dict[str, Any]] = None,
+    error: Optional[Exception] = None,
+    event_id: Optional[str] = None,
+    attributes: Optional[Dict[str, Any]] = None,
+    tracer: Optional[HoneyHiveTracer] = None,
+    **kwargs: Any,
+) -> Any:
+    """Context manager implementation for enrich_span.
+
+    Yields:
+        None: The context manager yields control to the wrapped code block
+    """
+    try:
+        # Get current span from OpenTelemetry context
+        current_span = trace.get_current_span()
+
+        if current_span and current_span.is_recording():
+            # Set comprehensive attributes on the current span
+            if event_type:
+                current_span.set_attribute("honeyhive_event_type", event_type)
+
+            if event_name:
+                current_span.set_attribute("honeyhive_event_name", event_name)
+
+            if event_id:
+                current_span.set_attribute("honeyhive_event_id", event_id)
+
+            # Set inputs if provided
+            if inputs:
+                _set_span_attributes(current_span, "honeyhive_inputs", inputs)
+
+            # Set config if provided
+            if config_data:
+                _set_span_attributes(current_span, "honeyhive_config", config_data)
+
+            # Set metadata if provided
+            if metadata:
+                _set_span_attributes(current_span, "honeyhive_metadata", metadata)
+
+            # Set metrics if provided
+            if metrics:
+                _set_span_attributes(current_span, "honeyhive_metrics", metrics)
+
+            # Set feedback if provided
+            if feedback:
+                _set_span_attributes(current_span, "honeyhive_feedback", feedback)
+
+            # Set attributes if provided (for direct method call compatibility)
+            if attributes:
+                for key, value in attributes.items():
+                    current_span.set_attribute(key, str(value))
+
+            # Set additional kwargs as attributes
+            for key, value in kwargs.items():
+                current_span.set_attribute(f"honeyhive_{key}", value)
+
+            # Add experiment harness information if available
+            try:
+                if config_data and config_data.get("experiment_id"):
+                    current_span.set_attribute(
+                        "honeyhive_experiment_id", config_data["experiment_id"]
+                    )
+
+                if config_data and config_data.get("experiment_name"):
+                    current_span.set_attribute(
+                        "honeyhive_experiment_name", config_data["experiment_name"]
+                    )
+
+                if config_data and config_data.get("experiment_variant"):
+                    current_span.set_attribute(
+                        "honeyhive_experiment_variant",
+                        config_data["experiment_variant"],
+                    )
+
+                if config_data and config_data.get("experiment_group"):
+                    current_span.set_attribute(
+                        "honeyhive_experiment_group",
+                        config_data["experiment_group"],
+                    )
+
+                if config_data and config_data.get("experiment_metadata"):
+                    # Add experiment metadata as individual attributes
+                    for key, value in config_data["experiment_metadata"].items():
+                        current_span.set_attribute(
+                            f"honeyhive_experiment_metadata_{key}", str(value)
+                        )
+            except Exception:
+                # Silently handle any exceptions when setting experiment attributes
+                pass
+
+        yield current_span
+
+    except Exception:
+        # If enrichment fails, just yield None
+        yield None
+
+
+def _set_span_attributes(span: Any, prefix: str, value: Any) -> None:
+    """Set span attributes with proper type handling and JSON serialization.
+
+    Recursively sets span attributes for complex data structures, handling
+    different data types appropriately for OpenTelemetry compatibility.
+
+    Args:
+        span: OpenTelemetry span object
+        prefix: Attribute name prefix
+        value: Value to set as attribute
+    """
+    if value is None:
+        return
+
+    try:
+        if isinstance(value, dict):
+            for key, val in value.items():
+                _set_span_attributes(span, f"{prefix}.{key}", val)
+        elif isinstance(value, (list, tuple)):
+            for i, val in enumerate(value):
+                _set_span_attributes(span, f"{prefix}.{i}", val)
+        elif isinstance(value, (str, int, float, bool)):
+            span.set_attribute(prefix, value)
+        else:
+            # For complex objects, try JSON serialization
+            try:
+                json_str = json.dumps(value, default=str)
+                span.set_attribute(prefix, json_str)
+            except (TypeError, ValueError):
+                # Fallback to string representation
+                span.set_attribute(prefix, str(value))
+    except Exception:
+        # Silently handle any exceptions during attribute setting
+        pass

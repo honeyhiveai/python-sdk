@@ -60,10 +60,14 @@ export HH_SOURCE="your-source"
 
 ```python
 from openinference.instrumentation.openai import OpenAIInstrumentor
-from honeyhive.tracer import get_tracer
+from honeyhive.tracer import HoneyHiveTracer
 
-# Get our existing HoneyHive tracer
-tracer = get_tracer()
+# Initialize HoneyHive tracer using modern approach
+tracer = HoneyHiveTracer.init(
+    api_key="your-api-key",
+    project="your-project",
+    source="development"
+)
 
 # Enable OpenInference instrumentation
 instrumentor = OpenAIInstrumentor()
@@ -84,15 +88,19 @@ instrumentor.uninstrument()
 ### With Vanilla Tracer and Spans
 
 ```python
-from honeyhive.tracer import get_tracer
+from honeyhive.tracer import HoneyHiveTracer
 from openinference.instrumentation.openai import OpenAIInstrumentor
+
+# Initialize HoneyHive tracer
+tracer = HoneyHiveTracer.init(
+    api_key="your-api-key",
+    project="your-project",
+    source="development"
+)
 
 # Enable instrumentation
 instrumentor = OpenAIInstrumentor()
 instrumentor.instrument()
-
-# Use our vanilla tracer as normal - no changes needed!
-tracer = get_tracer()
 
 # Create custom spans
 with tracer.start_span("ai_operation") as span:
@@ -143,9 +151,14 @@ OpenInference automatically captures:
 ### Hierarchical Span Management
 
 ```python
-from honeyhive.tracer import get_tracer
+from honeyhive.tracer import HoneyHiveTracer
 
-tracer = get_tracer()
+# Initialize HoneyHive tracer
+tracer = HoneyHiveTracer.init(
+    api_key="your-api-key",
+    project="your-project",
+    source="development"
+)
 
 # Create parent span for complex workflow
 with tracer.start_span("ai_workflow") as parent_span:

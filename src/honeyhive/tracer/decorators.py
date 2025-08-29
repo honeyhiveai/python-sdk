@@ -6,13 +6,15 @@ import json
 import logging
 import time
 from contextlib import contextmanager
-from typing import Any, Callable, Dict, Optional, TypeVar, Union
+from typing import TYPE_CHECKING, Any, Callable, Dict, Optional, TypeVar, Union
+
+if TYPE_CHECKING:
+    from .otel_tracer import HoneyHiveTracer
 
 from opentelemetry import trace as otel_trace
 
 from ..models.tracing import TracingParams
 from ..utils.config import config
-from .otel_tracer import get_tracer
 
 T = TypeVar("T")
 P = TypeVar("P")
@@ -36,14 +38,25 @@ def _set_span_attributes(span: Any, prefix: str, value: Any) -> None:
         for i, v in enumerate(value):
             _set_span_attributes(span, f"{prefix}.{i}", v)
     elif isinstance(value, (bool, float, int, str)):
-        span.set_attribute(prefix, value)
+        try:
+            span.set_attribute(prefix, value)
+        except Exception:
+            # Silently handle any exceptions when setting span attributes
+            pass
     else:
         # Convert complex types to JSON strings for OpenTelemetry compatibility
         try:
             span.set_attribute(prefix, json.dumps(value, default=str))
         except (TypeError, ValueError):
             # Fallback to string representation if JSON serialization fails
-            span.set_attribute(prefix, str(value))
+            try:
+                span.set_attribute(prefix, str(value))
+            except Exception:
+                # Silently handle any exceptions when setting span attributes
+                pass
+        except Exception:
+            # Silently handle any exceptions when setting span attributes
+            pass
 
 
 def _create_sync_wrapper(
@@ -78,8 +91,7 @@ def _create_sync_wrapper(
         tracer = None
         try:
             # Try to get tracer from kwargs first
-            if "tracer" in kwargs:
-                tracer = kwargs["tracer"]
+            tracer = kwargs.get("tracer")
 
             if tracer is None:
                 # If no tracer is available, just call the function
@@ -99,14 +111,22 @@ def _create_sync_wrapper(
             ) as span:
                 if span is not None:
                     # Set comprehensive attributes
-                    if params.event_type:
-                        span.set_attribute("honeyhive_event_type", params.event_type)
+                    try:
+                        if params.event_type:
+                            span.set_attribute(
+                                "honeyhive_event_type", params.event_type
+                            )
 
-                    if params.event_name:
-                        span.set_attribute("honeyhive_event_name", params.event_name)
+                        if params.event_name:
+                            span.set_attribute(
+                                "honeyhive_event_name", params.event_name
+                            )
 
-                    if params.event_id:
-                        span.set_attribute("honeyhive_event_id", params.event_id)
+                        if params.event_id:
+                            span.set_attribute("honeyhive_event_id", params.event_id)
+                    except Exception:
+                        # Silently handle any exceptions when setting basic span attributes
+                        pass
 
                     # Set inputs if provided
                     if params.inputs:
@@ -189,8 +209,12 @@ def _create_sync_wrapper(
                         pass
 
                     # Set additional kwargs as attributes
-                    for key, value in kwargs.items():
-                        span.set_attribute(f"honeyhive_{key}", value)
+                    try:
+                        for key, value in kwargs.items():
+                            span.set_attribute(f"honeyhive_{key}", value)
+                    except Exception:
+                        # Silently handle any exceptions when setting kwargs attributes
+                        pass
 
                 # Execute the function
                 result = func(*args, **func_kwargs)
@@ -218,11 +242,17 @@ def _create_sync_wrapper(
                 return result
 
         except Exception as e:
-            # Calculate duration
-            duration = (time.time() - start_time) * 1000  # Convert to milliseconds
+            # If tracing fails (e.g., tracer.start_span raises exception),
+            # gracefully degrade by calling function without tracing
+            if "Tracer error" in str(e):
+                return func(*args, **func_kwargs)
 
-            # Create error span
+            # For actual function exceptions, try to create error span
             try:
+                # Calculate duration
+                duration = (time.time() - start_time) * 1000  # Convert to milliseconds
+
+                # Create error span
                 with tracer.start_span(
                     f"{params.event_name or f'{func.__module__}.{func.__name__}'}_error"
                 ) as error_span:
@@ -270,8 +300,7 @@ def _create_async_wrapper(
         tracer = None
         try:
             # Try to get tracer from kwargs first
-            if "tracer" in kwargs:
-                tracer = kwargs["tracer"]
+            tracer = kwargs.get("tracer")
 
             if tracer is None:
                 # If no tracer is available, just call the function
@@ -291,14 +320,22 @@ def _create_async_wrapper(
             ) as span:
                 if span is not None:
                     # Set comprehensive attributes
-                    if params.event_type:
-                        span.set_attribute("honeyhive_event_type", params.event_type)
+                    try:
+                        if params.event_type:
+                            span.set_attribute(
+                                "honeyhive_event_type", params.event_type
+                            )
 
-                    if params.event_name:
-                        span.set_attribute("honeyhive_event_name", params.event_name)
+                        if params.event_name:
+                            span.set_attribute(
+                                "honeyhive_event_name", params.event_name
+                            )
 
-                    if params.event_id:
-                        span.set_attribute("honeyhive_event_id", params.event_id)
+                        if params.event_id:
+                            span.set_attribute("honeyhive_event_id", params.event_id)
+                    except Exception:
+                        # Silently handle any exceptions when setting basic span attributes
+                        pass
 
                     # Set inputs if provided
                     if params.inputs:
@@ -381,8 +418,12 @@ def _create_async_wrapper(
                         pass
 
                     # Set additional kwargs as attributes
-                    for key, value in kwargs.items():
-                        span.set_attribute(f"honeyhive_{key}", value)
+                    try:
+                        for key, value in kwargs.items():
+                            span.set_attribute(f"honeyhive_{key}", value)
+                    except Exception:
+                        # Silently handle any exceptions when setting kwargs attributes
+                        pass
 
                 # Execute the async function
                 result = await func(*args, **func_kwargs)
@@ -410,11 +451,17 @@ def _create_async_wrapper(
                 return result
 
         except Exception as e:
-            # Calculate duration
-            duration = (time.time() - start_time) * 1000  # Convert to milliseconds
+            # If tracing fails (e.g., tracer.start_span raises exception),
+            # gracefully degrade by calling function without tracing
+            if "Tracer error" in str(e):
+                return await func(*args, **func_kwargs)
 
-            # Create error span
+            # For actual function exceptions, try to create error span
             try:
+                # Calculate duration
+                duration = (time.time() - start_time) * 1000  # Convert to milliseconds
+
+                # Create error span
                 with tracer.start_span(
                     f"{params.event_name or f'{func.__module__}.{func.__name__}'}_error"
                 ) as error_span:
@@ -616,120 +663,14 @@ def trace_class(
     return decorator
 
 
-def enrich_span(
-    event_type: Optional[str] = None,
-    event_name: Optional[str] = None,
-    inputs: Optional[Dict[str, Any]] = None,
-    outputs: Optional[Dict[str, Any]] = None,
-    metadata: Optional[Dict[str, Any]] = None,
-    config_data: Optional[Dict[str, Any]] = None,
-    metrics: Optional[Dict[str, Any]] = None,
-    feedback: Optional[Dict[str, Any]] = None,
-    error: Optional[Exception] = None,
-    event_id: Optional[str] = None,
-    **kwargs: Any,
-) -> Any:
+# Import enrich_span from otel_tracer to maintain backwards compatibility
+# This avoids circular imports and centralizes the implementation
+def enrich_span(*args: Any, **kwargs: Any) -> Any:
     """
-    Context manager for enriching existing spans with additional attributes.
+    Import and delegate to the unified enrich_span implementation in otel_tracer.
 
-    Args:
-        event_type: Type of traced event
-        event_name: Name of the traced event
-        inputs: Input data for the event
-        outputs: Output data for the event
-        metadata: Additional metadata
-        config: Configuration data
-        metrics: Performance metrics
-        feedback: User feedback
-        error: Error information
-        event_id: Unique event identifier
-        **kwargs: Additional attributes to set on the span
+    This maintains backwards compatibility for imports from decorators module.
     """
+    from .otel_tracer import enrich_span as otel_enrich_span
 
-    @contextmanager
-    def span_enricher() -> Any:
-        """Context manager that enriches the current span with HoneyHive attributes.
-
-        Yields:
-            None: The context manager yields control to the wrapped code block
-        """
-        try:
-            # Get current span from OpenTelemetry context
-            current_span = otel_trace.get_current_span()
-
-            if current_span and current_span.is_recording():
-                # Set comprehensive attributes on the current span
-                if event_type:
-                    current_span.set_attribute("honeyhive_event_type", event_type)
-
-                if event_name:
-                    current_span.set_attribute("honeyhive_event_name", event_name)
-
-                if event_id:
-                    current_span.set_attribute("honeyhive_event_id", event_id)
-
-                # Set inputs if provided
-                if inputs:
-                    _set_span_attributes(current_span, "honeyhive_inputs", inputs)
-
-                # Set config if provided
-                if config_data:
-                    _set_span_attributes(current_span, "honeyhive_config", config_data)
-
-                # Set metadata if provided
-                if metadata:
-                    _set_span_attributes(current_span, "honeyhive_metadata", metadata)
-
-                # Set metrics if provided
-                if metrics:
-                    _set_span_attributes(current_span, "honeyhive_metrics", metrics)
-
-                # Set feedback if provided
-                if feedback:
-                    _set_span_attributes(current_span, "honeyhive_feedback", feedback)
-
-                # Set additional kwargs as attributes
-                for key, value in kwargs.items():
-                    current_span.set_attribute(f"honeyhive_{key}", value)
-
-                # Add experiment harness information if available
-                try:
-                    if config_data and config_data.get("experiment_id"):
-                        current_span.set_attribute(
-                            "honeyhive_experiment_id", config_data["experiment_id"]
-                        )
-
-                    if config_data and config_data.get("experiment_name"):
-                        current_span.set_attribute(
-                            "honeyhive_experiment_name", config_data["experiment_name"]
-                        )
-
-                    if config_data and config_data.get("experiment_variant"):
-                        current_span.set_attribute(
-                            "honeyhive_experiment_variant",
-                            config_data["experiment_variant"],
-                        )
-
-                    if config_data and config_data.get("experiment_group"):
-                        current_span.set_attribute(
-                            "honeyhive_experiment_group",
-                            config_data["experiment_group"],
-                        )
-
-                    if config_data and config_data.get("experiment_metadata"):
-                        # Add experiment metadata as individual attributes
-                        for key, value in config_data["experiment_metadata"].items():
-                            current_span.set_attribute(
-                                f"honeyhive_experiment_metadata_{key}", str(value)
-                            )
-                except Exception:
-                    # Silently handle any exceptions when setting experiment attributes
-                    pass
-
-            yield current_span
-
-        except Exception:
-            # If enrichment fails, just yield None
-            yield None
-
-    return span_enricher()
+    return otel_enrich_span(*args, **kwargs)

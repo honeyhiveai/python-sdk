@@ -330,6 +330,8 @@ class TestEvaluationFrameworkIntegration:
         """Test error handling integration in threaded evaluation."""
 
         class FailingEvaluator(BaseEvaluator):
+            """Test evaluator that always fails for error handling tests."""
+
             def __init__(self, name: str = "failing"):
                 super().__init__(name)
 
@@ -424,9 +426,9 @@ class TestEvaluationFrameworkIntegration:
         assert hasattr(length_evaluator, "evaluate")
 
         # Test getting custom evaluator
-        custom_evaluator = TestCustomEvaluator()
         # Note: Custom evaluators need to be registered or passed directly
         # This test verifies the basic registry functionality
+        TestCustomEvaluator()  # Instantiate to test it works
 
     def test_score_normalization_integration(self):
         """Test score normalization integration."""
@@ -713,7 +715,7 @@ class TestEvaluationPerformanceIntegration:
         # Collect results
         all_results = []
         for _ in range(num_threads):
-            thread_id, thread_results = results_queue.get()
+            _, thread_results = results_queue.get()
             all_results.extend(thread_results)
 
         # Verify results

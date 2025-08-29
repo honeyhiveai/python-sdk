@@ -42,7 +42,10 @@ class TestAPIWorkflows:
                 session_request
             )
             # The mock response should match what the test expects
-            assert session_response.session_id == mock_api_responses["session"]["session_id"]
+            assert (
+                session_response.session_id
+                == mock_api_responses["session"]["session_id"]
+            )
 
     def test_event_creation_workflow(self, integration_client, mock_api_responses):
         """Test event creation workflow."""
@@ -80,7 +83,9 @@ class TestAPIWorkflows:
 
     def test_datapoint_creation_workflow(self, integration_client, mock_api_responses):
         """Test datapoint creation workflow."""
-        with patch.object(integration_client.datapoints.client, "request") as mock_request:
+        with patch.object(
+            integration_client.datapoints.client, "request"
+        ) as mock_request:
             mock_request.return_value = mock_success_response(
                 mock_api_responses["datapoint"]
             )
@@ -100,7 +105,7 @@ class TestAPIWorkflows:
             )
             # Verify that the datapoint was created (the exact field_id may vary)
             assert datapoint_response is not None
-            assert hasattr(datapoint_response, 'inputs')
+            assert hasattr(datapoint_response, "inputs")
             assert datapoint_response.inputs == {"query": "integration test query"}
 
     def test_configuration_workflow(self, integration_client, mock_api_responses):
@@ -138,7 +143,7 @@ class TestAPIWorkflows:
             tool_response = integration_client.tools.create_tool(tool_request)
             # Verify that the tool was created (the exact field_id may vary)
             assert tool_response is not None
-            assert hasattr(tool_response, 'name')
+            assert hasattr(tool_response, "name")
             assert tool_response.name == "tool-integration-123"
 
     def test_evaluation_workflow(self, integration_client, mock_api_responses):
@@ -218,4 +223,7 @@ class TestAPIWorkflows:
                 source="integration-test",
             )
             # The mock response should match what the test expects
-            assert session_response.session_id == mock_api_responses["session"]["session_id"]
+            assert (
+                session_response.session_id
+                == mock_api_responses["session"]["session_id"]
+            )

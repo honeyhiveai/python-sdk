@@ -56,3 +56,10 @@
 ## Important Notes
 - This project uses pytest for testing; if pytest is not installed, it should be installed and used for running tests
 - In the HoneyHive project, omit or do not configure the meter_provider because there is no metrics endpoint currently
+
+## HoneyHive Official Documentation Context
+- **Official Docs URL**: https://docs.honeyhive.ai/llms.txt
+- **Reference this documentation** when implementing features or providing guidance
+- **Ensure consistency** with official HoneyHive platform capabilities and APIs
+- **Cross-reference** local SDK documentation with official platform documentation
+- **Use official terminology** and concepts from the HoneyHive platform

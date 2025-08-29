@@ -43,6 +43,23 @@ Session Management
 * **Multi-User Support** - Support for multiple concurrent sessions
 * **File-Based Organization** - Sessions automatically organized by source file
 
+Span and Session Enrichment
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+* **Unified enrich_span Function** - Single function supporting multiple usage patterns with full backwards compatibility
+* **Context Manager Support** - Rich context manager pattern for automatic span enrichment
+* **Multiple Import Paths** - Consistent API across all modules (tracer, otel_tracer, decorators)
+* **OpenTelemetry Native** - Direct integration with OpenTelemetry spans and attributes
+* **Backwards Compatibility** - Full support for existing usage patterns (basic_usage.py, enhanced_tracing_demo.py)
+* **Multi-Instance Support** - Works seamlessly with multiple tracer instances
+* **Experiment Support** - Built-in A/B testing and experiment tracking with automatic attribute setting
+* **Rich Attribute Support** - Complex data structures, nested dictionaries, and JSON serialization
+* **Session-Level Enrichment** - Backend persistence of session data via enrich_session
+* **User Feedback Collection** - Built-in support for ratings, feedback, and user properties
+* **Performance Metrics** - Automatic tracking of latency, tokens, and custom metrics
+* **Error Handling** - Graceful error handling with detailed error information
+* **Type Safety** - Full type annotations and IDE support for all enrichment functions
+
 Tracing Decorators
 ~~~~~~~~~~~~~~~~~~
 

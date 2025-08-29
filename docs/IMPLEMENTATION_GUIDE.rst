@@ -13,46 +13,160 @@ Architecture Overview
 High-Level Architecture
 ~~~~~~~~~~~~~~~~~~~~~~~
 
-.. code-block:: text
+.. mermaid::
 
-   ┌─────────────────────────────────────────────────────────────┐
-   │                    Application Layer                        │
-   ├─────────────────────────────────────────────────────────────┤
-   │                    HoneyHive SDK                           │
-   │  ┌─────────────┐  ┌─────────────┐  ┌─────────────────────┐ │
-   │  │   Tracers   │  │ API Client  │  │   Evaluation        │ │
-   │  │(Multi-Inst)│  │             │  │                     │ │
-   │  └─────────────┘  └─────────────┘  └─────────────────────┘ │
-   ├─────────────────────────────────────────────────────────────┤
-   │                  OpenTelemetry Layer                        │
-   │  ┌─────────────┐  ┌─────────────┐  ┌─────────────────────┐ │
-   │  │TracerProvider│  │Span Exporter│  │   Instrumentation   │ │
-   │  │(Smart Mgmt) │  │             │  │                     │ │
-   │  └─────────────┘  └─────────────┘  └─────────────────────┘ │
-   ├─────────────────────────────────────────────────────────────┤
-   │                     Transport Layer                         │
-   │  ┌─────────────┐  ┌─────────────┐  ┌─────────────────────┐ │
-   │  │   HTTPX     │  │  Connection │  │      Retry          │ │
-   │  │             │  │    Pool     │  │                     │ │
-   │  └─────────────┘  └─────────────┘  └─────────────────────┘ │
-   ├─────────────────────────────────────────────────────────────┤
-   │                     HoneyHive API                          │
-   │  ┌─────────────┐  ┌─────────────┐  ┌─────────────────────┐ │
-   │  │  Sessions   │  │   Events    │  │     Metrics         │ │
-   │  │             │  │             │  │                     │ │
-   │  └─────────────┘  └─────────────┘  └─────────────────────┘ │
-   └─────────────────────────────────────────────────────────────┘
+   %%{init: {'theme':'dark', 'themeVariables': {'darkMode': true, 'primaryColor': '#ffffff', 'primaryTextColor': '#ffffff', 'primaryBorderColor': '#ffffff', 'lineColor': '#ffffff', 'edgeLabelBackground': 'transparent', 'clusterBkg': 'transparent', 'clusterBorder': '#ffffff', 'mainBkg': 'transparent', 'secondBkg': 'transparent', 'tertiaryColor': 'transparent'}, 'flowchart': {'linkColor': '#ffffff', 'linkWidth': 4}}}%%
+   graph TB
+       subgraph "Application Layer"
+           UA[User Code]
+       end
+       
+       subgraph "HoneyHive SDK"
+           subgraph "SDK Layer"
+               T["Tracers<br/>(Multi-Instance)"] 
+               API[API Client]
+               E[Evaluation]
+           end
+           
+           subgraph "OpenTelemetry Layer"
+               TP["TracerProvider<br/>(Smart Management)"]
+               SE[Span Exporter]
+               I[Instrumentation]
+           end
+           
+           subgraph "Transport Layer"
+               H[HTTPX]
+               CP[Connection Pool]
+               R[Retry Logic]
+           end
+       end
+       
+       subgraph "HoneyHive API"
+           S[Sessions]
+           EV[Events]
+           M[Metrics]
+       end
+       
+       UA ==> T
+       UA ==> API
+       UA ==> E
+       
+       T ==> TP
+       API ==> H
+       E ==> API
+       
+       TP ==> SE
+       SE ==> H
+       H ==> CP
+       CP ==> R
+       
+       R ==> S
+       R ==> EV
+       R ==> M
+       
+       classDef sdkLayer fill:#1a237e,stroke:#ffffff,stroke-width:4px,color:#ffffff
+       classDef otelLayer fill:#e65100,stroke:#ffffff,stroke-width:4px,color:#ffffff
+       classDef transportLayer fill:#ad1457,stroke:#ffffff,stroke-width:4px,color:#ffffff
+       classDef apiLayer fill:#4a148c,stroke:#ffffff,stroke-width:4px,color:#ffffff
+       classDef userLayer fill:#1b5e20,stroke:#ffffff,stroke-width:4px,color:#ffffff
+       
+       class T,API,E sdkLayer
+       class TP,SE,I otelLayer
+       class H,CP,R transportLayer
+       class S,EV,M apiLayer
+       class UA userLayer
 
 Key Design Principles
 ~~~~~~~~~~~~~~~~~~~~~
 
 1. **Minimal Dependencies** - Core SDK has minimal dependencies to prevent conflicts
 2. **Bring Your Own Instrumentor** - Users choose what gets instrumented, not us
-3. **Separation of Concerns** - Each component has a single responsibility
-4. **Dependency Injection** - Components are loosely coupled
-5. **Configuration as Code** - Environment-based configuration
-6. **Graceful Degradation** - Fallback mechanisms for missing dependencies
-7. **Testability** - All components are designed for easy testing
+3. **Unified Enrichment Architecture** - Single implementation for span enrichment with multiple usage patterns
+4. **Backwards Compatibility** - All existing usage patterns continue to work unchanged
+5. **Separation of Concerns** - Each component has a single responsibility
+6. **Dependency Injection** - Components are loosely coupled
+7. **Configuration as Code** - Environment-based configuration
+8. **Graceful Degradation** - Fallback mechanisms for missing dependencies
+9. **Testability** - All components are designed for easy testing
+
+
+Unified Enrichment Architecture
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+The SDK provides a unified approach to span and session enrichment through a carefully designed architecture that supports multiple usage patterns while maintaining backwards compatibility.
+
+**Architecture Diagram:**
+
+.. mermaid::
+
+   %%{init: {'theme':'dark', 'themeVariables': {'darkMode': true, 'primaryColor': '#ffffff', 'primaryTextColor': '#ffffff', 'primaryBorderColor': '#ffffff', 'lineColor': '#ffffff', 'edgeLabelBackground': 'transparent', 'clusterBkg': 'transparent', 'clusterBorder': '#ffffff', 'mainBkg': 'transparent', 'secondBkg': 'transparent', 'tertiaryColor': 'transparent'}, 'flowchart': {'linkColor': '#ffffff', 'linkWidth': 4}}}%%
+   graph TB
+       subgraph "Enrichment Entry Points"
+           EP1["from tracer<br/>import enrich_span"]
+           EP2["from decorators<br/>import enrich_span"]
+           EP3["from otel<br/>import enrich_span"]
+       end
+       
+       subgraph "Unified Implementation"
+           UI["otel_tracer.enrich_span()<br/>(Main Implementation)"]
+           
+           subgraph "Pattern Detection Logic"
+               PD["if context_manager_args:<br/>return context_manager<br/>else:<br/>return direct_call"]
+           end
+       end
+       
+       subgraph "Execution Paths"
+           CM["Context Manager Pattern<br/>_enrich_span_context_manager()<br/>• Sets span attributes<br/>• Yields context<br/>• Rich experiments"]
+           DC["Direct Method Call<br/>HoneyHiveTracer.enrich_span()<br/>• Updates HH events<br/>• Returns boolean<br/>• Direct API calls"]
+       end
+       
+       subgraph "OpenTelemetry Integration"
+           SPAN["Span Creation & Attributes"]
+           OTEL["OpenTelemetry Tracer"]
+       end
+       
+       EP1 ==> UI
+       EP2 ==> UI  
+       EP3 ==> UI
+       
+       UI ==> PD
+       
+       PD ==> CM
+       PD ==> DC
+       
+       CM ==> SPAN
+       DC ==> SPAN
+       
+       SPAN ==> OTEL
+       
+       classDef entryPoint fill:#01579b,stroke:#ffffff,stroke-width:4px,color:#ffffff
+       classDef unified fill:#e65100,stroke:#ffffff,stroke-width:4px,color:#ffffff
+       classDef pattern fill:#4a148c,stroke:#ffffff,stroke-width:4px,color:#ffffff
+       classDef execution fill:#1b5e20,stroke:#ffffff,stroke-width:4px,color:#ffffff
+       classDef otel fill:#ad1457,stroke:#ffffff,stroke-width:4px,color:#ffffff
+       
+       class EP1,EP2,EP3 entryPoint
+       class UI unified
+       class PD pattern
+       class CM,DC execution
+       class SPAN,OTEL otel
+
+**Key Benefits:**
+
+1. **Single Source of Truth** - All enrichment logic centralized in ``otel_tracer.py``
+2. **No Circular Imports** - Clean dependency flow from decorators → otel_tracer
+3. **Consistent Behavior** - Same functionality regardless of import path
+4. **Pattern Detection** - Automatic detection of usage pattern based on arguments
+5. **Full Backwards Compatibility** - All existing code continues to work unchanged
+
+**Migration Strategy:**
+
+The architecture was refactored to address the previous issue where ``enrich_span`` was implemented in multiple files:
+
+- **Before**: ``decorators.py`` had its own implementation + ``otel_tracer.py`` had another
+- **After**: ``otel_tracer.py`` contains the unified implementation, ``decorators.py`` delegates
+
+This eliminates code duplication and potential inconsistencies while maintaining all existing functionality.
 8. **LLM Agent Focus** - Built specifically for multi-step AI workflows
 9. **Multi-Instance Support** - Modern architecture supporting multiple tracer instances
 10. **Smart Provider Management** - Intelligent OpenTelemetry provider integration

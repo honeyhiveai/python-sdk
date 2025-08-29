@@ -162,11 +162,7 @@ def mock_api_responses():
             "name": "config-integration-123",
             "project": "integration-test-project",
             "provider": "openai",
-            "parameters": {
-                "call_type": "chat",
-                "model": "gpt-4",
-                "temperature": 0.7
-            },
+            "parameters": {"call_type": "chat", "model": "gpt-4", "temperature": 0.7},
             "config": {"model": "gpt-4", "temperature": 0.7},
         },
         "tool": {
