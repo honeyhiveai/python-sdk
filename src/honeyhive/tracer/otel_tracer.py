@@ -123,6 +123,7 @@ class HoneyHiveTracer:
 
         # Mark as initialized
         self._is_initialized = True
+        HoneyHiveTracer._is_initialized = True
 
         # Auto-integrate instrumentors if provided
         if instrumentors:

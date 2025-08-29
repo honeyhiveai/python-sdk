@@ -86,7 +86,13 @@ class ConnectionPool:
             # Create new client
             self._stats["pool_misses"] += 1
             self._stats["connections_created"] += 1
+            self._stats["total_requests"] += 1
 
+            # Remove timeout from kwargs if it exists to avoid duplicate
+            client_kwargs = kwargs.copy()
+            if 'timeout' in client_kwargs:
+                del client_kwargs['timeout']
+            
             client = httpx.Client(
                 base_url=base_url,
                 headers=headers,
@@ -96,7 +102,7 @@ class ConnectionPool:
                     keepalive_expiry=self.config.keepalive_expiry,
                 ),
                 timeout=self.config.timeout,
-                **kwargs,
+                **client_kwargs,
             )
 
             self._clients[base_url] = client
@@ -136,7 +142,13 @@ class ConnectionPool:
             # Create new client
             self._stats["pool_misses"] += 1
             self._stats["connections_created"] += 1
+            self._stats["total_requests"] += 1
 
+            # Remove timeout from kwargs if it exists to avoid duplicate
+            client_kwargs = kwargs.copy()
+            if 'timeout' in client_kwargs:
+                del client_kwargs['timeout']
+            
             client = httpx.AsyncClient(
                 base_url=base_url,
                 headers=headers,
@@ -146,7 +158,7 @@ class ConnectionPool:
                     keepalive_expiry=self.config.keepalive_expiry,
                 ),
                 timeout=self.config.timeout,
-                **kwargs,
+                **client_kwargs,
             )
 
             self._async_clients[base_url] = client
@@ -171,6 +183,8 @@ class ConnectionPool:
                         # Check if pool has available connections
                         return len(pool.connections) > 0
 
+            # If we can't determine health from transport, assume it's healthy
+            # This covers cases where the client is open but transport details are not accessible
             return True
         except Exception:
             return False
@@ -356,6 +370,44 @@ class ConnectionPool:
             self._last_used.clear()
 
             self.logger.info("Closed all connections in pool")
+
+    def reset_stats(self) -> None:
+        """Reset pool statistics."""
+        with self._lock:
+            self._stats = {
+                "pool_hits": 0,
+                "pool_misses": 0,
+                "connections_created": 0,
+                "connections_reused": 0,
+                "total_requests": 0,
+            }
+
+    def close_all_clients(self) -> None:
+        """Close all clients in the pool (alias for close_all)."""
+        self.close_all()
+
+    async def aclose_all_clients(self) -> None:
+        """Close all async clients in the pool."""
+        with self._lock:
+            for client in self._async_clients.values():
+                try:
+                    await client.aclose()
+                except Exception as e:
+                    self.logger.warning(f"Error closing async client: {e}")
+
+            self._async_clients.clear()
+            # Remove async clients from last_used
+            keys_to_remove = [k for k, v in self._last_used.items() if k in self._async_clients]
+            for key in keys_to_remove:
+                del self._last_used[key]
+
+    async def __aenter__(self):
+        """Async context manager entry."""
+        return self
+
+    async def __aexit__(self, exc_type, exc_val, exc_tb):
+        """Async context manager exit."""
+        await self.aclose_all_clients()
 
     def __enter__(self) -> "ConnectionPool":
         """Context manager entry."""
