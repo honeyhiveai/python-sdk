@@ -1,6 +1,6 @@
 # Practical Examples
 
-Real-world examples and use cases for the HoneyHive SDK.
+Real-world implementation examples for the HoneyHive Python SDK.
 
 ## Table of Contents
 

@@ -29,6 +29,7 @@ class TestTraceloopCompatibility:
                     source="test",
                     api_key="test-key",
                     test_mode=True,
+                    disable_http_tracing=True,
                 )
 
     def test_traceloop_association_properties_basic_support(self) -> None:

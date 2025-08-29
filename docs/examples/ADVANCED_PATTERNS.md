@@ -1,6 +1,6 @@
-# Advanced SDK Usage Patterns
+# Advanced Patterns
 
-Advanced usage patterns and techniques for the HoneyHive SDK.
+Complex use cases and best practices for the HoneyHive Python SDK.
 
 ## Table of Contents
 

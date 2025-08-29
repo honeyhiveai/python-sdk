@@ -66,6 +66,7 @@ class HoneyHiveTracer:
         test_mode: bool = False,
         session_name: Optional[str] = None,
         instrumentors: Optional[list] = None,
+        disable_http_tracing: bool = True,
     ):
         """Initialize the HoneyHive tracer.
 
@@ -76,6 +77,7 @@ class HoneyHiveTracer:
             test_mode: Whether to run in test mode
             session_name: Optional session name for automatic session creation
             instrumentors: List of OpenInference instrumentors to automatically integrate
+            disable_http_tracing: Whether to disable HTTP tracing (defaults to True)
         """
         if not OTEL_AVAILABLE:
             raise ImportError("OpenTelemetry is required for HoneyHiveTracer")
@@ -84,6 +86,14 @@ class HoneyHiveTracer:
             return
 
         self.test_mode = test_mode
+        self.disable_http_tracing = disable_http_tracing
+
+        # Set HTTP tracing environment variable based on parameter
+        import os
+        if disable_http_tracing:
+            os.environ["HH_DISABLE_HTTP_TRACING"] = "true"
+        else:
+            os.environ["HH_DISABLE_HTTP_TRACING"] = "false"
 
         # In test mode, we can proceed without an API key
         if not test_mode:
@@ -115,6 +125,10 @@ class HoneyHiveTracer:
             self._integrate_instrumentors(instrumentors)
 
         print(f"✓ HoneyHiveTracer initialized for project: {self.project}")
+        if disable_http_tracing:
+            print("✓ HTTP tracing disabled")
+        else:
+            print("✓ HTTP tracing enabled")
 
     @classmethod
     def reset(cls):
@@ -130,6 +144,7 @@ class HoneyHiveTracer:
         source: str = "dev",
         session_name: Optional[str] = None,
         server_url: Optional[str] = None,
+        disable_http_tracing: bool = True,
     ) -> "HoneyHiveTracer":
         """
         Initialize the HoneyHive tracer (official API for backwards compatibility).
@@ -143,6 +158,7 @@ class HoneyHiveTracer:
             source: Source environment (defaults to "dev" per official docs)
             session_name: Optional session name for automatic session creation
             server_url: Optional server URL for self-hosted deployments
+            disable_http_tracing: Whether to disable HTTP tracing (defaults to True)
             
         Returns:
             HoneyHiveTracer instance
@@ -153,6 +169,14 @@ class HoneyHiveTracer:
                 api_key="your-api-key",
                 project="your-project",
                 source="prod"
+            )
+            
+            # With HTTP tracing enabled
+            HoneyHiveTracer.init(
+                api_key="your-api-key",
+                project="your-project",
+                source="prod",
+                disable_http_tracing=False
             )
         """
         # Handle server_url parameter (maps to api_url in our config)
@@ -169,6 +193,7 @@ class HoneyHiveTracer:
                     project=project,
                     source=source,
                     session_name=session_name,
+                    disable_http_tracing=disable_http_tracing,
                 )
                 return tracer
             finally:
@@ -184,6 +209,7 @@ class HoneyHiveTracer:
                 project=project,
                 source=source,
                 session_name=session_name,
+                disable_http_tracing=disable_http_tracing,
             )
 
     def _initialize_otel(self):

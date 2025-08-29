@@ -1,4 +1,4 @@
-# HoneyHive SDK API Reference
+# API Reference
 
 Complete API reference for the HoneyHive Python SDK.
 
@@ -28,7 +28,8 @@ HoneyHiveTracer.init(
     project: Optional[str] = None,
     source: str = "dev",
     session_name: Optional[str] = None,
-    server_url: Optional[str] = None
+    server_url: Optional[str] = None,
+    disable_http_tracing: bool = True
 )
 ```
 
@@ -38,6 +39,7 @@ HoneyHiveTracer.init(
 - `source`: Source environment (defaults to "dev" per official docs)
 - `session_name`: Custom session name (auto-generated if not provided)
 - `server_url`: Server URL for self-hosted deployments (optional)
+- `disable_http_tracing`: Whether to disable HTTP tracing (defaults to True)
 
 **Example:**
 ```python
@@ -55,6 +57,14 @@ HoneyHiveTracer.init(
     source="production",
     server_url="https://custom-honeyhive-server.com"
 )
+
+# With HTTP tracing enabled
+HoneyHiveTracer.init(
+    api_key="your-api-key",
+    project="my-project",
+    source="production",
+    disable_http_tracing=False
+)
 ```
 
 #### Alternative Initialization (Enhanced)
@@ -67,7 +77,7 @@ HoneyHiveTracer(
     test_mode: bool = False,
     session_name: Optional[str] = None,
     instrumentors: Optional[list] = None,
-    **kwargs
+    disable_http_tracing: bool = True,
 )
 ```
 
@@ -78,6 +88,7 @@ HoneyHiveTracer(
 - `test_mode`: Enable test mode (defaults to False)
 - `session_name`: Custom session name (auto-generated if not provided)
 - `instrumentors`: List of OpenInference instrumentors to integrate
+- `disable_http_tracing`: Whether to disable HTTP tracing (defaults to True)
 
 **Example:**
 ```python
@@ -87,7 +98,7 @@ tracer = HoneyHiveTracer(
     project="my-project",
     source="development",
     test_mode=True,
-    instrumentors=[OpenAIInstrumentor()]
+    instrumentors=[OpenAIInstrument()]
 )
 ```
 
@@ -255,7 +266,7 @@ result2 = await async_function("Bob")
 
 ### @trace
 
-Decorator for tracing synchronous functions. (Legacy - consider using `@dynamic_trace` instead)
+The primary tracing decorator that automatically handles both synchronous and asynchronous functions.
 
 **Signature:**
 ```python
@@ -307,7 +318,7 @@ def custom_function():
 
 ### @atrace
 
-Decorator for tracing asynchronous functions. (Legacy - consider using `@dynamic_trace` instead)
+Alternative async tracing decorator.
 
 **Signature:**
 ```python
@@ -361,7 +372,7 @@ async def custom_async_function():
 
 ### @trace_class
 
-Decorator for tracing all methods in a class.
+Class decorator for automatic method tracing.
 
 **Signature:**
 ```python
@@ -398,7 +409,7 @@ class CustomProcessor:
 
 ### HoneyHive
 
-Main API client for interacting with HoneyHive services.
+The main API client for interacting with HoneyHive services.
 
 #### Constructor
 
@@ -530,6 +541,10 @@ client.close()
 
 ### Environment Variables
 
+Configuration via environment variables.
+
+### Environment Variables
+
 | Variable | Description | Default | Required |
 |----------|-------------|---------|----------|
 | `HH_API_KEY` | HoneyHive API key | None | Yes |
@@ -610,6 +625,10 @@ config.reload()
 
 ## Utilities
 
+### Utility Functions
+
+Various utility functions and helpers.
+
 ### Connection Pool
 
 HTTP connection pooling for efficient API communication.
@@ -673,6 +692,10 @@ logger.error("Operation failed", exc_info=True)
 
 ## Models
 
+### Data Models
+
+Pydantic models for data validation.
+
 ### Auto-generated Models
 
 The SDK includes Pydantic models auto-generated from the OpenAPI specification.
@@ -708,6 +731,10 @@ event_request = CreateEventRequest(
 ---
 
 ## Examples
+
+### Usage Examples
+
+Practical examples of using the SDK.
 
 ### Basic Tracing
 

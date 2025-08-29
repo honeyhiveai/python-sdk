@@ -46,6 +46,7 @@ def integration_tracer(real_api_key):
         project="integration-test-project",
         source="integration-test",
         test_mode=real_api_key == "test-api-key-12345",
+        disable_http_tracing=True,
     )
 
     yield tracer

@@ -39,7 +39,7 @@ def honeyhive_client(api_key):
 def honeyhive_tracer(api_key, project, source):
     """HoneyHive tracer fixture."""
     return HoneyHiveTracer(
-        api_key=api_key, project=project, source=source, test_mode=True
+        api_key=api_key, project=project, source=source, test_mode=True, disable_http_tracing=True
     )
 
 
@@ -55,7 +55,7 @@ def fresh_honeyhive_tracer(api_key, project, source):
         pass
 
     return HoneyHiveTracer(
-        api_key=api_key, project=project, source=source, test_mode=True
+        api_key=api_key, project=project, source=source, test_mode=True, disable_http_tracing=True
     )
 
 

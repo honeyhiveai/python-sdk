@@ -35,6 +35,12 @@ def main():
     print(f"✓ Source environment: {tracer.source}")
     print(f"✓ Session ID: {tracer.session_id}")
     
+    # Example: Initialize with HTTP tracing enabled
+    print("\n2. Example: HTTP tracing control...")
+    print("   Note: HTTP tracing is disabled by default for performance")
+    print("   To enable HTTP tracing, use disable_http_tracing=False:")
+    print("   HoneyHiveTracer.init(..., disable_http_tracing=False)")
+    
     # Initialize API client
     print("\n2. Initializing API client...")
     client = HoneyHive(

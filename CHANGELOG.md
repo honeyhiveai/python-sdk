@@ -31,6 +31,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Full backwards compatibility with existing code
   - Environment variable integration
   - Automatic singleton management
+  - **NEW**: `disable_http_tracing` parameter (defaults to True for performance)
 
 ### Features
 - **API Client**: Full-featured HTTP client with retry support

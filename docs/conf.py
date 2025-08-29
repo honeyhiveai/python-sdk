@@ -83,7 +83,7 @@ napoleon_include_private_with_doc = False
 intersphinx_mapping = {
     'python': ('https://docs.python.org/3/', None),
     'opentelemetry': ('https://opentelemetry-python.readthedocs.io/en/latest/', None),
-    'pydantic': ('https://docs.pydantic.dev/', None),
+    'pydantic': ('https://docs.pydantic.dev/latest/', None),
 }
 
 # -- Options for todo extension ----------------------------------------------

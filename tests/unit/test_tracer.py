@@ -30,6 +30,7 @@ class TestHoneyHiveTracer:
                     source="test",
                     api_key="test-key",
                     test_mode=True,
+                    disable_http_tracing=True,
                 )
 
                 # Now manually set up what we need for testing
@@ -75,10 +76,10 @@ class TestHoneyHiveTracer:
         HoneyHiveTracer.reset()
 
         tracer1 = HoneyHiveTracer(
-            project="project1", source="source1", api_key="key1", test_mode=True
+            project="project1", source="source1", api_key="key1", test_mode=True, disable_http_tracing=True
         )
         tracer2 = HoneyHiveTracer(
-            project="project2", source="source2", api_key="key2", test_mode=True
+            project="project2", source="source2", api_key="key2", test_mode=True, disable_http_tracing=True
         )
 
         # Should be the same instance
@@ -262,6 +263,7 @@ class TestHoneyHiveTracer:
                 api_key="config-key",
                 test_mode=True,
                 session_name="custom-session",
+                disable_http_tracing=True,
             )
 
             assert tracer.project == "config-test"
@@ -274,7 +276,7 @@ class TestHoneyHiveTracer:
         # Test initialization without OpenTelemetry
         with patch("honeyhive.tracer.otel_tracer.OTEL_AVAILABLE", False):
             with pytest.raises(ImportError, match="OpenTelemetry is required"):
-                HoneyHiveTracer(test_mode=True)
+                HoneyHiveTracer(test_mode=True, disable_http_tracing=True)
 
     def test_tracer_performance(self) -> None:
         """Test tracer performance characteristics."""
@@ -592,7 +594,8 @@ class TestHoneyHiveTracer:
                 # Create with constructor
                 tracer2 = HoneyHiveTracer(
                     api_key="constructor-key",
-                    project="constructor-project"
+                    project="constructor-project",
+                    disable_http_tracing=True,
                 )
                 
                 # Both should be the same instance
@@ -676,3 +679,110 @@ class TestHoneyHiveTracer:
                 
                 # Verify it's the singleton instance
                 assert HoneyHiveTracer._instance is tracer
+
+    def test_disable_http_tracing_parameter(self):
+        """Test the disable_http_tracing parameter functionality."""
+        HoneyHiveTracer.reset()
+        
+        with patch.object(HoneyHiveTracer, "_initialize_session"):
+            with patch.object(HoneyHiveTracer, "_initialize_otel"):
+                # Test with default value (True)
+                tracer1 = HoneyHiveTracer.init(
+                    api_key="test-key",
+                    project="test-project"
+                )
+                
+                assert tracer1.disable_http_tracing is True
+                
+                # Test with explicit False
+                HoneyHiveTracer.reset()
+                tracer2 = HoneyHiveTracer.init(
+                    api_key="test-key",
+                    project="test-project",
+                    disable_http_tracing=False
+                )
+                
+                assert tracer2.disable_http_tracing is False
+                
+                # Test with explicit True
+                HoneyHiveTracer.reset()
+                tracer3 = HoneyHiveTracer.init(
+                    api_key="test-key",
+                    project="test-project",
+                    disable_http_tracing=True
+                )
+                
+                assert tracer3.disable_http_tracing is True
+
+    def test_disable_http_tracing_constructor_parameter(self):
+        """Test the disable_http_tracing parameter in constructor."""
+        HoneyHiveTracer.reset()
+        
+        with patch.object(HoneyHiveTracer, "_initialize_session"):
+            with patch.object(HoneyHiveTracer, "_initialize_otel"):
+                # Test with default value (True)
+                tracer1 = HoneyHiveTracer(
+                    api_key="test-key",
+                    project="test-project",
+                    test_mode=True
+                )
+                
+                assert tracer1.disable_http_tracing is True
+                
+                # Test with explicit False
+                HoneyHiveTracer.reset()
+                tracer2 = HoneyHiveTracer(
+                    api_key="test-key",
+                    project="test-project",
+                    test_mode=True,
+                    disable_http_tracing=False
+                )
+                
+                assert tracer2.disable_http_tracing is False
+                
+                # Test with explicit True
+                HoneyHiveTracer.reset()
+                tracer3 = HoneyHiveTracer(
+                    api_key="test-key",
+                    project="test-project",
+                    test_mode=True,
+                    disable_http_tracing=True
+                )
+                
+                assert tracer3.disable_http_tracing is True
+
+    def test_disable_http_tracing_environment_variable(self):
+        """Test that disable_http_tracing parameter sets environment variable correctly."""
+        HoneyHiveTracer.reset()
+        
+        with patch.object(HoneyHiveTracer, "_initialize_session"):
+            with patch.object(HoneyHiveTracer, "_initialize_otel"):
+                import os
+                
+                # Test with default value (True)
+                tracer1 = HoneyHiveTracer.init(
+                    api_key="test-key",
+                    project="test-project"
+                )
+                
+                assert os.environ.get("HH_DISABLE_HTTP_TRACING") == "true"
+                
+                # Test with explicit False
+                HoneyHiveTracer.reset()
+                tracer2 = HoneyHiveTracer.init(
+                    api_key="test-key",
+                    project="test-project",
+                    disable_http_tracing=False
+                )
+                
+                assert os.environ.get("HH_DISABLE_HTTP_TRACING") == "false"
+                
+                # Test with explicit True
+                HoneyHiveTracer.reset()
+                tracer3 = HoneyHiveTracer.init(
+                    api_key="test-key",
+                    project="test-project",
+                    disable_http_tracing=True
+                )
+                
+                assert os.environ.get("HH_DISABLE_HTTP_TRACING") == "true"

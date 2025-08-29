@@ -43,6 +43,9 @@ HoneyHiveTracer.init(
     source="production"
 )
 
+# Access the tracer instance
+tracer = HoneyHiveTracer._instance
+
 # Use unified decorator for automatic tracing (works with both sync and async)
 @trace(event_type="demo", event_name="my_function")
 def my_function():
@@ -54,10 +57,17 @@ async def my_async_function():
     return "Hello, Async World!"
 
 # Manual span management
-tracer = HoneyHiveTracer._instance
 with tracer.start_span("custom-operation"):
     # Your code here
     pass
+
+# With HTTP tracing enabled
+HoneyHiveTracer.init(
+    api_key="your-api-key",
+    project="your-project",
+    source="production",
+    disable_http_tracing=False
+)
 ```
 
 ### Alternative Initialization Patterns

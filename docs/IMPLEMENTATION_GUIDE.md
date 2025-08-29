@@ -1,6 +1,6 @@
-# HoneyHive SDK Implementation Guide
+# Implementation Guide
 
-A comprehensive technical guide explaining how the HoneyHive SDK is implemented, including architecture decisions, design patterns, and implementation details.
+Technical implementation details for the HoneyHive Python SDK.
 
 ## Table of Contents
 

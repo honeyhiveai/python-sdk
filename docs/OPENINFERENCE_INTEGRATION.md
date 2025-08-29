@@ -1,6 +1,6 @@
-# OpenInference Integration Guide
+# OpenInference Integration
 
-Complete guide for integrating the HoneyHive SDK with OpenInference instrumentors to automatically trace LLM calls and other AI operations.
+Using the HoneyHive SDK with OpenInference instrumentors.
 
 ## Table of Contents
 

@@ -1,14 +1,18 @@
-# Basic SDK Usage Patterns
+# Basic Usage Patterns
 
-Common usage patterns and examples for the HoneyHive SDK.
+Getting started and common usage patterns for the HoneyHive Python SDK.
 
 ## Table of Contents
 
 - [Initialization Patterns](#initialization-patterns)
 - [Tracing Patterns](#tracing-patterns)
+- [Manual Span Management](#manual-span-management)
 - [Session Management](#session-management)
 - [Error Handling](#error-handling)
 - [Configuration Patterns](#configuration-patterns)
+- [Performance Patterns](#performance-patterns)
+- [Testing Patterns](#testing-patterns)
+- [Best Practices](#best-practices)
 
 ---
 
@@ -30,6 +34,14 @@ HoneyHiveTracer.init(
 
 # Access the tracer instance
 tracer = HoneyHiveTracer._instance
+
+# With HTTP tracing enabled
+HoneyHiveTracer.init(
+    api_key="your-api-key",
+    project="my-project",
+    source="production",
+    disable_http_tracing=False
+)
 ```
 
 ### 1.1. Alternative Pattern (Enhanced)
@@ -51,7 +63,7 @@ tracer = HoneyHiveTracer(
 
 **Note:** Both initialization patterns are fully supported. The `init()` method follows the official HoneyHive SDK documentation pattern and is recommended for production use, while the constructor provides additional options like `test_mode` and `instrumentors`.
 
-### 2. Environment-Based Configuration
+## Environment-Based Configuration
 
 Use environment variables for configuration:
 
@@ -71,7 +83,7 @@ HoneyHiveTracer.init()
 tracer = HoneyHiveTracer._instance
 ```
 
-### 3. Conditional Initialization
+## Conditional Initialization
 
 Initialize based on environment or configuration:
 
@@ -101,7 +113,7 @@ HoneyHiveTracer.init()
 tracer = HoneyHiveTracer._instance
 ```
 
-### 4. Singleton Pattern Usage
+## Singleton Pattern Usage
 
 The tracer is a singleton, so you can access it from anywhere:
 
@@ -125,63 +137,42 @@ def some_function():
 
 ## Tracing Patterns
 
-### 1. Function Decorators
+### 1. Basic Tracing
 
-Use decorators for automatic function tracing:
+Use the `@trace` decorator for automatic tracing:
 
 ```python
-from honeyhive import trace, atrace
+from honeyhive import trace
 
-@trace
-def process_data(data):
-    """This function is automatically traced."""
-    result = data.upper()
-    return result
+@trace(event_type="demo", event_name="my_function")
+def my_function():
+    return "Hello, World!"
 
-@atrace
-async def fetch_data_async(url):
-    """This async function is automatically traced."""
-    import httpx
-    async with httpx.AsyncClient() as client:
-        response = await client.get(url)
-        return response.json()
-
-# Usage
-result = process_data("hello world")
+@trace(event_type="demo", event_name="my_async_function")
+async def my_async_function():
+    await asyncio.sleep(0.1)
+    return "Hello, Async World!"
 ```
 
-### 2. Class Decorators
+### 2. Class Tracing
 
-Trace all methods in a class:
+Use the `@trace_class` decorator for automatic method tracing:
 
 ```python
 from honeyhive import trace_class
 
 @trace_class
 class DataProcessor:
-    def __init__(self):
-        self.cache = {}
+    def process_data(self, data):
+        """This method will be automatically traced."""
+        return data.upper()
     
-    def process(self, data):
-        """This method is automatically traced."""
-        if data in self.cache:
-            return self.cache[data]
-        
-        result = data.upper()
-        self.cache[data] = result
-        return result
-    
-    def clear_cache(self):
-        """This method is also automatically traced."""
-        self.cache.clear()
-
-# Usage
-processor = DataProcessor()
-result = processor.process("hello")
-processor.clear_cache()
+    def analyze_data(self, data):
+        """This method will also be automatically traced."""
+        return len(data)
 ```
 
-### 3. Manual Span Management
+## Manual Span Management
 
 Create and manage spans manually:
 
@@ -793,24 +784,20 @@ Use mocks for testing:
 from unittest.mock import Mock, patch
 from honeyhive import HoneyHiveTracer
 
-@pytest.fixture
-def mock_tracer():
-    """Create a mock tracer for testing."""
-    return Mock(spec=HoneyHiveTracer)
-
-def test_with_mock_tracer(mock_tracer):
+def test_with_mock_tracer():
     """Test using a mock tracer."""
     
-    # Configure mock
+    # Create mock tracer
+    mock_tracer = Mock(spec=HoneyHiveTracer)
     mock_span = Mock()
     mock_tracer.start_span.return_value.__enter__.return_value = mock_span
     
-    # Use mock tracer
-    with mock_tracer.start_span("test-operation"):
-        pass
-    
-    # Verify mock was called
-    mock_tracer.start_span.assert_called_once_with("test-operation")
+    # Test with mock
+    with mock_tracer.start_span("test-operation") as span:
+        span.set_attribute("test.attribute", "test-value")
+        
+        # Verify mock was called
+        mock_span.set_attribute.assert_called_with("test.attribute", "test-value")
 ```
 
 ---
@@ -818,30 +805,26 @@ def test_with_mock_tracer(mock_tracer):
 ## Best Practices
 
 ### 1. Initialization
-- Initialize tracer once at application startup
+- Use `HoneyHiveTracer.init()` for production code
 - Use environment variables for configuration
-- Validate configuration before use
+- Initialize once at application startup
 
 ### 2. Tracing
-- Use decorators for simple functions
-- Use manual spans for complex operations
-- Set meaningful span names and attributes
+- Use `@trace` decorator for automatic tracing
+- Add meaningful span names and attributes
+- Handle errors gracefully in spans
 
 ### 3. Error Handling
-- Always handle errors gracefully
-- Set error attributes on spans
-- Implement retry logic when appropriate
+- Always use try-catch blocks in traced functions
+- Set error attributes on spans when exceptions occur
+- Log errors appropriately
 
 ### 4. Performance
-- Use conditional tracing for performance-critical paths
-- Implement span sampling for high-volume applications
+- Use conditional tracing for high-volume operations
+- Implement span sampling for production workloads
 - Monitor tracing overhead
 
 ### 5. Testing
-- Use test mode for unit tests
-- Mock tracer for integration tests
-- Test error scenarios
-
----
-
-This guide covers the essential usage patterns for the HoneyHive SDK. For more advanced patterns and specific use cases, refer to the other documentation files.
+- Use test fixtures for consistent tracer setup
+- Mock external dependencies
+- Test both success and error scenarios

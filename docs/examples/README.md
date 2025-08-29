@@ -92,10 +92,10 @@ Before running these examples, ensure you have:
 
 ## 📖 Related Documentation
 
-- **[Main README](../README.md)** - Project overview and quick start
-- **[API Reference](../API_REFERENCE.md)** - Complete API documentation
-- **[Implementation Guide](../IMPLEMENTATION_GUIDE.md)** - Technical details
-- **[OpenInference Integration](../OPENINFERENCE_INTEGRATION.md)** - AI framework integration
+For comprehensive documentation, see:
+- **[API Reference](../API_REFERENCE.md)** - Complete API reference
+- **[Basic Usage Patterns](BASIC_USAGE_PATTERNS.md)** - Detailed usage patterns
+- **[Implementation Guide](../IMPLEMENTATION_GUIDE.md)** - Technical implementation details
 
 ## 🤝 Contributing Examples
 
@@ -111,10 +111,9 @@ We welcome contributions! To add new examples:
 
 If you encounter issues with the examples:
 
-1. Check the [troubleshooting section](../OPENINFERENCE_INTEGRATION.md#troubleshooting)
+1. Check the [API reference](../API_REFERENCE.md) for details
 2. Verify your configuration and credentials
-3. Check the [API reference](../API_REFERENCE.md) for details
-4. Open an issue with specific error details
+3. Open an issue with specific error details
 
 ---
 

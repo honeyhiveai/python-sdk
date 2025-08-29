@@ -40,7 +40,7 @@ def demonstrate_official_sdk_pattern():
     """Demonstrate the official SDK pattern (backwards compatible)."""
     print("📚 Official SDK Pattern (Backwards Compatible)")
     print("=" * 50)
-    
+
     # Official SDK pattern from docs.honeyhive.ai
     tracer = HoneyHiveTracer.init(
         api_key="your-api-key",
@@ -48,11 +48,30 @@ def demonstrate_official_sdk_pattern():
         source="production",
         session_name="official_sdk_demo"
     )
-    
+
     print(f"✓ Tracer created with official SDK pattern")
     print(f"  Project: {tracer.project}")
     print(f"  Source: {tracer.source}")
     print(f"  Session Name: {tracer.session_name}")
+    print()
+
+    # Example with HTTP tracing enabled
+    print("🌐 HTTP Tracing Control Example")
+    print("-" * 30)
+    
+    # Note: HTTP tracing is disabled by default for performance
+    print("Note: HTTP tracing is disabled by default for performance")
+    print("To enable HTTP tracing, use disable_http_tracing=False:")
+    
+    # This would enable HTTP tracing (commented out to avoid side effects)
+    # HoneyHiveTracer.init(
+    #     api_key="your-api-key",
+    #     project="my-project",
+    #     source="production",
+    #     disable_http_tracing=False
+    # )
+    
+    print("✓ HTTP tracing control demonstrated")
     print()
 
 
