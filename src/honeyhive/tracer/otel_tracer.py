@@ -1151,28 +1151,6 @@ class HoneyHiveTracer:
         print("ℹ️  Static state reset not needed in multi-instance mode.")
         print("   Each tracer instance manages its own state independently.")
 
-    @classmethod
-    def configure_otlp_exporter(
-        cls,
-        enabled: bool = True,
-        endpoint: Optional[str] = None,
-        headers: Optional[Dict[str, str]] = None,
-    ) -> None:
-        """Configure OTLP exporter settings.
-
-        Args:
-            enabled: Whether OTLP export is enabled
-            endpoint: OTLP endpoint URL
-            headers: OTLP headers
-        """
-        if not OTEL_AVAILABLE:
-            return
-
-        # This would be implemented to configure OTLP exporter
-        # For now, we'll use the HoneyHive span processor
-        # OTLP exporter configuration is deferred for future implementation
-        pass
-
 
 # Global helper functions for backward compatibility
 # Note: These functions are no longer needed in multi-instance mode.
