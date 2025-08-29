@@ -1,74 +1,114 @@
-# HoneyHive SDK Documentation
+# HoneyHive Python SDK Documentation
 
-Welcome to the HoneyHive SDK documentation. This directory contains comprehensive documentation for the HoneyHive Python SDK.
+This directory contains the Sphinx documentation for the HoneyHive Python SDK.
 
-## 📚 Documentation Index
+## Building the Documentation
 
-### Getting Started
-- **[README.md](../README.md)** - Main project overview and quick start guide
-- **[API Reference](API_REFERENCE.md)** - Complete API reference with examples
-- **[Dynamic Trace Decorator](DYNAMIC_TRACE_DECORATOR.md)** - **NEW**: Unified tracing decorator documentation
-- **[Implementation Guide](IMPLEMENTATION_GUIDE.md)** - Technical implementation details
-- **[OpenInference Integration](OPENINFERENCE_INTEGRATION.md)** - Using SDK with OpenInference instrumentors
+### Using Tox (Recommended)
 
-### Additional Resources
-- **[Feature List](FEATURE_LIST.md)** - Complete list of SDK features
-- **[CHANGELOG.md](../CHANGELOG.md)** - Version history and changes
-- **[examples/](examples/README.md)** - Code examples and demonstrations
+```bash
+# Build the documentation
+tox -e docs
 
-## 🚀 Quick Navigation
+# The built HTML files will be in docs/_build/html/
+```
 
-| Document | Purpose | Audience |
-|----------|---------|----------|
-| [Main README](../README.md) | Project overview and quick start | All users |
-| [API Reference](API_REFERENCE.md) | Complete API documentation | Developers |
-| [Implementation Guide](IMPLEMENTATION_GUIDE.md) | Technical implementation details | Advanced users, contributors |
-| [OpenInference Integration](OPENINFERENCE_INTEGRATION.md) | OpenInference integration guide | AI developers, ML engineers |
+### Manual Build
 
-## 📖 How to Use This Documentation
+```bash
+# Install dependencies
+pip install sphinx sphinx-rtd-theme myst-parser
 
-### For New Users
-1. Start with the [Main README](../README.md) for an overview
-2. Follow the quick start examples
-3. Refer to [API Reference](API_REFERENCE.md) for specific functionality
+# Build the documentation
+sphinx-build -b html docs docs/_build/html
+```
 
-### For Developers
-1. Review the [Implementation Guide](IMPLEMENTATION_GUIDE.md) for architecture details
-2. Use [API Reference](API_REFERENCE.md) for development reference
-3. Check [OpenInference Integration](OPENINFERENCE_INTEGRATION.md) for AI framework integration
-4. Check [examples/](../examples/) for implementation patterns
+## Viewing the Documentation
 
-### For Contributors
-1. Read [Implementation Guide](IMPLEMENTATION_GUIDE.md) for technical details
-2. Review [API Reference](API_REFERENCE.md) for API design patterns
-3. Check [CHANGELOG.md](../CHANGELOG.md) for recent changes
+### Local HTTP Server
 
-## 🔗 External Resources
+After building, you can serve the documentation locally:
 
-- **GitHub Repository**: [https://github.com/honeyhiveai/sample](https://github.com/honeyhiveai/sample)
-- **PyPI Package**: [https://pypi.org/project/honeyhive/](https://pypi.org/project/honeyhive/)
-- **Official Documentation**: [https://docs.honeyhive.ai](https://docs.honeyhive.ai)
+```bash
+# Using the provided script
+python docs/serve.py
 
-## 📝 Contributing to Documentation
+# Or manually
+cd docs/_build/html
+python -m http.server 8000
+```
 
-We welcome contributions to improve our documentation! Please:
+Then open your browser to `http://localhost:8000`
 
-1. Fork the repository
-2. Make your changes in the `docs/` directory
-3. Ensure all links are updated
-4. Submit a pull request
+### Direct File Access
 
-## 🐛 Reporting Issues
+You can also open `docs/_build/html/index.html` directly in your browser.
 
-If you find any issues with the documentation:
+## Documentation Structure
 
-1. Check if the issue is already reported
-2. Create a new issue with a clear description
-3. Include the document path and section
-4. Provide steps to reproduce the issue
+- **Main Documentation**: `index.rst` - Entry point and overview
+- **API Reference**: `api/index.rst` - Complete API documentation
+- **Tracing**: `tracer/index.rst` - OpenTelemetry integration
+- **Evaluation**: `evaluation/index.rst` - AI evaluation framework
+- **Utilities**: `utils/index.rst` - Helper modules
+- **Examples**: `examples/` - Usage examples and patterns
 
----
+## Configuration
 
-**Last Updated**: December 2024  
-**SDK Version**: Latest  
-**Documentation Version**: 1.0
+The documentation is configured in `conf.py` with:
+
+- **Theme**: Read the Docs theme for professional appearance
+- **Extensions**: autodoc, napoleon, viewcode, intersphinx, todo, myst-parser
+- **Markdown Support**: Full support for .md files via MyST parser
+- **Auto-documentation**: Automatic extraction of docstrings from Python code
+
+## Adding New Documentation
+
+### Python Modules
+
+Documentation for Python modules is automatically generated from docstrings. Just add proper docstrings to your code and they'll appear in the docs.
+
+### New Pages
+
+1. Create a new `.rst` or `.md` file
+2. Add it to the appropriate `toctree` in the main `index.rst`
+3. Rebuild the documentation
+
+### API Documentation
+
+The API documentation is automatically generated from the source code using Sphinx's autodoc extension. Make sure your classes and methods have proper docstrings.
+
+## Troubleshooting
+
+### Common Issues
+
+1. **Import Errors**: Make sure the Python path includes the `src/` directory
+2. **Missing Dependencies**: Install required packages with `pip install -r requirements.txt`
+3. **Build Failures**: Check that all referenced files exist and are properly formatted
+
+### Warnings
+
+The build may show warnings about:
+- Documents not included in toctrees (normal for standalone files)
+- Cross-reference targets not found (check your links)
+- Title underlines too short (make them longer than the title)
+
+Most warnings don't prevent the build from succeeding.
+
+## Deployment
+
+The built documentation can be deployed to any static hosting service:
+
+- **GitHub Pages**: Push the `_build/html/` contents to a `gh-pages` branch
+- **Read the Docs**: Connect your repository for automatic builds
+- **Netlify/Vercel**: Deploy the `_build/html/` directory
+
+## Contributing
+
+When adding new features or APIs:
+
+1. Update the relevant documentation files
+2. Add proper docstrings to your code
+3. Update examples if needed
+4. Rebuild and test the documentation
+5. Ensure all links and references work correctly
