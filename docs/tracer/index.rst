@@ -75,7 +75,7 @@ If you specifically want to ensure a function is treated as async:
        return response.choices[0].message.content
 
 **Legacy: @atrace for async-only functions**
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 The `@atrace` decorator is available for cases where you specifically want to ensure a function is treated as async. For most use cases, use `@trace` instead as it provides the same functionality with better performance and cleaner code.
 

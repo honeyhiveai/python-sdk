@@ -34,7 +34,6 @@ extensions = [
     'sphinx.ext.viewcode',
     'sphinx.ext.intersphinx',
     'sphinx.ext.todo',
-    'myst_parser',  # For markdown support
 ]
 
 # Add any paths that contain templates here, relative to this directory.
@@ -46,10 +45,7 @@ templates_path = ['_templates']
 exclude_patterns = ['_build', 'Thumbs.db', '.DS_Store']
 
 # The suffix of source filenames.
-source_suffix = {
-    '.rst': 'restructuredtext',
-    '.md': 'markdown',
-}
+source_suffix = '.rst'
 
 # -- Options for HTML output -------------------------------------------------
 
@@ -93,18 +89,7 @@ todo_include_todos = True
 
 # -- Options for markdown ---------------------------------------------------
 
-# Enable MyST extensions
-myst_enable_extensions = [
-    "colon_fence",
-    "deflist",
-    "dollarmath",
-    "html_image",
-    "html_admonition",
-    "replacements",
-    "smartquotes",
-    "substitution",
-    "tasklist",
-]
+# RST-specific extensions and settings
 
 # -- Project-specific settings -----------------------------------------------
 

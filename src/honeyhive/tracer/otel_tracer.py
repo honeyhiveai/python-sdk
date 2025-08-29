@@ -153,8 +153,7 @@ class HoneyHiveTracer:
         instrumentors: Optional[list] = None,
         disable_http_tracing: bool = True,
     ) -> "HoneyHiveTracer":
-        """
-        Initialize the HoneyHive tracer (official API for backwards compatibility).
+        """Initialize the HoneyHive tracer (official API for backwards compatibility).
 
         This method provides the same functionality as the constructor but follows
         the official HoneyHive SDK API pattern shown in production documentation.
@@ -178,23 +177,6 @@ class HoneyHiveTracer:
                 api_key="your-api-key",
                 project="your-project",
                 source="prod"
-            )
-
-            # With HTTP tracing enabled
-            HoneyHiveTracer.init(
-                api_key="your-api-key",
-                project="your-project",
-                source="prod",
-                disable_http_tracing=False
-            )
-
-            # With test mode and instrumentors
-            HoneyHiveTracer.init(
-                api_key="your-api-key",
-                project="your-project",
-                source="prod",
-                test_mode=True,
-                instrumentors=[OpenAIInstrumentor()]
             )
         """
         # Handle server_url parameter (maps to api_url in our config)

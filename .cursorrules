@@ -44,6 +44,7 @@
 - Update examples/ when making changes that affect usage
 - Maintain the existing documentation structure in docs/
 - Follow the established example patterns in examples/
+- **Any Sphinx build warnings must be fixed before considering the docs build complete**
 
 ## Specific Commands to Use
 - Testing: `tox -e [environment]` instead of direct pytest calls
