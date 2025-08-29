@@ -122,6 +122,70 @@ class HoneyHiveTracer:
         cls._instance = None
         cls._is_initialized = False
 
+    @classmethod
+    def init(
+        cls,
+        api_key: Optional[str] = None,
+        project: Optional[str] = None,
+        source: str = "dev",
+        session_name: Optional[str] = None,
+        server_url: Optional[str] = None,
+    ) -> "HoneyHiveTracer":
+        """
+        Initialize the HoneyHive tracer (official API for backwards compatibility).
+        
+        This method provides the same functionality as the constructor but follows
+        the official HoneyHive SDK API pattern shown in production documentation.
+        
+        Args:
+            api_key: HoneyHive API key
+            project: Project name
+            source: Source environment (defaults to "dev" per official docs)
+            session_name: Optional session name for automatic session creation
+            server_url: Optional server URL for self-hosted deployments
+            
+        Returns:
+            HoneyHiveTracer instance
+            
+        Example:
+            # Official SDK pattern from docs.honeyhive.ai
+            HoneyHiveTracer.init(
+                api_key="your-api-key",
+                project="your-project",
+                source="prod"
+            )
+        """
+        # Handle server_url parameter (maps to api_url in our config)
+        if server_url:
+            # Set the server URL in environment for this initialization
+            import os
+            original_api_url = os.environ.get("HH_API_URL")
+            os.environ["HH_API_URL"] = server_url
+            
+            try:
+                # Create tracer with server URL
+                tracer = cls(
+                    api_key=api_key,
+                    project=project,
+                    source=source,
+                    session_name=session_name,
+                )
+                return tracer
+            finally:
+                # Restore original API URL
+                if original_api_url is not None:
+                    os.environ["HH_API_URL"] = original_api_url
+                else:
+                    os.environ.pop("HH_API_URL", None)
+        else:
+            # Standard initialization without server URL
+            return cls(
+                api_key=api_key,
+                project=project,
+                source=source,
+                session_name=session_name,
+            )
+
     def _initialize_otel(self):
         """Initialize OpenTelemetry components."""
         # Create tracer provider

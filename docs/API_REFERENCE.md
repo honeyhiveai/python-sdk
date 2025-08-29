@@ -20,7 +20,44 @@ Complete API reference for the HoneyHive Python SDK.
 
 The main tracer class providing OpenTelemetry integration and session management.
 
-#### Constructor
+#### Primary Initialization (Recommended)
+
+```python
+HoneyHiveTracer.init(
+    api_key: Optional[str] = None,
+    project: Optional[str] = None,
+    source: str = "dev",
+    session_name: Optional[str] = None,
+    server_url: Optional[str] = None
+)
+```
+
+**Parameters:**
+- `api_key`: HoneyHive API key (required if not in environment)
+- `project`: Project name (defaults to environment or "default")
+- `source`: Source environment (defaults to "dev" per official docs)
+- `session_name`: Custom session name (auto-generated if not provided)
+- `server_url`: Server URL for self-hosted deployments (optional)
+
+**Example:**
+```python
+# Official SDK pattern (recommended)
+HoneyHiveTracer.init(
+    api_key="your-api-key",
+    project="my-project",
+    source="production"
+)
+
+# For self-hosted deployments
+HoneyHiveTracer.init(
+    api_key="your-api-key",
+    project="my-project",
+    source="production",
+    server_url="https://custom-honeyhive-server.com"
+)
+```
+
+#### Alternative Initialization (Enhanced)
 
 ```python
 HoneyHiveTracer(
@@ -44,12 +81,17 @@ HoneyHiveTracer(
 
 **Example:**
 ```python
+# Enhanced constructor with additional options
 tracer = HoneyHiveTracer(
     api_key="your-api-key",
     project="my-project",
-    source="development"
+    source="development",
+    test_mode=True,
+    instrumentors=[OpenAIInstrumentor()]
 )
 ```
+
+**Note:** Both initialization patterns are supported. The `init()` method follows the official HoneyHive SDK documentation pattern and is recommended for production use, while the constructor provides additional options like `test_mode` and `instrumentors`.
 
 #### Methods
 
@@ -107,6 +149,38 @@ Reset the tracer instance for testing purposes.
 ```python
 tracer.reset()
 ```
+
+##### `init(api_key, project, source, session_name, server_url)`
+
+Initialize the HoneyHive tracer using the official SDK API pattern for backwards compatibility.
+
+**Parameters:**
+- `api_key`: HoneyHive API key (required if not in environment)
+- `project`: Project name (defaults to environment or "default")
+- `source`: Source environment (defaults to "dev" per official docs)
+- `session_name`: Custom session name (auto-generated if not provided)
+- `server_url`: Server URL for self-hosted deployments (optional)
+
+**Returns:** HoneyHiveTracer instance
+
+**Example:**
+```python
+# Official SDK pattern (backwards compatible)
+tracer = HoneyHiveTracer.init(
+    api_key="your-api-key",
+    project="my-project",
+    source="production"
+)
+
+# Alternative: Constructor pattern (also supported)
+tracer = HoneyHiveTracer(
+    api_key="your-api-key",
+    project="my-project",
+    source="production"
+)
+```
+
+**Note:** Both initialization patterns are supported. The `init()` method follows the official HoneyHive SDK documentation pattern, while the constructor provides the same functionality with additional options like `test_mode` and `instrumentors`.
 
 #### Properties
 

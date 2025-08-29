@@ -25,6 +25,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Context managers for resource management
 - Dot notation dictionary utilities
 - Comprehensive test suite with tox support
+- **NEW**: `HoneyHiveTracer.init()` method for official SDK compatibility
+  - Matches docs.honeyhive.ai initialization pattern exactly
+  - Supports self-hosted deployments with `server_url` parameter
+  - Full backwards compatibility with existing code
+  - Environment variable integration
+  - Automatic singleton management
 
 ### Features
 - **API Client**: Full-featured HTTP client with retry support

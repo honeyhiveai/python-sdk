@@ -1,279 +1,153 @@
-# HoneyHive SDK Examples
+# HoneyHive Python SDK Examples
 
-This directory contains practical examples demonstrating how to use the HoneyHive SDK for observability and tracing in various scenarios.
+This directory contains comprehensive examples demonstrating how to use the HoneyHive Python SDK with the **recommended initialization pattern**.
 
-## Quick Start
+## 🚀 **Primary Initialization Pattern (Recommended)**
 
-1. **Install the SDK**:
-   ```bash
-   pip install -e .
-   ```
+All examples now use the official SDK pattern for maximum compatibility:
 
-2. **Set up environment variables**:
-   ```bash
-   export HH_API_KEY="your-honeyhive-api-key"
-   export HH_PROJECT="your-project-name"
-   export HH_SOURCE="production"
-   ```
-
-3. **Run the examples**:
-   ```bash
-   python examples/simple_agent_integration.py
-   python examples/agent_google_ai_integration.py
-   ```
-
-## Available Examples
-
-### 1. Dynamic Trace Decorator (`dynamic_trace_demo.py`)
-
-A demonstration of the new unified trace decorator that automatically handles both synchronous and asynchronous functions:
-
-**Key Features:**
-- Single decorator for both sync and async functions
-- Automatic detection of function type
-- Comprehensive tracing with all existing features
-- Backward compatibility with existing `@trace` and `@atrace` decorators
-
-**Usage:**
-```bash
-python examples/dynamic_trace_demo.py
-```
-
-**Example:**
 ```python
-from honeyhive.tracer.decorators import dynamic_trace
+from honeyhive import HoneyHiveTracer
 
-@dynamic_trace(event_type="demo", event_name="my_function")
-def sync_function():
-    return "sync result"
-
-@dynamic_trace(event_type="demo", event_name="my_async_function")
-async def async_function():
-    return "async result"
-```
-
-### 2. Simple Agent Integration (`simple_agent_integration.py`)
-
-A basic example showing:
-- HoneyHive tracer initialization
-- Session management
-- Event logging
-- Basic tracing and observability
-
-**Key Features:**
-- Simple mock LLM responses
-- Question-answer interaction
-- Automatic event logging to HoneyHive
-- Session tracking
-
-**Usage:**
-```bash
-python examples/simple_agent_integration.py
-```
-
-### 2. Advanced Agent Integration (`agent_google_ai_integration.py`)
-
-A comprehensive example demonstrating:
-- Advanced agent framework with tools
-- Multi-step execution planning
-- Comprehensive tracing and observability
-- Tool usage tracking
-- Performance monitoring
-
-**Key Features:**
-- Tool-based architecture (search, calculator, weather, database)
-- Action planning and execution
-- Step-by-step tracing
-- Rich metadata collection
-- Error handling and logging
-
-**Usage:**
-```bash
-python examples/agent_google_ai_integration.py
-```
-
-### 3. Verbose Debugging (`verbose_debugging_example.py`)
-
-A dedicated example for debugging API calls and troubleshooting issues:
-
-**Key Features:**
-- Enable verbose logging for detailed API debugging
-- Request/response logging with headers, timing, and error details
-- Environment variable configuration
-- Comprehensive error information for troubleshooting
-
-**Usage:**
-```bash
-python examples/verbose_debugging_example.py
-```
-
-**Example:**
-```python
-from honeyhive import HoneyHive
-
-# Enable verbose logging for debugging
-client = HoneyHive(
+# Initialize tracer using the recommended pattern
+HoneyHiveTracer.init(
     api_key="your-api-key",
-    verbose=True  # This enables detailed API logging
+    project="your-project",
+    source="production"
 )
 
-# All API calls will now log detailed request/response information
-response = client.session.start_session(session_request)
+# Access the tracer instance
+tracer = HoneyHiveTracer._instance
 ```
 
-**Environment Variable Alternative:**
-```bash
-export HH_VERBOSE=true
-export HH_DEBUG_MODE=true
-client = HoneyHive()  # Automatically uses verbose mode
-```
+## 📚 **Available Examples**
 
-## What Gets Traced
+### **Core Functionality**
+- **[`basic_usage.py`](basic_usage.py)** - Basic SDK usage with `HoneyHiveTracer.init()`
+- **[`tracing_decorators.py`](tracing_decorators.py)** - Using `@trace`, `@atrace`, and `@trace_class` decorators
+- **[`enhanced_tracing_demo.py`](enhanced_tracing_demo.py)** - Advanced tracing features and manual span management
 
-### Agent Operations
-- **Session Management**: Session start/end with metadata
-- **Request Processing**: User input, planning, execution
-- **Tool Usage**: Tool selection, parameters, results
-- **Performance Metrics**: Duration, step counts, success rates
+### **Integration Examples**
+- **[`openinference_integration.py`](openinference_integration.py)** - OpenInference integration with HoneyHive
+- **[`openinference_integration_simple.py`](openinference_integration_simple.py)** - Simplified OpenInference setup
+- **[`openinference_google_ai_integration.py`](openinference_google_ai_integration.py)** - Google AI integration
 
-### Events Logged
-- **Agent Steps**: Each tool execution step
-- **Final Responses**: Completed request results
-- **Errors**: Processing failures with context
-- **Session Events**: Start, end, and metadata
+### **Evaluation Framework**
+- **[`evaluation_example.py`](evaluation_example.py)** - Using the evaluation framework with `@evaluator` decorators
 
-### Tracing Data
-- **Spans**: Request processing, tool execution, response generation
-- **Attributes**: User input, tool parameters, results, metadata
-- **Context**: Session ID, project, source, timestamps
+### **Advanced Patterns**
+- **[`pydantic_validation_demo.py`](pydantic_validation_demo.py)** - Pydantic validation with tracing
+- **[`verbose_demo.py`](verbose_demo.py)** - Verbose logging and debugging
+- **[`verbose_debugging_example.py`](verbose_debugging_example.py)** - Advanced debugging techniques
 
-## Dashboard Features
+### **Backwards Compatibility**
+- **[`backwards_compatibility_demo.py`](backwards_compatibility_demo.py)** - Demonstrating both initialization patterns
 
-When you run these examples, you'll see in your HoneyHive dashboard:
+## 🔧 **Key Features Demonstrated**
 
-### Traces
-- **Request Flow**: Complete request processing pipeline
-- **Tool Execution**: Individual tool usage and performance
-- **Error Paths**: Failed operations with full context
-
-### Metrics
-- **Performance**: Response times, throughput
-- **Usage**: Tool popularity, success rates
-- **Errors**: Failure patterns, error types
-
-### Events
-- **Agent Activity**: All agent operations and decisions
-- **Tool Usage**: Tool selection and execution results
-- **Session Data**: User interaction patterns
-
-## Advanced Patterns
-
-### Custom Tool Integration
+### **1. Primary Initialization**
 ```python
-@dataclass
-class CustomTool:
-    name: str
-    description: str
-    parameters: Dict[str, Any]
-    
-    def execute(self, **kwargs) -> str:
-        # Your tool logic here
-        return "Tool result"
-```
-
-### Custom Event Logging
-```python
-def log_custom_event(self, event_type: str, data: Dict[str, Any]):
-    event_data = {
-        "project": self.project,
-        "event_type": event_type,
-        "event_name": "custom_event",
-        "source": self.source,
-        "config": {"custom": True},
-        "inputs": data,
-        "outputs": {"status": "success"},
-        "metadata": {"timestamp": time.time()}
-    }
-    
-    self.client.events.create_event(event_data)
-```
-
-### Session Enrichment
-```python
-from honeyhive.tracer import enrich_session
-
-enrich_session(
-    session_id=self.session_id,
-    metadata={
-        "user_id": "user123",
-        "preferences": {"language": "en"},
-        "context": "customer_support"
-    }
+# Recommended pattern (matches docs.honeyhive.ai)
+HoneyHiveTracer.init(
+    api_key="your-key",
+    project="your-project",
+    source="production",
+    server_url="https://custom-server.com"  # For self-hosted deployments
 )
 ```
 
-## Configuration
-
-### Environment Variables
-- `HH_API_KEY`: Your HoneyHive API key
-- `HH_PROJECT`: Project name for organizing data
-- `HH_SOURCE`: Source environment (e.g., "production", "staging")
-
-### SDK Configuration
+### **2. Tracer Access**
 ```python
-from honeyhive.utils.config import get_config
+# Get tracer instance after initialization
+tracer = HoneyHiveTracer._instance
 
-config = get_config()
-print(f"Project: {config.project}")
-print(f"Source: {config.source}")
-print(f"API URL: {config.api_url}")
+# Use tracer for manual operations
+with tracer.start_span("operation"):
+    # Your code here
+    pass
 ```
 
-## Monitoring and Debugging
+### **3. Decorator Usage**
+```python
+from honeyhive import trace, atrace, trace_class
 
-### Real-time Monitoring
-- **Live Traces**: See requests as they happen
-- **Performance Alerts**: Get notified of slow operations
-- **Error Tracking**: Monitor failure rates and patterns
+@trace(event_type="demo", event_name="my_function")
+def my_function():
+    return "Hello, World!"
 
-### Debugging
-- **Request Replay**: Reconstruct failed requests
-- **Context Inspection**: View all related spans and events
-- **Performance Analysis**: Identify bottlenecks and optimizations
+@atrace
+async def async_function():
+    return "Hello, Async World!"
 
-### Best Practices
-1. **Use Descriptive Names**: Clear span and event names
-2. **Include Context**: Add relevant metadata to all operations
-3. **Handle Errors**: Log errors with full context
-4. **Monitor Performance**: Track duration and success rates
-5. **Organize Data**: Use consistent project and source naming
-
-## Troubleshooting
-
-### Common Issues
-1. **Missing API Key**: Ensure `HH_API_KEY` is set
-2. **Network Errors**: Check API endpoint accessibility
-3. **Import Errors**: Verify SDK installation
-4. **Permission Issues**: Check API key permissions
-
-### Debug Mode
-Enable debug logging:
-```bash
-export HH_DEBUG_MODE=true
+@trace_class
+class MyClass:
+    def method(self):
+        return "Traced method"
 ```
 
-### Testing
-Run the setup script to verify everything works:
-```bash
-chmod +x examples/setup.sh
-./examples/setup.sh
+## ⚠️ **Important: Use @trace for Tracing**
+
+**Avoid using `@dynamic_trace`** - it's available for backward compatibility but `@trace` is preferred.
+
+The `@trace` decorator automatically handles both synchronous and asynchronous functions, providing the same functionality as `@dynamic_trace` but with a cleaner, more intuitive API.
+
+## 🎯 **Getting Started**
+
+1. **Install Dependencies:**
+   ```bash
+   pip install honeyhive
+   ```
+
+2. **Set Environment Variables:**
+   ```bash
+   export HH_API_KEY="your-api-key"
+   export HH_PROJECT="your-project"
+   export HH_SOURCE="development"
+   ```
+
+3. **Run Examples:**
+   ```bash
+   # Basic usage
+   python examples/basic_usage.py
+   
+   # Tracing decorators
+   python examples/tracing_decorators.py
+   
+   # OpenInference integration
+   python examples/openinference_integration.py
+   ```
+
+## 🔄 **Alternative Initialization Pattern**
+
+For advanced use cases with additional options:
+
+```python
+# Enhanced constructor with additional options
+tracer = HoneyHiveTracer(
+    api_key="your-key",
+    project="your-project",
+    source="production",
+    test_mode=True,  # Additional option
+    instrumentors=[OpenAIInstrumentor()]  # Additional option
+)
 ```
 
-## Next Steps
+**Both patterns are fully supported and work together seamlessly!**
 
-1. **Explore the Dashboard**: Check your HoneyHive dashboard for traces and events
-2. **Customize Examples**: Modify the examples for your use case
-3. **Add Your Tools**: Integrate your own tools and services
-4. **Scale Up**: Apply patterns to production applications
+## 📖 **Documentation**
 
-For more information, check the main SDK documentation and API reference.
+For comprehensive documentation, see:
+- **[API Reference](../docs/API_REFERENCE.md)** - Complete API reference
+- **[Basic Usage Patterns](../docs/examples/BASIC_USAGE_PATTERNS.md)** - Detailed usage patterns
+- **[Implementation Guide](../docs/IMPLEMENTATION_GUIDE.md)** - Technical implementation details
+
+## 🚀 **Why Use the Primary Pattern?**
+
+1. **✅ Official SDK Compliance** - Matches docs.honeyhive.ai exactly
+2. **✅ Production Ready** - Used in real-world deployments
+3. **✅ Self-Hosted Support** - Built-in `server_url` parameter
+4. **✅ Environment Integration** - Seamless environment variable support
+5. **✅ Singleton Management** - Automatic instance management
+6. **✅ Backwards Compatible** - Your existing code continues to work
+
+**Start with `HoneyHiveTracer.init()` for the best experience!** 🎯

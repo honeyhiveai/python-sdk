@@ -1,29 +1,50 @@
 #!/usr/bin/env python3
 """
-Enhanced Tracing Demo - Showcasing All New Features
+Enhanced Tracing Demo
 
-This example demonstrates the enhanced tracing capabilities that bring our
-implementation to feature parity with the official SDK, including:
-
-- Enhanced decorators with comprehensive attributes
-- Parent-child span relationships
-- Legacy association_properties support
-- Performance optimizations
-- Complete attribute coverage
+This example demonstrates advanced tracing features including:
+- Primary initialization using HoneyHiveTracer.init()
+- Manual span management
+- Span enrichment
+- Session management
+- Error handling in spans
+- Performance monitoring
 """
 
-import asyncio
 import os
-import sys
 import time
-from typing import Dict, Any
-
-# Add the src directory to the path so we can import our SDK
-sys.path.insert(0, os.path.join(os.path.dirname(__file__), "..", "src"))
-
+import asyncio
+from typing import Dict, Any, Optional
 from honeyhive.tracer import HoneyHiveTracer
-from honeyhive.tracer.decorators import trace, atrace, trace_class, enrich_span
-from honeyhive.utils.config import get_config
+from honeyhive.tracer.decorators import trace, atrace
+
+# Set environment variables for configuration
+os.environ["HH_API_KEY"] = "your-api-key-here"
+os.environ["HH_PROJECT"] = "enhanced-tracing-demo"
+os.environ["HH_SOURCE"] = "development"
+
+def setup_tracer():
+    """Initialize the HoneyHive tracer using the recommended pattern."""
+    print("🔍 Initializing HoneyHiveTracer...")
+    
+    try:
+        HoneyHiveTracer.init(
+            api_key="your-api-key-here",
+            project="enhanced-tracing-demo",
+            source="development",
+            session_name="enhanced_tracing_demo"
+        )
+        
+        tracer = HoneyHiveTracer._instance
+        print("✓ HoneyHiveTracer initialized successfully")
+        print(f"  Project: {tracer.project}")
+        print(f"  Source: {tracer.source}")
+        print(f"  Session ID: {tracer.session_id}")
+        return tracer
+        
+    except Exception as e:
+        print(f"❌ Failed to initialize HoneyHiveTracer: {e}")
+        return None
 
 
 # Example 1: Enhanced @trace decorator with comprehensive attributes

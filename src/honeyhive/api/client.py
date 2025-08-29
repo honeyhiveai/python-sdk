@@ -224,6 +224,24 @@ class HoneyHive:
             "timestamp": time.time(),
         }
 
+    async def get_health_async(self) -> dict:
+        """Get API health status asynchronously. Returns basic info since health endpoint may not exist."""
+        try:
+            # Try to get health endpoint if it exists
+            response = await self.request_async("GET", "/api/v1/health")
+            if response.status_code == 200:
+                return response.json()
+        except Exception:
+            pass
+
+        # Return basic health info if health endpoint doesn't exist
+        return {
+            "status": "healthy",
+            "message": "API client is operational",
+            "base_url": self.base_url,
+            "timestamp": time.time(),
+        }
+
     def request(
         self,
         method: str,

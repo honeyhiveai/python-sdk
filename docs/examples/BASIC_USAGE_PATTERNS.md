@@ -14,23 +14,42 @@ Common usage patterns and examples for the HoneyHive SDK.
 
 ## Initialization Patterns
 
-### 1. Simple Initialization
+### 1. Primary Pattern (Recommended)
 
-Basic tracer initialization with minimal configuration:
+Use the official SDK pattern for production code:
 
 ```python
 from honeyhive import HoneyHiveTracer
 
-# Initialize with environment variables
-tracer = HoneyHiveTracer()
-
-# Or with explicit configuration
-tracer = HoneyHiveTracer(
+# Official SDK pattern (recommended)
+HoneyHiveTracer.init(
     api_key="your-api-key",
     project="my-project",
     source="production"
 )
+
+# Access the tracer instance
+tracer = HoneyHiveTracer._instance
 ```
+
+### 1.1. Alternative Pattern (Enhanced)
+
+For advanced use cases with additional options:
+
+```python
+from honeyhive import HoneyHiveTracer
+
+# Enhanced constructor with additional options
+tracer = HoneyHiveTracer(
+    api_key="your-api-key",
+    project="my-project",
+    source="production",
+    test_mode=True,  # Additional option
+    instrumentors=[OpenAIInstrumentor()]  # Additional option
+)
+```
+
+**Note:** Both initialization patterns are fully supported. The `init()` method follows the official HoneyHive SDK documentation pattern and is recommended for production use, while the constructor provides additional options like `test_mode` and `instrumentors`.
 
 ### 2. Environment-Based Configuration
 
@@ -46,7 +65,10 @@ os.environ["HH_PROJECT"] = "my-project"
 os.environ["HH_SOURCE"] = "production"
 
 # Initialize tracer (automatically reads environment)
-tracer = HoneyHiveTracer()
+HoneyHiveTracer.init()
+
+# Access the tracer instance
+tracer = HoneyHiveTracer._instance
 ```
 
 ### 3. Conditional Initialization
@@ -61,20 +83,22 @@ def create_tracer():
     """Create tracer based on environment."""
     
     if os.getenv("ENVIRONMENT") == "production":
-        return HoneyHiveTracer(
+        return HoneyHiveTracer.init(
             api_key=os.getenv("HH_API_KEY"),
             project=os.getenv("HH_PROJECT"),
             source="production"
         )
     else:
         # Development mode
-        return HoneyHiveTracer(
+        return HoneyHiveTracer.init(
             api_key="dev-key",
             project="dev-project",
             source="development"
         )
 
-tracer = create_tracer()
+# Initialize and get tracer instance
+HoneyHiveTracer.init()
+tracer = HoneyHiveTracer._instance
 ```
 
 ### 4. Singleton Pattern Usage
@@ -84,8 +108,8 @@ The tracer is a singleton, so you can access it from anywhere:
 ```python
 from honeyhive import HoneyHiveTracer
 
-# Initialize once
-tracer = HoneyHiveTracer(
+# Initialize once using the recommended pattern
+HoneyHiveTracer.init(
     api_key="your-api-key",
     project="my-project",
     source="production"
@@ -164,7 +188,15 @@ Create and manage spans manually:
 ```python
 from honeyhive import HoneyHiveTracer
 
-tracer = HoneyHiveTracer()
+# Initialize tracer
+HoneyHiveTracer.init(
+    api_key="your-api-key",
+    project="my-project",
+    source="production"
+)
+
+# Get tracer instance
+tracer = HoneyHiveTracer._instance
 
 def complex_operation():
     with tracer.start_span("data-processing") as span:
@@ -177,17 +209,6 @@ def complex_operation():
         
         # Add result attributes
         span.set_attribute("operation.result", "success")
-        span.set_attribute("operation.duration", get_operation_duration())
-        
-        return result
-
-def process_large_dataset():
-    with tracer.start_span("dataset-processing") as span:
-        span.set_attribute("dataset.type", "csv")
-        span.set_attribute("dataset.rows", 10000)
-        
-        # Process dataset
-        return "processed_data"
 ```
 
 ### 4. Span Enrichment

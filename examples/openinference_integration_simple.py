@@ -1,100 +1,43 @@
 #!/usr/bin/env python3
 """
-OpenInference Integration Example with HoneyHive SDK (Enhanced)
+OpenInference Integration - Simple Example
 
-This example demonstrates how to integrate OpenInference with our HoneyHive SDK
-and tracer instance without requiring any code changes to the SDK itself.
+This example demonstrates basic OpenInference integration with HoneyHive
+using the recommended HoneyHiveTracer.init() initialization pattern.
 
 The enhanced HoneyHiveTracer now automatically creates sessions during initialization
-and provides session-aware tracing, giving you the complete HoneyHive experience.
+and provides seamless integration with OpenInference instrumentors.
 """
 
-import asyncio
 import os
-import sys
-from typing import Any, Optional
-import time
+import asyncio
+from typing import Optional, Any
+from honeyhive.tracer import HoneyHiveTracer, get_tracer
 
-# Add the src directory to the path so we can import our SDK
-sys.path.insert(0, os.path.join(os.path.dirname(__file__), "..", "src"))
-
-from honeyhive.tracer import HoneyHiveTracer
-from honeyhive.utils.config import get_config
-
-# OpenInference imports - handled gracefully if not available
-OPENINFERENCE_AVAILABLE = False
-OpenAIInstrumentor = None
-
-try:
-    from openinference.instrumentation.openai import OpenAIInstrumentor
-
-    OPENINFERENCE_AVAILABLE = True
-    print("✓ OpenInference OpenAI instrumentation available")
-except ImportError:
-    print(
-        "⚠️  OpenInference not available. Install with: pip install openinference-instrumentation-openai"
-    )
-    print(
-        "   This example will show the integration pattern but won't run the actual instrumentation"
-    )
-
-# OpenAI imports - handled gracefully if not available
-OPENAI_AVAILABLE = False
-
-try:
-    import openai
-
-    OPENAI_AVAILABLE = True
-    print("✓ OpenAI client available")
-except ImportError:
-    print("⚠️  OpenAI not available. Install with: pip install openai")
-    print(
-        "   This example will show the integration pattern but won't make actual API calls"
-    )
-
+# Set environment variables for configuration
+os.environ["HH_API_KEY"] = "your-api-key-here"
+os.environ["HH_PROJECT"] = "openinference-demo"
+os.environ["HH_SOURCE"] = "development"
 
 def setup_openinference_integration(tracer: HoneyHiveTracer) -> Optional[Any]:
-    """
-    Set up OpenInference instrumentation to work with our HoneyHive tracer.
-
-    This function demonstrates how to configure OpenInference to send
-    traces to our existing HoneyHive tracer instance without modifying
-    the SDK code.
-    """
-    if not OPENINFERENCE_AVAILABLE:
-        print("Skipping OpenInference setup - not available")
+    """Set up OpenInference integration with the tracer."""
+    try:
+        # Try to import OpenInference instrumentors
+        from openinference.instrumentation.openai import OpenAIInstrumentor
+        
+        # Set up OpenAI instrumentation
+        OpenAIInstrumentor().instrument()
+        print("✓ OpenAI instrumentation set up successfully")
+        return OpenAIInstrumentor
+        
+    except ImportError:
+        print("⚠️  OpenInference not available, skipping instrumentation")
         return None
-
-    print("Setting up OpenInference integration with HoneyHive...")
-
-    # Configure OpenInference to use our tracer
-    # The key insight is that OpenInference will automatically
-    # integrate with the active OpenTelemetry tracer provider
-    instrumentor = OpenAIInstrumentor()
-
-    # Instrument OpenAI - this will automatically capture all OpenAI API calls
-    # and send them through our HoneyHive tracer
-    instrumentor.instrument()
-
-    print("✓ OpenInference OpenAI instrumentation enabled")
-    print("✓ All OpenAI API calls will now be traced through HoneyHive")
-    print("✓ HoneyHive span processor will intercept all spans")
-    print("✓ Session context automatically available to OpenInference spans")
-
-    return instrumentor
 
 
 def demonstrate_basic_integration(tracer: HoneyHiveTracer):
     """Demonstrate basic integration without any SDK code changes."""
     print("\n=== Basic OpenInference Integration Demo ===")
-
-    if not OPENAI_AVAILABLE:
-        print("OpenAI not available - showing integration pattern only")
-        print("Integration pattern:")
-        print("1. Enable OpenInference instrumentation")
-        print("2. Make OpenAI API calls (automatically traced)")
-        print("3. Traces flow through HoneyHive tracer")
-        return
 
     # Set up OpenInference instrumentation
     instrumentor = setup_openinference_integration(tracer)

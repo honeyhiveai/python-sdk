@@ -1,110 +1,192 @@
-"""Tracing decorators example for HoneyHive Python SDK."""
+#!/usr/bin/env python3
+"""
+Tracing Decorators Example
+
+This example demonstrates how to use the various tracing decorators
+with the recommended HoneyHiveTracer.init() initialization pattern.
+"""
 
 import asyncio
 import time
 from honeyhive import trace, atrace, trace_class, HoneyHiveTracer
 
-
-# Initialize tracer
-tracer = HoneyHiveTracer(
-    api_key="your-api-key", project="Decorator Example", source="example"
+# Initialize tracer using the recommended pattern
+HoneyHiveTracer.init(
+    api_key="your-api-key",
+    project="tracing-decorators-demo",
+    source="development"
 )
 
+# Get tracer instance
+tracer = HoneyHiveTracer._instance
 
-@trace(session_id="example-session")
-def sync_function(input_data):
-    """Synchronous function with tracing."""
-    print(f"Processing: {input_data}")
-    time.sleep(0.1)  # Simulate work
-    return f"Processed: {input_data}"
-
-
-@atrace(session_id="example-session")
-async def async_function(input_data):
-    """Asynchronous function with tracing."""
-    print(f"Processing async: {input_data}")
-    await asyncio.sleep(0.1)  # Simulate async work
-    return f"Processed async: {input_data}"
+print("🚀 HoneyHive Tracing Decorators Example")
+print("=" * 50)
+print(f"✓ Tracer initialized for project: {tracer.project}")
+print(f"✓ Source environment: {tracer.source}")
+print(f"✓ Session ID: {tracer.session_id}")
+print()
 
 
-@trace_class(name="DataProcessor", session_id="example-session")
+@trace
+def simple_function():
+    """Simple function with basic tracing."""
+    print("📝 Executing simple_function...")
+    time.sleep(0.1)
+    return "Hello from simple function!"
+
+
+@trace(event_type="demo", event_name="custom_traced_function")
+def custom_traced_function():
+    """Function with custom tracing parameters."""
+    print("📝 Executing custom_traced_function...")
+    time.sleep(0.1)
+    return "Hello from custom traced function!"
+
+
+@atrace
+async def async_function():
+    """Async function with automatic tracing."""
+    print("📝 Executing async_function...")
+    await asyncio.sleep(0.1)
+    return "Hello from async function!"
+
+
+@atrace(event_type="demo", event_name="custom_async_function")
+async def custom_async_function():
+    """Async function with custom tracing parameters."""
+    print("📝 Executing custom_async_function...")
+    await asyncio.sleep(0.1)
+    return "Hello from custom async function!"
+
+
+@trace_class
 class DataProcessor:
-    """Example class with traced methods."""
-
-    def __init__(self, name):
-        self.name = name
-
-    def process_data(self, data):
-        """Process data synchronously."""
-        print(f"{self.name} processing: {data}")
-        time.sleep(0.05)
-        return f"Processed by {self.name}: {data}"
-
-    async def process_data_async(self, data):
-        """Process data asynchronously."""
-        print(f"{self.name} processing async: {data}")
-        await asyncio.sleep(0.05)
-        return f"Processed async by {self.name}: {data}"
-
-    def _internal_method(self):
-        """Internal method (not traced)."""
-        return "internal"
-
-
-@trace(session_id="example-session", attributes={"custom": "attribute"})
-def function_with_attributes(input_data):
-    """Function with custom attributes."""
-    print(f"Function with attributes: {input_data}")
-    return f"Result: {input_data}"
+    """Class with all methods automatically traced."""
+    
+    def __init__(self):
+        self.data = []
+    
+    def add_data(self, item):
+        """Add data to the processor."""
+        print(f"📝 Adding data: {item}")
+        self.data.append(item)
+        return len(self.data)
+    
+    def process_data(self):
+        """Process all stored data."""
+        print(f"📝 Processing {len(self.data)} data items...")
+        time.sleep(0.1)
+        return [item.upper() for item in self.data]
+    
+    def clear_data(self):
+        """Clear all stored data."""
+        print("📝 Clearing data...")
+        self.data.clear()
+        return "Data cleared"
 
 
-@trace(session_id="example-session")
-def function_with_error():
-    """Function that raises an exception."""
-    print("Function that will raise an exception")
-    raise ValueError("Example error")
+def demonstrate_simple_tracing():
+    """Demonstrate simple tracing decorators."""
+    print("1. Simple Tracing Decorators")
+    print("-" * 30)
+    
+    # Test simple function
+    result = simple_function()
+    print(f"✓ Simple function result: {result}")
+    
+    # Test custom traced function
+    result = custom_traced_function()
+    print(f"✓ Custom traced function result: {result}")
+    
+    print()
 
 
-async def main():
-    """Run tracing decorator examples."""
-    print("=== Tracing Decorators Example ===\n")
-
-    # Test sync function
-    print("1. Testing sync function:")
-    result = sync_function("test data")
-    print(f"Result: {result}\n")
-
+def demonstrate_async_tracing():
+    """Demonstrate async tracing decorators."""
+    print("2. Async Tracing Decorators")
+    print("-" * 30)
+    
     # Test async function
-    print("2. Testing async function:")
-    result = await async_function("test data")
-    print(f"Result: {result}\n")
+    result = asyncio.run(async_function())
+    print(f"✓ Async function result: {result}")
+    
+    # Test custom async traced function
+    result = asyncio.run(custom_async_function())
+    print(f"✓ Custom async traced function result: {result}")
+    
+    print()
 
-    # Test class with traced methods
-    print("3. Testing class with traced methods:")
-    processor = DataProcessor("MyProcessor")
 
-    # Sync method
-    result = processor.process_data("class data")
-    print(f"Result: {result}")
+def demonstrate_class_tracing():
+    """Demonstrate class tracing decorator."""
+    print("3. Class Tracing Decorator")
+    print("-" * 30)
+    
+    # Create processor instance
+    processor = DataProcessor()
+    
+    # Add some data
+    processor.add_data("hello")
+    processor.add_data("world")
+    processor.add_data("python")
+    
+    # Process data
+    processed = processor.process_data()
+    print(f"✓ Processed data: {processed}")
+    
+    # Clear data
+    result = processor.clear_data()
+    print(f"✓ Clear result: {result}")
+    
+    print()
 
-    # Async method
-    result = await processor.process_data_async("class data async")
-    print(f"Result: {result}\n")
 
-    # Test function with attributes
-    print("4. Testing function with attributes:")
-    result = function_with_attributes("data with attributes")
-    print(f"Result: {result}\n")
+def demonstrate_manual_span_management():
+    """Demonstrate manual span management alongside decorators."""
+    print("4. Manual Span Management")
+    print("-" * 30)
+    
+    with tracer.start_span("manual_operation") as span:
+        span.set_attribute("operation.type", "manual_demo")
+        span.set_attribute("operation.description", "Manual span creation example")
+        
+        print("📝 Executing manual operation...")
+        time.sleep(0.1)
+        
+        # Call traced functions within manual span
+        simple_function()
+        asyncio.run(async_function())
+        
+        span.set_attribute("operation.result", "success")
+        print("✓ Manual operation completed")
+    
+    print()
 
-    # Test function with error
-    print("5. Testing function with error:")
+
+def main():
+    """Main demonstration function."""
     try:
-        function_with_error()
-    except ValueError as e:
-        print(f"Caught error: {e}\n")
-
-    print("All examples completed!")
+        # Demonstrate all tracing features
+        demonstrate_simple_tracing()
+        demonstrate_async_tracing()
+        demonstrate_class_tracing()
+        demonstrate_manual_span_management()
+        
+        print("🎉 Tracing decorators example completed successfully!")
+        print("\nKey features demonstrated:")
+        print("✅ Primary initialization using HoneyHiveTracer.init()")
+        print("✅ @trace decorator for synchronous functions")
+        print("✅ @atrace decorator for asynchronous functions")
+        print("✅ @trace_class decorator for automatic method tracing")
+        print("✅ Custom event types and names")
+        print("✅ Manual span management alongside decorators")
+        print("✅ Accessing tracer instance via HoneyHiveTracer._instance")
+        
+    except Exception as e:
+        print(f"❌ Example failed: {e}")
+        print("This might be due to missing OpenTelemetry dependencies")
 
 
 if __name__ == "__main__":
-    asyncio.run(main())
+    main()
