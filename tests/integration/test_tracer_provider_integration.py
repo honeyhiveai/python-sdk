@@ -300,3 +300,145 @@ class TestTracerProviderIntegration:
         # Restore original provider and clean up
         tracer.provider = original_provider
         tracer.shutdown()
+
+    def test_force_flush_with_different_providers_integration(
+        self, real_api_key, real_project, real_source
+    ):
+        """Test force_flush behavior with different provider configurations."""
+        # Test with new TracerProvider
+        tracer1 = HoneyHiveTracer(
+            api_key=real_api_key,
+            project=real_project,
+            source=real_source,
+            session_name="force-flush-new-provider",
+            test_mode=False,
+            disable_http_tracing=True,
+        )
+
+        # Create some spans
+        with tracer1.start_span("new_provider_span") as span:
+            span.set_attribute("provider_type", "new")
+
+        # Test force_flush
+        result = tracer1.force_flush(timeout_millis=5000)
+        assert isinstance(result, bool)
+
+        tracer1.shutdown()
+
+        # Test with existing TracerProvider
+        mock_existing_provider = Mock()
+        mock_existing_provider.add_span_processor = Mock()
+        mock_existing_provider.force_flush = Mock(return_value=True)
+
+        with patch(
+            "honeyhive.tracer.otel_tracer.trace.get_tracer_provider",
+            return_value=mock_existing_provider,
+        ):
+            tracer2 = HoneyHiveTracer(
+                api_key=real_api_key,
+                project=real_project,
+                source=real_source,
+                session_name="force-flush-existing-provider",
+                test_mode=False,
+                disable_http_tracing=True,
+            )
+
+            # Create some spans
+            with tracer2.start_span("existing_provider_span") as span:
+                span.set_attribute("provider_type", "existing")
+
+            # Test force_flush
+            result = tracer2.force_flush(timeout_millis=3000)
+            assert isinstance(result, bool)
+
+            # Verify that provider's force_flush was called
+            mock_existing_provider.force_flush.assert_called()
+
+            tracer2.shutdown()
+
+    def test_force_flush_multiple_tracers_same_provider_integration(
+        self, real_api_key, real_project, real_source
+    ):
+        """Test force_flush with multiple tracers sharing the same provider."""
+        # Create first tracer (will create new provider)
+        tracer1 = HoneyHiveTracer(
+            api_key=real_api_key,
+            project=real_project,
+            source=real_source,
+            session_name="force-flush-multi-1",
+            test_mode=False,
+            disable_http_tracing=True,
+        )
+
+        # Store the provider reference
+        shared_provider = tracer1.provider
+
+        # Create second tracer that will use the existing provider
+        with patch(
+            "honeyhive.tracer.otel_tracer.trace.get_tracer_provider",
+            return_value=shared_provider,
+        ):
+            tracer2 = HoneyHiveTracer(
+                api_key=real_api_key,
+                project=real_project,
+                source=real_source,
+                session_name="force-flush-multi-2",
+                test_mode=False,
+                disable_http_tracing=True,
+            )
+
+        # Create spans from both tracers
+        with tracer1.start_span("tracer1_span") as span:
+            span.set_attribute("tracer", "first")
+
+        with tracer2.start_span("tracer2_span") as span:
+            span.set_attribute("tracer", "second")
+
+        # Test force_flush from both tracers
+        result1 = tracer1.force_flush(timeout_millis=4000)
+        result2 = tracer2.force_flush(timeout_millis=4000)
+
+        assert isinstance(result1, bool)
+        assert isinstance(result2, bool)
+
+        # Both should share the same provider
+        assert tracer1.provider == tracer2.provider
+
+        # Clean up
+        tracer1.shutdown()
+        tracer2.shutdown()
+
+    def test_force_flush_stress_test_integration(
+        self, real_api_key, real_project, real_source
+    ):
+        """Test force_flush behavior under stress conditions."""
+        tracer = HoneyHiveTracer(
+            api_key=real_api_key,
+            project=real_project,
+            source=real_source,
+            session_name="force-flush-stress",
+            test_mode=False,
+            disable_http_tracing=True,
+        )
+
+        # Create many spans quickly
+        for i in range(20):
+            with tracer.start_span(f"stress_span_{i}") as span:
+                span.set_attribute("iteration", i)
+                span.set_attribute("stress_test", True)
+
+        # Multiple rapid force_flush calls
+        results = []
+        for timeout in [1000, 2000, 3000, 1500, 2500]:
+            result = tracer.force_flush(timeout_millis=timeout)
+            results.append(result)
+            assert isinstance(result, bool)
+
+        # All calls should complete without exceptions
+        assert len(results) == 5
+
+        # Final flush before shutdown
+        final_result = tracer.force_flush(timeout_millis=10000)
+        assert isinstance(final_result, bool)
+
+        tracer.shutdown()

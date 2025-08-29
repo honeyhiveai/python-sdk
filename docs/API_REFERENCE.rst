@@ -336,6 +336,67 @@ The ``outputs`` and ``error`` parameters provide comprehensive data capture and 
        error=inference_error  # Stored as 'honeyhive.span.error'
    )
 
+force_flush
+~~~~~~~~~~~
+
+**Force immediate flushing of all pending spans and telemetry data.**
+
+The ``force_flush`` method ensures that all buffered spans and telemetry data are immediately sent to their destinations, rather than waiting for automatic batching.
+
+**Function Signature:**
+
+.. code-block:: python
+
+   def force_flush(self, timeout_millis: float = 30000) -> bool
+
+**Parameters:**
+
+* ``timeout_millis``: Maximum time to wait for flush completion in milliseconds (default: 30000ms/30 seconds)
+
+**Returns:**
+
+* ``bool``: True if flush completed successfully within timeout, False otherwise
+
+**Usage Examples:**
+
+.. code-block:: python
+
+   from honeyhive.tracer import HoneyHiveTracer
+   
+   tracer = HoneyHiveTracer.init(api_key="your-key", project="your-project")
+   
+   # Flush with default timeout (30 seconds)
+   success = tracer.force_flush()
+   if success:
+       print("All spans flushed successfully")
+   else:
+       print("Flush timeout or error occurred")
+   
+   # Flush with custom timeout (5 seconds)
+   success = tracer.force_flush(timeout_millis=5000)
+   
+   # Use before critical operations
+   with tracer.start_span("critical_operation"):
+       perform_work()
+   
+   # Ensure spans are sent before continuing
+   tracer.force_flush()
+
+**Integration with OpenTelemetry:**
+
+The ``force_flush`` method integrates with:
+
+* **TracerProvider**: Calls the provider's ``force_flush`` if available
+* **Span Processors**: Flushes all attached span processors including batch processors
+* **HoneyHive Processor**: Validates processor state and ensures consistency
+
+**Best Practices:**
+
+* Use ``force_flush`` before application shutdown
+* Call before critical checkpoints where you need guaranteed span delivery
+* Consider timeout values based on your network conditions
+* Monitor return values to detect flush failures
+
 enrich_session
 ~~~~~~~~~~~~~~
 

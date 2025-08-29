@@ -1077,6 +1077,148 @@ class TestHoneyHiveTracerEnrichSpanUnified:
                     )
 
 
+class TestHoneyHiveTracerForceFlush:
+    """Test cases for HoneyHiveTracer force_flush functionality."""
+
+    def test_force_flush_basic(self) -> None:
+        """Test basic force_flush functionality."""
+        from honeyhive.tracer.otel_tracer import HoneyHiveTracer
+
+        tracer = HoneyHiveTracer.init(api_key="test", project="test", test_mode=True)
+
+        with patch("honeyhive.tracer.otel_tracer.OTEL_AVAILABLE", True):
+            # Test with default timeout
+            result = tracer.force_flush()
+            assert isinstance(result, bool)
+
+            # Test with custom timeout
+            result = tracer.force_flush(timeout_millis=5000)
+            assert isinstance(result, bool)
+
+    def test_force_flush_with_provider_support(self) -> None:
+        """Test force_flush when provider supports it."""
+        from honeyhive.tracer.otel_tracer import HoneyHiveTracer
+
+        with patch("honeyhive.tracer.otel_tracer.OTEL_AVAILABLE", True):
+            tracer = HoneyHiveTracer.init(
+                api_key="test", project="test", test_mode=True
+            )
+
+            # Mock provider with force_flush support and no batch processors
+            mock_provider = Mock()
+            mock_provider.force_flush.return_value = True
+            mock_provider._span_processors = []  # No batch processors
+            tracer.provider = mock_provider
+
+            # Mock span processor to return True as well
+            mock_span_processor = Mock()
+            mock_span_processor.force_flush.return_value = True
+            tracer.span_processor = mock_span_processor
+
+            result = tracer.force_flush(timeout_millis=10000)
+
+            # Should call provider's force_flush
+            mock_provider.force_flush.assert_called_once_with(timeout_millis=10000)
+            mock_span_processor.force_flush.assert_called_once_with(
+                timeout_millis=10000
+            )
+            assert result is True
+
+    def test_force_flush_with_span_processor(self) -> None:
+        """Test force_flush with span processor."""
+        from honeyhive.tracer.otel_tracer import HoneyHiveTracer
+
+        tracer = HoneyHiveTracer.init(api_key="test", project="test", test_mode=True)
+
+        with patch("honeyhive.tracer.otel_tracer.OTEL_AVAILABLE", True):
+            # Mock span processor with force_flush support
+            mock_span_processor = Mock()
+            mock_span_processor.force_flush.return_value = True
+            tracer.span_processor = mock_span_processor
+
+            result = tracer.force_flush(timeout_millis=5000)
+
+            # Should call span processor's force_flush
+            mock_span_processor.force_flush.assert_called_once_with(timeout_millis=5000)
+            assert result is True
+
+    def test_force_flush_with_batch_processors(self) -> None:
+        """Test force_flush with batch processors on provider."""
+        from honeyhive.tracer.otel_tracer import HoneyHiveTracer
+
+        tracer = HoneyHiveTracer.init(api_key="test", project="test", test_mode=True)
+
+        with patch("honeyhive.tracer.otel_tracer.OTEL_AVAILABLE", True):
+            # Mock provider with batch processors
+            mock_batch_processor = Mock()
+            mock_batch_processor.force_flush.return_value = True
+
+            mock_provider = Mock()
+            mock_provider._span_processors = [mock_batch_processor]
+            mock_provider.force_flush.return_value = True
+            tracer.provider = mock_provider
+
+            result = tracer.force_flush(timeout_millis=8000)
+
+            # Should call both provider and batch processor force_flush
+            mock_provider.force_flush.assert_called_once_with(timeout_millis=8000)
+            mock_batch_processor.force_flush.assert_called_once_with(
+                timeout_millis=8000
+            )
+            assert result is True
+
+    def test_force_flush_partial_failure(self) -> None:
+        """Test force_flush when some components fail."""
+        from honeyhive.tracer.otel_tracer import HoneyHiveTracer
+
+        tracer = HoneyHiveTracer.init(api_key="test", project="test", test_mode=True)
+
+        with patch("honeyhive.tracer.otel_tracer.OTEL_AVAILABLE", True):
+            # Mock provider that fails
+            mock_provider = Mock()
+            mock_provider.force_flush.return_value = False
+            tracer.provider = mock_provider
+
+            # Mock span processor that succeeds
+            mock_span_processor = Mock()
+            mock_span_processor.force_flush.return_value = True
+            tracer.span_processor = mock_span_processor
+
+            result = tracer.force_flush()
+
+            # Should return False because provider failed
+            assert result is False
+
+    def test_force_flush_exception_handling(self) -> None:
+        """Test force_flush exception handling."""
+        from honeyhive.tracer.otel_tracer import HoneyHiveTracer
+
+        tracer = HoneyHiveTracer.init(api_key="test", project="test", test_mode=True)
+
+        with patch("honeyhive.tracer.otel_tracer.OTEL_AVAILABLE", True):
+            # Mock provider that raises exception
+            mock_provider = Mock()
+            mock_provider.force_flush.side_effect = Exception("Provider error")
+            tracer.provider = mock_provider
+
+            result = tracer.force_flush()
+
+            # Should handle exception and return False
+            assert result is False
+
+    def test_force_flush_otel_not_available(self) -> None:
+        """Test force_flush when OpenTelemetry is not available."""
+        from honeyhive.tracer.otel_tracer import HoneyHiveTracer
+
+        tracer = HoneyHiveTracer.init(api_key="test", project="test", test_mode=True)
+
+        with patch("honeyhive.tracer.otel_tracer.OTEL_AVAILABLE", False):
+            result = tracer.force_flush()
+
+            # Should return True (graceful degradation)
+            assert result is True
+
+
 class TestGlobalEnrichSpanWithOutputsAndError:
     """Test cases for global enrich_span function with outputs and error."""
 

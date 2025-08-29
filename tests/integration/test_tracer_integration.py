@@ -363,3 +363,75 @@ class TestUnifiedEnrichSpanIntegration:
 
         # Verify that error scenarios don't crash the application
         assert True
+
+    def test_force_flush_integration(self, integration_tracer):
+        """Test force_flush functionality in integration environment."""
+        # Create some spans to flush
+        with integration_tracer.start_span("force_flush_test_span_1") as span:
+            span.set_attribute("test_type", "force_flush_integration")
+            span.set_attribute("span_number", 1)
+
+        with integration_tracer.start_span("force_flush_test_span_2") as span:
+            span.set_attribute("test_type", "force_flush_integration")
+            span.set_attribute("span_number", 2)
+
+        # Test force_flush with default timeout
+        result = integration_tracer.force_flush()
+        assert isinstance(result, bool)
+
+        # Test force_flush with custom timeout
+        result = integration_tracer.force_flush(timeout_millis=5000)
+        assert isinstance(result, bool)
+
+        # Force flush should work multiple times
+        result1 = integration_tracer.force_flush(timeout_millis=1000)
+        result2 = integration_tracer.force_flush(timeout_millis=2000)
+        assert isinstance(result1, bool)
+        assert isinstance(result2, bool)
+
+    def test_force_flush_before_shutdown_integration(self, integration_tracer):
+        """Test force_flush before shutdown in integration environment."""
+        # Create spans to ensure there's something to flush
+        with integration_tracer.start_span("pre_shutdown_span") as span:
+            span.set_attribute("test_type", "pre_shutdown_flush")
+            span.set_attribute("critical", True)
+
+        # Force flush before shutdown (best practice)
+        flush_result = integration_tracer.force_flush(timeout_millis=10000)
+        assert isinstance(flush_result, bool)
+
+        # Shutdown should work after force flush
+        integration_tracer.shutdown()
+
+        # Verify tracer is still accessible (but likely not functional)
+        assert integration_tracer.project is not None
+
+    def test_force_flush_with_enrich_span_integration(self, integration_tracer):
+        """Test force_flush interaction with enrich_span in integration environment."""
+        from honeyhive.tracer.otel_tracer import enrich_span
+
+        # Test with context manager pattern using global function
+        with enrich_span(
+            metadata={"operation": "integration_test"},
+            outputs={"result": "test_data"},
+            error=None,
+            tracer=integration_tracer,
+        ):
+            with integration_tracer.start_span("enriched_span") as span:
+                span.set_attribute("enriched", True)
+
+        # Force flush after enrichment
+        result = integration_tracer.force_flush()
+        assert isinstance(result, bool)
+
+        # Test with direct call pattern on tracer instance
+        success = integration_tracer.enrich_span(
+            metadata={"operation": "direct_call_test"},
+            outputs={"status": "completed"},
+            error=None,
+        )
+        assert isinstance(success, bool)
+
+        # Force flush after direct enrichment
+        result = integration_tracer.force_flush(timeout_millis=3000)
+        assert isinstance(result, bool)

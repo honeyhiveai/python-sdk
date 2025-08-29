@@ -348,3 +348,142 @@ class TestMultiInstanceTracerIntegration:
         # Clean up
         tracer1.shutdown()
         tracer2.shutdown()
+
+    def test_force_flush_multi_instance_integration(
+        self, real_api_key, real_project, real_source
+    ):
+        """Test force_flush functionality with multiple tracer instances."""
+        # Create multiple tracer instances
+        tracer1 = HoneyHiveTracer.init(
+            api_key=real_api_key,
+            project=real_project,
+            source=real_source,
+            session_name="force-flush-multi-1",
+            test_mode=False,
+            disable_http_tracing=True,
+        )
+
+        tracer2 = HoneyHiveTracer.init(
+            api_key=real_api_key,
+            project=real_project,
+            source=real_source,
+            session_name="force-flush-multi-2",
+            test_mode=False,
+            disable_http_tracing=True,
+        )
+
+        # Create spans from both tracers
+        with tracer1.start_span("multi_instance_span_1") as span:
+            span.set_attribute("tracer_id", "tracer1")
+            span.set_attribute("test_type", "multi_instance_flush")
+
+        with tracer2.start_span("multi_instance_span_2") as span:
+            span.set_attribute("tracer_id", "tracer2")
+            span.set_attribute("test_type", "multi_instance_flush")
+
+        # Test force_flush from both tracers
+        result1 = tracer1.force_flush(timeout_millis=5000)
+        result2 = tracer2.force_flush(timeout_millis=5000)
+
+        assert isinstance(result1, bool)
+        assert isinstance(result2, bool)
+
+        # Clean up
+        tracer1.shutdown()
+        tracer2.shutdown()
+
+    def test_force_flush_sequence_multi_instance_integration(
+        self, real_api_key, real_project, real_source
+    ):
+        """Test sequential force_flush operations across multiple tracers."""
+        tracers = []
+
+        # Create multiple tracers
+        for i in range(3):
+            tracer = HoneyHiveTracer.init(
+                api_key=real_api_key,
+                project=real_project,
+                source=real_source,
+                session_name=f"force-flush-seq-{i}",
+                test_mode=False,
+                disable_http_tracing=True,
+            )
+            tracers.append(tracer)
+
+        # Create spans and flush sequentially
+        for i, tracer in enumerate(tracers):
+            # Create spans
+            with tracer.start_span(f"sequential_span_{i}") as span:
+                span.set_attribute("tracer_index", i)
+                span.set_attribute("sequence_test", True)
+
+            # Force flush
+            result = tracer.force_flush(timeout_millis=3000)
+            assert isinstance(result, bool)
+
+        # Final concurrent flush from all tracers
+        results = []
+        for tracer in tracers:
+            result = tracer.force_flush(timeout_millis=2000)
+            results.append(result)
+            assert isinstance(result, bool)
+
+        # Verify all flushes completed
+        assert len(results) == 3
+
+        # Clean up all tracers
+        for tracer in tracers:
+            tracer.shutdown()
+
+    def test_force_flush_with_enrich_span_multi_instance_integration(
+        self, real_api_key, real_project, real_source
+    ):
+        """Test force_flush with enrich_span across multiple tracer instances."""
+        tracer1 = HoneyHiveTracer.init(
+            api_key=real_api_key,
+            project=real_project,
+            source=real_source,
+            session_name="force-flush-enrich-1",
+            test_mode=False,
+            disable_http_tracing=True,
+        )
+
+        tracer2 = HoneyHiveTracer.init(
+            api_key=real_api_key,
+            project=real_project,
+            source=real_source,
+            session_name="force-flush-enrich-2",
+            test_mode=False,
+            disable_http_tracing=True,
+        )
+
+        # Use enrich_span with first tracer
+        from honeyhive.tracer.otel_tracer import enrich_span
+
+        with enrich_span(
+            metadata={"tracer": "first", "operation": "multi_instance_test"},
+            outputs={"status": "processing"},
+            error=None,
+            tracer=tracer1,
+        ):
+            with tracer1.start_span("enriched_span_1") as span:
+                span.set_attribute("enriched_by", "tracer1")
+
+        # Use enrich_span with second tracer (direct call)
+        success = tracer2.enrich_span(
+            metadata={"tracer": "second", "operation": "direct_call_test"},
+            outputs={"result": "completed"},
+            error=None,
+        )
+        assert isinstance(success, bool)
+
+        # Force flush both tracers
+        result1 = tracer1.force_flush(timeout_millis=4000)
+        result2 = tracer2.force_flush(timeout_millis=4000)
+
+        assert isinstance(result1, bool)
+        assert isinstance(result2, bool)
+
+        # Clean up
+        tracer1.shutdown()
+        tracer2.shutdown()

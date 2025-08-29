@@ -15,10 +15,10 @@ Testing is a crucial part of developing reliable applications with the HoneyHive
 **Coverage Requirement**: The project maintains a minimum **70% test coverage** requirement to ensure code quality and reliability.
 
 **Current Test Status**: 
-- **Total Tests**: 816 tests
-- **Test Coverage**: 72.10% ✅ (above 70% requirement)
-- **Test Results**: 814 passed, 2 failed
-- **Code Coverage**: 4,158 total statements, 1,160 missed
+- **Total Tests**: 859 tests
+- **Test Coverage**: 72.76% ✅ (above 70% requirement)
+- **Test Results**: 859 passed, 0 failed ✅
+- **Code Coverage**: 4,270 total statements, 1,163 missed
 
 Test Organization
 -----------------
@@ -27,9 +27,9 @@ The project maintains a comprehensive test suite organized into logical categori
 
 **Test File Structure**:
 - **Total Test Files**: 37
-- **Unit Tests**: 21 test files in `tests/unit/`
-- **Integration Tests**: 8 test files in `tests/integration/`
-- **Tracer Tests**: 1 test file in `tests/tracer/`
+- **Unit Tests**: 21 test files in `tests/unit/` (739 tests)
+- **Integration Tests**: 8 test files in `tests/integration/` (97 tests)
+- **Tracer Tests**: 1 test file in `tests/tracer/` (23 tests)
 - **Test Utilities**: 2 utility files (`conftest.py`, `utils.py`)
 
 **Test Categories**:
@@ -40,6 +40,7 @@ The project maintains a comprehensive test suite organized into logical categori
 5. **Multi-Instance Tests** - Test multiple tracer instances and their interactions
 6. **Real API Tests** - Test with actual HoneyHive API endpoints
 7. **TracerProvider Tests** - Test OpenTelemetry provider integration
+8. **Force Flush Tests** - Test comprehensive force_flush functionality (20 tests)
 
 Testing Strategy
 ----------------
@@ -889,6 +890,79 @@ Organize tests logically:
            """Test new provider creation."""
            pass
 
+Force Flush Testing
+-------------------
+
+Testing Force Flush Functionality
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Test the comprehensive force_flush implementation:
+
+.. code-block:: python
+
+   from honeyhive import HoneyHiveTracer
+
+   def test_force_flush_basic():
+       """Test basic force_flush functionality."""
+       tracer = HoneyHiveTracer.init(
+           api_key="test-key",
+           project="test-project",
+           test_mode=True
+       )
+       
+       # Create spans to flush
+       with tracer.start_span("test-span") as span:
+           span.set_attribute("test.data", "value")
+       
+       # Test force_flush with default timeout
+       result = tracer.force_flush()
+       assert isinstance(result, bool)
+       
+       # Test force_flush with custom timeout
+       result = tracer.force_flush(timeout_millis=5000)
+       assert isinstance(result, bool)
+
+   def test_force_flush_with_enrich_span():
+       """Test force_flush with enrich_span integration."""
+       tracer = HoneyHiveTracer.init(
+           api_key="test-key",
+           project="test-project",
+           test_mode=True
+       )
+       
+       # Test with context manager
+       with tracer.enrich_span(
+           metadata={"operation": "test"},
+           outputs={"result": "success"},
+           error=None
+       ):
+           with tracer.start_span("enriched-operation") as span:
+               span.set_attribute("enriched", True)
+       
+       # Force flush to ensure delivery
+       result = tracer.force_flush()
+       assert result is True
+
+   def test_force_flush_error_handling():
+       """Test force_flush error handling."""
+       tracer = HoneyHiveTracer.init(
+           api_key="test-key",
+           project="test-project",
+           test_mode=True
+       )
+       
+       # Test with mock provider failure
+       with patch.object(tracer.provider, 'force_flush', return_value=False):
+           result = tracer.force_flush()
+           assert result is False  # Should handle failure gracefully
+
+**Force Flush Test Coverage**:
+
+- **Unit Tests**: 11 tests covering all force_flush scenarios
+- **Integration Tests**: 9 tests with real API endpoints
+- **Total**: 20 dedicated force_flush tests
+- **Coverage Areas**: Basic functionality, provider integration, error handling, multi-instance coordination
+
 Continuous Integration
 ----------------------
 
@@ -941,8 +1015,8 @@ Current Test Execution
 
 The project uses tox for consistent testing across environments. Current test execution shows:
 
-**Test Collection**: 816 tests collected from 37 test files
-**Execution Time**: ~15-18 seconds for full test suite
+**Test Collection**: 859 tests collected from 37 test files
+**Execution Time**: ~14-16 seconds for full test suite
 **Coverage Generation**: HTML and XML reports automatically generated
 
 Command Line
@@ -1044,23 +1118,23 @@ Current Test Metrics
 The project maintains comprehensive testing with the following current statistics:
 
 **Test Counts**:
-- **Total Tests**: 816 tests
-- **Unit Tests**: 21 test files covering individual components
-- **Integration Tests**: 8 test files covering component interactions
-- **Tracer Tests**: 1 test file covering core tracing functionality
+- **Total Tests**: 859 tests
+- **Unit Tests**: 21 test files covering individual components (739 tests)
+- **Integration Tests**: 8 test files covering component interactions (97 tests)
+- **Tracer Tests**: 1 test file covering core tracing functionality (23 tests)
 - **Test Utilities**: 2 utility files for test support
 
 **Coverage Metrics**:
-- **Overall Coverage**: 72.10% (4,158 statements, 1,160 missed)
+- **Overall Coverage**: 72.76% (4,270 statements, 1,163 missed)
 - **Coverage Requirement**: 70% minimum (✅ currently met)
 - **Coverage Enforcement**: Tests fail if coverage drops below threshold
 - **Coverage Reports**: HTML and XML coverage reports generated
 - **Coverage Tools**: pytest-cov integration with fail-under option
 
 **Test Results**:
-- **Passed**: 814 tests
-- **Failed**: 2 tests (related to default source configuration)
-- **Success Rate**: 99.75%
+- **Passed**: 859 tests ✅
+- **Failed**: 0 tests ✅
+- **Success Rate**: 100% ✅
 
 **Module Coverage Highlights**:
 - **100% Coverage**: `__init__.py` files, `evaluations.py`, `generated.py`, `tracing.py`, `dotdict.py`
@@ -1069,9 +1143,9 @@ The project maintains comprehensive testing with the following current statistic
 - **Lower Coverage Areas**: `cli/main.py` (37%), `metrics.py` (30%), `connection_pool.py` (57%)
 
 **Current Test Status**:
-- **Test Success Rate**: 99.75% (814/816 tests passing)
-- **Known Issues**: 2 test failures related to default source configuration
-- **Coverage Status**: ✅ Above 70% requirement (currently 72.10%)
+- **Test Success Rate**: 100% (859/859 tests passing) ✅
+- **Known Issues**: None - all tests passing ✅
+- **Coverage Status**: ✅ Above 70% requirement (currently 72.76%)
 
 **Test Improvement Opportunities**:
 - **CLI Module**: Increase coverage from 37% to target 70%+

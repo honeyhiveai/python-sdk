@@ -250,19 +250,56 @@ class TestHoneyHiveSpanProcessor:
     def test_force_flush(self) -> None:
         """Test force_flush functionality."""
         with patch("honeyhive.tracer.span_processor.OTEL_AVAILABLE", True):
-            processor = HoneyHiveSpanProcessor()
+            with patch("honeyhive.tracer.span_processor.context") as mock_context:
+                with patch("honeyhive.tracer.span_processor.baggage") as mock_baggage:
+                    processor = HoneyHiveSpanProcessor()
 
-            # Should return True
-            result = processor.force_flush()
-            assert result is True
+                    # Mock successful validation
+                    mock_context.get_current.return_value = Mock()
+                    mock_baggage.get_baggage.return_value = "test_session"
+
+                    # Should return True
+                    result = processor.force_flush()
+                    assert result is True
 
     def test_force_flush_with_timeout(self) -> None:
         """Test force_flush with custom timeout."""
         with patch("honeyhive.tracer.span_processor.OTEL_AVAILABLE", True):
+            with patch("honeyhive.tracer.span_processor.context") as mock_context:
+                with patch("honeyhive.tracer.span_processor.baggage") as mock_baggage:
+                    processor = HoneyHiveSpanProcessor()
+
+                    # Mock successful validation
+                    mock_context.get_current.return_value = Mock()
+                    mock_baggage.get_baggage.return_value = "test_session"
+
+                    # Should return True with custom timeout
+                    result = processor.force_flush(5000)
+                    assert result is True
+
+    def test_force_flush_validation_failure(self) -> None:
+        """Test force_flush with validation failure."""
+        with patch("honeyhive.tracer.span_processor.OTEL_AVAILABLE", True):
+            with patch("honeyhive.tracer.span_processor.context") as mock_context:
+                processor = HoneyHiveSpanProcessor()
+
+                # Mock validation failure
+                mock_context.get_current.side_effect = Exception("Context error")
+
+                # Should return False due to validation failure
+                result = processor.force_flush()
+                assert result is False
+
+    def test_force_flush_otel_not_available(self) -> None:
+        """Test force_flush when OpenTelemetry is not available."""
+        # First create processor when OTEL is available
+        with patch("honeyhive.tracer.span_processor.OTEL_AVAILABLE", True):
             processor = HoneyHiveSpanProcessor()
 
-            # Should return True with custom timeout
-            result = processor.force_flush(5000)
+        # Then test force_flush when OTEL is not available
+        with patch("honeyhive.tracer.span_processor.OTEL_AVAILABLE", False):
+            # Should return True (graceful degradation)
+            result = processor.force_flush()
             assert result is True
 
     def test_on_start_exception_handling(self) -> None:

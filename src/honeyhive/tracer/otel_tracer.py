@@ -992,6 +992,141 @@ class HoneyHiveTracer:
 
             return Context()
 
+    def force_flush(self, timeout_millis: float = 30000) -> bool:
+        """Force flush any pending spans and data.
+
+        This method ensures that all pending spans and telemetry data are
+        immediately sent to their destinations, rather than waiting for
+        automatic batching/flushing.
+
+        Args:
+            timeout_millis: Maximum time to wait for flush completion in milliseconds.
+                          Defaults to 30 seconds (30000ms).
+
+        Returns:
+            bool: True if flush completed successfully within timeout, False otherwise.
+
+        Example:
+            Flush with default timeout (30 seconds):
+
+            >>> success = tracer.force_flush()
+
+            Flush with custom timeout (5 seconds):
+
+            >>> success = tracer.force_flush(timeout_millis=5000)
+
+            Use before critical sections:
+
+            >>> if tracer.force_flush():
+            ...     print("All spans flushed successfully")
+            ... else:
+            ...     print("Flush timeout or error occurred")
+        """
+        if not OTEL_AVAILABLE:
+            print("⚠️  OpenTelemetry not available, skipping force_flush")
+            return True
+
+        flush_results = []
+
+        try:
+            # 1. Flush the tracer provider if available and supports it
+            if self.provider and hasattr(self.provider, "force_flush"):
+                try:
+                    provider_result = self.provider.force_flush(
+                        timeout_millis=int(timeout_millis)
+                    )
+                    flush_results.append(("provider", provider_result))
+                    if not self.test_mode:
+                        print(
+                            f"✓ Provider force_flush: {'success' if provider_result else 'failed'}"
+                        )
+                except Exception as e:
+                    flush_results.append(("provider", False))
+                    if not self.test_mode:
+                        print(f"❌ Provider force_flush error: {e}")
+            else:
+                if not self.test_mode:
+                    print("ℹ️  Provider does not support force_flush")
+                flush_results.append(
+                    ("provider", True)
+                )  # Consider it successful if not supported
+
+            # 2. Flush our custom span processor if available
+            if self.span_processor and hasattr(self.span_processor, "force_flush"):
+                try:
+                    processor_result = self.span_processor.force_flush(
+                        timeout_millis=timeout_millis
+                    )
+                    flush_results.append(("span_processor", processor_result))
+                    if not self.test_mode:
+                        print(
+                            f"✓ Span processor force_flush: {'success' if processor_result else 'failed'}"
+                        )
+                except Exception as e:
+                    flush_results.append(("span_processor", False))
+                    if not self.test_mode:
+                        print(f"❌ Span processor force_flush error: {e}")
+            else:
+                flush_results.append(
+                    ("span_processor", True)
+                )  # Consider successful if not available
+
+            # 3. Flush any batch span processors that might be attached to the provider
+            if self.provider and hasattr(self.provider, "_span_processors"):
+                try:
+                    batch_processors = []
+                    for processor in getattr(self.provider, "_span_processors", []):
+                        if hasattr(processor, "force_flush"):
+                            batch_processors.append(processor)
+
+                    if batch_processors:
+                        batch_results = []
+                        for i, processor in enumerate(batch_processors):
+                            try:
+                                result = processor.force_flush(
+                                    timeout_millis=int(timeout_millis)
+                                )
+                                batch_results.append(result)
+                                if not self.test_mode:
+                                    print(
+                                        f"✓ Batch processor {i+1} force_flush: {'success' if result else 'failed'}"
+                                    )
+                            except Exception as e:
+                                batch_results.append(False)
+                                if not self.test_mode:
+                                    print(
+                                        f"❌ Batch processor {i+1} force_flush error: {e}"
+                                    )
+
+                        flush_results.append(("batch_processors", all(batch_results)))
+                    else:
+                        flush_results.append(("batch_processors", True))
+                except Exception as e:
+                    flush_results.append(("batch_processors", False))
+                    if not self.test_mode:
+                        print(f"❌ Batch processors flush error: {e}")
+
+            # Calculate overall result
+            overall_success = all(result for _, result in flush_results)
+
+            if not self.test_mode:
+                if overall_success:
+                    print("✓ Force flush completed successfully")
+                else:
+                    failed_components = [
+                        name for name, result in flush_results if not result
+                    ]
+                    print(
+                        f"⚠️  Force flush completed with failures: {failed_components}"
+                    )
+
+            return overall_success
+
+        except Exception as e:
+            if not self.test_mode:
+                print(f"❌ Force flush failed: {e}")
+            return False
+
     def shutdown(self) -> None:
         """Shutdown the tracer and its provider."""
         try:
