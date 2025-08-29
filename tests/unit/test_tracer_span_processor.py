@@ -20,10 +20,7 @@ class TestHoneyHiveSpanProcessor:
         with patch("honeyhive.tracer.span_processor.OTEL_AVAILABLE", True):
             processor = HoneyHiveSpanProcessor()
             assert processor is not None
-            assert hasattr(processor, "_context_cache")
-            assert hasattr(processor, "_cache_ttl")
-            assert hasattr(processor, "_operation_count")
-            assert hasattr(processor, "_lock")
+            # No cache-related attributes anymore
 
     def test_init_otel_not_available(self) -> None:
         """Test initialization when OpenTelemetry is not available."""
@@ -159,8 +156,8 @@ class TestHoneyHiveSpanProcessor:
                 # Verify no attributes were set
                 mock_span.set_attribute.assert_not_called()
 
-    def test_on_start_cache_hit(self) -> None:
-        """Test on_start with cache hit."""
+    def test_on_start_multiple_calls(self) -> None:
+        """Test on_start with multiple calls (no caching)."""
         with patch("honeyhive.tracer.span_processor.OTEL_AVAILABLE", True):
             with patch("honeyhive.tracer.span_processor.context") as mock_context:
                 with patch("honeyhive.tracer.span_processor.baggage") as mock_baggage:
@@ -181,14 +178,15 @@ class TestHoneyHiveSpanProcessor:
                         "project": "test_project",
                     }.get(key)
 
-                    # First call to populate cache
+                    # First call
+                    processor.on_start(mock_span)
+                    first_call_count = mock_span.set_attribute.call_count
+
+                    # Second call should process baggage again (no caching)
                     processor.on_start(mock_span)
 
-                    # Second call should use cache
-                    processor.on_start(mock_span)
-
-                    # Verify attributes were set twice
-                    assert mock_span.set_attribute.call_count >= 2
+                    # Verify attributes were set both times
+                    assert mock_span.set_attribute.call_count >= first_call_count * 2
 
     def test_on_end_basic(self) -> None:
         """Test basic on_end functionality."""
@@ -243,14 +241,11 @@ class TestHoneyHiveSpanProcessor:
         with patch("honeyhive.tracer.span_processor.OTEL_AVAILABLE", True):
             processor = HoneyHiveSpanProcessor()
 
-            # Add some data to cache
-            processor._context_cache[1] = {"test": "data"}
-            assert len(processor._context_cache) == 1
-
+            # Shutdown should complete without errors (no cache to clear)
             processor.shutdown()
 
-            # Cache should be cleared
-            assert len(processor._context_cache) == 0
+            # Should succeed
+            assert True
 
     def test_force_flush(self) -> None:
         """Test force_flush functionality."""
@@ -269,23 +264,6 @@ class TestHoneyHiveSpanProcessor:
             # Should return True with custom timeout
             result = processor.force_flush(5000)
             assert result is True
-
-    def test_cleanup_cache(self) -> None:
-        """Test cache cleanup functionality."""
-        with patch("honeyhive.tracer.span_processor.OTEL_AVAILABLE", True):
-            processor = HoneyHiveSpanProcessor()
-
-            # Fill cache beyond limit
-            for i in range(1100):
-                processor._context_cache[i] = {"test": "data"}
-
-            assert len(processor._context_cache) > 1000
-
-            # Trigger cleanup
-            processor._cleanup_cache()
-
-            # Cache should be reduced
-            assert len(processor._context_cache) <= 1000
 
     def test_on_start_exception_handling(self) -> None:
         """Test exception handling in on_start."""
@@ -324,34 +302,8 @@ class TestHoneyHiveSpanProcessor:
         with patch("honeyhive.tracer.span_processor.OTEL_AVAILABLE", True):
             processor = HoneyHiveSpanProcessor()
 
-            # Add some data to cache
-            processor._context_cache[1] = {"test": "data"}
-            assert len(processor._context_cache) == 1
-
-            # Mock lock that raises exception
-            mock_lock = Mock()
-            mock_lock.__enter__ = Mock(side_effect=Exception("Test error"))
-            processor._lock = mock_lock
-
-            # Should not raise exception
+            # Should not raise exception (no cache operations)
             processor.shutdown()
-
-    def test_cleanup_cache_exception_handling(self) -> None:
-        """Test exception handling in cache cleanup."""
-        with patch("honeyhive.tracer.span_processor.OTEL_AVAILABLE", True):
-            processor = HoneyHiveSpanProcessor()
-
-            # Fill cache
-            for i in range(1100):
-                processor._context_cache[i] = {"test": "data"}
-
-            # Mock lock that raises exception
-            mock_lock = Mock()
-            mock_lock.__enter__ = Mock(side_effect=Exception("Test error"))
-            processor._lock = mock_lock
-
-            # Should not raise exception
-            processor._cleanup_cache()
 
     def test_otel_not_available_methods(self) -> None:
         """Test methods when OpenTelemetry is not available."""

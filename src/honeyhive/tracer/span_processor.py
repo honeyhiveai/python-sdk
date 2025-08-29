@@ -1,7 +1,5 @@
 """HoneyHive span processor for OpenTelemetry integration."""
 
-import threading
-import time
 from typing import TYPE_CHECKING, Any, Dict, Optional
 
 if TYPE_CHECKING:
@@ -22,20 +20,15 @@ from ..utils.config import config
 
 
 class HoneyHiveSpanProcessor(SpanProcessor):
-    """HoneyHive span processor with optimized attribute setting and reduced overhead."""
+    """HoneyHive span processor using baggage for context information."""
 
     def __init__(self) -> None:
-        """Initialize with performance optimizations."""
+        """Initialize the span processor."""
         if not OTEL_AVAILABLE:
             raise ImportError("OpenTelemetry is required for HoneyHiveSpanProcessor")
 
-        self._context_cache: Dict[int, Dict[str, Any]] = {}  # Cache context lookups
-        self._cache_ttl = 1000  # Cache TTL in operations
-        self._operation_count = 0
-        self._lock = threading.Lock()
-
     def on_start(self, span: Span, parent_context: Optional[Context] = None) -> None:
-        """Called when a span starts - optimized attribute setting with conditional processing."""
+        """Called when a span starts - enriches spans with HoneyHive attributes from baggage."""
         if not OTEL_AVAILABLE:
             return
 
@@ -48,10 +41,6 @@ class HoneyHiveSpanProcessor(SpanProcessor):
             print(f"   Attributes: {span_attributes}")
             print(f"   Parent context: {parent_context}")
 
-            # Increment operation counter for cache management
-            with self._lock:
-                self._operation_count += 1
-
             # Get current context (use parent_context if provided, otherwise get_current)
             ctx = (
                 parent_context if parent_context is not None else context.get_current()
@@ -62,17 +51,7 @@ class HoneyHiveSpanProcessor(SpanProcessor):
 
             print(f"   Context: {ctx}")
 
-            # Check if we have cached attributes for this context
-            ctx_id = id(ctx)
-            if ctx_id in self._context_cache:
-                cached_attrs = self._context_cache[ctx_id]
-                print(f"   ✅ Using cached attributes: {cached_attrs}")
-                # Apply cached attributes directly
-                for key, value in cached_attrs.items():
-                    span.set_attribute(key, value)
-                return
-
-            # Cache miss - compute attributes with early exit optimization
+            # Compute attributes from baggage - no caching needed
             attributes_to_set = {}
 
             # Try to get session_id from baggage first
@@ -304,15 +283,6 @@ class HoneyHiveSpanProcessor(SpanProcessor):
                     # Convert to string for any other type
                     span.set_attribute(key, str(value))
 
-            # Cache the attributes for future use
-            if len(attributes_to_set) > 0:
-                with self._lock:
-                    self._context_cache[ctx_id] = attributes_to_set
-
-                    # Clean up cache if it gets too large
-                    if len(self._context_cache) > 1000:
-                        self._cleanup_cache()
-
             print(f"   ✅ Span processing complete")
 
         except Exception as e:
@@ -352,12 +322,8 @@ class HoneyHiveSpanProcessor(SpanProcessor):
         if not OTEL_AVAILABLE:
             return
 
-        try:
-            with self._lock:
-                self._context_cache.clear()
-        except Exception:
-            # Silently fail to avoid breaking the application
-            pass
+        # No cleanup needed when using baggage-only approach
+        pass
 
     def force_flush(self, timeout_millis: float = 30000) -> bool:
         """Force flush any pending spans."""
@@ -369,21 +335,3 @@ class HoneyHiveSpanProcessor(SpanProcessor):
             return True
         except Exception:
             return False
-
-    def _cleanup_cache(self) -> None:
-        """Clean up the context cache to prevent memory leaks."""
-        if not OTEL_AVAILABLE:
-            return
-
-        try:
-            # Simple cleanup: remove oldest entries
-            cache_size = len(self._context_cache)
-            if cache_size > 1000:
-                # Remove oldest 20% of entries
-                items_to_remove = cache_size // 5
-                keys_to_remove = list(self._context_cache.keys())[:items_to_remove]
-                for key in keys_to_remove:
-                    del self._context_cache[key]
-        except Exception:
-            # Silently fail to avoid breaking the application
-            pass
