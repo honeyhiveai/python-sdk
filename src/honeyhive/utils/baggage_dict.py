@@ -1,7 +1,7 @@
 """Baggage dictionary for OpenTelemetry context management."""
 
 from contextlib import contextmanager
-from typing import TYPE_CHECKING, Any, Dict, Optional
+from typing import TYPE_CHECKING, Any, Dict, Iterator, KeysView, Optional, ValuesView
 
 if TYPE_CHECKING:
     from opentelemetry import baggage, context
@@ -24,16 +24,16 @@ class BaggageDict:
     propagation.
     """
 
-    def __init__(self, context: Optional[Context] = None):
+    def __init__(self, ctx: Optional[Context] = None):
         """Initialize BaggageDict with optional context.
 
         Args:
-            context: OpenTelemetry context. If None, uses current context.
+            ctx: OpenTelemetry context. If None, uses current context.
         """
         if not OTEL_AVAILABLE:
             raise ImportError("OpenTelemetry is required for BaggageDict")
 
-        self._context = context or baggage.get_current()
+        self._context = ctx or context.get_current()
 
     @property
     def context(self) -> Context:
@@ -87,7 +87,7 @@ class BaggageDict:
         new_context = baggage.set_baggage(key, None, self._context)
         return BaggageDict(new_context)
 
-    def update(self, **kwargs) -> "BaggageDict":
+    def update(self, **kwargs: Any) -> "BaggageDict":
         """Update multiple baggage values.
 
         Args:
@@ -137,11 +137,11 @@ class BaggageDict:
         except Exception:
             return {}
 
-    def keys(self):
+    def keys(self) -> KeysView[str]:
         """Get all baggage keys."""
         return self.items().keys()
 
-    def values(self):
+    def values(self) -> ValuesView[str]:
         """Get all baggage values."""
         return self.items().values()
 
@@ -150,7 +150,7 @@ class BaggageDict:
         value = self.get(key)
         if value is None:
             raise KeyError(key)
-        return value
+        return str(value)  # Ensure we return a string
 
     def __setitem__(self, key: str, value: Any) -> None:
         """Set baggage value using bracket notation."""
@@ -168,7 +168,7 @@ class BaggageDict:
         """Get number of baggage items."""
         return len(self.items())
 
-    def __iter__(self):
+    def __iter__(self) -> Iterator[str]:
         """Iterate over baggage keys."""
         return iter(self.keys())
 
@@ -194,7 +194,7 @@ class BaggageDict:
         return baggage_dict.update(**data)
 
     @contextmanager
-    def as_context(self):
+    def as_context(self) -> Iterator[None]:
         """Context manager to temporarily set baggage in current context.
 
         Example:

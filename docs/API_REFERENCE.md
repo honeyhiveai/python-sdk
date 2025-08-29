@@ -204,13 +204,13 @@ tracer = HoneyHiveTracer(
 
 ## Tracing Decorators
 
-### @dynamic_trace (Recommended)
+### @trace (Recommended)
 
 **NEW**: Unified decorator that automatically detects whether a function is synchronous or asynchronous and applies the appropriate tracing wrapper.
 
 **Signature:**
 ```python
-@dynamic_trace(
+@trace(
     event_type: Optional[str] = None,
     event_name: Optional[str] = None,
     inputs: Optional[Dict[str, Any]] = None,
@@ -240,15 +240,15 @@ tracer = HoneyHiveTracer(
 
 **Example:**
 ```python
-from honeyhive.tracer.decorators import dynamic_trace
+from honeyhive.tracer.decorators import trace
 
 # Automatically detected as sync function
-@dynamic_trace(event_type="demo", event_name="sync_function")
+@trace(event_type="demo", event_name="sync_function")
 def sync_function(name: str) -> str:
     return f"Hello, {name}!"
 
 # Automatically detected as async function
-@dynamic_trace(event_type="demo", event_name="async_function")
+@trace(event_type="demo", event_name="async_function")
 async def async_function(name: str) -> str:
     await asyncio.sleep(0.1)
     return f"Hello, {name}!"

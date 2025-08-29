@@ -61,7 +61,7 @@ class DatasetsAPI(BaseAPI):
         self, project: Optional[str] = None, limit: int = 100
     ) -> List[Dataset]:
         """List datasets with optional filtering."""
-        params = {"limit": limit}
+        params = {"limit": str(limit)}
         if project:
             params["project"] = project
 
@@ -73,7 +73,7 @@ class DatasetsAPI(BaseAPI):
         self, project: Optional[str] = None, limit: int = 100
     ) -> List[Dataset]:
         """List datasets asynchronously with optional filtering."""
-        params = {"limit": limit}
+        params = {"limit": str(limit)}
         if project:
             params["project"] = project
 

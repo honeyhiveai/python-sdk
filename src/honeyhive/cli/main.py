@@ -21,7 +21,7 @@ from ..utils.connection_pool import close_global_pool, get_global_pool
 )
 @click.option("--verbose", "-v", is_flag=True, help="Enable verbose logging")
 @click.option("--debug", is_flag=True, help="Enable debug mode")
-def cli(config: Optional[str], verbose: bool, debug: bool):
+def cli(config: Optional[str], verbose: bool, debug: bool) -> None:
     """HoneyHive CLI - LLM Observability and Evaluation Platform."""
     if verbose:
         click.echo("Verbose mode enabled")
@@ -34,7 +34,7 @@ def cli(config: Optional[str], verbose: bool, debug: bool):
 
 
 @cli.group()
-def config():
+def config() -> None:
     """Configuration management commands.
 
     Manage HoneyHive configuration including viewing, setting, and updating
@@ -50,7 +50,7 @@ def config():
     default="json",
     help="Output format",
 )
-def show(output_format: str):
+def show(output_format: str) -> None:
     """Show current configuration.
 
     Display the current HoneyHive configuration in various formats.
@@ -120,7 +120,7 @@ def show(output_format: str):
 @config.command()
 @click.option("--key", required=True, help="Configuration key")
 @click.option("--value", required=True, help="Configuration value")
-def set(key: str, value: str):
+def set(key: str, value: str) -> None:
     """Set configuration value.
 
     Update a specific configuration key with a new value.
@@ -140,7 +140,7 @@ def set(key: str, value: str):
 
 
 @cli.group()
-def trace():
+def trace() -> None:
     """Tracing commands.
 
     Manage OpenTelemetry tracing including starting spans, enriching sessions,
@@ -152,7 +152,7 @@ def trace():
 @click.option("--name", required=True, help="Span name")
 @click.option("--session-id", help="Session ID")
 @click.option("--attributes", help="Span attributes (JSON)")
-def start(name: str, session_id: Optional[str], attributes: Optional[str]):
+def start(name: str, session_id: Optional[str], attributes: Optional[str]) -> None:
     """Start a trace span.
 
     Create and start a new trace span with the specified name and attributes.
@@ -200,7 +200,7 @@ def enrich(
     metadata: Optional[str],
     feedback: Optional[str],
     metrics: Optional[str],
-):
+) -> None:
     """Enrich a session with additional data.
 
     Add metadata, feedback, and metrics to an existing session to provide
@@ -251,7 +251,7 @@ def enrich(
 
 
 @cli.group()
-def api():
+def api() -> None:
     """API client commands.
 
     Interact with the HoneyHive API directly, including making requests,
@@ -267,7 +267,7 @@ def api():
 @click.option("--timeout", type=float, default=30.0, help="Request timeout")
 def request(
     method: str, url: str, headers: Optional[str], data: Optional[str], timeout: float
-):
+) -> None:
     """Make an API request.
 
     Send an HTTP request to the HoneyHive API using the configured client.
@@ -327,7 +327,7 @@ def request(
 
 
 @cli.group()
-def monitor():
+def monitor() -> None:
     """Monitoring and performance commands.
 
     Monitor system health, performance metrics, and operational status
@@ -336,7 +336,7 @@ def monitor():
 
 
 @monitor.command()
-def status():
+def status() -> None:
     """Show system status.
 
     Display comprehensive status information including configuration,
@@ -396,7 +396,7 @@ def status():
 @monitor.command()
 @click.option("--duration", type=int, default=60, help="Monitor duration in seconds")
 @click.option("--interval", type=float, default=5.0, help="Update interval in seconds")
-def watch(duration: int, interval: float):
+def watch(duration: int, interval: float) -> None:
     """Monitor system in real-time.
 
     Continuously monitor HoneyHive system performance metrics
@@ -456,7 +456,7 @@ def watch(duration: int, interval: float):
 
 
 @cli.group()
-def performance():
+def performance() -> None:
     """Performance analysis commands.
 
     Commands for analyzing and benchmarking HoneyHive SDK
@@ -467,7 +467,7 @@ def performance():
 @performance.command()
 @click.option("--iterations", type=int, default=1000, help="Number of iterations")
 @click.option("--warmup", type=int, default=100, help="Warmup iterations")
-def benchmark(iterations: int, warmup: int):
+def benchmark(iterations: int, warmup: int) -> None:
     """Run performance benchmarks.
 
     Execute comprehensive performance benchmarks for cache operations
@@ -547,7 +547,7 @@ def benchmark(iterations: int, warmup: int):
 
 
 @cli.command()
-def cleanup():
+def cleanup() -> None:
     """Clean up resources.
 
     Safely shut down and clean up all HoneyHive SDK resources

@@ -98,6 +98,68 @@ multi_line_output = 3
 line_length = 88
 known_first_party = ["honeyhive"]
 
+[tool.pylint.messages_control]
+disable = [
+    "C0103",  # invalid-name (for generated models)
+    "C0301",  # line-too-long (for generated models)
+    "C0302",  # too-many-lines (for generated models)
+    "R0801",  # duplicate-code (acceptable in some cases)
+    "R0902",  # too-many-instance-attributes
+    "R0903",  # too-few-public-methods
+    "R0904",  # too-many-public-methods
+    "R0911",  # too-many-return-statements
+    "R0912",  # too-many-branches
+    "R0913",  # too-many-arguments
+    "R0915",  # too-many-statements
+    "W0212",  # protected-access (acceptable for testing)
+    "W0621",  # redefined-outer-name (acceptable in tests)
+    "W0622",  # redefined-builtin (acceptable in some cases)
+    "W0702",  # bare-except (acceptable in some cases)
+    "W0718",  # broad-exception-caught (acceptable in some cases)
+    "W0719",  # broad-exception-raised (acceptable in some cases)
+    "W1309",  # f-string-without-interpolation
+    "W0613",  # unused-argument (acceptable for interface compliance)
+    "W0611",  # unused-import (acceptable for conditional imports)
+    "C0415",  # import-outside-toplevel (acceptable in some cases)
+    "E0401",  # import-error (acceptable in test files)
+    "E0102",  # function-redefined (acceptable for decorators)
+    "E1120",  # no-value-for-parameter (acceptable in some cases)
+    "C0413",  # wrong-import-position (acceptable in some cases)
+    "W0107",  # unnecessary-pass (acceptable in some cases)
+    "W0603",  # global-statement (acceptable in some cases)
+    "R0914",  # too-many-locals (acceptable in some cases)
+    "R1702",  # too-many-nested-blocks (acceptable in some cases)
+    "R1705",  # no-else-return (acceptable in some cases)
+    "W0707",  # raise-missing-from (acceptable in some cases)
+    "W1203",  # logging-fstring-interpolation (acceptable in some cases)
+    "E1101",  # no-member (acceptable for dynamic attributes)
+]
+
+[tool.pylint.format]
+max-line-length = 88
+
+[tool.pylint.design]
+max-args = 15
+max-attributes = 20
+max-bool-expr = 5
+max-branches = 20
+max-locals = 25
+max-parents = 7
+max-public-methods = 30
+max-returns = 10
+max-statements = 100
+
+[tool.pylint.basic]
+good-names = ["i", "j", "k", "ex", "Run", "_", "id", "db", "api", "ui", "ui_", "id_", "ip_", "ip"]
+
+[tool.pylint.master]
+fail-under = 9.5
+
+[tool.pylint.files]
+ignore-patterns = [
+    ".*generated\\.py$",
+]
+
 [tool.mypy]
 python_version = "3.11"
 warn_return_any = true

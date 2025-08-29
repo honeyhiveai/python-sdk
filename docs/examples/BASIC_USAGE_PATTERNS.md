@@ -507,19 +507,7 @@ def create_tracer_from_config(config_path):
 tracer = create_tracer_from_config("config/honeyhive.json")
 ```
 
-### 3. Dynamic Configuration
 
-Update configuration dynamically:
-
-```python
-from honeyhive import HoneyHiveTracer
-from honeyhive.utils.config import get_config
-
-class DynamicTracer:
-    def __init__(self):
-        self.tracer = HoneyHiveTracer()
-        self.config = get_config()
-```
 
 ### 4. Experiment Environment Variables
 
@@ -609,42 +597,7 @@ with tracer.start_span("wandb_training") as span:
     pass
 ```
     
-    def update_project(self, new_project):
-        """Update the project dynamically."""
-        self.config.project = new_project
-        self.config.reload()
-        
-        # Update tracer
-        self.tracer.project = new_project
-        
-        print(f"Project updated to: {new_project}")
-    
-    def update_source(self, new_source):
-        """Update the source dynamically."""
-        self.config.source = new_source
-        self.config.reload()
-        
-        # Update tracer
-        self.tracer.source = new_source
-        
-        print(f"Source updated to: {new_source}")
-    
-    def get_current_config(self):
-        """Get current configuration."""
-        return {
-            "project": self.tracer.project,
-            "source": self.tracer.source,
-            "session_id": self.tracer.session_id
-        }
 
-# Usage
-dynamic_tracer = DynamicTracer()
-dynamic_tracer.update_project("new-project")
-dynamic_tracer.update_source("staging")
-
-current_config = dynamic_tracer.get_current_config()
-print(f"Current config: {current_config}")
-```
 
 ---
 

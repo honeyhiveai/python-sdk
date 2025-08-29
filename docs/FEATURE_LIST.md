@@ -45,9 +45,8 @@ A comprehensive overview of all features available in the HoneyHive Python SDK.
 - **Baggage Support**: Custom metadata propagation
 - **HTTP Instrumentation**: Automatic HTTP request tracing
 - **Decorators**: 
-  - `@dynamic_trace` - **NEW**: Unified decorator for both sync and async functions
-  - `@trace` - Legacy decorator for synchronous functions
-  - `@atrace` - Legacy decorator for asynchronous functions
+  - `@trace` - **NEW**: Unified decorator for both sync and async functions
+  - `@atrace` - Decorator for asynchronous functions
   - `@trace_class` - Class-level tracing decorator
 - **Context Managers**: Span context management
 - **Experiment Tracking**: Automatic experiment context injection into all spans

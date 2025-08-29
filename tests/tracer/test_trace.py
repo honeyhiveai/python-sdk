@@ -170,7 +170,9 @@ class TestTraceDecorator:
             # Just verify that start_span was called with some name
             mock_tracer.start_span.assert_called_once()
             call_args = mock_tracer.start_span.call_args
-            assert "test_func" in call_args[0][0]  # Function name should be in the span name
+            assert (
+                "test_func" in call_args[0][0]
+            )  # Function name should be in the span name
 
     def test_trace_with_complex_attributes(self) -> None:
         """Test trace decorator with complex attribute types."""
@@ -182,13 +184,13 @@ class TestTraceDecorator:
                 "nested": {"key": "value"},
                 "list": [1, 2, 3],
                 "boolean": True,
-                "number": 42.5
+                "number": 42.5,
             }
 
             @trace(
                 event_name="complex-test",
                 inputs=complex_data,
-                metadata={"user_id": "123", "session": "test"}
+                metadata={"user_id": "123", "session": "test"},
             )
             def test_func():
                 return "test result"
@@ -283,13 +285,13 @@ class TestTraceDecorator:
             # Create large data structure
             large_data = {
                 "items": [{"id": i, "data": f"item_{i}"} for i in range(1000)],
-                "metadata": {"total_count": 1000, "version": "1.0"}
+                "metadata": {"total_count": 1000, "version": "1.0"},
             }
 
             @trace(
                 event_name="large-data-test",
                 inputs=large_data,
-                config={"max_items": 1000, "chunk_size": 100}
+                config={"max_items": 1000, "chunk_size": 100},
             )
             def test_func():
                 return len(large_data["items"])

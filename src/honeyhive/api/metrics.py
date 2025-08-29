@@ -59,7 +59,7 @@ class MetricsAPI(BaseAPI):
         self, project: Optional[str] = None, limit: int = 100
     ) -> List[Metric]:
         """List metrics with optional filtering."""
-        params = {"limit": limit}
+        params = {"limit": str(limit)}
         if project:
             params["project"] = project
 
@@ -71,7 +71,7 @@ class MetricsAPI(BaseAPI):
         self, project: Optional[str] = None, limit: int = 100
     ) -> List[Metric]:
         """List metrics asynchronously with optional filtering."""
-        params = {"limit": limit}
+        params = {"limit": str(limit)}
         if project:
             params["project"] = project
 

@@ -6,7 +6,7 @@ A comprehensive Python SDK for HoneyHive, providing LLM observability, evaluatio
 
 - **OpenTelemetry Integration** - Full OTEL compliance with custom span processor and exporter
 - **Automatic Session Management** - Seamless session creation and management
-- **Decorator Support** - Easy-to-use `@dynamic_trace` (unified sync/async), `@trace`, `@atrace`, and `@trace_class` decorators
+- **Decorator Support** - Easy-to-use `@trace` (unified sync/async), `@atrace`, and `@trace_class` decorators
 - **Context Managers** - `start_span` and `enrich_span` for manual span management
 - **HTTP Instrumentation** - Automatic HTTP request tracing
 - **Baggage Support** - Context propagation across service boundaries

@@ -70,7 +70,7 @@ class DatapointsAPI(BaseAPI):
         limit: int = 100,
     ) -> List[Datapoint]:
         """List datapoints with optional filtering."""
-        params = {"limit": limit}
+        params = {"limit": str(limit)}
         if project:
             params["project"] = project
         if dataset:
@@ -89,7 +89,7 @@ class DatapointsAPI(BaseAPI):
         limit: int = 100,
     ) -> List[Datapoint]:
         """List datapoints asynchronously with optional filtering."""
-        params = {"limit": limit}
+        params = {"limit": str(limit)}
         if project:
             params["project"] = project
         if dataset:

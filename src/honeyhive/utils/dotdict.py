@@ -3,6 +3,8 @@
 import copy
 from typing import Any, Dict, Optional
 
+from typing_extensions import override
+
 
 class DotDict(dict):
     """Dictionary with dot notation access.
@@ -16,7 +18,7 @@ class DotDict(dict):
         'qux'
     """
 
-    def __init__(self, *args, **kwargs):
+    def __init__(self, *args: Any, **kwargs: Any) -> None:
         """Initialize the dotdict."""
         super().__init__(*args, **kwargs)
         # Convert nested dictionaries to dotdict
@@ -95,7 +97,7 @@ class DotDict(dict):
 
         return super().setdefault(key, default)
 
-    def update(self, other: Optional[Dict[str, Any]] = None, **kwargs) -> None:
+    def update(self, other: Any = None, /, **kwargs: Any) -> None:
         """Update dictionary with dot notation support."""
         if other is not None:
             for key, value in other.items():

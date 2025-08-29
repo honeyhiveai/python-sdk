@@ -52,7 +52,7 @@ async def generate_text_async(prompt: str) -> str:
     return "Generated text async"
 ```
 
-**Avoid using `@dynamic_trace`** - it's available for backward compatibility but `@trace` is preferred.
+**Use `@trace` for most tracing needs** - it automatically handles both synchronous and asynchronous functions with a clean, intuitive API.
 
 ### Copy and Adapt
 - Copy the example code that matches your use case

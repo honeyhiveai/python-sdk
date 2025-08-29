@@ -26,6 +26,7 @@
 - Maintain Python 3.11+ compatibility
 - **ALL code must contain docstrings** - every function, class, and module should have proper documentation
 - **Always run Black on Python files on save** when Cursor works on them
+- **ALL Python code must use type hinting/annotations** - functions, methods, variables, and class attributes should be properly typed
 
 ## Project Structure
 - Respect the src/ layout with `src/honeyhive/` as the main package

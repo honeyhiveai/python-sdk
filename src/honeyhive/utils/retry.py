@@ -2,6 +2,7 @@
 
 import random
 from dataclasses import dataclass
+from typing import Optional
 
 import httpx
 
@@ -38,11 +39,11 @@ class RetryConfig:
     """Configuration for retry behavior."""
 
     strategy: str = "exponential"  # "exponential", "linear", "constant"
-    backoff_strategy: BackoffStrategy = None
+    backoff_strategy: Optional[BackoffStrategy] = None
     max_retries: int = 3
-    retry_on_status_codes: set = None
+    retry_on_status_codes: Optional[set] = None
 
-    def __post_init__(self):
+    def __post_init__(self) -> None:
         """Initialize default values."""
         if self.backoff_strategy is None:
             self.backoff_strategy = BackoffStrategy()
@@ -114,7 +115,10 @@ class RetryConfig:
     def should_retry(self, response: httpx.Response) -> bool:
         """Determine if a response should be retried."""
         # Check status code
-        if response.status_code in self.retry_on_status_codes:
+        if (
+            self.retry_on_status_codes
+            and response.status_code in self.retry_on_status_codes
+        ):
             return True
 
         # Check for connection errors
@@ -140,6 +144,9 @@ class RetryConfig:
 
         # Retry on HTTP errors that are retryable
         if isinstance(exc, httpx.HTTPStatusError):
-            return exc.response.status_code in self.retry_on_status_codes
+            return bool(
+                self.retry_on_status_codes
+                and exc.response.status_code in self.retry_on_status_codes
+            )
 
         return False

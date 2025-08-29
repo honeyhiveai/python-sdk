@@ -8,7 +8,7 @@ import time
 from contextlib import contextmanager
 from typing import Any, Callable, Dict, Optional, TypeVar, Union
 
-from opentelemetry import trace
+from opentelemetry import trace as otel_trace
 
 from ..models.tracing import TracingParams
 from ..utils.config import config
@@ -18,7 +18,7 @@ T = TypeVar("T")
 P = TypeVar("P")
 
 
-def _set_span_attributes(span, prefix: str, value: Any) -> None:
+def _set_span_attributes(span: Any, prefix: str, value: Any) -> None:
     """Set span attributes with proper type handling and JSON serialization.
 
     Recursively sets span attributes for complex data structures, handling
@@ -47,7 +47,7 @@ def _set_span_attributes(span, prefix: str, value: Any) -> None:
 
 
 def _create_sync_wrapper(
-    func: Callable[..., T], params: TracingParams, **kwargs
+    func: Callable[..., T], params: TracingParams, **kwargs: Any
 ) -> Callable[..., T]:
     """Create a synchronous wrapper for the trace decorator.
 
@@ -64,7 +64,7 @@ def _create_sync_wrapper(
     """
 
     @functools.wraps(func)
-    def wrapper(*args, **func_kwargs) -> T:
+    def wrapper(*args: Any, **func_kwargs: Any) -> T:
         """Wrapper function that adds tracing capabilities to the decorated function.
 
         Args:
@@ -245,12 +245,12 @@ def _create_sync_wrapper(
 
 
 def _create_async_wrapper(
-    func: Callable[..., Any], params: TracingParams, **kwargs
+    func: Callable[..., Any], params: TracingParams, **kwargs: Any
 ) -> Callable[..., Any]:
     """Create an asynchronous wrapper for the trace decorator."""
 
     @functools.wraps(func)
-    async def async_wrapper(*args, **func_kwargs) -> Any:
+    async def async_wrapper(*args: Any, **func_kwargs: Any) -> Any:
         """Async wrapper function that adds tracing capabilities to the decorated async function.
 
         Args:
@@ -430,9 +430,8 @@ def _create_async_wrapper(
     return async_wrapper
 
 
-
 def trace(
-    event_type: Optional[str] = None,
+    event_type: Union[Optional[str], Callable] = None,
     event_name: Optional[str] = None,
     inputs: Optional[Dict[str, Any]] = None,
     outputs: Optional[Dict[str, Any]] = None,
@@ -442,8 +441,8 @@ def trace(
     feedback: Optional[Dict[str, Any]] = None,
     error: Optional[Exception] = None,
     event_id: Optional[str] = None,
-    **kwargs,
-):
+    **kwargs: Any,
+) -> Any:
     """
     Enhanced trace decorator with comprehensive attribute support.
 
@@ -465,7 +464,9 @@ def trace(
         # Validate parameters using Pydantic model
         try:
             params = TracingParams(
-                event_type=event_type,
+                event_type=(
+                    event_type if isinstance(event_type, (str, type(None))) else None
+                ),
                 event_name=event_name,
                 inputs=inputs,
                 outputs=outputs,
@@ -493,7 +494,7 @@ def trace(
 
 
 def atrace(
-    event_type: Optional[str] = None,
+    event_type: Union[Optional[str], Callable] = None,
     event_name: Optional[str] = None,
     inputs: Optional[Dict[str, Any]] = None,
     outputs: Optional[Dict[str, Any]] = None,
@@ -503,8 +504,8 @@ def atrace(
     feedback: Optional[Dict[str, Any]] = None,
     error: Optional[Exception] = None,
     event_id: Optional[str] = None,
-    **kwargs,
-):
+    **kwargs: Any,
+) -> Any:
     """
     Enhanced async trace decorator with comprehensive attribute support.
 
@@ -526,7 +527,9 @@ def atrace(
         # Validate parameters using Pydantic model
         try:
             params = TracingParams(
-                event_type=event_type,
+                event_type=(
+                    event_type if isinstance(event_type, (str, type(None))) else None
+                ),
                 event_name=event_name,
                 inputs=inputs,
                 outputs=outputs,
@@ -554,8 +557,8 @@ def atrace(
 
 
 def trace_class(
-    event_type: Optional[str] = None, event_name: Optional[str] = None, **kwargs
-):
+    event_type: Optional[str] = None, event_name: Optional[str] = None, **kwargs: Any
+) -> Callable[[type], type]:
     """
     Enhanced class decorator for tracing all methods of a class.
 
@@ -607,13 +610,13 @@ def enrich_span(
     inputs: Optional[Dict[str, Any]] = None,
     outputs: Optional[Dict[str, Any]] = None,
     metadata: Optional[Dict[str, Any]] = None,
-    config: Optional[Dict[str, Any]] = None,
+    config_data: Optional[Dict[str, Any]] = None,
     metrics: Optional[Dict[str, Any]] = None,
     feedback: Optional[Dict[str, Any]] = None,
     error: Optional[Exception] = None,
     event_id: Optional[str] = None,
-    **kwargs,
-):
+    **kwargs: Any,
+) -> Any:
     """
     Context manager for enriching existing spans with additional attributes.
 
@@ -632,7 +635,7 @@ def enrich_span(
     """
 
     @contextmanager
-    def span_enricher():
+    def span_enricher() -> Any:
         """Context manager that enriches the current span with HoneyHive attributes.
 
         Yields:
@@ -640,7 +643,7 @@ def enrich_span(
         """
         try:
             # Get current span from OpenTelemetry context
-            current_span = trace.get_current_span()
+            current_span = otel_trace.get_current_span()
 
             if current_span and current_span.is_recording():
                 # Set comprehensive attributes on the current span
@@ -658,8 +661,8 @@ def enrich_span(
                     _set_span_attributes(current_span, "honeyhive_inputs", inputs)
 
                 # Set config if provided
-                if config:
-                    _set_span_attributes(current_span, "honeyhive_config", config)
+                if config_data:
+                    _set_span_attributes(current_span, "honeyhive_config", config_data)
 
                 # Set metadata if provided
                 if metadata:
@@ -679,30 +682,31 @@ def enrich_span(
 
                 # Add experiment harness information if available
                 try:
-                    if config.experiment_id:
+                    if config_data and config_data.get("experiment_id"):
                         current_span.set_attribute(
-                            "honeyhive_experiment_id", config.experiment_id
+                            "honeyhive_experiment_id", config_data["experiment_id"]
                         )
 
-                    if config.experiment_name:
+                    if config_data and config_data.get("experiment_name"):
                         current_span.set_attribute(
-                            "honeyhive_experiment_name", config.experiment_name
+                            "honeyhive_experiment_name", config_data["experiment_name"]
                         )
 
-                    if config.experiment_variant:
+                    if config_data and config_data.get("experiment_variant"):
                         current_span.set_attribute(
                             "honeyhive_experiment_variant",
-                            config.experiment_variant,
+                            config_data["experiment_variant"],
                         )
 
-                    if config.experiment_group:
+                    if config_data and config_data.get("experiment_group"):
                         current_span.set_attribute(
-                            "honeyhive_experiment_group", config.experiment_group
+                            "honeyhive_experiment_group",
+                            config_data["experiment_group"],
                         )
 
-                    if config.experiment_metadata:
+                    if config_data and config_data.get("experiment_metadata"):
                         # Add experiment metadata as individual attributes
-                        for key, value in config.experiment_metadata.items():
+                        for key, value in config_data["experiment_metadata"].items():
                             current_span.set_attribute(
                                 f"honeyhive_experiment_metadata_{key}", str(value)
                             )

@@ -56,7 +56,7 @@ class ConnectionPool:
         }
 
     def get_client(
-        self, base_url: str, headers: Optional[Dict[str, str]] = None, **kwargs
+        self, base_url: str, headers: Optional[Dict[str, str]] = None, **kwargs: Any
     ) -> httpx.Client:
         """Get or create an HTTP client from the pool.
 
@@ -106,7 +106,7 @@ class ConnectionPool:
             return client
 
     def get_async_client(
-        self, base_url: str, headers: Optional[Dict[str, str]] = None, **kwargs
+        self, base_url: str, headers: Optional[Dict[str, str]] = None, **kwargs: Any
     ) -> httpx.AsyncClient:
         """Get or create an async HTTP client from the pool.
 
@@ -188,7 +188,7 @@ class ConnectionPool:
         except Exception:
             return False
 
-    def cleanup_idle_connections(self, max_idle_time: float = 300.0):
+    def cleanup_idle_connections(self, max_idle_time: float = 300.0) -> None:
         """Clean up idle connections.
 
         Args:
@@ -266,7 +266,7 @@ class ConnectionPool:
                     return client
         return None
 
-    def return_connection(self, base_url: str, client: httpx.Client):
+    def return_connection(self, base_url: str, client: httpx.Client) -> None:
         """Return a connection to the pool.
 
         Args:
@@ -294,7 +294,7 @@ class ConnectionPool:
                     return client
         return None
 
-    def return_async_connection(self, base_url: str, client: httpx.AsyncClient):
+    def return_async_connection(self, base_url: str, client: httpx.AsyncClient) -> None:
         """Return an async connection to the pool.
 
         Args:
@@ -306,7 +306,7 @@ class ConnectionPool:
                 self._async_clients[base_url] = client
                 self._last_used[base_url] = time.time()
 
-    def close_connection(self, base_url: str):
+    def close_connection(self, base_url: str) -> None:
         """Close a specific connection.
 
         Args:
@@ -323,7 +323,7 @@ class ConnectionPool:
                     if base_url in self._last_used:
                         del self._last_used[base_url]
 
-    def cleanup(self):
+    def cleanup(self) -> None:
         """Clean up expired connections."""
         current_time = time.time()
 
@@ -338,7 +338,7 @@ class ConnectionPool:
         for base_url in expired_urls:
             self.close_connection(base_url)
 
-    def close_all(self):
+    def close_all(self) -> None:
         """Close all connections in the pool."""
         with self._lock:
             # Close sync clients
@@ -357,11 +357,16 @@ class ConnectionPool:
 
             self.logger.info("Closed all connections in pool")
 
-    def __enter__(self):
+    def __enter__(self) -> "ConnectionPool":
         """Context manager entry."""
         return self
 
-    def __exit__(self, exc_type, exc_val, exc_tb):
+    def __exit__(
+        self,
+        exc_type: Optional[type],
+        exc_val: Optional[BaseException],
+        exc_tb: Optional[Any],
+    ) -> None:
         """Context manager exit."""
         self.close_all()
 
@@ -369,7 +374,7 @@ class ConnectionPool:
 class PooledHTTPClient:
     """HTTP client that uses connection pooling."""
 
-    def __init__(self, pool: ConnectionPool, **kwargs):
+    def __init__(self, pool: ConnectionPool, **kwargs: Any) -> None:
         """Initialize pooled HTTP client.
 
         Args:
@@ -380,7 +385,7 @@ class PooledHTTPClient:
         self.config = kwargs
         self.logger = get_logger(__name__)
 
-    def get(self, url: str, **kwargs) -> httpx.Response:
+    def get(self, url: str, **kwargs: Any) -> httpx.Response:
         """Make GET request."""
         # Extract base URL for pooling
         if url.startswith("http"):
@@ -410,7 +415,7 @@ class PooledHTTPClient:
             # Always return the connection to the pool
             self.pool.return_connection(base_url, client)
 
-    def post(self, url: str, **kwargs) -> httpx.Response:
+    def post(self, url: str, **kwargs: Any) -> httpx.Response:
         """Make POST request."""
         # Extract base URL for pooling
         if url.startswith("http"):
@@ -440,23 +445,101 @@ class PooledHTTPClient:
             # Always return the connection to the pool
             self.pool.return_connection(base_url, client)
 
-    def put(self, url: str, **kwargs) -> httpx.Response:
+    def put(self, url: str, **kwargs: Any) -> httpx.Response:
         """Make PUT request."""
-        return self.request("PUT", url, **kwargs)
+        # Extract base URL for pooling
+        if url.startswith("http"):
+            parsed = urllib.parse.urlparse(url)
+            base_url = f"{parsed.scheme}://{parsed.netloc}"
+        else:
+            base_url = "http://localhost"
 
-    def delete(self, url: str, **kwargs) -> httpx.Response:
+        # Get client from pool
+        client = self.pool.get_connection(base_url)
+
+        # If no client in pool, create a new one
+        if client is None:
+            client = httpx.Client(**self.config)
+            self.logger.debug(f"Created new HTTP client for {base_url}")
+
+        # Make request
+        self.pool._stats["total_requests"] += 1
+
+        try:
+            response = client.put(url, **kwargs)
+            return response
+        except Exception as e:
+            self.logger.error(f"HTTP PUT request failed: {e}")
+            raise
+        finally:
+            # Always return the connection to the pool
+            self.pool.return_connection(base_url, client)
+
+    def delete(self, url: str, **kwargs: Any) -> httpx.Response:
         """Make DELETE request."""
-        return self.request("DELETE", url, **kwargs)
+        # Extract base URL for pooling
+        if url.startswith("http"):
+            parsed = urllib.parse.urlparse(url)
+            base_url = f"{parsed.scheme}://{parsed.netloc}"
+        else:
+            base_url = "http://localhost"
 
-    def patch(self, url: str, **kwargs) -> httpx.Response:
+        # Get client from pool
+        client = self.pool.get_connection(base_url)
+
+        # If no client in pool, create a new one
+        if client is None:
+            client = httpx.Client(**self.config)
+            self.logger.debug(f"Created new HTTP client for {base_url}")
+
+        # Make request
+        self.pool._stats["total_requests"] += 1
+
+        try:
+            response = client.delete(url, **kwargs)
+            return response
+        except Exception as e:
+            self.logger.error(f"HTTP DELETE request failed: {e}")
+            raise
+        finally:
+            # Always return the connection to the pool
+            self.pool.return_connection(base_url, client)
+
+    def patch(self, url: str, **kwargs: Any) -> httpx.Response:
         """Make PATCH request."""
-        return self.request("PATCH", url, **kwargs)
+        # Extract base URL for pooling
+        if url.startswith("http"):
+            parsed = urllib.parse.urlparse(url)
+            base_url = f"{parsed.scheme}://{parsed.netloc}"
+        else:
+            base_url = "http://localhost"
+
+        # Get client from pool
+        client = self.pool.get_connection(base_url)
+
+        # If no client in pool, create a new one
+        if client is None:
+            client = httpx.Client(**self.config)
+            self.logger.debug(f"Created new HTTP client for {base_url}")
+
+        # Make request
+        self.pool._stats["total_requests"] += 1
+
+        try:
+            response = client.patch(url, **kwargs)
+            return response
+        except Exception as e:
+            self.logger.error(f"HTTP PATCH request failed: {e}")
+            raise
+        finally:
+            # Always return the connection to the pool
+            self.pool.return_connection(base_url, client)
 
 
 class PooledAsyncHTTPClient:
     """Async HTTP client that uses connection pooling."""
 
-    def __init__(self, pool: ConnectionPool, **kwargs):
+    def __init__(self, pool: ConnectionPool, **kwargs: Any) -> None:
         """Initialize pooled async HTTP client.
 
         Args:
@@ -467,7 +550,7 @@ class PooledAsyncHTTPClient:
         self.config = kwargs
         self.logger = get_logger(__name__)
 
-    async def get(self, url: str, **kwargs) -> httpx.Response:
+    async def get(self, url: str, **kwargs: Any) -> httpx.Response:
         """Make async GET request."""
         # Extract base URL for pooling
         if url.startswith("http"):
@@ -497,7 +580,7 @@ class PooledAsyncHTTPClient:
             # Always return the connection to the pool
             self.pool.return_async_connection(base_url, client)
 
-    async def post(self, url: str, **kwargs) -> httpx.Response:
+    async def post(self, url: str, **kwargs: Any) -> httpx.Response:
         """Make async POST request."""
         # Extract base URL for pooling
         if url.startswith("http"):
@@ -527,17 +610,95 @@ class PooledAsyncHTTPClient:
             # Always return the connection to the pool
             self.pool.return_async_connection(base_url, client)
 
-    async def put(self, url: str, **kwargs) -> httpx.Response:
+    async def put(self, url: str, **kwargs: Any) -> httpx.Response:
         """Make async PUT request."""
-        return await self.request("PUT", url, **kwargs)
+        # Extract base URL for pooling
+        if url.startswith("http"):
+            parsed = urllib.parse.urlparse(url)
+            base_url = f"{parsed.scheme}://{parsed.netloc}"
+        else:
+            base_url = "http://localhost"
 
-    async def delete(self, url: str, **kwargs) -> httpx.Response:
+        # Get client from pool
+        client = self.pool.get_async_connection(base_url)
+
+        # If no client in pool, create a new one
+        if client is None:
+            client = httpx.AsyncClient(**self.config)
+            self.logger.debug(f"Created new async HTTP client for {base_url}")
+
+        # Make request
+        self.pool._stats["total_requests"] += 1
+
+        try:
+            response = await client.put(url, **kwargs)
+            return response
+        except Exception as e:
+            self.logger.error(f"Async HTTP PUT request failed: {e}")
+            raise
+        finally:
+            # Always return the connection to the pool
+            self.pool.return_async_connection(base_url, client)
+
+    async def delete(self, url: str, **kwargs: Any) -> httpx.Response:
         """Make async DELETE request."""
-        return await self.request("DELETE", url, **kwargs)
+        # Extract base URL for pooling
+        if url.startswith("http"):
+            parsed = urllib.parse.urlparse(url)
+            base_url = f"{parsed.scheme}://{parsed.netloc}"
+        else:
+            base_url = "http://localhost"
 
-    async def patch(self, url: str, **kwargs) -> httpx.Response:
+        # Get client from pool
+        client = self.pool.get_async_connection(base_url)
+
+        # If no client in pool, create a new one
+        if client is None:
+            client = httpx.AsyncClient(**self.config)
+            self.logger.debug(f"Created new async HTTP client for {base_url}")
+
+        # Make request
+        self.pool._stats["total_requests"] += 1
+
+        try:
+            response = await client.delete(url, **kwargs)
+            return response
+        except Exception as e:
+            self.logger.error(f"Async HTTP DELETE request failed: {e}")
+            raise
+        finally:
+            # Always return the connection to the pool
+            self.pool.return_async_connection(base_url, client)
+
+    async def patch(self, url: str, **kwargs: Any) -> httpx.Response:
         """Make async PATCH request."""
-        return await self.request("PATCH", url, **kwargs)
+        # Extract base URL for pooling
+        if url.startswith("http"):
+            parsed = urllib.parse.urlparse(url)
+            base_url = f"{parsed.scheme}://{parsed.netloc}"
+        else:
+            base_url = "http://localhost"
+
+        # Get client from pool
+        client = self.pool.get_async_connection(base_url)
+
+        # If no client in pool, create a new one
+        if client is None:
+            client = httpx.AsyncClient(**self.config)
+            self.logger.debug(f"Created new async HTTP client for {base_url}")
+
+        # Make request
+        self.pool._stats["total_requests"] += 1
+
+        try:
+            response = await client.patch(url, **kwargs)
+            return response
+        except Exception as e:
+            self.logger.error(f"Async HTTP PATCH request failed: {e}")
+            raise
+        finally:
+            # Always return the connection to the pool
+            self.pool.return_async_connection(base_url, client)
 
 
 # Global connection pool instance
@@ -561,7 +722,7 @@ def get_global_pool(config: Optional[PoolConfig] = None) -> ConnectionPool:
     return _global_pool
 
 
-def close_global_pool():
+def close_global_pool() -> None:
     """Close global connection pool."""
     global _global_pool
 

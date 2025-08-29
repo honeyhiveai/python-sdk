@@ -87,9 +87,9 @@ class MyClass:
 
 ## ⚠️ **Important: Use @trace for Tracing**
 
-**Avoid using `@dynamic_trace`** - it's available for backward compatibility but `@trace` is preferred.
+**Use `@trace` for most tracing needs** - it automatically handles both synchronous and asynchronous functions with a clean, intuitive API.
 
-The `@trace` decorator automatically handles both synchronous and asynchronous functions, providing the same functionality as `@dynamic_trace` but with a cleaner, more intuitive API.
+The `@trace` decorator automatically detects function types and applies the appropriate wrapper, making it the preferred choice for most use cases.
 
 ## 🎯 **Getting Started**
 

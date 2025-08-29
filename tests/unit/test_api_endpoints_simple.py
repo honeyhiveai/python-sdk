@@ -476,7 +476,7 @@ class TestDatasetsAPI:
             assert result[0].name == "dataset-1"
             assert result[1].name == "dataset-2"
             mock_request.assert_called_once_with(
-                "GET", "/datasets", params={"limit": 50}
+                "GET", "/datasets", params={"limit": "50"}
             )
 
     def test_list_datasets_with_project(self, client):
@@ -493,7 +493,7 @@ class TestDatasetsAPI:
             assert len(result) == 1
             assert result[0].project == "test-project"
             mock_request.assert_called_once_with(
-                "GET", "/datasets", params={"project": "test-project", "limit": 100}
+                "GET", "/datasets", params={"project": "test-project", "limit": "100"}
             )
 
     def test_delete_dataset_success(self, client):
@@ -732,7 +732,7 @@ class TestDatapointsAPI:
             assert result[0].project_id == "proj-1"
             assert result[1].project_id == "proj-2"
             mock_request.assert_called_once_with(
-                "GET", "/datapoints", params={"limit": 50}
+                "GET", "/datapoints", params={"limit": "50"}
             )
 
     def test_list_datapoints_with_project(self, client):
@@ -759,7 +759,7 @@ class TestDatapointsAPI:
             assert len(result) == 1
             assert result[0].project_id == "test-project"
             mock_request.assert_called_once_with(
-                "GET", "/datapoints", params={"project": "test-project", "limit": 100}
+                "GET", "/datapoints", params={"project": "test-project", "limit": "100"}
             )
 
 
@@ -870,7 +870,9 @@ class TestToolsAPI:
             assert len(result) == 2
             assert result[0].name == "tool1"
             assert result[1].name == "tool2"
-            mock_request.assert_called_once_with("GET", "/tools", params={"limit": 50})
+            mock_request.assert_called_once_with(
+                "GET", "/tools", params={"limit": "50"}
+            )
 
     def test_list_tools_with_project(self, client):
         """Test listing tools with project filter."""
@@ -896,7 +898,7 @@ class TestToolsAPI:
             assert len(result) == 1
             assert result[0].task == "test-project"
             mock_request.assert_called_once_with(
-                "GET", "/tools", params={"project": "test-project", "limit": 100}
+                "GET", "/tools", params={"project": "test-project", "limit": "100"}
             )
 
     def test_delete_tool_success(self, client):

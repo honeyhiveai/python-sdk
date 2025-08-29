@@ -16,7 +16,9 @@ class HoneyHiveFormatter(logging.Formatter):
     including timestamps, log levels, and HoneyHive-specific data.
     """
 
-    def __init__(self, include_timestamp: bool = True, include_level: bool = True):
+    def __init__(
+        self, include_timestamp: bool = True, include_level: bool = True
+    ) -> None:
         """Initialize the formatter.
 
         Args:
@@ -112,8 +114,8 @@ class HoneyHiveLogger:
         level: int,
         message: str,
         honeyhive_data: Optional[Dict[str, Any]] = None,
-        **kwargs,
-    ):
+        **kwargs: Any,
+    ) -> None:
         """Log with HoneyHive context data.
 
         Args:
@@ -129,8 +131,11 @@ class HoneyHiveLogger:
         self.logger.log(level, message, extra=extra)
 
     def debug(
-        self, message: str, honeyhive_data: Optional[Dict[str, Any]] = None, **kwargs
-    ):
+        self,
+        message: str,
+        honeyhive_data: Optional[Dict[str, Any]] = None,
+        **kwargs: Any,
+    ) -> None:
         """Log debug message.
 
         Args:
@@ -141,32 +146,47 @@ class HoneyHiveLogger:
         self._log_with_context(logging.DEBUG, message, honeyhive_data, **kwargs)
 
     def info(
-        self, message: str, honeyhive_data: Optional[Dict[str, Any]] = None, **kwargs
-    ):
+        self,
+        message: str,
+        honeyhive_data: Optional[Dict[str, Any]] = None,
+        **kwargs: Any,
+    ) -> None:
         """Log info message."""
         self._log_with_context(logging.INFO, message, honeyhive_data, **kwargs)
 
     def warning(
-        self, message: str, honeyhive_data: Optional[Dict[str, Any]] = None, **kwargs
-    ):
+        self,
+        message: str,
+        honeyhive_data: Optional[Dict[str, Any]] = None,
+        **kwargs: Any,
+    ) -> None:
         """Log warning message."""
         self._log_with_context(logging.WARNING, message, honeyhive_data, **kwargs)
 
     def error(
-        self, message: str, honeyhive_data: Optional[Dict[str, Any]] = None, **kwargs
-    ):
+        self,
+        message: str,
+        honeyhive_data: Optional[Dict[str, Any]] = None,
+        **kwargs: Any,
+    ) -> None:
         """Log error message."""
         self._log_with_context(logging.ERROR, message, honeyhive_data, **kwargs)
 
     def critical(
-        self, message: str, honeyhive_data: Optional[Dict[str, Any]] = None, **kwargs
-    ):
+        self,
+        message: str,
+        honeyhive_data: Optional[Dict[str, Any]] = None,
+        **kwargs: Any,
+    ) -> None:
         """Log critical message."""
         self._log_with_context(logging.CRITICAL, message, honeyhive_data, **kwargs)
 
     def exception(
-        self, message: str, honeyhive_data: Optional[Dict[str, Any]] = None, **kwargs
-    ):
+        self,
+        message: str,
+        honeyhive_data: Optional[Dict[str, Any]] = None,
+        **kwargs: Any,
+    ) -> None:
         """Log exception message with traceback."""
         extra = kwargs.copy()
         if honeyhive_data:
@@ -175,7 +195,7 @@ class HoneyHiveLogger:
         self.logger.exception(message, extra=extra)
 
 
-def get_logger(name: str, **kwargs) -> HoneyHiveLogger:
+def get_logger(name: str, **kwargs: Any) -> HoneyHiveLogger:
     """Get a HoneyHive logger instance."""
     return HoneyHiveLogger(name, **kwargs)
 

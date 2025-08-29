@@ -2,7 +2,7 @@
 
 import threading
 import time
-from typing import TYPE_CHECKING, Optional
+from typing import TYPE_CHECKING, Any, Dict, Optional
 
 if TYPE_CHECKING:
     from opentelemetry import baggage, context
@@ -24,12 +24,12 @@ from ..utils.config import config
 class HoneyHiveSpanProcessor(SpanProcessor):
     """HoneyHive span processor with optimized attribute setting and reduced overhead."""
 
-    def __init__(self):
+    def __init__(self) -> None:
         """Initialize with performance optimizations."""
         if not OTEL_AVAILABLE:
             raise ImportError("OpenTelemetry is required for HoneyHiveSpanProcessor")
 
-        self._context_cache = {}  # Cache context lookups
+        self._context_cache: Dict[int, Dict[str, Any]] = {}  # Cache context lookups
         self._cache_ttl = 1000  # Cache TTL in operations
         self._operation_count = 0
         self._lock = threading.Lock()
@@ -284,7 +284,25 @@ class HoneyHiveSpanProcessor(SpanProcessor):
 
             # Set all attributes at once (more efficient)
             for key, value in attributes_to_set.items():
-                span.set_attribute(key, value)
+                # Ensure value is of the expected type for OpenTelemetry
+                if isinstance(value, (str, bool, int, float)):
+                    span.set_attribute(key, value)
+                elif isinstance(value, (list, tuple)):
+                    # Convert sequences to the expected type
+                    if all(isinstance(v, str) for v in value):
+                        span.set_attribute(key, list(value))
+                    elif all(isinstance(v, bool) for v in value):
+                        span.set_attribute(key, list(value))
+                    elif all(isinstance(v, int) for v in value):
+                        span.set_attribute(key, list(value))
+                    elif all(isinstance(v, float) for v in value):
+                        span.set_attribute(key, list(value))
+                    else:
+                        # Convert to string if mixed types
+                        span.set_attribute(key, str(value))
+                else:
+                    # Convert to string for any other type
+                    span.set_attribute(key, str(value))
 
             # Cache the attributes for future use
             if len(attributes_to_set) > 0:
@@ -352,7 +370,7 @@ class HoneyHiveSpanProcessor(SpanProcessor):
         except Exception:
             return False
 
-    def _cleanup_cache(self):
+    def _cleanup_cache(self) -> None:
         """Clean up the context cache to prevent memory leaks."""
         if not OTEL_AVAILABLE:
             return

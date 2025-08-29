@@ -44,7 +44,7 @@ class CacheEntry:
         """
         return time.time() - self.created_at > self.ttl
 
-    def access(self):
+    def access(self) -> None:
         """Mark entry as accessed."""
         self.access_count += 1
         self.last_accessed = time.time()
@@ -102,7 +102,7 @@ class Cache:
         }
 
         # Cleanup thread
-        self._cleanup_thread = None
+        self._cleanup_thread: Optional[threading.Thread] = None
         self._stop_cleanup = threading.Event()
         self._start_cleanup_thread()
 
@@ -133,7 +133,7 @@ class Cache:
         """
         return self._stats["misses"]
 
-    def _start_cleanup_thread(self):
+    def _start_cleanup_thread(self) -> None:
         """Start cleanup thread."""
         if self.config.cleanup_interval > 0:
             self._cleanup_thread = threading.Thread(
@@ -141,12 +141,12 @@ class Cache:
             )
             self._cleanup_thread.start()
 
-    def _cleanup_worker(self):
+    def _cleanup_worker(self) -> None:
         """Cleanup worker thread."""
         while not self._stop_cleanup.wait(self.config.cleanup_interval):
             self.cleanup_expired()
 
-    def _generate_key(self, *args, **kwargs) -> str:
+    def _generate_key(self, *args: Any, **kwargs: Any) -> str:
         """Generate cache key from arguments.
 
         Args:
@@ -164,7 +164,7 @@ class Cache:
         # Hash the key string for consistent length
         return hashlib.md5(key_string.encode()).hexdigest()
 
-    def generate_key(self, *args, **kwargs) -> str:
+    def generate_key(self, *args: Any, **kwargs: Any) -> str:
         """Generate cache key from arguments (public method).
 
         Args:
@@ -290,7 +290,7 @@ class Cache:
 
         return cleaned
 
-    def _evict_entries(self, count: int = 1):
+    def _evict_entries(self, count: int = 1) -> None:
         """Evict entries based on LRU policy.
 
         Args:
@@ -326,7 +326,7 @@ class Cache:
             )
             return stats
 
-    def _reset_stats(self):
+    def _reset_stats(self) -> None:
         """Reset cache statistics."""
         for key in self._stats:
             self._stats[key] = 0
@@ -352,22 +352,27 @@ class Cache:
                 "evictions": self._stats["evictions"],
             }
 
-    def cleanup(self):
+    def cleanup(self) -> None:
         """Clean up expired entries and perform maintenance."""
         self.cleanup_expired()
 
-    def close(self):
+    def close(self) -> None:
         """Close cache and cleanup resources."""
         self._stop_cleanup.set()
         if self._cleanup_thread and self._cleanup_thread.is_alive():
             self._cleanup_thread.join(timeout=1.0)
         self.clear()
 
-    def __enter__(self):
+    def __enter__(self) -> "Cache":
         """Context manager entry."""
         return self
 
-    def __exit__(self, exc_type, exc_val, exc_tb):
+    def __exit__(
+        self,
+        exc_type: Optional[type],
+        exc_val: Optional[BaseException],
+        exc_tb: Optional[Any],
+    ) -> None:
         """Context manager exit."""
         self.close()
 
@@ -402,7 +407,7 @@ class FunctionCache:
             Cached function
         """
 
-        def cached_func(*args, **kwargs):
+        def cached_func(*args: Any, **kwargs: Any) -> Any:
             # Generate cache key
             if self.key_func:
                 key = self.key_func(func, *args, **kwargs)
@@ -452,7 +457,7 @@ class AsyncFunctionCache:
             Cached async function
         """
 
-        async def cached_func(*args, **kwargs):
+        async def cached_func(*args: Any, **kwargs: Any) -> Any:
             # Generate cache key
             if self.key_func:
                 key = self.key_func(func, *args, **kwargs)
@@ -493,7 +498,7 @@ def get_global_cache(config: Optional[CacheConfig] = None) -> Cache:
     return _global_cache
 
 
-def close_global_cache():
+def close_global_cache() -> None:
     """Close global cache instance."""
     global _global_cache
 
@@ -506,7 +511,7 @@ def cache_function(
     ttl: Optional[float] = None,
     cache: Optional[Cache] = None,
     key_func: Optional[Callable] = None,
-):
+) -> FunctionCache:
     """Decorator to cache function results.
 
     Args:
@@ -524,7 +529,7 @@ def cache_async_function(
     ttl: Optional[float] = None,
     cache: Optional[Cache] = None,
     key_func: Optional[Callable] = None,
-):
+) -> AsyncFunctionCache:
     """Decorator to cache async function results.
 
     Args:

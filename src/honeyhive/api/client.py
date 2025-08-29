@@ -35,7 +35,7 @@ class RateLimiter:
         """
         self.max_calls = max_calls
         self.time_window = time_window
-        self.calls = []
+        self.calls: list = []
 
     def can_call(self) -> bool:
         """Check if a call can be made.
@@ -54,7 +54,7 @@ class RateLimiter:
             return True
         return False
 
-    def wait_if_needed(self):
+    def wait_if_needed(self) -> None:
         """Wait if rate limit is exceeded.
 
         Blocks execution until a call can be made.
@@ -206,13 +206,13 @@ class HoneyHive:
             return path
         return f"{self.base_url.rstrip('/')}/{path.lstrip('/')}"
 
-    def get_health(self) -> dict:
+    def get_health(self) -> Dict[str, Any]:
         """Get API health status. Returns basic info since health endpoint may not exist."""
         try:
             # Try to get health endpoint if it exists
             response = self.request("GET", "/api/v1/health")
             if response.status_code == 200:
-                return response.json()
+                return response.json()  # type: ignore[no-any-return]
         except Exception:
             pass
 
@@ -224,13 +224,13 @@ class HoneyHive:
             "timestamp": time.time(),
         }
 
-    async def get_health_async(self) -> dict:
+    async def get_health_async(self) -> Dict[str, Any]:
         """Get API health status asynchronously. Returns basic info since health endpoint may not exist."""
         try:
             # Try to get health endpoint if it exists
             response = await self.request_async("GET", "/api/v1/health")
             if response.status_code == 200:
-                return response.json()
+                return response.json()  # type: ignore[no-any-return]
         except Exception:
             pass
 
@@ -248,7 +248,7 @@ class HoneyHive:
         path: str,
         params: Optional[Dict[str, Any]] = None,
         json: Optional[Any] = None,
-        **kwargs,
+        **kwargs: Any,
     ) -> httpx.Response:
         """Make a synchronous HTTP request with rate limiting and retry logic."""
         # Apply rate limiting
@@ -329,7 +329,7 @@ class HoneyHive:
         path: str,
         params: Optional[Dict[str, Any]] = None,
         json: Optional[Any] = None,
-        **kwargs,
+        **kwargs: Any,
     ) -> httpx.Response:
         """Make an asynchronous HTTP request with rate limiting and retry logic."""
         # Apply rate limiting
@@ -414,11 +414,13 @@ class HoneyHive:
         path: str,
         params: Optional[Dict[str, Any]] = None,
         json: Optional[Any] = None,
-        **kwargs,
+        **kwargs: Any,
     ) -> httpx.Response:
         """Retry a synchronous request."""
         for attempt in range(1, self.retry_config.max_retries + 1):
-            delay = self.retry_config.backoff_strategy.get_delay(attempt)
+            delay: float = 0.0
+            if self.retry_config.backoff_strategy:
+                delay = self.retry_config.backoff_strategy.get_delay(attempt)
             if delay > 0:
                 time.sleep(delay)
 
@@ -468,11 +470,13 @@ class HoneyHive:
         path: str,
         params: Optional[Dict[str, Any]] = None,
         json: Optional[Any] = None,
-        **kwargs,
+        **kwargs: Any,
     ) -> httpx.Response:
         """Retry an asynchronous request."""
         for attempt in range(1, self.retry_config.max_retries + 1):
-            delay = self.retry_config.backoff_strategy.get_delay(attempt)
+            delay: float = 0.0
+            if self.retry_config.backoff_strategy:
+                delay = self.retry_config.backoff_strategy.get_delay(attempt)
             if delay > 0:
                 import asyncio
 
@@ -518,7 +522,7 @@ class HoneyHive:
 
         raise Exception("Max retries exceeded")
 
-    def close(self):
+    def close(self) -> None:
         """Close the HTTP clients."""
         if self._sync_client:
             self._sync_client.close()
@@ -541,7 +545,7 @@ class HoneyHive:
                 # Ignore logging errors during shutdown - the logging stream may already be closed
                 pass
 
-    async def aclose(self):
+    async def aclose(self) -> None:
         """Close the HTTP clients asynchronously."""
         if self._async_client:
             await self._async_client.aclose()
@@ -559,18 +563,28 @@ class HoneyHive:
                 # Ignore logging errors during shutdown - the logging stream may already be closed
                 pass
 
-    def __enter__(self):
+    def __enter__(self) -> "HoneyHive":
         """Context manager entry."""
         return self
 
-    def __exit__(self, exc_type, exc_val, exc_tb):
+    def __exit__(
+        self,
+        exc_type: Optional[type],
+        exc_val: Optional[BaseException],
+        exc_tb: Optional[Any],
+    ) -> None:
         """Context manager exit."""
         self.close()
 
-    async def __aenter__(self):
+    async def __aenter__(self) -> "HoneyHive":
         """Async context manager entry."""
         return self
 
-    async def __aexit__(self, exc_type, exc_val, exc_tb):
+    async def __aexit__(
+        self,
+        exc_type: Optional[type],
+        exc_val: Optional[BaseException],
+        exc_tb: Optional[Any],
+    ) -> None:
         """Async context manager exit."""
         await self.aclose()

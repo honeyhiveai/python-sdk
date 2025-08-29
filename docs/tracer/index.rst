@@ -74,10 +74,10 @@ If you specifically want to ensure a function is treated as async:
        response = await openai_client.chat.completions.create(...)
        return response.choices[0].message.content
 
-**Legacy: @dynamic_trace (not recommended)**
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+**Legacy: @atrace for async-only functions**
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-The `@dynamic_trace` decorator is available for backward compatibility but is **not recommended** for new code. Use `@trace` instead as it provides the same functionality with better performance and cleaner code.
+The `@atrace` decorator is available for cases where you specifically want to ensure a function is treated as async. For most use cases, use `@trace` instead as it provides the same functionality with better performance and cleaner code.
 
 Basic Tracing
 ~~~~~~~~~~~~~

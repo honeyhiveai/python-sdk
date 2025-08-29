@@ -297,15 +297,15 @@ class EventsAPI(BaseAPI):
     def list_events(self, event_filter: EventFilter, limit: int = 100) -> List[Event]:
         """List events using EventFilter model."""
         # Convert EventFilter to query parameters
-        params = {"limit": limit}
+        params = {"limit": str(limit)}
         if event_filter.field:
-            params["field"] = event_filter.field
+            params["field"] = str(event_filter.field)
         if event_filter.value:
-            params["value"] = event_filter.value
+            params["value"] = str(event_filter.value)
         if event_filter.operator:
-            params["operator"] = event_filter.operator
+            params["operator"] = str(event_filter.operator)
         if event_filter.type:
-            params["type"] = event_filter.type
+            params["type"] = str(event_filter.type)
 
         response = self.client.request("GET", "/events", params=params)
         data = response.json()
@@ -327,15 +327,15 @@ class EventsAPI(BaseAPI):
     ) -> List[Event]:
         """List events asynchronously using EventFilter model."""
         # Convert EventFilter to query parameters
-        params = {"limit": limit}
+        params = {"limit": str(limit)}
         if event_filter.field:
-            params["field"] = event_filter.field
+            params["field"] = str(event_filter.field)
         if event_filter.value:
-            params["value"] = event_filter.value
+            params["value"] = str(event_filter.value)
         if event_filter.operator:
-            params["operator"] = event_filter.operator
+            params["operator"] = str(event_filter.operator)
         if event_filter.type:
-            params["type"] = event_filter.type
+            params["type"] = str(event_filter.type)
 
         response = await self.client.request_async("GET", "/events", params=params)
         data = response.json()

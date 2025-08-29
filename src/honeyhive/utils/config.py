@@ -83,7 +83,7 @@ class Config:
     http_client: Optional[HTTPClientConfig] = None
     experiment: Optional[ExperimentConfig] = None
 
-    def __post_init__(self):
+    def __post_init__(self) -> None:
         """Initialize sub-configurations with defaults."""
         if self.api is None:
             self.api = APIConfig()
@@ -295,7 +295,7 @@ class Config:
 config = Config()
 
 
-def reload_config():
+def reload_config() -> None:
     """Reload configuration from environment variables.
 
     Creates a new global configuration instance with updated

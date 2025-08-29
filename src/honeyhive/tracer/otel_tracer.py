@@ -5,7 +5,7 @@ import os
 import threading
 import time
 from contextlib import contextmanager
-from typing import TYPE_CHECKING, Any, Dict, Optional
+from typing import TYPE_CHECKING, Any, Dict, Iterator, Optional
 
 if TYPE_CHECKING:
     from opentelemetry import baggage, context, trace
@@ -46,11 +46,16 @@ from .span_processor import HoneyHiveSpanProcessor
 class HoneyHiveTracer:
     """HoneyHive OpenTelemetry tracer implementation."""
 
-    _instance = None
+    _instance: Optional["HoneyHiveTracer"] = None
     _lock = threading.Lock()
     _is_initialized = False
 
-    def __new__(cls, *args, **kwargs):
+    # Instance attributes
+    session_id: Optional[str]
+    client: Optional[Any]
+    session_api: Optional[Any]
+
+    def __new__(cls, *args: Any, **kwargs: Any) -> "HoneyHiveTracer":
         """Singleton pattern for tracer."""
         if cls._instance is None:
             with cls._lock:
@@ -89,7 +94,6 @@ class HoneyHiveTracer:
         self.disable_http_tracing = disable_http_tracing
 
         # Set HTTP tracing environment variable based on parameter
-        import os
         if disable_http_tracing:
             os.environ["HH_DISABLE_HTTP_TRACING"] = "true"
         else:
@@ -131,7 +135,7 @@ class HoneyHiveTracer:
             print("✓ HTTP tracing enabled")
 
     @classmethod
-    def reset(cls):
+    def reset(cls) -> None:
         """Reset the tracer instance for testing purposes."""
         cls._instance = None
         cls._is_initialized = False
@@ -148,10 +152,10 @@ class HoneyHiveTracer:
     ) -> "HoneyHiveTracer":
         """
         Initialize the HoneyHive tracer (official API for backwards compatibility).
-        
+
         This method provides the same functionality as the constructor but follows
         the official HoneyHive SDK API pattern shown in production documentation.
-        
+
         Args:
             api_key: HoneyHive API key
             project: Project name
@@ -159,10 +163,10 @@ class HoneyHiveTracer:
             session_name: Optional session name for automatic session creation
             server_url: Optional server URL for self-hosted deployments
             disable_http_tracing: Whether to disable HTTP tracing (defaults to True)
-            
+
         Returns:
             HoneyHiveTracer instance
-            
+
         Example:
             # Official SDK pattern from docs.honeyhive.ai
             HoneyHiveTracer.init(
@@ -170,7 +174,7 @@ class HoneyHiveTracer:
                 project="your-project",
                 source="prod"
             )
-            
+
             # With HTTP tracing enabled
             HoneyHiveTracer.init(
                 api_key="your-api-key",
@@ -182,10 +186,9 @@ class HoneyHiveTracer:
         # Handle server_url parameter (maps to api_url in our config)
         if server_url:
             # Set the server URL in environment for this initialization
-            import os
             original_api_url = os.environ.get("HH_API_URL")
             os.environ["HH_API_URL"] = server_url
-            
+
             try:
                 # Create tracer with server URL
                 tracer = cls(
@@ -212,7 +215,7 @@ class HoneyHiveTracer:
                 disable_http_tracing=disable_http_tracing,
             )
 
-    def _initialize_otel(self):
+    def _initialize_otel(self) -> None:
         """Initialize OpenTelemetry components."""
         # Create tracer provider
         self.provider = TracerProvider()
@@ -279,7 +282,7 @@ class HoneyHiveTracer:
             class NoOpExporter:
                 """No-op exporter that prevents I/O errors during tests."""
 
-                def export(self, spans):
+                def export(self, spans: Any) -> bool:
                     """Export spans to the backend.
 
                     Args:
@@ -291,13 +294,14 @@ class HoneyHiveTracer:
                     # Do nothing - prevents I/O errors during tests
                     return True
 
-                def shutdown(self):
+                def shutdown(self) -> None:
                     """Shutdown the exporter."""
                     # No cleanup needed for no-op exporter
 
-                def force_flush(self, timeout_millis: float = 30000.0):
+                def force_flush(self, timeout_millis: float = 30000.0) -> bool:
                     """Force flush the exporter."""
                     # No flushing needed for no-op exporter
+                    return True
 
             # Use ConsoleSpanExporter instead of NoOpExporter to avoid type issues
             self.provider.add_span_processor(BatchSpanProcessor(ConsoleSpanExporter()))
@@ -316,7 +320,7 @@ class HoneyHiveTracer:
         # Create tracer
         self.tracer = trace.get_tracer("honeyhive", "0.1.0")
 
-    def _initialize_session(self):
+    def _initialize_session(self) -> None:
         """Initialize session management."""
         try:
             # Create client and session API
@@ -349,7 +353,7 @@ class HoneyHiveTracer:
             self.client = None
             self.session_api = None
 
-    def _setup_baggage_context(self):
+    def _setup_baggage_context(self) -> None:
         """Set up baggage with session context for OpenInference integration."""
         try:
             # Always set up baggage context, even if session creation failed
@@ -414,7 +418,7 @@ class HoneyHiveTracer:
             print(f"⚠️  Warning: Failed to set up baggage context: {e}")
             # Continue without baggage context - spans will still be processed
 
-    def _integrate_instrumentors(self, instrumentors: list):
+    def _integrate_instrumentors(self, instrumentors: list) -> None:
         """Automatically integrate with provided instrumentors."""
         for instrumentor in instrumentors:
             try:
@@ -444,8 +448,8 @@ class HoneyHiveTracer:
         session_id: Optional[str] = None,
         parent_id: Optional[str] = None,
         attributes: Optional[Dict[str, Any]] = None,
-        **kwargs,
-    ):
+        **kwargs: Any,
+    ) -> Iterator[Optional[Any]]:
         """Start a new span with context manager.
 
         Args:
@@ -525,8 +529,8 @@ class HoneyHiveTracer:
         inputs: Optional[Dict[str, Any]] = None,
         outputs: Optional[Dict[str, Any]] = None,
         metadata: Optional[Dict[str, Any]] = None,
-        **kwargs,
-    ):
+        **kwargs: Any,
+    ) -> Optional[str]:
         """Create a HoneyHive event associated with the current session.
 
         Args:
@@ -568,7 +572,7 @@ class HoneyHiveTracer:
                 if not self.test_mode:
                     print(f"✓ Event created: {event_response.event_id}")
 
-                return event_response.event_id
+                return event_response.event_id  # type: ignore[no-any-return]
 
             print("Warning: Session API not available")
             return None
@@ -826,9 +830,6 @@ class HoneyHiveTracer:
                 print(f"Failed to enrich span: {e}")
             return False
 
-        # Default return if no conditions are met
-        return False
-
     def get_baggage(
         self, key: str, ctx_param: Optional[Context] = None
     ) -> Optional[str]:
@@ -893,7 +894,7 @@ class HoneyHiveTracer:
 
         return self.propagator.extract(carrier)
 
-    def shutdown(self):
+    def shutdown(self) -> None:
         """Shutdown the tracer and flush remaining spans."""
         if not OTEL_AVAILABLE:
             return
@@ -905,7 +906,7 @@ class HoneyHiveTracer:
                 print(f"Error shutting down tracer: {e}")
 
     @classmethod
-    def _reset_static_state(cls):
+    def _reset_static_state(cls) -> None:
         """Reset static state for testing."""
         cls._instance = None
         cls._is_initialized = False
@@ -916,7 +917,7 @@ class HoneyHiveTracer:
         enabled: bool = True,
         endpoint: Optional[str] = None,
         headers: Optional[Dict[str, str]] = None,
-    ):
+    ) -> None:
         """Configure OTLP exporter settings.
 
         Args:

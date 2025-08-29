@@ -1,6 +1,6 @@
 """Session API module for HoneyHive."""
 
-from typing import Optional
+from typing import Any, Optional
 
 from ..models import Event, SessionStartRequest
 from .base import BaseAPI
@@ -82,7 +82,9 @@ class SessionAPI(BaseAPI):
         data = response.json()
         return SessionStartResponse(session_id=data["session_id"])
 
-    async def create_session_async(self, session: SessionStartRequest) -> SessionStartResponse:
+    async def create_session_async(
+        self, session: SessionStartRequest
+    ) -> SessionStartResponse:
         """Create a new session asynchronously using SessionStartRequest model."""
         response = await self.client.request_async(
             "POST",
@@ -93,7 +95,9 @@ class SessionAPI(BaseAPI):
         data = response.json()
         return SessionStartResponse(session_id=data["session_id"])
 
-    async def create_session_from_dict_async(self, session_data: dict) -> SessionStartResponse:
+    async def create_session_from_dict_async(
+        self, session_data: dict
+    ) -> SessionStartResponse:
         """Create a new session asynchronously from session data dictionary (legacy method)."""
         # Handle both direct session data and nested session data
         if "session" in session_data:
@@ -101,7 +105,9 @@ class SessionAPI(BaseAPI):
         else:
             request_data = {"session": session_data}
 
-        response = await self.client.request_async("POST", "/session/start", json=request_data)
+        response = await self.client.request_async(
+            "POST", "/session/start", json=request_data
+        )
 
         data = response.json()
         return SessionStartResponse(session_id=data["session_id"])
@@ -112,7 +118,7 @@ class SessionAPI(BaseAPI):
         session_name: str,
         source: str,
         session_id: Optional[str] = None,
-        **kwargs,
+        **kwargs: Any,
     ) -> SessionStartResponse:
         """Start a new session using SessionStartRequest model."""
         request_data = SessionStartRequest(
@@ -154,7 +160,7 @@ class SessionAPI(BaseAPI):
         session_name: str,
         source: str,
         session_id: Optional[str] = None,
-        **kwargs,
+        **kwargs: Any,
     ) -> SessionStartResponse:
         """Start a new session asynchronously using SessionStartRequest model."""
         request_data = SessionStartRequest(

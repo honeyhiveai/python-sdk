@@ -12,7 +12,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - OpenTelemetry integration with custom span processor and exporter
 - Session management with start and retrieve operations
 - Event creation and batch operations
-- **NEW**: Dynamic trace decorator (`@dynamic_trace`) for unified sync/async function tracing
+- **NEW**: Unified trace decorator (`@trace`) for both sync and async function tracing
 - Tracing decorators for sync and async functions (`@trace`, `@atrace`)
 - HTTP instrumentation for automatic request tracing
 - Evaluation tools with built-in metrics
