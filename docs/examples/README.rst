@@ -53,33 +53,57 @@ Quick Start
 
    from honeyhive import HoneyHiveTracer
 
-   # Initialize tracer
+   # Initialize tracer (creates new instance)
    tracer = HoneyHiveTracer.init(
        api_key="your-api-key",
        project="my-project",
        source="production"
    )
 
-2. Basic Tracing
+2. Multiple Tracers
+~~~~~~~~~~~~~~~~~~~
+
+.. code-block:: python
+
+   from honeyhive import HoneyHiveTracer
+
+   # Create tracers for different environments
+   prod_tracer = HoneyHiveTracer.init(
+       api_key="prod-key",
+       project="production-app",
+       source="prod"
+   )
+   
+   dev_tracer = HoneyHiveTracer.init(
+       api_key="dev-key",
+       project="development-app",
+       source="dev"
+   )
+
+3. Basic Tracing
 ~~~~~~~~~~~~~~~~
 
 .. code-block:: python
 
    from honeyhive.tracer.decorators import trace
 
-   @trace
+   # Pass tracer instance explicitly (recommended)
+   @trace(tracer=my_tracer)
    def my_function():
        """This function will be automatically traced."""
        return "Hello, World!"
 
-3. Manual Span Management
+4. Manual Span Management
 ~~~~~~~~~~~~~~~~~~~~~~~~~
 
 .. code-block:: python
 
    from honeyhive.tracer import HoneyHiveTracer
 
-   tracer = HoneyHiveTracer.get_instance()
+   tracer = HoneyHiveTracer.init(
+       api_key="your-api-key",
+       project="my-project"
+   )
 
    with tracer.start_span("custom-operation") as span:
        span.set_attribute("operation.type", "data_processing")
@@ -110,35 +134,52 @@ Microservices
 
 Distributed tracing across multiple services with context propagation and correlation.
 
+Multi-Instance Workflows
+~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Complex workflows using multiple tracer instances for different stages and components.
+
 Best Practices
 --------------
 
 1. Initialization
 ~~~~~~~~~~~~~~~~~
 
-* Use ``HoneyHiveTracer.init()`` for production code
+* Use ``HoneyHiveTracer()`` constructor for production code
+* Create separate tracers for different environments and workflows
 * Set environment variables for configuration
 * Enable test mode for development
 
-2. Tracing
+2. Multi-Instance Usage
+~~~~~~~~~~~~~~~~~~~~~~~~
+
+* Use different tracers for different components
+* Pass tracer instances explicitly to decorators
+* Manage tracer lifecycles independently
+* Separate production and development tracing
+
+3. Tracing
 ~~~~~~~~~~
 
-* Use ``@trace`` decorator for automatic tracing
+* Use ``@trace(tracer=instance)`` decorator for automatic tracing
 * Add meaningful span names and attributes
 * Handle errors properly in spans
+* Use explicit tracer instances for better control
 
-3. Performance
+4. Performance
 ~~~~~~~~~~~~~~
 
 * Use conditional tracing for high-throughput operations
 * Implement sampling for large applications
 * Monitor span volume and performance impact
+* Optimize each tracer instance independently
 
-4. Testing
+5. Testing
 ~~~~~~~~~~
 
 * Use test mode for development
-* Mock tracer for unit tests
+* Create mock tracers for unit tests
+* Test multi-instance scenarios
 * Test error scenarios and edge cases
 
 Getting Help

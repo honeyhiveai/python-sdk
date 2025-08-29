@@ -23,6 +23,8 @@ Design Philosophy
 
 **Zero Vendor Lock-in**: Use any combination of LLM providers, frameworks, and tools while maintaining consistent observability through OpenTelemetry standards.
 
+**Multi-Instance Architecture**: Modern tracer design supporting multiple independent tracer instances within the same runtime for flexible session management.
+
 Key Features
 ~~~~~~~~~~~~
 
@@ -34,6 +36,8 @@ Key Features
 * **Performance Monitoring** - Built-in latency, token tracking, and cost monitoring
 * **Framework Agnostic** - Works with any Python application and LLM framework
 * **Zero Code Changes** - Automatic instrumentation where possible
+* **Multi-Instance Support** - Create multiple independent tracers for different workflows
+* **Dynamic Session Naming** - Automatic file-based session naming for better organization
 
 Quick Start
 -----------
@@ -48,27 +52,72 @@ Quick Start
 2. Basic Usage
 ~~~~~~~~~~~~~~
 
+**Option 1: Official SDK Pattern (Recommended)**
+
 .. code-block:: python
 
    from honeyhive import HoneyHiveTracer
 
-   # Initialize tracer
-   HoneyHiveTracer.init(
+   # Official SDK pattern (recommended)
+   tracer = HoneyHiveTracer.init(
        api_key="your-api-key",
        project="my-project",
        source="production"
    )
 
-   # Use the tracer
-   tracer = HoneyHiveTracer.get_instance()
-   
+   # Use the tracer directly
    with tracer.start_span("my-operation") as span:
        span.set_attribute("operation.type", "data_processing")
        # Your operation here
        result = process_data()
        span.set_attribute("operation.result", result)
 
-3. LLM Agent Tracing
+**Option 2: Direct Constructor (Alternative)**
+
+.. code-block:: python
+
+   from honeyhive import HoneyHiveTracer
+
+   # Direct constructor (creates a new instance)
+   tracer = HoneyHiveTracer(
+       api_key="your-api-key",
+       project="my-project",
+       source="production"
+   )
+
+   # Use the tracer directly
+   with tracer.start_span("my-operation") as span:
+       span.set_attribute("operation.type", "data_processing")
+       # Your operation here
+       result = process_data()
+       span.set_attribute("operation.result", result)
+
+3. Multiple Tracers
+~~~~~~~~~~~~~~~~~~~
+
+.. code-block:: python
+
+   from honeyhive import HoneyHiveTracer
+
+   # Create multiple tracers for different workflows
+   production_tracer = HoneyHiveTracer(
+       api_key="prod-key",
+       project="production-app",
+       source="prod"
+   )
+   
+   development_tracer = HoneyHiveTracer(
+       api_key="dev-key", 
+       project="development-app",
+       source="dev"
+   )
+
+   # Each tracer operates independently
+   with production_tracer.start_span("prod-operation") as span:
+       # Production tracing
+       pass
+
+4. LLM Agent Tracing
 ~~~~~~~~~~~~~~~~~~~~~
 
 .. code-block:: python
@@ -77,7 +126,7 @@ Quick Start
    from openinference.instrumentation.openai import OpenAIInstrumentor
 
    # Initialize with LLM instrumentation
-   HoneyHiveTracer.init(
+   tracer = HoneyHiveTracer(
        api_key="your-api-key",
        project="my-project",
        source="production",
@@ -92,16 +141,23 @@ Quick Start
    )
    # Automatically traced with full context!
 
-3. Automatic Tracing
-~~~~~~~~~~~~~~~~~~~~
+5. Automatic Tracing with Decorators
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 .. code-block:: python
 
    from honeyhive.tracer.decorators import trace
 
-   @trace
+   # Pass tracer instance explicitly (recommended)
+   @trace(tracer=my_tracer)
    def my_function():
        """This function will be automatically traced."""
+       return "Hello, World!"
+
+   # Or use global tracer (legacy, deprecated)
+   @trace
+   def legacy_function():
+       """Uses global tracer - not recommended for new code."""
        return "Hello, World!"
 
 Documentation Sections
@@ -137,6 +193,20 @@ Guide to integrating OpenInference instrumentors for automatic AI operation trac
 
 Recent Improvements
 ~~~~~~~~~~~~~~~~~~~
+
+**Multi-Instance Architecture**: Modern multi-instance tracer design supporting multiple independent tracers within the same runtime.
+
+**Dynamic Session Naming**: Automatic session naming based on the file where the tracer is initialized, improving organization and debugging.
+
+**Enhanced Testing**: Comprehensive test coverage increased to 72.10% with a new 70% coverage threshold requirement.
+
+**Improved Decorator Support**: Enhanced `@trace` and `@atrace` decorators with explicit tracer instance support for better multi-instance usage.
+
+**TracerProvider Integration**: Smart OpenTelemetry provider management that integrates with existing providers or creates new ones as needed.
+
+**Complete Integration Testing**: Full test suite covering multi-instance patterns, real API integration, and TracerProvider scenarios.
+
+**Dependency Management**: Added `psutil` dependency for enhanced memory usage monitoring in evaluation framework.
 
 **Enhanced Documentation**: All documentation has been converted from Markdown to reStructuredText for better Sphinx integration and cross-referencing.
 
@@ -182,3 +252,11 @@ We welcome contributions! Please see our contributing guidelines for more inform
 * Submit pull requests
 * Improve documentation
 * Share examples and use cases
+
+Testing Standards
+-----------------
+
+* **Coverage Requirement**: Minimum 70% test coverage required
+* **Test Framework**: pytest with comprehensive unit and integration tests
+* **Quality Tools**: Black (formatting), isort (imports), pylint (linting), mypy (type checking)
+* **Multi-Instance Testing**: Full test coverage for new multi-tracer architecture

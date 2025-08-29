@@ -13,7 +13,7 @@ Core Classes
 HoneyHiveTracer
 ~~~~~~~~~~~~~~~
 
-The main tracer class providing OpenTelemetry integration and session management. Designed with minimal dependencies to prevent conflicts in customer environments while supporting comprehensive LLM agent observability.
+The main tracer class providing OpenTelemetry integration and session management. Now supports multiple independent instances within the same runtime for flexible workflow management.
 
 Primary Initialization (Recommended)
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
@@ -23,9 +23,11 @@ Primary Initialization (Recommended)
    HoneyHiveTracer.init(
        api_key: Optional[str] = None,
        project: Optional[str] = None,
-       source: str = "dev",
+       source: str = "production",
+       test_mode: bool = False,
        session_name: Optional[str] = None,
        server_url: Optional[str] = None,
+       instrumentors: Optional[list] = None,
        disable_http_tracing: bool = True
    )
 
@@ -33,10 +35,19 @@ Primary Initialization (Recommended)
 
 * ``api_key``: HoneyHive API key (required if not in environment)
 * ``project``: Project name (defaults to environment or "default")
-* ``source``: Source environment (defaults to "dev" per official docs)
+* ``source``: Source environment (defaults to "production")
+* ``test_mode``: Enable test mode (defaults to False)
 * ``session_name``: Custom session name (auto-generated if not provided)
 * ``server_url``: Server URL for self-hosted deployments (optional)
+* ``instrumentors``: List of OpenInference instrumentors to integrate
 * ``disable_http_tracing``: Whether to disable HTTP tracing (defaults to True)
+
+**Key Features:**
+
+* **Multi-Instance Support**: Create multiple independent tracers
+* **Dynamic Session Naming**: Automatic session naming based on initialization file
+* **Smart TracerProvider Management**: Integrates with existing OpenTelemetry providers
+* **Thread Safety**: Each instance is thread-safe and independent
 
 **Dependency Philosophy:**
 
@@ -46,15 +57,15 @@ The ``instrumentors`` parameter follows our "bring your own instrumentor" approa
 
 .. code-block:: python
 
-   # Official SDK pattern (recommended)
-   HoneyHiveTracer.init(
+   # Multi-instance pattern (recommended)
+   tracer = HoneyHiveTracer(
        api_key="your-api-key",
        project="my-project",
        source="production"
    )
 
    # For self-hosted deployments
-   HoneyHiveTracer.init(
+   tracer = HoneyHiveTracer.init(
        api_key="your-api-key",
        project="my-project",
        source="production",
@@ -62,102 +73,101 @@ The ``instrumentors`` parameter follows our "bring your own instrumentor" approa
    )
 
    # With HTTP tracing enabled
-   HoneyHiveTracer.init(
+   tracer = HoneyHiveTracer.init(
        api_key="your-api-key",
        project="my-project",
        source="production",
        disable_http_tracing=False
    )
 
-Enhanced Initialization (All Features Available)
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-
-.. code-block:: python
-
-   HoneyHiveTracer.init(
-       api_key: Optional[str] = None,
-       project: Optional[str] = None,
-       source: str = "dev",
-       test_mode: bool = False,
-       session_name: Optional[str] = None,
-       server_url: Optional[str] = None,
-       instrumentors: Optional[list] = None,
-       disable_http_tracing: bool = True,
-   )
-
-**Parameters:**
-
-* ``api_key``: HoneyHive API key (required if not in environment)
-* ``project``: Project name (defaults to environment or "default")
-* ``source``: Source environment (defaults to "dev")
-* ``test_mode``: Enable test mode (defaults to False)
-* ``session_name``: Custom session name (auto-generated if not provided)
-* ``server_url``: Custom server URL for self-hosted deployments
-* ``instrumentors``: List of OpenInference instrumentors to integrate
-* ``disable_http_tracing``: Whether to disable HTTP tracing (defaults to True)
-
-**Example:**
-
-.. code-block:: python
-
-   # Enhanced initialization with all features available
+   # With OpenInference instrumentors
+   from openinference.instrumentation.openai import OpenAIInstrumentor
+   
    tracer = HoneyHiveTracer.init(
        api_key="your-api-key",
        project="my-project",
        source="production",
-       test_mode=True,  # Test mode support
-       instrumentors=[OpenAIInstrumentor()],  # Auto-integration
-       disable_http_tracing=True  # Performance control
+       instrumentors=[OpenAIInstrumentor()]
    )
 
-.. note::
+Multiple Tracer Instances
+^^^^^^^^^^^^^^^^^^^^^^^^^
 
-   The ``init()`` method now supports ALL constructor features and is the recommended way to initialize the tracer. It follows the official HoneyHive SDK documentation pattern and provides the same functionality as the constructor.
-
-Environment-Based Configuration
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-
-Use environment variables for configuration:
+Create multiple tracers for different workflows and environments:
 
 .. code-block:: python
 
-   import os
-   from honeyhive import HoneyHiveTracer
+   # Production tracer
+   prod_tracer = HoneyHiveTracer.init(
+       api_key="prod-api-key",
+       project="production-app",
+       source="prod"
+   )
+   
+   # Development tracer
+   dev_tracer = HoneyHiveTracer.init(
+       api_key="dev-api-key",
+       project="development-app",
+       source="dev"
+   )
+   
+   # Testing tracer
+   test_tracer = HoneyHiveTracer.init(
+       api_key="test-api-key",
+       project="testing-app",
+       source="test"
+   )
+   
+   # Each tracer operates independently
+   with prod_tracer.start_span("prod-operation") as span:
+       # Production tracing
+       pass
+   
+   with dev_tracer.start_span("dev-operation") as span:
+       # Development tracing
+       pass
 
-   # Set environment variables
-   os.environ["HH_API_KEY"] = "your-api-key"
-   os.environ["HH_PROJECT"] = "my-project"
-   os.environ["HH_SOURCE"] = "production"
+Dynamic Session Naming
+^^^^^^^^^^^^^^^^^^^^^^
 
-   # Initialize tracer (automatically reads environment)
-   tracer = HoneyHiveTracer.init()
-
-Conditional Initialization
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-
-Initialize based on environment or configuration:
+Sessions are automatically named based on the file where the tracer is initialized:
 
 .. code-block:: python
 
-   import os
-   from honeyhive import HoneyHiveTracer
+   # In file: src/my_app/main.py
+   tracer = HoneyHiveTracer.init(api_key="key", project="project")
+   # Session name will be: "main"
 
-   def create_tracer():
-       """Create tracer based on environment."""
-       
-       if os.getenv("ENVIRONMENT") == "production":
-           return HoneyHiveTracer.init(
-               api_key=os.getenv("HH_API_KEY"),
-               project=os.getenv("HH_PROJECT"),
-               source="production"
-           )
-       else:
-           return HoneyHiveTracer.init(
-               api_key=os.getenv("HH_API_KEY"),
-               project=os.getenv("HH_PROJECT"),
-               source="development",
-               test_mode=True
-           )
+   # In file: src/my_app/processors/data_processor.py  
+   tracer = HoneyHiveTracer.init(api_key="key", project="project")
+   # Session name will be: "data_processor"
+
+   # In file: src/my_app/api/endpoints.py
+   tracer = HoneyHiveTracer.init(api_key="key", project="project")
+   # Session name will be: "endpoints"
+
+TracerProvider Integration
+^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+The tracer intelligently manages OpenTelemetry TracerProvider instances:
+
+.. code-block:: python
+
+   from honeyhive import HoneyHiveTracer
+   from opentelemetry import trace
+
+   # Check if a provider already exists
+   existing_provider = trace.get_tracer_provider()
+
+   # Create tracer - will integrate with existing provider if available
+   tracer = HoneyHiveTracer.init(
+       api_key="key",
+       project="project",
+       source="source"
+   )
+
+   # The tracer automatically detects and integrates with existing providers
+   # or creates a new one if none exists
 
 Tracing Decorators
 ------------------

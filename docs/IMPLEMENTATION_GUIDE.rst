@@ -20,14 +20,14 @@ High-Level Architecture
    ├─────────────────────────────────────────────────────────────┤
    │                    HoneyHive SDK                           │
    │  ┌─────────────┐  ┌─────────────┐  ┌─────────────────────┐ │
-   │  │   Tracer    │  │ API Client  │  │   Evaluation        │ │
-   │  │             │  │             │  │                     │ │
+   │  │   Tracers   │  │ API Client  │  │   Evaluation        │ │
+   │  │(Multi-Inst)│  │             │  │                     │ │
    │  └─────────────┘  └─────────────┘  └─────────────────────┘ │
    ├─────────────────────────────────────────────────────────────┤
    │                  OpenTelemetry Layer                        │
    │  ┌─────────────┐  ┌─────────────┐  ┌─────────────────────┐ │
-   │  │Span Processor│  │Span Exporter│  │   Instrumentation   │ │
-   │  │             │  │             │  │                     │ │
+   │  │TracerProvider│  │Span Exporter│  │   Instrumentation   │ │
+   │  │(Smart Mgmt) │  │             │  │                     │ │
    │  └─────────────┘  └─────────────┘  └─────────────────────┘ │
    ├─────────────────────────────────────────────────────────────┤
    │                     Transport Layer                         │
@@ -54,6 +54,8 @@ Key Design Principles
 6. **Graceful Degradation** - Fallback mechanisms for missing dependencies
 7. **Testability** - All components are designed for easy testing
 8. **LLM Agent Focus** - Built specifically for multi-step AI workflows
+9. **Multi-Instance Support** - Modern architecture supporting multiple tracer instances
+10. **Smart Provider Management** - Intelligent OpenTelemetry provider integration
 
 Core Components
 ---------------
@@ -61,7 +63,7 @@ Core Components
 1. HoneyHiveTracer
 ~~~~~~~~~~~~~~~~~~
 
-The central component that orchestrates OpenTelemetry integration and session management.
+The central component that orchestrates OpenTelemetry integration and session management. Now supports multiple independent instances within the same runtime.
 
 Implementation Details
 ^^^^^^^^^^^^^^^^^^^^^^
@@ -69,25 +71,118 @@ Implementation Details
 .. code-block:: python
 
    class HoneyHiveTracer:
-       _instance = None
-       _lock = threading.Lock()
-       _is_initialized = False
-       
-       def __new__(cls, *args, **kwargs):
-           """Singleton pattern for tracer."""
-           if cls._instance is None:
-               with cls._lock:
-                   if cls._instance is None:
-                       cls._instance = super().__new__(cls)
-           return cls._instance
+       def __init__(self, api_key=None, project=None, source="production", 
+                    test_mode=False, session_name=None, instrumentors=None):
+           """Initialize a new tracer instance."""
+           # Each instance is independent
+           self.api_key = api_key or config.api_key
+           self.project = project or config.project
+           self.source = source or config.source
+           self.test_mode = test_mode
+           self.session_name = session_name or self._generate_session_name()
+           self.instrumentors = instrumentors or []
+           
+           # Smart TracerProvider management
+           self.provider = None
+           self.is_main_provider = False
+           self._initialize_otel()
 
 **Key Features:**
 
-* **Singleton Pattern** - Ensures single tracer instance per application
-* **Thread Safety** - Uses locks for thread-safe initialization
+* **Multi-Instance Support** - Create multiple independent tracer instances
+* **Dynamic Session Naming** - Automatic session naming based on initialization file
+* **Smart TracerProvider Management** - Integrates with existing providers or creates new ones
+* **Thread Safety** - Each instance is thread-safe and independent
 * **Lazy Initialization** - Components initialized only when needed
 * **Session Auto-Creation** - Automatically creates HoneyHive sessions
 * **Dependency Conflict Prevention** - Minimal core dependencies with optional instrumentors
+
+Multi-Instance Architecture
+^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+The new architecture supports creating multiple tracer instances for different workflows:
+
+.. code-block:: python
+
+   # Production tracer
+   prod_tracer = HoneyHiveTracer.init(
+       api_key="prod-key",
+       project="production-app",
+       source="prod"
+   )
+   
+   # Development tracer
+   dev_tracer = HoneyHiveTracer.init(
+       api_key="dev-key",
+       project="development-app",
+       source="dev"
+   )
+   
+   # Testing tracer
+   test_tracer = HoneyHiveTracer.init(
+       api_key="test-key",
+       project="testing-app",
+       source="test"
+   )
+   
+   # Each tracer operates independently
+   with prod_tracer.start_span("prod-operation") as span:
+       # Production tracing
+       pass
+   
+   with dev_tracer.start_span("dev-operation") as span:
+       # Development tracing
+       pass
+
+Dynamic Session Naming
+^^^^^^^^^^^^^^^^^^^^^^
+
+Sessions are automatically named based on the file where the tracer is initialized:
+
+.. code-block:: python
+
+   def _generate_session_name(self):
+       """Generate session name from the calling file."""
+       import inspect
+       import os
+       
+       # Get the frame where HoneyHiveTracer was called
+       frame = inspect.currentframe()
+       while frame:
+           if frame.f_code.co_name == '__init__':
+               frame = frame.f_back
+               break
+           frame = frame.f_back
+       
+       if frame:
+           filename = os.path.basename(frame.f_code.co_filename)
+           name, _ = os.path.splitext(filename)
+           return name
+       
+       return "honeyhive_session"
+
+TracerProvider Integration
+^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+Smart integration with existing OpenTelemetry providers:
+
+.. code-block:: python
+
+   def _initialize_otel(self):
+       """Initialize OpenTelemetry with smart provider management."""
+       from opentelemetry import trace
+       
+       # Check if a provider already exists
+       existing_provider = trace.get_tracer_provider()
+       
+       if existing_provider and str(type(existing_provider).__name__) != "NoOpTracerProvider":
+           # Integrate with existing provider
+           self.provider = existing_provider
+           self.is_main_provider = False
+       else:
+           # Create new provider
+           self.provider = self._create_new_provider()
+           self.is_main_provider = True
 
 Initialization Flow
 ^^^^^^^^^^^^^^^^^^^
@@ -98,19 +193,23 @@ Initialization Flow
                 test_mode=False, session_name=None, instrumentors=None):
        # 1. Validate API key
        self.api_key = api_key or config.api_key
-       if not self.api_key:
-           raise ValueError("API key is required for HoneyHiveTracer")
        
        # 2. Set configuration
-       self.project = project or config.project or "default"
-       self.source = source
+       self.project = project or config.project
+       self.source = source or config.source
        self.test_mode = test_mode
        
-       # 3. Initialize OpenTelemetry
+       # 3. Generate session name
+       self.session_name = session_name or self._generate_session_name()
+       
+       # 4. Initialize OpenTelemetry
        self._initialize_otel()
        
-       # 4. Initialize session management
-       self._initialize_session()
+       # 5. Create session
+       self._create_session()
+       
+       # 6. Setup instrumentors
+       self._setup_instrumentors(instrumentors)
 
 Dependency Philosophy
 ^^^^^^^^^^^^^^^^^^^^^
@@ -144,28 +243,10 @@ The HoneyHive SDK intentionally keeps core dependencies minimal to prevent confl
 Design Patterns
 ---------------
 
-1. Singleton Pattern
-~~~~~~~~~~~~~~~~~~~~
-
-Ensures only one tracer instance exists per application:
-
-.. code-block:: python
-
-   class HoneyHiveTracer:
-       _instance = None
-       _lock = threading.Lock()
-       
-       def __new__(cls, *args, **kwargs):
-           if cls._instance is None:
-               with cls._lock:
-                   if cls._instance is None:
-                       cls._instance = super().__new__(cls)
-           return cls._instance
-
-2. Factory Pattern
+1. Factory Pattern
 ~~~~~~~~~~~~~~~~~~
 
-Provides flexible object creation:
+Provides flexible object creation through the init method:
 
 .. code-block:: python
 

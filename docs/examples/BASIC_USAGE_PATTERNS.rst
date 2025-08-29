@@ -20,25 +20,66 @@ Use the official SDK pattern for production code:
    from honeyhive import HoneyHiveTracer
 
    # Official SDK pattern (recommended)
-   HoneyHiveTracer.init(
+   tracer = HoneyHiveTracer.init(
        api_key="your-api-key",
        project="my-project",
        source="production"
    )
 
-   # Access the tracer instance
-   tracer = HoneyHiveTracer._instance
+   # Use the tracer instance directly
+   with tracer.start_span("my-operation") as span:
+       span.set_attribute("operation.type", "data_processing")
+       # Your operation here
 
    # With HTTP tracing enabled
-   HoneyHiveTracer.init(
+   tracer = HoneyHiveTracer(
        api_key="your-api-key",
        project="my-project",
        source="production",
        disable_http_tracing=False
    )
 
-1.1. Alternative Pattern (Enhanced)
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+1.1. Multiple Tracers Pattern
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Create multiple tracers for different workflows:
+
+.. code-block:: python
+
+   from honeyhive import HoneyHiveTracer
+
+   # Production tracer
+   prod_tracer = HoneyHiveTracer.init(
+       api_key="prod-api-key",
+       project="production-app",
+       source="prod"
+   )
+   
+   # Development tracer
+   dev_tracer = HoneyHiveTracer.init(
+       api_key="dev-api-key",
+       project="development-app",
+       source="dev"
+   )
+   
+   # Testing tracer
+   test_tracer = HoneyHiveTracer.init(
+       api_key="test-api-key",
+       project="testing-app",
+       source="test"
+   )
+   
+   # Each tracer operates independently
+   with prod_tracer.start_span("prod-operation") as span:
+       # Production tracing
+       pass
+   
+   with dev_tracer.start_span("dev-operation") as span:
+       # Development tracing
+       pass
+
+1.2. Enhanced Pattern with Instrumentors
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 For advanced use cases with additional options:
 
@@ -59,7 +100,7 @@ For advanced use cases with additional options:
 
 .. note::
 
-   The ``init()`` method now supports ALL constructor features and is the recommended way to initialize the tracer. It follows the official HoneyHive SDK documentation pattern and provides the same functionality as the constructor.
+   The new multi-instance pattern provides better flexibility and follows modern Python best practices. Each tracer instance is independent and can be configured differently for various use cases.
 
 Environment-Based Configuration
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -169,7 +210,10 @@ Manual span management:
 
    from honeyhive.tracer import HoneyHiveTracer
 
-   tracer = HoneyHiveTracer.get_instance()
+   tracer = HoneyHiveTracer.init(
+       api_key="your-api-key",
+       project="my-project"
+   )
 
    with tracer.start_span("custom-operation") as span:
        span.set_attribute("operation.type", "data_processing")
@@ -189,7 +233,10 @@ Create and manage spans manually:
 
    from honeyhive.tracer import HoneyHiveTracer
 
-   tracer = HoneyHiveTracer.get_instance()
+   tracer = HoneyHiveTracer.init(
+       api_key="your-api-key",
+       project="my-project"
+   )
 
    # Start a span
    span = tracer.start_span("manual-operation")
@@ -266,7 +313,10 @@ Use session context in spans:
 
    from honeyhive.tracer import HoneyHiveTracer
 
-   tracer = HoneyHiveTracer.get_instance()
+   tracer = HoneyHiveTracer.init(
+       api_key="your-api-key",
+       project="my-project"
+   )
 
    with tracer.start_span("user-action") as span:
        # Session context is automatically included
@@ -305,7 +355,10 @@ Add custom error information:
 
    from honeyhive.tracer import HoneyHiveTracer
 
-   tracer = HoneyHiveTracer.get_instance()
+   tracer = HoneyHiveTracer.init(
+       api_key="your-api-key",
+       project="my-project"
+   )
 
    with tracer.start_span("error-prone-operation") as span:
        try:

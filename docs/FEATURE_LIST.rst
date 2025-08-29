@@ -19,15 +19,29 @@ OpenTelemetry Integration
 * **Baggage Support** - Custom context propagation
 * **OTLP Export** - Export traces to OpenTelemetry backends
 * **Batch Processing** - Efficient span export with configurable batching
+* **Smart TracerProvider Management** - Integrates with existing providers or creates new ones
+* **Provider Lifecycle Management** - Intelligent shutdown and cleanup
+
+Multi-Instance Architecture
+~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+* **Multiple Tracer Instances** - Create multiple independent tracers within the same runtime
+* **Independent Configuration** - Each tracer can have different API keys, projects, and sources
+* **Workflow Isolation** - Separate tracers for different workflows and environments
+* **Concurrent Usage** - Thread-safe operation with multiple tracers
+* **Resource Management** - Independent lifecycle management for each tracer
+* **Environment Separation** - Production, development, and testing tracers
 
 Session Management
 ~~~~~~~~~~~~~~~~~~
 
 * **Automatic Session Creation** - Sessions created automatically on tracer initialization
+* **Dynamic Session Naming** - Automatic session naming based on initialization file
 * **Session Context** - Session information automatically included in spans
 * **Custom Session Names** - Specify custom session identifiers
 * **Session Persistence** - Session context maintained across operations
 * **Multi-User Support** - Support for multiple concurrent sessions
+* **File-Based Organization** - Sessions automatically organized by source file
 
 Tracing Decorators
 ~~~~~~~~~~~~~~~~~~
@@ -35,6 +49,7 @@ Tracing Decorators
 * **@trace Decorator** - **Recommended**: Automatic tracing for both sync and async functions with dynamic detection
 * **@atrace Decorator** - **Legacy**: Async-specific tracing decorator (use @trace for new code)
 * **@trace_class Decorator** - Automatic tracing for all methods in a class
+* **Explicit Tracer Support** - Pass tracer instances directly to decorators for multi-instance usage
 * **Automatic Detection** - Automatically detects function type (sync/async) for optimal tracing
 * **Custom Attributes** - Add custom span attributes
 * **Error Handling** - Automatic error recording and exception tracking
@@ -68,6 +83,7 @@ LLM Agent Observability
 * **Performance Analytics** - Monitor agent efficiency and response times
 * **Cost Tracking** - Track token usage and costs across agent operations
 * **Error Propagation** - Understand how errors affect agent workflows
+* **Multi-Tracer Workflows** - Track different stages with separate tracers
 
 Configuration Management
 ------------------------
@@ -77,6 +93,7 @@ Configuration Management
 * **Test Mode** - Development and testing configurations
 * **Multi-Environment Support** - Different configs for different environments
 * **Secure Storage** - Secure handling of sensitive configuration
+* **Instance-Specific Config** - Each tracer instance can have unique configuration
 
 Performance Features
 --------------------
@@ -87,6 +104,7 @@ Performance Features
 * **Conditional Tracing** - Enable/disable tracing based on conditions
 * **Memory Optimization** - Efficient memory usage for long-running applications
 * **Rate Limiting** - Built-in rate limiting for API calls
+* **Independent Performance** - Each tracer instance optimized independently
 
 HTTP Instrumentation
 --------------------
@@ -97,6 +115,7 @@ HTTP Instrumentation
 * **Error Tracking** - Automatic error recording for failed requests
 * **Performance Metrics** - Response time and throughput monitoring
 * **Configurable** - Enable/disable HTTP tracing as needed
+* **Multi-Instance Support** - HTTP instrumentation works with multiple tracer instances
 
 Advanced Features
 -----------------
