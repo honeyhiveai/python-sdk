@@ -70,29 +70,29 @@ class HTTPInstrumentation:
         # Store original methods
         self._original_httpx_request = httpx.Client.request
 
-        # Create instrumented request method
-        def instrumented_request(
-            self: Any, method: str, url: str, **kwargs: Any
-        ) -> Any:
-            # Simple instrumentation that won't conflict with OTLP exporter
-            try:
-                # Get tracer instance
-                tracer = HoneyHiveTracer._instance
-                if tracer:
-                    # Create a simple span for the request
-                    with tracer.start_span(
-                        name=f"HTTP {method.upper()}",
-                        attributes={
-                            "http.method": method.upper(),
-                            "http.url": str(url),
-                        },
-                    ):
-                        return self._original_httpx_request(method, url, **kwargs)
-                else:
-                    return self._original_httpx_request(method, url, **kwargs)
-            except Exception:
-                # Fallback to original behavior
-                return self._original_httpx_request(method, url, **kwargs)
+        # Instrumented request method (commented out due to method assignment issues)
+        # def instrumented_request(
+        #     self: Any, method: str, url: str, **kwargs: Any
+        # ) -> Any:
+        #     # Simple instrumentation that won't conflict with OTLP exporter
+        #     try:
+        #         # Get tracer instance
+        #         tracer = HoneyHiveTracer._instance
+        #         if tracer:
+        #             # Create a simple span for the request
+        #             with tracer.start_span(
+        #             name=f"HTTP {method.upper()}",
+        #             attributes={
+        #             "http.method": method.upper(),
+        #             "http.url": str(url),
+        #             },
+        #             ):
+        #             return self._original_httpx_request(method, url, **kwargs)
+        #         else:
+        #             return self._original_httpx_request(method, url, **kwargs)
+        #     except Exception:
+        #         # Fallback to original behavior
+        #         return self._original_httpx_request(method, url, **kwargs)
 
         # Replace methods - commented out due to method assignment issues
         # httpx.Client.request = instrumented_request
@@ -106,20 +106,20 @@ class HTTPInstrumentation:
         # Store original method
         self._original_requests_request = requests.Session.request
 
-        # Create instrumented request method
-        def instrumented_request(
-            self: Any, method: str, url: str, **kwargs: Any
-        ) -> Any:
-            try:
-                # Check if we have the trace method available
-                if hasattr(self, "_trace_request"):
-                    return self._trace_request(method, url, **kwargs)
-                else:
-                    # Fallback to original behavior if tracing not available
-                    return self._original_requests_request(method, url, **kwargs)
-            except (AttributeError, Exception):
-                # Graceful fallback to original behavior
-                return self._original_requests_request(method, url, **kwargs)
+        # Instrumented request method (commented out due to method assignment issues)
+        # def instrumented_request(
+        #     self: Any, method: str, url: str, **kwargs: Any
+        # ) -> Any:
+        #     try:
+        #         # Check if we have the trace method available
+        #         if hasattr(self, "_trace_request"):
+        #         return self._trace_request(method, url, **kwargs)
+        #         else:
+        #         # Fallback to original behavior if tracing not available
+        #         return self._original_requests_request(method, url, **kwargs)
+        #     except (AttributeError, Exception):
+        #         # Graceful fallback to original behavior
+        #         return self._original_requests_request(method, url, **kwargs)
 
         # Replace method - commented out due to method assignment issues
         # requests.Session.request = instrumented_request

@@ -90,9 +90,9 @@ class ConnectionPool:
 
             # Remove timeout from kwargs if it exists to avoid duplicate
             client_kwargs = kwargs.copy()
-            if 'timeout' in client_kwargs:
-                del client_kwargs['timeout']
-            
+            if "timeout" in client_kwargs:
+                del client_kwargs["timeout"]
+
             client = httpx.Client(
                 base_url=base_url,
                 headers=headers,
@@ -146,9 +146,9 @@ class ConnectionPool:
 
             # Remove timeout from kwargs if it exists to avoid duplicate
             client_kwargs = kwargs.copy()
-            if 'timeout' in client_kwargs:
-                del client_kwargs['timeout']
-            
+            if "timeout" in client_kwargs:
+                del client_kwargs["timeout"]
+
             client = httpx.AsyncClient(
                 base_url=base_url,
                 headers=headers,
@@ -397,15 +397,22 @@ class ConnectionPool:
 
             self._async_clients.clear()
             # Remove async clients from last_used
-            keys_to_remove = [k for k, v in self._last_used.items() if k in self._async_clients]
+            keys_to_remove = [
+                k for k, v in self._last_used.items() if k in self._async_clients
+            ]
             for key in keys_to_remove:
                 del self._last_used[key]
 
-    async def __aenter__(self):
+    async def __aenter__(self) -> "ConnectionPool":
         """Async context manager entry."""
         return self
 
-    async def __aexit__(self, exc_type, exc_val, exc_tb):
+    async def __aexit__(
+        self,
+        exc_type: Optional[type],
+        exc_val: Optional[BaseException],
+        exc_tb: Optional[Any],
+    ) -> None:
         """Async context manager exit."""
         await self.aclose_all_clients()
 

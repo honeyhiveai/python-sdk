@@ -2,6 +2,18 @@
 
 This directory contains the Sphinx documentation for the HoneyHive Python SDK.
 
+## 🚀 **What's New: Comprehensive Evaluation Framework**
+
+The SDK now includes a **production-ready evaluation framework** with:
+
+- **🔄 Threading Support**: Parallel evaluation processing with `ThreadPoolExecutor`
+- **🎯 Built-in Evaluators**: Exact match, F1 score, length, and semantic similarity
+- **🔧 Custom Evaluators**: Extensible framework for domain-specific evaluation
+- **✨ Decorator Pattern**: Seamless integration with `@evaluate_decorator`
+- **📊 API Integration**: Store evaluation results in HoneyHive
+- **⚡ Batch Processing**: Efficient evaluation of large datasets
+- **🛡️ Thread Safety**: Robust error handling and resource management
+
 ## Building the Documentation
 
 ### Using Tox (Recommended)
@@ -49,7 +61,7 @@ You can also open `docs/_build/html/index.html` directly in your browser.
 - **Main Documentation**: `index.rst` - Entry point and overview
 - **API Reference**: `api/index.rst` - Complete API documentation
 - **Tracing**: `tracer/index.rst` - OpenTelemetry integration
-- **Evaluation**: `evaluation/index.rst` - AI evaluation framework
+- **Evaluation**: `evaluation/index.rst` - **NEW: Comprehensive evaluation framework**
 - **Utilities**: `utils/index.rst` - Helper modules
 - **Examples**: `examples/` - Usage examples and patterns
 
@@ -112,3 +124,23 @@ When adding new features or APIs:
 3. Update examples if needed
 4. Rebuild and test the documentation
 5. Ensure all links and references work correctly
+
+## 🎯 **Quick Start: Evaluation Framework**
+
+```python
+from honeyhive.evaluation.evaluators import evaluate_decorator, evaluate_batch
+
+# Automatic evaluation with decorator
+@evaluate_decorator(evaluators=["exact_match", "length"])
+def generate_response(prompt: str) -> str:
+    return "Generated response"
+
+# Batch evaluation with threading
+results = evaluate_batch(
+    dataset=[("Hello", "Hi"), ("World", "Earth")],
+    evaluators=["exact_match", "length"],
+    max_workers=4  # Parallel processing
+)
+```
+
+See the :doc:`evaluation/index` section for comprehensive documentation.

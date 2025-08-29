@@ -91,7 +91,7 @@ class HoneyHiveLogger:
         if level is not None:
             if isinstance(level, str):
                 level = getattr(logging, level.upper())
-            self.logger.setLevel(level)
+            self.logger.setLevel(level)  # type: ignore[arg-type]
         elif config.debug_mode:
             self.logger.setLevel(logging.DEBUG)
         else:

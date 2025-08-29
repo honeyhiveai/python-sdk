@@ -7,7 +7,7 @@ the recommended HoneyHiveTracer.init() initialization pattern.
 """
 
 import os
-from honeyhive import evaluate, evaluator, aevaluator, HoneyHiveTracer
+from honeyhive import evaluate_decorator, evaluator, aevaluator, HoneyHiveTracer
 
 # Set environment variables for configuration
 os.environ["HH_API_KEY"] = "your-api-key-here"
@@ -51,16 +51,22 @@ def main():
         response = outputs.get("response", "")
         return {"length": len(response)}
     
-    # Test synchronous evaluation
-    print("3. Testing synchronous evaluation...")
+    # Test synchronous evaluation with the @evaluate decorator
+    print("3. Testing @evaluate decorator with evaluators...")
     
-    @evaluate(evaluators=[accuracy_evaluator, length_evaluator])
+    @evaluate_decorator(evaluators=[accuracy_evaluator, length_evaluator])
     def simple_function(inputs):
         """Simple function to evaluate."""
         return {"response": "Hello, World!"}
     
     result = simple_function({"expected": "Hello, World!"})
     print(f"✓ Function result: {result}")
+    
+    # Check if evaluation was attached
+    if "evaluation" in result:
+        eval_result = result["evaluation"]["result"]
+        print(f"✓ Evaluation score: {eval_result.score}")
+        print(f"✓ Evaluation metrics: {eval_result.metrics}")
     
     # Test async evaluation
     print("4. Testing async evaluation...")
@@ -80,9 +86,10 @@ def main():
     print("\nKey features demonstrated:")
     print("✅ Primary initialization using HoneyHiveTracer.init()")
     print("✅ @evaluator decorator for custom evaluators")
-    print("✅ @evaluate decorator for synchronous evaluation")
+    print("✅ @evaluate_decorator for automatic evaluation with evaluators")
     print("✅ @aevaluator decorator for asynchronous evaluation")
     print("✅ Accessing tracer instance via HoneyHiveTracer._instance")
+    print("✅ Automatic evaluation result attachment to function outputs")
 
 
 if __name__ == "__main__":

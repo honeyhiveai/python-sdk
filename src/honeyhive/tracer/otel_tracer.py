@@ -296,30 +296,7 @@ class HoneyHiveTracer:
         else:
             print("🔍 OTLP export disabled, using no-op exporter for tests")
 
-            # Create a custom no-op exporter to prevent I/O errors during tests
-            class NoOpExporter:
-                """No-op exporter that prevents I/O errors during tests."""
-
-                def export(self, spans: Any) -> bool:
-                    """Export spans to the backend.
-
-                    Args:
-                        spans: List of spans to export
-
-                    Returns:
-                        True if export was successful, False otherwise
-                    """
-                    # Do nothing - prevents I/O errors during tests
-                    return True
-
-                def shutdown(self) -> None:
-                    """Shutdown the exporter."""
-                    # No cleanup needed for no-op exporter
-
-                def force_flush(self, timeout_millis: float = 30000.0) -> bool:
-                    """Force flush the exporter."""
-                    # No flushing needed for no-op exporter
-                    return True
+            # NoOpExporter was removed as it's not used
 
             # Use ConsoleSpanExporter instead of NoOpExporter to avoid type issues
             self.provider.add_span_processor(BatchSpanProcessor(ConsoleSpanExporter()))
@@ -949,6 +926,7 @@ class HoneyHiveTracer:
         # This would be implemented to configure OTLP exporter
         # For now, we'll use the HoneyHive span processor
         # TODO: Implement OTLP exporter configuration
+        pass
 
 
 # Global function for session enrichment

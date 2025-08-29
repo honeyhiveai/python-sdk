@@ -1,7 +1,8 @@
 """HoneyHive API evaluations module."""
 
 import uuid
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List, Optional, cast
+from uuid import UUID
 
 from ..models import (
     CreateRunRequest,
@@ -12,6 +13,7 @@ from ..models import (
     UpdateRunRequest,
     UpdateRunResponse,
 )
+from ..models.generated import UUIDType
 from .base import BaseAPI
 
 
@@ -22,9 +24,7 @@ def _convert_uuids_recursively(data: Any) -> Any:
         for key, value in data.items():
             if key in ["run_id", "id"] and isinstance(value, str):
                 try:
-                    from uuid import UUID
-                    from ..models.generated import UUIDType
-                    result[key] = UUIDType(UUID(value))
+                    result[key] = cast(Any, UUIDType(UUID(value)))
                 except ValueError:
                     # If UUID conversion fails, keep the original string value
                     result[key] = value
@@ -47,7 +47,7 @@ class EvaluationsAPI(BaseAPI):
         )
 
         data = response.json()
-        
+
         # Convert string UUIDs to UUIDType objects recursively
         data = _convert_uuids_recursively(data)
 
@@ -58,10 +58,10 @@ class EvaluationsAPI(BaseAPI):
         response = self.client.request("POST", "/runs", json={"run": run_data})
 
         data = response.json()
-        
+
         # Convert string UUIDs to UUIDType objects recursively
         data = _convert_uuids_recursively(data)
-        
+
         return CreateRunResponse(**data)
 
     async def create_run_async(self, request: CreateRunRequest) -> CreateRunResponse:
@@ -84,30 +84,30 @@ class EvaluationsAPI(BaseAPI):
         )
 
         data = response.json()
-        
+
         # Convert string UUIDs to UUIDType objects recursively
         data = _convert_uuids_recursively(data)
-        
+
         return CreateRunResponse(**data)
 
     def get_run(self, run_id: str) -> GetRunResponse:
         """Get an evaluation run by ID."""
         response = self.client.request("GET", f"/runs/{run_id}")
         data = response.json()
-        
+
         # Convert string UUIDs to UUIDType objects recursively
         data = _convert_uuids_recursively(data)
-        
+
         return GetRunResponse(**data)
 
     async def get_run_async(self, run_id: str) -> GetRunResponse:
         """Get an evaluation run asynchronously."""
         response = await self.client.request_async("GET", f"/runs/{run_id}")
         data = response.json()
-        
+
         # Convert string UUIDs to UUIDType objects recursively
         data = _convert_uuids_recursively(data)
-        
+
         return GetRunResponse(**data)
 
     def list_runs(
@@ -120,10 +120,10 @@ class EvaluationsAPI(BaseAPI):
 
         response = self.client.request("GET", "/runs", params=params)
         data = response.json()
-        
+
         # Convert string UUIDs to UUIDType objects recursively
         data = _convert_uuids_recursively(data)
-        
+
         return GetRunsResponse(**data)
 
     async def list_runs_async(
@@ -136,10 +136,10 @@ class EvaluationsAPI(BaseAPI):
 
         response = await self.client.request_async("GET", "/runs", params=params)
         data = response.json()
-        
+
         # Convert string UUIDs to UUIDType objects recursively
         data = _convert_uuids_recursively(data)
-        
+
         return GetRunsResponse(**data)
 
     def update_run(self, run_id: str, request: UpdateRunRequest) -> UpdateRunResponse:
@@ -185,18 +185,15 @@ class EvaluationsAPI(BaseAPI):
         try:
             response = self.client.request("DELETE", f"/runs/{run_id}")
             data = response.json()
-            
+
             # Convert string UUIDs to UUIDType objects recursively
             data = _convert_uuids_recursively(data)
-            
+
             return DeleteRunResponse(**data)
         except Exception:
             # Convert string run_id to UUIDType for the response
-            import uuid
-            from ..models.generated import UUIDType
-            
             try:
-                uuid_obj = uuid.UUID(run_id)
+                uuid_obj = UUID(run_id)
                 return DeleteRunResponse(id=UUIDType(uuid_obj), deleted=False)
             except ValueError:
                 # If run_id is not a valid UUID, create a dummy one
@@ -207,18 +204,15 @@ class EvaluationsAPI(BaseAPI):
         try:
             response = await self.client.request_async("DELETE", f"/runs/{run_id}")
             data = response.json()
-            
+
             # Convert string UUIDs to UUIDType objects recursively
             data = _convert_uuids_recursively(data)
-            
+
             return DeleteRunResponse(**data)
         except Exception:
             # Convert string run_id to UUIDType for the response
-            import uuid
-            from ..models.generated import UUIDType
-            
             try:
-                uuid_obj = uuid.UUID(run_id)
+                uuid_obj = UUID(run_id)
                 return DeleteRunResponse(id=UUIDType(uuid_obj), deleted=False)
             except ValueError:
                 # If run_id is not a valid UUID, create a dummy one
