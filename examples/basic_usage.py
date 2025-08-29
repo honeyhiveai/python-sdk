@@ -23,14 +23,11 @@ def main():
     
     # Initialize tracer using the recommended pattern
     print("1. Initializing HoneyHiveTracer...")
-    HoneyHiveTracer.init(
+    tracer = HoneyHiveTracer.init(
         api_key="your-api-key-here",
         project="your-project-name",
         source="development"
     )
-    
-    # Get the tracer instance
-    tracer = HoneyHiveTracer._instance
     print(f"✓ Tracer initialized for project: {tracer.project}")
     print(f"✓ Source environment: {tracer.source}")
     print(f"✓ Session ID: {tracer.session_id}")

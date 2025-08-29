@@ -146,8 +146,10 @@ class HoneyHiveTracer:
         api_key: Optional[str] = None,
         project: Optional[str] = None,
         source: str = "dev",
+        test_mode: bool = False,
         session_name: Optional[str] = None,
         server_url: Optional[str] = None,
+        instrumentors: Optional[list] = None,
         disable_http_tracing: bool = True,
     ) -> "HoneyHiveTracer":
         """
@@ -160,8 +162,10 @@ class HoneyHiveTracer:
             api_key: HoneyHive API key
             project: Project name
             source: Source environment (defaults to "dev" per official docs)
+            test_mode: Whether to run in test mode
             session_name: Optional session name for automatic session creation
             server_url: Optional server URL for self-hosted deployments
+            instrumentors: List of OpenInference instrumentors to automatically integrate
             disable_http_tracing: Whether to disable HTTP tracing (defaults to True)
 
         Returns:
@@ -182,6 +186,15 @@ class HoneyHiveTracer:
                 source="prod",
                 disable_http_tracing=False
             )
+
+            # With test mode and instrumentors
+            HoneyHiveTracer.init(
+                api_key="your-api-key",
+                project="your-project",
+                source="prod",
+                test_mode=True,
+                instrumentors=[OpenAIInstrumentor()]
+            )
         """
         # Handle server_url parameter (maps to api_url in our config)
         if server_url:
@@ -195,7 +208,9 @@ class HoneyHiveTracer:
                     api_key=api_key,
                     project=project,
                     source=source,
+                    test_mode=test_mode,
                     session_name=session_name,
+                    instrumentors=instrumentors,
                     disable_http_tracing=disable_http_tracing,
                 )
                 return tracer
@@ -211,7 +226,9 @@ class HoneyHiveTracer:
                 api_key=api_key,
                 project=project,
                 source=source,
+                test_mode=test_mode,
                 session_name=session_name,
+                instrumentors=instrumentors,
                 disable_http_tracing=disable_http_tracing,
             )
 

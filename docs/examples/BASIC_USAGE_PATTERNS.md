@@ -50,18 +50,20 @@ For advanced use cases with additional options:
 
 ```python
 from honeyhive import HoneyHiveTracer
+from openinference.instrumentation.openai import OpenAIInstrumentor
 
-# Enhanced constructor with additional options
-tracer = HoneyHiveTracer(
+# Enhanced initialization with all features available
+tracer = HoneyHiveTracer.init(
     api_key="your-api-key",
     project="my-project",
     source="production",
-    test_mode=True,  # Additional option
-    instrumentors=[OpenAIInstrumentor()]  # Additional option
+    test_mode=True,  # Test mode support
+    instrumentors=[OpenAIInstrumentor()],  # Auto-integration
+    disable_http_tracing=True  # Performance control
 )
 ```
 
-**Note:** Both initialization patterns are fully supported. The `init()` method follows the official HoneyHive SDK documentation pattern and is recommended for production use, while the constructor provides additional options like `test_mode` and `instrumentors`.
+**Note:** The `init()` method now supports ALL constructor features and is the recommended way to initialize the tracer. It follows the official HoneyHive SDK documentation pattern and provides the same functionality as the constructor.
 
 ## Environment-Based Configuration
 
@@ -77,10 +79,7 @@ os.environ["HH_PROJECT"] = "my-project"
 os.environ["HH_SOURCE"] = "production"
 
 # Initialize tracer (automatically reads environment)
-HoneyHiveTracer.init()
-
-# Access the tracer instance
-tracer = HoneyHiveTracer._instance
+tracer = HoneyHiveTracer.init()
 ```
 
 ## Conditional Initialization
@@ -109,8 +108,7 @@ def create_tracer():
         )
 
 # Initialize and get tracer instance
-HoneyHiveTracer.init()
-tracer = HoneyHiveTracer._instance
+tracer = HoneyHiveTracer.init()
 ```
 
 ## Singleton Pattern Usage
@@ -121,7 +119,7 @@ The tracer is a singleton, so you can access it from anywhere:
 from honeyhive import HoneyHiveTracer
 
 # Initialize once using the recommended pattern
-HoneyHiveTracer.init(
+tracer = HoneyHiveTracer.init(
     api_key="your-api-key",
     project="my-project",
     source="production"
@@ -209,7 +207,7 @@ Enrich existing spans with additional context:
 ```python
 from honeyhive import HoneyHiveTracer
 
-tracer = HoneyHiveTracer()
+tracer = HoneyHiveTracer.init()
 
 def process_user_request(user_id, request_data):
     with tracer.start_span("user-request") as span:
@@ -243,7 +241,7 @@ Sessions are automatically created when the tracer initializes:
 ```python
 from honeyhive import HoneyHiveTracer
 
-tracer = HoneyHiveTracer(
+tracer = HoneyHiveTracer.init(
     api_key="your-api-key",
     project="chat-application",
     source="production"
@@ -262,7 +260,7 @@ Enrich the current session with additional context:
 ```python
 from honeyhive import HoneyHiveTracer
 
-tracer = HoneyHiveTracer()
+tracer = HoneyHiveTracer.init()
 
 def handle_user_conversation(user_id, conversation_id):
     # Enrich session with user context
@@ -285,7 +283,7 @@ from honeyhive import HoneyHiveTracer
 
 class MultiSessionManager:
     def __init__(self):
-        self.tracer = HoneyHiveTracer()
+        self.tracer = HoneyHiveTracer.init()
         self.sessions = {}
     
     def create_user_session(self, user_id):
@@ -353,7 +351,7 @@ Manually handle errors in spans:
 ```python
 from honeyhive import HoneyHiveTracer
 
-tracer = HoneyHiveTracer()
+tracer = HoneyHiveTracer.init()
 
 def robust_operation(data):
     with tracer.start_span("robust-operation") as span:
@@ -394,7 +392,7 @@ Implement error recovery patterns:
 ```python
 from honeyhive import HoneyHiveTracer
 
-tracer = HoneyHiveTracer()
+tracer = HoneyHiveTracer.init()
 
 def resilient_operation(data, max_retries=3):
     with tracer.start_span("resilient-operation") as span:
@@ -467,7 +465,7 @@ def get_environment_config():
 
 # Usage
 config = get_environment_config()
-tracer = HoneyHiveTracer(**config)
+tracer = HoneyHiveTracer.init(**config)
 ```
 
 ### 2. Configuration File
@@ -501,7 +499,7 @@ def create_tracer_from_config(config_path):
         if field not in config:
             raise ValueError(f"Missing required config field: {field}")
     
-    return HoneyHiveTracer(**config)
+    return HoneyHiveTracer.init(**config)
 
 # Usage
 tracer = create_tracer_from_config("config/honeyhive.json")
@@ -525,7 +523,7 @@ os.environ["HH_EXPERIMENT_GROUP"] = "control"
 os.environ["HH_EXPERIMENT_METADATA"] = '{"model_type": "gpt-4", "temperature": 0.7}'
 
 # Initialize tracer (automatically picks up experiment variables)
-tracer = HoneyHiveTracer(
+tracer = HoneyHiveTracer.init(
     api_key="your-api-key",
     project="my-project",
     source="production"
@@ -556,7 +554,7 @@ from honeyhive import HoneyHiveTracer
 # os.environ["MLFLOW_EXPERIMENT_NAME"] = "my_mlflow_experiment"
 
 # Initialize tracer (automatically detects MLflow variables)
-tracer = HoneyHiveTracer(
+tracer = HoneyHiveTracer.init(
     api_key="your-api-key",
     project="my-project",
     source="production"
@@ -618,7 +616,7 @@ def create_performance_aware_tracer():
     enable_tracing = os.getenv("ENABLE_TRACING", "true").lower() == "true"
     
     if enable_tracing:
-        return HoneyHiveTracer(
+        return HoneyHiveTracer.init(
             api_key=os.getenv("HH_API_KEY"),
             project=os.getenv("HH_PROJECT"),
             source=os.getenv("HH_SOURCE")
@@ -649,7 +647,7 @@ from honeyhive import HoneyHiveTracer
 
 class SampledTracer:
     def __init__(self, sample_rate=0.1):
-        self.tracer = HoneyHiveTracer()
+        self.tracer = HoneyHiveTracer.init()
         self.sample_rate = sample_rate
     
     def should_trace(self):
@@ -706,7 +704,7 @@ from honeyhive import HoneyHiveTracer
 @pytest.fixture
 def test_tracer():
     """Create a test tracer."""
-    tracer = HoneyHiveTracer(
+    tracer = HoneyHiveTracer.init(
         api_key="test-key",
         project="test-project",
         source="test",

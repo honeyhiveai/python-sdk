@@ -58,8 +58,12 @@ HoneyHiveTracer.init(
 
 ### **2. Tracer Access**
 ```python
-# Get tracer instance after initialization
-tracer = HoneyHiveTracer._instance
+# The init method returns the tracer instance directly
+tracer = HoneyHiveTracer.init(
+    api_key="your-api-key",
+    project="your-project",
+    source="production"
+)
 
 # Use tracer for manual operations
 with tracer.start_span("operation"):
@@ -117,22 +121,23 @@ The `@trace` decorator automatically detects function types and applies the appr
    python examples/openinference_integration.py
    ```
 
-## 🔄 **Alternative Initialization Pattern**
+## 🚀 **Enhanced Features Available**
 
-For advanced use cases with additional options:
+All advanced features are now available in the `init` method:
 
 ```python
-# Enhanced constructor with additional options
-tracer = HoneyHiveTracer(
+# Enhanced initialization with all features
+tracer = HoneyHiveTracer.init(
     api_key="your-key",
     project="your-project",
     source="production",
-    test_mode=True,  # Additional option
-    instrumentors=[OpenAIInstrumentor()]  # Additional option
+    test_mode=True,  # Test mode support
+    instrumentors=[OpenAIInstrumentor()],  # Auto-integration
+    disable_http_tracing=True  # Performance control
 )
 ```
 
-**Both patterns are fully supported and work together seamlessly!**
+**The init method now supports ALL constructor features!**
 
 ## 📖 **Documentation**
 

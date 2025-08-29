@@ -36,15 +36,12 @@ pip install -e .
 from honeyhive import HoneyHiveTracer
 from honeyhive.tracer.decorators import trace
 
-# Initialize tracer using the official SDK pattern (recommended)
-HoneyHiveTracer.init(
+# Initialize tracer using the recommended init method
+tracer = HoneyHiveTracer.init(
     api_key="your-api-key",
     project="your-project",
     source="production"
 )
-
-# Access the tracer instance
-tracer = HoneyHiveTracer._instance
 
 # Use unified decorator for automatic tracing (works with both sync and async)
 @trace(event_type="demo", event_name="my_function")
@@ -62,7 +59,7 @@ with tracer.start_span("custom-operation"):
     pass
 
 # With HTTP tracing enabled
-HoneyHiveTracer.init(
+tracer = HoneyHiveTracer.init(
     api_key="your-api-key",
     project="your-project",
     source="production",
@@ -70,38 +67,46 @@ HoneyHiveTracer.init(
 )
 ```
 
-### Alternative Initialization Patterns
+### Initialization
 
-**Both initialization patterns are fully supported:**
+**The `HoneyHiveTracer.init()` method is the recommended way to initialize the tracer:**
 
-#### **Primary: Official SDK Pattern (Recommended)**
 ```python
 from honeyhive import HoneyHiveTracer
 
-# Official SDK pattern from docs.honeyhive.ai (recommended)
-HoneyHiveTracer.init(
+# Standard initialization
+tracer = HoneyHiveTracer.init(
+    api_key="your-api-key",
+    project="your-project",
+    source="production"
+)
+
+# With custom server URL for self-hosted deployments
+tracer = HoneyHiveTracer.init(
     api_key="your-api-key",
     project="your-project",
     source="production",
-    server_url="https://custom-server.com"  # For self-hosted deployments
+    server_url="https://custom-server.com"
 )
 ```
 
-#### **Alternative: Constructor Pattern (Enhanced)**
+#### **Enhanced Features Available**
 ```python
 from honeyhive import HoneyHiveTracer
+from openinference.instrumentation.openai import OpenAIInstrumentor
 
-# Enhanced constructor with additional options
-tracer = HoneyHiveTracer(
+# All features are available in the init method
+tracer = HoneyHiveTracer.init(
     api_key="your-api-key",
     project="your-project",
     source="production",
-    test_mode=True,  # Additional option
-    instrumentors=[OpenAIInstrumentor()]  # Additional option
+    test_mode=True,  # Test mode support
+    instrumentors=[OpenAIInstrumentor()],  # Auto-integration
+    disable_http_tracing=True  # Performance control
 )
 ```
 
-**✅ Your existing production code will continue to work unchanged!**
+**✅ The init method now supports ALL constructor features!**
 
 ### OpenInference Integration
 
@@ -110,14 +115,12 @@ from honeyhive import HoneyHiveTracer
 from openinference.instrumentation.openai import OpenAIInstrumentor
 
 # Initialize tracer with OpenInference instrumentor (recommended pattern)
-HoneyHiveTracer.init(
+tracer = HoneyHiveTracer.init(
     api_key="your-api-key",
     project="your-project",
-    source="production"
+    source="production",
+    instrumentors=[OpenAIInstrumentor()]  # Auto-integration
 )
-
-# Get tracer instance for instrumentor setup
-tracer = HoneyHiveTracer._instance
 
 # OpenInference automatically traces OpenAI calls
 import openai

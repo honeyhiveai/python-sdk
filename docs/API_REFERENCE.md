@@ -67,15 +67,16 @@ HoneyHiveTracer.init(
 )
 ```
 
-#### Alternative Initialization (Enhanced)
+#### Enhanced Initialization (All Features Available)
 
 ```python
-HoneyHiveTracer(
+HoneyHiveTracer.init(
     api_key: Optional[str] = None,
     project: Optional[str] = None,
-    source: str = "production",
+    source: str = "dev",
     test_mode: bool = False,
     session_name: Optional[str] = None,
+    server_url: Optional[str] = None,
     instrumentors: Optional[list] = None,
     disable_http_tracing: bool = True,
 )
@@ -84,25 +85,27 @@ HoneyHiveTracer(
 **Parameters:**
 - `api_key`: HoneyHive API key (required if not in environment)
 - `project`: Project name (defaults to environment or "default")
-- `source`: Source environment (defaults to "production")
+- `source`: Source environment (defaults to "dev")
 - `test_mode`: Enable test mode (defaults to False)
 - `session_name`: Custom session name (auto-generated if not provided)
+- `server_url`: Custom server URL for self-hosted deployments
 - `instrumentors`: List of OpenInference instrumentors to integrate
 - `disable_http_tracing`: Whether to disable HTTP tracing (defaults to True)
 
 **Example:**
 ```python
-# Enhanced constructor with additional options
-tracer = HoneyHiveTracer(
+# Enhanced initialization with all features available
+tracer = HoneyHiveTracer.init(
     api_key="your-api-key",
     project="my-project",
     source="development",
     test_mode=True,
-    instrumentors=[OpenAIInstrument()]
+    instrumentors=[OpenAIInstrument()],
+    server_url="https://custom-server.com"
 )
 ```
 
-**Note:** Both initialization patterns are supported. The `init()` method follows the official HoneyHive SDK documentation pattern and is recommended for production use, while the constructor provides additional options like `test_mode` and `instrumentors`.
+**Note:** The `init()` method now supports ALL constructor features and is the recommended way to initialize the tracer. It follows the official HoneyHive SDK documentation pattern and provides the same functionality as the constructor.
 
 #### Methods
 
@@ -191,7 +194,7 @@ tracer = HoneyHiveTracer(
 )
 ```
 
-**Note:** Both initialization patterns are supported. The `init()` method follows the official HoneyHive SDK documentation pattern, while the constructor provides the same functionality with additional options like `test_mode` and `instrumentors`.
+**Note:** Both initialization patterns are supported. The `init()` method is now the recommended approach as it supports all constructor features, while the constructor provides the same functionality for backwards compatibility.
 
 #### Properties
 
@@ -742,7 +745,7 @@ Practical examples of using the SDK.
 from honeyhive import HoneyHiveTracer, trace
 
 # Initialize tracer
-tracer = HoneyHiveTracer(
+tracer = HoneyHiveTracer.init(
     api_key="your-api-key",
     project="my-project",
     source="development"
@@ -765,7 +768,7 @@ from honeyhive import HoneyHiveTracer
 from honeyhive.api.client import HoneyHive
 
 # Initialize tracer and client
-tracer = HoneyHiveTracer(
+tracer = HoneyHiveTracer.init(
     api_key="your-api-key",
     project="my-project",
     source="production"
@@ -810,7 +813,7 @@ from honeyhive import HoneyHiveTracer
 from openinference.instrumentation.openai import OpenAIInstrumentor
 
 # Initialize tracer with OpenInference
-tracer = HoneyHiveTracer(
+tracer = HoneyHiveTracer.init(
     api_key="your-api-key",
     project="my-project",
     source="production",
@@ -831,7 +834,7 @@ response = openai.ChatCompletion.create(
 ```python
 from honeyhive import HoneyHiveTracer
 
-tracer = HoneyHiveTracer()
+tracer = HoneyHiveTracer.init()
 
 def complex_operation():
     with tracer.start_span("data-processing") as span:

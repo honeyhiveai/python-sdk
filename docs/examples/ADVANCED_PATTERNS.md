@@ -38,7 +38,7 @@ class CustomAIInstrumentor(BaseInstrumentor):
         pass
 
 # Usage
-tracer = HoneyHiveTracer(
+tracer = HoneyHiveTracer.init(
     instrumentors=[CustomAIInstrumentor("my-ai-service")]
 )
 ```

@@ -23,7 +23,7 @@ from openinference.instrumentation.openai import OpenAIInstrumentor
 import httpx
 
 # Initialize tracer
-tracer = HoneyHiveTracer(
+tracer = HoneyHiveTracer.init(
     api_key="your-api-key",
     project="web-app",
     source="production",
@@ -116,7 +116,7 @@ import pandas as pd
 import time
 
 # Initialize tracer
-tracer = HoneyHiveTracer(
+tracer = HoneyHiveTracer.init(
     api_key="your-api-key",
     project="data-pipeline",
     source="production"
@@ -294,7 +294,7 @@ import anthropic
 import asyncio
 
 # Initialize tracer with multiple instrumentors
-tracer = HoneyHiveTracer(
+tracer = HoneyHiveTracer.init(
     api_key="your-api-key",
     project="ai-service",
     source="production",
@@ -435,7 +435,7 @@ import json
 import time
 
 # Initialize tracer
-tracer = HoneyHiveTracer(
+tracer = HoneyHiveTracer.init(
     api_key="your-api-key",
     project="user-service",
     source="production"
@@ -598,7 +598,7 @@ import mlflow
 # MLFLOW_EXPERIMENT_ID and MLFLOW_EXPERIMENT_NAME
 
 # Initialize tracer (automatically detects MLflow variables)
-tracer = HoneyHiveTracer(
+tracer = HoneyHiveTracer.init(
     api_key="your-api-key",
     project="ml-experiments",
     source="research"
@@ -653,7 +653,7 @@ os.environ["HH_EXPERIMENT_NAME"] = "recommendation_algorithm"
 os.environ["HH_EXPERIMENT_VARIANT"] = "collaborative_filtering"
 os.environ["HH_EXPERIMENT_GROUP"] = "treatment"
 
-tracer = HoneyHiveTracer(
+tracer = HoneyHiveTracer.init(
     api_key="your-api-key",
     project="recommendation_system",
     source="production"
@@ -696,7 +696,7 @@ os.environ["HH_EXPERIMENT_ID"] = "hyperopt_001"
 os.environ["HH_EXPERIMENT_NAME"] = "transformer_optimization"
 os.environ["HH_EXPERIMENT_METADATA"] = '{"optimization_type": "hyperopt", "search_space": "transformer"}'
 
-tracer = HoneyHiveTracer(
+tracer = HoneyHiveTracer.init(
     api_key="your-api-key",
     project="nlp_optimization",
     source="research"
@@ -763,7 +763,7 @@ def setup_experiment_tracking(environment: str, experiment_name: str):
         os.environ["HH_EXPERIMENT_METADATA"] = '{"environment": "prod", "debug": false}'
     
     # Initialize tracer
-    return HoneyHiveTracer(
+    return HoneyHiveTracer.init(
         api_key=os.getenv("HH_API_KEY"),
         project=f"{environment}-experiments",
         source=environment

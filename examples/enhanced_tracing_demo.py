@@ -253,7 +253,7 @@ async def main():
     # Initialize HoneyHiveTracer
     print("Initializing HoneyHiveTracer...")
     try:
-        tracer = HoneyHiveTracer(session_name="enhanced_tracing_demo")
+        tracer = HoneyHiveTracer.init(session_name="enhanced_tracing_demo")
         print("✓ HoneyHiveTracer initialized successfully")
         print(f"✓ Session automatically created: {tracer.session_id}")
     except Exception as e:
