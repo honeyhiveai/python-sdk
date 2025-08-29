@@ -785,6 +785,8 @@ class HoneyHiveTracer:
         metadata: Optional[Dict[str, Any]] = None,
         metrics: Optional[Dict[str, Any]] = None,
         attributes: Optional[Dict[str, Any]] = None,
+        outputs: Optional[Dict[str, Any]] = None,
+        error: Optional[Exception] = None,
         **kwargs: Any,
     ) -> Any:
         """Enrich the current active span with additional data.
@@ -807,6 +809,8 @@ class HoneyHiveTracer:
             metadata: Span metadata
             metrics: Span metrics
             attributes: Span attributes
+            outputs: Output data from the operation
+            error: Exception or error information
             **kwargs: Additional keyword arguments
 
         Returns:
@@ -825,6 +829,8 @@ class HoneyHiveTracer:
                 metadata=metadata,
                 metrics=metrics,
                 attributes=attributes,
+                outputs=outputs,
+                error=error,
                 tracer=self,
                 **kwargs,
             )
@@ -890,6 +896,14 @@ class HoneyHiveTracer:
             if attributes:
                 for key, value in attributes.items():
                     current_span.set_attribute(key, str(value))
+
+            # Handle outputs using _set_span_attributes for proper data structure handling
+            if outputs:
+                _set_span_attributes(current_span, "honeyhive.span.outputs", outputs)
+
+            # Handle error using _set_span_attributes for proper error serialization
+            if error:
+                _set_span_attributes(current_span, "honeyhive.span.error", error)
 
             return True
 
@@ -1174,7 +1188,11 @@ def enrich_span(
             return False
 
         return tracer.enrich_span(
-            metadata=metadata, metrics=metrics, attributes=attributes
+            metadata=metadata,
+            metrics=metrics,
+            attributes=attributes,
+            outputs=outputs,
+            error=error,
         )
 
 

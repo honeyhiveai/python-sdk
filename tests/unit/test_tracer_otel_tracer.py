@@ -3,7 +3,7 @@
 import json
 import time
 from typing import Any, Dict, List, Optional
-from unittest.mock import AsyncMock, MagicMock, Mock, patch
+from unittest.mock import AsyncMock, MagicMock, Mock, call, patch
 
 import pytest
 from opentelemetry.context import Context
@@ -643,6 +643,8 @@ class TestGlobalFunctions:
                 metadata={"key": "value"},
                 metrics={"metric": 42},
                 attributes={"attr": "test"},
+                outputs=None,
+                error=None,
             )
 
     def test_enrich_span_without_tracer(self) -> None:
@@ -760,7 +762,11 @@ class TestUnifiedEnrichSpan:
 
         # Should delegate to tracer instance
         self.tracer.enrich_span.assert_called_once_with(
-            metadata={"key": "value"}, metrics={"latency": 100}, attributes=None
+            metadata={"key": "value"},
+            metrics={"latency": 100},
+            attributes=None,
+            outputs=None,
+            error=None,
         )
         assert result is True
 
@@ -1031,3 +1037,76 @@ class TestHoneyHiveTracerEnrichSpanUnified:
                 assert isinstance(
                     result, bool
                 )  # Should return boolean for direct calls
+
+    def test_tracer_enrich_span_with_outputs_and_error(self) -> None:
+        """Test HoneyHiveTracer.enrich_span with outputs and error parameters."""
+        from honeyhive.tracer.otel_tracer import HoneyHiveTracer
+
+        tracer = HoneyHiveTracer(api_key="test", project="test", test_mode=True)
+
+        with patch("honeyhive.tracer.otel_tracer.OTEL_AVAILABLE", True):
+            with patch("honeyhive.tracer.otel_tracer.trace") as mock_trace:
+                with patch(
+                    "honeyhive.tracer.otel_tracer._set_span_attributes"
+                ) as mock_set_span_attributes:
+                    mock_span = Mock()
+                    mock_span.get_span_context.return_value = Mock(span_id=123)
+                    mock_trace.get_current_span.return_value = mock_span
+
+                    # Test data
+                    test_outputs = {"result": "success", "data": [1, 2, 3]}
+                    test_error = ValueError("test error")
+
+                    # Test direct method call with outputs and error
+                    result = tracer.enrich_span(
+                        metadata={"operation": "test"},
+                        outputs=test_outputs,
+                        error=test_error,
+                    )
+
+                    # Should return boolean for direct calls
+                    assert isinstance(result, bool)
+
+                    # Verify _set_span_attributes was called for outputs and error
+                    expected_calls = [
+                        call(mock_span, "honeyhive.span.outputs", test_outputs),
+                        call(mock_span, "honeyhive.span.error", test_error),
+                    ]
+                    mock_set_span_attributes.assert_has_calls(
+                        expected_calls, any_order=True
+                    )
+
+
+class TestGlobalEnrichSpanWithOutputsAndError:
+    """Test cases for global enrich_span function with outputs and error."""
+
+    def test_global_enrich_span_with_outputs_and_error(self) -> None:
+        """Test global enrich_span function with outputs and error parameters."""
+        from honeyhive.tracer.otel_tracer import HoneyHiveTracer, enrich_span
+        from contextlib import _GeneratorContextManager
+
+        tracer = HoneyHiveTracer(api_key="test", project="test", test_mode=True)
+
+        # Test data
+        test_outputs = {"result": "success", "data": [1, 2, 3]}
+        test_error = ValueError("test error")
+
+        # Test that global function correctly switches to context manager mode
+        # when rich parameters (outputs, error) are provided
+        result = enrich_span(
+            metadata={"operation": "global_test"},
+            outputs=test_outputs,
+            error=test_error,
+            tracer=tracer,
+        )
+
+        # Should return a context manager when rich parameters are provided
+        assert isinstance(result, _GeneratorContextManager)
+
+        # Test with only basic parameters to ensure direct call mode works
+        result_direct = enrich_span(
+            metadata={"operation": "direct_test"}, tracer=tracer
+        )
+
+        # Should return boolean for direct calls (no rich parameters)
+        assert isinstance(result_direct, bool)

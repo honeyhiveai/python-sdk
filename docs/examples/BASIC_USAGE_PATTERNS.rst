@@ -289,15 +289,21 @@ The new unified ``enrich_span`` function is the **recommended approach** for mos
    with enrich_span("user_session", {"user_id": "123", "action": "query"}):
        process_user_request()
 
-   # Enhanced enrichment with rich attributes
+   # Enhanced enrichment with rich attributes including outputs and error handling
    with enrich_span(
        event_type="llm_inference",
        event_name="gpt4_completion",
        inputs={"prompt": "What is AI?", "temperature": 0.7},
+       outputs={"response": "AI is artificial intelligence...", "tokens": 145},
        metadata={"model": "gpt-4", "version": "2024-03"},
-       metrics={"expected_tokens": 150}
+       metrics={"expected_tokens": 150, "actual_tokens": 145},
+       error=None  # Will capture any exceptions that occur
    ):
-       response = llm_client.complete(prompt)
+       try:
+           response = llm_client.complete(prompt)
+       except Exception as e:
+           # Error is automatically captured in span attributes
+           raise
 
 **Tracer Instance Methods:**
 
@@ -307,10 +313,12 @@ The new unified ``enrich_span`` function is the **recommended approach** for mos
    with tracer.enrich_span("operation_name", {"step": "preprocessing"}):
        preprocess_data()
    
-   # Direct method call
+   # Direct method call with outputs and error support
    success = tracer.enrich_span(
        metadata={"stage": "postprocessing"},
-       metrics={"latency": 0.1, "tokens": 150}
+       metrics={"latency": 0.1, "tokens": 150},
+       outputs={"result": "processed", "quality_score": 0.95},
+       error=None  # Set to Exception instance if error occurred
    )
 
 **Global Function with Tracer Parameter:**
@@ -319,10 +327,12 @@ The new unified ``enrich_span`` function is the **recommended approach** for mos
 
    from honeyhive.tracer.otel_tracer import enrich_span
 
-   # Direct call with explicit tracer
+   # Direct call with explicit tracer, outputs and error support
    success = enrich_span(
        metadata={"operation": "batch_processing"},
        metrics={"items_processed": 1000},
+       outputs={"success_count": 950, "error_count": 50},
+       error=None,  # Set to Exception if batch processing failed
        tracer=my_tracer
    )
 
@@ -332,6 +342,8 @@ The new unified ``enrich_span`` function is the **recommended approach** for mos
 
    with enrich_span(
        event_type="ab_test",
+       inputs={"prompt": "Compare these models", "test_data": "sample_input"},
+       outputs={"model_a_score": 0.85, "model_b_score": 0.92, "winner": "model_b"},
        config_data={
            "experiment_id": "exp-789",
            "experiment_name": "model_comparison",
@@ -341,10 +353,15 @@ The new unified ``enrich_span`` function is the **recommended approach** for mos
                "version": "1.2",
                "feature_flags": ["new_prompt", "enhanced_context"]
            }
-       }
+       },
+       error=None  # Captures any experiment execution errors
    ):
        # Automatically sets honeyhive_experiment_* attributes
-       run_experiment()
+       try:
+           result = run_experiment()
+       except Exception as e:
+           # Error automatically captured in span attributes
+           raise
 
 2. enrich_session - Backend Session Enrichment
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~

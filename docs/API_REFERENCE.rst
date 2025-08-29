@@ -209,10 +209,10 @@ The ``enrich_span`` function provides the modern, recommended approach for enric
 * ``event_type``: Type of traced event (e.g., "llm_inference", "preprocessing")
 * ``event_name``: Name of the traced event
 * ``inputs``: Input data for the event
-* ``outputs``: Output data for the event
+* ``outputs``: Output data for the event (stored as ``honeyhive.span.outputs`` using ``_set_span_attributes``)
 * ``config_data``: Configuration data including experiment parameters
 * ``feedback``: User feedback data
-* ``error``: Error information if applicable
+* ``error``: Error information if applicable (stored as ``honeyhive.span.error`` using ``_set_span_attributes``)
 * ``event_id``: Unique event identifier
 * ``tracer``: HoneyHiveTracer instance (required for direct calls)
 * ``**kwargs``: Additional attributes set with "honeyhive_" prefix
@@ -298,6 +298,43 @@ Automatic experiment attribute setting via ``config_data``:
    ):
        # Automatically sets honeyhive_experiment_* attributes
        run_experiment()
+
+**Outputs and Error Handling:**
+
+The ``outputs`` and ``error`` parameters provide comprehensive data capture and error tracking:
+
+.. code-block:: python
+
+   # Success case with outputs
+   with enrich_span(
+       event_type="data_processing",
+       inputs={"dataset": "user_data.csv", "rows": 1000},
+       outputs={"processed_rows": 950, "skipped_rows": 50, "format": "json"},
+       metadata={"processor_version": "2.1.0"}
+   ):
+       result = process_dataset()
+
+   # Error handling case
+   try:
+       with enrich_span(
+           event_type="model_inference",
+           inputs={"prompt": "What is AI?", "model": "gpt-4"},
+           error=None  # Will be updated if error occurs
+       ) as span:
+           response = model.generate()
+           # Update with outputs on success
+           span.outputs = {"response": response, "tokens": len(response.split())}
+   except Exception as e:
+       # Error is automatically captured in span attributes as 'honeyhive.span.error'
+       raise
+
+   # Direct method with error
+   inference_error = ValueError("Model not available")
+   success = tracer.enrich_span(
+       metadata={"operation": "model_call"},
+       outputs=None,  # No outputs due to error
+       error=inference_error  # Stored as 'honeyhive.span.error'
+   )
 
 enrich_session
 ~~~~~~~~~~~~~~

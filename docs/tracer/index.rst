@@ -310,21 +310,27 @@ Use the context manager pattern for automatic span enrichment within a code bloc
 
    from honeyhive.tracer import enrich_span
    
-   # Enhanced pattern with rich attributes
+   # Enhanced pattern with rich attributes including outputs and error handling
    with enrich_span(
        event_type="llm_inference",
        event_name="gpt4_completion", 
        inputs={"prompt": "What is AI?", "temperature": 0.7},
+       outputs={"response": "AI is...", "tokens_used": 145},
        metadata={"model": "gpt-4", "version": "2024-03"},
-       metrics={"expected_tokens": 150},
+       metrics={"expected_tokens": 150, "actual_tokens": 145},
        config_data={
            "experiment_id": "exp-123",
            "experiment_name": "temperature_test",
            "experiment_variant": "control"
-       }
+       },
+       error=None  # Can be set to an Exception if an error occurs
    ):
        # Your code here - span is automatically enriched
-       response = llm_client.complete(prompt)
+       try:
+           response = llm_client.complete(prompt)
+       except Exception as e:
+           # Error will be captured automatically in span attributes
+           raise
 
    # Basic pattern (backwards compatible with basic_usage.py)
    with enrich_span("user_session", {"user_id": "123", "action": "query"}):
@@ -345,10 +351,12 @@ Use direct method calls on tracer instances for immediate enrichment:
    with tracer.enrich_span("operation_name", {"step": "preprocessing"}):
        preprocess_data()
    
-   # Direct method call
+   # Direct method call with outputs and error support
    success = tracer.enrich_span(
        metadata={"stage": "postprocessing"},
-       metrics={"latency": 0.1, "tokens": 150}
+       metrics={"latency": 0.1, "tokens": 150},
+       outputs={"result": "processed_data", "format": "json"},
+       error=None  # Set to Exception instance if error occurred
    )
 
 Global Function (Multi-Instance Support)  
@@ -360,20 +368,28 @@ Use the global function with explicit tracer parameter for multi-instance scenar
 
    from honeyhive.tracer.otel_tracer import enrich_span
    
-   # Direct call with tracer parameter
+   # Direct call with tracer parameter and outputs/error support
    success = enrich_span(
        metadata={"operation": "batch_processing"},
        metrics={"items_processed": 1000},
+       outputs={"processed_count": 1000, "failed_count": 0},
+       error=None,  # Set to Exception if processing failed
        tracer=my_tracer
    )
    
-   # Context manager with tracer parameter
+   # Context manager with tracer parameter and error handling
    with enrich_span(
        event_type="batch_job",
        metadata={"job_id": "job-456"},
+       outputs={"status": "starting"},
+       error=None,
        tracer=my_tracer
    ):
-       process_batch()
+       try:
+           process_batch()
+       except Exception as e:
+           # Exception will be captured in span attributes
+           raise
 
 **Import Compatibility:**
 
