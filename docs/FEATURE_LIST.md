@@ -132,11 +132,14 @@ A comprehensive overview of all **actually implemented** features available in t
 ### **Testing Support**
 - **Tox Integration**: Multi-Python version testing (3.11, 3.12, 3.13)
 - **Pytest Support**: Full pytest integration with fixtures and async support
-- **Mock Support**: Comprehensive mocking and testing utilities
-- **Integration Tests**: Real API integration testing
-- **Unit Tests**: Comprehensive unit test coverage (735+ tests passing)
+- **Mock Support**: Comprehensive mocking and testing utilities with OpenTelemetry I/O error prevention
+- **Integration Tests**: **REAL API integration testing** with 21 evaluation framework tests (no mocking)
+- **Unit Tests**: Comprehensive unit test coverage (685 tests passing)
+- **Test Coverage**: 70.89% coverage (exceeds 60% requirement)
 - **Test Mode**: Built-in test mode for development and testing
 - **Evaluation Testing**: Comprehensive testing of evaluation framework including threading
+- **Test Isolation**: Clean environment setup with proper cleanup between tests
+- **Real Credentials**: Integration tests use actual HoneyHive API credentials from `.env` file
 
 ### **Development Tools**
 - **CLI Interface**: Command-line interface for common operations

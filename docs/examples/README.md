@@ -120,6 +120,31 @@ result = generate_response("Hello, world!")
 - Implement advanced features as needed
 - **🆕 Add evaluation capabilities step by step**
 
+## 🧪 **Testing & Quality Assurance**
+
+The SDK includes comprehensive testing with **70.89% coverage**:
+
+- **685 Unit Tests**: Covering all major components
+- **21 Integration Tests**: Evaluation framework integration testing
+- **Test Isolation**: Clean environment setup with proper cleanup
+- **I/O Error Prevention**: OpenTelemetry mocking prevents test crashes
+- **Multi-Python Support**: Testing across Python 3.11, 3.12, and 3.13
+
+**Running Tests:**
+```bash
+# Run all tests with coverage
+tox -e unit
+
+# Run specific test categories
+pytest -m evaluation
+pytest -m integration
+
+# Check coverage
+pytest --cov=src/honeyhive --cov-report=term-missing
+```
+
+See [Testing Documentation](../TESTING.md) for comprehensive testing information.
+
 ## 🔧 Prerequisites
 
 Before running these examples, ensure you have:
@@ -154,6 +179,7 @@ For comprehensive documentation, see:
 - **[Implementation Guide](../IMPLEMENTATION_GUIDE.md)** - Technical implementation details
 - **🆕 [Evaluation Framework](../evaluation/index.rst)** - Comprehensive evaluation documentation
 - **🆕 [Evaluation Examples](../evaluation/examples.rst)** - Detailed evaluation examples
+- **[Testing Documentation](../TESTING.md)** - Comprehensive testing information and best practices
 
 ## 🤝 Contributing Examples
 

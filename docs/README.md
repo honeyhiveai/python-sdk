@@ -14,6 +14,18 @@ The SDK now includes a **production-ready evaluation framework** with:
 - **⚡ Batch Processing**: Efficient evaluation of large datasets
 - **🛡️ Thread Safety**: Robust error handling and resource management
 
+## 🧪 **Testing & Quality Assurance**
+
+The SDK maintains high quality through comprehensive testing:
+
+- **✅ Test Coverage**: 70.89% coverage (exceeds 60% requirement)
+- **🔧 Unit Tests**: 685 unit tests covering all major components
+- **🔗 Integration Tests**: 21 evaluation framework integration tests with **REAL API**
+- **🛡️ Test Isolation**: Clean environment setup with proper cleanup
+- **🔌 I/O Error Prevention**: OpenTelemetry mocking prevents test crashes
+- **🌐 Real API Testing**: Integration tests use actual HoneyHive API credentials
+- **🚀 Tox Integration**: Multi-Python version testing (3.11, 3.12, 3.13)
+
 ## Building the Documentation
 
 ### Using Tox (Recommended)

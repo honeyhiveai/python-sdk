@@ -3,13 +3,18 @@
 import os
 import shutil
 import tempfile
+from pathlib import Path
 
 import pytest
+from dotenv import load_dotenv
 
 from honeyhive.api.client import HoneyHive
 from honeyhive.tracer import HoneyHiveTracer
 
 from ..utils import cleanup_test_environment, setup_test_environment
+
+# Load environment variables from .env file
+load_dotenv()
 
 
 @pytest.fixture(scope="session")
@@ -22,31 +27,60 @@ def integration_test_dir():
 
 @pytest.fixture
 def real_api_key():
-    """Get real API key for integration tests (optional)."""
-    return os.environ.get("HONEYHIVE_API_KEY", "test-api-key-12345")
+    """Get real API key for integration tests from .env file."""
+    api_key = os.environ.get("HH_API_KEY")
+    if not api_key:
+        pytest.skip("HH_API_KEY not found in environment. Create a .env file with real credentials.")
+    return api_key
 
 
 @pytest.fixture
-def integration_client(real_api_key):
-    """HoneyHive client for integration tests."""
+def real_api_url():
+    """Get real API URL for integration tests from .env file."""
+    return os.environ.get("HH_API_URL", "https://api.honeyhive.ai")
+
+
+@pytest.fixture
+def real_project():
+    """Get real project for integration tests from .env file."""
+    return os.environ.get("HH_PROJECT", "New Project")
+
+
+@pytest.fixture
+def real_project_id():
+    """Get real project ID for integration tests from .env file."""
+    return os.environ.get("HH_PROJECT_ID", "64d69442f9fa4485aa1cc582")
+
+
+@pytest.fixture
+def real_source():
+    """Get real source for integration tests from .env file."""
+    return os.environ.get("HH_SOURCE", "production")
+
+
+@pytest.fixture
+def integration_client(real_api_key, real_api_url):
+    """HoneyHive client for integration tests using real API."""
     return HoneyHive(
-        api_key=real_api_key, test_mode=real_api_key == "test-api-key-12345"
+        api_key=real_api_key,
+        base_url=real_api_url,
+        test_mode=False  # Use real API mode
     )
 
 
 @pytest.fixture
-def integration_tracer(real_api_key):
-    """HoneyHive tracer for integration tests."""
+def integration_tracer(real_api_key, real_project, real_source):
+    """HoneyHive tracer for integration tests using real API."""
     # Reset the global tracer instance first
     HoneyHiveTracer.reset()
 
-    # Create a new tracer instance (this will become the global instance)
+    # Create a new tracer instance with real credentials
     tracer = HoneyHiveTracer(
         api_key=real_api_key,
-        project="integration-test-project",
-        source="integration-test",
-        test_mode=real_api_key == "test-api-key-12345",
-        disable_http_tracing=True,
+        project=real_project,
+        source=real_source,
+        test_mode=False,  # Use real API mode
+        disable_http_tracing=True,  # Disable HTTP tracing to avoid conflicts
     )
 
     yield tracer
@@ -56,80 +90,28 @@ def integration_tracer(real_api_key):
 
 
 @pytest.fixture
-def mock_api_responses():
-    """Mock API responses for integration tests."""
-    return {
-        "session": {
-            "session_id": "session-integration-123",
-            "project": "integration-test-project",
-            "source": "integration-test",
-            "session_name": "test-session",
-            "created_at": "2024-01-01T00:00:00Z",
-            "updated_at": "2024-01-01T00:00:00Z",
-        },
-        "event": {
-            "event_id": "event-integration-123",
-            "success": True,
-            "project": "integration-test-project",
-            "source": "integration-test",
-            "event_name": "test-event",
-            "event_type": "model",
-            "created_at": "2024-01-01T00:00:00Z",
-        },
-        "datapoint": {
-            "_id": "datapoint-integration-123",
-            "project": "integration-test-project",
-            "inputs": {"query": "integration test query"},
-            "history": [],
-            "ground_truth": {},
-            "created_at": "2024-01-01T00:00:00Z",
-            "updated_at": "2024-01-01T00:00:00Z",
-        },
-        "dataset": {
-            "name": "dataset-integration-123",
-            "project": "integration-test-project",
-            "created_at": "2024-01-01T00:00:00Z",
-        },
-        "configuration": {
-            "name": "config-integration-123",
-            "project": "integration-test-project",
-            "provider": "openai",
-            "parameters": {"call_type": "chat", "model": "gpt-4"},
-            "created_at": "2024-01-01T00:00:00Z",
-        },
-        "tool": {
-            "_id": "tool-integration-123",
-            "task": "integration-test-project",
-            "name": "integration-tool",
-            "description": "Test tool for integration",
-            "parameters": {"test": True},
-            "tool_type": "function",
-            "created_at": "2024-01-01T00:00:00Z",
-        },
-        "metric": {
-            "_id": "metric-integration-123",
-            "project": "integration-test-project",
-            "created_at": "2024-01-01T00:00:00Z",
-        },
-        "evaluation": {"run_id": "12345678-1234-1234-1234-123456789abc"},
-    }
+def integration_project_name(real_project):
+    """Real project name for integration tests."""
+    return real_project
 
 
 @pytest.fixture
-def integration_project_name():
-    """Standard project name for integration tests."""
-    return "integration-test-project"
-
-
-@pytest.fixture
-def integration_source():
-    """Standard source for integration tests."""
-    return "integration-test"
+def integration_source(real_source):
+    """Real source for integration tests."""
+    return real_source
 
 
 @pytest.fixture(autouse=True)
 def setup_integration_env():
     """Setup integration test environment."""
+    # Load real environment variables
     setup_test_environment()
     yield
     cleanup_test_environment()
+
+
+@pytest.fixture
+def skip_if_no_real_credentials(real_api_key):
+    """Skip tests if no real credentials are available."""
+    if not real_api_key or real_api_key == "test-api-key-12345":
+        pytest.skip("Real API credentials required for integration tests. Check .env file.")

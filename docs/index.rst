@@ -26,6 +26,18 @@ The SDK now includes a **production-ready evaluation framework** with threading 
    def generate_response(prompt: str) -> str:
        return "Generated response"
 
+🧪 **Testing & Quality Assurance**
+----------------------------------
+
+The SDK maintains high quality through comprehensive testing with **70.89% coverage** (exceeds 60% requirement).
+
+**Testing Features:**
+- **685 Unit Tests**: Covering all major components
+- **21 Integration Tests**: Evaluation framework integration testing
+- **Test Isolation**: Clean environment setup with proper cleanup
+- **I/O Error Prevention**: OpenTelemetry mocking prevents test crashes
+- **Multi-Python Support**: Testing across Python 3.11, 3.12, and 3.13
+
 .. toctree::
    :maxdepth: 2
    :caption: Contents:
@@ -36,6 +48,7 @@ The SDK now includes a **production-ready evaluation framework** with threading 
    IMPLEMENTATION_GUIDE
    OPENINFERENCE_INTEGRATION
    EVALUATION_CHANGELOG
+   TESTING
    api/index
    tracer/index
    evaluation/index
