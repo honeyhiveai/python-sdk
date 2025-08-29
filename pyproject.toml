@@ -49,6 +49,7 @@ dev = [
     "flake8>=6.0.0",
     "mypy>=1.0.0",
     "typeguard>=4.0.0",
+    "psutil>=5.9.0",
 ]
 
 # Documentation

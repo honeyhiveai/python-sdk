@@ -7,51 +7,69 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
-### Added
-- Initial release of HoneyHive Python SDK
-- OpenTelemetry integration with custom span processor and exporter
-- Session management with start and retrieve operations
-- Event creation and batch operations
-- **NEW**: Unified trace decorator (`@trace`) for both sync and async function tracing
-- Tracing decorators for sync and async functions (`@trace`, `@atrace`)
-- HTTP instrumentation for automatic request tracing
-- Evaluation tools with built-in metrics
-- CLI interface for common operations
-- Comprehensive configuration management
-- Retry logic with multiple backoff strategies
-- Baggage support for context propagation
-- Type hints and validation with Pydantic
-- Async/await support throughout the SDK
-- Context managers for resource management
-- Dot notation dictionary utilities
-- Comprehensive test suite with tox support
-- **NEW**: `HoneyHiveTracer.init()` method for official SDK compatibility
-  - Matches docs.honeyhive.ai initialization pattern exactly
-  - Supports self-hosted deployments with `server_url` parameter
-  - Full backwards compatibility with existing code
-  - Environment variable integration
-  - Automatic singleton management
-  - **NEW**: `disable_http_tracing` parameter (defaults to True for performance)
+### Breaking Changes
+- **Modernized Architecture**: `HoneyHiveTracer` now supports multiple independent instances
+  - **`HoneyHiveTracer.init()` method maintained for backwards compatibility** - this is the preferred pattern
+  - Direct constructor usage also available: `HoneyHiveTracer(api_key="key", project="project")`
+  - Each initialization creates a new independent tracer instance
 
-### Features
-- **API Client**: Full-featured HTTP client with retry support
-- **Tracing**: OpenTelemetry-based tracing with automatic span creation and unified decorators
-- **Sessions**: Track and manage LLM sessions with rich metadata
-- **Events**: Create and manage events with batch support
-- **Evaluation**: Built-in evaluation metrics and scoring functions
-- **CLI**: Command-line interface for SDK operations
-- **Configuration**: Environment-based configuration with validation
-- **Utilities**: Helper utilities for common operations
+### Added
+- **Multi-Instance Architecture**: Complete refactor to support multiple tracer instances
+  - Create multiple independent tracers within the same runtime
+  - Each tracer can have different API keys, projects, and sources
+  - Independent lifecycle management for each tracer instance
+  - Thread-safe operation with multiple tracers
+
+- **Dynamic Session Naming**: Automatic session naming based on initialization file
+  - Sessions automatically named after the file where tracer is initialized
+  - Uses `inspect` module to detect calling file
+  - Provides better organization and debugging capabilities
+
+- **Smart TracerProvider Management**: Intelligent OpenTelemetry provider integration
+  - Automatically detects existing TracerProvider instances
+  - Integrates with existing providers or creates new ones as needed
+  - Prevents conflicts with other OpenTelemetry implementations
+  - `is_main_provider` flag for proper lifecycle management
+
+- **Enhanced Decorator Support**: Improved `@trace` and `@atrace` decorators
+  - Explicit tracer instance support: `@trace(tracer=my_tracer)`
+  - Better multi-instance usage patterns
+  - Maintains backward compatibility with global tracer usage
+  - Improved error handling and performance
+  - **`HoneyHiveTracer.init()` remains the preferred initialization method**
+
+- **Comprehensive Testing**: Enhanced test coverage and new test patterns
+  - Test coverage increased to 72.10% with new 70% threshold requirement
+  - New multi-instance integration tests
+  - Real API integration tests
+  - TracerProvider integration tests
+  - Enhanced unit tests for new architecture
+
+- **Dependency Management**: Added `psutil` dependency
+  - Enhanced memory usage monitoring in evaluation framework
+  - Better performance monitoring capabilities
+
+### Changed
+- **Architecture**: Modern multi-instance architecture supporting multiple independent tracers
+- **Initialization**: `HoneyHiveTracer.init()` remains the preferred method, direct constructor also available
+- **Session Management**: Automatic file-based session naming
+- **Provider Integration**: Smart OpenTelemetry provider detection and integration
+- **Decorator Usage**: Recommended explicit tracer instance passing
+- **Testing Standards**: Increased coverage requirement from 60% to 70%
+
+### Deprecated
+- **Global Tracer Usage**: `@trace` decorator without explicit tracer instance
+  - Still functional but not recommended for new code
+  - Use `@trace(tracer=instance)` for better multi-instance support
+
+### Removed
+- **Deprecation Warnings**: Replaced with direct error messages or guidance
 
 ### Technical Details
-- Python 3.11+ support
-- OpenTelemetry 1.21.0+ integration
-- Pydantic 2.10.0+ for data validation
-- httpx for HTTP client operations
-- wrapt for decorator support
-- Comprehensive type hints
-- Multi-Python version testing with tox
-- Code coverage and linting support
+- **Coverage Threshold**: Increased to 70% with enforcement
+- **Test Framework**: Enhanced pytest configuration with new markers
+- **Quality Tools**: Black, isort, pylint, and mypy integration
+- **Multi-Python Support**: Python 3.11, 3.12, and 3.13 testing
 
 ## [0.1.0] - 2024-01-XX
 

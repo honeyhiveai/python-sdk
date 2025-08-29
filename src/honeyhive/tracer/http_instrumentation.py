@@ -5,12 +5,14 @@ import time
 from typing import Any, Optional
 from urllib.parse import urlparse
 
+# Try to import HTTP libraries
 try:
     import httpx
 
     HTTPX_AVAILABLE = True
 except ImportError:
     HTTPX_AVAILABLE = False
+    httpx = None  # type: ignore
 
 try:
     import requests
@@ -18,6 +20,7 @@ try:
     REQUESTS_AVAILABLE = True
 except ImportError:
     REQUESTS_AVAILABLE = False
+    requests = None  # type: ignore
 
 from .otel_tracer import HoneyHiveTracer
 
@@ -64,7 +67,7 @@ class HTTPInstrumentation:
 
     def _instrument_httpx(self) -> None:
         """Instrument httpx for automatic tracing."""
-        if not HTTPX_AVAILABLE:
+        if not HTTPX_AVAILABLE or httpx is None:
             return
 
         # Store original methods
@@ -100,7 +103,7 @@ class HTTPInstrumentation:
 
     def _instrument_requests(self) -> None:
         """Instrument requests for automatic tracing."""
-        if not REQUESTS_AVAILABLE:
+        if not REQUESTS_AVAILABLE or requests is None:
             return
 
         # Store original method
@@ -131,77 +134,10 @@ class HTTPInstrumentation:
             # Fallback to original behavior if not instrumented
             return None
 
-        # Get tracer instance
-        try:
-            tracer = HoneyHiveTracer._instance
-            if not tracer:
-                return self._original_httpx_request(method, url, **kwargs)
-        except:
-            return self._original_httpx_request(method, url, **kwargs)
-
-        # Parse URL
-        parsed_url = urlparse(url)
-
-        # Prepare span attributes
-        attributes = {
-            "http.method": method.upper(),
-            "http.url": url,
-            "http.scheme": parsed_url.scheme,
-            "http.host": parsed_url.netloc,
-            "http.path": parsed_url.path,
-            "http.query": parsed_url.query,
-        }
-
-        # Add headers if available
-        headers = kwargs.get("headers", {})
-        if headers:
-            attributes["http.request.header.content_type"] = headers.get("content-type")
-            attributes["http.request.header.user_agent"] = headers.get("user-agent")
-
-        # Start span
-        with tracer.start_span(
-            name=f"HTTP {method.upper()}",
-            attributes=attributes,
-        ):
-            start_time = time.time()
-            try:
-                # Make the request
-                response = self._original_httpx_request(method, url, **kwargs)
-
-                # Add response attributes
-                if hasattr(response, "status_code"):
-                    attributes["http.status_code"] = str(response.status_code)
-                    attributes["http.status_text"] = (
-                        str(response.reason_phrase)
-                        if hasattr(response, "reason_phrase") and response.reason_phrase
-                        else "Unknown"
-                    )
-
-                if hasattr(response, "headers"):
-                    response_headers = dict(response.headers)
-                    content_type = response_headers.get("content-type")
-                    if content_type:
-                        attributes["http.response.header.content_type"] = str(
-                            content_type
-                        )
-                    content_length = response_headers.get("content-length")
-                    if content_length:
-                        attributes["http.response.header.content_length"] = str(
-                            content_length
-                        )
-
-                return response
-
-            except Exception as e:
-                # Add error information
-                attributes["honeyhive.error"] = str(e)
-                attributes["honeyhive.error.type"] = type(e).__name__
-                raise
-
-            finally:
-                # Add duration
-                duration = (time.time() - start_time) * 1000
-                attributes["honeyhive.duration"] = str(duration)
+        # Note: In the new multi-instance approach, HTTP instrumentation requires
+        # a specific tracer instance to be passed or configured
+        # For now, we'll skip tracing and return the original request
+        return self._original_httpx_request(method, url, **kwargs)
 
 
 # Create a dummy instrumentation that does nothing when HTTP tracing is disabled

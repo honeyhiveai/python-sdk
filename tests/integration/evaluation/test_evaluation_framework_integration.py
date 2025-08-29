@@ -11,10 +11,12 @@ These tests use REAL API credentials from the .env file to test actual
 HoneyHive API integration.
 """
 
+import os
 import time
 from concurrent.futures import ThreadPoolExecutor
 from typing import Any, Dict, Optional
 
+import psutil
 import pytest
 
 from honeyhive import HoneyHive
@@ -625,10 +627,6 @@ class TestEvaluationPerformanceIntegration:
 
     def test_memory_usage_integration(self):
         """Test memory usage in real evaluation scenarios."""
-        import os
-
-        import psutil
-
         # Get initial memory usage
         process = psutil.Process(os.getpid())
         initial_memory = process.memory_info().rss / 1024 / 1024  # MB

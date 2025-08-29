@@ -355,13 +355,13 @@ def status() -> None:
         # Tracer status
         click.echo("\n=== Tracer Status ===")
         try:
-            tracer = HoneyHiveTracer._instance
-            if tracer:
-                click.echo("✓ Tracer initialized")
-                click.echo(f"  Project: {getattr(tracer, 'project', 'Unknown')}")
-                click.echo(f"  Source: {getattr(tracer, 'source', 'Unknown')}")
-            else:
-                click.echo("✗ Tracer not initialized")
+            # Note: In the new multi-instance approach, we can't easily check for existing tracers
+            # Users should manage their own tracer instances
+            click.echo("ℹ️  Tracer status: Multi-instance mode enabled")
+            click.echo(
+                "   Create tracers with: HoneyHiveTracer(api_key='...', project='...')"
+            )
+            click.echo("   Multiple tracers can coexist in the same runtime")
         except Exception as e:
             click.echo(f"✗ Tracer error: {e}")
 
@@ -521,16 +521,13 @@ def benchmark(iterations: int, warmup: int) -> None:
         # Benchmark tracer operations
         click.echo("=== Tracer Performance ===")
         try:
-            tracer = HoneyHiveTracer._instance
-            if tracer and iterations > 0:
-                # Span creation
-                start_time = time.time()
-                for i in range(iterations):
-                    with tracer.start_span(f"benchmark_span_{i}"):
-                        pass
-                span_duration = time.time() - start_time
-
-                click.echo(f"Span creation: {iterations / span_duration:.0f} ops/s")
+            if iterations > 0:
+                # Note: In the new multi-instance approach, we can't easily access existing tracers
+                # Users should create their own tracer instances for benchmarking
+                click.echo("ℹ️  Tracer benchmarks: Multi-instance mode enabled")
+                click.echo("   Create a tracer for benchmarking:")
+                click.echo("   tracer = HoneyHiveTracer(api_key='...', project='...')")
+                click.echo("   Then run: with tracer.start_span('name'): pass")
             elif iterations == 0:
                 click.echo("Skipping tracer benchmarks (0 iterations)")
             else:

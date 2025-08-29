@@ -74,11 +74,17 @@ def _create_sync_wrapper(
         Returns:
             The result of the decorated function execution
         """
-        # Get tracer instance
+        # Get or create tracer instance
+        tracer = None
         try:
-            tracer = get_tracer()
+            # Try to get tracer from kwargs first
+            if "tracer" in kwargs:
+                tracer = kwargs["tracer"]
+
             if tracer is None:
                 # If no tracer is available, just call the function
+                print("⚠️  Warning: No tracer provided to @trace decorator")
+                print("   Usage: @trace(tracer=my_tracer)")
                 return func(*args, **func_kwargs)
         except Exception:
             # If tracer is not available, just call the function
@@ -260,11 +266,17 @@ def _create_async_wrapper(
         Returns:
             The result of the decorated async function execution
         """
-        # Get tracer instance
+        # Get or create tracer instance
+        tracer = None
         try:
-            tracer = get_tracer()
+            # Try to get tracer from kwargs first
+            if "tracer" in kwargs:
+                tracer = kwargs["tracer"]
+
             if tracer is None:
                 # If no tracer is available, just call the function
+                print("⚠️  Warning: No tracer provided to @atrace decorator")
+                print("   Usage: @atrace(tracer=my_tracer)")
                 return await func(*args, **func_kwargs)
         except Exception:
             # If tracer is not available, just call the function

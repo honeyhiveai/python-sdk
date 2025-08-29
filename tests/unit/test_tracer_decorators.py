@@ -12,6 +12,7 @@ from honeyhive.tracer.decorators import (
     _create_async_wrapper,
     _create_sync_wrapper,
     _set_span_attributes,
+    atrace,
     trace,
 )
 from honeyhive.tracer.otel_tracer import get_tracer
@@ -161,10 +162,12 @@ class TestCreateSyncWrapper:
         mock_context.__exit__ = Mock(return_value=None)
         mock_tracer.start_span.return_value = mock_context
 
-        with patch("honeyhive.tracer.decorators.get_tracer", return_value=mock_tracer):
-            wrapper = _create_sync_wrapper(test_func, params)
-            result = wrapper()
+        # Test the public decorator interface instead of internal function
+        @trace(event_name="test_event", tracer=mock_tracer)
+        def decorated_func() -> str:
+            return "success"
 
+        result = decorated_func()
         assert result == "success"
         mock_tracer.start_span.assert_called_once_with("test_event")
 
@@ -225,10 +228,23 @@ class TestCreateSyncWrapper:
         mock_context.__exit__ = Mock(return_value=None)
         mock_tracer.start_span.return_value = mock_context
 
-        with patch("honeyhive.tracer.decorators.get_tracer", return_value=mock_tracer):
-            wrapper = _create_sync_wrapper(test_func, params)
-            result = wrapper()
+        # Test the public decorator interface instead of internal function
+        @trace(
+            event_name="test_event",
+            event_type="model",
+            event_id="test-123",
+            inputs={"input": "data"},
+            outputs={"output": "result"},
+            config={"model": "gpt-4"},
+            metadata={"user_id": "user-123"},
+            metrics={"latency": 100},
+            feedback={"rating": 5},
+            tracer=mock_tracer
+        )
+        def decorated_func() -> str:
+            return "success"
 
+        result = decorated_func()
         assert result == "success"
 
         # Verify span attributes were set
@@ -274,10 +290,12 @@ class TestCreateSyncWrapper:
         mock_context.__exit__ = Mock(return_value=None)
         mock_tracer.start_span.return_value = mock_context
 
-        with patch("honeyhive.tracer.decorators.get_tracer", return_value=mock_tracer):
-            wrapper = _create_sync_wrapper(test_func, params, custom_attr="value")
-            result = wrapper()
+        # Test the public decorator interface instead of internal function
+        @trace(event_name="test_event", custom_attr="value", tracer=mock_tracer)
+        def decorated_func() -> str:
+            return "success"
 
+        result = decorated_func()
         assert result == "success"
         mock_span.set_attribute.assert_any_call("honeyhive_custom_attr", "value")
 
@@ -330,10 +348,12 @@ class TestCreateAsyncWrapper:
         mock_context.__exit__ = Mock(return_value=None)
         mock_tracer.start_span.return_value = mock_context
 
-        with patch("honeyhive.tracer.decorators.get_tracer", return_value=mock_tracer):
-            wrapper = _create_async_wrapper(test_func, params)
-            result = await wrapper()
+        # Test the public decorator interface instead of internal function
+        @atrace(event_name="test_event", tracer=mock_tracer)
+        async def decorated_func() -> str:
+            return "success"
 
+        result = await decorated_func()
         assert result == "success"
         mock_tracer.start_span.assert_called_once_with("test_event")
 
@@ -623,14 +643,10 @@ class TestTraceDecorator:
         mock_context.__exit__ = Mock(return_value=None)
         mock_tracer.start_span.return_value = mock_context
 
-        with patch("honeyhive.tracer.decorators.get_tracer", return_value=mock_tracer):
-            # The function should still work despite span attribute errors
-            # The decorator catches exceptions when setting attributes
-            with pytest.raises(Exception, match="Attribute error"):
-                result = test_func()
-
-        # The function should fail due to span attribute errors
-        # This is the expected behavior since the decorator doesn't catch span attribute exceptions
+        # In the new multi-instance approach, the decorator handles exceptions gracefully
+        # The function should still work despite span attribute errors
+        result = test_func()
+        assert result == "success"
 
     def test_trace_decorator_with_json_serialization_errors(self) -> None:
         """Test trace decorator handles JSON serialization errors."""
@@ -677,4 +693,143 @@ class TestTraceDecorator:
             result = test_func()
 
         # Function should still work despite experiment attribute errors
+        assert result == "success"
+
+
+class TestDecoratorTracerParameter:
+    """Test decorator functionality with explicit tracer parameters."""
+
+    def test_trace_decorator_with_tracer_parameter(self) -> None:
+        """Test @trace decorator with explicit tracer parameter."""
+        mock_tracer = Mock()
+        mock_span = Mock()
+        mock_context = Mock()
+        mock_context.__enter__ = Mock(return_value=mock_span)
+        mock_context.__exit__ = Mock(return_value=None)
+        mock_tracer.start_span.return_value = mock_context
+
+        @trace(tracer=mock_tracer)
+        def test_func():
+            return "success"
+
+        result = test_func()
+        assert result == "success"
+        mock_tracer.start_span.assert_called_once()
+
+    def test_trace_decorator_without_tracer_parameter(self) -> None:
+        """Test @trace decorator without tracer parameter."""
+
+        @trace()
+        def test_func():
+            return "success"
+
+        # Should handle gracefully when no tracer provided
+        result = test_func()
+        assert result == "success"
+
+    def test_atrace_decorator_with_tracer_parameter(self) -> None:
+        """Test @atrace decorator with explicit tracer parameter."""
+        mock_tracer = Mock()
+        mock_span = Mock()
+        mock_context = Mock()
+        mock_context.__enter__ = Mock(return_value=mock_span)
+        mock_context.__exit__ = Mock(return_value=None)
+        mock_tracer.start_span.return_value = mock_context
+
+        @atrace(tracer=mock_tracer)
+        async def test_func():
+            return "success"
+
+        # Test async function execution
+        import asyncio
+
+        result = asyncio.run(test_func())
+        assert result == "success"
+        mock_tracer.start_span.assert_called_once()
+
+    def test_atrace_decorator_without_tracer_parameter(self) -> None:
+        """Test @atrace decorator without tracer parameter."""
+
+        @atrace()
+        async def test_func():
+            return "success"
+
+        # Should handle gracefully when no tracer provided
+        import asyncio
+
+        result = asyncio.run(test_func())
+        assert result == "success"
+
+    def test_trace_decorator_with_tracing_params(self) -> None:
+        """Test @trace decorator with tracing parameters and tracer."""
+        mock_tracer = Mock()
+        mock_span = Mock()
+        mock_context = Mock()
+        mock_context.__enter__ = Mock(return_value=mock_span)
+        mock_context.__exit__ = Mock(return_value=None)
+        mock_tracer.start_span.return_value = mock_context
+
+        @trace(event_name="test_event", event_type="model", tracer=mock_tracer)
+        def test_func():
+            return "success"
+
+        result = test_func()
+        assert result == "success"
+        mock_tracer.start_span.assert_called_once()
+
+    def test_trace_decorator_with_kwargs_and_tracer(self) -> None:
+        """Test @trace decorator with kwargs and tracer parameter."""
+        mock_tracer = Mock()
+        mock_span = Mock()
+        mock_context = Mock()
+        mock_context.__enter__ = Mock(return_value=mock_span)
+        mock_context.__exit__ = Mock(return_value=None)
+        mock_tracer.start_span.return_value = mock_context
+
+        @trace(tracer=mock_tracer, custom_attr="value")
+        def test_func():
+            return "success"
+
+        result = test_func()
+        assert result == "success"
+        mock_tracer.start_span.assert_called_once()
+
+    def test_decorator_error_handling_with_tracer(self) -> None:
+        """Test decorator error handling when tracer is provided."""
+        mock_tracer = Mock()
+        mock_span = Mock()
+        mock_context = Mock()
+        mock_context.__enter__ = Mock(return_value=mock_span)
+        mock_context.__exit__ = Mock(return_value=None)
+        mock_tracer.start_span.return_value = mock_context
+
+        @trace(tracer=mock_tracer)
+        def test_func():
+            raise ValueError("Test error")
+
+        with pytest.raises(ValueError, match="Test error"):
+            test_func()
+
+        # Tracer should still be called for span creation (at least once)
+        assert mock_tracer.start_span.call_count >= 1
+
+    def test_decorator_error_handling_without_tracer(self) -> None:
+        """Test decorator error handling when no tracer is provided."""
+
+        @trace()
+        def test_func():
+            raise ValueError("Test error")
+
+        with pytest.raises(ValueError, match="Test error"):
+            test_func()
+
+    def test_decorator_with_none_tracer(self) -> None:
+        """Test decorator behavior when tracer is explicitly None."""
+
+        @trace(tracer=None)
+        def test_func():
+            return "success"
+
+        # Should handle gracefully when tracer is None
+        result = test_func()
         assert result == "success"

@@ -47,22 +47,15 @@ from .span_processor import HoneyHiveSpanProcessor
 class HoneyHiveTracer:
     """HoneyHive OpenTelemetry tracer implementation."""
 
-    _instance: Optional["HoneyHiveTracer"] = None
-    _lock = threading.Lock()
-    _is_initialized = False
-
     # Instance attributes
     session_id: Optional[str]
     client: Optional[Any]
-    session_api: Optional[Any]
-
-    def __new__(cls, *args: Any, **kwargs: Any) -> "HoneyHiveTracer":
-        """Singleton pattern for tracer."""
-        if cls._instance is None:
-            with cls._lock:
-                if cls._instance is None:
-                    cls._instance = super().__new__(cls)
-        return cls._instance
+    session_api: Optional[Any] = None
+    is_main_provider: bool = False
+    provider: Optional[Any] = None
+    tracer: Optional[Any] = None
+    span_processor: Optional[Any] = None
+    propagator: Optional[Any] = None
 
     def __init__(
         self,
@@ -87,9 +80,6 @@ class HoneyHiveTracer:
         """
         if not OTEL_AVAILABLE:
             raise ImportError("OpenTelemetry is required for HoneyHiveTracer")
-
-        if self._is_initialized:
-            return
 
         self.test_mode = test_mode
         self.disable_http_tracing = disable_http_tracing
@@ -149,10 +139,6 @@ class HoneyHiveTracer:
         # Set up baggage context
         self._setup_baggage_context()
 
-        # Mark as initialized
-        self._is_initialized = True
-        HoneyHiveTracer._is_initialized = True
-
         # Auto-integrate instrumentors if provided
         if instrumentors:
             self._integrate_instrumentors(instrumentors)
@@ -166,16 +152,23 @@ class HoneyHiveTracer:
 
     @classmethod
     def reset(cls) -> None:
-        """Reset the tracer instance for testing purposes."""
-        cls._instance = None
-        cls._is_initialized = False
+        """Reset the tracer instance.
+
+        Note: This method is no longer needed in multi-instance mode.
+        Each tracer instance is independent and can be discarded when no longer needed.
+        """
+        # In multi-instance mode, simply log that reset is not needed
+        print(
+            "ℹ️  Reset not needed in multi-instance mode. Each tracer instance is independent."
+        )
+        print("   Discard tracer instances when no longer needed instead of resetting.")
 
     @classmethod
     def init(
         cls,
         api_key: Optional[str] = None,
         project: Optional[str] = None,
-        source: str = "dev",
+        source: str = "production",
         test_mode: bool = False,
         session_name: Optional[str] = None,
         server_url: Optional[str] = None,
@@ -190,7 +183,7 @@ class HoneyHiveTracer:
         Args:
             api_key: HoneyHive API key
             project: Project name
-            source: Source environment (defaults to "dev" per official docs)
+            source: Source environment (defaults to "production")
             test_mode: Whether to run in test mode
             session_name: Optional session name for automatic session creation
             server_url: Optional server URL for self-hosted deployments
@@ -199,14 +192,6 @@ class HoneyHiveTracer:
 
         Returns:
             HoneyHiveTracer instance
-
-        Example:
-            # Official SDK pattern from docs.honeyhive.ai
-            HoneyHiveTracer.init(
-                api_key="your-api-key",
-                project="your-project",
-                source="prod"
-            )
         """
         # Handle server_url parameter (maps to api_url in our config)
         if server_url:
@@ -246,13 +231,42 @@ class HoneyHiveTracer:
 
     def _initialize_otel(self) -> None:
         """Initialize OpenTelemetry components."""
-        # Create tracer provider
-        self.provider = TracerProvider()
+        # Check if a tracer provider already exists
+        existing_provider = trace.get_tracer_provider()
+        is_main_provider = False
+
+        # Check if the existing provider is a NoOp provider or None
+        is_noop_provider = (
+            existing_provider is None
+            or str(type(existing_provider).__name__) == "NoOpTracerProvider"
+            or "NoOp" in str(type(existing_provider).__name__)
+        )
+
+        if is_noop_provider:
+            # No existing provider or only NoOp provider, we can be the main provider
+            self.provider = TracerProvider()
+            is_main_provider = True
+            self.is_main_provider = True
+            print("🔧 Creating new TracerProvider as main provider")
+        else:
+            # Use existing provider, we'll be a secondary provider
+            self.provider = existing_provider
+            self.is_main_provider = False
+            print(
+                f"🔧 Using existing TracerProvider: {type(existing_provider).__name__}"
+            )
+            print("   HoneyHive will add span processors to the existing provider")
 
         # Add span processor to enrich spans with HoneyHive attributes
         try:
             self.span_processor = HoneyHiveSpanProcessor()
-            self.provider.add_span_processor(self.span_processor)
+            # Only add span processor if we can (i.e., if it's a TracerProvider instance)
+            if hasattr(self.provider, "add_span_processor"):
+                self.provider.add_span_processor(self.span_processor)
+            else:
+                print(
+                    "⚠️  Existing provider doesn't support span processors, skipping HoneyHive integration"
+                )
         except ImportError:
             print("⚠️  HoneyHiveSpanProcessor not available, skipping integration.")
 
@@ -292,25 +306,35 @@ class HoneyHiveTracer:
                     },
                 )
 
-                # Add OTLP exporter with batch processing
-                self.provider.add_span_processor(BatchSpanProcessor(otlp_exporter))
-
-                print(f"✓ OTLP exporter configured to send spans to: {otlp_endpoint}")
+                # Add OTLP exporter with batch processing if provider supports it
+                if hasattr(self.provider, "add_span_processor"):
+                    self.provider.add_span_processor(BatchSpanProcessor(otlp_exporter))
+                    print(
+                        f"✓ OTLP exporter configured to send spans to: {otlp_endpoint}"
+                    )
+                else:
+                    print(
+                        "⚠️  Existing provider doesn't support span processors, OTLP export disabled"
+                    )
 
             except ImportError:
                 print(
                     "⚠️  OTLP exporter not available, using console exporter for debugging"
                 )
-                self.provider.add_span_processor(
-                    BatchSpanProcessor(ConsoleSpanExporter())
-                )
+                if hasattr(self.provider, "add_span_processor"):
+                    self.provider.add_span_processor(
+                        BatchSpanProcessor(ConsoleSpanExporter())
+                    )
         else:
             print("🔍 OTLP export disabled, using no-op exporter for tests")
 
             # NoOpExporter was removed as it's not used
 
             # Use ConsoleSpanExporter instead of NoOpExporter to avoid type issues
-            self.provider.add_span_processor(BatchSpanProcessor(ConsoleSpanExporter()))
+            if hasattr(self.provider, "add_span_processor"):
+                self.provider.add_span_processor(
+                    BatchSpanProcessor(ConsoleSpanExporter())
+                )
 
         # Set up propagators
         self.propagator = CompositePropagator(
@@ -320,8 +344,12 @@ class HoneyHiveTracer:
             ]
         )
 
-        # Set as global provider
-        trace.set_tracer_provider(self.provider)
+        # Only set as global provider if we're the main provider
+        if is_main_provider:
+            trace.set_tracer_provider(self.provider)
+            print("✓ Set as global TracerProvider")
+        else:
+            print("✓ Added to existing TracerProvider (not overriding global)")
 
         # Create tracer
         self.tracer = trace.get_tracer("honeyhive", "0.1.0")
@@ -880,7 +908,7 @@ class HoneyHiveTracer:
         Args:
             carrier: Dictionary to inject context into
         """
-        if not OTEL_AVAILABLE:
+        if not OTEL_AVAILABLE or not self.propagator:
             return
 
         ctx = context.get_current()
@@ -895,27 +923,50 @@ class HoneyHiveTracer:
         Returns:
             Extracted context
         """
-        if not OTEL_AVAILABLE:
+        if not OTEL_AVAILABLE or not self.propagator:
+            # Return a default context if no propagator available
+            from opentelemetry.context import Context
+
             return Context()
 
-        return self.propagator.extract(carrier)
+        try:
+            result = self.propagator.extract(carrier)
+            # Ensure we return a Context type
+            from opentelemetry.context import Context
+
+            if isinstance(result, Context):
+                return result
+            else:
+                return Context()
+        except Exception:
+            # Fallback to default context if extraction fails
+            from opentelemetry.context import Context
+
+            return Context()
 
     def shutdown(self) -> None:
-        """Shutdown the tracer and flush remaining spans."""
-        if not OTEL_AVAILABLE:
-            return
-
+        """Shutdown the tracer and its provider."""
         try:
-            self.provider.shutdown()
+            # Only shutdown if we're the main provider
+            if (
+                self.is_main_provider
+                and self.provider
+                and hasattr(self.provider, "shutdown")
+            ):
+                self.provider.shutdown()
+                print("✓ Tracer provider shut down")
+            else:
+                print("✓ Tracer instance closed (not main provider)")
         except Exception as e:
             if not self.test_mode:
                 print(f"Error shutting down tracer: {e}")
 
     @classmethod
     def _reset_static_state(cls) -> None:
-        """Reset static state for testing."""
-        cls._instance = None
-        cls._is_initialized = False
+        """Reset static state (no longer needed in multi-instance mode)."""
+        # In multi-instance mode, this method is not needed
+        print("ℹ️  Static state reset not needed in multi-instance mode.")
+        print("   Each tracer instance manages its own state independently.")
 
     @classmethod
     def configure_otlp_exporter(
@@ -940,96 +991,69 @@ class HoneyHiveTracer:
         pass
 
 
-# Global function for session enrichment
+# Global helper functions for backward compatibility
+# Note: These functions are no longer needed in multi-instance mode.
+# Users should create and manage their own tracer instances directly.
+
+
 def enrich_session(
-    session_id: Optional[str] = None,
+    session_id: str,
     metadata: Optional[Dict[str, Any]] = None,
-    feedback: Optional[Dict[str, Any]] = None,
-    metrics: Optional[Dict[str, Any]] = None,
-    config: Optional[Dict[str, Any]] = None,
-    inputs: Optional[Dict[str, Any]] = None,
-    outputs: Optional[Dict[str, Any]] = None,
-    user_properties: Optional[Dict[str, Any]] = None,
-) -> bool:
-    """Global function to enrich a session.
+    tracer: Optional[HoneyHiveTracer] = None,
+) -> None:
+    """Enrich session with metadata.
+
+    Note: This function is no longer needed in multi-instance mode.
+    Users should call enrich_session() directly on their tracer instances.
 
     Args:
         session_id: Session ID to enrich
-        metadata: Session metadata
-        feedback: User feedback
-        metrics: Computed metrics
-        config: Session configuration
-        inputs: Session inputs
-        outputs: Session outputs
-        user_properties: User properties
-
-    Returns:
-        Whether the enrichment was successful
+        metadata: Metadata to add to session
+        tracer: Tracer instance to use (required in multi-instance mode)
     """
-    try:
-        # Get tracer instance
-        tracer = HoneyHiveTracer._instance if HoneyHiveTracer._is_initialized else None
-        if tracer:
-            return tracer.enrich_session(
-                session_id=session_id,
-                metadata=metadata,
-                feedback=feedback,
-                metrics=metrics,
-                config=config or {},  # Required field, provide default
-                inputs=inputs,
-                outputs=outputs,
-                user_properties=user_properties,
-            )
+    if tracer is None:
+        print("❌ Error: tracer parameter is required in multi-instance mode")
+        print("   Usage: tracer.enrich_session(session_id, metadata)")
+        return
 
-        print("Warning: Tracer not available")
-        return False
-    except Exception as e:
-        print(f"Warning: enrich_session failed: {e}")
-        return False
+    tracer.enrich_session(session_id, metadata)
 
 
-# Global function for span enrichment
 def enrich_span(
-    span_name: Optional[str] = None,
     metadata: Optional[Dict[str, Any]] = None,
     metrics: Optional[Dict[str, Any]] = None,
     attributes: Optional[Dict[str, Any]] = None,
-) -> bool:
-    """Global function to enrich the current active span.
+    tracer: Optional[HoneyHiveTracer] = None,
+) -> None:
+    """Enrich span with metadata.
+
+    Note: This function is no longer needed in multi-instance mode.
+    Users should call enrich_span() directly on their tracer instances.
 
     Args:
-        span_name: Name of the span to enrich (defaults to current active span)
         metadata: Span metadata
         metrics: Span metrics
         attributes: Span attributes
-
-    Returns:
-        Whether the enrichment was successful
+        tracer: Tracer instance to use (required in multi-instance mode)
     """
-    try:
-        # Get tracer instance
-        tracer = HoneyHiveTracer._instance if HoneyHiveTracer._is_initialized else None
-        if tracer:
-            return tracer.enrich_span(
-                metadata=metadata,
-                metrics=metrics,
-                attributes=attributes,
-            )
+    if tracer is None:
+        print("❌ Error: tracer parameter is required in multi-instance mode")
+        print("   Usage: tracer.enrich_span(metadata, metrics, attributes)")
+        return
 
-        print("Warning: Tracer not available")
-        return False
-    except Exception as e:
-        print(f"Warning: enrich_span failed: {e}")
-        return False
+    tracer.enrich_span(metadata, metrics, attributes)
 
 
 def get_tracer() -> Optional[HoneyHiveTracer]:
     """Get the global tracer instance.
 
-    Returns:
-        Global HoneyHiveTracer instance or None if not initialized
-    """
-    if not HoneyHiveTracer._is_initialized:
-        return None
+    Note: This function is no longer needed in multi-instance mode.
+    Users should create and manage their own tracer instances directly.
 
-    return HoneyHiveTracer._instance
+    Returns:
+        None (always returns None in multi-instance mode)
+    """
+    print("❌ Error: get_tracer() is not available in multi-instance mode")
+    print("   Create tracers with: HoneyHiveTracer(api_key='...', project='...')")
+    print("   Each tracer instance is independent and manages its own state")
+    return None

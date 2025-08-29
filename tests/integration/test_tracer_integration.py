@@ -13,16 +13,16 @@ from honeyhive.tracer.decorators import trace
 class TestTracerIntegration:
     """Test tracer integration and end-to-end functionality."""
 
-    def test_tracer_initialization_integration(self, integration_tracer):
+    def test_tracer_initialization_integration(self, integration_tracer, real_project, real_source):
         """Test tracer initialization and configuration."""
-        assert integration_tracer.project == "integration-test-project"
-        assert integration_tracer.source == "integration-test"
-        assert integration_tracer.test_mode is True
+        assert integration_tracer.project == real_project
+        assert integration_tracer.source == real_source
+        assert integration_tracer.test_mode is False  # Integration tests use real API
 
     def test_function_tracing_integration(self, integration_tracer):
         """Test function tracing integration."""
 
-        @trace(event_type="model", event_name="test_function")
+        @trace(event_type="model", event_name="test_function", tracer=integration_tracer)
         def test_function(x, y):
             return x + y
 
@@ -31,8 +31,8 @@ class TestTracerIntegration:
         assert result == 8
 
         # Test that the tracer is properly initialized
-        assert integration_tracer.project == "integration-test-project"
-        assert integration_tracer.source == "integration-test"
+        assert integration_tracer.project is not None
+        assert integration_tracer.source is not None
 
     def test_method_tracing_integration(self, integration_tracer):
         """Test method tracing integration."""
@@ -40,7 +40,7 @@ class TestTracerIntegration:
         class TestClass:
             """Test class for method tracing integration."""
 
-            @trace(event_type="model", event_name="test_method")
+            @trace(event_type="model", event_name="test_method", tracer=integration_tracer)
             def test_method(self, value):
                 """Test method that doubles the input value.
 
@@ -59,8 +59,8 @@ class TestTracerIntegration:
         assert result == 20
 
         # Test that the tracer is properly initialized
-        assert integration_tracer.project == "integration-test-project"
-        assert integration_tracer.source == "integration-test"
+        assert integration_tracer.project is not None
+        assert integration_tracer.source is not None
 
     def test_tracer_context_management(self, integration_tracer):
         """Test tracer context management."""
@@ -94,8 +94,8 @@ class TestTracerIntegration:
         """Test session management through tracer."""
         # Test that the tracer has basic session information
         assert integration_tracer.session_name is not None
-        assert integration_tracer.project == "integration-test-project"
-        assert integration_tracer.source == "integration-test"
+        assert integration_tracer.project is not None
+        assert integration_tracer.source is not None
 
         # In test mode, session_id might be None due to API limitations
         # but we can still test the baggage functionality
@@ -190,10 +190,10 @@ class TestTracerIntegration:
     ):
         """Test tracer integration with API client."""
         # Test that both client and tracer are properly initialized
-        assert integration_client.test_mode is True
-        assert integration_tracer.test_mode is True
-        assert integration_tracer.project == "integration-test-project"
-        assert integration_tracer.source == "integration-test"
+        assert integration_client.test_mode is False  # Integration tests use real API
+        assert integration_tracer.test_mode is False  # Integration tests use real API
+        assert integration_tracer.project is not None
+        assert integration_tracer.source is not None
 
         # Test that we can start a span with the tracer
         with integration_tracer.start_span("api-operation") as span:

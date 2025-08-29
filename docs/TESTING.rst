@@ -14,6 +14,33 @@ Testing is a crucial part of developing reliable applications with the HoneyHive
 
 **Coverage Requirement**: The project maintains a minimum **70% test coverage** requirement to ensure code quality and reliability.
 
+**Current Test Status**: 
+- **Total Tests**: 816 tests
+- **Test Coverage**: 72.10% ✅ (above 70% requirement)
+- **Test Results**: 814 passed, 2 failed
+- **Code Coverage**: 4,158 total statements, 1,160 missed
+
+Test Organization
+-----------------
+
+The project maintains a comprehensive test suite organized into logical categories:
+
+**Test File Structure**:
+- **Total Test Files**: 37
+- **Unit Tests**: 21 test files in `tests/unit/`
+- **Integration Tests**: 8 test files in `tests/integration/`
+- **Tracer Tests**: 1 test file in `tests/tracer/`
+- **Test Utilities**: 2 utility files (`conftest.py`, `utils.py`)
+
+**Test Categories**:
+1. **Unit Tests** - Test individual components in isolation
+2. **Integration Tests** - Test component interactions and multi-instance patterns
+3. **End-to-End Tests** - Test complete workflows
+4. **Performance Tests** - Test performance characteristics
+5. **Multi-Instance Tests** - Test multiple tracer instances and their interactions
+6. **Real API Tests** - Test with actual HoneyHive API endpoints
+7. **TracerProvider Tests** - Test OpenTelemetry provider integration
+
 Testing Strategy
 ----------------
 
@@ -909,6 +936,15 @@ Set up automated testing in CI/CD:
 Running Tests
 -------------
 
+Current Test Execution
+~~~~~~~~~~~~~~~~~~~~~~
+
+The project uses tox for consistent testing across environments. Current test execution shows:
+
+**Test Collection**: 816 tests collected from 37 test files
+**Execution Time**: ~15-18 seconds for full test suite
+**Coverage Generation**: HTML and XML reports automatically generated
+
 Command Line
 ~~~~~~~~~~~~
 
@@ -942,6 +978,9 @@ Run tests from command line:
 
    # Run TracerProvider tests
    pytest -m tracer_provider -v
+
+   # Run with current coverage settings
+   pytest --cov=honeyhive --cov-report=term-missing --cov=src/honeyhive
 
 Tox Environments
 ~~~~~~~~~~~~~~~~
@@ -996,8 +1035,53 @@ Debug failing tests:
        
        assert result == expected
 
+Test Statistics & Coverage
+--------------------------
+
+Current Test Metrics
+~~~~~~~~~~~~~~~~~~~~
+
+The project maintains comprehensive testing with the following current statistics:
+
+**Test Counts**:
+- **Total Tests**: 816 tests
+- **Unit Tests**: 21 test files covering individual components
+- **Integration Tests**: 8 test files covering component interactions
+- **Tracer Tests**: 1 test file covering core tracing functionality
+- **Test Utilities**: 2 utility files for test support
+
+**Coverage Metrics**:
+- **Overall Coverage**: 72.10% (4,158 statements, 1,160 missed)
+- **Coverage Requirement**: 70% minimum (✅ currently met)
+- **Coverage Enforcement**: Tests fail if coverage drops below threshold
+- **Coverage Reports**: HTML and XML coverage reports generated
+- **Coverage Tools**: pytest-cov integration with fail-under option
+
+**Test Results**:
+- **Passed**: 814 tests
+- **Failed**: 2 tests (related to default source configuration)
+- **Success Rate**: 99.75%
+
+**Module Coverage Highlights**:
+- **100% Coverage**: `__init__.py` files, `evaluations.py`, `generated.py`, `tracing.py`, `dotdict.py`
+- **High Coverage (85%+)**: `evaluators.py` (85%), `baggage_dict.py` (86%), `cache.py` (98%), `logger.py` (98%)
+- **Medium Coverage (70-84%)**: `client.py` (74%), `otel_tracer.py` (72%), `config.py` (84%)
+- **Lower Coverage Areas**: `cli/main.py` (37%), `metrics.py` (30%), `connection_pool.py` (57%)
+
+**Current Test Status**:
+- **Test Success Rate**: 99.75% (814/816 tests passing)
+- **Known Issues**: 2 test failures related to default source configuration
+- **Coverage Status**: ✅ Above 70% requirement (currently 72.10%)
+
+**Test Improvement Opportunities**:
+- **CLI Module**: Increase coverage from 37% to target 70%+
+- **Metrics API**: Improve coverage from 30% to target 70%+
+- **Connection Pool**: Enhance coverage from 57% to target 70%+
+- **Tracer Decorators**: Boost coverage from 53% to target 70%+
+- **HTTP Instrumentation**: Improve coverage from 63% to target 70%+
+
 Coverage Requirements
----------------------
+~~~~~~~~~~~~~~~~~~~~~
 
 The project maintains strict coverage requirements:
 
@@ -1018,3 +1102,7 @@ To check coverage locally:
 
    # Verify coverage threshold
    pytest --cov=honeyhive --cov-report=term-missing --cov-fail-under=70
+
+   # Run with tox (recommended)
+   tox -e unit -- --cov=honeyhive --cov-report=term-missing
+   tox -e integration -- --cov=honeyhive --cov-report=term-missing

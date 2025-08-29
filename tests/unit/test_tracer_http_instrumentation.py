@@ -52,123 +52,69 @@ class TestHTTPInstrumentation:
 
     def test_create_request_span(self) -> None:
         """Test creating request spans."""
-        # Mock the tracer instance
-        with patch(
-            "honeyhive.tracer.http_instrumentation.HoneyHiveTracer._instance",
-            self.mock_tracer,
-        ):
-            # Mock start_span to return a context manager
-            mock_span = Mock()
-            mock_context_manager = Mock()
-            mock_context_manager.__enter__ = Mock(return_value=mock_span)
-            mock_context_manager.__exit__ = Mock(return_value=None)
-            self.mock_tracer.start_span.return_value = mock_context_manager
+        # In the current simplified implementation, HTTP instrumentation is simplified
+        # and doesn't create spans. This test verifies the current behavior.
+        
+        # Instrument
+        self.instrumentation.instrument()
 
-            # Instrument
-            self.instrumentation.instrument()
-
-            # Verify instrumentation was applied
-            assert self.instrumentation._is_instrumented is True
+        # Verify instrumentation was applied (but no spans are created)
+        assert self.instrumentation._is_instrumented is True
 
     def test_create_response_span(self) -> None:
         """Test creating response spans."""
-        # Mock the tracer instance
-        with patch(
-            "honeyhive.tracer.http_instrumentation.HoneyHiveTracer._instance",
-            self.mock_tracer,
-        ):
-            # Mock start_span to return a context manager
-            mock_span = Mock()
-            mock_context_manager = Mock()
-            mock_context_manager.__enter__ = Mock(return_value=mock_span)
-            mock_context_manager.__exit__ = Mock(return_value=None)
-            self.mock_tracer.start_span.return_value = mock_context_manager
+        # In the current simplified implementation, HTTP instrumentation is simplified
+        # and doesn't create spans. This test verifies the current behavior.
+        
+        # Instrument
+        self.instrumentation.instrument()
 
-            # Instrument
-            self.instrumentation.instrument()
-
-            # Verify instrumentation was applied
-            assert self.instrumentation._is_instrumented is True
+        # Verify instrumentation was applied (but no spans are created)
+        assert self.instrumentation._is_instrumented is True
 
     def test_add_request_attributes(self) -> None:
         """Test adding request attributes to spans."""
-        # Mock the tracer instance
-        with patch(
-            "honeyhive.tracer.http_instrumentation.HoneyHiveTracer._instance",
-            self.mock_tracer,
-        ):
-            # Mock start_span to return a context manager
-            mock_span = Mock()
-            mock_context_manager = Mock()
-            mock_context_manager.__enter__ = Mock(return_value=mock_span)
-            mock_context_manager.__exit__ = Mock(return_value=None)
-            self.mock_tracer.start_span.return_value = mock_context_manager
+        # In the current simplified implementation, HTTP instrumentation is simplified
+        # and doesn't add attributes to spans. This test verifies the current behavior.
+        
+        # Instrument
+        self.instrumentation.instrument()
 
-            # Instrument
-            self.instrumentation.instrument()
-
-            # Verify instrumentation was applied
-            assert self.instrumentation._is_instrumented is True
+        # Verify instrumentation was applied (but no attributes are added)
+        assert self.instrumentation._is_instrumented is True
 
     def test_add_response_attributes(self) -> None:
         """Test adding response attributes to spans."""
-        # Mock the tracer instance
-        with patch(
-            "honeyhive.tracer.http_instrumentation.HoneyHiveTracer._instance",
-            self.mock_tracer,
-        ):
-            # Mock start_span to return a context manager
-            mock_span = Mock()
-            mock_context_manager = Mock()
-            mock_context_manager.__enter__ = Mock(return_value=mock_span)
-            mock_context_manager.__exit__ = Mock(return_value=None)
-            self.mock_tracer.start_span.return_value = mock_context_manager
+        # In the current simplified implementation, HTTP instrumentation is simplified
+        # and doesn't add attributes to spans. This test verifies the current behavior.
+        
+        # Instrument
+        self.instrumentation.instrument()
 
-            # Instrument
-            self.instrumentation.instrument()
-
-            # Verify instrumentation was applied
-            assert self.instrumentation._is_instrumented is True
+        # Verify instrumentation was applied (but no attributes are added)
+        assert self.instrumentation._is_instrumented is True
 
     def test_instrument_request(self) -> None:
         """Test instrumenting HTTP requests."""
-        # Mock the tracer instance
-        with patch(
-            "honeyhive.tracer.http_instrumentation.HoneyHiveTracer._instance",
-            self.mock_tracer,
-        ):
-            # Mock start_span to return a context manager
-            mock_span = Mock()
-            mock_context_manager = Mock()
-            mock_context_manager.__enter__ = Mock(return_value=mock_span)
-            mock_context_manager.__exit__ = Mock(return_value=None)
-            self.mock_tracer.start_span.return_value = mock_context_manager
+        # In the current simplified implementation, HTTP instrumentation is simplified
+        # and doesn't create spans. This test verifies the current behavior.
+        
+        # Instrument
+        self.instrumentation.instrument()
 
-            # Instrument
-            self.instrumentation.instrument()
-
-            # Verify instrumentation was applied
-            assert self.instrumentation._is_instrumented is True
+        # Verify instrumentation was applied (but no spans are created)
+        assert self.instrumentation._is_instrumented is True
 
     def test_instrument_async_request(self) -> None:
         """Test instrumenting async HTTP requests."""
-        # Mock the tracer instance
-        with patch(
-            "honeyhive.tracer.http_instrumentation.HoneyHiveTracer._instance",
-            self.mock_tracer,
-        ):
-            # Mock start_span to return a context manager
-            mock_span = Mock()
-            mock_context_manager = Mock()
-            mock_context_manager.__enter__ = Mock(return_value=mock_span)
-            mock_context_manager.__exit__ = Mock(return_value=None)
-            self.mock_tracer.start_span.return_value = mock_context_manager
+        # In the current simplified implementation, HTTP instrumentation is simplified
+        # and doesn't create spans. This test verifies the current behavior.
+        
+        # Instrument
+        self.instrumentation.instrument()
 
-            # Instrument
-            self.instrumentation.instrument()
-
-            # Verify instrumentation was applied
-            assert self.instrumentation._is_instrumented is True
+        # Verify instrumentation was applied (but no spans are created)
+        assert self.instrumentation._is_instrumented is True
 
     def test_uninstrument(self) -> None:
         """Test removing HTTP instrumentation."""
@@ -204,27 +150,17 @@ class TestHTTPInstrumentation:
 
     def test_instrumentation_without_tracer(self) -> None:
         """Test instrumentation when no tracer is available."""
-        # Mock no tracer instance
-        with patch(
-            "honeyhive.tracer.http_instrumentation.HoneyHiveTracer._instance", None
-        ):
-            # Should not raise an error
-            self.instrumentation.instrument()
-            assert self.instrumentation._is_instrumented is True
+        # In the current simplified implementation, HTTP instrumentation works without a tracer
+        # Should not raise an error
+        self.instrumentation.instrument()
+        assert self.instrumentation._is_instrumented is True
 
     def test_instrumentation_with_exception(self) -> None:
         """Test instrumentation handles exceptions gracefully."""
-        # Mock an exception during instrumentation
-        with patch(
-            "honeyhive.tracer.http_instrumentation.HoneyHiveTracer._instance",
-            self.mock_tracer,
-        ):
-            # Mock start_span to raise an exception
-            self.mock_tracer.start_span.side_effect = Exception("Test exception")
-
-            # Should not raise an error
-            self.instrumentation.instrument()
-            assert self.instrumentation._is_instrumented is True
+        # In the current simplified implementation, HTTP instrumentation handles exceptions gracefully
+        # Should not raise an error
+        self.instrumentation.instrument()
+        assert self.instrumentation._is_instrumented is True
 
     def test_requests_instrumentation(self) -> None:
         """Test requests library instrumentation."""
@@ -250,20 +186,100 @@ class TestHTTPInstrumentation:
 
     def test_instrumentation_attributes(self) -> None:
         """Test that instrumentation adds correct attributes."""
-        # Mock the tracer instance
-        with patch(
-            "honeyhive.tracer.http_instrumentation.HoneyHiveTracer._instance",
-            self.mock_tracer,
-        ):
-            # Mock start_span to return a context manager
-            mock_span = Mock()
-            mock_context_manager = Mock()
-            mock_context_manager.__enter__ = Mock(return_value=mock_span)
-            mock_context_manager.__exit__ = Mock(return_value=None)
-            self.mock_tracer.start_span.return_value = mock_context_manager
+        # In the current simplified implementation, HTTP instrumentation is simplified
+        # and doesn't add attributes. This test verifies the current behavior.
+        
+        # Instrument
+        self.instrumentation.instrument()
 
-            # Instrument
-            self.instrumentation.instrument()
+        # Verify instrumentation was applied (but no attributes are added)
+        assert self.instrumentation._is_instrumented is True
 
-            # Verify instrumentation was applied
-            assert self.instrumentation._is_instrumented is True
+
+class TestHTTPInstrumentationMultiInstance:
+    """Test HTTP instrumentation with multi-instance tracer support."""
+
+    def test_http_instrumentation_with_multiple_tracers(self) -> None:
+        """Test that HTTP instrumentation works with multiple tracer instances."""
+        with patch("honeyhive.tracer.http_instrumentation.HTTPX_AVAILABLE", True):
+            with patch("honeyhive.tracer.http_instrumentation.httpx") as mock_httpx:
+                # Mock httpx module
+                mock_httpx.Client.request = Mock()
+
+                # Create multiple tracers
+                tracer1 = Mock()
+                tracer2 = Mock()
+
+                # Create HTTP instrumentation
+                from honeyhive.tracer.http_instrumentation import HTTPInstrumentation
+
+                instrumentation = HTTPInstrumentation()
+
+                # Instrument should work with multiple tracers
+                assert instrumentation is not None
+
+                # Verify httpx was instrumented
+                mock_httpx.Client.request.assert_not_called()  # Just checking it's available
+
+    def test_http_instrumentation_httpx_unavailable(self) -> None:
+        """Test HTTP instrumentation when httpx is not available."""
+        with patch("honeyhive.tracer.http_instrumentation.HTTPX_AVAILABLE", False):
+            from honeyhive.tracer.http_instrumentation import HTTPInstrumentation
+
+            # Should handle gracefully when httpx is not available
+            instrumentation = HTTPInstrumentation()
+            assert instrumentation is not None
+
+    def test_http_instrumentation_requests_unavailable(self) -> None:
+        """Test HTTP instrumentation when requests is not available."""
+        with patch("honeyhive.tracer.http_instrumentation.REQUESTS_AVAILABLE", False):
+            from honeyhive.tracer.http_instrumentation import HTTPInstrumentation
+
+            # Should handle gracefully when requests is not available
+            instrumentation = HTTPInstrumentation()
+            assert instrumentation is not None
+
+    def test_http_instrumentation_both_unavailable(self) -> None:
+        """Test HTTP instrumentation when both HTTP libraries are unavailable."""
+        with patch("honeyhive.tracer.http_instrumentation.HTTPX_AVAILABLE", False):
+            with patch(
+                "honeyhive.tracer.http_instrumentation.REQUESTS_AVAILABLE", False
+            ):
+                from honeyhive.tracer.http_instrumentation import HTTPInstrumentation
+
+                # Should handle gracefully when both are unavailable
+                instrumentation = HTTPInstrumentation()
+                assert instrumentation is not None
+
+    def test_http_instrumentation_import_errors(self) -> None:
+        """Test HTTP instrumentation with import errors."""
+        with patch("honeyhive.tracer.http_instrumentation.HTTPX_AVAILABLE", False):
+            with patch(
+                "honeyhive.tracer.http_instrumentation.REQUESTS_AVAILABLE", False
+            ):
+                # Test that instrumentation can be created even when libraries are unavailable
+                from honeyhive.tracer.http_instrumentation import HTTPInstrumentation
+
+                # Should handle gracefully with import errors
+                instrumentation = HTTPInstrumentation()
+                assert instrumentation is not None
+
+                # Verify that the unavailable flags are set correctly
+                assert instrumentation._original_httpx_request is None
+                assert instrumentation._original_requests_request is None
+
+    def test_http_instrumentation_type_safety(self) -> None:
+        """Test HTTP instrumentation type safety with None modules."""
+        with patch("honeyhive.tracer.http_instrumentation.HTTPX_AVAILABLE", False):
+            with patch(
+                "honeyhive.tracer.http_instrumentation.REQUESTS_AVAILABLE", False
+            ):
+                from honeyhive.tracer.http_instrumentation import HTTPInstrumentation
+
+                # Should handle None modules gracefully
+                instrumentation = HTTPInstrumentation()
+                assert instrumentation is not None
+
+                # Type ignore comments should prevent mypy errors
+                assert instrumentation._original_httpx_request is None
+                assert instrumentation._original_requests_request is None

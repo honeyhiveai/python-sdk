@@ -73,10 +73,8 @@ def integration_client(real_api_key, real_api_url):
 @pytest.fixture
 def integration_tracer(real_api_key, real_project, real_source):
     """HoneyHive tracer for integration tests using real API."""
-    # Reset the global tracer instance first
-    HoneyHiveTracer.reset()
-
     # Create a new tracer instance with real credentials
+    # No need to reset in multi-instance mode
     tracer = HoneyHiveTracer(
         api_key=real_api_key,
         project=real_project,
@@ -87,8 +85,8 @@ def integration_tracer(real_api_key, real_project, real_source):
 
     yield tracer
 
-    # Clean up after the test
-    HoneyHiveTracer.reset()
+    # Clean up after the test - shutdown the tracer
+    tracer.shutdown()
 
 
 @pytest.fixture
@@ -119,3 +117,83 @@ def skip_if_no_real_credentials(real_api_key):
         pytest.skip(
             "Real API credentials required for integration tests. Check .env file."
         )
+
+
+@pytest.fixture
+def mock_api_responses():
+    """Mock API responses for integration tests."""
+    return {
+        "session": {
+            "session_id": "session-integration-123",
+            "project": "integration-test-project",
+            "source": "integration-test",
+            "start_time": "2023-01-01T00:00:00Z",
+            "end_time": "2023-01-01T01:00:00Z",
+        },
+        "event": {
+            "event_id": "event-integration-123",
+            "session_id": "session-integration-123",
+            "event_type": "model_inference",
+            "event_name": "integration-event",
+            "inputs": {"prompt": "integration test"},
+            "outputs": {"response": "integration response"},
+            "success": True,
+        },
+        "datapoint": {
+            "field_id": "datapoint-integration-123",
+            "session_id": "session-integration-123",
+            "inputs": {"query": "integration test query"},
+            "outputs": {"result": "integration result"},
+            "tenant": "test-tenant",
+            "project_id": "test-project-id",
+            "created_at": "2023-01-01T00:00:00Z",
+            "updated_at": "2023-01-01T00:00:00Z",
+            "history": [],
+            "ground_truth": {},
+            "linked_event": None,
+            "linked_evals": [],
+            "linked_datasets": [],
+            "saved": False,
+            "type": "test",
+            "metadata": {},
+        },
+        "configuration": {
+            "config_id": "config-integration-123",
+            "name": "config-integration-123",
+            "project": "integration-test-project",
+            "provider": "openai",
+            "parameters": {
+                "call_type": "chat",
+                "model": "gpt-4",
+                "temperature": 0.7
+            },
+            "config": {"model": "gpt-4", "temperature": 0.7},
+        },
+        "tool": {
+            "field_id": "tool-integration-123",
+            "name": "tool-integration-123",
+            "task": "integration-test-project",
+            "description": "Test tool for integration",
+            "parameters": {"test": True},
+            "tool_type": "function",
+            "config": {"api_key": "test-key"},
+            "tenant": "test-tenant",
+            "created_at": "2023-01-01T00:00:00Z",
+            "updated_at": "2023-01-01T00:00:00Z",
+            "metadata": {},
+        },
+        "evaluation": {
+            "run_id": "12345678-1234-1234-1234-123456789abc",
+            "session_id": "session-integration-123",
+            "metrics": {"accuracy": 0.95, "latency": 100},
+            "feedback": {"rating": 5, "comment": "Great performance"},
+            "project": "integration-test-project",
+            "name": "integration-evaluation",
+            "event_ids": ["12345678-1234-1234-1234-123456789abc"],
+            "dataset_id": None,
+            "datapoint_ids": [],
+            "configuration": {"metrics": ["accuracy", "precision"]},
+            "metadata": {},
+            "status": "completed",
+        },
+    }
