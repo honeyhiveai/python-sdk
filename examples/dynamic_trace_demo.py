@@ -1,116 +1,109 @@
-#!/usr/bin/env python3
 """
-Demonstration of the dynamic trace decorator that automatically handles
-both synchronous and asynchronous functions.
+Dynamic Trace Decorator Demo
+
+This example demonstrates the automatic sync/async detection capabilities
+of the HoneyHive tracing decorators.
 """
 
 import asyncio
 import time
-from honeyhive.tracer.decorators import dynamic_trace
+from honeyhive.tracer.decorators import trace
+from typing import Optional
 
+# Sync function - automatically detected and wrapped
+@trace(event_type="demo", event_name="sync_function")
+def sync_function(name: str) -> str:
+    """Simple synchronous function."""
+    time.sleep(0.1)  # Simulate some work
+    return f"Hello, {name}!"
 
-@dynamic_trace(event_type="demo", event_name="sync_function")
-def sync_function(name: str, delay: float = 1.0) -> str:
-    """A synchronous function that simulates some work."""
-    print(f"Executing sync function for {name}")
-    time.sleep(delay)  # Simulate work
-    result = f"Hello, {name}! Work completed in {delay} seconds."
-    print(f"Sync function result: {result}")
-    return result
+# Async function - automatically detected and wrapped
+@trace(event_type="demo", event_name="async_function")
+async def async_function(name: str) -> str:
+    """Simple asynchronous function."""
+    await asyncio.sleep(0.1)  # Simulate async work
+    return f"Hello, {name}!"
 
-
-@dynamic_trace(event_type="demo", event_name="async_function")
-async def async_function(name: str, delay: float = 1.0) -> str:
-    """An asynchronous function that simulates some work."""
-    print(f"Executing async function for {name}")
-    await asyncio.sleep(delay)  # Simulate async work
-    result = f"Hello, {name}! Async work completed in {delay} seconds."
-    print(f"Async function result: {result}")
-    return result
-
-
-@dynamic_trace(event_type="demo", event_name="complex_function")
-def complex_function(data: dict, config: dict = None) -> dict:
-    """A more complex function with structured inputs and outputs."""
-    print(f"Executing complex function with data: {data}")
-    
-    if config is None:
-        config = {"multiplier": 2, "prefix": "processed"}
-    
-    # Simulate processing
-    time.sleep(0.5)
+# Complex function with multiple parameters
+@trace(event_type="demo", event_name="complex_function")
+def complex_function(
+    name: str, 
+    age: int, 
+    metadata: Optional[dict] = None
+) -> dict:
+    """Complex function with multiple parameters."""
+    if metadata is None:
+        metadata = {}
     
     result = {
-        "input_data": data,
-        "config_used": config,
-        "processed_items": len(data),
-        "timestamp": time.time(),
+        "greeting": f"Hello, {name}!",
+        "age": age,
+        "metadata": metadata,
+        "timestamp": time.time()
+    }
+    
+    return result
+
+# Function with comprehensive tracing parameters
+@trace(
+    event_type="demo",
+    event_name="comprehensive_function",
+    inputs={"name": "Alice", "age": 30},
+    metadata={"user_type": "demo", "version": "1.0"},
+    config={"timeout": 5.0, "retries": 3},
+    metrics={"duration": True, "memory_usage": True},
+    feedback={"rating": 5, "comment": "Great demo!"}
+)
+def comprehensive_function(name: str, age: int) -> dict:
+    """Function with comprehensive tracing parameters."""
+    time.sleep(0.05)  # Simulate work
+    
+    result = {
+        "greeting": f"Hello, {name}!",
+        "age": age,
+        "processed_at": time.time(),
         "status": "success"
     }
     
-    print(f"Complex function result: {result}")
     return result
 
-
-@dynamic_trace(
-    event_type="demo", 
-    event_name="async_complex_function",
-    inputs={"description": "Async function with structured tracing"},
-    metadata={"framework": "asyncio", "version": "1.0"}
-)
-async def async_complex_function(items: list, timeout: float = 2.0) -> dict:
-    """An async function with structured tracing parameters."""
-    print(f"Executing async complex function with {len(items)} items")
+async def main():
+    """Main demo function."""
+    print("🚀 HoneyHive Dynamic Trace Decorator Demo")
+    print("=" * 50)
     
-    # Simulate async processing of multiple items
-    results = []
-    for i, item in enumerate(items):
-        await asyncio.sleep(0.2)  # Simulate async work per item
-        processed_item = f"processed_{item}_{i}"
-        results.append(processed_item)
+    # Test sync function
+    print("\n1. Testing Sync Function:")
+    result1 = sync_function("Alice")
+    print(f"   Result: {result1}")
     
-    result = {
-        "input_items": items,
-        "processed_results": results,
-        "total_processed": len(results),
-        "processing_time": timeout,
-        "status": "completed"
-    }
-    
-    print(f"Async complex function result: {result}")
-    return result
-
-
-def main():
-    """Main function to demonstrate both sync and async tracing."""
-    print("=== Dynamic Trace Decorator Demo ===\n")
-    
-    # Test synchronous function
-    print("1. Testing synchronous function:")
-    sync_result = sync_function("Alice", 0.5)
-    print(f"   Final result: {sync_result}\n")
-    
-    # Test asynchronous function
-    print("2. Testing asynchronous function:")
-    async_result = asyncio.run(async_function("Bob", 0.5))
-    print(f"   Final result: {async_result}\n")
+    # Test async function
+    print("\n2. Testing Async Function:")
+    result2 = await async_function("Bob")
+    print(f"   Result: {result2}")
     
     # Test complex function
-    print("3. Testing complex function:")
-    test_data = {"name": "Charlie", "age": 30, "city": "New York"}
-    complex_result = complex_function(test_data, {"multiplier": 3, "prefix": "enhanced"})
-    print(f"   Final result: {complex_result}\n")
+    print("\n3. Testing Complex Function:")
+    result3 = complex_function("Charlie", 25, {"city": "New York"})
+    print(f"   Result: {result3}")
     
-    # Test async complex function
-    print("4. Testing async complex function:")
-    test_items = ["apple", "banana", "cherry", "date"]
-    async_complex_result = asyncio.run(async_complex_function(test_items, 1.5))
-    print(f"   Final result: {async_complex_result}\n")
+    # Test comprehensive function
+    print("\n4. Testing Comprehensive Function:")
+    result4 = comprehensive_function("Diana", 35)
+    print(f"   Result: {result4}")
     
-    print("=== Demo Complete ===")
-    print("\nNote: All functions were automatically traced using the same @dynamic_trace decorator!")
-    print("The decorator automatically detected whether each function was sync or async.")
-
+    print("\n" + "=" * 50)
+    print("✅ Demo completed successfully!")
+    print("\nNote: All functions were automatically traced using the same @trace decorator!")
+    print("The decorator automatically detected sync vs async and applied the appropriate wrapper.")
+    
+    # Show the magic - both sync and async work with the same decorator
+    print("\n🎯 Key Benefits:")
+    print("   • Single decorator for both sync and async functions")
+    print("   • Automatic detection - no need to remember which to use")
+    print("   • Consistent API and behavior")
+    print("   • Full parameter support and validation")
 
 if __name__ == "__main__":
-    main()
+    # Run the async main function
+    asyncio.run(main())

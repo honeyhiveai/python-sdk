@@ -8,10 +8,10 @@ if TYPE_CHECKING:
 
 class BaseAPI:
     """Base class for all API modules."""
-    
+
     def __init__(self, client: "HoneyHive"):
         """Initialize the API module with a client.
-        
+
         Args:
             client: HoneyHive client instance
         """

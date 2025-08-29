@@ -1,11 +1,11 @@
 """HoneyHive Python SDK - LLM Observability and Evaluation Platform"""
 
 from .api.client import HoneyHive
-from .tracer import HoneyHiveTracer, trace, atrace, trace_class, enrich_span
-from .evaluation import evaluate, evaluator, aevaluator
+from .evaluation import aevaluator, evaluate, evaluator
+from .tracer import HoneyHiveTracer, atrace, enrich_span, trace, trace_class
 from .utils.config import config
-from .utils.dotdict import dotdict
-from .utils.logger import get_logger, HoneyHiveLogger
+from .utils.dotdict import DotDict
+from .utils.logger import HoneyHiveLogger, get_logger
 
 __version__ = "0.1.0"
 
@@ -20,7 +20,7 @@ __all__ = [
     "evaluator",
     "aevaluator",
     "config",
-    "dotdict",
+    "DotDict",
     "get_logger",
     "HoneyHiveLogger",
 ]

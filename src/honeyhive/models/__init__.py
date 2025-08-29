@@ -1,84 +1,63 @@
 """HoneyHive Models - Auto-generated from OpenAPI specification"""
 
-from .generated import (
-    # Session models
-    SessionStartRequest,
-    SessionPropertiesBatch,
-    
-    # Event models
-    Event,
-    EventType,
-    EventFilter,
+# Tracing models
+from .generated import (  # Session models; Event models; Metric models; Tool models;; Datapoint models; Dataset models; Project models; Configuration models;; Experiment/Run models; Utility models
+    Configuration,
+    CreateDatapointRequest,
+    CreateDatasetRequest,
     CreateEventRequest,
     CreateModelEvent,
+    CreateProjectRequest,
+    CreateRunRequest,
+    CreateRunResponse,
+    CreateToolRequest,
+    Datapoint,
+    Datapoint1,
+    Datapoints,
+    Dataset,
+    DatasetUpdate,
+    DeleteRunResponse,
+    Detail,
+    EvaluationRun,
+    Event,
     EventDetail,
-    
-    # Metric models
+    EventFilter,
+    EventType,
+    ExperimentComparisonResponse,
+    ExperimentResultResponse,
+    GetRunResponse,
+    GetRunsResponse,
     Metric,
     Metric1,
     Metric2,
     MetricEdit,
     Metrics,
-    Threshold,
-    
-    # Tool models
-    Tool,
-    CreateToolRequest,
-    UpdateToolRequest,
-    
-    # Datapoint models
-    Datapoint,
-    Datapoint1,
-    Datapoints,
-    CreateDatapointRequest,
-    UpdateDatapointRequest,
-    
-    # Dataset models
-    Dataset,
-    CreateDatasetRequest,
-    DatasetUpdate,
-    
-    # Project models
-    Project,
-    CreateProjectRequest,
-    UpdateProjectRequest,
-    
-    # Configuration models
-    Configuration,
+    NewRun,
+    OldRun,
     Parameters,
     Parameters1,
     Parameters2,
-    PutConfigurationRequest,
     PostConfigurationRequest,
-    
-    # Experiment/Run models
-    EvaluationRun,
-    CreateRunRequest,
+    Project,
+    PutConfigurationRequest,
+    SelectedFunction,
+    SessionPropertiesBatch,
+    SessionStartRequest,
+    Threshold,
+    Tool,
+    UpdateDatapointRequest,
+    UpdateProjectRequest,
     UpdateRunRequest,
     UpdateRunResponse,
-    CreateRunResponse,
-    GetRunsResponse,
-    GetRunResponse,
-    DeleteRunResponse,
-    ExperimentResultResponse,
-    ExperimentComparisonResponse,
-    OldRun,
-    NewRun,
-    
-    # Utility models
+    UpdateToolRequest,
     UUIDType,
-    SelectedFunction,
-    Detail,
 )
-
-# Tracing models
-from ..tracer.decorators import TracingParams
+from .tracing import TracingParams
 
 __all__ = [
     # Session models
     "SessionStartRequest",
     "SessionPropertiesBatch",
-    
     # Event models
     "Event",
     "EventType",
@@ -86,7 +65,6 @@ __all__ = [
     "CreateEventRequest",
     "CreateModelEvent",
     "EventDetail",
-    
     # Metric models
     "Metric",
     "Metric1",
@@ -94,29 +72,24 @@ __all__ = [
     "MetricEdit",
     "Metrics",
     "Threshold",
-    
     # Tool models
     "Tool",
     "CreateToolRequest",
     "UpdateToolRequest",
-    
     # Datapoint models
     "Datapoint",
     "Datapoint1",
     "Datapoints",
     "CreateDatapointRequest",
     "UpdateDatapointRequest",
-    
     # Dataset models
     "Dataset",
     "CreateDatasetRequest",
     "DatasetUpdate",
-    
     # Project models
     "Project",
     "CreateProjectRequest",
     "UpdateProjectRequest",
-    
     # Configuration models
     "Configuration",
     "Parameters",
@@ -124,7 +97,6 @@ __all__ = [
     "Parameters2",
     "PutConfigurationRequest",
     "PostConfigurationRequest",
-    
     # Experiment/Run models
     "EvaluationRun",
     "CreateRunRequest",
@@ -138,12 +110,10 @@ __all__ = [
     "ExperimentComparisonResponse",
     "OldRun",
     "NewRun",
-    
     # Utility models
     "UUIDType",
     "SelectedFunction",
     "Detail",
-    
     # Tracing models
     "TracingParams",
 ]

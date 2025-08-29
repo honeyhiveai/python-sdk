@@ -1,15 +1,15 @@
 """HoneyHive API Client Module"""
 
 from .client import HoneyHive
-from .session import SessionAPI
-from .events import EventsAPI
-from .tools import ToolsAPI
+from .configurations import ConfigurationsAPI
 from .datapoints import DatapointsAPI
 from .datasets import DatasetsAPI
-from .configurations import ConfigurationsAPI
-from .projects import ProjectsAPI
-from .metrics import MetricsAPI
 from .evaluations import EvaluationsAPI
+from .events import EventsAPI
+from .metrics import MetricsAPI
+from .projects import ProjectsAPI
+from .session import SessionAPI
+from .tools import ToolsAPI
 
 __all__ = [
     "HoneyHive",

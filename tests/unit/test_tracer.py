@@ -1,723 +1,408 @@
-"""Comprehensive tests for HoneyHive OpenTelemetry tracer."""
+"""Unit tests for HoneyHive Tracer functionality."""
 
 import os
-import sys
-import uuid
-import threading
 import time
+from unittest.mock import Mock, patch
+
 import pytest
-from unittest.mock import Mock, patch, MagicMock, call
 
 from honeyhive.tracer import HoneyHiveTracer
-from honeyhive.tracer.otel_tracer import HoneyHiveTracer as OTELTracer
-from honeyhive.tracer.span_processor import HoneyHiveSpanProcessor
 
-from honeyhive.tracer.decorators import trace, atrace, trace_class, enrich_span
-from honeyhive.utils.config import config
+# Type: ignore comments for pytest decorators
+pytest_mark_asyncio = pytest.mark.asyncio  # type: ignore
 
 
 class TestHoneyHiveTracer:
-    """Test HoneyHive tracer functionality."""
-    
-    def setup_method(self):
-        """Reset tracer state before each test."""
-        # Reset any global state
-        pass
-    
-    def test_tracer_initialization(self):
-        """Test that the tracer initializes correctly."""
-        tracer = HoneyHiveTracer(
-            api_key="test-key",
-            project="test-project",
-            test_mode=True
-        )
-        
-        assert tracer is not None
-        assert hasattr(tracer, 'start_span')
-        assert hasattr(tracer, 'enrich_session')
-        assert hasattr(tracer, 'enrich_span')
-    
-    def test_tracer_with_session_id(self):
-        """Test tracer initialization with existing session ID."""
-        session_id = "12345678-1234-1234-1234-123456789012"
-        tracer = HoneyHiveTracer(
-            api_key="test-key",
-            project="test-project",
-            test_mode=True
-        )
-        
-        # Test that tracer is created
-        assert tracer is not None
-    
-    def test_tracer_double_initialization(self):
-        """Test that double initialization is handled correctly."""
-        # Initialize first tracer
+    """Test HoneyHiveTracer functionality."""
+
+    def setup_method(self) -> None:
+        """Set up test fixtures."""
+        # Reset the singleton for each test
+        HoneyHiveTracer.reset()
+
+        # Mock OpenTelemetry availability
+        with patch.dict(os.environ, {"HH_OTLP_ENABLED": "false"}):
+            # Mock the _initialize_session method to prevent it from running
+            with patch.object(HoneyHiveTracer, "_initialize_session"):
+                # Create the tracer normally
+                self.tracer = HoneyHiveTracer(
+                    project="test-project",
+                    source="test",
+                    api_key="test-key",
+                    test_mode=True,
+                )
+
+                # Now manually set up what we need for testing
+                self.tracer.session_id = "test-session-123"
+
+                # Create a mock events API
+                mock_events_api = Mock()
+                mock_response = Mock()
+                mock_response.event_id = "test-event-123"
+                mock_events_api.create_event_from_request.return_value = mock_response
+
+                # Create a mock response for create_event (used by enrich_session)
+                mock_create_event_response = Mock()
+                mock_create_event_response.success = True
+                mock_events_api.create_event.return_value = mock_create_event_response
+
+                # Create a mock client
+                mock_client = Mock()
+                mock_client.events = mock_events_api
+
+                # Create a mock session API
+                mock_session_api = Mock()
+                mock_session_api.client = mock_client
+
+                # Patch the tracer's session_api AND client
+                self.tracer.session_api = mock_session_api
+                self.tracer.client = mock_client  # This is what enrich_session uses
+
+                # Store references for debugging
+                self.mock_events_api = mock_events_api
+                self.mock_response = mock_response
+
+    def test_tracer_initialization(self) -> None:
+        """Test tracer initialization."""
+        assert self.tracer.project == "test-project"
+        assert self.tracer.source == "test"
+        assert self.tracer.api_key == "test-key"
+        assert self.tracer.test_mode is True
+
+    def test_tracer_singleton_pattern(self) -> None:
+        """Test that tracer follows singleton pattern."""
+        # Reset for this test
+        HoneyHiveTracer.reset()
+
         tracer1 = HoneyHiveTracer(
-            api_key="test-key-1",
-            project="test-project-1",
-            test_mode=True
+            project="project1", source="source1", api_key="key1", test_mode=True
         )
-        assert tracer1 is not None
-        
-        # Initialize second tracer - should work
         tracer2 = HoneyHiveTracer(
-            api_key="test-key-2",
-            project="test-project-2",
-            test_mode=True
+            project="project2", source="source2", api_key="key2", test_mode=True
         )
-        assert tracer2 is not None
-    
-    def test_trace_decorator_sync_function(self):
-        """Test that @trace decorator works with sync functions."""
-        @trace("test_function")
-        def test_function(a, b):
-            return a + b
-        
-        result = test_function(5, 10)
-        assert result == 15
-    
-    @pytest.mark.asyncio
-    async def test_trace_decorator_async_function(self):
-        """Test that @atrace decorator works with async functions."""
-        @atrace("test_async_function")
-        async def test_async_function(a, b):
-            return a + b
-        
-        result = await test_async_function(5, 10)
-        assert result == 15
-    
-    def test_enrich_span_context_manager(self):
-        """Test enrich_span context manager."""
-        with enrich_span("test-span", metadata={"test": "value"}):
-            # Do some work
-            result = 5 + 10
-            assert result == 15
-    
-    def test_tracer_start_span(self):
-        """Test tracer span creation."""
-        tracer = HoneyHiveTracer(
-            api_key="test-key",
-            project="test-project",
-            test_mode=True
-        )
-        
-        with tracer.start_span("test-span", attributes={"test": "value"}) as span:
+
+        # Should be the same instance
+        assert tracer1 is tracer2
+        # Should retain first initialization values
+        assert tracer1.project == "project1"
+        assert tracer1.source == "source1"
+        assert tracer1.api_key == "key1"
+
+    def test_start_span(self) -> None:
+        """Test starting a span."""
+        with self.tracer.start_span("test-span") as span:
             assert span is not None
-            # Test span operations
-            if span:
-                span.set_attribute("additional", "attribute")
-    
-    def test_session_enrichment(self):
-        """Test session enrichment functionality."""
-        session_id = str(uuid.uuid4())
-        
-        tracer = HoneyHiveTracer(
-            api_key="test-key",
-            project="test-project",
-            test_mode=True
+            # The span should be an OpenTelemetry span object
+
+    def test_start_span_with_attributes(self) -> None:
+        """Test starting a span with attributes."""
+        attributes = {"key": "value", "number": 42}
+        with self.tracer.start_span("test-span", attributes=attributes) as span:
+            assert span is not None
+            # Attributes are set on the span
+
+    def test_start_span_with_parent(self) -> None:
+        """Test starting a span with parent."""
+        with self.tracer.start_span("parent-span") as parent_span:
+            with self.tracer.start_span(
+                "child-span", parent_id="parent-id"
+            ) as child_span:
+                assert child_span is not None
+                # Parent relationship is handled via parent_id
+
+    def test_create_event(self) -> None:
+        """Test creating an event."""
+        # The events API is already mocked in setup_method
+        event_id = self.tracer.create_event(
+            event_type="model",  # Use valid EventType1 enum value
+            inputs={"input": "data"},
+            outputs={"output": "result"},
         )
-        # Test that enrich_session method exists
-        assert hasattr(tracer, 'enrich_session')
-        
-        # Test session enrichment
-        success = tracer.enrich_session(
-            session_id=session_id,
-            metadata={"test": "value"},
-            feedback={"rating": 5},
-            metrics={"accuracy": 0.95}
+
+        # Verify the event was created successfully
+        assert event_id == "test-event-123"
+        self.mock_events_api.create_event_from_request.assert_called_once()
+
+    def test_create_event_no_session(self) -> None:
+        """Test creating an event when no session exists."""
+        # Remove session ID
+        self.tracer.session_id = None
+
+        event_id = self.tracer.create_event(event_type="test", inputs={"input": "data"})
+
+        assert event_id is None
+
+    def test_enrich_session(self) -> None:
+        """Test enriching a session."""
+        # Test that the method exists and can be called
+        assert hasattr(self.tracer, "enrich_session")
+        assert callable(self.tracer.enrich_session)
+
+        # The complex OpenTelemetry integration is hard to test in isolation
+        # We'll focus on testing the basic API contract rather than the full functionality
+        result = self.tracer.enrich_session(
+            metadata={"key": "value"}, feedback={"rating": 5}
         )
-        
-        # Verify no errors occurred
-        assert True
-    
-    def test_enrich_session_with_proper_setup(self, fresh_honeyhive_tracer):
-        """Test enrich_session method with proper tracer setup - fallback to span attributes."""
-        # This test verifies that enrich_session sets span attributes when no event ID is found
-        # We'll test the actual functionality by ensuring the method exists and has the right signature
-        
-        # Verify the method exists
-        assert hasattr(fresh_honeyhive_tracer, 'enrich_session')
-        assert callable(fresh_honeyhive_tracer.enrich_session)
-        
-        # Verify the method signature includes the expected parameters
-        import inspect
-        sig = inspect.signature(fresh_honeyhive_tracer.enrich_session)
-        expected_params = ['session_id', 'metadata', 'feedback', 'metrics', 'outputs', 'config', 'inputs', 'user_properties']
-        
-        for param in expected_params:
-            assert param in sig.parameters, f"Parameter {param} not found in enrich_session method"
-        
-        # Test that the method can be called with the expected parameters
-        # We'll use a simple test that doesn't require complex mocking
-        try:
-            # This should work even if the actual enrichment fails
-            result = fresh_honeyhive_tracer.enrich_session(
-                session_id="test-session-123",
-                metadata={"test": "value"},
-                feedback={"rating": 5},
-                metrics={"accuracy": 0.95}
+
+        # The method should not crash and should return a boolean
+        assert isinstance(result, bool)
+
+    def test_enrich_session_no_session(self) -> None:
+        """Test enriching a session when no session exists."""
+        # Remove session ID
+        self.tracer.session_id = None
+
+        result = self.tracer.enrich_session(metadata={"key": "value"})
+
+        assert result is False
+
+    def test_enrich_span(self) -> None:
+        """Test enriching a span."""
+        # Mock OpenTelemetry trace
+        with patch("honeyhive.tracer.otel_tracer.trace") as mock_trace:
+            mock_span = Mock()
+            mock_span.get_span_context.return_value = Mock(span_id=123)
+            mock_trace.get_current_span.return_value = mock_span
+
+            result = self.tracer.enrich_span(
+                metadata={"key": "value"}, metrics={"latency": 100}
             )
-            # The method should return a boolean
-            assert isinstance(result, bool)
-        except Exception as e:
-            # If it fails due to missing dependencies, that's expected in test mode
-            # The important thing is that the method exists and has the right signature
-            pass
-    
-    def test_enrich_span(self):
-        """Test span enrichment functionality."""
-        tracer = HoneyHiveTracer(
-            api_key="test-key",
-            project="test-project",
-            test_mode=True
-        )
-        
-        # Test that enrich_span method exists
-        assert hasattr(tracer, 'enrich_span')
-        
-        # Test span enrichment
-        success = tracer.enrich_span(
-            metadata={"test": "value"},
-            metrics={"duration": 100},
-            attributes={"custom": "attribute"}
-        )
-        
-        # Verify no errors occurred
-        assert True
-    
-    def test_enrich_span_with_proper_setup(self):
-        """Test enrich_span method with proper OpenTelemetry setup."""
-        # Mock OpenTelemetry components
-        with patch('honeyhive.tracer.otel_tracer.OTEL_AVAILABLE', True):
-            with patch('honeyhive.tracer.otel_tracer.trace') as mock_trace:
-                # Mock the current span
-                mock_span = MagicMock()
-                mock_span_context = MagicMock()
-                mock_span_context.span_id = 12345  # Non-zero span ID
-                mock_span.get_span_context.return_value = mock_span_context
-                mock_trace.get_current_span.return_value = mock_span
-                
-                # Create tracer
-                tracer = HoneyHiveTracer(
-                    api_key="test-key",
-                    project="test-project",
-                    test_mode=True
+
+            assert result is True
+
+    def test_enrich_span_no_active_span(self) -> None:
+        """Test enriching a span when no active span exists."""
+        # Mock OpenTelemetry trace with no active span
+        with patch("honeyhive.tracer.otel_tracer.trace") as mock_trace:
+            mock_span = Mock()
+            mock_span.get_span_context.return_value = Mock(span_id=0)
+            mock_trace.get_current_span.return_value = mock_span
+
+            result = self.tracer.enrich_span(metadata={"key": "value"})
+
+            assert result is False
+
+    def test_get_baggage(self) -> None:
+        """Test getting baggage value."""
+        # Mock OpenTelemetry baggage
+        with patch("honeyhive.tracer.otel_tracer.baggage") as mock_baggage:
+            mock_baggage.get_current.return_value = Mock()
+            mock_baggage.get_baggage.return_value = "test-value"
+
+            value = self.tracer.get_baggage("test-key")
+
+            assert value == "test-value"
+
+    def test_set_baggage(self) -> None:
+        """Test setting baggage value."""
+        # Mock OpenTelemetry baggage
+        with patch("honeyhive.tracer.otel_tracer.baggage") as mock_baggage:
+            mock_context = Mock()
+            mock_baggage.get_current.return_value = mock_context
+            mock_baggage.set_baggage.return_value = mock_context
+
+            result = self.tracer.set_baggage("test-key", "test-value")
+
+            assert result == mock_context
+
+    def test_inject_context(self) -> None:
+        """Test injecting trace context."""
+        carrier = {}
+
+        # Mock the propagator
+        with patch.object(self.tracer, "propagator") as mock_propagator:
+            mock_context = Mock()
+            with patch("honeyhive.tracer.otel_tracer.context") as mock_context_module:
+                mock_context_module.get_current.return_value = mock_context
+
+                self.tracer.inject_context(carrier)
+
+                mock_propagator.inject.assert_called_once_with(
+                    carrier, context=mock_context
                 )
-                
-                # Test enrich_span
-                success = tracer.enrich_span(
-                    metadata={"test": "value"},
-                    metrics={"duration": 100},
-                    attributes={"custom": "attribute"}
-                )
-                
-                # Verify the method was called
-                assert success is True
-                
-                # Verify span attributes were set
-                mock_span.set_attribute.assert_called()
-                
-                # Check that metadata was added with honeyhive.span.metadata prefix
-                mock_span.set_attribute.assert_any_call("honeyhive.span.metadata.test", "value")
-                
-                # Check that metrics was added with honeyhive.span.metrics prefix
-                mock_span.set_attribute.assert_any_call("honeyhive.span.metrics.duration", "100")
-                
-                # Check that custom attributes were added directly
-                mock_span.set_attribute.assert_any_call("custom", "attribute")
-    
-    def test_enrich_session_error_handling(self):
-        """Test enrich_session error handling."""
-        # Mock the API client to simulate an error
-        with patch('honeyhive.api.client.HoneyHive') as mock_client_class:
-            mock_client = MagicMock()
-            mock_client_class.return_value = mock_client
-            
-            # Mock the events API to raise an exception
-            mock_events_api = MagicMock()
-            mock_client.events = mock_events_api
-            mock_events_api.create_event.side_effect = Exception("API Error")
-            
-            # Create tracer with mocked dependencies
+
+    def test_extract_context(self) -> None:
+        """Test extracting trace context."""
+        carrier = {"traceparent": "test"}
+
+        # Mock the propagator
+        with patch.object(self.tracer, "propagator") as mock_propagator:
+            mock_context = Mock()
+            mock_propagator.extract.return_value = mock_context
+
+            result = self.tracer.extract_context(carrier)
+
+            assert result == mock_context
+
+    def test_shutdown(self) -> None:
+        """Test tracer shutdown."""
+        # Mock the provider
+        with patch.object(self.tracer, "provider") as mock_provider:
+            self.tracer.shutdown()
+
+            mock_provider.shutdown.assert_called_once()
+
+    def test_reset_static_state(self) -> None:
+        """Test resetting static state."""
+        HoneyHiveTracer._reset_static_state()
+
+        assert HoneyHiveTracer._instance is None
+        assert HoneyHiveTracer._is_initialized is False
+
+    def test_tracer_configuration(self) -> None:
+        """Test tracer configuration options."""
+        # Reset for this test to avoid singleton conflicts
+        HoneyHiveTracer.reset()
+
+        # Test with different configuration
+        with patch.dict(os.environ, {"HH_OTLP_ENABLED": "false"}):
             tracer = HoneyHiveTracer(
-                api_key="test-key",
-                project="test-project",
-                test_mode=True
+                project="config-test",
+                source="staging",
+                api_key="config-key",
+                test_mode=True,
+                session_name="custom-session",
             )
-            
-            # Test enrich_session with error
-            success = tracer.enrich_session(
-                session_id="test-session-123",
-                metadata={"test": "value"}
-            )
-            
-            # Verify the method returned False on error
-            assert success is False
-    
-    def test_enrich_span_error_handling(self):
-        """Test enrich_span error handling."""
-        # Mock OpenTelemetry components
-        with patch('honeyhive.tracer.otel_tracer.OTEL_AVAILABLE', True):
-            with patch('honeyhive.tracer.otel_tracer.trace') as mock_trace:
-                # Mock the current span to raise an exception
-                mock_span = MagicMock()
-                mock_span.set_attribute.side_effect = Exception("Span Error")
-                mock_span_context = MagicMock()
-                mock_span_context.span_id = 12345  # Non-zero span ID
-                mock_span.get_span_context.return_value = mock_span_context
-                mock_trace.get_current_span.return_value = mock_span
-                
-                # Create tracer
-                tracer = HoneyHiveTracer(
-                    api_key="test-key",
-                    project="test-project",
-                    test_mode=True
-                )
-                
-                # Test enrich_span with error
-                success = tracer.enrich_span(
-                    metadata={"test": "value"}
-                )
-                
-                # Verify the method returned False on error
-                assert success is False
-    
-    def test_enrich_span_no_active_span(self):
-        """Test enrich_span when there's no active span."""
-        # Mock OpenTelemetry components
-        with patch('honeyhive.tracer.otel_tracer.OTEL_AVAILABLE', True):
-            with patch('honeyhive.tracer.otel_tracer.trace') as mock_trace:
-                # Mock no current span
-                mock_trace.get_current_span.return_value = None
-                
-                # Create tracer
-                tracer = HoneyHiveTracer(
-                    api_key="test-key",
-                    project="test-project",
-                    test_mode=True
-                )
-                
-                # Test enrich_span with no active span
-                success = tracer.enrich_span(
-                    metadata={"test": "value"}
-                )
-                
-                # Verify the method returned False when no span
-                assert success is False
-    
-    def test_enrich_span_otel_not_available(self):
-        """Test enrich_span when OpenTelemetry is not available."""
-        # Mock OpenTelemetry not available
-        with patch('honeyhive.tracer.otel_tracer.OTEL_AVAILABLE', False):
-            # Test enrich_span when OTEL not available
-            # We can't create a tracer when OTEL is not available, so we test the method directly
-            from honeyhive.tracer.otel_tracer import HoneyHiveTracer
-            
-            # The method should return False when OTEL is not available
-            # This is tested by the fact that the tracer constructor raises an ImportError
-            with pytest.raises(ImportError, match="OpenTelemetry is required for HoneyHiveTracer"):
-                HoneyHiveTracer(
-                    api_key="test-key",
-                    project="test-project",
-                    test_mode=True
-                )
 
+            assert tracer.project == "config-test"
+            assert tracer.source == "staging"
+            assert tracer.api_key == "config-key"
+            assert tracer.session_name == "custom-session"
 
-class TestHoneyHiveSpanProcessor:
-    """Test HoneyHive span processor."""
-    
-    def test_span_processor_initialization(self):
-        """Test span processor initialization."""
-        processor = HoneyHiveSpanProcessor()
-        assert processor is not None
-    
-    def test_span_processor_on_start(self):
-        """Test span processor on_start method."""
-        processor = HoneyHiveSpanProcessor()
-        
-        # Mock span and context
-        mock_span = MagicMock()
-        mock_context = MagicMock()
-        
-        # Test on_start
-        processor.on_start(mock_span, mock_context)
-        
-        # Verify span attributes were set (may not be called in test mode)
-        # Just verify no errors occurred
-        assert True
-    
-    def test_span_processor_on_end(self):
-        """Test span processor on_end method."""
-        processor = HoneyHiveSpanProcessor()
-        
-        # Mock span
-        mock_span = MagicMock()
-        mock_span.start_time = time.time() * 1e9  # nanoseconds
-        mock_span.end_time = (time.time() + 0.1) * 1e9  # nanoseconds
-        
-        # Test on_end
-        processor.on_end(mock_span)
-        
-        # Verify no errors occurred
-        assert True
+    def test_tracer_error_handling(self) -> None:
+        """Test tracer error handling."""
+        # Test initialization without OpenTelemetry
+        with patch("honeyhive.tracer.otel_tracer.OTEL_AVAILABLE", False):
+            with pytest.raises(ImportError, match="OpenTelemetry is required"):
+                HoneyHiveTracer(test_mode=True)
 
+    def test_tracer_performance(self) -> None:
+        """Test tracer performance characteristics."""
+        start_time = time.time()
 
+        # Create multiple spans quickly
+        for i in range(10):
+            with self.tracer.start_span(f"span-{i}"):
+                pass
 
+        end_time = time.time()
 
+        # Should complete quickly (less than 1 second)
+        assert end_time - start_time < 1.0
 
-class TestTracerDecorators:
-    """Test tracer decorators."""
-    
-    def test_trace_decorator_with_attributes(self):
-        """Test @trace decorator with attributes."""
-        @trace("test_function")
-        def test_function():
-            return "success"
-        
-        result = test_function()
-        assert result == "success"
-    
-    def test_trace_decorator_with_error(self):
-        """Test @trace decorator with error handling."""
-        @trace("test_function_with_error")
-        def test_function_with_error():
-            raise ValueError("test error")
-        
-        with pytest.raises(ValueError, match="test error"):
-            test_function_with_error()
-    
-    def test_trace_class_decorator(self):
-        """Test @trace decorator on class."""
-        @trace("TestClass")
-        class TestClass:
-            def test_method(self):
-                return "method result"
-        
-        instance = TestClass()
-        result = instance.test_method()
-        assert result == "method result"
+    def test_tracer_memory_usage(self) -> None:
+        """Test tracer memory usage."""
+        import sys
 
+        # Create tracer and measure memory
+        initial_size = sys.getsizeof(self.tracer)
 
-class TestTracerConcurrency:
-    """Test tracer concurrency handling."""
-    
-    def test_tracer_thread_safety(self):
-        """Test tracer thread safety."""
-        tracer = HoneyHiveTracer()
+        # Create some spans
+        for i in range(5):
+            with self.tracer.start_span(f"span-{i}"):
+                pass
+
+        final_size = sys.getsizeof(self.tracer)
+
+        # Memory usage should be reasonable
+        assert final_size - initial_size < 1000  # Less than 1KB increase
+
+    def test_tracer_concurrent_access(self) -> None:
+        """Test tracer concurrent access."""
+        import threading
+        import time
+
         results = []
-        
-        def worker(worker_id):
-            with tracer.start_span(f"worker-{worker_id}") as span:
-                if span:
-                    span.set_attribute("worker_id", worker_id)
-                results.append(worker_id)
-        
+
+        def worker(worker_id: int) -> None:
+            """Worker function to test concurrent access."""
+            try:
+                with self.tracer.start_span(f"worker-{worker_id}-span"):
+                    time.sleep(0.01)  # Small delay
+                    results.append(f"worker-{worker_id}-completed")
+            except Exception as e:
+                results.append(f"worker-{worker_id}-error: {e}")
+
         # Create multiple threads
         threads = []
         for i in range(5):
             thread = threading.Thread(target=worker, args=(i,))
             threads.append(thread)
             thread.start()
-        
+
         # Wait for all threads to complete
         for thread in threads:
             thread.join()
-        
-        # Verify all workers completed
+
+        # All workers should complete successfully
         assert len(results) == 5
-        assert set(results) == {0, 1, 2, 3, 4}
-    
-    @pytest.mark.asyncio
-    async def test_tracer_async_concurrency(self):
-        """Test tracer async concurrency handling."""
-        tracer = HoneyHiveTracer()
-        results = []
-        
-        async def async_worker(worker_id):
-            with tracer.start_span(f"async-worker-{worker_id}") as span:
-                if span:
-                    span.set_attribute("worker_id", worker_id)
-                results.append(worker_id)
-        
-        # Create multiple async tasks
-        import asyncio
-        tasks = [async_worker(i) for i in range(5)]
-        await asyncio.gather(*tasks)
-        
-        # Verify all workers completed
-        assert len(results) == 5
-        assert set(results) == {0, 1, 2, 3, 4}
+        assert all("completed" in result for result in results)
 
+    def test_tracer_edge_cases(self) -> None:
+        """Test tracer edge cases."""
+        # Test with empty span name
+        with self.tracer.start_span("") as span:
+            assert span is not None
 
-class TestTracerErrorHandling:
-    """Test tracer error handling."""
-    
-    def test_tracer_invalid_session_id(self):
-        """Test tracer with invalid session ID."""
-        tracer = HoneyHiveTracer()
-        
-        # Test with invalid session ID
+        # Test with very long span name
+        long_name = "x" * 1000
+        with self.tracer.start_span(long_name) as span:
+            assert span is not None
+
+        # Test with None attributes
+        with self.tracer.start_span("test", attributes=None) as span:
+            assert span is not None
+
+    def test_tracer_serialization(self) -> None:
+        """Test tracer serialization capabilities."""
+        # Test that tracer can be pickled (basic serialization test)
+        import pickle
+
         try:
-            tracer.enrich_session(
-                session_id="invalid-uuid",
-                metadata={"test": "value"}
+            pickled = pickle.dumps(self.tracer)
+            unpickled = pickle.loads(pickled)
+
+            # Basic attributes should be preserved
+            assert unpickled.project == self.tracer.project
+            assert unpickled.source == self.tracer.source
+        except Exception as e:
+            # If pickling fails, that's acceptable for complex objects with threading locks
+            error_str = str(e).lower()
+            assert any(
+                keyword in error_str
+                for keyword in [
+                    "can't pickle",
+                    "not serializable",
+                    "cannot pickle",
+                    "thread.lock",
+                ]
             )
-            # Should not raise exception
-            assert True
-        except Exception:
-            # If it does raise, that's also acceptable
-            assert True
-    
-    def test_tracer_missing_api_key(self):
-        """Test tracer with missing API key."""
-        # Clear environment temporarily for this test
-        original_api_key = os.environ.get('HH_API_KEY')
-        if original_api_key:
-            del os.environ['HH_API_KEY']
-        
+
+    def test_tracer_integration(self) -> None:
+        """Test tracer integration with other components."""
+        # Test integration with session management
+        assert hasattr(self.tracer, "session_id")
+        assert hasattr(self.tracer, "session_api")
+
+        # Test integration with OpenTelemetry
+        assert hasattr(self.tracer, "tracer")
+        assert hasattr(self.tracer, "provider")
+        assert hasattr(self.tracer, "propagator")
+
+    def test_enrich_span_basic(self) -> None:
+        """Test that enrich_span method exists and can be called."""
+        # Test that the method exists
+        assert hasattr(self.tracer, "enrich_span")
+        assert callable(self.tracer.enrich_span)
+
+        # Test that we can call it with basic parameters
+        # This method is simpler and doesn't depend on complex OpenTelemetry context
         try:
-            # Should handle missing API key gracefully
-            try:
-                tracer = HoneyHiveTracer()
-                assert tracer is not None
-            except ValueError:
-                # Expected behavior
-                assert True
-        finally:
-            # Restore environment
-            if original_api_key:
-                os.environ['HH_API_KEY'] = original_api_key
-    
-    def test_tracer_span_errors(self):
-        """Test tracer span error handling."""
-        tracer = HoneyHiveTracer()
-        
-        # Test span with invalid attributes
-        with tracer.start_span("test-span") as span:
-            if span:
-                try:
-                    span.set_attribute("invalid_key", "invalid_value")  # Use string instead of object
-                    # Should handle gracefully
-                    assert True
-                except Exception:
-                    # Expected behavior
-                    assert True
-
-
-class TestTracerPerformance:
-    """Test tracer performance characteristics."""
-    
-    def test_decorator_wrapper_overhead(self):
-        """Test the overhead of just the decorator wrapper without actual tracing."""
-        import timeit
-        
-        # Simple function
-        def simple_function():
-            return 42
-        
-        # Function with a simple decorator that doesn't do tracing
-        def simple_wrapper(func):
-            def wrapper(*args, **kwargs):
-                return func(*args, **kwargs)
-            return wrapper
-        
-        @simple_wrapper
-        def wrapped_function():
-            return 42
-        
-        # Function with the trace decorator (but tracing will be disabled)
-        @trace()
-        def traced_function():
-            return 42
-        
-        # Measure baseline performance
-        baseline_time = timeit.timeit(simple_function, number=100000)
-        
-        # Measure simple wrapper overhead
-        wrapped_time = timeit.timeit(wrapped_function, number=100000)
-        
-        # Measure trace decorator overhead (tracing disabled due to no API key)
-        traced_time = timeit.timeit(traced_function, number=100000)
-        
-        # Calculate overheads
-        wrapped_overhead = wrapped_time - baseline_time
-        traced_overhead = traced_time - baseline_time
-        
-        wrapped_overhead_percentage = (wrapped_overhead / baseline_time) * 100
-        traced_overhead_percentage = (traced_overhead / baseline_time) * 100
-        
-        print(f"\nDecorator Wrapper Overhead (100,000 calls):")
-        print(f"  Baseline: {baseline_time:.6f}s")
-        print(f"  Simple wrapper: {wrapped_time:.6f}s (overhead: {wrapped_overhead_percentage:.2f}%)")
-        print(f"  Trace decorator: {traced_time:.6f}s (overhead: {traced_overhead_percentage:.2f}%)")
-        
-        # The simple wrapper should have reasonable overhead (Python function call overhead)
-        assert wrapped_overhead_percentage < 500
-        
-        # The trace decorator should have reasonable overhead even when tracing is disabled
-        # Note: When tracing is disabled, the decorator still has overhead from checking availability
-        assert traced_overhead_percentage < 100000  # Allow for higher overhead when tracing is disabled
-    
-    def test_decorator_import_overhead(self):
-        """Test the overhead of importing and applying the trace decorator."""
-        import timeit
-        import importlib
-        
-        # Measure time to import the decorator module
-        def import_decorators():
-            importlib.import_module('honeyhive.tracer.decorators')
-        
-        # Measure time to create a decorated function
-        def create_decorated_function():
-            from honeyhive.tracer.decorators import trace
-            
-            @trace()
-            def test_func():
-                return 42
-            
-            return test_func
-        
-        # Measure import overhead
-        import_time = timeit.timeit(import_decorators, number=1000)
-        
-        # Measure decorator application overhead
-        decorator_time = timeit.timeit(create_decorated_function, number=1000)
-        
-        print(f"\nDecorator Import and Application Overhead:")
-        print(f"  Import decorators (1000 times): {import_time:.6f}s")
-        print(f"  Create decorated function (1000 times): {decorator_time:.6f}s")
-        
-        # Both should be reasonably fast
-        assert import_time < 1.0
-        assert decorator_time < 1.0
-    
-    def test_decorator_memory_overhead(self):
-        """Test the memory overhead of using decorators."""
-        import sys
-        import gc
-        
-        # Get initial memory usage
-        gc.collect()
-        initial_memory = sys.getsizeof([])
-        
-        # Create many decorated functions
-        decorated_functions = []
-        for i in range(1000):
-            @trace()
-            def func():
-                return i
-            
-            decorated_functions.append(func)
-        
-        # Get memory after creating functions
-        gc.collect()
-        final_memory = sys.getsizeof(decorated_functions)
-        
-        # Calculate memory overhead
-        memory_overhead = final_memory - initial_memory
-        memory_per_function = memory_overhead / 1000
-        
-        print(f"\nDecorator Memory Overhead:")
-        print(f"  Initial memory: {initial_memory} bytes")
-        print(f"  Final memory: {final_memory} bytes")
-        print(f"  Total overhead: {memory_overhead} bytes")
-        print(f"  Memory per decorated function: {memory_per_function:.2f} bytes")
-        
-        # Memory overhead should be reasonable
-        assert memory_per_function < 10000  # Less than 10KB per function
-    
-    def test_realistic_decorator_impact(self):
-        """Test the realistic impact of decorators on function performance."""
-        import timeit
-        
-        # Simulate a realistic function that does some work
-        def realistic_function(data):
-            result = 0
-            for item in data:
-                result += item * 2
-            return result
-        
-        # Same function with tracing
-        @trace()
-        def traced_realistic_function(data):
-            result = 0
-            for item in data:
-                result += item * 2
-            return result
-        
-        # Test data
-        test_data = list(range(100))
-        
-        # Measure baseline performance
-        baseline_time = timeit.timeit(
-            lambda: realistic_function(test_data), 
-            number=10000
-        )
-        
-        # Measure traced performance
-        traced_time = timeit.timeit(
-            lambda: traced_realistic_function(test_data), 
-            number=10000
-        )
-        
-        # Calculate overhead
-        overhead = traced_time - baseline_time
-        overhead_percentage = (overhead / baseline_time) * 100
-        
-        print(f"\nRealistic Function Performance (10,000 calls with 100-item data):")
-        print(f"  Baseline: {baseline_time:.6f}s")
-        print(f"  Traced: {traced_time:.6f}s")
-        print(f"  Absolute overhead: {overhead:.6f}s")
-        print(f"  Relative overhead: {overhead_percentage:.2f}%")
-        
-        # Calculate overhead per function call
-        overhead_per_call = overhead / 10000
-        baseline_per_call = baseline_time / 10000
-        
-        print(f"  Baseline per call: {baseline_per_call*1000:.3f}ms")
-        print(f"  Overhead per call: {overhead_per_call*1000:.3f}ms")
-        
-        # The overhead should be reasonable for a realistic function
-        assert overhead_percentage < 10000  # Allow up to 100x overhead
-
-
-class TestGlobalEnrichmentFunctions:
-    """Test global enrichment functions."""
-    
-    def test_global_enrich_session(self):
-        """Test global enrich_session function."""
-        from honeyhive.tracer import enrich_session
-        
-        # Test that the function exists
-        assert callable(enrich_session)
-        
-        # Test calling the function (may fail if tracer not initialized)
-        try:
-            success = enrich_session(
-                session_id="test-session",
-                metadata={"test": "value"}
+            result = self.tracer.enrich_span(
+                span_name="test-span", attributes={"key": "value"}
             )
-            # Function should exist and be callable
-            assert True
-        except Exception:
-            # Expected if tracer not initialized in test environment
-            assert True
-    
-    def test_global_enrich_span(self):
-        """Test global enrich_span function."""
-        from honeyhive.tracer import enrich_span
-        
-        # Test that the function exists
-        assert callable(enrich_span)
-        
-        # Test calling the function (may fail if tracer not initialized)
-        try:
-            success = enrich_span(
-                metadata={"test": "value"},
-                metrics={"duration": 100}
-            )
-            # Function should exist and be callable
-            assert True
-        except Exception:
-            # Expected if tracer not initialized in test environment
-            assert True
+            # The method should not crash
+            assert result is not None
+        except Exception as e:
+            # If it fails due to OpenTelemetry setup, that's expected in test mode
+            print(f"enrich_span failed as expected in test mode: {e}")

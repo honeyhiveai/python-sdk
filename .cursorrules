@@ -1,0 +1,55 @@
+# HoneyHive Python SDK - AI Assistant Rules
+# This file defines rules that AI assistants must follow when working on this project
+
+## Testing & Development
+- ALWAYS use tox for running tests - Never run pytest directly
+- Use specific tox environments:
+  - `tox -e unit` for unit tests only
+  - `tox -e integration` for integration tests
+  - `tox -e lint` for linting (pylint + mypy)
+  - `tox -e format` for code formatting checks
+  - `tox -e py311`, `tox -e py312`, `tox -e py313` for Python version-specific testing
+
+## Virtual Environment & Dependencies
+- ALWAYS use virtual environments - Never install packages globally
+- **Use a virtual environment named "python-sdk"** for this project
+- Use the project's pyproject.toml for dependency management
+- Install in development mode when working on the project: `pip install -e .`
+- Respect the requires-python = ">=3.11" constraint
+
+## Code Quality & Standards
+- Follow the established formatting rules:
+  - Black with line-length = 88
+  - isort with black profile
+  - pylint and mypy for static analysis
+- Use the project's existing configuration files (pyproject.toml, tox.ini)
+- Maintain Python 3.11+ compatibility
+- **ALL code must contain docstrings** - every function, class, and module should have proper documentation
+- **Always run Black on Python files on save** when Cursor works on them
+
+## Project Structure
+- Respect the src/ layout with `src/honeyhive/` as the main package
+- Use the established module structure (api/, tracer/, evaluation/, etc.)
+- Follow the existing import patterns and package organization
+- **NO code should be in `__init__.py` files** - only imports and package-level variables
+
+## Environment Variables
+- Use the test environment variables defined in tox.ini when running tests
+- Respect the HH_* environment variable patterns established in the project
+- Set HH_TEST_MODE appropriately for different test types
+
+## Documentation & Examples
+- Update examples/ when making changes that affect usage
+- Maintain the existing documentation structure in docs/
+- Follow the established example patterns in examples/
+
+## Specific Commands to Use
+- Testing: `tox -e [environment]` instead of direct pytest calls
+- Linting: `tox -e lint`
+- Formatting: `tox -e format`
+- Documentation: `tox -e docs`
+- Installation: `pip install -e .` in a virtual environment
+
+## Important Notes
+- This project uses pytest for testing; if pytest is not installed, it should be installed and used for running tests
+- In the HoneyHive project, omit or do not configure the meter_provider because there is no metrics endpoint currently

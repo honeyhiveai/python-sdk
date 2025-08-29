@@ -1,6 +1,6 @@
 """HoneyHive Evaluation Module"""
 
-from .evaluators import evaluate, evaluator, aevaluator
+from .evaluators import aevaluator, evaluate, evaluator
 
 __all__ = [
     "evaluate",

@@ -38,6 +38,47 @@ HTTP Instrumentation
 Usage Examples
 --------------
 
+**Recommended: Use @trace for most cases**
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+The `@trace` decorator is the **preferred choice** for most tracing needs. It automatically detects whether your function is synchronous or asynchronous and applies the appropriate wrapper:
+
+.. code-block:: python
+
+   from honeyhive.tracer.decorators import trace
+
+   # Sync function - automatically wrapped with sync wrapper
+   @trace(event_type="model", event_name="text_generation")
+   def generate_text(prompt: str) -> str:
+       return "Generated text"
+
+   # Async function - automatically wrapped with async wrapper  
+   @trace(event_type="model", event_name="async_text_generation")
+   async def generate_text_async(prompt: str) -> str:
+       return "Generated text async"
+
+   # Both work seamlessly with the same decorator!
+   # No need to remember which decorator to use
+
+**Advanced: Use @atrace for async-only functions**
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+If you specifically want to ensure a function is treated as async:
+
+.. code-block:: python
+
+   from honeyhive.tracer.decorators import atrace
+
+   @atrace(event_type="llm", event_name="gpt4_completion")
+   async def call_gpt4(prompt: str) -> str:
+       response = await openai_client.chat.completions.create(...)
+       return response.choices[0].message.content
+
+**Legacy: @dynamic_trace (not recommended)**
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+The `@dynamic_trace` decorator is available for backward compatibility but is **not recommended** for new code. Use `@trace` instead as it provides the same functionality with better performance and cleaner code.
+
 Basic Tracing
 ~~~~~~~~~~~~~
 
@@ -84,3 +125,12 @@ OpenTelemetry Integration
    with trace.get_tracer(__name__).start_as_current_span("span-name"):
        # Your traced operation
        pass
+
+**Key Benefits of @trace:**
+
+✅ **Single decorator** works for both sync and async  
+✅ **Automatic detection** - no need to remember which decorator to use  
+✅ **Consistent API** - same parameters and behavior for both  
+✅ **Performance optimized** - no unnecessary async overhead for sync functions  
+✅ **Error handling** - proper exception handling for both patterns  
+✅ **Recommended approach** - preferred by the HoneyHive team

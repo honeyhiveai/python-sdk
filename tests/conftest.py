@@ -1,11 +1,14 @@
-"""Pytest configuration and fixtures for HoneyHive tests."""
+"""Test configuration and fixtures for HoneyHive."""
 
 import os
-import pytest
 from unittest.mock import Mock, patch
+
+import pytest
 
 from honeyhive.api.client import HoneyHive
 from honeyhive.tracer import HoneyHiveTracer
+
+from .utils import cleanup_test_environment, setup_test_environment
 
 
 @pytest.fixture
@@ -22,20 +25,8 @@ def project():
 
 @pytest.fixture
 def source():
-    """Test source environment."""
+    """Test source."""
     return "test"
-
-
-@pytest.fixture
-def session_id():
-    """Test session ID."""
-    return "test-session-12345"
-
-
-@pytest.fixture
-def event_id():
-    """Test event ID."""
-    return "test-event-12345"
 
 
 @pytest.fixture
@@ -48,10 +39,7 @@ def honeyhive_client(api_key):
 def honeyhive_tracer(api_key, project, source):
     """HoneyHive tracer fixture."""
     return HoneyHiveTracer(
-        api_key=api_key,
-        project=project,
-        source=source,
-        test_mode=True
+        api_key=api_key, project=project, source=source, test_mode=True
     )
 
 
@@ -61,15 +49,13 @@ def fresh_honeyhive_tracer(api_key, project, source):
     # Reset any global state that might persist
     try:
         from opentelemetry import context
+
         context.attach(context.Context())
     except ImportError:
         pass
-    
+
     return HoneyHiveTracer(
-        api_key=api_key,
-        project=project,
-        source=source,
-        test_mode=True
+        api_key=api_key, project=project, source=source, test_mode=True
     )
 
 
@@ -96,26 +82,27 @@ def mock_async_response():
 @pytest.fixture(autouse=True)
 def setup_test_env():
     """Setup test environment variables."""
-    os.environ["HH_TEST_MODE"] = "true"
-    os.environ["HH_DISABLE_TRACING"] = "false"
-    os.environ["HH_DISABLE_HTTP_TRACING"] = "true"  # Disable HTTP instrumentation during tests
-    os.environ["HH_OTLP_ENABLED"] = "false"  # Disable OTLP during tests to prevent export errors
-    
+    setup_test_environment()
+
     # Also patch the HTTP instrumentation to do nothing during tests
-    with patch("honeyhive.tracer.http_instrumentation.instrument_http") as mock_instrument:
+    with patch(
+        "honeyhive.tracer.http_instrumentation.instrument_http"
+    ) as mock_instrument:
         mock_instrument.return_value = None
-        
+
         # Also patch the HTTP instrumentation methods to prevent them from being applied
-        with patch("honeyhive.tracer.http_instrumentation.HTTPInstrumentation._instrument_httpx") as mock_httpx:
+        with patch(
+            "honeyhive.tracer.http_instrumentation.HTTPInstrumentation._instrument_httpx"
+        ) as mock_httpx:
             mock_httpx.return_value = None
-            with patch("honeyhive.tracer.http_instrumentation.HTTPInstrumentation._instrument_requests") as mock_requests:
+            with patch(
+                "honeyhive.tracer.http_instrumentation.HTTPInstrumentation._instrument_requests"
+            ) as mock_requests:
                 mock_requests.return_value = None
                 yield
-    
+
     # Cleanup
-    for key in ["HH_TEST_MODE", "HH_DISABLE_TRACING", "HH_DISABLE_HTTP_TRACING", "HH_OTLP_ENABLED"]:
-        if key in os.environ:
-            del os.environ[key]
+    cleanup_test_environment()
 
 
 @pytest.fixture
@@ -131,12 +118,11 @@ def mock_otel():
 def reset_opentelemetry_context():
     """Reset OpenTelemetry context between tests to prevent isolation issues."""
     try:
-        from opentelemetry import context
-        from opentelemetry import baggage
-        
+        from opentelemetry import baggage, context
+
         # Get the current context
         current_context = context.get_current()
-        
+
         # Clear any baggage items that might persist between tests
         baggage_keys = ["event_id", "session_id", "project", "source", "parent_id"]
         for key in baggage_keys:
@@ -144,16 +130,15 @@ def reset_opentelemetry_context():
                 current_context = baggage.set_baggage(key, None, current_context)
             except Exception:
                 pass
-        
+
         # Reset to a clean context
         context.attach(context.Context())
-        
+
         yield
-        
+
         # Cleanup after test
         context.attach(context.Context())
-        
+
     except ImportError:
         # OpenTelemetry not available, skip context reset
         yield
-

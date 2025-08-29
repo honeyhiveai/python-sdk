@@ -1,8 +1,16 @@
 """Evaluations API module for HoneyHive."""
 
-from typing import List, Optional
+from typing import Optional
 
-from ..models import EvaluationRun, CreateRunRequest, UpdateRunRequest, UpdateRunResponse, CreateRunResponse, GetRunsResponse, GetRunResponse, DeleteRunResponse
+from ..models import (
+    CreateRunRequest,
+    CreateRunResponse,
+    DeleteRunResponse,
+    GetRunResponse,
+    GetRunsResponse,
+    UpdateRunRequest,
+    UpdateRunResponse,
+)
 from .base import BaseAPI
 
 
@@ -12,44 +20,60 @@ class EvaluationsAPI(BaseAPI):
     def create_run(self, request: CreateRunRequest) -> CreateRunResponse:
         """Create a new evaluation run using CreateRunRequest model."""
         response = self.client.request(
-            "POST", 
-            "/runs", 
-            json={"run": request.model_dump(exclude_none=True)}
+            "POST", "/runs", json={"run": request.model_dump(exclude_none=True)}
         )
-        
+
         data = response.json()
+
+        # Convert string UUIDs to UUIDType objects if present
+        if "run_id" in data and isinstance(data["run_id"], str):
+            try:
+                from uuid import UUID
+
+                from ..models.generated import UUIDType
+
+                data["run_id"] = UUIDType(UUID(data["run_id"]))
+            except (ValueError, ImportError):
+                # If UUID conversion fails, keep the original value
+                pass
+
         return CreateRunResponse(**data)
 
     def create_run_from_dict(self, run_data: dict) -> CreateRunResponse:
         """Create a new evaluation run from dictionary (legacy method)."""
-        response = self.client.request(
-            "POST", 
-            "/runs", 
-            json={"run": run_data}
-        )
-        
+        response = self.client.request("POST", "/runs", json={"run": run_data})
+
         data = response.json()
         return CreateRunResponse(**data)
 
     async def create_run_async(self, request: CreateRunRequest) -> CreateRunResponse:
         """Create a new evaluation run asynchronously using CreateRunRequest model."""
         response = await self.client.request_async(
-            "POST", 
-            "/runs", 
-            json={"run": request.model_dump(exclude_none=True)}
+            "POST", "/runs", json={"run": request.model_dump(exclude_none=True)}
         )
-        
+
         data = response.json()
+
+        # Convert string UUIDs to UUIDType objects if present
+        if "run_id" in data and isinstance(data["run_id"], str):
+            try:
+                from uuid import UUID
+
+                from ..models.generated import UUIDType
+
+                data["run_id"] = UUIDType(UUID(data["run_id"]))
+            except (ValueError, ImportError):
+                # If UUID conversion fails, keep the original value
+                pass
+
         return CreateRunResponse(**data)
 
     async def create_run_from_dict_async(self, run_data: dict) -> CreateRunResponse:
         """Create a new evaluation run asynchronously from dictionary (legacy method)."""
         response = await self.client.request_async(
-            "POST", 
-            "/runs", 
-            json={"run": run_data}
+            "POST", "/runs", json={"run": run_data}
         )
-        
+
         data = response.json()
         return CreateRunResponse(**data)
 
@@ -66,29 +90,25 @@ class EvaluationsAPI(BaseAPI):
         return GetRunResponse(**data)
 
     def list_runs(
-        self, 
-        project: Optional[str] = None, 
-        limit: int = 100
+        self, project: Optional[str] = None, limit: int = 100
     ) -> GetRunsResponse:
         """List evaluation runs with optional filtering."""
         params: dict = {"limit": limit}
         if project:
             params["project"] = project
-        
+
         response = self.client.request("GET", "/runs", params=params)
         data = response.json()
         return GetRunsResponse(**data)
 
     async def list_runs_async(
-        self, 
-        project: Optional[str] = None, 
-        limit: int = 100
+        self, project: Optional[str] = None, limit: int = 100
     ) -> GetRunsResponse:
         """List evaluation runs asynchronously with optional filtering."""
         params: dict = {"limit": limit}
         if project:
             params["project"] = project
-        
+
         response = await self.client.request_async("GET", "/runs", params=params)
         data = response.json()
         return GetRunsResponse(**data)
@@ -96,44 +116,38 @@ class EvaluationsAPI(BaseAPI):
     def update_run(self, run_id: str, request: UpdateRunRequest) -> UpdateRunResponse:
         """Update an evaluation run using UpdateRunRequest model."""
         response = self.client.request(
-            "PUT", 
-            f"/runs/{run_id}", 
-            json=request.model_dump(exclude_none=True)
+            "PUT", f"/runs/{run_id}", json=request.model_dump(exclude_none=True)
         )
-        
+
         data = response.json()
         return UpdateRunResponse(**data)
 
     def update_run_from_dict(self, run_id: str, run_data: dict) -> UpdateRunResponse:
         """Update an evaluation run from dictionary (legacy method)."""
-        response = self.client.request(
-            "PUT", 
-            f"/runs/{run_id}", 
-            json=run_data
-        )
-        
+        response = self.client.request("PUT", f"/runs/{run_id}", json=run_data)
+
         data = response.json()
         return UpdateRunResponse(**data)
 
-    async def update_run_async(self, run_id: str, request: UpdateRunRequest) -> UpdateRunResponse:
+    async def update_run_async(
+        self, run_id: str, request: UpdateRunRequest
+    ) -> UpdateRunResponse:
         """Update an evaluation run asynchronously using UpdateRunRequest model."""
         response = await self.client.request_async(
-            "PUT", 
-            f"/runs/{run_id}", 
-            json=request.model_dump(exclude_none=True)
+            "PUT", f"/runs/{run_id}", json=request.model_dump(exclude_none=True)
         )
-        
+
         data = response.json()
         return UpdateRunResponse(**data)
 
-    async def update_run_from_dict_async(self, run_id: str, run_data: dict) -> UpdateRunResponse:
+    async def update_run_from_dict_async(
+        self, run_id: str, run_data: dict
+    ) -> UpdateRunResponse:
         """Update an evaluation run asynchronously from dictionary (legacy method)."""
         response = await self.client.request_async(
-            "PUT", 
-            f"/runs/{run_id}", 
-            json=run_data
+            "PUT", f"/runs/{run_id}", json=run_data
         )
-        
+
         data = response.json()
         return UpdateRunResponse(**data)
 
@@ -144,7 +158,17 @@ class EvaluationsAPI(BaseAPI):
             data = response.json()
             return DeleteRunResponse(**data)
         except Exception:
-            return DeleteRunResponse(id=run_id, deleted=False)
+            # Convert string run_id to UUIDType for the response
+            import uuid
+
+            from ..models.generated import UUIDType
+
+            try:
+                uuid_obj = uuid.UUID(run_id)
+                return DeleteRunResponse(id=UUIDType(uuid_obj), deleted=False)
+            except ValueError:
+                # If run_id is not a valid UUID, create a dummy one
+                return DeleteRunResponse(id=UUIDType(uuid.uuid4()), deleted=False)
 
     async def delete_run_async(self, run_id: str) -> DeleteRunResponse:
         """Delete an evaluation run by ID asynchronously."""
@@ -153,4 +177,14 @@ class EvaluationsAPI(BaseAPI):
             data = response.json()
             return DeleteRunResponse(**data)
         except Exception:
-            return DeleteRunResponse(id=run_id, deleted=False)
+            # Convert string run_id to UUIDType for the response
+            import uuid
+
+            from ..models.generated import UUIDType
+
+            try:
+                uuid_obj = uuid.UUID(run_id)
+                return DeleteRunResponse(id=UUIDType(uuid_obj), deleted=False)
+            except ValueError:
+                # If run_id is not a valid UUID, create a dummy one
+                return DeleteRunResponse(id=UUIDType(uuid.uuid4()), deleted=False)

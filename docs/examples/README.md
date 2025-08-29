@@ -7,7 +7,7 @@ Practical examples and usage patterns for the HoneyHive SDK.
 ### [Basic Usage Patterns](BASIC_USAGE_PATTERNS.md)
 Common usage patterns including:
 - Initialization patterns
-- Tracing patterns
+- **Tracing patterns** - **Use `@trace` decorator (recommended)**
 - Session management
 - Error handling
 - Configuration patterns
@@ -36,6 +36,23 @@ Real-world use cases including:
 3. **Need advanced features?** Read [Advanced Patterns](ADVANCED_PATTERNS.md)
 
 ## 💡 How to Use These Examples
+
+### **Important: Use @trace for Tracing**
+The examples demonstrate the **recommended `@trace` decorator** which automatically handles both sync and async functions:
+
+```python
+from honeyhive.tracer.decorators import trace  # ← Preferred
+
+@trace(event_type="model", event_name="text_generation")
+def generate_text(prompt: str) -> str:
+    return "Generated text"
+
+@trace(event_type="model", event_name="async_generation")
+async def generate_text_async(prompt: str) -> str:
+    return "Generated text async"
+```
+
+**Avoid using `@dynamic_trace`** - it's available for backward compatibility but `@trace` is preferred.
 
 ### Copy and Adapt
 - Copy the example code that matches your use case

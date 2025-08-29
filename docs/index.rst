@@ -11,7 +11,6 @@ HoneyHive is a comprehensive Python SDK for AI observability, tracing, and evalu
    FEATURE_LIST
    API_REFERENCE
    IMPLEMENTATION_GUIDE
-   DYNAMIC_TRACE_DECORATOR
    OPENINFERENCE_INTEGRATION
    examples/README
 
@@ -74,13 +73,32 @@ Basic usage:
        inputs={"prompt": "Hello, world!"}
    )
 
+**Tracing with @trace (Recommended)**
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+The `@trace` decorator is the **preferred choice** for automatic tracing:
+
+.. code-block:: python
+
+   from honeyhive.tracer.decorators import trace
+   
+   @trace(event_type="model", event_name="text_generation")
+   def generate_text(prompt: str) -> str:
+       # This function is automatically traced
+       return "Generated text"
+   
+   @trace(event_type="model", event_name="async_generation")
+   async def generate_text_async(prompt: str) -> str:
+       # Async functions work seamlessly too!
+       return "Generated text async"
+
 Features
 ========
 
 * **OpenTelemetry Integration**: Full support for distributed tracing
 * **Comprehensive API Client**: Complete coverage of HoneyHive API endpoints
 * **Evaluation Framework**: Built-in tools for AI model evaluation
-* **Dynamic Tracing**: Automatic instrumentation and tracing decorators
+* **Smart Tracing**: **@trace decorator** automatically handles sync/async functions
 * **Async Support**: Full asynchronous operation support
 * **Type Safety**: Complete type hints and Pydantic model validation
 

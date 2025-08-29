@@ -1,18 +1,28 @@
-"""HoneyHive Utilities Module"""
+"""HoneyHive utilities package."""
 
-from .config import config
-from .retry import RetryConfig, BackoffStrategy
-from .dotdict import dotdict
 from .baggage_dict import BaggageDict
-from .logger import get_logger, HoneyHiveLogger, HoneyHiveFormatter
+from .cache import Cache, CacheConfig, CacheEntry
+from .config import Config, config, get_config, reload_config
+from .connection_pool import ConnectionPool, PoolConfig
+from .dotdict import DotDict
+from .logger import HoneyHiveFormatter, HoneyHiveLogger, get_logger
+from .retry import BackoffStrategy, RetryConfig
 
 __all__ = [
-    "config",
-    "RetryConfig",
-    "BackoffStrategy",
-    "dotdict",
     "BaggageDict",
-    "get_logger",
-    "HoneyHiveLogger",
+    "Cache",
+    "CacheConfig",
+    "CacheEntry",
+    "Config",
+    "config",
+    "get_config",
+    "reload_config",
+    "ConnectionPool",
+    "PoolConfig",
+    "DotDict",
     "HoneyHiveFormatter",
+    "HoneyHiveLogger",
+    "get_logger",
+    "BackoffStrategy",
+    "RetryConfig",
 ]
