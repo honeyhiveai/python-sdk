@@ -62,6 +62,7 @@ The SDK maintains high quality through comprehensive testing with **72.10% cover
    OPENINFERENCE_INTEGRATION
    EVALUATION_CHANGELOG
    TESTING
+   LAMBDA_TESTING
    api/index
    tracer/index
    evaluation/index
