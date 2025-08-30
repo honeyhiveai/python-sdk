@@ -1,0 +1,48 @@
+# HoneyHive SDK Compatibility Matrix Test Requirements
+
+# Core HoneyHive SDK
+honeyhive[opentelemetry]
+
+# OpenInference Instrumentation - Core Providers
+openinference-instrumentation-openai
+openinference-instrumentation-anthropic
+openinference-instrumentation-langchain
+openinference-instrumentation-llama-index
+openinference-instrumentation-bedrock
+openinference-instrumentation-google-generativeai
+
+# Model Provider SDKs
+openai>=1.0.0
+anthropic>=0.20.0
+langchain>=0.2.0
+langchain-openai>=0.1.0
+llama-index>=0.10.0
+llama-index-llms-openai
+llama-index-embeddings-openai
+boto3>=1.28.0
+google-generativeai>=0.3.0
+
+# Optional/Extended Provider Support
+# Uncomment these for extended testing:
+
+# openinference-instrumentation-cohere
+# openinference-instrumentation-vertexai
+# openinference-instrumentation-mistralai
+# openinference-instrumentation-groq
+# openinference-instrumentation-huggingface
+# openinference-instrumentation-ollama
+# openinference-instrumentation-dspy
+
+# cohere>=4.0.0
+# google-cloud-aiplatform>=1.38.0
+# mistralai>=0.1.0
+# groq>=0.4.0
+# transformers>=4.35.0
+# torch>=2.0.0
+# ollama>=0.1.0
+# dspy-ai>=2.4.0
+
+# Development and Testing
+pytest>=7.0.0
+pytest-asyncio>=0.21.0
+pytest-timeout>=2.1.0
