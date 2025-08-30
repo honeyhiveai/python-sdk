@@ -1,0 +1,2 @@
+# Requirements for the dataclass generation script
+pyyaml>=6.0

@@ -1,0 +1,83 @@
+# Demo Lambda container for testing strategy
+FROM public.ecr.aws/lambda/python:3.11
+
+# Install basic dependencies
+RUN pip install --no-cache-dir requests pydantic
+
+# Copy Lambda functions
+COPY lambda_functions/ ${LAMBDA_TASK_ROOT}/
+
+# Create comprehensive honeyhive mock
+RUN mkdir -p ${LAMBDA_TASK_ROOT}/honeyhive/tracer && \
+    echo "# HoneyHive SDK Mock" > ${LAMBDA_TASK_ROOT}/honeyhive/__init__.py && \
+    cat > ${LAMBDA_TASK_ROOT}/honeyhive/tracer/__init__.py << 'INNER_EOF'
+# Comprehensive HoneyHive mock for Lambda container testing
+
+class MockTracer:
+    def __init__(self, **kwargs):
+        self.api_key = kwargs.get('api_key', 'test')
+        self.project = kwargs.get('project', 'test') 
+        self.test_mode = kwargs.get('test_mode', True)
+        print(f"🎯 Mock HoneyHive tracer initialized: {self.project} (test_mode: {self.test_mode})")
+    
+    def start_span(self, name):
+        print(f"📊 Creating span: {name}")
+        return MockSpan(name)
+    
+    def enrich_span(self, **kwargs):
+        print(f"🎨 Enriching span with: {list(kwargs.keys())}")
+        return MockContextManager()
+    
+    def force_flush(self, timeout_millis=30000):
+        print(f"⚡ Force flush called (timeout: {timeout_millis}ms)")
+        return True
+
+class MockSpan:
+    def __init__(self, name):
+        self.name = name
+        print(f"✨ Span '{name}' created")
+    
+    def __enter__(self):
+        print(f"🔹 Entering span: {self.name}")
+        return self
+    
+    def __exit__(self, *args):
+        print(f"🔸 Exiting span: {self.name}")
+    
+    def set_attribute(self, key, value):
+        print(f"📝 Span attribute: {key} = {value}")
+
+class MockContextManager:
+    def __enter__(self):
+        print("🎨 Entering enrich_span context")
+        return self
+    
+    def __exit__(self, *args):
+        print("🎨 Exiting enrich_span context")
+
+class HoneyHiveTracer:
+    @classmethod
+    def init(cls, **kwargs):
+        return MockTracer(**kwargs)
+
+def enrich_span(**kwargs):
+    print(f"🌟 Global enrich_span called with: {list(kwargs.keys())}")
+    return MockContextManager()
+
+# Mock decorators module
+def trace(**kwargs):
+    def decorator(func):
+        def wrapper(*args, **kwargs):
+            print(f"🎯 Trace decorator for: {func.__name__}")
+            return func(*args, **kwargs)
+        return wrapper
+    return decorator
+INNER_EOF
+
+# Create decorators submodule
+RUN echo "from . import trace" > ${LAMBDA_TASK_ROOT}/honeyhive/tracer/decorators.py
+
+# Verify setup
+RUN python -c "from honeyhive.tracer import HoneyHiveTracer; from honeyhive.tracer.decorators import trace; print('✅ Complete mock SDK ready')"
+
+CMD ["container_demo.lambda_handler"]

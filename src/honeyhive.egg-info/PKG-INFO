@@ -1,0 +1,444 @@
+Metadata-Version: 2.4
+Name: honeyhive
+Version: 0.1.0
+Summary: HoneyHive Python SDK - LLM Observability and Evaluation Platform
+Author-email: HoneyHive <support@honeyhive.ai>
+Maintainer-email: HoneyHive <support@honeyhive.ai>
+License: Apache-2.0
+Project-URL: Homepage, https://honeyhive.ai
+Project-URL: Documentation, https://docs.honeyhive.ai
+Project-URL: Repository, https://github.com/honeyhiveai/python-sdk
+Project-URL: Issues, https://github.com/honeyhiveai/python-sdk/issues
+Project-URL: Changelog, https://github.com/honeyhiveai/python-sdk/blob/main/CHANGELOG.md
+Keywords: llm,observability,evaluation,tracing,opentelemetry
+Classifier: Development Status :: 4 - Beta
+Classifier: Intended Audience :: Developers
+Classifier: License :: OSI Approved :: Apache Software License
+Classifier: Operating System :: OS Independent
+Classifier: Programming Language :: Python :: 3
+Classifier: Programming Language :: Python :: 3.10
+Classifier: Programming Language :: Python :: 3.11
+Classifier: Programming Language :: Python :: 3.12
+Classifier: Topic :: Software Development :: Libraries :: Python Modules
+Classifier: Topic :: System :: Monitoring
+Classifier: Topic :: Scientific/Engineering :: Artificial Intelligence
+Requires-Python: >=3.10
+Description-Content-Type: text/markdown
+Requires-Dist: httpx>=0.27.0
+Requires-Dist: pydantic>=2.10.0
+Requires-Dist: opentelemetry-api>=1.21.0
+Requires-Dist: opentelemetry-sdk>=1.21.0
+Requires-Dist: opentelemetry-exporter-otlp-proto-http>=1.21.0
+Requires-Dist: opentelemetry-instrumentation>=0.42b0
+Requires-Dist: wrapt>=1.16.0
+Requires-Dist: python-dateutil>=2.8.2
+Requires-Dist: typing-inspect>=0.9.0
+Requires-Dist: requests>=2.25.1
+Requires-Dist: dataclasses-json>=0.6.7
+Requires-Dist: jsonpath-python>=1.0.6
+Requires-Dist: uplink>=0.1.0
+Requires-Dist: eval-type-backport>=0.2.0
+Provides-Extra: dev
+Requires-Dist: pytest>=8.1.1; extra == "dev"
+Requires-Dist: pytest-cov>=4.1.0; extra == "dev"
+Requires-Dist: pytest-asyncio>=0.21.0; extra == "dev"
+Requires-Dist: pylint==3.2.3; extra == "dev"
+Requires-Dist: mypy==1.10.1; extra == "dev"
+Requires-Dist: black>=23.0.0; extra == "dev"
+Requires-Dist: isort>=5.12.0; extra == "dev"
+Requires-Dist: types-python-dateutil>=2.9.0.20240316; extra == "dev"
+Requires-Dist: types-requests>=2.31.0; extra == "dev"
+Requires-Dist: types-urllib3>=1.26.0; extra == "dev"
+Provides-Extra: docs
+Requires-Dist: sphinx>=7.0.0; extra == "docs"
+Requires-Dist: sphinx-rtd-theme>=1.3.0; extra == "docs"
+Requires-Dist: myst-parser>=2.0.0; extra == "docs"
+Provides-Extra: test
+Requires-Dist: pytest>=8.1.1; extra == "test"
+Requires-Dist: pytest-cov>=4.1.0; extra == "test"
+Requires-Dist: pytest-asyncio>=0.21.0; extra == "test"
+Requires-Dist: pytest-mock>=3.12.0; extra == "test"
+Requires-Dist: responses>=0.24.0; extra == "test"
+Requires-Dist: freezegun>=1.2.0; extra == "test"
+
+# HoneyHive Python SDK
+
+[![PyPI version](https://badge.fury.io/py/honeyhive.svg)](https://badge.fury.io/py/honeyhive)
+[![Python versions](https://img.shields.io/pypi/pyversions/honeyhive.svg)](https://pypi.org/project/honeyhive/)
+[![License](https://img.shields.io/pypi/l/honeyhive.svg)](https://pypi.org/project/honeyhive/)
+
+The HoneyHive Python SDK provides comprehensive LLM observability and evaluation capabilities for your AI applications. Built with OpenTelemetry integration, it offers automatic tracing, session management, and evaluation tools to help you monitor and improve your LLM applications.
+
+## Features
+
+- **🔍 Automatic Tracing**: OpenTelemetry-based tracing with automatic span creation
+- **📊 Session Management**: Track and manage LLM sessions with rich metadata
+- **🎯 Evaluation Tools**: Built-in evaluation metrics and scoring functions
+- **🔄 Async Support**: Full async/await support for all operations
+- **🎨 Decorators**: Easy-to-use decorators for function tracing
+- **🌐 HTTP Instrumentation**: Automatic HTTP request tracing
+- **📦 Batch Operations**: Efficient batch processing for high-throughput applications
+- **🔧 CLI Tools**: Command-line interface for SDK operations
+
+## Installation
+
+```bash
+pip install honeyhive
+```
+
+For development dependencies:
+
+```bash
+pip install honeyhive[dev]
+```
+
+## Quick Start
+
+### Basic Usage
+
+```python
+from honeyhive import HoneyHiveClient, HoneyHiveTracer
+
+# Initialize the client
+client = HoneyHiveClient(api_key="your-api-key")
+
+# Start a session
+from honeyhive.api.session import SessionStartRequest
+session_request = SessionStartRequest(
+    project="My Project",
+    session_name="Chat Session",
+    source="production",
+    inputs={"user_query": "What is the weather like?"}
+)
+
+response = client.session.start_session(session_request)
+session_id = response.session_id
+print(f"Session started: {session_id}")
+```
+
+### Tracing with Decorators
+
+```python
+from honeyhive import trace, atrace
+
+@trace(session_id="my-session")
+def my_function(input_data):
+    # Your function logic here
+    return processed_data
+
+@atrace(session_id="my-session")
+async def my_async_function(input_data):
+    # Your async function logic here
+    return processed_data
+```
+
+### OpenTelemetry Integration
+
+```python
+from honeyhive import HoneyHiveTracer
+
+# Initialize tracer
+tracer = HoneyHiveTracer(
+    api_key="your-api-key",
+    project="My Project",
+    source="production"
+)
+
+# Use context manager for manual tracing
+with tracer.start_span("custom-operation", session_id="my-session"):
+    # Your code here
+    result = perform_operation()
+```
+
+### Evaluation
+
+```python
+from honeyhive import evaluate, evaluator
+
+# Simple evaluation
+result = evaluate(
+    prediction="The weather is sunny",
+    ground_truth="It's sunny today",
+    metrics=["exact_match", "f1_score"]
+)
+print(f"Score: {result.score}")
+
+# Evaluation decorator
+@evaluator(name="my-evaluator")
+def custom_evaluation(prediction, ground_truth):
+    # Custom evaluation logic
+    return EvaluationResult(score=0.95, metrics={"custom": 0.95})
+```
+
+## Configuration
+
+### Environment Variables
+
+The SDK can be configured using environment variables:
+
+```bash
+export HONEYHIVE_API_KEY="your-api-key"
+export HONEYHIVE_PROJECT="My Project"
+export HONEYHIVE_SOURCE="production"
+export HONEYHIVE_API_URL="https://api.honeyhive.ai"
+export HONEYHIVE_DISABLE_TRACING="false"
+export HONEYHIVE_DISABLE_HTTP_TRACING="false"
+export HONEYHIVE_TEST_MODE="false"
+```
+
+### Configuration Object
+
+```python
+from honeyhive.utils.config import config
+
+# Access configuration
+print(f"API URL: {config.api_url}")
+print(f"Project: {config.project}")
+print(f"Source: {config.source}")
+```
+
+## API Reference
+
+### Client
+
+```python
+from honeyhive import HoneyHiveClient
+
+client = HoneyHiveClient(
+    api_key="your-api-key",
+    base_url="https://api.honeyhive.ai",
+    timeout=30.0,
+    retry_config=RetryConfig.exponential()
+)
+```
+
+### Sessions
+
+```python
+# Start a session
+session_response = client.session.start_session(session_request)
+
+# Get session details
+session_data = client.session.get_session(session_id)
+
+# Async operations
+session_response = await client.session.start_session_async(session_request)
+session_data = await client.session.get_session_async(session_id)
+```
+
+### Events
+
+```python
+# Create an event
+from honeyhive.api.events import CreateEventRequest
+event_request = CreateEventRequest(
+    project="My Project",
+    source="production",
+    event_name="model_call",
+    event_type="model",
+    session_id="session-123",
+    inputs={"prompt": "Hello world"},
+    outputs={"response": "Hi there!"}
+)
+
+response = client.events.create_event(event_request)
+
+# Batch create events
+batch_request = BatchCreateEventRequest(events=[event1, event2, event3])
+response = client.events.create_event_batch(batch_request)
+```
+
+### Tracer
+
+```python
+from honeyhive import HoneyHiveTracer
+
+tracer = HoneyHiveTracer(
+    api_key="your-api-key",
+    project="My Project",
+    source="production"
+)
+
+# Context manager
+with tracer.start_span("operation-name", session_id="session-123"):
+    # Your code here
+    pass
+
+# Baggage operations
+tracer.set_baggage("user_id", "123")
+user_id = tracer.get_baggage("user_id")
+
+# Context propagation
+carrier = {}
+tracer.inject_context(carrier)
+context = tracer.extract_context(carrier)
+```
+
+### Decorators
+
+```python
+from honeyhive import trace, atrace, trace_class
+
+# Function tracing
+@trace(name="my-function", session_id="session-123")
+def my_function():
+    pass
+
+# Async function tracing
+@atrace(name="my-async-function", session_id="session-123")
+async def my_async_function():
+    pass
+
+# Class tracing
+@trace_class(name="MyClass", session_id="session-123")
+class MyClass:
+    def method1(self):
+        pass
+    
+    async def method2(self):
+        pass
+```
+
+### Evaluation
+
+```python
+from honeyhive import evaluate, evaluator, aevaluator
+
+# Simple evaluation
+result = evaluate(
+    prediction="predicted text",
+    ground_truth="actual text",
+    metrics=["exact_match", "f1_score"]
+)
+
+# Evaluation decorator
+@evaluator(name="custom-evaluator")
+def custom_eval(prediction, ground_truth):
+    # Custom evaluation logic
+    return EvaluationResult(score=0.95, metrics={"custom": 0.95})
+
+# Async evaluation decorator
+@aevaluator(name="async-evaluator")
+async def async_eval(prediction, ground_truth):
+    # Async evaluation logic
+    return EvaluationResult(score=0.95, metrics={"async": 0.95})
+```
+
+## CLI Usage
+
+The SDK includes a command-line interface for common operations:
+
+```bash
+# Initialize tracer
+honeyhive tracer init --project "My Project" --source production
+
+# Start a session
+honeyhive session start --name "Chat Session" --inputs '{"query": "Hello"}'
+
+# Get session details
+honeyhive session get session-id-123
+
+# Create an event
+honeyhive event create --name "model_call" --type "model" --session-id "session-123"
+```
+
+## Testing
+
+Run tests using tox for multi-Python version support:
+
+```bash
+# Run all tests
+tox
+
+# Run specific Python version
+tox -e py311
+
+# Run linting
+tox -e lint
+
+# Run formatting checks
+tox -e format
+
+# Run unit tests only
+tox -e unit
+
+# Run integration tests
+tox -e integration
+```
+
+## Development
+
+### Setup Development Environment
+
+```bash
+# Clone the repository
+git clone https://github.com/honeyhiveai/python-sdk.git
+cd python-sdk
+
+# Create virtual environment
+python -m venv venv
+source venv/bin/activate  # On Windows: venv\Scripts\activate
+
+# Install dependencies
+pip install -e ".[dev]"
+
+# Run tests
+pytest
+
+# Run linting
+pylint src/honeyhive tests
+mypy src/honeyhive
+
+# Format code
+black src tests
+isort src tests
+```
+
+### Project Structure
+
+```
+src/honeyhive/
+├── api/                 # API client modules
+│   ├── client.py       # Main API client
+│   ├── session.py      # Session operations
+│   ├── events.py       # Event operations
+│   └── ...
+├── tracer/             # OpenTelemetry integration
+│   ├── otel_tracer.py  # Main tracer
+│   ├── decorators.py   # Tracing decorators
+│   ├── span_processor.py # Span processor
+│   ├── span_exporter.py # Span exporter
+│   └── http_instrumentation.py # HTTP instrumentation
+├── utils/              # Utilities
+│   ├── config.py       # Configuration
+│   ├── retry.py        # Retry logic
+│   ├── dotdict.py      # Dot notation dict
+│   └── baggage_dict.py # Baggage utilities
+├── evaluation/         # Evaluation tools
+│   └── evaluators.py   # Evaluation functions
+├── cli/                # Command-line interface
+│   └── main.py         # CLI entry point
+└── models/             # Data models (auto-generated)
+```
+
+## Contributing
+
+1. Fork the repository
+2. Create a feature branch (`git checkout -b feature/amazing-feature`)
+3. Commit your changes (`git commit -m 'Add amazing feature'`)
+4. Push to the branch (`git push origin feature/amazing-feature`)
+5. Open a Pull Request
+
+## License
+
+This project is licensed under the Apache License 2.0 - see the [LICENSE](LICENSE) file for details.
+
+## Support
+
+- Documentation: [https://docs.honeyhive.ai](https://docs.honeyhive.ai)
+- Issues: [https://github.com/honeyhiveai/python-sdk/issues](https://github.com/honeyhiveai/python-sdk/issues)
+- Email: support@honeyhive.ai
+
+## Changelog
+
+See [CHANGELOG.md](CHANGELOG.md) for a list of changes and version history.

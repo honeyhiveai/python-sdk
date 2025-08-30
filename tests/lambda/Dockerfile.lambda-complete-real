@@ -1,0 +1,34 @@
+# Complete Lambda container with all HoneyHive SDK dependencies
+FROM public.ecr.aws/lambda/python:3.11
+
+# Install all required dependencies for HoneyHive SDK
+RUN pip install --no-cache-dir --upgrade pip && \
+    pip install --no-cache-dir \
+    requests \
+    httpx \
+    pydantic \
+    opentelemetry-api \
+    opentelemetry-sdk \
+    opentelemetry-exporter-otlp \
+    opentelemetry-instrumentation \
+    opentelemetry-propagator-b3 \
+    opentelemetry-propagator-jaeger \
+    opentelemetry-propagator-aws-xray
+
+# Copy Lambda functions first
+COPY tests/lambda/lambda_functions/ ${LAMBDA_TASK_ROOT}/
+
+# Copy the entire src directory for the SDK
+COPY src/ ${LAMBDA_TASK_ROOT}/
+
+# Verify the SDK can be imported
+RUN python -c "
+import sys
+sys.path.insert(0, '/var/task')
+import honeyhive
+from honeyhive.tracer import HoneyHiveTracer
+print('✅ HoneyHive SDK successfully imported')
+print(f'SDK location: {honeyhive.__file__}')
+"
+
+CMD ["working_sdk_test.lambda_handler"]

@@ -1,0 +1,27 @@
+# Fixed Lambda container with proper SDK installation
+FROM public.ecr.aws/lambda/python:3.11
+
+# Install system dependencies
+RUN yum update -y
+
+# First, install all OpenTelemetry dependencies
+RUN pip install --no-cache-dir --upgrade pip && \
+    pip install --no-cache-dir \
+    opentelemetry-api==1.20.0 \
+    opentelemetry-sdk==1.20.0 \
+    opentelemetry-exporter-otlp==1.20.0 \
+    opentelemetry-instrumentation==0.41b0 \
+    requests \
+    pydantic
+
+# Copy the SDK source code directly
+COPY src/honeyhive/ ${LAMBDA_TASK_ROOT}/honeyhive/
+
+# Copy Lambda functions
+COPY tests/lambda/lambda_functions/ ${LAMBDA_TASK_ROOT}/
+
+# Verify the SDK is accessible
+RUN ls -la ${LAMBDA_TASK_ROOT}/honeyhive/
+RUN python -c "import sys; sys.path.insert(0, '/var/task'); from honeyhive.tracer import HoneyHiveTracer; print('✅ SDK installed correctly')"
+
+CMD ["real_sdk_test.lambda_handler"]
