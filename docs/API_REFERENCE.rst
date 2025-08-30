@@ -562,9 +562,12 @@ Environment Variables
 
 Configuration via environment variables.
 
-.. list-table:: Environment Variables
+API Configuration
+~~~~~~~~~~~~~~~~~
+
+.. list-table:: API Configuration
    :header-rows: 1
-   :widths: 20 40 20 20
+   :widths: 25 35 20 20
 
    * - Variable
      - Description
@@ -573,7 +576,7 @@ Configuration via environment variables.
    * - ``HH_API_KEY``
      - HoneyHive API key
      - None
-     - Yes
+     - **Yes**
    * - ``HH_API_URL``
      - API base URL
      - ``https://api.honeyhive.ai``
@@ -586,10 +589,18 @@ Configuration via environment variables.
      - Source environment
      - ``production``
      - No
-   * - ``HH_TEST_MODE``
-     - Enable test mode
-     - ``false``
-     - No
+
+Tracing Configuration
+~~~~~~~~~~~~~~~~~~~~~
+
+.. list-table:: Tracing Configuration
+   :header-rows: 1
+   :widths: 25 35 20 20
+
+   * - Variable
+     - Description
+     - Default
+     - Required
    * - ``HH_DISABLE_TRACING``
      - Disable tracing
      - ``false``
@@ -598,36 +609,345 @@ Configuration via environment variables.
      - Disable HTTP instrumentation
      - ``false``
      - No
+   * - ``HH_TEST_MODE``
+     - Enable test mode
+     - ``false``
+     - No
+   * - ``HH_DEBUG_MODE``
+     - Enable debug mode
+     - ``false``
+     - No
+
+OTLP Configuration
+~~~~~~~~~~~~~~~~~~
+
+.. list-table:: OTLP Configuration
+   :header-rows: 1
+   :widths: 25 35 20 20
+
+   * - Variable
+     - Description
+     - Default
+     - Required
    * - ``HH_OTLP_ENABLED``
      - Enable OTLP export
      - ``true``
      - No
+   * - ``HH_OTLP_ENDPOINT``
+     - Custom OTLP endpoint
+     - Auto-detected
+     - No
+   * - ``HH_OTLP_HEADERS``
+     - OTLP headers (JSON format)
+     - None
+     - No
 
-Utilities
----------
+HTTP Client Configuration
+~~~~~~~~~~~~~~~~~~~~~~~~~
 
-Utility Functions
+.. list-table:: Connection Pool Settings
+   :header-rows: 1
+   :widths: 25 35 20 20
+
+   * - Variable
+     - Description
+     - Default
+     - Required
+   * - ``HH_MAX_CONNECTIONS``
+     - Maximum connections in pool
+     - ``10``
+     - No
+   * - ``HH_MAX_KEEPALIVE_CONNECTIONS``
+     - Maximum keepalive connections
+     - ``20``
+     - No
+   * - ``HH_KEEPALIVE_EXPIRY``
+     - Keepalive expiry time (seconds)
+     - ``30.0``
+     - No
+   * - ``HH_POOL_TIMEOUT``
+     - Pool timeout (seconds)
+     - ``10.0``
+     - No
+
+.. list-table:: Rate Limiting
+   :header-rows: 1
+   :widths: 25 35 20 20
+
+   * - Variable
+     - Description
+     - Default
+     - Required
+   * - ``HH_RATE_LIMIT_CALLS``
+     - Maximum calls per time window
+     - ``100``
+     - No
+   * - ``HH_RATE_LIMIT_WINDOW``
+     - Rate limit time window (seconds)
+     - ``60.0``
+     - No
+
+.. list-table:: Proxy Settings
+   :header-rows: 1
+   :widths: 25 35 20 20
+
+   * - Variable
+     - Description
+     - Default
+     - Required
+   * - ``HH_HTTP_PROXY``
+     - HTTP proxy URL
+     - None
+     - No
+   * - ``HH_HTTPS_PROXY``
+     - HTTPS proxy URL
+     - None
+     - No
+   * - ``HH_NO_PROXY``
+     - Hosts to bypass proxy (comma-separated)
+     - None
+     - No
+
+.. list-table:: SSL and Redirects
+   :header-rows: 1
+   :widths: 25 35 20 20
+
+   * - Variable
+     - Description
+     - Default
+     - Required
+   * - ``HH_VERIFY_SSL``
+     - Verify SSL certificates
+     - ``true``
+     - No
+   * - ``HH_FOLLOW_REDIRECTS``
+     - Follow HTTP redirects
+     - ``true``
+     - No
+
+Experiment Harness Configuration
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+.. list-table:: Experiment Configuration
+   :header-rows: 1
+   :widths: 25 35 20 20
+
+   * - Variable
+     - Description
+     - Default
+     - Required
+   * - ``HH_EXPERIMENT_ID``
+     - Unique experiment identifier
+     - None
+     - No
+   * - ``HH_EXPERIMENT_NAME``
+     - Experiment name
+     - None
+     - No
+   * - ``HH_EXPERIMENT_VARIANT``
+     - Experiment variant/treatment
+     - None
+     - No
+   * - ``HH_EXPERIMENT_GROUP``
+     - Experiment group/cohort
+     - None
+     - No
+   * - ``HH_EXPERIMENT_METADATA``
+     - Experiment metadata/tags (JSON)
+     - None
+     - No
+
+SDK Configuration
 ~~~~~~~~~~~~~~~~~
 
-Various utility functions and helpers.
+.. list-table:: SDK Configuration
+   :header-rows: 1
+   :widths: 25 35 20 20
 
-Connection Pool
-~~~~~~~~~~~~~~~
+   * - Variable
+     - Description
+     - Default
+     - Required
+   * - ``HH_TIMEOUT``
+     - Request timeout in seconds
+     - ``30.0``
+     - No
+   * - ``HH_MAX_RETRIES``
+     - Maximum retry attempts
+     - ``3``
+     - No
 
-HTTP connection pooling for efficient API communication.
+Standard Environment Variable Compatibility
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-Models
-------
+The SDK also supports standard environment variable names for better integration with existing infrastructure:
+
+.. list-table:: Standard Alternatives
+   :header-rows: 1
+   :widths: 25 50 25
+
+   * - HoneyHive Variable
+     - Standard Alternatives
+     - Category
+   * - ``HH_HTTP_PROXY``
+     - ``HTTP_PROXY``, ``http_proxy``
+     - Proxy
+   * - ``HH_HTTPS_PROXY``
+     - ``HTTPS_PROXY``, ``https_proxy``
+     - Proxy
+   * - ``HH_NO_PROXY``
+     - ``NO_PROXY``, ``no_proxy``
+     - Proxy
+   * - ``HH_EXPERIMENT_ID``
+     - ``EXPERIMENT_ID``, ``MLFLOW_EXPERIMENT_ID``, ``WANDB_RUN_ID``
+     - Experiment
+   * - ``HH_EXPERIMENT_NAME``
+     - ``EXPERIMENT_NAME``, ``MLFLOW_EXPERIMENT_NAME``, ``WANDB_PROJECT``
+     - Experiment
+   * - ``HH_OTLP_ENDPOINT``
+     - ``OTEL_EXPORTER_OTLP_ENDPOINT``
+     - OTLP
+   * - ``HH_OTLP_HEADERS``
+     - ``OTEL_EXPORTER_OTLP_HEADERS``
+     - OTLP
+
+Configuration Precedence
+~~~~~~~~~~~~~~~~~~~~~~~~
+
+Configuration values are resolved in the following order (highest to lowest priority):
+
+1. **Constructor parameters** (highest priority)
+2. **HoneyHive-specific environment variables** (``HH_*``)
+3. **Standard environment variables** (e.g., ``HTTP_*``, ``EXPERIMENT_*``)
+4. **Default values** (lowest priority)
+
+Usage Notes
+~~~~~~~~~~~
+
+- Boolean environment variables accept: ``true``, ``false``, ``1``, ``0``, ``yes``, ``no``, ``on``, ``off``
+- Numeric environment variables are automatically converted to appropriate types
+- JSON environment variables (like ``HH_EXPERIMENT_METADATA``) support multiple formats
+- The SDK gracefully handles invalid environment variable values by falling back to defaults
+
+Evaluation Framework
+--------------------
+
+The evaluation framework provides comprehensive tools for evaluating LLM outputs with built-in and custom evaluators.
+
+**Key Features:**
+
+- Built-in evaluators (exact match, F1 score, length, semantic similarity)
+- Custom evaluator support with ``BaseEvaluator`` class
+- Threading and parallel processing capabilities
+- Decorator pattern for easy integration
+- API integration for storing evaluation results
+- Batch processing for large datasets
+
+**Environment Variables:**
+
+- ``HH_EVALUATION_MAX_WORKERS`` - Maximum parallel workers (default: 4)
+- ``HH_EVALUATION_TIMEOUT`` - Evaluation timeout in seconds (default: 30)
+- ``HH_EVALUATION_BATCH_SIZE`` - Default batch size (default: 100)
+
+**API Reference:**
+
+.. automodule:: honeyhive.evaluation.evaluators
+   :members:
+   :undoc-members:
+   :show-inheritance:
+   :no-index:
+
+Tracing and OpenTelemetry
+-------------------------
+
+The tracing system provides multi-instance tracer support, OpenTelemetry integration, and comprehensive span enrichment capabilities.
+
+**Key Features:**
+
+- Multi-instance tracer architecture for environment isolation
+- Dynamic session naming based on initialization file
+- Smart TracerProvider management with existing OTEL providers
+- Enhanced decorator support with explicit tracer instances
+- Dual enrichment system (span-level and session-level)
+- HTTP instrumentation for automatic request tracing
+
+**API Reference:**
+
+OpenTelemetry Tracer
+~~~~~~~~~~~~~~~~~~~~
+
+.. automodule:: honeyhive.tracer.otel_tracer
+   :members:
+   :undoc-members:
+   :show-inheritance:
+   :no-index:
+
+Tracing Decorators
+~~~~~~~~~~~~~~~~~~
+
+.. automodule:: honeyhive.tracer.decorators
+   :members:
+   :undoc-members:
+   :show-inheritance:
+   :no-index:
+
+Span Processor
+~~~~~~~~~~~~~~
+
+.. automodule:: honeyhive.tracer.span_processor
+   :members:
+   :undoc-members:
+   :show-inheritance:
+   :no-index:
+
+HTTP Instrumentation
+~~~~~~~~~~~~~~~~~~~~
+
+.. automodule:: honeyhive.tracer.http_instrumentation
+   :members:
+   :undoc-members:
+   :show-inheritance:
+   :no-index:
+
+Additional Resources
+--------------------
+
+Utilities
+~~~~~~~~~
+
+The SDK includes several utility classes for advanced use cases:
+
+- **BaggageDict** - OpenTelemetry baggage management
+- **DotDict** - Dictionary with dot notation access  
+- **Cache** - Configurable caching system
+- **ConnectionPool** - HTTP connection pooling
+- **Logger** - Structured logging with HoneyHive formatting
+- **RetryConfig** - Configurable retry strategies
+
+For detailed utility documentation, see the source code in ``src/honeyhive/utils/``.
 
 Data Models
 ~~~~~~~~~~~
 
-Generated data models for API requests and responses.
+The SDK provides 50+ auto-generated data models for API interactions, including:
+
+- **Session Models** - ``SessionStartRequest``, ``SessionPropertiesBatch``
+- **Event Models** - ``Event``, ``CreateEventRequest``, ``EventFilter``
+- **Metric Models** - ``Metric``, ``MetricEdit``, ``Threshold``
+- **Dataset Models** - ``Dataset``, ``CreateDatasetRequest``, ``Datapoint``
+- **Project Models** - ``Project``, ``CreateProjectRequest``
+- **Experiment Models** - ``EvaluationRun``, ``CreateRunRequest``
+
+All models are available from ``honeyhive.models`` and include full type hints and validation.
 
 Examples
---------
+~~~~~~~~
 
-Usage Examples
-~~~~~~~~~~~~~~
+The ``examples/`` directory contains 12+ practical examples:
 
-Basic usage examples and common patterns.
+- **Basic Usage** - ``basic_usage.py``, ``tracing_decorators.py``
+- **Provider Integration** - ``simple_openai_integration.py``, ``simple_anthropic_integration.py``
+- **Advanced Patterns** - ``advanced_usage.py``
+- **Evaluation** - ``evaluation_example.py`` (comprehensive)
+
+See the `examples documentation <examples/README.html>`_ for detailed usage patterns.

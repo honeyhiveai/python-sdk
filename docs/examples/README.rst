@@ -10,55 +10,46 @@ Comprehensive examples and usage patterns for the HoneyHive Python SDK.
 Overview
 --------
 
-This section contains practical examples and usage patterns for the HoneyHive Python SDK. Each example demonstrates real-world scenarios and best practices for implementing observability in your applications.
+This section contains practical examples and usage patterns for the HoneyHive Python SDK. The examples focus on the **Bring Your Own Instrumentor (BYOI)** approach, demonstrating how to achieve automatic AI/LLM observability with minimal code changes by leveraging existing OpenTelemetry instrumentors.
 
 Available Examples
 ------------------
 
-Basic Usage Patterns
-~~~~~~~~~~~~~~~~~~~~
+Bring Your Own Instrumentor
+~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-:doc:`BASIC_USAGE_PATTERNS`
+   :doc:`../BRING_YOUR_INSTRUMENTOR`
 
-Getting started with the SDK, including initialization patterns, basic tracing, and common usage scenarios.
+Complete guide to using the "Bring Your Own Instrumentor" pattern with the HoneyHive SDK for automatic AI operation tracing.
 
-Advanced Patterns
-~~~~~~~~~~~~~~~~~
+Quick Start: BYOI Pattern
+-------------------------
 
-:doc:`ADVANCED_PATTERNS`
+The core BYOI pattern requires just two steps: initialize HoneyHive tracer and bring your instrumentor.
 
-Complex use cases, custom instrumentors, advanced span management, and performance optimization techniques.
-
-Practical Examples
-~~~~~~~~~~~~~~~~~~
-
-:doc:`PRACTICAL_EXAMPLES`
-
-Real-world implementation examples including web applications, data processing pipelines, AI services, and microservices.
-
-OpenInference Integration
-~~~~~~~~~~~~~~~~~~~~~~~~~
-
-   :doc:`../OPENINFERENCE_INTEGRATION`
-
-Complete guide to integrating OpenInference instrumentors with the HoneyHive SDK for automatic AI operation tracing.
-
-Quick Start
------------
-
-1. Basic Initialization
-~~~~~~~~~~~~~~~~~~~~~~~
+1. Basic BYOI Setup
+~~~~~~~~~~~~~~~~~~~
 
 .. code-block:: python
 
+   # Step 1: Install your instrumentor
+   # pip install openinference-instrumentation-openai
+   
+   # Step 2: Initialize HoneyHive and instrument
    from honeyhive import HoneyHiveTracer
-
-   # Initialize tracer (creates new instance)
+   from openinference.instrumentation.openai import OpenAIInstrumentor
+   
+   # Initialize tracer
    tracer = HoneyHiveTracer.init(
        api_key="your-api-key",
        project="my-project",
        source="production"
    )
+   
+   # Bring your instrumentor
+   OpenAIInstrumentor().instrument()
+   
+   # That's it! All OpenAI calls are now automatically traced
 
 2. Multiple Tracers
 ~~~~~~~~~~~~~~~~~~~
@@ -111,76 +102,82 @@ Quick Start
        result = process_data()
        span.set_attribute("operation.result", result)
 
-Integration Examples
---------------------
+BYOI Integration Examples
+-------------------------
 
-Web Frameworks
-~~~~~~~~~~~~~~
+The following examples demonstrate the BYOI pattern with different instrumentors and use cases:
 
-FastAPI, Flask, and Django integration examples with automatic HTTP request tracing.
+AI/ML Providers (Automatic Tracing)
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-AI/ML Operations
-~~~~~~~~~~~~~~~~
+* **OpenAI**: `simple_openai_integration.py` - GPT models with OpenInference instrumentor
+* **Anthropic**: `simple_anthropic_integration.py` - Claude models with OpenInference instrumentor  
+* **Google AI**: `simple_google_ai_integration.py` - Gemini models with OpenInference instrumentor
+* **AWS Bedrock**: `simple_bedrock_integration.py` - Bedrock models with OpenInference instrumentor
 
-OpenAI, Anthropic, and Google AI integration with automatic operation tracing via OpenInference.
+Standard Libraries (Automatic Tracing)
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-Data Processing
-~~~~~~~~~~~~~~~
+* **HTTP Requests**: Using `opentelemetry-instrumentation-requests` for automatic HTTP tracing
+* **Database Operations**: Using `opentelemetry-instrumentation-sqlalchemy` for database tracing
+* **Web Frameworks**: Using framework-specific instrumentors (FastAPI, Flask, Django)
 
-ETL pipelines, batch processing, and data transformation workflows with comprehensive tracing.
+Advanced Patterns
+~~~~~~~~~~~~~~~~~
 
-Microservices
-~~~~~~~~~~~~~
+* **Multi-Provider Workflows**: `advanced_usage.py` - Multiple AI providers in one application
+* **Multi-Instance Tracers**: Different tracers for different environments/workflows
+* **Custom Instrumentors**: Building and integrating custom OpenTelemetry instrumentors
 
-Distributed tracing across multiple services with context propagation and correlation.
+Manual Tracing (When Needed)
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-Multi-Instance Workflows
-~~~~~~~~~~~~~~~~~~~~~~~~~
-
-Complex workflows using multiple tracer instances for different stages and components.
+* **Custom Operations**: `basic_usage.py` - Manual span management for custom logic
+* **Decorator Tracing**: `tracing_decorators.py` - Function-level tracing with decorators
+* **Span Enrichment**: Adding custom metadata and context to traces
 
 Best Practices
 --------------
 
-1. Initialization
-~~~~~~~~~~~~~~~~~
+1. BYOI Pattern
+~~~~~~~~~~~~~~~
 
-* Use ``HoneyHiveTracer()`` constructor for production code
-* Create separate tracers for different environments and workflows
-* Set environment variables for configuration
-* Enable test mode for development
+* **Start with instrumentors**: Use existing OpenTelemetry instrumentors before manual tracing
+* **One tracer per application**: Initialize HoneyHive tracer once, let instrumentors handle the rest
+* **Instrument early**: Set up instrumentors during application startup
+* **Test instrumentor compatibility**: Verify instrumentors work with your dependencies
 
 2. Multi-Instance Usage
 ~~~~~~~~~~~~~~~~~~~~~~~~
 
-* Use different tracers for different components
-* Pass tracer instances explicitly to decorators
-* Manage tracer lifecycles independently
-* Separate production and development tracing
+* **Environment separation**: Use different tracers for prod/dev/test environments
+* **Component isolation**: Separate tracers for different services or workflows
+* **Independent lifecycles**: Each tracer manages its own configuration and resources
+* **Explicit tracer passing**: Pass tracer instances to decorators when using manual tracing
 
-3. Tracing
-~~~~~~~~~~
+3. Instrumentor Selection
+~~~~~~~~~~~~~~~~~~~~~~~~~
 
-* Use ``@trace(tracer=instance)`` decorator for automatic tracing
-* Add meaningful span names and attributes
-* Handle errors properly in spans
-* Use explicit tracer instances for better control
+* **Provider-specific**: Use OpenInference instrumentors for AI/ML providers (OpenAI, Anthropic, etc.)
+* **Standard libraries**: Use official OpenTelemetry instrumentors for HTTP, databases, frameworks
+* **Custom needs**: Build custom instrumentors for proprietary systems
+* **Compatibility**: Ensure instrumentor versions are compatible with your dependencies
 
-4. Performance
-~~~~~~~~~~~~~~
+4. Performance Optimization
+~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-* Use conditional tracing for high-throughput operations
-* Implement sampling for large applications
-* Monitor span volume and performance impact
-* Optimize each tracer instance independently
+* **Sampling**: Configure sampling rates for high-volume applications
+* **Selective instrumentation**: Only instrument critical paths in performance-sensitive code
+* **Batch processing**: Use OTLP exporter's built-in batching for efficiency
+* **Monitor overhead**: Track instrumentation impact on application performance
 
-5. Testing
-~~~~~~~~~~
+5. Development & Testing
+~~~~~~~~~~~~~~~~~~~~~~~~
 
-* Use test mode for development
-* Create mock tracers for unit tests
-* Test multi-instance scenarios
-* Test error scenarios and edge cases
+* **Test mode**: Use `test_mode=True` for development and testing
+* **Mock instrumentors**: Disable instrumentation in unit tests when not needed
+* **Environment variables**: Use environment variables for configuration flexibility
+* **Gradual rollout**: Start with manual tracing, then add instrumentors incrementally
 
 Getting Help
 ------------
@@ -191,4 +188,4 @@ For API reference and implementation details, see:
 
 * :doc:`../API_REFERENCE` - Complete API reference
 * :doc:`../IMPLEMENTATION_GUIDE` - Technical implementation details
-* :doc:`../OPENINFERENCE_INTEGRATION` - OpenInference integration guide
+* :doc:`../BRING_YOUR_INSTRUMENTOR` - Bring Your Own Instrumentor guide

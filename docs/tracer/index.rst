@@ -17,37 +17,99 @@ Key Features
 * **Enhanced Decorator Support**: Explicit tracer instance support in decorators
 * **Independent Lifecycle Management**: Each tracer manages its own resources
 
-OpenTelemetry Tracer
---------------------
+Architecture
+------------
 
-.. automodule:: honeyhive.tracer.otel_tracer
-   :members:
-   :undoc-members:
-   :show-inheritance:
+The HoneyHive tracing system follows a layered architecture designed for flexibility, multi-instance support, and OpenTelemetry compatibility:
 
-Tracing Decorators
-------------------
+.. mermaid::
 
-.. automodule:: honeyhive.tracer.decorators
-   :members:
-   :undoc-members:
-   :show-inheritance:
+   %%{init: {'theme':'dark', 'themeVariables': {'darkMode': true, 'primaryColor': '#ffffff', 'primaryTextColor': '#ffffff', 'primaryBorderColor': '#ffffff', 'lineColor': '#ffffff', 'edgeLabelBackground': 'transparent', 'clusterBkg': 'transparent', 'clusterBorder': '#ffffff', 'mainBkg': 'transparent', 'secondBkg': 'transparent', 'tertiaryColor': 'transparent'}, 'flowchart': {'linkColor': '#ffffff', 'linkWidth': 4}}}%%
+   graph TB
+       subgraph "User Application Layer"
+           UA["User Code<br/>Functions & Classes"]
+           DEC["@trace / @atrace<br/>@trace_class decorators"]
+           CTX["Context Managers<br/>with tracer.start_span()"]
+       end
+       
+       subgraph "HoneyHive SDK Layer"
+           subgraph "Multi-Instance Tracers"
+               T1["Production Tracer<br/>HoneyHiveTracer.init()"]
+               T2["Development Tracer<br/>HoneyHiveTracer.init()"]
+               T3["Testing Tracer<br/>HoneyHiveTracer.init()"]
+           end
+           
+           subgraph "Enrichment Layer"
+               ES["enrich_span()<br/>Span-level enrichment"]
+               ESS["enrich_session()<br/>Session-level enrichment"]
+           end
+           
+           subgraph "Core Components"
+               OT["OTEL Tracer<br/>OpenTelemetry integration"]
+               SP["HoneyHive Span Processor<br/>Enriches spans with attributes"]
+               HTTP["HTTP Instrumentation<br/>Auto-tracing (optional)"]
+           end
+       end
+       
+       subgraph "OpenTelemetry Layer"
+           TP["TracerProvider<br/>Global or custom"]
+           SPANS["Active Spans<br/>Context propagation"]
+           BSP["Batch Span Processor<br/>OpenTelemetry batching"]
+           OTLP["OTLP Exporter<br/>Sends to /opentelemetry/v1/traces"]
+       end
+       
+       subgraph "HoneyHive Platform"
+           API["HoneyHive API<br/>Sessions & Events"]
+           DASH["Analytics Dashboard<br/>Traces & Metrics"]
+           STORE["Data Storage<br/>Spans & Sessions"]
+       end
+       
+       UA --> DEC
+       UA --> CTX
+       DEC --> T1
+       DEC --> T2
+       DEC --> T3
+       CTX --> T1
+       CTX --> T2
+       CTX --> T3
+       
+       T1 --> ES
+       T2 --> ES
+       T3 --> ES
+       T1 --> ESS
+       T2 --> ESS
+       T3 --> ESS
+       
+       ES --> OT
+       ESS --> API
+       
+       T1 --> OT
+       T2 --> OT
+       T3 --> OT
+       
+       OT --> TP
+       T1 --> HTTP
+       
+       TP --> SP
+       TP --> BSP
+       SP --> SPANS
+       HTTP --> SPANS
+       
+       SPANS --> BSP
+       BSP --> OTLP
+       OTLP --> API
+       
+       API --> DASH
+       API --> STORE
 
-Span Processor
---------------
+**Key Architecture Components:**
 
-.. automodule:: honeyhive.tracer.span_processor
-   :members:
-   :undoc-members:
-   :show-inheritance:
-
-HTTP Instrumentation
---------------------
-
-.. automodule:: honeyhive.tracer.http_instrumentation
-   :members:
-   :undoc-members:
-   :show-inheritance:
+* **Multi-Instance Tracers**: Independent tracer instances for different environments/workflows
+* **Enrichment Layer**: Dual enrichment system for spans and sessions
+* **HoneyHive Span Processor**: Enriches spans with HoneyHive-specific attributes and context
+* **Standard OTLP Export**: Uses OpenTelemetry's OTLP exporter to send spans to HoneyHive API
+* **Flexible Entry Points**: Decorators, context managers, and direct API calls
+* **Data Flow**: User code → Span enrichment → OTLP export → HoneyHive platform
 
 Multi-Instance Architecture
 ---------------------------
@@ -277,287 +339,31 @@ Each tracer instance manages its own lifecycle:
 ✅ **Type Safety**: Better IDE support and type checking
 
 Span and Session Enrichment
-============================
+----------------------------
 
-The HoneyHive SDK provides two powerful enrichment approaches for adding metadata and context to your traces:
+The HoneyHive SDK provides powerful enrichment capabilities for adding metadata and context to your traces. For detailed enrichment architecture and implementation details, see the :doc:`../IMPLEMENTATION_GUIDE`.
+
+**Quick Overview:**
 
 1. **enrich_span**: Modern, unified span-level enrichment (recommended for most use cases)
 2. **enrich_session**: Session-level enrichment for backend persistence
 
-enrich_span - Unified Span Enrichment
---------------------------------------
-
-The new ``enrich_span`` function provides a unified, flexible approach to span enrichment with multiple usage patterns and full backwards compatibility.
-
-**Key Features:**
-
-* ✅ **Unified API**: Single function supporting multiple usage patterns
-* ✅ **OpenTelemetry Native**: Works with standard OTEL infrastructure  
-* ✅ **Context Manager Support**: Rich context manager pattern
-* ✅ **Backwards Compatible**: Supports all existing usage patterns
-* ✅ **No Dependencies**: No session_id or API connection required
-* ✅ **Rich Attributes**: Supports experiments, complex data structures
-* ✅ **Multiple Import Paths**: Consistent across all modules
-
-**Usage Patterns:**
-
-Context Manager Pattern (Recommended)
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-
-Use the context manager pattern for automatic span enrichment within a code block:
+**Basic Usage Examples:**
 
 .. code-block:: python
 
-   from honeyhive.tracer import enrich_span
-   
-   # Enhanced pattern with rich attributes including outputs and error handling
+   # Span enrichment with context manager
    with enrich_span(
        event_type="llm_inference",
-       event_name="gpt4_completion", 
-       inputs={"prompt": "What is AI?", "temperature": 0.7},
-       outputs={"response": "AI is...", "tokens_used": 145},
-       metadata={"model": "gpt-4", "version": "2024-03"},
-       metrics={"expected_tokens": 150, "actual_tokens": 145},
-       config_data={
-           "experiment_id": "exp-123",
-           "experiment_name": "temperature_test",
-           "experiment_variant": "control"
-       },
-       error=None  # Can be set to an Exception if an error occurs
+       metadata={"model": "gpt-4"},
+       inputs={"prompt": "What is AI?"}
    ):
-       # Your code here - span is automatically enriched
-       try:
-           response = llm_client.complete(prompt)
-       except Exception as e:
-           # Error will be captured automatically in span attributes
-           raise
-
-   # Basic pattern (backwards compatible with basic_usage.py)
-   with enrich_span("user_session", {"user_id": "123", "action": "query"}):
-       process_user_request()
-
-Tracer Instance Method (Direct Calls)
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-
-Use direct method calls on tracer instances for immediate enrichment:
-
-.. code-block:: python
-
-   from honeyhive.tracer import HoneyHiveTracer
+       response = llm_client.complete(prompt)
    
-   tracer = HoneyHiveTracer.init(api_key="key", project="project")
-   
-   # Context manager pattern (backwards compatible)
-   with tracer.enrich_span("operation_name", {"step": "preprocessing"}):
-       preprocess_data()
-   
-   # Direct method call with outputs and error support
-   success = tracer.enrich_span(
-       metadata={"stage": "postprocessing"},
-       metrics={"latency": 0.1, "tokens": 150},
-       outputs={"result": "processed_data", "format": "json"},
-       error=None  # Set to Exception instance if error occurred
-   )
-
-Global Function (Multi-Instance Support)  
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-
-Use the global function with explicit tracer parameter for multi-instance scenarios:
-
-.. code-block:: python
-
-   from honeyhive.tracer.otel_tracer import enrich_span
-   
-   # Direct call with tracer parameter and outputs/error support
-   success = enrich_span(
-       metadata={"operation": "batch_processing"},
-       metrics={"items_processed": 1000},
-       outputs={"processed_count": 1000, "failed_count": 0},
-       error=None,  # Set to Exception if processing failed
-       tracer=my_tracer
-   )
-   
-   # Context manager with tracer parameter and error handling
-   with enrich_span(
-       event_type="batch_job",
-       metadata={"job_id": "job-456"},
-       outputs={"status": "starting"},
-       error=None,
-       tracer=my_tracer
-   ):
-       try:
-           process_batch()
-       except Exception as e:
-           # Exception will be captured in span attributes
-           raise
-
-**Import Compatibility:**
-
-All import paths work consistently:
-
-.. code-block:: python
-
-   # All of these are equivalent:
-   from honeyhive.tracer import enrich_span                    # Public API (recommended)
-   from honeyhive.tracer.otel_tracer import enrich_span        # Main implementation
-   from honeyhive.tracer.decorators import enrich_span         # Delegates to main
-
-**Experiment Support:**
-
-Rich experiment data support with automatic attribute setting:
-
-.. code-block:: python
-
-   with enrich_span(
-       event_type="ab_test",
-       config_data={
-           "experiment_id": "exp-789",
-           "experiment_name": "model_comparison", 
-           "experiment_variant": "gpt4_turbo",
-           "experiment_group": "B",
-           "experiment_metadata": {
-               "version": "1.2",
-               "feature_flags": ["new_prompt", "enhanced_context"]
-           }
-       }
-   ):
-       # Automatically sets:
-       # honeyhive_experiment_id = "exp-789"
-       # honeyhive_experiment_name = "model_comparison"
-       # honeyhive_experiment_variant = "gpt4_turbo" 
-       # honeyhive_experiment_group = "B"
-       # honeyhive_experiment_metadata_version = "1.2"
-       # honeyhive_experiment_metadata_feature_flags = [...]
-       run_experiment()
-
-enrich_session - Session-Level Enrichment  
-------------------------------------------
-
-Use ``enrich_session`` for backend persistence of session-level data that needs to be stored in the HoneyHive platform.
-
-**Key Features:**
-
-* ✅ **Backend Integration**: Direct API calls to HoneyHive backend
-* ✅ **Rich Data Types**: metadata, feedback, metrics, config, inputs, outputs, user_properties
-* ✅ **Immediate Persistence**: Data stored in HoneyHive backend immediately
-* ✅ **Session Scoped**: Updates entire session context
-* ❌ **Session Dependency**: Requires active session_id
-* ❌ **API Dependency**: Requires HoneyHive API connection
-
-**Usage:**
-
-.. code-block:: python
-
-   from honeyhive.tracer import HoneyHiveTracer
-   
-   tracer = HoneyHiveTracer.init(api_key="key", project="project")
-   
-   # Enrich session with comprehensive data
-   success = tracer.enrich_session(
-       session_id="session-123",  # Optional - uses tracer's session if not provided
-       metadata={
-           "user_id": "user-456",
-           "conversation_type": "support",
-           "language": "en"
-       },
-       feedback={
-           "rating": 5,
-           "helpful": True,
-           "feedback_text": "Very helpful response"
-       },
-       metrics={
-           "total_tokens": 1500,
-           "duration": 2.5,
-           "api_calls": 3
-       },
-       config={
-           "model": "gpt-4",
-           "temperature": 0.7,
-           "max_tokens": 500
-       },
-       user_properties={
-           "subscription_tier": "premium",
-           "region": "us-west"
-       }
-   )
-
-When to Use Which?
-------------------
-
-**Use enrich_span when:**
-
-* ✅ Working within **span context** (most tracing scenarios)
-* ✅ Need **OpenTelemetry-native** span enrichment
-* ✅ Want **flexible usage patterns** (context managers)
-* ✅ Need **rich attribute support** with experiment data
-* ✅ Want **backwards compatibility** with existing code
-* ✅ Working with **local span enrichment**
-
-**Use enrich_session when:**
-
-* ✅ Need **backend persistence** of session-level data
-* ✅ Want to **update existing sessions** in HoneyHive
-* ✅ Working with **session-scoped metrics/feedback**
-* ✅ Need data **immediately available** in HoneyHive UI
-* ✅ Collecting **user feedback and ratings**
-
-**Combined Usage (Recommended):**
-
-Use both for comprehensive observability:
-
-.. code-block:: python
-
-   # Session-level data (persisted to backend)
+   # Session enrichment for backend persistence
    tracer.enrich_session(
-       metadata={"user_id": "123", "session_type": "chat"},
-       config={"model": "gpt-4", "temperature": 0.7}
+       metadata={"user_id": "123"},
+       metrics={"total_tokens": 1500}
    )
-   
-   # Span-level data (rich context for current operation)  
-   with enrich_span(
-       event_type="llm_query",
-       inputs={"prompt": "What is AI?"},
-       metadata={"step": "preprocessing"}
-   ):
-       preprocess_query()
-   
-   with enrich_span(
-       event_type="llm_inference",
-       config_data={"model": "gpt-4", "tokens": 150},
-       metrics={"latency": 0.8}
-   ):
-       generate_response()
 
-Migration Guide
----------------
-
-**From Legacy enrich_span Usage:**
-
-The new unified approach is **fully backwards compatible**:
-
-.. code-block:: python
-
-   # ✅ Legacy patterns continue to work unchanged:
-   
-   # Basic usage pattern (basic_usage.py)
-   with tracer.enrich_span("session_enrichment", {"enrichment_type": "session_data"}):
-       pass
-   
-   # Enhanced tracing pattern (enhanced_tracing_demo.py)  
-   with enrich_span(
-       event_type="enrichment_demo",
-       event_name="attribute_enrichment",
-       metadata={"enrichment_type": "context_manager"}
-   ):
-       pass
-   
-   # Direct method calls
-   success = tracer.enrich_span(metadata={"key": "value"})
-
-**Architecture Benefits:**
-
-* ✅ **Single Implementation**: No more duplicate code across modules
-* ✅ **No Circular Imports**: Clean dependency flow
-* ✅ **Consistent API**: Same behavior across all import paths
-* ✅ **Better Testing**: Comprehensive unit and integration test coverage
-* ✅ **Type Safety**: Full type annotations and IDE support
+For complete enrichment documentation including all usage patterns, migration guides, and advanced features, see the :doc:`../IMPLEMENTATION_GUIDE`.

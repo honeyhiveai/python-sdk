@@ -1,7 +1,78 @@
 """Configuration management for HoneyHive SDK."""
 
+import json
+import os
 from dataclasses import dataclass, field
 from typing import Any, Dict, List, Optional
+
+
+def _get_env_bool(key: str, default: bool = False) -> bool:
+    """Get boolean value from environment variable.
+    
+    Args:
+        key: Environment variable name
+        default: Default value if not found
+        
+    Returns:
+        Boolean value from environment or default
+    """
+    value = os.getenv(key, "").lower()
+    if value in ("true", "1", "yes", "on"):
+        return True
+    elif value in ("false", "0", "no", "off"):
+        return False
+    return default
+
+
+def _get_env_int(key: str, default: int = 0) -> int:
+    """Get integer value from environment variable.
+    
+    Args:
+        key: Environment variable name
+        default: Default value if not found
+        
+    Returns:
+        Integer value from environment or default
+    """
+    try:
+        return int(os.getenv(key, str(default)))
+    except (ValueError, TypeError):
+        return default
+
+
+def _get_env_float(key: str, default: float = 0.0) -> float:
+    """Get float value from environment variable.
+    
+    Args:
+        key: Environment variable name
+        default: Default value if not found
+        
+    Returns:
+        Float value from environment or default
+    """
+    try:
+        return float(os.getenv(key, str(default)))
+    except (ValueError, TypeError):
+        return default
+
+
+def _get_env_json(key: str, default: Optional[dict] = None) -> Optional[dict]:
+    """Get JSON value from environment variable.
+    
+    Args:
+        key: Environment variable name
+        default: Default value if not found
+        
+    Returns:
+        Dict value from environment or default
+    """
+    value = os.getenv(key)
+    if not value:
+        return default
+    try:
+        return json.loads(value)
+    except (json.JSONDecodeError, TypeError):
+        return default
 
 
 @dataclass
@@ -12,6 +83,26 @@ class APIConfig:
     api_url: str = "https://api.honeyhive.ai"
     project: Optional[str] = None
     source: str = "production"
+
+    def __post_init__(self) -> None:
+        """Load configuration from environment variables."""
+        # Load from HH_ prefixed variables first, then standard alternatives
+        if self.api_key is None:
+            self.api_key = os.getenv("HH_API_KEY")
+        
+        # API URL with fallback to standard
+        env_api_url = os.getenv("HH_API_URL") or os.getenv("API_URL")
+        if env_api_url:
+            self.api_url = env_api_url
+        
+        # Project name with fallback to default
+        if self.project is None:
+            self.project = os.getenv("HH_PROJECT") or os.getenv("PROJECT") or "default"
+        
+        # Source environment
+        env_source = os.getenv("HH_SOURCE") or os.getenv("SOURCE") or os.getenv("ENVIRONMENT")
+        if env_source:
+            self.source = env_source
 
 
 @dataclass
@@ -24,6 +115,15 @@ class TracingConfig:
     debug_mode: bool = False
     verbose: bool = False  # Enable verbose logging for API debugging
 
+    def __post_init__(self) -> None:
+        """Load configuration from environment variables."""
+        # Tracing configuration
+        self.disable_tracing = _get_env_bool("HH_DISABLE_TRACING", self.disable_tracing)
+        self.disable_http_tracing = _get_env_bool("HH_DISABLE_HTTP_TRACING", self.disable_http_tracing)
+        self.test_mode = _get_env_bool("HH_TEST_MODE", self.test_mode)
+        self.debug_mode = _get_env_bool("HH_DEBUG_MODE", self.debug_mode)
+        self.verbose = _get_env_bool("HH_VERBOSE", self.verbose)
+
 
 @dataclass
 class OTLPConfig:
@@ -32,6 +132,21 @@ class OTLPConfig:
     otlp_enabled: bool = True
     otlp_endpoint: Optional[str] = None
     otlp_headers: Optional[dict] = None
+
+    def __post_init__(self) -> None:
+        """Load configuration from environment variables."""
+        # OTLP configuration
+        self.otlp_enabled = _get_env_bool("HH_OTLP_ENABLED", self.otlp_enabled)
+        
+        # OTLP endpoint
+        env_endpoint = os.getenv("HH_OTLP_ENDPOINT") or os.getenv("OTEL_EXPORTER_OTLP_ENDPOINT")
+        if env_endpoint:
+            self.otlp_endpoint = env_endpoint
+        
+        # OTLP headers
+        env_headers = _get_env_json("HH_OTLP_HEADERS") or _get_env_json("OTEL_EXPORTER_OTLP_HEADERS")
+        if env_headers:
+            self.otlp_headers = env_headers
 
 
 @dataclass
@@ -50,6 +165,27 @@ class HTTPClientConfig:
     verify_ssl: bool = True
     follow_redirects: bool = True
 
+    def __post_init__(self) -> None:
+        """Load configuration from environment variables."""
+        # Connection pool settings
+        self.max_connections = _get_env_int("HH_MAX_CONNECTIONS", self.max_connections) or _get_env_int("HTTP_MAX_CONNECTIONS", self.max_connections)
+        self.max_keepalive_connections = _get_env_int("HH_MAX_KEEPALIVE_CONNECTIONS", self.max_keepalive_connections) or _get_env_int("HTTP_MAX_KEEPALIVE_CONNECTIONS", self.max_keepalive_connections)
+        self.keepalive_expiry = _get_env_float("HH_KEEPALIVE_EXPIRY", self.keepalive_expiry) or _get_env_float("HTTP_KEEPALIVE_EXPIRY", self.keepalive_expiry)
+        self.pool_timeout = _get_env_float("HH_POOL_TIMEOUT", self.pool_timeout) or _get_env_float("HTTP_POOL_TIMEOUT", self.pool_timeout)
+        
+        # Rate limiting
+        self.rate_limit_calls = _get_env_int("HH_RATE_LIMIT_CALLS", self.rate_limit_calls) or _get_env_int("HTTP_RATE_LIMIT_CALLS", self.rate_limit_calls)
+        self.rate_limit_window = _get_env_float("HH_RATE_LIMIT_WINDOW", self.rate_limit_window) or _get_env_float("HTTP_RATE_LIMIT_WINDOW", self.rate_limit_window)
+        
+        # Proxy settings
+        self.http_proxy = os.getenv("HH_HTTP_PROXY") or os.getenv("HTTP_PROXY") or os.getenv("http_proxy")
+        self.https_proxy = os.getenv("HH_HTTPS_PROXY") or os.getenv("HTTPS_PROXY") or os.getenv("https_proxy")
+        self.no_proxy = os.getenv("HH_NO_PROXY") or os.getenv("NO_PROXY") or os.getenv("no_proxy")
+        
+        # SSL and redirects
+        self.verify_ssl = _get_env_bool("HH_VERIFY_SSL", self.verify_ssl) or _get_env_bool("VERIFY_SSL", self.verify_ssl)
+        self.follow_redirects = _get_env_bool("HH_FOLLOW_REDIRECTS", self.follow_redirects) or _get_env_bool("FOLLOW_REDIRECTS", self.follow_redirects)
+
 
 @dataclass
 class ExperimentConfig:
@@ -60,6 +196,51 @@ class ExperimentConfig:
     experiment_variant: Optional[str] = None
     experiment_group: Optional[str] = None
     experiment_metadata: Optional[dict] = None
+
+    def __post_init__(self) -> None:
+        """Load configuration from environment variables."""
+        # Experiment identification with multiple standard alternatives
+        self.experiment_id = (
+            os.getenv("HH_EXPERIMENT_ID") or 
+            os.getenv("EXPERIMENT_ID") or 
+            os.getenv("MLFLOW_EXPERIMENT_ID") or 
+            os.getenv("WANDB_RUN_ID") or 
+            os.getenv("COMET_EXPERIMENT_KEY")
+        )
+        
+        self.experiment_name = (
+            os.getenv("HH_EXPERIMENT_NAME") or 
+            os.getenv("EXPERIMENT_NAME") or 
+            os.getenv("MLFLOW_EXPERIMENT_NAME") or 
+            os.getenv("WANDB_PROJECT") or 
+            os.getenv("COMET_PROJECT_NAME")
+        )
+        
+        # Experiment variants and groups
+        self.experiment_variant = (
+            os.getenv("HH_EXPERIMENT_VARIANT") or 
+            os.getenv("EXPERIMENT_VARIANT") or 
+            os.getenv("VARIANT") or 
+            os.getenv("AB_TEST_VARIANT") or 
+            os.getenv("TREATMENT")
+        )
+        
+        self.experiment_group = (
+            os.getenv("HH_EXPERIMENT_GROUP") or 
+            os.getenv("EXPERIMENT_GROUP") or 
+            os.getenv("GROUP") or 
+            os.getenv("AB_TEST_GROUP") or 
+            os.getenv("COHORT")
+        )
+        
+        # Experiment metadata with multiple formats
+        self.experiment_metadata = (
+            _get_env_json("HH_EXPERIMENT_METADATA") or 
+            _get_env_json("EXPERIMENT_METADATA") or 
+            _get_env_json("MLFLOW_TAGS") or 
+            _get_env_json("WANDB_TAGS") or 
+            _get_env_json("COMET_TAGS")
+        )
 
 
 @dataclass
@@ -84,7 +265,12 @@ class Config:
     experiment: Optional[ExperimentConfig] = None
 
     def __post_init__(self) -> None:
-        """Initialize sub-configurations with defaults."""
+        """Initialize sub-configurations with defaults and load from environment."""
+        # Load SDK-level configuration from environment
+        self.timeout = _get_env_float("HH_TIMEOUT", self.timeout)
+        self.max_retries = _get_env_int("HH_MAX_RETRIES", self.max_retries)
+        
+        # Initialize sub-configurations (they will load their own env vars)
         if self.api is None:
             self.api = APIConfig()
         if self.tracing is None:

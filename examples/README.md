@@ -27,10 +27,11 @@ tracer = HoneyHiveTracer._instance
 - **[`tracing_decorators.py`](tracing_decorators.py)** - Using `@trace`, `@atrace`, and `@trace_class` decorators
 - **[`enhanced_tracing_demo.py`](enhanced_tracing_demo.py)** - Advanced tracing features and manual span management
 
-### **Integration Examples**
-- **[`openinference_integration.py`](openinference_integration.py)** - OpenInference integration with HoneyHive
-- **[`openinference_integration_simple.py`](openinference_integration_simple.py)** - Simplified OpenInference setup
-- **[`openinference_google_ai_integration.py`](openinference_google_ai_integration.py)** - Google AI integration
+### **Provider Integration Examples**
+- **[`simple_openai_integration.py`](simple_openai_integration.py)** - OpenAI integration with OpenInference
+- **[`simple_anthropic_integration.py`](simple_anthropic_integration.py)** - Anthropic integration with OpenInference
+- **[`simple_google_ai_integration.py`](simple_google_ai_integration.py)** - Google AI integration with OpenInference
+- **[`simple_bedrock_integration.py`](simple_bedrock_integration.py)** - AWS Bedrock integration with OpenInference
 
 ### **Evaluation Framework**
 - **[`evaluation_example.py`](evaluation_example.py)** - Using the evaluation framework with `@evaluator` decorators
@@ -117,8 +118,8 @@ The `@trace` decorator automatically detects function types and applies the appr
    # Tracing decorators
    python examples/tracing_decorators.py
    
-   # OpenInference integration
-   python examples/openinference_integration.py
+   # Provider integration
+   python examples/simple_openai_integration.py
    ```
 
 ## 🚀 **Enhanced Features Available**
@@ -142,9 +143,9 @@ tracer = HoneyHiveTracer.init(
 ## 📖 **Documentation**
 
 For comprehensive documentation, see:
-- **[API Reference](../docs/API_REFERENCE.md)** - Complete API reference
-- **[Basic Usage Patterns](../docs/examples/BASIC_USAGE_PATTERNS.md)** - Detailed usage patterns
-- **[Implementation Guide](../docs/IMPLEMENTATION_GUIDE.md)** - Technical implementation details
+- **[API Reference](../docs/API_REFERENCE.rst)** - Complete API reference
+- **[Bring Your Own Instrumentor](../docs/BRING_YOUR_INSTRUMENTOR.rst)** - Integration patterns with OpenInference
+- **[Implementation Guide](../docs/IMPLEMENTATION_GUIDE.rst)** - Technical implementation details
 
 ## 🚀 **Why Use the Primary Pattern?**
 

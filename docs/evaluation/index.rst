@@ -15,13 +15,42 @@ The evaluation framework provides a robust system for evaluating LLM outputs wit
 * **API Integration**: Store evaluation results in HoneyHive
 * **Batch Processing**: Efficient evaluation of large datasets
 
-Core Components
----------------
+Architecture
+------------
 
-.. automodule:: honeyhive.evaluation.evaluators
-   :members:
-   :undoc-members:
-   :show-inheritance:
+The evaluation framework follows a modular architecture designed for flexibility and performance:
+
+.. mermaid::
+
+   %%{init: {'theme':'dark', 'themeVariables': {'darkMode': true, 'primaryColor': '#ffffff', 'primaryTextColor': '#ffffff', 'primaryBorderColor': '#ffffff', 'lineColor': '#ffffff', 'edgeLabelBackground': 'transparent', 'clusterBkg': 'transparent', 'clusterBorder': '#ffffff', 'mainBkg': 'transparent', 'secondBkg': 'transparent', 'tertiaryColor': 'transparent'}, 'flowchart': {'linkColor': '#ffffff', 'linkWidth': 4}}}%%
+   graph TD
+       A["User Code<br/>@evaluate_decorator"] --> B["Evaluation Framework"]
+       B --> C["Input Processing"]
+       C --> D["Evaluator Selection"]
+       
+       D --> E1["Built-in Evaluators<br/>• ExactMatchEvaluator<br/>• F1ScoreEvaluator<br/>• LengthEvaluator<br/>• SemanticSimilarityEvaluator"]
+       D --> E2["Custom Evaluators<br/>• BaseEvaluator subclasses<br/>• Lambda functions<br/>• User-defined logic"]
+       
+       E1 --> F["Thread Pool<br/>Parallel Processing"]
+       E2 --> F
+       
+       F --> G["Result Aggregation"]
+       G --> H["EvaluationResult<br/>• Score<br/>• Metrics<br/>• Metadata"]
+       
+       H --> I1["Local Storage<br/>• In-memory results<br/>• File export"]
+       H --> I2["HoneyHive API<br/>• Evaluation runs<br/>• Analytics dashboard"]
+       
+       J["Configuration<br/>• Environment variables<br/>• Context parameters"] --> B
+       
+       K["Error Handling<br/>• Graceful failures<br/>• Logging<br/>• Retry logic"] --> F
+
+**Key Components:**
+
+* **Input Processing**: Validates and normalizes evaluation inputs
+* **Evaluator Selection**: Dynamically loads built-in or custom evaluators
+* **Thread Pool**: Manages parallel execution for performance
+* **Result Aggregation**: Combines individual evaluator results
+* **Storage Options**: Local results or HoneyHive API integration
 
 Built-in Evaluators
 -------------------
@@ -280,7 +309,7 @@ The evaluation framework uses Python's `ThreadPoolExecutor` for parallel process
 API Reference
 -------------
 
-For detailed API documentation, see the :doc:`../api/index` section.
+For detailed API documentation, see the :doc:`../API_REFERENCE` section.
 
 Examples
 --------

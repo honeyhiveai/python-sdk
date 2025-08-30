@@ -2,17 +2,25 @@
 """
 Basic Usage Example
 
-This example demonstrates the primary initialization pattern using HoneyHiveTracer.init()
-and shows how to access the tracer instance for various operations.
+This example demonstrates the fundamental patterns from the documentation
+as full functioning executable code:
+
+1. Basic Initialization
+2. Simple Tracing with @trace decorator
+3. Manual Span Management
+4. API Client Usage
+
+This aligns with the code snippets shown in the documentation.
 """
 
 import os
-from honeyhive import HoneyHive, HoneyHiveTracer
-from honeyhive.tracer.decorators import trace
+import time
+import asyncio
+from honeyhive import HoneyHive, HoneyHiveTracer, trace
 
 # Set environment variables for configuration
 os.environ["HH_API_KEY"] = "your-api-key-here"
-os.environ["HH_PROJECT"] = "your-project-name"
+os.environ["HH_PROJECT"] = "my-project"
 os.environ["HH_SOURCE"] = "development"
 
 def main():
@@ -20,89 +28,97 @@ def main():
     
     print("🚀 HoneyHive SDK Basic Usage Example")
     print("=" * 50)
+    print("This example demonstrates the code snippets from the documentation")
+    print("as full functioning executable examples.\n")
     
-    # Initialize tracer using the recommended pattern
-    print("1. Initializing HoneyHiveTracer...")
+    # ========================================================================
+    # 1. BASIC INITIALIZATION (from docs)
+    # ========================================================================
+    print("1. Basic Initialization")
+    print("-" * 25)
+    
+    # Initialize tracer (creates new instance) - from docs
     tracer = HoneyHiveTracer.init(
-        api_key="your-api-key-here",
-        project="your-project-name",
-        source="development"
+        api_key="your-api-key",
+        project="my-project",
+        source="production"
     )
+    
     print(f"✓ Tracer initialized for project: {tracer.project}")
     print(f"✓ Source environment: {tracer.source}")
     print(f"✓ Session ID: {tracer.session_id}")
     
-    # Example: Initialize with HTTP tracing enabled
-    print("\n2. Example: HTTP tracing control...")
-    print("   Note: HTTP tracing is disabled by default for performance")
-    print("   To enable HTTP tracing, use disable_http_tracing=False:")
-    print("   HoneyHiveTracer.init(..., disable_http_tracing=False)")
+    # ========================================================================
+    # 2. BASIC TRACING (from docs)
+    # ========================================================================
+    print("\n2. Basic Tracing")
+    print("-" * 17)
+    
+    # Pass tracer instance explicitly (recommended) - from docs
+    @trace(tracer=tracer)
+    def my_function():
+        """This function will be automatically traced."""
+        print("  📝 Executing my_function...")
+        time.sleep(0.1)  # Simulate some work
+        return "Hello, World!"
+    
+    # Test the traced function
+    result = my_function()
+    print(f"✓ Function result: {result}")
+    
+    # Demonstrate dynamic sync/async detection
+    @trace(tracer=tracer)
+    async def my_async_function():
+        """This async function will be automatically traced."""
+        print("  📝 Executing my_async_function...")
+        await asyncio.sleep(0.1)  # Simulate async work
+        return "Hello, Async World!"
+    
+    # Test the async traced function
+    async_result = asyncio.run(my_async_function())
+    print(f"✓ Async function result: {async_result}")
+    
+    # ========================================================================
+    # 3. MANUAL SPAN MANAGEMENT (from docs)
+    # ========================================================================
+    print("\n3. Manual Span Management")
+    print("-" * 26)
+    
+    # Manual span management - from docs
+    with tracer.start_span("custom-operation") as span:
+        span.set_attribute("operation.type", "data_processing")
+        print("  📝 Processing data...")
+        
+        # Your operation here
+        time.sleep(0.1)  # Simulate processing
+        result = "processed_data"
+        
+        span.set_attribute("operation.result", result)
+        print(f"  ✓ Operation completed: {result}")
+    
+    # ========================================================================
+    # 4. API CLIENT USAGE
+    # ========================================================================
+    print("\n4. API Client Usage")
+    print("-" * 20)
     
     # Initialize API client
-    print("\n2. Initializing API client...")
     client = HoneyHive(
         api_key="your-api-key-here",
-        project="your-project-name",
-        source="development"
+        test_mode=True  # Use test mode for examples
     )
     print("✓ API client initialized")
-    
-    # Demonstrate tracing decorators
-    print("\n3. Testing tracing decorators...")
-    
-    @trace(event_type="demo", event_name="basic_function")
-    def basic_function():
-        """A simple function that will be traced."""
-        print("  📝 Executing basic_function...")
-        return "Hello from basic function!"
-    
-    @trace(event_type="demo", event_name="async_function")
-    async def async_function():
-        """An async function that will be traced."""
-        print("  📝 Executing async_function...")
-        import asyncio
-        await asyncio.sleep(0.1)
-        return "Hello from async function!"
-    
-    # Test synchronous function
-    result = basic_function()
-    print(f"  ✓ Basic function result: {result}")
-    
-    # Test async function
-    import asyncio
-    async_result = asyncio.run(async_function())
-    print(f"  ✓ Async function result: {async_result}")
-    
-    # Demonstrate manual span management
-    print("\n4. Testing manual span management...")
-    
-    with tracer.start_span("manual_operation") as span:
-        span.set_attribute("operation.type", "manual")
-        span.set_attribute("operation.description", "Manual span creation example")
-        print("  📝 Executing manual operation...")
-        
-        # Simulate some work
-        import time
-        time.sleep(0.1)
-        
-        span.set_attribute("operation.result", "success")
-        print("  ✓ Manual operation completed")
-    
-    # Demonstrate session enrichment
-    print("\n5. Testing session enrichment...")
-    
-    with tracer.enrich_span("session_enrichment", {"enrichment_type": "session_data"}):
-        print("  📝 Enriching session with additional data...")
-        print("  ✓ Session enrichment completed")
+    print("✓ Ready for API operations (events, datasets, etc.)")
+    print("  Note: API client is separate from tracer - used for direct API calls")
     
     print("\n🎉 Basic usage example completed successfully!")
-    print("\nKey points demonstrated:")
-    print("✅ Primary initialization using HoneyHiveTracer.init()")
-    print("✅ Accessing tracer instance via HoneyHiveTracer._instance")
-    print("✅ Using @trace decorators for automatic tracing")
-    print("✅ Manual span management with start_span()")
-    print("✅ Session enrichment with enrich_span()")
-    print("✅ API client initialization and usage")
+    print("\nKey patterns demonstrated:")
+    print("✅ Basic tracer initialization")
+    print("✅ @trace decorator with tracer parameter")
+    print("✅ Dynamic sync/async function detection")
+    print("✅ Manual span management")
+    print("✅ API client initialization")
+    print("\nThese examples match the documentation code snippets!")
 
 
 if __name__ == "__main__":

@@ -50,7 +50,7 @@ Span and Session Enrichment
 * **Context Manager Support** - Rich context manager pattern for automatic span enrichment
 * **Multiple Import Paths** - Consistent API across all modules (tracer, otel_tracer, decorators)
 * **OpenTelemetry Native** - Direct integration with OpenTelemetry spans and attributes
-* **Backwards Compatibility** - Full support for existing usage patterns (basic_usage.py, enhanced_tracing_demo.py)
+* **Backwards Compatibility** - Full support for existing usage patterns (basic_usage.py, advanced_usage.py)
 * **Multi-Instance Support** - Works seamlessly with multiple tracer instances
 * **Experiment Support** - Built-in A/B testing and experiment tracking with automatic attribute setting
 * **Rich Attribute Support** - Complex data structures, nested dictionaries, and JSON serialization

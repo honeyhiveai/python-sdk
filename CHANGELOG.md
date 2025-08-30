@@ -49,6 +49,19 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Enhanced memory usage monitoring in evaluation framework
   - Better performance monitoring capabilities
 
+- **Evaluation Framework**: Comprehensive evaluation system for AI model assessment
+  - Built-in evaluators: exact match, F1 score, length, semantic similarity
+  - Custom evaluator framework for domain-specific evaluation
+  - Threading support with `ThreadPoolExecutor` for parallel processing
+  - Decorator pattern with `@evaluate_decorator` for seamless integration
+  - API integration for storing evaluation results in HoneyHive
+  - Batch processing capabilities for large datasets
+  - Memory optimization and caching for repeated evaluations
+  - Statistical significance testing and result comparison
+  - Export formats: JSON, CSV, Excel
+  - Integration with MLflow, Weights & Biases, and TensorBoard
+  - Real-time evaluation monitoring and debugging tools
+
 ### Changed
 - **Architecture**: Modern multi-instance architecture supporting multiple independent tracers
 - **Initialization**: `HoneyHiveTracer.init()` remains the preferred method, direct constructor also available

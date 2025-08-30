@@ -8,17 +8,14 @@ with the recommended HoneyHiveTracer.init() initialization pattern.
 
 import asyncio
 import time
-from honeyhive import trace, atrace, trace_class, HoneyHiveTracer
+from honeyhive import trace, trace_class, HoneyHiveTracer
 
 # Initialize tracer using the recommended pattern
-HoneyHiveTracer.init(
+tracer = HoneyHiveTracer.init(
     api_key="your-api-key",
     project="tracing-decorators-demo",
     source="development"
 )
-
-# Get tracer instance
-tracer = HoneyHiveTracer._instance
 
 print("🚀 HoneyHive Tracing Decorators Example")
 print("=" * 50)
@@ -28,62 +25,70 @@ print(f"✓ Session ID: {tracer.session_id}")
 print()
 
 
-@trace
-def simple_function():
-    """Simple function with basic tracing."""
-    print("📝 Executing simple_function...")
-    time.sleep(0.1)
-    return "Hello from simple function!"
+# We'll define the decorated functions after tracer initialization
+# This demonstrates the proper pattern for using decorators with tracer instances
 
-
-@trace(event_type="demo", event_name="custom_traced_function")
-def custom_traced_function():
-    """Function with custom tracing parameters."""
-    print("📝 Executing custom_traced_function...")
-    time.sleep(0.1)
-    return "Hello from custom traced function!"
-
-
-@atrace
-async def async_function():
-    """Async function with automatic tracing."""
-    print("📝 Executing async_function...")
-    await asyncio.sleep(0.1)
-    return "Hello from async function!"
-
-
-@atrace(event_type="demo", event_name="custom_async_function")
-async def custom_async_function():
-    """Async function with custom tracing parameters."""
-    print("📝 Executing custom_async_function...")
-    await asyncio.sleep(0.1)
-    return "Hello from custom async function!"
-
-
-@trace_class
-class DataProcessor:
-    """Class with all methods automatically traced."""
+def create_traced_functions(tracer):
+    """Create traced functions with the tracer instance."""
     
-    def __init__(self):
-        self.data = []
-    
-    def add_data(self, item):
-        """Add data to the processor."""
-        print(f"📝 Adding data: {item}")
-        self.data.append(item)
-        return len(self.data)
-    
-    def process_data(self):
-        """Process all stored data."""
-        print(f"📝 Processing {len(self.data)} data items...")
+    @trace(tracer=tracer)
+    def simple_function():
+        """Simple function with basic tracing."""
+        print("📝 Executing simple_function...")
         time.sleep(0.1)
-        return [item.upper() for item in self.data]
+        return "Hello from simple function!"
+
+    @trace(event_type="demo", event_name="custom_traced_function", tracer=tracer)
+    def custom_traced_function():
+        """Function with custom tracing parameters."""
+        print("📝 Executing custom_traced_function...")
+        time.sleep(0.1)
+        return "Hello from custom traced function!"
+
+    @trace(tracer=tracer)  # Same decorator works for async functions!
+    async def async_function():
+        """Async function with automatic tracing."""
+        print("📝 Executing async_function...")
+        await asyncio.sleep(0.1)
+        return "Hello from async function!"
+
+    @trace(event_type="demo", event_name="custom_async_function", tracer=tracer)  # Dynamic detection!
+    async def custom_async_function():
+        """Async function with custom tracing parameters."""
+        print("📝 Executing custom_async_function...")
+        await asyncio.sleep(0.1)
+        return "Hello from custom async function!"
+
+    @trace_class(tracer=tracer)
+    class DataProcessor:
+        """Class with all methods automatically traced."""
+        
+        def __init__(self):
+            self.data = []
+        
+        def add_data(self, item):
+            """Add data to the processor."""
+            print(f"📝 Adding data: {item}")
+            self.data.append(item)
+            return len(self.data)
+        
+        def process_data(self):
+            """Process all stored data."""
+            print(f"📝 Processing {len(self.data)} data items...")
+            time.sleep(0.1)
+            return [item.upper() for item in self.data]
+        
+        def clear_data(self):
+            """Clear all stored data."""
+            print("📝 Clearing data...")
+            self.data.clear()
+            return "Data cleared"
     
-    def clear_data(self):
-        """Clear all stored data."""
-        print("📝 Clearing data...")
-        self.data.clear()
-        return "Data cleared"
+    return simple_function, custom_traced_function, async_function, custom_async_function, DataProcessor
+
+
+# Create traced functions with the tracer instance
+simple_function, custom_traced_function, async_function, custom_async_function, DataProcessor = create_traced_functions(tracer)
 
 
 def demonstrate_simple_tracing():
@@ -103,9 +108,9 @@ def demonstrate_simple_tracing():
 
 
 def demonstrate_async_tracing():
-    """Demonstrate async tracing decorators."""
-    print("2. Async Tracing Decorators")
-    print("-" * 30)
+    """Demonstrate async tracing with the same @trace decorator."""
+    print("2. Dynamic Async Tracing (Same @trace Decorator)")
+    print("-" * 50)
     
     # Test async function
     result = asyncio.run(async_function())
@@ -176,12 +181,12 @@ def main():
         print("🎉 Tracing decorators example completed successfully!")
         print("\nKey features demonstrated:")
         print("✅ Primary initialization using HoneyHiveTracer.init()")
-        print("✅ @trace decorator for synchronous functions")
-        print("✅ @atrace decorator for asynchronous functions")
+        print("✅ @trace decorator with automatic sync/async detection")
+        print("✅ Single decorator works for both synchronous and asynchronous functions")
         print("✅ @trace_class decorator for automatic method tracing")
         print("✅ Custom event types and names")
         print("✅ Manual span management alongside decorators")
-        print("✅ Accessing tracer instance via HoneyHiveTracer._instance")
+        print("✅ Tracer instance returned from HoneyHiveTracer.init()")
         
     except Exception as e:
         print(f"❌ Example failed: {e}")

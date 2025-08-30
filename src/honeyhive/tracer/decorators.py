@@ -503,7 +503,10 @@ def trace(
     **kwargs: Any,
 ) -> Any:
     """
-    Enhanced trace decorator with comprehensive attribute support.
+    Enhanced trace decorator with comprehensive attribute support and automatic sync/async detection.
+    
+    This decorator automatically detects whether the decorated function is synchronous or 
+    asynchronous and applies the appropriate wrapper. No need to choose between @trace and @atrace.
 
     Args:
         event_type: Type of traced event (e.g., 'model', 'tool', 'chain')
@@ -517,6 +520,19 @@ def trace(
         error: Error information
         event_id: Unique event identifier
         **kwargs: Additional attributes to set on the span
+        
+    Examples:
+        Basic usage with automatic sync/async detection:
+        
+        .. code-block:: python
+        
+            @trace(event_type="demo", event_name="sync_function")
+            def sync_function():
+                return "Hello, World!"
+                
+            @trace(event_type="demo", event_name="async_function")
+            async def async_function():
+                return "Hello, Async World!"
     """
 
     def decorator(func: Callable[..., T]) -> Callable[..., T]:
@@ -541,7 +557,11 @@ def trace(
             logging.warning(f"Tracing parameter validation failed: {e}")
             params = TracingParams()
 
-        return _create_sync_wrapper(func, params, **kwargs)
+        # Automatically detect sync vs async and use appropriate wrapper
+        if inspect.iscoroutinefunction(func):
+            return _create_async_wrapper(func, params, **kwargs)
+        else:
+            return _create_sync_wrapper(func, params, **kwargs)
 
     # Handle both @trace and @trace(...) usage
     if callable(event_type):

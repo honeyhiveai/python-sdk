@@ -657,20 +657,21 @@ class TestHoneyHiveTracer:
 
         with patch.object(HoneyHiveTracer, "_initialize_session"):
             with patch.object(HoneyHiveTracer, "_initialize_otel"):
-                # Mock the config to return environment values
-                with patch("honeyhive.tracer.otel_tracer.config") as mock_config:
-                    mock_config.api_key = "env-key"
-                    mock_config.project = "env-project"
+                # Mock environment variables and config
+                with patch.dict(os.environ, {"HH_PROJECT": "env-project"}, clear=False):
+                    with patch("honeyhive.tracer.otel_tracer.config") as mock_config:
+                        mock_config.api_key = "env-key"
+                        mock_config.project = "env-project"
 
-                    # Test init with api_key but project from config (which comes from environment)
-                    tracer = HoneyHiveTracer.init(
-                        api_key="test-key", source="test-source"
-                    )
+                        # Test init with api_key but project from config (which comes from environment)
+                        tracer = HoneyHiveTracer.init(
+                            api_key="test-key", source="test-source"
+                        )
 
-                    # Should use explicit api_key but config project (from environment)
-                    assert tracer.api_key == "test-key"
-                    assert tracer.project == "env-project"
-                    assert tracer.source == "test-source"
+                        # Should use explicit api_key but config project (from environment)
+                        assert tracer.api_key == "test-key"
+                        assert tracer.project == "env-project"
+                        assert tracer.source == "test-source"
 
     def test_init_method_return_type(self):
         """Test that init method returns correct type."""
