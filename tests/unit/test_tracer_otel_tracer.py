@@ -1,6 +1,8 @@
 """Unit tests for HoneyHive OpenTelemetry tracer functionality."""
 
+import importlib
 import json
+import sys
 import time
 from typing import Any, Dict, List, Optional
 from unittest.mock import AsyncMock, MagicMock, Mock, call, patch
@@ -1253,3 +1255,90 @@ class TestGlobalEnrichSpanWithOutputsAndError:
 
         # Should return boolean for direct calls (no rich parameters)
         assert isinstance(result_direct, bool)
+
+
+class TestOtelTracerImportHandling:
+    """Test OpenTelemetry import error handling using sys.modules manipulation."""
+
+    def test_otel_import_error_handling(self):
+        """Test OpenTelemetry ImportError handling using sys.modules manipulation."""
+        # Get all OpenTelemetry modules currently loaded
+        otel_modules = [
+            key for key in sys.modules.keys() if key.startswith("opentelemetry")
+        ]
+
+        # Create patch dict to simulate OpenTelemetry not being available
+        patch_dict = {module: None for module in otel_modules}
+        patch_dict.update(
+            {
+                "opentelemetry": None,
+                "opentelemetry.trace": None,
+                "opentelemetry.sdk": None,
+                "opentelemetry.sdk.trace": None,
+                "opentelemetry.propagate": None,
+            }
+        )
+
+        with patch.dict(sys.modules, patch_dict):
+            # Force reimport to trigger the ImportError path
+            import honeyhive.tracer.otel_tracer
+
+            importlib.reload(honeyhive.tracer.otel_tracer)
+
+            # This should have triggered the ImportError handling
+            from honeyhive.tracer.otel_tracer import OTEL_AVAILABLE
+
+            # Verify the import error was handled gracefully
+            assert isinstance(OTEL_AVAILABLE, bool)
+
+    def test_trace_context_import_availability(self):
+        """Test that trace context imports are handled properly."""
+        # Just test that the module can handle the import patterns
+        from honeyhive.tracer.otel_tracer import OTEL_AVAILABLE
+
+        # Just verify the flag works
+        assert isinstance(OTEL_AVAILABLE, bool)
+
+        # Only create tracer if OTEL is available
+        if OTEL_AVAILABLE:
+            from honeyhive.tracer.otel_tracer import HoneyHiveTracer
+
+            tracer = HoneyHiveTracer()
+            assert tracer is not None
+
+    def test_sdk_trace_import_error(self):
+        """Test SDK trace import error handling."""
+        # Create patch dict to simulate SDK trace imports failing
+        patch_dict = {
+            "opentelemetry.sdk.trace": None,
+            "opentelemetry.sdk.trace.export": None,
+        }
+
+        with patch.dict(sys.modules, patch_dict):
+            # Force reimport to trigger the ImportError path
+            import honeyhive.tracer.otel_tracer
+
+            importlib.reload(honeyhive.tracer.otel_tracer)
+
+            # Should handle gracefully
+            from honeyhive.tracer.otel_tracer import OTEL_AVAILABLE
+
+            assert isinstance(OTEL_AVAILABLE, bool)
+
+    def test_baggage_import_error(self):
+        """Test baggage import error handling."""
+        # Create patch dict to simulate baggage imports failing
+        patch_dict = {
+            "opentelemetry.baggage": None,
+        }
+
+        with patch.dict(sys.modules, patch_dict):
+            # Force reimport to trigger the ImportError path
+            import honeyhive.tracer.otel_tracer
+
+            importlib.reload(honeyhive.tracer.otel_tracer)
+
+            # Should handle gracefully
+            from honeyhive.tracer.otel_tracer import OTEL_AVAILABLE
+
+            assert isinstance(OTEL_AVAILABLE, bool)

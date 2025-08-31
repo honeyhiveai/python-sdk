@@ -123,18 +123,28 @@ class DatasetsAPI(BaseAPI):
 
     def delete_dataset(self, dataset_id: str) -> bool:
         """Delete a dataset by ID."""
-        try:
+        context = self._create_error_context(
+            operation="delete_dataset",
+            method="DELETE",
+            path=f"/datasets/{dataset_id}",
+            additional_context={"dataset_id": dataset_id},
+        )
+
+        with self.error_handler.handle_operation(context):
             response = self.client.request("DELETE", f"/datasets/{dataset_id}")
             return response.status_code == 200
-        except Exception:
-            return False
 
     async def delete_dataset_async(self, dataset_id: str) -> bool:
         """Delete a dataset by ID asynchronously."""
-        try:
+        context = self._create_error_context(
+            operation="delete_dataset_async",
+            method="DELETE",
+            path=f"/datasets/{dataset_id}",
+            additional_context={"dataset_id": dataset_id},
+        )
+
+        with self.error_handler.handle_operation(context):
             response = await self.client.request_async(
                 "DELETE", f"/datasets/{dataset_id}"
             )
             return response.status_code == 200
-        except Exception:
-            return False

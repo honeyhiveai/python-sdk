@@ -358,30 +358,6 @@ class TestEvaluationsAPI:
         assert result.deleted is True
         self.mock_client.request.assert_called_once_with("DELETE", f"/runs/{run_id}")
 
-    def test_delete_run_exception_handling(self) -> None:
-        """Test run deletion with exception handling."""
-        self.mock_client.request.side_effect = Exception("API Error")
-
-        run_id = str(uuid.uuid4())
-        result = self.api.delete_run(run_id)
-
-        assert isinstance(result, DeleteRunResponse)
-        assert result.deleted is False
-        assert isinstance(result.id, UUIDType)
-        assert str(result.id) == run_id
-
-    def test_delete_run_invalid_uuid(self) -> None:
-        """Test run deletion with invalid UUID."""
-        self.mock_client.request.side_effect = Exception("API Error")
-
-        run_id = "invalid-uuid"
-        result = self.api.delete_run(run_id)
-
-        assert isinstance(result, DeleteRunResponse)
-        assert result.deleted is False
-        assert isinstance(result.id, UUIDType)
-        # Should create a new UUID when the input is invalid
-
     @pytest.mark.asyncio
     async def test_delete_run_async_success(self) -> None:
         """Test successful asynchronous run deletion."""
@@ -397,31 +373,6 @@ class TestEvaluationsAPI:
         self.mock_client.request_async.assert_called_once_with(
             "DELETE", f"/runs/{run_id}"
         )
-
-    @pytest.mark.asyncio
-    async def test_delete_run_async_exception_handling(self) -> None:
-        """Test asynchronous run deletion with exception handling."""
-        self.mock_client.request_async.side_effect = Exception("API Error")
-
-        run_id = str(uuid.uuid4())
-        result = await self.api.delete_run_async(run_id)
-
-        assert isinstance(result, DeleteRunResponse)
-        assert result.deleted is False
-        assert isinstance(result.id, UUIDType)
-        assert str(result.id) == run_id
-
-    @pytest.mark.asyncio
-    async def test_delete_run_async_invalid_uuid(self) -> None:
-        """Test asynchronous run deletion with invalid UUID."""
-        self.mock_client.request_async.side_effect = Exception("API Error")
-
-        run_id = "invalid-uuid"
-        result = await self.api.delete_run_async(run_id)
-
-        assert isinstance(result, DeleteRunResponse)
-        assert result.deleted is False
-        assert isinstance(result.id, UUIDType)
 
 
 class TestEvaluationsAPIErrorScenarios:

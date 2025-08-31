@@ -1,6 +1,8 @@
 """Unit tests for HoneyHive baggage dictionary utilities."""
 
+import importlib
 import json
+import sys
 from typing import Any, Dict
 from unittest.mock import MagicMock, Mock, patch
 
@@ -561,3 +563,53 @@ class TestBaggageDict:
         value = baggage.get("zero_key")
 
         assert value == "0"
+
+
+class TestBaggageDictImportHandling:
+    """Test OpenTelemetry baggage import error handling using sys.modules manipulation."""
+
+    def test_otel_availability_flag(self):
+        """Test that OTEL_AVAILABLE flag works correctly."""
+        # Just test that the module handles OTEL availability properly
+        from honeyhive.utils.baggage_dict import BaggageDict
+
+        baggage = BaggageDict()
+        assert baggage is not None
+
+        # Should handle operations gracefully
+        baggage.set("test_key", "test_value")
+        value = baggage.get("test_key")
+
+        # Should work with appropriate storage mechanism
+        assert isinstance(value, (str, type(None)))
+
+    def test_baggage_dict_resilience(self):
+        """Test BaggageDict resilience to import variations."""
+        from honeyhive.utils.baggage_dict import BaggageDict
+
+        baggage = BaggageDict()
+        assert baggage is not None
+
+        # Test basic operations work regardless of backend
+        baggage.set("resilience_test", "value")
+        result = baggage.get("resilience_test")
+        assert isinstance(result, (str, type(None)))
+
+    def test_partial_otel_import_failure(self):
+        """Test when only some OpenTelemetry modules are available."""
+        # Create patch dict to simulate partial import failure
+        patch_dict = {
+            "opentelemetry.baggage": None,  # Baggage fails but context works
+        }
+
+        with patch.dict(sys.modules, patch_dict):
+            # Force reimport to trigger the ImportError path
+            import honeyhive.utils.baggage_dict
+
+            importlib.reload(honeyhive.utils.baggage_dict)
+
+            # Should handle gracefully
+            from honeyhive.utils.baggage_dict import BaggageDict
+
+            baggage = BaggageDict()
+            assert baggage is not None

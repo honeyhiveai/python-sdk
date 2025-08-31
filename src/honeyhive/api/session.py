@@ -194,18 +194,28 @@ class SessionAPI(BaseAPI):
 
     def delete_session(self, session_id: str) -> bool:
         """Delete a session by ID."""
-        try:
+        context = self._create_error_context(
+            operation="delete_session",
+            method="DELETE",
+            path=f"/session/{session_id}",
+            additional_context={"session_id": session_id},
+        )
+
+        with self.error_handler.handle_operation(context):
             response = self.client.request("DELETE", f"/session/{session_id}")
             return response.status_code == 200
-        except Exception:
-            return False
 
     async def delete_session_async(self, session_id: str) -> bool:
         """Delete a session by ID asynchronously."""
-        try:
+        context = self._create_error_context(
+            operation="delete_session_async",
+            method="DELETE",
+            path=f"/session/{session_id}",
+            additional_context={"session_id": session_id},
+        )
+
+        with self.error_handler.handle_operation(context):
             response = await self.client.request_async(
                 "DELETE", f"/session/{session_id}"
             )
             return response.status_code == 200
-        except Exception:
-            return False

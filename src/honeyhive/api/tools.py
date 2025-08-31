@@ -113,16 +113,26 @@ class ToolsAPI(BaseAPI):
 
     def delete_tool(self, tool_id: str) -> bool:
         """Delete a tool by ID."""
-        try:
+        context = self._create_error_context(
+            operation="delete_tool",
+            method="DELETE",
+            path=f"/tools/{tool_id}",
+            additional_context={"tool_id": tool_id},
+        )
+
+        with self.error_handler.handle_operation(context):
             response = self.client.request("DELETE", f"/tools/{tool_id}")
             return response.status_code == 200
-        except Exception:
-            return False
 
     async def delete_tool_async(self, tool_id: str) -> bool:
         """Delete a tool by ID asynchronously."""
-        try:
+        context = self._create_error_context(
+            operation="delete_tool_async",
+            method="DELETE",
+            path=f"/tools/{tool_id}",
+            additional_context={"tool_id": tool_id},
+        )
+
+        with self.error_handler.handle_operation(context):
             response = await self.client.request_async("DELETE", f"/tools/{tool_id}")
             return response.status_code == 200
-        except Exception:
-            return False

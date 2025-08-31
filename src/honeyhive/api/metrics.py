@@ -117,18 +117,28 @@ class MetricsAPI(BaseAPI):
 
     def delete_metric(self, metric_id: str) -> bool:
         """Delete a metric by ID."""
-        try:
+        context = self._create_error_context(
+            operation="delete_metric",
+            method="DELETE",
+            path=f"/metrics/{metric_id}",
+            additional_context={"metric_id": metric_id},
+        )
+
+        with self.error_handler.handle_operation(context):
             response = self.client.request("DELETE", f"/metrics/{metric_id}")
             return response.status_code == 200
-        except Exception:
-            return False
 
     async def delete_metric_async(self, metric_id: str) -> bool:
         """Delete a metric by ID asynchronously."""
-        try:
+        context = self._create_error_context(
+            operation="delete_metric_async",
+            method="DELETE",
+            path=f"/metrics/{metric_id}",
+            additional_context={"metric_id": metric_id},
+        )
+
+        with self.error_handler.handle_operation(context):
             response = await self.client.request_async(
                 "DELETE", f"/metrics/{metric_id}"
             )
             return response.status_code == 200
-        except Exception:
-            return False

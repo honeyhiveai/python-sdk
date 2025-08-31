@@ -16,11 +16,12 @@ Testing is a crucial part of developing reliable applications with the HoneyHive
 
 **Current Test Status**: 
 
-- **Total Tests**: 882 tests (100% success rate)
-- **Unit Tests**: 747 tests across 21 test files
+- **Total Tests**: 881 tests (100% success rate)
+- **Unit Tests**: 761 tests across 26 test files
 - **Integration Tests**: 97 tests across 8 test files
-- **Test Coverage**: 73.35% ✅ (above 70% requirement)
-- **Code Coverage**: 4,345 statements, 1,158 missed
+- **Tracer Tests**: 23 tests across 1 test file
+- **Test Coverage**: 72.95% ✅ (above 70% requirement)
+- **Code Coverage**: 4,484 statements, 1,213 missed
 
 Test Organization
 -----------------
@@ -29,11 +30,13 @@ The project maintains a comprehensive test suite organized into logical categori
 
 **Test File Structure**:
 
-- **Total Test Files**: 37
-- **Unit Tests**: 21 test files in `tests/unit/` - Test individual components in isolation (747 tests)
+- **Total Test Files**: 35
+- **Unit Tests**: 26 test files in `tests/unit/` - Test individual components in isolation (761 tests)
 - **Integration Tests**: 8 test files in `tests/integration/` - Test component interactions and multi-instance patterns (97 tests)
-- **Tracer Tests**: 1 test file in `tests/tracer/` - Test core tracing functionality (38 tests)
+- **Tracer Tests**: 1 test file in `tests/tracer/` - Test core tracing functionality (23 tests)
 - **Test Utilities**: 2 utility files (`conftest.py`, `utils.py`)
+
+**Test File Naming Convention**: All unit test files follow the pattern `test_<module>_<file>.py` for consistent organization and easy identification.
 
 **Test Types** (distributed across the above test files):
 
@@ -455,6 +458,68 @@ Test instrumentor integration:
        # Verify instrumentor was added
        assert len(tracer.instrumentors) > 0
        assert any(isinstance(i, OpenAIInstrumentor) for i in tracer.instrumentors)
+
+Import Error Testing
+--------------------
+
+Testing Conditional Imports
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+The SDK uses conditional imports for optional dependencies. Test these scenarios using `sys.modules` manipulation:
+
+.. code-block:: python
+
+   import sys
+   import importlib
+   from unittest.mock import patch
+
+   def test_httpx_import_error_handling():
+       """Test handling of missing httpx dependency."""
+       # Save original modules
+       httpx_modules = [key for key in sys.modules.keys() if key.startswith('httpx')]
+       patch_dict = {module: None for module in httpx_modules}
+       patch_dict['httpx'] = None
+
+       with patch.dict(sys.modules, patch_dict):
+           # Reload module to trigger ImportError
+           import honeyhive.utils.connection_pool
+           importlib.reload(honeyhive.utils.connection_pool)
+           
+           # Test that module handles missing dependency gracefully
+           from honeyhive.utils.connection_pool import HTTPX_AVAILABLE
+           assert isinstance(HTTPX_AVAILABLE, bool)
+
+   def test_opentelemetry_import_error_handling():
+       """Test handling of missing OpenTelemetry dependencies."""
+       otel_modules = [key for key in sys.modules.keys() if key.startswith('opentelemetry')]
+       patch_dict = {module: None for module in otel_modules}
+       patch_dict.update({
+           'opentelemetry': None,
+           'opentelemetry.trace': None,
+           'opentelemetry.sdk': None,
+           'opentelemetry.sdk.trace': None,
+       })
+
+       with patch.dict(sys.modules, patch_dict):
+           import honeyhive.tracer.otel_tracer
+           importlib.reload(honeyhive.tracer.otel_tracer)
+           
+           from honeyhive.tracer.otel_tracer import OTEL_AVAILABLE
+           assert isinstance(OTEL_AVAILABLE, bool)
+
+**Import Testing Strategy**:
+
+1. **Identify Conditional Imports** - Find modules with try/except import blocks
+2. **Use sys.modules Manipulation** - Simulate missing dependencies by setting modules to None
+3. **Reload Modules** - Force re-import to trigger conditional logic
+4. **Test Graceful Degradation** - Verify the module handles missing dependencies properly
+5. **Restore Original State** - Ensure tests don't affect other test modules
+
+**Coverage Impact**: This strategy significantly improves coverage of conditional import paths, bringing modules like:
+
+- ``http_instrumentation.py``: 65% → 72% coverage
+- ``span_processor.py``: 59% → 60% coverage  
+- ``otel_tracer.py``: 72% → 73% coverage
 
 Mock Testing
 ------------
@@ -1000,8 +1065,8 @@ Current Test Execution
 
 The project uses tox for consistent testing across environments. Current test execution shows:
 
-**Test Collection**: 882 tests collected from 37 test files
-**Execution Time**: ~14-16 seconds for full test suite
+**Test Collection**: 881 tests collected from 35 test files
+**Execution Time**: ~6-8 seconds for full test suite
 **Coverage Generation**: HTML and XML reports automatically generated
 
 Command Line
@@ -1104,15 +1169,15 @@ The project maintains comprehensive testing with the following current statistic
 
 **Test Counts**:
 
-- **Total Tests**: 882 tests
-- **Unit Tests**: 21 test files covering individual components (747 tests)
+- **Total Tests**: 881 tests
+- **Unit Tests**: 26 test files covering individual components (761 tests)
 - **Integration Tests**: 8 test files covering component interactions (97 tests)
-- **Tracer Tests**: 1 test file covering core tracing functionality (38 tests)
+- **Tracer Tests**: 1 test file covering core tracing functionality (23 tests)
 - **Test Utilities**: 2 utility files for test support
 
 **Coverage Metrics**:
 
-- **Overall Coverage**: 73.35% (4,345 statements, 1,158 missed)
+- **Overall Coverage**: 72.95% (4,484 statements, 1,213 missed)
 - **Coverage Requirement**: 70% minimum (✅ currently met)
 - **Coverage Enforcement**: Tests fail if coverage drops below threshold
 - **Coverage Reports**: HTML and XML coverage reports generated
@@ -1120,30 +1185,35 @@ The project maintains comprehensive testing with the following current statistic
 
 **Test Results**:
 
-- **Passed**: 882 tests ✅
+- **Passed**: 881 tests ✅
 - **Failed**: 0 tests ✅
 - **Success Rate**: 100% ✅
 
 **Module Coverage Highlights**:
 
 - **100% Coverage**: `__init__.py` files, `evaluations.py`, `generated.py`, `tracing.py`, `dotdict.py`
-- **High Coverage (85%+)**: `evaluators.py` (85%), `baggage_dict.py` (86%), `cache.py` (98%), `logger.py` (98%)
-- **Medium Coverage (70-84%)**: `client.py` (74%), `otel_tracer.py` (72%), `config.py` (84%)
-- **Lower Coverage Areas**: `cli/main.py` (37%), `metrics.py` (30%), `connection_pool.py` (57%)
+- **High Coverage (85%+)**: `evaluators.py` (84%), `baggage_dict.py` (86%), `cache.py` (93%), `logger.py` (98%), `error_handler.py` (91%)
+- **Medium Coverage (70-84%)**: `client.py` (76%), `otel_tracer.py` (73%), `config.py` (83%), `http_instrumentation.py` (72%)
+- **Good Coverage (60-69%)**: `span_processor.py` (60%), `decorators.py` (66%), `retry.py` (66%)
+- **Areas for Improvement (<60%)**: `cli/main.py` (37%), `connection_pool.py` (35%)
 
 **Current Test Status**:
 
-- **Test Success Rate**: 100% (882/882 tests passing) ✅
+- **Test Success Rate**: 100% (881/881 tests passing) ✅
 - **Known Issues**: None - all tests passing ✅
-- **Coverage Status**: ✅ Above 70% requirement (currently 73.35%)
+- **Coverage Status**: ✅ Above 70% requirement (currently 72.95%)
 
 **Test Improvement Opportunities**:
 
-- **CLI Module**: Increase coverage from 37% to target 70%+
-- **Metrics API**: Improve coverage from 30% to target 70%+
-- **Connection Pool**: Enhance coverage from 57% to target 70%+
-- **Tracer Decorators**: Boost coverage from 53% to target 70%+
-- **HTTP Instrumentation**: Improve coverage from 63% to target 70%+
+- **CLI Module**: Increase coverage from 37% to target 60%+
+- **Connection Pool**: Enhance coverage from 35% to target 60%+
+
+**Recent Coverage Improvements**:
+
+- **Error Handling**: New standardized middleware with 91% coverage
+- **Import Testing**: Applied `sys.modules` strategy to improve conditional import coverage
+- **Test Consolidation**: Reorganized 26 unit test files following `test_<module>_<file>.py` naming convention
+- **File Consolidation**: All core API modules now have dedicated test files with 60%+ coverage
 
 Coverage Requirements
 ~~~~~~~~~~~~~~~~~~~~~

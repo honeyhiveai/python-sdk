@@ -115,18 +115,28 @@ class ProjectsAPI(BaseAPI):
 
     def delete_project(self, project_id: str) -> bool:
         """Delete a project by ID."""
-        try:
+        context = self._create_error_context(
+            operation="delete_project",
+            method="DELETE",
+            path=f"/projects/{project_id}",
+            additional_context={"project_id": project_id},
+        )
+
+        with self.error_handler.handle_operation(context):
             response = self.client.request("DELETE", f"/projects/{project_id}")
             return response.status_code == 200
-        except Exception:
-            return False
 
     async def delete_project_async(self, project_id: str) -> bool:
         """Delete a project by ID asynchronously."""
-        try:
+        context = self._create_error_context(
+            operation="delete_project_async",
+            method="DELETE",
+            path=f"/projects/{project_id}",
+            additional_context={"project_id": project_id},
+        )
+
+        with self.error_handler.handle_operation(context):
             response = await self.client.request_async(
                 "DELETE", f"/projects/{project_id}"
             )
             return response.status_code == 200
-        except Exception:
-            return False

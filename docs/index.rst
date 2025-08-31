@@ -60,7 +60,7 @@ This version represents a **major architectural refactor** designed to solve dep
 🧪 **Quality & Reliability**
 -----------------------------
 
-The SDK maintains high quality through comprehensive testing with **73.35% coverage** (exceeds 70% requirement) and **882 tests** with 100% success rate. See the :doc:`TESTING` guide for detailed testing information.
+The SDK maintains high quality through comprehensive testing with **72.95% coverage** (exceeds 70% requirement) and **881 tests** with 100% success rate. See the :doc:`TESTING` guide for detailed testing information.
 
 .. toctree::
    :maxdepth: 2

@@ -208,12 +208,23 @@ class HoneyHive:
 
     def get_health(self) -> Dict[str, Any]:
         """Get API health status. Returns basic info since health endpoint may not exist."""
+        from ..utils.error_handler import ErrorContext, get_error_handler
+
+        error_handler = get_error_handler()
+        context = ErrorContext(
+            operation="get_health",
+            method="GET",
+            url=f"{self.base_url}/api/v1/health",
+            client_name="HoneyHive",
+        )
+
         try:
-            # Try to get health endpoint if it exists
-            response = self.request("GET", "/api/v1/health")
-            if response.status_code == 200:
-                return response.json()  # type: ignore[no-any-return]
+            with error_handler.handle_operation(context):
+                response = self.request("GET", "/api/v1/health")
+                if response.status_code == 200:
+                    return response.json()  # type: ignore[no-any-return]
         except Exception:
+            # Health endpoint may not exist, return basic info
             pass
 
         # Return basic health info if health endpoint doesn't exist
@@ -226,12 +237,23 @@ class HoneyHive:
 
     async def get_health_async(self) -> Dict[str, Any]:
         """Get API health status asynchronously. Returns basic info since health endpoint may not exist."""
+        from ..utils.error_handler import ErrorContext, get_error_handler
+
+        error_handler = get_error_handler()
+        context = ErrorContext(
+            operation="get_health_async",
+            method="GET",
+            url=f"{self.base_url}/api/v1/health",
+            client_name="HoneyHive",
+        )
+
         try:
-            # Try to get health endpoint if it exists
-            response = await self.request_async("GET", "/api/v1/health")
-            if response.status_code == 200:
-                return response.json()  # type: ignore[no-any-return]
+            with error_handler.handle_operation(context):
+                response = await self.request_async("GET", "/api/v1/health")
+                if response.status_code == 200:
+                    return response.json()  # type: ignore[no-any-return]
         except Exception:
+            # Health endpoint may not exist, return basic info
             pass
 
         # Return basic health info if health endpoint doesn't exist
@@ -279,7 +301,20 @@ class HoneyHive:
                 },
             )
 
-        try:
+        # Import error handler here to avoid circular imports
+        from ..utils.error_handler import ErrorContext, get_error_handler
+
+        error_handler = get_error_handler()
+        context = ErrorContext(
+            operation="request",
+            method=method,
+            url=url,
+            params=params,
+            json_data=json,
+            client_name="HoneyHive",
+        )
+
+        with error_handler.handle_operation(context):
             response = self.sync_client.request(
                 method, url, params=params, json=json, **kwargs
             )
@@ -304,24 +339,6 @@ class HoneyHive:
                 return self._retry_request(method, path, params, json, **kwargs)
 
             return response
-
-        except Exception as e:
-            if self.verbose:
-                self.logger.error(
-                    "API Request Failed",
-                    honeyhive_data={
-                        "method": method,
-                        "url": url,
-                        "error": str(e),
-                        "error_type": type(e).__name__,
-                        "params": params,
-                        "json": json,
-                    },
-                )
-
-            if self.retry_config.should_retry_exception(e):
-                return self._retry_request(method, path, params, json, **kwargs)
-            raise
 
     async def request_async(
         self,
@@ -360,7 +377,20 @@ class HoneyHive:
                 },
             )
 
-        try:
+        # Import error handler here to avoid circular imports
+        from ..utils.error_handler import ErrorContext, get_error_handler
+
+        error_handler = get_error_handler()
+        context = ErrorContext(
+            operation="request_async",
+            method=method,
+            url=url,
+            params=params,
+            json_data=json,
+            client_name="HoneyHive",
+        )
+
+        with error_handler.handle_operation(context):
             response = await self.async_client.request(
                 method, url, params=params, json=json, **kwargs
             )
@@ -387,26 +417,6 @@ class HoneyHive:
                 )
 
             return response
-
-        except Exception as e:
-            if self.verbose:
-                self.logger.error(
-                    "API Async Request Failed",
-                    honeyhive_data={
-                        "method": method,
-                        "url": url,
-                        "error": str(e),
-                        "error_type": type(e).__name__,
-                        "params": params,
-                        "json": json,
-                    },
-                )
-
-            if self.retry_config.should_retry_exception(e):
-                return await self._retry_request_async(
-                    method, path, params, json, **kwargs
-                )
-            raise
 
     def _retry_request(
         self,

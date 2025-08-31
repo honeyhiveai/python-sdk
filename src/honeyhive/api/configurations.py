@@ -153,18 +153,28 @@ class ConfigurationsAPI(BaseAPI):
 
     def delete_configuration(self, config_id: str) -> bool:
         """Delete a configuration by ID."""
-        try:
+        context = self._create_error_context(
+            operation="delete_configuration",
+            method="DELETE",
+            path=f"/configurations/{config_id}",
+            additional_context={"config_id": config_id},
+        )
+
+        with self.error_handler.handle_operation(context):
             response = self.client.request("DELETE", f"/configurations/{config_id}")
             return response.status_code == 200
-        except Exception:
-            return False
 
     async def delete_configuration_async(self, config_id: str) -> bool:
         """Delete a configuration by ID asynchronously."""
-        try:
+        context = self._create_error_context(
+            operation="delete_configuration_async",
+            method="DELETE",
+            path=f"/configurations/{config_id}",
+            additional_context={"config_id": config_id},
+        )
+
+        with self.error_handler.handle_operation(context):
             response = await self.client.request_async(
                 "DELETE", f"/configurations/{config_id}"
             )
             return response.status_code == 200
-        except Exception:
-            return False

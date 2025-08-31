@@ -182,7 +182,14 @@ class EvaluationsAPI(BaseAPI):
 
     def delete_run(self, run_id: str) -> DeleteRunResponse:
         """Delete an evaluation run by ID."""
-        try:
+        context = self._create_error_context(
+            operation="delete_run",
+            method="DELETE",
+            path=f"/runs/{run_id}",
+            additional_context={"run_id": run_id},
+        )
+
+        with self.error_handler.handle_operation(context):
             response = self.client.request("DELETE", f"/runs/{run_id}")
             data = response.json()
 
@@ -190,18 +197,17 @@ class EvaluationsAPI(BaseAPI):
             data = _convert_uuids_recursively(data)
 
             return DeleteRunResponse(**data)
-        except Exception:
-            # Convert string run_id to UUIDType for the response
-            try:
-                uuid_obj = UUID(run_id)
-                return DeleteRunResponse(id=UUIDType(uuid_obj), deleted=False)
-            except ValueError:
-                # If run_id is not a valid UUID, create a dummy one
-                return DeleteRunResponse(id=UUIDType(uuid.uuid4()), deleted=False)
 
     async def delete_run_async(self, run_id: str) -> DeleteRunResponse:
         """Delete an evaluation run by ID asynchronously."""
-        try:
+        context = self._create_error_context(
+            operation="delete_run_async",
+            method="DELETE",
+            path=f"/runs/{run_id}",
+            additional_context={"run_id": run_id},
+        )
+
+        with self.error_handler.handle_operation(context):
             response = await self.client.request_async("DELETE", f"/runs/{run_id}")
             data = response.json()
 
@@ -209,11 +215,3 @@ class EvaluationsAPI(BaseAPI):
             data = _convert_uuids_recursively(data)
 
             return DeleteRunResponse(**data)
-        except Exception:
-            # Convert string run_id to UUIDType for the response
-            try:
-                uuid_obj = UUID(run_id)
-                return DeleteRunResponse(id=UUIDType(uuid_obj), deleted=False)
-            except ValueError:
-                # If run_id is not a valid UUID, create a dummy one
-                return DeleteRunResponse(id=UUIDType(uuid.uuid4()), deleted=False)

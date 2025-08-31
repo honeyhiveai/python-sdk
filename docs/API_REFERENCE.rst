@@ -554,6 +554,336 @@ The main API client for interacting with HoneyHive services.
        base_url="https://api.honeyhive.ai"
    )
 
+Error Handling
+--------------
+
+The HoneyHive Python SDK provides a comprehensive error handling system with standardized middleware, custom exception hierarchy, and context-aware error responses.
+
+Exception Hierarchy
+~~~~~~~~~~~~~~~~~~~~
+
+The SDK uses a structured exception hierarchy for different error types:
+
+.. code-block:: python
+
+   from honeyhive.utils.error_handler import (
+       HoneyHiveError,      # Base exception for all SDK errors
+       APIError,            # API-related errors
+       ValidationError,     # Data validation errors
+       ConnectionError,     # Network/connection errors
+       RateLimitError,      # Rate limiting errors
+       AuthenticationError  # Authentication/authorization errors
+   )
+
+**Exception Types:**
+
+* **HoneyHiveError** - Base class for all SDK exceptions
+* **APIError** - HTTP errors, malformed responses, server errors
+* **ValidationError** - Invalid input data, missing required fields
+* **ConnectionError** - Network timeouts, connection failures
+* **RateLimitError** - API rate limit exceeded
+* **AuthenticationError** - Invalid API key, authorization failures
+
+Error Middleware
+~~~~~~~~~~~~~~~~
+
+All API clients use standardized error handling middleware that provides:
+
+* **Automatic Error Detection** - Classifies errors based on HTTP status codes and response content
+* **Context Preservation** - Maintains operation context for debugging
+* **Structured Logging** - Detailed error logs with relevant context
+* **Consistent Error Format** - Standardized error responses across all API operations
+
+**Middleware Features:**
+
+.. code-block:: python
+
+   from honeyhive.utils.error_handler import handle_api_errors
+
+   # Context manager for automatic error handling
+   with handle_api_errors(operation="create_session", client="SessionAPI"):
+       response = api_client.post("/sessions", json=data)
+       return response.json()
+
+Error Context
+~~~~~~~~~~~~~
+
+Every error includes rich context information for debugging:
+
+.. code-block:: python
+
+   try:
+       client.sessions.create_session({"project": "test"})
+   except APIError as e:
+       print(f"Operation: {e.context.operation}")
+       print(f"Method: {e.context.method}")
+       print(f"URL: {e.context.url}")
+       print(f"Status Code: {e.status_code}")
+       print(f"Error Details: {e.details}")
+
+**Error Context Fields:**
+
+* ``operation`` - Name of the failed operation
+* ``method`` - HTTP method used
+* ``url`` - Full URL that was requested
+* ``client_name`` - API client class name
+* ``timestamp`` - When the error occurred
+* ``additional_context`` - Operation-specific context data
+
+Usage Examples
+~~~~~~~~~~~~~~
+
+**Basic Error Handling:**
+
+.. code-block:: python
+
+   from honeyhive.api.client import HoneyHive
+   from honeyhive.utils.error_handler import APIError, ValidationError
+
+   client = HoneyHive(api_key="your-api-key")
+
+   try:
+       session = client.sessions.create_session({
+           "project": "my-project",
+           "session_name": "test-session"
+       })
+   except ValidationError as e:
+       print(f"Invalid input data: {e.message}")
+       print(f"Details: {e.details}")
+   except APIError as e:
+       print(f"API error: {e.message}")
+       print(f"Status: {e.status_code}")
+   except ConnectionError as e:
+       print(f"Connection failed: {e.message}")
+
+**Advanced Error Handling with Context:**
+
+.. code-block:: python
+
+   from honeyhive.utils.error_handler import handle_api_errors, ErrorContext
+
+   def create_session_with_retry(client, session_data, max_retries=3):
+       """Create session with automatic retry on rate limits."""
+       
+       for attempt in range(max_retries):
+           try:
+               with handle_api_errors(
+                   operation="create_session_with_retry",
+                   client="SessionAPI",
+                   attempt=attempt + 1
+               ):
+                   return client.sessions.create_session(session_data)
+                   
+           except RateLimitError as e:
+               if attempt < max_retries - 1:
+                   wait_time = e.retry_after or (2 ** attempt)  # Exponential backoff
+                   print(f"Rate limited, waiting {wait_time}s before retry...")
+                   time.sleep(wait_time)
+               else:
+                   raise
+           except (ValidationError, AuthenticationError):
+               # Don't retry for these error types
+               raise
+
+**Error Recovery Strategies:**
+
+.. code-block:: python
+
+   import time
+   from honeyhive.utils.error_handler import RateLimitError, ConnectionError
+
+   def robust_api_call(client, operation_func, *args, **kwargs):
+       """Robust API call with automatic recovery strategies."""
+       
+       max_retries = 3
+       base_delay = 1.0
+       
+       for attempt in range(max_retries):
+           try:
+               return operation_func(*args, **kwargs)
+               
+           except RateLimitError as e:
+               # Honor rate limit retry-after header
+               delay = e.retry_after or base_delay * (2 ** attempt)
+               print(f"Rate limited. Waiting {delay}s...")
+               time.sleep(delay)
+               
+           except ConnectionError as e:
+               # Exponential backoff for connection errors
+               if attempt < max_retries - 1:
+                   delay = base_delay * (2 ** attempt)
+                   print(f"Connection error. Retrying in {delay}s...")
+                   time.sleep(delay)
+               else:
+                   raise
+                   
+           except (ValidationError, AuthenticationError):
+               # Don't retry validation or auth errors
+               raise
+
+   # Usage
+   result = robust_api_call(
+       client,
+       client.events.create_event,
+       {"event_type": "test", "inputs": {"prompt": "Hello"}}
+   )
+
+**Logging Integration:**
+
+.. code-block:: python
+
+   import logging
+   from honeyhive.utils.error_handler import HoneyHiveError
+
+   # Configure logging to capture error context
+   logging.basicConfig(level=logging.INFO)
+   logger = logging.getLogger(__name__)
+
+   try:
+       # API operation
+       client.projects.create_project({"name": "test-project"})
+   except HoneyHiveError as e:
+       # Error context is automatically logged by the middleware
+       logger.error(f"Operation failed: {e.message}", extra={
+           "error_type": type(e).__name__,
+           "operation": e.context.operation if e.context else None,
+           "status_code": getattr(e, 'status_code', None)
+       })
+
+Error Response Format
+~~~~~~~~~~~~~~~~~~~~~
+
+All errors return consistent response format:
+
+.. code-block:: python
+
+   {
+       "success": False,
+       "error_type": "ValidationError",
+       "error_message": "Missing required field: project",
+       "error_code": "MISSING_REQUIRED_FIELD",
+       "status_code": 400,
+       "details": {
+           "field": "project",
+           "provided_data": {"session_name": "test"}
+       },
+       "context": {
+           "operation": "create_session",
+           "method": "POST",
+           "url": "https://api.honeyhive.ai/sessions",
+           "client_name": "SessionAPI",
+           "timestamp": 1640995200.0
+       },
+       "retry_after": None  # Set for rate limit errors
+   }
+
+Best Practices
+~~~~~~~~~~~~~~
+
+**1. Specific Exception Handling:**
+
+.. code-block:: python
+
+   # Good: Handle specific exceptions
+   try:
+       client.sessions.create_session(data)
+   except ValidationError as e:
+       # Handle validation errors specifically
+       fix_validation_errors(e.details)
+   except RateLimitError as e:
+       # Handle rate limits with appropriate delay
+       time.sleep(e.retry_after or 60)
+   except APIError as e:
+       # Handle other API errors
+       log_api_error(e)
+
+   # Avoid: Generic exception handling
+   try:
+       client.sessions.create_session(data)
+   except Exception as e:  # Too broad
+       pass
+
+**2. Error Context Utilization:**
+
+.. code-block:: python
+
+   # Good: Use error context for debugging
+   except APIError as e:
+       logger.error(f"API call failed", extra={
+           "operation": e.context.operation,
+           "status_code": e.status_code,
+           "url": e.context.url,
+           "details": e.details
+       })
+
+**3. Graceful Degradation:**
+
+.. code-block:: python
+
+   def get_session_with_fallback(client, session_id):
+       """Get session with fallback strategies."""
+       try:
+           return client.sessions.get_session(session_id)
+       except AuthenticationError:
+           # Re-raise auth errors immediately
+           raise
+       except APIError as e:
+           if e.status_code == 404:
+               # Session not found, return None instead of failing
+               return None
+           elif e.status_code >= 500:
+               # Server error, try alternative method
+               return get_session_from_cache(session_id)
+           else:
+               raise
+
+**4. Resource Cleanup:**
+
+.. code-block:: python
+
+   def safe_api_operation(client):
+       """Ensure resources are cleaned up even on errors."""
+       resource = None
+       try:
+           resource = client.sessions.create_session(data)
+           # Process resource
+           return process_session(resource)
+       except HoneyHiveError as e:
+           logger.error(f"Session operation failed: {e}")
+           raise
+       finally:
+           # Clean up resources
+           if resource and hasattr(resource, 'session_id'):
+               try:
+                   client.sessions.end_session(resource.session_id)
+               except Exception as cleanup_error:
+                   logger.warning(f"Cleanup failed: {cleanup_error}")
+
+Integration with Tracing
+~~~~~~~~~~~~~~~~~~~~~~~~
+
+Error handling integrates seamlessly with the tracing system:
+
+.. code-block:: python
+
+   from honeyhive import HoneyHiveTracer
+   from honeyhive.utils.error_handler import APIError
+
+   tracer = HoneyHiveTracer.init(api_key="your-key", project="your-project")
+
+   try:
+       with tracer.start_span("api_operation") as span:
+           result = client.events.create_event(event_data)
+           span.set_attribute("success", True)
+           return result
+   except APIError as e:
+       # Error context automatically added to span
+       span.set_attribute("error.type", type(e).__name__)
+       span.set_attribute("error.message", str(e))
+       span.set_attribute("error.status_code", e.status_code)
+       span.record_exception(e)
+       raise
+
 Configuration
 -------------
 

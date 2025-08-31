@@ -134,6 +134,20 @@ HTTP Instrumentation
 * **Configurable** - Enable/disable HTTP tracing as needed
 * **Multi-Instance Support** - HTTP instrumentation works with multiple tracer instances
 
+Error Handling
+---------------
+
+Standardized Error Middleware
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+* **Custom Exception Hierarchy** - HoneyHiveError, APIError, ValidationError, ConnectionError, RateLimitError, AuthenticationError
+* **Context-Aware Error Handling** - Rich error context with operation details, HTTP methods, and URLs
+* **Automatic Error Classification** - Intelligent error categorization based on HTTP status codes and response content
+* **Structured Error Logging** - Detailed error logs with operation context and debugging information
+* **Consistent Error Format** - Standardized error responses across all API operations
+* **Error Recovery Strategies** - Built-in retry logic for rate limits and connection errors
+* **Integration with Tracing** - Seamless error tracking within OpenTelemetry spans
+
 Advanced Features
 -----------------
 

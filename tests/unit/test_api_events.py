@@ -611,3 +611,128 @@ class TestEventsAPI:
         assert new_event.source == event_request.source
         assert new_event.event_name == event_request.event_name
         assert new_event.event_type == event_request.event_type
+
+
+class TestEventsAPIClient:
+    """Test events API client methods."""
+
+    @pytest.fixture
+    def api_key(self):
+        return "test-api-key-12345"
+
+    @pytest.fixture
+    def client(self, api_key):
+        from honeyhive.api.client import HoneyHive
+
+        return HoneyHive(api_key=api_key)
+
+    @pytest.fixture
+    def mock_event_response(self):
+        return {"event_id": "event-123", "success": True}
+
+    def test_create_event_with_model(self, client, mock_event_response):
+        """Test creating event using CreateEventRequest model."""
+        event_request = CreateEventRequest(
+            project="test-project",
+            source="test",
+            event_name="test-event",
+            event_type=EventType1.model,
+            config={"model": "gpt-4"},
+            inputs={"prompt": "test prompt"},
+            duration=100.0,
+            metadata={"version": "1.0"},
+        )
+
+        with patch.object(client, "request") as mock_request:
+            mock_response = Mock()
+            mock_response.json.return_value = mock_event_response
+            mock_request.return_value = mock_response
+
+            result = client.events.create_event(event_request)
+
+            assert result.event_id == "event-123"
+            assert result.success is True
+            mock_request.assert_called_once()
+
+    def test_create_event_from_dict(self, client, mock_event_response):
+        """Test creating event from dictionary (legacy method)."""
+        event_data = {
+            "project": "test-project",
+            "source": "test",
+            "event_name": "test-event",
+        }
+
+        with patch.object(client, "request") as mock_request:
+            mock_response = Mock()
+            mock_response.json.return_value = mock_event_response
+            mock_request.return_value = mock_response
+
+            result = client.events.create_event_from_dict(event_data)
+
+            assert result.event_id == "event-123"
+            assert result.success is True
+            mock_request.assert_called_once()
+
+    def test_delete_event_success(self, client):
+        """Test successful event deletion."""
+        event_id = "event-123"
+
+        with patch.object(client, "request") as mock_request:
+            mock_response = Mock()
+            mock_response.status_code = 200
+            mock_request.return_value = mock_response
+
+            result = client.events.delete_event(event_id)
+
+            assert result is True
+            mock_request.assert_called_once_with("DELETE", f"/events/{event_id}")
+
+    def test_delete_event_failure(self, client):
+        """Test failed event deletion."""
+        event_id = "event-123"
+
+        with patch.object(client, "request") as mock_request:
+            mock_request.side_effect = Exception("API Error")
+
+            with pytest.raises(Exception):
+                client.events.delete_event(event_id)
+
+    def test_list_events_with_filter(self, client):
+        """Test listing events with EventFilter."""
+        mock_data = {
+            "events": [
+                {"project_id": "proj-1", "event_name": "event1"},
+                {"project_id": "proj-2", "event_name": "event2"},
+            ]
+        }
+
+        event_filter = EventFilter(field="project", value="test-project")
+
+        with patch.object(client, "request") as mock_request:
+            mock_response = Mock()
+            mock_response.json.return_value = mock_data
+            mock_request.return_value = mock_response
+
+            result = client.events.list_events(event_filter, limit=50)
+
+            assert len(result) == 2
+            assert result[0].project_id == "proj-1"
+            assert result[1].project_id == "proj-2"
+            mock_request.assert_called_once()
+
+    def test_list_events_from_dict(self, client):
+        """Test listing events from filter dictionary."""
+        mock_data = {"events": [{"project_id": "test-project", "event_name": "event1"}]}
+
+        event_filter = {"project": "test-project"}
+
+        with patch.object(client, "request") as mock_request:
+            mock_response = Mock()
+            mock_response.json.return_value = mock_data
+            mock_request.return_value = mock_response
+
+            result = client.events.list_events_from_dict(event_filter, limit=100)
+
+            assert len(result) == 1
+            assert result[0].project_id == "test-project"
+            mock_request.assert_called_once()

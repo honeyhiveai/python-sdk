@@ -188,19 +188,29 @@ class EventsAPI(BaseAPI):
 
     def delete_event(self, event_id: str) -> bool:
         """Delete an event by ID."""
-        try:
+        context = self._create_error_context(
+            operation="delete_event",
+            method="DELETE",
+            path=f"/events/{event_id}",
+            additional_context={"event_id": event_id},
+        )
+
+        with self.error_handler.handle_operation(context):
             response = self.client.request("DELETE", f"/events/{event_id}")
             return response.status_code == 200
-        except Exception:
-            return False
 
     async def delete_event_async(self, event_id: str) -> bool:
         """Delete an event by ID asynchronously."""
-        try:
+        context = self._create_error_context(
+            operation="delete_event_async",
+            method="DELETE",
+            path=f"/events/{event_id}",
+            additional_context={"event_id": event_id},
+        )
+
+        with self.error_handler.handle_operation(context):
             response = await self.client.request_async("DELETE", f"/events/{event_id}")
             return response.status_code == 200
-        except Exception:
-            return False
 
     def update_event(self, request: UpdateEventRequest) -> None:
         """Update an event."""
