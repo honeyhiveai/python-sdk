@@ -504,8 +504,8 @@ def trace(
 ) -> Any:
     """
     Enhanced trace decorator with comprehensive attribute support and automatic sync/async detection.
-    
-    This decorator automatically detects whether the decorated function is synchronous or 
+
+    This decorator automatically detects whether the decorated function is synchronous or
     asynchronous and applies the appropriate wrapper. No need to choose between @trace and @atrace.
 
     Args:
@@ -520,16 +520,16 @@ def trace(
         error: Error information
         event_id: Unique event identifier
         **kwargs: Additional attributes to set on the span
-        
+
     Examples:
         Basic usage with automatic sync/async detection:
-        
+
         .. code-block:: python
-        
+
             @trace(event_type="demo", event_name="sync_function")
             def sync_function():
                 return "Hello, World!"
-                
+
             @trace(event_type="demo", event_name="async_function")
             async def async_function():
                 return "Hello, Async World!"

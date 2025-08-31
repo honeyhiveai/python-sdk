@@ -1224,8 +1224,9 @@ class TestGlobalEnrichSpanWithOutputsAndError:
 
     def test_global_enrich_span_with_outputs_and_error(self) -> None:
         """Test global enrich_span function with outputs and error parameters."""
-        from honeyhive.tracer.otel_tracer import HoneyHiveTracer, enrich_span
         from contextlib import _GeneratorContextManager
+
+        from honeyhive.tracer.otel_tracer import HoneyHiveTracer, enrich_span
 
         tracer = HoneyHiveTracer(api_key="test", project="test", test_mode=True)
 

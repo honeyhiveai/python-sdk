@@ -195,18 +195,19 @@ class HoneyHiveTracer:
         """
         # Load configuration from environment variables as defaults
         from ..utils.config import Config
+
         config = Config()
-        
+
         # Use environment variables as defaults only for None parameters
         # This preserves backward compatibility: explicit params > method defaults > env vars
-        
+
         # Only use env vars for None parameters
         if api_key is None:
             api_key = config.api_key
-            
+
         if project is None:
             project = config.project if config.project != "default" else None
-        
+
         # Handle server_url parameter (maps to api_url in our config)
         if server_url:
             # Set the server URL in environment for this initialization

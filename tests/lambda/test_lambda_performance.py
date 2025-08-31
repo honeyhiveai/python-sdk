@@ -1,14 +1,15 @@
 """Performance tests for HoneyHive SDK in AWS Lambda environment."""
 
 import json
-import pytest
-import requests
+import os
+import statistics
 import subprocess
 import time
-import statistics
-from typing import Dict, Any, List
+from typing import Any, Dict, List
+
 import docker
-import os
+import pytest
+import requests
 
 
 class TestLambdaPerformance:
@@ -29,7 +30,7 @@ class TestLambdaPerformance:
                 "HH_API_KEY": "test-key",
                 "HH_PROJECT": "lambda-performance-test",
                 "HH_SOURCE": "performance-test",
-                "HH_TEST_MODE": "true"
+                "HH_TEST_MODE": "true",
             },
             detach=True,
             remove=True,
@@ -147,8 +148,8 @@ class TestLambdaPerformance:
     @pytest.mark.benchmark
     def test_throughput_performance(self, performance_container):
         """Test throughput under load."""
-        import threading
         import queue
+        import threading
 
         results_queue = queue.Queue()
         num_requests = 10

@@ -1,13 +1,14 @@
 """Test HoneyHive SDK compatibility with AWS Lambda."""
 
 import json
-import pytest
-import requests
+import os
 import subprocess
 import time
-from typing import Dict, Any
+from typing import Any, Dict
+
 import docker
-import os
+import pytest
+import requests
 
 
 class TestLambdaCompatibility:
@@ -32,7 +33,7 @@ class TestLambdaCompatibility:
                 "HH_API_KEY": "test-key",
                 "HH_PROJECT": "lambda-compatibility-test",
                 "HH_SOURCE": "test",
-                "HH_TEST_MODE": "true"
+                "HH_TEST_MODE": "true",
             },
             detach=True,
             remove=True,
@@ -48,8 +49,6 @@ class TestLambdaCompatibility:
             container.stop()
         except:
             pass
-
-
 
     def invoke_lambda(
         self, payload: Dict[str, Any], port: int = 9000
@@ -83,7 +82,7 @@ class TestLambdaCompatibility:
         body = json.loads(result["body"])
         assert body["status"] == "SUCCESS"
         assert body["tracer_initialized"] is True
-        assert body["span_created"] is True  
+        assert body["span_created"] is True
         assert body["flush_success"] is True
         assert "execution_time_ms" in body
         assert body["execution_time_ms"] > 0
@@ -149,8 +148,8 @@ class TestLambdaCompatibility:
 
     def test_lambda_concurrent_invocations(self, lambda_container):
         """Test concurrent Lambda invocations."""
-        import threading
         import queue
+        import threading
 
         results_queue = queue.Queue()
 
@@ -360,14 +359,15 @@ class TestLambdaIntegration:
 class TestLambdaColdStarts:
     """Test AWS Lambda cold start performance with HoneyHive SDK."""
 
-    @pytest.fixture(scope="class") 
+    @pytest.fixture(scope="class")
     def cold_start_container(self):
         """Start container specifically for cold start testing."""
         import docker
+
         client = docker.from_env()
         container = client.containers.run(
             "honeyhive-lambda:bundle-native",
-            command="cold_start_test.lambda_handler", 
+            command="cold_start_test.lambda_handler",
             ports={"8080/tcp": 9010},
             environment={
                 "AWS_LAMBDA_FUNCTION_NAME": "honeyhive-cold-start-test",
@@ -375,7 +375,7 @@ class TestLambdaColdStarts:
                 "HH_API_KEY": "test-key",
                 "HH_PROJECT": "lambda-cold-start-test",
                 "HH_SOURCE": "test",
-                "HH_TEST_MODE": "true"
+                "HH_TEST_MODE": "true",
             },
             detach=True,
             remove=True,
@@ -410,73 +410,87 @@ class TestLambdaColdStarts:
     def test_cold_start_performance(self, cold_start_container):
         """Test cold start performance with HoneyHive SDK."""
         payload = {"test_type": "cold_start", "measure_performance": True}
-        
+
         result = self.invoke_cold_start_lambda(payload)
-        
+
         assert result["statusCode"] == 200
         body = json.loads(result["body"])
-        
+
         # Verify successful cold start test
         assert body["message"] == "Cold start test completed"
         assert body["cold_start"] is True  # First call should be a cold start
         assert body["flush_success"] is True
-        
+
         timings = body["timings"]
-        
+
         # Verify performance targets (updated to realistic thresholds for bundle)
-        assert timings["sdk_import_ms"] < 200, f"SDK import too slow: {timings['sdk_import_ms']}ms"
-        assert timings["tracer_init_ms"] < 300, f"Tracer init too slow: {timings['tracer_init_ms']}ms"
-        assert timings["handler_total_ms"] < 3000, f"Total execution too slow: {timings['handler_total_ms']}ms"
-        
+        assert (
+            timings["sdk_import_ms"] < 200
+        ), f"SDK import too slow: {timings['sdk_import_ms']}ms"
+        assert (
+            timings["tracer_init_ms"] < 300
+        ), f"Tracer init too slow: {timings['tracer_init_ms']}ms"
+        assert (
+            timings["handler_total_ms"] < 3000
+        ), f"Total execution too slow: {timings['handler_total_ms']}ms"
+
         # Log performance for documentation
-        print(f"📊 Performance metrics: SDK import: {timings['sdk_import_ms']:.1f}ms, Tracer init: {timings['tracer_init_ms']:.1f}ms, Total: {timings['handler_total_ms']:.1f}ms")
+        print(
+            f"📊 Performance metrics: SDK import: {timings['sdk_import_ms']:.1f}ms, Tracer init: {timings['tracer_init_ms']:.1f}ms, Total: {timings['handler_total_ms']:.1f}ms"
+        )
 
     def test_memory_footprint(self, cold_start_container):
         """Test memory footprint of HoneyHive SDK in Lambda."""
         payload = {"test_type": "memory_test", "measure_memory": True}
-        
+
         result = self.invoke_cold_start_lambda(payload)
-        
+
         assert result["statusCode"] == 200
         body = json.loads(result["body"])
-        
+
         assert body["message"] == "Cold start test completed"
         assert "performance_impact" in body
-        
+
         performance_impact = body["performance_impact"]
-        
+
         # Verify runtime overhead is reasonable
         runtime_overhead = performance_impact.get("runtime_overhead_ms", 0)
-        assert runtime_overhead < 1000, f"Runtime overhead too high: {runtime_overhead}ms"
+        assert (
+            runtime_overhead < 1000
+        ), f"Runtime overhead too high: {runtime_overhead}ms"
 
     def test_warm_start_optimization(self, cold_start_container):
         """Test warm start performance optimization."""
         # First call for cold start
         cold_payload = {"test_type": "cold_start", "measure_performance": True}
         cold_result = self.invoke_cold_start_lambda(cold_payload)
-        
+
         assert cold_result["statusCode"] == 200
         cold_body = json.loads(cold_result["body"])
         cold_time = cold_body["timings"]["handler_total_ms"]
-        
+
         # Subsequent calls for warm starts
         warm_times = []
         for i in range(3):
             warm_payload = {"test_type": "warm_start", "iteration": i}
             warm_result = self.invoke_cold_start_lambda(warm_payload)
-            
+
             assert warm_result["statusCode"] == 200
             warm_body = json.loads(warm_result["body"])
             assert warm_body["cold_start"] is False, f"Call {i} should be warm start"
             warm_times.append(warm_body["timings"]["handler_total_ms"])
-        
+
         # Warm starts should be reasonably fast (allowing for some variation)
         avg_warm_time = sum(warm_times) / len(warm_times)
-        print(f"🔥 Warm start performance: {avg_warm_time:.1f}ms average vs {cold_time:.1f}ms cold start")
-        
+        print(
+            f"🔥 Warm start performance: {avg_warm_time:.1f}ms average vs {cold_time:.1f}ms cold start"
+        )
+
         # Warm starts should be under 1 second and generally faster than cold starts (with tolerance)
         assert avg_warm_time < 1000, f"Warm starts too slow: {avg_warm_time}ms"
-        
+
         # Allow some tolerance since first few warm calls can vary
         warm_start_threshold = cold_time + 50  # Allow 50ms tolerance
-        assert avg_warm_time < warm_start_threshold, f"Warm starts not optimized: {avg_warm_time}ms vs {cold_time}ms cold start"
+        assert (
+            avg_warm_time < warm_start_threshold
+        ), f"Warm starts not optimized: {avg_warm_time}ms vs {cold_time}ms cold start"

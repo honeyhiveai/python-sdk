@@ -843,119 +843,125 @@ class TestTraceDynamicBehavior:
     def setup_method(self) -> None:
         """Set up test environment."""
         from honeyhive.tracer.otel_tracer import HoneyHiveTracer
+
         HoneyHiveTracer.reset()
 
     def teardown_method(self) -> None:
         """Clean up after each test."""
         from honeyhive.tracer.otel_tracer import HoneyHiveTracer
+
         HoneyHiveTracer.reset()
 
     def test_trace_decorator_automatically_detects_sync_function(self) -> None:
         """Test that @trace automatically detects and properly wraps sync functions."""
-        
+
         @trace(event_name="sync_test")
         def sync_function(x: int) -> int:
             return x * 2
-        
+
         # Should work as a normal sync function
         result = sync_function(21)
         assert result == 42
-        
+
         # Verify it's not a coroutine
         import inspect
+
         assert not inspect.iscoroutinefunction(sync_function)
 
     @pytest.mark.asyncio
     async def test_trace_decorator_automatically_detects_async_function(self) -> None:
         """Test that @trace automatically detects and properly wraps async functions."""
-        
+
         @trace(event_name="async_test")
         async def async_function(x: int) -> int:
             return x * 2
-        
+
         # Should work as a normal async function
         result = await async_function(21)
         assert result == 42
-        
+
         # Verify it's still a coroutine function
         import inspect
+
         assert inspect.iscoroutinefunction(async_function)
 
     def test_trace_decorator_sync_and_async_same_interface(self) -> None:
         """Test that @trace provides the same interface for both sync and async functions."""
-        
+
         # Same decorator parameters for both
         decorator_params = {
             "event_type": "demo",
             "event_name": "test_function",
             "inputs": {"param": "value"},
-            "metadata": {"test": True}
+            "metadata": {"test": True},
         }
-        
+
         @trace(**decorator_params)
         def sync_func(value: str) -> str:
             return f"sync_{value}"
-        
+
         @trace(**decorator_params)
         async def async_func(value: str) -> str:
             return f"async_{value}"
-        
+
         # Both should work with the same decorator
         sync_result = sync_func("test")
         assert sync_result == "sync_test"
-        
+
         import asyncio
+
         async_result = asyncio.run(async_func("test"))
         assert async_result == "async_test"
 
     def test_trace_decorator_preserves_function_signatures(self) -> None:
         """Test that @trace preserves function signatures for both sync and async."""
-        
+
         @trace(event_name="sync_sig_test")
         def sync_func(a: int, b: str = "default", *args, **kwargs) -> str:
             """Sync function docstring."""
             return f"{a}_{b}_{len(args)}_{len(kwargs)}"
-        
+
         @trace(event_name="async_sig_test")
         async def async_func(a: int, b: str = "default", *args, **kwargs) -> str:
             """Async function docstring."""
             return f"{a}_{b}_{len(args)}_{len(kwargs)}"
-        
+
         # Test sync function signature preservation
         assert sync_func.__name__ == "sync_func"
         assert sync_func.__doc__ == "Sync function docstring."
         result = sync_func(1, "test", "extra", key="value")
         assert result == "1_test_1_1"
-        
+
         # Test async function signature preservation
         assert async_func.__name__ == "async_func"
         assert async_func.__doc__ == "Async function docstring."
         import asyncio
+
         result = asyncio.run(async_func(2, "async", "extra", key="value"))
         assert result == "2_async_1_1"
 
     @pytest.mark.asyncio
     async def test_trace_decorator_error_handling_both_types(self) -> None:
         """Test that @trace handles errors correctly for both sync and async functions."""
-        
+
         @trace(event_name="sync_error_test")
         def sync_error_func():
             raise ValueError("Sync error")
-        
+
         @trace(event_name="async_error_test")
         async def async_error_func():
             raise ValueError("Async error")
-        
+
         # Both should propagate errors correctly
         with pytest.raises(ValueError, match="Sync error"):
             sync_error_func()
-        
+
         with pytest.raises(ValueError, match="Async error"):
             await async_error_func()
 
     def test_trace_decorator_with_mock_tracer_sync_and_async(self) -> None:
         """Test @trace with mock tracer for both sync and async functions."""
-        
+
         # Mock tracer setup
         mock_tracer = Mock()
         mock_span = Mock()
@@ -963,30 +969,31 @@ class TestTraceDynamicBehavior:
         mock_context.__enter__ = Mock(return_value=mock_span)
         mock_context.__exit__ = Mock(return_value=None)
         mock_tracer.start_span.return_value = mock_context
-        
+
         @trace(event_name="sync_mock_test", tracer=mock_tracer)
         def sync_func():
             return "sync_success"
-        
+
         @trace(event_name="async_mock_test", tracer=mock_tracer)
         async def async_func():
             return "async_success"
-        
+
         # Test sync function with tracer
         result = sync_func()
         assert result == "sync_success"
-        
+
         # Test async function with tracer
         import asyncio
+
         result = asyncio.run(async_func())
         assert result == "async_success"
-        
+
         # Both should have called the tracer
         assert mock_tracer.start_span.call_count == 2
 
     def test_trace_decorator_comprehensive_parameters_both_types(self) -> None:
         """Test @trace with comprehensive parameters for both sync and async functions."""
-        
+
         comprehensive_params = {
             "event_type": "model",
             "event_name": "comprehensive_test",
@@ -995,62 +1002,77 @@ class TestTraceDynamicBehavior:
             "metadata": {"user_id": "test_user"},
             "config": {"model": "test_model"},
             "metrics": {"latency": 100},
-            "feedback": {"rating": 5}
+            "feedback": {"rating": 5},
         }
-        
+
         @trace(**comprehensive_params)
         def sync_comprehensive(data: str) -> str:
             return f"sync_{data}"
-        
+
         @trace(**comprehensive_params)
         async def async_comprehensive(data: str) -> str:
             return f"async_{data}"
-        
+
         # Both should work with comprehensive parameters
         sync_result = sync_comprehensive("test")
         assert sync_result == "sync_test"
-        
+
         import asyncio
+
         async_result = asyncio.run(async_comprehensive("test"))
         assert async_result == "async_test"
 
     def test_trace_decorator_automatic_detection_verification(self) -> None:
         """Test that @trace actually uses different wrappers for sync vs async."""
-        
+
         # This test verifies the internal behavior by checking wrapper types
-        from honeyhive.tracer.decorators import _create_sync_wrapper, _create_async_wrapper
         from unittest.mock import patch
-        
+
+        from honeyhive.tracer.decorators import (
+            _create_async_wrapper,
+            _create_sync_wrapper,
+        )
+
         sync_wrapper_called = False
         async_wrapper_called = False
-        
+
         original_sync_wrapper = _create_sync_wrapper
         original_async_wrapper = _create_async_wrapper
-        
+
         def mock_sync_wrapper(*args, **kwargs):
             nonlocal sync_wrapper_called
             sync_wrapper_called = True
             return original_sync_wrapper(*args, **kwargs)
-        
+
         def mock_async_wrapper(*args, **kwargs):
             nonlocal async_wrapper_called
             async_wrapper_called = True
             return original_async_wrapper(*args, **kwargs)
-        
-        with patch('honeyhive.tracer.decorators._create_sync_wrapper', mock_sync_wrapper), \
-             patch('honeyhive.tracer.decorators._create_async_wrapper', mock_async_wrapper):
-            
+
+        with (
+            patch(
+                "honeyhive.tracer.decorators._create_sync_wrapper", mock_sync_wrapper
+            ),
+            patch(
+                "honeyhive.tracer.decorators._create_async_wrapper", mock_async_wrapper
+            ),
+        ):
+
             @trace(event_name="sync_detection_test")
             def sync_func():
                 return "sync"
-            
+
             @trace(event_name="async_detection_test")
             async def async_func():
                 return "async"
-            
+
             # Just defining the functions should trigger wrapper creation
             pass
-        
+
         # Verify that the correct wrappers were called
-        assert sync_wrapper_called, "Sync wrapper should have been called for sync function"
-        assert async_wrapper_called, "Async wrapper should have been called for async function"
+        assert (
+            sync_wrapper_called
+        ), "Sync wrapper should have been called for sync function"
+        assert (
+            async_wrapper_called
+        ), "Async wrapper should have been called for async function"

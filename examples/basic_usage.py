@@ -86,18 +86,19 @@ def main():
     
     # Manual span management - from docs
     with tracer.start_span("custom-operation") as span:
-        span.set_attribute("operation.type", "data_processing")
-        print("  📝 Processing data...")
-        
-        # Your operation here
-        time.sleep(0.1)  # Simulate processing
+        if span is not None:
+            span.set_attribute("operation.type", "data_processing")
+            print("  📝 Processing data...")
+
+            # Your operation here
+            time.sleep(0.1)  # Simulate processing
+        else:
+            print("  ⚠️ Failed to start span for 'custom-operation'")
         result = "processed_data"
-        
-        span.set_attribute("operation.result", result)
+
+        if span is not None:
+            span.set_attribute("operation.result", result)
         print(f"  ✓ Operation completed: {result}")
-    
-    # ========================================================================
-    # 4. API CLIENT USAGE
     # ========================================================================
     print("\n4. API Client Usage")
     print("-" * 20)

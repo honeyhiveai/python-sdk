@@ -2,8 +2,15 @@
 
 import os
 import time
-from typing import Any, Optional
+from typing import TYPE_CHECKING, Any, Optional, Union
 from urllib.parse import urlparse
+
+if TYPE_CHECKING:
+    import httpx
+    import requests
+else:
+    httpx = None
+    requests = None
 
 # Try to import HTTP libraries
 try:
@@ -12,7 +19,6 @@ try:
     HTTPX_AVAILABLE = True
 except ImportError:
     HTTPX_AVAILABLE = False
-    httpx = None  # type: ignore
 
 try:
     import requests
@@ -20,7 +26,6 @@ try:
     REQUESTS_AVAILABLE = True
 except ImportError:
     REQUESTS_AVAILABLE = False
-    requests = None  # type: ignore
 
 from .otel_tracer import HoneyHiveTracer
 

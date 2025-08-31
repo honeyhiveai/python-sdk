@@ -45,8 +45,9 @@ def process_data(data: Dict[str, Any]) -> Dict[str, Any]:
     # Simulate work
     time.sleep(0.1)
 
-    # Test span enrichment  
+    # Test span enrichment
     from honeyhive.tracer.otel_tracer import enrich_span
+
     with enrich_span(
         metadata={"lambda_test": True, "data_size": len(str(data))},
         outputs={"processed": True},

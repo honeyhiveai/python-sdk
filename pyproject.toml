@@ -134,6 +134,7 @@ disable = [
     "W0707",  # raise-missing-from (acceptable in some cases)
     "W1203",  # logging-fstring-interpolation (acceptable in some cases)
     "E1101",  # no-member (acceptable for dynamic attributes)
+    "R0401",  # cyclic-import (acceptable in test files)
 ]
 
 [tool.pylint.format]
@@ -183,6 +184,7 @@ module = [
     "wrapt.*",
     "click.*",
     "yaml.*",
+    "requests.*",
 ]
 ignore_missing_imports = true
 

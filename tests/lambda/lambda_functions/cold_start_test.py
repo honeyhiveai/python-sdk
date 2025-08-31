@@ -85,10 +85,10 @@ def lambda_handler(event: Dict[str, Any], context: Any) -> Dict[str, Any]:
 
             # Simulate some work
             work_start = time.time()
-            
+
             # Import the global enrich_span function
             from honeyhive.tracer.otel_tracer import enrich_span
-            
+
             with enrich_span(
                 tracer=tracer,
                 metadata={
