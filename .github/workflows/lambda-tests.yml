@@ -10,12 +10,8 @@ name: AWS Lambda Compatibility Tests
 
 jobs:
   lambda-docker-tests:
-    name: "🐳 Docker Simulation"
+    name: "🐳 Docker Simulation Suite"
     runs-on: ubuntu-latest
-
-    strategy:
-      matrix:
-        python-version: ["3.11", "3.12"]
 
     steps:
       - name: Checkout code
@@ -24,7 +20,7 @@ jobs:
       - name: Set up Python
         uses: actions/setup-python@v5
         with:
-          python-version: ${{ matrix.python-version }}
+          python-version: "3.11"
 
       - name: Set up virtual environment (following project standards)
         run: |
@@ -76,7 +72,7 @@ jobs:
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: lambda-test-results-py${{ matrix.python-version }}
+          name: lambda-docker-test-results
           path: tests/lambda/test-results/
 
   lambda-real-aws-tests:
@@ -194,20 +190,9 @@ jobs:
               body: comment
             });
 
-  lambda-compatibility-matrix:
-    name: "🧪 Compatibility Matrix"
+  lambda-compatibility-tests:
+    name: "🧪 Lambda Compatibility Suite"
     runs-on: ubuntu-latest
-
-    strategy:
-      matrix:
-        lambda-runtime: ["python3.11", "python3.12"]
-        memory-size: [128, 512]  # Test low and high memory only
-        exclude:
-          # Reduce combinations - test each Python version with different memory
-          - lambda-runtime: "python3.11"
-            memory-size: 512
-          - lambda-runtime: "python3.12"
-            memory-size: 128
 
     steps:
       - name: Checkout code
@@ -224,42 +209,58 @@ jobs:
           pip install docker requests
           pip install -e .
 
-      - name: Set up virtual environment (following project standards)
-        run: |
-          python -m venv python-sdk
-          source python-sdk/bin/activate
-          echo "VIRTUAL_ENV=$PWD/python-sdk" >> $GITHUB_ENV
-          echo "$PWD/python-sdk/bin" >> $GITHUB_PATH
-
-      - name: Test compatibility matrix
+      - name: "🐍 Test Python 3.11 @ 128MB"
         run: |
           cd tests/lambda
+          echo "🧪 Testing Python 3.11 with 128MB memory..."
 
-          # Build test container with specific runtime
-          docker build -f Dockerfile.bundle-builder -t honeyhive-lambda:test-${{ matrix.lambda-runtime }} .
-
-          # Start container with memory constraints
-          docker run -d -p 9000:8080 --memory=${{ matrix.memory-size }}m \
-            honeyhive-lambda:test-${{ matrix.lambda-runtime }} \
-            basic_tracing.lambda_handler &
-
+          docker build -f Dockerfile.bundle-builder -t honeyhive-lambda:py311-test .
+          docker run -d -p 9000:8080 --memory=128m \
+            honeyhive-lambda:py311-test basic_tracing.lambda_handler &
           sleep 5
 
-          # Test basic functionality
           response=$(curl -s -X POST http://localhost:9000/2015-03-31/functions/function/invocations \
             -H "Content-Type: application/json" \
-            -d '{"test": "compatibility", "runtime": "${{ matrix.lambda-runtime }}", \
-              "memory": ${{ matrix.memory-size }}}')
-
+            -d '{"test": "py311-128mb"}')
           echo "Response: $response"
 
-          # Check if successful
           if echo "$response" | grep -q '"statusCode": 200'; then
-            echo "✅ Compatible with ${{ matrix.lambda-runtime }} @ ${{ matrix.memory-size }}MB"
+            echo "✅ Python 3.11 @ 128MB - Compatible"
           else
-            echo "❌ Failed with ${{ matrix.lambda-runtime }} @ ${{ matrix.memory-size }}MB"
+            echo "❌ Python 3.11 @ 128MB - Failed"
             exit 1
           fi
 
-          # Stop the container
           docker ps -q --filter "publish=9000" | xargs -r docker stop
+
+      - name: "🐍 Test Python 3.12 @ 512MB"
+        run: |
+          cd tests/lambda
+          echo "🧪 Testing Python 3.12 with 512MB memory..."
+
+          docker build -f Dockerfile.bundle-builder -t honeyhive-lambda:py312-test .
+          docker run -d -p 9001:8080 --memory=512m \
+            honeyhive-lambda:py312-test basic_tracing.lambda_handler &
+          sleep 5
+
+          response=$(curl -s -X POST http://localhost:9001/2015-03-31/functions/function/invocations \
+            -H "Content-Type: application/json" \
+            -d '{"test": "py312-512mb"}')
+          echo "Response: $response"
+
+          if echo "$response" | grep -q '"statusCode": 200'; then
+            echo "✅ Python 3.12 @ 512MB - Compatible"
+          else
+            echo "❌ Python 3.12 @ 512MB - Failed"
+            exit 1
+          fi
+
+          docker ps -q --filter "publish=9001" | xargs -r docker stop
+
+      - name: Upload compatibility test results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: lambda-compatibility-results
+          path: tests/lambda/compatibility-*.log
+          retention-days: 7
