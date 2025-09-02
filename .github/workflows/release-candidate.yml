@@ -104,6 +104,8 @@ jobs:
     if: always() && (needs.pre-release-validation.outputs.should-run-tests == 'false' ||
         (needs.full-test-suite.result == 'success' && needs.lambda-compatibility-tests.result == 'success'))
     runs-on: ubuntu-latest
+    outputs:
+      RC_VERSION: ${{ env.RC_VERSION }}
 
     steps:
       - name: Checkout code
@@ -184,7 +186,7 @@ jobs:
       - name: Upload build artifacts
         uses: actions/upload-artifact@v4
         with:
-          name: release-candidate-package-${{ env.RC_VERSION }}
+          name: honeyhive-python-sdk-${{ env.RC_VERSION }}
           path: dist/
           retention-days: 30
 
@@ -227,7 +229,7 @@ jobs:
       - name: Download release candidate package
         uses: actions/download-artifact@v4
         with:
-          name: release-candidate-package-${{ needs.build-package.outputs.RC_VERSION || 'latest' }}
+          name: honeyhive-python-sdk-${{ needs.build-package.outputs.RC_VERSION }}
           path: dist/
 
       - name: Test package on Python ${{ matrix.python-version }}

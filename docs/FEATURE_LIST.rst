@@ -245,6 +245,7 @@ CI/CD Integration
 * **Workflow Trigger Optimization** - Elimination of duplicate executions on PR branches
 * **Modern Action Versions** - Updated to latest GitHub Actions versions (v4/v5) for reliability
 * **Workflow Dispatch Support** - Proper manual trigger configuration for release candidate workflows
+* **Release Artifact Management** - Descriptive artifact naming (``honeyhive-python-sdk-<version>``) with proper job output sharing
 
 Debugging Features
 ~~~~~~~~~~~~~~~~~~

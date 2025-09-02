@@ -20,6 +20,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Documentation Synchronization Checks**: Automated validation of feature documentation consistency
 - **AI Assistant Compliance**: Specific requirements for AI assistants to update documentation before commits
 - **Release Candidate Workflow Fix**: Removed quotes from 'on' trigger to ensure GitHub Actions recognizes workflow_dispatch
+- **Artifact Naming Improvement**: Changed artifact name to `honeyhive-python-sdk-<version>` for better identification
+- **Build Package Output Fix**: Added proper job outputs to share RC_VERSION between workflow jobs
 - **Multi-Instance Architecture**: Complete refactor to support multiple tracer instances
   - Create multiple independent tracers within the same runtime
   - Each tracer can have different API keys, projects, and sources
