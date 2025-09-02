@@ -463,7 +463,7 @@ class TestEvaluationAPIIntegration:
 
     @pytest.mark.skipif(
         os.environ.get("HH_SOURCE", "").startswith("github-actions"),
-        reason="Evaluation run creation requires write permissions not available in CI"
+        reason="Evaluation run creation requires write permissions not available in CI",
     )
     def test_create_evaluation_run_integration(
         self, integration_client, integration_project_name, skip_if_no_real_credentials
@@ -491,7 +491,7 @@ class TestEvaluationAPIIntegration:
 
     @pytest.mark.skipif(
         os.environ.get("HH_SOURCE", "").startswith("github-actions"),
-        reason="Evaluation run creation requires write permissions not available in CI"
+        reason="Evaluation run creation requires write permissions not available in CI",
     )
     def test_evaluation_workflow_end_to_end(
         self, integration_client, integration_project_name, skip_if_no_real_credentials
@@ -539,7 +539,7 @@ class TestEvaluationAPIIntegration:
 
     @pytest.mark.skipif(
         os.environ.get("HH_SOURCE", "").startswith("github-actions"),
-        reason="Evaluation run creation requires write permissions not available in CI"
+        reason="Evaluation run creation requires write permissions not available in CI",
     )
     def test_large_dataset_api_integration(
         self, integration_client, integration_project_name, skip_if_no_real_credentials
