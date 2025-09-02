@@ -2,10 +2,10 @@
 
 import json
 import os
+import statistics
 import sys
 import time
 from typing import Any, Dict, List
-import statistics
 
 sys.path.insert(0, "/var/task")
 

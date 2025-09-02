@@ -51,6 +51,7 @@ class TestLambdaPerformance:
     ) -> None:
         """Wait for performance Lambda container to be ready."""
         import time
+
         import requests
 
         url = f"http://localhost:{port}/2015-03-31/functions/function/invocations"
@@ -845,6 +846,7 @@ class TestLambdaStressTests:
     ) -> None:
         """Wait for timeout test container to be ready."""
         import time
+
         import requests
 
         url = f"http://localhost:{port}/2015-03-31/functions/function/invocations"

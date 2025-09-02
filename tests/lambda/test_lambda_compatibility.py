@@ -53,6 +53,7 @@ class TestLambdaCompatibility:
     def _wait_for_container_ready(self, port: int = 9000, timeout: int = 30) -> None:
         """Wait for Lambda container to be ready to accept requests."""
         import time
+
         import requests
 
         url = f"http://localhost:{port}/2015-03-31/functions/function/invocations"

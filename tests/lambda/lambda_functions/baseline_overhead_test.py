@@ -1,9 +1,9 @@
 """Baseline Lambda function WITHOUT HoneyHive SDK for overhead comparison."""
 
 import json
+import statistics
 import time
 from typing import Any, Dict, List
-import statistics
 
 
 def cpu_intensive_work(duration_ms: float) -> float:
