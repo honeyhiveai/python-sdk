@@ -15,7 +15,7 @@ High-Level Architecture
 
 .. mermaid::
 
-   %%{init: {'theme':'dark', 'themeVariables': {'darkMode': true, 'primaryColor': '#ffffff', 'primaryTextColor': '#ffffff', 'primaryBorderColor': '#ffffff', 'lineColor': '#ffffff', 'edgeLabelBackground': 'transparent', 'clusterBkg': 'transparent', 'clusterBorder': '#ffffff', 'mainBkg': 'transparent', 'secondBkg': 'transparent', 'tertiaryColor': 'transparent'}, 'flowchart': {'linkColor': '#ffffff', 'linkWidth': 4}}}%%
+   %%{init: {'theme':'base', 'themeVariables': {'primaryColor': '#4F81BD', 'primaryTextColor': '#333333', 'primaryBorderColor': '#333333', 'lineColor': '#333333', 'mainBkg': 'transparent', 'secondBkg': 'transparent', 'tertiaryColor': 'transparent', 'clusterBkg': 'transparent', 'clusterBorder': '#333333', 'edgeLabelBackground': 'transparent', 'background': 'transparent'}, 'flowchart': {'linkColor': '#333333', 'linkWidth': 2}}}%%
    graph TB
        subgraph "Application Layer"
            UA[User Code]
@@ -99,7 +99,7 @@ The SDK provides a unified approach to span and session enrichment through a car
 
 .. mermaid::
 
-   %%{init: {'theme':'dark', 'themeVariables': {'darkMode': true, 'primaryColor': '#ffffff', 'primaryTextColor': '#ffffff', 'primaryBorderColor': '#ffffff', 'lineColor': '#ffffff', 'edgeLabelBackground': 'transparent', 'clusterBkg': 'transparent', 'clusterBorder': '#ffffff', 'mainBkg': 'transparent', 'secondBkg': 'transparent', 'tertiaryColor': 'transparent'}, 'flowchart': {'linkColor': '#ffffff', 'linkWidth': 4}}}%%
+   %%{init: {'theme':'base', 'themeVariables': {'primaryColor': '#4F81BD', 'primaryTextColor': '#333333', 'primaryBorderColor': '#333333', 'lineColor': '#333333', 'mainBkg': 'transparent', 'secondBkg': 'transparent', 'tertiaryColor': 'transparent', 'clusterBkg': 'transparent', 'clusterBorder': '#333333', 'edgeLabelBackground': 'transparent', 'background': 'transparent'}, 'flowchart': {'linkColor': '#333333', 'linkWidth': 2}}}%%
    graph TB
        subgraph "Enrichment Entry Points"
            EP1["from tracer<br/>import enrich_span"]

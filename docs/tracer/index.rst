@@ -24,83 +24,73 @@ The HoneyHive tracing system follows a layered architecture designed for flexibi
 
 .. mermaid::
 
-   %%{init: {'theme':'dark', 'themeVariables': {'darkMode': true, 'primaryColor': '#ffffff', 'primaryTextColor': '#ffffff', 'primaryBorderColor': '#ffffff', 'lineColor': '#ffffff', 'edgeLabelBackground': 'transparent', 'clusterBkg': 'transparent', 'clusterBorder': '#ffffff', 'mainBkg': 'transparent', 'secondBkg': 'transparent', 'tertiaryColor': 'transparent'}, 'flowchart': {'linkColor': '#ffffff', 'linkWidth': 4}}}%%
+   %%{init: {'theme':'base', 'themeVariables': {'primaryColor': '#4F81BD', 'primaryTextColor': '#333333', 'primaryBorderColor': '#333333', 'lineColor': '#333333', 'mainBkg': 'transparent', 'secondBkg': 'transparent', 'tertiaryColor': 'transparent', 'clusterBkg': 'transparent', 'clusterBorder': '#333333', 'edgeLabelBackground': 'transparent', 'background': 'transparent'}, 'flowchart': {'linkColor': '#333333', 'linkWidth': 2}}}%%
    graph TB
-       subgraph "User Application Layer"
-           UA["User Code<br/>Functions & Classes"]
-           DEC["@trace / @atrace<br/>@trace_class decorators"]
-           CTX["Context Managers<br/>with tracer.start_span()"]
+       subgraph "Application Layer"
+           UA[User Code]
+           DEC[Decorators]
+           CTX[Context Managers]
        end
        
-       subgraph "HoneyHive SDK Layer"
-           subgraph "Multi-Instance Tracers"
-               T1["Production Tracer<br/>HoneyHiveTracer.init()"]
-               T2["Development Tracer<br/>HoneyHiveTracer.init()"]
-               T3["Testing Tracer<br/>HoneyHiveTracer.init()"]
+       subgraph "HoneyHive SDK"
+           subgraph "Tracer Layer"
+               T[Multi-Instance Tracers]
+               ES[Span Enrichment]
+               ESS[Session Enrichment]
            end
            
-           subgraph "Enrichment Layer"
-               ES["enrich_span()<br/>Span-level enrichment"]
-               ESS["enrich_session()<br/>Session-level enrichment"]
+           subgraph "OpenTelemetry Layer"
+               OT[OTEL Tracer]
+               SP[Span Processor]
+               HTTP[HTTP Instrumentation]
            end
            
-           subgraph "Core Components"
-               OT["OTEL Tracer<br/>OpenTelemetry integration"]
-               SP["HoneyHive Span Processor<br/>Enriches spans with attributes"]
-               HTTP["HTTP Instrumentation<br/>Auto-tracing (optional)"]
+           subgraph "Export Layer"
+               TP[TracerProvider]
+               BSP[Batch Processor]
+               OTLP[OTLP Exporter]
            end
-       end
-       
-       subgraph "OpenTelemetry Layer"
-           TP["TracerProvider<br/>Global or custom"]
-           SPANS["Active Spans<br/>Context propagation"]
-           BSP["Batch Span Processor<br/>OpenTelemetry batching"]
-           OTLP["OTLP Exporter<br/>Sends to /opentelemetry/v1/traces"]
        end
        
        subgraph "HoneyHive Platform"
-           API["HoneyHive API<br/>Sessions & Events"]
-           DASH["Analytics Dashboard<br/>Traces & Metrics"]
-           STORE["Data Storage<br/>Spans & Sessions"]
+           API[API]
+           DASH[Dashboard]
+           STORE[Storage]
        end
        
-       UA --> DEC
-       UA --> CTX
-       DEC --> T1
-       DEC --> T2
-       DEC --> T3
-       CTX --> T1
-       CTX --> T2
-       CTX --> T3
+       UA ==> T
+       DEC ==> T
+       CTX ==> T
        
-       T1 --> ES
-       T2 --> ES
-       T3 --> ES
-       T1 --> ESS
-       T2 --> ESS
-       T3 --> ESS
+       T ==> ES
+       T ==> ESS
+       T ==> OT
        
-       ES --> OT
-       ESS --> API
+       ES ==> OT
+       OT ==> TP
+       HTTP ==> TP
        
-       T1 --> OT
-       T2 --> OT
-       T3 --> OT
+       TP ==> SP
+       TP ==> BSP
+       BSP ==> OTLP
        
-       OT --> TP
-       T1 --> HTTP
+       OTLP ==> API
+       ESS ==> API
        
-       TP --> SP
-       TP --> BSP
-       SP --> SPANS
-       HTTP --> SPANS
+       API ==> DASH
+       API ==> STORE
        
-       SPANS --> BSP
-       BSP --> OTLP
-       OTLP --> API
+       classDef userLayer fill:#1b5e20,stroke:#ffffff,stroke-width:4px,color:#ffffff
+       classDef tracerLayer fill:#1a237e,stroke:#ffffff,stroke-width:4px,color:#ffffff
+       classDef otelLayer fill:#e65100,stroke:#ffffff,stroke-width:4px,color:#ffffff
+       classDef exportLayer fill:#ad1457,stroke:#ffffff,stroke-width:4px,color:#ffffff
+       classDef platformLayer fill:#4a148c,stroke:#ffffff,stroke-width:4px,color:#ffffff
        
-       API --> DASH
-       API --> STORE
+       class UA,DEC,CTX userLayer
+       class T,ES,ESS tracerLayer
+       class OT,SP,HTTP otelLayer
+       class TP,BSP,OTLP exportLayer
+       class API,DASH,STORE platformLayer
 
 **Key Architecture Components:**
 

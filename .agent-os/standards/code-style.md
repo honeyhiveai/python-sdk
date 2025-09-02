@@ -306,3 +306,53 @@ refactor(utils): simplify config loading
 - Use parameterized queries
 - Implement rate limiting
 - Follow OWASP guidelines
+
+## Documentation Standards
+
+### Mermaid Diagram Configuration
+
+All Mermaid diagrams in the HoneyHive Python SDK documentation must use this standardized configuration:
+
+```rst
+.. mermaid::
+
+   %%{init: {'theme':'base', 'themeVariables': {'primaryColor': '#4F81BD', 'primaryTextColor': '#333333', 'primaryBorderColor': '#333333', 'lineColor': '#333333', 'mainBkg': 'transparent', 'secondBkg': 'transparent', 'tertiaryColor': 'transparent', 'clusterBkg': 'transparent', 'clusterBorder': '#333333', 'edgeLabelBackground': 'transparent', 'background': 'transparent'}, 'flowchart': {'linkColor': '#333333', 'linkWidth': 2}}}%%
+   graph TB
+       // Your diagram content here
+```
+
+**Key Features:**
+- **Base Theme**: Uses `theme:'base'` which is the only customizable theme per [Mermaid documentation](https://mermaid.js.org/config/theming.html)
+- **Transparent Backgrounds**: No forced background colors that conflict with documentation themes
+- **HoneyHive Branding**: Primary color `#4F81BD` (HoneyHive blue)
+- **Dual Theme Support**: Dark gray text/lines (`#333333`) work well in both light and dark themes
+- **Reliable Rendering**: Proven configuration that renders properly as visual graphics
+
+**Color Coding for Architecture Diagrams:**
+
+Use this color scheme for layered architecture diagrams:
+
+```mermaid
+classDef userLayer fill:#1b5e20,stroke:#ffffff,stroke-width:4px,color:#ffffff
+classDef sdkLayer fill:#1a237e,stroke:#ffffff,stroke-width:4px,color:#ffffff
+classDef otelLayer fill:#e65100,stroke:#ffffff,stroke-width:4px,color:#ffffff
+classDef transportLayer fill:#ad1457,stroke:#ffffff,stroke-width:4px,color:#ffffff
+classDef apiLayer fill:#4a148c,stroke:#ffffff,stroke-width:4px,color:#ffffff
+
+class UserComponents userLayer
+class SDKComponents sdkLayer
+class OTELComponents otelLayer
+class TransportComponents transportLayer
+class APIComponents apiLayer
+```
+
+**Color Meanings:**
+- **Green** (`#1b5e20`): User/Application layer
+- **Dark Blue** (`#1a237e`): SDK/Tracer layer
+- **Orange** (`#e65100`): OpenTelemetry layer
+- **Magenta** (`#ad1457`): Transport/Export layer  
+- **Purple** (`#4a148c`): API/Platform layer
+
+**Documentation:**
+- Complete standard documented in `docs/MERMAID_STANDARD.md`
+- Applied to: tracer/index.rst, IMPLEMENTATION_GUIDE.rst, evaluation/index.rst

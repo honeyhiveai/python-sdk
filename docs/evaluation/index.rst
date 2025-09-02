@@ -22,7 +22,7 @@ The evaluation framework follows a modular architecture designed for flexibility
 
 .. mermaid::
 
-   %%{init: {'theme':'dark', 'themeVariables': {'darkMode': true, 'primaryColor': '#ffffff', 'primaryTextColor': '#ffffff', 'primaryBorderColor': '#ffffff', 'lineColor': '#ffffff', 'edgeLabelBackground': 'transparent', 'clusterBkg': 'transparent', 'clusterBorder': '#ffffff', 'mainBkg': 'transparent', 'secondBkg': 'transparent', 'tertiaryColor': 'transparent'}, 'flowchart': {'linkColor': '#ffffff', 'linkWidth': 4}}}%%
+   %%{init: {'theme':'base', 'themeVariables': {'primaryColor': '#4F81BD', 'primaryTextColor': '#333333', 'primaryBorderColor': '#333333', 'lineColor': '#333333', 'mainBkg': 'transparent', 'secondBkg': 'transparent', 'tertiaryColor': 'transparent', 'clusterBkg': 'transparent', 'clusterBorder': '#333333', 'edgeLabelBackground': 'transparent', 'background': 'transparent'}, 'flowchart': {'linkColor': '#333333', 'linkWidth': 2}}}%%
    graph TD
        A["User Code<br/>@evaluate_decorator"] --> B["Evaluation Framework"]
        B --> C["Input Processing"]
