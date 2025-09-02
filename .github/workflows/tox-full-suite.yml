@@ -96,8 +96,8 @@ jobs:
 
       - name: Set up virtual environment (following project standards)
         run: |
-          python -m venv python-sdk
-          source python-sdk/bin/activate
+          python -m venv ../python-sdk
+          source ../python-sdk/bin/activate
           echo "VIRTUAL_ENV=$VIRTUAL_ENV" >> $GITHUB_ENV
           echo "$VIRTUAL_ENV/bin" >> $GITHUB_PATH
 
@@ -152,8 +152,8 @@ jobs:
 
       - name: Set up virtual environment
         run: |
-          python -m venv python-sdk
-          source python-sdk/bin/activate
+          python -m venv ../python-sdk
+          source ../python-sdk/bin/activate
           echo "VIRTUAL_ENV=$VIRTUAL_ENV" >> $GITHUB_ENV
           echo "$VIRTUAL_ENV/bin" >> $GITHUB_PATH
 
@@ -197,8 +197,8 @@ jobs:
 
       - name: Set up virtual environment
         run: |
-          python -m venv python-sdk
-          source python-sdk/bin/activate
+          python -m venv ../python-sdk
+          source ../python-sdk/bin/activate
           echo "VIRTUAL_ENV=$VIRTUAL_ENV" >> $GITHUB_ENV
           echo "$VIRTUAL_ENV/bin" >> $GITHUB_PATH
 
@@ -238,8 +238,8 @@ jobs:
 
       - name: Set up virtual environment
         run: |
-          python -m venv python-sdk
-          source python-sdk/bin/activate
+          python -m venv ../python-sdk
+          source ../python-sdk/bin/activate
           echo "VIRTUAL_ENV=$VIRTUAL_ENV" >> $GITHUB_ENV
           echo "$VIRTUAL_ENV/bin" >> $GITHUB_PATH
 
@@ -343,8 +343,8 @@ jobs:
 
       - name: Set up virtual environment
         run: |
-          python -m venv python-sdk
-          source python-sdk/bin/activate
+          python -m venv ../python-sdk
+          source ../python-sdk/bin/activate
           echo "VIRTUAL_ENV=$VIRTUAL_ENV" >> $GITHUB_ENV
           echo "$VIRTUAL_ENV/bin" >> $GITHUB_PATH
 
