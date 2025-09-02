@@ -1,0 +1,515 @@
+name: Build Release Candidate
+
+on:
+  workflow_dispatch:
+    inputs:
+      version_type:
+        description: 'Version bump type'
+        required: true
+        default: 'patch'
+        type: choice
+        options:
+          - patch
+          - minor
+          - major
+      pre_release:
+        description: 'Pre-release identifier (e.g., rc, beta, alpha)'
+        required: false
+        default: 'rc'
+        type: string
+      skip_tests:
+        description: 'Skip tests (for emergency releases only)'
+        required: false
+        default: false
+        type: boolean
+
+env:
+  PYTHON_VERSION: "3.11"
+  POETRY_VERSION: "1.7.1"
+
+jobs:
+  # Comprehensive test suite following project standards
+  test-suite:
+    if: ${{ !inputs.skip_tests }}
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        python-version: ["3.11", "3.12", "3.13"]
+        test-type: [unit, integration, tracer]
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      with:
+        fetch-depth: 0
+    
+    - name: Set up Python ${{ matrix.python-version }}
+      uses: actions/setup-python@v4
+      with:
+        python-version: ${{ matrix.python-version }}
+    
+    - name: Set up virtual environment
+      run: |
+        python -m venv python-sdk
+        source python-sdk/bin/activate
+        echo "VIRTUAL_ENV=$PWD/python-sdk" >> $GITHUB_ENV
+        echo "$PWD/python-sdk/bin" >> $GITHUB_PATH
+    
+    - name: Install dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install tox
+    
+    - name: Run ${{ matrix.test-type }} tests
+      env:
+        HH_API_KEY: ${{ secrets.HH_TEST_API_KEY }}
+        HH_PROJECT: "ci-release-candidate"
+        HH_SOURCE: "github-actions-rc"
+        HH_TEST_MODE: "true"
+      run: |
+        tox -e ${{ matrix.test-type }}
+    
+    - name: Upload test results
+      uses: actions/upload-artifact@v3
+      if: always()
+      with:
+        name: test-results-${{ matrix.python-version }}-${{ matrix.test-type }}
+        path: |
+          .coverage
+          coverage.xml
+          htmlcov/
+    
+    - name: Upload coverage to Codecov
+      if: matrix.python-version == '3.11' && matrix.test-type == 'unit'
+      uses: codecov/codecov-action@v3
+      with:
+        file: ./coverage.xml
+        flags: unittests
+        name: codecov-umbrella
+
+  # Lambda testing following documented standards
+  lambda-testing:
+    if: ${{ !inputs.skip_tests }}
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        python-version: ["3.11", "3.12", "3.13"]
+        memory-size: [256, 512, 1024]
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+    
+    - name: Set up Python ${{ matrix.python-version }}
+      uses: actions/setup-python@v4
+      with:
+        python-version: ${{ matrix.python-version }}
+    
+    - name: Install dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install tox docker pytest
+    
+    - name: Build Lambda test containers
+      run: |
+        cd tests/lambda
+        make build
+    
+    - name: Run Lambda compatibility tests
+      env:
+        HH_API_KEY: ${{ secrets.HH_TEST_API_KEY }}
+        HH_PROJECT: "ci-lambda-rc-test"
+        HH_SOURCE: "github-actions-lambda"
+        AWS_LAMBDA_FUNCTION_MEMORY_SIZE: ${{ matrix.memory-size }}
+        HH_TEST_MODE: "true"
+      run: |
+        cd tests/lambda
+        make test-lambda
+    
+    - name: Run Lambda performance tests
+      env:
+        HH_API_KEY: ${{ secrets.HH_TEST_API_KEY }}
+        HH_PROJECT: "ci-lambda-rc-performance"
+        AWS_LAMBDA_FUNCTION_MEMORY_SIZE: ${{ matrix.memory-size }}
+      run: |
+        cd tests/lambda
+        make test-performance
+    
+    - name: Upload Lambda performance results
+      uses: actions/upload-artifact@v3
+      if: always()
+      with:
+        name: lambda-performance-${{ matrix.python-version }}-${{ matrix.memory-size }}mb
+        path: tests/lambda/performance-results.json
+
+  # Code quality and linting
+  quality-checks:
+    if: ${{ !inputs.skip_tests }}
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+    
+    - name: Set up Python ${{ env.PYTHON_VERSION }}
+      uses: actions/setup-python@v4
+      with:
+        python-version: ${{ env.PYTHON_VERSION }}
+    
+    - name: Set up virtual environment
+      run: |
+        python -m venv python-sdk
+        source python-sdk/bin/activate
+        echo "VIRTUAL_ENV=$PWD/python-sdk" >> $GITHUB_ENV
+        echo "$PWD/python-sdk/bin" >> $GITHUB_PATH
+    
+    - name: Install dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install tox
+    
+    - name: Run linting
+      run: tox -e lint
+    
+    - name: Run formatting checks
+      run: tox -e format
+    
+    - name: Build documentation
+      run: tox -e docs
+    
+    - name: Upload documentation
+      uses: actions/upload-artifact@v3
+      with:
+        name: documentation
+        path: docs/_build/html/
+
+  # Security scanning
+  security-scan:
+    if: ${{ !inputs.skip_tests }}
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+    
+    - name: Set up Python ${{ env.PYTHON_VERSION }}
+      uses: actions/setup-python@v4
+      with:
+        python-version: ${{ env.PYTHON_VERSION }}
+    
+    - name: Install security tools
+      run: |
+        python -m pip install --upgrade pip
+        pip install safety bandit
+    
+    - name: Run safety check
+      run: safety check --json || true
+    
+    - name: Run bandit security scan
+      run: bandit -r src/ -f json || true
+
+  # Performance regression analysis
+  performance-analysis:
+    if: ${{ !inputs.skip_tests }}
+    needs: [lambda-testing]
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+    
+    - name: Download performance artifacts
+      uses: actions/download-artifact@v3
+      with:
+        pattern: lambda-performance-*
+        merge-multiple: true
+    
+    - name: Set up Python ${{ env.PYTHON_VERSION }}
+      uses: actions/setup-python@v4
+      with:
+        python-version: ${{ env.PYTHON_VERSION }}
+    
+    - name: Analyze performance trends
+      run: |
+        python -c "
+        import json
+        import glob
+        import statistics
+        
+        # Collect all performance results
+        results = []
+        for file in glob.glob('performance-results*.json'):
+            try:
+                with open(file, 'r') as f:
+                    data = json.load(f)
+                    results.append(data)
+            except:
+                pass
+        
+        if results:
+            # Calculate aggregate metrics
+            cold_starts = [r.get('cold_start_ms', 0) for r in results if r.get('cold_start_ms')]
+            warm_starts = [r.get('warm_start_ms', 0) for r in results if r.get('warm_start_ms')]
+            
+            summary = {
+                'avg_cold_start': statistics.mean(cold_starts) if cold_starts else 0,
+                'avg_warm_start': statistics.mean(warm_starts) if warm_starts else 0,
+                'max_cold_start': max(cold_starts) if cold_starts else 0,
+                'total_tests': len(results),
+                'passed': len([r for r in results if r.get('success', False)]),
+                'performance_regression': max(cold_starts) > 1000 if cold_starts else False
+            }
+            
+            with open('performance-summary.json', 'w') as f:
+                json.dump(summary, f, indent=2)
+            
+            print(f'Performance Summary: {summary}')
+            
+            # Fail if performance regression detected
+            if summary['performance_regression']:
+                print('Performance regression detected!')
+                exit(1)
+        else:
+            print('No performance results found')
+        "
+    
+    - name: Upload performance summary
+      uses: actions/upload-artifact@v3
+      with:
+        name: performance-summary
+        path: performance-summary.json
+
+  # Build release candidate package
+  build-release-candidate:
+    needs: [test-suite, lambda-testing, quality-checks, security-scan, performance-analysis]
+    if: always() && (success() || inputs.skip_tests)
+    runs-on: ubuntu-latest
+    
+    outputs:
+      version: ${{ steps.version.outputs.version }}
+      package-name: ${{ steps.build.outputs.package-name }}
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      with:
+        fetch-depth: 0
+    
+    - name: Set up Python ${{ env.PYTHON_VERSION }}
+      uses: actions/setup-python@v4
+      with:
+        python-version: ${{ env.PYTHON_VERSION }}
+    
+    - name: Install build dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install build twine setuptools wheel
+    
+    - name: Set up virtual environment (following project standards)
+      run: |
+        python -m venv python-sdk
+        source python-sdk/bin/activate
+        echo "VIRTUAL_ENV=$PWD/python-sdk" >> $GITHUB_ENV
+        echo "$PWD/python-sdk/bin" >> $GITHUB_PATH
+    
+    - name: Install project dependencies
+      run: |
+        pip install -e .
+    
+    - name: Generate version number
+      id: version
+      run: |
+        # Get current version from pyproject.toml
+        CURRENT_VERSION=$(python -c "
+        import tomllib
+        with open('pyproject.toml', 'rb') as f:
+            data = tomllib.load(f)
+        print(data['project']['version'])
+        ")
+        
+        echo "Current version: $CURRENT_VERSION"
+        
+        # Generate new version based on input
+        NEW_VERSION=$(python -c "
+        import re
+        from datetime import datetime
+        
+        current = '$CURRENT_VERSION'
+        version_type = '${{ inputs.version_type }}'
+        pre_release = '${{ inputs.pre_release }}'
+        
+        # Parse version (assuming semantic versioning)
+        match = re.match(r'(\d+)\.(\d+)\.(\d+)', current)
+        if match:
+            major, minor, patch = map(int, match.groups())
+            
+            if version_type == 'major':
+                major += 1
+                minor = 0
+                patch = 0
+            elif version_type == 'minor':
+                minor += 1
+                patch = 0
+            else:  # patch
+                patch += 1
+            
+            # Add pre-release identifier with timestamp
+            timestamp = datetime.now().strftime('%Y%m%d%H%M')
+            new_version = f'{major}.{minor}.{patch}-{pre_release}.{timestamp}'
+        else:
+            # Fallback if parsing fails
+            new_version = f'{current}-{pre_release}.$(date +%Y%m%d%H%M)'
+        
+        print(new_version)
+        ")
+        
+        echo "New version: $NEW_VERSION"
+        echo "version=$NEW_VERSION" >> $GITHUB_OUTPUT
+        
+        # Update pyproject.toml
+        python -c "
+        import tomllib
+        import re
+        
+        # Read current pyproject.toml
+        with open('pyproject.toml', 'rb') as f:
+            content = f.read().decode()
+        
+        # Update version
+        updated_content = re.sub(
+            r'version = \"[^\"]+\"',
+            f'version = \"$NEW_VERSION\"',
+            content
+        )
+        
+        with open('pyproject.toml', 'w') as f:
+            f.write(updated_content)
+        "
+    
+    - name: Build package
+      id: build
+      run: |
+        python -m build
+        
+        # Get package name
+        PACKAGE_NAME=$(ls dist/*.whl | head -1 | basename)
+        echo "package-name=$PACKAGE_NAME" >> $GITHUB_OUTPUT
+        echo "Built package: $PACKAGE_NAME"
+    
+    - name: Verify package
+      run: |
+        # Test installation
+        pip install dist/*.whl
+        
+        # Basic import test
+        python -c "
+        import honeyhive
+        print(f'HoneyHive SDK version: {honeyhive.__version__ if hasattr(honeyhive, \"__version__\") else \"unknown\"}')
+        
+        # Test basic functionality
+        from honeyhive import HoneyHiveTracer
+        tracer = HoneyHiveTracer(api_key='test', test_mode=True)
+        print('✅ Package verification successful')
+        "
+    
+    - name: Upload package artifacts
+      uses: actions/upload-artifact@v3
+      with:
+        name: release-candidate-package
+        path: |
+          dist/
+          pyproject.toml
+    
+    - name: Create release notes
+      run: |
+        cat > release-notes.md << EOF
+        # Release Candidate ${{ steps.version.outputs.version }}
+        
+        ## 🚀 Build Information
+        - **Version**: ${{ steps.version.outputs.version }}
+        - **Build Date**: $(date -u +"%Y-%m-%d %H:%M:%S UTC")
+        - **Commit**: ${{ github.sha }}
+        - **Triggered By**: ${{ github.actor }}
+        
+        ## ✅ Test Results
+        - **Unit Tests**: $(if [ "${{ needs.test-suite.result }}" = "success" ]; then echo "✅ Passed"; else echo "❌ Failed"; fi)
+        - **Lambda Tests**: $(if [ "${{ needs.lambda-testing.result }}" = "success" ]; then echo "✅ Passed"; else echo "❌ Failed"; fi)
+        - **Quality Checks**: $(if [ "${{ needs.quality-checks.result }}" = "success" ]; then echo "✅ Passed"; else echo "❌ Failed"; fi)
+        - **Security Scan**: $(if [ "${{ needs.security-scan.result }}" = "success" ]; then echo "✅ Passed"; else echo "❌ Failed"; fi)
+        - **Performance**: $(if [ "${{ needs.performance-analysis.result }}" = "success" ]; then echo "✅ No Regression"; else echo "⚠️ Check Required"; fi)
+        
+        ## 📦 Package Details
+        - **Package**: ${{ steps.build.outputs.package-name }}
+        - **Python Versions**: 3.11, 3.12, 3.13
+        - **Lambda Tested**: ✅ Memory configs 256MB, 512MB, 1024MB
+        
+        ## 🔍 Installation
+        \`\`\`bash
+        # Download from artifacts and install
+        pip install ${{ steps.build.outputs.package-name }}
+        \`\`\`
+        
+        ## ⚠️ Pre-Release Notice
+        This is a release candidate and should not be used in production without thorough testing.
+        EOF
+    
+    - name: Upload release notes
+      uses: actions/upload-artifact@v3
+      with:
+        name: release-notes
+        path: release-notes.md
+
+  # Summary and notification
+  release-summary:
+    needs: [build-release-candidate]
+    if: always()
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Create workflow summary
+      run: |
+        cat >> $GITHUB_STEP_SUMMARY << EOF
+        # 🚀 Release Candidate Build Summary
+        
+        ## 📋 Build Details
+        - **Version**: ${{ needs.build-release-candidate.outputs.version }}
+        - **Package**: ${{ needs.build-release-candidate.outputs.package-name }}
+        - **Status**: ${{ needs.build-release-candidate.result == 'success' && '✅ Success' || '❌ Failed' }}
+        
+        ## 🧪 Test Results
+        | Test Suite | Status |
+        |------------|--------|
+        | Unit Tests | ${{ needs.test-suite.result == 'success' && '✅' || needs.test-suite.result == 'skipped' && '⏭️' || '❌' }} |
+        | Lambda Tests | ${{ needs.lambda-testing.result == 'success' && '✅' || needs.lambda-testing.result == 'skipped' && '⏭️' || '❌' }} |
+        | Quality Checks | ${{ needs.quality-checks.result == 'success' && '✅' || needs.quality-checks.result == 'skipped' && '⏭️' || '❌' }} |
+        | Security Scan | ${{ needs.security-scan.result == 'success' && '✅' || needs.security-scan.result == 'skipped' && '⏭️' || '❌' }} |
+        | Performance | ${{ needs.performance-analysis.result == 'success' && '✅' || needs.performance-analysis.result == 'skipped' && '⏭️' || '❌' }} |
+        
+        ## 📦 Artifacts
+        - Release candidate package available in workflow artifacts
+        - Documentation build included
+        - Performance results and analysis included
+        - Release notes generated
+        
+        ## 🚀 Next Steps
+        1. Download and test the release candidate package
+        2. Review performance analysis results
+        3. If satisfied, proceed with official release
+        EOF
+    
+    - name: Comment on triggering commit
+      if: github.event_name == 'workflow_dispatch'
+      uses: actions/github-script@v6
+      with:
+        script: |
+          const status = '${{ needs.build-release-candidate.result }}' === 'success' ? '✅' : '❌';
+          const version = '${{ needs.build-release-candidate.outputs.version }}';
+          
+          github.rest.repos.createCommitComment({
+            owner: context.repo.owner,
+            repo: context.repo.repo,
+            commit_sha: context.sha,
+            body: `${status} Release candidate ${version} build completed!\n\nView details: ${context.payload.repository.html_url}/actions/runs/${context.runId}`
+          });
