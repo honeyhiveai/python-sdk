@@ -46,26 +46,30 @@ class TestLambdaPerformance:
         except:
             pass
 
-    def _wait_for_performance_container_ready(self, port: int = 9100, timeout: int = 30) -> None:
+    def _wait_for_performance_container_ready(
+        self, port: int = 9100, timeout: int = 30
+    ) -> None:
         """Wait for performance Lambda container to be ready."""
         import time
         import requests
-        
+
         url = f"http://localhost:{port}/2015-03-31/functions/function/invocations"
         start_time = time.time()
-        
+
         print(f"⏳ Waiting for performance container on port {port}...")
-        
+
         while time.time() - start_time < timeout:
             try:
                 response = requests.post(
-                    url, 
-                    json={"health_check": True}, 
-                    headers={"Content-Type": "application/json"}, 
-                    timeout=5
+                    url,
+                    json={"health_check": True},
+                    headers={"Content-Type": "application/json"},
+                    timeout=5,
                 )
                 if response.status_code == 200:
-                    print(f"✅ Performance container ready after {time.time() - start_time:.2f}s")
+                    print(
+                        f"✅ Performance container ready after {time.time() - start_time:.2f}s"
+                    )
                     return
             except (requests.exceptions.ConnectionError, requests.exceptions.Timeout):
                 time.sleep(2)
@@ -74,8 +78,10 @@ class TestLambdaPerformance:
                 print(f"⚠️ Unexpected error during performance health check: {e}")
                 time.sleep(2)
                 continue
-        
-        raise Exception(f"Performance container failed to become ready within {timeout} seconds")
+
+        raise Exception(
+            f"Performance container failed to become ready within {timeout} seconds"
+        )
 
     def invoke_lambda_timed(self, payload: Dict[str, Any]) -> Dict[str, Any]:
         """Invoke Lambda and measure timing."""
@@ -165,9 +171,15 @@ class TestLambdaPerformance:
         p95_total = statistics.quantiles(total_times, n=20)[18]  # 95th percentile
 
         # Performance assertions - Updated for realistic expectations
-        assert avg_total < 2000, f"Average warm start too slow: {avg_total}ms (expected <2000ms)"
-        assert avg_handler < 1000, f"Average handler time too slow: {avg_handler}ms (expected <1000ms)"
-        assert p95_total < 3000, f"P95 warm start too slow: {p95_total}ms (expected <3000ms)"
+        assert (
+            avg_total < 2000
+        ), f"Average warm start too slow: {avg_total}ms (expected <2000ms)"
+        assert (
+            avg_handler < 1000
+        ), f"Average handler time too slow: {avg_handler}ms (expected <1000ms)"
+        assert (
+            p95_total < 3000
+        ), f"P95 warm start too slow: {p95_total}ms (expected <3000ms)"
 
         return {
             "avg_total_ms": avg_total,
@@ -182,7 +194,7 @@ class TestLambdaPerformance:
         # Use sequential requests instead of threading to avoid connection issues
         results = []
         num_requests = 10
-        
+
         # Run requests sequentially with minimal delay
         start_time = time.time()
         for i in range(num_requests):
@@ -199,26 +211,32 @@ class TestLambdaPerformance:
             except Exception as e:
                 print(f"Throughput request {i} failed: {type(e).__name__}: {str(e)}")
                 results.append(("error", str(e), i))
-                
+
         total_test_time = time.time() - start_time
-        
+
         successful_results = [r for r in results if r[0] == "success"]
         success_rate = len(successful_results) / num_requests
-        requests_per_second = num_requests / total_test_time if total_test_time > 0 else 0
-        
+        requests_per_second = (
+            num_requests / total_test_time if total_test_time > 0 else 0
+        )
+
         # Calculate response times
         response_times = []
         for _, result, _ in successful_results:
             if result["statusCode"] == 200:
                 response_times.append(result["_test_total_time_ms"])
-        
+
         avg_response_time = statistics.mean(response_times) if response_times else 0
-        
+
         # Performance assertions
-        assert success_rate >= 0.8, f"Success rate too low: {success_rate * 100}% (expected >=80%)"
-        
+        assert (
+            success_rate >= 0.8
+        ), f"Success rate too low: {success_rate * 100}% (expected >=80%)"
+
         if response_times:
-            assert avg_response_time < 3000, f"Average response time too slow: {avg_response_time}ms"
+            assert (
+                avg_response_time < 3000
+            ), f"Average response time too slow: {avg_response_time}ms"
 
         return {
             "success_rate": success_rate,
@@ -246,18 +264,27 @@ class TestLambdaPerformance:
             for attempt in range(max_retries):
                 try:
                     result = self.invoke_lambda_timed(
-                        {"test": "memory_efficiency", "size": size_name, "data": payload_data}
+                        {
+                            "test": "memory_efficiency",
+                            "size": size_name,
+                            "data": payload_data,
+                        }
                     )
                     break  # Success, exit retry loop
                 except Exception as e:
                     error_str = str(e)
-                    print(f"Memory efficiency test attempt {attempt + 1}/{max_retries} failed: {type(e).__name__}: {error_str}")
-                    
+                    print(
+                        f"Memory efficiency test attempt {attempt + 1}/{max_retries} failed: {type(e).__name__}: {error_str}"
+                    )
+
                     if attempt == max_retries - 1:  # Last attempt
-                        raise Exception(f"Memory efficiency test for {size_name} failed after {max_retries} attempts. Last error: {error_str}")
-                    
+                        raise Exception(
+                            f"Memory efficiency test for {size_name} failed after {max_retries} attempts. Last error: {error_str}"
+                        )
+
                     # Wait before retry
                     import time
+
                     time.sleep(1 + attempt)  # 1s, 2s, 3s
 
             assert result["statusCode"] == 200
@@ -301,13 +328,18 @@ class TestLambdaPerformance:
                 break  # Success, exit retry loop
             except Exception as e:
                 error_str = str(e)
-                print(f"SDK overhead test attempt {attempt + 1}/{max_retries} failed: {type(e).__name__}: {error_str}")
-                
+                print(
+                    f"SDK overhead test attempt {attempt + 1}/{max_retries} failed: {type(e).__name__}: {error_str}"
+                )
+
                 if attempt == max_retries - 1:  # Last attempt
-                    raise Exception(f"SDK overhead test failed after {max_retries} attempts. Last error: {error_str}")
-                
+                    raise Exception(
+                        f"SDK overhead test failed after {max_retries} attempts. Last error: {error_str}"
+                    )
+
                 # Wait before retry
                 import time
+
                 time.sleep(1 + attempt)  # 1s, 2s, 3s
 
         assert result["statusCode"] == 200
@@ -323,7 +355,9 @@ class TestLambdaPerformance:
         }
 
         # Calculate meaningful overhead metrics
-        cold_start_overhead = sdk_overhead["import_time_ms"] + sdk_overhead["init_time_ms"]
+        cold_start_overhead = (
+            sdk_overhead["import_time_ms"] + sdk_overhead["init_time_ms"]
+        )
         runtime_overhead = sdk_overhead["flush_time_ms"]  # Per-request overhead
         total_execution = timings.get("handler_total_ms", 0)
         work_time = timings.get("work_time_ms", total_execution)
@@ -337,11 +371,11 @@ class TestLambdaPerformance:
         assert (
             cold_start_overhead < 500
         ), f"Cold start overhead too high: {cold_start_overhead}ms (expected <500ms for SDK import + init)"
-        
+
         assert (
             runtime_overhead < 50
         ), f"Runtime overhead too high: {runtime_overhead}ms (expected <50ms per request)"
-        
+
         assert (
             runtime_overhead_percentage < 10
         ), f"Runtime overhead percentage too high: {runtime_overhead_percentage:.1f}% (expected <10% of work time)"
@@ -351,14 +385,16 @@ class TestLambdaPerformance:
             "runtime_overhead_ms": runtime_overhead,
             "runtime_overhead_percentage": runtime_overhead_percentage,
             "breakdown": sdk_overhead,
-            "measurement_note": "Cold start overhead is one-time, runtime overhead is per-request"
+            "measurement_note": "Cold start overhead is one-time, runtime overhead is per-request",
         }
 
-    @pytest.mark.skip(reason="Replaced by test_optimal_sdk_overhead which provides 99.8% better variance reduction")
+    @pytest.mark.skip(
+        reason="Replaced by test_optimal_sdk_overhead which provides 99.8% better variance reduction"
+    )
     def test_comprehensive_sdk_overhead(self):
         """Comprehensive SDK overhead measurement with statistical significance and minimal variance."""
         client = docker.from_env()
-        
+
         # Use dedicated SDK overhead test container
         container = client.containers.run(
             "honeyhive-lambda:bundle-native",
@@ -389,12 +425,14 @@ class TestLambdaPerformance:
                 {"work_duration_ms": 50, "name": "standard_work"},
                 {"work_duration_ms": 100, "name": "extended_work"},
             ]
-            
+
             results = {}
-            
+
             for scenario in test_scenarios:
-                url = f"http://localhost:{port}/2015-03-31/functions/function/invocations"
-                
+                url = (
+                    f"http://localhost:{port}/2015-03-31/functions/function/invocations"
+                )
+
                 # Multiple measurements for statistical significance
                 measurements = []
                 for run in range(3):
@@ -404,19 +442,21 @@ class TestLambdaPerformance:
                         headers={"Content-Type": "application/json"},
                         timeout=30,
                     )
-                    
-                    assert response.status_code == 200, f"Request failed: {response.text}"
-                    
+
+                    assert (
+                        response.status_code == 200
+                    ), f"Request failed: {response.text}"
+
                     result = response.json()
                     body = json.loads(result["body"])
                     measurements.append(body)
-                    
+
                     # Small delay between measurements
                     time.sleep(0.1)
-                
+
                 # Analyze measurements for this scenario
                 overhead_percentages = [
-                    m["overhead_analysis"]["overhead_vs_work_percentage"] 
+                    m["overhead_analysis"]["overhead_vs_work_percentage"]
                     for m in measurements
                 ]
                 per_span_overheads = [
@@ -427,38 +467,54 @@ class TestLambdaPerformance:
                     m["overhead_analysis"]["coefficient_of_variation"]
                     for m in measurements
                 ]
-                
+
                 scenario_stats = {
                     "overhead_percentage": {
                         "mean": statistics.mean(overhead_percentages),
-                        "std_dev": statistics.stdev(overhead_percentages) if len(overhead_percentages) > 1 else 0,
+                        "std_dev": (
+                            statistics.stdev(overhead_percentages)
+                            if len(overhead_percentages) > 1
+                            else 0
+                        ),
                         "values": overhead_percentages,
                     },
                     "per_span_overhead_ms": {
                         "mean": statistics.mean(per_span_overheads),
-                        "std_dev": statistics.stdev(per_span_overheads) if len(per_span_overheads) > 1 else 0,
+                        "std_dev": (
+                            statistics.stdev(per_span_overheads)
+                            if len(per_span_overheads) > 1
+                            else 0
+                        ),
                         "values": per_span_overheads,
                     },
                     "measurement_stability": {
-                        "avg_coefficient_of_variation": statistics.mean(coefficients_of_variation),
+                        "avg_coefficient_of_variation": statistics.mean(
+                            coefficients_of_variation
+                        ),
                         "measurement_count": len(measurements),
                     },
-                    "sample_result": measurements[0],  # Include one full result for reference
+                    "sample_result": measurements[
+                        0
+                    ],  # Include one full result for reference
                 }
-                
+
                 results[scenario["name"]] = scenario_stats
 
             # Comprehensive assertions across all scenarios
             for scenario_name, stats in results.items():
-                work_duration = next(s["work_duration_ms"] for s in test_scenarios if s["name"] == scenario_name)
-                
+                work_duration = next(
+                    s["work_duration_ms"]
+                    for s in test_scenarios
+                    if s["name"] == scenario_name
+                )
+
                 # Per-span overhead should be reasonable
                 avg_per_span = stats["per_span_overhead_ms"]["mean"]
                 assert avg_per_span < 5.0, (
                     f"{scenario_name}: Per-span overhead too high: {avg_per_span:.2f}ms "
                     f"(expected <5.0ms per span)"
                 )
-                
+
                 # Overhead percentage should decrease with longer work
                 avg_percentage = stats["overhead_percentage"]["mean"]
                 if work_duration >= 50:  # Only assert for substantial work
@@ -466,14 +522,14 @@ class TestLambdaPerformance:
                         f"{scenario_name}: Overhead percentage too high: {avg_percentage:.1f}% "
                         f"(expected <20% for {work_duration}ms work)"
                     )
-                
+
                 # Measurement variance should be low (good test stability)
                 percentage_variance = stats["overhead_percentage"]["std_dev"]
                 assert percentage_variance < 5.0, (
                     f"{scenario_name}: Overhead measurement too variable: {percentage_variance:.1f}% std dev "
                     f"(expected <5% for stable measurements)"
                 )
-                
+
                 # SDK internal measurements should be stable
                 avg_cv = stats["measurement_stability"]["avg_coefficient_of_variation"]
                 assert avg_cv < 50.0, (
@@ -482,7 +538,9 @@ class TestLambdaPerformance:
                 )
 
             # Cold start overhead validation (from any scenario)
-            sample_init = results["standard_work"]["sample_result"]["initialization_overhead"]
+            sample_init = results["standard_work"]["sample_result"][
+                "initialization_overhead"
+            ]
             cold_start_overhead = sample_init["total_init_ms"]
             if cold_start_overhead > 0:
                 assert cold_start_overhead < 500, (
@@ -493,17 +551,24 @@ class TestLambdaPerformance:
             return {
                 "test_scenarios": results,
                 "summary": {
-                    "avg_per_span_overhead_ms": statistics.mean([
-                        stats["per_span_overhead_ms"]["mean"] for stats in results.values()
-                    ]),
-                    "overhead_scales_with_work": (
-                        results["minimal_work"]["overhead_percentage"]["mean"] >
-                        results["extended_work"]["overhead_percentage"]["mean"]
+                    "avg_per_span_overhead_ms": statistics.mean(
+                        [
+                            stats["per_span_overhead_ms"]["mean"]
+                            for stats in results.values()
+                        ]
                     ),
-                    "measurement_stability": "high" if all(
-                        stats["overhead_percentage"]["std_dev"] < 3.0 
-                        for stats in results.values()
-                    ) else "moderate",
+                    "overhead_scales_with_work": (
+                        results["minimal_work"]["overhead_percentage"]["mean"]
+                        > results["extended_work"]["overhead_percentage"]["mean"]
+                    ),
+                    "measurement_stability": (
+                        "high"
+                        if all(
+                            stats["overhead_percentage"]["std_dev"] < 3.0
+                            for stats in results.values()
+                        )
+                        else "moderate"
+                    ),
                 },
                 "cold_start_overhead_ms": cold_start_overhead,
             }
@@ -511,7 +576,9 @@ class TestLambdaPerformance:
         finally:
             container.stop()
 
-    def _wait_for_comprehensive_overhead_container_ready(self, port: int, timeout: int = 30):
+    def _wait_for_comprehensive_overhead_container_ready(
+        self, port: int, timeout: int = 30
+    ):
         """Wait for comprehensive overhead container to be ready with health checking."""
         start_time = time.time()
         while time.time() - start_time < timeout:
@@ -522,20 +589,23 @@ class TestLambdaPerformance:
                     headers={"Content-Type": "application/json"},
                     timeout=5,
                 )
-                if response.status_code in [200, 500]:  # Accept both success and handler errors
+                if response.status_code in [
+                    200,
+                    500,
+                ]:  # Accept both success and handler errors
                     print(f"✅ Comprehensive overhead container ready on port {port}")
                     return
             except requests.exceptions.RequestException:
                 pass
             time.sleep(0.5)
-        
+
         raise Exception(f"Comprehensive overhead container not ready after {timeout}s")
 
     @pytest.mark.benchmark
     def test_optimal_sdk_overhead(self):
         """Optimal SDK overhead measurement using comparative baseline approach."""
         client = docker.from_env()
-        
+
         # Start baseline container (without SDK)
         baseline_container = client.containers.run(
             "honeyhive-lambda:bundle-native",
@@ -547,10 +617,10 @@ class TestLambdaPerformance:
             detach=True,
             remove=True,
         )
-        
-        # Start SDK container (with SDK) 
+
+        # Start SDK container (with SDK)
         sdk_container = client.containers.run(
-            "honeyhive-lambda:bundle-native", 
+            "honeyhive-lambda:bundle-native",
             command="sdk_overhead_test.lambda_handler",
             ports={"8080/tcp": None},
             environment={
@@ -566,13 +636,13 @@ class TestLambdaPerformance:
             # Get assigned ports
             baseline_container.reload()
             sdk_container.reload()
-            
+
             baseline_port_info = baseline_container.ports.get("8080/tcp")
             sdk_port_info = sdk_container.ports.get("8080/tcp")
-            
+
             assert baseline_port_info, "Baseline container port mapping failed"
             assert sdk_port_info, "SDK container port mapping failed"
-            
+
             baseline_port = baseline_port_info[0]["HostPort"]
             sdk_port = sdk_port_info[0]["HostPort"]
 
@@ -586,9 +656,11 @@ class TestLambdaPerformance:
                 "spans_per_request": 10,
                 "work_per_span_ms": 20,  # 20ms * 10 spans = 200ms per request
             }
-            
-            print(f"🧪 Running optimal overhead test: {test_config['num_requests']} requests × {test_config['spans_per_request']} spans × {test_config['work_per_span_ms']}ms")
-            
+
+            print(
+                f"🧪 Running optimal overhead test: {test_config['num_requests']} requests × {test_config['spans_per_request']} spans × {test_config['work_per_span_ms']}ms"
+            )
+
             # Measure baseline (without SDK)
             baseline_url = f"http://localhost:{baseline_port}/2015-03-31/functions/function/invocations"
             baseline_response = requests.post(
@@ -597,65 +669,94 @@ class TestLambdaPerformance:
                 headers={"Content-Type": "application/json"},
                 timeout=60,
             )
-            
-            assert baseline_response.status_code == 200, f"Baseline request failed: {baseline_response.text}"
+
+            assert (
+                baseline_response.status_code == 200
+            ), f"Baseline request failed: {baseline_response.text}"
             baseline_result = json.loads(baseline_response.json()["body"])
             baseline_results = baseline_result["results"]
-            
+
             # Measure with SDK
-            sdk_url = f"http://localhost:{sdk_port}/2015-03-31/functions/function/invocations"
+            sdk_url = (
+                f"http://localhost:{sdk_port}/2015-03-31/functions/function/invocations"
+            )
             sdk_response = requests.post(
                 sdk_url,
                 json=test_config,
                 headers={"Content-Type": "application/json"},
                 timeout=60,
             )
-            
-            assert sdk_response.status_code == 200, f"SDK request failed: {sdk_response.text}"
+
+            assert (
+                sdk_response.status_code == 200
+            ), f"SDK request failed: {sdk_response.text}"
             sdk_result = json.loads(sdk_response.json()["body"])
             sdk_results = sdk_result["results"]
-            
+
             # Calculate comparative overhead
             baseline_mean = baseline_results["mean_time_ms"]
             sdk_mean = sdk_results["mean_time_ms"]
             true_overhead_ms = sdk_mean - baseline_mean
-            overhead_percentage = (true_overhead_ms / baseline_mean) * 100 if baseline_mean > 0 else 0
-            
+            overhead_percentage = (
+                (true_overhead_ms / baseline_mean) * 100 if baseline_mean > 0 else 0
+            )
+
             # Calculate expected work time
-            expected_work_ms = test_config["num_requests"] * test_config["spans_per_request"] * test_config["work_per_span_ms"]
-            overhead_vs_work_percentage = (true_overhead_ms / expected_work_ms) * 100 if expected_work_ms > 0 else 0
-            
+            expected_work_ms = (
+                test_config["num_requests"]
+                * test_config["spans_per_request"]
+                * test_config["work_per_span_ms"]
+            )
+            overhead_vs_work_percentage = (
+                (true_overhead_ms / expected_work_ms) * 100
+                if expected_work_ms > 0
+                else 0
+            )
+
             print(f"📊 Results:")
-            print(f"  Baseline mean: {baseline_mean:.1f}ms (CV: {baseline_results['coefficient_of_variation']:.1f}%)")
-            print(f"  SDK mean: {sdk_mean:.1f}ms (CV: {sdk_results['coefficient_of_variation']:.1f}%)")
-            print(f"  True overhead: {true_overhead_ms:.1f}ms ({overhead_percentage:.1f}% of total)")
-            print(f"  Overhead vs work: {overhead_vs_work_percentage:.2f}% of expected work time")
+            print(
+                f"  Baseline mean: {baseline_mean:.1f}ms (CV: {baseline_results['coefficient_of_variation']:.1f}%)"
+            )
+            print(
+                f"  SDK mean: {sdk_mean:.1f}ms (CV: {sdk_results['coefficient_of_variation']:.1f}%)"
+            )
+            print(
+                f"  True overhead: {true_overhead_ms:.1f}ms ({overhead_percentage:.1f}% of total)"
+            )
+            print(
+                f"  Overhead vs work: {overhead_vs_work_percentage:.2f}% of expected work time"
+            )
 
             # Validate measurement stability
             assert baseline_results["coefficient_of_variation"] < 10.0, (
                 f"Baseline measurements too variable: {baseline_results['coefficient_of_variation']:.1f}% CV "
                 f"(expected <10% for stable measurements)"
             )
-            
+
             assert sdk_results["coefficient_of_variation"] < 15.0, (
                 f"SDK measurements too variable: {sdk_results['coefficient_of_variation']:.1f}% CV "
                 f"(expected <15% for stable measurements)"
             )
-            
+
             # Assert reasonable overhead
             assert true_overhead_ms < 100.0, (
                 f"True SDK overhead too high: {true_overhead_ms:.1f}ms "
                 f"(expected <100ms for {expected_work_ms}ms of work)"
             )
-            
+
             assert overhead_vs_work_percentage < 5.0, (
                 f"SDK overhead vs work too high: {overhead_vs_work_percentage:.2f}% "
                 f"(expected <5% of work time)"
             )
-            
+
             # Cold start overhead validation
-            if "initialization_overhead" in sdk_result and sdk_result["initialization_overhead"]["total_init_ms"] > 0:
-                cold_start_overhead = sdk_result["initialization_overhead"]["total_init_ms"]
+            if (
+                "initialization_overhead" in sdk_result
+                and sdk_result["initialization_overhead"]["total_init_ms"] > 0
+            ):
+                cold_start_overhead = sdk_result["initialization_overhead"][
+                    "total_init_ms"
+                ]
                 assert cold_start_overhead < 500, (
                     f"Cold start overhead too high: {cold_start_overhead:.1f}ms "
                     f"(expected <500ms for SDK import + init)"
@@ -686,12 +787,14 @@ class TestLambdaPerformance:
             baseline_container.stop()
             sdk_container.stop()
 
-    def _wait_for_optimal_containers_ready(self, baseline_port: str, sdk_port: str, timeout: int = 30):
+    def _wait_for_optimal_containers_ready(
+        self, baseline_port: str, sdk_port: str, timeout: int = 30
+    ):
         """Wait for both optimal test containers to be ready."""
         start_time = time.time()
         baseline_ready = False
         sdk_ready = False
-        
+
         while time.time() - start_time < timeout:
             # Check baseline container
             if not baseline_ready:
@@ -707,7 +810,7 @@ class TestLambdaPerformance:
                         print(f"✅ Baseline container ready on port {baseline_port}")
                 except requests.exceptions.RequestException:
                     pass
-            
+
             # Check SDK container
             if not sdk_ready:
                 try:
@@ -722,39 +825,48 @@ class TestLambdaPerformance:
                         print(f"✅ SDK container ready on port {sdk_port}")
                 except requests.exceptions.RequestException:
                     pass
-            
+
             if baseline_ready and sdk_ready:
                 print("✅ Both optimal test containers ready")
                 return
-                
+
             time.sleep(0.5)
-        
-        raise Exception(f"Optimal test containers not ready after {timeout}s (baseline: {baseline_ready}, sdk: {sdk_ready})")
+
+        raise Exception(
+            f"Optimal test containers not ready after {timeout}s (baseline: {baseline_ready}, sdk: {sdk_ready})"
+        )
 
 
 class TestLambdaStressTests:
     """Stress tests for Lambda environment."""
 
-    def _wait_for_timeout_container_ready(self, port: int = 9200, timeout: int = 30) -> None:
+    def _wait_for_timeout_container_ready(
+        self, port: int = 9200, timeout: int = 30
+    ) -> None:
         """Wait for timeout test container to be ready."""
         import time
         import requests
-        
+
         url = f"http://localhost:{port}/2015-03-31/functions/function/invocations"
         start_time = time.time()
-        
+
         print(f"⏳ Waiting for timeout test container on port {port}...")
-        
+
         while time.time() - start_time < timeout:
             try:
                 response = requests.post(
-                    url, 
-                    json={"health_check": True}, 
-                    headers={"Content-Type": "application/json"}, 
-                    timeout=5
+                    url,
+                    json={"health_check": True},
+                    headers={"Content-Type": "application/json"},
+                    timeout=5,
                 )
-                if response.status_code in [200, 502]:  # 502 is also acceptable for initial connection
-                    print(f"✅ Timeout test container ready after {time.time() - start_time:.2f}s")
+                if response.status_code in [
+                    200,
+                    502,
+                ]:  # 502 is also acceptable for initial connection
+                    print(
+                        f"✅ Timeout test container ready after {time.time() - start_time:.2f}s"
+                    )
                     return
             except (requests.exceptions.ConnectionError, requests.exceptions.Timeout):
                 time.sleep(2)
@@ -763,8 +875,10 @@ class TestLambdaStressTests:
                 print(f"⚠️ Unexpected error during timeout test health check: {e}")
                 time.sleep(2)
                 continue
-        
-        raise Exception(f"Timeout test container failed to become ready within {timeout} seconds")
+
+        raise Exception(
+            f"Timeout test container failed to become ready within {timeout} seconds"
+        )
 
     def test_repeated_cold_starts(self):
         """Test performance under repeated cold starts."""
@@ -882,7 +996,7 @@ class TestLambdaStressTests:
 
             # Test with proper payload that the handler expects
             start_time = time.time()
-            
+
             # Use retry logic for connection stability
             max_retries = 3
             for attempt in range(max_retries):
@@ -897,15 +1011,23 @@ class TestLambdaStressTests:
                     break  # Success, exit retry loop
                 except Exception as e:
                     error_str = str(e)
-                    print(f"Timeout test attempt {attempt + 1}/{max_retries} failed: {type(e).__name__}: {error_str}")
-                    
+                    print(
+                        f"Timeout test attempt {attempt + 1}/{max_retries} failed: {type(e).__name__}: {error_str}"
+                    )
+
                     if attempt == max_retries - 1:  # Last attempt
-                        raise Exception(f"Timeout test failed after {max_retries} attempts. Last error: {error_str}")
-                    
+                        raise Exception(
+                            f"Timeout test failed after {max_retries} attempts. Last error: {error_str}"
+                        )
+
                     time.sleep(1 + attempt)  # 1s, 2s, 3s
 
-            assert response.status_code == 200, f"Should complete before timeout, got {response.status_code}"
-            assert execution_time < 8.0, f"Execution took too long: {execution_time}s (expected <8s)"
+            assert (
+                response.status_code == 200
+            ), f"Should complete before timeout, got {response.status_code}"
+            assert (
+                execution_time < 8.0
+            ), f"Execution took too long: {execution_time}s (expected <8s)"
 
             result = response.json()
             body = json.loads(result["body"])

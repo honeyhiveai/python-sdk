@@ -119,7 +119,9 @@ class ErrorHandler:
             logger_name: Name for the logger instance
         """
         self.logger = get_logger(logger_name)
-        self._error_handlers: Dict[Type[Exception], Callable[[Any, ErrorContext], ErrorResponse]] = {
+        self._error_handlers: Dict[
+            Type[Exception], Callable[[Any, ErrorContext], ErrorResponse]
+        ] = {
             httpx.ConnectError: self._handle_connection_error,
             httpx.ConnectTimeout: self._handle_connection_error,
             httpx.ReadTimeout: self._handle_connection_error,

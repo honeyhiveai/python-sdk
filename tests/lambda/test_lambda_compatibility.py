@@ -54,34 +54,43 @@ class TestLambdaCompatibility:
         """Wait for Lambda container to be ready to accept requests."""
         import time
         import requests
-        
+
         url = f"http://localhost:{port}/2015-03-31/functions/function/invocations"
         start_time = time.time()
-        
+
         print(f"Waiting for Lambda container on port {port}...")
-        
+
         while time.time() - start_time < timeout:
             try:
                 # Try a simple health check with a minimal payload
                 response = requests.post(
-                    url, 
-                    json={"health_check": True}, 
-                    headers={"Content-Type": "application/json"}, 
-                    timeout=5
+                    url,
+                    json={"health_check": True},
+                    headers={"Content-Type": "application/json"},
+                    timeout=5,
                 )
                 if response.status_code == 200:
-                    print(f"✅ Lambda container ready after {time.time() - start_time:.2f}s")
+                    print(
+                        f"✅ Lambda container ready after {time.time() - start_time:.2f}s"
+                    )
                     return
-            except (requests.exceptions.ConnectionError, requests.exceptions.Timeout) as e:
-                print(f"⏳ Waiting for container... ({time.time() - start_time:.1f}s) - {type(e).__name__}")
+            except (
+                requests.exceptions.ConnectionError,
+                requests.exceptions.Timeout,
+            ) as e:
+                print(
+                    f"⏳ Waiting for container... ({time.time() - start_time:.1f}s) - {type(e).__name__}"
+                )
                 time.sleep(2)
                 continue
             except Exception as e:
                 print(f"⚠️ Unexpected error during health check: {e}")
                 time.sleep(2)
                 continue
-        
-        raise Exception(f"Lambda container failed to become ready within {timeout} seconds")
+
+        raise Exception(
+            f"Lambda container failed to become ready within {timeout} seconds"
+        )
 
     def invoke_lambda(
         self, payload: Dict[str, Any], port: int = 9000
@@ -160,13 +169,19 @@ class TestLambdaCompatibility:
             warm_start_times = [t["lambda_execution_ms"] for t in execution_times[1:]]
             avg_warm_time = sum(warm_start_times) / len(warm_start_times)
 
-                    # Warm starts should generally be faster, but allow for CI environment variability
+            # Warm starts should generally be faster, but allow for CI environment variability
         # In CI environments, network latency and resource constraints can affect timing
-        warm_start_threshold = cold_start_time * 1.2  # Allow warm starts to be up to 20% slower
+        warm_start_threshold = (
+            cold_start_time * 1.2
+        )  # Allow warm starts to be up to 20% slower
         if avg_warm_time > warm_start_threshold:
-            print(f"Warning: Warm starts ({avg_warm_time:.2f}ms) slower than expected. Cold: {cold_start_time:.2f}ms")
+            print(
+                f"Warning: Warm starts ({avg_warm_time:.2f}ms) slower than expected. Cold: {cold_start_time:.2f}ms"
+            )
         # Only fail if warm starts are consistently much slower (more than 50% slower)
-        assert avg_warm_time < cold_start_time * 1.5, f"Warm starts ({avg_warm_time:.2f}ms) significantly slower than cold start ({cold_start_time:.2f}ms)"
+        assert (
+            avg_warm_time < cold_start_time * 1.5
+        ), f"Warm starts ({avg_warm_time:.2f}ms) significantly slower than cold start ({cold_start_time:.2f}ms)"
 
     def test_lambda_error_handling(self, lambda_container):
         """Test error handling in Lambda environment."""
@@ -187,52 +202,62 @@ class TestLambdaCompatibility:
     def test_lambda_concurrent_invocations(self, lambda_container):
         """Test concurrent Lambda invocations with sequential approach."""
         import time
-        
+
         # Instead of true concurrency (which Lambda containers don't support well),
         # test rapid sequential invocations to simulate concurrent load
         results = []
-        
+
         for i in range(3):
             try:
                 payload = {"iteration": i, "test_type": "concurrent"}
                 start_time = time.time()
                 result = self.invoke_lambda(payload)
                 execution_time = time.time() - start_time
-                
-                results.append({
-                    "iteration": i,
-                    "success": True,
-                    "result": result,
-                    "execution_time": execution_time
-                })
-                
+
+                results.append(
+                    {
+                        "iteration": i,
+                        "success": True,
+                        "result": result,
+                        "execution_time": execution_time,
+                    }
+                )
+
                 # Brief pause between requests to avoid overwhelming container
                 time.sleep(0.1)
-                
+
             except Exception as e:
                 print(f"Sequential invocation {i} failed: {type(e).__name__}: {str(e)}")
-                results.append({
-                    "iteration": i,
-                    "success": False,
-                    "error": str(e),
-                    "execution_time": 0
-                })
+                results.append(
+                    {
+                        "iteration": i,
+                        "success": False,
+                        "error": str(e),
+                        "execution_time": 0,
+                    }
+                )
 
         # Verify all succeeded
         success_count = sum(1 for r in results if r["success"])
-        
+
         # Log results for debugging
         for result in results:
             if result["success"]:
-                print(f"✅ Invocation {result['iteration']}: {result['execution_time']:.3f}s")
+                print(
+                    f"✅ Invocation {result['iteration']}: {result['execution_time']:.3f}s"
+                )
             else:
                 print(f"❌ Invocation {result['iteration']}: {result['error']}")
 
         # All sequential invocations should succeed
-        assert success_count == 3, f"Only {success_count}/3 sequential invocations succeeded. Results: {results}"
-        
+        assert (
+            success_count == 3
+        ), f"Only {success_count}/3 sequential invocations succeeded. Results: {results}"
+
         # Verify reasonable performance
-        avg_time = sum(r["execution_time"] for r in results if r["success"]) / success_count
+        avg_time = (
+            sum(r["execution_time"] for r in results if r["success"]) / success_count
+        )
         assert avg_time < 5.0, f"Average execution time too slow: {avg_time:.3f}s"
 
     def test_lambda_memory_usage(self, lambda_container):
@@ -247,14 +272,19 @@ class TestLambdaCompatibility:
                 break  # Success, exit retry loop
             except Exception as e:
                 error_str = str(e)
-                print(f"Memory test attempt {attempt + 1}/{max_retries} failed: {type(e).__name__}: {error_str}")
-                
+                print(
+                    f"Memory test attempt {attempt + 1}/{max_retries} failed: {type(e).__name__}: {error_str}"
+                )
+
                 if attempt == max_retries - 1:  # Last attempt
-                    raise Exception(f"Memory test failed after {max_retries} attempts. Last error: {error_str}")
-                
+                    raise Exception(
+                        f"Memory test failed after {max_retries} attempts. Last error: {error_str}"
+                    )
+
                 # Wait before retry
                 import time
-                time.sleep(2 ** attempt)  # Exponential backoff: 1s, 2s, 4s
+
+                time.sleep(2**attempt)  # Exponential backoff: 1s, 2s, 4s
 
         assert result["statusCode"] == 200
 
@@ -263,7 +293,9 @@ class TestLambdaCompatibility:
         # Should handle reasonably sized payloads without issues
         assert body["flush_success"] is True
         # Allow more time in CI environments due to resource constraints
-        assert body["execution_time_ms"] < 5000  # Increased from 2s to 5s for CI tolerance
+        assert (
+            body["execution_time_ms"] < 5000
+        )  # Increased from 2s to 5s for CI tolerance
 
 
 class TestLambdaColdStarts:
