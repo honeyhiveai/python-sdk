@@ -22,8 +22,17 @@ class LambdaContainerValidator:
             "overall_status": "UNKNOWN"
         }
     
-    def run_command(self, cmd: List[str], timeout: int = 60) -> Dict[str, any]:
-        """Run a command and return result with output."""
+    def run_command(self, cmd: List[str], timeout: int = 60) -> Dict[str, object]:
+        """
+        Run a command and return result with output.
+
+        Args:
+            cmd (List[str]): The command to run as a list of arguments.
+            timeout (int): Timeout in seconds for the command.
+
+        Returns:
+            Dict[str, object]: Dictionary with keys: success, returncode, stdout, stderr.
+        """
         try:
             result = subprocess.run(
                 cmd,
@@ -49,9 +58,9 @@ class LambdaContainerValidator:
                 "success": False,
                 "returncode": -1,
                 "stdout": "",
-                "stderr": str(e)
+                "stderr": str(e),
             }
-    
+
     def check_docker_available(self) -> bool:
         """Check if Docker is available."""
         print("🐳 Checking Docker availability...")

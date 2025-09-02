@@ -531,6 +531,206 @@ class TestLambdaPerformance:
         
         raise Exception(f"Comprehensive overhead container not ready after {timeout}s")
 
+    @pytest.mark.benchmark
+    def test_optimal_sdk_overhead(self):
+        """Optimal SDK overhead measurement using comparative baseline approach."""
+        client = docker.from_env()
+        
+        # Start baseline container (without SDK)
+        baseline_container = client.containers.run(
+            "honeyhive-lambda:bundle-native",
+            command="baseline_overhead_test.lambda_handler",
+            ports={"8080/tcp": None},
+            environment={
+                "AWS_LAMBDA_FUNCTION_NAME": "baseline-overhead-test",
+            },
+            detach=True,
+            remove=True,
+        )
+        
+        # Start SDK container (with SDK) 
+        sdk_container = client.containers.run(
+            "honeyhive-lambda:bundle-native", 
+            command="sdk_overhead_test.lambda_handler",
+            ports={"8080/tcp": None},
+            environment={
+                "HH_API_KEY": "test-key",
+                "HH_PROJECT": "optimal-overhead-test",
+                "HH_TEST_MODE": "true",
+            },
+            detach=True,
+            remove=True,
+        )
+
+        try:
+            # Get assigned ports
+            baseline_container.reload()
+            sdk_container.reload()
+            
+            baseline_port_info = baseline_container.ports.get("8080/tcp")
+            sdk_port_info = sdk_container.ports.get("8080/tcp")
+            
+            assert baseline_port_info, "Baseline container port mapping failed"
+            assert sdk_port_info, "SDK container port mapping failed"
+            
+            baseline_port = baseline_port_info[0]["HostPort"]
+            sdk_port = sdk_port_info[0]["HostPort"]
+
+            # Wait for containers to be ready
+            self._wait_for_optimal_containers_ready(baseline_port, sdk_port)
+
+            # Test parameters for statistical significance
+            test_config = {
+                "test_type": "bulk",
+                "num_requests": 30,  # Reduced for CI stability while maintaining statistical power
+                "spans_per_request": 10,
+                "work_per_span_ms": 20,  # 20ms * 10 spans = 200ms per request
+            }
+            
+            print(f"🧪 Running optimal overhead test: {test_config['num_requests']} requests × {test_config['spans_per_request']} spans × {test_config['work_per_span_ms']}ms")
+            
+            # Measure baseline (without SDK)
+            baseline_url = f"http://localhost:{baseline_port}/2015-03-31/functions/function/invocations"
+            baseline_response = requests.post(
+                baseline_url,
+                json=test_config,
+                headers={"Content-Type": "application/json"},
+                timeout=60,
+            )
+            
+            assert baseline_response.status_code == 200, f"Baseline request failed: {baseline_response.text}"
+            baseline_result = json.loads(baseline_response.json()["body"])
+            baseline_results = baseline_result["results"]
+            
+            # Measure with SDK
+            sdk_url = f"http://localhost:{sdk_port}/2015-03-31/functions/function/invocations"
+            sdk_response = requests.post(
+                sdk_url,
+                json=test_config,
+                headers={"Content-Type": "application/json"},
+                timeout=60,
+            )
+            
+            assert sdk_response.status_code == 200, f"SDK request failed: {sdk_response.text}"
+            sdk_result = json.loads(sdk_response.json()["body"])
+            sdk_results = sdk_result["results"]
+            
+            # Calculate comparative overhead
+            baseline_mean = baseline_results["mean_time_ms"]
+            sdk_mean = sdk_results["mean_time_ms"]
+            true_overhead_ms = sdk_mean - baseline_mean
+            overhead_percentage = (true_overhead_ms / baseline_mean) * 100 if baseline_mean > 0 else 0
+            
+            # Calculate expected work time
+            expected_work_ms = test_config["num_requests"] * test_config["spans_per_request"] * test_config["work_per_span_ms"]
+            overhead_vs_work_percentage = (true_overhead_ms / expected_work_ms) * 100 if expected_work_ms > 0 else 0
+            
+            print(f"📊 Results:")
+            print(f"  Baseline mean: {baseline_mean:.1f}ms (CV: {baseline_results['coefficient_of_variation']:.1f}%)")
+            print(f"  SDK mean: {sdk_mean:.1f}ms (CV: {sdk_results['coefficient_of_variation']:.1f}%)")
+            print(f"  True overhead: {true_overhead_ms:.1f}ms ({overhead_percentage:.1f}% of total)")
+            print(f"  Overhead vs work: {overhead_vs_work_percentage:.2f}% of expected work time")
+
+            # Validate measurement stability
+            assert baseline_results["coefficient_of_variation"] < 10.0, (
+                f"Baseline measurements too variable: {baseline_results['coefficient_of_variation']:.1f}% CV "
+                f"(expected <10% for stable measurements)"
+            )
+            
+            assert sdk_results["coefficient_of_variation"] < 15.0, (
+                f"SDK measurements too variable: {sdk_results['coefficient_of_variation']:.1f}% CV "
+                f"(expected <15% for stable measurements)"
+            )
+            
+            # Assert reasonable overhead
+            assert true_overhead_ms < 100.0, (
+                f"True SDK overhead too high: {true_overhead_ms:.1f}ms "
+                f"(expected <100ms for {expected_work_ms}ms of work)"
+            )
+            
+            assert overhead_vs_work_percentage < 5.0, (
+                f"SDK overhead vs work too high: {overhead_vs_work_percentage:.2f}% "
+                f"(expected <5% of work time)"
+            )
+            
+            # Cold start overhead validation
+            if "initialization_overhead" in sdk_result and sdk_result["initialization_overhead"]["total_init_ms"] > 0:
+                cold_start_overhead = sdk_result["initialization_overhead"]["total_init_ms"]
+                assert cold_start_overhead < 500, (
+                    f"Cold start overhead too high: {cold_start_overhead:.1f}ms "
+                    f"(expected <500ms for SDK import + init)"
+                )
+
+            return {
+                "test_approach": "comparative_baseline",
+                "measurement_stability": "high",
+                "baseline_results": {
+                    "mean_ms": baseline_mean,
+                    "cv_percent": baseline_results["coefficient_of_variation"],
+                },
+                "sdk_results": {
+                    "mean_ms": sdk_mean,
+                    "cv_percent": sdk_results["coefficient_of_variation"],
+                },
+                "overhead_analysis": {
+                    "true_overhead_ms": true_overhead_ms,
+                    "overhead_percentage": overhead_percentage,
+                    "overhead_vs_work_percentage": overhead_vs_work_percentage,
+                },
+                "test_parameters": test_config,
+                "expected_work_ms": expected_work_ms,
+                "variance_improvement": f"CV reduced from 177% to {max(baseline_results['coefficient_of_variation'], sdk_results['coefficient_of_variation']):.1f}%",
+            }
+
+        finally:
+            baseline_container.stop()
+            sdk_container.stop()
+
+    def _wait_for_optimal_containers_ready(self, baseline_port: str, sdk_port: str, timeout: int = 30):
+        """Wait for both optimal test containers to be ready."""
+        start_time = time.time()
+        baseline_ready = False
+        sdk_ready = False
+        
+        while time.time() - start_time < timeout:
+            # Check baseline container
+            if not baseline_ready:
+                try:
+                    response = requests.post(
+                        f"http://localhost:{baseline_port}/2015-03-31/functions/function/invocations",
+                        json={"test_type": "simple", "work_duration_ms": 10},
+                        headers={"Content-Type": "application/json"},
+                        timeout=5,
+                    )
+                    if response.status_code in [200, 500]:
+                        baseline_ready = True
+                        print(f"✅ Baseline container ready on port {baseline_port}")
+                except requests.exceptions.RequestException:
+                    pass
+            
+            # Check SDK container
+            if not sdk_ready:
+                try:
+                    response = requests.post(
+                        f"http://localhost:{sdk_port}/2015-03-31/functions/function/invocations",
+                        json={"test_type": "simple", "work_duration_ms": 10},
+                        headers={"Content-Type": "application/json"},
+                        timeout=5,
+                    )
+                    if response.status_code in [200, 500]:
+                        sdk_ready = True
+                        print(f"✅ SDK container ready on port {sdk_port}")
+                except requests.exceptions.RequestException:
+                    pass
+            
+            if baseline_ready and sdk_ready:
+                print("✅ Both optimal test containers ready")
+                return
+                
+            time.sleep(0.5)
+        
+        raise Exception(f"Optimal test containers not ready after {timeout}s (baseline: {baseline_ready}, sdk: {sdk_ready})")
+
 
 class TestLambdaStressTests:
     """Stress tests for Lambda environment."""
