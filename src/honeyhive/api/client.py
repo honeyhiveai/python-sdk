@@ -106,7 +106,7 @@ class HoneyHive:
         rate_limit_window: float = 60.0,
         max_connections: int = 10,
         max_keepalive: int = 20,
-        test_mode: bool = False,
+        test_mode: Optional[bool] = None,
         verbose: bool = False,
     ):
         """Initialize the HoneyHive client.
@@ -120,7 +120,7 @@ class HoneyHive:
             rate_limit_window: Time window in seconds
             max_connections: Maximum connections in pool
             max_keepalive: Maximum keepalive connections
-            test_mode: Enable test mode
+            test_mode: Enable test mode (None = use config default)
             verbose: Enable verbose logging for API debugging
         """
         self.api_key = api_key or config.api_key
@@ -130,7 +130,7 @@ class HoneyHive:
         self.base_url = base_url or config.api_url
         self.timeout = timeout or config.timeout
         self.retry_config = retry_config or RetryConfig()
-        self.test_mode = test_mode or config.test_mode
+        self.test_mode = config.test_mode if test_mode is None else test_mode
         self.verbose = verbose or config.verbose
 
         # Initialize rate limiter and connection pool with configuration values
