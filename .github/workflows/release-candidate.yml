@@ -249,7 +249,7 @@ jobs:
           from honeyhive.evaluation import evaluate
 
           # Test basic functionality
-          client = HoneyHive(api_key='test-key', project='test-project')
+          client = HoneyHive(api_key='test-key', test_mode=True)
           tracer = HoneyHiveTracer.init(project='test-project', api_key='test-key')
 
           print('✅ All core imports successful')
