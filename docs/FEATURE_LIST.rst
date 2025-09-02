@@ -208,25 +208,42 @@ Testing Support
 AWS Lambda Testing
 ~~~~~~~~~~~~~~~~~~
 
-* **Lambda Container Simulation** - Docker-based Lambda environment testing
-* **Cold Start Performance** - Comprehensive cold start time measurement and optimization
-* **Warm Start Optimization** - Warm start performance testing and validation
-* **Memory Efficiency Testing** - Multi-memory configuration testing (128MB to 1024MB)
-* **Concurrent Invocation Testing** - Stress testing with multiple simultaneous invocations
-* **Throughput Performance** - High-volume request testing and performance validation
-* **Container Compatibility Matrix** - Multi-Python version testing (3.11, 3.12, 3.13)
-* **Real AWS Environment Testing** - Actual AWS Lambda deployment testing support
+* **Multi-Tier Testing Strategy** - Comprehensive testing approach with continuous, daily, and release validation
+* **Docker Simulation Suite** - Complete Lambda runtime simulation using official AWS runtime images
+* **Lambda Compatibility Matrix** - Cross-Python version and memory configuration validation
+* **Real AWS Environment Testing** - Production AWS Lambda deployment and testing on main branch
+* **Container Validation Framework** - SDK import verification and handler functionality testing
+* **Cold Start Performance Analysis** - Detailed cold start timing with <3000ms thresholds
+* **Warm Start Optimization** - Container reuse efficiency testing and validation
+* **Memory Efficiency Testing** - Variable memory configuration testing (128MB to 1024MB)
+* **Stress Testing Suite** - Concurrent invocation and timeout handling validation
+* **Performance Benchmarking** - Statistical significance testing with bulk operations
 
 Advanced Performance Analysis
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-* **SDK Overhead Measurement** - Scientific measurement of SDK performance impact
-* **Comparative Baseline Testing** - Side-by-side performance comparison methodology
-* **Statistical Significance Testing** - Bulk operation testing for reliable measurements
-* **Variance Reduction Techniques** - 99.8% measurement variance reduction capability
-* **Coefficient of Variation Analysis** - Mathematical stability assessment of measurements
-* **CI-Compatible Thresholds** - Environment-aware performance threshold management
-* **Performance Regression Detection** - Automated detection of performance degradation
+* **Scientific Overhead Measurement** - Statistical analysis achieving 99.8% variance reduction
+* **Comparative Baseline Methodology** - Dual-container approach measuring SDK vs. no-SDK performance
+* **Coefficient of Variation Analysis** - Mathematical stability assessment achieving <10% CV
+* **Bulk Operation Testing** - Statistical power through multiple spans and requests per test
+* **Container-Aware Performance Testing** - CI/CD compatible thresholds adapted for container environments
+* **Performance Regression Detection** - Automated threshold-based monitoring with adaptive limits
+* **Memory Efficiency Analysis** - Detailed memory usage patterns and leak detection
+* **Throughput Performance Validation** - Sequential rapid request testing for production load simulation
+
+CI/CD Integration
+~~~~~~~~~~~~~~~~~
+
+* **Multi-Tier GitHub Actions Strategy** - Comprehensive workflow organization with appropriate testing granularity
+* **Continuous Testing** - Basic validation on every PR and push for rapid feedback
+* **Daily Scheduled Testing** - Thorough performance and real AWS environment validation
+* **Release Candidate Pipeline** - Manual comprehensive pre-release testing and validation
+* **Smart Workflow Organization** - Reduced PR interface clutter through composite jobs and matrix consolidation
+* **Conditional Test Execution** - Context-aware testing based on branch, commit messages, and event types
+* **Artifact Management** - Comprehensive test result preservation with configurable retention policies
+* **YAML Configuration Management** - Custom yamllint configuration with 120-character line length standards
+* **Workflow Trigger Optimization** - Elimination of duplicate executions on PR branches
+* **Modern Action Versions** - Updated to latest GitHub Actions versions (v4/v5) for reliability
 
 Debugging Features
 ~~~~~~~~~~~~~~~~~~

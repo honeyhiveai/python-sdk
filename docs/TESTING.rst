@@ -50,6 +50,46 @@ The project maintains a comprehensive test suite organized into logical categori
 - **Container Tests** - Docker-based Lambda simulation testing
 - **Cold Start Tests** - Lambda cold start optimization testing
 
+Testing Infrastructure Overview
+-------------------------------
+
+Comprehensive Testing Strategy
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+The HoneyHive Python SDK employs a **three-tier testing strategy** for comprehensive validation:
+
+**Tier 1: Continuous Testing** (Every PR/Push)
+- **🐳 Docker Simulation Suite**: Complete Lambda runtime simulation using official AWS images
+- **🧪 Lambda Compatibility Matrix**: Cross-Python version (3.11, 3.12, 3.13) and memory configuration validation
+- **🔍 Unit & Integration Tests**: 877+ tests with 73.22% coverage across all components
+- **⚡ Fast Feedback**: ~5-10 minutes total execution time for rapid development cycles
+
+**Tier 2: Daily Scheduled Testing** (2 AM UTC)
+- **☁️ Real AWS Environment Testing**: Production AWS Lambda deployment and validation
+- **⚡ Performance Benchmarks**: Comprehensive performance analysis with statistical significance
+- **📊 Regression Detection**: Automated threshold-based performance monitoring
+- **🔬 Deep Analysis**: Memory efficiency, throughput, and stress testing
+
+**Tier 3: Release Candidate Testing** (Manual)
+- **🚀 Full Comprehensive Testing**: All tier 1 & 2 tests plus integration validation
+- **📦 Package Validation**: Distribution package testing before customer release
+- **🎯 Quality Gates**: Complete validation before production deployment
+
+GitHub Actions Workflow Organization
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+**Smart Workflow Design**:
+- **Reduced PR Clutter**: Composite jobs and matrix consolidation for clean PR interface
+- **Conditional Execution**: Context-aware testing based on branch, commit messages, and event types
+- **Artifact Management**: Comprehensive test result preservation with configurable retention
+- **Modern Tooling**: Latest GitHub Actions versions (v4/v5) with yamllint and GitHub CLI integration
+
+**Performance & Reliability Features**:
+- **Zero Duplicate Runs**: Optimized triggers preventing redundant PR/push executions  
+- **Environment-Aware Thresholds**: CI-compatible performance limits adapted for container environments
+- **Statistical Significance**: 99.8% variance reduction in performance measurements through scientific methodology
+- **Container Validation**: Comprehensive SDK import and handler functionality verification
+
 Testing Strategy
 ----------------
 
