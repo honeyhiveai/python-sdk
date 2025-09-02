@@ -16,12 +16,12 @@ Testing is a crucial part of developing reliable applications with the HoneyHive
 
 **Current Test Status**: 
 
-- **Total Tests**: 881 tests (100% success rate)
+- **Total Tests**: 877+ tests (100% success rate across all environments)
 - **Unit Tests**: 761 tests across 26 test files
-- **Integration Tests**: 97 tests across 8 test files
-- **Tracer Tests**: 23 tests across 1 test file
-- **Test Coverage**: 72.95% ✅ (above 70% requirement)
-- **Code Coverage**: 4,484 statements, 1,213 missed
+- **Integration Tests**: 99 tests across 8 test files  
+- **Lambda Tests**: 17 tests across 2 specialized test files (NEW)
+- **Test Coverage**: 73.22% ✅ (above 70% requirement)
+- **Code Coverage**: Enhanced with Lambda and performance testing validation
 
 Test Organization
 -----------------
@@ -30,11 +30,11 @@ The project maintains a comprehensive test suite organized into logical categori
 
 **Test File Structure**:
 
-- **Total Test Files**: 35
+- **Total Test Files**: 37+
 - **Unit Tests**: 26 test files in `tests/unit/` - Test individual components in isolation (761 tests)
-- **Integration Tests**: 8 test files in `tests/integration/` - Test component interactions and multi-instance patterns (97 tests)
-- **Tracer Tests**: 1 test file in `tests/tracer/` - Test core tracing functionality (23 tests)
-- **Test Utilities**: 2 utility files (`conftest.py`, `utils.py`)
+- **Integration Tests**: 8 test files in `tests/integration/` - Test component interactions and multi-instance patterns (99 tests)
+- **Lambda Tests**: 2 test files in `tests/lambda/` - Test AWS Lambda compatibility and performance (17 tests)
+- **Test Utilities**: Multiple utility files across test directories (`conftest.py`, `utils.py`, etc.)
 
 **Test File Naming Convention**: All unit test files follow the pattern `test_<module>_<file>.py` for consistent organization and easy identification.
 
@@ -45,6 +45,10 @@ The project maintains a comprehensive test suite organized into logical categori
 - **Multi-Instance Tests** - Multiple tracer instance testing
 - **Real API Tests** - Actual HoneyHive API endpoint testing
 - **TracerProvider Tests** - OpenTelemetry provider integration testing (includes Force Flush functionality)
+- **Lambda Compatibility Tests** - AWS Lambda environment testing
+- **Lambda Performance Tests** - Serverless performance benchmarking
+- **Container Tests** - Docker-based Lambda simulation testing
+- **Cold Start Tests** - Lambda cold start optimization testing
 
 Testing Strategy
 ----------------

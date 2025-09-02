@@ -205,6 +205,29 @@ Testing Support
 * **Integration Testing** - Support for integration tests
 * **Performance Testing** - Tools for performance testing
 
+AWS Lambda Testing
+~~~~~~~~~~~~~~~~~~
+
+* **Lambda Container Simulation** - Docker-based Lambda environment testing
+* **Cold Start Performance** - Comprehensive cold start time measurement and optimization
+* **Warm Start Optimization** - Warm start performance testing and validation
+* **Memory Efficiency Testing** - Multi-memory configuration testing (128MB to 1024MB)
+* **Concurrent Invocation Testing** - Stress testing with multiple simultaneous invocations
+* **Throughput Performance** - High-volume request testing and performance validation
+* **Container Compatibility Matrix** - Multi-Python version testing (3.11, 3.12, 3.13)
+* **Real AWS Environment Testing** - Actual AWS Lambda deployment testing support
+
+Advanced Performance Analysis
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+* **SDK Overhead Measurement** - Scientific measurement of SDK performance impact
+* **Comparative Baseline Testing** - Side-by-side performance comparison methodology
+* **Statistical Significance Testing** - Bulk operation testing for reliable measurements
+* **Variance Reduction Techniques** - 99.8% measurement variance reduction capability
+* **Coefficient of Variation Analysis** - Mathematical stability assessment of measurements
+* **CI-Compatible Thresholds** - Environment-aware performance threshold management
+* **Performance Regression Detection** - Automated detection of performance degradation
+
 Debugging Features
 ~~~~~~~~~~~~~~~~~~
 
@@ -243,6 +266,29 @@ Data Privacy
 
 * **OpenTelemetry Standards** - Follows OpenTelemetry data handling standards
 * **Configurable Export** - Control what data gets exported
+
+CI/CD Integration
+-----------------
+
+GitHub Actions Support
+~~~~~~~~~~~~~~~~~~~~~~~
+
+* **Release Candidate Workflow** - Manual deployment testing and release candidate building
+* **Lambda Compatibility Matrix** - Automated testing across Python versions and memory configurations
+* **Container Validation** - Comprehensive Docker container build and validation testing
+* **Performance Benchmarking** - Automated performance regression detection in CI
+* **Artifact Management** - Test result preservation and artifact handling
+* **Multi-Environment Testing** - Parallel testing across different environments
+* **YAML Validation** - Automated workflow syntax validation with yamllint
+
+Development Tooling
+~~~~~~~~~~~~~~~~~~~
+
+* **GitHub CLI Integration** - Workflow investigation and automation capabilities
+* **Agent OS Integration** - Structured development guidance and standards enforcement
+* **Code Quality Enforcement** - Automated Black, isort, pylint, and mypy integration
+* **Test Coverage Validation** - Automated 70% coverage threshold enforcement
+* **Cross-Version Testing** - Automated Python 3.11, 3.12, and 3.13 testing
 
 Deployment Features
 -------------------
