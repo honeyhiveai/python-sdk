@@ -1,0 +1,36 @@
+# Plan Product - HoneyHive Python SDK
+
+When planning or understanding the product architecture, refer to the Agent OS product documentation:
+
+## Product Documentation
+- Overview: `.agent-os/product/overview.md`
+- Audience: `.agent-os/product/audience.md`
+- Roadmap: `.agent-os/product/roadmap.md`
+- Features: `.agent-os/product/features.md`
+- Decisions: `.agent-os/product/decisions.md`
+
+## Key Product Information
+- **Vision**: Comprehensive observability and evaluation platform for LLM applications
+- **Architecture**: OpenTelemetry-based with multi-instance support
+- **Target Users**: AI/ML engineers, Platform engineers, Data scientists
+- **Current Version**: 0.1.0 (complete-refactor branch)
+
+## Core Features
+- Universal @trace decorator (sync/async)
+- Multi-instance tracer support
+- Automatic session management
+- Client and server-side evaluations
+- 20+ LLM provider integrations
+
+## When to Use This Command
+Use @plan-product when:
+- Starting a new major feature
+- Understanding the product architecture
+- Reviewing the development roadmap
+- Making architectural decisions
+
+## Standards to Follow
+Always reference:
+- `.agent-os/standards/tech-stack.md` for technology choices
+- `.agent-os/standards/code-style.md` for coding standards
+- `.agent-os/standards/best-practices.md` for development practices

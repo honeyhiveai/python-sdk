@@ -1,6 +1,13 @@
 # HoneyHive Python SDK - AI Assistant Rules
 # This file defines rules that AI assistants must follow when working on this project
 
+## 🚨 AGENT OS INTEGRATION
+**This project uses Agent OS for structured development guidance.**
+- **Standards**: `.agent-os/standards/` - Global coding standards
+- **Product Docs**: `.agent-os/product/` - Product documentation
+- **Specifications**: `.agent-os/specs/` - Feature specifications
+- **Use Cursor Rules**: `.cursor/rules/*.mdc` - @plan-product, @create-spec, @execute-tasks, @analyze-product
+
 ## Testing & Development
 - ALWAYS use tox for running tests - Never run pytest directly
 - Use specific tox environments:
@@ -19,6 +26,7 @@
 - Respect the requires-python = ">=3.11" constraint
 
 ## Code Quality & Standards
+- **Follow `.agent-os/standards/code-style.md`** for comprehensive style guide
 - Follow the established formatting rules:
   - Black with line-length = 88
   - isort with black profile
@@ -35,9 +43,17 @@
 - Follow the existing import patterns and package organization
 - **NO code should be in `__init__.py` files** - only imports and package-level variables
 
+## Architecture Patterns (from Agent OS)
+- **Multi-instance tracers** - No singleton pattern
+- **Unified @trace decorator** - Works for both sync and async
+- **Graceful degradation** - SDK must never crash host application
+- **HTTP tracing disabled by default** - Performance optimization
+- **Check `.agent-os/product/decisions.md`** for architectural rationale
+
 ## Environment Variables
 - Use the test environment variables defined in tox.ini when running tests
 - Respect the HH_* environment variable patterns established in the project
+- Support HTTP_*, EXPERIMENT_* patterns for compatibility
 - Set HH_TEST_MODE appropriately for different test types
 
 ## Documentation & Examples
@@ -45,6 +61,7 @@
 - Maintain the existing documentation structure in docs/
 - Follow the established example patterns in examples/
 - **Any Sphinx build warnings must be fixed before considering the docs build complete**
+- **Update `.agent-os/product/` docs** for significant changes
 
 ## Specific Commands to Use
 - Testing: `tox -e [environment]` instead of direct pytest calls
@@ -56,6 +73,7 @@
 ## Important Notes
 - This project uses pytest for testing; if pytest is not installed, it should be installed and used for running tests
 - In the HoneyHive project, omit or do not configure the meter_provider because there is no metrics endpoint currently
+- **Complete-refactor branch** includes multi-instance support and unified decorators
 
 ## HoneyHive Official Documentation Context
 - **Official Docs URL**: https://docs.honeyhive.ai/llms.txt
@@ -63,3 +81,10 @@
 - **Ensure consistency** with official HoneyHive platform capabilities and APIs
 - **Cross-reference** local SDK documentation with official platform documentation
 - **Use official terminology** and concepts from the HoneyHive platform
+
+## Agent OS Quick Reference
+- **Product Overview**: `.agent-os/product/overview.md`
+- **Development Roadmap**: `.agent-os/product/roadmap.md`
+- **Feature Catalog**: `.agent-os/product/features.md`
+- **Tech Stack**: `.agent-os/standards/tech-stack.md`
+- **Best Practices**: `.agent-os/standards/best-practices.md`

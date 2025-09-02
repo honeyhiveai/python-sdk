@@ -1,0 +1,54 @@
+# Create Spec - HoneyHive Python SDK
+
+When creating specifications for new features, follow the Agent OS spec structure:
+
+## Spec Template Location
+Example spec: `.agent-os/specs/2025-01-15-performance-optimization/`
+
+## Required Spec Documents
+1. **srd.md** - Spec Requirements Document
+   - Business requirements
+   - User stories
+   - Success criteria
+   - Risks & mitigations
+
+2. **specs.md** - Technical Specifications
+   - Architecture changes
+   - Implementation details
+   - Code examples
+   - Testing requirements
+
+3. **tasks.md** - Task Breakdown
+   - Detailed task list
+   - Time estimates
+   - Dependencies
+   - Success validation
+
+## Creating a New Spec
+
+### Directory Structure
+```
+.agent-os/specs/YYYY-MM-DD-feature-name/
+├── srd.md    # Business requirements
+├── specs.md  # Technical approach
+└── tasks.md  # Implementation tasks
+```
+
+### Key Considerations
+- Maintain backwards compatibility
+- Follow existing patterns in codebase
+- Consider performance impact
+- Include comprehensive testing
+- Update documentation
+
+## Standards to Follow
+- Technology: `.agent-os/standards/tech-stack.md`
+- Code Style: `.agent-os/standards/code-style.md`
+- Best Practices: `.agent-os/standards/best-practices.md`
+
+## Critical Rules
+1. No breaking changes in minor versions
+2. All functions must have type hints
+3. Minimum 90% test coverage
+4. Use tox for all testing
+5. Graceful degradation required

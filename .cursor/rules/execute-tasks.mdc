@@ -1,0 +1,74 @@
+# Execute Tasks - HoneyHive Python SDK
+
+When executing tasks from specifications, follow these guidelines:
+
+## Task Execution Process
+
+### 1. Locate Current Tasks
+Check the active spec's `tasks.md` file in `.agent-os/specs/`
+
+### 2. Task Status
+- [ ] Not started
+- [x] Completed
+- [~] In progress (optional marker)
+
+### 3. Execution Guidelines
+
+#### Code Implementation
+- **ALWAYS use type hints** on all functions
+- **Use Black formatting** (line length 88)
+- **No code in `__init__.py`** files
+- **Follow patterns** in `.agent-os/standards/code-style.md`
+
+#### Testing Requirements
+```bash
+# ALWAYS use tox, NEVER run pytest directly
+tox -e py311        # Python 3.11 tests
+tox -e unit         # Unit tests only
+tox -e integration  # Integration tests
+tox -e lint         # Linting checks
+```
+
+#### Key Patterns
+```python
+# Multi-instance tracer (no singleton)
+tracer1 = HoneyHiveTracer.init(api_key="key1")
+tracer2 = HoneyHiveTracer.init(api_key="key2")
+
+# Unified decorator for sync/async
+@trace(event_type="operation")
+def sync_func(): pass
+
+@trace(event_type="operation")
+async def async_func(): pass
+
+# Graceful degradation
+try:
+    result = operation()
+except Exception as e:
+    logger.warning(f"Operation failed: {e}")
+    return None  # Don't crash
+```
+
+### 4. Update Documentation
+- Update task status in `tasks.md`
+- Add decisions to `.agent-os/product/decisions.md`
+- Update features in `.agent-os/product/features.md` if needed
+
+### 5. Validation
+- Ensure all tests pass with tox
+- Verify backwards compatibility
+- Check performance impact
+- Update CHANGELOG.md
+
+## Critical Rules
+1. **Use tox for ALL testing** - Never pytest directly
+2. **Type hints required** - All functions
+3. **90% test coverage** minimum
+4. **Graceful degradation** - Never crash host app
+5. **HTTP tracing off by default** for performance
+
+## References
+- Standards: `.agent-os/standards/`
+- Current roadmap: `.agent-os/product/roadmap.md`
+- Technical decisions: `.agent-os/product/decisions.md`

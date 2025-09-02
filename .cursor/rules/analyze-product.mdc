@@ -1,0 +1,100 @@
+# Analyze Product - HoneyHive Python SDK
+
+When analyzing the existing codebase or adding Agent OS to existing code:
+
+## Analysis Process
+
+### 1. Understand Current Architecture
+```python
+# Key directories to analyze
+src/honeyhive/
+├── api/           # API client layer
+├── tracer/        # OpenTelemetry integration
+├── evaluation/    # Evaluation framework
+├── models/        # Data models
+└── utils/         # Shared utilities
+```
+
+### 2. Key Architectural Patterns
+
+#### Multi-Instance Support
+- Each tracer instance is independent
+- No global singleton pattern
+- Thread-safe operations
+
+#### Unified Decorators
+```python
+# Single @trace works for both sync and async
+@trace(event_type="operation")
+def sync_func(): pass
+
+@trace(event_type="operation")
+async def async_func(): pass
+```
+
+#### Graceful Degradation
+- SDK never crashes host application
+- Errors logged but handled gracefully
+- Optional returns for non-critical operations
+
+### 3. Current Implementation Details
+
+#### Testing Framework
+- **203+ tests** currently passing
+- **90%+ coverage** target
+- **tox** for test orchestration
+- Python 3.11, 3.12, 3.13 support
+
+#### Configuration
+- Environment variables: HH_*, HTTP_*, EXPERIMENT_*
+- Configuration precedence: Constructor > Env > Defaults
+- HTTP tracing disabled by default
+
+#### Key Dependencies
+- OpenTelemetry >=1.20.0
+- httpx >=0.24.0
+- pydantic >=2.0.0
+- Python 3.11+ required
+
+### 4. Integration Points
+
+#### Provider Integrations
+- OpenAI / Azure OpenAI
+- Anthropic Claude
+- Google Gemini
+- AWS Bedrock
+- 15+ more providers
+
+#### Framework Support
+- LangChain / LangGraph
+- LlamaIndex
+- CrewAI
+- LiteLLM
+
+### 5. When Analyzing Existing Code
+
+#### Check for:
+- Existing test patterns
+- Configuration mechanisms
+- Error handling approaches
+- Performance optimizations
+- Security practices
+
+#### Document in Agent OS:
+- Update `.agent-os/product/features.md` with discovered features
+- Add to `.agent-os/product/decisions.md` for architectural choices
+- Create specs in `.agent-os/specs/` for improvements
+
+## Critical Patterns to Maintain
+
+1. **Always use tox** for testing
+2. **Type hints mandatory** on all functions
+3. **No code in __init__.py** files
+4. **Multi-instance support** required
+5. **Graceful degradation** essential
+
+## References
+- Product overview: `.agent-os/product/overview.md`
+- Technical decisions: `.agent-os/product/decisions.md`
+- Code standards: `.agent-os/standards/code-style.md`
+- Best practices: `.agent-os/standards/best-practices.md`
