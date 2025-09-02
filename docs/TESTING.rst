@@ -1104,6 +1104,57 @@ Set up automated testing in CI/CD:
 Running Tests
 -------------
 
+Code Quality Requirements
+~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+**⚠️ MANDATORY: Development Environment Setup**
+
+All developers must install pre-commit hooks before contributing:
+
+.. code-block:: bash
+
+   # One-time setup (required for all developers)
+   ./scripts/setup-dev.sh
+
+**Automatic Code Quality Enforcement**
+
+The project enforces code quality through automated pre-commit hooks that run on every commit:
+
+- **Black formatting**: 88-character lines, applied automatically
+- **Import sorting**: isort with black profile  
+- **Static analysis**: pylint + mypy type checking
+- **YAML validation**: yamllint with 120-character lines
+- **Documentation verification**: Sphinx build and synchronization checks
+- **Tox verification**: Format and lint validation
+
+**Pre-Commit Verification Commands**
+
+Before every commit, run the mandatory verification:
+
+.. code-block:: bash
+
+   # Mandatory pre-commit verification (required)
+   tox -e format && tox -e lint
+
+   # Individual quality checks
+   tox -e format  # Code formatting verification
+   tox -e lint    # Static analysis and type checking
+   tox -e docs    # Documentation build verification
+
+**Documentation Update Requirements**
+
+- **All code changes**: CHANGELOG.md must be updated
+- **New features**: Update CHANGELOG.md + docs/FEATURE_LIST.rst + .agent-os/product/features.md  
+- **Workflow changes**: Update docs/TESTING.rst and .agent-os/standards/
+- **AI Assistant commits**: Automatic documentation compliance verification
+
+**Emergency Bypass** (document reason):
+
+.. code-block:: bash
+
+   # Only in emergencies - document why in commit message
+   git commit --no-verify -m "Emergency fix: [reason for bypass]"
+
 Current Test Execution
 ~~~~~~~~~~~~~~~~~~~~~~
 

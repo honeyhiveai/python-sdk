@@ -322,6 +322,20 @@ Self-Hosted Support
 * **Custom Endpoints** - Support for custom API endpoints
 * **On-Premises Deployment** - On-premises deployment support
 
+Code Quality & Development Automation
+-------------------------------------
+
+* **Automated Code Quality Enforcement** - Pre-commit hooks with Black, isort, pylint, mypy, and yamllint
+* **Development Environment Setup** - One-time automated setup script (``./scripts/setup-dev.sh``)
+* **Mandatory Documentation Updates** - Pre-commit verification ensuring CHANGELOG.md and feature docs are updated
+* **Documentation Synchronization** - Automated validation of feature documentation consistency across files
+* **Code Formatting Standards** - Black formatting (88-character lines) and isort import organization
+* **Static Analysis Integration** - pylint and mypy type checking with pre-commit automation
+* **YAML Validation** - yamllint with 120-character line limits for workflow files
+* **Tox Quality Gates** - Mandatory ``tox -e format && tox -e lint`` verification before commits
+* **AI Assistant Compliance** - Specific requirements for AI assistants to update documentation before commits
+* **Emergency Bypass Controls** - Controlled ``--no-verify`` bypass with mandatory documentation requirements
+
 Documentation Features
 ----------------------
 

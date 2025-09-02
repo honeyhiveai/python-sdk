@@ -14,6 +14,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Each initialization creates a new independent tracer instance
 
 ### Added
+- **Comprehensive Code Quality Enforcement**: Pre-commit hooks with Black, isort, pylint, mypy, and yamllint
+- **Mandatory Documentation Updates**: Pre-commit checks ensuring CHANGELOG.md and feature docs are updated
+- **Development Setup Automation**: `./scripts/setup-dev.sh` for one-time development environment configuration  
+- **Documentation Synchronization Checks**: Automated validation of feature documentation consistency
+- **AI Assistant Compliance**: Specific requirements for AI assistants to update documentation before commits
 - **Multi-Instance Architecture**: Complete refactor to support multiple tracer instances
   - Create multiple independent tracers within the same runtime
   - Each tracer can have different API keys, projects, and sources

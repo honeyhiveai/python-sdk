@@ -23,10 +23,46 @@ pip install honeyhive
 ### Development Installation
 
 ```bash
-git clone https://github.com/honeyhiveai/sample.git
-cd sample
+git clone https://github.com/honeyhiveai/python-sdk.git
+cd python-sdk
+
+# Create and activate virtual environment named 'python-sdk' (required)
+python -m venv python-sdk
+source python-sdk/bin/activate  # On Windows: python-sdk\Scripts\activate
+
+# Install in development mode
 pip install -e .
+
+# 🚨 MANDATORY: Set up development environment (one-time setup)
+./scripts/setup-dev.sh
+
+# Verify setup (should pass all checks)
+tox -e format && tox -e lint
 ```
+
+#### Development Environment Setup
+
+**⚠️ CRITICAL: All developers must run the setup script once:**
+
+```bash
+# This installs pre-commit hooks for automatic code quality enforcement
+./scripts/setup-dev.sh
+```
+
+**Pre-commit hooks automatically enforce:**
+- **Black formatting** (88-character lines)
+- **Import sorting** (isort with black profile)  
+- **Static analysis** (pylint + mypy)
+- **YAML validation** (yamllint with 120-character lines)
+- **Documentation synchronization** (feature docs, changelog)
+- **Tox verification** (format and lint checks)
+
+**Before every commit, the system automatically runs:**
+1. Code formatting and import sorting
+2. Static analysis and type checking
+3. Documentation build verification
+4. Feature documentation synchronization
+5. Mandatory changelog update verification
 
 ## 🔧 Quick Start
 

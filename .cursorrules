@@ -38,6 +38,9 @@
 - **MANDATORY: Run Black on Python files on save** when Cursor works on them
 - **MANDATORY: Install pre-commit hooks**: Run `./scripts/setup-dev.sh` once
 - **MANDATORY: Pre-commit verification**: Run `tox -e format && tox -e lint` before every commit
+- **MANDATORY: Documentation updates**: Update CHANGELOG.md for all code changes
+- **MANDATORY: Feature documentation**: Update docs/FEATURE_LIST.rst and .agent-os/product/features.md for new features
+- **MANDATORY: Workflow documentation**: Update docs/TESTING.rst for CI/CD changes
 - **ALL Python code must use type hinting/annotations** - functions, methods, variables, and class attributes should be properly typed
 
 ## Project Structure

@@ -142,10 +142,30 @@ This Agent OS configuration aligns with:
 ## For Contributors
 
 If you're contributing to the HoneyHive Python SDK:
-1. Read through the standards before coding
-2. Follow the patterns in existing specs
-3. Update Agent OS docs when adding features
-4. Use these docs when working with AI assistants
+
+**🚨 MANDATORY FIRST STEP**: Install pre-commit hooks before any development:
+
+```bash
+# One-time setup (required for all contributors)
+./scripts/setup-dev.sh
+```
+
+**Development Requirements**:
+1. **Pre-commit compliance**: Automatic code quality enforcement is mandatory
+2. **Documentation updates**: All changes require CHANGELOG.md updates
+3. **Quality verification**: Run `tox -e format && tox -e lint` before every commit
+4. Read through the standards before coding
+5. Follow the patterns in existing specs
+6. Update Agent OS docs when adding features
+7. Use these docs when working with AI assistants
+
+**Code Quality Standards** (automatically enforced):
+- Black formatting (88-character lines)
+- Import sorting (isort with black profile)
+- Static analysis (pylint + mypy)
+- YAML validation (yamllint with 120-character lines)
+- Documentation synchronization and build verification
+- Mandatory CHANGELOG.md and feature documentation updates
 
 ## Support
 

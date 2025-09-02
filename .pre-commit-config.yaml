@@ -1,12 +1,14 @@
 # Pre-commit hooks for HoneyHive Python SDK
 # See https://pre-commit.com for more information
+---
 repos:
   - repo: https://github.com/psf/black
     rev: 23.12.1
     hooks:
       - id: black
         language_version: python3
-        args: [--line-length=88]
+        args: [--line-length=88, --target-version=py311]
+        files: \.py$
 
   - repo: https://github.com/pycqa/isort
     rev: 5.13.2
@@ -53,6 +55,36 @@ repos:
         name: Tox Format Check
         entry: tox -e format
         language: system
+        pass_filenames: false
+        always_run: true
+        stages: [pre-commit]
+
+      - id: docs-build-check
+        name: Documentation Build Check
+        entry: tox -e docs
+        language: system
+        pass_filenames: false
+        files: '^(docs/.*\.(rst|md)|README\.md|CHANGELOG\.md|\.agent-os/.*\.md)$'
+        stages: [pre-commit]
+
+      - id: feature-list-sync
+        name: Feature List Synchronization Check
+        entry: scripts/check-feature-sync.py
+        language: python
+        files: '^(src/.*\.py|docs/FEATURE_LIST\.rst|\.agent-os/product/features\.md)$'
+        stages: [pre-commit]
+
+      - id: changelog-update-check
+        name: CHANGELOG Update Check
+        entry: scripts/check-changelog-updated.py
+        language: python
+        files: '^(src/.*\.py|tests/.*\.py)$'
+        stages: [pre-commit]
+
+      - id: mandatory-docs-update
+        name: Mandatory Documentation Update Check
+        entry: scripts/check-docs-updated.py
+        language: python
         pass_filenames: false
         always_run: true
         stages: [pre-commit]

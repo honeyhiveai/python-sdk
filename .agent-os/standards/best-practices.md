@@ -20,7 +20,15 @@
 **Before Every Commit**:
 1. Pre-commit hooks run automatically (DO NOT bypass)
 2. Manual verification: `tox -e format && tox -e lint`
-3. Emergency bypass only: `git commit --no-verify` (document why)
+3. **MANDATORY for AI Assistants**: Update documentation before committing
+4. Emergency bypass only: `git commit --no-verify` (document why)
+
+**Documentation Update Requirements**:
+- **Code changes**: CHANGELOG.md must be updated
+- **New features**: CHANGELOG.md + docs/FEATURE_LIST.rst + .agent-os/product/features.md
+- **Workflow changes**: Update docs/TESTING.rst and .agent-os/standards/
+- **Large changesets (>3 files)**: Comprehensive documentation review required
+- **AI Assistant commits**: Automatic documentation compliance checking
 
 ### Required Tools
 ```bash
