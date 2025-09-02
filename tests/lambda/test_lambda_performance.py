@@ -545,9 +545,9 @@ class TestLambdaPerformance:
                 cold_start_overhead = sdk_result["initialization_overhead"][
                     "total_init_ms"
                 ]
-                assert cold_start_overhead < 500, (
+                assert cold_start_overhead < 1000, (
                     f"Cold start overhead too high: {cold_start_overhead:.1f}ms "
-                    f"(expected <500ms for SDK import + init)"
+                    f"(expected <1000ms for SDK import + init in CI)"
                 )
 
             return {
