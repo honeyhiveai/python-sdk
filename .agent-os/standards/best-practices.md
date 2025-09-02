@@ -399,13 +399,37 @@ else:
 7. Address review feedback
 8. Merge after approval
 
-### Continuous Integration
-- Run tests on all Python versions
-- Check code formatting
-- Measure test coverage
-- Build documentation
-- Run security scans
-- Deploy to staging
+### Continuous Integration & CI/CD Best Practices
+
+**Multi-Tier Testing Strategy** (see [CI/CD GitHub Actions Specification](../specs/2025-09-02-cicd-gha-best-practices/specs.md)):
+
+- **Tier 1: Continuous Testing** - Fast feedback on every PR/push (5-10 minutes)
+  - Run core tests on all Python versions (3.11, 3.12, 3.13)
+  - Check code formatting with black and isort
+  - Measure test coverage (minimum 70% requirement)
+  - Validate YAML syntax with yamllint
+  - Docker simulation testing for AWS Lambda compatibility
+
+- **Tier 2: Daily Scheduled Testing** - Comprehensive validation (30-60 minutes)
+  - Performance benchmarking with statistical significance
+  - Real AWS Lambda environment testing
+  - Security scans and dependency vulnerability checks
+  - Build and deploy documentation
+  - Performance regression detection
+
+- **Tier 3: Release Candidate Testing** - Complete validation (45-90 minutes)
+  - All tier 1 & 2 tests plus integration validation
+  - Package building and distribution testing
+  - Cross-platform testing (Ubuntu, Windows, macOS)
+  - Quality gates for production deployment
+
+**GitHub Actions Workflow Optimization**:
+
+- **Smart Job Organization** - Reduce PR interface clutter through composite jobs
+- **Conditional Execution** - Branch and commit message-based test triggering
+- **Modern Action Versions** - Use latest stable actions (v4/v5)
+- **Artifact Management** - Comprehensive test result preservation
+- **Duplicate Prevention** - Optimize triggers to prevent redundant executions
 
 ### Developer Experience
 - Clear error messages

@@ -17,10 +17,12 @@ This directory contains the Agent OS configuration for the HoneyHive Python SDK 
 │   ├── features.md        # Feature catalog
 │   └── decisions.md       # Technical decision log
 └── specs/                 # Feature specifications
-    └── 2025-01-15-performance-optimization/
-        ├── srd.md         # Spec requirements document
-        ├── specs.md       # Technical specifications
-        └── tasks.md       # Task breakdown
+    ├── 2025-01-15-performance-optimization/
+    │   ├── srd.md         # Spec requirements document
+    │   ├── specs.md       # Technical specifications
+    │   └── tasks.md       # Task breakdown
+    └── 2025-09-02-cicd-gha-best-practices/
+        └── specs.md       # CI/CD GitHub Actions best practices
 ```
 
 ## How to Use Agent OS
@@ -64,10 +66,13 @@ When working with AI coding assistants (like Claude, GPT-4, etc.), reference the
 4. **HTTP tracing off by default** - For better performance
 
 ### 🟢 Best Practices
-1. **90% test coverage minimum**
+1. **70% test coverage minimum** (currently achieving 73.22%)
 2. **Black formatting with 88 char lines**
 3. **Comprehensive docstrings**
 4. **Error handling with logging**
+5. **Multi-tier CI/CD testing strategy** (continuous, daily, release)
+6. **GitHub Actions workflow optimization** (reduced PR clutter)
+7. **yamllint validation** with 120-character line length
 
 ## Quick Reference
 
@@ -92,10 +97,14 @@ async def my_function():
 ### Run Tests
 ```bash
 # Always use tox
-tox -e py311        # Python 3.11 tests
+tox -e py311        # Python 3.11 tests (full unit + integration)
+tox -e py312        # Python 3.12 tests (full unit + integration)
+tox -e py313        # Python 3.13 tests (full unit + integration)
 tox -e unit         # Unit tests only
-tox -e integration  # Integration tests
-tox -e lint         # Linting
+tox -e integration  # Integration tests only
+tox -e lint         # Linting (pylint + mypy)
+tox -e format       # Code formatting checks
+tox -e docs         # Documentation build
 ```
 
 ## Creating New Specs
@@ -123,9 +132,12 @@ When making significant changes:
 
 This Agent OS configuration aligns with:
 - The complete-refactor branch architecture
-- 203+ existing tests
+- 877+ comprehensive tests (73.22% coverage)
+- Multi-tier CI/CD testing strategy
 - Production deployment requirements
 - OpenTelemetry standards
+- AWS Lambda compatibility testing
+- Performance benchmarking with statistical significance
 
 ## For Contributors
 

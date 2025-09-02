@@ -68,9 +68,24 @@
 - **Standard Env Support**: HTTP_*, EXPERIMENT_* compatibility
 
 ## Development & CI/CD Tools
-- **GitHub CLI**: >=2.78.0 - GitHub Actions investigation and automation
-- **Docker**: Container development and Lambda testing
-- **tox**: Multi-environment testing automation
+### Core CI/CD Infrastructure
+- **GitHub Actions**: Primary CI/CD platform with multi-tier testing strategy
+- **GitHub CLI**: >=2.78.0 - Workflow investigation, automation, and debugging
+- **yamllint**: >=1.37.0 - YAML syntax validation with 120-character line length
+- **Docker**: Container development, Lambda simulation, and testing environments
+- **tox**: Multi-environment testing automation across Python versions
+
+### Workflow Management
+- **Composite Jobs**: Reduced PR interface clutter through workflow consolidation
+- **Matrix Strategies**: Strategic parallelization for cross-platform testing
+- **Conditional Logic**: Branch and commit message-based execution control
+- **Artifact Management**: Comprehensive test result preservation and analysis
+
+### Testing Infrastructure
+- **Docker Simulation**: Complete AWS Lambda runtime simulation using official images
+- **Performance Benchmarking**: Statistical measurement with 99.8% variance reduction
+- **Real Environment Testing**: Production AWS Lambda validation on main branch
+- **Cross-Platform Testing**: Ubuntu, Windows, macOS validation matrices
 
 ## Deployment Targets
 - **Docker**: Container support
