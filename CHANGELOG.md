@@ -19,6 +19,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Development Setup Automation**: `./scripts/setup-dev.sh` for one-time development environment configuration  
 - **Documentation Synchronization Checks**: Automated validation of feature documentation consistency
 - **AI Assistant Compliance**: Specific requirements for AI assistants to update documentation before commits
+- **Release Candidate Workflow Fix**: Removed quotes from 'on' trigger to ensure GitHub Actions recognizes workflow_dispatch
 - **Multi-Instance Architecture**: Complete refactor to support multiple tracer instances
   - Create multiple independent tracers within the same runtime
   - Each tracer can have different API keys, projects, and sources

@@ -1,7 +1,7 @@
 ---
 name: Build Release Candidate
 
-'on':
+on:
   workflow_dispatch:
     inputs:
       version_type:
