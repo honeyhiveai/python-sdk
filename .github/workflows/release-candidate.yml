@@ -79,6 +79,10 @@ jobs:
     needs: pre-release-validation
     if: needs.pre-release-validation.outputs.should-run-tests == 'true'
     uses: ./.github/workflows/tox-full-suite.yml
+    with:
+      python_versions: '3.11,3.12,3.13'
+      tox_environments: 'lint,format,docs'
+      upload_coverage: true
     secrets: inherit
 
   # Call Lambda tests with AWS enabled
@@ -87,6 +91,9 @@ jobs:
     needs: pre-release-validation
     if: needs.pre-release-validation.outputs.should-run-tests == 'true'
     uses: ./.github/workflows/lambda-tests.yml
+    with:
+      force_aws_tests: ${{ inputs.force_aws_tests }}
+      skip_performance_tests: false
     secrets: inherit
 
   # === PACKAGE BUILDING PHASE ===

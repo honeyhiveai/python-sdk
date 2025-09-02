@@ -2,6 +2,27 @@
 name: AWS Lambda Compatibility Tests
 
 'on':
+  workflow_call:
+    inputs:
+      force_aws_tests:
+        description: 'Force real AWS Lambda tests to run'
+        type: boolean
+        required: false
+        default: false
+      skip_performance_tests:
+        description: 'Skip performance benchmark tests'
+        type: boolean
+        required: false
+        default: false
+    secrets:
+      AWS_ACCESS_KEY_ID:
+        required: false
+      AWS_SECRET_ACCESS_KEY:
+        required: false
+      HH_API_KEY:
+        required: false
+      HH_TEST_API_KEY:
+        required: false
   push:
     branches: [main, develop]  # Only run on protected branches
   pull_request:

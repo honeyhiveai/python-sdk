@@ -17,6 +17,30 @@ name: Tox Full Test Suite
         type: boolean
         required: false
         default: true
+  workflow_call:
+    inputs:
+      python_versions:
+        description: 'Python versions to test (comma-separated)'
+        required: false
+        default: '3.11,3.12,3.13'
+        type: string
+      tox_environments:
+        description: 'Additional tox environments to run'
+        required: false
+        default: 'lint,format,docs'
+        type: string
+      upload_coverage:
+        description: 'Upload coverage reports'
+        type: boolean
+        required: false
+        default: true
+    secrets:
+      HH_API_KEY:
+        required: false
+      HH_TEST_API_KEY:
+        required: false
+      CODECOV_TOKEN:
+        required: false
   push:
     branches: [main, develop]  # Only run on protected branches
     paths:
