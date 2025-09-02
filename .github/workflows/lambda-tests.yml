@@ -211,10 +211,10 @@ jobs:
 
       - name: "🐍 Test Python 3.11 @ 128MB"
         run: |
-          cd tests/lambda
           echo "🧪 Testing Python 3.11 with 128MB memory..."
 
-          docker build -f Dockerfile.bundle-builder -t honeyhive-lambda:py311-test .
+          # Build from project root with correct context
+          docker build -f tests/lambda/Dockerfile.bundle-builder -t honeyhive-lambda:py311-test .
           docker run -d -p 9000:8080 --memory=128m \
             honeyhive-lambda:py311-test basic_tracing.lambda_handler &
           sleep 5
@@ -235,10 +235,10 @@ jobs:
 
       - name: "🐍 Test Python 3.12 @ 512MB"
         run: |
-          cd tests/lambda
           echo "🧪 Testing Python 3.12 with 512MB memory..."
 
-          docker build -f Dockerfile.bundle-builder -t honeyhive-lambda:py312-test .
+          # Build from project root with correct context
+          docker build -f tests/lambda/Dockerfile.bundle-builder -t honeyhive-lambda:py312-test .
           docker run -d -p 9001:8080 --memory=512m \
             honeyhive-lambda:py312-test basic_tracing.lambda_handler &
           sleep 5
