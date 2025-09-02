@@ -96,9 +96,9 @@ jobs:
             .tox/*/log/
           retention-days: 7
 
-  # === CODE QUALITY CHECKS ===
-  code-quality:
-    name: "🔍 Code Quality"
+  # === CODE QUALITY & DOCUMENTATION ===
+  quality-and-docs:
+    name: "🔍 Quality & 📚 Docs"
     runs-on: ubuntu-latest
 
     steps:
@@ -116,44 +116,27 @@ jobs:
           python -m pip install --upgrade pip
           pip install tox>=4.0
 
-      - name: Run linting checks
-        run: tox -e lint
+      - name: Run code quality checks
+        run: |
+          echo "🔍 Running linting checks..."
+          tox -e lint
+          echo "✨ Running format checks..."
+          tox -e format
 
-      - name: Run format checks
-        run: tox -e format
+      - name: Build documentation
+        run: |
+          echo "📚 Building documentation..."
+          tox -e docs
 
-      - name: Upload lint results
+      - name: Upload quality results
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: code-quality-results
+          name: quality-results
           path: |
             .tox/lint/log/
             .tox/format/log/
           retention-days: 7
-
-  # === DOCUMENTATION BUILD ===
-  documentation:
-    name: "📚 Documentation"
-    runs-on: ubuntu-latest
-
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
-
-      - name: Set up Python 3.12
-        uses: actions/setup-python@v5
-        with:
-          python-version: '3.12'
-          cache: 'pip'
-
-      - name: Install tox and dependencies
-        run: |
-          python -m pip install --upgrade pip
-          pip install tox>=4.0
-
-      - name: Build documentation
-        run: tox -e docs
 
       - name: Upload documentation build
         uses: actions/upload-artifact@v4
@@ -206,7 +189,7 @@ jobs:
   # === TEST SUITE SUMMARY ===
   summary:
     name: "📊 Test Summary"
-    needs: [python-tests, code-quality, documentation]
+    needs: [python-tests, quality-and-docs]
     runs-on: ubuntu-latest
     if: always()
 
@@ -230,17 +213,14 @@ jobs:
 
           # Quality Checks
           echo "" >> $GITHUB_STEP_SUMMARY
-          echo "## 🔍 Quality Checks" >> $GITHUB_STEP_SUMMARY
-          quality_result="${{ needs.code-quality.result == 'success' && '✅ PASSED' || '❌ FAILED' }}"
-          docs_result="${{ needs.documentation.result == 'success' && '✅ PASSED' || '❌ FAILED' }}"
-          echo "- **Code Quality:** $quality_result" >> $GITHUB_STEP_SUMMARY
-          echo "- **Documentation:** $docs_result" >> $GITHUB_STEP_SUMMARY
+          echo "## 🔍 Quality & Documentation" >> $GITHUB_STEP_SUMMARY
+          quality_docs_result="${{ needs.quality-and-docs.result == 'success' && '✅ PASSED' || '❌ FAILED' }}"
+          echo "- **Code Quality & Docs:** $quality_docs_result" >> $GITHUB_STEP_SUMMARY
 
           # Overall Status
           echo "" >> $GITHUB_STEP_SUMMARY
           if [ "${{ needs.python-tests.result }}" = "success" ] && \
-             [ "${{ needs.code-quality.result }}" = "success" ] && \
-             [ "${{ needs.documentation.result }}" = "success" ]; then
+             [ "${{ needs.quality-and-docs.result }}" = "success" ]; then
             echo "## 🎉 **ALL TESTS PASSED**" >> $GITHUB_STEP_SUMMARY
             echo "The full tox test suite completed successfully!" >> $GITHUB_STEP_SUMMARY
           else

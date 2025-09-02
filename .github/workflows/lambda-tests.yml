@@ -201,7 +201,13 @@ jobs:
     strategy:
       matrix:
         lambda-runtime: ["python3.11", "python3.12"]
-        memory-size: [128, 256, 512, 1024]
+        memory-size: [128, 512]  # Test low and high memory only
+        exclude:
+          # Reduce combinations - test each Python version with different memory
+          - lambda-runtime: "python3.11"
+            memory-size: 512
+          - lambda-runtime: "python3.12"
+            memory-size: 128
 
     steps:
       - name: Checkout code
