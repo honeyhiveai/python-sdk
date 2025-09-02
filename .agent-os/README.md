@@ -73,6 +73,7 @@ When working with AI coding assistants (like Claude, GPT-4, etc.), reference the
 5. **Multi-tier CI/CD testing strategy** (continuous, daily, release)
 6. **GitHub Actions workflow optimization** (reduced PR clutter)
 7. **yamllint validation** with 120-character line length
+8. **AI Assistant validation protocol** preventing codebase drift (mandatory)
 
 ## Quick Reference
 
@@ -117,6 +118,10 @@ When adding new features, create a spec following this structure:
 ├── specs.md  # Technical approach
 └── tasks.md  # Implementation tasks
 ```
+
+**Recent Critical Specs**:
+- `2025-09-02-ai-validation-protocol/` - Mandatory AI assistant validation (prevents codebase drift)
+- `2025-09-02-cicd-gha-best-practices/` - GitHub Actions workflow optimization
 
 Use the performance optimization spec as a template.
 

@@ -246,6 +246,7 @@ CI/CD Integration
 * **Modern Action Versions** - Updated to latest GitHub Actions versions (v4/v5) for reliability
 * **Workflow Dispatch Support** - Proper manual trigger configuration for release candidate workflows
 * **Release Artifact Management** - Descriptive artifact naming (``honeyhive-python-sdk-<version>``) with proper job output sharing
+* **API Import Validation** - Release candidate workflow tests current API surface (``HoneyHive`` not deprecated ``HoneyHiveClient``)
 
 Debugging Features
 ~~~~~~~~~~~~~~~~~~

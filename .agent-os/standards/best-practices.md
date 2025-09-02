@@ -515,3 +515,84 @@ stats.print_stats(10)
 3. Performance third
 4. Measure before optimizing
 5. Document optimizations
+
+## AI Assistant Development Process Requirements
+
+### 🤖 Mandatory AI Assistant Validation Process
+
+**⚠️ CRITICAL**: AI assistants must follow strict validation protocols to prevent codebase drift and outdated reference errors.
+
+#### Pre-Generation Validation (MANDATORY)
+
+Before generating ANY code that integrates with the codebase:
+
+1. **📋 Current API Validation**:
+   ```bash
+   # ALWAYS check current exports first
+   read_file src/honeyhive/__init__.py
+   grep -r "class.*:" src/honeyhive/api/
+   ```
+
+2. **🔍 Import Pattern Verification**:
+   ```bash
+   # Check current import patterns in examples
+   grep -r "from honeyhive import" examples/
+   grep -r "import honeyhive" tests/
+   ```
+
+3. **📚 Current Usage Pattern Analysis**:
+   - Read at least 2-3 current example files
+   - Check recent test files for current API usage
+   - Verify class names and method signatures
+
+#### Workflow/CI Generation Rules (MANDATORY)
+
+**🚨 Never generate CI/CD workflows without codebase validation**:
+
+1. **Current API Check**: Read `__init__.py` and `__all__` exports
+2. **Test Pattern Review**: Check `tests/` for current import patterns  
+3. **Example Validation**: Verify against `examples/` directory
+4. **Documentation Cross-Check**: Ensure consistency with current docs
+
+#### Case Study: HoneyHiveClient Failure (2025-09-02)
+
+**❌ What Happened**: AI assistant generated workflow using `HoneyHiveClient` (deprecated Aug 28) instead of `HoneyHive` (current API)
+
+**🔍 Root Cause**: Generated code from memory/assumptions instead of current codebase validation
+
+**✅ Prevention**: Mandatory pre-generation codebase validation prevents this failure mode
+
+#### AI Assistant Commit Requirements
+
+**All AI assistant commits MUST**:
+1. **Validate current API** before generating integration code
+2. **Test generated code** against current codebase
+3. **Update documentation** to reflect any changes
+4. **Include validation evidence** in commit messages
+
+**Example compliant commit message**:
+```
+feat: add release candidate workflow
+
+VALIDATION EVIDENCE:
+- Checked src/honeyhive/__init__.py exports: HoneyHive, HoneyHiveTracer
+- Verified examples/basic_usage.py import patterns
+- Tested against current API surface
+- All imports validated against __all__ exports
+```
+
+#### Emergency Override Process
+
+**Only in genuine emergencies**:
+1. Document why validation was skipped
+2. Add TODO for immediate post-emergency validation
+3. Schedule validation within 24 hours
+4. Update Agent OS with lessons learned
+
+### 🔄 Continuous Validation Requirements
+
+**For Long-Running Development Sessions**:
+- Re-validate API every 50+ file changes
+- Check for deprecation warnings before major code generation
+- Refresh codebase understanding if session > 2 hours
+- Always validate before final commits

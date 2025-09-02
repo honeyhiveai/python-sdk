@@ -244,13 +244,13 @@ jobs:
 
           # Test core imports
           import honeyhive
-          from honeyhive import HoneyHiveTracer, HoneyHiveClient
+          from honeyhive import HoneyHiveTracer, HoneyHive
           from honeyhive.tracer import trace
-          from honeyhive.evaluation import EvaluationFramework
+          from honeyhive.evaluation import evaluate
 
           # Test basic functionality
-          client = HoneyHiveClient(api_key='test-key', project='test-project')
-          tracer = HoneyHiveTracer(project='test-project', api_key='test-key')
+          client = HoneyHive(api_key='test-key', project='test-project')
+          tracer = HoneyHiveTracer.init(project='test-project', api_key='test-key')
 
           print('✅ All core imports successful')
           print('✅ Basic instantiation successful')

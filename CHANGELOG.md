@@ -22,6 +22,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Release Candidate Workflow Fix**: Removed quotes from 'on' trigger to ensure GitHub Actions recognizes workflow_dispatch
 - **Artifact Naming Improvement**: Changed artifact name to `honeyhive-python-sdk-<version>` for better identification
 - **Build Package Output Fix**: Added proper job outputs to share RC_VERSION between workflow jobs
+- **Workflow Test Update**: Fixed import test to use `HoneyHive` instead of removed `HoneyHiveClient`
 - **Multi-Instance Architecture**: Complete refactor to support multiple tracer instances
   - Create multiple independent tracers within the same runtime
   - Each tracer can have different API keys, projects, and sources

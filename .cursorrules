@@ -94,3 +94,23 @@
 - **Feature Catalog**: `.agent-os/product/features.md`
 - **Tech Stack**: `.agent-os/standards/tech-stack.md`
 - **Best Practices**: `.agent-os/standards/best-practices.md`
+
+## 🤖 AI Assistant Validation Protocol (MANDATORY)
+
+**⚠️ CRITICAL**: Before generating ANY code that integrates with the codebase:
+
+### Pre-Generation Validation (REQUIRED)
+1. **Check Current API**: `read_file src/honeyhive/__init__.py` 
+2. **Verify Imports**: `grep -r "from honeyhive import" examples/`
+3. **Validate Classes**: Ensure class names match current exports
+
+### Workflow/CI Generation Rules
+- **NEVER** generate CI/CD workflows without current API validation
+- **ALWAYS** check `__init__.py` exports before writing import statements
+- **VERIFY** against examples/ directory for current usage patterns
+- **TEST** generated code against current codebase
+
+### Case Study Prevention
+The 2025-09-02 HoneyHiveClient failure demonstrates why this validation is MANDATORY.
+Generated workflow used `HoneyHiveClient` (deprecated Aug 28) instead of `HoneyHive` (current).
+This validation protocol prevents such codebase drift failures.
