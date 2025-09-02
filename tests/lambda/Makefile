@@ -11,6 +11,7 @@ help:
 	@echo "  test-lambda     - Run basic Lambda tests"
 	@echo "  test-cold-start - Run cold start specific tests"
 	@echo "  test-performance- Run performance tests"
+	@echo "  validate        - Validate all Lambda containers and functions"
 	@echo "  start-containers- Start Lambda containers for testing"
 	@echo "  stop-containers - Stop Lambda containers"
 	@echo "  clean           - Clean up containers and images"
@@ -112,6 +113,11 @@ quick-container-test:
 		-d '{"test": "quick", "message": "container works!"}' \
 		--max-time 10
 	docker ps -q --filter "publish=9020" | xargs -r docker stop
+
+# Validate containers and functions
+validate:
+	@echo "🔍 Validating Lambda containers and functions..."
+	python validate-containers.py
 
 # Clean up containers
 clean-containers:

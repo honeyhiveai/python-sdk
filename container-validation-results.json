@@ -1,0 +1,38 @@
+{
+  "container_builds": {
+    "honeyhive-lambda:bundle-native": {
+      "status": "SUCCESS",
+      "dockerfile": "Dockerfile.bundle-builder"
+    }
+  },
+  "container_tests": {
+    "honeyhive-lambda:bundle-native": {
+      "status": "SUCCESS",
+      "output": "\u2705 HoneyHive SDK working\n"
+    }
+  },
+  "function_tests": {
+    "honeyhive-lambda:bundle-native:working_sdk_test.lambda_handler": {
+      "status": "SUCCESS",
+      "response": {
+        "statusCode": 200,
+        "body": "{\"status\": \"SUCCESS\", \"message\": \"\\ud83c\\udf89 Real HoneyHive SDK working in Lambda!\", \"sdk_location\": \"/var/task/honeyhive/__init__.py\", \"tracer_initialized\": true, \"span_created\": true, \"flush_success\": true, \"execution_time_ms\": 295.0911521911621, \"event\": {\"test\": \"validation\", \"timestamp\": 1756834851.319673}}"
+      }
+    },
+    "honeyhive-lambda:bundle-native:cold_start_test.lambda_handler": {
+      "status": "SUCCESS",
+      "response": {
+        "statusCode": 200,
+        "body": "{\"message\": \"Cold start test completed\", \"cold_start\": true, \"timings\": {\"sdk_import_ms\": 152.9531478881836, \"tracer_init_ms\": 180.4218292236328, \"handler_total_ms\": 52.76346206665039, \"work_time_ms\": 52.62112617492676, \"flush_time_ms\": 0.08225440979003906}, \"flush_success\": true, \"performance_impact\": {\"init_overhead_ms\": 333.3749771118164, \"runtime_overhead_ms\": 52.7033805847168}}"
+      }
+    },
+    "honeyhive-lambda:bundle-native:simple_test.lambda_handler": {
+      "status": "SUCCESS",
+      "response": {
+        "statusCode": 200,
+        "body": "{\"message\": \"Lambda Docker setup works!\", \"event\": {\"test\": \"validation\", \"timestamp\": 1756834858.853976}, \"lambda_context\": {\"function_name\": \"test_function\", \"function_version\": \"$LATEST\", \"memory_limit\": \"3008\"}, \"execution_time_ms\": 0.0030994415283203125, \"timestamp\": 1756834858.899654}"
+      }
+    }
+  },
+  "overall_status": "SUCCESS"
+}

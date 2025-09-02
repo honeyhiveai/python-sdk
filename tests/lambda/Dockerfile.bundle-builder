@@ -13,8 +13,9 @@ WORKDIR /lambda-bundle
 # Copy HoneyHive SDK
 COPY src/honeyhive ./honeyhive/
 
-# Copy Lambda functions  
+# Copy Lambda functions from both locations
 COPY tests/lambda/lambda_functions/*.py ./
+COPY lambda_functions/*.py ./
 
 # Install dependencies directly to current directory
 RUN pip install --target . \

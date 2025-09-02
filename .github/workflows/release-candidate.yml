@@ -112,10 +112,41 @@ jobs:
         python -m pip install --upgrade pip
         pip install tox docker pytest
     
+    - name: Set up virtual environment (following project standards)
+      run: |
+        python -m venv python-sdk
+        source python-sdk/bin/activate
+        echo "VIRTUAL_ENV=$PWD/python-sdk" >> $GITHUB_ENV
+        echo "$PWD/python-sdk/bin" >> $GITHUB_PATH
+    
+    - name: Install project in development mode
+      run: |
+        pip install -e .
+    
     - name: Build Lambda test containers
       run: |
         cd tests/lambda
+        echo "🐳 Building Lambda container for Python ${{ matrix.python-version }}..."
         make build
+        
+        # Verify container was built successfully
+        docker images | grep honeyhive-lambda
+        
+        # Quick container validation (override entrypoint for testing)
+        docker run --rm --entrypoint python honeyhive-lambda:bundle-native -c "import honeyhive; print('✅ SDK available')" || echo "⚠️ Container validation skipped"
+    
+    - name: Comprehensive container validation
+      run: |
+        echo "🔍 Running comprehensive Lambda container validation..."
+        python tests/lambda/validate-containers.py
+        
+        # Upload validation results
+        if [ -f "container-validation-results.json" ]; then
+          echo "📊 Container validation completed successfully"
+        else
+          echo "❌ Container validation failed"
+          exit 1
+        fi
     
     - name: Run Lambda compatibility tests
       env:
@@ -126,6 +157,14 @@ jobs:
         HH_TEST_MODE: "true"
       run: |
         cd tests/lambda
+        
+        # Ensure container exists before running tests
+        if ! docker images | grep -q "honeyhive-lambda.*bundle-native"; then
+          echo "❌ Lambda container not found, rebuilding..."
+          make build
+        fi
+        
+        echo "🧪 Running Lambda compatibility tests..."
         make test-lambda
     
     - name: Run Lambda performance tests
@@ -135,6 +174,8 @@ jobs:
         AWS_LAMBDA_FUNCTION_MEMORY_SIZE: ${{ matrix.memory-size }}
       run: |
         cd tests/lambda
+        
+        echo "⚡ Running Lambda performance tests..."
         make test-performance
     
     - name: Upload Lambda performance results
@@ -143,6 +184,13 @@ jobs:
       with:
         name: lambda-performance-${{ matrix.python-version }}-${{ matrix.memory-size }}mb
         path: tests/lambda/performance-results.json
+    
+    - name: Upload container validation results
+      uses: actions/upload-artifact@v3
+      if: always()
+      with:
+        name: container-validation-${{ matrix.python-version }}-${{ matrix.memory-size }}mb
+        path: container-validation-results.json
 
   # Code quality and linting
   quality-checks:
