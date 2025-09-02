@@ -28,6 +28,9 @@ name: Build Release Candidate
         required: false
         default: true
         type: boolean
+  push:
+    branches: [complete-refactor]
+    paths: ['.github/workflows/release-candidate.yml']
 
 env:
   PYTHON_VERSION: "3.11"
