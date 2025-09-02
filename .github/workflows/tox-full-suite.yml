@@ -45,22 +45,10 @@ env:
   HH_OTLP_ENABLED: false
 
 jobs:
-  tox-testing:
-    name: 🧪 Tox Testing
-    runs-on: ubuntu-latest
-    outputs:
-      matrix-results: ${{ steps.matrix-results.outputs.results }}
-    steps:
-      - name: Setup Tox Test Matrix
-        id: matrix-results
-        run: |
-          echo "results=success" >> $GITHUB_OUTPUT
-          echo "✅ Tox Test Matrix Initialized"
-
-  # === PYTHON VERSION MATRIX (Full Test Suite) ===
-  python-matrix:
-    name: "  ├─ 🐍 Python ${{ matrix.python-version }}"
-    needs: tox-testing
+  # === PYTHON VERSION TESTING ===
+  python-tests:
+    name: "🐍 Python ${{ matrix.python-version }}"
+    if: "!contains(github.event.head_commit.message, '[skip-tests]')"
     runs-on: ubuntu-latest
     strategy:
       fail-fast: false
@@ -110,8 +98,7 @@ jobs:
 
   # === CODE QUALITY CHECKS ===
   code-quality:
-    name: "  ├─ 🔍 Code Quality"
-    needs: tox-testing
+    name: "🔍 Code Quality"
     runs-on: ubuntu-latest
 
     steps:
@@ -147,8 +134,7 @@ jobs:
 
   # === DOCUMENTATION BUILD ===
   documentation:
-    name: "  ├─ 📚 Documentation"
-    needs: tox-testing
+    name: "📚 Documentation"
     runs-on: ubuntu-latest
 
     steps:
@@ -178,8 +164,7 @@ jobs:
 
   # === INTEGRATION TESTS (Real API) ===
   integration-tests:
-    name: "  ├─ 🔗 Integration Tests"
-    needs: tox-testing
+    name: "🔗 Integration Tests"
     runs-on: ubuntu-latest
     if: >
       github.event_name == 'workflow_dispatch' ||
@@ -220,8 +205,8 @@ jobs:
 
   # === TEST SUITE SUMMARY ===
   summary:
-    name: "  ├─ 📊 Test Summary"
-    needs: [tox-testing, python-matrix, code-quality, documentation]
+    name: "📊 Test Summary"
+    needs: [python-tests, code-quality, documentation]
     runs-on: ubuntu-latest
     if: always()
 
@@ -238,7 +223,7 @@ jobs:
 
           # Python Version Results
           echo "## 🐍 Python Version Testing" >> $GITHUB_STEP_SUMMARY
-          python_result="${{ needs.python-matrix.result == 'success' && '✅ PASSED' || '❌ FAILED' }}"
+          python_result="${{ needs.python-tests.result == 'success' && '✅ PASSED' || '❌ FAILED' }}"
           echo "- **Python 3.11:** $python_result" >> $GITHUB_STEP_SUMMARY
           echo "- **Python 3.12:** $python_result" >> $GITHUB_STEP_SUMMARY
           echo "- **Python 3.13:** $python_result" >> $GITHUB_STEP_SUMMARY
@@ -253,7 +238,7 @@ jobs:
 
           # Overall Status
           echo "" >> $GITHUB_STEP_SUMMARY
-          if [ "${{ needs.python-matrix.result }}" = "success" ] && \
+          if [ "${{ needs.python-tests.result }}" = "success" ] && \
              [ "${{ needs.code-quality.result }}" = "success" ] && \
              [ "${{ needs.documentation.result }}" = "success" ]; then
             echo "## 🎉 **ALL TESTS PASSED**" >> $GITHUB_STEP_SUMMARY
@@ -265,8 +250,7 @@ jobs:
 
   # === OPTIONAL: FULL TOX SUITE (Sequential) ===
   tox-full-sequential:
-    name: "  └─ 🎯 Sequential Suite"
-    needs: tox-testing
+    name: "🎯 Sequential Suite"
     runs-on: ubuntu-latest
     if: github.event_name == 'workflow_dispatch'
 

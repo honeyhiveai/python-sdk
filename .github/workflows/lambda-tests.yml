@@ -9,21 +9,8 @@ name: AWS Lambda Compatibility Tests
     - cron: '0 2 * * *'
 
 jobs:
-  lambda-tests:
-    name: 🐳 Lambda Testing
-    runs-on: ubuntu-latest
-    outputs:
-      matrix-results: ${{ steps.matrix-results.outputs.results }}
-    steps:
-      - name: Setup Lambda Test Matrix
-        id: matrix-results
-        run: |
-          echo "results=success" >> $GITHUB_OUTPUT
-          echo "✅ Lambda Test Matrix Initialized"
-
   lambda-docker-tests:
-    name: "  ├─ 🐳 Docker Simulation"
-    needs: lambda-tests
+    name: "🐳 Docker Simulation"
     runs-on: ubuntu-latest
 
     strategy:
@@ -93,8 +80,7 @@ jobs:
           path: tests/lambda/test-results/
 
   lambda-real-aws-tests:
-    name: "  ├─ ☁️ Real AWS Environment"
-    needs: lambda-tests
+    name: "☁️ Real AWS Environment"
     runs-on: ubuntu-latest
     if: github.ref == 'refs/heads/main' || github.event_name == 'schedule'
 
@@ -140,8 +126,7 @@ jobs:
           sam delete --no-prompts
 
   lambda-performance-benchmark:
-    name: "  ├─ ⚡ Performance Benchmarks"
-    needs: lambda-tests
+    name: "⚡ Performance Benchmarks"
     runs-on: ubuntu-latest
     if: github.event_name == 'schedule'
 
@@ -210,8 +195,7 @@ jobs:
             });
 
   lambda-compatibility-matrix:
-    name: "  └─ 🧪 Compatibility Matrix"
-    needs: lambda-tests
+    name: "🧪 Compatibility Matrix"
     runs-on: ubuntu-latest
 
     strategy:
