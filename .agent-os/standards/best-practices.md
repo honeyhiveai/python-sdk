@@ -2,6 +2,26 @@
 
 ## Development Environment Setup
 
+### Mandatory Code Quality Process
+
+**⚠️ CRITICAL: Install Pre-commit Hooks**
+```bash
+# One-time setup (required for all developers)
+./scripts/setup-dev.sh
+```
+
+**Automatic Quality Enforcement**:
+- **Black formatting**: 88-character lines, applied on every commit
+- **Import sorting**: isort with black profile
+- **Static analysis**: pylint + mypy type checking  
+- **YAML validation**: yamllint with 120-character lines
+- **Tox verification**: Format and lint checks
+
+**Before Every Commit**:
+1. Pre-commit hooks run automatically (DO NOT bypass)
+2. Manual verification: `tox -e format && tox -e lint`
+3. Emergency bypass only: `git commit --no-verify` (document why)
+
 ### Required Tools
 ```bash
 # Core development tools
