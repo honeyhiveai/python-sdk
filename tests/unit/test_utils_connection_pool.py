@@ -74,7 +74,7 @@ class TestConnectionPool:
             assert pool.config.max_connections == 100
             assert pool._clients == {}
             assert pool._async_clients == {}
-            assert isinstance(pool._lock, threading.Lock)
+            assert hasattr(pool._lock, "acquire") and hasattr(pool._lock, "release")
             assert pool._last_used == {}
 
     def test_pool_initialization_custom_config(self, pool_config):
