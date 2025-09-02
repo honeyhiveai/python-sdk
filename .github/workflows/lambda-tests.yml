@@ -2,8 +2,10 @@
 name: AWS Lambda Compatibility Tests
 
 'on':
-  push:  # Run on all branches
-  pull_request:  # Run on all PRs
+  push:
+    branches: [main, develop]  # Only run on protected branches
+  pull_request:
+    branches: [main, develop]  # Run on PRs to protected branches
   schedule:
     # Run Lambda tests daily at 2 AM UTC
     - cron: '0 2 * * *'

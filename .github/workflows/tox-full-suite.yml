@@ -18,6 +18,7 @@ name: Tox Full Test Suite
         required: false
         default: true
   push:
+    branches: [main, develop]  # Only run on protected branches
     paths:
       - 'src/**'
       - 'tests/**'
@@ -25,6 +26,7 @@ name: Tox Full Test Suite
       - 'pyproject.toml'
       - '.github/workflows/tox-full-suite.yml'
   pull_request:
+    branches: [main, develop]  # Run on PRs to protected branches
     paths:
       - 'src/**'
       - 'tests/**'
