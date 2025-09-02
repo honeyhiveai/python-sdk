@@ -33,17 +33,17 @@ test: build test-lambda test-cold-start test-performance
 # Run basic Lambda compatibility tests
 test-lambda:
 	@echo "🧪 Running Lambda compatibility tests..."
-	python -m pytest test_lambda_compatibility.py::TestLambdaCompatibility -v
+	python -m pytest test_lambda_compatibility.py::TestLambdaCompatibility -v --no-cov
 
 # Run cold start tests
 test-cold-start:
 	@echo "❄️ Running cold start tests..."
-	python -m pytest test_lambda_compatibility.py::TestLambdaColdStarts -v
+	python -m pytest test_lambda_compatibility.py::TestLambdaColdStarts -v --no-cov
 
 # Run performance tests
 test-performance:
 	@echo "⚡ Running Lambda performance tests..."
-	python -m pytest test_lambda_performance.py -v
+	python -m pytest test_lambda_performance.py -v --no-cov
 
 # Start containers for manual testing
 start-containers:
