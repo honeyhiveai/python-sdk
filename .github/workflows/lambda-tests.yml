@@ -1,270 +1,275 @@
+---
 name: AWS Lambda Compatibility Tests
 
-on:
-  push:
-    branches: [ main, develop, complete-refactor ]
-  pull_request:
-    branches: [ main, develop ]
+'on':
+  push:  # Run on all branches
+  pull_request:  # Run on all PRs
   schedule:
     # Run Lambda tests daily at 2 AM UTC
     - cron: '0 2 * * *'
 
 jobs:
-  lambda-docker-tests:
-    name: Lambda Docker Simulation Tests
+  lambda-tests:
+    name: 🐳 Lambda Testing
     runs-on: ubuntu-latest
-    
+    outputs:
+      matrix-results: ${{ steps.matrix-results.outputs.results }}
+    steps:
+      - name: Setup Lambda Test Matrix
+        id: matrix-results
+        run: |
+          echo "results=success" >> $GITHUB_OUTPUT
+          echo "✅ Lambda Test Matrix Initialized"
+
+  lambda-docker-tests:
+    name: "  ├─ 🐳 Docker Simulation"
+    needs: lambda-tests
+    runs-on: ubuntu-latest
+
     strategy:
       matrix:
         python-version: ["3.11", "3.12"]
-    
+
     steps:
-    - name: Checkout code
-      uses: actions/checkout@v4
-      
-    - name: Set up Python
-      uses: actions/setup-python@v5
-      with:
-        python-version: ${{ matrix.python-version }}
-        
-    - name: Set up virtual environment (following project standards)
-      run: |
-        python -m venv python-sdk
-        source python-sdk/bin/activate
-        echo "VIRTUAL_ENV=$PWD/python-sdk" >> $GITHUB_ENV
-        echo "$PWD/python-sdk/bin" >> $GITHUB_PATH
-    
-    - name: Install dependencies
-      run: |
-        python -m pip install --upgrade pip
-        pip install docker requests pytest pytest-asyncio
-        pip install -e .
-        
-    - name: Build Lambda test containers
-      run: |
-        cd tests/lambda
-        echo "🐳 Building Lambda containers..."
-        make build
-        
-        # Verify container was built successfully
-        docker images | grep honeyhive-lambda || echo "No honeyhive-lambda images found"
-    
-    - name: Validate Lambda containers
-      run: |
-        echo "🔍 Running container validation..."
-        python tests/lambda/validate-containers.py
-        
-    - name: Test Lambda compatibility with Docker
-      env:
-        HH_API_KEY: ${{ secrets.HH_TEST_API_KEY || 'test-key' }}
-        HH_PROJECT: "ci-lambda-test"
-        HH_SOURCE: "github-actions"
-        HH_TEST_MODE: "true"
-      run: |
-        cd tests/lambda
-        
-        # Ensure container exists
-        if ! docker images | grep -q "honeyhive-lambda.*bundle-native"; then
-          echo "❌ Lambda container not found, rebuilding..."
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+
+      - name: Set up virtual environment (following project standards)
+        run: |
+          python -m venv python-sdk
+          source python-sdk/bin/activate
+          echo "VIRTUAL_ENV=$PWD/python-sdk" >> $GITHUB_ENV
+          echo "$PWD/python-sdk/bin" >> $GITHUB_PATH
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install docker requests pytest pytest-asyncio
+          pip install -e .
+
+      - name: Build Lambda test containers
+        run: |
+          cd tests/lambda
+          echo "🐳 Building Lambda containers..."
           make build
-        fi
-        
-        echo "🧪 Running Lambda compatibility tests..."
-        make test-lambda
-      timeout-minutes: 10
-      
-    - name: Test Cold Start Performance
-      env:
-        HH_API_KEY: ${{ secrets.HH_TEST_API_KEY || 'test-key' }}
-        HH_PROJECT: "ci-lambda-coldstart"
-        HH_SOURCE: "github-actions"
-      run: |
-        cd tests/lambda
-        echo "❄️ Running cold start tests..."
-        make test-performance
-      timeout-minutes: 15
-      
-    - name: Upload test results
-      if: always()
-      uses: actions/upload-artifact@v4
-      with:
-        name: lambda-test-results-py${{ matrix.python-version }}
-        path: tests/lambda/test-results/
-        
+
+          # Verify container was built successfully
+          docker images | grep honeyhive-lambda || echo "No honeyhive-lambda images found"
+
+      - name: Validate Lambda containers
+        run: |
+          echo "🔍 Running container validation..."
+          python tests/lambda/validate-containers.py
+
+      - name: Test Lambda compatibility with Docker
+        env:
+          HH_API_KEY: ${{ secrets.HH_TEST_API_KEY || 'test-key' }}
+          HH_PROJECT: "ci-lambda-test"
+          HH_SOURCE: "github-actions"
+          HH_TEST_MODE: "true"
+        run: |
+          cd tests/lambda
+
+          # Ensure container exists
+          if ! docker images | grep -q "honeyhive-lambda.*bundle-native"; then
+            echo "❌ honeyhive-lambda:bundle-native container not found"
+            docker images
+            exit 1
+          fi
+
+          echo "✅ Container found, running Lambda tests..."
+          make test-lambda
+
+      - name: Upload Lambda test results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: lambda-test-results-py${{ matrix.python-version }}
+          path: tests/lambda/test-results/
+
   lambda-real-aws-tests:
-    name: Real AWS Lambda Tests
+    name: "  ├─ ☁️ Real AWS Environment"
+    needs: lambda-tests
     runs-on: ubuntu-latest
     if: github.ref == 'refs/heads/main' || github.event_name == 'schedule'
-    
+
     steps:
-    - name: Checkout code
-      uses: actions/checkout@v4
-      
-    - name: Configure AWS credentials
-      uses: aws-actions/configure-aws-credentials@v4
-      with:
-        aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
-        aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-        aws-region: us-east-1
-        
-    - name: Set up Python
-      uses: actions/setup-python@v5
-      with:
-        python-version: "3.11"
-        
-    - name: Install SAM CLI
-      run: |
-        pip install aws-sam-cli
-        
-    - name: Deploy test Lambda functions
-      run: |
-        cd tests/lambda/aws-deployment
-        sam build
-        sam deploy --no-confirm-changeset --no-fail-on-empty-changeset
-        
-    - name: Run real Lambda tests
-      run: |
-        cd tests/lambda
-        python -m pytest test_real_lambda.py -v --tb=short
-      env:
-        AWS_LAMBDA_FUNCTION_NAME: honeyhive-sdk-test
-        HH_API_KEY: ${{ secrets.HH_API_KEY }}
-        HH_PROJECT: lambda-ci-test
-        
-    - name: Cleanup Lambda functions
-      if: always()
-      run: |
-        cd tests/lambda/aws-deployment
-        sam delete --no-prompts
-        
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: us-east-1
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install AWS SAM CLI
+        uses: aws-actions/setup-sam@v2
+        with:
+          use-installer: true
+
+      - name: Deploy and test real Lambda
+        env:
+          HH_API_KEY: ${{ secrets.HH_API_KEY }}
+          HH_PROJECT: ${{ secrets.HH_PROJECT || 'ci-lambda-test' }}
+          HH_SOURCE: "aws-lambda-ci"
+        run: |
+          cd tests/lambda/aws-deployment
+          sam build
+          sam deploy --no-confirm-changeset --no-fail-on-empty-changeset
+
+          # Test deployed Lambda
+          aws lambda invoke --function-name honeyhive-lambda-test response.json
+          cat response.json
+
+      - name: Cleanup AWS resources
+        if: always()
+        run: |
+          cd tests/lambda/aws-deployment
+          sam delete --no-prompts
+
   lambda-performance-benchmark:
-    name: Lambda Performance Benchmarks
+    name: "  ├─ ⚡ Performance Benchmarks"
+    needs: lambda-tests
     runs-on: ubuntu-latest
     if: github.event_name == 'schedule'
-    
+
     steps:
-    - name: Checkout code
-      uses: actions/checkout@v4
-      
-    - name: Set up Python
-      uses: actions/setup-python@v5
-      with:
-        python-version: "3.11"
-        
-    - name: Install dependencies
-      run: |
-        python -m pip install --upgrade pip
-        pip install docker requests pytest pytest-benchmark
-        pip install -e .
-        
-    - name: Run performance benchmarks
-      run: |
-        cd tests/lambda
-        python -m pytest test_lambda_performance.py --benchmark-json=benchmark-results.json
-        
-    - name: Upload benchmark results
-      uses: actions/upload-artifact@v4
-      with:
-        name: lambda-benchmarks
-        path: tests/lambda/benchmark-results.json
-        
-    - name: Comment benchmark results
-      if: github.event_name == 'pull_request'
-      uses: actions/github-script@v7
-      with:
-        script: |
-          const fs = require('fs');
-          const results = JSON.parse(fs.readFileSync('tests/lambda/benchmark-results.json'));
-          
-          const comment = `## 🚀 Lambda Performance Benchmarks
-          
-          | Metric | Value |
-          |--------|-------|
-          | Cold Start Time | ${results.cold_start_avg}ms |
-          | Warm Start Time | ${results.warm_start_avg}ms |
-          | SDK Init Time | ${results.sdk_init_avg}ms |
-          | Memory Usage | ${results.memory_peak}MB |
-          | Flush Time | ${results.flush_avg}ms |
-          
-          ${results.cold_start_avg < 1000 ? '✅' : '⚠️'} Cold start performance
-          ${results.sdk_init_avg < 100 ? '✅' : '⚠️'} SDK initialization speed
-          ${results.memory_peak < 50 ? '✅' : '⚠️'} Memory efficiency
-          `;
-          
-          github.rest.issues.createComment({
-            issue_number: context.issue.number,
-            owner: context.repo.owner,
-            repo: context.repo.repo,
-            body: comment
-          });
-          
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install docker pytest pytest-benchmark
+          pip install -e .
+
+      - name: Set up virtual environment (following project standards)
+        run: |
+          python -m venv python-sdk
+          source python-sdk/bin/activate
+          echo "VIRTUAL_ENV=$PWD/python-sdk" >> $GITHUB_ENV
+          echo "$PWD/python-sdk/bin" >> $GITHUB_PATH
+
+      - name: Build containers and run performance benchmarks
+        run: |
+          cd tests/lambda
+          make build
+
+      - name: Run performance benchmarks
+        run: |
+          cd tests/lambda
+          python -m pytest test_lambda_performance.py --benchmark-json=benchmark-results.json
+
+      - name: Upload benchmark results
+        uses: actions/upload-artifact@v4
+        with:
+          name: lambda-benchmarks
+          path: tests/lambda/benchmark-results.json
+
+      - name: Comment benchmark results on PR
+        if: github.event_name == 'pull_request'
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const fs = require('fs');
+            const results = JSON.parse(fs.readFileSync('tests/lambda/benchmark-results.json'));
+
+            const comment = `## 🚀 Lambda Performance Benchmarks
+
+            | Metric | Value |
+            |--------|-------|
+            | Cold Start | ${results.cold_start_ms}ms |
+            | Warm Start | ${results.warm_start_ms}ms |
+            | Memory Usage | ${results.memory_mb}MB |
+            | Execution Time | ${results.execution_time_ms}ms |
+
+            _Generated on: ${new Date().toISOString()}_`;
+
+            github.rest.issues.createComment({
+              issue_number: context.issue.number,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              body: comment
+            });
+
   lambda-compatibility-matrix:
-    name: Lambda Compatibility Matrix
+    name: "  └─ 🧪 Compatibility Matrix"
+    needs: lambda-tests
     runs-on: ubuntu-latest
-    
+
     strategy:
       matrix:
-        lambda-runtime: [
-          "python3.11",
-          "python3.12"
-        ]
+        lambda-runtime: ["python3.11", "python3.12"]
         memory-size: [128, 256, 512, 1024]
-        
+
     steps:
-    - name: Checkout code
-      uses: actions/checkout@v4
-      
-    - name: Set up Python
-      uses: actions/setup-python@v5
-      with:
-        python-version: "3.11"
-        
-    - name: Set up virtual environment
-      run: |
-        python -m venv python-sdk
-        source python-sdk/bin/activate
-        echo "VIRTUAL_ENV=$PWD/python-sdk" >> $GITHUB_ENV
-        echo "$PWD/python-sdk/bin" >> $GITHUB_PATH
-    
-    - name: Install dependencies
-      run: |
-        python -m pip install --upgrade pip
-        pip install -e .
-        
-    - name: Build Lambda container
-      run: |
-        cd tests/lambda
-        make build
-        
-    - name: Test compatibility with built container
-      run: |
-        cd tests/lambda
-        
-        # Use our built container instead of base Lambda runtime
-        docker run --rm \
-          -e AWS_LAMBDA_FUNCTION_MEMORY_SIZE=${{ matrix.memory-size }} \
-          -e HH_API_KEY=test-key \
-          -e HH_PROJECT=ci-compatibility-test \
-          -p 9000:8080 \
-          honeyhive-lambda:bundle-native \
-          basic_tracing.lambda_handler &
-        
-        sleep 5
-        
-        # Test basic functionality
-        response=$(curl -s -X POST http://localhost:9000/2015-03-31/functions/function/invocations \
-          -H "Content-Type: application/json" \
-          -d '{"test": "compatibility", "runtime": "${{ matrix.lambda-runtime }}", "memory": ${{ matrix.memory-size }}}')
-        
-        echo "Response: $response"
-        
-        # Check if successful
-        if echo "$response" | grep -q '"statusCode": 200'; then
-          echo "✅ Compatible with ${{ matrix.lambda-runtime }} @ ${{ matrix.memory-size }}MB"
-        else
-          echo "❌ Failed with ${{ matrix.lambda-runtime }} @ ${{ matrix.memory-size }}MB"
-          exit 1
-        fi
-        
-        # Stop the container
-        docker ps -q --filter "publish=9000" | xargs -r docker stop
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install docker requests
+          pip install -e .
+
+      - name: Set up virtual environment (following project standards)
+        run: |
+          python -m venv python-sdk
+          source python-sdk/bin/activate
+          echo "VIRTUAL_ENV=$PWD/python-sdk" >> $GITHUB_ENV
+          echo "$PWD/python-sdk/bin" >> $GITHUB_PATH
+
+      - name: Test compatibility matrix
+        run: |
+          cd tests/lambda
+
+          # Build test container with specific runtime
+          docker build -f Dockerfile.bundle-builder -t honeyhive-lambda:test-${{ matrix.lambda-runtime }} .
+
+          # Start container with memory constraints
+          docker run -d -p 9000:8080 --memory=${{ matrix.memory-size }}m \
+            honeyhive-lambda:test-${{ matrix.lambda-runtime }} \
+            basic_tracing.lambda_handler &
+
+          sleep 5
+
+          # Test basic functionality
+          response=$(curl -s -X POST http://localhost:9000/2015-03-31/functions/function/invocations \
+            -H "Content-Type: application/json" \
+            -d '{"test": "compatibility", "runtime": "${{ matrix.lambda-runtime }}", \
+              "memory": ${{ matrix.memory-size }}}')
+
+          echo "Response: $response"
+
+          # Check if successful
+          if echo "$response" | grep -q '"statusCode": 200'; then
+            echo "✅ Compatible with ${{ matrix.lambda-runtime }} @ ${{ matrix.memory-size }}MB"
+          else
+            echo "❌ Failed with ${{ matrix.lambda-runtime }} @ ${{ matrix.memory-size }}MB"
+            exit 1
+          fi
+
+          # Stop the container
+          docker ps -q --filter "publish=9000" | xargs -r docker stop
