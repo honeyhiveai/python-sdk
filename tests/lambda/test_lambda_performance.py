@@ -354,6 +354,183 @@ class TestLambdaPerformance:
             "measurement_note": "Cold start overhead is one-time, runtime overhead is per-request"
         }
 
+    @pytest.mark.benchmark
+    def test_comprehensive_sdk_overhead(self):
+        """Comprehensive SDK overhead measurement with statistical significance and minimal variance."""
+        client = docker.from_env()
+        
+        # Use dedicated SDK overhead test container
+        container = client.containers.run(
+            "honeyhive-lambda:bundle-native",
+            command="sdk_overhead_test.lambda_handler",
+            ports={"8080/tcp": None},
+            environment={
+                "HH_API_KEY": "test-key",
+                "HH_PROJECT": "overhead-test",
+                "HH_TEST_MODE": "true",
+            },
+            detach=True,
+            remove=True,
+        )
+
+        try:
+            # Get assigned port
+            container.reload()
+            port_info = container.ports.get("8080/tcp")
+            assert port_info, "Container port mapping failed"
+            port = port_info[0]["HostPort"]
+
+            # Wait for container to be ready
+            self._wait_for_comprehensive_overhead_container_ready(port=port, timeout=30)
+
+            # Test multiple work durations to validate overhead scaling
+            test_scenarios = [
+                {"work_duration_ms": 10, "name": "minimal_work"},
+                {"work_duration_ms": 50, "name": "standard_work"},
+                {"work_duration_ms": 100, "name": "extended_work"},
+            ]
+            
+            results = {}
+            
+            for scenario in test_scenarios:
+                url = f"http://localhost:{port}/2015-03-31/functions/function/invocations"
+                
+                # Multiple measurements for statistical significance
+                measurements = []
+                for run in range(3):
+                    response = requests.post(
+                        url,
+                        json=scenario,
+                        headers={"Content-Type": "application/json"},
+                        timeout=30,
+                    )
+                    
+                    assert response.status_code == 200, f"Request failed: {response.text}"
+                    
+                    result = response.json()
+                    body = json.loads(result["body"])
+                    measurements.append(body)
+                    
+                    # Small delay between measurements
+                    time.sleep(0.1)
+                
+                # Analyze measurements for this scenario
+                overhead_percentages = [
+                    m["overhead_analysis"]["overhead_vs_work_percentage"] 
+                    for m in measurements
+                ]
+                per_span_overheads = [
+                    m["overhead_analysis"]["avg_per_span_overhead_ms"]
+                    for m in measurements
+                ]
+                coefficients_of_variation = [
+                    m["overhead_analysis"]["coefficient_of_variation"]
+                    for m in measurements
+                ]
+                
+                scenario_stats = {
+                    "overhead_percentage": {
+                        "mean": statistics.mean(overhead_percentages),
+                        "std_dev": statistics.stdev(overhead_percentages) if len(overhead_percentages) > 1 else 0,
+                        "values": overhead_percentages,
+                    },
+                    "per_span_overhead_ms": {
+                        "mean": statistics.mean(per_span_overheads),
+                        "std_dev": statistics.stdev(per_span_overheads) if len(per_span_overheads) > 1 else 0,
+                        "values": per_span_overheads,
+                    },
+                    "measurement_stability": {
+                        "avg_coefficient_of_variation": statistics.mean(coefficients_of_variation),
+                        "measurement_count": len(measurements),
+                    },
+                    "sample_result": measurements[0],  # Include one full result for reference
+                }
+                
+                results[scenario["name"]] = scenario_stats
+
+            # Comprehensive assertions across all scenarios
+            for scenario_name, stats in results.items():
+                work_duration = next(s["work_duration_ms"] for s in test_scenarios if s["name"] == scenario_name)
+                
+                # Per-span overhead should be reasonable
+                avg_per_span = stats["per_span_overhead_ms"]["mean"]
+                assert avg_per_span < 5.0, (
+                    f"{scenario_name}: Per-span overhead too high: {avg_per_span:.2f}ms "
+                    f"(expected <5.0ms per span)"
+                )
+                
+                # Overhead percentage should decrease with longer work
+                avg_percentage = stats["overhead_percentage"]["mean"]
+                if work_duration >= 50:  # Only assert for substantial work
+                    assert avg_percentage < 20.0, (
+                        f"{scenario_name}: Overhead percentage too high: {avg_percentage:.1f}% "
+                        f"(expected <20% for {work_duration}ms work)"
+                    )
+                
+                # Measurement variance should be low (good test stability)
+                percentage_variance = stats["overhead_percentage"]["std_dev"]
+                assert percentage_variance < 5.0, (
+                    f"{scenario_name}: Overhead measurement too variable: {percentage_variance:.1f}% std dev "
+                    f"(expected <5% for stable measurements)"
+                )
+                
+                # SDK internal measurements should be stable
+                avg_cv = stats["measurement_stability"]["avg_coefficient_of_variation"]
+                assert avg_cv < 50.0, (
+                    f"{scenario_name}: SDK internal measurements too variable: {avg_cv:.1f}% CV "
+                    f"(expected <50% coefficient of variation)"
+                )
+
+            # Cold start overhead validation (from any scenario)
+            sample_init = results["standard_work"]["sample_result"]["initialization_overhead"]
+            cold_start_overhead = sample_init["total_init_ms"]
+            if cold_start_overhead > 0:
+                assert cold_start_overhead < 500, (
+                    f"Cold start overhead too high: {cold_start_overhead:.1f}ms "
+                    f"(expected <500ms for SDK import + init)"
+                )
+
+            return {
+                "test_scenarios": results,
+                "summary": {
+                    "avg_per_span_overhead_ms": statistics.mean([
+                        stats["per_span_overhead_ms"]["mean"] for stats in results.values()
+                    ]),
+                    "overhead_scales_with_work": (
+                        results["minimal_work"]["overhead_percentage"]["mean"] >
+                        results["extended_work"]["overhead_percentage"]["mean"]
+                    ),
+                    "measurement_stability": "high" if all(
+                        stats["overhead_percentage"]["std_dev"] < 3.0 
+                        for stats in results.values()
+                    ) else "moderate",
+                },
+                "cold_start_overhead_ms": cold_start_overhead,
+            }
+
+        finally:
+            container.stop()
+
+    def _wait_for_comprehensive_overhead_container_ready(self, port: int, timeout: int = 30):
+        """Wait for comprehensive overhead container to be ready with health checking."""
+        start_time = time.time()
+        while time.time() - start_time < timeout:
+            try:
+                response = requests.post(
+                    f"http://localhost:{port}/2015-03-31/functions/function/invocations",
+                    json={"work_duration_ms": 1},  # Minimal test
+                    headers={"Content-Type": "application/json"},
+                    timeout=5,
+                )
+                if response.status_code in [200, 500]:  # Accept both success and handler errors
+                    print(f"✅ Comprehensive overhead container ready on port {port}")
+                    return
+            except requests.exceptions.RequestException:
+                pass
+            time.sleep(0.5)
+        
+        raise Exception(f"Comprehensive overhead container not ready after {timeout}s")
+
 
 class TestLambdaStressTests:
     """Stress tests for Lambda environment."""
