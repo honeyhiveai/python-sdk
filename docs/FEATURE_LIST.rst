@@ -293,6 +293,13 @@ CI/CD Integration
 GitHub Actions Support
 ~~~~~~~~~~~~~~~~~~~~~~~
 
+* **Documentation Workflows** - Complete documentation automation suite
+  
+  - **Main Documentation Deployment** - Deploy Sphinx docs to GitHub Pages
+  - **PR Documentation Previews** - Build and preview docs for pull requests  
+  - **Versioned Documentation** - Manage multiple doc versions with mike
+  - **API Validation** - Validate current API surface before doc generation
+
 * **Release Candidate Workflow** - Manual deployment testing and release candidate building
 * **Lambda Compatibility Matrix** - Automated testing across Python versions and memory configurations
 * **Container Validation** - Comprehensive Docker container build and validation testing

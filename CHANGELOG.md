@@ -14,6 +14,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Each initialization creates a new independent tracer instance
 
 ### Added
+- **Documentation Workflows**: Complete rewrite of documentation automation workflows
+  - `docs-deploy.yml`: Deploy Sphinx documentation to GitHub Pages
+  - `docs-preview.yml`: Build documentation previews for pull requests
+  - `docs-versioned.yml`: Manage versioned documentation using mike
 - **Comprehensive Code Quality Enforcement**: Pre-commit hooks with Black, isort, pylint, mypy, and yamllint
 - **Mandatory Documentation Updates**: Pre-commit checks ensuring CHANGELOG.md and feature docs are updated
 - **Development Setup Automation**: `./scripts/setup-dev.sh` for one-time development environment configuration  
