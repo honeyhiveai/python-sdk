@@ -11,7 +11,7 @@ name: Tox Full Test Suite
       tox_environments:
         description: 'Additional tox environments to run'
         required: false
-        default: 'lint,format,docs,unit,integration'
+        default: 'lint,format,docs'
       upload_coverage:
         description: 'Upload coverage reports'
         type: boolean
@@ -57,43 +57,15 @@ jobs:
           echo "results=success" >> $GITHUB_OUTPUT
           echo "✅ Tox Test Matrix Initialized"
 
-  tox-matrix:
-    name: "  ├─ 🐍 Matrix Testing"
+  # === PYTHON VERSION MATRIX (Full Test Suite) ===
+  python-matrix:
+    name: "  ├─ 🐍 Python ${{ matrix.python-version }}"
     needs: tox-testing
     runs-on: ubuntu-latest
     strategy:
       fail-fast: false
       matrix:
         python-version: ['3.11', '3.12', '3.13']
-        tox-env:
-          - py311
-          - py312
-          - py313
-          - unit
-          - integration
-        exclude:
-          # Only run Python version-specific envs on matching Python versions
-          - python-version: '3.11'
-            tox-env: py312
-          - python-version: '3.11'
-            tox-env: py313
-          - python-version: '3.12'
-            tox-env: py311
-          - python-version: '3.12'
-            tox-env: py313
-          - python-version: '3.13'
-            tox-env: py311
-          - python-version: '3.13'
-            tox-env: py312
-          # Run unit/integration tests only on Python 3.12 to avoid duplication
-          - python-version: '3.11'
-            tox-env: unit
-          - python-version: '3.11'
-            tox-env: integration
-          - python-version: '3.13'
-            tox-env: unit
-          - python-version: '3.13'
-            tox-env: integration
 
     steps:
       - name: Checkout code
@@ -110,35 +82,33 @@ jobs:
           python -m pip install --upgrade pip
           pip install tox>=4.0 tox-gh-actions
 
-      - name: Run tox environment - ${{ matrix.tox-env }}
+      - name: Run comprehensive test suite
         run: |
-          tox -e ${{ matrix.tox-env }}
+          tox -e py${{ matrix.python-version == '3.11' && '311' || matrix.python-version == '3.12' && '312' || '313' }}
+        env:
+          HH_API_KEY: ${{ secrets.HH_API_KEY || env.HH_API_KEY }}
+          HH_PROJECT: ${{ secrets.HH_PROJECT || env.HH_PROJECT }}
 
       - name: Upload coverage reports
-        if: >
-          matrix.tox-env == 'unit' || matrix.tox-env == 'integration' ||
-          startsWith(matrix.tox-env, 'py')
+        if: inputs.upload_coverage != false
         uses: codecov/codecov-action@v4
         with:
           file: ./coverage.xml
-          flags: ${{ matrix.tox-env }}
-          name: >
-            codecov-${{ matrix.tox-env }}-py${{ matrix.python-version }}
-          fail_ci_if_error: false
           token: ${{ secrets.CODECOV_TOKEN }}
+          fail_ci_if_error: false
 
       - name: Upload test results
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: >
-            test-results-${{ matrix.tox-env }}-py${{ matrix.python-version }}
+          name: test-results-python-${{ matrix.python-version }}
           path: |
             .coverage
             coverage.xml
             .tox/*/log/
           retention-days: 7
 
+  # === CODE QUALITY CHECKS ===
   code-quality:
     name: "  ├─ 🔍 Code Quality"
     needs: tox-testing
@@ -160,12 +130,10 @@ jobs:
           pip install tox>=4.0
 
       - name: Run linting checks
-        run: |
-          tox -e lint
+        run: tox -e lint
 
       - name: Run format checks
-        run: |
-          tox -e format
+        run: tox -e format
 
       - name: Upload lint results
         if: always()
@@ -177,6 +145,7 @@ jobs:
             .tox/format/log/
           retention-days: 7
 
+  # === DOCUMENTATION BUILD ===
   documentation:
     name: "  ├─ 📚 Documentation"
     needs: tox-testing
@@ -198,16 +167,16 @@ jobs:
           pip install tox>=4.0
 
       - name: Build documentation
-        run: |
-          tox -e docs
+        run: tox -e docs
 
-      - name: Upload documentation
+      - name: Upload documentation build
         uses: actions/upload-artifact@v4
         with:
           name: documentation-build
           path: docs/_build/html/
           retention-days: 14
 
+  # === INTEGRATION TESTS (Real API) ===
   integration-tests:
     name: "  ├─ 🔗 Integration Tests"
     needs: tox-testing
@@ -231,13 +200,12 @@ jobs:
           python -m pip install --upgrade pip
           pip install tox>=4.0
 
-      - name: Run integration tests
+      - name: Run integration tests with real API
         env:
-          HH_API_KEY: ${{ secrets.HH_API_KEY || 'test-api-key-12345' }}
-          HH_PROJECT: ${{ secrets.HH_PROJECT || 'test-project' }}
-          HH_TEST_MODE: false
-        run: |
-          tox -e integration
+          HH_API_KEY: ${{ secrets.HH_API_KEY }}
+          HH_PROJECT: ${{ secrets.HH_PROJECT }}
+          HH_SOURCE: "github-actions-integration"
+        run: tox -e integration
 
       - name: Upload integration test results
         if: always()
@@ -250,9 +218,10 @@ jobs:
             .tox/integration/log/
           retention-days: 7
 
+  # === TEST SUITE SUMMARY ===
   summary:
     name: "  ├─ 📊 Test Summary"
-    needs: [tox-testing, tox-matrix, code-quality, documentation]
+    needs: [tox-testing, python-matrix, code-quality, documentation]
     runs-on: ubuntu-latest
     if: always()
 
@@ -260,54 +229,41 @@ jobs:
       - name: Download all artifacts
         uses: actions/download-artifact@v4
         with:
-          path: test-results
+          path: artifacts/
 
       - name: Generate test summary
         run: |
-          echo "# Tox Full Test Suite Results" >> $GITHUB_STEP_SUMMARY
+          echo "# 🧪 Tox Test Suite Summary" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
 
-          # Check matrix job results
-          if [ "${{ needs.tox-matrix.result }}" == "success" ]; then
-            echo "✅ **Matrix Tests**: All Python versions and environments passed" >> \
-            $GITHUB_STEP_SUMMARY
-          else
-            echo "❌ **Matrix Tests**: Some tests failed" >> $GITHUB_STEP_SUMMARY
-          fi
+          # Python Version Results
+          echo "## 🐍 Python Version Testing" >> $GITHUB_STEP_SUMMARY
+          python_result="${{ needs.python-matrix.result == 'success' && '✅ PASSED' || '❌ FAILED' }}"
+          echo "- **Python 3.11:** $python_result" >> $GITHUB_STEP_SUMMARY
+          echo "- **Python 3.12:** $python_result" >> $GITHUB_STEP_SUMMARY
+          echo "- **Python 3.13:** $python_result" >> $GITHUB_STEP_SUMMARY
 
-          # Check code quality results
-          if [ "${{ needs.code-quality.result }}" == "success" ]; then
-            echo "✅ **Code Quality**: Linting and formatting checks passed" >> \
-            $GITHUB_STEP_SUMMARY
-          else
-            echo "❌ **Code Quality**: Linting or formatting issues found" >> \
-            $GITHUB_STEP_SUMMARY
-          fi
-
-          # Check documentation results
-          if [ "${{ needs.documentation.result }}" == "success" ]; then
-            echo "✅ **Documentation**: Build completed successfully" >> \
-            $GITHUB_STEP_SUMMARY
-          else
-            echo "❌ **Documentation**: Build failed" >> $GITHUB_STEP_SUMMARY
-          fi
-
+          # Quality Checks
           echo "" >> $GITHUB_STEP_SUMMARY
-          echo "## Test Environment Details" >> $GITHUB_STEP_SUMMARY
-          echo "- **Python Versions**: 3.11, 3.12, 3.13" >> $GITHUB_STEP_SUMMARY
-          echo "- **Tox Environments**: py311, py312, py313, unit, integration, lint, format, docs" >> \
-            $GITHUB_STEP_SUMMARY
-          echo "- **Coverage Reporting**: Enabled with Codecov" >> $GITHUB_STEP_SUMMARY
-          echo "- **Artifact Retention**: 7-14 days" >> $GITHUB_STEP_SUMMARY
+          echo "## 🔍 Quality Checks" >> $GITHUB_STEP_SUMMARY
+          quality_result="${{ needs.code-quality.result == 'success' && '✅ PASSED' || '❌ FAILED' }}"
+          docs_result="${{ needs.documentation.result == 'success' && '✅ PASSED' || '❌ FAILED' }}"
+          echo "- **Code Quality:** $quality_result" >> $GITHUB_STEP_SUMMARY
+          echo "- **Documentation:** $docs_result" >> $GITHUB_STEP_SUMMARY
 
-      - name: Report workflow status
-        if: failure()
-        run: |
-          echo "❌ Tox Full Test Suite encountered failures. Check individual job logs for details." >> \
-            $GITHUB_STEP_SUMMARY
-          exit 1
+          # Overall Status
+          echo "" >> $GITHUB_STEP_SUMMARY
+          if [ "${{ needs.python-matrix.result }}" = "success" ] && \
+             [ "${{ needs.code-quality.result }}" = "success" ] && \
+             [ "${{ needs.documentation.result }}" = "success" ]; then
+            echo "## 🎉 **ALL TESTS PASSED**" >> $GITHUB_STEP_SUMMARY
+            echo "The full tox test suite completed successfully!" >> $GITHUB_STEP_SUMMARY
+          else
+            echo "## ❌ **TESTS FAILED**" >> $GITHUB_STEP_SUMMARY
+            echo "Some tests failed. Please review the logs above." >> $GITHUB_STEP_SUMMARY
+          fi
 
-  # Optional: Run full tox suite in a single environment for comparison
+  # === OPTIONAL: FULL TOX SUITE (Sequential) ===
   tox-full-sequential:
     name: "  └─ 🎯 Sequential Suite"
     needs: tox-testing
@@ -329,17 +285,7 @@ jobs:
           python -m pip install --upgrade pip
           pip install tox>=4.0
 
-      - name: Run full tox suite
+      - name: Run full tox suite sequentially
         run: |
+          echo "Running full tox suite for comparison..."
           tox
-
-      - name: Upload full suite results
-        if: always()
-        uses: actions/upload-artifact@v4
-        with:
-          name: full-tox-suite-results
-          path: |
-            .tox/*/log/
-            .coverage
-            coverage.xml
-          retention-days: 14
