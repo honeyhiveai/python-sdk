@@ -17,6 +17,7 @@
   - `tox -e format` for code formatting checks
   - `tox -e py311`, `tox -e py312`, `tox -e py313` for Python version-specific testing
 - **Unit test files must follow the naming pattern `test_<module>_<file>.py`** - for example: `test_api_client.py`, `test_tracer_decorators.py`
+- **Required development tools**: Install `yamllint` and GitHub CLI (`gh`) for workflow validation and CI/CD investigation
 
 ## Virtual Environment & Dependencies
 - ALWAYS use virtual environments - Never install packages globally

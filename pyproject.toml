@@ -50,6 +50,7 @@ dev = [
     "mypy>=1.0.0",
     "typeguard>=4.0.0",
     "psutil>=5.9.0",
+    "yamllint>=1.37.0",
 ]
 
 # Documentation

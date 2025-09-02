@@ -1,5 +1,23 @@
 # Development Best Practices - HoneyHive Python SDK
 
+## Development Environment Setup
+
+### Required Tools
+```bash
+# Core development tools
+pip install yamllint>=1.37.0  # YAML validation for workflows
+brew install gh               # GitHub CLI for workflow investigation
+
+# Verify installation
+yamllint --version
+gh --version
+```
+
+### Tool Usage Patterns
+- **yamllint**: Validate GitHub Actions YAML syntax before commits
+- **GitHub CLI**: Investigate workflow failures, view run logs, manage releases
+- **Docker**: Required for Lambda testing and container validation
+
 ## Architecture Principles
 
 ### Multi-Instance Support

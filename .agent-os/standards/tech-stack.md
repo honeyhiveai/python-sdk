@@ -40,6 +40,7 @@
 - **pylint**: Custom configuration, 9.99 score target
 - **mypy**: >=1.0.0 - Static type checking (strict mode)
 - **typeguard**: >=4.0.0 - Runtime type checking
+- **yamllint**: >=1.37.0 - YAML syntax validation
 
 ## Documentation Tools
 - **sphinx**: >=7.0.0 - Documentation generation
@@ -65,6 +66,11 @@
 - **python-dotenv**: .env file support
 - **Configuration Hierarchy**: Constructor > Env > Defaults
 - **Standard Env Support**: HTTP_*, EXPERIMENT_* compatibility
+
+## Development & CI/CD Tools
+- **GitHub CLI**: >=2.78.0 - GitHub Actions investigation and automation
+- **Docker**: Container development and Lambda testing
+- **tox**: Multi-environment testing automation
 
 ## Deployment Targets
 - **Docker**: Container support
