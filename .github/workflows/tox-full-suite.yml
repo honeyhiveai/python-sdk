@@ -199,6 +199,7 @@ jobs:
           HH_API_KEY: ${{ secrets.HH_API_KEY }}
           HH_PROJECT: ${{ secrets.HH_PROJECT }}
           HH_SOURCE: "github-actions-integration"
+          HH_TEST_MODE: false
         run: tox -e integration
 
       - name: Upload integration test results
