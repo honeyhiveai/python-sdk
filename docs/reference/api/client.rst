@@ -114,7 +114,7 @@ create_session()
    
       # Create a basic session
       session = client.create_session(
-          project="my-llm-app",
+          ,
           source="production",
           session_name="user-onboarding-flow"
       )
@@ -123,7 +123,7 @@ create_session()
       
       # Create session with metadata
       session = client.create_session(
-          project="chat-app",
+          ,
           source="production",
           user_id="user_123",
           conversation_type="customer_support",
@@ -191,14 +191,14 @@ list_sessions()
    .. code-block:: python
    
       # List all sessions for a project
-      sessions = client.list_sessions(project="my-app", limit=50)
+      sessions = client.list_sessions(, limit=50)
       
       for session in sessions['sessions']:
           print(f"Session {session['session_id']}: {session['session_name']}")
       
       # List with filters
       recent_sessions = client.list_sessions(
-          project="chat-app",
+          ,
           source="production",
           created_after="2024-01-01T00:00:00Z",
           limit=20
@@ -343,7 +343,7 @@ list_events()
       
       # List LLM call events across all sessions
       llm_events = client.list_events(
-          project="my-app",
+          ,
           event_type=EventType.model,
           limit=50
       )
@@ -495,7 +495,7 @@ update_configuration()
    .. code-block:: python
    
       updated_config = client.update_configuration(
-          project="my-app",
+          ,
           configuration={
               "sampling_rate": 0.1,  # 10% sampling
               "retention_days": 30,
@@ -530,7 +530,7 @@ Asynchronous version of the HoneyHive client for non-blocking operations.
    async def async_example():
        async with AsyncHoneyHive(api_key="your-key") as client:
            session = await client.create_session(
-               project="async-project",
+               ,
                session_name="async-session"
            )
            
@@ -591,7 +591,7 @@ Initialization
           async with AsyncHoneyHive(api_key="hh_your_key") as client:
               # Use async client
               session = await client.create_session(
-                  project="async-app",
+                  ,
                   source="production"
               )
               
@@ -616,7 +616,7 @@ All session management methods have async equivalents:
        async with AsyncHoneyHive(api_key="hh_key") as client:
            # Create session
            session = await client.create_session(
-               project="async-project",
+               ,
                source="production"
            )
            
@@ -625,7 +625,7 @@ All session management methods have async equivalents:
            
            # List sessions
            sessions = await client.list_sessions(
-               project="async-project",
+               ,
                limit=10
            )
 
@@ -639,7 +639,7 @@ All event management methods have async equivalents:
    async def manage_events():
        async with AsyncHoneyHive(api_key="hh_key") as client:
            session = await client.create_session(
-               project="async-events",
+               ,
                source="production"
            )
            
@@ -756,7 +756,7 @@ Error Handling Examples
        for attempt in range(max_retries):
            try:
                session = client.create_session(
-                   project="robust-app",
+                   ,
                    source="production"
                )
                return session
@@ -879,7 +879,7 @@ Context Manager Usage
    # Automatic resource cleanup
    with HoneyHive(api_key="hh_key") as client:
        session = client.create_session(
-           project="context-managed-app",
+           ,
            source="production"
        )
        
@@ -912,7 +912,7 @@ Dependency Injection
        def process_user_request(self, user_id: str, request_data: dict):
            # Create session for this request
            session = self.client.create_session(
-               project="user-service",
+               ,
                source="production",
                user_id=user_id
            )
@@ -1012,7 +1012,7 @@ Request Batching
    async def batch_events_efficiently():
        async with AsyncHoneyHive(api_key="hh_key") as client:
            session = await client.create_session(
-               project="batch-app",
+               ,
                source="production"
            )
            

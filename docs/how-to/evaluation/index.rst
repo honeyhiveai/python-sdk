@@ -41,7 +41,7 @@ Getting Started
 
    tracer = HoneyHiveTracer.init(
        api_key="your-api-key",
-       project="evaluation-demo"
+       
    )
 
    @evaluate(evaluators=["exact_match", "length"])

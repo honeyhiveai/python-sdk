@@ -1,0 +1,26 @@
+# Requirements for AWS Strands + HoneyHive integration testing
+# Install with: pip install -r test_strands_requirements.txt
+
+# Core dependencies
+honeyhive>=0.1.0
+opentelemetry-api>=1.20.0
+opentelemetry-sdk>=1.20.0
+
+# AWS Strands SDK (verified working packages)
+# Primary: Mature package with AWS dependencies
+strands-agents>=1.7.0
+# Alternative: Simpler package (if needed)
+# strands>=0.1.0
+
+# Optional: Additional OpenTelemetry instrumentations for comprehensive testing
+opentelemetry-instrumentation>=0.41b0
+opentelemetry-exporter-otlp>=1.20.0
+
+# Development/testing utilities
+pytest>=7.0.0
+pytest-asyncio>=0.21.0
+
+# AWS dependencies (for real Bedrock models and credential management)
+boto3>=1.28.0
+botocore>=1.31.0
+awscli>=1.32.0  # For AWS SSO and credential management

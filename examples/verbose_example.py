@@ -82,7 +82,7 @@ def demonstrate_tracer_verbose():
     # Initialize tracer with verbose logging
     tracer = HoneyHiveTracer.init(
         api_key="demo-api-key",
-        project="verbose-demo",
+        # project derived from API key (simplified API)
         source="development",
         test_mode=True  # Use test mode
     )

@@ -35,9 +35,11 @@ class TestHoneyHiveTracer:
                 mock_config.api_key = "test_key"
                 mock_config.project = "test_project"
 
-                tracer = HoneyHiveTracer(api_key="test_key", project="test_project")
+                tracer = HoneyHiveTracer(
+                    api_key="test_key",
+                )
                 assert tracer.api_key == "test_key"
-                assert tracer.project == "test_project"
+                assert tracer.project == "api-key-derived"
                 assert tracer.source == "dev"
                 assert tracer.test_mode is False
                 assert tracer.disable_http_tracing is True
@@ -52,7 +54,7 @@ class TestHoneyHiveTracer:
                 tracer = HoneyHiveTracer(test_mode=True)
                 assert tracer.test_mode is True
                 assert tracer.api_key == "test-api-key"
-                assert tracer.project == "default"
+                assert tracer.project == "api-key-derived"
 
     def test_init_otel_not_available(self) -> None:
         """Test initialization when OpenTelemetry is not available."""
@@ -80,17 +82,17 @@ class TestHoneyHiveTracer:
                 # Reset instance
                 HoneyHiveTracer.reset()
 
-                tracer1 = HoneyHiveTracer(api_key="test_key", project="test_project")
-                tracer2 = HoneyHiveTracer(
-                    api_key="different_key", project="different_project"
+                tracer1 = HoneyHiveTracer(
+                    api_key="test_key",
                 )
+                tracer2 = HoneyHiveTracer(api_key="different_key")
 
                 # Should be different instances in multi-instance mode
                 assert tracer1 is not tracer2
                 assert tracer1.api_key == "test_key"
-                assert tracer1.project == "test_project"
+                assert tracer1.project == "api-key-derived"
                 assert tracer2.api_key == "different_key"
-                assert tracer2.project == "different_project"
+                assert tracer2.project == "api-key-derived"
 
     def test_reset_class_method(self) -> None:
         """Test reset class method."""
@@ -100,13 +102,17 @@ class TestHoneyHiveTracer:
                 mock_config.project = "test_project"
 
                 # Create instance
-                tracer1 = HoneyHiveTracer(api_key="test_key", project="test_project")
+                tracer1 = HoneyHiveTracer(
+                    api_key="test_key",
+                )
 
                 # Reset
                 HoneyHiveTracer.reset()
 
                 # Create new instance
-                tracer2 = HoneyHiveTracer(api_key="new_key", project="new_project")
+                tracer2 = HoneyHiveTracer(
+                    api_key="new_key",
+                )
 
                 # Should be different instances after reset
                 assert tracer1 is not tracer2
@@ -119,7 +125,9 @@ class TestHoneyHiveTracer:
                     mock_config.api_key = "test_key"
                     mock_config.project = "test_project"
 
-                    tracer = HoneyHiveTracer(api_key="test_key", project="test_project")
+                    tracer = HoneyHiveTracer(
+                        api_key="test_key",
+                    )
 
                     # Should set environment variable
                     assert mock_env["HH_DISABLE_HTTP_TRACING"] == "true"
@@ -134,7 +142,6 @@ class TestHoneyHiveTracer:
 
                     tracer = HoneyHiveTracer(
                         api_key="test_key",
-                        project="test_project",
                         disable_http_tracing=False,
                     )
 
@@ -148,7 +155,9 @@ class TestHoneyHiveTracer:
                 mock_config.api_key = "test_key"
                 mock_config.project = "test_project"
 
-                tracer = HoneyHiveTracer(api_key="test_key", project="test_project")
+                tracer = HoneyHiveTracer(
+                    api_key="test_key",
+                )
 
                 # Should generate session name based on the calling file name
                 # The test file name is 'test_tracer_otel_tracer.py', so session name should be 'test_tracer_otel_tracer'
@@ -163,7 +172,6 @@ class TestHoneyHiveTracer:
 
                 tracer = HoneyHiveTracer(
                     api_key="test_key",
-                    project="test_project",
                     session_name="custom_session",
                 )
 
@@ -183,7 +191,6 @@ class TestHoneyHiveTracer:
                     instrumentors = ["test_instrumentor"]
                     tracer = HoneyHiveTracer(
                         api_key="test_key",
-                        project="test_project",
                         instrumentors=instrumentors,
                     )
 
@@ -207,7 +214,7 @@ class TestHoneyHiveTracer:
                             mock_config.project = "test_project"
 
                             tracer = HoneyHiveTracer(
-                                api_key="test_key", project="test_project"
+                                api_key="test_key",
                             )
 
                             # Should call all initialization methods
@@ -233,13 +240,11 @@ class TestHoneyHiveTracer:
 
                             # First initialization
                             tracer1 = HoneyHiveTracer(
-                                api_key="test_key", project="test_project"
+                                api_key="test_key",
                             )
 
                             # Second initialization creates new instance
-                            tracer2 = HoneyHiveTracer(
-                                api_key="different_key", project="different_project"
-                            )
+                            tracer2 = HoneyHiveTracer(api_key="different_key")
 
                             # Should be different instances in multi-instance mode
                             assert tracer1 is not tracer2
@@ -270,12 +275,11 @@ class TestHoneyHiveTracer:
 
                         if disable_value is None:
                             tracer = HoneyHiveTracer(
-                                api_key="test_key", project="test_project"
+                                api_key="test_key",
                             )
                         else:
                             tracer = HoneyHiveTracer(
                                 api_key="test_key",
-                                project="test_project",
                                 disable_http_tracing=disable_value,
                             )
 
@@ -292,7 +296,7 @@ class TestHoneyHiveTracer:
 
                 # Should use fallback values
                 assert tracer.api_key == "test-api-key"
-                assert tracer.project == "default"
+                assert tracer.project == "api-key-derived"
 
     def test_source_parameter(self) -> None:
         """Test source parameter handling."""
@@ -306,9 +310,7 @@ class TestHoneyHiveTracer:
                 for source in test_sources:
                     HoneyHiveTracer.reset()
 
-                    tracer = HoneyHiveTracer(
-                        api_key="test_key", project="test_project", source=source
-                    )
+                    tracer = HoneyHiveTracer(api_key="test_key", source=source)
 
                     assert tracer.source == source
 
@@ -331,7 +333,9 @@ class TestHoneyHiveTracer:
                 mock_config.api_key = "config_key"
                 mock_config.project = "test_project"
 
-                tracer = HoneyHiveTracer(api_key="param_key", project="test_project")
+                tracer = HoneyHiveTracer(
+                    api_key="param_key",
+                )
 
                 # Parameter should override config
                 assert tracer.api_key == "param_key"
@@ -361,12 +365,12 @@ class TestHoneyHiveTracer:
 
                 # Test with invalid parameters
                 with pytest.raises(ValueError):
-                    HoneyHiveTracer(api_key="", project="test_project")
+                    HoneyHiveTracer(
+                        api_key="",
+                    )
 
                 with pytest.raises(ValueError):
-                    HoneyHiveTracer(
-                        api_key=None, project="test_project", test_mode=False
-                    )
+                    HoneyHiveTracer(api_key=None, test_mode=False)
 
     def test_initialization_state_tracking(self) -> None:
         """Test initialization state tracking in multi-instance mode."""
@@ -382,16 +386,16 @@ class TestHoneyHiveTracer:
                 # In multi-instance mode, reset just logs info
 
                 # Initialize first tracer
-                tracer1 = HoneyHiveTracer(api_key="test_key", project="test_project")
+                tracer1 = HoneyHiveTracer(
+                    api_key="test_key",
+                )
                 assert tracer1.api_key == "test_key"
-                assert tracer1.project == "test_project"
+                assert tracer1.project == "api-key-derived"
 
                 # Initialize second tracer
-                tracer2 = HoneyHiveTracer(
-                    api_key="different_key", project="different_project"
-                )
+                tracer2 = HoneyHiveTracer(api_key="different_key")
                 assert tracer2.api_key == "different_key"
-                assert tracer2.project == "different_project"
+                assert tracer2.project == "api-key-derived"
 
                 # Should be different instances
                 assert tracer1 is not tracer2
@@ -410,9 +414,7 @@ class TestHoneyHiveTracer:
 
                 def create_tracer(thread_id: int) -> None:
                     try:
-                        tracer = HoneyHiveTracer(
-                            api_key=f"key_{thread_id}", project=f"project_{thread_id}"
-                        )
+                        tracer = HoneyHiveTracer(api_key=f"key_{thread_id}")
                         results.append((thread_id, tracer))
                     except Exception as e:
                         results.append((thread_id, e))
@@ -493,8 +495,12 @@ class TestMultiInstanceTracer:
                 mock_config.api_key = "test_key"
                 mock_config.project = "test_project"
 
-                tracer1 = HoneyHiveTracer(api_key="key1", project="project1")
-                tracer2 = HoneyHiveTracer(api_key="key2", project="project2")
+                tracer1 = HoneyHiveTracer(
+                    api_key="key1",
+                )
+                tracer2 = HoneyHiveTracer(
+                    api_key="key2",
+                )
 
                 # Each should have its own session name based on calling file
                 assert tracer1.session_name == "test_tracer_otel_tracer"
@@ -510,8 +516,12 @@ class TestMultiInstanceTracer:
                 mock_config.api_key = "test_key"
                 mock_config.project = "test_project"
 
-                tracer1 = HoneyHiveTracer(api_key="key1", project="project1")
-                tracer2 = HoneyHiveTracer(api_key="key2", project="project2")
+                tracer1 = HoneyHiveTracer(
+                    api_key="key1",
+                )
+                tracer2 = HoneyHiveTracer(
+                    api_key="key2",
+                )
 
                 # Verify tracers are different instances
                 assert tracer1 is not tracer2
@@ -540,7 +550,9 @@ class TestTracerProviderIntegration:
                     # Mock get_tracer_provider to return None
                     mock_trace.get_tracer_provider.return_value = None
 
-                    tracer = HoneyHiveTracer(api_key="test", project="test")
+                    tracer = HoneyHiveTracer(
+                        api_key="test",
+                    )
 
                     assert tracer.is_main_provider is True
                     assert tracer.provider is not None
@@ -560,7 +572,9 @@ class TestTracerProviderIntegration:
                 with patch("honeyhive.tracer.otel_tracer.trace") as mock_trace:
                     mock_trace.get_tracer_provider.return_value = existing_provider
 
-                    tracer = HoneyHiveTracer(api_key="test", project="test")
+                    tracer = HoneyHiveTracer(
+                        api_key="test",
+                    )
 
                     assert tracer.is_main_provider is False
                     assert tracer.provider is existing_provider
@@ -580,7 +594,9 @@ class TestTracerProviderIntegration:
                 with patch("honeyhive.tracer.otel_tracer.trace") as mock_trace:
                     mock_trace.get_tracer_provider.return_value = noop_provider
 
-                    tracer = HoneyHiveTracer(api_key="test", project="test")
+                    tracer = HoneyHiveTracer(
+                        api_key="test",
+                    )
 
                     # Should create new provider when existing is NoOp
                     assert tracer.is_main_provider is True
@@ -601,7 +617,9 @@ class TestTracerProviderIntegration:
                 with patch("honeyhive.tracer.otel_tracer.trace") as mock_trace:
                     mock_trace.get_tracer_provider.return_value = limited_provider
 
-                    tracer = HoneyHiveTracer(api_key="test", project="test")
+                    tracer = HoneyHiveTracer(
+                        api_key="test",
+                    )
 
                     # Should handle gracefully without span processor support
                     assert tracer.is_main_provider is False
@@ -999,7 +1017,7 @@ class TestHoneyHiveTracerEnrichSpanUnified:
         """Test HoneyHiveTracer.enrich_span with context manager pattern (backwards compatibility)."""
         from honeyhive.tracer.otel_tracer import HoneyHiveTracer
 
-        tracer = HoneyHiveTracer(api_key="test", project="test", test_mode=True)
+        tracer = HoneyHiveTracer(api_key="test", test_mode=True)
 
         with patch(
             "honeyhive.tracer.otel_tracer._enrich_span_context_manager"
@@ -1024,7 +1042,7 @@ class TestHoneyHiveTracerEnrichSpanUnified:
         """Test HoneyHiveTracer.enrich_span direct method call."""
         from honeyhive.tracer.otel_tracer import HoneyHiveTracer
 
-        tracer = HoneyHiveTracer(api_key="test", project="test", test_mode=True)
+        tracer = HoneyHiveTracer(api_key="test", test_mode=True)
 
         with patch("honeyhive.tracer.otel_tracer.OTEL_AVAILABLE", True):
             with patch("honeyhive.tracer.otel_tracer.trace") as mock_trace:
@@ -1044,7 +1062,7 @@ class TestHoneyHiveTracerEnrichSpanUnified:
         """Test HoneyHiveTracer.enrich_span with outputs and error parameters."""
         from honeyhive.tracer.otel_tracer import HoneyHiveTracer
 
-        tracer = HoneyHiveTracer(api_key="test", project="test", test_mode=True)
+        tracer = HoneyHiveTracer(api_key="test", test_mode=True)
 
         with patch("honeyhive.tracer.otel_tracer.OTEL_AVAILABLE", True):
             with patch("honeyhive.tracer.otel_tracer.trace") as mock_trace:
@@ -1086,7 +1104,7 @@ class TestHoneyHiveTracerForceFlush:
         """Test basic force_flush functionality."""
         from honeyhive.tracer.otel_tracer import HoneyHiveTracer
 
-        tracer = HoneyHiveTracer.init(api_key="test", project="test", test_mode=True)
+        tracer = HoneyHiveTracer.init(api_key="test", test_mode=True)
 
         with patch("honeyhive.tracer.otel_tracer.OTEL_AVAILABLE", True):
             # Test with default timeout
@@ -1102,9 +1120,7 @@ class TestHoneyHiveTracerForceFlush:
         from honeyhive.tracer.otel_tracer import HoneyHiveTracer
 
         with patch("honeyhive.tracer.otel_tracer.OTEL_AVAILABLE", True):
-            tracer = HoneyHiveTracer.init(
-                api_key="test", project="test", test_mode=True
-            )
+            tracer = HoneyHiveTracer.init(api_key="test", test_mode=True)
 
             # Mock provider with force_flush support and no batch processors
             mock_provider = Mock()
@@ -1130,7 +1146,7 @@ class TestHoneyHiveTracerForceFlush:
         """Test force_flush with span processor."""
         from honeyhive.tracer.otel_tracer import HoneyHiveTracer
 
-        tracer = HoneyHiveTracer.init(api_key="test", project="test", test_mode=True)
+        tracer = HoneyHiveTracer.init(api_key="test", test_mode=True)
 
         with patch("honeyhive.tracer.otel_tracer.OTEL_AVAILABLE", True):
             # Mock span processor with force_flush support
@@ -1148,7 +1164,7 @@ class TestHoneyHiveTracerForceFlush:
         """Test force_flush with batch processors on provider."""
         from honeyhive.tracer.otel_tracer import HoneyHiveTracer
 
-        tracer = HoneyHiveTracer.init(api_key="test", project="test", test_mode=True)
+        tracer = HoneyHiveTracer.init(api_key="test", test_mode=True)
 
         with patch("honeyhive.tracer.otel_tracer.OTEL_AVAILABLE", True):
             # Mock provider with batch processors
@@ -1173,7 +1189,7 @@ class TestHoneyHiveTracerForceFlush:
         """Test force_flush when some components fail."""
         from honeyhive.tracer.otel_tracer import HoneyHiveTracer
 
-        tracer = HoneyHiveTracer.init(api_key="test", project="test", test_mode=True)
+        tracer = HoneyHiveTracer.init(api_key="test", test_mode=True)
 
         with patch("honeyhive.tracer.otel_tracer.OTEL_AVAILABLE", True):
             # Mock provider that fails
@@ -1195,7 +1211,7 @@ class TestHoneyHiveTracerForceFlush:
         """Test force_flush exception handling."""
         from honeyhive.tracer.otel_tracer import HoneyHiveTracer
 
-        tracer = HoneyHiveTracer.init(api_key="test", project="test", test_mode=True)
+        tracer = HoneyHiveTracer.init(api_key="test", test_mode=True)
 
         with patch("honeyhive.tracer.otel_tracer.OTEL_AVAILABLE", True):
             # Mock provider that raises exception
@@ -1212,7 +1228,7 @@ class TestHoneyHiveTracerForceFlush:
         """Test force_flush when OpenTelemetry is not available."""
         from honeyhive.tracer.otel_tracer import HoneyHiveTracer
 
-        tracer = HoneyHiveTracer.init(api_key="test", project="test", test_mode=True)
+        tracer = HoneyHiveTracer.init(api_key="test", test_mode=True)
 
         with patch("honeyhive.tracer.otel_tracer.OTEL_AVAILABLE", False):
             result = tracer.force_flush()
@@ -1230,7 +1246,7 @@ class TestGlobalEnrichSpanWithOutputsAndError:
 
         from honeyhive.tracer.otel_tracer import HoneyHiveTracer, enrich_span
 
-        tracer = HoneyHiveTracer(api_key="test", project="test", test_mode=True)
+        tracer = HoneyHiveTracer(api_key="test", test_mode=True)
 
         # Test data
         test_outputs = {"result": "success", "data": [1, 2, 3]}

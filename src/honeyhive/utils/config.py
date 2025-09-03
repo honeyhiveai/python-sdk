@@ -85,7 +85,7 @@ class APIConfig:
 
     api_key: Optional[str] = None
     api_url: str = "https://api.honeyhive.ai"
-    project: Optional[str] = None
+    # project removed - backend derives from API key
     source: str = "production"
 
     def __post_init__(self) -> None:
@@ -98,10 +98,6 @@ class APIConfig:
         env_api_url = os.getenv("HH_API_URL") or os.getenv("API_URL")
         if env_api_url:
             self.api_url = env_api_url
-
-        # Project name with fallback to default
-        if self.project is None:
-            self.project = os.getenv("HH_PROJECT") or os.getenv("PROJECT") or "default"
 
         # Source environment
         env_source = (
@@ -346,14 +342,15 @@ class Config:
 
     @property
     def project(self) -> Optional[str]:
-        """Get project from sub-configuration."""
-        return self.api.project if self.api else None
+        """Get project from sub-configuration - deprecated, returns None."""
+        # Project removed - backend derives from API key scope
+        return None
 
     @project.setter
     def project(self, value: Optional[str]) -> None:
-        """Set project in sub-configuration."""
-        if self.api:
-            self.api.project = value
+        """Set project in sub-configuration - deprecated, no-op."""
+        # Project removed - backend derives from API key scope
+        pass
 
     @property
     def source(self) -> str:

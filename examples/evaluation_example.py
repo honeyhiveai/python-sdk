@@ -72,7 +72,7 @@ def main():
     # Initialize tracer using the recommended pattern
     tracer = HoneyHiveTracer.init(
         api_key="your-api-key-here",
-        project="evaluation-demo",
+        # project derived from API key,
         source="development"
     )
     
@@ -418,7 +418,7 @@ def demo_advanced_features():
     section_header("Context-Aware Evaluation", 10)
     
     context = EvaluationContext(
-        project="threading_demo",
+        # project derived from API key,
         source="parallel_evaluation",
         metadata={"threading": True, "max_workers": 4}
     )
@@ -450,7 +450,7 @@ def demo_advanced_features():
     # Uncomment to test evaluation run creation:
     # run = create_evaluation_run(
     #     name="comprehensive-evaluation-run",
-    #     project="evaluation-demo",
+    #     # project derived from API key,
     #     results=eval_results,
     #     metadata={"demo": True, "version": "2.0", "comprehensive": True}
     # )

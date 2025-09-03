@@ -29,7 +29,7 @@ Quick Setup
    # Initialize HoneyHive with OpenAI instrumentor
    tracer = HoneyHiveTracer.init(
        api_key="your-honeyhive-key",
-       project="openai-integration",
+       ,
        instrumentors=[OpenAIInstrumentor()]
    )
    

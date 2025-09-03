@@ -45,7 +45,7 @@ Getting Started
 
    tracer = HoneyHiveTracer.init(
        api_key="your-api-key",
-       project="advanced-app"
+       
    )
 
    # Custom business logic tracing

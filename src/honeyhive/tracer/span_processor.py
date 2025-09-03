@@ -120,14 +120,14 @@ class HoneyHiveSpanProcessor(SpanProcessor):
                 # Set honeyhive.* attributes (primary format)
                 attributes_to_set["honeyhive.session_id"] = session_id
 
-                # Add project from baggage - early exit if missing
+                # Add project from baggage (backend will handle if missing)
                 project = baggage.get_baggage("project", ctx)
-                if not project:
-                    # No project means no HoneyHive context, skip processing
-                    print(f"   ❌ No project in baggage, skipping processing")
-                    return
-
-                attributes_to_set["honeyhive.project"] = project
+                if project:
+                    attributes_to_set["honeyhive.project"] = project
+                else:
+                    print(
+                        f"   ℹ️  No project in baggage - backend will derive from API key"
+                    )
 
                 # Add source from baggage
                 source = baggage.get_baggage("source", ctx)

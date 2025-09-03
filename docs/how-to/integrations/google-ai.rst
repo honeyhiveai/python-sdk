@@ -38,7 +38,7 @@ Quick Start
    # Initialize HoneyHive tracer with Google AI instrumentor
    tracer = HoneyHiveTracer.init(
        api_key="your-honeyhive-api-key",
-       project="google-ai-project",
+       ,
        instrumentors=[GoogleGenerativeAIInstrumentor()]
    )
 
@@ -70,7 +70,7 @@ Basic Text Generation
    # Setup (do once at application startup)
    tracer = HoneyHiveTracer.init(
        api_key="your-honeyhive-api-key",
-       project="gemini-text-generation",
+       ,
        instrumentors=[GoogleGenerativeAIInstrumentor()]
    )
 

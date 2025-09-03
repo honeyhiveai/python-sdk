@@ -82,7 +82,7 @@ Environment Variable
    
    # Automatically uses HH_API_KEY environment variable
    tracer = HoneyHiveTracer.init(
-       project="my-project"
+       
        # api_key not needed - loaded from environment
    )
 
@@ -98,7 +98,7 @@ Direct Parameter
    # Direct API key parameter
    tracer = HoneyHiveTracer.init(
        api_key="hh_your_api_key_here",
-       project="my-project"
+       
    )
 
 **Use Cases**:
@@ -189,7 +189,7 @@ The SDK resolves authentication in this order (highest to lowest precedence):
    # This takes precedence over all other methods
    tracer = HoneyHiveTracer.init(
        api_key="hh_direct_key",  # Highest precedence
-       project="my-project"
+       
    )
 
 .. code-block:: bash
@@ -239,7 +239,7 @@ API Key Management
    # Use read-only keys for monitoring
    monitoring_tracer = HoneyHiveTracer.init(
        api_key="hh_readonly_key_here",
-       project="monitoring"
+       
    )
 
 **Don'ts**:
@@ -251,7 +251,7 @@ API Key Management
    # DON'T DO THIS
    tracer = HoneyHiveTracer.init(
        api_key="hh_1234567890abcdef...",  # Never hardcode!
-       project="my-project"
+       
    )
 
 ❌ **Don't Share Keys**:
@@ -324,7 +324,7 @@ Storage Security
       from decouple import config
       
       api_key = config('HH_API_KEY')
-      tracer = HoneyHiveTracer.init(api_key=api_key, project="my-project")
+      tracer = HoneyHiveTracer.init(api_key=api_key, )
 
 Access Control
 ~~~~~~~~~~~~~~
@@ -346,7 +346,7 @@ Access Control
    # SDK handles rate limiting automatically
    tracer = HoneyHiveTracer.init(
        api_key="hh_your_key",
-       project="my-project",
+       ,
        # Rate limiting is automatic
    )
 
@@ -372,7 +372,7 @@ Development Environment
    load_dotenv('.env.development')
    
    from honeyhive import HoneyHiveTracer
-   tracer = HoneyHiveTracer.init(project="my-app-dev")
+   tracer = HoneyHiveTracer.init()
 
 Testing Environment
 ~~~~~~~~~~~~~~~~~~~
@@ -396,7 +396,7 @@ Testing Environment
    def test_honeyhive_integration():
        from honeyhive import HoneyHiveTracer
        tracer = HoneyHiveTracer.init(
-           project="test-project",
+           ,
            test_mode=True  # No real API calls
        )
        # Test your code here
@@ -741,7 +741,7 @@ Debugging Tools
    # Enable debug mode
    tracer = HoneyHiveTracer.init(
        api_key="hh_your_key",
-       project="debug-project",
+       ,
        debug=True  # Enables debug logging
    )
 

@@ -14,7 +14,7 @@ from honeyhive.models import EventType
 
 # Initialize tracer using the recommended pattern
 tracer = HoneyHiveTracer.init(
-    api_key="your-api-key", project="tracing-decorators-demo", source="development"
+    api_key="your-api-key", source="development"
 )
 
 print("🚀 HoneyHive Tracing Decorators Example")

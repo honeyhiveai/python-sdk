@@ -46,8 +46,8 @@ The ``@trace`` decorator is the simplest way to add tracing:
    from honeyhive import HoneyHiveTracer, trace
    
    tracer = HoneyHiveTracer.init(
-       api_key="your-api-key",
-       project="tracing-tutorial"
+       api_key="your-api-key"  # project derived from API key
+       
    )
    
    @trace(tracer=tracer)
@@ -84,8 +84,8 @@ For more control, create spans manually:
    from honeyhive import HoneyHiveTracer
    
    tracer = HoneyHiveTracer.init(
-       api_key="your-api-key",
-       project="tracing-tutorial"
+       api_key="your-api-key"  # project derived from API key
+       
    )
    
    def analyze_text_manually(text: str):
@@ -139,8 +139,8 @@ The ``@trace`` decorator works seamlessly with async functions:
    from honeyhive import HoneyHiveTracer, trace
    
    tracer = HoneyHiveTracer.init(
-       api_key="your-api-key",
-       project="async-tutorial"
+       api_key="your-api-key"  # project derived from API key
+       
    )
    
    @trace(tracer=tracer)
@@ -186,8 +186,8 @@ HoneyHive automatically captures exceptions, but you can add context:
    import random
    
    tracer = HoneyHiveTracer.init(
-       api_key="your-api-key",
-       project="error-tutorial"
+       api_key="your-api-key"  # project derived from API key
+       
    )
    
    @trace(tracer=tracer)
@@ -238,8 +238,8 @@ Add business context and metadata to your spans:
    from honeyhive import HoneyHiveTracer, trace, enrich_span
    
    tracer = HoneyHiveTracer.init(
-       api_key="your-api-key",
-       project="enrichment-tutorial"
+       api_key="your-api-key"  # project derived from API key
+       
    )
    
    @trace(tracer=tracer, event_type="document_processing")
@@ -286,8 +286,8 @@ See how function calls flow through your application:
    from honeyhive import HoneyHiveTracer, trace
    
    tracer = HoneyHiveTracer.init(
-       api_key="your-api-key",
-       project="nested-tutorial"
+       api_key="your-api-key"  # project derived from API key
+       
    )
    
    @trace(tracer=tracer)
@@ -344,8 +344,8 @@ The ``@trace_class`` decorator provides automatic tracing for all public methods
    from honeyhive import HoneyHiveTracer, trace_class, enrich_span
    
    tracer = HoneyHiveTracer.init(
-       api_key="your-api-key",
-       project="class-tracing-tutorial"
+       api_key="your-api-key"  # project derived from API key
+       
    )
    
    @trace_class(event_type="tool", event_name="DocumentProcessor")
@@ -664,8 +664,8 @@ Here's a complete example combining all patterns:
    from honeyhive import HoneyHiveTracer, trace, enrich_span
    
    tracer = HoneyHiveTracer.init(
-       api_key="your-api-key",
-       project="document-pipeline"
+       api_key="your-api-key"  # project derived from API key
+       
    )
    
    @trace(tracer=tracer, event_type="document_validation")

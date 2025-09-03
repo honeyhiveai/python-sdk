@@ -40,7 +40,6 @@ def main():
     # Initialize tracer (creates new instance) - from docs
     tracer = HoneyHiveTracer.init(
         api_key="your-api-key",
-        project="my-project",
         source="production"
     )
     

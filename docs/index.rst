@@ -5,6 +5,9 @@ HoneyHive Python SDK Documentation
 
 The HoneyHive Python SDK provides comprehensive observability, tracing, and evaluation capabilities for LLM applications with OpenTelemetry integration and a "Bring Your Own Instrumentor" architecture.
 
+.. note::
+   **API Simplified in v0.1.0**: The ``project`` parameter is now optional! Your API key is already scoped to your project, so the SDK automatically derives project information. Existing code with ``project`` parameter continues to work for backward compatibility.
+
 🚀 **Quick Start**
 
 New to HoneyHive? Start here:
@@ -229,7 +232,7 @@ New to HoneyHive? Start here:
    # Initialize with BYOI architecture
    tracer = HoneyHiveTracer.init(
        api_key="your-api-key",
-       project="my-project", 
+       # project derived from API key, 
        instrumentors=[OpenAIInstrumentor()]  # Your choice!
    )
    
@@ -261,7 +264,7 @@ New to HoneyHive? Start here:
    
    tracer = HoneyHiveTracer.init(
        api_key="your-api-key",
-       project="my-project",
+       # project derived from API key,
        instrumentors=[OpenAIInstrumentor()]
    )
    
@@ -300,7 +303,7 @@ New to HoneyHive? Start here:
    # Multi-provider setup with BYOI
    tracer = HoneyHiveTracer.init(
        api_key="your-api-key",
-       project="multi-llm-app",
+       # project derived from API key,
        instrumentors=[
            OpenAIInstrumentor(),    # Traces OpenAI calls
            AnthropicInstrumentor()  # Traces Anthropic calls

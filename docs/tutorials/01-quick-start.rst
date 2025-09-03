@@ -33,16 +33,18 @@ Install the SDK using pip:
 
 That's it! The HoneyHive SDK is designed with minimal dependencies to avoid conflicts with your existing setup.
 
-Step 2: Get Your API Key and Project Name
-------------------------------------------
+Step 2: Get Your API Key
+------------------------
 
 1. Log into your HoneyHive dashboard at `app.honeyhive.ai <https://app.honeyhive.ai>`_
 2. Go to **Settings** → **API Keys**
 3. Copy your API key (it starts with ``hh_``)
-4. Note your project name from the **Projects** section in the sidebar
 
 .. important::
    Keep your API key secure! Never commit it to version control.
+
+.. note::
+   **New in v0.1.0**: You no longer need to specify a project name! Your API key is already scoped to your project, so the SDK automatically derives the project information.
 
 Step 3: Create Your First Traced Function
 -----------------------------------------
@@ -53,12 +55,14 @@ Create a new file called ``hello_honeyhive.py``:
 
    from honeyhive import HoneyHiveTracer, trace
    
-   # Initialize the tracer
+   # Initialize the tracer (simplified in v0.1.0+)
    tracer = HoneyHiveTracer.init(
        api_key="your-api-key-here",  # Replace with your actual API key
-       project="your-project-name",  # Use your project name from HoneyHive UI
-       source="tutorial"             # Environment identifier
+       source="tutorial"             # Environment identifier (project derived from API key)
    )
+   
+   # For backward compatibility, you can still specify project explicitly:
+   # tracer = HoneyHiveTracer.init(api_key="...", project="your-project", source="tutorial")
    
    # Use the @trace decorator to automatically trace this function
    @trace(tracer=tracer)

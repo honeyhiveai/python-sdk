@@ -113,7 +113,7 @@ Network Security
    
    tracer = HoneyHiveTracer.init(
        api_key=os.getenv("HH_API_KEY"),
-       project="production-app",
+       ,
        base_url="https://api.honeyhive.ai",  # Always use HTTPS
        timeout=30.0,  # Reasonable timeout
        # Configure for corporate environments
@@ -133,7 +133,7 @@ Network Security
    # Or configure in code
    tracer = HoneyHiveTracer.init(
        api_key=os.getenv("HH_API_KEY"),
-       project="production-app",
+       ,
        # Custom HTTP configuration if needed
    )
 
@@ -154,7 +154,7 @@ Don't trace everything - focus on business-critical operations:
    
    tracer = HoneyHiveTracer.init(
        api_key=os.getenv("HH_API_KEY"),
-       project="production-app"
+       
    )
    
    # Trace critical business operations
@@ -182,7 +182,7 @@ Use async patterns for high-throughput applications:
    
    tracer = HoneyHiveTracer.init(
        api_key=os.getenv("HH_API_KEY"),
-       project="async-app"
+       
    )
    
    @trace(tracer=tracer)
@@ -437,7 +437,7 @@ Health Check Endpoints
            # Test tracer connectivity
            test_tracer = HoneyHiveTracer.init(
                api_key=os.getenv("HH_API_KEY"),
-               project="health-check",
+               ,
                timeout=5.0
            )
            
@@ -501,7 +501,7 @@ Logging Integration
    # Set up integrated logging
    tracer = HoneyHiveTracer.init(
        api_key=os.getenv("HH_API_KEY"),
-       project="production-app"
+       
    )
    
    # Add HoneyHive handler to logger
@@ -556,14 +556,14 @@ Canary Deployment
            # Canary version
            return HoneyHiveTracer.init(
                api_key=os.getenv("HH_API_KEY"),
-               project="production-app-canary",
+               ,
                source="production-canary"
            )
        else:
            # Stable version
            return HoneyHiveTracer.init(
                api_key=os.getenv("HH_API_KEY"),
-               project="production-app",
+               ,
                source="production-stable"
            )
 

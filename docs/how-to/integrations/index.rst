@@ -47,7 +47,7 @@ Quick Start
 
    tracer = HoneyHiveTracer.init(
        api_key="your-api-key",
-       project="my-project",
+       ,
        instrumentors=[OpenAIInstrumentor()]
    )
 
@@ -100,7 +100,7 @@ Best Practices
    # Good: Initialize at application startup
    tracer = HoneyHiveTracer.init(
        api_key="your-key",
-       project="my-project",
+       ,
        instrumentors=[OpenAIInstrumentor()]
    )
 

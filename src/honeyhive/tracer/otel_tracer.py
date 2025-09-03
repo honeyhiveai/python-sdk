@@ -60,18 +60,18 @@ class HoneyHiveTracer:
     def __init__(
         self,
         api_key: Optional[str] = None,
-        project: Optional[str] = None,
         source: str = "dev",
         test_mode: bool = False,
         session_name: Optional[str] = None,
         instrumentors: Optional[list] = None,
         disable_http_tracing: bool = True,
-    ):
+        project: Optional[str] = None,  # Backward compatibility - ignored
+        **kwargs: Any,
+    ) -> None:
         """Initialize the HoneyHive tracer.
 
         Args:
             api_key: HoneyHive API key
-            project: Project name
             source: Source environment
             test_mode: Whether to run in test mode
             session_name: Optional session name for automatic session creation
@@ -99,7 +99,9 @@ class HoneyHiveTracer:
             # Use a dummy API key for test mode
             self.api_key = api_key or config.api_key or "test-api-key"
 
-        self.project = project or config.project or "default"
+        # Project is handled by the backend based on API key scope
+        # Use provided project for backward compatibility, fallback to placeholder
+        self.project = project if project is not None else "api-key-derived"
         self.source = source
 
         # Set default session name to the calling file name if not provided
@@ -173,13 +175,14 @@ class HoneyHiveTracer:
     def init(
         cls,
         api_key: Optional[str] = None,
-        project: Optional[str] = None,
         source: str = "dev",
         test_mode: bool = False,
         session_name: Optional[str] = None,
         server_url: Optional[str] = None,
         instrumentors: Optional[list] = None,
         disable_http_tracing: bool = True,
+        project: Optional[str] = None,  # Backward compatibility - ignored
+        **kwargs: Any,
     ) -> "HoneyHiveTracer":
         """Initialize the HoneyHive tracer (official API for backwards compatibility).
 
@@ -188,7 +191,6 @@ class HoneyHiveTracer:
 
         Args:
             api_key: HoneyHive API key
-            project: Project name
             source: Source environment (defaults to "production")
             test_mode: Whether to run in test mode
             session_name: Optional session name for automatic session creation
@@ -211,9 +213,6 @@ class HoneyHiveTracer:
         if api_key is None:
             api_key = config.api_key
 
-        if project is None:
-            project = config.project if config.project != "default" else None
-
         # Handle server_url parameter (maps to api_url in our config)
         if server_url:
             # Set the server URL in environment for this initialization
@@ -224,12 +223,13 @@ class HoneyHiveTracer:
                 # Create tracer with server URL
                 tracer = cls(
                     api_key=api_key,
-                    project=project,
                     source=source,
                     test_mode=test_mode,
                     session_name=session_name,
                     instrumentors=instrumentors,
                     disable_http_tracing=disable_http_tracing,
+                    project=project,
+                    **kwargs,
                 )
                 return tracer
             finally:
@@ -242,12 +242,13 @@ class HoneyHiveTracer:
             # Standard initialization without server URL
             return cls(
                 api_key=api_key,
-                project=project,
                 source=source,
                 test_mode=test_mode,
                 session_name=session_name,
                 instrumentors=instrumentors,
                 disable_http_tracing=disable_http_tracing,
+                project=project,
+                **kwargs,
             )
 
     def _initialize_otel(self) -> None:

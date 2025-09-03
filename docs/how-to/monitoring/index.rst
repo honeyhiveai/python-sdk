@@ -41,7 +41,7 @@ Getting Started
 
    tracer = HoneyHiveTracer.init(
        api_key="your-api-key",
-       project="production-app"
+       
    )
 
    def health_check_endpoint():

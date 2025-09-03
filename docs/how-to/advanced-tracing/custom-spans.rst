@@ -33,7 +33,7 @@ Basic Custom Spans with Decorator-First Approach
 
    tracer = HoneyHiveTracer.init(
        api_key="your-api-key",
-       project="custom-spans-demo"
+       
    )
    set_default_tracer(tracer)
 

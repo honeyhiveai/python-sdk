@@ -57,7 +57,7 @@ Quick Start
    # Initialize tracer with MCP instrumentor
    tracer = HoneyHiveTracer.init(
        api_key="your-honeyhive-api-key",
-       project="mcp-project",
+       ,
        instrumentors=[MCPInstrumentor()]
    )
 
@@ -118,7 +118,7 @@ Combine MCP with other LLM providers for complete observability:
    # Multi-provider setup
    tracer = HoneyHiveTracer.init(
        api_key="your-honeyhive-api-key",
-       project="multi-provider-project",
+       ,
        instrumentors=[
            MCPInstrumentor(),      # Trace MCP operations
            OpenAIInstrumentor()    # Trace OpenAI calls within tools
@@ -175,7 +175,7 @@ Enrich MCP spans with additional context:
 
    tracer = HoneyHiveTracer.init(
        api_key="your-api-key",
-       project="enhanced-mcp-project",
+       ,
        instrumentors=[MCPInstrumentor()]
    )
 
@@ -200,7 +200,7 @@ Optimize MCP tracing for production:
 
    tracer = HoneyHiveTracer.init(
        api_key="your-api-key",
-       project="production-mcp",
+       ,
        instrumentors=[MCPInstrumentor()],
        disable_http_tracing=True,  # Reduce overhead
    )
@@ -227,7 +227,7 @@ Handle MCP integration errors gracefully:
        try:
            tracer = HoneyHiveTracer.init(
                api_key="your-api-key",
-               project="mcp-project",
+               ,
                instrumentors=[instrumentor]
            )
            return tracer
@@ -277,7 +277,7 @@ Verify MCP traces are being captured:
 
    tracer = HoneyHiveTracer.init(
        api_key="your-api-key",
-       project="debug-mcp-project",
+       ,
        instrumentors=[MCPInstrumentor()]
    )
 
@@ -390,7 +390,7 @@ Implement health checks for MCP integration:
        try:
            tracer = HoneyHiveTracer.init(
                api_key="health-check",
-               project="health-check",
+               ,
                test_mode=True,
                instrumentors=[MCPInstrumentor()]
            )
@@ -432,7 +432,7 @@ Troubleshooting
    # Verify configuration
    tracer = HoneyHiveTracer.init(
        api_key="your-real-api-key",  # Not test-key
-       project="your-real-project",   # Existing project
+       ,   # Existing project
        test_mode=False,               # Disable for real tracing
        instrumentors=[MCPInstrumentor()]
    )
@@ -447,7 +447,7 @@ Troubleshooting
 
       tracer = HoneyHiveTracer.init(
           api_key="your-api-key",
-          project="optimized-project",
+          ,
           disable_http_tracing=True,  # Default, but explicit
           instrumentors=[MCPInstrumentor()]
       )

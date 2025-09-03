@@ -44,7 +44,7 @@ HoneyHive provides both built-in and custom evaluation capabilities:
    
    tracer = HoneyHiveTracer.init(
        api_key="your-api-key",
-       project="evaluation-tutorial"
+       
    )
 
 **Key Concepts:**
@@ -69,7 +69,7 @@ HoneyHive provides several built-in evaluators for common use cases:
    
    tracer = HoneyHiveTracer.init(
        api_key="your-api-key",
-       project="factual-accuracy-demo"
+       
    )
    
    # Initialize the evaluator
@@ -386,7 +386,7 @@ Evaluate multiple examples at once for comprehensive testing:
            QualityScoreEvaluator(),
            LengthEvaluator(min_length=20, max_length=150)
        ],
-       project="customer-service-eval"
+       
    )
    
    # Analyze results
@@ -451,7 +451,7 @@ Create automated evaluation workflows:
    # Define evaluation pipeline
    pipeline = EvaluationPipeline(
        name="daily_quality_check",
-       project="production_bot",
+       ,
        evaluators=[
            FactualAccuracyEvaluator(),
            QualityScoreEvaluator(),

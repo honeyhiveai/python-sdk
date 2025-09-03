@@ -1,3 +1,29 @@
+## [Unreleased] - 2025-09-03
+
+### Added
+- Simplified HoneyHiveTracer initialization API - project parameter now optional
+- Automatic project derivation from API key scope
+- Full backward compatibility for existing project parameter usage
+- Enhanced documentation with simplified API examples across all tutorials
+
+### Changed
+- HoneyHiveTracer.init() and constructor now accept optional project parameter
+- Project resolution moved to backend based on API key scope
+- Updated all documentation examples to show simplified API first
+- Span processor gracefully handles missing project in baggage context
+
+### Technical Details
+- Zero breaking changes - all existing code continues to work
+- 65/65 unit tests passing with updated implementation
+- Comprehensive documentation update across 40+ files
+- Added **kwargs support for future extensibility
+
+### Migration Guide
+- NEW API: `HoneyHiveTracer.init(api_key='...')` - project derived automatically
+- EXISTING API: `HoneyHiveTracer.init(api_key='...', project='...')` - still supported
+- No immediate action required for existing users
+
+
 # Changelog
 
 All notable changes to the HoneyHive Python SDK will be documented in this file.

@@ -127,14 +127,14 @@ init()
       # Explicit configuration
       tracer = HoneyHiveTracer.init(
           api_key="hh_your_api_key_here",
-          project="my-llm-app",
+          ,
           source="production"
       )
       
       # Development mode
       tracer = HoneyHiveTracer.init(
           api_key="hh_dev_key",
-          project="my-app-dev",
+          ,
           source="development",
           test_mode=True  # No data sent to HoneyHive
       )
@@ -149,14 +149,14 @@ init()
       # Single instrumentor
       tracer = HoneyHiveTracer.init(
           api_key="hh_your_key",
-          project="openai-app",
+          ,
           instrumentors=[OpenAIInstrumentor()]
       )
       
       # Multiple instrumentors for multi-LLM applications
       tracer = HoneyHiveTracer.init(
           api_key="hh_your_key",
-          project="multi-llm-app",
+          ,
           instrumentors=[
               OpenAIInstrumentor(),
               AnthropicInstrumentor()
@@ -169,28 +169,28 @@ init()
    
       # Different projects
       user_tracer = HoneyHiveTracer.init(
-          project="user-service",
+          ,
           source="production"
       )
       
       payment_tracer = HoneyHiveTracer.init(
-          project="payment-service", 
+          , 
           source="production"
       )
       
       # Different environments
       prod_tracer = HoneyHiveTracer.init(
-          project="my-app",
+          ,
           source="production"
       )
       
       staging_tracer = HoneyHiveTracer.init(
-          project="my-app-staging",
+          ,
           source="staging"
       )
       
       dev_tracer = HoneyHiveTracer.init(
-          project="my-app-dev",
+          ,
           source="development",
           test_mode=True
       )
@@ -202,7 +202,7 @@ init()
       # Custom HoneyHive deployment
       tracer = HoneyHiveTracer.init(
           api_key="hh_your_key",
-          project="enterprise-app",
+          ,
           server_url="https://honeyhive.company.com"
       )
 
@@ -481,7 +481,7 @@ close()
           tracer.close()
       
       # Using context manager for automatic cleanup
-      with HoneyHiveTracer.init(api_key="hh_key", project="myapp") as tracer:
+      with HoneyHiveTracer.init(api_key="hh_key", ) as tracer:
           # Use tracer for operations
           with tracer.trace("operation"):
               do_work()
@@ -490,7 +490,7 @@ close()
       # In application cleanup handlers
       import atexit
       
-      tracer = HoneyHiveTracer.init(api_key="hh_key", project="myapp")
+      tracer = HoneyHiveTracer.init(api_key="hh_key", )
       
       def cleanup_tracer():
           print("Cleaning up tracer...")
@@ -512,7 +512,7 @@ project
    
    .. code-block:: python
    
-      tracer = HoneyHiveTracer.init(project="user-service")
+      tracer = HoneyHiveTracer.init()
       print(f"Tracer project: {tracer.project}")  # "user-service"
 
 source
@@ -567,21 +567,21 @@ The HoneyHiveTracer supports multiple independent instances for flexible workflo
    # Production tracer
    prod_tracer = HoneyHiveTracer.init(
        api_key="prod-api-key",
-       project="my-app",
+       ,
        source="production"
    )
    
    # Staging tracer
    staging_tracer = HoneyHiveTracer.init(
        api_key="staging-api-key",
-       project="my-app-staging",
+       ,
        source="staging"
    )
    
    # Development tracer
    dev_tracer = HoneyHiveTracer.init(
        api_key="dev-api-key",
-       project="my-app-dev",
+       ,
        source="development",
        test_mode=True
    )
@@ -592,17 +592,17 @@ The HoneyHiveTracer supports multiple independent instances for flexible workflo
 
    # Microservices architecture
    auth_tracer = HoneyHiveTracer.init(
-       project="auth-service",
+       ,
        session_name="auth_operations"
    )
    
    user_tracer = HoneyHiveTracer.init(
-       project="user-service",
+       ,
        session_name="user_operations"
    )
    
    payment_tracer = HoneyHiveTracer.init(
-       project="payment-service",
+       ,
        session_name="payment_operations"
    )
 
@@ -612,17 +612,17 @@ The HoneyHiveTracer supports multiple independent instances for flexible workflo
 
    # Different workflows with different instrumentors
    chat_tracer = HoneyHiveTracer.init(
-       project="chat-service",
+       ,
        instrumentors=[OpenAIInstrumentor()]
    )
    
    analysis_tracer = HoneyHiveTracer.init(
-       project="analysis-service",
+       ,
        instrumentors=[AnthropicInstrumentor()]
    )
    
    background_tracer = HoneyHiveTracer.init(
-       project="background-jobs",
+       ,
        # No instrumentors for non-LLM background tasks
    )
 
@@ -640,7 +640,7 @@ All HoneyHiveTracer instances are thread-safe and can be safely used across mult
    # Global tracer instance
    tracer = HoneyHiveTracer.init(
        api_key="your-key",
-       project="concurrent-app"
+       
    )
    
    @trace(tracer=tracer)
@@ -850,7 +850,7 @@ Framework Integration Examples
    from flask import Flask, request, g
    
    app = Flask(__name__)
-   tracer = HoneyHiveTracer.init(project="flask-app")
+   tracer = HoneyHiveTracer.init()
    
    @app.before_request
    def start_trace():
@@ -887,7 +887,7 @@ Framework Integration Examples
    import time
    
    app = FastAPI()
-   tracer = HoneyHiveTracer.init(project="fastapi-app")
+   tracer = HoneyHiveTracer.init()
    
    @app.middleware("http")
    async def trace_requests(request: Request, call_next):
@@ -926,7 +926,7 @@ Framework Integration Examples
    from django.utils.deprecation import MiddlewareMixin
    from honeyhive import HoneyHiveTracer
    
-   tracer = HoneyHiveTracer.init(project="django-app")
+   tracer = HoneyHiveTracer.init()
    
    class HoneyHiveMiddleware(MiddlewareMixin):
        def process_request(self, request):
@@ -1048,7 +1048,7 @@ Best Practices
    import signal
    import sys
    
-   tracer = HoneyHiveTracer.init(project="long-running-app")
+   tracer = HoneyHiveTracer.init()
    
    def cleanup_handler(signum=None, frame=None):
        print("Shutting down, flushing traces...")

@@ -72,12 +72,14 @@ tox -e format && tox -e lint
 from honeyhive import HoneyHiveTracer
 from honeyhive.tracer.decorators import trace
 
-# Initialize tracer using the recommended init method
+# Initialize tracer using the recommended init method (simplified API)
 tracer = HoneyHiveTracer.init(
     api_key="your-api-key",
-    project="your-project",
-    source="production"
+    source="production"  # project derived from API key automatically
 )
+
+# Backward compatibility: project parameter still accepted but optional
+# tracer = HoneyHiveTracer.init(api_key="your-api-key", project="your-project", source="production")
 
 # Use unified decorator for automatic tracing (works with both sync and async)
 @trace(event_type="demo", event_name="my_function")
@@ -94,12 +96,11 @@ with tracer.start_span("custom-operation"):
     # Your code here
     pass
 
-# With HTTP tracing enabled
+# With HTTP tracing enabled (new simplified API)
 tracer = HoneyHiveTracer.init(
     api_key="your-api-key",
-    project="your-project",
     source="production",
-    disable_http_tracing=False
+    disable_http_tracing=False  # project derived from API key
 )
 ```
 
@@ -113,16 +114,14 @@ from honeyhive import HoneyHiveTracer
 # Standard initialization
 tracer = HoneyHiveTracer.init(
     api_key="your-api-key",
-    project="your-project",
-    source="production"
+    source="production"  # project derived from API key
 )
 
 # With custom server URL for self-hosted deployments
 tracer = HoneyHiveTracer.init(
     api_key="your-api-key",
-    project="your-project",
     source="production",
-    server_url="https://custom-server.com"
+    server_url="https://custom-server.com"  # project derived from API key
 )
 ```
 

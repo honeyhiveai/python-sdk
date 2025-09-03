@@ -54,7 +54,7 @@ Let's start with a complete example showing both session and span enrichment:
    # Initialize tracer
    tracer = HoneyHiveTracer.init(
        api_key="your-api-key",
-       project="enrichment-tutorial"
+       
    )
    set_default_tracer(tracer)
 

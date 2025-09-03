@@ -69,7 +69,7 @@ The original explicit tracer pattern continues to work exactly as before:
    from honeyhive import HoneyHiveTracer, trace, atrace
    from honeyhive.models import EventType
    
-   tracer = HoneyHiveTracer(project="my-project")
+   tracer = HoneyHiveTracer()
    
    @trace(tracer=tracer, event_type=EventType.tool)
    def process_data(data):
@@ -89,7 +89,7 @@ Decorators now automatically discover tracers from context when needed:
    from honeyhive import HoneyHiveTracer, trace, atrace
    from honeyhive.models import EventType
    
-   tracer = HoneyHiveTracer(project="my-project")
+   tracer = HoneyHiveTracer()
    
    @trace(event_type=EventType.tool)  # No tracer parameter needed!
    def process_data(data):
@@ -117,7 +117,7 @@ Set a global default tracer for application-wide convenience:
    from honeyhive import HoneyHiveTracer, trace, set_default_tracer
    
    # Set up default tracer once
-   default_tracer = HoneyHiveTracer(project="my-app")
+   default_tracer = HoneyHiveTracer()
    set_default_tracer(default_tracer)
    
    # Now @trace works everywhere without specification
@@ -141,9 +141,9 @@ Create independent tracers for different services using decorators as the primar
    from honeyhive import HoneyHiveTracer, trace, set_default_tracer
    
    # Create service-specific tracers
-   auth_tracer = HoneyHiveTracer(project="auth-service")
-   payment_tracer = HoneyHiveTracer(project="payment-service")
-   notification_tracer = HoneyHiveTracer(project="notification-service")
+   auth_tracer = HoneyHiveTracer()
+   payment_tracer = HoneyHiveTracer()
+   notification_tracer = HoneyHiveTracer()
    
    # Option 1: Use explicit tracer parameter (always works)
    @trace(tracer=auth_tracer, event_type=EventType.tool)
@@ -195,9 +195,9 @@ Handle nested calls across different service boundaries with decorators:
    from honeyhive import HoneyHiveTracer, trace, set_default_tracer
    
    # Create tracers for different layers
-   api_tracer = HoneyHiveTracer(project="api-gateway")
-   business_tracer = HoneyHiveTracer(project="business-logic")
-   data_tracer = HoneyHiveTracer(project="data-layer")
+   api_tracer = HoneyHiveTracer()
+   business_tracer = HoneyHiveTracer()
+   data_tracer = HoneyHiveTracer()
    
    # Decorator-first approach with explicit tracers
    @trace(tracer=data_tracer, event_type=EventType.tool)
@@ -257,7 +257,7 @@ Async functions work seamlessly with decorator-based tracing:
    from honeyhive import HoneyHiveTracer, atrace, set_default_tracer
    import asyncio
    
-   tracer = HoneyHiveTracer(project="async-service")
+   tracer = HoneyHiveTracer()
    set_default_tracer(tracer)
    
    @atrace(event_type=EventType.tool)
@@ -300,7 +300,7 @@ Combine synchronous and asynchronous functions with decorator-based tracing:
    from honeyhive import HoneyHiveTracer, trace, atrace, set_default_tracer
    import asyncio
    
-   tracer = HoneyHiveTracer(project="mixed-service")
+   tracer = HoneyHiveTracer()
    set_default_tracer(tracer)
    
    @trace(event_type=EventType.tool)
@@ -389,9 +389,9 @@ Understand how the priority system works:
    from honeyhive import HoneyHiveTracer, trace, set_default_tracer
    
    # Set up different tracers
-   default_tracer = HoneyHiveTracer(project="default")
-   context_tracer = HoneyHiveTracer(project="context")
-   explicit_tracer = HoneyHiveTracer(project="explicit")
+   default_tracer = HoneyHiveTracer()
+   context_tracer = HoneyHiveTracer()
+   explicit_tracer = HoneyHiveTracer()
    
    set_default_tracer(default_tracer)
    
@@ -489,7 +489,7 @@ Recommended Patterns by Use Case
 .. code-block:: python
 
    # Set once at startup
-   set_default_tracer(HoneyHiveTracer(project="my-app"))
+   set_default_tracer(HoneyHiveTracer())
    
    # Use everywhere without parameters
    @trace(event_type=EventType.chain)
@@ -501,8 +501,8 @@ Recommended Patterns by Use Case
 .. code-block:: python
 
    # Create service-specific tracers
-   auth_tracer = HoneyHiveTracer(project="auth-service")
-   data_tracer = HoneyHiveTracer(project="data-service")
+   auth_tracer = HoneyHiveTracer()
+   data_tracer = HoneyHiveTracer()
    
    # Use explicit tracer parameters
    @trace(tracer=auth_tracer, event_type=EventType.tool)
@@ -660,11 +660,11 @@ Migrating from Previous Versions
 .. code-block:: python
 
    # Phase 1: Single tracer (existing)
-   app_tracer = HoneyHiveTracer(project="monolith")
+   app_tracer = HoneyHiveTracer()
    
    # Phase 2: Service-specific tracers (new)
-   auth_tracer = HoneyHiveTracer(project="auth-service")
-   user_tracer = HoneyHiveTracer(project="user-service")
+   auth_tracer = HoneyHiveTracer()
+   user_tracer = HoneyHiveTracer()
    
    # Phase 3: Context-aware usage (enhanced)
    with auth_tracer.start_span("auth_flow"):

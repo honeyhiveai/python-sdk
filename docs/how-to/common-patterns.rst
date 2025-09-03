@@ -43,7 +43,7 @@ Agent and Workflow Patterns
 
    tracer = HoneyHiveTracer.init(
        api_key="your-api-key",
-       project="agent-patterns"
+       
    )
    set_default_tracer(tracer)
 
@@ -185,7 +185,7 @@ Agent and Workflow Patterns
    
    tracer = HoneyHiveTracer.init(
        api_key="your-api-key", 
-       project="data-pipeline"
+       
    )
    set_default_tracer(tracer)
    

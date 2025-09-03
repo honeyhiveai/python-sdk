@@ -45,7 +45,7 @@ def register_tracer(tracer: "HoneyHiveTracer") -> str:
         Unique tracer ID for use in baggage context
 
     Example:
-        >>> tracer = HoneyHiveTracer(project="my-project")
+        >>> tracer = HoneyHiveTracer(api_key="your-api-key")  # project derived from API key
         >>> tracer_id = register_tracer(tracer)
         >>> print(f"Registered tracer with ID: {tracer_id}")
     """
@@ -123,7 +123,7 @@ def set_default_tracer(tracer: "Optional[HoneyHiveTracer]") -> None:
                 or None to clear the default
 
     Example:
-        >>> default_tracer = HoneyHiveTracer(project="default")
+        >>> default_tracer = HoneyHiveTracer(api_key="your-api-key")  # project derived from API key
         >>> set_default_tracer(default_tracer)
         >>>
         >>> # Now @trace will use default_tracer when no context available

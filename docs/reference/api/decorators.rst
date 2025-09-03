@@ -66,7 +66,7 @@ Basic Usage
    # Initialize tracer
    tracer = HoneyHiveTracer.init(
        api_key="your-api-key",
-       project="my-project"
+       
    )
    
    # Basic function tracing
@@ -327,7 +327,7 @@ Alias for ``@trace`` specifically for async functions (both work identically).
    
    tracer = HoneyHiveTracer.init(
        api_key="your-api-key",
-       project="async-project"
+       
    )
    
    @atrace(tracer=tracer, event_type="async_processing")
@@ -385,7 +385,7 @@ Basic Evaluation
    
    tracer = HoneyHiveTracer.init(
        api_key="your-api-key",
-       project="evaluation-project"
+       
    )
    
    fact_evaluator = FactualAccuracyEvaluator()
@@ -1102,7 +1102,7 @@ Framework Integration Examples
    from honeyhive import HoneyHiveTracer, trace, get_logger
    
    app = Flask(__name__)
-   tracer = HoneyHiveTracer.init(project="flask-app")
+   tracer = HoneyHiveTracer.init()
    logger = get_logger(__name__)
    
    @app.before_request
@@ -1163,7 +1163,7 @@ Framework Integration Examples
    import time
    
    app = FastAPI()
-   tracer = HoneyHiveTracer.init(project="fastapi-app")
+   tracer = HoneyHiveTracer.init()
    
    @app.middleware("http")
    async def tracing_middleware(request: Request, call_next):
@@ -1289,7 +1289,7 @@ Best Practices
    # Ensure proper cleanup when using decorators globally
    tracer = HoneyHiveTracer.init(
        api_key="your-key",
-       project="decorator-app"
+       
    )
    
    def cleanup_tracer():
@@ -1326,7 +1326,7 @@ Common Pitfalls and Solutions
        pass
    
    # Apply decorator after tracer is initialized
-   tracer = HoneyHiveTracer.init(api_key="key", project="project")
+   tracer = HoneyHiveTracer.init(api_key="key", )
    solution2_function = trace(tracer=tracer)(solution2_function)
 
 **Problem: Circular Import with Global Tracer**

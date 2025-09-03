@@ -34,7 +34,7 @@ Initialize HoneyHive with multiple instrumentors:
    # Initialize with multiple instrumentors
    tracer = HoneyHiveTracer.init(
        api_key="your-honeyhive-key",
-       project="multi-provider-project",
+       ,
        instrumentors=[
            AnthropicInstrumentor(),
            GoogleGenerativeAIInstrumentor(),
@@ -74,7 +74,7 @@ Multi-Provider Agent Workflow
    # Initialize with multiple instrumentors
    tracer = HoneyHiveTracer.init(
        api_key="your-api-key",
-       project="multi-provider-agent",
+       ,
        instrumentors=[
            OpenAIInstrumentor(),
            AnthropicInstrumentor()

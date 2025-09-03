@@ -57,8 +57,8 @@ The most common integration uses the OpenInference OpenAI instrumentor.
    
    # Initialize HoneyHive with OpenAI instrumentor
    tracer = HoneyHiveTracer.init(
-       api_key="your-honeyhive-api-key",
-       project="openai-tutorial",
+       api_key="your-api-key",  # project derived from API key
+       ,
        source="development",
        instrumentors=[OpenAIInstrumentor()]  # This is the magic!
    )
@@ -102,8 +102,8 @@ Enhance automatic tracing with business context:
    import openai
    
    tracer = HoneyHiveTracer.init(
-       api_key="your-honeyhive-api-key",
-       project="customer-support",
+       api_key="your-api-key",  # project derived from API key
+       ,
        instrumentors=[OpenAIInstrumentor()]
    )
    
@@ -171,8 +171,8 @@ Add Anthropic Claude tracing with the same BYOI pattern.
    
    # Initialize with Anthropic instrumentor
    tracer = HoneyHiveTracer.init(
-       api_key="your-honeyhive-api-key",
-       project="anthropic-tutorial",
+       api_key="your-api-key",  # project derived from API key
+       ,
        instrumentors=[AnthropicInstrumentor()]
    )
    
@@ -228,8 +228,8 @@ Add Google AI (Gemini) tracing.
    
    # Initialize with Google AI instrumentor
    tracer = HoneyHiveTracer.init(
-       api_key="your-honeyhive-api-key",
-       project="gemini-tutorial",
+       api_key="your-api-key",  # project derived from API key
+       ,
        instrumentors=[GoogleGenerativeAIInstrumentor()]
    )
    
@@ -269,8 +269,8 @@ Use multiple LLM providers in the same application:
    
    # Initialize with multiple instrumentors
    tracer = HoneyHiveTracer.init(
-       api_key="your-honeyhive-api-key",
-       project="multi-llm-tutorial",
+       api_key="your-api-key",  # project derived from API key
+       ,
        instrumentors=[
            OpenAIInstrumentor(),    # Traces OpenAI calls
            AnthropicInstrumentor()  # Traces Anthropic calls
@@ -346,8 +346,8 @@ Add Google Agent Development Kit (ADK) tracing for sophisticated agent workflows
    
    # Initialize with Google ADK instrumentor
    tracer = HoneyHiveTracer.init(
-       api_key="your-honeyhive-api-key",
-       project="google-adk-tutorial",
+       api_key="your-api-key",  # project derived from API key
+       ,
        instrumentors=[GoogleADKInstrumentor()]
    )
    
@@ -407,8 +407,8 @@ MCP enables agents to securely connect to data sources and tools through a stand
    
    # Initialize with MCP instrumentor
    tracer = HoneyHiveTracer.init(
-       api_key="your-honeyhive-api-key",
-       project="mcp-tutorial",
+       api_key="your-api-key",  # project derived from API key
+       ,
        instrumentors=[MCPInstrumentor()]
    )
 
@@ -486,8 +486,8 @@ You can also integrate custom or community instrumentors:
    
    # Use any OpenTelemetry-compatible instrumentor
    tracer = HoneyHiveTracer.init(
-       api_key="your-api-key",
-       project="custom-llm",
+       api_key="your-api-key",  # project derived from API key
+       ,
        instrumentors=[
            CustomLLMInstrumentor(),
            # Mix with standard instrumentors
@@ -606,7 +606,7 @@ Here's a complete example using multiple providers:
    # Initialize with multiple instrumentors
    tracer = HoneyHiveTracer.init(
        api_key=os.getenv("HH_API_KEY"),
-       project="content-pipeline",
+       ,
        instrumentors=[OpenAIInstrumentor(), AnthropicInstrumentor()]
    )
    

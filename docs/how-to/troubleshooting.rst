@@ -178,7 +178,7 @@ API Key Problems
    
    # Test tracer initialization
    try:
-       tracer = HoneyHiveTracer.init(api_key=api_key, project="test")
+       tracer = HoneyHiveTracer.init(api_key=api_key, )
        print("✅ Tracer initialized successfully")
    except Exception as e:
        print(f"❌ Tracer initialization failed: {e}")
@@ -206,7 +206,7 @@ API Key Problems
       # Temporarily test with explicit values
       tracer = HoneyHiveTracer.init(
           api_key="hh_your_actual_key",
-          project="test-project"
+          
       )
 
 .. _check-connectivity:
@@ -254,7 +254,7 @@ Network Connectivity
 
       tracer = HoneyHiveTracer.init(
           api_key="your-key",
-          project="test",
+          ,
           timeout=30  # Increase timeout
       )
 
@@ -394,7 +394,7 @@ SSL/TLS Certificate Issues
       # Initialize tracer with custom session
       tracer = HoneyHiveTracer.init(
           api_key="your-key",
-          project="test",
+          ,
           session=session  # Use custom session for all API calls
       )
 
@@ -467,7 +467,7 @@ SSL/TLS Certificate Issues
        try:
            tracer = HoneyHiveTracer.init(
                api_key="test-key",
-               project="ssl-test"
+               
            )
            print("✅ Tracer initialization successful")
        except Exception as e:
@@ -501,7 +501,7 @@ Project Configuration
 
    from honeyhive import HoneyHiveTracer
    
-   tracer = HoneyHiveTracer.init(api_key="your-key", project="test")
+   tracer = HoneyHiveTracer.init(api_key="your-key", )
    
    print(f"Project: {tracer.project}")
    print(f"Source: {tracer.source}")
@@ -536,7 +536,7 @@ Project Configuration
 
       tracer = HoneyHiveTracer.init(
           api_key="your-key",
-          project="exact-project-name",  # Must match dashboard
+          ,  # Must match dashboard
           source="development"           # Clear source identifier
       )
 
@@ -575,7 +575,7 @@ Event Type Validation
 
    from honeyhive import HoneyHiveTracer, trace
    
-   tracer = HoneyHiveTracer.init(api_key="your-key", project="test")
+   tracer = HoneyHiveTracer.init(api_key="your-key", )
    
    # ✅ Valid event types
    @trace(tracer=tracer, event_type=EventType.model)
@@ -620,7 +620,7 @@ Traces Not Being Captured
    
    tracer = HoneyHiveTracer.init(
        api_key="your-key",
-       project="debug-test",
+       ,
        verbose=True  # Enable verbose logging
    )
    
@@ -699,7 +699,7 @@ Instrumentor Problems
    # Initialize with instrumentor
    tracer = HoneyHiveTracer.init(
        api_key="your-key",
-       project="test",
+       ,
        instrumentors=[instrumentor],
        verbose=True
    )
@@ -734,7 +734,7 @@ Instrumentor Problems
       OpenAIInstrumentor().instrument()
       
       # Then initialize tracer normally
-      tracer = HoneyHiveTracer.init(api_key="your-key", project="test")
+      tracer = HoneyHiveTracer.init(api_key="your-key", )
 
 Instrumentor Initialization Order
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -758,7 +758,7 @@ Instrumentor Initialization Order
    # Tracer initialized after instrumentor
    tracer = HoneyHiveTracer.init(
        api_key="your-key",
-       project="test"
+       
    )
 
 **CLI Validation**:
@@ -784,7 +784,7 @@ Instrumentor Initialization Order
       # ✅ CORRECT: Initialize tracer first
       tracer = HoneyHiveTracer.init(
           api_key="your-key",
-          project="test"
+          
       )
       
       # Then initialize instrumentor
@@ -801,7 +801,7 @@ Instrumentor Initialization Order
       # ✅ RECOMMENDED: Let HoneyHive manage instrumentors
       tracer = HoneyHiveTracer.init(
           api_key="your-key",
-          project="test",
+          ,
           instrumentors=[OpenAIInstrumentor()]  # Initialized in correct order
       )
 
@@ -814,7 +814,7 @@ Instrumentor Initialization Order
       
       tracer = HoneyHiveTracer.init(
           api_key="your-key",
-          project="production"
+          
       )
       
       # services.py - Import tracer, then set up instrumentors
@@ -833,7 +833,7 @@ Instrumentor Initialization Order
       from openinference.instrumentation.openai import OpenAIInstrumentor
       
       # Initialize in correct order
-      tracer = HoneyHiveTracer.init(api_key="your-key", project="test")
+      tracer = HoneyHiveTracer.init(api_key="your-key", )
       OpenAIInstrumentor().instrument()
       
       # Test LLM call - should create automatic traces
@@ -869,7 +869,7 @@ Instrumentor Initialization Order
            # Initialize tracer in constructor
            self.tracer = HoneyHiveTracer.init(
                api_key="your-key",
-               project="llm-service"
+               
            )
            
            # Then set up instrumentors
@@ -893,7 +893,7 @@ High Latency or Overhead
    import time
    from honeyhive import HoneyHiveTracer, trace
    
-   tracer = HoneyHiveTracer.init(api_key="your-key", project="perf-test")
+   tracer = HoneyHiveTracer.init(api_key="your-key", )
    
    # Measure overhead
    def without_tracing():
@@ -1010,7 +1010,7 @@ Common Error Messages
        pass
    
    # Solution: Initialize tracer first
-   tracer = HoneyHiveTracer.init(api_key="key", project="project")
+   tracer = HoneyHiveTracer.init(api_key="key", )
 
 **"ValueError: API key is required"**
 
@@ -1020,7 +1020,7 @@ Common Error Messages
    tracer = HoneyHiveTracer.init()  # ❌ No API key
    
    # Solution: Provide API key
-   tracer = HoneyHiveTracer.init(api_key="your-key", project="project")
+   tracer = HoneyHiveTracer.init(api_key="your-key", )
 
 **"ConnectionError: Unable to connect to HoneyHive API"**
 
@@ -1056,7 +1056,7 @@ Getting More Help
    
    # Test basic functionality
    try:
-       tracer = HoneyHiveTracer.init(api_key="test", project="test")
+       tracer = HoneyHiveTracer.init(api_key="test", )
        print("✅ Basic initialization works")
    except Exception as e:
        print(f"❌ Initialization failed: {e}")
