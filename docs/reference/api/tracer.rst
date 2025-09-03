@@ -31,7 +31,7 @@ Class Methods
 init()
 ~~~~~~
 
-.. py:classmethod:: HoneyHiveTracer.init(api_key: Optional[str] = None, project: Optional[str] = None, source: str = "production", test_mode: bool = False, session_name: Optional[str] = None, server_url: Optional[str] = None, instrumentors: Optional[list] = None, disable_http_tracing: bool = True, **kwargs) -> "HoneyHiveTracer"
+.. py:classmethod:: HoneyHiveTracer.init(api_key: Optional[str] = None, source: str = "production", test_mode: bool = False, session_name: Optional[str] = None, server_url: Optional[str] = None, instrumentors: Optional[list] = None, disable_http_tracing: bool = True, project: Optional[str] = None, **kwargs) -> "HoneyHiveTracer"
    :no-index:
 
    Initialize a new HoneyHiveTracer instance with the specified configuration.
@@ -40,9 +40,6 @@ init()
    
    :param api_key: HoneyHive API key. If not provided, reads from ``HH_API_KEY`` environment variable.
    :type api_key: Optional[str]
-   
-   :param project: Project name for organizing traces. If not provided, reads from ``HH_PROJECT`` environment variable or defaults to "default".
-   :type project: Optional[str]
    
    :param source: Source environment identifier (e.g., "production", "staging", "development"). Defaults to "production".
    :type source: str
@@ -61,6 +58,9 @@ init()
    
    :param disable_http_tracing: Whether to disable HTTP request tracing. Defaults to True for performance.
    :type disable_http_tracing: bool
+   
+   :param project: **[Backward Compatibility]** Project name - ignored as projects are derived from API key scope. Kept for compatibility with existing code.
+   :type project: Optional[str]
    
    :param kwargs: Additional configuration options passed to the underlying tracer
    :type kwargs: Any
@@ -97,8 +97,8 @@ init()
         - HoneyHive API key
         - **Required**
       * - ``HH_PROJECT``
-        - Project name
-        - "default"
+        - **[Deprecated]** Project name (ignored - derived from API key)
+        - *Ignored*
       * - ``HH_SOURCE``
         - Source identifier
         - "production"
@@ -133,7 +133,7 @@ init()
       # Development mode
       tracer = HoneyHiveTracer.init(
           api_key="hh_dev_key",
-          source="development"
+          source="development",
           test_mode=True  # No data sent to HoneyHive
       )
    
