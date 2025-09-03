@@ -97,6 +97,7 @@ Keep applications running reliably:
    :maxdepth: 1
 
    monitoring/index
+   deployment/pyproject-integration
    deployment/production
 
 Build Common Patterns
@@ -119,6 +120,7 @@ Implement proven architectural patterns:
 
 **Production Workflows:**
 
+- :doc:`deployment/pyproject-integration` - Include HoneyHive in your pyproject.toml
 - :doc:`deployment/production` - Deploy HoneyHive to production
 - :doc:`monitoring/index` - Set up monitoring and alerts
 - :doc:`evaluation/index` - Build comprehensive evaluation pipelines

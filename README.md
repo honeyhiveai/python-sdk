@@ -41,6 +41,10 @@ pip install honeyhive[all-integrations]
 pip install honeyhive
 ```
 
+**📋 Including in Your Project**
+
+For detailed guidance on including HoneyHive in your `pyproject.toml`, see our [pyproject.toml Integration Guide](https://docs.honeyhive.ai/how-to/deployment/pyproject-integration.html).
+
 ### Development Installation
 
 ```bash
