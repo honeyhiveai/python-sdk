@@ -65,27 +65,28 @@ This documentation is organized into four sections, each serving a different pur
    <div class="doc-sections">
    <div class="doc-card">
      <h3><a href="tutorials/index.html">📖 Tutorials</a></h3>
-     <p><strong>Learning-oriented</strong></p>
      <p>Step-by-step guides that take you through building complete examples. Perfect for learning by doing.</p>
      <a href="tutorials/01-quick-start.html" class="quick-link">→ Quick Start</a>
    </div>
    <div class="doc-card">
      <h3><a href="how-to/index.html">🛠️ How-to Guides</a></h3>
-     <p><strong>Problem-oriented</strong></p>
      <p>Practical guides for solving specific problems. Jump straight to solutions for your use case.</p>
      <a href="how-to/troubleshooting.html" class="quick-link">→ Troubleshooting</a>
    </div>
    <div class="doc-card">
      <h3><a href="reference/index.html">📋 Reference</a></h3>
-     <p><strong>Information-oriented</strong></p>
      <p>Comprehensive API documentation. Look up exact parameters, return values, and technical specifications.</p>
      <a href="reference/api/tracer.html" class="quick-link">→ API Reference</a>
    </div>
    <div class="doc-card">
      <h3><a href="explanation/index.html">💡 Explanation</a></h3>
-     <p><strong>Understanding-oriented</strong></p>
      <p>Conceptual guides explaining why HoneyHive works the way it does. Understand the design and architecture.</p>
      <a href="explanation/architecture/byoi-design.html" class="quick-link">→ BYOI Design</a>
+   </div>
+   <div class="doc-card">
+     <h3><a href="changelog.html">📝 Changelog</a></h3>
+     <p>Release history, version notes, and upgrade guides. Stay updated with latest changes.</p>
+     <a href="changelog.html" class="quick-link">→ Latest Release</a>
    </div>
    </div>
 
@@ -187,33 +188,12 @@ This documentation is organized into four sections, each serving a different pur
 🔗 **Main Documentation Sections**
 
 .. toctree::
-   :maxdepth: 1
-   :caption: Learning-Oriented
+   :maxdepth: 2
 
    tutorials/index
-
-.. toctree::
-   :maxdepth: 1
-   :caption: Problem-Oriented
-
    how-to/index
-
-.. toctree::
-   :maxdepth: 1
-   :caption: Information-Oriented
-
    reference/index
-
-.. toctree::
-   :maxdepth: 1
-   :caption: Understanding-Oriented
-
    explanation/index
-
-.. toctree::
-   :maxdepth: 1
-   :caption: Release Information
-
    changelog
 
 
