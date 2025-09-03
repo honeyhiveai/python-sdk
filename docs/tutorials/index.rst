@@ -13,6 +13,7 @@ Welcome to the HoneyHive Python SDK tutorials! If you're new to HoneyHive or LLM
 - How to set up and configure the HoneyHive SDK
 - How to trace your first LLM application
 - How to integrate with popular LLM providers
+- How to enrich traces with metrics, feedback, and metadata
 - How to evaluate your LLM outputs
 
 **Prerequisites:**
@@ -34,6 +35,7 @@ Follow these tutorials in order for the best learning experience:
    02-basic-tracing
    03-llm-integration
    04-evaluation-basics
+   05-trace-enrichment
 
 Additional Learning
 -------------------

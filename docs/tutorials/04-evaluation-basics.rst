@@ -606,9 +606,9 @@ What's Next?
 
 You now have comprehensive evaluation set up! Next steps:
 
+- :doc:`05-trace-enrichment` - Learn to enrich traces with metrics, feedback, and custom data
 - :doc:`../how-to/evaluation/index` - Advanced evaluation patterns
 - :doc:`../how-to/testing/ci-cd-integration` - Testing in CI/CD pipelines
-- :doc:`../reference/index` - Complete API reference documentation
 
 Key Takeaways
 -------------
