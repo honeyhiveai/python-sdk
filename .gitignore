@@ -188,3 +188,4 @@ test-results/
 .coverage
 htmlcov/
 .tox/
+# Netlify integration removed - triggering fresh status checks
