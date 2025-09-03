@@ -663,14 +663,14 @@ class TestHoneyHiveTracer:
                         mock_config.api_key = "env-key"
                         mock_config.project = "env-project"
 
-                        # Test init with api_key but project from config (which comes from environment)
+                        # Test init with api_key - project is now derived from API key
                         tracer = HoneyHiveTracer.init(
                             api_key="test-key", source="test-source"
                         )
 
-                        # Should use explicit api_key but config project (from environment)
+                        # Should use explicit api_key, project now derived from API key scope
                         assert tracer.api_key == "test-key"
-                        assert tracer.project == "env-project"
+                        assert tracer.project == "api-key-derived"
                         assert tracer.source == "test-source"
 
     def test_init_method_return_type(self):
