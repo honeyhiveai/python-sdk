@@ -56,7 +56,7 @@ Core Capabilities
 - **Pre-Commit Integration**: Automated quality gates using tox environments for consistency
 - **Documentation Quality Control**: Sphinx-based validation with warnings-as-errors enforcement
 - **Git Branching Strategy**: Simplified workflow with main as single protected branch and feature-based development
-- **CI/CD Optimization**: Smart workflow triggers (push on all branches, PRs target main only)
+- **CI/CD Optimization**: Smart workflow triggers (push on main only, PRs on all branches - eliminates duplicates)
 
 **Configuration & Security**:
 

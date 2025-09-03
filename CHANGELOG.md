@@ -32,7 +32,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Git Branching Strategy and Workflow Optimization**: Simplified development workflow
   - **Single Protected Branch**: `main` is the only protected branch containing production-ready code
   - **Feature Branch Model**: All other branches are temporary working branches (deleted after merge)
-  - **Optimized CI/CD Triggers**: Push runs on all branches, PRs only target main (eliminates duplicates)
+  - **Optimized CI/CD Triggers**: Push only on main branch, PRs run on all branches (eliminates duplicates)
   - **Immediate Feedback**: Quality checks run on every push to any branch for fast development cycles
   - **Netlify Cleanup**: Removed Netlify configuration and deployment steps
 - **Documentation Quality Control System**: Comprehensive production incident prevention framework

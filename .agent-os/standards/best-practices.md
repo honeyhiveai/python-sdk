@@ -90,16 +90,16 @@ develop             # Legacy branch (will be removed)
 **GitHub Actions Workflows:**
 ```yaml
 push:
-  # Run on ALL branches - immediate feedback on feature work
+  branches: [main]  # Only run on pushes to the protected main branch
 pull_request:
-  branches: [main]  # Only PRs targeting main (the protected branch)
+  # Run on ALL PRs - immediate feedback on feature branch work
 ```
 
 **Rationale:**
-- **Immediate feedback**: Every push to any branch triggers quality checks
-- **Gate keeping**: PRs to `main` get comprehensive validation before merge
-- **No duplicates**: Feature branch pushes don't trigger duplicate PR workflows
-- **Resource efficient**: Only PRs targeting production branch get full validation
+- **No duplicates**: Feature branch pushes only trigger via PR workflows
+- **Immediate feedback**: All PRs get tested regardless of target branch
+- **Gate keeping**: Direct pushes to `main` get validated (though should be rare)
+- **Resource efficient**: Single workflow run per feature branch change
 
 ### Branch Lifecycle
 1. **Create**: `git checkout -b feature/my-feature main`
