@@ -16,6 +16,27 @@ A comprehensive Python SDK for HoneyHive, providing LLM observability, evaluatio
 
 ## 📦 Installation
 
+**Recommended - Install with Provider Integration:**
+
+```bash
+# Install with OpenAI integration (most common)
+pip install honeyhive[openai]
+
+# Install with Anthropic integration  
+pip install honeyhive[anthropic]
+
+# Install with Google AI integration
+pip install honeyhive[google-ai]
+
+# Install with multiple providers
+pip install honeyhive[openai,anthropic,google-ai]
+
+# Install all supported integrations
+pip install honeyhive[all-integrations]
+```
+
+**Basic Installation (manual instrumentor setup required):**
+
 ```bash
 pip install honeyhive
 ```

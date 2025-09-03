@@ -710,7 +710,11 @@ Instrumentor Problems
       pip install openinference-instrumentation-openai
       
       # For Anthropic
-      pip install openinference-instrumentation-anthropic
+      # Recommended: Install with Anthropic integration
+      pip install honeyhive[anthropic]
+      
+      # Alternative: Manual installation
+      pip install honeyhive openinference-instrumentation-anthropic
 
 2. **Verify instrumentor compatibility**:
 

@@ -44,7 +44,11 @@ The most common integration uses the OpenInference OpenAI instrumentor.
 
 .. code-block:: bash
 
-   pip install openinference-instrumentation-openai
+   # Recommended: Install with OpenAI integration
+   pip install honeyhive[openai]
+   
+   # Alternative: Manual installation
+   pip install honeyhive openinference-instrumentation-openai openai
 
 **Step 2: Set Up Automatic Tracing**
 
@@ -157,7 +161,11 @@ Add Anthropic Claude tracing with the same BYOI pattern.
 
 .. code-block:: bash
 
-   pip install openinference-instrumentation-anthropic
+   # Recommended: Install with Anthropic integration
+   pip install honeyhive[anthropic]
+   
+   # Alternative: Manual installation
+   pip install honeyhive openinference-instrumentation-anthropic
 
 **Step 2: Set Up Anthropic Tracing**
 
@@ -213,7 +221,11 @@ Add Google AI (Gemini) tracing.
 
 .. code-block:: bash
 
-   pip install openinference-instrumentation-google-generativeai
+   # Recommended: Install with Google AI integration
+   pip install honeyhive[google-ai]
+   
+   # Alternative: Manual installation
+   pip install honeyhive openinference-instrumentation-google-generativeai
 
 **Step 2: Set Up Google AI Tracing**
 
@@ -329,7 +341,11 @@ Add Google Agent Development Kit (ADK) tracing for sophisticated agent workflows
 
 .. code-block:: bash
 
-   pip install openinference-instrumentation-google-adk
+   # Recommended: Install with Google ADK integration
+   pip install honeyhive[google-adk]
+   
+   # Alternative: Manual installation
+   pip install honeyhive openinference-instrumentation-google-adk
 
 **Step 2: Set Up Google ADK Tracing**
 

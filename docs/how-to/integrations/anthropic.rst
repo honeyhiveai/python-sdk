@@ -17,7 +17,10 @@ Quick Setup
 
 .. code-block:: bash
 
-   # Install required packages
+   # Recommended: Install with Anthropic integration
+   pip install honeyhive[anthropic]
+   
+   # Alternative: Manual installation
    pip install honeyhive openinference-instrumentation-anthropic anthropic
 
 .. code-block:: python

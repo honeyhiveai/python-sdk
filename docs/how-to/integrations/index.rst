@@ -28,15 +28,21 @@ HoneyHive uses OpenInference instrumentors to automatically trace LLM calls from
 Quick Start
 -----------
 
-**1. Install Instrumentor**
+**1. Install with Provider Integration (Recommended)**
 
 .. code-block:: bash
 
-   # For OpenAI
-   pip install openinference-instrumentation-openai openai
+   # For OpenAI (includes instrumentor + SDK)
+   pip install honeyhive[openai]
    
-   # For Anthropic
-   pip install openinference-instrumentation-anthropic anthropic
+   # For Anthropic (includes instrumentor + SDK)  
+   pip install honeyhive[anthropic]
+   
+   # For Google AI (includes instrumentor + SDK)
+   pip install honeyhive[google-ai]
+   
+   # Alternative: Manual installation
+   pip install honeyhive openinference-instrumentation-openai openai
 
 **2. Initialize HoneyHive with Instrumentor**
 
@@ -142,7 +148,11 @@ Install the required packages:
 
 .. code-block:: bash
 
-   pip install openinference-instrumentation-<provider> <provider-sdk>
+   # Recommended: Use integration groups
+   pip install honeyhive[<provider>]
+   
+   # Alternative: Manual installation
+   pip install honeyhive openinference-instrumentation-<provider> <provider-sdk>
 
 **Multiple Providers Not Working?**
 

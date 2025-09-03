@@ -40,6 +40,10 @@ Quick Start
 
 .. code-block:: bash
 
+   # Recommended: Install with AWS Bedrock integration
+   pip install honeyhive[aws-bedrock]
+   
+   # Alternative: Manual installation
    pip install honeyhive boto3 openinference-instrumentation-bedrock
 
 **2. Configure AWS Credentials**

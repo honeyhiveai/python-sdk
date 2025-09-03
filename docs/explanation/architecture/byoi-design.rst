@@ -86,10 +86,18 @@ You install only what you need:
    pip install openinference-instrumentation-openai
    
    # Only if you use Anthropic  
-   pip install openinference-instrumentation-anthropic
+   # Recommended: Install with Anthropic integration
+   pip install honeyhive[anthropic]
+   
+   # Alternative: Manual installation
+   pip install honeyhive openinference-instrumentation-anthropic
    
    # Only if you use Google AI
-   pip install openinference-instrumentation-google-generativeai
+   # Recommended: Install with Google AI integration
+   pip install honeyhive[google-ai]
+   
+   # Alternative: Manual installation
+   pip install honeyhive openinference-instrumentation-google-generativeai
 
 **3. Integration at Runtime**
 
@@ -178,8 +186,16 @@ HoneyHive supports multiple instrumentor providers through its BYOI architecture
 
    # OpenInference Providers
    pip install openinference-instrumentation-openai
-   pip install openinference-instrumentation-anthropic
-   pip install openinference-instrumentation-google-generativeai
+   # Recommended: Install with Anthropic integration
+   pip install honeyhive[anthropic]
+   
+   # Alternative: Manual installation
+   pip install honeyhive openinference-instrumentation-anthropic
+   # Recommended: Install with Google AI integration
+   pip install honeyhive[google-ai]
+   
+   # Alternative: Manual installation
+   pip install honeyhive openinference-instrumentation-google-generativeai
    
    # OpenLLMetry Providers (alternative)
    pip install openllmetry[openai]
