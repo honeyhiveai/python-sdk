@@ -15,6 +15,18 @@ Quick Setup
 
 **Solution**:
 
+
+.. raw:: html
+
+   <div class="code-example">
+   <div class="code-tabs">
+     <button class="tab-button active" onclick="showTab(event, 'anthropic-install')">Installation</button>
+     <button class="tab-button" onclick="showTab(event, 'anthropic-basic')">Basic Setup</button>
+     <button class="tab-button" onclick="showTab(event, 'anthropic-advanced')">Advanced Usage</button>
+   </div>
+
+   <div id="anthropic-install" class="tab-content active">
+
 .. code-block:: bash
 
    # Recommended: Install with Anthropic integration
@@ -22,6 +34,12 @@ Quick Setup
    
    # Alternative: Manual installation
    pip install honeyhive openinference-instrumentation-anthropic anthropic
+
+
+.. raw:: html
+
+   </div>
+   <div id="anthropic-basic" class="tab-content">
 
 .. code-block:: python
 
@@ -42,6 +60,64 @@ Quick Setup
        max_tokens=100,
        messages=[{"role": "user", "content": "Hello, Claude!"}]
    )
+
+
+.. raw:: html
+
+   </div>
+   <div id="anthropic-advanced" class="tab-content">
+
+.. code-block:: python
+
+   from honeyhive import HoneyHiveTracer, trace
+   from openinference.instrumentation.anthropic import AnthropicInstrumentor
+   import anthropic
+
+   # Initialize with custom configuration
+   tracer = HoneyHiveTracer.init(
+       api_key="your-honeyhive-key",
+       source="production",
+       instrumentors=[AnthropicInstrumentor()]
+   )
+
+   @trace(tracer=tracer, event_type="chain")
+   def research_assistant(topic: str) -> dict:
+       """Advanced example with multiple Claude calls."""
+       client = anthropic.Anthropic()
+       
+       # Research phase
+       research = client.messages.create(
+           model="claude-3-opus-20240229",
+           max_tokens=300,
+           messages=[{
+               "role": "user",
+               "content": f"Research key facts about {topic}. Be concise and accurate."
+           }]
+       )
+       
+       # Summary phase
+       summary = client.messages.create(
+           model="claude-3-sonnet-20240229",
+           max_tokens=150,
+           messages=[{
+               "role": "user",
+               "content": f"Summarize this research in bullet points:\n{research.content[0].text}"
+           }]
+       )
+       
+       return {
+           "research": research.content[0].text,
+           "summary": summary.content[0].text
+       }
+
+   # All calls are traced with context
+   result = research_assistant("quantum computing")
+
+
+.. raw:: html
+
+   </div>
+   </div>
 
 Environment Variables
 ---------------------
@@ -697,3 +773,65 @@ See Also
 - :doc:`multi-provider` - Use Anthropic with other providers
 - :doc:`../troubleshooting` - Common integration issues
 - :doc:`../../tutorials/03-llm-integration` - LLM integration tutorial
+
+.. raw:: html
+
+   <script>
+   function showTab(evt, tabName) {
+     var i, tabcontent, tablinks;
+     tabcontent = document.getElementsByClassName("tab-content");
+     for (i = 0; i < tabcontent.length; i++) {
+       tabcontent[i].classList.remove("active");
+     }
+     tablinks = document.getElementsByClassName("tab-button");
+     for (i = 0; i < tablinks.length; i++) {
+       tablinks[i].classList.remove("active");
+     }
+     document.getElementById(tabName).classList.add("active");
+     evt.currentTarget.classList.add("active");
+   }
+   </script>
+   
+   <style>
+   .code-example {
+     margin: 1.5rem 0;
+     border: 1px solid #ddd;
+     border-radius: 8px;
+     overflow: hidden;
+   }
+   .code-tabs {
+     display: flex;
+     background: #f8f9fa;
+     border-bottom: 1px solid #ddd;
+   }
+   .tab-button {
+     background: none;
+     border: none;
+     padding: 12px 20px;
+     cursor: pointer;
+     font-weight: 500;
+     color: #666;
+     transition: all 0.2s ease;
+   }
+   .tab-button:hover {
+     background: #e9ecef;
+     color: #2980b9;
+   }
+   .tab-button.active {
+     background: #2980b9;
+     color: white;
+     border-bottom: 2px solid #2980b9;
+   }
+   .tab-content {
+     display: none;
+     padding: 0;
+   }
+   .tab-content.active {
+     display: block;
+   }
+   .tab-content .highlight {
+     margin: 0;
+     border-radius: 0;
+   }
+   </style>
+

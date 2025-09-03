@@ -21,7 +21,17 @@ Google AI offers powerful Gemini models through the `google-generativeai` librar
 Quick Start
 -----------
 
-**1. Install Required Packages**
+
+.. raw:: html
+
+   <div class="code-example">
+   <div class="code-tabs">
+     <button class="tab-button active" onclick="showTab(event, 'google-install')">Installation</button>
+     <button class="tab-button" onclick="showTab(event, 'google-basic')">Basic Setup</button>
+     <button class="tab-button" onclick="showTab(event, 'google-advanced')">Advanced Usage</button>
+   </div>
+
+   <div id="google-install" class="tab-content active">
 
 .. code-block:: bash
 
@@ -31,7 +41,11 @@ Quick Start
    # Alternative: Manual installation
    pip install honeyhive google-generativeai openinference-instrumentation-google-generativeai
 
-**2. Initialize HoneyHive with Google AI Instrumentor**
+
+.. raw:: html
+
+   </div>
+   <div id="google-basic" class="tab-content">
 
 .. code-block:: python
 
@@ -48,14 +62,61 @@ Quick Start
    # Configure Google AI
    genai.configure(api_key="your-google-ai-api-key")
 
-**3. Use Google AI Normally - Automatically Traced**
-
-.. code-block:: python
-
    # All Google AI calls are now automatically traced
    model = genai.GenerativeModel('gemini-pro')
    response = model.generate_content("What is machine learning?")
    print(response.text)
+
+
+.. raw:: html
+
+   </div>
+   <div id="google-advanced" class="tab-content">
+
+.. code-block:: python
+
+   from honeyhive import HoneyHiveTracer, trace
+   from openinference.instrumentation.google_generativeai import GoogleGenerativeAIInstrumentor
+   import google.generativeai as genai
+
+   # Initialize with custom configuration
+   tracer = HoneyHiveTracer.init(
+       api_key="your-honeyhive-api-key",
+       source="production",
+       instrumentors=[GoogleGenerativeAIInstrumentor()]
+   )
+
+   genai.configure(api_key="your-google-ai-api-key")
+
+   @trace(tracer=tracer, event_type="chain")
+   def content_pipeline(topic: str) -> dict:
+       """Advanced example with multiple Gemini models."""
+       
+       # Use Gemini Pro for research
+       research_model = genai.GenerativeModel('gemini-pro')
+       research = research_model.generate_content(
+           f"Research comprehensive information about {topic}. Include key facts and recent developments."
+       )
+       
+       # Use Gemini Pro Vision for visual content ideas
+       content_model = genai.GenerativeModel('gemini-pro')
+       content_ideas = content_model.generate_content(
+           f"Based on this research, suggest 5 creative content ideas:\n{research.text}"
+       )
+       
+       return {
+           "research": research.text,
+           "content_ideas": content_ideas.text
+       }
+
+   # Both the function and all Gemini calls are traced
+   result = content_pipeline("sustainable energy")
+
+
+.. raw:: html
+
+   </div>
+   </div>
 
 Basic Text Generation
 ---------------------
@@ -607,3 +668,65 @@ See Also
 - :doc:`multi-provider` - Use Google AI with other providers
 - :doc:`../troubleshooting` - Common integration issues
 - :doc:`../../tutorials/03-llm-integration` - LLM integration tutorial
+
+.. raw:: html
+
+   <script>
+   function showTab(evt, tabName) {
+     var i, tabcontent, tablinks;
+     tabcontent = document.getElementsByClassName("tab-content");
+     for (i = 0; i < tabcontent.length; i++) {
+       tabcontent[i].classList.remove("active");
+     }
+     tablinks = document.getElementsByClassName("tab-button");
+     for (i = 0; i < tablinks.length; i++) {
+       tablinks[i].classList.remove("active");
+     }
+     document.getElementById(tabName).classList.add("active");
+     evt.currentTarget.classList.add("active");
+   }
+   </script>
+   
+   <style>
+   .code-example {
+     margin: 1.5rem 0;
+     border: 1px solid #ddd;
+     border-radius: 8px;
+     overflow: hidden;
+   }
+   .code-tabs {
+     display: flex;
+     background: #f8f9fa;
+     border-bottom: 1px solid #ddd;
+   }
+   .tab-button {
+     background: none;
+     border: none;
+     padding: 12px 20px;
+     cursor: pointer;
+     font-weight: 500;
+     color: #666;
+     transition: all 0.2s ease;
+   }
+   .tab-button:hover {
+     background: #e9ecef;
+     color: #2980b9;
+   }
+   .tab-button.active {
+     background: #2980b9;
+     color: white;
+     border-bottom: 2px solid #2980b9;
+   }
+   .tab-content {
+     display: none;
+     padding: 0;
+   }
+   .tab-content.active {
+     display: block;
+   }
+   .tab-content .highlight {
+     margin: 0;
+     border-radius: 0;
+   }
+   </style>
+

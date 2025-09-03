@@ -15,6 +15,18 @@ Quick Setup
 
 **Solution**:
 
+
+.. raw:: html
+
+   <div class="code-example">
+   <div class="code-tabs">
+     <button class="tab-button active" onclick="showTab(event, 'openai-install')">Installation</button>
+     <button class="tab-button" onclick="showTab(event, 'openai-basic')">Basic Setup</button>
+     <button class="tab-button" onclick="showTab(event, 'openai-advanced')">Advanced Usage</button>
+   </div>
+
+   <div id="openai-install" class="tab-content active">
+
 .. code-block:: bash
 
    # Recommended: Install with OpenAI integration
@@ -22,6 +34,12 @@ Quick Setup
    
    # Alternative: Manual installation
    pip install honeyhive openinference-instrumentation-openai openai
+
+
+.. raw:: html
+
+   </div>
+   <div id="openai-basic" class="tab-content">
 
 .. code-block:: python
 
@@ -41,6 +59,60 @@ Quick Setup
        model="gpt-3.5-turbo",
        messages=[{"role": "user", "content": "Hello!"}]
    )
+
+
+.. raw:: html
+
+   </div>
+   <div id="openai-advanced" class="tab-content">
+
+.. code-block:: python
+
+   from honeyhive import HoneyHiveTracer, trace
+   from openinference.instrumentation.openai import OpenAIInstrumentor
+   import openai
+
+   # Initialize with custom configuration
+   tracer = HoneyHiveTracer.init(
+       api_key="your-honeyhive-key",
+       source="production",
+       instrumentors=[OpenAIInstrumentor()]
+   )
+
+   @trace(tracer=tracer, event_type="chain")
+   def analyze_sentiment(text: str) -> dict:
+       """Advanced example with custom tracing and multiple calls."""
+       client = openai.OpenAI()
+       
+       # Multiple OpenAI calls in one traced function
+       analysis = client.chat.completions.create(
+           model="gpt-4",
+           messages=[
+               {"role": "system", "content": "You are a sentiment analyzer. Return JSON."},
+               {"role": "user", "content": f"Analyze sentiment: {text}"}
+           ]
+       )
+       
+       summary = client.chat.completions.create(
+           model="gpt-3.5-turbo",
+           messages=[
+               {"role": "user", "content": f"Summarize in 10 words: {text}"}
+           ]
+       )
+       
+       return {
+           "sentiment": analysis.choices[0].message.content,
+           "summary": summary.choices[0].message.content
+       }
+
+   # Both the function and all OpenAI calls are traced
+   result = analyze_sentiment("I love this new feature!")
+
+
+.. raw:: html
+
+   </div>
+   </div>
 
 Environment Variables
 ---------------------
@@ -773,3 +845,65 @@ See Also
 - :doc:`multi-provider` - Use OpenAI with other providers
 - :doc:`../troubleshooting` - Common integration issues
 - :doc:`../../tutorials/03-llm-integration` - LLM integration tutorial
+
+.. raw:: html
+
+   <script>
+   function showTab(evt, tabName) {
+     var i, tabcontent, tablinks;
+     tabcontent = document.getElementsByClassName("tab-content");
+     for (i = 0; i < tabcontent.length; i++) {
+       tabcontent[i].classList.remove("active");
+     }
+     tablinks = document.getElementsByClassName("tab-button");
+     for (i = 0; i < tablinks.length; i++) {
+       tablinks[i].classList.remove("active");
+     }
+     document.getElementById(tabName).classList.add("active");
+     evt.currentTarget.classList.add("active");
+   }
+   </script>
+   
+   <style>
+   .code-example {
+     margin: 1.5rem 0;
+     border: 1px solid #ddd;
+     border-radius: 8px;
+     overflow: hidden;
+   }
+   .code-tabs {
+     display: flex;
+     background: #f8f9fa;
+     border-bottom: 1px solid #ddd;
+   }
+   .tab-button {
+     background: none;
+     border: none;
+     padding: 12px 20px;
+     cursor: pointer;
+     font-weight: 500;
+     color: #666;
+     transition: all 0.2s ease;
+   }
+   .tab-button:hover {
+     background: #e9ecef;
+     color: #2980b9;
+   }
+   .tab-button.active {
+     background: #2980b9;
+     color: white;
+     border-bottom: 2px solid #2980b9;
+   }
+   .tab-content {
+     display: none;
+     padding: 0;
+   }
+   .tab-content.active {
+     display: block;
+   }
+   .tab-content .highlight {
+     margin: 0;
+     border-radius: 0;
+   }
+   </style>
+

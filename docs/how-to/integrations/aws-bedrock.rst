@@ -36,7 +36,17 @@ AWS Bedrock supports multiple model providers:
 Quick Start
 -----------
 
-**1. Install Required Packages**
+
+.. raw:: html
+
+   <div class="code-example">
+   <div class="code-tabs">
+     <button class="tab-button active" onclick="showTab(event, 'bedrock-install')">Installation</button>
+     <button class="tab-button" onclick="showTab(event, 'bedrock-basic')">Basic Setup</button>
+     <button class="tab-button" onclick="showTab(event, 'bedrock-advanced')">Multi-Model</button>
+   </div>
+
+   <div id="bedrock-install" class="tab-content active">
 
 .. code-block:: bash
 
@@ -45,6 +55,81 @@ Quick Start
    
    # Alternative: Manual installation
    pip install honeyhive boto3 openinference-instrumentation-bedrock
+
+
+.. raw:: html
+
+   </div>
+   <div id="bedrock-basic" class="tab-content">
+
+.. code-block:: python
+
+   from honeyhive import HoneyHiveTracer
+   from openinference.instrumentation.bedrock import BedrockInstrumentor
+   import boto3
+
+   # Initialize HoneyHive with Bedrock instrumentor
+   tracer = HoneyHiveTracer.init(
+       api_key="your-honeyhive-key",
+       instrumentors=[BedrockInstrumentor()]
+   )
+
+   # Use AWS Bedrock normally - automatic tracing!
+   bedrock = boto3.client('bedrock-runtime', region_name='us-east-1')
+   response = bedrock.invoke_model(
+       modelId='anthropic.claude-v2',
+       body=json.dumps({
+           "prompt": "Human: Hello, Claude! Assistant:",
+           "max_tokens_to_sample": 100
+       })
+   )
+
+
+.. raw:: html
+
+   </div>
+   <div id="bedrock-advanced" class="tab-content">
+
+.. code-block:: python
+
+   from honeyhive import HoneyHiveTracer, trace
+   from openinference.instrumentation.bedrock import BedrockInstrumentor
+   import boto3
+   import json
+
+   tracer = HoneyHiveTracer.init(
+       api_key="your-honeyhive-key",
+       source="production",
+       instrumentors=[BedrockInstrumentor()]
+   )
+
+   @trace(tracer=tracer, event_type="chain")
+   def multi_model_comparison(prompt: str) -> dict:
+       """Compare responses across multiple Bedrock models."""
+       bedrock = boto3.client('bedrock-runtime', region_name='us-east-1')
+       
+       # Claude response
+       claude = bedrock.invoke_model(
+           modelId='anthropic.claude-v2',
+           body=json.dumps({"prompt": f"Human: {prompt} Assistant:", "max_tokens_to_sample": 150})
+       )
+       
+       # Titan response  
+       titan = bedrock.invoke_model(
+           modelId='amazon.titan-text-express-v1',
+           body=json.dumps({"inputText": prompt, "textGenerationConfig": {"maxTokenCount": 150}})
+       )
+       
+       return {
+           "claude": json.loads(claude['body'].read())['completion'],
+           "titan": json.loads(titan['body'].read())['results'][0]['outputText']
+       }
+
+
+.. raw:: html
+
+   </div>
+   </div>
 
 **2. Configure AWS Credentials**
 
@@ -397,3 +482,65 @@ See Also
 - :doc:`multi-provider` - Use AWS Bedrock with other providers
 - :doc:`../troubleshooting` - Common integration issues
 - :doc:`../../tutorials/03-llm-integration` - LLM integration tutorial
+
+.. raw:: html
+
+   <script>
+   function showTab(evt, tabName) {
+     var i, tabcontent, tablinks;
+     tabcontent = document.getElementsByClassName("tab-content");
+     for (i = 0; i < tabcontent.length; i++) {
+       tabcontent[i].classList.remove("active");
+     }
+     tablinks = document.getElementsByClassName("tab-button");
+     for (i = 0; i < tablinks.length; i++) {
+       tablinks[i].classList.remove("active");
+     }
+     document.getElementById(tabName).classList.add("active");
+     evt.currentTarget.classList.add("active");
+   }
+   </script>
+   
+   <style>
+   .code-example {
+     margin: 1.5rem 0;
+     border: 1px solid #ddd;
+     border-radius: 8px;
+     overflow: hidden;
+   }
+   .code-tabs {
+     display: flex;
+     background: #f8f9fa;
+     border-bottom: 1px solid #ddd;
+   }
+   .tab-button {
+     background: none;
+     border: none;
+     padding: 12px 20px;
+     cursor: pointer;
+     font-weight: 500;
+     color: #666;
+     transition: all 0.2s ease;
+   }
+   .tab-button:hover {
+     background: #e9ecef;
+     color: #2980b9;
+   }
+   .tab-button.active {
+     background: #2980b9;
+     color: white;
+     border-bottom: 2px solid #2980b9;
+   }
+   .tab-content {
+     display: none;
+     padding: 0;
+   }
+   .tab-content.active {
+     display: block;
+   }
+   .tab-content .highlight {
+     margin: 0;
+     border-radius: 0;
+   }
+   </style>
+

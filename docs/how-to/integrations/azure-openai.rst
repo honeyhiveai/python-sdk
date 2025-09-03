@@ -38,7 +38,17 @@ Compliance        Limited                   SOC 2, HIPAA, FedRAMP options
 Quick Start
 -----------
 
-**1. Install Required Packages**
+
+.. raw:: html
+
+   <div class="code-example">
+   <div class="code-tabs">
+     <button class="tab-button active" onclick="showTab(event, 'azure-install')">Installation</button>
+     <button class="tab-button" onclick="showTab(event, 'azure-basic')">Basic Setup</button>
+     <button class="tab-button" onclick="showTab(event, 'azure-advanced')">Enterprise</button>
+   </div>
+
+   <div id="azure-install" class="tab-content active">
 
 .. code-block:: bash
 
@@ -47,6 +57,92 @@ Quick Start
    
    # Alternative: Manual installation
    pip install honeyhive openai openinference-instrumentation-openai azure-identity
+
+
+.. raw:: html
+
+   </div>
+   <div id="azure-basic" class="tab-content">
+
+.. code-block:: python
+
+   from honeyhive import HoneyHiveTracer
+   from openinference.instrumentation.openai import OpenAIInstrumentor
+   from openai import AzureOpenAI
+
+   # Initialize HoneyHive with OpenAI instrumentor (works for Azure too!)
+   tracer = HoneyHiveTracer.init(
+       api_key="your-honeyhive-key",
+       instrumentors=[OpenAIInstrumentor()]
+   )
+
+   # Use Azure OpenAI normally - automatic tracing!
+   client = AzureOpenAI(
+       azure_endpoint="https://your-resource.openai.azure.com/",
+       api_key="your-azure-openai-key",
+       api_version="2024-02-01"
+   )
+
+   response = client.chat.completions.create(
+       model="gpt-4",  # Your deployment name
+       messages=[{"role": "user", "content": "Hello from Azure!"}]
+   )
+
+
+.. raw:: html
+
+   </div>
+   <div id="azure-advanced" class="tab-content">
+
+.. code-block:: python
+
+   from honeyhive import HoneyHiveTracer, trace
+   from openinference.instrumentation.openai import OpenAIInstrumentor
+   from azure.identity import DefaultAzureCredential
+   from openai import AzureOpenAI
+
+   # Enterprise setup with managed identity
+   tracer = HoneyHiveTracer.init(
+       api_key="your-honeyhive-key",
+       source="production",
+       instrumentors=[OpenAIInstrumentor()]
+   )
+
+   credential = DefaultAzureCredential()
+   token = credential.get_token("https://cognitiveservices.azure.com/.default")
+
+   client = AzureOpenAI(
+       azure_endpoint="https://your-resource.openai.azure.com/",
+       azure_ad_token=token.token,
+       api_version="2024-02-01"
+   )
+
+   @trace(tracer=tracer, event_type="chain")
+   def enterprise_analysis(data: str) -> dict:
+       """Enterprise-grade analysis with multiple models."""
+       
+       # Analysis with GPT-4
+       analysis = client.chat.completions.create(
+           model="gpt-4-deployment",
+           messages=[{"role": "user", "content": f"Analyze: {data}"}]
+       )
+       
+       # Summary with GPT-3.5
+       summary = client.chat.completions.create(
+           model="gpt-35-turbo-deployment",
+           messages=[{"role": "user", "content": f"Summarize: {analysis.choices[0].message.content}"}]
+       )
+       
+       return {
+           "analysis": analysis.choices[0].message.content,
+           "summary": summary.choices[0].message.content
+       }
+
+
+.. raw:: html
+
+   </div>
+   </div>
 
 **2. Configure Azure OpenAI Access**
 
@@ -903,3 +999,65 @@ See Also
 - :doc:`multi-provider` - Use Azure OpenAI with other providers
 - :doc:`../troubleshooting` - Common integration issues
 - :doc:`../../tutorials/03-llm-integration` - LLM integration tutorial
+
+.. raw:: html
+
+   <script>
+   function showTab(evt, tabName) {
+     var i, tabcontent, tablinks;
+     tabcontent = document.getElementsByClassName("tab-content");
+     for (i = 0; i < tabcontent.length; i++) {
+       tabcontent[i].classList.remove("active");
+     }
+     tablinks = document.getElementsByClassName("tab-button");
+     for (i = 0; i < tablinks.length; i++) {
+       tablinks[i].classList.remove("active");
+     }
+     document.getElementById(tabName).classList.add("active");
+     evt.currentTarget.classList.add("active");
+   }
+   </script>
+   
+   <style>
+   .code-example {
+     margin: 1.5rem 0;
+     border: 1px solid #ddd;
+     border-radius: 8px;
+     overflow: hidden;
+   }
+   .code-tabs {
+     display: flex;
+     background: #f8f9fa;
+     border-bottom: 1px solid #ddd;
+   }
+   .tab-button {
+     background: none;
+     border: none;
+     padding: 12px 20px;
+     cursor: pointer;
+     font-weight: 500;
+     color: #666;
+     transition: all 0.2s ease;
+   }
+   .tab-button:hover {
+     background: #e9ecef;
+     color: #2980b9;
+   }
+   .tab-button.active {
+     background: #2980b9;
+     color: white;
+     border-bottom: 2px solid #2980b9;
+   }
+   .tab-content {
+     display: none;
+     padding: 0;
+   }
+   .tab-content.active {
+     display: block;
+   }
+   .tab-content .highlight {
+     margin: 0;
+     border-radius: 0;
+   }
+   </style>
+
