@@ -168,7 +168,11 @@
 **CRITICAL**: Execute BEFORE generating ANY code:
 
 ```bash
-# 1. Validate Current Codebase State
+# 1. Get Current Date (MANDATORY for all dated content)
+CURRENT_DATE=$(date +"%Y-%m-%d")
+echo "Today is: $CURRENT_DATE"
+
+# 2. Validate Current Codebase State
 read_file src/honeyhive/__init__.py     # Check current API exports
 grep -r "from honeyhive import" examples/  # Verify import patterns  
 grep -r "class.*:" src/honeyhive/       # Validate class names
@@ -198,6 +202,7 @@ cd .. && python -m doctest examples/*.py  # Examples work (MUST pass)
 **❌ NEVER COMMIT** if ANY test fails
 **❌ NEVER PUSH** failing tests to ANY branch
 **❌ NEVER USE** `git commit --no-verify` without immediate fix
+**❌ NEVER USE** hardcoded dates - always use `date +"%Y-%m-%d"`
 
 ### Autonomous Decision Framework
 
@@ -207,6 +212,22 @@ cd .. && python -m doctest examples/*.py  # Examples work (MUST pass)
 2. **Maintain Quality**: Apply formatting, resolve linting issues, update docs  
 3. **Ensure Compatibility**: Test across Python versions, validate examples
 4. **Prevent Regressions**: Run full test suite, verify existing functionality
+
+### Date Usage Requirements - MANDATORY
+
+**🚨 CRITICAL**: AI Assistants consistently make date errors. Follow these rules:
+
+1. **ALWAYS get current date first**: `CURRENT_DATE=$(date +"%Y-%m-%d")`
+2. **Use ISO 8601 format**: `YYYY-MM-DD` (e.g., 2025-09-03)
+3. **For new specs**: `.agent-os/specs/${CURRENT_DATE}-spec-name/`
+4. **In file headers**: `**Date**: $CURRENT_DATE`
+5. **NEVER hardcode dates**: Don't use 2025-01-30 when today is 2025-09-03
+
+**Common Date Errors to Prevent:**
+- ❌ Using random past dates (2025-01-30) 
+- ❌ Wrong formats (09/03/2025, Sep 3, 2025)
+- ❌ Hardcoded dates instead of system date
+- ❌ Inconsistent dates across files
 
 ### Documentation Quality Prevention
 
@@ -237,5 +258,6 @@ cd .. && python -m doctest examples/*.py  # Examples work (MUST pass)
 
 - `.agent-os/specs/2025-09-03-ai-assistant-quality-framework/` - Complete framework
 - `.agent-os/specs/2025-09-03-zero-failing-tests-policy/` - Testing requirements
-- `.agent-os/standards/best-practices.md` - Quality standards
+- `.agent-os/specs/2025-09-03-date-usage-standards/` - Date usage requirements
+- `.agent-os/standards/best-practices.md` - Quality standards including date protocols
 - `.agent-os/standards/tech-stack.md` - Technical requirements

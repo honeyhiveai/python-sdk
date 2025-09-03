@@ -22,7 +22,8 @@
 2. Manual verification: `tox -e format && tox -e lint`
 3. **MANDATORY**: All tests must pass - `tox -e unit && tox -e integration`
 4. **MANDATORY for AI Assistants**: Update documentation before committing
-5. Emergency bypass only: `git commit --no-verify` (document why and fix immediately)
+5. **MANDATORY for AI Assistants**: Use correct dates - `date +"%Y-%m-%d"` command
+6. Emergency bypass only: `git commit --no-verify` (document why and fix immediately)
 
 **Documentation Update Requirements**:
 - **Code changes**: CHANGELOG.md must be updated
@@ -372,6 +373,218 @@ tox -e py311 -e py312 -e py313  # All must pass
 - All testing requirements still apply
 - No exceptions for "urgent" fixes
 - Fast tracking through expedited review, not skipped testing
+
+## Date and Timestamp Standards - MANDATORY FOR AI ASSISTANTS
+
+**🚨 CRITICAL ISSUE**: AI Assistants consistently make date errors that create confusion and misaligned documentation.
+
+### Mandatory Date Usage Protocol
+
+**ALWAYS use the system date command before creating dated content:**
+
+```bash
+# REQUIRED: Get current date before ANY date-related work
+CURRENT_DATE=$(date +"%Y-%m-%d")
+echo "Today is: $CURRENT_DATE"
+
+# Use this variable for all date references
+echo "Creating spec for date: $CURRENT_DATE"
+```
+
+### Date Format Standards
+
+**Standard Format**: `YYYY-MM-DD` (ISO 8601)
+- ✅ **Correct**: `2025-09-03`
+- ❌ **Wrong**: `2025-01-30` (when today is 2025-09-03)
+- ❌ **Wrong**: `09/03/2025`, `Sep 3, 2025`, `3-9-2025`
+
+### AI Assistant Date Requirements
+
+#### For New Specifications
+```bash
+# 1. Get current date
+CURRENT_DATE=$(date +"%Y-%m-%d")
+
+# 2. Create directory with current date
+mkdir -p ".agent-os/specs/${CURRENT_DATE}-spec-name"
+
+# 3. Use date in file headers
+echo "**Date**: $CURRENT_DATE" > spec-file.md
+```
+
+#### For File Naming
+- **Directories**: `.agent-os/specs/YYYY-MM-DD-spec-name/`
+- **Files**: `YYYY-MM-DD-feature-name.md`
+- **Logs**: `build-YYYY-MM-DD.log`
+- **Releases**: `v1.2.3-YYYY-MM-DD`
+
+#### For Documentation Headers
+```markdown
+# Specification Title
+
+**Date**: 2025-09-03
+**Status**: Active
+**Last Updated**: 2025-09-03
+**Review Date**: 2025-10-03
+```
+
+### Common Date Errors to Prevent
+
+#### Error Pattern 1: Using Random Past Dates
+❌ **Wrong**:
+```bash
+mkdir .agent-os/specs/2025-01-30-new-spec  # Created in September!
+```
+
+✅ **Correct**:
+```bash
+CURRENT_DATE=$(date +"%Y-%m-%d")
+mkdir ".agent-os/specs/${CURRENT_DATE}-new-spec"
+```
+
+#### Error Pattern 2: Hardcoded Dates in Content
+❌ **Wrong**:
+```markdown
+**Date**: 2025-01-30  <!-- Hardcoded wrong date -->
+```
+
+✅ **Correct**:
+```bash
+CURRENT_DATE=$(date +"%Y-%m-%d")
+echo "**Date**: $CURRENT_DATE" >> spec.md
+```
+
+#### Error Pattern 3: Inconsistent Date Formats
+❌ **Wrong**:
+- `January 30, 2025`
+- `30-01-2025`
+- `1/30/2025`
+
+✅ **Correct**:
+- `2025-09-03` (always ISO 8601)
+
+### Date Validation Checklist
+
+**Before creating ANY dated content:**
+
+1. **Get Current Date**: `date +"%Y-%m-%d"`
+2. **Verify Output**: Confirm the date makes sense
+3. **Use Variable**: Store in variable for consistency
+4. **Validate Creation**: Check directory/file names match current date
+5. **Review Headers**: Ensure all date headers use current date
+
+### Directory Naming Protocol
+
+**For new specifications:**
+```bash
+# Template
+.agent-os/specs/YYYY-MM-DD-specification-name/
+
+# Example (if today is 2025-09-03)
+.agent-os/specs/2025-09-03-new-feature-spec/
+.agent-os/specs/2025-09-03-ai-quality-framework/
+.agent-os/specs/2025-09-03-testing-standards/
+```
+
+**NEVER use old or random dates in new directories!**
+
+### Automated Date Injection
+
+**For AI Assistants - use this template:**
+
+```bash
+#!/bin/bash
+# Date-aware specification creation template
+
+# Get current date
+CURRENT_DATE=$(date +"%Y-%m-%d")
+SPEC_NAME="$1"  # First argument is spec name
+
+# Create directory
+SPEC_DIR=".agent-os/specs/${CURRENT_DATE}-${SPEC_NAME}"
+mkdir -p "$SPEC_DIR"
+
+# Create README with correct date
+cat > "$SPEC_DIR/README.md" << EOF
+# Specification: $SPEC_NAME
+
+**Date**: $CURRENT_DATE
+**Status**: Draft
+**Last Updated**: $CURRENT_DATE
+
+## Overview
+[Specification content here]
+EOF
+
+echo "Created specification: $SPEC_DIR"
+echo "Date used: $CURRENT_DATE"
+```
+
+### Date Review and Maintenance
+
+#### Weekly Reviews
+- **Audit existing specs**: Check for date inconsistencies
+- **Update "Last Updated"**: Refresh modified specifications
+- **Archive old specs**: Move outdated specs to archive directory
+
+#### Monthly Reviews
+- **Validate date patterns**: Ensure consistency across all files
+- **Update review dates**: Extend review cycles for stable specs
+- **Clean up directories**: Remove any incorrectly dated directories
+
+### Emergency Date Correction Protocol
+
+**If wrong dates are discovered:**
+
+1. **Stop all work**: Halt current development
+2. **Identify scope**: Find all affected files/directories
+3. **Create fix plan**: Plan correction strategy
+4. **Execute corrections**: Rename directories, update headers
+5. **Validate fixes**: Ensure all dates are now correct
+6. **Document lessons**: Update this protocol if needed
+
+### Date Quality Metrics
+
+**Track these metrics to prevent date errors:**
+- **Specification Date Accuracy**: % of specs with correct creation dates
+- **Directory Naming Consistency**: % of directories following date standards
+- **Header Date Validity**: % of files with accurate date headers
+- **Review Date Compliance**: % of specs with up-to-date review dates
+
+### Enforcement Mechanisms
+
+#### Pre-commit Hooks
+```bash
+# Add to pre-commit validation
+check_dates() {
+    # Validate new spec directories use current date
+    CURRENT_DATE=$(date +"%Y-%m-%d")
+    
+    # Check for directories created today
+    NEW_DIRS=$(git diff --cached --name-only | grep "\.agent-os/specs/" | head -1)
+    if [[ $NEW_DIRS == *"specs/"* ]] && [[ $NEW_DIRS != *"$CURRENT_DATE"* ]]; then
+        echo "ERROR: New spec directory must use current date: $CURRENT_DATE"
+        exit 1
+    fi
+}
+```
+
+#### CI/CD Validation
+```yaml
+# GitHub Actions date validation
+- name: Validate Specification Dates
+  run: |
+    CURRENT_DATE=$(date +"%Y-%m-%d")
+    # Check for any new specs with wrong dates
+    NEW_SPECS=$(git diff --name-only HEAD~1 HEAD | grep "\.agent-os/specs/")
+    for spec in $NEW_SPECS; do
+        if [[ $spec == *"specs/"* ]] && [[ $spec != *"$CURRENT_DATE"* ]]; then
+            echo "ERROR: Specification uses wrong date: $spec"
+            echo "Expected date: $CURRENT_DATE"
+            exit 1
+        fi
+    done
+```
 
 ## Security Practices
 
