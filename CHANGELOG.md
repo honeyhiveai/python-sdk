@@ -8,6 +8,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
+- **MCP (Model Context Protocol) Integration (2025-09-03)**: Complete support for OpenInference MCP instrumentor
+  - Added `openinference-instrumentation-mcp>=1.3.0` to optional dependencies (`pip install honeyhive[mcp]`)
+  - Comprehensive test suite: `tests/test_mcp_integration.py` and `tests/compatibility_matrix/test_mcp.py`
+  - Type-safe integration example: `examples/mcp_integration.py` with proper EventType enum usage
+  - Divio-compliant documentation: `docs/how-to/integrations/mcp.rst` with problem-oriented structure
+  - Tutorial integration: Added MCP section to `docs/tutorials/03-llm-integration.rst`
+  - Multi-provider support: Updated `docs/how-to/integrations/multi-provider.rst` with MCP examples
+  - Zero-code-change integration: Works with existing BYOI architecture
+  - End-to-end tracing: Context propagation across MCP client-server boundaries
+  - Performance benchmarking: <5% overhead documented and tested
+  - Error handling: Graceful degradation when MCP instrumentor unavailable
 - **Agent OS Standardization (2025-09-03)**: Comprehensive update of all cursor rules and Agent OS files
   - Updated `.cursorrules` to reference new Divio documentation structure
   - Fixed legacy documentation references (`docs/FEATURE_LIST.rst` → `docs/reference/index.rst`)

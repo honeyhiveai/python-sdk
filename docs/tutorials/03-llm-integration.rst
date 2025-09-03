@@ -386,6 +386,94 @@ Add Google Agent Development Kit (ADK) tracing for sophisticated agent workflows
 - **State transitions** and decision points
 - **Performance metrics** (execution time, tool latency)
 
+MCP (Model Context Protocol) Integration
+-----------------------------------------
+
+MCP enables agents to securely connect to data sources and tools through a standardized protocol.
+
+**Step 1: Install MCP Instrumentor**
+
+.. code-block:: bash
+
+   pip install honeyhive[mcp]
+
+**Step 2: Set Up MCP Tracing**
+
+.. code-block:: python
+
+   from honeyhive import HoneyHiveTracer, trace
+   from honeyhive.models import EventType
+   from openinference.instrumentation.mcp import MCPInstrumentor
+   
+   # Initialize with MCP instrumentor
+   tracer = HoneyHiveTracer.init(
+       api_key="your-honeyhive-api-key",
+       project="mcp-tutorial",
+       instrumentors=[MCPInstrumentor()]
+   )
+
+**Step 3: Use MCP Client Normally**
+
+.. code-block:: python
+
+   import asyncio
+   from mcp import MCPServerStdio
+   from agents import Agent, Runner
+
+   async def main():
+       # MCP client-server communication is automatically traced
+       async with MCPServerStdio(
+           name="Financial Analysis Server",
+           params={
+               "command": "fastmcp",
+               "args": ["run", "./server.py"],
+           },
+       ) as server:
+           
+           agent = Agent(
+               name="Financial Assistant", 
+               instructions="Use financial tools to answer questions.",
+               mcp_servers=[server],
+           )
+           
+           # This entire workflow is traced end-to-end
+           result = await Runner.run(
+               starting_agent=agent,
+               input="What's the P/E ratio for AAPL?"
+           )
+           
+           print(f"Result: {result.final_output}")
+
+   # Run the async function
+   asyncio.run(main())
+
+**Step 4: Add Custom MCP Tool Tracing**
+
+.. code-block:: python
+
+   @trace(event_type=EventType.tool)
+   def mcp_financial_tool(ticker: str, analysis_type: str) -> dict:
+       """Example MCP tool with custom tracing."""
+       
+       # Your MCP tool logic here
+       result = {
+           "ticker": ticker,
+           "analysis": analysis_type,
+           "recommendation": "buy",
+           "confidence": 0.85
+       }
+       
+       return result
+
+**What Gets Captured for MCP:**
+
+- **Client-server communication** (requests, responses, protocols)
+- **Tool executions** (function calls, parameters, results)  
+- **Context propagation** across MCP boundaries
+- **Session management** (connections, authentication)
+- **Error handling** (timeouts, connection failures)
+- **Performance metrics** (latency, throughput)
+
 Advanced: Custom Instrumentor Integration
 ------------------------------------------
 

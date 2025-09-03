@@ -477,6 +477,13 @@ def test_that_works():
 
 **🚨 ALL NEW INSTRUMENTOR INTEGRATIONS MUST INCLUDE**:
 
+**0. Version Validation**: **MANDATORY Package Version Lookup**
+- **ALWAYS look up the latest major version** of the instrumentor package before defining version in spec
+- Use `pip index versions openinference-instrumentation-[provider]` or check PyPI directly
+- **NEVER use outdated or assumed versions** - always verify current latest version
+- Document the version lookup process and date in the specification
+- Use the most recent major version available at time of spec creation
+
 **1. Compatibility Matrix Test**: `tests/compatibility_matrix/test_[provider]_[instrumentor].py`
 - Complete integration test with actual provider API calls
 - Error handling validation (auth errors, rate limits, network failures)
@@ -539,6 +546,8 @@ def test_that_works():
 - Ensure example follows the documented patterns and conventions
 
 **🔍 Pre-Commit Validation Checklist**:
+- [ ] **Latest package version verified** - Used `pip index versions` or PyPI to confirm current major version
+- [ ] **Version lookup documented** - Specification includes version verification date and process
 - [ ] Compatibility test passes with real API credentials
 - [ ] Documentation builds without Sphinx warnings
 - [ ] All code examples are executable and tested

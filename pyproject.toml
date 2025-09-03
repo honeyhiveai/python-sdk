@@ -60,6 +60,16 @@ docs = [
     "myst-parser>=2.0.0",
 ]
 
+# MCP integration support
+mcp = [
+    "openinference-instrumentation-mcp>=1.3.0",
+]
+
+# All integrations (convenience group)
+all-integrations = [
+    "openinference-instrumentation-mcp>=1.3.0",
+]
+
 [project.urls]
 Homepage = "https://honeyhive.ai"
 Documentation = "https://docs.honeyhive.ai"

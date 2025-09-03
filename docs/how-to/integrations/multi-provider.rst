@@ -28,6 +28,7 @@ Initialize HoneyHive with multiple instrumentors:
    from openinference.instrumentation.anthropic import AnthropicInstrumentor
    from openinference.instrumentation.google_generativeai import GoogleGenerativeAIInstrumentor
    from openinference.instrumentation.google_adk import GoogleADKInstrumentor
+   from openinference.instrumentation.mcp import MCPInstrumentor
    from openinference.instrumentation.openai import OpenAIInstrumentor
 
    # Initialize with multiple instrumentors
@@ -38,6 +39,7 @@ Initialize HoneyHive with multiple instrumentors:
            AnthropicInstrumentor(),
            GoogleGenerativeAIInstrumentor(),
            GoogleADKInstrumentor(),
+           MCPInstrumentor(),          # Agent tool orchestration
            OpenAIInstrumentor()
        ]
    )

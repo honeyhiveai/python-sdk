@@ -12,6 +12,7 @@ Learn how to integrate HoneyHive with different LLM providers using the BYOI (Br
    google-adk
    aws-bedrock
    azure-openai
+   mcp
    multi-provider
 
 Overview
@@ -80,6 +81,9 @@ Available Providers
 
 **Azure OpenAI** - :doc:`azure-openai`
    Use ``openinference-instrumentation-openai`` for Azure-hosted OpenAI
+
+**MCP (Model Context Protocol)** - :doc:`mcp`
+   Use ``openinference-instrumentation-mcp`` for agent tool orchestration
 
 **Multiple Providers** - :doc:`multi-provider`
    Combine multiple instrumentors in one application
