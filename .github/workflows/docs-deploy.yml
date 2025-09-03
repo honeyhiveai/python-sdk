@@ -1,3 +1,4 @@
+---
 name: Deploy Documentation to GitHub Pages
 
 # Deploy Sphinx documentation to GitHub Pages
@@ -121,8 +122,25 @@ jobs:
           # Clean previous builds
           make clean
 
-          # Build HTML documentation
-          make html
+          # Build HTML documentation with warnings as errors
+          echo "🔧 Building documentation with strict validation..."
+          make html 2>&1 | tee build.log
+
+          # Additional validation: Check for common issues
+          echo "🔍 Running additional documentation validation..."
+          # Check for broken internal links (basic validation)
+          if grep -i "unknown document" build.log; then
+            echo "❌ Found broken internal links in build log"
+            cat build.log
+            exit 1
+          fi
+
+          # Check for any warnings that might have been missed
+          if grep -i "warning" build.log; then
+            echo "❌ Found warnings in documentation build"
+            cat build.log
+            exit 1
+          fi
 
           # Create .nojekyll for GitHub Pages
           touch _build/html/.nojekyll
@@ -133,7 +151,16 @@ jobs:
             exit 1
           fi
 
-          echo "✅ Documentation built successfully"
+          # Check that key pages exist
+          required_pages=("tutorials/index.html" "how-to/index.html" "reference/index.html" "development/index.html")
+          for page in "${required_pages[@]}"; do
+            if [ ! -f "_build/html/$page" ]; then
+              echo "❌ Required page missing: $page"
+              exit 1
+            fi
+          done
+
+          echo "✅ Documentation built and validated successfully"
           ls -la _build/html/
 
       - name: Upload Pages artifact

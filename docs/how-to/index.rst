@@ -42,12 +42,7 @@ Connect OpenAI, Anthropic, Google AI, and more:
 .. toctree::
    :maxdepth: 1
 
-   integrations/openai
-   integrations/anthropic
-   integrations/google-ai
-   integrations/aws-bedrock
-   integrations/azure-openai
-   integrations/multi-provider
+   integrations/index
 
 Custom Tracing
 --------------
@@ -57,8 +52,7 @@ Build sophisticated observability:
 .. toctree::
    :maxdepth: 1
 
-   advanced-tracing/custom-spans
-   advanced-tracing/tracer-auto-discovery
+   advanced-tracing/index
 
 Testing Your Application
 -------------------------

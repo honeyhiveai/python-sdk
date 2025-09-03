@@ -14,6 +14,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Each initialization creates a new independent tracer instance
 
 ### Added
+- **Documentation Quality Control System**: Comprehensive production incident prevention framework
+  - **ROOT CAUSE FIX**: Sphinx builds now fail immediately on warnings (added `-W` flag to tox.ini and Makefile)
+  - **CI/CD Enhancement**: Enhanced GitHub Actions with build log validation and broken link detection
+  - **Zero Warnings Policy**: Documentation must build without any warnings to prevent broken links from reaching production
+  - **Multi-Layer Validation**: Pre-commit hooks + CI/CD + deployment gates ensure no broken docs are deployed
+  - **Agent OS Quality Framework**: Complete specification in `.agent-os/specs/2025-09-03-documentation-quality-control/`
 - **Documentation Quality Prevention System**: Comprehensive error prevention and validation framework
   - **Zero Build Warnings**: Documentation now builds cleanly without any Sphinx warnings (previously 23+ warnings)
   - **Automated RST Validation**: Pre-commit hooks validate RST structure, title underlines, and code block formatting
