@@ -210,6 +210,12 @@ This documentation is organized into four sections, each serving a different pur
 
    explanation/index
 
+.. toctree::
+   :maxdepth: 1
+   :caption: Release Information
+
+   changelog
+
 
 
 📦 **Installation**
@@ -422,6 +428,8 @@ This documentation is organized into four sections, each serving a different pur
 - **⚡ Enhanced Performance**: Optimized for production workloads
 - **🔧 Improved Developer Experience**: Simplified APIs with powerful capabilities
 - **📊 Advanced Evaluation**: Threading support for high-performance evaluation
+
+📝 **Release History**: See :doc:`changelog` for complete version history and upgrade notes
 
 🔗 **External Links**
 
