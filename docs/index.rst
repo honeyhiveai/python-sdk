@@ -173,7 +173,7 @@ This documentation is organized into four sections, each serving a different pur
 **🔧 Solving Specific Problems?**
 
 - :doc:`how-to/troubleshooting` - Fix common issues
-- :doc:`how-to/testing/index` - Test your HoneyHive integration
+- :doc:`development/testing/index` - Test your HoneyHive integration
 - :doc:`how-to/deployment/production` - Deploy to production
 - :doc:`how-to/integrations/openai` - OpenAI integration patterns
 - :doc:`how-to/evaluation/index` - Evaluation and analysis
