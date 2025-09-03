@@ -88,9 +88,6 @@ Decorators & Functions
 Configuration
 ~~~~~~~~~~~~~
 
-Environment Variables
-~~~~~~~~~~~~~~~~~~~~~
-
 .. toctree::
    :maxdepth: 1
 
@@ -100,9 +97,6 @@ Environment Variables
 
 Data Models
 ~~~~~~~~~~~~
-
-Event and Span Formats
-~~~~~~~~~~~~~~~~~~~~~~
 
 .. toctree::
    :maxdepth: 1
@@ -121,9 +115,6 @@ Evaluation Framework
 
 Command Line Interface
 ~~~~~~~~~~~~~~~~~~~~~~
-
-CLI Reference
-~~~~~~~~~~~~~
 
 .. toctree::
    :maxdepth: 1
