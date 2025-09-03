@@ -311,7 +311,7 @@ Configuration Features
 
 All configuration supports the ``HH_*`` prefix pattern:
 
-- **Authentication**: ``HH_API_KEY``, ``HH_PROJECT``, ``HH_SOURCE``
+- **Authentication**: ``HH_API_KEY``, ``HH_SOURCE``
 - **Operational**: ``HH_TEST_MODE``, ``HH_DEBUG_MODE``, ``HH_DISABLE_TRACING``
 - **Performance**: ``HH_TIMEOUT``, ``HH_MAX_CONNECTIONS``, ``HH_RATE_LIMIT_*``
 - **Security**: ``HH_SSL_*``, ``HH_PROXY_*``

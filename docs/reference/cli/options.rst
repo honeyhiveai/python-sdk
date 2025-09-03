@@ -51,15 +51,7 @@ Authentication Options
    - Self-hosted HoneyHive instances
    - Development environments
 
-.. option:: --project <name>
-
-   **Description**: Default project name for operations
-   
-   **Environment Variable**: ``HH_PROJECT``
-   
-   **Format**: String (alphanumeric, hyphens, underscores)
-   
-   **Example**: ``--project my-llm-application``
+.. option:: **Description**: Default project name for operations
    
    **Notes**:
    - Used as default when commands require a project
@@ -122,7 +114,7 @@ Output Options
    - Reduces output verbosity
    - Useful for scripting
    
-   **Example**: ``honeyhive event export --project prod -q``
+   **Example**: ``honeyhive event export -q``
 
 .. option:: --no-color
 
@@ -1021,13 +1013,11 @@ Options are resolved in this order (highest to lowest precedence):
 .. code-block:: bash
 
    # Environment variable
-   export HH_PROJECT="env-project"
    
    # Config file contains: default_project: "config-project"
    
    # Command line overrides both
-   honeyhive event list --project "cli-project"
-   # Uses: "cli-project"
+   honeyhive event list # Uses: "cli-project"
 
 Validation Rules
 ----------------

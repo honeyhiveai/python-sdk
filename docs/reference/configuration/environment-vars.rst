@@ -50,8 +50,8 @@ Project Configuration
      - Default
      - Description
    * - ``HH_PROJECT``
-     - ``"default"``
-     - Default project name for organizing traces
+     - *[Deprecated - Ignored]*
+     - **[Deprecated]** Ignored - project derived from API key
    * - ``HH_SOURCE``
      - ``"unknown"``
      - Source environment identifier (e.g., production, staging)
@@ -63,14 +63,12 @@ Project Configuration
 
 .. code-block:: bash
 
-   # Production configuration
-   export HH_PROJECT="customer-support-bot"
-   export HH_SOURCE="production"
+     # Production configuration
+  export HH_SOURCE="production"
    export HH_SESSION_NAME="prod-session-$(date +%Y%m%d)"
    
-   # Development configuration
-   export HH_PROJECT="customer-support-bot-dev"
-   export HH_SOURCE="development"
+     # Development configuration
+  export HH_SOURCE="development"
    export HH_SESSION_NAME="dev-local"
 
 Network Configuration
@@ -473,7 +471,6 @@ Development Environment
 
    # .env.development
    HH_API_KEY="hh_dev_key_here"
-   HH_PROJECT="myapp-dev"
    HH_SOURCE="development"
    HH_TEST_MODE="false"
    HH_DEBUG="true"
@@ -491,7 +488,6 @@ Staging Environment
 
    # .env.staging
    HH_API_KEY="hh_staging_key_here"
-   HH_PROJECT="myapp-staging"
    HH_SOURCE="staging"
    HH_TEST_MODE="false"
    HH_DEBUG="false"
@@ -508,7 +504,6 @@ Production Environment
 
    # .env.production
    HH_API_KEY="hh_prod_key_here"
-   HH_PROJECT="myapp-production"
    HH_SOURCE="production"
    HH_TEST_MODE="false"
    HH_DEBUG="false"
@@ -540,7 +535,6 @@ Docker Configuration
    WORKDIR /app
    
    # Environment variables with defaults
-   ENV HH_PROJECT="containerized-app"
    ENV HH_SOURCE="container"
    ENV HH_BATCH_SIZE="100"
    ENV HH_FLUSH_INTERVAL="5.0"
@@ -559,7 +553,6 @@ Docker Configuration
        build: .
        environment:
          - HH_API_KEY=${HH_API_KEY}
-         - HH_PROJECT=docker-compose-app
          - HH_SOURCE=docker-compose
          - HH_DEBUG=false
          - HH_BATCH_SIZE=150
@@ -714,8 +707,7 @@ Hierarchical Configuration
            
            env_mapping = {
                'HH_API_KEY': 'api_key',
-               'HH_PROJECT': 'project',
-               'HH_SOURCE': 'source',
+                              'HH_SOURCE': 'source',
                'HH_TEST_MODE': 'test_mode',
                'HH_DEBUG': 'debug',
                'HH_TIMEOUT': 'timeout',
@@ -832,7 +824,7 @@ Configuration Debugging
        
        # Core settings
        print(f"API Key: {'✓ Set' if os.getenv('HH_API_KEY') else '✗ Missing'}")
-       print(f"Project: {os.getenv('HH_PROJECT', 'default')}")
+       print(f"Project: {os.getenv('default')}")
        print(f"Source: {os.getenv('HH_SOURCE', 'unknown')}")
        print(f"Test Mode: {os.getenv('HH_TEST_MODE', 'false')}")
        

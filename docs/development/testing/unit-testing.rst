@@ -61,8 +61,7 @@ Testing Tracer Initialization
            """Test initialization from environment variables."""
            # Set environment variables
            os.environ["HH_API_KEY"] = "env-test-key"
-           os.environ["HH_PROJECT"] = "env-test-project"
-           os.environ["HH_TEST_MODE"] = "true"
+           os.environ["           os.environ["HH_TEST_MODE"] = "true"
            
            try:
                tracer = HoneyHiveTracer.init()
@@ -278,10 +277,10 @@ Testing Multi-Instance Behavior
            import time
            
            tracer1 = HoneyHiveTracer.init(
-               api_key="key1", project="project1", test_mode=True
+               api_key="key1", test_mode=True
            )
            tracer2 = HoneyHiveTracer.init(
-               api_key="key2", project="project2", test_mode=True
+               api_key="key2", test_mode=True
            )
            
            results = []
@@ -310,10 +309,10 @@ Testing Multi-Instance Behavior
        def test_decorator_with_different_tracers(self):
            """Test decorators with different tracer instances."""
            tracer1 = HoneyHiveTracer.init(
-               api_key="key1", project="project1", test_mode=True
+               api_key="key1", test_mode=True
            )
            tracer2 = HoneyHiveTracer.init(
-               api_key="key2", project="project2", test_mode=True
+               api_key="key2", test_mode=True
            )
            
            @trace(tracer=tracer1, event_type="function1")
@@ -413,12 +412,11 @@ Testing Configuration Loading
            """Test that explicit parameters have highest priority."""
            # Set environment variables
            os.environ["HH_API_KEY"] = "env-key"
-           os.environ["HH_PROJECT"] = "env-project"
-           
+           os.environ["           
            try:
                tracer = HoneyHiveTracer.init(
                    api_key="explicit-key",  # Should override env var
-                   project="explicit-project",  # Should override env var
+                   # Should override env var
                    test_mode=True
                )
                
@@ -431,8 +429,7 @@ Testing Configuration Loading
        def test_environment_variable_fallback(self):
            """Test fallback to environment variables."""
            os.environ["HH_API_KEY"] = "fallback-key"
-           os.environ["HH_PROJECT"] = "fallback-project"
-           os.environ["HH_SOURCE"] = "fallback-source"
+           os.environ["           os.environ["HH_SOURCE"] = "fallback-source"
            
            try:
                tracer = HoneyHiveTracer.init(test_mode=True)
@@ -484,10 +481,10 @@ Testing Session Management
        def test_session_uniqueness(self):
            """Test that different tracers have unique sessions."""
            tracer1 = HoneyHiveTracer.init(
-               api_key="key1", project="project1", test_mode=True
+               api_key="key1", test_mode=True
            )
            tracer2 = HoneyHiveTracer.init(
-               api_key="key2", project="project2", test_mode=True
+               api_key="key2", test_mode=True
            )
            
            assert tracer1.session_id != tracer2.session_id
@@ -854,8 +851,7 @@ Test Fixtures and Utilities
        original_env = {}
        test_env = {
            "HH_API_KEY": "env-test-key",
-           "HH_PROJECT": "env-test-project",
-           "HH_SOURCE": "env-test",
+                      "HH_SOURCE": "env-test",
            "HH_TEST_MODE": "true"
        }
        

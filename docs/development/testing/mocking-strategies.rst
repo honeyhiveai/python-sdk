@@ -805,7 +805,7 @@ Advanced Mocking Patterns
                       .with_span("db-query", {"db.table": "users"})
                       .with_span("api-call", {"http.status": 200})
                       .with_span("error-operation", should_error=True)
-                      .with_global_config(api_key="test-key", project="test")
+                      .with_global_config(api_key="test-key")
                       .build())
        
        # Test configured spans

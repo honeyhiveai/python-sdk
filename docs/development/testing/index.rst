@@ -112,10 +112,10 @@ Quick Solutions
 
    def test_multiple_tracers():
        tracer1 = HoneyHiveTracer.init(
-           api_key="key1", project="project1", test_mode=True
+           api_key="key1", test_mode=True
        )
        tracer2 = HoneyHiveTracer.init(
-           api_key="key2", project="project2", test_mode=True
+           api_key="key2", test_mode=True
        )
        
        # Verify independence
@@ -208,7 +208,6 @@ Test Environment Setup
 
    # Set test environment variables
    export HH_API_KEY="test-key"
-   export HH_PROJECT="test-project" 
    export HH_SOURCE="test"
    export HH_TEST_MODE="true"
 

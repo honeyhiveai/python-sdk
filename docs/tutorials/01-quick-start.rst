@@ -155,7 +155,6 @@ Instead of hardcoding your API key, you can use environment variables:
 .. code-block:: bash
 
    export HH_API_KEY="your-api-key-here"
-   export HH_PROJECT="your-project-name"
    export HH_SOURCE="tutorial"
 
 Then update your code:

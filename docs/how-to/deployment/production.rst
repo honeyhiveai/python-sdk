@@ -33,7 +33,6 @@ API Key Management
 
    # .env file (not committed to version control)
    HH_API_KEY=hh_prod_your_production_key_here
-   HH_PROJECT=production-app
    HH_SOURCE=production
 
 .. code-block:: python
@@ -584,7 +583,6 @@ Docker Configuration
    
    # Environment variables (will be overridden by orchestrator)
    ENV HH_API_KEY=""
-   ENV HH_PROJECT="production-app"
    ENV HH_SOURCE="production"
    
    # Health check
@@ -605,7 +603,6 @@ Docker Configuration
        build: .
        environment:
          - HH_API_KEY=${HH_API_KEY}
-         - HH_PROJECT=${HH_PROJECT:-production-app}
          - HH_SOURCE=${HH_SOURCE:-production}
        ports:
          - "8000:8000"

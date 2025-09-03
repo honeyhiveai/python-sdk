@@ -54,13 +54,6 @@ All commands support these global options:
    **Environment Variable**: ``HH_BASE_URL``
    **Example**: ``--base-url https://api-staging.honeyhive.ai``
 
-.. option:: --project <name>
-
-   Project name for operations.
-   
-   **Environment Variable**: ``HH_PROJECT``
-   **Example**: ``--project my-llm-app``
-
 .. option:: --output <format>
 
    Output format for results.
@@ -339,9 +332,7 @@ Manage tracing sessions.
    
    List sessions in a project.
 
-   .. option:: --project <name>
-
-      Project name.
+   .. option:: Project name.
       
       **Required**: Yes (or set via ``HH_PROJECT``)
 
@@ -368,11 +359,9 @@ Manage tracing sessions.
    .. code-block:: bash
 
       # List recent sessions
-      honeyhive session list --project my-project
-      
-      # List sessions in date range
+      honeyhive session list # List sessions in date range
       honeyhive session list \
-        --project my-project \
+        \
         --start-date 2024-01-01 \
         --end-date 2024-01-31
 
@@ -442,9 +431,7 @@ Manage and analyze events.
    
    List events in a session or project.
 
-   .. option:: --project <name>
-
-      Project name.
+   .. option:: Project name.
 
    .. option:: --session-id <id>
 
@@ -475,16 +462,14 @@ Manage and analyze events.
    .. code-block:: bash
 
       # List recent events
-      honeyhive event list --project my-project
-      
-      # List LLM events in session
+      honeyhive event list # List LLM events in session
       honeyhive event list \
         --session-id session_abc123 \
         --event-type llm
       
       # List events in time range
       honeyhive event list \
-        --project my-project \
+        \
         --start-time 2024-01-15T10:00:00Z \
         --end-time 2024-01-15T11:00:00Z
 
@@ -528,9 +513,7 @@ Manage and analyze events.
       
       **Example**: ``--query "model:gpt-4 AND status:error"``
 
-   .. option:: --project <name>
-
-      Project to search in.
+   .. option:: Project to search in.
 
    .. option:: --limit <number>
 
@@ -544,12 +527,12 @@ Manage and analyze events.
 
       # Search for errors
       honeyhive event search \
-        --project my-project \
+        \
         --query "status:error"
       
       # Search for specific model
       honeyhive event search \
-        --project my-project \
+        \
         --query "model:gpt-4 AND event_type:model"
 
 .. option:: export
@@ -558,9 +541,7 @@ Manage and analyze events.
    
    Export events to file.
 
-   .. option:: --project <name>
-
-      Project to export from.
+   .. option:: Project to export from.
       
       **Required**: Yes
 
@@ -595,19 +576,19 @@ Manage and analyze events.
 
       # Export all events
       honeyhive event export \
-        --project my-project \
+        \
         --output-file events.jsonl
       
       # Export LLM events as CSV
       honeyhive event export \
-        --project my-project \
+        \
         --output-file llm_events.csv \
         --format csv \
         --event-types llm
       
       # Export date range
       honeyhive event export \
-        --project my-project \
+        \
         --output-file january_events.jsonl \
         --start-date 2024-01-01 \
         --end-date 2024-01-31
@@ -640,9 +621,7 @@ Run and manage evaluations.
       
       **Example**: ``--target-events "event_type:model AND model:gpt-4"``
 
-   .. option:: --project <name>
-
-      Project containing target events.
+   .. option:: Project containing target events.
 
    .. option:: --config-file <path>
 
@@ -664,13 +643,13 @@ Run and manage evaluations.
 
       # Run evaluations on recent LLM events
       honeyhive eval run \
-        --project my-project \
+        \
         --evaluators factual_accuracy,quality \
         --target-events "event_type:model AND start_time:>2024-01-15"
       
       # Dry run to see what would be evaluated
       honeyhive eval run \
-        --project my-project \
+        \
         --evaluators quality \
         --target-events "session_id:session_abc123" \
         --dry-run
@@ -684,9 +663,7 @@ Run and manage evaluations.
    
    List evaluation results.
 
-   .. option:: --project <name>
-
-      Project to list evaluations from.
+   .. option:: Project to list evaluations from.
 
    .. option:: --target-event-id <id>
 
@@ -709,16 +686,14 @@ Run and manage evaluations.
    .. code-block:: bash
 
       # List recent evaluations
-      honeyhive eval list --project my-project
-      
-      # List evaluations for specific event
+      honeyhive eval list # List evaluations for specific event
       honeyhive eval list \
-        --project my-project \
+        \
         --target-event-id evt_abc123
       
       # List quality evaluations
       honeyhive eval list \
-        --project my-project \
+        \
         --evaluator quality
 
 .. option:: get
@@ -775,9 +750,7 @@ Run and manage evaluations.
    
    Export evaluation results.
 
-   .. option:: --project <name>
-
-      Project to export from.
+   .. option:: Project to export from.
 
    .. option:: --output-file <path>
 
@@ -799,13 +772,13 @@ Run and manage evaluations.
 
       # Export all evaluations
       honeyhive eval export \
-        --project my-project \
+        \
         --output-file evaluations.csv \
         --format csv
       
       # Export specific evaluator results
       honeyhive eval export \
-        --project my-project \
+        \
         --output-file quality_evals.json \
         --evaluator quality
 
@@ -824,9 +797,7 @@ Analyze traces and spans.
    
    Analyze trace patterns and performance.
 
-   .. option:: --project <name>
-
-      Project to analyze.
+   .. option:: Project to analyze.
 
    .. option:: --time-window <window>
 
@@ -848,11 +819,9 @@ Analyze traces and spans.
    .. code-block:: bash
 
       # Analyze recent traces
-      honeyhive trace analyze --project my-project
-      
-      # Analyze last week with metrics
+      honeyhive trace analyze # Analyze last week with metrics
       honeyhive trace analyze \
-        --project my-project \
+        \
         --time-window 7d \
         --include-metrics \
         --output-file trace_analysis.json
@@ -863,9 +832,7 @@ Analyze traces and spans.
    
    Analyze trace performance metrics.
 
-   .. option:: --project <name>
-
-      Project to analyze.
+   .. option:: Project to analyze.
 
    .. option:: --groupby <field>
 
@@ -885,12 +852,12 @@ Analyze traces and spans.
 
       # Performance analysis by model
       honeyhive trace performance \
-        --project my-project \
+        \
         --groupby model
       
       # Custom percentiles
       honeyhive trace performance \
-        --project my-project \
+        \
         --percentiles 50,75,90,95,99
 
 .. option:: errors
@@ -899,9 +866,7 @@ Analyze traces and spans.
    
    Analyze error patterns in traces.
 
-   .. option:: --project <name>
-
-      Project to analyze.
+   .. option:: Project to analyze.
 
    .. option:: --time-window <window>
 
@@ -916,11 +881,9 @@ Analyze traces and spans.
    .. code-block:: bash
 
       # Analyze recent errors
-      honeyhive trace errors --project my-project
-      
-      # Group errors by model
+      honeyhive trace errors # Group errors by model
       honeyhive trace errors \
-        --project my-project \
+        \
         --groupby model
 
 Configuration Commands
@@ -1160,19 +1123,19 @@ Examples and Use Cases
    
    # Check for errors
    honeyhive trace errors \
-     --project $PROJECT \
+     \
      --time-window 24h \
      --output json > daily_errors.json
    
    # Performance analysis
    honeyhive trace performance \
-     --project $PROJECT \
+     \
      --time-window 24h \
      --groupby model > daily_performance.txt
    
    # Run evaluations on recent events
    honeyhive eval run \
-     --project $PROJECT \
+     \
      --evaluators quality,factual_accuracy \
      --target-events "start_time:>$DATE"
 
@@ -1185,7 +1148,7 @@ Examples and Use Cases
    
    # Export test session events
    honeyhive event export \
-     --project test-project \
+     \
      --session-id $TEST_SESSION_ID \
      --output-file test_events.jsonl
    
@@ -1211,7 +1174,7 @@ Examples and Use Cases
    
    # Export events
    honeyhive event export \
-     --project $PROJECT \
+     \
      --start-date $START_DATE \
      --end-date $END_DATE \
      --format parquet \
@@ -1219,7 +1182,7 @@ Examples and Use Cases
    
    # Export evaluations
    honeyhive eval export \
-     --project $PROJECT \
+     \
      --format csv \
      --output-file evaluations_jan2024.csv
 

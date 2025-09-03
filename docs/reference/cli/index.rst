@@ -53,8 +53,7 @@ All commands support these global options:
      - Description
    * - ``--api-key TEXT``
      - HoneyHive API key (overrides ``HH_API_KEY`` environment variable)
-   * - ``--project TEXT``
-     - Project name (overrides ``HH_PROJECT`` environment variable)
+
    * - ``--base-url TEXT``
      - API base URL (default: https://api.honeyhive.ai)
    * - ``--timeout FLOAT``
@@ -106,8 +105,7 @@ Configure CLI settings interactively or show current configuration.
      - Description
    * - ``--api-key TEXT``
      - Set API key
-   * - ``--project TEXT``
-     - Set default project
+
    * - ``--base-url TEXT``
      - Set API base URL
    * - ``--show``
@@ -123,9 +121,7 @@ Configure CLI settings interactively or show current configuration.
    honeyhive configure
    
    # Set specific values
-   honeyhive configure --api-key "hh_your_key" --project "my-project"
-   
-   # Show current configuration
+   honeyhive configure --api-key "hh_your_key" # Show current configuration
    honeyhive configure --show
    
    # Reset to defaults
@@ -357,8 +353,7 @@ List sessions in a project.
 
    * - Option
      - Description
-   * - ``--project TEXT``
-     - Project name (uses default if not specified)
+
    * - ``--limit INTEGER``
      - Maximum sessions to show (default: 50)
    * - ``--since TEXT``
@@ -376,8 +371,8 @@ List sessions in a project.
    # List production sessions from last week
    honeyhive session list --source "production" --since "2024-01-15T00:00:00Z"
    
-   # List sessions for specific project
-   honeyhive session list --project "customer-support"
+   # List sessions
+   honeyhive session list
 
 honeyhive session show
 ~~~~~~~~~~~~~~~~~~~~~~
@@ -463,8 +458,7 @@ List events with filtering options.
 
    * - Option
      - Description
-   * - ``--project TEXT``
-     - Filter by project
+
    * - ``--session TEXT``
      - Filter by session ID
    * - ``--event-type TEXT``
@@ -519,8 +513,7 @@ Search events by content or attributes.
 
    * - Option
      - Description
-   * - ``--project TEXT``
-     - Search within project
+
    * - ``--field [inputs|outputs|metadata]``
      - Search specific field (default: all)
    * - ``--limit INTEGER``
@@ -539,7 +532,7 @@ Search events by content or attributes.
    honeyhive event search "gpt-4" --field "metadata"
    
    # Case-sensitive search in project
-   honeyhive event search "API_ERROR" --project "production-app" --case-sensitive
+   honeyhive event search "API_ERROR" --case-sensitive
 
 Evaluation Commands
 -------------------
@@ -842,8 +835,7 @@ Analyze trace patterns and performance.
 
    * - Option
      - Description
-   * - ``--project TEXT``
-     - Project to analyze
+
    * - ``--since TEXT``
      - Analyze traces since date
    * - ``--operation TEXT``
@@ -856,7 +848,7 @@ Analyze trace patterns and performance.
 .. code-block:: bash
 
    # Performance analysis
-   honeyhive trace analyze --project "production-app" --report performance
+   honeyhive trace analyze --report performance
    
    # Error analysis for last 24 hours
    honeyhive trace analyze --since "2024-01-21T00:00:00Z" --report errors
@@ -915,8 +907,7 @@ Export event data.
 
    * - Option
      - Description
-   * - ``--project TEXT``
-     - Project to export
+
    * - ``--since TEXT``
      - Export events since date
    * - ``--format [json|csv|parquet]``
@@ -929,9 +920,7 @@ Export event data.
 .. code-block:: bash
 
    # Export all events
-   honeyhive export events all_events.json --project "my-app"
-   
-   # Export recent events as CSV
+   honeyhive export events all_events.json # Export recent events as CSV
    honeyhive export events recent_events.csv \
      --since "2024-01-20T00:00:00Z" \
      --format csv
@@ -1073,8 +1062,7 @@ The CLI uses standard exit codes:
    if honeyhive project show "my-project" --format json > /dev/null 2>&1; then
        echo "Project exists"
        # Export recent data
-       honeyhive export events "backup_$(date +%Y%m%d).json" --project "my-project"
-   else
+       honeyhive export events "backup_$(date +%Y%m%d).json" else
        echo "Project not found"
        exit 1
    fi
@@ -1153,7 +1141,7 @@ Use in continuous integration pipelines:
          
          - name: Generate Report
            run: |
-             honeyhive trace analyze --project "production-model" \
+             honeyhive trace analyze \
                --since "$(date -d '1 day ago' -I)T00:00:00Z" \
                --report performance > performance_report.txt
 
@@ -1167,7 +1155,7 @@ Create monitoring scripts:
    #!/bin/bash
    # Monitor error rate
    error_count=$(honeyhive event list \
-     --project "production-app" \
+     \
      --since "$(date -d '1 hour ago' -I)T$(date -d '1 hour ago' +%H):00:00Z" \
      --errors-only \
      --format json | jq length)

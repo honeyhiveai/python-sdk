@@ -31,7 +31,7 @@ Class Methods
 init()
 ~~~~~~
 
-.. py:classmethod:: HoneyHiveTracer.init(api_key: Optional[str] = None, source: str = "production", test_mode: bool = False, session_name: Optional[str] = None, server_url: Optional[str] = None, instrumentors: Optional[list] = None, disable_http_tracing: bool = True, project: Optional[str] = None, **kwargs) -> "HoneyHiveTracer"
+.. py:classmethod:: HoneyHiveTracer.init(api_key: Optional[str] = None, source: str = "production", test_mode: bool = False, session_name: Optional[str] = None, server_url: Optional[str] = None, instrumentors: Optional[list] = None, disable_http_tracing: bool = True, **kwargs) -> "HoneyHiveTracer"
    :no-index:
 
    Initialize a new HoneyHiveTracer instance with the specified configuration.
