@@ -258,6 +258,6 @@ See Also
 --------
 
 - :doc:`../integrations/index` - LLM provider integrations
-- :doc:`../testing/performance-testing` - Performance testing strategies
+- :doc:`../../development/testing/performance-testing` - Performance testing strategies
 - :doc:`../monitoring/index` - Monitoring and alerting
 - :doc:`../../reference/api/tracer` - HoneyHiveTracer API reference

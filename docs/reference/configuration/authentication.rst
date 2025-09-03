@@ -831,4 +831,4 @@ See Also
 - :doc:`environment-vars` - Environment variable configuration
 - :doc:`config-options` - Complete configuration reference
 - :doc:`../cli/commands` - CLI authentication commands
-- :doc:`../../how-to/testing/ci-cd-integration` - CI/CD authentication patterns
+- :doc:`../../development/testing/ci-cd-integration` - CI/CD authentication patterns

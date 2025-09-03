@@ -675,7 +675,7 @@ Migrating from Previous Versions
 See Also
 --------
 
-- :doc:`../testing/unit-testing` - Testing strategies with auto-discovery
+- :doc:`../../development/testing/unit-testing` - Testing strategies with auto-discovery
 - :doc:`../integrations/multi-provider` - Multi-provider tracing patterns  
 - :doc:`../../reference/api/decorators` - Complete decorator API reference
 - :doc:`../../explanation/architecture/overview` - Architecture deep dive

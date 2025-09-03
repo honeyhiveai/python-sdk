@@ -1229,4 +1229,4 @@ See Also
 - :doc:`options` - Detailed CLI options reference
 - :doc:`../configuration/environment-vars` - Environment variable configuration
 - :doc:`../../tutorials/01-quick-start` - Getting started with HoneyHive
-- :doc:`../../how-to/testing/ci-cd-integration` - CI/CD integration patterns
+- :doc:`../../development/testing/ci-cd-integration` - CI/CD integration patterns

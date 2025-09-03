@@ -1062,5 +1062,5 @@ See Also
 
 - :doc:`commands` - Complete command reference
 - :doc:`../configuration/environment-vars` - Environment variable details
-- :doc:`../../how-to/testing/ci-cd-integration` - CI/CD usage patterns
+- :doc:`../../development/testing/ci-cd-integration` - CI/CD usage patterns
 - :doc:`../../tutorials/01-quick-start` - Getting started guide
