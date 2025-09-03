@@ -9,6 +9,7 @@ Learn how to integrate HoneyHive with different LLM providers using the BYOI (Br
    openai
    anthropic
    google-ai
+   google-adk
    aws-bedrock
    azure-openai
    multi-provider

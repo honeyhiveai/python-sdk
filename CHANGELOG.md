@@ -25,6 +25,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Removed explicit Divio Documentation System references from main page
   - Maintained the four-part structure without verbose explanations
   - Cleaner, more professional documentation presentation
+- **GitHub Pages Configuration Fix (2025-09-03)**: Resolved 404 errors across entire documentation site
+  - Fixed GitHub Pages deployment configuration (legacy branch → workflow deployment)
+  - Validated all 32 major navigation links working correctly
+  - Restored full accessibility to https://honeyhiveai.github.io/python-sdk/
 
 ### Breaking Changes
 - **Modernized Architecture**: `HoneyHiveTracer` now supports multiple independent instances

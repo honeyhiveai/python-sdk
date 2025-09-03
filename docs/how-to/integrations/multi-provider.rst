@@ -12,7 +12,7 @@ Overview
 
 The HoneyHive SDK allows you to trace multiple LLM providers simultaneously using OpenInference instrumentors. This approach provides:
 
-- **Provider Flexibility**: Use any combination of OpenAI, Anthropic, Google AI, AWS Bedrock
+- **Provider Flexibility**: Use any combination of OpenAI, Anthropic, Google AI, Google ADK, AWS Bedrock
 - **Zero Code Changes**: Existing LLM calls are automatically traced
 - **Unified Observability**: All providers appear in the same HoneyHive dashboard
 - **Independent Configuration**: Each provider can have different settings
@@ -27,6 +27,7 @@ Initialize HoneyHive with multiple instrumentors:
    from honeyhive import HoneyHiveTracer
    from openinference.instrumentation.anthropic import AnthropicInstrumentor
    from openinference.instrumentation.google_generativeai import GoogleGenerativeAIInstrumentor
+   from openinference.instrumentation.google_adk import GoogleADKInstrumentor
    from openinference.instrumentation.openai import OpenAIInstrumentor
 
    # Initialize with multiple instrumentors
@@ -36,18 +37,21 @@ Initialize HoneyHive with multiple instrumentors:
        instrumentors=[
            AnthropicInstrumentor(),
            GoogleGenerativeAIInstrumentor(),
+           GoogleADKInstrumentor(),
            OpenAIInstrumentor()
        ]
    )
 
-   # Now all three providers are automatically traced
+   # Now all providers are automatically traced
    import anthropic
    import google.generativeai as genai
+   import google.adk as adk
    import openai
 
    # Each call is automatically traced with provider-specific context
    anthropic_client = anthropic.Anthropic()
    google_model = genai.GenerativeModel('gemini-pro')
+   google_agent = adk.Agent(name="multi_provider_agent", model="gemini-pro")
    openai_client = openai.OpenAI()
 
 Multi-Provider Agent Workflow

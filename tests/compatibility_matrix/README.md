@@ -24,6 +24,7 @@ Each test file follows this pattern:
 - `test_cohere.py` - Cohere language models
 - `test_google_vertexai.py` - Google Cloud Vertex AI
 - `test_google_genai.py` - Google Generative AI (Gemini)
+- `test_google_adk.py` - Google Agent Development Kit
 
 ### AWS Ecosystem
 - `test_aws_bedrock.py` - AWS Bedrock (multiple model families)
@@ -86,6 +87,7 @@ export HH_PROJECT="your_project_name"
 export OPENAI_API_KEY="your_openai_key"
 export ANTHROPIC_API_KEY="your_anthropic_key"
 export COHERE_API_KEY="your_cohere_key"
+export GOOGLE_ADK_API_KEY="your_google_adk_key"
 export GOOGLE_APPLICATION_CREDENTIALS="path/to/service_account.json"
 
 # AWS Configuration
@@ -103,6 +105,7 @@ export AWS_DEFAULT_REGION="us-east-1"
 | Anthropic | `openinference-instrumentation-anthropic` | ✅ Full Support | Tested | Claude models |
 | Google Vertex AI | `openinference-instrumentation-vertexai` | ✅ Full Support | Tested | PaLM, Gemini via Vertex |
 | Google Generative AI | `openinference-instrumentation-google-generativeai` | ✅ Full Support | Tested | Direct Gemini API |
+| Google ADK | `openinference-instrumentation-google-adk` | ✅ Full Support | Tested | Agent Development Kit |
 | AWS Bedrock | `openinference-instrumentation-bedrock` | ✅ Full Support | Tested | Multi-model support |
 | Cohere | `openinference-instrumentation-cohere` | ✅ Full Support | Tested | Command models |
 | LangChain | `openinference-instrumentation-langchain` | ✅ Full Support | Tested | Any LangChain-supported provider |

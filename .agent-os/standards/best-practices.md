@@ -472,6 +472,114 @@ def test_that_works():
 **For critical hotfixes:**
 - All testing requirements still apply
 - No exceptions for "urgent" fixes
+
+### Instrumentor Integration Requirements - MANDATORY
+
+**🚨 ALL NEW INSTRUMENTOR INTEGRATIONS MUST INCLUDE**:
+
+**1. Compatibility Matrix Test**: `tests/compatibility_matrix/test_[provider]_[instrumentor].py`
+- Complete integration test with actual provider API calls
+- Error handling validation (auth errors, rate limits, network failures)
+- Performance benchmarking (latency, throughput metrics)
+- Multi-configuration testing (different models, parameters)
+- State management verification (for agent-based instrumentors)
+- Real API credential testing (with proper environment variable setup)
+
+**2. Integration Documentation**: `docs/how-to/integrations/[provider]-[instrumentor].rst`
+- Quick start guide with installation instructions
+- Basic usage examples with working code
+- Advanced configuration patterns
+- Error handling and reliability patterns
+- Performance monitoring and optimization
+- Environment configuration for dev/staging/production
+- Best practices and common pitfalls
+- Comparison with similar providers/instrumentors
+
+**3. Example Implementation**: `examples/simple_[provider]_[instrumentor]_integration.py`
+- Complete working example demonstrating integration
+- Proper error handling and graceful degradation
+- Environment variable configuration with clear setup instructions
+- Type hints and comprehensive docstrings
+- Real-world usage patterns (basic usage, advanced features, multi-step workflows)
+- Executable standalone script with proper main() function
+- Clear success/failure exit codes and user feedback
+- Examples of tracing enrichment and custom span attributes
+
+**4. Multi-Provider Documentation Update**: `docs/how-to/integrations/multi-provider.rst`
+- Add new instrumentor to provider comparison table
+- Include in multi-provider example code
+- Update capability matrix with instrumentor features
+- Add to provider selection guidance
+
+**5. Integration Index Update**: `docs/how-to/integrations/index.rst`
+- Add to provider list with clear description
+- Include in integration overview section
+- Update provider comparison table
+- Add to recommended provider combinations
+
+**6. Feature Catalog Update**: `.agent-os/product/features.md`
+- Add instrumentor to compatibility matrix
+- Update provider support table
+- Document new capabilities enabled
+- Add to roadmap if applicable
+
+**7. Compatibility Matrix Environment Documentation**: `tests/compatibility_matrix/README.md`
+- Add all required environment variables for the new instrumentor
+- Include provider-specific API key requirements
+- Document authentication setup steps
+- Update the "Complete Environment Setup" section
+- Add troubleshooting guidance for provider-specific issues
+- Include provider in the supported providers table with status
+
+**8. Examples Directory Documentation**: `examples/README.md`
+- Add new example to the appropriate provider integration section
+- Include clear description of what the example demonstrates
+- Link to the example file with proper formatting
+- Update provider integration examples list
+- Ensure example follows the documented patterns and conventions
+
+**🔍 Pre-Commit Validation Checklist**:
+- [ ] Compatibility test passes with real API credentials
+- [ ] Documentation builds without Sphinx warnings
+- [ ] All code examples are executable and tested
+- [ ] Integration guide follows Divio documentation standards
+- [ ] Multi-provider docs include new instrumentor
+- [ ] CHANGELOG.md updated with new integration details
+- [ ] Feature catalog reflects new capabilities
+- [ ] Example code includes proper error handling
+- [ ] Performance benchmarks are reasonable (if applicable)
+- [ ] Type hints are complete and accurate
+- [ ] Compatibility matrix README updated with environment variables
+- [ ] Supported providers table includes new instrumentor
+- [ ] Environment setup section covers new provider requirements
+- [ ] Troubleshooting section addresses provider-specific issues
+- [ ] Examples directory README updated with new example
+- [ ] Example file is executable and demonstrates key features
+- [ ] Example includes proper error handling and environment setup
+
+**📋 Quality Gates**:
+- **Documentation Quality**: Must pass `tox -e docs` with `-W` flag (warnings as errors)
+- **Code Quality**: Must pass `tox -e lint` (pylint ≥8.0/10.0, mypy clean)
+- **Test Coverage**: Compatibility test must achieve ≥80% code coverage
+- **Example Validation**: All examples must be executable via `python examples/[file].py`
+- **Integration Testing**: Must pass in CI/CD environment with mock/test credentials
+
+**❌ PROHIBITED**:
+- Instrumentor integrations without complete documentation
+- Tests that require manual credential setup without environment fallbacks
+- Documentation that references non-existent features
+- Examples that use hardcoded credentials or non-generic configurations
+- Compatibility tests that skip functionality due to "complexity"
+- Adding new instrumentors without updating compatibility matrix environment documentation
+- Missing environment variable documentation for new provider integrations
+- Incomplete provider setup instructions in compatibility matrix README
+
+**📚 Documentation Standards**:
+- All instrumentor docs must follow the Divio Documentation System (Tutorials, How-to, Reference, Explanation)
+- Code examples must use `EventType` enums, never string literals
+- All examples must include proper `from honeyhive.models import EventType` imports
+- Error handling patterns must be consistent across all instrumentor documentation
+- Performance considerations must be documented for resource-intensive instrumentors
 - Fast tracking through expedited review, not skipped testing
 
 ## Date and Timestamp Standards - MANDATORY FOR AI ASSISTANTS

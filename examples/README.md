@@ -31,6 +31,7 @@ tracer = HoneyHiveTracer._instance
 - **[`simple_openai_integration.py`](simple_openai_integration.py)** - OpenAI integration with OpenInference
 - **[`simple_anthropic_integration.py`](simple_anthropic_integration.py)** - Anthropic integration with OpenInference
 - **[`simple_google_ai_integration.py`](simple_google_ai_integration.py)** - Google AI integration with OpenInference
+- **[`simple_google_adk_integration.py`](simple_google_adk_integration.py)** - Google Agent Development Kit integration with multi-step workflows
 - **[`simple_bedrock_integration.py`](simple_bedrock_integration.py)** - AWS Bedrock integration with OpenInference
 
 ### **Evaluation Framework**
