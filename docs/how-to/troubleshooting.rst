@@ -254,7 +254,6 @@ Network Connectivity
 
       tracer = HoneyHiveTracer.init(
           api_key="your-key",
-          ,
           timeout=30  # Increase timeout
       )
 
@@ -394,7 +393,6 @@ SSL/TLS Certificate Issues
       # Initialize tracer with custom session
       tracer = HoneyHiveTracer.init(
           api_key="your-key",
-          ,
           session=session  # Use custom session for all API calls
       )
 
@@ -620,7 +618,6 @@ Traces Not Being Captured
    
    tracer = HoneyHiveTracer.init(
        api_key="your-key",
-       ,
        verbose=True  # Enable verbose logging
    )
    
@@ -699,7 +696,6 @@ Instrumentor Problems
    # Initialize with instrumentor
    tracer = HoneyHiveTracer.init(
        api_key="your-key",
-       ,
        instrumentors=[instrumentor],
        verbose=True
    )
@@ -801,7 +797,6 @@ Instrumentor Initialization Order
       # ✅ RECOMMENDED: Let HoneyHive manage instrumentors
       tracer = HoneyHiveTracer.init(
           api_key="your-key",
-          ,
           instrumentors=[OpenAIInstrumentor()]  # Initialized in correct order
       )
 

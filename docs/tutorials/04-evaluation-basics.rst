@@ -451,7 +451,6 @@ Create automated evaluation workflows:
    # Define evaluation pipeline
    pipeline = EvaluationPipeline(
        name="daily_quality_check",
-       ,
        evaluators=[
            FactualAccuracyEvaluator(),
            QualityScoreEvaluator(),

@@ -48,7 +48,6 @@ Quick Start
    # Initialize HoneyHive tracer with Google ADK instrumentor
    tracer = HoneyHiveTracer.init(
        api_key="your-honeyhive-api-key",
-       ,
        instrumentors=[GoogleADKInstrumentor()]
    )
 
@@ -81,7 +80,6 @@ Basic Agent Creation
    # Setup (do once at application startup)
    tracer = HoneyHiveTracer.init(
        api_key="your-honeyhive-api-key",
-       ,
        instrumentors=[GoogleADKInstrumentor()]
    )
 

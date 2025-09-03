@@ -113,7 +113,6 @@ Network Security
    
    tracer = HoneyHiveTracer.init(
        api_key=os.getenv("HH_API_KEY"),
-       ,
        base_url="https://api.honeyhive.ai",  # Always use HTTPS
        timeout=30.0,  # Reasonable timeout
        # Configure for corporate environments
@@ -133,7 +132,6 @@ Network Security
    # Or configure in code
    tracer = HoneyHiveTracer.init(
        api_key=os.getenv("HH_API_KEY"),
-       ,
        # Custom HTTP configuration if needed
    )
 
@@ -437,7 +435,6 @@ Health Check Endpoints
            # Test tracer connectivity
            test_tracer = HoneyHiveTracer.init(
                api_key=os.getenv("HH_API_KEY"),
-               ,
                timeout=5.0
            )
            
@@ -556,14 +553,12 @@ Canary Deployment
            # Canary version
            return HoneyHiveTracer.init(
                api_key=os.getenv("HH_API_KEY"),
-               ,
                source="production-canary"
            )
        else:
            # Stable version
            return HoneyHiveTracer.init(
                api_key=os.getenv("HH_API_KEY"),
-               ,
                source="production-stable"
            )
 

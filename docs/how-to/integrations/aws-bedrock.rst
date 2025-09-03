@@ -66,7 +66,6 @@ Quick Start
    # Initialize HoneyHive tracer with Bedrock instrumentor
    tracer = HoneyHiveTracer.init(
        api_key="your-honeyhive-api-key",
-       ,
        instrumentors=[BedrockInstrumentor()]
    )
 

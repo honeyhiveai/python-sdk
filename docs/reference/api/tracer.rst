@@ -127,14 +127,12 @@ init()
       # Explicit configuration
       tracer = HoneyHiveTracer.init(
           api_key="hh_your_api_key_here",
-          ,
           source="production"
       )
       
       # Development mode
       tracer = HoneyHiveTracer.init(
           api_key="hh_dev_key",
-          ,
           source="development"
           test_mode=True  # No data sent to HoneyHive
       )
@@ -149,14 +147,12 @@ init()
       # Single instrumentor
       tracer = HoneyHiveTracer.init(
           api_key="hh_your_key",
-          ,
           instrumentors=[OpenAIInstrumentor()]
       )
       
       # Multiple instrumentors for multi-LLM applications
       tracer = HoneyHiveTracer.init(
           api_key="hh_your_key",
-          ,
           instrumentors=[
               OpenAIInstrumentor(),
               AnthropicInstrumentor()
@@ -169,28 +165,23 @@ init()
    
       # Different projects
       user_tracer = HoneyHiveTracer.init(
-          ,
           source="production"
       )
       
       payment_tracer = HoneyHiveTracer.init(
-          , 
           source="production"
       )
       
       # Different environments
       prod_tracer = HoneyHiveTracer.init(
-          ,
           source="production"
       )
       
       staging_tracer = HoneyHiveTracer.init(
-          ,
           source="staging"
       )
       
       dev_tracer = HoneyHiveTracer.init(
-          ,
           source="development"
           test_mode=True
       )
@@ -202,7 +193,6 @@ init()
       # Custom HoneyHive deployment
       tracer = HoneyHiveTracer.init(
           api_key="hh_your_key",
-          ,
           server_url="https://honeyhive.company.com"
       )
 
@@ -567,21 +557,18 @@ The HoneyHiveTracer supports multiple independent instances for flexible workflo
    # Production tracer
    prod_tracer = HoneyHiveTracer.init(
        api_key="prod-api-key",
-       ,
        source="production"
    )
    
    # Staging tracer
    staging_tracer = HoneyHiveTracer.init(
        api_key="staging-api-key",
-       ,
        source="staging"
    )
    
    # Development tracer
    dev_tracer = HoneyHiveTracer.init(
        api_key="dev-api-key",
-       ,
        source="development"
        test_mode=True
    )
@@ -592,17 +579,14 @@ The HoneyHiveTracer supports multiple independent instances for flexible workflo
 
    # Microservices architecture
    auth_tracer = HoneyHiveTracer.init(
-       ,
        session_name="auth_operations"
    )
    
    user_tracer = HoneyHiveTracer.init(
-       ,
        session_name="user_operations"
    )
    
    payment_tracer = HoneyHiveTracer.init(
-       ,
        session_name="payment_operations"
    )
 
@@ -612,17 +596,14 @@ The HoneyHiveTracer supports multiple independent instances for flexible workflo
 
    # Different workflows with different instrumentors
    chat_tracer = HoneyHiveTracer.init(
-       ,
        instrumentors=[OpenAIInstrumentor()]
    )
    
    analysis_tracer = HoneyHiveTracer.init(
-       ,
        instrumentors=[AnthropicInstrumentor()]
    )
    
    background_tracer = HoneyHiveTracer.init(
-       ,
        # No instrumentors for non-LLM background tasks
    )
 

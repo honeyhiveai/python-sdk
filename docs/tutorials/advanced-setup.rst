@@ -392,7 +392,6 @@ Custom Instrumentor Development
    
    tracer = HoneyHiveTracer.init(
        api_key="your-api-key",
-       ,
        instrumentors=[custom_instrumentor]
    )
    

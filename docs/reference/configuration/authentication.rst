@@ -346,7 +346,6 @@ Access Control
    # SDK handles rate limiting automatically
    tracer = HoneyHiveTracer.init(
        api_key="hh_your_key",
-       ,
        # Rate limiting is automatic
    )
 
@@ -396,7 +395,6 @@ Testing Environment
    def test_honeyhive_integration():
        from honeyhive import HoneyHiveTracer
        tracer = HoneyHiveTracer.init(
-           ,
            test_mode=True  # No real API calls
        )
        # Test your code here
@@ -741,7 +739,6 @@ Debugging Tools
    # Enable debug mode
    tracer = HoneyHiveTracer.init(
        api_key="hh_your_key",
-       ,
        debug=True  # Enables debug logging
    )
 

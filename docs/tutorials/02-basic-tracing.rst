@@ -46,7 +46,7 @@ The ``@trace`` decorator is the simplest way to add tracing:
    from honeyhive import HoneyHiveTracer, trace
    
    tracer = HoneyHiveTracer.init(
-       api_key="your-api-key"  # project derived from API key
+       api_key="your-api-key"  
        
    )
    
@@ -84,7 +84,7 @@ For more control, create spans manually:
    from honeyhive import HoneyHiveTracer
    
    tracer = HoneyHiveTracer.init(
-       api_key="your-api-key"  # project derived from API key
+       api_key="your-api-key"  
        
    )
    
@@ -139,7 +139,7 @@ The ``@trace`` decorator works seamlessly with async functions:
    from honeyhive import HoneyHiveTracer, trace
    
    tracer = HoneyHiveTracer.init(
-       api_key="your-api-key"  # project derived from API key
+       api_key="your-api-key"  
        
    )
    
@@ -186,7 +186,7 @@ HoneyHive automatically captures exceptions, but you can add context:
    import random
    
    tracer = HoneyHiveTracer.init(
-       api_key="your-api-key"  # project derived from API key
+       api_key="your-api-key"  
        
    )
    
@@ -238,7 +238,7 @@ Add business context and metadata to your spans:
    from honeyhive import HoneyHiveTracer, trace, enrich_span
    
    tracer = HoneyHiveTracer.init(
-       api_key="your-api-key"  # project derived from API key
+       api_key="your-api-key"  
        
    )
    
@@ -286,7 +286,7 @@ See how function calls flow through your application:
    from honeyhive import HoneyHiveTracer, trace
    
    tracer = HoneyHiveTracer.init(
-       api_key="your-api-key"  # project derived from API key
+       api_key="your-api-key"  
        
    )
    
@@ -344,7 +344,7 @@ The ``@trace_class`` decorator provides automatic tracing for all public methods
    from honeyhive import HoneyHiveTracer, trace_class, enrich_span
    
    tracer = HoneyHiveTracer.init(
-       api_key="your-api-key"  # project derived from API key
+       api_key="your-api-key"  
        
    )
    
@@ -664,7 +664,7 @@ Here's a complete example combining all patterns:
    from honeyhive import HoneyHiveTracer, trace, enrich_span
    
    tracer = HoneyHiveTracer.init(
-       api_key="your-api-key"  # project derived from API key
+       api_key="your-api-key"  
        
    )
    

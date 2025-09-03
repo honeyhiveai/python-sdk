@@ -67,7 +67,6 @@ Quick Start
    # Initialize HoneyHive tracer
    tracer = HoneyHiveTracer.init(
        api_key="your-honeyhive-api-key",
-       ,
        instrumentors=[OpenAIInstrumentor()]
    )
 

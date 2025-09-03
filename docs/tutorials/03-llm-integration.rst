@@ -598,7 +598,6 @@ Here's a complete example using multiple providers:
    # Initialize with multiple instrumentors
    tracer = HoneyHiveTracer.init(
        api_key=os.getenv("HH_API_KEY"),
-       ,
        instrumentors=[OpenAIInstrumentor(), AnthropicInstrumentor()]
    )
    

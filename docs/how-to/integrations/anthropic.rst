@@ -29,7 +29,6 @@ Quick Setup
    # Initialize HoneyHive with Anthropic instrumentor
    tracer = HoneyHiveTracer.init(
        api_key="your-honeyhive-key",
-       ,
        instrumentors=[AnthropicInstrumentor()]
    )
    

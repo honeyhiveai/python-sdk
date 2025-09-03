@@ -57,7 +57,6 @@ Quick Start
    # Initialize tracer with MCP instrumentor
    tracer = HoneyHiveTracer.init(
        api_key="your-honeyhive-api-key",
-       ,
        instrumentors=[MCPInstrumentor()]
    )
 
@@ -118,7 +117,6 @@ Combine MCP with other LLM providers for complete observability:
    # Multi-provider setup
    tracer = HoneyHiveTracer.init(
        api_key="your-honeyhive-api-key",
-       ,
        instrumentors=[
            MCPInstrumentor(),      # Trace MCP operations
            OpenAIInstrumentor()    # Trace OpenAI calls within tools
@@ -175,7 +173,6 @@ Enrich MCP spans with additional context:
 
    tracer = HoneyHiveTracer.init(
        api_key="your-api-key",
-       ,
        instrumentors=[MCPInstrumentor()]
    )
 
@@ -200,7 +197,6 @@ Optimize MCP tracing for production:
 
    tracer = HoneyHiveTracer.init(
        api_key="your-api-key",
-       ,
        instrumentors=[MCPInstrumentor()],
        disable_http_tracing=True,  # Reduce overhead
    )
@@ -227,7 +223,6 @@ Handle MCP integration errors gracefully:
        try:
            tracer = HoneyHiveTracer.init(
                api_key="your-api-key",
-               ,
                instrumentors=[instrumentor]
            )
            return tracer
@@ -277,7 +272,6 @@ Verify MCP traces are being captured:
 
    tracer = HoneyHiveTracer.init(
        api_key="your-api-key",
-       ,
        instrumentors=[MCPInstrumentor()]
    )
 
@@ -390,7 +384,6 @@ Implement health checks for MCP integration:
        try:
            tracer = HoneyHiveTracer.init(
                api_key="health-check",
-               ,
                test_mode=True,
                instrumentors=[MCPInstrumentor()]
            )
@@ -447,7 +440,6 @@ Troubleshooting
 
       tracer = HoneyHiveTracer.init(
           api_key="your-api-key",
-          ,
           disable_http_tracing=True,  # Default, but explicit
           instrumentors=[MCPInstrumentor()]
       )

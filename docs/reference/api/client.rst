@@ -114,8 +114,7 @@ create_session()
    
       # Create a basic session
       session = client.create_session(
-          ,
-          source="development"
+          source="development",
           session_name="user-onboarding-flow"
       )
       
@@ -123,8 +122,7 @@ create_session()
       
       # Create session with metadata
       session = client.create_session(
-          ,
-          source="development"
+          source="development",
           user_id="user_123",
           conversation_type="customer_support",
           priority="high"
@@ -198,7 +196,6 @@ list_sessions()
       
       # List with filters
       recent_sessions = client.list_sessions(
-          ,
           source="development"
           created_after="2024-01-01T00:00:00Z",
           limit=20
@@ -343,7 +340,6 @@ list_events()
       
       # List LLM call events across all sessions
       llm_events = client.list_events(
-          ,
           event_type=EventType.model,
           limit=50
       )
@@ -495,7 +491,6 @@ update_configuration()
    .. code-block:: python
    
       updated_config = client.update_configuration(
-          ,
           configuration={
               "sampling_rate": 0.1,  # 10% sampling
               "retention_days": 30,
@@ -530,7 +525,6 @@ Asynchronous version of the HoneyHive client for non-blocking operations.
    async def async_example():
        async with AsyncHoneyHive(api_key="your-key") as client:
            session = await client.create_session(
-               ,
                session_name="async-session"
            )
            
@@ -591,7 +585,6 @@ Initialization
           async with AsyncHoneyHive(api_key="hh_your_key") as client:
               # Use async client
               session = await client.create_session(
-                  ,
                   source="production"
               )
               
@@ -616,7 +609,6 @@ All session management methods have async equivalents:
        async with AsyncHoneyHive(api_key="hh_key") as client:
            # Create session
            session = await client.create_session(
-               ,
                source="production"
            )
            
@@ -625,7 +617,6 @@ All session management methods have async equivalents:
            
            # List sessions
            sessions = await client.list_sessions(
-               ,
                limit=10
            )
 
@@ -639,7 +630,6 @@ All event management methods have async equivalents:
    async def manage_events():
        async with AsyncHoneyHive(api_key="hh_key") as client:
            session = await client.create_session(
-               ,
                source="production"
            )
            
@@ -756,7 +746,6 @@ Error Handling Examples
        for attempt in range(max_retries):
            try:
                session = client.create_session(
-                   ,
                    source="production"
                )
                return session
@@ -879,7 +868,6 @@ Context Manager Usage
    # Automatic resource cleanup
    with HoneyHive(api_key="hh_key") as client:
        session = client.create_session(
-           ,
            source="production"
        )
        
@@ -912,7 +900,6 @@ Dependency Injection
        def process_user_request(self, user_id: str, request_data: dict):
            # Create session for this request
            session = self.client.create_session(
-               ,
                source="development"
                user_id=user_id
            )
@@ -1012,7 +999,6 @@ Request Batching
    async def batch_events_efficiently():
        async with AsyncHoneyHive(api_key="hh_key") as client:
            session = await client.create_session(
-               ,
                source="production"
            )
            
