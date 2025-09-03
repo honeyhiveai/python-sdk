@@ -49,28 +49,6 @@ Fundamental Concepts
    concepts/tracing-fundamentals
    concepts/llm-observability
 
-Design Decisions
-----------------
-
-Why We Built It This Way
-~~~~~~~~~~~~~~~~~~~~~~~~~
-
-.. toctree::
-   :maxdepth: 2
-
-
-
-Comparisons
------------
-
-How HoneyHive Relates to Other Tools
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-
-.. toctree::
-   :maxdepth: 2
-
-
-
 Understanding the Ecosystem
 ---------------------------
 
