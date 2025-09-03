@@ -16,8 +16,7 @@ tutorials/
 ├── 01-quick-start.rst          # 5-minute setup
 ├── 02-basic-tracing.rst        # First traces with @trace decorator
 ├── 03-llm-integration.rst      # OpenAI/Anthropic integration
-├── 04-evaluation-basics.rst    # First evaluation
-└── 05-dashboard-tour.rst       # Understanding HoneyHive UI
+└── 04-evaluation-basics.rst    # First evaluation
 ```
 
 **Content Migration:**
