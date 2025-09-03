@@ -35,6 +35,16 @@ Core Design Principles
 
    architecture/overview
    architecture/byoi-design
+
+Architecture Diagrams
+---------------------
+
+Visual System Design
+~~~~~~~~~~~~~~~~~~~~
+
+.. toctree::
+   :maxdepth: 2
+
    architecture/diagrams
 
 Key Concepts
