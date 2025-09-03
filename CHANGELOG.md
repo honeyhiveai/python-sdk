@@ -34,7 +34,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - **Feature Branch Model**: All other branches are temporary working branches (deleted after merge)
   - **Optimized CI/CD Triggers**: Push only on main branch, PRs run on all branches (eliminates duplicates)
   - **Immediate Feedback**: Quality checks run on every push to any branch for fast development cycles
-  - **Netlify Cleanup**: Removed Netlify configuration and deployment steps
+  - **Complete Netlify Removal**: Comprehensive cleanup of all Netlify references
+    - Removed netlify.toml configuration file
+    - Removed Netlify deployment steps from workflows
+    - Removed documentation files with Netlify setup instructions
+    - Removed commit scripts and documentation referencing Netlify
+    - Migration to GitHub Pages-only documentation approach
 - **BYOI Strategy Clarification**: Updated documentation to reflect multi-provider instrumentor support
   - **Multiple Providers**: Support for OpenInference, OpenLLMetry, and custom instrumentors
   - **Not a Partnership**: OpenInference is one supported option, not an exclusive partnership
