@@ -27,6 +27,26 @@
 - **Virtual Environment**: Required, named "python-sdk"
 - **tox**: Multi-version testing orchestration
 
+## Testing Framework & Quality Assurance
+
+### Testing Requirements - MANDATORY
+- **Zero Failing Tests Policy**: ALL commits must have 100% passing tests
+- **tox**: Primary testing orchestration tool
+  ```bash
+  tox -e unit           # Unit tests (MUST pass)
+  tox -e integration    # Integration tests (MUST pass)
+  tox -e py311 -e py312 -e py313  # All Python versions (MUST pass)
+  ```
+- **pytest**: Test framework with fixtures and async support
+- **Coverage**: Minimum 70% overall, 80% for new code
+- **Pre-commit validation**: Automated test execution before commits
+
+### Testing Architecture
+- **Unit Tests**: Fast, isolated, mock external dependencies
+- **Integration Tests**: Real API calls, external service validation
+- **Performance Tests**: Latency and throughput validation
+- **Compatibility Tests**: Cross-version Python and dependency validation
+
 ## Core SDK Dependencies
 - **httpx**: >=0.24.0 - Modern async/sync HTTP client
 - **pydantic**: >=2.0.0 - Data validation and models

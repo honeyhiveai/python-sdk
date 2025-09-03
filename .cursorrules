@@ -159,31 +159,83 @@
 - **Tech Stack**: `.agent-os/standards/tech-stack.md`
 - **Best Practices**: `.agent-os/standards/best-practices.md`
 
-## 🤖 AI Assistant Validation Protocol (MANDATORY)
+## 🤖 AI Assistant Quality Framework (MANDATORY)
 
-**⚠️ CRITICAL**: Before generating ANY code that integrates with the codebase:
+**🎯 MISSION**: Enable AI assistants to autonomously ship production-quality solutions
 
-### Pre-Generation Validation (REQUIRED)
-1. **Check Current API**: `read_file src/honeyhive/__init__.py` 
-2. **Verify Imports**: `grep -r "from honeyhive import" examples/`
-3. **Validate Classes**: Ensure class names match current exports
+### Pre-Generation Validation Protocol (REQUIRED)
 
-### Documentation Quality Prevention (NEW)
-**MANDATORY**: Follow `.agent-os/specs/2025-01-30-documentation-quality-prevention/`
+**CRITICAL**: Execute BEFORE generating ANY code:
+
+```bash
+# 1. Validate Current Codebase State
+read_file src/honeyhive/__init__.py     # Check current API exports
+grep -r "from honeyhive import" examples/  # Verify import patterns  
+grep -r "class.*:" src/honeyhive/       # Validate class names
+git status --porcelain                  # Ensure clean working directory
+git branch --show-current              # Verify correct branch
+```
+
+### Autonomous Quality Gates (ALL MUST PASS)
+
+**MANDATORY**: Every code change must pass ALL quality gates:
+
+```bash
+# Code Quality Gates
+tox -e format           # Black formatting (MUST pass)
+tox -e lint            # Pylint analysis ≥8.0/10.0 (MUST pass)
+tox -e unit            # Unit tests 100% (MUST pass)
+tox -e integration     # Integration tests 100% (MUST pass)
+tox -e py311 -e py312 -e py313  # Python compatibility (MUST pass)
+
+# Documentation Gates  
+cd docs && make html   # Sphinx build, zero warnings (MUST pass)
+cd .. && python -m doctest examples/*.py  # Examples work (MUST pass)
+```
+
+### Zero Failing Tests Policy
+
+**❌ NEVER COMMIT** if ANY test fails
+**❌ NEVER PUSH** failing tests to ANY branch
+**❌ NEVER USE** `git commit --no-verify` without immediate fix
+
+### Autonomous Decision Framework
+
+**AI Assistants MUST autonomously:**
+
+1. **Handle Test Failures**: Fix import errors, type annotations, coverage gaps
+2. **Maintain Quality**: Apply formatting, resolve linting issues, update docs  
+3. **Ensure Compatibility**: Test across Python versions, validate examples
+4. **Prevent Regressions**: Run full test suite, verify existing functionality
+
+### Documentation Quality Prevention
+
+**MANDATORY**: Follow `.agent-os/specs/2025-09-03-documentation-quality-prevention/`
 
 1. ✅ **RST Structure**: Title underlines, blank lines, proper indentation
 2. ✅ **Type Safety**: EventType enums only, complete imports
 3. ✅ **Code Examples**: Valid syntax, working imports, tested execution
-4. ✅ **Structure**: Toctree inclusion, working cross-references
+4. ✅ **Cross-References**: Working internal links, toctree inclusion
 
-### Workflow/CI Generation Rules
-- **NEVER** generate CI/CD workflows without current API validation
-- **ALWAYS** check `__init__.py` exports before writing import statements
-- **VERIFY** against examples/ directory for current usage patterns
-- **TEST** generated code against current codebase
+### Escalation Protocol
 
-### Case Study Prevention
-1. **API Drift**: The 2025-09-02 HoneyHiveClient failure demonstrates why validation is MANDATORY
-2. **Documentation Errors**: The 2025-01-30 documentation cleanup required fixing 23+ warnings
-   - RST formatting issues, broken code blocks, type safety violations
-   - Solution: Automated validation prevents these errors entirely
+**Hand off to human when:**
+- **Repeated Failures**: Cannot resolve test failures after 3 attempts
+- **Architecture Changes**: Major structural modifications needed
+- **Security Issues**: Authentication or data protection concerns
+- **Performance Problems**: Significant latency or resource issues
+
+### Success Metrics
+
+**Framework succeeds when:**
+- 100% of commits pass all tests on first attempt
+- 90%+ of development tasks handled autonomously
+- Zero production bugs from AI-generated code
+- Code quality metrics consistently improve
+
+### Implementation References
+
+- `.agent-os/specs/2025-09-03-ai-assistant-quality-framework/` - Complete framework
+- `.agent-os/specs/2025-09-03-zero-failing-tests-policy/` - Testing requirements
+- `.agent-os/standards/best-practices.md` - Quality standards
+- `.agent-os/standards/tech-stack.md` - Technical requirements

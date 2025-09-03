@@ -20,8 +20,9 @@
 **Before Every Commit**:
 1. Pre-commit hooks run automatically (DO NOT bypass)
 2. Manual verification: `tox -e format && tox -e lint`
-3. **MANDATORY for AI Assistants**: Update documentation before committing
-4. Emergency bypass only: `git commit --no-verify` (document why)
+3. **MANDATORY**: All tests must pass - `tox -e unit && tox -e integration`
+4. **MANDATORY for AI Assistants**: Update documentation before committing
+5. Emergency bypass only: `git commit --no-verify` (document why and fix immediately)
 
 **Documentation Update Requirements**:
 - **Code changes**: CHANGELOG.md must be updated
@@ -270,12 +271,107 @@ def configured_tracer():
     )
 ```
 
+## Testing Standards - MANDATORY FOR ALL COMMITS
+
+**🚨 CRITICAL RULE: Zero Failing Tests Policy**
+
+**ALL commits with new features, bug fixes, or code changes MUST have 100% passing tests.**
+
+### Pre-Commit Testing Requirements
+
+**MANDATORY Test Execution**:
+```bash
+# Required before ANY commit
+tox -e unit           # Must pass 100%
+tox -e integration    # Must pass 100%
+tox -e lint          # Must pass 100%
+tox -e format        # Must pass 100%
+
+# For Python version compatibility
+tox -e py311 -e py312 -e py313  # All must pass
+```
+
+**❌ NEVER COMMIT if any tests fail**
+**❌ NEVER use `git commit --no-verify` without immediate follow-up fix**
+**❌ NEVER push failing tests to any branch (including development branches)**
+
+### New Feature Requirements
+
+**For ANY new feature or functionality:**
+
+1. **Feature Implementation**: Write the feature code
+2. **Test Implementation**: Write comprehensive tests that cover:
+   - Happy path scenarios
+   - Error conditions
+   - Edge cases
+   - Backward compatibility (if applicable)
+3. **Test Verification**: All tests must pass locally
+4. **Integration Check**: Feature must not break existing functionality
+5. **Documentation**: Update relevant docs and examples
+
 ### Test Coverage Requirements
-- Minimum 90% code coverage
-- Focus on business logic
-- Test error paths
-- Verify edge cases
-- Include performance tests
+- **New code**: Minimum 80% coverage required
+- **Modified code**: Cannot decrease existing coverage
+- **Critical paths**: 100% coverage required (API clients, decorators, core functionality)
+- **Overall project**: Minimum 70% coverage maintained
+
+### Development Branch Testing Policy
+
+**Even on development branches:**
+- **No exceptions**: All tests must pass before pushing
+- **Work-in-progress**: Use local commits, squash before pushing
+- **Feature branches**: Must have passing tests for each logical commit
+- **Draft PRs**: Can have failing tests, but must be fixed before review
+
+### CI/CD Integration
+
+**Automated enforcement:**
+- GitHub Actions will block merges if tests fail
+- Pre-commit hooks prevent local commits with obvious issues
+- Tox environments ensure consistent testing across all environments
+- Coverage reports must meet minimum thresholds
+
+**Failure Response Protocol:**
+1. **Immediate action**: Stop all work on new features
+2. **Fix tests**: Address failing tests as highest priority
+3. **Root cause analysis**: Understand why tests failed
+4. **Prevention**: Update practices to prevent similar failures
+
+### Testing Requirements by Change Type
+
+**Bug Fixes:**
+- Must include test that reproduces the bug
+- Test must fail before fix, pass after fix
+- Regression test must be added to prevent reoccurrence
+
+**New Features:**
+- Comprehensive test suite covering all functionality
+- Integration tests showing feature works with existing code
+- Performance tests if feature affects performance
+- Documentation examples must be tested
+
+**Refactoring:**
+- All existing tests must continue to pass
+- No decrease in test coverage
+- May require updating test implementation (not removing tests)
+
+**Documentation Changes:**
+- All code examples in docs must be tested
+- Examples must use current API patterns
+- Integration with existing documentation must be verified
+
+### Emergency Procedures
+
+**If tests fail after commit:**
+1. **Immediate revert**: Revert the failing commit
+2. **Fix locally**: Address the test failures
+3. **Re-commit**: Only after all tests pass
+4. **Post-mortem**: Document what went wrong and how to prevent it
+
+**For critical hotfixes:**
+- All testing requirements still apply
+- No exceptions for "urgent" fixes
+- Fast tracking through expedited review, not skipped testing
 
 ## Security Practices
 
