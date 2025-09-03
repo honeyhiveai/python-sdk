@@ -203,6 +203,8 @@ cd .. && python -m doctest examples/*.py  # Examples work (MUST pass)
 **❌ NEVER PUSH** failing tests to ANY branch
 **❌ NEVER USE** `git commit --no-verify` without immediate fix
 **❌ NEVER USE** hardcoded dates - always use `date +"%Y-%m-%d"`
+**❌ NEVER SKIP TESTS** - AI assistants MUST fix failing tests, never skip them
+**❌ NEVER USE** `@pytest.mark.skip` or commenting out failing tests
 
 ### Autonomous Decision Framework
 

@@ -22,6 +22,8 @@ Implement a **Zero Failing Tests Policy** that requires ALL commits to have 100%
 2. **No Exceptions**: This applies to ALL branches, including development branches
 3. **Immediate Fix**: Any failing tests must be fixed before new work begins
 4. **Comprehensive Coverage**: All test types must pass (unit, integration, linting, formatting)
+5. **❌ NO SKIPPING TESTS**: AI assistants MUST fix failing tests, never skip them
+6. **Fix Root Cause**: Address the underlying issue, not just the symptom
 
 ## Implementation
 
@@ -81,6 +83,48 @@ tox -e py311 -e py312 -e py313  # Python version compatibility
 - All testing requirements still apply
 - No exceptions for "urgent" fixes
 - Use expedited review process, not skipped testing
+
+### ❌ PROHIBITED: Test Skipping Policy
+
+**AI assistants are STRICTLY FORBIDDEN from skipping failing tests.**
+
+#### What is NOT Allowed
+```python
+# ❌ FORBIDDEN - Do not add skip decorators
+@pytest.mark.skip(reason="Temporarily skipped - will fix later")
+def test_failing_function():
+    pass
+
+# ❌ FORBIDDEN - Do not disable tests in tox.ini
+# -e unit-skip-broken
+
+# ❌ FORBIDDEN - Do not comment out test functions
+# def test_broken():
+#     assert something_that_fails()
+```
+
+#### What IS Required
+```python
+# ✅ REQUIRED - Fix the underlying issue
+def test_failing_function():
+    # Proper mock setup that works
+    with patch("module.Class", MagicMock()) as mock_class:
+        mock_class.return_value = Mock()
+        result = function_under_test()
+        assert result == expected_value
+```
+
+#### When Tests Fail: Mandatory Process
+1. **Investigate Root Cause**: Understand WHY the test is failing
+2. **Fix the Implementation**: Address the underlying bug or mock setup
+3. **Validate the Fix**: Ensure test passes and doesn't break others
+4. **Never Skip**: Skipping tests hides problems and creates technical debt
+
+#### Escalation Protocol
+**If AI assistant cannot fix failing tests after 3 attempts:**
+- Document the specific error and investigation attempts
+- Escalate to human developer for guidance
+- Do NOT skip the tests as a workaround
 
 ## Impact Assessment
 

@@ -49,6 +49,13 @@ Core Capabilities
 - **Graceful Degradation**: SDK never crashes host application, continues operation on failures
 - **Batch Processing**: Configurable span batching for optimal performance
 
+**Development & Quality**:
+
+- **Zero Failing Tests Policy**: Comprehensive test quality enforcement framework with anti-skipping rules
+- **Tox-Based Development**: Unified development environments for consistent formatting, linting, and testing
+- **Pre-Commit Integration**: Automated quality gates using tox environments for consistency
+- **Documentation Quality Control**: Sphinx-based validation with warnings-as-errors enforcement
+
 **Configuration & Security**:
 
 - **Environment Variables**: Comprehensive configuration via HH_* environment variables

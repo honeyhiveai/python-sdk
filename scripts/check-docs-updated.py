@@ -98,7 +98,7 @@ def check_required_docs_updated(staged_files: list) -> tuple:
     required_docs = {
         "CHANGELOG.md": False,
         "README.md": False,
-        "docs/FEATURE_LIST.rst": False,
+        "docs/reference/index.rst": False,
         ".agent-os/product/features.md": False,
     }
 
@@ -174,7 +174,7 @@ def main() -> NoReturn:
 
     # Strict enforcement for feature commits
     if has_features:
-        required_for_features = ["CHANGELOG.md", "docs/FEATURE_LIST.rst"]
+        required_for_features = ["CHANGELOG.md", "docs/reference/index.rst"]
         missing_required = [doc for doc in required_for_features if doc in missing_docs]
 
         if missing_required:
@@ -182,8 +182,8 @@ def main() -> NoReturn:
             print(f"   Missing: {missing_required}")
             print("\nTo fix:")
             print("1. Update CHANGELOG.md with your changes")
-            print("2. Update docs/FEATURE_LIST.rst if adding new features")
-            print("3. Stage updated docs: git add CHANGELOG.md docs/FEATURE_LIST.rst")
+            print("2. Update docs/reference/index.rst if adding new features")
+            print("3. Stage updated docs: git add CHANGELOG.md docs/reference/index.rst")
             print("4. Re-run your commit")
             sys.exit(1)
 

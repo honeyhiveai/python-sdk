@@ -102,7 +102,7 @@ def get_tracer_from_baggage(
         ctx = ctx or context.get_current()
         tracer_id = baggage.get_baggage("honeyhive_tracer_id", ctx)
 
-        if tracer_id and tracer_id in _TRACER_REGISTRY:
+        if tracer_id and isinstance(tracer_id, str) and tracer_id in _TRACER_REGISTRY:
             return _TRACER_REGISTRY[tracer_id]
 
     except Exception:

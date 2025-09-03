@@ -3,11 +3,16 @@
 Feature Documentation Synchronization Checker
 
 Ensures that feature documentation stays synchronized between:
-- docs/FEATURE_LIST.rst (user-facing documentation)
+- docs/reference/index.rst (modern API reference documentation)
 - .agent-os/product/features.md (Agent OS product catalog)
 - Actual codebase features (src/honeyhive/)
 
 This prevents documentation drift and ensures comprehensive feature coverage.
+
+Note: docs/FEATURE_LIST.rst and docs/TESTING.rst are legacy files maintained
+for backward compatibility only. New feature documentation should be added
+to the Divio-structured documentation in docs/reference/, docs/tutorials/,
+docs/how-to/, and docs/explanation/.
 """
 
 import os
@@ -18,23 +23,31 @@ from pathlib import Path
 from typing import List, NoReturn, Set
 
 
-def extract_features_from_feature_list() -> Set[str]:
-    """Extract features from docs/FEATURE_LIST.rst."""
-    feature_list_path = Path("docs/FEATURE_LIST.rst")
-    if not feature_list_path.exists():
-        print(f"❌ {feature_list_path} not found")
+def extract_features_from_reference_docs() -> Set[str]:
+    """Extract features from docs/reference/index.rst (modern documentation)."""
+    reference_path = Path("docs/reference/index.rst")
+    if not reference_path.exists():
+        print(f"❌ {reference_path} not found")
         return set()
 
-    content = feature_list_path.read_text()
-    # Extract features from RST sections (look for ~~~ underlines)
+    content = reference_path.read_text()
     features = set()
+    
+    # Extract features from RST sections and bullet points
     lines = content.split("\n")
     for i, line in enumerate(lines):
+        # Look for section headers with underlines
         if "~~~" in line and i > 0:
             feature_name = lines[i - 1].strip()
             if feature_name and not feature_name.startswith("*"):
                 features.add(feature_name.lower())
-
+        
+        # Look for bullet points with ** bold features
+        if line.strip().startswith("- **") and "**:" in line:
+            feature_match = re.search(r'\*\*(.*?)\*\*', line)
+            if feature_match:
+                features.add(feature_match.group(1).lower())
+    
     return features
 
 
@@ -111,8 +124,10 @@ def check_required_docs_exist() -> bool:
     required_docs = [
         "README.md",
         "CHANGELOG.md",
-        "docs/FEATURE_LIST.rst",
-        "docs/TESTING.rst",
+        "docs/reference/index.rst",
+        "docs/tutorials/index.rst", 
+        "docs/how-to/index.rst",
+        "docs/explanation/index.rst",
         ".agent-os/product/features.md",
         ".agent-os/standards/best-practices.md",
     ]
@@ -151,20 +166,20 @@ def main() -> NoReturn:
     docs_exist = check_required_docs_exist()
 
     # Extract features from different sources
-    feature_list_features = extract_features_from_feature_list()
+    reference_docs_features = extract_features_from_reference_docs()
     agent_os_features = extract_features_from_agent_os()
     codebase_components = extract_core_components_from_codebase()
 
     print(f"\n📊 Feature Coverage Analysis:")
-    print(f"   Feature List (docs/): {len(feature_list_features)} features")
+    print(f"   Reference Docs (docs/reference/): {len(reference_docs_features)} features")
     print(f"   Agent OS (product/): {len(agent_os_features)} features")
     print(f"   Codebase components: {len(codebase_components)} components")
 
     # Check for major discrepancies
     all_good = True
 
-    if len(feature_list_features) == 0:
-        print("❌ No features found in FEATURE_LIST.rst")
+    if len(reference_docs_features) == 0:
+        print("❌ No features found in docs/reference/index.rst")
         all_good = False
 
     if len(agent_os_features) == 0:
@@ -172,13 +187,13 @@ def main() -> NoReturn:
         all_good = False
 
     # Warn about significant gaps (more than 50% difference)
-    if len(feature_list_features) > 0 and len(agent_os_features) > 0:
-        ratio = min(len(feature_list_features), len(agent_os_features)) / max(
-            len(feature_list_features), len(agent_os_features)
+    if len(reference_docs_features) > 0 and len(agent_os_features) > 0:
+        ratio = min(len(reference_docs_features), len(agent_os_features)) / max(
+            len(reference_docs_features), len(agent_os_features)
         )
         if ratio < 0.5:
             print(
-                f"⚠️  Significant feature count discrepancy: {len(feature_list_features)} vs {len(agent_os_features)}"
+                f"⚠️  Significant feature count discrepancy: {len(reference_docs_features)} vs {len(agent_os_features)}"
             )
             print("   Consider updating documentation to ensure consistency")
 

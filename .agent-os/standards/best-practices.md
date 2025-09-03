@@ -293,8 +293,46 @@ tox -e py311 -e py312 -e py313  # All must pass
 ```
 
 **❌ NEVER COMMIT if any tests fail**
+**❌ NEVER SKIP TESTS** - AI assistants must fix failing tests, never skip them
 **❌ NEVER use `git commit --no-verify` without immediate follow-up fix**
 **❌ NEVER push failing tests to any branch (including development branches)**
+
+### ❌ PROHIBITED: Test Skipping
+
+**AI assistants are STRICTLY FORBIDDEN from skipping failing tests.**
+
+#### Forbidden Patterns
+```python
+# ❌ FORBIDDEN - Never skip tests
+@pytest.mark.skip(reason="Temporarily skipped - will fix later")
+def test_broken_feature():
+    pass
+
+# ❌ FORBIDDEN - Never comment out failing tests  
+# def test_that_fails():
+#     assert broken_function() == expected
+
+# ❌ FORBIDDEN - Never disable in tox.ini
+# Removing failing test environments from tox.ini
+```
+
+#### Required Approach
+```python
+# ✅ REQUIRED - Fix the underlying issue
+def test_that_works():
+    # Proper setup and mocking
+    with patch("module.dependency") as mock_dep:
+        mock_dep.return_value = expected_response
+        result = function_under_test()
+        assert result == expected_result
+```
+
+#### When Tests Fail: Mandatory Steps
+1. **Investigate**: Understand the root cause
+2. **Debug**: Use print statements, debugger, or logging
+3. **Fix**: Address the underlying issue (code or mock setup)
+4. **Validate**: Ensure the fix works and doesn't break other tests
+5. **Never Skip**: Skipping creates technical debt and hides problems
 
 ### New Feature Requirements
 
@@ -884,7 +922,7 @@ When updating documentation, AI assistants MUST:
    - No broken internal links allowed
    - Section hierarchy MUST be logical
 
-**Error Prevention Tools** (See `.agent-os/specs/2025-01-30-documentation-quality-prevention/`):
+**Error Prevention Tools** (See `.agent-os/specs/2025-09-03-documentation-quality-prevention/`):
 - Pre-commit validation hooks
 - Automated RST quality checking
 - Type safety enforcement

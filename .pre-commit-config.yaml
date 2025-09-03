@@ -1,48 +1,10 @@
 # Pre-commit hooks for HoneyHive Python SDK
 # See https://pre-commit.com for more information
+#
+# IMPORTANT: All code quality checks use tox environments to ensure consistency
+# between local development, pre-commit, and CI/CD environments.
 ---
 repos:
-  - repo: https://github.com/psf/black
-    rev: 23.12.1
-    hooks:
-      - id: black
-        language_version: python3
-        args: [--line-length=88, --target-version=py311]
-        files: \.py$
-
-  - repo: https://github.com/pycqa/isort
-    rev: 5.13.2
-    hooks:
-      - id: isort
-        args: [--profile=black]
-
-  - repo: https://github.com/pycqa/pylint
-    rev: v3.0.3
-    hooks:
-      - id: pylint
-        args: [--rcfile=pyproject.toml]
-        additional_dependencies: [
-          "httpx>=0.24.0",
-          "opentelemetry-api>=1.20.0",
-          "opentelemetry-sdk>=1.20.0",
-          "pydantic>=2.0.0",
-          "pytest>=7.0.0",
-          "pytest-asyncio>=0.21.0"
-        ]
-
-  - repo: https://github.com/pre-commit/mirrors-mypy
-    rev: v1.8.0
-    hooks:
-      - id: mypy
-        args: [--config-file=pyproject.toml]
-        additional_dependencies: [
-          "httpx>=0.24.0",
-          "opentelemetry-api>=1.20.0",
-          "pydantic>=2.0.0",
-          "types-python-dateutil>=2.9.0.20240316",
-          "types-requests>=2.31.0"
-        ]
-
   - repo: https://github.com/adrienverge/yamllint
     rev: v1.37.0
     hooks:
@@ -52,8 +14,16 @@ repos:
   - repo: local
     hooks:
       - id: tox-format-check
-        name: Tox Format Check
+        name: Code Formatting Check (Black + isort)
         entry: tox -e format
+        language: system
+        pass_filenames: false
+        always_run: true
+        stages: [pre-commit]
+
+      - id: tox-lint-check
+        name: Code Quality Check (Pylint + Mypy)
+        entry: tox -e lint
         language: system
         pass_filenames: false
         always_run: true
@@ -68,10 +38,10 @@ repos:
         stages: [pre-commit]
 
       - id: feature-list-sync
-        name: Feature List Synchronization Check
+        name: Feature Documentation Synchronization Check
         entry: scripts/check-feature-sync.py
         language: python
-        files: '^(src/.*\.py|docs/FEATURE_LIST\.rst|\.agent-os/product/features\.md)$'
+        files: '^(src/.*\.py|docs/reference/.*\.rst|\.agent-os/product/features\.md)$'
         stages: [pre-commit]
 
       - id: changelog-update-check

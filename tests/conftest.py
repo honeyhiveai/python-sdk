@@ -168,4 +168,14 @@ def disable_tracing_during_tests():
         mock_span.__exit__ = Mock(return_value=None)
         mock_tracer.start_as_current_span.return_value = mock_span
         mock_trace.get_tracer.return_value = mock_tracer
-        yield
+
+        # Mock HoneyHiveSpanProcessor to prevent StopIteration errors
+        # Create a callable mock that returns a new Mock instance each time
+        def create_mock_span_processor():
+            return Mock()
+
+        with patch(
+            "src.honeyhive.tracer.otel_tracer.HoneyHiveSpanProcessor",
+            create_mock_span_processor,
+        ):
+            yield
