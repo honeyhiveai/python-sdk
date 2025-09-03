@@ -93,7 +93,7 @@ Testing Tracer Initialization
            tracer = HoneyHiveTracer.init(
                api_key="test-key",
                project="custom-project",
-               source="custom-source",
+               source="development"
                session_name="custom-session",
                test_mode=True,
                disable_http_tracing=True
@@ -275,14 +275,14 @@ Testing Multi-Instance Behavior
            tracer1 = HoneyHiveTracer.init(
                api_key="key1",
                project="project1",
-               source="source1",
+               source="development"
                test_mode=True
            )
            
            tracer2 = HoneyHiveTracer.init(
                api_key="key2",
                project="project2", 
-               source="source2",
+               source="development"
                test_mode=True
            )
            
@@ -847,7 +847,7 @@ Test Fixtures and Utilities
        tracer = HoneyHiveTracer.init(
            api_key="test-api-key",
            project="fixture-test-project",
-           source="test-fixture",
+           source="development"
            test_mode=True,
            disable_http_tracing=True
        )

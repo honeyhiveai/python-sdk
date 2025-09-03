@@ -135,7 +135,7 @@ init()
       tracer = HoneyHiveTracer.init(
           api_key="hh_dev_key",
           ,
-          source="development",
+          source="development"
           test_mode=True  # No data sent to HoneyHive
       )
    
@@ -191,7 +191,7 @@ init()
       
       dev_tracer = HoneyHiveTracer.init(
           ,
-          source="development",
+          source="development"
           test_mode=True
       )
    
@@ -582,7 +582,7 @@ The HoneyHiveTracer supports multiple independent instances for flexible workflo
    dev_tracer = HoneyHiveTracer.init(
        api_key="dev-api-key",
        ,
-       source="development",
+       source="development"
        test_mode=True
    )
 

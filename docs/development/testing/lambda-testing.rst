@@ -40,7 +40,7 @@ Quick Start
    tracer = HoneyHiveTracer.init(
        api_key=os.getenv("HH_API_KEY", "test-key"),
        project="lambda-test",
-       source="aws-lambda",
+       source="development"
        test_mode=True,
        disable_http_tracing=True  # Optimize for Lambda
    )
@@ -221,7 +221,7 @@ Local Lambda Testing
            tracer = HoneyHiveTracer.init(
                api_key=os.getenv("HH_API_KEY", "test-key"),
                project=os.getenv("HH_PROJECT", "lambda-test"),
-               source="aws-lambda",
+               source="development"
                session_name="lambda-basic-test",
                test_mode=True,  # Enable test mode for Lambda
                disable_http_tracing=True,  # Avoid Lambda networking issues
@@ -360,7 +360,7 @@ Local Lambda Testing
            tracer = HoneyHiveTracer.init(
                api_key=os.getenv("HH_API_KEY", "test-key"),
                project="lambda-cold-start-test",
-               source="aws-lambda",
+               source="development"
                session_name="cold-start-test",
                test_mode=True,
                disable_http_tracing=True,
@@ -983,7 +983,7 @@ Production Lambda Testing
        tracer = HoneyHiveTracer.init(
            api_key=os.environ.get("HH_API_KEY"),
            project="lambda-integration-test",
-           source="aws-lambda-prod",
+           source="development"
            instrumentors=[OpenAIInstrumentor()]
        )
        
@@ -1054,7 +1054,7 @@ Lambda Optimization Best Practices
    tracer = HoneyHiveTracer.init(
        api_key=os.environ.get("HH_API_KEY"),
        project=os.environ.get("HH_PROJECT", "lambda-app"),
-       source="aws-lambda",
+       source="development"
        session_name=os.environ.get("AWS_LAMBDA_FUNCTION_NAME", "lambda-function"),
        # Optimize for Lambda constraints
        test_mode=os.environ.get("HH_TEST_MODE", "false").lower() == "true",

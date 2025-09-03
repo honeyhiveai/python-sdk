@@ -432,7 +432,7 @@ Troubleshooting
    # Verify configuration
    tracer = HoneyHiveTracer.init(
        api_key="your-real-api-key",  # Not test-key
-       ,   # Existing project
+
        test_mode=False,               # Disable for real tracing
        instrumentors=[MCPInstrumentor()]
    )

@@ -115,7 +115,7 @@ create_session()
       # Create a basic session
       session = client.create_session(
           ,
-          source="production",
+          source="development"
           session_name="user-onboarding-flow"
       )
       
@@ -124,7 +124,7 @@ create_session()
       # Create session with metadata
       session = client.create_session(
           ,
-          source="production",
+          source="development"
           user_id="user_123",
           conversation_type="customer_support",
           priority="high"
@@ -199,7 +199,7 @@ list_sessions()
       # List with filters
       recent_sessions = client.list_sessions(
           ,
-          source="production",
+          source="development"
           created_after="2024-01-01T00:00:00Z",
           limit=20
       )
@@ -913,7 +913,7 @@ Dependency Injection
            # Create session for this request
            session = self.client.create_session(
                ,
-               source="production",
+               source="development"
                user_id=user_id
            )
            

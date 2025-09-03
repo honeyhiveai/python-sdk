@@ -58,7 +58,7 @@ Create a new file called ``hello_honeyhive.py``:
    # Initialize the tracer (simplified in v0.1.0+)
    tracer = HoneyHiveTracer.init(
        api_key="your-api-key-here",  # Replace with your actual API key
-       source="tutorial"             # Environment identifier (project derived from API key)
+       source="tutorial"
    )
    
    # For backward compatibility, you can still specify project explicitly:

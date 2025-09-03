@@ -149,14 +149,14 @@ Testing Multi-Instance Patterns
            tracer1 = HoneyHiveTracer.init(
                api_key="test-key-1",
                project="project-1",
-               source="source-1",
+               source="development"
                test_mode=True
            )
            
            tracer2 = HoneyHiveTracer.init(
                api_key="test-key-2", 
                project="project-2",
-               source="source-2",
+               source="development"
                test_mode=True
            )
            
@@ -350,7 +350,7 @@ Testing Real API Integration
            self.tracer = HoneyHiveTracer.init(
                api_key=self.api_key,
                project=self.project,
-               source="integration-test",
+               source="development"
                test_mode=False  # Use real API
            )
            

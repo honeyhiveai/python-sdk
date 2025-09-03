@@ -57,8 +57,7 @@ The most common integration uses the OpenInference OpenAI instrumentor.
    
    # Initialize HoneyHive with OpenAI instrumentor
    tracer = HoneyHiveTracer.init(
-       api_key="your-api-key",  # project derived from API key
-       ,
+       api_key="your-api-key",
        source="development",
        instrumentors=[OpenAIInstrumentor()]  # This is the magic!
    )
@@ -102,8 +101,7 @@ Enhance automatic tracing with business context:
    import openai
    
    tracer = HoneyHiveTracer.init(
-       api_key="your-api-key",  # project derived from API key
-       ,
+       api_key="your-api-key",
        instrumentors=[OpenAIInstrumentor()]
    )
    
@@ -171,8 +169,7 @@ Add Anthropic Claude tracing with the same BYOI pattern.
    
    # Initialize with Anthropic instrumentor
    tracer = HoneyHiveTracer.init(
-       api_key="your-api-key",  # project derived from API key
-       ,
+       api_key="your-api-key",
        instrumentors=[AnthropicInstrumentor()]
    )
    
@@ -228,8 +225,7 @@ Add Google AI (Gemini) tracing.
    
    # Initialize with Google AI instrumentor
    tracer = HoneyHiveTracer.init(
-       api_key="your-api-key",  # project derived from API key
-       ,
+       api_key="your-api-key",
        instrumentors=[GoogleGenerativeAIInstrumentor()]
    )
    
@@ -269,8 +265,7 @@ Use multiple LLM providers in the same application:
    
    # Initialize with multiple instrumentors
    tracer = HoneyHiveTracer.init(
-       api_key="your-api-key",  # project derived from API key
-       ,
+       api_key="your-api-key",
        instrumentors=[
            OpenAIInstrumentor(),    # Traces OpenAI calls
            AnthropicInstrumentor()  # Traces Anthropic calls
@@ -346,8 +341,7 @@ Add Google Agent Development Kit (ADK) tracing for sophisticated agent workflows
    
    # Initialize with Google ADK instrumentor
    tracer = HoneyHiveTracer.init(
-       api_key="your-api-key",  # project derived from API key
-       ,
+       api_key="your-api-key",
        instrumentors=[GoogleADKInstrumentor()]
    )
    
@@ -407,8 +401,7 @@ MCP enables agents to securely connect to data sources and tools through a stand
    
    # Initialize with MCP instrumentor
    tracer = HoneyHiveTracer.init(
-       api_key="your-api-key",  # project derived from API key
-       ,
+       api_key="your-api-key",
        instrumentors=[MCPInstrumentor()]
    )
 
@@ -486,8 +479,7 @@ You can also integrate custom or community instrumentors:
    
    # Use any OpenTelemetry-compatible instrumentor
    tracer = HoneyHiveTracer.init(
-       api_key="your-api-key",  # project derived from API key
-       ,
+       api_key="your-api-key",
        instrumentors=[
            CustomLLMInstrumentor(),
            # Mix with standard instrumentors

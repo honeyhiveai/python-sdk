@@ -232,7 +232,6 @@ New to HoneyHive? Start here:
    # Initialize with BYOI architecture
    tracer = HoneyHiveTracer.init(
        api_key="your-api-key",
-       # project derived from API key, 
        instrumentors=[OpenAIInstrumentor()]  # Your choice!
    )
    
@@ -264,7 +263,7 @@ New to HoneyHive? Start here:
    
    tracer = HoneyHiveTracer.init(
        api_key="your-api-key",
-       # project derived from API key,
+       # Simplified API - no project parameter needed
        instrumentors=[OpenAIInstrumentor()]
    )
    
@@ -303,7 +302,7 @@ New to HoneyHive? Start here:
    # Multi-provider setup with BYOI
    tracer = HoneyHiveTracer.init(
        api_key="your-api-key",
-       # project derived from API key,
+       # Simplified API - no project parameter needed
        instrumentors=[
            OpenAIInstrumentor(),    # Traces OpenAI calls
            AnthropicInstrumentor()  # Traces Anthropic calls

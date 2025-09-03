@@ -103,7 +103,7 @@ Connect them when initializing:
    # Bring your own instrumentor
    tracer = HoneyHiveTracer.init(
        api_key="your-key",
-       # project derived from API key,
+       # Simplified API - no project parameter needed
        instrumentors=[OpenAIInstrumentor()]  # Your choice!
    )
 

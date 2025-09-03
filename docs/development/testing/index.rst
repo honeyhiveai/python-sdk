@@ -201,7 +201,7 @@ Test Environment Setup
    test_tracer = HoneyHiveTracer.init(
        api_key="test-api-key",
        project="test-project",
-       source="test",
+       source="development"
        test_mode=True,  # Enable test mode
        disable_http_tracing=True  # Optimize for testing
    )
