@@ -416,6 +416,35 @@ def test_that_works():
 - **Critical paths**: 100% coverage required (API clients, decorators, core functionality)
 - **Overall project**: Minimum 70% coverage maintained
 
+### Test Count Reporting - MANDATORY
+
+**🚨 CRITICAL: Always Report Total Test Count Correctly**
+
+When reporting test results in commit messages, documentation, or communication:
+
+**REQUIRED FORMAT:**
+- **Total Tests**: X tests passing (Y unit + Z integration)
+- **Examples**: 
+  - ✅ "950 tests passing (831 unit + 119 integration)"
+  - ✅ "All 950 tests pass (831 unit + 119 integration)"
+  - ❌ "All 831 tests passing" (missing integration tests)
+
+**Test Counting Rules:**
+1. **Always sum all test types**: unit + integration + any other test categories
+2. **Specify breakdown**: Show individual counts for transparency
+3. **Use consistent language**: "X tests passing" or "All X tests pass"
+4. **Verify accuracy**: Run both test suites to confirm actual counts
+
+**Common Test Types:**
+- **Unit tests**: `tox -e unit` (isolated, fast tests)
+- **Integration tests**: `tox -e integration` (end-to-end, API tests)
+- **Performance tests**: `tox -e performance` (when present)
+- **Compatibility tests**: `tox -e compatibility` (when present)
+
+**AI Assistant Requirements:**
+- AI assistants MUST calculate and report total test counts correctly by summing all test categories, never report partial counts as totals
+- AI assistants MUST NEVER use `git commit --no-verify` or skip pre-commit hooks - always fix formatting/linting issues properly
+
 ### Development Branch Testing Policy
 
 **Even on development branches:**

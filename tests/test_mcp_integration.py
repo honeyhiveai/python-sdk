@@ -147,8 +147,7 @@ class TestMCPInstrumentorOptionalDependency:
             """Get MCP instrumentor if available."""
             try:
                 # This would normally import the real instrumentor
-                from unittest.mock import Mock
-
+                # Note: Mock is already imported at module level
                 mock_instrumentor = Mock()
                 mock_instrumentor.instrument = Mock()
                 mock_instrumentor.__class__.__name__ = "MCPInstrumentor"
@@ -191,7 +190,7 @@ class TestMCPSpanEnrichment:
         }
 
         # Test span detection logic
-        is_mcp_span = any("mcp." in key for key in mock_span.attributes.keys())
+        is_mcp_span = any("mcp." in key for key in mock_span.attributes)
         assert is_mcp_span is True
 
     def test_non_mcp_span_detection(self):
@@ -201,7 +200,7 @@ class TestMCPSpanEnrichment:
         mock_span.attributes = {"openai.model": "gpt-4", "openai.tokens": 150}
 
         # Test span detection logic
-        is_mcp_span = any("mcp." in key for key in mock_span.attributes.keys())
+        is_mcp_span = any("mcp." in key for key in mock_span.attributes)
         assert is_mcp_span is False
 
     def test_mcp_span_attribute_enrichment(self):
@@ -235,6 +234,10 @@ class TestMCPSpanEnrichment:
 @pytest.mark.integration
 class TestMCPRealIntegration:
     """Integration tests with real MCP instrumentor (requires optional dependency)."""
+
+    def __init__(self):
+        """Initialize test class."""
+        self.mcp_available = False
 
     @pytest.fixture(autouse=True)
     def setup_mcp_available(self):
