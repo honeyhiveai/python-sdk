@@ -80,6 +80,14 @@
 ### 🎯 Divio Documentation Architecture
 **Follow the [Divio Documentation System](https://docs.divio.com/documentation-system/) for all documentation:**
 
+### 📱 **MANDATORY: Tabbed Interface for Integration Docs**
+**ALL new instrumentor integration documentation MUST use the interactive tabbed interface pattern** defined in `.agent-os/standards/documentation-templates.md`:
+
+- **3 Required Tabs**: Installation | Basic Setup | Advanced Usage
+- **Progressive Disclosure**: Start simple, advance to real-world patterns
+- **Consistent UX**: Same pattern across all provider integrations
+- **Copy-Paste Ready**: Complete, working examples in each tab
+
 #### 1. TUTORIALS (Learning-oriented) - `docs/tutorials/`
 - **Purpose**: Help newcomers get started and achieve early success
 - **User mindset**: "I want to learn by doing"
@@ -131,6 +139,7 @@
 - Update examples/ when making changes that affect usage
 - **Update `.agent-os/product/` docs** for significant changes
 - Follow established example patterns in examples/
+- **NEW INSTRUMENTOR DOCS**: Use tabbed interface template from `.agent-os/standards/documentation-templates.md`
 - Test all documentation examples before committing
 
 ## Specific Commands to Use
