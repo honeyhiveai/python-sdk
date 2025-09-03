@@ -136,6 +136,11 @@ class HoneyHiveTracer:
         # Initialize session management
         self._initialize_session()
 
+        # Register this tracer instance for auto-discovery
+        from .registry import register_tracer
+
+        self._tracer_id = register_tracer(self)
+
         # Set up baggage context
         self._setup_baggage_context()
 
@@ -145,6 +150,7 @@ class HoneyHiveTracer:
 
         print(f"✓ HoneyHiveTracer initialized for project: {self.project}")
         print(f"✓ Session name: {self.session_name}")
+        print(f"✓ Tracer ID: {self._tracer_id}")
         if disable_http_tracing:
             print("✓ HTTP tracing disabled")
         else:
@@ -419,6 +425,10 @@ class HoneyHiveTracer:
             baggage_items["project"] = self.project
             baggage_items["source"] = self.source
 
+            # Add tracer ID for auto-discovery (backward compatibility)
+            baggage_items["honeyhive_tracer_id"] = self._tracer_id
+            print(f"✓ Tracer ID injected: {self._tracer_id}")
+
             # Add experiment harness information to baggage if available
             if config.experiment_id:
                 baggage_items["experiment_id"] = config.experiment_id
@@ -554,6 +564,9 @@ class HoneyHiveTracer:
             baggage_items["session_id"] = session_id
             baggage_items["project"] = self.project
             baggage_items["source"] = self.source
+
+        # Always include tracer ID for auto-discovery
+        baggage_items["honeyhive_tracer_id"] = self._tracer_id
 
         # Add parent_id to baggage if provided
         if parent_id:

@@ -87,19 +87,28 @@ def _create_sync_wrapper(
         Returns:
             The result of the decorated function execution
         """
-        # Get or create tracer instance
-        tracer = None
+        # Get or create tracer instance using priority-based discovery
+        from .registry import discover_tracer
+
         try:
-            # Try to get tracer from kwargs first
-            tracer = kwargs.get("tracer")
+            # Use auto-discovery with priority fallback
+            tracer = discover_tracer(
+                explicit_tracer=kwargs.get("tracer"), ctx=None  # Use current context
+            )
 
             if tracer is None:
-                # If no tracer is available, just call the function
-                print("⚠️  Warning: No tracer provided to @trace decorator")
-                print("   Usage: @trace(tracer=my_tracer)")
+                # No tracer available anywhere - function executes without tracing
+                print("⚠️  Warning: No tracer available for @trace decorator")
+                print("   Either:")
+                print("   1. Use @trace(tracer=my_tracer) with explicit tracer")
+                print(
+                    "   2. Use tracer.start_span() context manager for auto-discovery"
+                )
+                print("   3. Set a global default with set_default_tracer()")
+                print("   Function will execute without tracing.")
                 return func(*args, **func_kwargs)
         except Exception:
-            # If tracer is not available, just call the function
+            # If tracer discovery fails, just call the function
             return func(*args, **func_kwargs)
 
         # Start timing for duration calculation
@@ -296,19 +305,28 @@ def _create_async_wrapper(
         Returns:
             The result of the decorated async function execution
         """
-        # Get or create tracer instance
-        tracer = None
+        # Get or create tracer instance using priority-based discovery
+        from .registry import discover_tracer
+
         try:
-            # Try to get tracer from kwargs first
-            tracer = kwargs.get("tracer")
+            # Use auto-discovery with priority fallback
+            tracer = discover_tracer(
+                explicit_tracer=kwargs.get("tracer"), ctx=None  # Use current context
+            )
 
             if tracer is None:
-                # If no tracer is available, just call the function
-                print("⚠️  Warning: No tracer provided to @atrace decorator")
-                print("   Usage: @atrace(tracer=my_tracer)")
+                # No tracer available anywhere - function executes without tracing
+                print("⚠️  Warning: No tracer available for @atrace decorator")
+                print("   Either:")
+                print("   1. Use @atrace(tracer=my_tracer) with explicit tracer")
+                print(
+                    "   2. Use tracer.start_span() context manager for auto-discovery"
+                )
+                print("   3. Set a global default with set_default_tracer()")
+                print("   Function will execute without tracing.")
                 return await func(*args, **func_kwargs)
         except Exception:
-            # If tracer is not available, just call the function
+            # If tracer discovery fails, just call the function
             return await func(*args, **func_kwargs)
 
         # Start timing for duration calculation
@@ -658,7 +676,6 @@ def trace_class(
                 and not attr_name.startswith("_")
                 and attr_name not in ["__init__", "__new__"]
             ):
-
                 # Create a traced version of the method
                 if inspect.iscoroutinefunction(attr_value):
                     # Async method

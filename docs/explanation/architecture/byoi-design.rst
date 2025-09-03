@@ -1,0 +1,394 @@
+Bring Your Own Instrumentor (BYOI) Design
+==========================================
+
+.. note::
+   This document explains why HoneyHive uses a "Bring Your Own Instrumentor" architecture and how it solves common problems in LLM observability.
+
+The Problem: Dependency Hell
+----------------------------
+
+Traditional observability SDKs face a fundamental challenge in the rapidly evolving LLM ecosystem:
+
+**Version Conflicts**
+
+.. code-block:: text
+
+   Your App → requires openai==1.8.0
+   Your App → requires honeyhive-old==0.5.0
+   honeyhive-old → requires openai==1.6.0
+   
+   ❌ Conflict! Cannot install both openai 1.8.0 and 1.6.0
+
+**Forced Dependencies**
+
+When an observability SDK ships with LLM library dependencies:
+
+- You're **locked to specific versions** of LLM libraries
+- You **must install libraries** you don't use (bloated dependencies)
+- You **can't use newer LLM features** until the SDK updates
+- You face **supply chain security** concerns from transitive dependencies
+
+**Real-World Example**
+
+.. code-block:: bash
+
+   # What happens with traditional SDKs:
+   pip install traditional-llm-sdk
+   # Also installs: openai==1.5.0, anthropic==0.8.0, google-cloud-ai==2.1.0
+   # Even if you only use OpenAI!
+   
+   pip install openai==1.8.0  # You want the latest features
+   # ❌ ERROR: Incompatible requirements
+
+The BYOI Solution
+-----------------
+
+HoneyHive's BYOI architecture separates concerns:
+
+.. code-block:: text
+
+   Your App → honeyhive (core observability)
+   Your App → openai==1.8.0 (your choice)
+   Your App → openinference-instrumentation-openai (your choice)
+
+**Key Principles:**
+
+1. **HoneyHive Core**: Minimal dependencies, provides tracing infrastructure
+2. **Instrumentors**: Separate packages that understand specific LLM libraries
+3. **Your Choice**: You decide which instrumentors to install and use
+
+How It Works
+------------
+
+**1. Core SDK (honeyhive)**
+
+The core SDK provides:
+
+.. code-block:: python
+
+   from honeyhive import HoneyHiveTracer
+   
+   # Just the tracing infrastructure
+   tracer = HoneyHiveTracer.init(
+       api_key="your-key",
+       project="your-project"
+   )
+
+**Dependencies**: Only OpenTelemetry and HTTP libraries
+
+**2. Instrumentor Packages (your choice)**
+
+You install only what you need:
+
+.. code-block:: bash
+
+   # Only if you use OpenAI
+   pip install openinference-instrumentation-openai
+   
+   # Only if you use Anthropic  
+   pip install openinference-instrumentation-anthropic
+   
+   # Only if you use Google AI
+   pip install openinference-instrumentation-google-generativeai
+
+**3. Integration at Runtime**
+
+Connect them when initializing:
+
+.. code-block:: python
+
+   from honeyhive import HoneyHiveTracer
+   from openinference.instrumentation.openai import OpenAIInstrumentor
+   
+   # Bring your own instrumentor
+   tracer = HoneyHiveTracer.init(
+       api_key="your-key",
+       project="your-project",
+       instrumentors=[OpenAIInstrumentor()]  # Your choice!
+   )
+
+Benefits of BYOI
+----------------
+
+**Dependency Freedom**
+
+.. code-block:: bash
+
+   # You control LLM library versions
+   pip install openai==1.8.0        # Latest features
+   pip install anthropic==0.12.0    # Latest version
+   pip install honeyhive            # No conflicts!
+
+**Minimal Installation**
+
+.. code-block:: bash
+
+   # Only install what you use
+   pip install honeyhive                              # Core (5 deps)
+   pip install openinference-instrumentation-openai  # Only if needed
+
+**Future-Proof Architecture**
+
+.. code-block:: python
+
+   # New LLM provider? Just add its instrumentor
+   from new_llm_instrumentor import NewLLMInstrumentor
+   
+   tracer = HoneyHiveTracer.init(
+       instrumentors=[
+           OpenAIInstrumentor(),     # Existing
+           NewLLMInstrumentor()      # New provider
+       ]
+   )
+
+**Supply Chain Security**
+
+- **Fewer dependencies** = smaller attack surface
+- **Explicit choices** = you audit what you install
+- **Community instrumentors** = distributed maintenance
+
+OpenInference Partnership
+-------------------------
+
+HoneyHive partners with the OpenInference project for instrumentors:
+
+**Why OpenInference?**
+
+- **Open source** and community-driven
+- **OpenTelemetry native** for standardization
+- **LLM-focused** with rich semantic conventions
+- **Multi-provider** support from day one
+
+**Available Instrumentors:**
+
+.. code-block:: bash
+
+   # OpenAI (GPT, DALL-E, Embeddings)
+   pip install openinference-instrumentation-openai
+   
+   # Anthropic (Claude)
+   pip install openinference-instrumentation-anthropic
+   
+   # Google AI (Gemini)
+   pip install openinference-instrumentation-google-generativeai
+   
+   # LlamaIndex
+   pip install openinference-instrumentation-llamaindex
+   
+   # LangChain
+   pip install openinference-instrumentation-langchain
+
+**Custom Instrumentors:**
+
+You can also build custom instrumentors for proprietary or new LLM providers:
+
+.. code-block:: python
+
+   from opentelemetry.instrumentation.instrumentor import BaseInstrumentor
+   
+   class CustomLLMInstrumentor(BaseInstrumentor):
+       def _instrument(self, **kwargs):
+           # Your custom instrumentation logic
+           pass
+       
+       def _uninstrument(self, **kwargs):
+           # Cleanup logic
+           pass
+
+Implementation Details
+----------------------
+
+**Runtime Discovery**
+
+The BYOI system works through runtime discovery:
+
+.. code-block:: python
+
+   # HoneyHiveTracer.init() process:
+   
+   1. Initialize core OpenTelemetry infrastructure
+   2. For each instrumentor in the list:
+      a. Call instrumentor.instrument()
+      b. Register with tracer provider
+   3. Set up HoneyHive-specific span processors
+   4. Return configured tracer
+
+**Instrumentor Lifecycle**
+
+.. code-block:: python
+
+   class ExampleInstrumentor(BaseInstrumentor):
+       def _instrument(self, **kwargs):
+           # Patch the target library
+           # Add OpenTelemetry spans
+           # Set LLM-specific attributes
+           pass
+       
+       def _uninstrument(self, **kwargs):
+           # Remove patches
+           # Clean up resources
+           pass
+
+**No Monkey Patching by Default**
+
+HoneyHive core doesn't monkey patch anything. Only instrumentors modify library behavior, and only when explicitly requested.
+
+Migration Examples
+------------------
+
+**From All-in-One SDKs**
+
+.. code-block:: python
+
+   # Old way (hypothetical all-in-one SDK)
+   from llm_observability import LLMTracer
+   
+   # Forces specific versions of openai, anthropic, etc.
+   tracer = LLMTracer(api_key="key")
+
+.. code-block:: python
+
+   # New way (BYOI)
+   from honeyhive import HoneyHiveTracer
+   from openinference.instrumentation.openai import OpenAIInstrumentor
+   
+   # You control openai version
+   tracer = HoneyHiveTracer.init(
+       api_key="key",
+       instrumentors=[OpenAIInstrumentor()]
+   )
+
+**Adding New Providers**
+
+.. code-block:: python
+
+   # Before: Wait for SDK update to support new provider
+   # After: Install community instrumentor or build your own
+   
+   pip install openinference-instrumentation-newprovider
+   
+   tracer = HoneyHiveTracer.init(
+       instrumentors=[
+           OpenAIInstrumentor(),
+           NewProviderInstrumentor()  # Immediate support
+       ]
+   )
+
+Best Practices
+--------------
+
+**Start Minimal**
+
+.. code-block:: python
+
+   # Begin with just what you need
+   tracer = HoneyHiveTracer.init(
+       instrumentors=[OpenAIInstrumentor()]  # Only OpenAI
+   )
+
+**Add Incrementally**
+
+.. code-block:: python
+
+   # Add providers as you adopt them
+   tracer = HoneyHiveTracer.init(
+       instrumentors=[
+           OpenAIInstrumentor(),
+           AnthropicInstrumentor(),    # Added Anthropic
+           GoogleGenAIInstrumentor()   # Added Google AI
+       ]
+   )
+
+**Version Pinning**
+
+.. code-block:: bash
+
+   # Pin versions for reproducible builds
+   openai==1.8.0
+   anthropic==0.12.0
+   openinference-instrumentation-openai==0.1.2
+   honeyhive>=0.1.0
+
+**Testing Strategy**
+
+.. code-block:: python
+
+   # Test without instrumentors for unit tests
+   tracer = HoneyHiveTracer.init(
+       instrumentors=[]  # No automatic tracing
+   )
+   
+   # Test with instrumentors for integration tests
+   tracer = HoneyHiveTracer.init(
+       instrumentors=[OpenAIInstrumentor()]
+   )
+
+Trade-offs and Limitations
+--------------------------
+
+**Trade-offs**
+
+**Pros:**
+- ✅ No dependency conflicts
+- ✅ Minimal required dependencies
+- ✅ Future-proof architecture
+- ✅ Community-driven instrumentors
+- ✅ Custom instrumentor support
+
+**Cons:**
+- ❌ Requires explicit instrumentor installation
+- ❌ More setup steps than all-in-one SDKs
+- ❌ Need to track instrumentor compatibility
+- ❌ Potential for instrumentor version mismatches
+
+**When BYOI Might Not Be Ideal**
+
+- **Prototype projects** where setup speed matters more than flexibility
+- **Single LLM provider** applications that will never change
+- **Teams unfamiliar** with dependency management concepts
+
+**Mitigation Strategies**
+
+.. code-block:: bash
+
+   # Use dependency groups for easy setup
+   pip install honeyhive[openai]     # Installs OpenAI instrumentor
+   pip install honeyhive[anthropic]  # Installs Anthropic instrumentor
+   pip install honeyhive[all]        # Installs common instrumentors
+
+Future Evolution
+----------------
+
+**Upcoming Features**
+
+1. **Instrumentor Registry**: Discover available instrumentors
+2. **Compatibility Matrix**: Track tested version combinations
+3. **Auto-detection**: Suggest instrumentors based on installed packages
+4. **Bundle Packages**: Pre-configured combinations for common use cases
+
+**Community Growth**
+
+The BYOI model enables:
+
+- **Community contributions** to instrumentor development
+- **Faster adoption** of new LLM providers
+- **Specialized instrumentors** for niche use cases
+- **Corporate instrumentors** for proprietary systems
+
+Conclusion
+----------
+
+The BYOI architecture represents a fundamental shift from monolithic observability SDKs to composable, dependency-free systems. While it requires slightly more setup, it provides:
+
+- **Long-term maintainability** through dependency isolation
+- **Flexibility** to adopt new LLM technologies quickly
+- **Community-driven development** of instrumentors
+- **Production-ready reliability** without version conflicts
+
+This design philosophy aligns with modern software engineering practices of loose coupling, explicit dependencies, and composable architectures.
+
+**Next Steps:**
+
+- :doc:`../../tutorials/03-llm-integration` - Try BYOI integration
+- :doc:`../../how-to/integrations/index` - Integration patterns
+- :doc:`../concepts/llm-observability` - LLM observability concepts

@@ -359,20 +359,246 @@ class Config:
 - Complex logic requires inline comments
 - Include usage examples in docstrings
 
-### User Documentation
-- Getting started guide
-- Configuration reference
-- Integration examples
-- Troubleshooting guide
-- API reference
-- Migration guides
+### User Documentation - Divio System
+
+**🎯 Following the [Divio Documentation System](https://docs.divio.com/documentation-system/)**
+
+The HoneyHive SDK documentation is organized into four distinct types, each serving different user needs:
+
+#### 1. TUTORIALS (Learning-oriented)
+**Purpose**: Help newcomers get started and achieve early success
+**User mindset**: "I want to learn by doing"
+
+**Structure**:
+```
+tutorials/
+├── 01-quick-start.rst          # 5-minute setup
+├── 02-basic-tracing.rst        # First traces with @trace decorator
+├── 03-llm-integration.rst      # OpenAI/Anthropic integration
+├── 04-evaluation-basics.rst    # First evaluation
+└── 05-dashboard-tour.rst       # Understanding HoneyHive UI
+```
+
+**Content Requirements**:
+- Step-by-step instructions
+- Clear learning objectives
+- Working code examples
+- Expected outcomes at each step
+- Maximum 15-20 minutes per tutorial
+- Test with actual beginners
+
+#### 2. HOW-TO GUIDES (Problem-oriented)
+**Purpose**: Solve specific real-world problems
+**User mindset**: "I want to solve this specific problem"
+
+**Structure**:
+```
+how-to/
+├── troubleshooting.rst         # Common issues and solutions
+├── deployment/                 # Production deployment guides
+├── integrations/              # LLM provider integrations
+├── advanced-tracing/          # Complex tracing scenarios
+├── evaluation/                # Evaluation workflows
+├── testing/                   # Testing strategies
+└── monitoring/                # Performance and error tracking
+```
+
+**Content Requirements**:
+- Problem-focused titles
+- Minimal background explanation
+- Clear steps to solution
+- Multiple approaches when applicable
+- Prerequisites clearly stated
+- Links to reference docs
+
+#### 3. REFERENCE (Information-oriented)
+**Purpose**: Provide comprehensive technical specifications
+**User mindset**: "I need to look up exact details"
+
+**Structure**:
+```
+reference/
+├── api/                       # Complete API documentation
+├── configuration/             # All configuration options
+├── data-models/              # Data structure specifications
+├── cli/                      # CLI command reference
+└── evaluation/               # Evaluator specifications
+```
+
+**Content Requirements**:
+- Complete API coverage
+- Accurate parameter descriptions
+- Return value specifications
+- Error condition documentation
+- Code examples for each function
+- Cross-references between related items
+
+#### 4. EXPLANATION (Understanding-oriented)
+**Purpose**: Provide context, background, and design decisions
+**User mindset**: "I want to understand how this works and why"
+
+**Structure**:
+```
+explanation/
+├── architecture/              # SDK design and architecture
+├── concepts/                  # Core concepts and terminology
+├── decisions/                 # Design decision rationale
+└── comparisons/              # Comparisons with alternatives
+```
+
+**Content Requirements**:
+- Conceptual explanations
+- Design decision rationale
+- Architecture overviews
+- Historical context when relevant
+- Comparison with alternatives
+- Future direction insights
+
+### Documentation Best Practices
+
+#### Type Safety and Code Examples
+
+**MANDATORY: Proper Type Usage in All Documentation**
+
+All code examples in documentation MUST follow strict type safety guidelines:
+
+```python
+# ✅ CORRECT: Proper enum imports and usage
+from honeyhive import HoneyHiveTracer, trace, atrace
+from honeyhive.models import EventType
+
+@trace(event_type=EventType.model)  # Type-safe enum value
+def llm_function():
+    """Process LLM requests."""
+    pass
+
+@trace(event_type=EventType.tool)   # Individual function/utility
+def utility_function():
+    """Process individual data operations."""
+    pass
+
+@trace(event_type=EventType.chain)  # Multi-step workflow
+def workflow_function():
+    """Orchestrate multiple operations."""
+    pass
+
+# ❌ INCORRECT: String literals (deprecated, breaks type safety)
+@trace(event_type="model")  # Never use string literals
+def bad_function():
+    pass
+```
+
+**EventType Semantic Guidelines**:
+- **EventType.model**: LLM calls, AI model inference, generation
+- **EventType.tool**: Individual functions, utilities, data processing, validation
+- **EventType.chain**: Workflows, multi-step processes, business logic orchestration  
+- **EventType.session**: High-level sessions, complete user interactions
+
+**Validation Requirements**:
+1. ✅ **Import Validation**: Every code example includes correct imports
+2. ✅ **Type Checking**: All examples pass mypy validation
+3. ✅ **Enum Usage**: No string literals for enum values anywhere
+4. ✅ **Import Order**: honeyhive imports first, then models
+5. ✅ **Consistency**: Same patterns across tutorials, how-to, reference
+6. ✅ **Semantic Correctness**: EventType matches actual function purpose
+
+**AI Assistant Requirements**:
+When updating documentation, AI assistants MUST:
+- Validate all imports are correct and complete
+- Replace string literals with proper enum values
+- Test code examples for syntax correctness
+- Follow EventType semantic mapping guidelines
+- Update import statements when adding enum usage
+- Maintain consistency across all files
+
+#### Documentation Error Prevention Protocol
+
+**MANDATORY: Pre-generation validation checklist**
+
+1. ✅ **RST Structure Validation**:
+   - Title underlines MUST match title length exactly
+   - Blank lines MUST separate sections and headers
+   - Code blocks MUST have proper indentation (3 spaces)
+   - Tables MUST use consistent column formatting
+
+2. ✅ **Type Safety Enforcement**:
+   - NO string literals in `event_type` parameters
+   - ALL `@trace` decorators MUST use `EventType` enums
+   - Complete import statements MUST be included
+   - Import validation MUST pass before generation
+
+3. ✅ **Code Example Integrity**:
+   - Python syntax MUST be valid (AST parseable)
+   - All imports MUST resolve correctly
+   - Examples MUST follow project standards
+   - No orphaned code fragments allowed
+
+4. ✅ **Structural Compliance**:
+   - All files MUST be included in toctrees
+   - Cross-references MUST resolve correctly
+   - No broken internal links allowed
+   - Section hierarchy MUST be logical
+
+**Error Prevention Tools** (See `.agent-os/specs/2025-01-30-documentation-quality-prevention/`):
+- Pre-commit validation hooks
+- Automated RST quality checking
+- Type safety enforcement
+- Code example testing
+- Structural integrity verification
+
+#### Content Creation Guidelines
+```python
+# Every tutorial should follow this pattern:
+"""
+1. Clear objective statement
+2. Prerequisites list
+3. Step-by-step instructions
+4. Code examples with explanations
+5. Expected results
+6. Next steps recommendations
+7. Troubleshooting section
+"""
+
+# How-to guides should be problem-focused:
+"""
+Title: "How to trace custom LLM providers"
+Not: "Custom LLM provider documentation"
+
+Structure:
+- Problem statement
+- Solution overview
+- Step-by-step implementation
+- Verification steps
+- Common pitfalls
+"""
+```
+
+#### Cross-linking Strategy
+- Tutorials link to relevant how-to guides
+- How-to guides reference specific API docs
+- Reference docs link to conceptual explanations
+- Explanations provide context for tutorials
+
+#### Content Maintenance
+```bash
+# Regular content audits
+docs/utils/audit-content.py      # Check for broken links
+docs/utils/test-examples.py      # Verify all code examples work
+docs/utils/validate-structure.py # Ensure Divio compliance
+```
+
+#### User Testing Protocol
+1. **Tutorial Testing**: Test with 3+ new users monthly
+2. **How-to Validation**: Verify solutions work in real scenarios
+3. **Reference Accuracy**: Automated testing of API examples
+4. **Explanation Clarity**: Expert review for technical accuracy
 
 ### Maintenance Documentation
-- Architecture decisions
-- Design patterns used
-- Performance considerations
-- Security implications
-- Known limitations
+- Architecture decisions (in `explanation/decisions/`)
+- Design patterns used (in `explanation/architecture/`)
+- Performance considerations (in `explanation/concepts/`)
+- Security implications (in `how-to/deployment/`)
+- Known limitations (in `reference/` sections)
 
 ## Release Process
 

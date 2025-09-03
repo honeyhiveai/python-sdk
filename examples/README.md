@@ -75,8 +75,9 @@ with tracer.start_span("operation"):
 ### **3. Decorator Usage**
 ```python
 from honeyhive import trace, atrace, trace_class
+from honeyhive.models import EventType
 
-@trace(event_type="demo", event_name="my_function")
+@trace(event_type=EventType.tool, event_name="my_function")
 def my_function():
     return "Hello, World!"
 

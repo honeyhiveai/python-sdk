@@ -1,0 +1,53 @@
+[91m/Users/josh/src/github.com/honeyhiveai/python-sdk/docs/explanation/concepts/tracing-fundamentals.rst:358: WARNING: Title underline too short.
+
+Integration with Monitoring Systems
+---------------------------------- [docutils][39;49;00m
+[91m/Users/josh/src/github.com/honeyhiveai/python-sdk/docs/explanation/concepts/tracing-fundamentals.rst:358: WARNING: Title underline too short.
+
+Integration with Monitoring Systems
+---------------------------------- [docutils][39;49;00m
+[91m/Users/josh/src/github.com/honeyhiveai/python-sdk/docs/explanation/concepts/tracing-fundamentals.rst:419: WARNING: Title underline too short.
+
+Best Practices Summary
+--------------------- [docutils][39;49;00m
+[91m/Users/josh/src/github.com/honeyhiveai/python-sdk/docs/explanation/concepts/tracing-fundamentals.rst:419: WARNING: Title underline too short.
+
+Best Practices Summary
+--------------------- [docutils][39;49;00m
+[91m/Users/josh/src/github.com/honeyhiveai/python-sdk/docs/reference/data-models/spans.rst:316: WARNING: Title underline too short.
+
+HoneyHive Span Extensions
+------------------------ [docutils][39;49;00m
+[91m/Users/josh/src/github.com/honeyhiveai/python-sdk/docs/reference/data-models/spans.rst:316: WARNING: Title underline too short.
+
+HoneyHive Span Extensions
+------------------------ [docutils][39;49;00m
+[91m/Users/josh/src/github.com/honeyhiveai/python-sdk/docs/reference/data-models/spans.rst:410: WARNING: Title underline too short.
+
+Span Context Model
+----------------- [docutils][39;49;00m
+[91m/Users/josh/src/github.com/honeyhiveai/python-sdk/docs/reference/data-models/spans.rst:410: WARNING: Title underline too short.
+
+Span Context Model
+----------------- [docutils][39;49;00m
+[91m/Users/josh/src/github.com/honeyhiveai/python-sdk/docs/reference/data-models/spans.rst:457: WARNING: Title underline too short.
+
+Complete Span Example
+-------------------- [docutils][39;49;00m
+[91m/Users/josh/src/github.com/honeyhiveai/python-sdk/docs/reference/data-models/spans.rst:457: WARNING: Title underline too short.
+
+Complete Span Example
+-------------------- [docutils][39;49;00m
+[91m/Users/josh/src/github.com/honeyhiveai/python-sdk/docs/reference/data-models/spans.rst:525: WARNING: Title underline too short.
+
+Trace Hierarchy Example
+---------------------- [docutils][39;49;00m
+[91m/Users/josh/src/github.com/honeyhiveai/python-sdk/docs/reference/data-models/spans.rst:525: WARNING: Title underline too short.
+
+Trace Hierarchy Example
+---------------------- [docutils][39;49;00m
+[91m/Users/josh/src/github.com/honeyhiveai/python-sdk/docs/explanation/architecture/overview.rst:161: WARNING: unknown document: 'multi-instance' [ref.doc][39;49;00m
+[91m/Users/josh/src/github.com/honeyhiveai/python-sdk/docs/explanation/architecture/overview.rst:162: WARNING: unknown document: 'opentelemetry' [ref.doc][39;49;00m
+[91m/Users/josh/src/github.com/honeyhiveai/python-sdk/docs/explanation/concepts/tracing-fundamentals.rst:38: WARNING: Lexing literal_block '# Example trace hierarchy\ncustomer_support_request  # Root span\n├── validate_input       # Child span\n├── classify_query       # Child span\n├── llm_completion      # Child span\n│   ├── prompt_preparation\n│   └── api_call\n└── format_response     # Child span' as "python" resulted in an error at token: '├'. Retrying in relaxed mode. [misc.highlighting_failure][39;49;00m
+[91m/Users/josh/src/github.com/honeyhiveai/python-sdk/docs/reference/evaluation/evaluators.rst:1152: WARNING: unknown document: '../../how-to/evaluation/custom-evaluators' [ref.doc][39;49;00m
+[91m/Users/josh/src/github.com/honeyhiveai/python-sdk/docs/reference/evaluation/evaluators.rst:1153: WARNING: unknown document: '../../explanation/concepts/evaluation-theory' [ref.doc][39;49;00m

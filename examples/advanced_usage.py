@@ -15,11 +15,13 @@ as full functioning executable code:
 This extends beyond the basic patterns to show advanced usage scenarios.
 """
 
+import asyncio
 import os
 import time
-import asyncio
-from typing import Dict, Any, Optional
-from honeyhive import HoneyHiveTracer, trace, trace_class, enrich_span
+from typing import Any, Dict, Optional
+
+from honeyhive import HoneyHiveTracer, enrich_span, trace, trace_class
+from honeyhive.models import EventType
 
 # Set environment variables for configuration
 os.environ["HH_API_KEY"] = "your-api-key-here"
@@ -29,52 +31,56 @@ os.environ["HH_SOURCE"] = "development"
 
 def main():
     """Main function demonstrating advanced usage patterns."""
-    
+
     print("🚀 HoneyHive SDK Advanced Usage Example")
     print("=" * 50)
     print("This example demonstrates advanced patterns beyond the basic usage.")
     print("These patterns are useful for complex applications and workflows.\n")
-    
+
     # ========================================================================
     # 1. MULTIPLE TRACERS (from docs)
     # ========================================================================
     print("1. Multiple Tracers")
     print("-" * 20)
-    
+
     # Create tracers for different environments - from docs
     prod_tracer = HoneyHiveTracer.init(
-        api_key="prod-key",
-        project="production-app",
-        source="prod"
+        api_key="prod-key", project="production-app", source="prod"
     )
-    
+
     dev_tracer = HoneyHiveTracer.init(
-        api_key="dev-key", 
-        project="development-app",
-        source="dev"
+        api_key="dev-key", project="development-app", source="dev"
     )
-    
+
     print(f"✓ Production tracer: {prod_tracer.project}")
     print(f"✓ Development tracer: {dev_tracer.project}")
-    
+
     # ========================================================================
     # 2. ADVANCED TRACING PATTERNS
     # ========================================================================
     print("\n2. Advanced Tracing Patterns")
     print("-" * 30)
-    
+
     # Create traced functions with different tracers
     def create_traced_functions(tracer, env_name):
         """Create traced functions for a specific environment."""
-        
-        @trace(tracer=tracer, event_type="model", event_name=f"{env_name}_ai_processing")
+
+        @trace(
+            tracer=tracer,
+            event_type=EventType.model,
+            event_name=f"{env_name}_ai_processing",
+        )
         def process_ai_request(prompt: str, user_id: str) -> str:
             """Process an AI request with comprehensive tracing."""
             print(f"  📝 Processing AI request in {env_name}...")
             time.sleep(0.1)  # Simulate AI processing
             return f"AI Response from {env_name}: {prompt}"
-        
-        @trace(tracer=tracer, event_type="tool", event_name=f"{env_name}_data_processing")
+
+        @trace(
+            tracer=tracer,
+            event_type=EventType.tool,
+            event_name=f"{env_name}_data_processing",
+        )
         async def process_data_async(data: list) -> Dict[str, Any]:
             """Process data asynchronously with comprehensive tracing."""
             print(f"  📝 Processing data async in {env_name}...")
@@ -85,31 +91,31 @@ def main():
                 "environment": env_name,
                 "timestamp": time.time(),
             }
-        
+
         return process_ai_request, process_data_async
-    
+
     # Create functions for both environments
     prod_ai_func, prod_data_func = create_traced_functions(prod_tracer, "production")
-    dev_ai_func, dev_data_func = create_traced_functions(dev_tracer, "development")
-    
+    dev_ai_func, _ = create_traced_functions(dev_tracer, "development")
+
     # Test production functions
     prod_result = prod_ai_func("Hello from prod", "user123")
     print(f"✓ Production result: {prod_result}")
-    
+
     # Test development functions
     dev_result = dev_ai_func("Hello from dev", "user456")
     print(f"✓ Development result: {dev_result}")
-    
+
     # Test async functions
     prod_async_result = asyncio.run(prod_data_func([1, 2, 3, 4, 5]))
     print(f"✓ Production async result: {prod_async_result}")
-    
+
     # ========================================================================
     # 3. TRACE_CLASS DECORATOR (from docs)
     # ========================================================================
     print("\n3. Class Tracing with @trace_class")
     print("-" * 35)
-    
+
     @trace_class(tracer=prod_tracer)
     class WorkflowOrchestrator:
         """Example class with all methods automatically traced."""
@@ -135,20 +141,20 @@ def main():
             print(f"  📝 Finalizing workflow with results: {results}")
             await asyncio.sleep(0.1)
             return True
-    
+
     # Test the traced class
     orchestrator = WorkflowOrchestrator("advanced_workflow_123")
     orchestrator.start_workflow({"steps": 3, "timeout": 30})
-    step_result = orchestrator.execute_step("data_processing", {"batch_size": 1000})
+    orchestrator.execute_step("data_processing", {"batch_size": 1000})
     asyncio.run(orchestrator.finalize_workflow({"status": "success"}))
     print("✓ @trace_class workflow completed")
-    
+
     # ========================================================================
     # 4. PARENT-CHILD SPAN RELATIONSHIPS
     # ========================================================================
     print("\n4. Parent-Child Span Relationships")
     print("-" * 36)
-    
+
     # Create complex parent-child span hierarchy
     with prod_tracer.start_span("complex_workflow") as parent_span:
         parent_span.set_attribute("workflow.type", "multi_step_processing")
@@ -177,86 +183,86 @@ def main():
             time.sleep(0.05)
 
     print("✓ Parent-child span hierarchy completed")
-    
+
     # ========================================================================
     # 5. SPAN ENRICHMENT PATTERNS
     # ========================================================================
     print("\n5. Advanced Span Enrichment")
     print("-" * 28)
-    
+
     # Demonstrate span enrichment with enrich_span
     with prod_tracer.start_span("enriched_operation") as span:
         print("✓ Base span created: enriched_operation")
 
         # Enrich the span with additional context
         with enrich_span(
-            event_type="enrichment_demo",
+            event_type=EventType.tool,
             event_name="context_enrichment",
             inputs={"source": "advanced_demo", "operation": "enrichment"},
             metadata={"enrichment_type": "context_manager", "level": "advanced"},
             metrics={"enrichment_count": 10, "performance_score": 0.95},
-            feedback={"quality": "excellent", "completeness": "full"}
+            feedback={"quality": "excellent", "completeness": "full"},
         ):
             print("  ✓ Span enriched with comprehensive attributes")
             time.sleep(0.1)
             print("  ✓ Enrichment context manager completed")
 
     print("✓ Advanced span enrichment completed")
-    
+
     # ========================================================================
     # 6. ERROR HANDLING IN SPANS
     # ========================================================================
     print("\n6. Error Handling in Spans")
     print("-" * 27)
-    
+
     # Demonstrate proper error handling in spans
-    @trace(tracer=dev_tracer, event_type="demo", event_name="error_handling")
+    @trace(tracer=dev_tracer, event_type=EventType.tool, event_name="error_handling")
     def function_with_error(should_fail: bool = False):
         """Function that demonstrates error handling in spans."""
         if should_fail:
             raise ValueError("Intentional error for demonstration")
         return "Success!"
-    
+
     # Test successful execution
     try:
         result = function_with_error(should_fail=False)
         print(f"✓ Success case: {result}")
     except Exception as e:
         print(f"❌ Unexpected error: {e}")
-    
+
     # Test error handling
     try:
         result = function_with_error(should_fail=True)
         print(f"✓ This shouldn't print: {result}")
     except ValueError as e:
         print(f"✓ Error properly handled and traced: {e}")
-    
+
     # ========================================================================
     # 7. PERFORMANCE MONITORING
     # ========================================================================
     print("\n7. Performance Monitoring")
     print("-" * 26)
-    
+
     # Create multiple spans to demonstrate performance patterns
     start_time = time.time()
-    
+
     for i in range(3):
         with dev_tracer.start_span(f"performance_test_{i}") as span:
             span.set_attribute("iteration", i)
             span.set_attribute("batch_id", "performance_demo")
             span.set_attribute("start_time", time.time())
-            
+
             # Simulate varying workloads
             work_time = 0.02 * (i + 1)  # Increasing work time
             time.sleep(work_time)
-            
+
             span.set_attribute("work_duration", work_time)
             span.set_attribute("end_time", time.time())
-    
+
     total_time = time.time() - start_time
     print(f"✓ Created 3 performance monitoring spans in {total_time:.3f}s")
     print("✓ Each span includes timing and performance metrics")
-    
+
     print("\n🎉 Advanced usage example completed successfully!")
     print("\nAdvanced patterns demonstrated:")
     print("✅ Multiple tracer instances for different environments")
@@ -266,7 +272,9 @@ def main():
     print("✅ Proper error handling in traced functions")
     print("✅ Performance monitoring patterns")
     print("✅ Complex multi-step workflows")
-    print("\nThese patterns enable sophisticated observability in production applications!")
+    print(
+        "\nThese patterns enable sophisticated observability in production applications!"
+    )
 
 
 if __name__ == "__main__":

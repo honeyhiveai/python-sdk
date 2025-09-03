@@ -6,6 +6,20 @@
   - Type hints required for ALL functions, methods, and class attributes
   - Modern Python features encouraged (match statements, union types, walrus operator)
 
+### Type Safety Requirements
+- **Enum Usage**: MANDATORY use of proper enum imports in all code
+  ```python
+  # ✅ CORRECT
+  from honeyhive.models import EventType
+  @trace(event_type=EventType.model)
+  
+  # ❌ INCORRECT
+  @trace(event_type="model")  # Never use string literals
+  ```
+- **Import Validation**: All documentation examples must include complete imports
+- **Type Checking**: All examples must pass mypy validation
+- **Documentation Standards**: See `.agent-os/standards/best-practices.md` for full requirements
+
 ## Build & Package Management
 - **pyproject.toml**: PEP 621 compliant project configuration
 - **hatchling**: Modern build backend
@@ -42,10 +56,75 @@
 - **typeguard**: >=4.0.0 - Runtime type checking
 - **yamllint**: >=1.37.0 - YAML syntax validation
 
-## Documentation Tools
-- **sphinx**: >=7.0.0 - Documentation generation
-- **sphinx-rtd-theme**: >=1.3.0 - Documentation theme
+## Documentation Tools & Standards
+
+### Core Documentation Stack
+- **sphinx**: >=7.0.0 - Documentation generation engine
+- **sphinx-rtd-theme**: >=1.3.0 - ReadTheDocs compatible theme
 - **myst-parser**: >=2.0.0 - Markdown support in Sphinx
+- **sphinxcontrib-mermaid**: >=0.9.2 - Diagram generation support
+
+### Documentation Architecture - Divio System
+Following the [Divio Documentation System](https://docs.divio.com/documentation-system/) for comprehensive user experience:
+
+**🎯 Four Documentation Types**:
+1. **TUTORIALS** (`tutorials/`) - Learning-oriented, step-by-step guides
+2. **HOW-TO GUIDES** (`how-to/`) - Problem-oriented, specific solutions
+3. **REFERENCE** (`reference/`) - Information-oriented, technical specifications
+4. **EXPLANATION** (`explanation/`) - Understanding-oriented, conceptual background
+
+### Documentation Quality Standards
+```yaml
+# Content Requirements by Type
+tutorials:
+  max_duration: "15-20 minutes"
+  testing: "Verify with 3+ new users monthly"
+  structure: "Objective → Prerequisites → Steps → Results → Next Steps"
+
+how-to:
+  title_format: "How to [solve specific problem]"
+  structure: "Problem → Solution → Implementation → Verification"
+  prerequisites: "Always clearly stated"
+
+reference:
+  coverage: "100% API documentation"
+  examples: "Working code for every function"
+  accuracy: "Automated testing of examples"
+
+explanation:
+  purpose: "Design rationale and conceptual understanding"
+  cross_links: "Connect to practical tutorials and how-tos"
+  depth: "Sufficient context for informed decisions"
+```
+
+### Content Validation Tools
+```python
+# Automated documentation testing
+docs/utils/
+├── audit-content.py          # Broken link detection
+├── test-examples.py          # Code example verification
+├── validate-structure.py     # Divio compliance checking
+└── user-journey-test.py      # End-to-end tutorial testing
+```
+
+### Documentation Deployment
+- **Netlify**: Primary hosting platform for documentation
+- **Preview Builds**: Automatic PR previews for review
+- **Multi-Version Support**: Sphinx versioning for releases
+- **Search Integration**: Full-text search capability
+- **Analytics**: User journey tracking and content optimization
+
+### Visual Documentation Standards
+- **Mermaid Diagrams**: Architecture and flow diagrams
+- **Screenshots**: UI walkthrough captures (sanitized credentials)
+- **Code Highlighting**: Syntax highlighting for all languages
+- **Responsive Design**: Mobile-friendly documentation layout
+
+### Cross-Platform Compatibility
+- **Desktop**: Full navigation and content accessibility
+- **Mobile**: Optimized reading experience
+- **Print**: PDF generation capability for offline reference
+- **Screen Readers**: WCAG 2.1 accessibility compliance
 
 ## API Design Standards
 - **OpenAPI**: 3.0 specification

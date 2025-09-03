@@ -5,6 +5,8 @@ import time
 from typing import TYPE_CHECKING, Any, Optional, Union
 from urllib.parse import urlparse
 
+from .otel_tracer import HoneyHiveTracer
+
 if TYPE_CHECKING:
     import httpx
     import requests
@@ -14,20 +16,18 @@ else:
 
 # Try to import HTTP libraries
 try:
-    import httpx
+    import httpx  # pylint: disable=ungrouped-imports
 
     HTTPX_AVAILABLE = True
 except ImportError:
     HTTPX_AVAILABLE = False
 
 try:
-    import requests
+    import requests  # pylint: disable=ungrouped-imports
 
     REQUESTS_AVAILABLE = True
 except ImportError:
     REQUESTS_AVAILABLE = False
-
-from .otel_tracer import HoneyHiveTracer
 
 
 class HTTPInstrumentation:

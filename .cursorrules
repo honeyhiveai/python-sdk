@@ -19,6 +19,19 @@
 - **Unit test files must follow the naming pattern `test_<module>_<file>.py`** - for example: `test_api_client.py`, `test_tracer_decorators.py`
 - **Required development tools**: Install `yamllint` and GitHub CLI (`gh`) for workflow validation and CI/CD investigation
 
+## Type Safety & Documentation Code Standards
+- **MANDATORY**: Use proper enum imports in ALL documentation examples
+- **MANDATORY**: Include complete import statements in every code example
+- **Pattern**: Always import `from honeyhive.models import EventType`
+- **Usage**: Use `EventType.model`, `EventType.tool`, `EventType.chain`, `EventType.session` 
+- **NEVER**: Use string literals like `event_type="model"` - always use enum values
+- **Validation**: All examples must pass mypy type checking
+- **Semantic Mapping**: 
+  - `EventType.model` → LLM calls, AI model operations
+  - `EventType.tool` → Individual functions, utilities, data processing
+  - `EventType.chain` → Multi-step workflows, business logic orchestration
+  - `EventType.session` → High-level user interactions
+
 ## Virtual Environment & Dependencies
 - ALWAYS use virtual environments - Never install packages globally
 - **Use a virtual environment named "python-sdk"** for this project
@@ -62,12 +75,63 @@
 - Support HTTP_*, EXPERIMENT_* patterns for compatibility
 - Set HH_TEST_MODE appropriately for different test types
 
-## Documentation & Examples
+## Documentation & Examples - Divio System
+
+### 🎯 Divio Documentation Architecture
+**Follow the [Divio Documentation System](https://docs.divio.com/documentation-system/) for all documentation:**
+
+#### 1. TUTORIALS (Learning-oriented) - `docs/tutorials/`
+- **Purpose**: Help newcomers get started and achieve early success
+- **User mindset**: "I want to learn by doing"
+- **Structure**: Objective → Prerequisites → Steps → Results → Next Steps
+- **Requirements**:
+  - Maximum 15-20 minutes per tutorial
+  - Step-by-step instructions with working code examples
+  - Test with actual beginners (3+ users monthly)
+  - Clear expected outcomes at each step
+
+#### 2. HOW-TO GUIDES (Problem-oriented) - `docs/how-to/`
+- **Purpose**: Solve specific real-world problems
+- **User mindset**: "I want to solve this specific problem"
+- **Title format**: "How to [solve specific problem]"
+- **Structure**: Problem → Solution → Implementation → Verification
+- **Requirements**:
+  - Minimal background explanation
+  - Clear steps to solution
+  - Prerequisites clearly stated
+  - Links to reference docs
+
+#### 3. REFERENCE (Information-oriented) - `docs/reference/`
+- **Purpose**: Provide comprehensive technical specifications
+- **User mindset**: "I need to look up exact details"
+- **Requirements**:
+  - 100% API coverage with working examples
+  - Accurate parameter descriptions and return values
+  - Error condition documentation
+  - Cross-references between related items
+  - Automated testing of all code examples
+
+#### 4. EXPLANATION (Understanding-oriented) - `docs/explanation/`
+- **Purpose**: Provide context, background, and design decisions
+- **User mindset**: "I want to understand how this works and why"
+- **Requirements**:
+  - Design decision rationale
+  - Architecture overviews
+  - Historical context when relevant
+  - Comparison with alternatives
+
+### Documentation Quality Standards
+- **Sphinx build warnings**: Must be fixed before considering docs complete
+- **Cross-linking**: Tutorials → How-to, How-to → Reference, Reference → Explanation
+- **Content testing**: Use `docs/utils/` scripts for validation
+- **Accessibility**: WCAG 2.1 AA compliance for all content
+- **Visual standards**: Use Mermaid diagrams with base theme, sanitize credentials in screenshots
+
+### Update Requirements
 - Update examples/ when making changes that affect usage
-- Maintain the existing documentation structure in docs/
-- Follow the established example patterns in examples/
-- **Any Sphinx build warnings must be fixed before considering the docs build complete**
 - **Update `.agent-os/product/` docs** for significant changes
+- Follow established example patterns in examples/
+- Test all documentation examples before committing
 
 ## Specific Commands to Use
 - Testing: `tox -e [environment]` instead of direct pytest calls
@@ -104,6 +168,14 @@
 2. **Verify Imports**: `grep -r "from honeyhive import" examples/`
 3. **Validate Classes**: Ensure class names match current exports
 
+### Documentation Quality Prevention (NEW)
+**MANDATORY**: Follow `.agent-os/specs/2025-01-30-documentation-quality-prevention/`
+
+1. ✅ **RST Structure**: Title underlines, blank lines, proper indentation
+2. ✅ **Type Safety**: EventType enums only, complete imports
+3. ✅ **Code Examples**: Valid syntax, working imports, tested execution
+4. ✅ **Structure**: Toctree inclusion, working cross-references
+
 ### Workflow/CI Generation Rules
 - **NEVER** generate CI/CD workflows without current API validation
 - **ALWAYS** check `__init__.py` exports before writing import statements
@@ -111,6 +183,7 @@
 - **TEST** generated code against current codebase
 
 ### Case Study Prevention
-The 2025-09-02 HoneyHiveClient failure demonstrates why this validation is MANDATORY.
-Generated workflow used `HoneyHiveClient` (deprecated Aug 28) instead of `HoneyHive` (current).
-This validation protocol prevents such codebase drift failures.
+1. **API Drift**: The 2025-09-02 HoneyHiveClient failure demonstrates why validation is MANDATORY
+2. **Documentation Errors**: The 2025-01-30 documentation cleanup required fixing 23+ warnings
+   - RST formatting issues, broken code blocks, type safety violations
+   - Solution: Automated validation prevents these errors entirely

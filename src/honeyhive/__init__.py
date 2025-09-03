@@ -14,7 +14,14 @@ from .evaluation import (
     evaluator,
     get_evaluator,
 )
-from .tracer import HoneyHiveTracer, atrace, enrich_span, trace, trace_class
+from .tracer import (
+    HoneyHiveTracer,
+    atrace,
+    enrich_span,
+    set_default_tracer,
+    trace,
+    trace_class,
+)
 from .utils.config import config
 from .utils.dotdict import DotDict
 from .utils.logger import HoneyHiveLogger, get_logger
@@ -28,6 +35,7 @@ __all__ = [
     "atrace",
     "trace_class",
     "enrich_span",
+    "set_default_tracer",
     "evaluate",
     "evaluate_batch",  # New threading function
     "evaluate_decorator",  # Main @evaluate decorator

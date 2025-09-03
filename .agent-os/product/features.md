@@ -311,6 +311,117 @@ export HH_MAX_RETRIES=3
 # Handles transient failures automatically
 ```
 
+### 📚 Documentation System - Divio Architecture
+
+#### Four-Type Documentation Structure  
+Following the [Divio Documentation System](https://docs.divio.com/documentation-system/) for optimal user experience:
+
+#### Type Safety & Code Standards
+**MANDATORY: Proper type usage in all documentation examples**
+
+```python
+# ✅ CORRECT: Type-safe enum usage
+from honeyhive import HoneyHiveTracer, trace
+from honeyhive.models import EventType
+
+@trace(event_type=EventType.model)  # LLM operations
+@trace(event_type=EventType.tool)   # Individual functions  
+@trace(event_type=EventType.chain)  # Multi-step workflows
+@trace(event_type=EventType.session) # User sessions
+
+# ❌ INCORRECT: String literals (deprecated)
+@trace(event_type="model")  # Breaks type safety
+```
+
+**Quality Requirements**:
+- All code examples include proper imports
+- Examples pass mypy type checking  
+- Semantic EventType usage consistency
+- AI assistant validation enforcement
+
+```yaml
+# TUTORIALS (Learning-oriented)
+tutorials/:
+  purpose: "Help newcomers get started and achieve early success"
+  user_mindset: "I want to learn by doing"
+  structure: "Objective → Prerequisites → Steps → Results → Next Steps"
+  max_duration: "15-20 minutes per tutorial"
+  testing: "Verified with 3+ new users monthly"
+
+# HOW-TO GUIDES (Problem-oriented)  
+how-to/:
+  purpose: "Solve specific real-world problems"
+  user_mindset: "I want to solve this specific problem"
+  title_format: "How to [solve specific problem]"
+  structure: "Problem → Solution → Implementation → Verification"
+  content: "Minimal background, maximum solution focus"
+
+# REFERENCE (Information-oriented)
+reference/:
+  purpose: "Provide comprehensive technical specifications"
+  user_mindset: "I need to look up exact details"
+  coverage: "100% API documentation with working examples"
+  accuracy: "Automated testing of all code examples"
+  cross_references: "Complete linking between related items"
+
+# EXPLANATION (Understanding-oriented)
+explanation/:
+  purpose: "Provide context, background, and design decisions"
+  user_mindset: "I want to understand how this works and why"
+  content: "Design rationale, conceptual understanding, comparisons"
+  depth: "Sufficient context for informed architectural decisions"
+```
+
+#### Content Quality Assurance
+```python
+# Automated Documentation Testing
+docs/utils/
+├── audit-content.py          # Broken link detection
+├── test-examples.py          # Code example verification  
+├── validate-structure.py     # Divio compliance checking
+└── user-journey-test.py      # End-to-end tutorial testing
+```
+
+#### Documentation Deployment Features
+```yaml
+# Multi-Platform Publishing
+netlify:
+  primary_hosting: "docs.honeyhive-sdk.dev"
+  preview_builds: "Automatic PR previews"
+  branch_deploys: "Feature branch documentation"
+
+versioning:
+  sphinx_versions: "Release-based versioning"
+  backward_compatibility: "Previous version access"
+  migration_guides: "Breaking change documentation"
+
+accessibility:
+  wcag_compliance: "WCAG 2.1 AA standard"
+  screen_reader: "Full navigation support" 
+  mobile_optimized: "Responsive design"
+  offline_capable: "PDF generation"
+```
+
+#### Visual Documentation Standards
+```yaml
+# Diagram Standards
+mermaid:
+  architecture_diagrams: "System architecture visualization"
+  flow_charts: "Process and decision flows"
+  sequence_diagrams: "API interaction patterns"
+  theme: "Base theme with consistent color palette"
+
+screenshots:
+  credential_sanitization: "All API keys and sensitive data redacted"
+  consistent_styling: "Standardized UI capture settings"
+  mobile_responsive: "Multi-device optimization"
+
+code_highlighting:
+  language_support: "Python, YAML, JSON, bash, docker"
+  syntax_themes: "Light/dark mode compatibility"
+  copy_to_clipboard: "One-click code copying"
+```
+
 ### 🔧 CI/CD & DevOps Features
 
 #### Multi-Tier Testing Strategy
@@ -320,18 +431,21 @@ export HH_MAX_RETRIES=3
 - Core functionality validation
 - Docker Lambda simulation
 - Cross-Python version testing (3.11, 3.12, 3.13)
+- Documentation build and link validation
 
 # Tier 2: Daily Scheduled Testing (2 AM UTC) 
 - Comprehensive validation (30-60 minutes)
 - Real AWS Lambda environment testing
 - Performance benchmarking with statistical significance
 - Security and dependency vulnerability scans
+- Documentation accessibility testing
 
 # Tier 3: Release Candidate Testing (Manual)
 - Complete validation (45-90 minutes)
 - Package building and distribution testing
 - Cross-platform testing (Ubuntu, Windows, macOS)
 - Quality gates for production deployment
+- Documentation versioning and deployment
 ```
 
 #### GitHub Actions Workflow Optimization
@@ -408,6 +522,11 @@ rules:
 | **Performance benchmarks** | ✅ **Stable** | **0.1.0** |
 | **GitHub Actions optimization** | ✅ **Stable** | **0.1.0** |
 | **YAML validation** | ✅ **Stable** | **0.1.0** |
+| **Divio documentation system** | ✅ **Stable** | **0.1.0** |
+| **Automated content testing** | ✅ **Stable** | **0.1.0** |
+| **Multi-platform docs hosting** | ✅ **Stable** | **0.1.0** |
+| **WCAG accessibility compliance** | ✅ **Stable** | **0.1.0** |
+| **Documentation versioning** | ✅ **Stable** | **0.1.0** |
 | Streaming | 🚧 Planned | 0.3.0 |
 | Alerting | 🚧 Planned | 0.4.0 |
 | Enterprise | 🚧 Planned | 1.0.0 |
