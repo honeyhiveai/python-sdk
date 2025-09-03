@@ -1,5 +1,5 @@
-OpenAI Integration Guide
-========================
+Integrate with OpenAI
+=====================
 
 .. note::
    **Problem-solving guide for OpenAI integration**

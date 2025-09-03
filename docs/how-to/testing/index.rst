@@ -1,5 +1,5 @@
-Testing Guide
-=============
+Test Your Implementation
+========================
 
 .. note::
    **Problem-solving guide for testing HoneyHive SDK applications**

@@ -1,5 +1,5 @@
-LLM Provider Integrations
-=========================
+Integrate with LLM Providers
+============================
 
 Learn how to integrate HoneyHive with different LLM providers using the BYOI (Bring Your Own Instrumentor) architecture.
 
@@ -65,16 +65,23 @@ Quick Start
 Available Providers
 -------------------
 
-=================== ================================ ===========================================
-Provider            Instrumentor Package             Documentation
-=================== ================================ ===========================================
-OpenAI              openinference-instrumentation-openai           :doc:`openai`
-Anthropic           openinference-instrumentation-anthropic        :doc:`anthropic`
-Google AI           openinference-instrumentation-google-generativeai  :doc:`google-ai`
-AWS Bedrock         openinference-instrumentation-bedrock          :doc:`aws-bedrock`
-Azure OpenAI        openinference-instrumentation-openai           :doc:`azure-openai`
-Multiple Providers  Multiple instrumentors                         :doc:`multi-provider`
-=================== ================================ ===========================================
+**OpenAI** - :doc:`openai`
+   Use ``openinference-instrumentation-openai`` for OpenAI GPT models
+
+**Anthropic** - :doc:`anthropic`
+   Use ``openinference-instrumentation-anthropic`` for Claude models
+
+**Google AI** - :doc:`google-ai`
+   Use ``openinference-instrumentation-google-generativeai`` for Gemini models
+
+**AWS Bedrock** - :doc:`aws-bedrock`
+   Use ``openinference-instrumentation-bedrock`` for Bedrock model access
+
+**Azure OpenAI** - :doc:`azure-openai`
+   Use ``openinference-instrumentation-openai`` for Azure-hosted OpenAI
+
+**Multiple Providers** - :doc:`multi-provider`
+   Combine multiple instrumentors in one application
 
 .. _OpenInference Docs: https://github.com/Arize-ai/openinference
 

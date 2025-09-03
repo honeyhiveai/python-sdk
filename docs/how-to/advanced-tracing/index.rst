@@ -1,5 +1,5 @@
-Advanced Tracing Techniques
-===========================
+Build Custom Tracing
+=====================
 
 Sophisticated observability patterns for complex LLM applications and production environments.
 

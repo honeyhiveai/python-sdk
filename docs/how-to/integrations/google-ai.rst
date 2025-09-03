@@ -1,5 +1,5 @@
-Google AI (Gemini) Integration
-===============================
+Integrate with Google AI
+========================
 
 Learn how to integrate HoneyHive with Google AI's Gemini models using the BYOI (Bring Your Own Instrumentor) approach.
 

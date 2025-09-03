@@ -1,5 +1,5 @@
-AWS Bedrock Integration
-=======================
+Integrate with AWS Bedrock
+==========================
 
 Learn how to integrate HoneyHive with AWS Bedrock's diverse model ecosystem using the BYOI (Bring Your Own Instrumentor) approach.
 

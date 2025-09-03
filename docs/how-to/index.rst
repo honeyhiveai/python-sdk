@@ -24,72 +24,83 @@ How-to guides are organized by problem domain. Each guide provides step-by-step 
 - You want to implement a specific pattern or technique
 - You're troubleshooting an issue
 
-Deployment & Infrastructure
----------------------------
+Getting Started
+---------------
 
-Get HoneyHive running in your environment:
+Essential setup and configuration:
 
 .. toctree::
    :maxdepth: 1
 
-   deployment/production
    troubleshooting
 
-Integration Guides
-------------------
+Integrate with LLM Providers
+-----------------------------
 
-Connect HoneyHive with your existing tools:
-
-.. toctree::
-   :maxdepth: 1
-
-   integrations/index
-
-
-Advanced Tracing Techniques
----------------------------
-
-Sophisticated observability patterns:
+Connect OpenAI, Anthropic, Google AI, and more:
 
 .. toctree::
    :maxdepth: 1
 
-   advanced-tracing/index
+   integrations/openai
+   integrations/anthropic
+   integrations/google-ai
+   integrations/aws-bedrock
+   integrations/azure-openai
+   integrations/multi-provider
 
-Testing & Quality Assurance
----------------------------
+Custom Tracing
+--------------
 
-Ensure reliable HoneyHive implementations:
+Build sophisticated observability:
 
 .. toctree::
    :maxdepth: 1
 
-   testing/index
+   advanced-tracing/custom-spans
+   advanced-tracing/tracer-auto-discovery
 
-Evaluation & Analysis
+Test Your Implementation
+------------------------
+
+Validate and debug your HoneyHive setup:
+
+.. toctree::
+   :maxdepth: 1
+
+   testing/unit-testing
+   testing/integration-testing
+   testing/performance-testing
+   testing/mocking-strategies
+   testing/ci-cd-integration
+   testing/lambda-testing
+   testing/troubleshooting-tests
+
+Evaluate LLM Outputs
 ---------------------
 
-Implement robust LLM evaluation:
+Set up quality monitoring and evaluation:
 
 .. toctree::
    :maxdepth: 1
 
    evaluation/index
 
-Monitoring & Operations
------------------------
+Monitor in Production
+---------------------
 
-Keep your LLM applications running smoothly:
+Keep applications running reliably:
 
 .. toctree::
    :maxdepth: 1
 
    monitoring/index
+   deployment/production
 
-Common Patterns
----------------
+Build Common Patterns
+----------------------
 
-Learn proven architectural patterns and best practices:
+Implement proven architectural patterns:
 
 .. toctree::
    :maxdepth: 1
@@ -98,20 +109,19 @@ Learn proven architectural patterns and best practices:
 
 **Quick Solutions:**
 
-- :doc:`troubleshooting` - Fix common issues
-- :doc:`testing/index` - Test your HoneyHive integration
-- :doc:`integrations/openai` - Add OpenAI tracing
-- :doc:`advanced-tracing/custom-spans` - Create custom spans
-- :doc:`evaluation/index` - Evaluation and analysis
-- :doc:`common-patterns` - Proven application patterns
+- :doc:`troubleshooting` - Fix common issues and setup problems
+- :doc:`integrations/openai` - Add OpenAI tracing in 5 minutes  
+- :doc:`testing/unit-testing` - Write your first HoneyHive tests
+- :doc:`advanced-tracing/custom-spans` - Create custom trace spans
+- :doc:`integrations/multi-provider` - Use multiple LLM providers
 
-**Complex Workflows:**
+**Production Workflows:**
 
-- :doc:`deployment/production` - Production deployment strategy
-- :doc:`advanced-tracing/index` - Advanced tracing techniques
-- :doc:`evaluation/index` - Comprehensive evaluation strategies
-- :doc:`monitoring/index` - Production monitoring setup
-- :doc:`common-patterns` - Agent and resilience patterns
+- :doc:`deployment/production` - Deploy HoneyHive to production
+- :doc:`monitoring/index` - Set up monitoring and alerts
+- :doc:`testing/ci-cd-integration` - Integrate testing into CI/CD
+- :doc:`evaluation/index` - Build comprehensive evaluation pipelines
+- :doc:`common-patterns` - Implement resilient agent patterns
 
 Getting Help
 ------------

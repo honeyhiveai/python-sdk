@@ -1,5 +1,5 @@
-Anthropic Integration Guide
-===========================
+Integrate with Anthropic
+========================
 
 .. note::
    **Problem-solving guide for Anthropic (Claude) integration**
