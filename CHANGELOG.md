@@ -1,6 +1,10 @@
 ## [Unreleased] - 2025-09-03
 
 ### Added
+- **Compatibility testing infrastructure**
+  * Backward compatibility test suite for API changes
+  * Migration analysis tests for main branch patterns
+  * Automated compatibility validation in CI/CD
 - **Enhanced coverage standards and enforcement**
   * Project-wide coverage requirement increased to 80% (from 70%)
   * Individual file coverage goal established at 70% minimum
@@ -31,6 +35,10 @@
 - Agent OS rule for mandatory correct test count reporting format
 
 ### Changed
+- **Repository structure cleanup and organization**
+  * Removed obsolete documentation files (AWS_SSO, BEDROCK_ACCESS, etc.)
+  * Cleaned up build artifacts and stale coverage files
+  * Reorganized test structure with dedicated compatibility directories
 - HoneyHiveTracer.init() and constructor now accept optional project parameter
 - Project resolution moved to backend based on API key scope
 - Updated all documentation examples to show simplified API first

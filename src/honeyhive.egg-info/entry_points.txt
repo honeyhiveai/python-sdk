@@ -1,2 +1,0 @@
-[console_scripts]
-honeyhive = honeyhive.cli.main:main

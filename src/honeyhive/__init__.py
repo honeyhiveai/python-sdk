@@ -17,6 +17,7 @@ from .evaluation import (
 from .tracer import (
     HoneyHiveTracer,
     atrace,
+    enrich_session,
     enrich_span,
     set_default_tracer,
     trace,
@@ -34,6 +35,7 @@ __all__ = [
     "trace",
     "atrace",
     "trace_class",
+    "enrich_session",
     "enrich_span",
     "set_default_tracer",
     "evaluate",
