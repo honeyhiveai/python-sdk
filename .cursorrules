@@ -229,6 +229,23 @@ cd .. && python -m doctest examples/*.py  # Examples work (MUST pass)
 - ❌ Hardcoded dates instead of system date
 - ❌ Inconsistent dates across files
 
+### Commit Message Standards - MANDATORY
+
+**🚨 CRITICAL**: AI Assistants consistently make commit message formatting errors. Follow these rules:
+
+1. **Use Conventional Commits**: `<type>: <description>` (max 50 chars)
+2. **NO unnecessary quotes**: Don't wrap entire commit titles in quotes
+3. **Match quotes properly**: If you start a quote, always close it
+4. **Types**: feat, fix, docs, style, refactor, perf, test, build, ci, chore
+5. **Body lines**: Maximum 72 characters each
+
+**Common Commit Errors to Prevent:**
+- ❌ Missing closing quotes: `git commit -m "feat: Add feature`
+- ❌ Unnecessary quotes: `git commit -m "\"feat: Add feature\""`
+- ❌ Too long: `feat: Add comprehensive documentation quality control system validation` (71 chars)
+- ❌ Wrong format: Missing type prefix or colon
+- ❌ Periods at end: `feat: Add feature.`
+
 ### Documentation Quality Prevention
 
 **MANDATORY**: Follow `.agent-os/specs/2025-09-03-documentation-quality-prevention/`
@@ -259,5 +276,6 @@ cd .. && python -m doctest examples/*.py  # Examples work (MUST pass)
 - `.agent-os/specs/2025-09-03-ai-assistant-quality-framework/` - Complete framework
 - `.agent-os/specs/2025-09-03-zero-failing-tests-policy/` - Testing requirements
 - `.agent-os/specs/2025-09-03-date-usage-standards/` - Date usage requirements
-- `.agent-os/standards/best-practices.md` - Quality standards including date protocols
+- `.agent-os/specs/2025-09-03-commit-message-standards/` - Commit message requirements
+- `.agent-os/standards/best-practices.md` - Quality standards including date and commit protocols
 - `.agent-os/standards/tech-stack.md` - Technical requirements

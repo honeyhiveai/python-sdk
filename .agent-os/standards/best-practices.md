@@ -586,6 +586,42 @@ check_dates() {
     done
 ```
 
+## Commit Message Standards - MANDATORY
+
+**🚨 CRITICAL ISSUE**: AI Assistants consistently make commit message formatting errors.
+
+### Mandatory Commit Message Protocol
+
+**ALWAYS follow Conventional Commits format:**
+- **Title**: `<type>: <description>` (max 50 chars)
+- **NO unnecessary quotes**: Don't wrap titles in quotes
+- **Match quotes properly**: If you start a quote, close it
+- **Types**: feat, fix, docs, style, refactor, perf, test, build, ci, chore
+
+### Common Errors to Prevent
+
+```bash
+# ❌ WRONG - Missing closing quote
+git commit -m "feat: Add feature
+
+# ❌ WRONG - Unnecessary quotes
+git commit -m "\"feat: Add feature\""
+
+# ❌ WRONG - Too long (71 chars)
+git commit -m "feat: Add comprehensive documentation quality control system validation"
+
+# ✅ CORRECT
+git commit -m "feat: Add documentation quality control"
+```
+
+### Validation Requirements
+
+**Before EVERY commit:**
+1. Check title length ≤ 50 characters
+2. Verify conventional commit format
+3. Ensure proper quote matching
+4. No periods at end of title
+
 ## Security Practices
 
 ### API Key Management
