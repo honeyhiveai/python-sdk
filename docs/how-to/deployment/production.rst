@@ -44,7 +44,6 @@ API Key Management
    # Secure initialization
    tracer = HoneyHiveTracer.init(
        api_key=os.getenv("HH_API_KEY"),
-       project=os.getenv("HH_PROJECT"),
        source=os.getenv("HH_SOURCE")
    )
 
@@ -151,7 +150,7 @@ Don't trace everything - focus on business-critical operations:
    import random
    
    tracer = HoneyHiveTracer.init(
-       api_key=os.getenv("HH_API_KEY"),
+       api_key=os.getenv("HH_API_KEY")
        
    )
    
@@ -179,7 +178,7 @@ Use async patterns for high-throughput applications:
    from honeyhive import HoneyHiveTracer, trace
    
    tracer = HoneyHiveTracer.init(
-       api_key=os.getenv("HH_API_KEY"),
+       api_key=os.getenv("HH_API_KEY")
        
    )
    
@@ -231,9 +230,7 @@ Graceful Degradation
        """Create tracer with error handling."""
        try:
            tracer = HoneyHiveTracer.init(
-               api_key=os.getenv("HH_API_KEY"),
-               project=os.getenv("HH_PROJECT", "fallback-project"),
-               source=os.getenv("HH_SOURCE", "production"),
+               api_key=os.getenv("HH_API_KEY"),               source=os.getenv("HH_SOURCE", "production"),
                timeout=10.0  # Don't wait too long
            )
            logger.info("HoneyHive tracer initialized successfully")
@@ -274,9 +271,7 @@ Retry Logic
        for attempt in range(max_retries):
            try:
                tracer = HoneyHiveTracer.init(
-                   api_key=os.getenv("HH_API_KEY"),
-                   project=os.getenv("HH_PROJECT"),
-                   timeout=5.0 + attempt * 2  # Increasing timeout
+                   api_key=os.getenv("HH_API_KEY"),                   timeout=5.0 + attempt * 2  # Increasing timeout
                )
                return tracer
            except Exception as e:
@@ -325,9 +320,7 @@ Circuit Breaker Pattern
                try:
                    if not self.tracer:
                        self.tracer = HoneyHiveTracer.init(
-                           api_key=os.getenv("HH_API_KEY"),
-                           project=os.getenv("HH_PROJECT")
-                       )
+                           api_key=os.getenv("HH_API_KEY")                       )
                    
                    # Reset on success
                    if self.state == CircuitState.HALF_OPEN:
@@ -497,7 +490,7 @@ Logging Integration
    
    # Set up integrated logging
    tracer = HoneyHiveTracer.init(
-       api_key=os.getenv("HH_API_KEY"),
+       api_key=os.getenv("HH_API_KEY")
        
    )
    
@@ -530,8 +523,7 @@ Blue-Green Deployment
        }
        
        return HoneyHiveTracer.init(
-           api_key=os.getenv("HH_API_KEY"),
-           project=project_mapping.get(env, "production-app"),
+           api_key=os.getenv("HH_API_KEY"), "production-app"),
            source=f"production-{env}"
        )
 

@@ -23,9 +23,7 @@ Quick Start
    def test_tracer_initialization():
        """Test basic tracer initialization."""
        tracer = HoneyHiveTracer.init(
-           api_key="test-key",
-           project="test-project",
-           test_mode=True  # Critical for unit tests
+           api_key="test-key",           test_mode=True  # Critical for unit tests
        )
        
        assert tracer.api_key == "test-key"
@@ -51,9 +49,7 @@ Testing Tracer Initialization
        def test_basic_initialization(self):
            """Test basic tracer initialization."""
            tracer = HoneyHiveTracer.init(
-               api_key="test-key",
-               project="test-project",
-               test_mode=True
+               api_key="test-key",               test_mode=True
            )
            
            assert tracer is not None
@@ -84,16 +80,12 @@ Testing Tracer Initialization
            """Test that missing API key raises appropriate error."""
            with pytest.raises(ValueError, match="API key is required"):
                HoneyHiveTracer.init(
-                   api_key=None,
-                   project="test-project"
-               )
+                   api_key=None               )
        
        def test_custom_configuration(self):
            """Test initialization with custom configuration."""
            tracer = HoneyHiveTracer.init(
-               api_key="test-key",
-               project="custom-project",
-               source="development"
+               api_key="test-key",               source="development"
                session_name="custom-session",
                test_mode=True,
                disable_http_tracing=True
@@ -122,9 +114,7 @@ Testing Span Operations
        def tracer(self):
            """Create test tracer fixture."""
            return HoneyHiveTracer.init(
-               api_key="test-key",
-               project="test-project",
-               test_mode=True
+               api_key="test-key",               test_mode=True
            )
        
        def test_span_creation(self, tracer):
@@ -210,9 +200,7 @@ Testing Decorators
        def test_decorator_captures_arguments(self):
            """Test that decorator captures function arguments."""
            tracer = HoneyHiveTracer.init(
-               api_key="test-key",
-               project="test-project",
-               test_mode=True
+               api_key="test-key",               test_mode=True
            )
            
            @trace(tracer=tracer, include_inputs=True)
@@ -227,9 +215,7 @@ Testing Decorators
        def test_decorator_captures_return_value(self):
            """Test that decorator captures return values.""" 
            tracer = HoneyHiveTracer.init(
-               api_key="test-key",
-               project="test-project",
-               test_mode=True
+               api_key="test-key",               test_mode=True
            )
            
            @trace(tracer=tracer, include_outputs=True)
@@ -244,9 +230,7 @@ Testing Decorators
        def test_decorator_handles_exceptions(self):
            """Test that decorator handles exceptions correctly."""
            tracer = HoneyHiveTracer.init(
-               api_key="test-key", 
-               project="test-project",
-               test_mode=True
+               api_key="test-key",               test_mode=True
            )
            
            @trace(tracer=tracer)
@@ -273,16 +257,12 @@ Testing Multi-Instance Behavior
        def test_independent_tracers(self):
            """Test that multiple tracers operate independently."""
            tracer1 = HoneyHiveTracer.init(
-               api_key="key1",
-               project="project1",
-               source="development"
+               api_key="key1",               source="development"
                test_mode=True
            )
            
            tracer2 = HoneyHiveTracer.init(
-               api_key="key2",
-               project="project2", 
-               source="development"
+               api_key="key2",               source="development"
                test_mode=True
            )
            
@@ -369,9 +349,7 @@ Testing Error Handling
        @pytest.fixture
        def tracer(self):
            return HoneyHiveTracer.init(
-               api_key="test-key",
-               project="test-project", 
-               test_mode=True
+               api_key="test-key",               test_mode=True
            )
        
        def test_span_exception_recording(self, tracer):
@@ -396,9 +374,7 @@ Testing Error Handling
                
                # Tracer should still work in degraded mode
                tracer = HoneyHiveTracer.init(
-                   api_key="test-key",
-                   project="test-project",
-                   test_mode=False  # Use real API (which will fail)
+                   api_key="test-key",                   test_mode=False  # Use real API (which will fail)
                )
                
                # Operations should not raise exceptions
@@ -410,15 +386,11 @@ Testing Error Handling
            """Test handling of invalid configuration."""
            with pytest.raises(ValueError):
                HoneyHiveTracer.init(
-                   api_key="",  # Empty API key should raise error
-                   project="test-project"
-               )
+                   api_key="",  # Empty API key should raise error               )
            
            with pytest.raises(ValueError):
                HoneyHiveTracer.init(
-                   api_key="invalid-format",  # Invalid format
-                   project=""  # Empty project should raise error
-               )
+                   api_key="invalid-format",  # Invalid format               )
 
 Testing Configuration Loading
 -----------------------------
@@ -500,9 +472,7 @@ Testing Session Management
        @pytest.fixture
        def tracer(self):
            return HoneyHiveTracer.init(
-               api_key="test-key",
-               project="test-project",
-               test_mode=True
+               api_key="test-key",               test_mode=True
            )
        
        def test_session_creation(self, tracer):
@@ -526,9 +496,7 @@ Testing Session Management
            """Test custom session name setting."""
            custom_name = "custom-test-session"
            tracer = HoneyHiveTracer.init(
-               api_key="test-key",
-               project="test-project",
-               session_name=custom_name,
+               api_key="test-key",               session_name=custom_name,
                test_mode=True
            )
            
@@ -553,9 +521,7 @@ Testing Performance Impact
        def test_tracing_overhead(self):
            """Test that tracing adds minimal overhead."""
            tracer = HoneyHiveTracer.init(
-               api_key="test-key",
-               project="performance-test",
-               test_mode=True
+               api_key="test-key",               test_mode=True
            )
            
            # Measure baseline performance
@@ -603,9 +569,7 @@ Testing Performance Impact
            tracers = []
            for i in range(10):
                tracer = HoneyHiveTracer.init(
-                   api_key=f"test-key-{i}",
-                   project=f"memory-test-{i}",
-                   test_mode=True
+                   api_key=f"test-key-{i}",                   test_mode=True
                )
                tracers.append(tracer)
                
@@ -751,7 +715,7 @@ Advanced Unit Testing Patterns
            
            threads = []
            for i in range(5):
-               thread = threading.Thread(target=worker, args=(i,))
+               thread = threading.Thread(target=worker, args=(i))
                threads.append(thread)
                thread.start()
            
@@ -792,9 +756,7 @@ Advanced Unit Testing Patterns
            
            for i in range(10):
                tracer = HoneyHiveTracer.init(
-                   api_key=f"cleanup-test-{i}",
-                   project=f"cleanup-project-{i}",
-                   test_mode=True
+                   api_key=f"cleanup-test-{i}",                   test_mode=True
                )
                tracers.append(tracer)
            
@@ -845,9 +807,7 @@ Test Fixtures and Utilities
    def test_tracer():
        """Standard test tracer fixture."""
        tracer = HoneyHiveTracer.init(
-           api_key="test-api-key",
-           project="fixture-test-project",
-           source="development"
+           api_key="test-api-key",           source="development"
            test_mode=True,
            disable_http_tracing=True
        )
@@ -860,9 +820,7 @@ Test Fixtures and Utilities
        tracers = []
        for i in range(3):
            tracer = HoneyHiveTracer.init(
-               api_key=f"test-key-{i}",
-               project=f"test-project-{i}",
-               source=f"test-source-{i}",
+               api_key=f"test-key-{i}",               source=f"test-source-{i}",
                test_mode=True
            )
            tracers.append(tracer)

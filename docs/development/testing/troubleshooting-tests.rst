@@ -167,18 +167,14 @@ Common Test Failures
        def test_isolation_example_1(self):
            """Test that might affect global state."""
            tracer = HoneyHiveTracer.init(
-               api_key="test-1", 
-               project="test-1",
-               test_mode=True
+               api_key="test-1",               test_mode=True
            )
            # Test logic here
        
        def test_isolation_example_2(self):
            """Test that might be affected by previous test."""
            tracer = HoneyHiveTracer.init(
-               api_key="test-2",
-               project="test-2", 
-               test_mode=True
+               api_key="test-2",               test_mode=True
            )
            # This test might fail if previous test contaminated state
 
@@ -238,9 +234,7 @@ Common Test Failures
        from honeyhive import HoneyHiveTracer
        
        tracer = HoneyHiveTracer.init(
-           api_key="isolated-test",
-           project="isolated-project",
-           test_mode=True
+           api_key="isolated-test",           test_mode=True
        )
        
        # Test logic here
@@ -363,9 +357,7 @@ Common Test Failures
            
            start = time.time()
            tracer = HoneyHiveTracer.init(
-               api_key="perf-test",
-               project="perf-project",
-               test_mode=True
+               api_key="perf-test",               test_mode=True
            )
            init_time = time.time() - start
            print(f"Init time: {init_time:.3f}s")
@@ -560,9 +552,7 @@ Debugging Test Data and Fixtures
        print("🔧 Creating debug tracer")
        
        tracer = HoneyHiveTracer.init(
-           api_key="debug-test-key",
-           project="debug-test-project", 
-           test_mode=True
+           api_key="debug-test-key",           test_mode=True
        )
        
        print(f"✅ Tracer created: {tracer.session_id}")

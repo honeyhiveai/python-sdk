@@ -764,9 +764,7 @@ Configuration Factory
        def create_for_testing() -> HoneyHiveTracer:
            """Create tracer configured for testing."""
            return HoneyHiveTracer.init(
-               api_key=os.getenv('HH_API_KEY', 'test_key'),
-               project='test_project',
-               source='test',
+               api_key=os.getenv('HH_API_KEY', 'test_key'),               source='test',
                test_mode=True
            )
        
@@ -774,9 +772,7 @@ Configuration Factory
        def create_for_production() -> HoneyHiveTracer:
            """Create production-optimized tracer."""
            return HoneyHiveTracer.init(
-               api_key=os.getenv('HH_API_KEY'),
-               project=os.getenv('HH_PROJECT', 'production'),
-               source='production'
+               api_key=os.getenv('HH_API_KEY'),               source='production'
            )
 
 Troubleshooting Configuration

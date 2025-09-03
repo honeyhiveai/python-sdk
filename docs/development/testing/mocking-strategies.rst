@@ -229,9 +229,7 @@ Mock Tracer Creation
        """Example of using MockHoneyHiveTracer."""
        # Create mock tracer
        mock_tracer = MockHoneyHiveTracer(
-           api_key="test-key",
-           project="test-project"
-       )
+           api_key="test-key"       )
        
        # Use mock tracer in your code
        with mock_tracer.trace("test-operation") as span:
@@ -359,9 +357,7 @@ Fixture-Based Mocking
    def mock_tracer():
        """Fixture providing a mock HoneyHive tracer."""
        return MockHoneyHiveTracer(
-           api_key="fixture-test-key",
-           project="fixture-test-project",
-           test_mode=True
+           api_key="fixture-test-key",           test_mode=True
        )
    
    @pytest.fixture
@@ -539,9 +535,7 @@ Mocking External Dependencies
        # Test your code that uses HoneyHive API
        from honeyhive import HoneyHiveTracer
        tracer = HoneyHiveTracer.init(
-           api_key="test-key",
-           project="test-project",
-           test_mode=False  # Use "real" API (which is mocked)
+           api_key="test-key",           test_mode=False  # Use "real" API (which is mocked)
        )
        
        with tracer.trace("api-test") as span:
@@ -556,9 +550,7 @@ Mocking External Dependencies
        
        # Should not raise exception even with network failure
        tracer = HoneyHiveTracer.init(
-           api_key="test-key",
-           project="test-project",
-           test_mode=False
+           api_key="test-key",           test_mode=False
        )
        
        # Should handle gracefully

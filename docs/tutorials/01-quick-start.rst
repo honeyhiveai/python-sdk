@@ -61,8 +61,8 @@ Create a new file called ``hello_honeyhive.py``:
        source="tutorial"
    )
    
-   # For backward compatibility, you can still specify project explicitly:
-   # tracer = HoneyHiveTracer.init(api_key="...", project="your-project", source="tutorial")
+   # You can also specify additional configuration:
+   # tracer = HoneyHiveTracer.init(api_key="...", source="tutorial")
    
    # Use the @trace decorator to automatically trace this function
    @trace(tracer=tracer)

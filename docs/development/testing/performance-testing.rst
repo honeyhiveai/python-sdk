@@ -24,9 +24,7 @@ Quick Start
    def quick_performance_test():
        """Quick performance impact assessment."""
        tracer = HoneyHiveTracer.init(
-           api_key="test-key",
-           project="performance-test",
-           test_mode=True
+           api_key="test-key",           test_mode=True
        )
        
        # Baseline measurement
@@ -312,9 +310,7 @@ Performance Testing Framework
    def test_comprehensive_performance():
        """Comprehensive performance test using the framework."""
        tracer = HoneyHiveTracer.init(
-           api_key="perf-test-key",
-           project="performance-project",
-           test_mode=True
+           api_key="perf-test-key",           test_mode=True
        )
        
        tester = PerformanceTester(tracer)
@@ -394,9 +390,7 @@ Memory Performance Testing
            tracers = []
            for i in range(num_tracers):
                tracer = HoneyHiveTracer.init(
-                   api_key=f"memory-test-key-{i}",
-                   project=f"memory-project-{i}",
-                   test_mode=True
+                   api_key=f"memory-test-key-{i}",                   test_mode=True
                )
                tracers.append(tracer)
                
@@ -430,9 +424,7 @@ Memory Performance Testing
        def test_span_memory_growth(self, num_spans: int = 1000) -> Dict[str, float]:
            """Test memory growth with many spans."""
            tracer = HoneyHiveTracer.init(
-               api_key="span-memory-test",
-               project="span-memory-project",
-               test_mode=True
+               api_key="span-memory-test",               test_mode=True
            )
            
            self.start_monitoring()
@@ -471,9 +463,7 @@ Memory Performance Testing
        def test_long_running_memory_stability(self, duration_seconds: int = 60) -> Dict[str, Any]:
            """Test memory stability over time."""
            tracer = HoneyHiveTracer.init(
-               api_key="stability-test",
-               project="stability-project",
-               test_mode=True
+               api_key="stability-test",               test_mode=True
            )
            
            self.start_monitoring()
@@ -641,9 +631,7 @@ Async Performance Testing
    async def test_async_performance():
        """Test async performance with HoneyHive tracing."""
        tracer = HoneyHiveTracer.init(
-           api_key="async-test-key",
-           project="async-performance",
-           test_mode=True
+           api_key="async-test-key",           test_mode=True
        )
        
        tester = AsyncPerformanceTester(tracer)
@@ -808,9 +796,7 @@ Load Testing
    def test_high_load_performance():
        """Test performance under high load."""
        tracer = HoneyHiveTracer.init(
-           api_key="load-test-key",
-           project="load-test-project",
-           test_mode=True
+           api_key="load-test-key",           test_mode=True
        )
        
        tester = LoadTester(tracer)

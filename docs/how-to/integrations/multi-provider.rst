@@ -408,9 +408,7 @@ Environment-Based Provider Selection
            instrumentors.append(OpenAIInstrumentor())
        
        tracer = HoneyHiveTracer.init(
-           api_key=os.getenv("HH_API_KEY"),
-           project=os.getenv("HH_PROJECT"),
-           source=environment,
+           api_key=os.getenv("HH_API_KEY"),           source=environment,
            instrumentors=instrumentors
        )
        

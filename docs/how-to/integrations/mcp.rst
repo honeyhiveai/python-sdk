@@ -75,13 +75,13 @@ Quick Start
            params={
                "command": "fastmcp",
                "args": ["run", "./server.py"],
-           },
+           }
        ) as server:
            
            agent = Agent(
                name="Financial Assistant",
                instructions="Use financial tools to answer questions.",
-               mcp_servers=[server],
+               mcp_servers=[server]
            )
            
            # This entire workflow is traced end-to-end
@@ -341,9 +341,7 @@ Production Deployment
    .. code-block:: python
 
       tracer = HoneyHiveTracer.init(
-          api_key=os.getenv("HH_API_KEY"),
-          project=os.getenv("HH_PROJECT"),
-          source=os.getenv("HH_SOURCE", "production"),
+          api_key=os.getenv("HH_API_KEY"),          source=os.getenv("HH_SOURCE", "production"),
           instrumentors=[MCPInstrumentor()],
           disable_http_tracing=True  # Optimize for production
       )

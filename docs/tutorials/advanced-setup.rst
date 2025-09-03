@@ -119,9 +119,7 @@ Multi-Environment Configuration
            instrumentors.append(OpenAIInstrumentor())
        
        tracer = HoneyHiveTracer.init(
-           api_key=config.api_key,
-           project=config.project,
-           source=config.source,
+           api_key=config.api_key,           source=config.source,
            test_mode=config.test_mode,
            instrumentors=instrumentors
        )
@@ -433,9 +431,7 @@ Microservices Tracing Architecture
        def _initialize_tracer(self) -> HoneyHiveTracer:
            """Initialize service-specific tracer."""
            return HoneyHiveTracer.init(
-               api_key=os.getenv("HH_API_KEY"),
-               project=f"microservices-{self.service_name}",
-               source=os.getenv("ENVIRONMENT", "production"),
+               api_key=os.getenv("HH_API_KEY"),               source=os.getenv("ENVIRONMENT", "production"),
                session_name=f"{self.service_name}-{self.version}"
            )
        
@@ -1017,9 +1013,7 @@ Enterprise Security Configuration
            
            # Initialize with security settings
            tracer = HoneyHiveTracer.init(
-               api_key=config["api_key"],
-               project=config["project"],
-               source=environment,
+               api_key=config["api_key"],               source=environment,
                base_url=config.get("base_url", "https://api.honeyhive.ai"),
                timeout=config.get("timeout", 30),
                # Security-specific settings

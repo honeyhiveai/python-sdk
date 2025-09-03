@@ -70,9 +70,7 @@ Quick Solutions
    
    def test_basic_integration():
        tracer = HoneyHiveTracer.init(
-           api_key="test-key",
-           project="test-project",
-           test_mode=True  # Important: enables test mode
+           api_key="test-key",           test_mode=True  # Important: enables test mode
        )
        
        with tracer.trace("test-operation") as span:
@@ -199,9 +197,7 @@ Test Environment Setup
 
    # Test configuration
    test_tracer = HoneyHiveTracer.init(
-       api_key="test-api-key",
-       project="test-project",
-       source="development"
+       api_key="test-api-key",       source="development"
        test_mode=True,  # Enable test mode
        disable_http_tracing=True  # Optimize for testing
    )

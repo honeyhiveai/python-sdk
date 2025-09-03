@@ -65,7 +65,7 @@ Basic Usage
    
    # Initialize tracer
    tracer = HoneyHiveTracer.init(
-       api_key="your-api-key",
+       api_key="your-api-key"
        
    )
    
@@ -326,7 +326,7 @@ Alias for ``@trace`` specifically for async functions (both work identically).
    from honeyhive import HoneyHiveTracer, atrace
    
    tracer = HoneyHiveTracer.init(
-       api_key="your-api-key",
+       api_key="your-api-key"
        
    )
    
@@ -384,7 +384,7 @@ Basic Evaluation
    from honeyhive.evaluation import FactualAccuracyEvaluator
    
    tracer = HoneyHiveTracer.init(
-       api_key="your-api-key",
+       api_key="your-api-key"
        
    )
    
@@ -1288,7 +1288,7 @@ Best Practices
    
    # Ensure proper cleanup when using decorators globally
    tracer = HoneyHiveTracer.init(
-       api_key="your-key",
+       api_key="your-key"
        
    )
    
@@ -1326,7 +1326,7 @@ Common Pitfalls and Solutions
        pass
    
    # Apply decorator after tracer is initialized
-   tracer = HoneyHiveTracer.init(api_key="key", )
+   tracer = HoneyHiveTracer.init(api_key="key" )
    solution2_function = trace(tracer=tracer)(solution2_function)
 
 **Problem: Circular Import with Global Tracer**
@@ -1386,9 +1386,7 @@ Common Pitfalls and Solutions
    tracer_manager = TracerManager()
    
    def get_service_tracer(service_name: str):
-       return tracer_manager.create_tracer(
-           project=f"service-{service_name}",
-           source="production"
+       return tracer_manager.create_tracer(           source="production"
        )
    
    # Clean shutdown

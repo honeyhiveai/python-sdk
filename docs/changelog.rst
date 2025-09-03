@@ -26,7 +26,7 @@ This release represents a comprehensive modernization of the HoneyHive Python SD
 - **Modernized Architecture**: ``HoneyHiveTracer`` now supports multiple independent instances
   
   - ``HoneyHiveTracer.init()`` method maintained for backwards compatibility
-  - Direct constructor usage also available: ``HoneyHiveTracer(api_key="key", project="project")``
+  - Direct constructor usage also available: ``HoneyHiveTracer(api_key="key")``
   - Each initialization creates a new independent tracer instance
 
 **✨ Major Additions**

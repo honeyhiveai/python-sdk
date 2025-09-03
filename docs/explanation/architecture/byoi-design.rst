@@ -70,9 +70,7 @@ The core SDK provides:
    
    # Just the tracing infrastructure
    tracer = HoneyHiveTracer.init(
-       api_key="your-key",
-       project="your-project"
-   )
+       api_key="your-key"   )
 
 **Dependencies**: Only OpenTelemetry and HTTP libraries
 

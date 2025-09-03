@@ -117,7 +117,6 @@ Best Practices
    
    tracer = HoneyHiveTracer.init(
        api_key=os.getenv("HH_API_KEY"),
-       project=os.getenv("HH_PROJECT"),
        instrumentors=[OpenAIInstrumentor()]
    )
 

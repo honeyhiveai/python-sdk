@@ -27,9 +27,7 @@ Quick Start
        """Test complete tracer + API client workflow."""
        # Initialize tracer
        tracer = HoneyHiveTracer.init(
-           api_key=os.getenv("HH_TEST_API_KEY", "test-key"),
-           project="integration-test",
-           test_mode=True
+           api_key=os.getenv("HH_TEST_API_KEY", "test-key"),           test_mode=True
        )
        
        # Initialize API client
@@ -43,9 +41,7 @@ Quick Start
            span.set_attribute("test.type", "integration")
            
            # Test session creation via client
-           session = client.sessions.create(
-               project="integration-test",
-               session_name="test-session"
+           session = client.sessions.create(               session_name="test-session"
            )
            
            span.set_attribute("session.id", session.session_id)
@@ -73,9 +69,7 @@ Testing Component Interactions
        def integration_setup(self):
            """Setup tracer and client for integration testing."""
            tracer = HoneyHiveTracer.init(
-               api_key="integration-test-key",
-               project="integration-test-project",
-               test_mode=True
+               api_key="integration-test-key",               test_mode=True
            )
            
            client = HoneyHive(
@@ -147,16 +141,12 @@ Testing Multi-Instance Patterns
        def test_independent_sessions(self):
            """Test that multiple tracers create independent sessions."""
            tracer1 = HoneyHiveTracer.init(
-               api_key="test-key-1",
-               project="project-1",
-               source="development"
+               api_key="test-key-1",               source="development"
                test_mode=True
            )
            
            tracer2 = HoneyHiveTracer.init(
-               api_key="test-key-2", 
-               project="project-2",
-               source="development"
+               api_key="test-key-2",               source="development"
                test_mode=True
            )
            
@@ -173,9 +163,7 @@ Testing Multi-Instance Patterns
            # Create multiple tracers
            for i in range(3):
                tracer = HoneyHiveTracer.init(
-                   api_key=f"concurrent-key-{i}",
-                   project=f"concurrent-project-{i}",
-                   test_mode=True
+                   api_key=f"concurrent-key-{i}",                   test_mode=True
                )
                tracers.append(tracer)
            
@@ -219,16 +207,12 @@ Testing Multi-Instance Patterns
            
            # Create tracers with shared instrumentor
            tracer1 = HoneyHiveTracer.init(
-               api_key="shared-key-1",
-               project="shared-project-1", 
-               instrumentors=[instrumentor],
+               api_key="shared-key-1",               instrumentors=[instrumentor],
                test_mode=True
            )
            
            tracer2 = HoneyHiveTracer.init(
-               api_key="shared-key-2",
-               project="shared-project-2",
-               instrumentors=[instrumentor],
+               api_key="shared-key-2",               instrumentors=[instrumentor],
                test_mode=True
            )
            
@@ -259,9 +243,7 @@ Testing LLM Provider Integration
        def instrumented_tracer(self):
            """Create tracer with LLM instrumentors."""
            return HoneyHiveTracer.init(
-               api_key="llm-test-key",
-               project="llm-integration-test",
-               instrumentors=[OpenAIInstrumentor()],
+               api_key="llm-test-key",               instrumentors=[OpenAIInstrumentor()],
                test_mode=True
            )
        
@@ -348,9 +330,7 @@ Testing Real API Integration
                pytest.skip("Real API credentials not available")
            
            self.tracer = HoneyHiveTracer.init(
-               api_key=self.api_key,
-               project=self.project,
-               source="development"
+               api_key=self.api_key,               source="development"
                test_mode=False  # Use real API
            )
            
@@ -440,9 +420,7 @@ Testing Environment Integration
            
            try:
                tracer = HoneyHiveTracer.init(
-                   api_key="dev-test-key",
-                   project="dev-project"
-               )
+                   api_key="dev-test-key"               )
                
                with tracer.trace("dev-test") as span:
                    span.set_attribute("env", "development")
@@ -460,9 +438,7 @@ Testing Environment Integration
            
            try:
                tracer = HoneyHiveTracer.init(
-                   api_key=os.getenv("HH_STAGING_API_KEY", "staging-key"),
-                   project="staging-project"
-               )
+                   api_key=os.getenv("HH_STAGING_API_KEY", "staging-key")               )
                
                with tracer.trace("staging-test") as span:
                    span.set_attribute("env", "staging")
@@ -484,9 +460,7 @@ Testing Environment Integration
                    pytest.skip("Production credentials not available")
                
                tracer = HoneyHiveTracer.init(
-                   api_key=os.getenv("HH_PROD_API_KEY"),
-                   project="prod-project",
-                   test_mode=False  # Never test mode in production
+                   api_key=os.getenv("HH_PROD_API_KEY"),                   test_mode=False  # Never test mode in production
                )
                
                # Production tracer should be configured conservatively
@@ -520,9 +494,7 @@ Testing Error Scenarios Integration
                
                # Tracer should still work in degraded mode
                tracer = HoneyHiveTracer.init(
-                   api_key="test-key",
-                   project="degraded-test",
-                   test_mode=False  # Try to use real API
+                   api_key="test-key",                   test_mode=False  # Try to use real API
                )
                
                # Tracing operations should not fail
@@ -542,9 +514,7 @@ Testing Error Scenarios Integration
                mock_post.side_effect = requests.Timeout("Request timeout")
                
                tracer = HoneyHiveTracer.init(
-                   api_key="timeout-test-key",
-                   project="timeout-test",
-                   test_mode=False
+                   api_key="timeout-test-key",                   test_mode=False
                )
                
                # Operations should handle timeouts gracefully
@@ -562,9 +532,7 @@ Testing Error Scenarios Integration
                mock_post.return_value = mock_response
                
                tracer = HoneyHiveTracer.init(
-                   api_key="invalid-key",
-                   project="auth-test",
-                   test_mode=False
+                   api_key="invalid-key",                   test_mode=False
                )
                
                # Should handle auth failures gracefully
@@ -580,9 +548,7 @@ Testing Error Scenarios Integration
                
                # But tracer should still work locally
                tracer = HoneyHiveTracer.init(
-                   api_key="partial-failure-key",
-                   project="partial-failure-test",
-                   test_mode=False
+                   api_key="partial-failure-key",                   test_mode=False
                )
                
                # Local tracing should still work
@@ -646,9 +612,7 @@ Testing Configuration Integration
            
            try:
                tracer = HoneyHiveTracer.init(
-                   api_key="explicit-key",  # Should override env
-                   project="explicit-project"  # Should override env
-               )
+                   api_key="explicit-key",  # Should override env               )
                
                assert tracer.api_key == "explicit-key"
                assert tracer.project == "explicit-project"
@@ -661,9 +625,7 @@ Testing Configuration Integration
            # Test invalid configuration combinations
            with pytest.raises(ValueError):
                HoneyHiveTracer.init(
-                   api_key="",  # Invalid: empty API key
-                   project="valid-project"
-               )
+                   api_key="",  # Invalid: empty API key               )
            
            with pytest.raises(ValueError):
                HoneyHive(
@@ -691,9 +653,7 @@ Testing Performance Integration
        def test_tracer_client_performance(self):
            """Test performance of tracer + client operations."""
            tracer = HoneyHiveTracer.init(
-               api_key="perf-test-key",
-               project="perf-test-project",
-               test_mode=True
+               api_key="perf-test-key",               test_mode=True
            )
            
            client = HoneyHive(
@@ -734,9 +694,7 @@ Testing Performance Integration
            def worker(worker_id):
                """Worker function for concurrent testing."""
                tracer = HoneyHiveTracer.init(
-                   api_key=f"concurrent-perf-key-{worker_id}",
-                   project=f"concurrent-perf-project-{worker_id}",
-                   test_mode=True
+                   api_key=f"concurrent-perf-key-{worker_id}",                   test_mode=True
                )
                
                start = time.perf_counter()
@@ -751,7 +709,7 @@ Testing Performance Integration
            # Start concurrent workers
            threads = []
            for i in range(10):
-               thread = threading.Thread(target=worker, args=(i,))
+               thread = threading.Thread(target=worker, args=(i))
                threads.append(thread)
                thread.start()
            

@@ -38,9 +38,7 @@ Quick Start
    
    # Initialize outside handler for container reuse
    tracer = HoneyHiveTracer.init(
-       api_key=os.getenv("HH_API_KEY", "test-key"),
-       project="lambda-test",
-       source="development"
+       api_key=os.getenv("HH_API_KEY", "test-key"),       source="development"
        test_mode=True,
        disable_http_tracing=True  # Optimize for Lambda
    )
@@ -219,9 +217,7 @@ Local Lambda Testing
    if SDK_AVAILABLE:
        try:
            tracer = HoneyHiveTracer.init(
-               api_key=os.getenv("HH_API_KEY", "test-key"),
-               project=os.getenv("HH_PROJECT", "lambda-test"),
-               source="development"
+               api_key=os.getenv("HH_API_KEY", "test-key"),               source="development"
                session_name="lambda-basic-test",
                test_mode=True,  # Enable test mode for Lambda
                disable_http_tracing=True,  # Avoid Lambda networking issues
@@ -247,7 +243,7 @@ Local Lambda Testing
            metadata={"lambda_test": True, "data_size": len(str(data))},
            outputs={"processed": True},
            error=None,
-           tracer=tracer,
+           tracer=tracer
        ):
            result = {
                "processed_data": data,
@@ -358,12 +354,10 @@ Local Lambda Testing
        init_start = time.time()
        try:
            tracer = HoneyHiveTracer.init(
-               api_key=os.getenv("HH_API_KEY", "test-key"),
-               project="lambda-cold-start-test",
-               source="development"
+               api_key=os.getenv("HH_API_KEY", "test-key"),               source="development"
                session_name="cold-start-test",
                test_mode=True,
-               disable_http_tracing=True,
+               disable_http_tracing=True
            )
            TRACER_INIT_TIME = time.time() - init_start
            print(f"✅ Tracer initialization took: {TRACER_INIT_TIME * 1000:.2f}ms")
@@ -407,7 +401,7 @@ Local Lambda Testing
                    tracer=tracer,
                    metadata={"test_type": "cold_start", "iteration": event.get("iteration", 1)},
                    outputs={"cold_start": current_cold_start},
-                   error=None,
+                   error=None
                ):
                    # Simulate processing
                    time.sleep(0.05)
@@ -520,7 +514,7 @@ Performance Testing & Benchmarking
                    "HH_TEST_MODE": "true",
                },
                detach=True,
-               remove=True,
+               remove=True
            )
    
            # Wait for container to be ready
@@ -981,9 +975,7 @@ Production Lambda Testing
        
        # Initialize with production settings
        tracer = HoneyHiveTracer.init(
-           api_key=os.environ.get("HH_API_KEY"),
-           project="lambda-integration-test",
-           source="development"
+           api_key=os.environ.get("HH_API_KEY"),           source="development"
            instrumentors=[OpenAIInstrumentor()]
        )
        
@@ -1052,8 +1044,7 @@ Lambda Optimization Best Practices
 
    # Optimized Lambda configuration
    tracer = HoneyHiveTracer.init(
-       api_key=os.environ.get("HH_API_KEY"),
-       project=os.environ.get("HH_PROJECT", "lambda-app"),
+       api_key=os.environ.get("HH_API_KEY"), "lambda-app"),
        source="development"
        session_name=os.environ.get("AWS_LAMBDA_FUNCTION_NAME", "lambda-function"),
        # Optimize for Lambda constraints
