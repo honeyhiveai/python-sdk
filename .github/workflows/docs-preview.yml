@@ -1,7 +1,8 @@
+---
 name: PR Documentation Preview
 
 # Build documentation previews for pull requests
-# Uploads as artifacts and optionally deploys to Netlify
+# Uploads as artifacts for manual review
 
 on:
   pull_request:
@@ -153,21 +154,3 @@ jobs:
               repo: context.repo.repo,
               body: body
             });
-
-      # Optional: Deploy to Netlify if secrets are configured
-      - name: Deploy to Netlify (if configured)
-        if: ${{ secrets.NETLIFY_AUTH_TOKEN != '' }}
-        uses: nwtgck/actions-netlify@v2.1
-        with:
-          publish-dir: './docs/_build/html'
-          production-deploy: false
-          github-token: ${{ secrets.GITHUB_TOKEN }}
-          deploy-message: "PR #${{ github.event.pull_request.number }} preview"
-          enable-pull-request-comment: true
-          enable-commit-comment: false
-          overwrites-pull-request-comment: false
-          alias: pr-${{ github.event.pull_request.number }}
-        env:
-          NETLIFY_AUTH_TOKEN: ${{ secrets.NETLIFY_AUTH_TOKEN }}
-          NETLIFY_SITE_ID: ${{ secrets.NETLIFY_SITE_ID }}
-        timeout-minutes: 5

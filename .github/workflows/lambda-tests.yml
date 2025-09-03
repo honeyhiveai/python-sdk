@@ -24,9 +24,9 @@ name: AWS Lambda Compatibility Tests
       HH_TEST_API_KEY:
         required: false
   push:
-    branches: [main, develop]  # Only run on protected branches
+  # Run on all branches - immediate feedback on Lambda compatibility
   pull_request:
-    branches: [main, develop]  # Run on PRs to protected branches
+    branches: [main]  # Only run on PRs targeting the protected main branch
   schedule:
     # Run Lambda tests daily at 2 AM UTC
     - cron: '0 2 * * *'

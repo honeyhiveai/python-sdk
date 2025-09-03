@@ -48,6 +48,67 @@ gh --version
 - **GitHub CLI**: Investigate workflow failures, view run logs, manage releases
 - **Docker**: Required for Lambda testing and container validation
 
+## Git Branching Strategy
+
+### Branch Model
+**HoneyHive Python SDK follows a simplified branching model:**
+
+- **`main`**: The only protected branch containing production-ready code
+- **All other branches**: Temporary working feature branches (deleted after merge)
+
+### Branch Types
+```bash
+# Feature branches (temporary)
+feature/add-anthropic-support
+feature/improve-error-handling
+bugfix/fix-span-serialization
+docs/update-api-reference
+refactor/modernize-architecture
+
+# Current working branches (temporary)
+complete-refactor    # Major architecture changes
+develop             # Legacy branch (will be removed)
+```
+
+### Workflow Rules
+
+**✅ DO:**
+- Create feature branches from `main`
+- Use descriptive branch names: `feature/`, `bugfix/`, `docs/`, `refactor/`
+- Open PRs targeting `main` when ready for review
+- Delete feature branches after successful merge
+- Rebase feature branches to keep history clean
+
+**❌ DON'T:**
+- Consider any branch other than `main` as permanent
+- Create long-lived development branches
+- Merge directly to `main` without PR review
+- Push directly to `main` (use PRs for all changes)
+
+### CI/CD Trigger Strategy
+
+**GitHub Actions Workflows:**
+```yaml
+push:
+  # Run on ALL branches - immediate feedback on feature work
+pull_request:
+  branches: [main]  # Only PRs targeting main (the protected branch)
+```
+
+**Rationale:**
+- **Immediate feedback**: Every push to any branch triggers quality checks
+- **Gate keeping**: PRs to `main` get comprehensive validation before merge
+- **No duplicates**: Feature branch pushes don't trigger duplicate PR workflows
+- **Resource efficient**: Only PRs targeting production branch get full validation
+
+### Branch Lifecycle
+1. **Create**: `git checkout -b feature/my-feature main`
+2. **Develop**: Regular commits with quality checks on every push
+3. **Integrate**: Open PR to `main` when ready
+4. **Review**: Automated + manual review process
+5. **Merge**: Squash merge to `main` with clean commit message
+6. **Cleanup**: Delete feature branch immediately after merge
+
 ## Architecture Principles
 
 ### Multi-Instance Support

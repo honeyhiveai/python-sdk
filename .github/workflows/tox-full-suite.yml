@@ -42,7 +42,7 @@ name: Tox Full Test Suite
       CODECOV_TOKEN:
         required: false
   push:
-    branches: [main, develop]  # Only run on protected branches
+    # Run on all branches - immediate feedback on feature branches
     paths:
       - 'src/**'
       - 'tests/**'
@@ -50,7 +50,7 @@ name: Tox Full Test Suite
       - 'pyproject.toml'
       - '.github/workflows/tox-full-suite.yml'
   pull_request:
-    branches: [main, develop]  # Run on PRs to protected branches
+    branches: [main]  # Only run on PRs targeting the protected main branch
     paths:
       - 'src/**'
       - 'tests/**'
