@@ -556,13 +556,19 @@ def test_that_works():
 - [ ] Examples directory README updated with new example
 - [ ] Example file is executable and demonstrates key features
 - [ ] Example includes proper error handling and environment setup
+- [ ] Documentation navigation validation passes locally
+- [ ] All new documentation files included in appropriate toctree
+- [ ] Cross-references between documentation sections work correctly
+- [ ] Integration with main navigation structure verified
 
 **📋 Quality Gates**:
 - **Documentation Quality**: Must pass `tox -e docs` with `-W` flag (warnings as errors)
+- **Navigation Validation**: Must pass `python docs/utils/validate_navigation.py --local`
 - **Code Quality**: Must pass `tox -e lint` (pylint ≥8.0/10.0, mypy clean)
 - **Test Coverage**: Compatibility test must achieve ≥80% code coverage
 - **Example Validation**: All examples must be executable via `python examples/[file].py`
 - **Integration Testing**: Must pass in CI/CD environment with mock/test credentials
+- **Post-Deployment Validation**: Navigation validation must pass against live site
 
 **❌ PROHIBITED**:
 - Instrumentor integrations without complete documentation
@@ -580,6 +586,69 @@ def test_that_works():
 - All examples must include proper `from honeyhive.models import EventType` imports
 - Error handling patterns must be consistent across all instrumentor documentation
 - Performance considerations must be documented for resource-intensive instrumentors
+
+### Documentation Navigation Validation - MANDATORY
+
+**🚨 ALL NEW DOCUMENTATION MUST PASS NAVIGATION VALIDATION**:
+
+**Automatic Validation Requirements**:
+- All new `.rst` files are automatically discovered and validated
+- Navigation validation runs on every documentation deployment
+- Broken links, missing pages, and navigation errors block deployment
+- Cross-references between documentation sections must be valid
+
+**Pre-Commit Documentation Validation**:
+```bash
+# Local validation before committing
+python docs/utils/validate_navigation.py --local
+
+# Validate against production after deployment
+python docs/utils/validate_navigation.py --base-url https://honeyhiveai.github.io/python-sdk/
+```
+
+**Mandatory Navigation Requirements**:
+1. **Toctree Inclusion**: All new documentation files must be included in appropriate toctree
+2. **Cross-Reference Validation**: Internal links must resolve correctly
+3. **Navigation Structure**: New sections must integrate with existing navigation
+4. **Search Integration**: New content must be searchable via Sphinx search
+5. **Mobile Compatibility**: Navigation must work on mobile devices
+
+**🔄 Self-Updating Validation**:
+- Documentation validation automatically discovers new files
+- No manual updates to validation lists required
+- New instrumentor documentation is automatically included
+- Navigation validation adapts as documentation grows
+
+**⚠️ Common Navigation Issues to Prevent**:
+- New `.rst` files not added to any toctree
+- Broken cross-references after restructuring
+- Missing index pages for new sections
+- Orphaned documentation files
+- Invalid internal link targets
+- Missing or broken integration with main navigation
+
+**🔍 Validation Scope**:
+- **All Documentation Pages**: Every `.rst` file that becomes an `.html` page
+- **Navigation Links**: All internal navigation and toctree links
+- **Cross-References**: Links between different documentation sections
+- **Search Functionality**: Sphinx search index and search page
+- **Structural Integrity**: Main navigation, breadcrumbs, and section organization
+
+**📋 Automatic Quality Gates**:
+- **Post-Deployment Validation**: MANDATORY validation after every documentation deployment
+- **GitHub Actions**: Runs automatically on `workflow_run` completion and `push` to main
+- **Pre-commit Hooks**: Local validation prevents broken navigation commits
+- **Deployment Blocking**: Failed navigation validation = failed deployment
+- **Weekly Monitoring**: Scheduled validation catches deployment drift
+- **Manual Triggers**: On-demand validation for specific URL testing
+
+**❌ PROHIBITED Navigation Patterns**:
+- Adding new documentation without toctree inclusion
+- Creating orphaned pages that can't be reached via navigation
+- Broken internal links that return 404 errors
+- Navigation structures that don't follow Divio documentation system
+- Instrumentor documentation that isn't linked from integration index
+- Cross-references that break after documentation restructuring
 - Fast tracking through expedited review, not skipped testing
 
 ## Date and Timestamp Standards - MANDATORY FOR AI ASSISTANTS

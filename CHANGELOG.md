@@ -29,6 +29,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Fixed GitHub Pages deployment configuration (legacy branch → workflow deployment)
   - Validated all 32 major navigation links working correctly
   - Restored full accessibility to https://honeyhiveai.github.io/python-sdk/
+- **Mandatory Post-Deploy Navigation Validation (2025-09-03)**: Automatic validation after every documentation deployment
+  - Self-updating validation system that discovers all documentation pages automatically
+  - GitHub Actions workflow validates navigation on every deployment and push to main
+  - Post-deployment validation with detailed error reporting and fix guidance
+  - Agent OS standards updated to require navigation validation as deployment quality gate
+  - Local validation tools for developers to test before committing
 
 ### Breaking Changes
 - **Modernized Architecture**: `HoneyHiveTracer` now supports multiple independent instances

@@ -56,6 +56,8 @@ Core Capabilities
 - **Tox-Based Development**: Unified development environments for consistent formatting, linting, and testing
 - **Pre-Commit Integration**: Automated quality gates using tox environments for consistency
 - **Documentation Quality Control**: Sphinx-based validation with warnings-as-errors enforcement
+- **Post-Deploy Navigation Validation**: Automatic validation after every documentation deployment
+- **Self-Updating Documentation Validation**: System automatically adapts as documentation grows
 - **Git Branching Strategy**: Simplified workflow with main as single protected branch and feature-based development
 - **CI/CD Optimization**: Smart workflow triggers (push on main only, PRs on all branches - eliminates duplicates)
 
