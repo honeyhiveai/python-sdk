@@ -62,15 +62,27 @@ Quick Start
    from honeyhive import HoneyHiveTracer
    from openinference.instrumentation.[provider] import [Provider]Instrumentor
    import [provider_sdk]
+   import os
 
-   # Initialize HoneyHive with [Provider] instrumentor
+   # Environment variables (recommended for production)
+   # .env file:
+   # HH_API_KEY=your-honeyhive-key
+   # [PROVIDER]_API_KEY=your-[provider]-key
+
+   # Initialize with environment variables (secure)
    tracer = HoneyHiveTracer.init(
-       api_key="your-honeyhive-key",
-       instrumentors=[[Provider]Instrumentor()]
+       instrumentors=[[Provider]Instrumentor()]  # Uses HH_API_KEY automatically
    )
 
-   # Use [Provider] normally - automatic tracing!
-   # [Basic example code here]
+   # Basic usage with error handling
+   try:
+       client = [provider_sdk].[ClientClass]()  # Uses [PROVIDER]_API_KEY automatically
+       # [Provider-specific API call example]
+       # Automatically traced! ✨
+   except [provider_sdk].[ProviderAPIError] as e:
+       print(f"[Provider] API error: {e}")
+   except Exception as e:
+       print(f"Unexpected error: {e}")
 
 .. raw:: html
 
@@ -79,7 +91,7 @@ Quick Start
 
 .. code-block:: python
 
-   from honeyhive import HoneyHiveTracer, trace
+   from honeyhive import HoneyHiveTracer, trace, enrich_span
    from openinference.instrumentation.[provider] import [Provider]Instrumentor
    import [provider_sdk]
 
@@ -92,9 +104,32 @@ Quick Start
 
    @trace(tracer=tracer, event_type="chain")
    def [advanced_function_name](input_param: str) -> dict:
-       """Advanced example with [specific use case]."""
-       # [Advanced example with multiple API calls]
-       return results
+       """Advanced example with business context and multiple [provider] calls."""
+       client = [provider_sdk].[ClientClass]()
+       
+       # Add business context to the trace
+       enrich_span({
+           "[business_context].input_type": type(input_param).__name__,
+           "[business_context].use_case": "[specific_use_case]",
+           "[provider].strategy": "[model_selection_strategy]"
+       })
+       
+       try:
+           # [First API call with specific model/configuration]
+           # [Second API call with different model/configuration]
+           
+           # Add result metadata
+           enrich_span({
+               "[business_context].successful": True,
+               "[provider].models_used": ["[model1]", "[model2]"],
+               "[business_context].result_metrics": "[relevant_metrics]"
+           })
+           
+           return results
+           
+       except [provider_sdk].[ProviderAPIError] as e:
+           enrich_span({"error.type": "api_error", "error.message": str(e)})
+           raise
 
 .. raw:: html
 
@@ -176,13 +211,20 @@ Quick Start
 - **MUST** be a complete, working example
 - **MUST** show instrumentor initialization
 - **MUST** demonstrate automatic tracing
-- **SHOULD** be achievable in under 10 lines
+- **MUST** include environment variables setup (.env file example)
+- **MUST** include basic error handling (try/except with provider-specific exceptions)
+- **MUST** show secure API key usage (environment variables, not hardcoded)
+- **SHOULD** be copy-paste ready for immediate use
 
 #### Advanced Usage Tab Content
-- **MUST** use `@trace` decorator
+- **MUST** use `@trace` decorator with `event_type` parameter
+- **MUST** use `enrich_span()` to add business context metadata
 - **MUST** show multiple API calls in one function
-- **MUST** demonstrate real-world patterns
+- **MUST** include comprehensive error handling with span enrichment
+- **MUST** demonstrate real-world patterns (business context, multiple models, result metadata)
+- **MUST** show provider-specific optimization strategies
 - **SHOULD** include provider-specific best practices
+- **SHOULD** demonstrate different model usage patterns where applicable
 
 ### Naming Conventions
 
@@ -212,14 +254,19 @@ docs/how-to/integrations/
 Before merging any new instrumentor documentation:
 
 - [ ] **Tab Structure**: All 3 tabs present and functional
-- [ ] **Installation**: Both recommended and manual installation shown
-- [ ] **Basic Example**: Complete, working, copy-paste ready
-- [ ] **Advanced Example**: Uses @trace decorator with multiple calls
+- [ ] **Installation**: Both recommended (`pip install honeyhive[provider]`) and manual installation shown
+- [ ] **Basic Example**: Complete, working, copy-paste ready with environment variables and error handling
+- [ ] **Environment Variables**: .env file example included in Basic Setup tab
+- [ ] **Error Handling**: Provider-specific exceptions handled in both Basic and Advanced tabs
+- [ ] **Advanced Example**: Uses @trace decorator with enrich_span() for business context
+- [ ] **Business Context**: Advanced tab demonstrates real-world metadata and multiple model usage
+- [ ] **Security**: No hardcoded API keys, environment variables used throughout
 - [ ] **CSS/JS**: Styling and script blocks included at end
 - [ ] **Naming**: Consistent tab IDs and descriptive function names
 - [ ] **Optional Dependencies**: Provider added to pyproject.toml
 - [ ] **Index Update**: Provider listed in integrations index
 - [ ] **Documentation Build**: Sphinx builds without warnings
+- [ ] **Content Consolidation**: Redundant sections removed (environment variables, basic business context moved to tabs)
 
 ### Benefits
 

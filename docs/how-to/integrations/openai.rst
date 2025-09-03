@@ -46,19 +46,31 @@ Quick Setup
    from honeyhive import HoneyHiveTracer
    from openinference.instrumentation.openai import OpenAIInstrumentor
    import openai
-   
-   # Initialize HoneyHive with OpenAI instrumentor
+   import os
+
+   # Environment variables (recommended for production)
+   # .env file:
+   # HH_API_KEY=your-honeyhive-key
+   # OPENAI_API_KEY=your-openai-key
+
+   # Initialize with environment variables (secure)
    tracer = HoneyHiveTracer.init(
-       api_key="your-honeyhive-key",
-       instrumentors=[OpenAIInstrumentor()]
+       instrumentors=[OpenAIInstrumentor()]  # Uses HH_API_KEY automatically
    )
-   
-   # Use OpenAI exactly as before - automatic tracing!
-   client = openai.OpenAI(api_key="your-openai-key")
-   response = client.chat.completions.create(
-       model="gpt-3.5-turbo",
-       messages=[{"role": "user", "content": "Hello!"}]
-   )
+
+   # Basic usage with error handling
+   try:
+       client = openai.OpenAI()  # Uses OPENAI_API_KEY automatically
+       response = client.chat.completions.create(
+           model="gpt-3.5-turbo",
+           messages=[{"role": "user", "content": "Hello!"}]
+       )
+       print(response.choices[0].message.content)
+       # Automatically traced! ✨
+   except openai.APIError as e:
+       print(f"OpenAI API error: {e}")
+   except Exception as e:
+       print(f"Unexpected error: {e}")
 
 
 .. raw:: html
@@ -68,7 +80,7 @@ Quick Setup
 
 .. code-block:: python
 
-   from honeyhive import HoneyHiveTracer, trace
+   from honeyhive import HoneyHiveTracer, trace, enrich_span
    from openinference.instrumentation.openai import OpenAIInstrumentor
    import openai
 
@@ -81,31 +93,49 @@ Quick Setup
 
    @trace(tracer=tracer, event_type="chain")
    def analyze_sentiment(text: str) -> dict:
-       """Advanced example with custom tracing and multiple calls."""
+       """Advanced example with business context and multiple calls."""
        client = openai.OpenAI()
        
-       # Multiple OpenAI calls in one traced function
-       analysis = client.chat.completions.create(
-           model="gpt-4",
-           messages=[
-               {"role": "system", "content": "You are a sentiment analyzer. Return JSON."},
-               {"role": "user", "content": f"Analyze sentiment: {text}"}
-           ]
-       )
+       # Add business context to the trace
+       enrich_span({
+           "customer.tier": "premium",
+           "analysis.type": "sentiment_summary",
+           "input.length": len(text)
+       })
        
-       summary = client.chat.completions.create(
-           model="gpt-3.5-turbo",
-           messages=[
-               {"role": "user", "content": f"Summarize in 10 words: {text}"}
-           ]
-       )
-       
-       return {
-           "sentiment": analysis.choices[0].message.content,
-           "summary": summary.choices[0].message.content
-       }
+       # Multiple OpenAI calls with error handling
+       try:
+           analysis = client.chat.completions.create(
+               model="gpt-4",
+               messages=[
+                   {"role": "system", "content": "You are a sentiment analyzer. Return JSON."},
+                   {"role": "user", "content": f"Analyze sentiment: {text}"}
+               ]
+           )
+           
+           summary = client.chat.completions.create(
+               model="gpt-3.5-turbo",
+               messages=[
+                   {"role": "user", "content": f"Summarize in 10 words: {text}"}
+               ]
+           )
+           
+           # Add result metadata
+           enrich_span({
+               "analysis.successful": True,
+               "models.used": ["gpt-4", "gpt-3.5-turbo"]
+           })
+           
+           return {
+               "sentiment": analysis.choices[0].message.content,
+               "summary": summary.choices[0].message.content
+           }
+           
+       except openai.APIError as e:
+           enrich_span({"error.type": "api_error", "error.message": str(e)})
+           raise
 
-   # Both the function and all OpenAI calls are traced
+   # Both the function and all OpenAI calls are traced with context
    result = analyze_sentiment("I love this new feature!")
 
 
@@ -114,40 +144,10 @@ Quick Setup
    </div>
    </div>
 
-Environment Variables
----------------------
+Streaming Responses
+-------------------
 
-**Problem**: I need to manage API keys securely across environments.
-
-**Solution**:
-
-.. code-block:: bash
-
-   # .env file
-   HH_API_KEY=hh_your_honeyhive_key_here
-   HH_PROJECT=openai-production
-   HH_SOURCE=production
-   OPENAI_API_KEY=sk-your_openai_key_here
-
-.. code-block:: python
-
-   import os
-   from honeyhive import HoneyHiveTracer
-   from openinference.instrumentation.openai import OpenAIInstrumentor
-   import openai
-   
-   # Automatic environment variable usage
-   tracer = HoneyHiveTracer.init(
-       instrumentors=[OpenAIInstrumentor()]
-   )
-   
-   # OpenAI client uses OPENAI_API_KEY automatically
-   client = openai.OpenAI()
-
-Adding Business Context
------------------------
-
-**Problem**: I want to add custom metadata to my OpenAI traces.
+**Problem**: I need to trace OpenAI streaming responses.
 
 **Solution**:
 

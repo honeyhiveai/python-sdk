@@ -46,20 +46,32 @@ Quick Setup
    from honeyhive import HoneyHiveTracer
    from openinference.instrumentation.anthropic import AnthropicInstrumentor
    import anthropic
-   
-   # Initialize HoneyHive with Anthropic instrumentor
+   import os
+
+   # Environment variables (recommended for production)
+   # .env file:
+   # HH_API_KEY=your-honeyhive-key
+   # ANTHROPIC_API_KEY=your-anthropic-key
+
+   # Initialize with environment variables (secure)
    tracer = HoneyHiveTracer.init(
-       api_key="your-honeyhive-key",
-       instrumentors=[AnthropicInstrumentor()]
+       instrumentors=[AnthropicInstrumentor()]  # Uses HH_API_KEY automatically
    )
-   
-   # Use Anthropic exactly as before - automatic tracing!
-   client = anthropic.Anthropic(api_key="your-anthropic-key")
-   response = client.messages.create(
-       model="claude-3-sonnet-20240229",
-       max_tokens=100,
-       messages=[{"role": "user", "content": "Hello, Claude!"}]
-   )
+
+   # Basic usage with error handling
+   try:
+       client = anthropic.Anthropic()  # Uses ANTHROPIC_API_KEY automatically
+       response = client.messages.create(
+           model="claude-3-sonnet-20240229",
+           max_tokens=100,
+           messages=[{"role": "user", "content": "Hello, Claude!"}]
+       )
+       print(response.content[0].text)
+       # Automatically traced! ✨
+   except anthropic.APIError as e:
+       print(f"Anthropic API error: {e}")
+   except Exception as e:
+       print(f"Unexpected error: {e}")
 
 
 .. raw:: html
@@ -69,7 +81,7 @@ Quick Setup
 
 .. code-block:: python
 
-   from honeyhive import HoneyHiveTracer, trace
+   from honeyhive import HoneyHiveTracer, trace, enrich_span
    from openinference.instrumentation.anthropic import AnthropicInstrumentor
    import anthropic
 
@@ -82,33 +94,52 @@ Quick Setup
 
    @trace(tracer=tracer, event_type="chain")
    def research_assistant(topic: str) -> dict:
-       """Advanced example with multiple Claude calls."""
+       """Advanced example with business context and multiple Claude calls."""
        client = anthropic.Anthropic()
        
-       # Research phase
-       research = client.messages.create(
-           model="claude-3-opus-20240229",
-           max_tokens=300,
-           messages=[{
-               "role": "user",
-               "content": f"Research key facts about {topic}. Be concise and accurate."
-           }]
-       )
+       # Add business context to the trace
+       enrich_span({
+           "research.topic": topic,
+           "research.type": "comprehensive_analysis",
+           "models.strategy": "opus_then_sonnet"
+       })
        
-       # Summary phase
-       summary = client.messages.create(
-           model="claude-3-sonnet-20240229",
-           max_tokens=150,
-           messages=[{
-               "role": "user",
-               "content": f"Summarize this research in bullet points:\n{research.content[0].text}"
-           }]
-       )
-       
-       return {
-           "research": research.content[0].text,
-           "summary": summary.content[0].text
-       }
+       try:
+           # Research phase with Claude Opus (most capable)
+           research = client.messages.create(
+               model="claude-3-opus-20240229",
+               max_tokens=300,
+               messages=[{
+                   "role": "user",
+                   "content": f"Research key facts about {topic}. Be concise and accurate."
+               }]
+           )
+           
+           # Summary phase with Claude Sonnet (faster, efficient)
+           summary = client.messages.create(
+               model="claude-3-sonnet-20240229",
+               max_tokens=150,
+               messages=[{
+                   "role": "user",
+                   "content": f"Summarize this research in bullet points:\n{research.content[0].text}"
+               }]
+           )
+           
+           # Add result metadata
+           enrich_span({
+               "research.successful": True,
+               "research.word_count": len(research.content[0].text.split()),
+               "summary.word_count": len(summary.content[0].text.split())
+           })
+           
+           return {
+               "research": research.content[0].text,
+               "summary": summary.content[0].text
+           }
+           
+       except anthropic.APIError as e:
+           enrich_span({"error.type": "api_error", "error.message": str(e)})
+           raise
 
    # All calls are traced with context
    result = research_assistant("quantum computing")
