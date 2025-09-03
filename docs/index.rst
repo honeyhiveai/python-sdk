@@ -1,11 +1,6 @@
 HoneyHive Python SDK Documentation
 ==================================
 
-.. note::
-   **Welcome to the Divio-organized documentation!**
-   
-   This documentation follows the `Divio Documentation System <https://docs.divio.com/documentation-system/>`_ with four distinct sections designed for different needs and contexts.
-
 **LLM Observability and Evaluation Platform**
 
 The HoneyHive Python SDK provides comprehensive observability, tracing, and evaluation capabilities for LLM applications with OpenTelemetry integration and a "Bring Your Own Instrumentor" architecture.
@@ -55,8 +50,6 @@ New to HoneyHive? Start here:
    </style>
 
 📚 **Documentation Structure**
-
-This documentation is organized into four sections, each serving a different purpose:
 
 **Documentation Sections:**
 
@@ -425,11 +418,6 @@ This documentation is organized into four sections, each serving a different pur
 - `OpenInference Instrumentors <https://github.com/Arize-ai/openinference>`_ (supported instrumentor provider)
 - `OpenLLMetry Instrumentors <https://github.com/traceloop/openllmetry>`_ (upcoming support)
 - Compatibility Matrix (full testing documentation coming soon)
-
-.. note::
-   **About This Documentation Structure**
-   
-   This documentation follows the `Divio Documentation System <https://docs.divio.com/documentation-system/>`_, which organizes content by user intent rather than by technical structure. This makes it easier to find exactly what you need, whether you're learning, solving problems, looking up details, or understanding concepts.
 
 Indices and Tables
 ==================

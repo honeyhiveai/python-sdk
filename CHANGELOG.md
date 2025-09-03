@@ -21,6 +21,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - YAML validation only runs when YAML files change
   - Documentation checks only run when docs/Agent OS files change
   - Eliminates unnecessary check overhead for unrelated changes
+- **Documentation Landing Page Cleanup (2025-09-03)**: Removed Divio system comments for cleaner presentation
+  - Removed explicit Divio Documentation System references from main page
+  - Maintained the four-part structure without verbose explanations
+  - Cleaner, more professional documentation presentation
 
 ### Breaking Changes
 - **Modernized Architecture**: `HoneyHiveTracer` now supports multiple independent instances
