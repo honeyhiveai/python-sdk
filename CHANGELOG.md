@@ -16,6 +16,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Enhanced documentation standards in `code-style.md` with Divio system requirements
   - Updated `features.md` with proper type safety and current deployment strategy
   - Verified all Agent OS specifications are current with correct dates (2025-09-03)
+- **Pre-commit Optimization (2025-09-03)**: Improved developer experience with targeted hook execution
+  - Code formatting/linting only runs when Python files change
+  - YAML validation only runs when YAML files change
+  - Documentation checks only run when docs/Agent OS files change
+  - Eliminates unnecessary check overhead for unrelated changes
 
 ### Breaking Changes
 - **Modernized Architecture**: `HoneyHiveTracer` now supports multiple independent instances

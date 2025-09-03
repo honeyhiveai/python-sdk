@@ -10,12 +10,13 @@
 ./scripts/setup-dev.sh
 ```
 
-**Automatic Quality Enforcement**:
-- **Black formatting**: 88-character lines, applied on every commit
-- **Import sorting**: isort with black profile
-- **Static analysis**: pylint + mypy type checking  
-- **YAML validation**: yamllint with 120-character lines
-- **Tox verification**: Format and lint checks
+**Automatic Quality Enforcement** (only runs when relevant files change):
+- **Black formatting**: 88-character lines, applied when Python files change
+- **Import sorting**: isort with black profile, applied when Python files change
+- **Static analysis**: pylint + mypy type checking when Python files change
+- **YAML validation**: yamllint with 120-character lines when YAML files change
+- **Documentation checks**: Only when docs/Agent OS files change
+- **Tox verification**: Scoped to relevant file types for efficiency
 
 **Before Every Commit**:
 1. Pre-commit hooks run automatically (DO NOT bypass)

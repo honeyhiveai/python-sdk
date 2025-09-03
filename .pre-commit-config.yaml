@@ -10,6 +10,7 @@ repos:
     hooks:
       - id: yamllint
         args: [-c=.yamllint]
+        files: '^.*\.(yaml|yml)$'
 
   - repo: local
     hooks:
@@ -18,7 +19,7 @@ repos:
         entry: tox -e format
         language: system
         pass_filenames: false
-        always_run: true
+        files: '^(src/.*\.py|tests/.*\.py|examples/.*\.py|scripts/.*\.py)$'
         stages: [pre-commit]
 
       - id: tox-lint-check
@@ -26,7 +27,7 @@ repos:
         entry: tox -e lint
         language: system
         pass_filenames: false
-        always_run: true
+        files: '^(src/.*\.py|tests/.*\.py|examples/.*\.py|scripts/.*\.py)$'
         stages: [pre-commit]
 
       - id: docs-build-check
@@ -56,5 +57,5 @@ repos:
         entry: scripts/check-docs-updated.py
         language: python
         pass_filenames: false
-        always_run: true
+        files: '^(src/.*\.py|tests/.*\.py|examples/.*\.py|\.agent-os/product/features\.md|\.agent-os/standards/.*\.md)$'
         stages: [pre-commit]
