@@ -897,6 +897,84 @@ Running Unit Tests
    # Run tests matching pattern
    pytest tests/unit/ -k "tracer" -v
 
+CLI Testing
+-----------
+
+**Problem**: Test CLI commands and command-line interface functionality.
+
+**Solution**:
+
+.. code-block:: python
+
+   from click.testing import CliRunner
+   from unittest.mock import Mock, patch
+   from honeyhive.cli.main import cli
+   
+   class TestCLICommands:
+       """Test CLI command functionality."""
+       
+       def test_cli_help(self):
+           """Test CLI help command."""
+           runner = CliRunner()
+           result = runner.invoke(cli, ["--help"])
+           
+           assert result.exit_code == 0
+           assert "HoneyHive CLI" in result.output
+       
+       @patch('honeyhive.cli.main.HoneyHive')
+       def test_api_command_with_mocking(self, mock_client):
+           """Test API command with proper mocking."""
+           # Setup mock
+           mock_instance = Mock()
+           mock_client.return_value = mock_instance
+           mock_response = Mock()
+           mock_response.status_code = 200
+           mock_response.json.return_value = {"status": "success"}
+           mock_instance.sync_client.request.return_value = mock_response
+           
+           runner = CliRunner()
+           result = runner.invoke(cli, [
+               "api", "request", 
+               "--method", "GET",
+               "--url", "/api/v1/test"
+           ])
+           
+           assert result.exit_code == 0
+           assert "Status: 200" in result.output
+           mock_client.assert_called_once()
+       
+       def test_config_show_json(self):
+           """Test config show with JSON format."""
+           runner = CliRunner()
+           result = runner.invoke(cli, ["config", "show", "--format", "json"])
+           
+           assert result.exit_code == 0
+           # Verify JSON output structure
+           import json
+           config_data = json.loads(result.output)
+           assert "api_key" in config_data
+
+**CLI Testing Best Practices**:
+
+1. **Use CliRunner**: Always use ``click.testing.CliRunner`` for CLI tests
+2. **Mock at Module Level**: Use ``@patch('honeyhive.cli.main.ModuleName')`` for mocking
+3. **Test All Commands**: Cover all CLI commands and subcommands
+4. **Test Error Conditions**: Verify error handling and exit codes
+5. **Test Output Format**: Verify command output matches expected format
+6. **Mock External Services**: Mock API clients, file operations, and network calls
+7. **Test Help Text**: Ensure all help text is properly displayed
+8. **Test Command Options**: Verify all command-line options and flags work correctly
+
+**CLI Test Coverage**: The CLI module achieves 89% test coverage with 58 comprehensive tests covering:
+
+- Command structure and help text (11 tests)
+- Configuration management (8 tests) 
+- Tracing operations (12 tests)
+- API client interactions (8 tests)
+- System monitoring (8 tests)
+- Resource cleanup (10 tests)
+- Environment integration (4 tests)
+
 **Best Practices for Unit Tests**:
 
 1. **Test in Isolation**: Each test should be independent

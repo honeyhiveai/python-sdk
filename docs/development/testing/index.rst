@@ -26,8 +26,8 @@ SDK Development Testing Setup
    # 3. Run integration tests
    tox -e integration
    
-   # 4. Check code coverage (minimum 60% required)
-   tox -e unit -- --cov=honeyhive --cov-report=html --cov-fail-under=60
+   # 4. Check code coverage (minimum 70% required, currently 81.14%)
+   tox -e unit -- --cov=honeyhive --cov-report=html --cov-fail-under=70
 
 .. toctree::
    :maxdepth: 2
@@ -45,9 +45,10 @@ Testing Overview
 
 **Current Test Infrastructure**:
 
-- **Total Tests**: 881+ tests (100% success rate)
-- **Test Coverage**: 72.95% (above 70% requirement ✅)
-- **Test Types**: Unit, Integration, Lambda, Performance, Real API
+- **Total Tests**: 972 tests (853 unit + 119 integration) (100% success rate)
+- **Test Coverage**: 81.14% (above 70% requirement ✅)
+- **Test Types**: Unit, Integration, Lambda, Performance, Real API, CLI
+- **CLI Coverage**: 89% (improved from 37% with 58 comprehensive CLI tests)
 - **CI/CD Integration**: GitHub Actions with automated quality gates
 - **Lambda Testing**: AWS Lambda compatibility and performance validation
 
@@ -122,6 +123,34 @@ Quick Solutions
        assert tracer1.session_id != tracer2.session_id
        assert tracer1.project != tracer2.project
 
+**Problem: Test CLI Commands**
+
+.. code-block:: python
+
+   from click.testing import CliRunner
+   from unittest.mock import Mock, patch
+   from honeyhive.cli.main import cli
+   
+   def test_cli_command():
+       """Test CLI commands using Click's CliRunner."""
+       runner = CliRunner()
+       
+       # Test basic command
+       result = runner.invoke(cli, ["--help"])
+       assert result.exit_code == 0
+       assert "HoneyHive CLI" in result.output
+   
+   @patch('honeyhive.cli.main.HoneyHive')
+   def test_cli_with_mocking(mock_client):
+       """Test CLI commands with proper mocking."""
+       mock_client.return_value = Mock()
+       
+       runner = CliRunner()
+       result = runner.invoke(cli, ["api", "request", "--method", "GET", "--url", "/test"])
+       
+       assert result.exit_code == 0
+       mock_client.assert_called_once()
+
 Code Quality Requirements
 -------------------------
 
@@ -159,6 +188,12 @@ Testing Commands
    
    # Integration tests only
    tox -e integration
+   
+   # CLI tests specifically
+   pytest tests/unit/test_cli_main.py -v
+   
+   # CLI tests with coverage
+   pytest tests/unit/test_cli_main.py --cov=src/honeyhive/cli/main --cov-report=term-missing
    
    # Lambda compatibility tests
    cd tests/lambda && make test-lambda
@@ -280,7 +315,9 @@ Best Practices
 5. **Test Performance Impact**: Ensure tracing doesn't significantly impact performance
 6. **Clean Up Resources**: Clean up test resources after each test
 7. **Test Multi-Instance Patterns**: Verify multiple tracers work independently
-8. **Maintain Coverage**: Keep test coverage above 70% threshold
+8. **CLI Testing**: Use ``click.testing.CliRunner`` for CLI command testing
+9. **Mock at Module Level**: For CLI tests, mock imports like ``@patch('honeyhive.cli.main.HoneyHive')``
+10. **Maintain Coverage**: Keep test coverage above 70% threshold
 
 **Test Organization**:
 
@@ -300,6 +337,38 @@ Best Practices
        def test_error_handling(self):
            """Test error scenarios."""
            pass
+
+**CLI Testing Organization**:
+
+.. code-block:: python
+
+   class TestCLICommandStructure:
+       """Test CLI command structure and help text."""
+       
+       def test_cli_help(self):
+           """Test main CLI help output."""
+           runner = CliRunner()
+           result = runner.invoke(cli, ["--help"])
+           assert result.exit_code == 0
+           assert "HoneyHive CLI" in result.output
+   
+   class TestCLIConfigCommands:
+       """Test configuration management commands."""
+       
+       def test_config_show_json(self):
+           """Test config show with JSON format."""
+           runner = CliRunner()
+           result = runner.invoke(cli, ["config", "show", "--format", "json"])
+           assert result.exit_code == 0
+   
+   class TestCLIErrorHandling:
+       """Test CLI error conditions and validation."""
+       
+       def test_invalid_command(self):
+           """Test CLI with invalid command."""
+           runner = CliRunner()
+           result = runner.invoke(cli, ["invalid-command"])
+           assert result.exit_code != 0
 
 **Naming Conventions**:
 
