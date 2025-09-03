@@ -673,6 +673,86 @@ See Also
 - [ ] All links are verified working during docs build
 - [ ] Navigation follows consistent rst formatting
 
+### Tutorial Integration Coverage - MANDATORY
+
+**🚨 ALL NEW LLM INSTRUMENTORS MUST BE ADDED TO TUTORIAL**:
+
+**Required Tutorial Integration**: `docs/tutorials/03-llm-integration.rst`
+
+**Mandatory Tutorial Section Template**:
+```rst
+[Provider Name] Integration
+---------------------------
+
+[Brief description of provider and use cases]
+
+**Step 1: Install [Provider] Instrumentor**
+
+.. code-block:: bash
+
+   pip install openinference-instrumentation-[provider]
+
+**Step 2: Set Up [Provider] Tracing**
+
+.. code-block:: python
+
+   from honeyhive import HoneyHiveTracer
+   from openinference.instrumentation.[provider] import [Provider]Instrumentor
+   import [provider-package]
+   
+   # Initialize with [Provider] instrumentor
+   tracer = HoneyHiveTracer.init(
+       api_key="your-honeyhive-api-key",
+       project="[provider]-tutorial",
+       instrumentors=[[Provider]Instrumentor()]
+   )
+   
+   # Configure [Provider]
+   [provider-specific-setup]
+   
+   def example_function(prompt: str) -> str:
+       """Example function showing [Provider] usage."""
+       
+       # Working example with actual provider API
+       [provider-api-call]
+       
+       return result
+
+**Step 3: Test Your Integration**
+
+.. code-block:: python
+
+   # Example call that demonstrates tracing
+   result = example_function("Example prompt")
+   print(f"Result: {result}")
+```
+
+**Tutorial Integration Requirements**:
+
+1. **Placement**: Add section between existing providers and "Advanced: Custom Instrumentor"
+2. **Working Example**: Include complete, executable code example
+3. **Real API Usage**: Demonstrate actual provider API calls, not pseudocode
+4. **Environment Setup**: Show how to configure provider credentials
+5. **Clear Naming**: Use `[provider]-tutorial` project naming convention
+6. **Practical Use Case**: Choose example that showcases provider's strengths
+
+**📋 Tutorial Validation Checklist**:
+- [ ] New provider section added to `docs/tutorials/03-llm-integration.rst`
+- [ ] Section follows the standard template structure  
+- [ ] Code example is complete and executable
+- [ ] Proper imports for both HoneyHive and provider
+- [ ] Environment variable setup documented
+- [ ] Example demonstrates actual provider API usage
+- [ ] Tutorial maintains logical flow between providers
+- [ ] Prerequisites updated if new provider has unique requirements
+
+**❌ PROHIBITED Tutorial Patterns**:
+- Adding instrumentor without tutorial coverage
+- Pseudocode examples that aren't executable
+- Missing import statements in code examples
+- Generic examples that don't showcase provider capabilities
+- Incomplete setup instructions for provider credentials
+
 **📚 Documentation Standards**:
 - All instrumentor docs must follow the Divio Documentation System (Tutorials, How-to, Reference, Explanation)
 - Code examples must use `EventType` enums, never string literals

@@ -47,6 +47,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Added Agent OS rules for consistent integration page navigation
   - Eliminated maintenance burden of exhaustive cross-linking between all integrations
   - Applied minimal navigation template to all 7 integration pages
+- **Tutorial Integration Coverage Standards (2025-09-03)**: Mandatory tutorial coverage for all instrumentors
+  - Added comprehensive Agent OS rules requiring tutorial integration for all new instrumentors
+  - Created standardized template for instrumentor tutorial sections
+  - Added Google ADK integration to LLM tutorial with complete working example
+  - Updated tutorial prerequisites and learning objectives to include agent frameworks
+  - Established validation checklist for tutorial integration coverage
 
 ### Breaking Changes
 - **Modernized Architecture**: `HoneyHiveTracer` now supports multiple independent instances

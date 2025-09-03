@@ -11,8 +11,8 @@ What You'll Learn
 
 - How to use the "Bring Your Own Instrumentor" (BYOI) architecture
 - Tracing OpenAI calls automatically
-- Adding Anthropic and Google AI tracing
-- Combining multiple LLM providers
+- Adding Anthropic, Google AI, and Google ADK tracing
+- Combining multiple LLM providers and agent frameworks
 - Understanding what data gets captured
 - Best practices for LLM observability
 
@@ -20,7 +20,7 @@ Prerequisites
 -------------
 
 - Complete :doc:`02-basic-tracing` tutorial
-- An LLM provider API key (OpenAI, Anthropic, or Google AI)
+- An LLM provider API key (OpenAI, Anthropic, Google AI, or Google ADK)
 - Basic familiarity with your chosen LLM provider
 
 The Magic of BYOI Architecture
@@ -325,6 +325,67 @@ Use multiple LLM providers in the same application:
    # Compare responses - both calls traced separately
    comparison = compare_llm_responses("What are the benefits of renewable energy?")
 
+Google ADK Integration
+----------------------
+
+Add Google Agent Development Kit (ADK) tracing for sophisticated agent workflows.
+
+**Step 1: Install Google ADK Instrumentor**
+
+.. code-block:: bash
+
+   pip install openinference-instrumentation-google-adk
+
+**Step 2: Set Up Google ADK Tracing**
+
+.. code-block:: python
+
+   from honeyhive import HoneyHiveTracer
+   from openinference.instrumentation.google_adk import GoogleADKInstrumentor
+   import google.adk as adk
+   
+   # Initialize with Google ADK instrumentor
+   tracer = HoneyHiveTracer.init(
+       api_key="your-honeyhive-api-key",
+       project="google-adk-tutorial",
+       instrumentors=[GoogleADKInstrumentor()]
+   )
+   
+   # Configure Google ADK
+   adk.configure(api_key="your-google-adk-api-key")
+   
+   def create_research_agent(topic: str) -> str:
+       """Create an agent that performs research and analysis."""
+       
+       # Create an agent with research tools
+       agent = adk.Agent(
+           name="research_agent",
+           model="gemini-pro",
+           tools=["web_search", "data_analyzer", "summarizer"],
+           temperature=0.3
+       )
+       
+       # Agent workflow is automatically traced!
+       result = agent.execute(f"Research and analyze: {topic}")
+       
+       return result.content
+
+**Step 3: Test Your Agent Integration**
+
+.. code-block:: python
+
+   # Example call that demonstrates agent tracing
+   research = create_research_agent("impact of AI on education")
+   print(f"Research Results: {research}")
+
+**What Gets Captured for Agents:**
+
+- **Agent workflow steps** (tool calls, reasoning, decisions)
+- **Tool interactions** (web searches, data processing)
+- **Multi-step reasoning chains**
+- **State transitions** and decision points
+- **Performance metrics** (execution time, tool latency)
+
 Advanced: Custom Instrumentor Integration
 ------------------------------------------
 
@@ -577,7 +638,7 @@ Key Takeaways
 
 - **BYOI Architecture**: Use any OpenTelemetry-compatible instrumentor
 - **Zero Code Changes**: Existing LLM calls work without modification
-- **Multiple Providers**: Mix OpenAI, Anthropic, Google AI, and others
+- **Multiple Providers**: Mix OpenAI, Anthropic, Google AI, Google ADK, and others
 - **Rich Context**: Automatic capture of prompts, responses, and metadata
 - **Business Context**: Add custom attributes with ``enrich_span()``
 - **Error Handling**: Automatic capture of rate limits and API errors
