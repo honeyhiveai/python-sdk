@@ -764,7 +764,8 @@ See Also
 
 **📚 Documentation Standards**:
 - All instrumentor docs must follow the Divio Documentation System (Tutorials, How-to, Reference, Explanation)
-- **MANDATORY**: ALL new instrumentor integration docs MUST use interactive tabbed interface (see `.agent-os/standards/documentation-templates.md`)
+- **MANDATORY**: ALL new instrumentor integration HOW-TO docs MUST use interactive tabbed interface (see `.agent-os/standards/documentation-templates.md`)
+- **Scope**: Apply to `docs/how-to/integrations/` only, NOT `docs/tutorials/` (use linear structure for learning)
 - **Required tabs**: Installation | Basic Setup | Advanced Usage
 - Code examples must use `EventType` enums, never string literals
 - All examples must include proper `from honeyhive.models import EventType` imports

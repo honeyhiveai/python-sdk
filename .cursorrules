@@ -80,9 +80,10 @@
 ### 🎯 Divio Documentation Architecture
 **Follow the [Divio Documentation System](https://docs.divio.com/documentation-system/) for all documentation:**
 
-### 📱 **MANDATORY: Tabbed Interface for Integration Docs**
-**ALL new instrumentor integration documentation MUST use the interactive tabbed interface pattern** defined in `.agent-os/standards/documentation-templates.md`:
+### 📱 **MANDATORY: Tabbed Interface for Integration How-To Docs**
+**ALL new instrumentor integration HOW-TO documentation MUST use the interactive tabbed interface pattern** defined in `.agent-os/standards/documentation-templates.md`:
 
+- **SCOPE**: Apply to `docs/how-to/integrations/[provider].rst` only, NOT tutorials
 - **3 Required Tabs**: Installation | Basic Setup | Advanced Usage
 - **Progressive Disclosure**: Start simple, advance to real-world patterns
 - **Consistent UX**: Same pattern across all provider integrations

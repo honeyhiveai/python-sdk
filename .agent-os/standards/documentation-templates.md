@@ -10,9 +10,13 @@ This document defines standard templates and patterns for creating consistent, u
 
 ## Instrumentor Documentation Standard
 
-### 🎯 **MANDATORY: Tabbed Interface Pattern**
+### 🎯 **MANDATORY: Tabbed Interface Pattern for How-To Guides**
 
-All new instrumentor integration documentation **MUST** use the interactive tabbed interface pattern. This provides progressive disclosure and consistent user experience.
+All new instrumentor integration **HOW-TO** documentation **MUST** use the interactive tabbed interface pattern. This provides progressive disclosure and consistent user experience.
+
+**SCOPE**:
+- ✅ **How-To Guides**: `docs/how-to/integrations/[provider].rst` - Problem-solving reference
+- ❌ **Tutorials**: `docs/tutorials/` - Use linear, step-by-step structure for learning
 
 #### Required Tab Structure
 
