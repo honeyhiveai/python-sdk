@@ -33,11 +33,13 @@ tracer = HoneyHiveTracer._instance
 - **[`simple_google_ai_integration.py`](simple_google_ai_integration.py)** - Google AI integration with OpenInference
 - **[`simple_google_adk_integration.py`](simple_google_adk_integration.py)** - Google Agent Development Kit integration with multi-step workflows
 - **[`simple_bedrock_integration.py`](simple_bedrock_integration.py)** - AWS Bedrock integration with OpenInference
+- **[`simple_mcp_integration.py`](simple_mcp_integration.py)** - MCP (Model Context Protocol) integration for agent tool orchestration
 
 ### **Evaluation Framework**
 - **[`evaluation_example.py`](evaluation_example.py)** - Using the evaluation framework with `@evaluator` decorators
 
 ### **Advanced Patterns**
+- **[`mcp_integration.py`](mcp_integration.py)** - Comprehensive MCP integration with multi-provider support, error handling, and async workflows
 - **[`pydantic_validation_demo.py`](pydantic_validation_demo.py)** - Pydantic validation with tracing
 - **[`verbose_demo.py`](verbose_demo.py)** - Verbose logging and debugging
 - **[`verbose_debugging_example.py`](verbose_debugging_example.py)** - Advanced debugging techniques
