@@ -6,12 +6,14 @@
 
 #### Universal @trace Decorator
 ```python
+from honeyhive.models import EventType
+
 # Works with both sync and async functions
-@trace(event_type="llm_call", event_name="chat_completion")
+@trace(event_type=EventType.model, event_name="chat_completion")
 def sync_function(prompt: str) -> str:
     return llm.complete(prompt)
 
-@trace(event_type="llm_call")
+@trace(event_type=EventType.model)
 async def async_function(prompt: str) -> str:
     return await llm.complete_async(prompt)
 ```
@@ -137,7 +139,7 @@ tracer.enrich_span(
 )
 
 # Context manager pattern
-with enrich_span(event_type="enrichment"):
+with enrich_span(event_type=EventType.tool):
     process_data()
 ```
 
@@ -385,9 +387,9 @@ docs/utils/
 #### Documentation Deployment Features
 ```yaml
 # Multi-Platform Publishing
-netlify:
-  primary_hosting: "docs.honeyhive-sdk.dev"
-  preview_builds: "Automatic PR previews"
+github_pages:
+  primary_hosting: "honeyhiveai.github.io/python-sdk"
+  preview_builds: "Automatic PR previews via GitHub Actions"
   branch_deploys: "Feature branch documentation"
 
 versioning:
@@ -524,7 +526,7 @@ rules:
 | **YAML validation** | ✅ **Stable** | **0.1.0** |
 | **Divio documentation system** | ✅ **Stable** | **0.1.0** |
 | **Automated content testing** | ✅ **Stable** | **0.1.0** |
-| **Multi-platform docs hosting** | ✅ **Stable** | **0.1.0** |
+| **GitHub Pages docs hosting** | ✅ **Stable** | **0.1.0** |
 | **WCAG accessibility compliance** | ✅ **Stable** | **0.1.0** |
 | **Documentation versioning** | ✅ **Stable** | **0.1.0** |
 | Streaming | 🚧 Planned | 0.3.0 |
@@ -576,12 +578,13 @@ HH_EXPERIMENT_VARIANT="..."
 ### Basic Tracing
 ```python
 from honeyhive import HoneyHiveTracer, trace
+from honeyhive.models import EventType
 
 # Initialize
 tracer = HoneyHiveTracer.init()
 
 # Trace a function
-@trace(event_type="api_call")
+@trace(event_type=EventType.tool)
 def my_function():
     return "result"
 

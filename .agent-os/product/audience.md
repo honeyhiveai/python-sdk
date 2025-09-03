@@ -30,12 +30,14 @@
 **Usage Patterns**
 ```python
 # Their typical integration
+from honeyhive.models import EventType
+
 tracer = HoneyHiveTracer.init(
     api_key=os.getenv("HH_API_KEY"),
     project="production-app"
 )
 
-@trace(event_type="llm_call")
+@trace(event_type=EventType.model)
 async def generate_response(prompt: str):
     return await openai_client.complete(prompt)
 ```

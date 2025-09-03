@@ -114,11 +114,11 @@ def enrich_span(self, metadata: Dict[str, Any]) -> bool:
 ### Async/Sync Patterns
 ```python
 # Unified decorator for both sync and async
-@trace(event_type="api_call")
+@trace(event_type=EventType.tool)
 def sync_function():
     return "result"
 
-@trace(event_type="api_call")
+@trace(event_type=EventType.tool)
 async def async_function():
     await asyncio.sleep(0.1)
     return "result"
@@ -250,15 +250,30 @@ refactor(utils): simplify config loading
 
 ## Documentation Standards
 
-### README Structure
-1. Project description
-2. Key features
-3. Installation
-4. Quick start
-5. Configuration
-6. Examples
-7. API reference
-8. Contributing
+### Divio Documentation System
+Following the [Divio Documentation System](https://docs.divio.com/documentation-system/) for comprehensive user experience:
+
+**🎯 Four Documentation Types**:
+1. **TUTORIALS** (`docs/tutorials/`) - Learning-oriented, step-by-step guides (15-20 min max)
+2. **HOW-TO GUIDES** (`docs/how-to/`) - Problem-oriented, specific solutions
+3. **REFERENCE** (`docs/reference/`) - Information-oriented, technical specifications
+4. **EXPLANATION** (`docs/explanation/`) - Understanding-oriented, conceptual background
+
+### Type Safety in Documentation
+```python
+# ✅ CORRECT - Use enum imports in ALL examples
+from honeyhive.models import EventType
+@trace(event_type=EventType.model)
+
+# ❌ INCORRECT - Never use string literals
+@trace(event_type="model")
+```
+
+### Documentation Quality Gates
+- **Sphinx Build**: Must pass with `-W` flag (warnings as errors)
+- **Link Validation**: All internal links must resolve
+- **Example Testing**: All code examples must be executable
+- **Type Checking**: All examples must pass mypy validation
 
 ### Code Comments
 ```python
@@ -279,6 +294,11 @@ refactor(utils): simplify config loading
 - Include request/response examples
 - Document all error codes
 - Provide rate limit information
+
+### Documentation Deployment
+- **GitHub Pages**: Primary hosting platform
+- **GitHub Actions**: Automated deployment and validation
+- **Preview Builds**: PR-based documentation previews
 
 ## Quality Standards
 

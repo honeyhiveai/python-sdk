@@ -7,6 +7,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+- **Agent OS Standardization (2025-09-03)**: Comprehensive update of all cursor rules and Agent OS files
+  - Updated `.cursorrules` to reference new Divio documentation structure
+  - Fixed legacy documentation references (`docs/FEATURE_LIST.rst` → `docs/reference/index.rst`)
+  - Updated GitHub Pages hosting references throughout (replaced Netlify)
+  - Standardized all code examples to use `EventType` enums instead of string literals
+  - Enhanced documentation standards in `code-style.md` with Divio system requirements
+  - Updated `features.md` with proper type safety and current deployment strategy
+  - Verified all Agent OS specifications are current with correct dates (2025-09-03)
+
 ### Breaking Changes
 - **Modernized Architecture**: `HoneyHiveTracer` now supports multiple independent instances
   - **`HoneyHiveTracer.init()` method maintained for backwards compatibility** - this is the preferred pattern

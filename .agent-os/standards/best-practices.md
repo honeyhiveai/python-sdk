@@ -27,8 +27,8 @@
 
 **Documentation Update Requirements**:
 - **Code changes**: CHANGELOG.md must be updated
-- **New features**: CHANGELOG.md + docs/FEATURE_LIST.rst + .agent-os/product/features.md
-- **Workflow changes**: Update docs/TESTING.rst and .agent-os/standards/
+- **New features**: CHANGELOG.md + docs/reference/index.rst + .agent-os/product/features.md
+- **Workflow changes**: Update docs/development/testing/ and .agent-os/standards/
 - **Large changesets (>3 files)**: Comprehensive documentation review required
 - **AI Assistant commits**: Automatic documentation compliance checking
 
@@ -164,11 +164,11 @@ def create_session(self) -> Optional[str]:
 ### Decorator Pattern
 ```python
 # Unified decorator for sync/async
-@trace(event_type="llm_call")
+@trace(event_type=EventType.model)
 def sync_function():
     pass
 
-@trace(event_type="llm_call")
+@trace(event_type=EventType.model)
 async def async_function():
     pass
 
@@ -188,7 +188,7 @@ with tracer.start_span("operation") as span:
     span.set_attribute("result", result)
 
 # Enrich span context manager
-with enrich_span(event_type="enrichment"):
+with enrich_span(event_type=EventType.tool):
     # Enrichment applied to current span
     process_data()
 ```

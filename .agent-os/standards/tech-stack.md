@@ -128,8 +128,8 @@ docs/utils/
 ```
 
 ### Documentation Deployment
-- **Netlify**: Primary hosting platform for documentation
-- **Preview Builds**: Automatic PR previews for review
+- **GitHub Pages**: Primary hosting platform for documentation
+- **Preview Builds**: Automatic PR previews for review using GitHub Actions
 - **Multi-Version Support**: Sphinx versioning for releases
 - **Search Integration**: Full-text search capability
 - **Analytics**: User journey tracking and content optimization
