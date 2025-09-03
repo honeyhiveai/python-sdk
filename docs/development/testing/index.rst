@@ -26,8 +26,8 @@ SDK Development Testing Setup
    # 3. Run integration tests
    tox -e integration
    
-   # 4. Check code coverage (minimum 70% required, currently 81.14%)
-   tox -e unit -- --cov=honeyhive --cov-report=html --cov-fail-under=70
+   # 4. Check code coverage (minimum 80% required, currently 81.14%)
+   tox -e unit -- --cov=honeyhive --cov-report=html --cov-fail-under=80
 
 .. toctree::
    :maxdepth: 2
@@ -46,7 +46,7 @@ Testing Overview
 **Current Test Infrastructure**:
 
 - **Total Tests**: 972 tests (853 unit + 119 integration) (100% success rate)
-- **Test Coverage**: 81.14% (above 70% requirement ✅)
+- **Test Coverage**: 81.14% (above 80% requirement ✅)
 - **Test Types**: Unit, Integration, Lambda, Performance, Real API, CLI
 - **CLI Coverage**: 89% (improved from 37% with 58 comprehensive CLI tests)
 - **CI/CD Integration**: GitHub Actions with automated quality gates
@@ -317,7 +317,7 @@ Best Practices
 7. **Test Multi-Instance Patterns**: Verify multiple tracers work independently
 8. **CLI Testing**: Use ``click.testing.CliRunner`` for CLI command testing
 9. **Mock at Module Level**: For CLI tests, mock imports like ``@patch('honeyhive.cli.main.HoneyHive')``
-10. **Maintain Coverage**: Keep test coverage above 70% threshold
+10. **Maintain Coverage**: Keep test coverage above 80% project-wide, 70% individual files
 
 **Test Organization**:
 

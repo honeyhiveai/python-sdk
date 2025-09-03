@@ -38,7 +38,7 @@
   tox -e py311 -e py312 -e py313  # All Python versions (MUST pass)
   ```
 - **pytest**: Test framework with fixtures and async support
-- **Coverage**: Minimum 70% overall, 80% for new code
+- **Coverage**: **Minimum 80% project-wide** (enforced), **70% individual files** (recommended)
 - **Pre-commit validation**: Automated test execution before commits
 
 ### Testing Architecture

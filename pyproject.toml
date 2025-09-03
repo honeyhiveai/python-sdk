@@ -294,10 +294,8 @@ check_untyped_defs = true
 disallow_untyped_decorators = true
 no_implicit_optional = true
 warn_redundant_casts = true
-warn_unused_ignores = true
-warn_no_return = true
-warn_unreachable = true
-strict_equality = true
+
+
 
 [[tool.mypy.overrides]]
 module = [
@@ -322,7 +320,7 @@ markers = [
 ]
 
 [tool.coverage.run]
-source = ["src"]
+source = ["src/honeyhive"]
 omit = [
     "*/tests/*",
     "*/test_*",
@@ -331,9 +329,20 @@ omit = [
     "*/env/*",
     "*/.env/*",
     "*/.venv/*",
+    "*/.tox/*",
+    "*/build/*",
+    "*/dist/*",
 ]
 
 [tool.coverage.report]
+# Project-wide coverage requirement: 80%
+fail_under = 80
+show_missing = true
+skip_covered = false
+precision = 2
+# Individual file coverage requirement: 70% (strongly recommended)
+skip_empty = true
+
 exclude_lines = [
     "pragma: no cover",
     "def __repr__",

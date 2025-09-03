@@ -411,10 +411,21 @@ def test_that_works():
 5. **Documentation**: Update relevant docs and examples
 
 ### Test Coverage Requirements
+
+**🎯 Coverage Targets - Updated Standards:**
+
+- **Project-wide coverage**: **Minimum 80%** (enforced in CI/CD)
+- **Individual file coverage**: **Minimum 70%** (strongly recommended)
 - **New code**: Minimum 80% coverage required
-- **Modified code**: Cannot decrease existing coverage
+- **Modified code**: Cannot decrease existing coverage below 70%
 - **Critical paths**: 100% coverage required (API clients, decorators, core functionality)
-- **Overall project**: Minimum 70% coverage maintained
+
+**Coverage Configuration:**
+- Project threshold: `--cov-fail-under=80` (pytest.ini, tox.ini)
+- Individual file goal: 70% (documented standard, not enforced)
+- Configuration location: `pyproject.toml [tool.coverage.*]`
+
+**Current Achievement**: 81.14% project coverage (exceeds 80% requirement ✅)
 
 ### Test Count Reporting - MANDATORY
 

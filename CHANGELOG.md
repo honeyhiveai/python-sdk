@@ -1,6 +1,12 @@
 ## [Unreleased] - 2025-09-03
 
 ### Added
+- **Enhanced coverage standards and enforcement**
+  * Project-wide coverage requirement increased to 80% (from 70%)
+  * Individual file coverage goal established at 70% minimum
+  * Comprehensive coverage configuration in pyproject.toml
+  * Updated CI/CD enforcement across all test environments
+  * Documentation and Agent OS standards updated
 - **Comprehensive CLI test suite with 58 tests (37% → 89% coverage)**
   * Command structure testing for all CLI groups and help text (11 tests)
   * Configuration management commands with all output formats (8 tests)
@@ -46,9 +52,11 @@
 - Zero breaking changes - all existing code continues to work
 - **All 972 tests passing (853 unit + 119 integration)**
 - Perfect lint score: 10.00/10 (pylint + mypy)
+- **Coverage requirements updated: 80% project-wide (enforced), 70% individual files**
 - **CLI coverage improved from 37% to 89% (+52 percentage points)**
 - Connection pool coverage improved from 35% to 88%
-- Overall test coverage: 81.14% (exceeds 70% requirement)
+- **Overall test coverage: 81.14% (exceeds new 80% requirement)**
+- Configuration files updated: pytest.ini, tox.ini, pyproject.toml
 - Comprehensive documentation update across 40+ files
 - Added **kwargs support for future extensibility
 
