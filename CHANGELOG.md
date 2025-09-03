@@ -35,6 +35,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - **Optimized CI/CD Triggers**: Push only on main branch, PRs run on all branches (eliminates duplicates)
   - **Immediate Feedback**: Quality checks run on every push to any branch for fast development cycles
   - **Netlify Cleanup**: Removed Netlify configuration and deployment steps
+- **BYOI Strategy Clarification**: Updated documentation to reflect multi-provider instrumentor support
+  - **Multiple Providers**: Support for OpenInference, OpenLLMetry, and custom instrumentors
+  - **Not a Partnership**: OpenInference is one supported option, not an exclusive partnership
+  - **Compatibility Matrix**: Full testing and generation framework planned for all supported providers
+  - **Flexible Architecture**: Users can choose their preferred instrumentor provider or build custom ones
 - **Documentation Quality Control System**: Comprehensive production incident prevention framework
   - **ROOT CAUSE FIX**: Sphinx builds now fail immediately on warnings (added `-W` flag to tox.ini and Makefile)
   - **CI/CD Enhancement**: Enhanced GitHub Actions with build log validation and broken link detection

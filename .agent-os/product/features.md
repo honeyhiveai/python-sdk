@@ -103,7 +103,7 @@ from openinference.instrumentation.openai import OpenAIInstrumentor
 
 tracer = HoneyHiveTracer.init(
     api_key="...",
-    instrumentors=[OpenAIInstrumentor()]  # Auto-integrates
+    instrumentors=[OpenAIInstrumentor()]  # BYOI: OpenInference, OpenLLMetry, or custom
 )
 
 # Now all OpenAI calls are automatically traced
@@ -516,7 +516,7 @@ rules:
 | HTTP tracing | ✅ Stable | 0.1.0 |
 | Evaluations | ✅ Stable | 0.1.0 |
 | Threading | ✅ Stable | 0.1.0 |
-| Auto-instrumentors | ✅ Stable | 0.1.0 |
+| BYOI Instrumentors | ✅ Stable | 0.1.0 |
 | **Multi-tier CI/CD** | ✅ **Stable** | **0.1.0** |
 | **Lambda testing** | ✅ **Stable** | **0.1.0** |
 | **Performance benchmarks** | ✅ **Stable** | **0.1.0** |
@@ -542,7 +542,7 @@ tracer = HoneyHiveTracer.init(
     session_name="...",         # Custom session name
     test_mode=False,            # Enable test mode
     disable_http_tracing=True,  # HTTP tracing control
-    instrumentors=[],           # Auto-instrumentors
+    instrumentors=[],           # BYOI: OpenInference, OpenLLMetry, custom
     server_url="..."           # Custom server URL
 )
 ```

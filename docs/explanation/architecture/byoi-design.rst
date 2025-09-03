@@ -147,36 +147,53 @@ Benefits of BYOI
 - **Explicit choices** = you audit what you install
 - **Community instrumentors** = distributed maintenance
 
-OpenInference Partnership
--------------------------
+Supported Instrumentor Providers
+---------------------------------
 
-HoneyHive partners with the OpenInference project for instrumentors:
+HoneyHive supports multiple instrumentor providers through its BYOI architecture:
 
-**Why OpenInference?**
+**OpenInference Instrumentors**
 
 - **Open source** and community-driven
 - **OpenTelemetry native** for standardization
 - **LLM-focused** with rich semantic conventions
 - **Multi-provider** support from day one
 
-**Available Instrumentors:**
+**OpenLLMetry Instrumentors**
+
+- **Comprehensive LLM coverage** across providers
+- **Production-ready** instrumentation
+- **Active development** and maintenance
+- **Enterprise support** available
+
+**Custom Instrumentors**
+
+- **Build your own** for proprietary systems
+- **OpenTelemetry standards** compliance
+- **Full control** over instrumentation behavior
+
+**Example Instrumentor Installation:**
 
 .. code-block:: bash
 
-   # OpenAI (GPT, DALL-E, Embeddings)
+   # OpenInference Providers
    pip install openinference-instrumentation-openai
-   
-   # Anthropic (Claude)
    pip install openinference-instrumentation-anthropic
-   
-   # Google AI (Gemini)
    pip install openinference-instrumentation-google-generativeai
    
-   # LlamaIndex
-   pip install openinference-instrumentation-llamaindex
+   # OpenLLMetry Providers (alternative)
+   pip install openllmetry[openai]
+   pip install openllmetry[anthropic]
+   pip install openllmetry[google]
    
-   # LangChain
+   # Framework Support
+   pip install openinference-instrumentation-llamaindex
    pip install openinference-instrumentation-langchain
+
+.. note::
+   **Compatibility Matrix Coming Soon**
+   
+   A comprehensive compatibility matrix with full testing and generation documentation for all supported instrumentor providers is in development. This will include detailed installation guides, testing results, and performance benchmarks for each provider.
 
 **Custom Instrumentors:**
 

@@ -147,7 +147,7 @@ This documentation is organized into four sections, each serving a different pur
 🔄 **Key Features**
 
 **Bring Your Own Instrumentor (BYOI) Architecture**
-   Avoid dependency conflicts by choosing exactly which LLM libraries to instrument. Use OpenInference instrumentors or build your own.
+   Avoid dependency conflicts by choosing exactly which LLM libraries to instrument. Supports multiple instrumentor providers including OpenInference, OpenLLMetry, or build your own.
 
 **Multi-Instance Tracer Support**
    Create independent tracer instances for different environments, workflows, or services within the same application.
@@ -212,7 +212,7 @@ This documentation is organized into four sections, each serving a different pur
    pip install honeyhive
    
    # With LLM provider support
-   pip install honeyhive openinference-instrumentation-openai
+   pip install honeyhive openinference-instrumentation-openai  # or other instrumentor providers
 
 🔧 **Quick Example**
 
@@ -422,7 +422,9 @@ This documentation is organized into four sections, each serving a different pur
 - `HoneyHive Platform <https://honeyhive.ai>`_
 - `Python SDK on PyPI <https://pypi.org/project/honeyhive/>`_
 - `GitHub Repository <https://github.com/honeyhiveai/python-sdk>`_
-- `OpenInference Project <https://github.com/Arize-ai/openinference>`_
+- `OpenInference Instrumentors <https://github.com/Arize-ai/openinference>`_ (supported instrumentor provider)
+- `OpenLLMetry Instrumentors <https://github.com/traceloop/openllmetry>`_ (upcoming support)
+- Compatibility Matrix (full testing documentation coming soon)
 
 .. note::
    **About This Documentation Structure**
