@@ -1,30 +1,33 @@
-Test Your Implementation
-========================
+SDK Testing Best Practices
+===========================
 
 .. note::
-   **Problem-solving guide for testing HoneyHive SDK applications**
+   **For HoneyHive SDK Developers and Contributors**
    
-   Comprehensive testing strategies, tools, and solutions for ensuring reliable tracing implementations.
+   This guide covers testing practices for developing the HoneyHive Python SDK itself, not for testing applications that use the SDK.
 
-This section provides practical solutions for testing applications that use the HoneyHive Python SDK, covering everything from unit tests to AWS Lambda performance validation.
+This section provides testing standards, practices, and tools used in HoneyHive Python SDK development. All contributors must follow these testing practices to maintain code quality and reliability.
 
-Testing Quick Start
--------------------
+SDK Development Testing Setup
+------------------------------
 
-**Problem**: I need to start testing my HoneyHive integration quickly.
+**Setup**: Configure your development environment for SDK testing.
 
-**Solution**:
+**Required Setup**:
 
 .. code-block:: bash
 
    # 1. Set up development environment (required first step)
    ./scripts/setup-dev.sh
    
-   # 2. Run basic tests
+   # 2. Verify setup with basic tests
    tox -e unit
    
-   # 3. Run with coverage
-   pytest --cov=honeyhive --cov-report=html --cov-fail-under=70
+   # 3. Run integration tests
+   tox -e integration
+   
+   # 4. Check code coverage (minimum 60% required)
+   tox -e unit -- --cov=honeyhive --cov-report=html --cov-fail-under=60
 
 .. toctree::
    :maxdepth: 2

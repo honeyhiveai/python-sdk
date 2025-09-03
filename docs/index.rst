@@ -88,6 +88,11 @@ This documentation is organized into four sections, each serving a different pur
      <p>Release history, version notes, and upgrade guides. Stay updated with latest changes.</p>
      <a href="changelog.html" class="quick-link">→ Latest Release</a>
    </div>
+   <div class="doc-card">
+     <h3><a href="development/index.html">🔧 SDK Development</a></h3>
+     <p>For contributors and maintainers working on the SDK itself. Testing practices and development standards.</p>
+     <a href="development/testing/index.html" class="quick-link">→ Testing Practices</a>
+   </div>
    </div>
 
 .. raw:: html
@@ -195,6 +200,7 @@ This documentation is organized into four sections, each serving a different pur
    reference/index
    explanation/index
    changelog
+   development/index
 
 
 

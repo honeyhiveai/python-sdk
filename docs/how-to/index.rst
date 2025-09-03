@@ -60,21 +60,29 @@ Build sophisticated observability:
    advanced-tracing/custom-spans
    advanced-tracing/tracer-auto-discovery
 
-Test Your Implementation
-------------------------
+Testing Your Application
+-------------------------
 
-Validate and debug your HoneyHive setup:
+.. note::
+   **Testing HoneyHive SDK Usage**
+   
+   For testing applications that use the HoneyHive SDK, use standard Python testing practices with pytest, unittest, or your preferred testing framework. The SDK is designed to be easily mockable and testable.
+   
+   For mocking HoneyHive in tests, simply mock the tracer instance or use dependency injection patterns.
 
-.. toctree::
-   :maxdepth: 1
+.. code-block:: python
 
-   testing/unit-testing
-   testing/integration-testing
-   testing/performance-testing
-   testing/mocking-strategies
-   testing/ci-cd-integration
-   testing/lambda-testing
-   testing/troubleshooting-tests
+   # Example: Mocking HoneyHive in tests
+   from unittest.mock import Mock, patch
+   import pytest
+   
+   @patch('honeyhive.HoneyHiveTracer')
+   def test_my_traced_function(mock_tracer):
+       # Your test code here
+       pass
+
+**SDK Development Testing**: For testing the HoneyHive SDK itself, see :doc:`../development/testing/index`.
+
 
 Evaluate LLM Outputs
 ---------------------
@@ -111,15 +119,14 @@ Implement proven architectural patterns:
 
 - :doc:`troubleshooting` - Fix common issues and setup problems
 - :doc:`integrations/openai` - Add OpenAI tracing in 5 minutes  
-- :doc:`testing/unit-testing` - Write your first HoneyHive tests
 - :doc:`advanced-tracing/custom-spans` - Create custom trace spans
 - :doc:`integrations/multi-provider` - Use multiple LLM providers
+- :doc:`evaluation/index` - Set up basic evaluation
 
 **Production Workflows:**
 
 - :doc:`deployment/production` - Deploy HoneyHive to production
 - :doc:`monitoring/index` - Set up monitoring and alerts
-- :doc:`testing/ci-cd-integration` - Integrate testing into CI/CD
 - :doc:`evaluation/index` - Build comprehensive evaluation pipelines
 - :doc:`common-patterns` - Implement resilient agent patterns
 
