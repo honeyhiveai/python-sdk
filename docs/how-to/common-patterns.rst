@@ -12,6 +12,16 @@ Overview
 
 This guide covers common architectural patterns and implementation strategies for LLM applications, with focus on observability, reliability, and performance optimization.
 
+.. important::
+   **Decorator-First Approach**: All examples in this guide emphasize using ``@trace``, ``@trace_class``, and ``enrich_span()`` instead of manual context managers. This approach provides:
+   
+   - **Cleaner code**: Less boilerplate, more focus on business logic
+   - **Automatic tracing**: Methods are traced by default with ``@trace_class``
+   - **Easy enrichment**: Use ``enrich_span()`` to add context to existing spans
+   - **Better maintainability**: Tracing logic is separated from business logic
+   
+   **When to use context managers**: Only for iteration loops, conditional tracing, or non-function operations where decorators aren't applicable.
+
 **Pattern Categories**:
 - Agent and workflow patterns
 - Error handling and resilience
@@ -261,6 +271,7 @@ Error Handling and Resilience Patterns
 
 .. code-block:: python
 
+   @trace_class(event_type=EventType.chain, event_name="ToolUsingAgent")
    class ToolUsingAgent:
        """Agent that can dynamically select and use tools."""
        
@@ -271,88 +282,126 @@ Error Handling and Resilience Patterns
        def process_request(self, user_request: str) -> Dict:
            """Process user request using appropriate tools."""
            
-           with tracer.start_span("tool_using_agent") as agent_span:
-               agent_span.set_attribute("request.user_input", user_request)
-               agent_span.set_attribute("tools.available_count", len(self.tools))
-               agent_span.set_attribute("tools.available_names", list(self.tools.keys()))
+           # Enrich the automatically created span with request context
+           enrich_span({
+               "request.user_input": user_request,
+               "tools.available_count": len(self.tools),
+               "tools.available_names": list(self.tools.keys())
+           })
+           
+           # Step 1: Understand intent (automatically traced method)
+           intent_analysis = self._analyze_intent(user_request)
+           
+           # Step 2: Tool selection (automatically traced method) 
+           tool_plan = self._select_tools(intent_analysis)
+           
+           # Step 3: Execute tool sequence
+           tool_results = []
+           for i, tool_config in enumerate(tool_plan.get("tools", [])):
+               # Execute individual tool (automatically traced method)
+               tool_result = self._execute_single_tool(tool_config, i + 1)
+               tool_results.append(tool_result)
+           
+           # Step 4: Synthesize final response (automatically traced method)
+           final_response = self._synthesize_response(user_request, intent_analysis, tool_results)
+           
+           # Enrich span with final results
+           enrich_span({
+               "agent.tools_executed": len(tool_results),
+               "agent.success_rate": sum(1 for r in tool_results if r.get("success")) / len(tool_results) if tool_results else 0
+           })
+           
+           return {
+               "response": final_response,
+               "intent_analysis": intent_analysis,
+               "tool_results": tool_results,
+               "execution_summary": {
+                   "tools_used": len(tool_results),
+                   "success_rate": sum(1 for r in tool_results if r.get("success")) / len(tool_results) if tool_results else 0
+               }
+           }
+       
+       @trace(event_type=EventType.tool, event_name="analyze_intent")
+       def _analyze_intent(self, user_request: str) -> Dict:
+           """Analyze user intent and extract parameters."""
+           # Intent analysis logic here (could call LLM)
+           intent_analysis = {"primary_intent": "search", "confidence": 0.95, "parameters": {}}
+           
+           enrich_span({
+               "intent.primary": intent_analysis.get("primary_intent"),
+               "intent.confidence": intent_analysis.get("confidence", 0),
+               "intent.parameters_count": len(intent_analysis.get("parameters", {}))
+           })
+           
+           return intent_analysis
+       
+       @trace(event_type=EventType.tool, event_name="select_tools")  
+       def _select_tools(self, intent_analysis: Dict) -> Dict:
+           """Select appropriate tools for the task."""
+           # Tool selection logic here (could call LLM for planning)
+           tool_plan = {"tools": [{"name": "search", "parameters": {}}], "sequential": True}
+           
+           enrich_span({
+               "plan.tools_selected": len(tool_plan.get("tools", [])),
+               "plan.sequential": tool_plan.get("sequential", True),
+               "plan.tool_names": [t["name"] for t in tool_plan.get("tools", [])]
+           })
+           
+           return tool_plan
+       
+       @trace(event_type=EventType.tool, event_name="execute_single_tool")
+       def _execute_single_tool(self, tool_config: Dict, position: int) -> Dict:
+           """Execute a single tool with error handling."""
+           tool_name = tool_config["name"]
+           tool_params = tool_config.get("parameters", {})
+           
+           enrich_span({
+               "tool.name": tool_name,
+               "tool.parameters": str(tool_params),
+               "tool.sequence_position": position
+           })
+           
+           try:
+               # Execute tool (the actual tool should also be decorated)
+               tool_result = self._execute_tool(tool_name, tool_params, [])
                
-               # Step 1: Understand intent and extract parameters
-               with tracer.start_span("intent_analysis") as intent_span:
-                   intent_analysis = self._analyze_intent(user_request)
-                   intent_span.set_attribute("intent.primary", intent_analysis.get("primary_intent"))
-                   intent_span.set_attribute("intent.confidence", intent_analysis.get("confidence", 0))
-                   intent_span.set_attribute("intent.parameters_count", len(intent_analysis.get("parameters", {})))
-               
-               # Step 2: Tool selection and planning
-               with tracer.start_span("tool_selection") as selection_span:
-                   tool_plan = self._select_tools(intent_analysis)
-                   selection_span.set_attribute("plan.tools_selected", len(tool_plan.get("tools", [])))
-                   selection_span.set_attribute("plan.sequential", tool_plan.get("sequential", True))
-                   
-                   if tool_plan.get("tools"):
-                       selection_span.set_attribute("plan.tool_names", 
-                                                  [t["name"] for t in tool_plan["tools"]])
-               
-               # Step 3: Execute tool sequence
-               tool_results = []
-               for i, tool_config in enumerate(tool_plan.get("tools", [])):
-                   with tracer.start_span(f"tool_execution_{i+1}") as tool_span:
-                       tool_name = tool_config["name"]
-                       tool_params = tool_config.get("parameters", {})
-                       
-                       tool_span.set_attribute("tool.name", tool_name)
-                       tool_span.set_attribute("tool.parameters", str(tool_params))
-                       tool_span.set_attribute("tool.sequence_position", i + 1)
-                       
-                       try:
-                           tool_result = self._execute_tool(tool_name, tool_params, tool_results)
-                           tool_span.set_attribute("tool.success", True)
-                           tool_span.set_attribute("tool.result_type", type(tool_result).__name__)
-                           
-                           tool_results.append({
-                               "tool": tool_name,
-                               "parameters": tool_params,
-                               "result": tool_result,
-                               "success": True
-                           })
-                           
-                       except Exception as e:
-                           tool_span.set_attribute("tool.success", False)
-                           tool_span.set_attribute("tool.error", str(e))
-                           tool_span.set_status("ERROR", str(e))
-                           
-                           tool_results.append({
-                               "tool": tool_name,
-                               "parameters": tool_params,
-                               "error": str(e),
-                               "success": False
-                           })
-               
-               # Step 4: Synthesize final response
-               with tracer.start_span("response_synthesis") as synthesis_span:
-                   final_response = self._synthesize_response(
-                       user_request, intent_analysis, tool_results
-                   )
-                   
-                   synthesis_span.set_attribute("response.length", len(str(final_response)))
-                   synthesis_span.set_attribute("response.tools_used", len(tool_results))
-                   synthesis_span.set_attribute("response.successful_tools", 
-                                               sum(1 for r in tool_results if r.get("success")))
-               
-               agent_span.set_attribute("agent.tools_executed", len(tool_results))
-               agent_span.set_attribute("agent.success_rate", 
-                                       sum(1 for r in tool_results if r.get("success")) / len(tool_results) 
-                                       if tool_results else 0)
+               enrich_span({
+                   "tool.success": True,
+                   "tool.result_type": type(tool_result).__name__
+               })
                
                return {
-                   "response": final_response,
-                   "intent_analysis": intent_analysis,
-                   "tool_results": tool_results,
-                   "execution_summary": {
-                       "tools_used": len(tool_results),
-                       "success_rate": sum(1 for r in tool_results if r.get("success")) / len(tool_results) if tool_results else 0
-                   }
+                   "tool": tool_name,
+                   "parameters": tool_params,
+                   "result": tool_result,
+                   "success": True
                }
+               
+           except Exception as e:
+               enrich_span({
+                   "tool.success": False,
+                   "tool.error": str(e)
+               })
+               return {
+                   "tool": tool_name,
+                   "parameters": tool_params,
+                   "error": str(e),
+                   "success": False
+               }
+       
+       @trace(event_type=EventType.tool, event_name="synthesize_response")
+       def _synthesize_response(self, user_request: str, intent_analysis: Dict, tool_results: List[Dict]) -> Dict:
+           """Synthesize final response from tool results."""
+           # Response synthesis logic here (could call LLM)
+           final_response = {"response": "Task completed", "confidence": 0.9}
+           
+           enrich_span({
+               "response.length": len(str(final_response)),
+               "response.tools_used": len(tool_results),
+               "response.successful_tools": sum(1 for r in tool_results if r.get("success"))
+           })
+           
+           return final_response
 
 Error Handling and Resilience Patterns
 --------------------------------------
@@ -380,61 +429,74 @@ Error Handling and Resilience Patterns
            self.last_failure_time = None
            self.state = CircuitState.CLOSED
        
+       @trace(event_type=EventType.tool, event_name="circuit_breaker_call")
        def call(self, llm_function: Callable, *args, **kwargs) -> Any:
            """Execute LLM function with circuit breaker protection."""
            
-           with tracer.start_span("circuit_breaker_call") as cb_span:
-               cb_span.set_attribute("circuit.state", self.state.value)
-               cb_span.set_attribute("circuit.failure_count", self.failure_count)
-               cb_span.set_attribute("circuit.failure_threshold", self.failure_threshold)
+           # Enrich span with circuit breaker state
+           enrich_span({
+               "circuit.state": self.state.value,
+               "circuit.failure_count": self.failure_count,
+               "circuit.failure_threshold": self.failure_threshold
+           })
+           
+           # Check circuit state
+           if self.state == CircuitState.OPEN:
+               if self._should_attempt_reset():
+                   self.state = CircuitState.HALF_OPEN
+                   enrich_span({"circuit.state_transition": "open_to_half_open"})
+               else:
+                   enrich_span({"circuit.call_blocked": True})
+                   raise Exception("Circuit breaker is OPEN - calls are being blocked")
+           
+           # Attempt the call
+           try:
+               result = self._execute_protected_call(llm_function, *args, **kwargs)
                
-               # Check circuit state
-               if self.state == CircuitState.OPEN:
-                   if self._should_attempt_reset():
-                       self.state = CircuitState.HALF_OPEN
-                       cb_span.set_attribute("circuit.state_transition", "open_to_half_open")
-                   else:
-                       cb_span.set_attribute("circuit.call_blocked", True)
-                       cb_span.set_status("ERROR", "Circuit breaker is OPEN")
-                       raise Exception("Circuit breaker is OPEN - calls are being blocked")
+               # Success - reset circuit if needed
+               if self.state == CircuitState.HALF_OPEN:
+                   self._reset_circuit()
+                   enrich_span({"circuit.state_transition": "half_open_to_closed"})
                
-               # Attempt the call
-               try:
-                   with tracer.start_span("llm_function_call") as call_span:
-                       call_span.set_attribute("function.name", llm_function.__name__)
-                       call_span.set_attribute("function.args_count", len(args))
-                       call_span.set_attribute("function.kwargs_count", len(kwargs))
-                       
-                       start_time = time.time()
-                       result = llm_function(*args, **kwargs)
-                       call_duration = time.time() - start_time
-                       
-                       call_span.set_attribute("function.duration_ms", call_duration * 1000)
-                       call_span.set_attribute("function.success", True)
-                   
-                   # Success - reset circuit if needed
-                   if self.state == CircuitState.HALF_OPEN:
-                       self._reset_circuit()
-                       cb_span.set_attribute("circuit.state_transition", "half_open_to_closed")
-                   
-                   cb_span.set_attribute("circuit.call_success", True)
-                   return result
-                   
-               except Exception as e:
-                   # Failure - update circuit state
-                   self._record_failure()
-                   
-                   cb_span.set_attribute("circuit.call_success", False)
-                   cb_span.set_attribute("circuit.failure_recorded", True)
-                   cb_span.set_attribute("circuit.new_failure_count", self.failure_count)
-                   
-                   if self.failure_count >= self.failure_threshold:
-                       self.state = CircuitState.OPEN
-                       self.last_failure_time = time.time()
-                       cb_span.set_attribute("circuit.state_transition", "closed_to_open")
-                   
-                   cb_span.set_status("ERROR", str(e))
-                   raise
+               enrich_span({"circuit.call_success": True})
+               return result
+               
+           except Exception as e:
+               # Failure - update circuit state
+               self._record_failure()
+               
+               enrich_span({
+                   "circuit.call_success": False,
+                   "circuit.failure_recorded": True,
+                   "circuit.new_failure_count": self.failure_count
+               })
+               
+               if self.failure_count >= self.failure_threshold:
+                   self.state = CircuitState.OPEN
+                   self.last_failure_time = time.time()
+                   enrich_span({"circuit.state_transition": "closed_to_open"})
+               
+               raise
+       
+       @trace(event_type=EventType.tool, event_name="protected_llm_call")
+       def _execute_protected_call(self, llm_function: Callable, *args, **kwargs) -> Any:
+           """Execute the actual LLM function call with timing."""
+           enrich_span({
+               "function.name": llm_function.__name__,
+               "function.args_count": len(args),
+               "function.kwargs_count": len(kwargs)
+           })
+           
+           start_time = time.time()
+           result = llm_function(*args, **kwargs)
+           call_duration = time.time() - start_time
+           
+           enrich_span({
+               "function.duration_ms": call_duration * 1000,
+               "function.success": True
+           })
+           
+           return result
        
        def _should_attempt_reset(self) -> bool:
            """Check if enough time has passed to attempt reset."""
