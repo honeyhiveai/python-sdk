@@ -692,11 +692,6 @@ Integration with Other Services
 See Also
 --------
 
-- :doc:`openai` - OpenAI integration patterns
-- :doc:`google-ai` - Google AI (Gemini) integration patterns
-- :doc:`aws-bedrock` - AWS Bedrock integration patterns
-- :doc:`azure-openai` - Azure OpenAI integration patterns
-- :doc:`multi-provider` - Using multiple providers together
-- :doc:`../advanced-tracing/custom-spans` - Custom tracing patterns
+- :doc:`multi-provider` - Use Anthropic with other providers
+- :doc:`../troubleshooting` - Common integration issues
 - :doc:`../../tutorials/03-llm-integration` - LLM integration tutorial
-- :doc:`../../explanation/architecture/byoi-design` - BYOI architecture explanation

@@ -40,7 +40,7 @@ Quick Start
 
 .. code-block:: python
 
-   from honeyhive import HoneyHiveTracer
+   from honeyhive import HoneyHiveTracer, trace
    from honeyhive.models import EventType
    from openinference.instrumentation.google_adk import GoogleADKInstrumentor
    import google.adk as adk
@@ -87,7 +87,7 @@ Basic Agent Creation
 
    adk.configure(api_key="your-google-adk-api-key")
 
-   @tracer.trace(event_type=EventType.chain, event_name="agent_setup")
+   @trace(tracer=tracer, event_type=EventType.chain, event_name="agent_setup")
    def create_research_agent() -> adk.Agent:
        """Create a research agent with tools."""
        
@@ -144,7 +144,7 @@ Multi-Step Agent Workflows
 
 .. code-block:: python
 
-   @tracer.trace(event_type=EventType.chain, event_name="multi_step_workflow")
+   @trace(tracer=tracer, event_type=EventType.chain, event_name="multi_step_workflow")
    def complex_research_workflow(topic: str) -> dict:
        """Execute a complex research workflow with multiple steps."""
        
@@ -246,7 +246,7 @@ Agent Tool Integration
                model="gemini-pro"
            )
        
-       @tracer.trace(event_type=EventType.tool, event_name="api_call")
+       @trace(tracer=tracer, event_type=EventType.tool, event_name="api_call")
        def _api_tool(self, url: str, method: str = "GET", **kwargs) -> str:
            """Custom API calling tool with tracing."""
            
@@ -262,7 +262,7 @@ Agent Tool Integration
                    span.set_attribute("api.error", str(e))
                    return f"API call failed: {e}"
        
-       @tracer.trace(event_type=EventType.tool, event_name="data_analysis")
+       @trace(tracer=tracer, event_type=EventType.tool, event_name="data_analysis")
        def _data_analysis_tool(self, data: str) -> str:
            """Data analysis tool with tracing."""
            
@@ -302,7 +302,7 @@ Agent Tool Integration
                    span.set_attribute("analysis.error", str(e))
                    return f"Analysis failed: {e}"
        
-       @tracer.trace(event_type=EventType.tool, event_name="file_processing")
+       @trace(tracer=tracer, event_type=EventType.tool, event_name="file_processing")
        def _file_processing_tool(self, file_path: str, operation: str = "read") -> str:
            """File processing tool with tracing."""
            
@@ -363,7 +363,7 @@ Agent State Management
                model="gemini-pro"
            )
        
-       @tracer.trace(event_type=EventType.chain, event_name="state_transition")
+       @trace(tracer=tracer, event_type=EventType.chain, event_name="state_transition")
        def _transition_state(self, new_state: AgentState, reason: str = "") -> None:
            """Transition agent state with tracing."""
            
@@ -384,7 +384,7 @@ Agent State Management
                if reason:
                    print(f"Reason: {reason}")
        
-       @tracer.trace(event_type=EventType.chain, event_name="agent_execution")
+       @trace(tracer=tracer, event_type=EventType.chain, event_name="agent_execution")
        def execute_with_state_tracking(self, task: str) -> dict:
            """Execute task with comprehensive state tracking."""
            
@@ -494,7 +494,7 @@ Error Handling and Reliability
    from typing import Optional, Dict, Any
    from google.adk.exceptions import ADKException, RateLimitError, AuthenticationError
 
-   @tracer.trace(event_type=EventType.chain, event_name="reliable_agent_execution")
+   @trace(tracer=tracer, event_type=EventType.chain, event_name="reliable_agent_execution")
    def reliable_agent_execution(
        task: str, 
        max_retries: int = 3,
@@ -633,7 +633,7 @@ Performance Monitoring
        max_iterations: int = 10
        temperature: float = 0.7
 
-   @tracer.trace(event_type=EventType.chain, event_name="agent_benchmark")
+   @trace(tracer=tracer, event_type=EventType.chain, event_name="agent_benchmark")
    def benchmark_agent_configurations(
        task: str, 
        configurations: List[AgentConfig]
@@ -773,7 +773,7 @@ Environment Configuration
    from typing import Optional, Dict, Any
    from honeyhive.models import EventType
 
-   @tracer.trace(event_type=EventType.session, event_name="adk_environment_setup")
+   @trace(tracer=tracer, event_type=EventType.session, event_name="adk_environment_setup")
    def setup_google_adk_environment(
        honeyhive_api_key: Optional[str] = None,
        google_adk_api_key: Optional[str] = None,
@@ -965,7 +965,7 @@ Best Practices
            self.max_execution_time = max_execution_time
            self.resource_monitor = ResourceMonitor()
        
-       @tracer.trace(event_type=EventType.chain, event_name="resource_check")
+       @trace(tracer=tracer, event_type=EventType.chain, event_name="resource_check")
        def check_resources(self) -> bool:
            """Check if agent has sufficient resources to continue."""
            memory_usage = self.resource_monitor.get_memory_usage()
@@ -982,7 +982,7 @@ Common Issues & Solutions
 .. code-block:: python
 
    # Verify ADK setup and credentials
-   @tracer.trace(event_type=EventType.tool, event_name="adk_health_check")
+   @trace(tracer=tracer, event_type=EventType.tool, event_name="adk_health_check")
    def verify_adk_setup():
        """Verify Google ADK configuration and connectivity."""
        try:
@@ -1000,7 +1000,7 @@ Common Issues & Solutions
 .. code-block:: python
 
    # Test tool functionality independently
-   @tracer.trace(event_type=EventType.tool, event_name="tool_validation")
+   @trace(tracer=tracer, event_type=EventType.tool, event_name="tool_validation")
    def validate_tools(tools: List[adk.Tool]) -> Dict[str, bool]:
        """Validate that all tools are working correctly."""
        results = {}
@@ -1022,7 +1022,7 @@ Common Issues & Solutions
 .. code-block:: python
 
    # Monitor and optimize agent performance
-   @tracer.trace(event_type=EventType.chain, event_name="performance_optimization")
+   @trace(tracer=tracer, event_type=EventType.chain, event_name="performance_optimization")
    def optimize_agent_performance(agent: adk.Agent, task: str) -> dict:
        """Analyze and optimize agent performance."""
        
@@ -1065,9 +1065,6 @@ Common Issues & Solutions
 See Also
 --------
 
-- :doc:`google-ai` - Google GenAI integration for direct model access
-- :doc:`openai` - OpenAI integration patterns  
-- :doc:`anthropic` - Anthropic integration patterns
-- :doc:`multi-provider` - Using multiple AI providers together
-- :doc:`../advanced-tracing/custom-spans` - Advanced tracing techniques
-- :doc:`../advanced-tracing/tracer-auto-discovery` - Multi-instance tracer patterns
+- :doc:`multi-provider` - Use Google ADK with other providers
+- :doc:`../troubleshooting` - Common integration issues  
+- :doc:`../../tutorials/03-llm-integration` - LLM integration tutorial

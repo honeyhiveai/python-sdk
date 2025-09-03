@@ -391,10 +391,6 @@ Production Considerations
 See Also
 --------
 
-- :doc:`openai` - OpenAI integration patterns
-- :doc:`anthropic` - Anthropic integration patterns  
-- :doc:`google-ai` - Google AI integration patterns
-- :doc:`azure-openai` - Azure OpenAI integration patterns
-- :doc:`multi-provider` - Using multiple providers together
-- :doc:`../advanced-tracing/custom-spans` - Advanced tracing techniques
-
+- :doc:`multi-provider` - Use AWS Bedrock with other providers
+- :doc:`../troubleshooting` - Common integration issues
+- :doc:`../../tutorials/03-llm-integration` - LLM integration tutorial

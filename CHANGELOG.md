@@ -35,6 +35,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Post-deployment validation with detailed error reporting and fix guidance
   - Agent OS standards updated to require navigation validation as deployment quality gate
   - Local validation tools for developers to test before committing
+- **Invalid Tracer Decorator Pattern Cleanup (2025-09-03)**: Fixed and prohibited @tracer.trace(...) usage
+  - Removed all instances of invalid `@tracer.trace(...)` decorator pattern from documentation
+  - Added comprehensive Agent OS rules prohibiting this non-existent pattern
+  - Updated Google ADK documentation with correct `@trace(tracer=tracer, ...)` patterns
+  - Added validation checks to prevent reintroduction of invalid patterns
+  - Enhanced best practices with clear examples of correct vs incorrect usage
+- **Integration Navigation Simplification (2025-09-03)**: Streamlined documentation cross-references
+  - Replaced complex navigation systems with simple 3-link template across all integration pages
+  - Focused navigation on high-value links: multi-provider, troubleshooting, tutorial
+  - Added Agent OS rules for consistent integration page navigation
+  - Eliminated maintenance burden of exhaustive cross-linking between all integrations
+  - Applied minimal navigation template to all 7 integration pages
 
 ### Breaking Changes
 - **Modernized Architecture**: `HoneyHiveTracer` now supports multiple independent instances

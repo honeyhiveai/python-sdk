@@ -768,11 +768,6 @@ Troubleshooting
 See Also
 --------
 
-- :doc:`anthropic` - Anthropic integration patterns
-- :doc:`google-ai` - Google AI (Gemini) integration patterns
-- :doc:`aws-bedrock` - AWS Bedrock integration patterns
-- :doc:`azure-openai` - Azure OpenAI integration patterns
-- :doc:`multi-provider` - Using multiple providers together
-- :doc:`../troubleshooting` - General troubleshooting guide
+- :doc:`multi-provider` - Use OpenAI with other providers
+- :doc:`../troubleshooting` - Common integration issues
 - :doc:`../../tutorials/03-llm-integration` - LLM integration tutorial
-- :doc:`../../explanation/architecture/byoi-design` - BYOI architecture explanation

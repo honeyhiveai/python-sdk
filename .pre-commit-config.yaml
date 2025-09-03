@@ -59,3 +59,14 @@ repos:
         pass_filenames: false
         files: '^(src/.*\.py|tests/.*\.py|examples/.*\.py|\.agent-os/product/features\.md|\.agent-os/standards/.*\.md)$'
         stages: [pre-commit]
+
+      - id: invalid-tracer-pattern-check
+        name: Invalid Tracer Pattern Check
+        entry: bash
+        args:
+          - -c
+          - 'if grep -r "@.*\.trace(" docs/ examples/ src/ 2>/dev/null; then echo "❌ Invalid patterns!"; exit 1; fi'
+        language: system
+        files: '^(docs/.*\.(rst|md)|examples/.*\.py|src/.*\.py)$'
+        pass_filenames: false
+        stages: [pre-commit]

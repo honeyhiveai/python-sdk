@@ -897,10 +897,6 @@ Best Practices
 See Also
 --------
 
-- :doc:`openai` - Standard OpenAI integration patterns
-- :doc:`anthropic` - Anthropic integration patterns
-- :doc:`google-ai` - Google AI (Gemini) integration patterns
-- :doc:`aws-bedrock` - AWS Bedrock integration patterns
-- :doc:`multi-provider` - Using multiple providers together
-- :doc:`../deployment/production` - Production deployment guides
-- :doc:`../advanced-tracing/custom-spans` - Advanced tracing techniques
+- :doc:`multi-provider` - Use Azure OpenAI with other providers
+- :doc:`../troubleshooting` - Common integration issues
+- :doc:`../../tutorials/03-llm-integration` - LLM integration tutorial

@@ -580,6 +580,99 @@ def test_that_works():
 - Missing environment variable documentation for new provider integrations
 - Incomplete provider setup instructions in compatibility matrix README
 
+### ❌ PROHIBITED: Invalid Tracer Decorator Patterns - MANDATORY
+
+**🚨 CRITICAL**: The `@tracer.trace(...)` decorator pattern is NOT supported in HoneyHive SDK**:
+
+**Invalid Patterns (DO NOT USE)**:
+```python
+# ❌ NEVER USE - This pattern does not exist in HoneyHive SDK
+@tracer.trace(event_type=EventType.chain, event_name="agent_benchmark")
+def my_function():
+    pass
+
+# ❌ NEVER USE - HoneyHiveTracer has no trace method for decorators
+@my_tracer.trace(event_type=EventType.tool)
+def process_data():
+    pass
+```
+
+**Correct Patterns (USE THESE)**:
+```python
+# ✅ CORRECT: Standalone trace decorator with explicit tracer
+from honeyhive import trace, EventType
+
+@trace(tracer=tracer, event_type=EventType.chain, event_name="agent_benchmark")
+def my_function():
+    pass
+
+# ✅ CORRECT: Standalone trace decorator with automatic discovery
+@trace(event_type=EventType.chain, event_name="agent_benchmark")
+def my_function():
+    pass
+
+# ✅ CORRECT: Context manager for manual span control
+with tracer.start_span("operation_name") as span:
+    # Manual span management
+    pass
+```
+
+**Why This Matters**:
+- **API Consistency**: HoneyHiveTracer class has no `trace()` method that returns a decorator
+- **Documentation Accuracy**: Prevents confusion and incorrect examples
+- **Code Quality**: Ensures all tracing code uses supported patterns
+- **Backward Compatibility**: Maintains consistency with both main and complete-refactor branches
+
+**🔍 Common Sources of Confusion**:
+- **Other SDKs**: Some observability SDKs do provide `@tracer.trace()` patterns
+- **OpenTelemetry**: Raw OpenTelemetry has different patterns than HoneyHive
+- **Intuitive Assumption**: It seems logical that `@tracer.trace()` would exist alongside `tracer.start_span()`
+
+**📋 Validation Checklist**:
+- [ ] All examples use `@trace(tracer=tracer, ...)` or `@trace(...)`
+- [ ] No instances of `@tracer.trace(...)` or `@*.trace(...)` in documentation
+- [ ] Context manager usage correctly uses `tracer.start_span()` or `tracer.trace()` (context manager form)
+- [ ] All trace decorators import from `honeyhive` module: `from honeyhive import trace`
+- [ ] Run validation: `grep -r "@.*\.trace(" docs/` should return no results
+- [ ] All code examples include proper import statements
+
+### Integration Documentation Navigation - MANDATORY
+
+**🚨 ALL INTEGRATION PAGES MUST INCLUDE CONSISTENT "SEE ALSO" NAVIGATION**:
+
+**Required "See Also" Section Template**:
+```rst
+See Also
+--------
+
+- :doc:`multi-provider` - Use [Current Provider] with other providers
+- :doc:`../troubleshooting` - Common integration issues  
+- :doc:`../../tutorials/03-llm-integration` - LLM integration tutorial
+```
+
+**Navigation Principles**:
+- **Keep it minimal**: Only 3-4 essential links that users actually need
+- **Focus on value**: Multi-provider setup, troubleshooting, and learning path
+- **Avoid link spam**: Don't list every other integration (users can find those via index)
+- **Be consistent**: Same structure and essential links across all integration pages
+
+**❌ PROHIBITED Navigation Patterns**:
+- Exhaustive lists of all other integrations (creates maintenance burden)
+- Links to niche advanced topics (better discovered organically)  
+- Complex automation systems that require maintenance scripts
+- Dead or outdated cross-references
+
+**✅ REQUIRED Navigation Links**:
+1. **Multi-provider**: Always relevant for users wanting to combine providers
+2. **Troubleshooting**: Practical when integration issues arise
+3. **Tutorial**: Clear learning path for new users
+
+**📋 Integration Page Validation**:
+- [ ] Page has "See Also" section with exactly 3 essential links
+- [ ] Multi-provider link uses current provider name in description
+- [ ] All links are verified working during docs build
+- [ ] Navigation follows consistent rst formatting
+
 **📚 Documentation Standards**:
 - All instrumentor docs must follow the Divio Documentation System (Tutorials, How-to, Reference, Explanation)
 - Code examples must use `EventType` enums, never string literals
