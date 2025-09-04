@@ -33,6 +33,12 @@
 - **Mermaid diagrams**: MUST follow `.agent-os/standards/mermaid-diagrams.md` dual-theme standards
 - **Large changesets (>3 files)**: Comprehensive documentation review required
 - **AI Assistant commits**: Automatic documentation compliance checking
+- **Enhanced Quality Gates**: Pre-commit hooks now validate ALL significant changes including:
+  - Documentation restructuring (>5 files requires CHANGELOG)
+  - Configuration changes (pyproject.toml, tox.ini)
+  - Tooling changes (scripts/, .github/workflows/)
+  - Agent OS documentation (.agent-os/ files)
+  - Examples and integration guides
 
 ### Required Tools
 ```bash
@@ -617,6 +623,11 @@ When reporting test results in commit messages, documentation, or communication:
 - **Example Validation**: All examples must be executable via `python examples/[file].py`
 - **Integration Testing**: Must pass in CI/CD environment with mock/test credentials
 - **Post-Deployment Validation**: Navigation validation must pass against live site
+- **Enhanced Pre-Commit Gates**: Automatic validation of changelog and documentation updates
+  - Triggers on ALL significant changes (code, docs, config, tooling, Agent OS files)
+  - Enforces changelog updates for major documentation restructuring (>5 files)
+  - Validates AI assistant compliance with documentation standards
+  - Comprehensive file pattern matching prevents bypassing quality requirements
 
 **❌ PROHIBITED**:
 - Instrumentor integrations without complete documentation

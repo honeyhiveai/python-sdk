@@ -261,6 +261,13 @@ tox -e py311 -e py312 -e py313  # Python compatibility (MUST pass)
 # Documentation Gates  
 cd docs && make html   # Sphinx build, zero warnings (MUST pass)
 cd .. && python -m doctest examples/*.py  # Examples work (MUST pass)
+
+# Enhanced Pre-Commit Quality Gates (NEW)
+# These run automatically via pre-commit hooks for ALL significant changes:
+# - CHANGELOG update validation for documentation, configuration, and code changes
+# - Mandatory documentation updates for new features and large changesets
+# - Comprehensive file pattern matching (docs, scripts, config, Agent OS files)
+# - AI assistant compliance checking with automatic enforcement
 ```
 
 ### Zero Failing Tests Policy

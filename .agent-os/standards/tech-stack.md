@@ -40,6 +40,11 @@
 - **pytest**: Test framework with fixtures and async support
 - **Coverage**: **Minimum 80% project-wide** (enforced), **70% individual files** (recommended)
 - **Pre-commit validation**: Automated test execution before commits
+- **Enhanced Quality Gates**: Comprehensive validation including:
+  - Changelog update enforcement for all significant changes
+  - Documentation compliance for large changesets (>5 files)
+  - AI assistant compliance with documentation standards
+  - File pattern matching for docs, config, tooling, and Agent OS files
 
 ### Testing Architecture
 - **Unit Tests**: Fast, isolated, mock external dependencies

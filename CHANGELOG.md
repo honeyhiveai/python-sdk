@@ -42,6 +42,7 @@
     - Expanded file pattern matching to include documentation, configuration, and tooling files
     - Improved logic to require changelog updates for major documentation restructuring
     - Added comprehensive validation for AI assistant compliance with documentation standards
+    - Updated Agent OS rules (.cursorrules, best-practices.md, tech-stack.md) to document enhanced quality gates
 
 ### Changed
 - **🔄 BREAKING: Integration Key Migration**
