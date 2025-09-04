@@ -542,7 +542,7 @@ When reporting test results in commit messages, documentation, or communication:
 - Best practices and common pitfalls
 - Comparison with similar providers/instrumentors
 
-**3. Example Implementation**: `examples/simple_[provider]_[instrumentor]_integration.py`
+**3. Example Implementation**: `examples/[instrumentor]_[provider]_example.py`
 - Complete working example demonstrating integration
 - Proper error handling and graceful degradation
 - Environment variable configuration with clear setup instructions
@@ -804,10 +804,16 @@ See Also
 
 **📚 Documentation Standards**:
 - All instrumentor docs must follow the Divio Documentation System (Tutorials, How-to, Reference, Explanation)
-- **MANDATORY**: ALL new instrumentor integration HOW-TO docs MUST use interactive tabbed interface (see `.agent-os/standards/documentation-templates.md`)
+- **MANDATORY**: ALL new instrumentor integration HOW-TO docs MUST use formal template system (see `.agent-os/standards/documentation-templates.md`)
+- **Template**: Use `docs/_templates/multi_instrumentor_integration_formal_template.rst`
+- **Variables**: Define provider-specific values using `docs/_templates/template_variables.md`
 - **Scope**: Apply to `docs/how-to/integrations/` only, NOT `docs/tutorials/` (use linear structure for learning)
-- **Required tabs**: Installation | Basic Setup | Advanced Usage
+- **Required tabs**: Installation | Basic Setup | Advanced Usage | Troubleshooting
+- **Interactive UI**: Top-level instrumentor selector (OpenInference/OpenLLMetry) with 4 sub-tabs each
+- **Content Structure**: All instrumentor-specific content in tabs, general content (comparison, environment, migration) outside tabs
 - Code examples must use `EventType` enums, never string literals
+- All code examples must be copy-paste ready and tested
+- CSS/JavaScript for tabbed interface must be included
 - All examples must include proper `from honeyhive.models import EventType` imports
 - Error handling patterns must be consistent across all instrumentor documentation
 - Performance considerations must be documented for resource-intensive instrumentors

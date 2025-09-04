@@ -1,487 +1,612 @@
 Integrate with AWS Bedrock
-==========================
+===================================
 
-Learn how to integrate HoneyHive with AWS Bedrock's diverse model ecosystem using the BYOI (Bring Your Own Instrumentor) approach.
+.. note::
+   **Problem-solving guide for AWS Bedrock integration**
+   
+   This guide helps you solve specific problems when integrating HoneyHive with AWS Bedrock, with support for multiple instrumentor options.
 
-.. contents:: Table of Contents
-   :local:
-   :depth: 2
+This guide covers AWS Bedrock integration with HoneyHive's BYOI architecture, supporting both OpenInference and OpenLLMetry instrumentors.
 
-Overview
---------
+Choose Your Instrumentor
+------------------------
 
-AWS Bedrock provides access to multiple foundation models through a unified API, including Claude (Anthropic), Titan (Amazon), Jurassic (AI21), and others. HoneyHive provides automatic tracing through OpenInference instrumentors with zero code changes to your existing Bedrock implementations.
+**Problem**: I need to choose between OpenInference and OpenLLMetry for AWS Bedrock integration.
 
-**Benefits**:
-- **Multi-Model Support**: Trace all Bedrock models consistently
-- **Automatic Tracing**: All Bedrock API calls traced automatically
-- **AWS Integration**: Native integration with AWS infrastructure
-- **Rich Context**: Model parameters, costs, and performance metrics
-- **Enterprise Ready**: Built for enterprise security and compliance
+**Solution**: Choose the instrumentor that best fits your needs:
 
-Supported Models
-----------------
+- **OpenInference**: Open-source, lightweight, great for getting started
+- **OpenLLMetry**: Enhanced LLM metrics, cost tracking, production optimizations
 
-AWS Bedrock supports multiple model providers:
+.. raw:: html
 
-**Available Providers:**
+   <div class="instrumentor-selector">
+   <div class="instrumentor-tabs">
+     <button class="instrumentor-button active" onclick="showInstrumentor(event, 'openinference-section')">OpenInference</button>
+     <button class="instrumentor-button" onclick="showInstrumentor(event, 'openllmetry-section')">OpenLLMetry</button>
+   </div>
 
-- **Anthropic**: Claude 3 (Haiku, Sonnet, Opus) - Conversation, analysis, coding
-- **Amazon**: Titan Text/Embeddings - Content generation, search  
-- **AI21 Labs**: Jurassic-2 - Text generation, summarization
-- **Cohere**: Command/Embed - Generation, embeddings
-- **Meta**: Llama 2 - Open-source text generation
-- **Stability AI**: Stable Diffusion - Image generation
-
-Quick Start
------------
-
+   <div id="openinference-section" class="instrumentor-content active">
 
 .. raw:: html
 
    <div class="code-example">
    <div class="code-tabs">
-     <button class="tab-button active" onclick="showTab(event, 'bedrock-install')">Installation</button>
-     <button class="tab-button" onclick="showTab(event, 'bedrock-basic')">Basic Setup</button>
-     <button class="tab-button" onclick="showTab(event, 'bedrock-advanced')">Multi-Model</button>
+     <button class="tab-button active" onclick="showTab(event, 'bedrock-openinference-install')">Installation</button>
+     <button class="tab-button" onclick="showTab(event, 'bedrock-openinference-basic')">Basic Setup</button>
+     <button class="tab-button" onclick="showTab(event, 'bedrock-openinference-advanced')">Advanced Usage</button>
+     <button class="tab-button" onclick="showTab(event, 'bedrock-openinference-troubleshoot')">Troubleshooting</button>
    </div>
 
-   <div id="bedrock-install" class="tab-content active">
+   <div id="bedrock-openinference-install" class="tab-content active">
+
+**Best for**: Open-source projects, simple tracing needs, getting started quickly
 
 .. code-block:: bash
 
    # Recommended: Install with AWS Bedrock integration
-   pip install honeyhive[openinference-aws-bedrock]
+   pip install honeyhive[openinference-bedrock]
    
    # Alternative: Manual installation
-   pip install honeyhive boto3 openinference-instrumentation-bedrock
-
+   pip install honeyhive openinference-instrumentation-bedrock boto3>=1.26.0
 
 .. raw:: html
 
    </div>
-   <div id="bedrock-basic" class="tab-content">
+   <div id="bedrock-openinference-basic" class="tab-content">
 
 .. code-block:: python
 
    from honeyhive import HoneyHiveTracer
    from openinference.instrumentation.bedrock import BedrockInstrumentor
    import boto3
+   import os
 
-   # Initialize HoneyHive with Bedrock instrumentor
+   # Environment variables (recommended for production)
+   # .env file:
+   # HH_API_KEY=your-honeyhive-key
+   # AWS_ACCESS_KEY_ID=your-bedrock-key
+
+   # Initialize with environment variables (secure)
    tracer = HoneyHiveTracer.init(
-       api_key="your-honeyhive-key",
-       instrumentors=[BedrockInstrumentor()]
+       instrumentors=[BedrockInstrumentor()]  # Uses HH_API_KEY automatically
    )
 
-   # Use AWS Bedrock normally - automatic tracing!
-   bedrock = boto3.client('bedrock-runtime', region_name='us-east-1')
-   response = bedrock.invoke_model(
-       modelId='anthropic.claude-v2',
-       body=json.dumps({
-           "prompt": "Human: Hello, Claude! Assistant:",
-           "max_tokens_to_sample": 100
-       })
-   )
-
+   # Basic usage with error handling
+   try:
+       import boto3
+       
+       # Create Bedrock client
+       bedrock = boto3.client(
+           "bedrock-runtime",
+           region_name="us-east-1"
+       )
+       
+       # Invoke model
+       response = bedrock.invoke_model(
+           modelId="anthropic.claude-3-sonnet-20240229-v1:0",
+           body=json.dumps({
+               "anthropic_version": "bedrock-2023-05-31",
+               "max_tokens": 1000,
+               "messages": [{"role": "user", "content": "Hello from Bedrock!"}]
+           })
+       )
+       # Automatically traced! ✨
+   except botocore.exceptions.ClientError as e:
+       print(f"AWS Bedrock API error: {e}")
+   except Exception as e:
+       print(f"Unexpected error: {e}")
 
 .. raw:: html
 
    </div>
-   <div id="bedrock-advanced" class="tab-content">
+   <div id="bedrock-openinference-advanced" class="tab-content">
 
 .. code-block:: python
 
-   from honeyhive import HoneyHiveTracer, trace
+   from honeyhive import HoneyHiveTracer, trace, enrich_span
+   from honeyhive.models import EventType
    from openinference.instrumentation.bedrock import BedrockInstrumentor
    import boto3
-   import json
 
+   # Initialize with custom configuration
    tracer = HoneyHiveTracer.init(
        api_key="your-honeyhive-key",
        source="production",
        instrumentors=[BedrockInstrumentor()]
    )
 
-   @trace(tracer=tracer, event_type="chain")
-   def multi_model_comparison(prompt: str) -> dict:
-       """Compare responses across multiple Bedrock models."""
-       bedrock = boto3.client('bedrock-runtime', region_name='us-east-1')
+   @trace(tracer=tracer, event_type=EventType.chain)
+   def multi_model_bedrock_workflow(prompts: List[str]) -> dict:
+       """Advanced example with business context and multiple AWS Bedrock calls."""
+       import boto3
+       import json
        
-       # Claude response
-       claude = bedrock.invoke_model(
-           modelId='anthropic.claude-v2',
-           body=json.dumps({"prompt": f"Human: {prompt} Assistant:", "max_tokens_to_sample": 150})
+       # Configure AWS Bedrock
+       bedrock = boto3.client(
+           "bedrock-runtime",
+           region_name=os.getenv("AWS_REGION", "us-east-1")
        )
        
-       # Titan response  
-       titan = bedrock.invoke_model(
-           modelId='amazon.titan-text-express-v1',
-           body=json.dumps({"inputText": prompt, "textGenerationConfig": {"maxTokenCount": 150}})
-       )
+       # Add business context to the trace
+       enrich_span({
+           "business.input_type": type(prompts).__name__,
+           "business.use_case": "multi_model_analysis",
+           "bedrock.strategy": "bedrock_model_comparison",
+           "instrumentor.type": "openinference"
+       })
        
-       return {
-           "claude": json.loads(claude['body'].read())['completion'],
-           "titan": json.loads(titan['body'].read())['results'][0]['outputText']
-       }
+       try:
+           # Test multiple Bedrock models
+       models = [
+           "anthropic.claude-3-sonnet-20240229-v1:0",
+           "anthropic.claude-3-haiku-20240307-v1:0",
+           "amazon.titan-text-express-v1"
+       ]
+       
+       results = []
+       for prompt in prompts:
+           model_results = {}
+           
+           for model_id in models:
+               try:
+                   # Prepare request based on model type
+                   if "anthropic" in model_id:
+                       body = {
+                           "anthropic_version": "bedrock-2023-05-31",
+                           "max_tokens": 1000,
+                           "messages": [{"role": "user", "content": prompt}]
+                       }
+                   elif "titan" in model_id:
+                       body = {
+                           "inputText": prompt,
+                           "textGenerationConfig": {
+                               "maxTokenCount": 1000,
+                               "temperature": 0.7
+                           }
+                       }
+                   
+                   # Invoke model
+                   response = bedrock.invoke_model(
+                       modelId=model_id,
+                       body=json.dumps(body)
+                   )
+                   
+                   response_body = json.loads(response["body"].read())
+                   model_results[model_id] = response_body
+                   
+               except Exception as e:
+                   model_results[model_id] = {"error": str(e)}
+           
+           results.append({
+               "prompt": prompt,
+               "model_responses": model_results
+           })
+           
+           # Add result metadata
+           enrich_span({
+               "business.successful": True,
+               "bedrock.models_used": ["claude-3-sonnet", "claude-3-haiku", "titan-text"],
+               "business.result_confidence": "high"
+           })
+           
+           return {{RETURN_VALUE}}
+           
+       except botocore.exceptions.ClientError as e:
+           enrich_span({
+               "error.type": "api_error", 
+               "error.message": str(e),
+               "instrumentor.source": "openinference"
+           })
+           raise
 
+.. raw:: html
+
+   </div>
+   <div id="bedrock-openinference-troubleshoot" class="tab-content">
+
+**Common OpenInference Issues**:
+
+1. **Missing Traces**
+   
+   .. code-block:: python
+   
+      # Ensure instrumentor is passed to tracer
+      tracer = HoneyHiveTracer.init(
+          instrumentors=[BedrockInstrumentor()]  # Don't forget this!
+      )
+
+2. **Performance for High Volume**
+   
+   .. code-block:: python
+   
+      # OpenInference uses efficient span processors automatically
+      # No additional configuration needed
+
+3. **Multiple Instrumentors**
+   
+   .. code-block:: python
+   
+      # You can combine OpenInference with other instrumentors
+      from openinference.instrumentation.bedrock import BedrockInstrumentor
+       from openinference.instrumentation.openai import OpenAIInstrumentor
+       
+       tracer = HoneyHiveTracer.init(
+           instrumentors=[
+               BedrockInstrumentor(),
+               OpenAIInstrumentor()
+           ]
+       )
+
+
+4. **Environment Configuration**
+   
+   .. code-block:: bash
+   
+      # HoneyHive configuration
+      export HH_API_KEY="your-honeyhive-api-key"
+      export HH_PROJECT="bedrock-integration"
+      export HH_SOURCE="production"
+      
+      # AWS Bedrock configuration
+      export AWS_ACCESS_KEY_ID="your-aws-access-key"
+      export AWS_SECRET_ACCESS_KEY="your-aws-secret-key"
+      export AWS_DEFAULT_REGION="us-east-1"
 
 .. raw:: html
 
    </div>
    </div>
 
-**2. Configure AWS Credentials**
+.. raw:: html
+
+   </div>
+
+   <div id="openllmetry-section" class="instrumentor-content">
+
+.. raw:: html
+
+   <div class="code-example">
+   <div class="code-tabs">
+     <button class="tab-button active" onclick="showTab(event, 'bedrock-openllmetry-install')">Installation</button>
+     <button class="tab-button" onclick="showTab(event, 'bedrock-openllmetry-basic')">Basic Setup</button>
+     <button class="tab-button" onclick="showTab(event, 'bedrock-openllmetry-advanced')">Advanced Usage</button>
+     <button class="tab-button" onclick="showTab(event, 'bedrock-openllmetry-troubleshoot')">Troubleshooting</button>
+   </div>
+
+   <div id="bedrock-openllmetry-install" class="tab-content active">
+
+**Best for**: Production deployments, cost tracking, enhanced LLM observability
 
 .. code-block:: bash
 
-   # Option 1: AWS CLI
-   aws configure
+   # Recommended: Install with OpenLLMetry AWS Bedrock integration
+   pip install honeyhive[traceloop-bedrock]
    
-   # Option 2: Environment variables
-   export AWS_ACCESS_KEY_ID=your-access-key
-   export AWS_SECRET_ACCESS_KEY=your-secret-key
-   export AWS_DEFAULT_REGION=us-east-1
+   # Alternative: Manual installation
+   pip install honeyhive opentelemetry-instrumentation-bedrock boto3>=1.26.0
 
-**3. Initialize HoneyHive with Bedrock Instrumentor**
+.. raw:: html
+
+   </div>
+   <div id="bedrock-openllmetry-basic" class="tab-content">
 
 .. code-block:: python
 
    from honeyhive import HoneyHiveTracer
-   from openinference.instrumentation.bedrock import BedrockInstrumentor
+   from opentelemetry.instrumentation.bedrock import BedrockInstrumentor
    import boto3
-   import json
+   import os
 
-   # Initialize HoneyHive tracer with Bedrock instrumentor
+   # Environment variables (recommended for production)
+   # .env file:
+   # HH_API_KEY=your-honeyhive-key
+   # AWS_ACCESS_KEY_ID=your-bedrock-key
+
+   # Initialize with OpenLLMetry instrumentor
    tracer = HoneyHiveTracer.init(
-       api_key="your-honeyhive-api-key",
+       instrumentors=[BedrockInstrumentor()]  # Uses HH_API_KEY automatically
+   )
+
+   # Basic usage with automatic tracing
+   try:
+       import boto3
+       
+       # Create Bedrock client
+       bedrock = boto3.client(
+           "bedrock-runtime",
+           region_name="us-east-1"
+       )
+       
+       # Invoke model
+       response = bedrock.invoke_model(
+           modelId="anthropic.claude-3-sonnet-20240229-v1:0",
+           body=json.dumps({
+               "anthropic_version": "bedrock-2023-05-31",
+               "max_tokens": 1000,
+               "messages": [{"role": "user", "content": "Hello from Bedrock!"}]
+           })
+       )
+       # Automatically traced by OpenLLMetry with enhanced metrics! ✨
+   except botocore.exceptions.ClientError as e:
+       print(f"AWS Bedrock API error: {e}")
+   except Exception as e:
+       print(f"Unexpected error: {e}")
+
+.. raw:: html
+
+   </div>
+   <div id="bedrock-openllmetry-advanced" class="tab-content">
+
+.. code-block:: python
+
+   from honeyhive import HoneyHiveTracer, trace, enrich_span
+   from honeyhive.models import EventType
+   from opentelemetry.instrumentation.bedrock import BedrockInstrumentor
+   import boto3
+
+   # Initialize HoneyHive with OpenLLMetry instrumentor
+   tracer = HoneyHiveTracer.init(
+       api_key="your-honeyhive-key",
+       source="production",
        instrumentors=[BedrockInstrumentor()]
    )
 
-   # Create Bedrock client
-   bedrock_runtime = boto3.client(
-       "bedrock-runtime",
-       region_name="us-east-1"
-   )
-
-**4. Use Bedrock Normally - Automatically Traced**
-
-.. code-block:: python
-
-   # All Bedrock calls are now automatically traced
-   request = {
-       "prompt": "\n\nHuman: What is machine learning?\n\nAssistant:",
-       "max_tokens_to_sample": 100,
-       "temperature": 0.1
-   }
-
-   response = bedrock_runtime.invoke_model(
-       modelId="anthropic.claude-v2",
-       body=json.dumps(request),
-       contentType="application/json"
-   )
-
-   result = json.loads(response["body"].read())
-   print(result["completion"])
-
-Claude Integration
-------------------
-
-**Problem**: Use Claude models through Bedrock with automatic tracing.
-
-**Solution**:
-
-.. code-block:: python
-
-   import boto3
-   import json
-   from typing import List, Dict, Any
-
-   def claude_bedrock_chat(
-       messages: List[Dict[str, str]], 
-       model_id: str = "anthropic.claude-3-sonnet-20240229-v1:0",
-       max_tokens: int = 1000,
-       temperature: float = 0.7
-   ) -> str:
-       """Chat with Claude through Bedrock with automatic tracing."""
+   @trace(tracer=tracer, event_type=EventType.chain)
+   def multi_model_bedrock_workflow(prompts: List[str]) -> dict:
+       """Advanced example with business context and enhanced LLM metrics."""
+       import boto3
+       import json
        
-       bedrock_runtime = boto3.client("bedrock-runtime", region_name="us-east-1")
-       
-       # Format for Claude 3
-       request = {
-           "anthropic_version": "bedrock-2023-05-31",
-           "max_tokens": max_tokens,
-           "temperature": temperature,
-           "messages": messages
-       }
-       
-       # This call is automatically traced with:
-       # - Model ID and parameters
-       # - Input messages and token estimates
-       # - Output text and actual token usage
-       # - Latency and cost information
-       response = bedrock_runtime.invoke_model(
-           modelId=model_id,
-           body=json.dumps(request),
-           contentType="application/json"
+       # Configure AWS Bedrock
+       bedrock = boto3.client(
+           "bedrock-runtime",
+           region_name=os.getenv("AWS_REGION", "us-east-1")
        )
        
-       result = json.loads(response["body"].read())
-       return result["content"][0]["text"]
-
-   def claude_conversation_example():
-       """Example conversation with automatic tracing."""
+       # Add business context to the trace
+       enrich_span({
+           "business.input_type": type(prompts).__name__,
+           "business.use_case": "multi_model_analysis",
+           "bedrock.strategy": "cost_optimized_bedrock_model_comparison",
+           "instrumentor.type": "openllmetry",
+           "observability.enhanced": True
+       })
        
-       # Single-turn
-       messages = [
-           {"role": "user", "content": "Explain quantum computing simply"}
-       ]
-       response = claude_bedrock_chat(messages)
-       print("Claude:", response)
-       
-       # Multi-turn conversation
-       messages = [
-           {"role": "user", "content": "What is machine learning?"},
-           {"role": "assistant", "content": "Machine learning is a subset of AI..."},
-           {"role": "user", "content": "What are the main types?"}
-       ]
-       response = claude_bedrock_chat(messages, temperature=0.3)
-       print("Claude:", response)
-
-   # Usage
-   claude_conversation_example()
-
-Amazon Titan Integration
-------------------------
-
-**Problem**: Use Amazon Titan models for text generation and embeddings.
-
-**Solution**:
-
-.. code-block:: python
-
-   def titan_text_generation(
-       prompt: str,
-       model_id: str = "amazon.titan-text-express-v1",
-       max_tokens: int = 200,
-       temperature: float = 0.7
-   ) -> str:
-       """Generate text with Amazon Titan."""
-       
-       bedrock_runtime = boto3.client("bedrock-runtime", region_name="us-east-1")
-       
-       request = {
-           "inputText": prompt,
-           "textGenerationConfig": {
-               "maxTokenCount": max_tokens,
-               "temperature": temperature,
-               "topP": 0.9,
-               "stopSequences": []
-           }
-       }
-       
-       # Automatically traced
-       response = bedrock_runtime.invoke_model(
-           modelId=model_id,
-           body=json.dumps(request),
-           contentType="application/json"
-       )
-       
-       result = json.loads(response["body"].read())
-       return result["results"][0]["outputText"]
-
-   def titan_embeddings(
-       text: str,
-       model_id: str = "amazon.titan-embed-text-v1"
-   ) -> List[float]:
-       """Generate embeddings with Amazon Titan."""
-       
-       bedrock_runtime = boto3.client("bedrock-runtime", region_name="us-east-1")
-       
-       request = {
-           "inputText": text
-       }
-       
-       # Automatically traced
-       response = bedrock_runtime.invoke_model(
-           modelId=model_id,
-           body=json.dumps(request),
-           contentType="application/json"
-       )
-       
-       result = json.loads(response["body"].read())
-       return result["embedding"]
-
-   # Usage examples
-   text_result = titan_text_generation("Explain the benefits of cloud computing")
-   embeddings = titan_embeddings("This is a sample text for embedding")
-   print(f"Generated text: {text_result}")
-   print(f"Embedding dimensions: {len(embeddings)}")
-
-Multi-Model Comparison
-----------------------
-
-**Problem**: Compare different models on the same task with performance tracking.
-
-**Solution**:
-
-.. code-block:: python
-
-   import time
-   from typing import Dict, Any
-
-   def compare_bedrock_models(prompt: str) -> Dict[str, Any]:
-       """Compare multiple Bedrock models with automatic tracing."""
-       
-       bedrock_runtime = boto3.client("bedrock-runtime", region_name="us-east-1")
-       
+       try:
+           # Test multiple Bedrock models
        models = [
-           {
-               "id": "anthropic.claude-3-haiku-20240307-v1:0",
-               "name": "Claude 3 Haiku",
-               "type": "claude",
-               "cost_per_1k_tokens": 0.00025
-           },
-           {
-               "id": "anthropic.claude-3-sonnet-20240229-v1:0", 
-               "name": "Claude 3 Sonnet",
-               "type": "claude",
-               "cost_per_1k_tokens": 0.003
-           },
-           {
-               "id": "amazon.titan-text-express-v1",
-               "name": "Titan Text Express",
-               "type": "titan",
-               "cost_per_1k_tokens": 0.0013
-           }
+           "anthropic.claude-3-sonnet-20240229-v1:0",
+           "anthropic.claude-3-haiku-20240307-v1:0",
+           "amazon.titan-text-express-v1"
        ]
        
-       from honeyhive import trace, enrich_span, set_default_tracer
-       
-       set_default_tracer(tracer)
-       
-       @trace(event_type=EventType.model)
-       def test_single_model(model: dict, prompt: str) -> dict:
-           """Test a single model - automatically traced."""
-           enrich_span({
-               "model.id": model["id"],
-               "model.name": model["name"],
-               "model.type": model["type"],
-               "prompt.length": len(prompt)
+       results = []
+       for prompt in prompts:
+           model_results = {}
+           
+           for model_id in models:
+               try:
+                   # Prepare request based on model type
+                   if "anthropic" in model_id:
+                       body = {
+                           "anthropic_version": "bedrock-2023-05-31",
+                           "max_tokens": 1000,
+                           "messages": [{"role": "user", "content": prompt}]
+                       }
+                   elif "titan" in model_id:
+                       body = {
+                           "inputText": prompt,
+                           "textGenerationConfig": {
+                               "maxTokenCount": 1000,
+                               "temperature": 0.7
+                           }
+                       }
+                   
+                   # Invoke model
+                   response = bedrock.invoke_model(
+                       modelId=model_id,
+                       body=json.dumps(body)
+                   )
+                   
+                   response_body = json.loads(response["body"].read())
+                   model_results[model_id] = response_body
+                   
+               except Exception as e:
+                   model_results[model_id] = {"error": str(e)}
+           
+           results.append({
+               "prompt": prompt,
+               "model_responses": model_results
            })
            
-           # Model testing logic here
-           result = {"model": model["name"], "response": f"Response for {prompt[:50]}..."}
-           
+           # Add result metadata
            enrich_span({
-               "response.length": len(result["response"]),
-               "test.success": True
+               "business.successful": True,
+               "bedrock.models_used": ["claude-3-sonnet", "claude-3-haiku", "titan-text"],
+               "business.result_confidence": "high",
+               "openllmetry.cost_tracking": "enabled",
+               "openllmetry.token_metrics": "captured"
            })
            
-           return result
-       
-       @trace(event_type=EventType.chain)
-       def compare_models(models: list, prompt: str) -> dict:
-           """Compare multiple models - automatically traced with individual model calls."""
+           return {{RETURN_VALUE}}
+           
+       except botocore.exceptions.ClientError as e:
            enrich_span({
-               "comparison.prompt": prompt,
-               "comparison.models_count": len(models)
+               "error.type": "api_error", 
+               "error.message": str(e),
+               "instrumentor.error_handling": "openllmetry"
            })
-           
-           results = {}
-           
-           # Each model test is automatically traced
-           for model in models:
-               result = test_single_model(model, prompt)
-               results[model["name"]] = result
-           
-           enrich_span({
-               "comparison.completed_tests": len(results),
-               "comparison.success": True
-           })
-           
-           return results
-       
-               # Usage
-        comparison_results = compare_models(models, "Explain quantum computing")
+           raise
 
-Streaming Support
------------------
+.. raw:: html
 
-AWS Bedrock supports streaming responses for real-time applications:
+   </div>
+   <div id="bedrock-openllmetry-troubleshoot" class="tab-content">
 
-.. code-block:: python
+**Common OpenLLMetry Issues**:
 
-   import boto3
-   from honeyhive import trace
-   from honeyhive.models import EventType
+1. **Missing Traces**
    
-   @trace(event_type=EventType.model)
-   def stream_bedrock_response(prompt: str):
-       """Stream response from AWS Bedrock."""
-       bedrock_runtime = boto3.client('bedrock-runtime', region_name='us-east-1')
+   .. code-block:: python
+   
+      # Ensure OpenLLMetry instrumentor is passed to tracer
+      from opentelemetry.instrumentation.bedrock import BedrockInstrumentor
+      
+      tracer = HoneyHiveTracer.init(
+          instrumentors=[BedrockInstrumentor()]  # Don't forget this!
+      )
+
+2. **Enhanced Metrics Not Showing**
+   
+   .. code-block:: python
+   
+      # Ensure you're using the latest version
+      # pip install --upgrade opentelemetry-instrumentation-bedrock
+      
+      # The instrumentor automatically captures enhanced metrics
+      from opentelemetry.instrumentation.bedrock import BedrockInstrumentor
+      tracer = HoneyHiveTracer.init(instrumentors=[BedrockInstrumentor()])
+
+3. **Multiple OpenLLMetry Instrumentors**
+   
+   .. code-block:: python
+   
+      # You can combine multiple OpenLLMetry instrumentors
+      from opentelemetry.instrumentation.bedrock import BedrockInstrumentor
+       from opentelemetry.instrumentation.openai import OpenAIInstrumentor
        
-       request = {
-           "anthropic_version": "bedrock-2023-05-31",
-           "max_tokens": 200,
-           "temperature": 0.7,
-           "messages": [{"role": "user", "content": prompt}]
-       }
-       
-       response = bedrock_runtime.invoke_model_with_response_stream(
-           modelId="anthropic.claude-3-sonnet-20240229-v1:0",
-           body=json.dumps(request),
-           contentType="application/json"
+       tracer = HoneyHiveTracer.init(
+           instrumentors=[
+               BedrockInstrumentor(),       # OpenLLMetry Bedrock
+               OpenAIInstrumentor()         # OpenLLMetry OpenAI
+           ]
        )
-       
-       # Process streaming response
-       for event in response.get('body'):
-           chunk = json.loads(event['chunk']['bytes'].decode())
-           if chunk.get('type') == 'content_block_delta':
-               yield chunk['delta']['text']
 
-Production Considerations
--------------------------
+4. **Performance Optimization**
+   
+   .. code-block:: python
+   
+      # OpenLLMetry instrumentors handle batching automatically
+      # No additional configuration needed for performance
 
-**1. Error Handling**
+
+5. **Environment Configuration**
+   
+   .. code-block:: bash
+   
+      # HoneyHive configuration
+      export HH_API_KEY="your-honeyhive-api-key"
+      export HH_PROJECT="bedrock-integration"
+      export HH_SOURCE="production"
+      
+      # AWS Bedrock configuration
+      export AWS_ACCESS_KEY_ID="your-aws-access-key"
+      export AWS_SECRET_ACCESS_KEY="your-aws-secret-key"
+      export AWS_DEFAULT_REGION="us-east-1"
+      
+      # Optional: OpenLLMetry cloud features
+      export TRACELOOP_API_KEY="your-traceloop-key"
+      export TRACELOOP_BASE_URL="https://api.traceloop.com"
+
+.. raw:: html
+
+   </div>
+   </div>
+
+.. raw:: html
+
+   </div>
+   </div>
+
+Comparison: OpenInference vs OpenLLMetry for AWS Bedrock
+---------------------------------------------------------------
+
+.. list-table:: Feature Comparison
+   :header-rows: 1
+   :widths: 30 35 35
+
+   * - Feature
+     - OpenInference
+     - OpenLLMetry
+   * - **Setup Complexity**
+     - Simple, single instrumentor
+     - Single instrumentor setup
+   * - **Token Tracking**
+     - Basic span attributes
+     - Detailed token metrics + costs
+   * - **Model Metrics**
+     - Model name, basic timing
+     - Cost per model, latency analysis
+   * - **Performance**
+     - Lightweight, fast
+     - Optimized with smart batching
+   * - **Cost Analysis**
+     - Manual calculation needed
+     - Automatic cost per request
+   * - **Production Ready**
+     - ✅ Yes
+     - ✅ Yes, with cost insights
+   * - **Debugging**
+     - Standard OpenTelemetry
+     - Enhanced LLM-specific debug
+   * - **Best For**
+     - Simple integrations, dev
+     - Production, cost optimization
+
+Environment Configuration
+--------------------------
+
+**Required Environment Variables** (both instrumentors):
+
+.. code-block:: bash
+
+   # HoneyHive configuration
+   export HH_API_KEY="your-honeyhive-api-key"
+   export HH_PROJECT="bedrock-integration"
+   export HH_SOURCE="production"
+   
+   # AWS Bedrock configuration
+   export AWS_ACCESS_KEY_ID="your-bedrock-api-key"
+
+# AWS_ACCESS_KEY_ID=your-aws-access-key
+# AWS_SECRET_ACCESS_KEY=your-aws-secret-key
+# AWS_REGION=us-east-1
+
+Migration Between Instrumentors
+-------------------------------
+
+**From OpenInference to OpenLLMetry**:
 
 .. code-block:: python
 
-   @trace(event_type=EventType.model)
-   def robust_bedrock_call(prompt: str, max_retries: int = 3):
-       """Robust Bedrock call with retry logic."""
-       for attempt in range(max_retries):
-           try:
-               return bedrock_generate(prompt)
-           except Exception as e:
-               if attempt == max_retries - 1:
-                   raise
-               time.sleep(2 ** attempt)  # Exponential backoff
+   # Before (OpenInference)
+   from openinference.instrumentation.bedrock import BedrockInstrumentor
+   tracer = HoneyHiveTracer.init(instrumentors=[BedrockInstrumentor()])
+   
+   # After (OpenLLMetry) - different instrumentor package
+   from opentelemetry.instrumentation.bedrock import BedrockInstrumentor
+   tracer = HoneyHiveTracer.init(instrumentors=[BedrockInstrumentor()])
 
-**2. Cost Optimization**
+**From OpenLLMetry to OpenInference**:
 
 .. code-block:: python
 
-   @trace(event_type=EventType.model)
-   def cost_optimized_call(prompt: str):
-       """Optimize costs by choosing appropriate model."""
-       # Use cheaper model for simple tasks
-       if len(prompt) < 100:
-           model_id = "amazon.titan-text-lite-v1"
-       else:
-           model_id = "anthropic.claude-3-haiku-20240307-v1:0"
-       
-       return bedrock_runtime.invoke_model(
-           modelId=model_id,
-           body=json.dumps({"inputText": prompt})
-       )
+   # Before (OpenLLMetry)
+   from opentelemetry.instrumentation.bedrock import BedrockInstrumentor
+   tracer = HoneyHiveTracer.init(instrumentors=[BedrockInstrumentor()])
+   
+   # After (OpenInference)
+   from openinference.instrumentation.bedrock import BedrockInstrumentor
+   tracer = HoneyHiveTracer.init(instrumentors=[BedrockInstrumentor()])
 
 See Also
 --------
 
-- :doc:`multi-provider` - Use AWS Bedrock with other providers
+- :doc:`multi-provider` - Use Bedrock with other providers
 - :doc:`../troubleshooting` - Common integration issues
 - :doc:`../../tutorials/03-llm-integration` - LLM integration tutorial
+- :doc:`anthropic` - Similar integration for Anthropic Claude
 
 .. raw:: html
 
@@ -499,9 +624,63 @@ See Also
      document.getElementById(tabName).classList.add("active");
      evt.currentTarget.classList.add("active");
    }
+   
+   function showInstrumentor(evt, instrumentorName) {
+     var i, instrumentorContent, instrumentorLinks;
+     instrumentorContent = document.getElementsByClassName("instrumentor-content");
+     for (i = 0; i < instrumentorContent.length; i++) {
+       instrumentorContent[i].classList.remove("active");
+     }
+     instrumentorLinks = document.getElementsByClassName("instrumentor-button");
+     for (i = 0; i < instrumentorLinks.length; i++) {
+       instrumentorLinks[i].classList.remove("active");
+     }
+     document.getElementById(instrumentorName).classList.add("active");
+     evt.currentTarget.classList.add("active");
+   }
    </script>
    
    <style>
+   .instrumentor-selector {
+     margin: 2rem 0;
+     border: 2px solid #2980b9;
+     border-radius: 12px;
+     overflow: hidden;
+     box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+   }
+   .instrumentor-tabs {
+     display: flex;
+     background: linear-gradient(135deg, #3498db, #2980b9);
+     border-bottom: 1px solid #2980b9;
+   }
+   .instrumentor-button {
+     background: none;
+     border: none;
+     padding: 15px 25px;
+     cursor: pointer;
+     font-weight: 600;
+     font-size: 16px;
+     color: white;
+     transition: all 0.3s ease;
+     flex: 1;
+     text-align: center;
+   }
+   .instrumentor-button:hover {
+     background: rgba(255, 255, 255, 0.1);
+     transform: translateY(-1px);
+   }
+   .instrumentor-button.active {
+     background: rgba(255, 255, 255, 0.2);
+     border-bottom: 3px solid #f39c12;
+   }
+   .instrumentor-content {
+     display: none;
+     padding: 1.5rem;
+     background: #f8f9fa;
+   }
+   .instrumentor-content.active {
+     display: block;
+   }
    .code-example {
      margin: 1.5rem 0;
      border: 1px solid #ddd;
@@ -543,4 +722,3 @@ See Also
      border-radius: 0;
    }
    </style>
-

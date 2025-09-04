@@ -1,37 +1,46 @@
 Integrate with Google AI
-========================
+===================================
 
-Learn how to integrate HoneyHive with Google AI's Gemini models using the BYOI (Bring Your Own Instrumentor) approach.
+.. note::
+   **Problem-solving guide for Google AI integration**
+   
+   This guide helps you solve specific problems when integrating HoneyHive with Google AI, with support for multiple instrumentor options.
 
-.. contents:: Table of Contents
-   :local:
-   :depth: 2
+This guide covers Google AI integration with HoneyHive's BYOI architecture, supporting both OpenInference and OpenLLMetry instrumentors.
 
-Overview
---------
+Choose Your Instrumentor
+------------------------
 
-Google AI offers powerful Gemini models through the `google-generativeai` library. HoneyHive provides automatic tracing through OpenInference instrumentors with zero code changes to your existing Google AI implementations.
+**Problem**: I need to choose between OpenInference and OpenLLMetry for Google AI integration.
 
-**Benefits**:
-- **Automatic Tracing**: All Gemini API calls traced automatically
-- **Rich Context**: Model parameters, token usage, and performance metrics
-- **Multi-Modal Support**: Text, image, and code generation tracing
-- **Zero Code Changes**: Works with existing Google AI code
+**Solution**: Choose the instrumentor that best fits your needs:
 
-Quick Start
------------
+- **OpenInference**: Open-source, lightweight, great for getting started
+- **OpenLLMetry**: Enhanced LLM metrics, cost tracking, production optimizations
 
+.. raw:: html
+
+   <div class="instrumentor-selector">
+   <div class="instrumentor-tabs">
+     <button class="instrumentor-button active" onclick="showInstrumentor(event, 'openinference-section')">OpenInference</button>
+     <button class="instrumentor-button" onclick="showInstrumentor(event, 'openllmetry-section')">OpenLLMetry</button>
+   </div>
+
+   <div id="openinference-section" class="instrumentor-content active">
 
 .. raw:: html
 
    <div class="code-example">
    <div class="code-tabs">
-     <button class="tab-button active" onclick="showTab(event, 'google-install')">Installation</button>
-     <button class="tab-button" onclick="showTab(event, 'google-basic')">Basic Setup</button>
-     <button class="tab-button" onclick="showTab(event, 'google-advanced')">Advanced Usage</button>
+     <button class="tab-button active" onclick="showTab(event, 'google-ai-openinference-install')">Installation</button>
+     <button class="tab-button" onclick="showTab(event, 'google-ai-openinference-basic')">Basic Setup</button>
+     <button class="tab-button" onclick="showTab(event, 'google-ai-openinference-advanced')">Advanced Usage</button>
+     <button class="tab-button" onclick="showTab(event, 'google-ai-openinference-troubleshoot')">Troubleshooting</button>
    </div>
 
-   <div id="google-install" class="tab-content active">
+   <div id="google-ai-openinference-install" class="tab-content active">
+
+**Best for**: Open-source projects, simple tracing needs, getting started quickly
 
 .. code-block:: bash
 
@@ -39,628 +48,409 @@ Quick Start
    pip install honeyhive[openinference-google-ai]
    
    # Alternative: Manual installation
-   pip install honeyhive google-generativeai openinference-instrumentation-google-generativeai
-
+   pip install honeyhive openinference-instrumentation-google-generativeai google-generativeai>=0.3.0
 
 .. raw:: html
 
    </div>
-   <div id="google-basic" class="tab-content">
+   <div id="google-ai-openinference-basic" class="tab-content">
 
 .. code-block:: python
 
    from honeyhive import HoneyHiveTracer
    from openinference.instrumentation.google_generativeai import GoogleGenerativeAIInstrumentor
-   import google.generativeai as genai
+   import google.generativeai
+   import os
 
-   # Initialize HoneyHive tracer with Google AI instrumentor
+   # Environment variables (recommended for production)
+   # .env file:
+   # HH_API_KEY=your-honeyhive-key
+   # GOOGLE_API_KEY=your-google-ai-key
+
+   # Initialize with environment variables (secure)
    tracer = HoneyHiveTracer.init(
-       api_key="your-honeyhive-api-key",
-       instrumentors=[GoogleGenerativeAIInstrumentor()]
+       instrumentors=[GoogleGenerativeAIInstrumentor()]  # Uses HH_API_KEY automatically
    )
 
-   # Configure Google AI
-   genai.configure(api_key="your-google-ai-api-key")
-
-   # All Google AI calls are now automatically traced
-   model = genai.GenerativeModel('gemini-pro')
-   response = model.generate_content("What is machine learning?")
-   print(response.text)
-
+   # Basic usage with error handling
+   try:
+       import google.generativeai as genai
+       genai.configure(api_key=os.getenv("GOOGLE_API_KEY"))
+       model = genai.GenerativeModel('gemini-pro')
+       response = model.generate_content("Hello!")
+       print(response.text)
+       # Automatically traced! ✨
+   except google.generativeai.types.GoogleGenerativeAIError as e:
+       print(f"Google AI API error: {e}")
+   except Exception as e:
+       print(f"Unexpected error: {e}")
 
 .. raw:: html
 
    </div>
-   <div id="google-advanced" class="tab-content">
+   <div id="google-ai-openinference-advanced" class="tab-content">
 
 .. code-block:: python
 
-   from honeyhive import HoneyHiveTracer, trace
+   from honeyhive import HoneyHiveTracer, trace, enrich_span
+   from honeyhive.models import EventType
    from openinference.instrumentation.google_generativeai import GoogleGenerativeAIInstrumentor
-   import google.generativeai as genai
+   import google.generativeai
 
    # Initialize with custom configuration
    tracer = HoneyHiveTracer.init(
-       api_key="your-honeyhive-api-key",
+       api_key="your-honeyhive-key",
        source="production",
        instrumentors=[GoogleGenerativeAIInstrumentor()]
    )
 
-   genai.configure(api_key="your-google-ai-api-key")
-
-   @trace(tracer=tracer, event_type="chain")
-   def content_pipeline(topic: str) -> dict:
-       """Advanced example with multiple Gemini models."""
+   @trace(tracer=tracer, event_type=EventType.chain)
+   def generate_content_comparison(prompt: str) -> dict:
+       """Advanced example with business context and multiple Google AI calls."""
+       {{ADVANCED_USAGE_EXAMPLE}}
        
-       # Use Gemini Pro for research
-       research_model = genai.GenerativeModel('gemini-pro')
-       research = research_model.generate_content(
-           f"Research comprehensive information about {topic}. Include key facts and recent developments."
-       )
+       # Add business context to the trace
+       enrich_span({
+           "business.input_type": type(prompt).__name__,
+           "business.use_case": "content_generation",
+           "google-ai.strategy": "multi_model_gemini",
+           "instrumentor.type": "openinference"
+       })
        
-       # Use Gemini Pro Vision for visual content ideas
-       content_model = genai.GenerativeModel('gemini-pro')
-       content_ideas = content_model.generate_content(
-           f"Based on this research, suggest 5 creative content ideas:\n{research.text}"
-       )
-       
-       return {
-           "research": research.text,
-           "content_ideas": content_ideas.text
-       }
+       try:
+           {{ADVANCED_IMPLEMENTATION}}
+           
+           # Add result metadata
+           enrich_span({
+               "business.successful": True,
+               "google-ai.models_used": ["gemini-pro", "gemini-pro-vision"],
+               "business.result_confidence": "high"
+           })
+           
+           return {{RETURN_VALUE}}
+           
+       except google.generativeai.types.GoogleGenerativeAIError as e:
+           enrich_span({
+               "error.type": "api_error", 
+               "error.message": str(e),
+               "instrumentor.source": "openinference"
+           })
+           raise
 
-   # Both the function and all Gemini calls are traced
-   result = content_pipeline("sustainable energy")
+.. raw:: html
 
+   </div>
+   <div id="google-ai-openinference-troubleshoot" class="tab-content">
+
+**Common OpenInference Issues**:
+
+1. **Missing Traces**
+   
+   .. code-block:: python
+   
+      # Ensure instrumentor is passed to tracer
+      tracer = HoneyHiveTracer.init(
+          instrumentors=[GoogleGenerativeAIInstrumentor()]  # Don't forget this!
+      )
+
+2. **Performance for High Volume**
+   
+   .. code-block:: python
+   
+      # OpenInference uses efficient span processors automatically
+      # No additional configuration needed
+
+3. **Multiple Instrumentors**
+   
+   .. code-block:: python
+   
+      # You can combine OpenInference with other instrumentors
+      {{MULTIPLE_INSTRUMENTORS_EXAMPLE}}
+
+
+4. **Environment Configuration**
+   
+   .. code-block:: bash
+   
+      # HoneyHive configuration
+      export HH_API_KEY="your-honeyhive-api-key"
+      export HH_PROJECT="google-ai-integration"
+      export HH_SOURCE="production"
+      
+      # Google AI configuration
+      export GOOGLE_API_KEY="your-google-ai-api-key"
 
 .. raw:: html
 
    </div>
    </div>
 
-Basic Text Generation
----------------------
+.. raw:: html
 
-**Problem**: Trace basic text generation with Gemini Pro.
+   </div>
 
-**Solution**:
+   <div id="openllmetry-section" class="instrumentor-content">
+
+.. raw:: html
+
+   <div class="code-example">
+   <div class="code-tabs">
+     <button class="tab-button active" onclick="showTab(event, 'google-ai-openllmetry-install')">Installation</button>
+     <button class="tab-button" onclick="showTab(event, 'google-ai-openllmetry-basic')">Basic Setup</button>
+     <button class="tab-button" onclick="showTab(event, 'google-ai-openllmetry-advanced')">Advanced Usage</button>
+     <button class="tab-button" onclick="showTab(event, 'google-ai-openllmetry-troubleshoot')">Troubleshooting</button>
+   </div>
+
+   <div id="google-ai-openllmetry-install" class="tab-content active">
+
+**Best for**: Production deployments, cost tracking, enhanced LLM observability
+
+.. code-block:: bash
+
+   # Recommended: Install with OpenLLMetry Google AI integration
+   pip install honeyhive[traceloop-google-ai]
+   
+   # Alternative: Manual installation
+   pip install honeyhive opentelemetry-instrumentation-google-generativeai google-generativeai>=0.3.0
+
+.. raw:: html
+
+   </div>
+   <div id="google-ai-openllmetry-basic" class="tab-content">
 
 .. code-block:: python
 
-   import google.generativeai as genai
    from honeyhive import HoneyHiveTracer
-   from openinference.instrumentation.google_generativeai import GoogleGenerativeAIInstrumentor
+   from opentelemetry.instrumentation.google_generativeai import GoogleGenerativeAIInstrumentor
+   import google.generativeai
+   import os
 
-   # Setup (do once at application startup)
+   # Environment variables (recommended for production)
+   # .env file:
+   # HH_API_KEY=your-honeyhive-key
+   # GOOGLE_API_KEY=your-google-ai-key
+
+   # Initialize with OpenLLMetry instrumentor
    tracer = HoneyHiveTracer.init(
-       api_key="your-honeyhive-api-key",
+       instrumentors=[GoogleGenerativeAIInstrumentor()]  # Uses HH_API_KEY automatically
+   )
+
+   # Basic usage with automatic tracing
+   try:
+       import google.generativeai as genai
+       genai.configure(api_key=os.getenv("GOOGLE_API_KEY"))
+       model = genai.GenerativeModel('gemini-pro')
+       response = model.generate_content("Hello!")
+       print(response.text)
+       # Automatically traced by OpenLLMetry with enhanced metrics! ✨
+   except google.generativeai.types.GoogleGenerativeAIError as e:
+       print(f"Google AI API error: {e}")
+   except Exception as e:
+       print(f"Unexpected error: {e}")
+
+.. raw:: html
+
+   </div>
+   <div id="google-ai-openllmetry-advanced" class="tab-content">
+
+.. code-block:: python
+
+   from honeyhive import HoneyHiveTracer, trace, enrich_span
+   from honeyhive.models import EventType
+   from opentelemetry.instrumentation.google_generativeai import GoogleGenerativeAIInstrumentor
+   import google.generativeai
+
+   # Initialize HoneyHive with OpenLLMetry instrumentor
+   tracer = HoneyHiveTracer.init(
+       api_key="your-honeyhive-key",
+       source="production",
        instrumentors=[GoogleGenerativeAIInstrumentor()]
    )
 
-   genai.configure(api_key="your-google-ai-api-key")
-
-   def generate_text(prompt: str, model_name: str = "gemini-pro") -> str:
-       """Generate text with automatic tracing."""
+   @trace(tracer=tracer, event_type=EventType.chain)
+   def generate_content_comparison(prompt: str) -> dict:
+       """Advanced example with business context and enhanced LLM metrics."""
+       {{ADVANCED_USAGE_EXAMPLE}}
        
-       model = genai.GenerativeModel(model_name)
+       # Add business context to the trace
+       enrich_span({
+           "business.input_type": type(prompt).__name__,
+           "business.use_case": "content_generation",
+           "google-ai.strategy": "cost_optimized_multi_model_gemini",
+           "instrumentor.type": "openllmetry",
+           "observability.enhanced": True
+       })
        
-       # This call is automatically traced with:
-       # - Model name and parameters
-       # - Input prompt and token count
-       # - Output text and token count
-       # - Latency and performance metrics
-       response = model.generate_content(prompt)
-       
-       return response.text
-
-   # Usage examples
-   result = generate_text("Explain quantum computing in simple terms")
-   print(result)
-
-   result = generate_text("Write a Python function to sort a list", "gemini-pro")
-   print(result)
-
-Chat Conversations
-------------------
-
-**Problem**: Trace multi-turn conversations with context.
-
-**Solution**:
-
-.. code-block:: python
-
-   def chat_conversation():
-       """Multi-turn chat conversation with automatic tracing."""
-       
-       model = genai.GenerativeModel('gemini-pro')
-       chat = model.start_chat(history=[])
-       
-       # Each message is automatically traced
-       response1 = chat.send_message("Hello! I'm learning about AI.")
-       print("AI:", response1.text)
-       
-       response2 = chat.send_message("What should I learn first?")
-       print("AI:", response2.text)
-       
-       response3 = chat.send_message("Can you give me a learning plan?")
-       print("AI:", response3.text)
-       
-       return chat.history
-
-   # Usage
-   conversation_history = chat_conversation()
-
-**Enhanced Chat with Custom Context**:
-
-.. code-block:: python
-
-   def enhanced_chat_session(user_id: str, topic: str):
-       """Chat session with custom tracing context."""
-       
-       # Add custom context to the trace
-       with tracer.start_span("chat_session") as span:
-           span.set_attribute("user.id", user_id)
-           span.set_attribute("chat.topic", topic)
-           span.set_attribute("chat.model", "gemini-pro")
+       try:
+           {{ADVANCED_IMPLEMENTATION}}
            
-           model = genai.GenerativeModel('gemini-pro')
-           chat = model.start_chat(history=[])
+           # Add result metadata
+           enrich_span({
+               "business.successful": True,
+               "google-ai.models_used": ["gemini-pro", "gemini-pro-vision"],
+               "business.result_confidence": "high",
+               "openllmetry.cost_tracking": "enabled",
+               "openllmetry.token_metrics": "captured"
+           })
            
-           # System prompt
-           system_prompt = f"You are helping a user learn about {topic}. Be encouraging and provide practical advice."
+           return {{RETURN_VALUE}}
            
-           response = chat.send_message(system_prompt)
-           span.set_attribute("chat.system_prompt_tokens", len(system_prompt.split()))
-           
-           return chat
+       except google.generativeai.types.GoogleGenerativeAIError as e:
+           enrich_span({
+               "error.type": "api_error", 
+               "error.message": str(e),
+               "instrumentor.error_handling": "openllmetry"
+           })
+           raise
 
-   # Usage
-   chat = enhanced_chat_session("user123", "machine learning")
+.. raw:: html
 
-Multi-Modal Generation
-----------------------
+   </div>
+   <div id="google-ai-openllmetry-troubleshoot" class="tab-content">
 
-**Problem**: Trace image and text multi-modal generation.
+**Common OpenLLMetry Issues**:
 
-**Solution**:
+1. **Missing Traces**
+   
+   .. code-block:: python
+   
+      # Ensure OpenLLMetry instrumentor is passed to tracer
+      from opentelemetry.instrumentation.google_generativeai import GoogleGenerativeAIInstrumentor
+      
+      tracer = HoneyHiveTracer.init(
+          instrumentors=[GoogleGenerativeAIInstrumentor()]  # Don't forget this!
+      )
 
-.. code-block:: python
+2. **Enhanced Metrics Not Showing**
+   
+   .. code-block:: python
+   
+      # Ensure you're using the latest version
+      # pip install --upgrade opentelemetry-instrumentation-google-generativeai
+      
+      # The instrumentor automatically captures enhanced metrics
+      from opentelemetry.instrumentation.google_generativeai import GoogleGenerativeAIInstrumentor
+      tracer = HoneyHiveTracer.init(instrumentors=[GoogleGenerativeAIInstrumentor()])
 
-   import PIL.Image
+3. **Multiple OpenLLMetry Instrumentors**
+   
+   .. code-block:: python
+   
+      # You can combine multiple OpenLLMetry instrumentors
+      {{MULTIPLE_OPENLLMETRY_INSTRUMENTORS_EXAMPLE}}
 
-   def analyze_image_with_text(image_path: str, question: str):
-       """Analyze image with text prompt - automatically traced."""
-       
-       # Load image
-       image = PIL.Image.open(image_path)
-       
-       # Use Gemini Pro Vision for multi-modal
-       model = genai.GenerativeModel('gemini-pro-vision')
-       
-       # This multi-modal call is automatically traced with:
-       # - Image metadata (size, format)
-       # - Text prompt
-       # - Model parameters
-       # - Response content
-       response = model.generate_content([question, image])
-       
-       return response.text
+4. **Performance Optimization**
+   
+   .. code-block:: python
+   
+      # OpenLLMetry instrumentors handle batching automatically
+      # No additional configuration needed for performance
 
-   def generate_content_from_description(description: str):
-       """Generate detailed content from image description."""
-       
-       with tracer.start_span("content_generation") as span:
-           span.set_attribute("content.type", "image_description")
-           span.set_attribute("content.description_length", len(description))
-           
-           model = genai.GenerativeModel('gemini-pro')
-           
-           prompt = f"""
-           Based on this image description: "{description}"
-           
-           Generate:
-           1. A detailed scene analysis
-           2. Possible context or story
-           3. Key visual elements to notice
-           """
-           
-           response = model.generate_content(prompt)
-           span.set_attribute("content.generated_length", len(response.text))
-           
-           return response.text
 
-   # Usage examples
-   result = analyze_image_with_text("photo.jpg", "What's happening in this image?")
-   content = generate_content_from_description("A busy street market with colorful fruits")
+5. **Environment Configuration**
+   
+   .. code-block:: bash
+   
+      # HoneyHive configuration
+      export HH_API_KEY="your-honeyhive-api-key"
+      export HH_PROJECT="google-ai-integration"
+      export HH_SOURCE="production"
+      
+      # Google AI configuration
+      export GOOGLE_API_KEY="your-google-ai-api-key"
+      
+      # Optional: OpenLLMetry cloud features
+      export TRACELOOP_API_KEY="your-traceloop-key"
+      export TRACELOOP_BASE_URL="https://api.traceloop.com"
 
-Advanced Configuration
-----------------------
+.. raw:: html
 
-**Problem**: Configure Gemini models with specific parameters and trace the configurations.
+   </div>
+   </div>
 
-**Solution**:
+.. raw:: html
 
-.. code-block:: python
+   </div>
+   </div>
 
-   def advanced_generation(prompt: str, **config):
-       """Advanced generation with custom configuration tracing."""
-       
-       # Configuration options
-       generation_config = genai.types.GenerationConfig(
-           candidate_count=config.get('candidate_count', 1),
-           stop_sequences=config.get('stop_sequences', []),
-           max_output_tokens=config.get('max_output_tokens', 1024),
-           temperature=config.get('temperature', 0.7),
-           top_p=config.get('top_p', 0.8),
-           top_k=config.get('top_k', 40)
-       )
-       
-       safety_settings = config.get('safety_settings', [])
-       
-       with tracer.start_span("advanced_generation") as span:
-           # Log configuration for observability
-           span.set_attribute("config.temperature", generation_config.temperature)
-           span.set_attribute("config.max_tokens", generation_config.max_output_tokens)
-           span.set_attribute("config.top_p", generation_config.top_p)
-           span.set_attribute("config.top_k", generation_config.top_k)
-           span.set_attribute("config.safety_settings_count", len(safety_settings))
-           
-           model = genai.GenerativeModel('gemini-pro')
-           
-           # Generate with custom configuration
-           response = model.generate_content(
-               prompt,
-               generation_config=generation_config,
-               safety_settings=safety_settings
-           )
-           
-           span.set_attribute("response.finish_reason", getattr(response, 'finish_reason', 'unknown'))
-           
-           return response.text
+Comparison: OpenInference vs OpenLLMetry for Google AI
+---------------------------------------------------------------
 
-   # Usage with different configurations
-   creative_config = {
-       'temperature': 0.9,
-       'top_p': 0.95,
-       'max_output_tokens': 2048
-   }
+.. list-table:: Feature Comparison
+   :header-rows: 1
+   :widths: 30 35 35
 
-   factual_config = {
-       'temperature': 0.1,
-       'top_p': 0.1,
-       'max_output_tokens': 512
-   }
-
-   creative_result = advanced_generation("Write a creative story about AI", **creative_config)
-   factual_result = advanced_generation("What is the capital of France?", **factual_config)
-
-Error Handling and Reliability
-------------------------------
-
-**Problem**: Handle Google AI API errors gracefully while maintaining tracing.
-
-**Solution**:
-
-.. code-block:: python
-
-   import google.generativeai as genai
-   from google.api_core import exceptions as google_exceptions
-
-   def reliable_generation(prompt: str, max_retries: int = 3):
-       """Reliable generation with error handling and tracing."""
-       
-       model = genai.GenerativeModel('gemini-pro')
-       
-       for attempt in range(max_retries):
-           try:
-               with tracer.start_span(f"generation_attempt_{attempt + 1}") as span:
-                   span.set_attribute("attempt.number", attempt + 1)
-                   span.set_attribute("attempt.max_retries", max_retries)
-                   
-                   # This will be traced automatically, including errors
-                   response = model.generate_content(prompt)
-                   
-                   span.set_attribute("attempt.success", True)
-                   return response.text
-                   
-           except google_exceptions.ResourceExhausted as e:
-               # Rate limit error
-               span.set_attribute("attempt.success", False)
-               span.set_attribute("error.type", "rate_limit")
-               span.set_attribute("error.message", str(e))
-               
-               if attempt < max_retries - 1:
-                   wait_time = 2 ** attempt  # Exponential backoff
-                   span.set_attribute("retry.wait_seconds", wait_time)
-                   time.sleep(wait_time)
-               else:
-                   raise
-                   
-           except google_exceptions.InvalidArgument as e:
-               # Invalid input error
-               span.set_attribute("attempt.success", False)
-               span.set_attribute("error.type", "invalid_argument")
-               span.set_attribute("error.message", str(e))
-               raise  # Don't retry invalid arguments
-               
-           except Exception as e:
-               # Other errors
-               span.set_attribute("attempt.success", False)
-               span.set_attribute("error.type", type(e).__name__)
-               span.set_attribute("error.message", str(e))
-               
-               if attempt < max_retries - 1:
-                   time.sleep(1)
-               else:
-                   raise
-
-   # Usage
-   try:
-       result = reliable_generation("Explain machine learning")
-       print(result)
-   except Exception as e:
-       print(f"Generation failed: {e}")
-
-Performance Monitoring
-----------------------
-
-**Problem**: Monitor and optimize Google AI performance across different models.
-
-**Solution**:
-
-.. code-block:: python
-
-   import time
-   from typing import Dict, Any
-
-   def benchmark_models(prompt: str, models: list = None) -> Dict[str, Any]:
-       """Benchmark different Gemini models with detailed tracing."""
-       
-       if models is None:
-           models = ["gemini-pro", "gemini-pro-vision"]
-       
-       results = {}
-       
-       with tracer.start_span("model_benchmark") as benchmark_span:
-           benchmark_span.set_attribute("benchmark.prompt", prompt)
-           benchmark_span.set_attribute("benchmark.models_count", len(models))
-           
-           for model_name in models:
-               with tracer.start_span(f"benchmark_{model_name}") as model_span:
-                   model_span.set_attribute("model.name", model_name)
-                   
-                   start_time = time.time()
-                   
-                   try:
-                       model = genai.GenerativeModel(model_name)
-                       response = model.generate_content(prompt)
-                       
-                       end_time = time.time()
-                       latency = end_time - start_time
-                       
-                       # Record performance metrics
-                       model_span.set_attribute("performance.latency_ms", latency * 1000)
-                       model_span.set_attribute("performance.response_length", len(response.text))
-                       model_span.set_attribute("performance.chars_per_second", len(response.text) / latency)
-                       model_span.set_attribute("benchmark.success", True)
-                       
-                       results[model_name] = {
-                           "response": response.text,
-                           "latency_ms": latency * 1000,
-                           "chars_per_second": len(response.text) / latency,
-                           "success": True
-                       }
-                       
-                   except Exception as e:
-                       end_time = time.time()
-                       latency = end_time - start_time
-                       
-                       model_span.set_attribute("performance.latency_ms", latency * 1000)
-                       model_span.set_attribute("benchmark.success", False)
-                       model_span.set_attribute("benchmark.error", str(e))
-                       
-                       results[model_name] = {
-                           "error": str(e),
-                           "latency_ms": latency * 1000,
-                           "success": False
-                       }
-           
-           # Summary metrics
-           successful_models = [k for k, v in results.items() if v.get("success")]
-           benchmark_span.set_attribute("benchmark.successful_models", len(successful_models))
-           benchmark_span.set_attribute("benchmark.success_rate", len(successful_models) / len(models))
-           
-           return results
-
-   # Usage
-   benchmark_results = benchmark_models("Explain quantum computing briefly")
-   for model, result in benchmark_results.items():
-       if result.get("success"):
-           print(f"{model}: {result['latency_ms']:.0f}ms, {result['chars_per_second']:.0f} chars/sec")
-       else:
-           print(f"{model}: Failed - {result['error']}")
+   * - Feature
+     - OpenInference
+     - OpenLLMetry
+   * - **Setup Complexity**
+     - Simple, single instrumentor
+     - Single instrumentor setup
+   * - **Token Tracking**
+     - Basic span attributes
+     - Detailed token metrics + costs
+   * - **Model Metrics**
+     - Model name, basic timing
+     - Cost per model, latency analysis
+   * - **Performance**
+     - Lightweight, fast
+     - Optimized with smart batching
+   * - **Cost Analysis**
+     - Manual calculation needed
+     - Automatic cost per request
+   * - **Production Ready**
+     - ✅ Yes
+     - ✅ Yes, with cost insights
+   * - **Debugging**
+     - Standard OpenTelemetry
+     - Enhanced LLM-specific debug
+   * - **Best For**
+     - Simple integrations, dev
+     - Production, cost optimization
 
 Environment Configuration
--------------------------
+--------------------------
 
-**Problem**: Manage Google AI credentials and settings across environments.
+**Required Environment Variables** (both instrumentors):
 
-**Solution**:
+.. code-block:: bash
 
-.. code-block:: python
-
-   import os
-   from typing import Optional
-
-   def setup_google_ai_environment(
-       honeyhive_api_key: Optional[str] = None,
-       google_api_key: Optional[str] = None,
-       project_name: Optional[str] = None,
-       environment: str = "development"
-   ):
-       """Setup Google AI with HoneyHive for different environments."""
-       
-       # Use environment variables if not provided
-       honeyhive_key = honeyhive_api_key or os.getenv("HH_API_KEY")
-       google_key = google_api_key or os.getenv("GOOGLE_API_KEY")
-       project = project_name or os.getenv("HH_PROJECT", f"google-ai-{environment}")
-       
-       if not honeyhive_key:
-           raise ValueError("HoneyHive API key required (HH_API_KEY)")
-       if not google_key:
-           raise ValueError("Google API key required (GOOGLE_API_KEY)")
-       
-       # Initialize HoneyHive with environment-specific settings
-       tracer_config = {
-           "api_key": honeyhive_key,
-           "project": project,
-           "source": environment,
-           "instrumentors": [GoogleGenerativeAIInstrumentor()]
-       }
-       
-       # Environment-specific configuration
-       if environment == "production":
-           tracer_config["disable_http_tracing"] = False  # Enable full tracing
-       elif environment == "development":
-           tracer_config["test_mode"] = True  # Enable debug mode
-       
-       tracer = HoneyHiveTracer.init(**tracer_config)
-       
-       # Configure Google AI
-       genai.configure(api_key=google_key)
-       
-       with tracer.start_span("environment_setup") as span:
-           span.set_attribute("environment", environment)
-           span.set_attribute("project", project)
-           span.set_attribute("google_ai.configured", True)
-       
-       return tracer
-
-   # Usage for different environments
+   # HoneyHive configuration
+   export HH_API_KEY="your-honeyhive-api-key"
+   export HH_PROJECT="google-ai-integration"
+   export HH_SOURCE="production"
    
-   # Development
-   dev_tracer = setup_google_ai_environment(environment="development")
+   # Google AI configuration
+   export GOOGLE_API_KEY="your-google-ai-api-key"
+
+{{ADDITIONAL_ENV_CONFIG}}
+
+Migration Between Instrumentors
+-------------------------------
+
+**From OpenInference to OpenLLMetry**:
+
+.. code-block:: python
+
+   # Before (OpenInference)
+   from openinference.instrumentation.google_generativeai import GoogleGenerativeAIInstrumentor
+   tracer = HoneyHiveTracer.init(instrumentors=[GoogleGenerativeAIInstrumentor()])
    
-   # Production
-   prod_tracer = setup_google_ai_environment(environment="production")
+   # After (OpenLLMetry) - different instrumentor package
+   from opentelemetry.instrumentation.google_generativeai import GoogleGenerativeAIInstrumentor
+   tracer = HoneyHiveTracer.init(instrumentors=[GoogleGenerativeAIInstrumentor()])
 
-Best Practices
---------------
-
-**1. Model Selection**
+**From OpenLLMetry to OpenInference**:
 
 .. code-block:: python
 
-   # Choose the right model for your use case
-   def choose_model(task_type: str) -> str:
-       model_mapping = {
-           "text_generation": "gemini-pro",
-           "image_analysis": "gemini-pro-vision",
-           "code_generation": "gemini-pro",
-           "conversation": "gemini-pro"
-       }
-       return model_mapping.get(task_type, "gemini-pro")
-
-**2. Prompt Engineering**
-
-.. code-block:: python
-
-   # Structure prompts for better tracing and results
-   def structured_prompt(task: str, context: str, constraints: str = "") -> str:
-       prompt = f"""
-       Task: {task}
-       
-       Context: {context}
-       
-       {f"Constraints: {constraints}" if constraints else ""}
-       
-       Response:
-       """
-       return prompt.strip()
-
-**3. Error Recovery**
-
-.. code-block:: python
-
-   # Always implement graceful error handling
-   def safe_generation(prompt: str, fallback_response: str = "Unable to generate response"):
-       try:
-           model = genai.GenerativeModel('gemini-pro')
-           response = model.generate_content(prompt)
-           return response.text
-       except Exception as e:
-           # Error is automatically traced
-           return fallback_response
-
-**4. Resource Management**
-
-.. code-block:: python
-
-   # Reuse model instances for better performance
-   class GoogleAIManager:
-       def __init__(self):
-           self.models = {}
-       
-       def get_model(self, model_name: str):
-           if model_name not in self.models:
-               self.models[model_name] = genai.GenerativeModel(model_name)
-           return self.models[model_name]
-
-Common Issues & Solutions
--------------------------
-
-**Issue 1: Authentication Errors**
-
-.. code-block:: python
-
-   # Verify API key setup
-   try:
-       genai.configure(api_key="your-api-key")
-       model = genai.GenerativeModel('gemini-pro')
-       test_response = model.generate_content("Hello")
-       print("✅ Google AI configured successfully")
-   except Exception as e:
-       print(f"❌ Configuration failed: {e}")
-
-**Issue 2: Rate Limiting**
-
-.. code-block:: python
-
-   # Implement exponential backoff
-   import time
-   from random import uniform
-
-   def rate_limited_call(func, *args, **kwargs):
-       max_retries = 3
-       base_delay = 1
-       
-       for attempt in range(max_retries):
-           try:
-               return func(*args, **kwargs)
-           except google_exceptions.ResourceExhausted:
-               if attempt < max_retries - 1:
-                   delay = base_delay * (2 ** attempt) + uniform(0, 1)
-                   time.sleep(delay)
-               else:
-                   raise
-
-**Issue 3: Large Response Handling**
-
-.. code-block:: python
-
-   # Handle potentially large responses
-   def generate_with_limits(prompt: str, max_tokens: int = 1024):
-       generation_config = genai.types.GenerationConfig(
-           max_output_tokens=max_tokens
-       )
-       
-       model = genai.GenerativeModel('gemini-pro')
-       response = model.generate_content(
-           prompt, 
-           generation_config=generation_config
-       )
-       
-       return response.text
+   # Before (OpenLLMetry)
+   from opentelemetry.instrumentation.google_generativeai import GoogleGenerativeAIInstrumentor
+   tracer = HoneyHiveTracer.init(instrumentors=[GoogleGenerativeAIInstrumentor()])
+   
+   # After (OpenInference)
+   from openinference.instrumentation.google_generativeai import GoogleGenerativeAIInstrumentor
+   tracer = HoneyHiveTracer.init(instrumentors=[GoogleGenerativeAIInstrumentor()])
 
 See Also
 --------
@@ -668,6 +458,7 @@ See Also
 - :doc:`multi-provider` - Use Google AI with other providers
 - :doc:`../troubleshooting` - Common integration issues
 - :doc:`../../tutorials/03-llm-integration` - LLM integration tutorial
+- :doc:`openai` - Similar integration for OpenAI GPT
 
 .. raw:: html
 
@@ -685,9 +476,63 @@ See Also
      document.getElementById(tabName).classList.add("active");
      evt.currentTarget.classList.add("active");
    }
+   
+   function showInstrumentor(evt, instrumentorName) {
+     var i, instrumentorContent, instrumentorLinks;
+     instrumentorContent = document.getElementsByClassName("instrumentor-content");
+     for (i = 0; i < instrumentorContent.length; i++) {
+       instrumentorContent[i].classList.remove("active");
+     }
+     instrumentorLinks = document.getElementsByClassName("instrumentor-button");
+     for (i = 0; i < instrumentorLinks.length; i++) {
+       instrumentorLinks[i].classList.remove("active");
+     }
+     document.getElementById(instrumentorName).classList.add("active");
+     evt.currentTarget.classList.add("active");
+   }
    </script>
    
    <style>
+   .instrumentor-selector {
+     margin: 2rem 0;
+     border: 2px solid #2980b9;
+     border-radius: 12px;
+     overflow: hidden;
+     box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+   }
+   .instrumentor-tabs {
+     display: flex;
+     background: linear-gradient(135deg, #3498db, #2980b9);
+     border-bottom: 1px solid #2980b9;
+   }
+   .instrumentor-button {
+     background: none;
+     border: none;
+     padding: 15px 25px;
+     cursor: pointer;
+     font-weight: 600;
+     font-size: 16px;
+     color: white;
+     transition: all 0.3s ease;
+     flex: 1;
+     text-align: center;
+   }
+   .instrumentor-button:hover {
+     background: rgba(255, 255, 255, 0.1);
+     transform: translateY(-1px);
+   }
+   .instrumentor-button.active {
+     background: rgba(255, 255, 255, 0.2);
+     border-bottom: 3px solid #f39c12;
+   }
+   .instrumentor-content {
+     display: none;
+     padding: 1.5rem;
+     background: #f8f9fa;
+   }
+   .instrumentor-content.active {
+     display: block;
+   }
    .code-example {
      margin: 1.5rem 0;
      border: 1px solid #ddd;
@@ -729,4 +574,3 @@ See Also
      border-radius: 0;
    }
    </style>
-

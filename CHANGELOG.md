@@ -10,6 +10,24 @@
   * Enhanced BYOI documentation with ecosystem-specific convenience groups
   * First SDK with comprehensive instrumentor ecosystem flexibility
 
+- **🔥 NEW: OpenLLMetry (Traceloop) Instrumentor Support**
+  * Complete OpenLLMetry integration for enhanced LLM observability
+  * Support for all major providers: OpenAI, Anthropic, Google AI, AWS Bedrock, Azure OpenAI, MCP
+  * Enhanced cost tracking and performance monitoring capabilities
+  * Production-optimized instrumentors with detailed token analysis
+  * New installation patterns: `pip install honeyhive[traceloop-openai]`, `pip install honeyhive[traceloop-anthropic]`
+  * Comprehensive examples for each provider with OpenLLMetry
+  * Strategic mixed instrumentor setups (OpenInference + OpenLLMetry)
+  * Complete migration guide from OpenInference to OpenLLMetry
+
+- **📚 Enhanced Documentation System**
+  * Interactive tabbed documentation for all provider integrations
+  * Comprehensive migration guide with code examples
+  * Updated tutorials with both OpenInference and OpenLLMetry options
+  * Multi-provider integration patterns and best practices
+  * Enhanced installation documentation with instrumentor choice guidance
+  * Formal documentation template system for consistent provider docs
+
 ### Changed
 - **🔄 BREAKING: Integration Key Migration**
   * OLD: `pip install honeyhive[openai]` → NEW: `pip install honeyhive[openinference-openai]`

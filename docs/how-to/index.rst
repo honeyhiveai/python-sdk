@@ -32,6 +32,7 @@ Essential setup and configuration:
 .. toctree::
    :maxdepth: 1
 
+   migration-guide
    troubleshooting
 
 Integrate with LLM Providers

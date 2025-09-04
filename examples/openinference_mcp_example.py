@@ -10,7 +10,7 @@ Prerequisites:
 - Optional: Set up actual MCP server for real testing
 
 Usage:
-    python examples/simple_mcp_integration.py
+    python examples/openinference_mcp_example.py
 """
 
 import asyncio
@@ -120,7 +120,7 @@ def main():
         if os.getenv("HH_API_KEY") is None:
             print("\n💡 To see traces in HoneyHive dashboard:")
             print("   export HH_API_KEY='your-api-key'")
-            print("   python examples/simple_mcp_integration.py")
+            print("   python examples/openinference_mcp_example.py")
 
         return 0
 

@@ -16,7 +16,11 @@ A comprehensive Python SDK for HoneyHive, providing LLM observability, evaluatio
 
 ## 📦 Installation
 
-**Recommended - Install with Provider Integration:**
+**Choose Your Instrumentor Type:**
+
+HoneyHive supports both OpenInference (lightweight) and OpenLLMetry (enhanced metrics) instrumentors.
+
+**Option A: OpenInference (Recommended for Beginners)**
 
 ```bash
 # Install with OpenAI integration (most common)
@@ -31,8 +35,34 @@ pip install honeyhive[openinference-google-ai]
 # Install with multiple providers
 pip install honeyhive[openinference-openai,openinference-anthropic,openinference-google-ai]
 
-# Install all supported integrations
+# Install all OpenInference integrations
 pip install honeyhive[all-openinference]
+```
+
+**Option B: OpenLLMetry (Enhanced Metrics)**
+
+```bash
+# Install with OpenAI integration (enhanced metrics)
+pip install honeyhive[traceloop-openai]
+
+# Install with Anthropic integration  
+pip install honeyhive[traceloop-anthropic]
+
+# Install with Google AI integration
+pip install honeyhive[traceloop-google-ai]
+
+# Install with multiple providers
+pip install honeyhive[traceloop-openai,traceloop-anthropic,traceloop-google-ai]
+
+# Install all OpenLLMetry integrations
+pip install honeyhive[all-traceloop]
+```
+
+**Option C: Mix Both Types**
+
+```bash
+# Strategic mixing based on your needs
+pip install honeyhive[traceloop-openai,openinference-anthropic]
 ```
 
 **Basic Installation (manual instrumentor setup required):**

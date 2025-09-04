@@ -18,17 +18,24 @@ Learn how to integrate HoneyHive with different LLM providers using the BYOI (Br
 Overview
 --------
 
-HoneyHive uses OpenInference instrumentors to automatically trace LLM calls from any provider. This approach provides:
+HoneyHive supports both OpenInference and OpenLLMetry instrumentors to automatically trace LLM calls from any provider. This approach provides:
 
 - **Zero Code Changes**: Existing LLM calls are automatically traced
+- **Instrumentor Choice**: Choose between OpenInference (lightweight) or OpenLLMetry (enhanced metrics)
 - **Provider Flexibility**: Use any LLM provider you want
 - **Rich Observability**: Automatic span creation with detailed metadata
 - **No Dependency Conflicts**: Use any library version
 
+**Choose Your Instrumentor:**
+- **OpenInference**: Lightweight, open-source, perfect for getting started
+- **OpenLLMetry**: Enhanced LLM metrics, cost tracking, production optimizations
+
 Quick Start
 -----------
 
-**1. Install with Provider Integration (Recommended)**
+**1. Choose and Install Your Instrumentor**
+
+**Option A: OpenInference (Lightweight)**
 
 .. code-block:: bash
 
@@ -40,16 +47,40 @@ Quick Start
    
    # For Google AI (includes instrumentor + SDK)
    pip install honeyhive[openinference-google-ai]
-   
-   # Alternative: Manual installation
-   pip install honeyhive openinference-instrumentation-openai openai
 
-**2. Initialize HoneyHive with Instrumentor**
+**Option B: OpenLLMetry (Enhanced Metrics)**
+
+.. code-block:: bash
+
+   # For OpenAI (includes instrumentor + SDK)
+   pip install honeyhive[traceloop-openai]
+   
+   # For Anthropic (includes instrumentor + SDK)  
+   pip install honeyhive[traceloop-anthropic]
+   
+   # For Google AI (includes instrumentor + SDK)
+   pip install honeyhive[traceloop-google-ai]
+
+**2. Initialize HoneyHive with Your Chosen Instrumentor**
+
+**Using OpenInference:**
 
 .. code-block:: python
 
    from honeyhive import HoneyHiveTracer
    from openinference.instrumentation.openai import OpenAIInstrumentor
+
+   tracer = HoneyHiveTracer.init(
+       api_key="your-api-key",
+       instrumentors=[OpenAIInstrumentor()]
+   )
+
+**Using OpenLLMetry:**
+
+.. code-block:: python
+
+   from honeyhive import HoneyHiveTracer
+   from opentelemetry.instrumentation.openai import OpenAIInstrumentor
 
    tracer = HoneyHiveTracer.init(
        api_key="your-api-key",
@@ -72,23 +103,35 @@ Quick Start
 Available Providers
 -------------------
 
+Each provider supports both OpenInference and OpenLLMetry instrumentors (where available):
+
 **OpenAI** - :doc:`openai`
-   Use ``openinference-instrumentation-openai`` for OpenAI GPT models
+   - OpenInference: ``openinference-instrumentation-openai``
+   - OpenLLMetry: ``opentelemetry-instrumentation-openai``
 
 **Anthropic** - :doc:`anthropic`
-   Use ``openinference-instrumentation-anthropic`` for Claude models
+   - OpenInference: ``openinference-instrumentation-anthropic``
+   - OpenLLMetry: ``opentelemetry-instrumentation-anthropic``
 
 **Google AI** - :doc:`google-ai`
-   Use ``openinference-instrumentation-google-generativeai`` for Gemini models
+   - OpenInference: ``openinference-instrumentation-google-generativeai``
+   - OpenLLMetry: ``opentelemetry-instrumentation-google-generativeai``
+
+**Google ADK** - :doc:`google-adk`
+   - OpenInference: ``openinference-instrumentation-google-adk``
+   - OpenLLMetry: *Not available*
 
 **AWS Bedrock** - :doc:`aws-bedrock`
-   Use ``openinference-instrumentation-bedrock`` for Bedrock model access
+   - OpenInference: ``openinference-instrumentation-bedrock``
+   - OpenLLMetry: ``opentelemetry-instrumentation-bedrock``
 
 **Azure OpenAI** - :doc:`azure-openai`
-   Use ``openinference-instrumentation-openai`` for Azure-hosted OpenAI
+   - OpenInference: ``openinference-instrumentation-openai``
+   - OpenLLMetry: ``opentelemetry-instrumentation-openai``
 
 **MCP (Model Context Protocol)** - :doc:`mcp`
-   Use ``openinference-instrumentation-mcp`` for agent tool orchestration
+   - OpenInference: ``openinference-instrumentation-mcp``
+   - OpenLLMetry: ``opentelemetry-instrumentation-mcp``
 
 **Multiple Providers** - :doc:`multi-provider`
    Combine multiple instrumentors in one application

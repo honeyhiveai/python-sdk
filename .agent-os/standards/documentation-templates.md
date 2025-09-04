@@ -10,21 +10,56 @@ This document defines standard templates and patterns for creating consistent, u
 
 ## Instrumentor Documentation Standard
 
-### 🎯 **MANDATORY: Tabbed Interface Pattern for How-To Guides**
+### 🎯 **MANDATORY: Multi-Instrumentor Integration Pattern**
 
-All new instrumentor integration **HOW-TO** documentation **MUST** use the interactive tabbed interface pattern. This provides progressive disclosure and consistent user experience.
+All new integration **HOW-TO** documentation **MUST** support multiple instrumentors (OpenInference + OpenLLMetry) on a single page using the interactive tabbed interface pattern.
 
 **SCOPE**:
-- ✅ **How-To Guides**: `docs/how-to/integrations/[provider].rst` - Problem-solving reference
+- ✅ **How-To Guides**: `docs/how-to/integrations/[provider].rst` - Single page per provider with multiple instrumentors
 - ❌ **Tutorials**: `docs/tutorials/` - Use linear, step-by-step structure for learning
 
-#### Required Tab Structure
+**DESIGN PRINCIPLE**: One integration page per provider, multiple instrumentor options per page.
 
-Every instrumentor doc must include exactly **3 tabs**:
+#### Required Structure
 
-1. **Installation Tab** - Package installation instructions
-2. **Basic Setup Tab** - Simple working example
-3. **Advanced Usage Tab** - Real-world patterns with @trace decorator
+Every integration page must include:
+
+1. **Instrumentor Selector** - Top-level tabs to choose between OpenInference and OpenLLMetry
+2. **Per-Instrumentor Sections** - Each with 4 sub-tabs:
+   - **Installation Tab** - Package installation instructions with pip install commands
+   - **Basic Setup Tab** - Simple working example with error handling
+   - **Advanced Usage Tab** - Real-world patterns with @trace decorator and business context
+   - **Troubleshooting Tab** - Instrumentor-specific issues and solutions
+3. **Comparison Table** - Feature comparison between instrumentors (outside tabs)
+4. **Environment Configuration** - General setup for both instrumentors (outside tabs)
+5. **Migration Guide** - How to switch between instrumentors (outside tabs)
+6. **See Also Section** - Links to related documentation (outside tabs)
+
+#### Formal Template System
+
+**Template Location**: `docs/_templates/multi_instrumentor_integration_formal_template.rst`
+
+**Variable Definitions**: `docs/_templates/template_variables.md`
+
+**Key Template Variables**:
+- Provider info: `{{PROVIDER_NAME}}`, `{{PROVIDER_KEY}}`, `{{PROVIDER_MODULE}}`
+- Package names: `{{OPENINFERENCE_PACKAGE}}`, `{{OPENLLMETRY_PACKAGE}}`
+- Code examples: `{{BASIC_USAGE_EXAMPLE}}`, `{{ADVANCED_IMPLEMENTATION}}`
+- Imports: `{{OPENINFERENCE_IMPORT}}`, `{{OPENLLMETRY_IMPORT}}`
+
+**Generation Process**:
+1. Copy formal template file
+2. Replace all `{{VARIABLE}}` placeholders with provider-specific values
+3. Customize code examples for provider patterns
+4. Validate all imports and code work correctly
+5. Test tabbed interface renders properly
+
+**Quality Requirements**:
+- All code examples must be copy-paste ready and functional
+- All imports must be correct and tested
+- All package names must match current versions
+- CSS/JavaScript must be included for tabbed interface
+- Content outside tabs must be accessible regardless of tab selection
 
 #### Implementation Template
 

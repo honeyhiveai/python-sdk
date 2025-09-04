@@ -1,487 +1,704 @@
-Model Context Protocol (MCP) Integration
-=========================================
+Integrate with Model Context Protocol (MCP)
+============================================
 
-Learn how to integrate HoneyHive with MCP (Model Context Protocol) clients and servers for comprehensive agent observability.
+.. note::
+   **Problem-solving guide for Model Context Protocol (MCP) integration**
+   
+   This guide helps you solve specific problems when integrating HoneyHive with Model Context Protocol (MCP), with support for multiple instrumentor options.
 
-.. contents:: Table of Contents
-   :local:
-   :depth: 2
+This guide covers Model Context Protocol (MCP) integration with HoneyHive's BYOI architecture, supporting both OpenInference and OpenLLMetry instrumentors.
 
-Overview
---------
+Choose Your Instrumentor
+------------------------
 
-The Model Context Protocol (MCP) is a standardized protocol that enables AI agents to securely connect to data sources and tools. HoneyHive's MCP integration provides automatic tracing of MCP client-server communications, giving you complete visibility into your agent workflows.
+**Problem**: I need to choose between OpenInference and OpenLLMetry for Model Context Protocol (MCP) integration.
 
-**Key Benefits:**
+**Solution**: Choose the instrumentor that best fits your needs:
 
-- **Zero-Code Tracing**: Existing MCP applications work unchanged
-- **End-to-End Visibility**: Complete trace propagation across client-server boundaries
-- **Rich Context**: MCP-specific span attributes and metadata
-- **Multi-Provider Support**: Works alongside other LLM provider instrumentors
+- **OpenInference**: Open-source, lightweight, great for getting started
+- **OpenLLMetry**: Enhanced LLM metrics, cost tracking, production optimizations
 
-Prerequisites
--------------
+.. raw:: html
 
-**Required:**
+   <div class="instrumentor-selector">
+   <div class="instrumentor-tabs">
+     <button class="instrumentor-button active" onclick="showInstrumentor(event, 'openinference-section')">OpenInference</button>
+     <button class="instrumentor-button" onclick="showInstrumentor(event, 'openllmetry-section')">OpenLLMetry</button>
+   </div>
 
-- Python 3.11 or higher
-- HoneyHive Python SDK installed
-- MCP instrumentor package
+   <div id="openinference-section" class="instrumentor-content active">
 
-**Optional:**
+.. raw:: html
 
-- Running MCP server for real testing
-- Other OpenInference instrumentors for multi-provider setups
+   <div class="code-example">
+   <div class="code-tabs">
+     <button class="tab-button active" onclick="showTab(event, 'mcp-openinference-install')">Installation</button>
+     <button class="tab-button" onclick="showTab(event, 'mcp-openinference-basic')">Basic Setup</button>
+     <button class="tab-button" onclick="showTab(event, 'mcp-openinference-advanced')">Advanced Usage</button>
+     <button class="tab-button" onclick="showTab(event, 'mcp-openinference-troubleshoot')">Troubleshooting</button>
+   </div>
 
-Installation
-------------
+   <div id="mcp-openinference-install" class="tab-content active">
 
-Install MCP support for HoneyHive:
+**Best for**: Open-source projects, simple tracing needs, getting started quickly
 
 .. code-block:: bash
 
+   # Recommended: Install with Model Context Protocol (MCP) integration
    pip install honeyhive[openinference-mcp]
+   
+   # Alternative: Manual installation
+   pip install honeyhive openinference-instrumentation-mcp mcp>=1.0.0
 
-This installs the OpenInference MCP instrumentor (version 1.3.0+) alongside the HoneyHive SDK.
+.. raw:: html
 
-Quick Start
------------
-
-**Step 1: Basic MCP Integration**
+   </div>
+   <div id="mcp-openinference-basic" class="tab-content">
 
 .. code-block:: python
 
    from honeyhive import HoneyHiveTracer
    from openinference.instrumentation.mcp import MCPInstrumentor
+   import mcp
+   import os
 
-   # Initialize tracer with MCP instrumentor
+   # Environment variables (recommended for production)
+   # .env file:
+   # HH_API_KEY=your-honeyhive-key
+   # MCP_API_KEY=your-mcp-key
+
+   # Initialize with environment variables (secure)
    tracer = HoneyHiveTracer.init(
-       api_key="your-honeyhive-api-key",
+       instrumentors=[MCPInstrumentor()]  # Uses HH_API_KEY automatically
+   )
+
+   # Basic usage with error handling
+   try:
+       import mcp
+       
+       # Create MCP client
+       client = mcp.Client(
+           server_url="http://localhost:8000",
+           api_key=os.getenv("MCP_API_KEY")
+       )
+       
+       # Execute tool via MCP
+       result = client.call_tool(
+           name="web_search",
+           arguments={"query": "OpenLLMetry MCP integration"}
+       )
+       # Automatically traced! ✨
+   except mcp.MCPError as e:
+       print(f"Model Context Protocol (MCP) API error: {e}")
+   except Exception as e:
+       print(f"Unexpected error: {e}")
+
+.. raw:: html
+
+   </div>
+   <div id="mcp-openinference-advanced" class="tab-content">
+
+.. code-block:: python
+
+   from honeyhive import HoneyHiveTracer, trace, enrich_span
+   from honeyhive.models import EventType
+   from openinference.instrumentation.mcp import MCPInstrumentor
+   import mcp
+
+   # Initialize with custom configuration
+   tracer = HoneyHiveTracer.init(
+       api_key="your-honeyhive-key",
+       source="production",
        instrumentors=[MCPInstrumentor()]
    )
 
-**Step 2: Use MCP Client Normally**
-
-.. code-block:: python
-
-   import asyncio
-   from mcp import MCPServerStdio
-   from agents import Agent, Runner
-
-   async def main():
-       # MCP client-server communication is automatically traced
-       async with MCPServerStdio(
-           name="Financial Analysis Server",
-           params={
-               "command": "fastmcp",
-               "args": ["run", "./server.py"],
-           }
-       ) as server:
+   @trace(tracer=tracer, event_type=EventType.chain)
+   def multi_tool_mcp_workflow(tasks: List[Dict[str, Any]]) -> dict:
+       """Advanced example with business context and multiple Model Context Protocol (MCP) calls."""
+       import mcp
+       
+       # Configure MCP client
+       client = mcp.Client(
+           server_url=os.getenv("MCP_SERVER_URL", "http://localhost:8000"),
+           api_key=os.getenv("MCP_API_KEY")
+       )
+       
+       # Add business context to the trace
+       enrich_span({
+           "business.input_type": type(tasks).__name__,
+           "business.use_case": "tool_orchestration",
+           "mcp.strategy": "mcp_multi_tool",
+           "instrumentor.type": "openinference"
+       })
+       
+       try:
+           # Execute multiple MCP tools in workflow
+       available_tools = [
+           "web_search",
+           "file_processor", 
+           "data_analyzer",
+           "content_generator"
+       ]
+       
+       results = []
+       for task in tasks:
+           task_results = {}
+           tool_name = task.get("tool")
+           arguments = task.get("arguments", {})
            
-           agent = Agent(
-               name="Financial Assistant",
-               instructions="Use financial tools to answer questions.",
-               mcp_servers=[server]
-           )
+           if tool_name in available_tools:
+               try:
+                   # Execute MCP tool
+                   result = client.call_tool(
+                       name=tool_name,
+                       arguments=arguments
+                   )
+                   
+                   task_results[tool_name] = {
+                       "success": True,
+                       "result": result.content,
+                       "metadata": result.metadata
+                   }
+                   
+               except Exception as tool_error:
+                   task_results[tool_name] = {
+                       "success": False,
+                       "error": str(tool_error)
+                   }
+           else:
+               task_results[tool_name] = {
+                   "success": False,
+                   "error": f"Tool {tool_name} not available"
+               }
            
-           # This entire workflow is traced end-to-end
-           result = await Runner.run(
-               starting_agent=agent,
-               input="What's the P/E ratio for AAPL?"
-           )
+           results.append({
+               "task": task,
+               "tool_results": task_results
+           })
            
-           print(f"Result: {result.final_output}")
+           # Add result metadata
+           enrich_span({
+               "business.successful": True,
+               "mcp.models_used": ["web_search", "file_processor", "data_analyzer"],
+               "business.result_confidence": "high"
+           })
+           
+           return {{RETURN_VALUE}}
+           
+       except mcp.MCPError as e:
+           enrich_span({
+               "error.type": "api_error", 
+               "error.message": str(e),
+               "instrumentor.source": "openinference"
+           })
+           raise
 
-   asyncio.run(main())
+.. raw:: html
 
-**Step 3: Verify Tracing**
+   </div>
+   <div id="mcp-openinference-troubleshoot" class="tab-content">
 
-Your MCP operations will appear in the HoneyHive dashboard with:
+**Common OpenInference Issues**:
 
-- Client-server communication spans
-- Tool execution traces
-- Context propagation across boundaries
-- MCP-specific metadata and attributes
+1. **Missing Traces**
+   
+   .. code-block:: python
+   
+      # Ensure instrumentor is passed to tracer
+      tracer = HoneyHiveTracer.init(
+          instrumentors=[MCPInstrumentor()]  # Don't forget this!
+      )
 
-Multi-Provider Integration
---------------------------
+2. **Performance for High Volume**
+   
+   .. code-block:: python
+   
+      # OpenInference uses efficient span processors automatically
+      # No additional configuration needed
 
-Combine MCP with other LLM providers for complete observability:
+3. **Multiple Instrumentors**
+   
+   .. code-block:: python
+   
+      # You can combine OpenInference with other instrumentors
+      from openinference.instrumentation.mcp import MCPInstrumentor
+       from openinference.instrumentation.openai import OpenAIInstrumentor
+       
+       tracer = HoneyHiveTracer.init(
+           instrumentors=[
+               MCPInstrumentor(),
+               OpenAIInstrumentor()
+           ]
+       )
+
+
+4. **Environment Configuration**
+   
+   .. code-block:: bash
+   
+      # HoneyHive configuration
+      export HH_API_KEY="your-honeyhive-api-key"
+      export HH_PROJECT="mcp-integration"
+      export HH_SOURCE="production"
+      
+      # MCP configuration
+      export MCP_SERVER_URL="http://localhost:8000"
+      export MCP_API_KEY="your-mcp-api-key"  # Optional
+
+.. raw:: html
+
+   </div>
+   </div>
+
+.. raw:: html
+
+   </div>
+
+   <div id="openllmetry-section" class="instrumentor-content">
+
+.. raw:: html
+
+   <div class="code-example">
+   <div class="code-tabs">
+     <button class="tab-button active" onclick="showTab(event, 'mcp-openllmetry-install')">Installation</button>
+     <button class="tab-button" onclick="showTab(event, 'mcp-openllmetry-basic')">Basic Setup</button>
+     <button class="tab-button" onclick="showTab(event, 'mcp-openllmetry-advanced')">Advanced Usage</button>
+     <button class="tab-button" onclick="showTab(event, 'mcp-openllmetry-troubleshoot')">Troubleshooting</button>
+   </div>
+
+   <div id="mcp-openllmetry-install" class="tab-content active">
+
+**Best for**: Production deployments, cost tracking, enhanced LLM observability
+
+.. code-block:: bash
+
+   # Recommended: Install with OpenLLMetry Model Context Protocol (MCP) integration
+   pip install honeyhive[traceloop-mcp]
+   
+   # Alternative: Manual installation
+   pip install honeyhive opentelemetry-instrumentation-mcp mcp>=1.0.0
+
+.. raw:: html
+
+   </div>
+   <div id="mcp-openllmetry-basic" class="tab-content">
 
 .. code-block:: python
 
    from honeyhive import HoneyHiveTracer
-   from openinference.instrumentation.mcp import MCPInstrumentor
-   from openinference.instrumentation.openai import OpenAIInstrumentor
+   from opentelemetry.instrumentation.mcp import MCPInstrumentor
+   import mcp
+   import os
 
-   # Multi-provider setup
+   # Environment variables (recommended for production)
+   # .env file:
+   # HH_API_KEY=your-honeyhive-key
+   # MCP_API_KEY=your-mcp-key
+
+   # Initialize with OpenLLMetry instrumentor
    tracer = HoneyHiveTracer.init(
-       api_key="your-honeyhive-api-key",
-       instrumentors=[
-           MCPInstrumentor(),      # Trace MCP operations
-           OpenAIInstrumentor()    # Trace OpenAI calls within tools
-       ]
+       instrumentors=[MCPInstrumentor()]  # Uses HH_API_KEY automatically
    )
 
-   # Now both MCP and OpenAI operations are traced
-   import openai
-
-   async def analyze_with_llm(mcp_data):
-       """Function that uses both MCP tools and LLM calls."""
+   # Basic usage with automatic tracing
+   try:
+       import mcp
        
-       # MCP tool call (automatically traced)
-       tool_result = await call_mcp_tool("analyze_data", mcp_data)
-       
-       # OpenAI call (automatically traced)
-       client = openai.OpenAI()
-       response = client.chat.completions.create(
-           model="gpt-4",
-           messages=[{
-               "role": "user", 
-               "content": f"Summarize this analysis: {tool_result}"
-           }]
+       # Create MCP client
+       client = mcp.Client(
+           server_url="http://localhost:8000",
+           api_key=os.getenv("MCP_API_KEY")
        )
        
-       return response.choices[0].message.content
+       # Execute tool via MCP
+       result = client.call_tool(
+           name="web_search",
+           arguments={"query": "OpenLLMetry MCP integration"}
+       )
+       # Automatically traced by OpenLLMetry with enhanced metrics! ✨
+   except mcp.MCPError as e:
+       print(f"Model Context Protocol (MCP) API error: {e}")
+   except Exception as e:
+       print(f"Unexpected error: {e}")
 
-Advanced Configuration
-----------------------
+.. raw:: html
 
-**Environment Variables**
+   </div>
+   <div id="mcp-openllmetry-advanced" class="tab-content">
 
-Configure MCP tracing using environment variables:
+.. code-block:: python
+
+   from honeyhive import HoneyHiveTracer, trace, enrich_span
+   from honeyhive.models import EventType
+   from opentelemetry.instrumentation.mcp import MCPInstrumentor
+   import mcp
+
+   # Initialize HoneyHive with OpenLLMetry instrumentor
+   tracer = HoneyHiveTracer.init(
+       api_key="your-honeyhive-key",
+       source="production",
+       instrumentors=[MCPInstrumentor()]
+   )
+
+   @trace(tracer=tracer, event_type=EventType.chain)
+   def multi_tool_mcp_workflow(tasks: List[Dict[str, Any]]) -> dict:
+       """Advanced example with business context and enhanced LLM metrics."""
+       import mcp
+       
+       # Configure MCP client
+       client = mcp.Client(
+           server_url=os.getenv("MCP_SERVER_URL", "http://localhost:8000"),
+           api_key=os.getenv("MCP_API_KEY")
+       )
+       
+       # Add business context to the trace
+       enrich_span({
+           "business.input_type": type(tasks).__name__,
+           "business.use_case": "tool_orchestration",
+           "mcp.strategy": "cost_optimized_mcp_multi_tool",
+           "instrumentor.type": "openllmetry",
+           "observability.enhanced": True
+       })
+       
+       try:
+           # Execute multiple MCP tools in workflow
+       available_tools = [
+           "web_search",
+           "file_processor", 
+           "data_analyzer",
+           "content_generator"
+       ]
+       
+       results = []
+       for task in tasks:
+           task_results = {}
+           tool_name = task.get("tool")
+           arguments = task.get("arguments", {})
+           
+           if tool_name in available_tools:
+               try:
+                   # Execute MCP tool
+                   result = client.call_tool(
+                       name=tool_name,
+                       arguments=arguments
+                   )
+                   
+                   task_results[tool_name] = {
+                       "success": True,
+                       "result": result.content,
+                       "metadata": result.metadata
+                   }
+                   
+               except Exception as tool_error:
+                   task_results[tool_name] = {
+                       "success": False,
+                       "error": str(tool_error)
+                   }
+           else:
+               task_results[tool_name] = {
+                   "success": False,
+                   "error": f"Tool {tool_name} not available"
+               }
+           
+           results.append({
+               "task": task,
+               "tool_results": task_results
+           })
+           
+           # Add result metadata
+           enrich_span({
+               "business.successful": True,
+               "mcp.models_used": ["web_search", "file_processor", "data_analyzer"],
+               "business.result_confidence": "high",
+               "openllmetry.cost_tracking": "enabled",
+               "openllmetry.token_metrics": "captured"
+           })
+           
+           return {{RETURN_VALUE}}
+           
+       except mcp.MCPError as e:
+           enrich_span({
+               "error.type": "api_error", 
+               "error.message": str(e),
+               "instrumentor.error_handling": "openllmetry"
+           })
+           raise
+
+.. raw:: html
+
+   </div>
+   <div id="mcp-openllmetry-troubleshoot" class="tab-content">
+
+**Common OpenLLMetry Issues**:
+
+1. **Missing Traces**
+   
+   .. code-block:: python
+   
+      # Ensure OpenLLMetry instrumentor is passed to tracer
+      from opentelemetry.instrumentation.mcp import MCPInstrumentor
+      
+      tracer = HoneyHiveTracer.init(
+          instrumentors=[MCPInstrumentor()]  # Don't forget this!
+      )
+
+2. **Enhanced Metrics Not Showing**
+   
+   .. code-block:: python
+   
+      # Ensure you're using the latest version
+      # pip install --upgrade opentelemetry-instrumentation-mcp
+      
+      # The instrumentor automatically captures enhanced metrics
+      from opentelemetry.instrumentation.mcp import MCPInstrumentor
+      tracer = HoneyHiveTracer.init(instrumentors=[MCPInstrumentor()])
+
+3. **Multiple OpenLLMetry Instrumentors**
+   
+   .. code-block:: python
+   
+      # You can combine multiple OpenLLMetry instrumentors
+      from opentelemetry.instrumentation.mcp import MCPInstrumentor
+       from opentelemetry.instrumentation.openai import OpenAIInstrumentor
+       
+       tracer = HoneyHiveTracer.init(
+           instrumentors=[
+               MCPInstrumentor(),         # OpenLLMetry MCP
+               OpenAIInstrumentor()       # OpenLLMetry OpenAI
+           ]
+       )
+
+4. **Performance Optimization**
+   
+   .. code-block:: python
+   
+      # OpenLLMetry instrumentors handle batching automatically
+      # No additional configuration needed for performance
+
+
+5. **Environment Configuration**
+   
+   .. code-block:: bash
+   
+      # HoneyHive configuration
+      export HH_API_KEY="your-honeyhive-api-key"
+      export HH_PROJECT="mcp-integration"
+      export HH_SOURCE="production"
+      
+      # MCP configuration
+      export MCP_SERVER_URL="http://localhost:8000"
+      export MCP_API_KEY="your-mcp-api-key"  # Optional
+
+.. raw:: html
+
+   </div>
+   </div>
+
+.. raw:: html
+
+   </div>
+   </div>
+
+Comparison: OpenInference vs OpenLLMetry for Model Context Protocol (MCP)
+==========================================================================
+
+.. list-table:: Feature Comparison
+   :header-rows: 1
+   :widths: 30 35 35
+
+   * - Feature
+     - OpenInference
+     - OpenLLMetry
+   * - **Setup Complexity**
+     - Simple, single instrumentor
+     - Single instrumentor setup
+   * - **Token Tracking**
+     - Basic span attributes
+     - Detailed token metrics + costs
+   * - **Model Metrics**
+     - Model name, basic timing
+     - Cost per model, latency analysis
+   * - **Performance**
+     - Lightweight, fast
+     - Optimized with smart batching
+   * - **Cost Analysis**
+     - Manual calculation needed
+     - Automatic cost per request
+   * - **Production Ready**
+     - ✅ Yes
+     - ✅ Yes, with cost insights
+   * - **Debugging**
+     - Standard OpenTelemetry
+     - Enhanced LLM-specific debug
+   * - **Best For**
+     - Simple integrations, dev
+     - Production, cost optimization
+
+Environment Configuration
+--------------------------
+
+**Required Environment Variables** (both instrumentors):
 
 .. code-block:: bash
 
    # HoneyHive configuration
-   export HH_API_KEY="your-api-key"
-   export HH_PROJECT="mcp-project"
+   export HH_API_KEY="your-honeyhive-api-key"
+   export HH_PROJECT="mcp-integration"
    export HH_SOURCE="production"
    
-   # Optional: MCP-specific settings
-   export MCP_SERVER_TIMEOUT="30"
-   export MCP_TRACE_LEVEL="INFO"
+   # Model Context Protocol (MCP) configuration
+   export MCP_API_KEY="your-mcp-api-key"
 
-**Custom Span Enrichment**
+# MCP_API_KEY=your-mcp-api-key
+# MCP_SERVER_URL=http://localhost:8000
+# MCP_CLIENT_ID=your-client-id
 
-Enrich MCP spans with additional context:
+Migration Between Instrumentors
+-------------------------------
 
-.. code-block:: python
-
-   from honeyhive import HoneyHiveTracer, trace
-   from honeyhive.models import EventType
-
-   tracer = HoneyHiveTracer.init(
-       api_key="your-api-key",
-       instrumentors=[MCPInstrumentor()]
-   )
-
-   @trace(event_type=EventType.tool)
-   def enhanced_mcp_tool(tool_name: str, params: dict):
-       """MCP tool with custom enrichment."""
-       
-       # Add custom metadata
-       tracer.enrich_span(
-           metadata={"mcp_tool_version": "2.1.0"},
-           metrics={"input_size": len(str(params))}
-       )
-       
-       # Your MCP tool logic here
-       return call_mcp_server(tool_name, params)
-
-**Performance Optimization**
-
-Optimize MCP tracing for production:
+**From OpenInference to OpenLLMetry**:
 
 .. code-block:: python
 
-   tracer = HoneyHiveTracer.init(
-       api_key="your-api-key",
-       instrumentors=[MCPInstrumentor()],
-       disable_http_tracing=True,  # Reduce overhead
-   )
+   # Before (OpenInference)
+   from openinference.instrumentation.mcp import MCPInstrumentor
+   tracer = HoneyHiveTracer.init(instrumentors=[MCPInstrumentor()])
+   
+   # After (OpenLLMetry) - different instrumentor package
+   from opentelemetry.instrumentation.mcp import MCPInstrumentor
+   tracer = HoneyHiveTracer.init(instrumentors=[MCPInstrumentor()])
 
-Error Handling
---------------
-
-Handle MCP integration errors gracefully:
-
-**Installation Issues**
+**From OpenLLMetry to OpenInference**:
 
 .. code-block:: python
 
-   def setup_mcp_tracer():
-       """Set up MCP tracer with error handling."""
-       try:
-           from openinference.instrumentation.mcp import MCPInstrumentor
-           instrumentor = MCPInstrumentor()
-       except ImportError:
-           print("MCP instrumentor not available.")
-           print("Install with: pip install honeyhive[openinference-mcp]")
-           return None
-       
-       try:
-           tracer = HoneyHiveTracer.init(
-               api_key="your-api-key",
-               instrumentors=[instrumentor]
-           )
-           return tracer
-       except Exception as e:
-           print(f"Failed to initialize MCP tracer: {e}")
-           return None
-
-**Runtime Errors**
-
-.. code-block:: python
-
-   async def robust_mcp_operation(tool_name: str, params: dict):
-       """MCP operation with comprehensive error handling."""
-       try:
-           # MCP operation
-           result = await call_mcp_tool(tool_name, params)
-           return {"status": "success", "result": result}
-           
-       except ConnectionError as e:
-           # MCP server connection issues
-           print(f"MCP server connection failed: {e}")
-           return {"status": "connection_error", "error": str(e)}
-           
-       except TimeoutError as e:
-           # MCP operation timeout
-           print(f"MCP operation timed out: {e}")
-           return {"status": "timeout", "error": str(e)}
-           
-       except Exception as e:
-           # Other MCP errors
-           print(f"MCP operation failed: {e}")
-           return {"status": "error", "error": str(e)}
-
-Debugging and Monitoring
-------------------------
-
-**Trace Validation**
-
-Verify MCP traces are being captured:
-
-.. code-block:: python
-
-   import logging
-
-   # Enable debug logging
-   logging.basicConfig(level=logging.DEBUG)
-
-   tracer = HoneyHiveTracer.init(
-       api_key="your-api-key",
-       instrumentors=[MCPInstrumentor()]
-   )
-
-   # Check tracer status
-   print(f"Tracer initialized: {tracer is not None}")
-   print(f"Project: {tracer.project}")
-
-**Performance Monitoring**
-
-Monitor MCP integration performance:
-
-.. code-block:: python
-
-   import time
-   from honeyhive import trace
-   from honeyhive.models import EventType
-
-   @trace(event_type=EventType.tool)
-   def monitored_mcp_tool(tool_name: str, params: dict):
-       """MCP tool with performance monitoring."""
-       start_time = time.time()
-       
-       try:
-           result = call_mcp_server(tool_name, params)
-           
-           # Record performance metrics
-           duration = time.time() - start_time
-           tracer.enrich_span(
-               metrics={
-                   "duration_seconds": duration,
-                   "tool_name": tool_name,
-                   "param_count": len(params)
-               }
-           )
-           
-           return result
-           
-       except Exception as e:
-           # Record error metrics
-           duration = time.time() - start_time
-           tracer.enrich_span(
-               metrics={
-                   "duration_seconds": duration,
-                   "error": str(e),
-                   "tool_name": tool_name
-               }
-           )
-           raise
-
-Production Deployment
----------------------
-
-**Best Practices for Production**
-
-1. **Environment Configuration**:
-
-   .. code-block:: bash
-
-      # Production environment
-      export HH_API_KEY="prod-api-key"
-      export HH_PROJECT="production-mcp"
-      export HH_SOURCE="production"
-      export HH_DISABLE_HTTP_TRACING="true"
-
-2. **Resource Management**:
-
-   .. code-block:: python
-
-      tracer = HoneyHiveTracer.init(
-          api_key=os.getenv("HH_API_KEY"),          source=os.getenv("HH_SOURCE", "production"),
-          instrumentors=[MCPInstrumentor()],
-          disable_http_tracing=True  # Optimize for production
-      )
-
-3. **Graceful Shutdown**:
-
-   .. code-block:: python
-
-      import atexit
-
-      def cleanup_tracer():
-          """Ensure traces are flushed on shutdown."""
-          if hasattr(tracer, 'force_flush'):
-              tracer.force_flush()
-
-      atexit.register(cleanup_tracer)
-
-**Health Checks**
-
-Implement health checks for MCP integration:
-
-.. code-block:: python
-
-   def check_mcp_health():
-       """Check MCP integration health."""
-       health_status = {
-           "mcp_instrumentor": False,
-           "honeyhive_tracer": False,
-           "mcp_server_connection": False
-       }
-       
-       try:
-           from openinference.instrumentation.mcp import MCPInstrumentor
-           health_status["mcp_instrumentor"] = True
-       except ImportError:
-           pass
-       
-       try:
-           tracer = HoneyHiveTracer.init(
-               api_key="health-check",
-               test_mode=True,
-               instrumentors=[MCPInstrumentor()]
-           )
-           health_status["honeyhive_tracer"] = tracer is not None
-       except Exception:
-           pass
-       
-       return health_status
-
-Troubleshooting
----------------
-
-**Common Issues and Solutions**
-
-**Issue: MCP instrumentor not found**
-
-.. code-block:: text
-
-   ImportError: No module named 'openinference.instrumentation.mcp'
-
-**Solution:**
-
-.. code-block:: bash
-
-   pip install honeyhive[openinference-mcp]
-
-**Issue: Traces not appearing in dashboard**
-
-**Possible causes:**
-
-1. **API key not set**: Verify ``HH_API_KEY`` environment variable
-2. **Wrong project name**: Check ``HH_PROJECT`` matches your HoneyHive project
-3. **Test mode enabled**: Disable test mode for production tracing
-
-**Solution:**
-
-.. code-block:: python
-
-   # Verify configuration
-   tracer = HoneyHiveTracer.init(
-       api_key="your-real-api-key",  # Not test-key
-
-       test_mode=False,               # Disable for real tracing
-       instrumentors=[MCPInstrumentor()]
-   )
-
-**Issue: Poor performance with MCP tracing**
-
-**Solutions:**
-
-1. **Enable HTTP tracing optimization**:
-
-   .. code-block:: python
-
-      tracer = HoneyHiveTracer.init(
-          api_key="your-api-key",
-          disable_http_tracing=True,  # Default, but explicit
-          instrumentors=[MCPInstrumentor()]
-      )
-
-2. **Reduce trace frequency** for high-volume operations
-3. **Use async operations** where possible
-
-**Issue: MCP server connection problems**
-
-**Debugging steps:**
-
-1. **Check server availability**:
-
-   .. code-block:: bash
-
-      # Test MCP server directly
-      curl -X POST http://localhost:8080/health
-
-2. **Verify network configuration**:
-
-   .. code-block:: python
-
-      # Test with timeout settings
-      async with MCPServerStdio(
-          name="Test Server",
-          params={"command": "your-server"},
-          client_session_timeout_seconds=30  # Adjust timeout
-      ) as server:
-          # Your MCP operations
-
-3. **Check logs** for detailed error messages
-
-**Getting Help**
-
-If you continue to experience issues:
-
-1. **Check the logs** for detailed error messages
-2. **Verify your environment** matches the prerequisites  
-3. **Test with the example code** provided in this guide
-4. **Contact support** with your configuration and error details
+   # Before (OpenLLMetry)
+   from opentelemetry.instrumentation.mcp import MCPInstrumentor
+   tracer = HoneyHiveTracer.init(instrumentors=[MCPInstrumentor()])
+   
+   # After (OpenInference)
+   from openinference.instrumentation.mcp import MCPInstrumentor
+   tracer = HoneyHiveTracer.init(instrumentors=[MCPInstrumentor()])
 
 See Also
 --------
 
-- :doc:`multi-provider` - Use MCP with other LLM providers
-- :doc:`../troubleshooting` - Common integration issues  
+- :doc:`multi-provider` - Use MCP with other providers
+- :doc:`../troubleshooting` - Common integration issues
 - :doc:`../../tutorials/03-llm-integration` - LLM integration tutorial
+- :doc:`../advanced-tracing/custom-spans` - Advanced tracing patterns
+
+.. raw:: html
+
+   <script>
+   function showTab(evt, tabName) {
+     var i, tabcontent, tablinks;
+     tabcontent = document.getElementsByClassName("tab-content");
+     for (i = 0; i < tabcontent.length; i++) {
+       tabcontent[i].classList.remove("active");
+     }
+     tablinks = document.getElementsByClassName("tab-button");
+     for (i = 0; i < tablinks.length; i++) {
+       tablinks[i].classList.remove("active");
+     }
+     document.getElementById(tabName).classList.add("active");
+     evt.currentTarget.classList.add("active");
+   }
+   
+   function showInstrumentor(evt, instrumentorName) {
+     var i, instrumentorContent, instrumentorLinks;
+     instrumentorContent = document.getElementsByClassName("instrumentor-content");
+     for (i = 0; i < instrumentorContent.length; i++) {
+       instrumentorContent[i].classList.remove("active");
+     }
+     instrumentorLinks = document.getElementsByClassName("instrumentor-button");
+     for (i = 0; i < instrumentorLinks.length; i++) {
+       instrumentorLinks[i].classList.remove("active");
+     }
+     document.getElementById(instrumentorName).classList.add("active");
+     evt.currentTarget.classList.add("active");
+   }
+   </script>
+   
+   <style>
+   .instrumentor-selector {
+     margin: 2rem 0;
+     border: 2px solid #2980b9;
+     border-radius: 12px;
+     overflow: hidden;
+     box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+   }
+   .instrumentor-tabs {
+     display: flex;
+     background: linear-gradient(135deg, #3498db, #2980b9);
+     border-bottom: 1px solid #2980b9;
+   }
+   .instrumentor-button {
+     background: none;
+     border: none;
+     padding: 15px 25px;
+     cursor: pointer;
+     font-weight: 600;
+     font-size: 16px;
+     color: white;
+     transition: all 0.3s ease;
+     flex: 1;
+     text-align: center;
+   }
+   .instrumentor-button:hover {
+     background: rgba(255, 255, 255, 0.1);
+     transform: translateY(-1px);
+   }
+   .instrumentor-button.active {
+     background: rgba(255, 255, 255, 0.2);
+     border-bottom: 3px solid #f39c12;
+   }
+   .instrumentor-content {
+     display: none;
+     padding: 1.5rem;
+     background: #f8f9fa;
+   }
+   .instrumentor-content.active {
+     display: block;
+   }
+   .code-example {
+     margin: 1.5rem 0;
+     border: 1px solid #ddd;
+     border-radius: 8px;
+     overflow: hidden;
+   }
+   .code-tabs {
+     display: flex;
+     background: #f8f9fa;
+     border-bottom: 1px solid #ddd;
+   }
+   .tab-button {
+     background: none;
+     border: none;
+     padding: 12px 20px;
+     cursor: pointer;
+     font-weight: 500;
+     color: #666;
+     transition: all 0.2s ease;
+   }
+   .tab-button:hover {
+     background: #e9ecef;
+     color: #2980b9;
+   }
+   .tab-button.active {
+     background: #2980b9;
+     color: white;
+     border-bottom: 2px solid #2980b9;
+   }
+   .tab-content {
+     display: none;
+     padding: 0;
+   }
+   .tab-content.active {
+     display: block;
+   }
+   .tab-content .highlight {
+     margin: 0;
+     border-radius: 0;
+   }
+   </style>

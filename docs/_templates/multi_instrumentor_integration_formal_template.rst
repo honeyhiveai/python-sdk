@@ -1,22 +1,22 @@
-Integrate with Anthropic
+Integrate with {{PROVIDER_NAME}}
 ===================================
 
 .. note::
-   **Problem-solving guide for Anthropic integration**
+   **Problem-solving guide for {{PROVIDER_NAME}} integration**
    
-   This guide helps you solve specific problems when integrating HoneyHive with Anthropic, with support for multiple instrumentor options.
+   This guide helps you solve specific problems when integrating HoneyHive with {{PROVIDER_NAME}}, with support for multiple instrumentor options.
 
-This guide covers Anthropic integration with HoneyHive's BYOI architecture, supporting both OpenInference and OpenLLMetry instrumentors.
+This guide covers {{PROVIDER_NAME}} integration with HoneyHive's BYOI architecture, supporting both OpenInference and OpenLLMetry instrumentors.
 
 Choose Your Instrumentor
 ------------------------
 
-**Problem**: I need to choose between OpenInference and OpenLLMetry for Anthropic integration.
+**Problem**: I need to choose between OpenInference and OpenLLMetry for {{PROVIDER_NAME}} integration.
 
 **Solution**: Choose the instrumentor that best fits your needs:
 
 - **OpenInference**: Open-source, lightweight, great for getting started
-- **OpenLLMetry**: Enhanced LLM metrics, cost tracking, production optimizations
+- **OpenLLMetry**: {{OPENLLMETRY_NOTE if OPENLLMETRY_AVAILABLE == False else "Enhanced LLM metrics, cost tracking, production optimizations"}}
 
 .. raw:: html
 
@@ -32,124 +32,100 @@ Choose Your Instrumentor
 
    <div class="code-example">
    <div class="code-tabs">
-     <button class="tab-button active" onclick="showTab(event, 'anthropic-openinference-install')">Installation</button>
-     <button class="tab-button" onclick="showTab(event, 'anthropic-openinference-basic')">Basic Setup</button>
-     <button class="tab-button" onclick="showTab(event, 'anthropic-openinference-advanced')">Advanced Usage</button>
-     <button class="tab-button" onclick="showTab(event, 'anthropic-openinference-troubleshoot')">Troubleshooting</button>
+     <button class="tab-button active" onclick="showTab(event, '{{PROVIDER_KEY}}-openinference-install')">Installation</button>
+     <button class="tab-button" onclick="showTab(event, '{{PROVIDER_KEY}}-openinference-basic')">Basic Setup</button>
+     <button class="tab-button" onclick="showTab(event, '{{PROVIDER_KEY}}-openinference-advanced')">Advanced Usage</button>
+     <button class="tab-button" onclick="showTab(event, '{{PROVIDER_KEY}}-openinference-troubleshoot')">Troubleshooting</button>
    </div>
 
-   <div id="anthropic-openinference-install" class="tab-content active">
+   <div id="{{PROVIDER_KEY}}-openinference-install" class="tab-content active">
 
 **Best for**: Open-source projects, simple tracing needs, getting started quickly
 
 .. code-block:: bash
 
-   # Recommended: Install with Anthropic integration
-   pip install honeyhive[openinference-anthropic]
+   # Recommended: Install with {{PROVIDER_NAME}} integration
+   pip install honeyhive[openinference-{{PROVIDER_KEY}}]
    
    # Alternative: Manual installation
-   pip install honeyhive openinference-instrumentation-anthropic anthropic>=0.17.0
+   pip install honeyhive {{OPENINFERENCE_PACKAGE}} {{PROVIDER_SDK}}
 
 .. raw:: html
 
    </div>
-   <div id="anthropic-openinference-basic" class="tab-content">
+   <div id="{{PROVIDER_KEY}}-openinference-basic" class="tab-content">
 
 .. code-block:: python
 
    from honeyhive import HoneyHiveTracer
-   from openinference.instrumentation.anthropic import AnthropicInstrumentor
-   import anthropic
+   from {{OPENINFERENCE_IMPORT}} import {{OPENINFERENCE_CLASS}}
+   import {{PROVIDER_MODULE}}
    import os
 
    # Environment variables (recommended for production)
    # .env file:
    # HH_API_KEY=your-honeyhive-key
-   # ANTHROPIC_API_KEY=your-anthropic-key
+   # {{PROVIDER_API_KEY_NAME}}=your-{{PROVIDER_KEY}}-key
 
    # Initialize with environment variables (secure)
    tracer = HoneyHiveTracer.init(
-       instrumentors=[AnthropicInstrumentor()]  # Uses HH_API_KEY automatically
+       instrumentors=[{{OPENINFERENCE_CLASS}}()]  # Uses HH_API_KEY automatically
    )
 
    # Basic usage with error handling
    try:
-       client = anthropic.Anthropic()  # Uses ANTHROPIC_API_KEY automatically
-       response = client.messages.create(
-           model="claude-3-sonnet-20240229",
-           max_tokens=1000,
-           messages=[{"role": "user", "content": "Hello!"}]
-       )
-       print(response.content[0].text)
+       {{BASIC_USAGE_EXAMPLE}}
        # Automatically traced! ✨
-   except anthropic.APIError as e:
-       print(f"Anthropic API error: {e}")
+   except {{PROVIDER_EXCEPTION}} as e:
+       print(f"{{PROVIDER_NAME}} API error: {e}")
    except Exception as e:
        print(f"Unexpected error: {e}")
 
 .. raw:: html
 
    </div>
-   <div id="anthropic-openinference-advanced" class="tab-content">
+   <div id="{{PROVIDER_KEY}}-openinference-advanced" class="tab-content">
 
 .. code-block:: python
 
    from honeyhive import HoneyHiveTracer, trace, enrich_span
    from honeyhive.models import EventType
-   from openinference.instrumentation.anthropic import AnthropicInstrumentor
-   import anthropic
+   from {{OPENINFERENCE_IMPORT}} import {{OPENINFERENCE_CLASS}}
+   import {{PROVIDER_MODULE}}
 
    # Initialize with custom configuration
    tracer = HoneyHiveTracer.init(
        api_key="your-honeyhive-key",
        source="production",
-       instrumentors=[AnthropicInstrumentor()]
+       instrumentors=[{{OPENINFERENCE_CLASS}}()]
    )
 
    @trace(tracer=tracer, event_type=EventType.chain)
-   def analyze_document(document: str) -> dict:
-       """Advanced example with business context and multiple Anthropic calls."""
-       client = anthropic.Anthropic()
+   def {{ADVANCED_FUNCTION_NAME}}({{ADVANCED_FUNCTION_PARAMS}}) -> dict:
+       """Advanced example with business context and multiple {{PROVIDER_NAME}} calls."""
+       {{ADVANCED_USAGE_EXAMPLE}}
        
        # Add business context to the trace
        enrich_span({
-           "business.input_type": type(document).__name__,
-           "business.use_case": "document_analysis",
-           "anthropic.strategy": "claude_reasoning",
+           "business.input_type": type({{FIRST_PARAM}}).__name__,
+           "business.use_case": "{{USE_CASE_NAME}}",
+           "{{PROVIDER_KEY}}.strategy": "{{STRATEGY_NAME}}",
            "instrumentor.type": "openinference"
        })
        
        try:
-           # First call: Quick summary with Claude Sonnet
-           summary_response = client.messages.create(
-               model="claude-3-sonnet-20240229",
-               max_tokens=500,
-               messages=[{
-                   "role": "user", 
-                   "content": f"Provide a brief summary of this document: {document}"
-               }]
-           )
-           
-           # Second call: Detailed analysis with Claude Opus
-           analysis_response = client.messages.create(
-               model="claude-3-opus-20240229",
-               max_tokens=1000,
-               messages=[{
-                   "role": "user",
-                   "content": f"Provide detailed analysis with insights: {document}"
-               }]
-           )
+           {{ADVANCED_IMPLEMENTATION}}
            
            # Add result metadata
            enrich_span({
                "business.successful": True,
-               "anthropic.models_used": ["claude-3-sonnet-20240229", "claude-3-opus-20240229"],
+               "{{PROVIDER_KEY}}.models_used": {{MODELS_USED}},
                "business.result_confidence": "high"
            })
            
-           return {"summary": summary_response.content[0].text, "analysis": analysis_response.content[0].text}
+           return {{RETURN_VALUE}}
            
-       except anthropic.APIError as e:
+       except {{PROVIDER_EXCEPTION}} as e:
            enrich_span({
                "error.type": "api_error", 
                "error.message": str(e),
@@ -160,7 +136,7 @@ Choose Your Instrumentor
 .. raw:: html
 
    </div>
-   <div id="anthropic-openinference-troubleshoot" class="tab-content">
+   <div id="{{PROVIDER_KEY}}-openinference-troubleshoot" class="tab-content">
 
 **Common OpenInference Issues**:
 
@@ -170,7 +146,7 @@ Choose Your Instrumentor
    
       # Ensure instrumentor is passed to tracer
       tracer = HoneyHiveTracer.init(
-          instrumentors=[AnthropicInstrumentor()]  # Don't forget this!
+          instrumentors=[{{OPENINFERENCE_CLASS}}()]  # Don't forget this!
       )
 
 2. **Performance for High Volume**
@@ -185,28 +161,7 @@ Choose Your Instrumentor
    .. code-block:: python
    
       # You can combine OpenInference with other instrumentors
-      from openinference.instrumentation.anthropic import AnthropicInstrumentor
-       from openinference.instrumentation.openai import OpenAIInstrumentor
-       
-       tracer = HoneyHiveTracer.init(
-           instrumentors=[
-               AnthropicInstrumentor(),
-               OpenAIInstrumentor()
-           ]
-       )
-
-
-4. **Environment Configuration**
-   
-   .. code-block:: bash
-   
-      # HoneyHive configuration
-      export HH_API_KEY="your-honeyhive-api-key"
-      export HH_PROJECT="anthropic-integration"
-      export HH_SOURCE="production"
-      
-      # Anthropic configuration
-      export ANTHROPIC_API_KEY="your-anthropic-api-key"
+      {{MULTIPLE_INSTRUMENTORS_EXAMPLE}}
 
 .. raw:: html
 
@@ -223,127 +178,103 @@ Choose Your Instrumentor
 
    <div class="code-example">
    <div class="code-tabs">
-     <button class="tab-button active" onclick="showTab(event, 'anthropic-openllmetry-install')">Installation</button>
-     <button class="tab-button" onclick="showTab(event, 'anthropic-openllmetry-basic')">Basic Setup</button>
-     <button class="tab-button" onclick="showTab(event, 'anthropic-openllmetry-advanced')">Advanced Usage</button>
-     <button class="tab-button" onclick="showTab(event, 'anthropic-openllmetry-troubleshoot')">Troubleshooting</button>
+     <button class="tab-button active" onclick="showTab(event, '{{PROVIDER_KEY}}-openllmetry-install')">Installation</button>
+     <button class="tab-button" onclick="showTab(event, '{{PROVIDER_KEY}}-openllmetry-basic')">Basic Setup</button>
+     <button class="tab-button" onclick="showTab(event, '{{PROVIDER_KEY}}-openllmetry-advanced')">Advanced Usage</button>
+     <button class="tab-button" onclick="showTab(event, '{{PROVIDER_KEY}}-openllmetry-troubleshoot')">Troubleshooting</button>
    </div>
 
-   <div id="anthropic-openllmetry-install" class="tab-content active">
+   <div id="{{PROVIDER_KEY}}-openllmetry-install" class="tab-content active">
 
 **Best for**: Production deployments, cost tracking, enhanced LLM observability
 
 .. code-block:: bash
 
-   # Recommended: Install with OpenLLMetry Anthropic integration
-   pip install honeyhive[traceloop-anthropic]
+   # Recommended: Install with OpenLLMetry {{PROVIDER_NAME}} integration
+   pip install honeyhive[traceloop-{{PROVIDER_KEY}}]
    
    # Alternative: Manual installation
-   pip install honeyhive opentelemetry-instrumentation-anthropic anthropic>=0.17.0
+   pip install honeyhive {{OPENLLMETRY_PACKAGE}} {{PROVIDER_SDK}}
 
 .. raw:: html
 
    </div>
-   <div id="anthropic-openllmetry-basic" class="tab-content">
+   <div id="{{PROVIDER_KEY}}-openllmetry-basic" class="tab-content">
 
 .. code-block:: python
 
    from honeyhive import HoneyHiveTracer
-   from opentelemetry.instrumentation.anthropic import AnthropicInstrumentor
-   import anthropic
+   from {{OPENLLMETRY_IMPORT}} import {{OPENLLMETRY_CLASS}}
+   import {{PROVIDER_MODULE}}
    import os
 
    # Environment variables (recommended for production)
    # .env file:
    # HH_API_KEY=your-honeyhive-key
-   # ANTHROPIC_API_KEY=your-anthropic-key
+   # {{PROVIDER_API_KEY_NAME}}=your-{{PROVIDER_KEY}}-key
 
    # Initialize with OpenLLMetry instrumentor
    tracer = HoneyHiveTracer.init(
-       instrumentors=[AnthropicInstrumentor()]  # Uses HH_API_KEY automatically
+       instrumentors=[{{OPENLLMETRY_CLASS}}()]  # Uses HH_API_KEY automatically
    )
 
    # Basic usage with automatic tracing
    try:
-       client = anthropic.Anthropic()  # Uses ANTHROPIC_API_KEY automatically
-       response = client.messages.create(
-           model="claude-3-sonnet-20240229",
-           max_tokens=1000,
-           messages=[{"role": "user", "content": "Hello!"}]
-       )
-       print(response.content[0].text)
+       {{BASIC_USAGE_EXAMPLE}}
        # Automatically traced by OpenLLMetry with enhanced metrics! ✨
-   except anthropic.APIError as e:
-       print(f"Anthropic API error: {e}")
+   except {{PROVIDER_EXCEPTION}} as e:
+       print(f"{{PROVIDER_NAME}} API error: {e}")
    except Exception as e:
        print(f"Unexpected error: {e}")
 
 .. raw:: html
 
    </div>
-   <div id="anthropic-openllmetry-advanced" class="tab-content">
+   <div id="{{PROVIDER_KEY}}-openllmetry-advanced" class="tab-content">
 
 .. code-block:: python
 
    from honeyhive import HoneyHiveTracer, trace, enrich_span
    from honeyhive.models import EventType
-   from opentelemetry.instrumentation.anthropic import AnthropicInstrumentor
-   import anthropic
+   from {{OPENLLMETRY_IMPORT}} import {{OPENLLMETRY_CLASS}}
+   import {{PROVIDER_MODULE}}
 
    # Initialize HoneyHive with OpenLLMetry instrumentor
    tracer = HoneyHiveTracer.init(
        api_key="your-honeyhive-key",
        source="production",
-       instrumentors=[AnthropicInstrumentor()]
+       instrumentors=[{{OPENLLMETRY_CLASS}}()]
    )
 
    @trace(tracer=tracer, event_type=EventType.chain)
-   def analyze_document(document: str) -> dict:
+   def {{ADVANCED_FUNCTION_NAME}}({{ADVANCED_FUNCTION_PARAMS}}) -> dict:
        """Advanced example with business context and enhanced LLM metrics."""
-       client = anthropic.Anthropic()
+       {{ADVANCED_USAGE_EXAMPLE}}
        
        # Add business context to the trace
        enrich_span({
-           "business.input_type": type(document).__name__,
-           "business.use_case": "document_analysis",
-           "anthropic.strategy": "cost_optimized_claude_reasoning",
+           "business.input_type": type({{FIRST_PARAM}}).__name__,
+           "business.use_case": "{{USE_CASE_NAME}}",
+           "{{PROVIDER_KEY}}.strategy": "cost_optimized_{{STRATEGY_NAME}}",
            "instrumentor.type": "openllmetry",
            "observability.enhanced": True
        })
        
        try:
-           # First call: Quick summary with Claude Sonnet
-           summary_response = client.messages.create(
-               model="claude-3-sonnet-20240229",
-               max_tokens=500,
-               messages=[{
-                   "role": "user", 
-                   "content": f"Provide a brief summary of this document: {document}"
-               }]
-           )
-           
-           # Second call: Detailed analysis with Claude Opus
-           analysis_response = client.messages.create(
-               model="claude-3-opus-20240229",
-               max_tokens=1000,
-               messages=[{
-                   "role": "user",
-                   "content": f"Provide detailed analysis with insights: {document}"
-               }]
-           )
+           {{ADVANCED_IMPLEMENTATION}}
            
            # Add result metadata
            enrich_span({
                "business.successful": True,
-               "anthropic.models_used": ["claude-3-sonnet-20240229", "claude-3-opus-20240229"],
+               "{{PROVIDER_KEY}}.models_used": {{MODELS_USED}},
                "business.result_confidence": "high",
                "openllmetry.cost_tracking": "enabled",
                "openllmetry.token_metrics": "captured"
            })
            
-           return {"summary": summary_response.content[0].text, "analysis": analysis_response.content[0].text}
+           return {{RETURN_VALUE}}
            
-       except anthropic.APIError as e:
+       except {{PROVIDER_EXCEPTION}} as e:
            enrich_span({
                "error.type": "api_error", 
                "error.message": str(e),
@@ -354,7 +285,7 @@ Choose Your Instrumentor
 .. raw:: html
 
    </div>
-   <div id="anthropic-openllmetry-troubleshoot" class="tab-content">
+   <div id="{{PROVIDER_KEY}}-openllmetry-troubleshoot" class="tab-content">
 
 **Common OpenLLMetry Issues**:
 
@@ -363,10 +294,10 @@ Choose Your Instrumentor
    .. code-block:: python
    
       # Ensure OpenLLMetry instrumentor is passed to tracer
-      from opentelemetry.instrumentation.anthropic import AnthropicInstrumentor
+      from {{OPENLLMETRY_IMPORT}} import {{OPENLLMETRY_CLASS}}
       
       tracer = HoneyHiveTracer.init(
-          instrumentors=[AnthropicInstrumentor()]  # Don't forget this!
+          instrumentors=[{{OPENLLMETRY_CLASS}}()]  # Don't forget this!
       )
 
 2. **Enhanced Metrics Not Showing**
@@ -374,26 +305,18 @@ Choose Your Instrumentor
    .. code-block:: python
    
       # Ensure you're using the latest version
-      # pip install --upgrade opentelemetry-instrumentation-anthropic
+      # pip install --upgrade {{OPENLLMETRY_PACKAGE}}
       
       # The instrumentor automatically captures enhanced metrics
-      from opentelemetry.instrumentation.anthropic import AnthropicInstrumentor
-      tracer = HoneyHiveTracer.init(instrumentors=[AnthropicInstrumentor()])
+      from {{OPENLLMETRY_IMPORT}} import {{OPENLLMETRY_CLASS}}
+      tracer = HoneyHiveTracer.init(instrumentors=[{{OPENLLMETRY_CLASS}}()])
 
 3. **Multiple OpenLLMetry Instrumentors**
    
    .. code-block:: python
    
       # You can combine multiple OpenLLMetry instrumentors
-      from opentelemetry.instrumentation.anthropic import AnthropicInstrumentor
-       from opentelemetry.instrumentation.openai import OpenAIInstrumentor
-       
-       tracer = HoneyHiveTracer.init(
-           instrumentors=[
-               AnthropicInstrumentor(),      # OpenLLMetry Anthropic
-               OpenAIInstrumentor()          # OpenLLMetry OpenAI
-           ]
-       )
+      {{MULTIPLE_OPENLLMETRY_INSTRUMENTORS_EXAMPLE}}
 
 4. **Performance Optimization**
    
@@ -402,23 +325,6 @@ Choose Your Instrumentor
       # OpenLLMetry instrumentors handle batching automatically
       # No additional configuration needed for performance
 
-
-5. **Environment Configuration**
-   
-   .. code-block:: bash
-   
-      # HoneyHive configuration
-      export HH_API_KEY="your-honeyhive-api-key"
-      export HH_PROJECT="anthropic-integration"
-      export HH_SOURCE="production"
-      
-      # Anthropic configuration
-      export ANTHROPIC_API_KEY="your-anthropic-api-key"
-      
-      # Optional: OpenLLMetry cloud features
-      export TRACELOOP_API_KEY="your-traceloop-key"
-      export TRACELOOP_BASE_URL="https://api.traceloop.com"
-
 .. raw:: html
 
    </div>
@@ -429,7 +335,7 @@ Choose Your Instrumentor
    </div>
    </div>
 
-Comparison: OpenInference vs OpenLLMetry for Anthropic
+Comparison: OpenInference vs OpenLLMetry for {{PROVIDER_NAME}}
 ---------------------------------------------------------------
 
 .. list-table:: Feature Comparison
@@ -473,13 +379,13 @@ Environment Configuration
 
    # HoneyHive configuration
    export HH_API_KEY="your-honeyhive-api-key"
-   export HH_PROJECT="anthropic-integration"
+   export HH_PROJECT="{{PROVIDER_KEY}}-integration"
    export HH_SOURCE="production"
    
-   # Anthropic configuration
-   export ANTHROPIC_API_KEY="your-anthropic-api-key"
+   # {{PROVIDER_NAME}} configuration
+   export {{PROVIDER_API_KEY_NAME}}="your-{{PROVIDER_KEY}}-api-key"
 
-
+{{ADDITIONAL_ENV_CONFIG}}
 
 Migration Between Instrumentors
 -------------------------------
@@ -489,32 +395,29 @@ Migration Between Instrumentors
 .. code-block:: python
 
    # Before (OpenInference)
-   from openinference.instrumentation.anthropic import AnthropicInstrumentor
-   tracer = HoneyHiveTracer.init(instrumentors=[AnthropicInstrumentor()])
+   from {{OPENINFERENCE_IMPORT}} import {{OPENINFERENCE_CLASS}}
+   tracer = HoneyHiveTracer.init(instrumentors=[{{OPENINFERENCE_CLASS}}()])
    
    # After (OpenLLMetry) - different instrumentor package
-   from opentelemetry.instrumentation.anthropic import AnthropicInstrumentor
-   tracer = HoneyHiveTracer.init(instrumentors=[AnthropicInstrumentor()])
+   from {{OPENLLMETRY_IMPORT}} import {{OPENLLMETRY_CLASS}}
+   tracer = HoneyHiveTracer.init(instrumentors=[{{OPENLLMETRY_CLASS}}()])
 
 **From OpenLLMetry to OpenInference**:
 
 .. code-block:: python
 
    # Before (OpenLLMetry)
-   from opentelemetry.instrumentation.anthropic import AnthropicInstrumentor
-   tracer = HoneyHiveTracer.init(instrumentors=[AnthropicInstrumentor()])
+   from {{OPENLLMETRY_IMPORT}} import {{OPENLLMETRY_CLASS}}
+   tracer = HoneyHiveTracer.init(instrumentors=[{{OPENLLMETRY_CLASS}}()])
    
    # After (OpenInference)
-   from openinference.instrumentation.anthropic import AnthropicInstrumentor
-   tracer = HoneyHiveTracer.init(instrumentors=[AnthropicInstrumentor()])
+   from {{OPENINFERENCE_IMPORT}} import {{OPENINFERENCE_CLASS}}
+   tracer = HoneyHiveTracer.init(instrumentors=[{{OPENINFERENCE_CLASS}}()])
 
 See Also
 --------
 
-- :doc:`multi-provider` - Use Anthropic with other providers
-- :doc:`../troubleshooting` - Common integration issues
-- :doc:`../../tutorials/03-llm-integration` - LLM integration tutorial
-- :doc:`openai` - Similar integration for OpenAI GPT
+{{SEE_ALSO_LINKS}}
 
 .. raw:: html
 

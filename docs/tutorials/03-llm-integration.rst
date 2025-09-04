@@ -35,12 +35,39 @@ HoneyHive's "Bring Your Own Instrumentor" approach means:
 
 Think of instrumentors as plugins that automatically capture LLM interactions.
 
+Choosing Your Instrumentor Type
+-------------------------------
+
+You have two main options for LLM instrumentation:
+
+**OpenInference (Recommended for Beginners)**
+- Lightweight and easy to set up
+- Open-source with active community
+- Good for development and simple production setups
+- Consistent API across all providers
+
+**OpenLLMetry (Advanced Metrics)**
+- Enhanced LLM-specific metrics and cost tracking
+- Production-optimized with detailed token analysis
+- Better performance monitoring capabilities
+- Provided by Traceloop (``opentelemetry-instrumentation-*`` packages)
+
+**When to Use Each:**
+- **Start with OpenInference** if you're new to LLM observability
+- **Upgrade to OpenLLMetry** when you need detailed cost tracking and production metrics
+- **Mix both** strategically based on your provider usage patterns
+
+.. note::
+   Both instrumentor types work identically with HoneyHive's BYOI architecture. You can switch between them or use both in the same application.
+
 OpenAI Integration
 ------------------
 
-The most common integration uses the OpenInference OpenAI instrumentor.
+You can trace OpenAI calls using either OpenInference or OpenLLMetry instrumentors.
 
-**Step 1: Install the OpenAI Instrumentor**
+**Step 1: Choose and Install Your Instrumentor**
+
+**Option A: OpenInference (Recommended for Beginners)**
 
 .. code-block:: bash
 
@@ -50,7 +77,19 @@ The most common integration uses the OpenInference OpenAI instrumentor.
    # Alternative: Manual installation
    pip install honeyhive openinference-instrumentation-openai openai
 
+**Option B: OpenLLMetry (Enhanced Metrics)**
+
+.. code-block:: bash
+
+   # Recommended: Install with OpenLLMetry integration
+   pip install honeyhive[traceloop-openai]
+   
+   # Alternative: Manual installation
+   pip install honeyhive opentelemetry-instrumentation-openai openai
+
 **Step 2: Set Up Automatic Tracing**
+
+**Using OpenInference:**
 
 .. code-block:: python
 
@@ -59,13 +98,33 @@ The most common integration uses the OpenInference OpenAI instrumentor.
    from openinference.instrumentation.openai import OpenAIInstrumentor
    import openai
    
-   # Initialize HoneyHive with OpenAI instrumentor
+   # Initialize HoneyHive with OpenInference OpenAI instrumentor
    tracer = HoneyHiveTracer.init(
        api_key="your-api-key",
        source="development",
-       instrumentors=[OpenAIInstrumentor()]  # This is the magic!
+       instrumentors=[OpenAIInstrumentor()]  # OpenInference version
    )
+
+**Using OpenLLMetry:**
+
+.. code-block:: python
+
+   import os
+   from honeyhive import HoneyHiveTracer
+   from opentelemetry.instrumentation.openai import OpenAIInstrumentor
+   import openai
    
+   # Initialize HoneyHive with OpenLLMetry OpenAI instrumentor
+   tracer = HoneyHiveTracer.init(
+       api_key="your-api-key",
+       source="development",
+       instrumentors=[OpenAIInstrumentor()]  # OpenLLMetry version
+   )
+
+**The rest is identical regardless of instrumentor choice:**
+
+.. code-block:: python
+
    # Use OpenAI exactly as you normally would - no changes needed!
    client = openai.OpenAI(api_key="your-openai-api-key")
    
@@ -157,7 +216,9 @@ Anthropic Integration
 
 Add Anthropic Claude tracing with the same BYOI pattern.
 
-**Step 1: Install Anthropic Instrumentor**
+**Step 1: Choose and Install Your Instrumentor**
+
+**Option A: OpenInference**
 
 .. code-block:: bash
 
@@ -167,7 +228,19 @@ Add Anthropic Claude tracing with the same BYOI pattern.
    # Alternative: Manual installation
    pip install honeyhive openinference-instrumentation-anthropic
 
+**Option B: OpenLLMetry**
+
+.. code-block:: bash
+
+   # Recommended: Install with OpenLLMetry integration
+   pip install honeyhive[traceloop-anthropic]
+   
+   # Alternative: Manual installation
+   pip install honeyhive opentelemetry-instrumentation-anthropic
+
 **Step 2: Set Up Anthropic Tracing**
+
+**Using OpenInference:**
 
 .. code-block:: python
 
@@ -175,12 +248,30 @@ Add Anthropic Claude tracing with the same BYOI pattern.
    from openinference.instrumentation.anthropic import AnthropicInstrumentor
    import anthropic
    
-   # Initialize with Anthropic instrumentor
+   # Initialize with OpenInference Anthropic instrumentor
    tracer = HoneyHiveTracer.init(
        api_key="your-api-key",
        instrumentors=[AnthropicInstrumentor()]
    )
+
+**Using OpenLLMetry:**
+
+.. code-block:: python
+
+   from honeyhive import HoneyHiveTracer
+   from opentelemetry.instrumentation.anthropic import AnthropicInstrumentor
+   import anthropic
    
+   # Initialize with OpenLLMetry Anthropic instrumentor
+   tracer = HoneyHiveTracer.init(
+       api_key="your-api-key",
+       instrumentors=[AnthropicInstrumentor()]
+   )
+
+**The rest is identical regardless of instrumentor choice:**
+
+.. code-block:: python
+
    # Use Anthropic normally - automatic tracing!
    client = anthropic.Anthropic(api_key="your-anthropic-api-key")
    
@@ -265,7 +356,9 @@ Add Google AI (Gemini) tracing.
 Multi-Provider Setup
 --------------------
 
-Use multiple LLM providers in the same application:
+Use multiple LLM providers in the same application. You can mix instrumentor types:
+
+**Option A: All OpenInference**
 
 .. code-block:: python
 
@@ -275,15 +368,58 @@ Use multiple LLM providers in the same application:
    import openai
    import anthropic
    
-   # Initialize with multiple instrumentors
+   # Initialize with multiple OpenInference instrumentors
    tracer = HoneyHiveTracer.init(
        api_key="your-api-key",
        instrumentors=[
-           OpenAIInstrumentor(),    # Traces OpenAI calls
-           AnthropicInstrumentor()  # Traces Anthropic calls
+           OpenAIInstrumentor(),    # OpenInference OpenAI
+           AnthropicInstrumentor()  # OpenInference Anthropic
        ]
    )
+
+**Option B: All OpenLLMetry**
+
+.. code-block:: python
+
+   from honeyhive import HoneyHiveTracer, trace, enrich_span
+   from opentelemetry.instrumentation.openai import OpenAIInstrumentor
+   from opentelemetry.instrumentation.anthropic import AnthropicInstrumentor
+   import openai
+   import anthropic
    
+   # Initialize with multiple OpenLLMetry instrumentors
+   tracer = HoneyHiveTracer.init(
+       api_key="your-api-key",
+       instrumentors=[
+           OpenAIInstrumentor(),    # OpenLLMetry OpenAI
+           AnthropicInstrumentor()  # OpenLLMetry Anthropic
+       ]
+   )
+
+**Option C: Mixed Instrumentors (Strategic)**
+
+.. code-block:: python
+
+   from honeyhive import HoneyHiveTracer, trace, enrich_span
+   # Mix OpenInference and OpenLLMetry
+   from openinference.instrumentation.anthropic import AnthropicInstrumentor as OIAnthropic
+   from opentelemetry.instrumentation.openai import OpenAIInstrumentor as OLOpenAI
+   import openai
+   import anthropic
+   
+   # Initialize with mixed instrumentors
+   tracer = HoneyHiveTracer.init(
+       api_key="your-api-key",
+       instrumentors=[
+           OLOpenAI(),     # OpenLLMetry for high-volume OpenAI (enhanced metrics)
+           OIAnthropic()   # OpenInference for Anthropic (lightweight)
+       ]
+   )
+
+**The rest of your code remains identical:**
+
+.. code-block:: python
+
    @trace(tracer=tracer, event_type="llm_comparison")
    def compare_llm_responses(question: str) -> dict:
        """Compare responses from multiple LLM providers."""
@@ -600,7 +736,9 @@ Use environment variables to manage multiple API keys:
 Complete Example: Multi-LLM Content Pipeline
 ---------------------------------------------
 
-Here's a complete example using multiple providers:
+Here's a complete example using multiple providers with both instrumentor options:
+
+**Using OpenInference (Lightweight):**
 
 .. code-block:: python
 
@@ -611,12 +749,33 @@ Here's a complete example using multiple providers:
    import openai
    import anthropic
    
-   # Initialize with multiple instrumentors
+   # Initialize with OpenInference instrumentors
    tracer = HoneyHiveTracer.init(
        api_key=os.getenv("HH_API_KEY"),
        instrumentors=[OpenAIInstrumentor(), AnthropicInstrumentor()]
    )
+
+**Using OpenLLMetry (Enhanced Metrics):**
+
+.. code-block:: python
+
+   import os
+   from honeyhive import HoneyHiveTracer, trace, enrich_span
+   from opentelemetry.instrumentation.openai import OpenAIInstrumentor
+   from opentelemetry.instrumentation.anthropic import AnthropicInstrumentor
+   import openai
+   import anthropic
    
+   # Initialize with OpenLLMetry instrumentors
+   tracer = HoneyHiveTracer.init(
+       api_key=os.getenv("HH_API_KEY"),
+       instrumentors=[OpenAIInstrumentor(), AnthropicInstrumentor()]
+   )
+
+**The pipeline functions are identical regardless of instrumentor choice:**
+
+.. code-block:: python
+
    @trace(tracer=tracer, event_type="content_outline")
    def generate_outline(topic: str) -> str:
        """Generate content outline using GPT-4."""

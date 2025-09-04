@@ -8,6 +8,7 @@ benchmarking as required by the instrumentor integration standards.
 import asyncio
 import os
 import time
+from contextlib import nullcontext
 from typing import Any, Dict, Optional
 from unittest.mock import Mock, patch
 
@@ -162,7 +163,7 @@ class TestMCPCompatibilityMatrix:
             with (
                 pytest.raises(Exception)
                 if not test_case["should_succeed"]
-                else pytest.nullcontext()
+                else nullcontext()
             ):
                 tracer = HoneyHiveTracer.init(
                     api_key="test-key",

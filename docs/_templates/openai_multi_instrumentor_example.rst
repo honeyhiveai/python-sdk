@@ -1,5 +1,5 @@
 Integrate with OpenAI
-===================================
+====================
 
 .. note::
    **Problem-solving guide for OpenAI integration**
@@ -13,7 +13,7 @@ Choose Your Instrumentor
 
 **Problem**: I need to choose between OpenInference and OpenLLMetry for OpenAI integration.
 
-**Solution**: Choose the instrumentor that best fits your needs:
+**Solution**: Both instrumentors work excellently with HoneyHive. Choose based on your needs:
 
 - **OpenInference**: Open-source, lightweight, great for getting started
 - **OpenLLMetry**: Enhanced LLM metrics, cost tracking, production optimizations
@@ -28,6 +28,11 @@ Choose Your Instrumentor
 
    <div id="openinference-section" class="instrumentor-content active">
 
+OpenInference Integration
+-------------------------
+
+**Best for**: Open-source projects, simple tracing needs, getting started quickly
+
 .. raw:: html
 
    <div class="code-example">
@@ -35,12 +40,9 @@ Choose Your Instrumentor
      <button class="tab-button active" onclick="showTab(event, 'openai-openinference-install')">Installation</button>
      <button class="tab-button" onclick="showTab(event, 'openai-openinference-basic')">Basic Setup</button>
      <button class="tab-button" onclick="showTab(event, 'openai-openinference-advanced')">Advanced Usage</button>
-     <button class="tab-button" onclick="showTab(event, 'openai-openinference-troubleshoot')">Troubleshooting</button>
    </div>
 
    <div id="openai-openinference-install" class="tab-content active">
-
-**Best for**: Open-source projects, simple tracing needs, getting started quickly
 
 .. code-block:: bash
 
@@ -48,7 +50,7 @@ Choose Your Instrumentor
    pip install honeyhive[openinference-openai]
    
    # Alternative: Manual installation
-   pip install honeyhive openinference-instrumentation-openai openai>=1.0.0
+   pip install honeyhive openinference-instrumentation-openai openai
 
 .. raw:: html
 
@@ -81,7 +83,7 @@ Choose Your Instrumentor
        )
        print(response.choices[0].message.content)
        # Automatically traced! ✨
-   except openai.OpenAIError as e:
+   except openai.APIError as e:
        print(f"OpenAI API error: {e}")
    except Exception as e:
        print(f"Unexpected error: {e}")
@@ -106,128 +108,56 @@ Choose Your Instrumentor
    )
 
    @trace(tracer=tracer, event_type=EventType.chain)
-   def multi_model_comparison(prompt: str) -> dict:
+   def analyze_sentiment(text: str) -> dict:
        """Advanced example with business context and multiple OpenAI calls."""
        client = openai.OpenAI()
        
        # Add business context to the trace
        enrich_span({
-           "business.input_type": type(prompt).__name__,
-           "business.use_case": "model_comparison",
-           "openai.strategy": "multi_model_analysis",
+           "business.input_type": type(text).__name__,
+           "business.use_case": "sentiment_analysis",
+           "openai.strategy": "multi_model_comparison",
            "instrumentor.type": "openinference"
        })
        
        try:
-           # Test multiple OpenAI models
-       models = ["gpt-3.5-turbo", "gpt-4", "gpt-4-turbo-preview"]
-       
-       results = []
-       for model in models:
-           try:
-               # Generate response with current model
-               response = client.chat.completions.create(
-                   model=model,
-                   messages=[{"role": "user", "content": prompt}],
-                   max_tokens=150
-               )
-               
-               results.append({
-                   "model": model,
-                   "response": response.choices[0].message.content,
-                   "usage": response.usage.dict() if response.usage else None
-               })
-               
-           except Exception as model_error:
-               results.append({
-                   "model": model,
-                   "error": str(model_error)
-               })
-       
-       # Add result metadata
-       enrich_span({
-           "business.successful": True,
-           "openai.models_used": models,
-           "business.result_confidence": "high"
-       })
-       
-       return {
-           "prompt": prompt,
-           "model_results": results,
-           "comparison_completed": True
-       }
+           # First call: Quick sentiment with GPT-3.5
+           quick_response = client.chat.completions.create(
+               model="gpt-3.5-turbo",
+               messages=[{
+                   "role": "user", 
+                   "content": f"Analyze sentiment (positive/negative/neutral): {text}"
+               }]
+           )
+           
+           # Second call: Detailed analysis with GPT-4
+           detailed_response = client.chat.completions.create(
+               model="gpt-4",
+               messages=[{
+                   "role": "user",
+                   "content": f"Provide detailed sentiment analysis with confidence score: {text}"
+               }]
+           )
            
            # Add result metadata
            enrich_span({
                "business.successful": True,
-               "openai.models_used": ["gpt-3.5-turbo", "gpt-4", "gpt-4-turbo-preview"],
+               "openai.models_used": ["gpt-3.5-turbo", "gpt-4"],
                "business.result_confidence": "high"
            })
            
            return {
-           "prompt": prompt,
-           "model_results": results,
-           "comparison_completed": True
-       }
+               "quick_sentiment": quick_response.choices[0].message.content,
+               "detailed_analysis": detailed_response.choices[0].message.content
+           }
            
-       except openai.OpenAIError as e:
+       except openai.APIError as e:
            enrich_span({
                "error.type": "api_error", 
                "error.message": str(e),
                "instrumentor.source": "openinference"
            })
            raise
-
-.. raw:: html
-
-   </div>
-   <div id="openai-openinference-troubleshoot" class="tab-content">
-
-**Common OpenInference Issues**:
-
-1. **Missing Traces**
-   
-   .. code-block:: python
-   
-      # Ensure instrumentor is passed to tracer
-      tracer = HoneyHiveTracer.init(
-          instrumentors=[OpenAIInstrumentor()]  # Don't forget this!
-      )
-
-2. **Performance for High Volume**
-   
-   .. code-block:: python
-   
-      # OpenInference uses efficient span processors automatically
-      # No additional configuration needed
-
-3. **Multiple Instrumentors**
-   
-   .. code-block:: python
-   
-      # You can combine OpenInference with other instrumentors
-      from openinference.instrumentation.openai import OpenAIInstrumentor
-       from openinference.instrumentation.anthropic import AnthropicInstrumentor
-       
-       tracer = HoneyHiveTracer.init(
-           instrumentors=[
-               OpenAIInstrumentor(),
-               AnthropicInstrumentor()
-           ]
-       )
-
-
-4. **Environment Configuration**
-   
-   .. code-block:: bash
-   
-      # HoneyHive configuration
-      export HH_API_KEY="your-honeyhive-api-key"
-      export HH_PROJECT="openai-integration"
-      export HH_SOURCE="production"
-      
-      # OpenAI configuration
-      export OPENAI_API_KEY="your-openai-api-key"
 
 .. raw:: html
 
@@ -240,6 +170,11 @@ Choose Your Instrumentor
 
    <div id="openllmetry-section" class="instrumentor-content">
 
+OpenLLMetry Integration
+-----------------------
+
+**Best for**: Production deployments, cost tracking, enhanced LLM observability
+
 .. raw:: html
 
    <div class="code-example">
@@ -247,12 +182,9 @@ Choose Your Instrumentor
      <button class="tab-button active" onclick="showTab(event, 'openai-openllmetry-install')">Installation</button>
      <button class="tab-button" onclick="showTab(event, 'openai-openllmetry-basic')">Basic Setup</button>
      <button class="tab-button" onclick="showTab(event, 'openai-openllmetry-advanced')">Advanced Usage</button>
-     <button class="tab-button" onclick="showTab(event, 'openai-openllmetry-troubleshoot')">Troubleshooting</button>
    </div>
 
    <div id="openai-openllmetry-install" class="tab-content active">
-
-**Best for**: Production deployments, cost tracking, enhanced LLM observability
 
 .. code-block:: bash
 
@@ -260,7 +192,7 @@ Choose Your Instrumentor
    pip install honeyhive[traceloop-openai]
    
    # Alternative: Manual installation
-   pip install honeyhive opentelemetry-instrumentation-openai openai>=1.0.0
+   pip install honeyhive opentelemetry-instrumentation-openai openai
 
 .. raw:: html
 
@@ -270,7 +202,7 @@ Choose Your Instrumentor
 .. code-block:: python
 
    from honeyhive import HoneyHiveTracer
-   from opentelemetry.instrumentation.openai import OpenAIInstrumentor
+   from traceloop.sdk import Traceloop
    import openai
    import os
 
@@ -279,10 +211,11 @@ Choose Your Instrumentor
    # HH_API_KEY=your-honeyhive-key
    # OPENAI_API_KEY=your-openai-key
 
-   # Initialize with OpenLLMetry instrumentor
-   tracer = HoneyHiveTracer.init(
-       instrumentors=[OpenAIInstrumentor()]  # Uses HH_API_KEY automatically
-   )
+   # Initialize OpenLLMetry first
+   Traceloop.init()
+   
+   # Initialize HoneyHive tracer
+   tracer = HoneyHiveTracer.init()  # Uses HH_API_KEY automatically
 
    # Basic usage with automatic tracing
    try:
@@ -293,7 +226,7 @@ Choose Your Instrumentor
        )
        print(response.choices[0].message.content)
        # Automatically traced by OpenLLMetry with enhanced metrics! ✨
-   except openai.OpenAIError as e:
+   except openai.APIError as e:
        print(f"OpenAI API error: {e}")
    except Exception as e:
        print(f"Unexpected error: {e}")
@@ -307,159 +240,76 @@ Choose Your Instrumentor
 
    from honeyhive import HoneyHiveTracer, trace, enrich_span
    from honeyhive.models import EventType
-   from opentelemetry.instrumentation.openai import OpenAIInstrumentor
+   from traceloop.sdk import Traceloop
    import openai
 
-   # Initialize HoneyHive with OpenLLMetry instrumentor
+   # Initialize OpenLLMetry with custom settings
+   Traceloop.init(
+       app_name="sentiment-analyzer",
+       disable_batch=False,  # Enable batching for performance
+       api_endpoint="https://api.traceloop.com"
+   )
+   
+   # Initialize HoneyHive with custom configuration
    tracer = HoneyHiveTracer.init(
        api_key="your-honeyhive-key",
-       source="production",
-       instrumentors=[OpenAIInstrumentor()]
+       source="production"
    )
 
    @trace(tracer=tracer, event_type=EventType.chain)
-   def multi_model_comparison(prompt: str) -> dict:
+   def analyze_sentiment(text: str) -> dict:
        """Advanced example with business context and enhanced LLM metrics."""
        client = openai.OpenAI()
        
        # Add business context to the trace
        enrich_span({
-           "business.input_type": type(prompt).__name__,
-           "business.use_case": "model_comparison",
-           "openai.strategy": "cost_optimized_multi_model_analysis",
+           "business.input_type": type(text).__name__,
+           "business.use_case": "sentiment_analysis",
+           "openai.strategy": "cost_optimized_multi_model",
            "instrumentor.type": "openllmetry",
            "observability.enhanced": True
        })
        
        try:
-           # Test multiple OpenAI models
-       models = ["gpt-3.5-turbo", "gpt-4", "gpt-4-turbo-preview"]
-       
-       results = []
-       for model in models:
-           try:
-               # Generate response with current model
-               response = client.chat.completions.create(
-                   model=model,
-                   messages=[{"role": "user", "content": prompt}],
-                   max_tokens=150
-               )
-               
-               results.append({
-                   "model": model,
-                   "response": response.choices[0].message.content,
-                   "usage": response.usage.dict() if response.usage else None
-               })
-               
-           except Exception as model_error:
-               results.append({
-                   "model": model,
-                   "error": str(model_error)
-               })
-       
-       # Add result metadata
-       enrich_span({
-           "business.successful": True,
-           "openai.models_used": models,
-           "business.result_confidence": "high"
-       })
-       
-       return {
-           "prompt": prompt,
-           "model_results": results,
-           "comparison_completed": True
-       }
+           # First call - OpenLLMetry captures cost and token metrics automatically
+           quick_response = client.chat.completions.create(
+               model="gpt-3.5-turbo",
+               messages=[{
+                   "role": "user", 
+                   "content": f"Analyze sentiment (positive/negative/neutral): {text}"
+               }]
+           )
+           
+           # Second call - Automatic latency and performance tracking
+           detailed_response = client.chat.completions.create(
+               model="gpt-4",
+               messages=[{
+                   "role": "user",
+                   "content": f"Provide detailed sentiment analysis with confidence score: {text}"
+               }]
+           )
            
            # Add result metadata
            enrich_span({
                "business.successful": True,
-               "openai.models_used": ["gpt-3.5-turbo", "gpt-4", "gpt-4-turbo-preview"],
+               "openai.models_used": ["gpt-3.5-turbo", "gpt-4"],
                "business.result_confidence": "high",
                "openllmetry.cost_tracking": "enabled",
                "openllmetry.token_metrics": "captured"
            })
            
            return {
-           "prompt": prompt,
-           "model_results": results,
-           "comparison_completed": True
-       }
+               "quick_sentiment": quick_response.choices[0].message.content,
+               "detailed_analysis": detailed_response.choices[0].message.content
+           }
            
-       except openai.OpenAIError as e:
+       except openai.APIError as e:
            enrich_span({
                "error.type": "api_error", 
                "error.message": str(e),
                "instrumentor.error_handling": "openllmetry"
            })
            raise
-
-.. raw:: html
-
-   </div>
-   <div id="openai-openllmetry-troubleshoot" class="tab-content">
-
-**Common OpenLLMetry Issues**:
-
-1. **Missing Traces**
-   
-   .. code-block:: python
-   
-      # Ensure OpenLLMetry instrumentor is passed to tracer
-      from opentelemetry.instrumentation.openai import OpenAIInstrumentor
-      
-      tracer = HoneyHiveTracer.init(
-          instrumentors=[OpenAIInstrumentor()]  # Don't forget this!
-      )
-
-2. **Enhanced Metrics Not Showing**
-   
-   .. code-block:: python
-   
-      # Ensure you're using the latest version
-      # pip install --upgrade opentelemetry-instrumentation-openai
-      
-      # The instrumentor automatically captures enhanced metrics
-      from opentelemetry.instrumentation.openai import OpenAIInstrumentor
-      tracer = HoneyHiveTracer.init(instrumentors=[OpenAIInstrumentor()])
-
-3. **Multiple OpenLLMetry Instrumentors**
-   
-   .. code-block:: python
-   
-      # You can combine multiple OpenLLMetry instrumentors
-      from opentelemetry.instrumentation.openai import OpenAIInstrumentor
-       from opentelemetry.instrumentation.anthropic import AnthropicInstrumentor
-       
-       tracer = HoneyHiveTracer.init(
-           instrumentors=[
-               OpenAIInstrumentor(),      # OpenLLMetry OpenAI
-               AnthropicInstrumentor()    # OpenLLMetry Anthropic
-           ]
-       )
-
-4. **Performance Optimization**
-   
-   .. code-block:: python
-   
-      # OpenLLMetry instrumentors handle batching automatically
-      # No additional configuration needed for performance
-
-
-5. **Environment Configuration**
-   
-   .. code-block:: bash
-   
-      # HoneyHive configuration
-      export HH_API_KEY="your-honeyhive-api-key"
-      export HH_PROJECT="openai-integration"
-      export HH_SOURCE="production"
-      
-      # OpenAI configuration
-      export OPENAI_API_KEY="your-openai-api-key"
-      
-      # Optional: OpenLLMetry cloud features
-      export TRACELOOP_API_KEY="your-traceloop-key"
-      export TRACELOOP_BASE_URL="https://api.traceloop.com"
 
 .. raw:: html
 
@@ -472,7 +322,7 @@ Choose Your Instrumentor
    </div>
 
 Comparison: OpenInference vs OpenLLMetry for OpenAI
----------------------------------------------------------------
+----------------------------------------------------
 
 .. list-table:: Feature Comparison
    :header-rows: 1
@@ -483,7 +333,7 @@ Comparison: OpenInference vs OpenLLMetry for OpenAI
      - OpenLLMetry
    * - **Setup Complexity**
      - Simple, single instrumentor
-     - Single instrumentor setup
+     - Two-step initialization
    * - **Token Tracking**
      - Basic span attributes
      - Detailed token metrics + costs
@@ -506,6 +356,42 @@ Comparison: OpenInference vs OpenLLMetry for OpenAI
      - Simple integrations, dev
      - Production, cost optimization
 
+Real-World Usage Examples
+-------------------------
+
+**Content Generation Pipeline**:
+
+.. code-block:: python
+
+   # Works with both instrumentors - just change initialization!
+   
+   @trace(event_type=EventType.chain)
+   def content_pipeline(topic: str) -> str:
+       """Generate and refine content using multiple OpenAI models."""
+       client = openai.OpenAI()
+       
+       # Draft with GPT-3.5 (cost-effective)
+       draft = client.chat.completions.create(
+           model="gpt-3.5-turbo",
+           messages=[{"role": "user", "content": f"Write a blog post about {topic}"}]
+       )
+       
+       # Polish with GPT-4 (higher quality)
+       final = client.chat.completions.create(
+           model="gpt-4",
+           messages=[{
+               "role": "user", 
+               "content": f"Improve this blog post: {draft.choices[0].message.content}"
+           }]
+       )
+       
+       # OpenLLMetry automatically tracks: 
+       # - Cost difference between models
+       # - Token usage optimization opportunities
+       # - Latency for each step
+       
+       return final.choices[0].message.content
+
 Environment Configuration
 --------------------------
 
@@ -521,8 +407,13 @@ Environment Configuration
    # OpenAI configuration
    export OPENAI_API_KEY="your-openai-api-key"
 
-# OPENAI_API_KEY=your-openai-api-key
-# OPENAI_ORG_ID=your-org-id  # Optional
+**Additional for OpenLLMetry**:
+
+.. code-block:: bash
+
+   # Optional: OpenLLMetry cloud features
+   export TRACELOOP_API_KEY="your-traceloop-key"
+   export TRACELOOP_BASE_URL="https://api.traceloop.com"
 
 Migration Between Instrumentors
 -------------------------------
@@ -535,27 +426,77 @@ Migration Between Instrumentors
    from openinference.instrumentation.openai import OpenAIInstrumentor
    tracer = HoneyHiveTracer.init(instrumentors=[OpenAIInstrumentor()])
    
-   # After (OpenLLMetry) - different instrumentor package
-   from opentelemetry.instrumentation.openai import OpenAIInstrumentor
-   tracer = HoneyHiveTracer.init(instrumentors=[OpenAIInstrumentor()])
+   # After (OpenLLMetry) - easier setup!
+   from traceloop.sdk import Traceloop
+   Traceloop.init()
+   tracer = HoneyHiveTracer.init()  # No instrumentors parameter needed
 
 **From OpenLLMetry to OpenInference**:
 
 .. code-block:: python
 
    # Before (OpenLLMetry)
-   from opentelemetry.instrumentation.openai import OpenAIInstrumentor
-   tracer = HoneyHiveTracer.init(instrumentors=[OpenAIInstrumentor()])
+   from traceloop.sdk import Traceloop
+   Traceloop.init()
+   tracer = HoneyHiveTracer.init()
    
    # After (OpenInference)
    from openinference.instrumentation.openai import OpenAIInstrumentor
    tracer = HoneyHiveTracer.init(instrumentors=[OpenAIInstrumentor()])
 
+Troubleshooting
+---------------
+
+**Common Issues**:
+
+1. **OpenInference: Missing Traces**
+   
+   .. code-block:: python
+   
+      # Ensure instrumentor is passed to tracer
+      tracer = HoneyHiveTracer.init(
+          instrumentors=[OpenAIInstrumentor()]  # Don't forget this!
+      )
+
+2. **OpenLLMetry: Import Order Matters**
+   
+   .. code-block:: python
+   
+      # Initialize Traceloop BEFORE HoneyHive
+      from traceloop.sdk import Traceloop
+      Traceloop.init()  # Must come first
+      
+      from honeyhive import HoneyHiveTracer
+      tracer = HoneyHiveTracer.init()
+
+3. **High Volume Applications**
+   
+   .. code-block:: python
+   
+      # OpenLLMetry: Enable batching for performance
+      Traceloop.init(
+          disable_batch=False, 
+          batch_size=100,
+          flush_interval=5000  # 5 seconds
+      )
+      
+      # OpenInference: Uses efficient span processors automatically
+
+4. **Cost Tracking Not Working (OpenLLMetry)**
+   
+   .. code-block:: python
+   
+      # Ensure you're using the latest version
+      # pip install --upgrade opentelemetry-instrumentation-openai
+      
+      # Verify Traceloop is initialized properly
+      Traceloop.init()  # Must be called before making OpenAI calls
+
 See Also
 --------
 
 - :doc:`multi-provider` - Use OpenAI with other providers
-- :doc:`../troubleshooting` - Common integration issues
+- :doc:`../troubleshooting` - Common integration issues  
 - :doc:`../../tutorials/03-llm-integration` - LLM integration tutorial
 - :doc:`anthropic` - Similar integration for Anthropic Claude
 
