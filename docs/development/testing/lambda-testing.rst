@@ -73,7 +73,7 @@ Why Lambda Testing Matters
 
 .. mermaid::
 
-   %%{init: {'theme':'base', 'themeVariables': {'primaryColor': '#4F81BD', 'primaryTextColor': '#ffffff', 'primaryBorderColor': '#ffffff', 'lineColor': '#333333', 'mainBkg': 'transparent', 'secondBkg': 'transparent', 'tertiaryColor': 'transparent', 'clusterBkg': 'transparent', 'clusterBorder': '#ffffff', 'edgeLabelBackground': 'transparent', 'background': 'transparent'}, 'flowchart': {'linkColor': '#333333', 'linkWidth': 2}}}%%
+   %%{init: {'theme':'base', 'themeVariables': {'primaryColor': '#4F81BD', 'primaryTextColor': '#ffffff', 'primaryBorderColor': '#000000', 'lineColor': '#333333', 'mainBkg': 'transparent', 'secondBkg': 'transparent', 'tertiaryColor': 'transparent', 'clusterBkg': 'transparent', 'clusterBorder': '#000000', 'edgeLabelBackground': 'transparent', 'background': 'transparent'}, 'flowchart': {'linkColor': '#333333', 'linkWidth': 2}}}%%
    graph TD
        subgraph "Cold Start (First Invocation)"
            COLD_INIT[Lambda Container Init<br/>~100-200ms]
@@ -107,9 +107,9 @@ Why Lambda Testing Matters
        
        COLD_TOTAL -.->|Container Reuse| WARM_REUSE
        
-       classDef cold fill:#1565c0,stroke:#ffffff,stroke-width:2px,color:#ffffff
-       classDef warm fill:#2e7d32,stroke:#ffffff,stroke-width:2px,color:#ffffff
-       classDef total fill:#ef6c00,stroke:#ffffff,stroke-width:2px,color:#ffffff
+       classDef cold fill:#1565c0,stroke:#000000,stroke-width:3px,color:#ffffff
+       classDef warm fill:#2e7d32,stroke:#000000,stroke-width:3px,color:#ffffff
+       classDef total fill:#ef6c00,stroke:#000000,stroke-width:3px,color:#ffffff
        
        class COLD_INIT,COLD_RUNTIME,COLD_SDK,COLD_TRACER,COLD_HANDLER,COLD_FLUSH cold
        class WARM_REUSE,WARM_TRACER,WARM_HANDLER,WARM_FLUSH warm
@@ -130,7 +130,7 @@ Lambda Testing Infrastructure
 
 .. mermaid::
 
-   %%{init: {'theme':'base', 'themeVariables': {'primaryColor': '#4F81BD', 'primaryTextColor': '#ffffff', 'primaryBorderColor': '#ffffff', 'lineColor': '#333333', 'mainBkg': 'transparent', 'secondBkg': 'transparent', 'tertiaryColor': 'transparent', 'clusterBkg': 'transparent', 'clusterBorder': '#ffffff', 'edgeLabelBackground': 'transparent', 'background': 'transparent'}, 'flowchart': {'linkColor': '#333333', 'linkWidth': 2}}}%%
+   %%{init: {'theme':'base', 'themeVariables': {'primaryColor': '#4F81BD', 'primaryTextColor': '#ffffff', 'primaryBorderColor': '#000000', 'lineColor': '#333333', 'mainBkg': 'transparent', 'secondBkg': 'transparent', 'tertiaryColor': 'transparent', 'clusterBkg': 'transparent', 'clusterBorder': '#000000', 'edgeLabelBackground': 'transparent', 'background': 'transparent'}, 'flowchart': {'linkColor': '#333333', 'linkWidth': 2}}}%%
    graph TD
        subgraph "Development Testing"
            LOCAL[Local Docker Testing]
@@ -140,15 +140,15 @@ Lambda Testing Infrastructure
        end
        
        subgraph "CI/CD Pipeline"
-           MATRIX[Matrix Testing<br/>Python 3.11/3.12/3.13<br/>Memory 256/512/1024MB]
-           REGRESSION[Performance Regression Detection]
+           MATRIX[Matrix Testing<br/>Python 3.11-3.13<br/>Memory 256-1024MB]
+           REGRESSION[Regression Detection]
            GATES[Quality Gates]
        end
        
        subgraph "Production Validation"
            DEPLOY[Real AWS Lambda Deploy]
-           PROD[Production Integration Tests]
-           MONITOR[Performance Monitoring]
+           PROD[Integration Tests]
+           MONITOR[Monitoring]
        end
        
        LOCAL --> BUNDLE
@@ -609,7 +609,7 @@ Performance Testing & Benchmarking
 
 .. mermaid::
 
-   %%{init: {'theme':'base', 'themeVariables': {'primaryColor': '#4F81BD', 'primaryTextColor': '#ffffff', 'primaryBorderColor': '#ffffff', 'lineColor': '#333333', 'mainBkg': 'transparent', 'secondBkg': 'transparent', 'tertiaryColor': 'transparent', 'clusterBkg': 'transparent', 'clusterBorder': '#ffffff', 'edgeLabelBackground': 'transparent', 'background': 'transparent'}, 'flowchart': {'linkColor': '#333333', 'linkWidth': 2}}}%%
+   %%{init: {'theme':'base', 'themeVariables': {'primaryColor': '#4F81BD', 'primaryTextColor': '#ffffff', 'primaryBorderColor': '#000000', 'lineColor': '#333333', 'mainBkg': 'transparent', 'secondBkg': 'transparent', 'tertiaryColor': 'transparent', 'clusterBkg': 'transparent', 'clusterBorder': '#000000', 'edgeLabelBackground': 'transparent', 'background': 'transparent'}, 'flowchart': {'linkColor': '#333333', 'linkWidth': 2}}}%%
    graph LR
        subgraph "Test Configurations"
            M256[256MB Memory]
@@ -650,10 +650,10 @@ Performance Testing & Benchmarking
        
        PASS --> TREND
        
-       classDef config fill:#1565c0,stroke:#ffffff,stroke-width:2px,color:#ffffff
-       classDef test fill:#7b1fa2,stroke:#ffffff,stroke-width:2px,color:#ffffff
-       classDef version fill:#2e7d32,stroke:#ffffff,stroke-width:2px,color:#ffffff
-       classDef result fill:#ef6c00,stroke:#ffffff,stroke-width:2px,color:#ffffff
+       classDef config fill:#1565c0,stroke:#000000,stroke-width:3px,color:#ffffff
+       classDef test fill:#7b1fa2,stroke:#000000,stroke-width:3px,color:#ffffff
+       classDef version fill:#2e7d32,stroke:#000000,stroke-width:3px,color:#ffffff
+       classDef result fill:#ef6c00,stroke:#000000,stroke-width:3px,color:#ffffff
        
        class M256,M512,M1024 config
        class COLD,WARM,MEM,LOAD test
@@ -721,7 +721,7 @@ CI/CD Integration Testing
 
 .. mermaid::
 
-   %%{init: {'theme':'base', 'themeVariables': {'primaryColor': '#4F81BD', 'primaryTextColor': '#ffffff', 'primaryBorderColor': '#ffffff', 'lineColor': '#333333', 'mainBkg': 'transparent', 'secondBkg': 'transparent', 'tertiaryColor': 'transparent', 'clusterBkg': 'transparent', 'clusterBorder': '#ffffff', 'edgeLabelBackground': 'transparent', 'background': 'transparent'}, 'flowchart': {'linkColor': '#333333', 'linkWidth': 2}}}%%
+   %%{init: {'theme':'base', 'themeVariables': {'primaryColor': '#4F81BD', 'primaryTextColor': '#ffffff', 'primaryBorderColor': '#000000', 'lineColor': '#333333', 'mainBkg': 'transparent', 'secondBkg': 'transparent', 'tertiaryColor': 'transparent', 'clusterBkg': 'transparent', 'clusterBorder': '#000000', 'edgeLabelBackground': 'transparent', 'background': 'transparent'}, 'flowchart': {'linkColor': '#333333', 'linkWidth': 2}}}%%
    graph TD
        PR[Pull Request Created]
        
@@ -769,12 +769,12 @@ CI/CD Integration Testing
        REGRESS --> WARN
        REGRESS --> PASS
        
-       classDef trigger fill:#1565c0,stroke:#ffffff,stroke-width:2px,color:#ffffff
-       classDef test fill:#7b1fa2,stroke:#ffffff,stroke-width:2px,color:#ffffff
-       classDef gate fill:#ef6c00,stroke:#ffffff,stroke-width:2px,color:#ffffff
-       classDef success fill:#2e7d32,stroke:#ffffff,stroke-width:2px,color:#ffffff
-       classDef warning fill:#f9a825,stroke:#ffffff,stroke-width:2px,color:#ffffff
-       classDef failure fill:#c62828,stroke:#ffffff,stroke-width:2px,color:#ffffff
+       classDef trigger fill:#1565c0,stroke:#000000,stroke-width:3px,color:#ffffff
+       classDef test fill:#7b1fa2,stroke:#000000,stroke-width:3px,color:#ffffff
+       classDef gate fill:#ef6c00,stroke:#000000,stroke-width:3px,color:#ffffff
+       classDef success fill:#2e7d32,stroke:#000000,stroke-width:3px,color:#ffffff
+       classDef warning fill:#f9a825,stroke:#000000,stroke-width:3px,color:#ffffff
+       classDef failure fill:#c62828,stroke:#000000,stroke-width:3px,color:#ffffff
        
        class PR trigger
        class PY311,PY312,PY313,M256,M512,M1024 test
@@ -885,7 +885,7 @@ Production Lambda Testing
 
 .. mermaid::
 
-   %%{init: {'theme':'base', 'themeVariables': {'primaryColor': '#4F81BD', 'primaryTextColor': '#ffffff', 'primaryBorderColor': '#ffffff', 'lineColor': '#333333', 'mainBkg': 'transparent', 'secondBkg': 'transparent', 'tertiaryColor': 'transparent', 'clusterBkg': 'transparent', 'clusterBorder': '#ffffff', 'edgeLabelBackground': 'transparent', 'background': 'transparent'}, 'flowchart': {'linkColor': '#333333', 'linkWidth': 2}}}%%
+   %%{init: {'theme':'base', 'themeVariables': {'primaryColor': '#4F81BD', 'primaryTextColor': '#ffffff', 'primaryBorderColor': '#000000', 'lineColor': '#333333', 'mainBkg': 'transparent', 'secondBkg': 'transparent', 'tertiaryColor': 'transparent', 'clusterBkg': 'transparent', 'clusterBorder': '#000000', 'edgeLabelBackground': 'transparent', 'background': 'transparent'}, 'flowchart': {'linkColor': '#333333', 'linkWidth': 2}}}%%
    graph TB
        subgraph "AWS Lambda Environment"
            LAMBDA[AWS Lambda Function<br/>honeyhive-sdk-test]

@@ -17,7 +17,7 @@ This document defines the mandatory standards for all Mermaid diagrams in the Ho
 ```rst
 .. mermaid::
 
-   %%{init: {'theme':'base', 'themeVariables': {'primaryColor': '#4F81BD', 'primaryTextColor': '#ffffff', 'primaryBorderColor': '#ffffff', 'lineColor': '#333333', 'mainBkg': 'transparent', 'secondBkg': 'transparent', 'tertiaryColor': 'transparent', 'clusterBkg': 'transparent', 'clusterBorder': '#ffffff', 'edgeLabelBackground': 'transparent', 'background': 'transparent'}, 'flowchart': {'linkColor': '#333333', 'linkWidth': 2}}}%%
+   %%{init: {'theme':'base', 'themeVariables': {'primaryColor': '#4F81BD', 'primaryTextColor': '#ffffff', 'primaryBorderColor': '#333333', 'lineColor': '#333333', 'mainBkg': 'transparent', 'secondBkg': 'transparent', 'tertiaryColor': 'transparent', 'clusterBkg': 'transparent', 'clusterBorder': '#333333', 'edgeLabelBackground': 'transparent', 'background': 'transparent'}, 'flowchart': {'linkColor': '#333333', 'linkWidth': 2}}}%%
    graph TB
        // Your diagram content here
 ```
@@ -62,18 +62,18 @@ Use these colors for node fills to maintain brand consistency:
 **ALL classDef definitions MUST include `color:#ffffff`:**
 
 ```mermaid
-classDef primary fill:#1565c0,stroke:#ffffff,stroke-width:2px,color:#ffffff
-classDef success fill:#2e7d32,stroke:#ffffff,stroke-width:2px,color:#ffffff
-classDef warning fill:#ef6c00,stroke:#ffffff,stroke-width:2px,color:#ffffff
-classDef action fill:#7b1fa2,stroke:#ffffff,stroke-width:2px,color:#ffffff
-classDef alert fill:#f9a825,stroke:#ffffff,stroke-width:2px,color:#ffffff
-classDef error fill:#c62828,stroke:#ffffff,stroke-width:2px,color:#ffffff
+classDef primary fill:#1565c0,stroke:#333333,stroke-width:2px,color:#ffffff
+classDef success fill:#2e7d32,stroke:#333333,stroke-width:2px,color:#ffffff
+classDef warning fill:#ef6c00,stroke:#333333,stroke-width:2px,color:#ffffff
+classDef action fill:#7b1fa2,stroke:#333333,stroke-width:2px,color:#ffffff
+classDef alert fill:#f9a825,stroke:#333333,stroke-width:2px,color:#ffffff
+classDef error fill:#c62828,stroke:#333333,stroke-width:2px,color:#ffffff
 ```
 
 ### ClassDef Components
 
 - **`fill`**: Use HoneyHive professional colors from the palette
-- **`stroke:#ffffff`**: White borders for clear definition
+- **`stroke:#333333`**: Dark gray borders visible in both themes
 - **`stroke-width:2px`**: Consistent border width
 - **`color:#ffffff`**: **CRITICAL** - White text for readability
 
@@ -121,10 +121,17 @@ Test ALL diagrams in both themes:
 ### Browser Testing
 
 Test in multiple browsers:
-- Chrome/Chromium
-- Firefox  
-- Safari
-- Arc
+- ✅ Chrome/Chromium (Full support)
+- ✅ Firefox (Full support - optimize node labels for best rendering)
+- ✅ Edge (Full support)
+- ⚠️ Safari (Limited support - borders may not be visible)
+- ✅ Arc (Chromium-based - Full support)
+
+**Firefox Optimization Tips:**
+- Keep node labels concise (avoid very long text)
+- Simplify multi-line text where possible
+- Use hyphens for ranges (e.g., "3.11-3.13" vs "3.11/3.12/3.13")
+- Test complex diagrams in Firefox during development
 
 ## 📚 Reference Files
 
