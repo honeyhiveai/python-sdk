@@ -107,9 +107,9 @@ Why Lambda Testing Matters
        
        COLD_TOTAL -.->|Container Reuse| WARM_REUSE
        
-       classDef cold fill:#ffcdd2,stroke:#d32f2f,stroke-width:2px
-       classDef warm fill:#c8e6c9,stroke:#388e3c,stroke-width:2px
-       classDef total fill:#fff3e0,stroke:#f57c00,stroke-width:2px
+       classDef cold fill:#ffcdd2,stroke:#d32f2f,stroke-width:2px,color:#ffffff
+       classDef warm fill:#c8e6c9,stroke:#388e3c,stroke-width:2px,color:#ffffff
+       classDef total fill:#fff3e0,stroke:#f57c00,stroke-width:2px,color:#ffffff
        
        class COLD_INIT,COLD_RUNTIME,COLD_SDK,COLD_TRACER,COLD_HANDLER,COLD_FLUSH cold
        class WARM_REUSE,WARM_TRACER,WARM_HANDLER,WARM_FLUSH warm
@@ -650,10 +650,10 @@ Performance Testing & Benchmarking
        
        PASS --> TREND
        
-       classDef config fill:#e3f2fd,stroke:#1976d2,stroke-width:2px
-       classDef test fill:#f3e5f5,stroke:#7b1fa2,stroke-width:2px
-       classDef version fill:#e8f5e8,stroke:#388e3c,stroke-width:2px
-       classDef result fill:#fff3e0,stroke:#f57c00,stroke-width:2px
+       classDef config fill:#e3f2fd,stroke:#1976d2,stroke-width:2px,color:#ffffff
+       classDef test fill:#f3e5f5,stroke:#7b1fa2,stroke-width:2px,color:#ffffff
+       classDef version fill:#e8f5e8,stroke:#388e3c,stroke-width:2px,color:#ffffff
+       classDef result fill:#fff3e0,stroke:#f57c00,stroke-width:2px,color:#ffffff
        
        class M256,M512,M1024 config
        class COLD,WARM,MEM,LOAD test
@@ -769,12 +769,12 @@ CI/CD Integration Testing
        REGRESS --> WARN
        REGRESS --> PASS
        
-       classDef trigger fill:#e1f5fe,stroke:#0277bd,stroke-width:2px
-       classDef test fill:#f3e5f5,stroke:#7b1fa2,stroke-width:2px
-       classDef gate fill:#fff3e0,stroke:#ef6c00,stroke-width:2px
-       classDef success fill:#e8f5e8,stroke:#2e7d32,stroke-width:2px
-       classDef warning fill:#fff8e1,stroke:#f9a825,stroke-width:2px
-       classDef failure fill:#ffebee,stroke:#c62828,stroke-width:2px
+       classDef trigger fill:#e1f5fe,stroke:#0277bd,stroke-width:2px,color:#ffffff
+       classDef test fill:#f3e5f5,stroke:#7b1fa2,stroke-width:2px,color:#ffffff
+       classDef gate fill:#fff3e0,stroke:#ef6c00,stroke-width:2px,color:#ffffff
+       classDef success fill:#e8f5e8,stroke:#2e7d32,stroke-width:2px,color:#ffffff
+       classDef warning fill:#fff8e1,stroke:#f9a825,stroke-width:2px,color:#ffffff
+       classDef failure fill:#ffebee,stroke:#c62828,stroke-width:2px,color:#ffffff
        
        class PR trigger
        class PY311,PY312,PY313,M256,M512,M1024 test
