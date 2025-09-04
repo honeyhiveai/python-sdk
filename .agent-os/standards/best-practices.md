@@ -30,6 +30,7 @@
 - **Code changes**: CHANGELOG.md must be updated
 - **New features**: CHANGELOG.md + docs/reference/index.rst + .agent-os/product/features.md
 - **Workflow changes**: Update docs/development/testing/ and .agent-os/standards/
+- **Mermaid diagrams**: MUST follow `.agent-os/standards/mermaid-diagrams.md` dual-theme standards
 - **Large changesets (>3 files)**: Comprehensive documentation review required
 - **AI Assistant commits**: Automatic documentation compliance checking
 

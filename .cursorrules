@@ -76,6 +76,60 @@
 - Support HTTP_*, EXPERIMENT_* patterns for compatibility
 - Set HH_TEST_MODE appropriately for different test types
 
+## 🎨 Mermaid Diagram Standards (MANDATORY)
+
+### **🚨 CRITICAL: All Mermaid diagrams MUST use HoneyHive dual-theme configuration**
+
+**MANDATORY Configuration** - Copy this EXACT configuration for ALL Mermaid diagrams:
+
+```rst
+.. mermaid::
+
+   %%{init: {'theme':'base', 'themeVariables': {'primaryColor': '#4F81BD', 'primaryTextColor': '#ffffff', 'primaryBorderColor': '#ffffff', 'lineColor': '#333333', 'mainBkg': 'transparent', 'secondBkg': 'transparent', 'tertiaryColor': 'transparent', 'clusterBkg': 'transparent', 'clusterBorder': '#ffffff', 'edgeLabelBackground': 'transparent', 'background': 'transparent'}, 'flowchart': {'linkColor': '#333333', 'linkWidth': 2}}}%%
+   graph TB
+       // Your diagram content here
+```
+
+### **🎯 Dual-Theme Requirements**
+- ✅ **Node Text**: ALWAYS use `color:#ffffff` in ALL classDef definitions
+- ✅ **Node Fills**: Use HoneyHive professional colors (deep blues, greens, oranges)
+- ✅ **Arrows/Lines**: Dark gray (`#333333`) for visibility in both light and dark themes
+- ✅ **Borders**: White (`#ffffff`) for clear definition
+- ✅ **Backgrounds**: Transparent for theme flexibility
+
+### **🎨 HoneyHive Color Palette**
+**MANDATORY**: Use these professional colors for node fills:
+- **Primary Blue**: `#1565c0` (Deep blue for main elements)
+- **Success Green**: `#2e7d32` (Deep green for success states)
+- **Warning Orange**: `#ef6c00` (Deep orange for warnings/results)
+- **Action Purple**: `#7b1fa2` (Deep purple for actions/tests)
+- **Alert Yellow**: `#f9a825` (Deep yellow for alerts)
+- **Error Red**: `#c62828` (Deep red for errors/failures)
+
+### **✅ ClassDef Pattern**
+**MANDATORY**: ALL classDef definitions MUST include `color:#ffffff`:
+```
+classDef success fill:#2e7d32,stroke:#ffffff,stroke-width:2px,color:#ffffff
+classDef warning fill:#ef6c00,stroke:#ffffff,stroke-width:2px,color:#ffffff
+classDef error fill:#c62828,stroke:#ffffff,stroke-width:2px,color:#ffffff
+```
+
+### **❌ NEVER Use These Patterns**
+- ❌ Light fill colors (`#ffcdd2`, `#e3f2fd`) - poor contrast in dark themes
+- ❌ Missing `color:#ffffff` in classDef - text invisible in dark themes
+- ❌ White arrows (`linkColor: '#ffffff'`) - invisible in light themes
+- ❌ Dark text (`primaryTextColor: '#333333'`) - invisible in dark themes
+- ❌ Non-transparent backgrounds - conflicts with theme switching
+
+### **📋 Quality Checklist**
+Before committing ANY Mermaid diagram, verify:
+- ✅ Uses exact HoneyHive dual-theme configuration
+- ✅ All classDef include `color:#ffffff`
+- ✅ Uses professional HoneyHive color palette
+- ✅ Arrows visible in both light and dark themes
+- ✅ Text readable on all colored backgrounds
+- ✅ Follows `docs/MERMAID_STANDARD.md` specification
+
 ## Documentation & Examples - Divio System
 
 ### 🎯 Divio Documentation Architecture
@@ -135,7 +189,7 @@
 - **Cross-linking**: Tutorials → How-to, How-to → Reference, Reference → Explanation
 - **Content testing**: Use `docs/utils/` scripts for validation
 - **Accessibility**: WCAG 2.1 AA compliance for all content
-- **Visual standards**: Use Mermaid diagrams with base theme, sanitize credentials in screenshots
+- **Visual standards**: Use Mermaid diagrams with HoneyHive dual-theme standard, sanitize credentials in screenshots
 
 ### Update Requirements
 - Update examples/ when making changes that affect usage
