@@ -10,19 +10,19 @@ All Mermaid diagrams in the HoneyHive Python SDK documentation use this standard
 
 ## Key Features
 
-- **Reliable Rendering**: Uses stable dark theme that renders consistently
+- **Reliable Rendering**: Uses stable base theme that renders consistently
 - **Transparent Backgrounds**: No forced background colors that conflict with themes
-- **White Text/Borders**: High contrast white text and borders for visibility
+- **Dark Gray Text/Borders**: High contrast dark gray text and borders for visibility in both light and dark themes
 - **HoneyHive Branding**: Uses HoneyHive blue (#4F81BD) for primary elements
 - **No Background Conflicts**: Transparent backgrounds work in both light/dark themes
 
 ## Color Palette
 
 - **Primary Color**: `#4F81BD` (HoneyHive Blue)
-- **Text/Border Colors**: `#ffffff` (White for high contrast)
+- **Text/Border Colors**: `#333333` (Dark gray for high contrast in both themes)
 - **All Backgrounds**: `transparent` (No forced backgrounds)
-- **Links**: `#ffffff` (White links)
-- **Cluster Borders**: `#ffffff` (White borders)
+- **Links**: `#333333` (Dark gray links)
+- **Cluster Borders**: `#333333` (Dark gray borders)
 
 ## Usage
 
@@ -40,6 +40,6 @@ Copy this configuration block for any new Mermaid diagrams in the documentation:
 
 This configuration is currently applied to:
 
-- `docs/tracer/index.rst` - HoneyHive Tracing Architecture
-- `docs/IMPLEMENTATION_GUIDE.rst` - High-Level Architecture & Unified Enrichment Architecture  
-- `docs/evaluation/index.rst` - Evaluation Framework Architecture
+- `docs/development/testing/lambda-testing.rst` - Lambda Testing Architecture (5 diagrams)
+- `docs/explanation/concepts/tracing-fundamentals.rst` - Tracing Concepts
+- `docs/explanation/architecture/overview.rst` - System Architecture Overview
