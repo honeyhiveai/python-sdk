@@ -85,7 +85,7 @@
 ```rst
 .. mermaid::
 
-   %%{init: {'theme':'base', 'themeVariables': {'primaryColor': '#4F81BD', 'primaryTextColor': '#ffffff', 'primaryBorderColor': '#ffffff', 'lineColor': '#333333', 'mainBkg': 'transparent', 'secondBkg': 'transparent', 'tertiaryColor': 'transparent', 'clusterBkg': 'transparent', 'clusterBorder': '#ffffff', 'edgeLabelBackground': 'transparent', 'background': 'transparent'}, 'flowchart': {'linkColor': '#333333', 'linkWidth': 2}}}%%
+   %%{init: {'theme':'base', 'themeVariables': {'primaryColor': '#4F81BD', 'primaryTextColor': '#ffffff', 'primaryBorderColor': '#333333', 'lineColor': '#333333', 'mainBkg': 'transparent', 'secondBkg': 'transparent', 'tertiaryColor': 'transparent', 'clusterBkg': 'transparent', 'clusterBorder': '#333333', 'edgeLabelBackground': 'transparent', 'background': 'transparent'}, 'flowchart': {'linkColor': '#333333', 'linkWidth': 2}}}%%
    graph TB
        // Your diagram content here
 ```
@@ -94,7 +94,7 @@
 - ✅ **Node Text**: ALWAYS use `color:#ffffff` in ALL classDef definitions
 - ✅ **Node Fills**: Use HoneyHive professional colors (deep blues, greens, oranges)
 - ✅ **Arrows/Lines**: Dark gray (`#333333`) for visibility in both light and dark themes
-- ✅ **Borders**: White (`#ffffff`) for clear definition
+- ✅ **Borders**: Dark gray (`#333333`) for visibility in both themes
 - ✅ **Backgrounds**: Transparent for theme flexibility
 
 ### **🎨 HoneyHive Color Palette**
@@ -109,9 +109,9 @@
 ### **✅ ClassDef Pattern**
 **MANDATORY**: ALL classDef definitions MUST include `color:#ffffff`:
 ```
-classDef success fill:#2e7d32,stroke:#ffffff,stroke-width:2px,color:#ffffff
-classDef warning fill:#ef6c00,stroke:#ffffff,stroke-width:2px,color:#ffffff
-classDef error fill:#c62828,stroke:#ffffff,stroke-width:2px,color:#ffffff
+classDef success fill:#2e7d32,stroke:#333333,stroke-width:2px,color:#ffffff
+classDef warning fill:#ef6c00,stroke:#333333,stroke-width:2px,color:#ffffff
+classDef error fill:#c62828,stroke:#333333,stroke-width:2px,color:#ffffff
 ```
 
 ### **❌ NEVER Use These Patterns**

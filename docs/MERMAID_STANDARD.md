@@ -5,7 +5,7 @@
 All Mermaid diagrams in the HoneyHive Python SDK documentation use this standardized configuration that provides optimal contrast in both light and dark themes:
 
 ```mermaid
-%%{init: {'theme':'base', 'themeVariables': {'primaryColor': '#4F81BD', 'primaryTextColor': '#ffffff', 'primaryBorderColor': '#ffffff', 'lineColor': '#333333', 'mainBkg': 'transparent', 'secondBkg': 'transparent', 'tertiaryColor': 'transparent', 'clusterBkg': 'transparent', 'clusterBorder': '#ffffff', 'edgeLabelBackground': 'transparent', 'background': 'transparent'}, 'flowchart': {'linkColor': '#333333', 'linkWidth': 2}}}%%
+%%{init: {'theme':'base', 'themeVariables': {'primaryColor': '#4F81BD', 'primaryTextColor': '#ffffff', 'primaryBorderColor': '#333333', 'lineColor': '#333333', 'mainBkg': 'transparent', 'secondBkg': 'transparent', 'tertiaryColor': 'transparent', 'clusterBkg': 'transparent', 'clusterBorder': '#333333', 'edgeLabelBackground': 'transparent', 'background': 'transparent'}, 'flowchart': {'linkColor': '#333333', 'linkWidth': 2}}}%%
 ```
 
 ## Key Features
@@ -22,7 +22,7 @@ All Mermaid diagrams in the HoneyHive Python SDK documentation use this standard
 - **Text/Border Colors**: `#ffffff` (White for maximum contrast in both themes)
 - **All Backgrounds**: `transparent` (No forced backgrounds)
 - **Links**: `#333333` (Dark gray links visible in both themes)
-- **Cluster Borders**: `#ffffff` (White borders for definition)
+- **Cluster Borders**: `#333333` (Dark gray borders visible in both themes)
 
 ## Usage
 
@@ -31,10 +31,17 @@ Copy this configuration block for any new Mermaid diagrams in the documentation:
 ```rst
 .. mermaid::
 
-   %%{init: {'theme':'base', 'themeVariables': {'primaryColor': '#4F81BD', 'primaryTextColor': '#ffffff', 'primaryBorderColor': '#ffffff', 'lineColor': '#333333', 'mainBkg': 'transparent', 'secondBkg': 'transparent', 'tertiaryColor': 'transparent', 'clusterBkg': 'transparent', 'clusterBorder': '#ffffff', 'edgeLabelBackground': 'transparent', 'background': 'transparent'}, 'flowchart': {'linkColor': '#333333', 'linkWidth': 2}}}%%
+   %%{init: {'theme':'base', 'themeVariables': {'primaryColor': '#4F81BD', 'primaryTextColor': '#ffffff', 'primaryBorderColor': '#333333', 'lineColor': '#333333', 'mainBkg': 'transparent', 'secondBkg': 'transparent', 'tertiaryColor': 'transparent', 'clusterBkg': 'transparent', 'clusterBorder': '#333333', 'edgeLabelBackground': 'transparent', 'background': 'transparent'}, 'flowchart': {'linkColor': '#333333', 'linkWidth': 2}}}%%
    graph TB
        // Your diagram content here
 ```
+
+## Browser Compatibility
+
+- ✅ **Chrome/Chromium**: Full support with all features
+- ✅ **Firefox**: Full support with all features  
+- ✅ **Edge**: Full support with all features
+- ⚠️ **Safari**: Limited support - borders may not be visible due to Safari's SVG rendering limitations
 
 ## Applied To
 
