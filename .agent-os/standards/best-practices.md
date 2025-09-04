@@ -24,7 +24,7 @@
 3. **MANDATORY**: All tests must pass - `tox -e unit && tox -e integration`
 4. **MANDATORY for AI Assistants**: Update documentation before committing
 5. **MANDATORY for AI Assistants**: Use correct dates - `date +"%Y-%m-%d"` command
-6. Emergency bypass only: `git commit --no-verify` (document why and fix immediately)
+
 
 **Documentation Update Requirements**:
 - **Code changes**: CHANGELOG.md must be updated
