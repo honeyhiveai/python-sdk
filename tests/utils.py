@@ -67,15 +67,29 @@ def mock_success_response(data):
 
 def setup_test_environment():
     """Setup common test environment variables."""
+    # Clear any existing HH_API_URL that might interfere with tests
+    if "HH_API_URL" in os.environ:
+        del os.environ["HH_API_URL"]
+
     os.environ["HH_TEST_MODE"] = "true"
     os.environ["HH_DISABLE_TRACING"] = "false"
     os.environ["HH_DISABLE_HTTP_TRACING"] = "true"
     os.environ["HH_OTLP_ENABLED"] = "false"
 
+    # Patch the config module to use test values
+    try:
+        from honeyhive.utils.config import config
+
+        # Reset the config to use default values
+        config.api_url = "https://api.honeyhive.ai"
+    except ImportError:
+        pass
+
 
 def cleanup_test_environment():
     """Cleanup common test environment variables."""
     for key in [
+        "HH_API_URL",
         "HH_TEST_MODE",
         "HH_DISABLE_TRACING",
         "HH_DISABLE_HTTP_TRACING",
