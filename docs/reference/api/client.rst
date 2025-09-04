@@ -1032,5 +1032,5 @@ See Also
 - :doc:`tracer` - HoneyHiveTracer API reference
 - :doc:`decorators` - Decorator-based APIs
 - :doc:`../../tutorials/01-quick-start` - Getting started tutorial
-- :doc:`../../how-to/troubleshooting` - Client troubleshooting
+- :doc:`../../how-to/index` - Client troubleshooting (see Troubleshooting section)
 - :doc:`../../explanation/architecture/overview` - Architecture overview

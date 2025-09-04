@@ -9,7 +9,8 @@ This directory contains the Agent OS configuration for the HoneyHive Python SDK 
 ├── standards/              # Global coding standards
 │   ├── tech-stack.md      # Technology choices and dependencies
 │   ├── code-style.md      # Code formatting and style guide
-│   └── best-practices.md  # Development best practices
+│   ├── best-practices.md  # Development best practices
+│   └── documentation-generation.md  # Template generation system
 ├── product/               # Product documentation
 │   ├── overview.md        # Product vision and architecture
 │   ├── audience.md        # User personas and market segments

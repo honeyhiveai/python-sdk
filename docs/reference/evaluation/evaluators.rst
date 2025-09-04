@@ -8,7 +8,12 @@ Evaluation Framework API Reference
 
 .. currentmodule:: honeyhive.evaluation
 
-The HoneyHive evaluation framework provides comprehensive tools for assessing LLM outputs across multiple dimensions including quality, accuracy, safety, and performance.
+The HoneyHive evaluation framework provides comprehensive tools for assessing LLM outputs across multiple dimensions:
+
+- Quality assessment
+- Accuracy verification
+- Safety evaluation
+- Performance analysis
 
 **Key Features:**
 

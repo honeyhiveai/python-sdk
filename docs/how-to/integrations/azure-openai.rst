@@ -532,25 +532,6 @@ Comparison: OpenInference vs OpenLLMetry for Azure OpenAI
      - Simple integrations, dev
      - Production, cost optimization
 
-Environment Configuration
---------------------------
-
-**Required Environment Variables** (both instrumentors):
-
-.. code-block:: bash
-
-   # HoneyHive configuration
-   export HH_API_KEY="your-honeyhive-api-key"
-   export HH_PROJECT="azure-openai-integration"
-   export HH_SOURCE="production"
-   
-   # Azure OpenAI configuration
-   export AZURE_OPENAI_API_KEY="your-azure-openai-api-key"
-
-# AZURE_OPENAI_API_KEY=your-azure-openai-key
-# AZURE_OPENAI_ENDPOINT=https://your-resource.openai.azure.com/
-# AZURE_OPENAI_API_VERSION=2024-02-01
-
 Migration Between Instrumentors
 -------------------------------
 
@@ -582,7 +563,7 @@ See Also
 --------
 
 - :doc:`multi-provider` - Use Azure OpenAI with other providers
-- :doc:`../troubleshooting` - Common integration issues
+- :doc:`../index` - Common integration issues (see Troubleshooting section)
 - :doc:`../../tutorials/03-llm-integration` - LLM integration tutorial
 - :doc:`openai` - Similar integration for OpenAI
 

@@ -1,5 +1,5 @@
 Integrate with Google Agent Development Kit (ADK)
-==================================================
+=================================================
 
 .. note::
    **Problem-solving guide for Google Agent Development Kit (ADK) integration**
@@ -36,7 +36,6 @@ Choose Your Instrumentor
      <button class="tab-button" onclick="showTab(event, 'google-adk-openinference-basic')">Basic Setup</button>
      <button class="tab-button" onclick="showTab(event, 'google-adk-openinference-advanced')">Advanced Usage</button>
      <button class="tab-button" onclick="showTab(event, 'google-adk-openinference-troubleshoot')">Troubleshooting</button>
-     <button class="tab-button" onclick="showTab(event, 'google-adk-openinference-config')">Configuration</button>
    </div>
 
    <div id="google-adk-openinference-install" class="tab-content active">
@@ -119,9 +118,9 @@ Choose Your Instrumentor
        
        # Add business context to the trace
        enrich_span({
-           "business.input_type": type({{FIRST_PARAM}}).__name__,
-           "business.use_case": "{{USE_CASE_NAME}}",
-           "google-adk.strategy": "{{STRATEGY_NAME}}",
+           "business.input_type": type(documents).__name__,
+           "business.use_case": "multi_agent_analysis",
+           "google-adk.strategy": "parallel_processing",
            "instrumentor.type": "openinference"
        })
        
@@ -159,14 +158,27 @@ Choose Your Instrumentor
                "review": review.output
            })
            
+       # Add result metadata
+       enrich_span({
+           "business.successful": True,
+           "google-adk.models_used": ["gemini-pro", "gemini-ultra"],
+           "business.result_confidence": "high"
+       })
+       
+       return {
+           "processed_documents": len(results),
+           "analysis_results": results,
+           "workflow_completed": True
+       }
+           
            # Add result metadata
            enrich_span({
                "business.successful": True,
-               "google-adk.models_used": {{MODELS_USED}},
+               "google-adk.models_used": ["gemini-pro", "gemini-ultra"],
                "business.result_confidence": "high"
            })
            
-           return {{RETURN_VALUE}}
+           return {"processed_documents": len(results), "analysis_results": results, "workflow_completed": True}
            
        except google.adk.ADKError as e:
            enrich_span({
@@ -226,71 +238,6 @@ Choose Your Instrumentor
       
       # Google Agent Development Kit (ADK) configuration
       export GOOGLE_API_KEY="your-google-adk-api-key"
-
-.. raw:: html
-
-   </div>
-   </div>
-
-
-.. raw:: html
-
-   </div>
-   <div id="google-adk-openinference-config" class="tab-content">
-
-.. raw:: html
-
-   </div>
-
-   <div id="openllmetry-section" class="instrumentor-content">
-.. note::
-   **OpenLLMetry Not Available**
-   
-   OpenLLMetry does not currently provide a Google ADK instrumentor. Only OpenInference instrumentation is available for this provider.
-   
-   Please use the OpenInference instrumentor above for Google Agent Development Kit (ADK) integration.
-
-.. raw:: html
-
-   </div>
-   </div>
-
-.. raw:: html
-
-   </div>
-   </div>
-
-
-Environment Configuration
---------------------------
-
-**Required Environment Variables**:
-
-.. code-block:: bash
-
-   # HoneyHive configuration
-   export HH_API_KEY="your-honeyhive-api-key"
-   export HH_PROJECT="google-adk-integration"
-   export HH_SOURCE="production"
-   
-   # Google Agent Development Kit (ADK) configuration
-   export GOOGLE_API_KEY="your-google-adk-api-key"
-
-
-
-
-See Also
---------
-
-- :doc:`multi-provider` - Use Google ADK with other providers
-- :doc:`../troubleshooting` - Common integration issues
-- :doc:`../../tutorials/03-llm-integration` - LLM integration tutorial
-- :doc:`google-ai` - Similar integration for Google AI
-
-.. raw:: html
-
-   </div>
-   </div>
 
 .. raw:: html
 

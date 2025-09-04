@@ -1,7 +1,10 @@
-Evaluation & Analysis
-=====================
+Evaluation & Analysis Guides
+=============================
 
-Learn how to evaluate LLM outputs, analyze performance, and implement quality assurance for your AI applications.
+**Problem-solving guides** for evaluating LLM outputs, analyzing performance, and implementing quality assurance for your AI applications.
+
+.. tip::
+   **New to evaluation?** Start with the comprehensive :doc:`../../tutorials/04-evaluation-basics` tutorial first.
 
 .. toctree::
    :maxdepth: 2
@@ -447,7 +450,7 @@ Best Practices
 See Also
 --------
 
-- :doc:`../integrations/index` - LLM provider integrations
+- :doc:`../index` - LLM provider integrations
 - :doc:`../advanced-tracing/custom-spans` - Custom tracing patterns
 - :doc:`../monitoring/index` - System monitoring and alerting
 - :doc:`../../reference/evaluation/evaluators` - Evaluator API reference

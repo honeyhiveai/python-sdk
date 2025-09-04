@@ -1,5 +1,5 @@
 Integrate with Model Context Protocol (MCP)
-============================================
+===========================================
 
 .. note::
    **Problem-solving guide for Model Context Protocol (MCP) integration**
@@ -500,7 +500,7 @@ Choose Your Instrumentor
    </div>
 
 Comparison: OpenInference vs OpenLLMetry for Model Context Protocol (MCP)
-==========================================================================
+=========================================================================
 
 .. list-table:: Feature Comparison
    :header-rows: 1
@@ -534,25 +534,6 @@ Comparison: OpenInference vs OpenLLMetry for Model Context Protocol (MCP)
      - Simple integrations, dev
      - Production, cost optimization
 
-Environment Configuration
---------------------------
-
-**Required Environment Variables** (both instrumentors):
-
-.. code-block:: bash
-
-   # HoneyHive configuration
-   export HH_API_KEY="your-honeyhive-api-key"
-   export HH_PROJECT="mcp-integration"
-   export HH_SOURCE="production"
-   
-   # Model Context Protocol (MCP) configuration
-   export MCP_API_KEY="your-mcp-api-key"
-
-# MCP_API_KEY=your-mcp-api-key
-# MCP_SERVER_URL=http://localhost:8000
-# MCP_CLIENT_ID=your-client-id
-
 Migration Between Instrumentors
 -------------------------------
 
@@ -584,9 +565,9 @@ See Also
 --------
 
 - :doc:`multi-provider` - Use MCP with other providers
-- :doc:`../troubleshooting` - Common integration issues
+- :doc:`../index` - Common integration issues (see Troubleshooting section)
 - :doc:`../../tutorials/03-llm-integration` - LLM integration tutorial
-- :doc:`../advanced-tracing/custom-spans` - Advanced tracing patterns
+- :doc:`../advanced-tracing/custom-spans` - Custom span patterns
 
 .. raw:: html
 

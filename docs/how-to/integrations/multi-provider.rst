@@ -808,6 +808,6 @@ Best Practices
 See Also
 --------
 
-- :doc:`../troubleshooting` - Common integration issues
+- :doc:`../index` - Common integration issues (see Troubleshooting section)
 - :doc:`../../tutorials/03-llm-integration` - LLM integration tutorial
 - :doc:`../../explanation/architecture/byoi-design` - BYOI architecture explanation

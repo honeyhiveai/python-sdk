@@ -1,6 +1,3 @@
-Architecture Diagrams
-=====================
-
 .. note::
    Visual representations of HoneyHive's architecture and key concepts to help you understand the system design.
 
@@ -13,6 +10,7 @@ System Overview
 
 .. mermaid::
 
+   %%{init: {'theme':'base', 'themeVariables': {'primaryColor': '#1565c0', 'primaryTextColor': '#ffffff', 'primaryBorderColor': '#000000', 'lineColor': '#333333', 'secondaryColor': '#2e7d32', 'tertiaryColor': '#ef6c00', 'background': 'transparent', 'mainBkg': 'transparent', 'secondBkg': 'transparent', 'nodeBkg': '#1565c0', 'nodeBorder': '#000000', 'clusterBkg': 'transparent', 'clusterBorder': '#000000', 'defaultLinkColor': '#333333', 'titleColor': '#333333', 'edgeLabelBackground': 'transparent', 'nodeTextColor': '#ffffff'}, 'flowchart': {'linkColor': '#333333', 'linkWidth': 2, 'nodeSpacing': 50, 'rankSpacing': 50}}}%%
    graph TB
        App["Your Application"] --> SDK["HoneyHive SDK"]
        SDK --> Tracer["HoneyHiveTracer"]
@@ -33,10 +31,16 @@ System Overview
        Evaluators --> Results["Evaluation<br/>Results"]
        Results --> API
        
-       style SDK fill:#e1f5fe
-       style Tracer fill:#f3e5f5
-       style Eval fill:#e8f5e8
-       style API fill:#fff3e0
+       classDef appClass fill:#1565c0,stroke:#000000,stroke-width:2px,color:#ffffff
+       classDef sdkClass fill:#1565c0,stroke:#000000,stroke-width:2px,color:#ffffff
+       classDef tracerClass fill:#7b1fa2,stroke:#000000,stroke-width:2px,color:#ffffff
+       classDef evalClass fill:#2e7d32,stroke:#000000,stroke-width:2px,color:#ffffff
+       classDef apiClass fill:#ef6c00,stroke:#000000,stroke-width:2px,color:#ffffff
+       
+       class App,SDK appClass
+       class Tracer,OTEL,Instrumentors,OpenAI,Anthropic,Custom,Exporter tracerClass
+       class Eval,Evaluators,Results evalClass
+       class API,Dashboard apiClass
 
 BYOI Architecture
 -----------------
@@ -45,6 +49,7 @@ BYOI Architecture
 
 .. mermaid::
 
+   %%{init: {'theme':'base', 'themeVariables': {'primaryColor': '#1565c0', 'primaryTextColor': '#ffffff', 'primaryBorderColor': '#000000', 'lineColor': '#333333', 'secondaryColor': '#2e7d32', 'tertiaryColor': '#ef6c00', 'background': 'transparent', 'mainBkg': 'transparent', 'secondBkg': 'transparent', 'nodeBkg': '#1565c0', 'nodeBorder': '#000000', 'clusterBkg': 'transparent', 'clusterBorder': '#000000', 'defaultLinkColor': '#333333', 'titleColor': '#333333', 'edgeLabelBackground': 'transparent', 'nodeTextColor': '#ffffff'}, 'flowchart': {'linkColor': '#333333', 'linkWidth': 2, 'nodeSpacing': 50, 'rankSpacing': 50}}}%%
    graph TD
        subgraph "Your Application"
            Code["Application Code"]
@@ -79,15 +84,21 @@ BYOI Architecture
        
        Exporter --> API["HoneyHive API"]
        
-       style Core fill:#e3f2fd
-       style Inst1 fill:#f1f8e9
-       style Inst2 fill:#f1f8e9
-       style Inst3 fill:#f1f8e9
+       classDef appClass fill:#1565c0,stroke:#000000,stroke-width:2px,color:#ffffff
+       classDef coreClass fill:#7b1fa2,stroke:#000000,stroke-width:2px,color:#ffffff
+       classDef instClass fill:#2e7d32,stroke:#000000,stroke-width:2px,color:#ffffff
+       classDef apiClass fill:#ef6c00,stroke:#000000,stroke-width:2px,color:#ffffff
+       
+       class Code,LLM1,LLM2,LLM3 appClass
+       class Core,Tracer,Exporter coreClass
+       class Inst1,Inst2,Inst3 instClass
+       class API apiClass
 
 **Benefits of BYOI**
 
 .. mermaid::
 
+   %%{init: {'theme':'base', 'themeVariables': {'primaryColor': '#1565c0', 'primaryTextColor': '#ffffff', 'primaryBorderColor': '#000000', 'lineColor': '#333333', 'secondaryColor': '#2e7d32', 'tertiaryColor': '#ef6c00', 'background': 'transparent', 'mainBkg': 'transparent', 'secondBkg': 'transparent', 'nodeBkg': '#1565c0', 'nodeBorder': '#000000', 'clusterBkg': 'transparent', 'clusterBorder': '#000000', 'defaultLinkColor': '#333333', 'titleColor': '#333333', 'edgeLabelBackground': 'transparent', 'nodeTextColor': '#ffffff'}, 'flowchart': {'linkColor': '#333333', 'linkWidth': 2, 'nodeSpacing': 50, 'rankSpacing': 50}}}%%
    graph LR
        subgraph "Traditional Approach"
            TradSDK["Observability SDK"]
@@ -111,8 +122,17 @@ BYOI Architecture
            YourInst --> BYOISDK
        end
        
-       style TradSDK fill:#ffebee
-       style BYOISDK fill:#e8f5e8
+       classDef tradClass fill:#c62828,stroke:#000000,stroke-width:2px,color:#ffffff
+       classDef byoiClass fill:#2e7d32,stroke:#000000,stroke-width:2px,color:#ffffff
+       classDef appClass fill:#1565c0,stroke:#000000,stroke-width:2px,color:#ffffff
+       classDef depClass fill:#ef6c00,stroke:#000000,stroke-width:2px,color:#ffffff
+       classDef conflictClass fill:#7b1fa2,stroke:#000000,stroke-width:2px,color:#ffffff
+       
+       class TradSDK tradClass
+       class BYOISDK byoiClass
+       class App1,App2 appClass
+       class OpenAIDep,AnthropicDep,GoogleDep depClass
+       class YourOpenAI,YourOpenAI2,YourInst conflictClass
 
 Multi-Instance Architecture
 ----------------------------
@@ -121,6 +141,7 @@ Multi-Instance Architecture
 
 .. mermaid::
 
+   %%{init: {'theme':'base', 'themeVariables': {'primaryColor': '#1565c0', 'primaryTextColor': '#ffffff', 'primaryBorderColor': '#000000', 'lineColor': '#333333', 'secondaryColor': '#2e7d32', 'tertiaryColor': '#ef6c00', 'background': 'transparent', 'mainBkg': 'transparent', 'secondBkg': 'transparent', 'nodeBkg': '#1565c0', 'nodeBorder': '#000000', 'clusterBkg': 'transparent', 'clusterBorder': '#000000', 'defaultLinkColor': '#333333', 'titleColor': '#333333', 'edgeLabelBackground': 'transparent', 'nodeTextColor': '#ffffff'}, 'flowchart': {'linkColor': '#333333', 'linkWidth': 2, 'nodeSpacing': 50, 'rankSpacing': 50}}}%%
    graph TB
        subgraph "Application"
            Service1["User Service"]
@@ -148,9 +169,13 @@ Multi-Instance Architecture
        Tracer2 --> Project2
        Tracer3 --> Project3
        
-       style Tracer1 fill:#e3f2fd
-       style Tracer2 fill:#f3e5f5
-       style Tracer3 fill:#e8f5e8
+       classDef serviceClass fill:#2e7d32,stroke:#000000,stroke-width:2px,color:#ffffff
+       classDef tracerClass fill:#1565c0,stroke:#000000,stroke-width:2px,color:#ffffff
+       classDef projectClass fill:#ef6c00,stroke:#000000,stroke-width:2px,color:#ffffff
+       
+       class Service1,Service2,Service3 serviceClass
+       class Tracer1,Tracer2,Tracer3 tracerClass
+       class Project1,Project2,Project3 projectClass
 
 Data Flow
 ---------
@@ -159,6 +184,7 @@ Data Flow
 
 .. mermaid::
 
+   %%{init: {'theme':'base', 'themeVariables': {'primaryColor': '#1565c0', 'primaryTextColor': '#ffffff', 'primaryBorderColor': '#333333', 'lineColor': '#333333', 'secondaryColor': '#2e7d32', 'tertiaryColor': '#ef6c00', 'background': 'transparent', 'mainBkg': 'transparent', 'secondBkg': 'transparent', 'actorBkg': '#1565c0', 'actorBorder': '#333333', 'actorTextColor': '#ffffff', 'actorLineColor': '#333333', 'signalColor': '#333333', 'signalTextColor': '#333333', 'activationBorderColor': '#333333', 'activationBkgColor': '#2e7d32', 'sequenceNumberColor': '#333333', 'sectionBkgColor': 'transparent', 'altSectionBkgColor': 'transparent', 'gridColor': '#333333', 'gridTextColor': '#333333', 'taskBkgColor': '#1565c0', 'taskTextColor': '#ffffff', 'taskTextLightColor': '#ffffff', 'taskTextOutsideColor': '#333333', 'taskTextClickableColor': '#333333', 'activeTaskBkgColor': '#2e7d32', 'activeTaskBorderColor': '#333333', 'gridTextSize': '11px', 'taskTextSize': '11px'}}}%%
    sequenceDiagram
        participant App as Application
        participant SDK as HoneyHive SDK
@@ -186,6 +212,7 @@ Data Flow
 
 .. mermaid::
 
+   %%{init: {'theme':'base', 'themeVariables': {'primaryColor': '#1565c0', 'primaryTextColor': '#ffffff', 'primaryBorderColor': '#333333', 'lineColor': '#333333', 'secondaryColor': '#2e7d32', 'tertiaryColor': '#ef6c00', 'background': 'transparent', 'mainBkg': 'transparent', 'secondBkg': 'transparent', 'actorBkg': '#1565c0', 'actorBorder': '#333333', 'actorTextColor': '#ffffff', 'actorLineColor': '#333333', 'signalColor': '#333333', 'signalTextColor': '#333333', 'activationBorderColor': '#333333', 'activationBkgColor': '#2e7d32', 'sequenceNumberColor': '#333333', 'sectionBkgColor': 'transparent', 'altSectionBkgColor': 'transparent', 'gridColor': '#333333', 'gridTextColor': '#333333', 'taskBkgColor': '#1565c0', 'taskTextColor': '#ffffff', 'taskTextLightColor': '#ffffff', 'taskTextOutsideColor': '#333333', 'taskTextClickableColor': '#333333', 'activeTaskBkgColor': '#2e7d32', 'activeTaskBorderColor': '#333333', 'gridTextSize': '11px', 'taskTextSize': '11px'}}}%%
    sequenceDiagram
        participant App as Application
        participant SDK as HoneyHive SDK
@@ -214,6 +241,7 @@ Deployment Patterns
 
 .. mermaid::
 
+   %%{init: {'theme':'base', 'themeVariables': {'primaryColor': '#1565c0', 'primaryTextColor': '#ffffff', 'primaryBorderColor': '#000000', 'lineColor': '#333333', 'secondaryColor': '#2e7d32', 'tertiaryColor': '#ef6c00', 'background': 'transparent', 'mainBkg': 'transparent', 'secondBkg': 'transparent', 'nodeBkg': '#1565c0', 'nodeBorder': '#000000', 'clusterBkg': 'transparent', 'clusterBorder': '#000000', 'defaultLinkColor': '#333333', 'titleColor': '#333333', 'edgeLabelBackground': 'transparent', 'nodeTextColor': '#ffffff'}, 'flowchart': {'linkColor': '#333333', 'linkWidth': 2, 'nodeSpacing': 50, 'rankSpacing': 50}}}%%
    graph TB
        subgraph "Kubernetes Cluster"
            subgraph "Namespace: production"
@@ -223,8 +251,8 @@ Deployment Patterns
            end
            
            subgraph "Namespace: staging"
-               Service4["API Gateway<br/>HoneyHive: api-gateway-staging"]
-               Service5["User Service<br/>HoneyHive: user-service-staging"]
+               Service4["API Gateway<br/>(Staging)"]
+               Service5["User Service<br/>(Staging)"]
            end
        end
        
@@ -240,16 +268,19 @@ Deployment Patterns
        Service4 --> Dashboard2
        Service5 --> Dashboard2
        
-       style Service1 fill:#e8f5e8
-       style Service2 fill:#e8f5e8
-       style Service3 fill:#e8f5e8
-       style Service4 fill:#fff3e0
-       style Service5 fill:#fff3e0
+       classDef prodServiceClass fill:#2e7d32,stroke:#000000,stroke-width:2px,color:#ffffff
+       classDef stagingServiceClass fill:#1565c0,stroke:#000000,stroke-width:2px,color:#ffffff
+       classDef dashboardClass fill:#ef6c00,stroke:#000000,stroke-width:2px,color:#ffffff
+       
+       class Service1,Service2,Service3 prodServiceClass
+       class Service4,Service5 stagingServiceClass
+       class Dashboard1,Dashboard2 dashboardClass
 
 **Container Architecture**
 
 .. mermaid::
 
+   %%{init: {'theme':'base', 'themeVariables': {'primaryColor': '#1565c0', 'primaryTextColor': '#ffffff', 'primaryBorderColor': '#000000', 'lineColor': '#333333', 'secondaryColor': '#2e7d32', 'tertiaryColor': '#ef6c00', 'background': 'transparent', 'mainBkg': 'transparent', 'secondBkg': 'transparent', 'nodeBkg': '#1565c0', 'nodeBorder': '#000000', 'clusterBkg': 'transparent', 'clusterBorder': '#000000', 'defaultLinkColor': '#333333', 'titleColor': '#333333', 'edgeLabelBackground': 'transparent', 'nodeTextColor': '#ffffff'}, 'flowchart': {'linkColor': '#333333', 'linkWidth': 2, 'nodeSpacing': 50, 'rankSpacing': 50}}}%%
    graph LR
        subgraph "Docker Container"
            App["Application<br/>Process"]
@@ -274,6 +305,14 @@ Deployment Patterns
        Secrets --> SDK
        Inst --> LLMProviders
        SDK --> HoneyHive
+       
+       classDef appClass fill:#1565c0,stroke:#000000,stroke-width:2px,color:#ffffff
+       classDef envClass fill:#2e7d32,stroke:#000000,stroke-width:2px,color:#ffffff
+       classDef extClass fill:#ef6c00,stroke:#000000,stroke-width:2px,color:#ffffff
+       
+       class App,SDK,Inst appClass
+       class Env,Secrets envClass
+       class LLMProviders,HoneyHive extClass
 
 Evaluation Architecture
 -----------------------
@@ -282,6 +321,7 @@ Evaluation Architecture
 
 .. mermaid::
 
+   %%{init: {'theme':'base', 'themeVariables': {'primaryColor': '#1565c0', 'primaryTextColor': '#ffffff', 'primaryBorderColor': '#000000', 'lineColor': '#333333', 'secondaryColor': '#2e7d32', 'tertiaryColor': '#ef6c00', 'background': 'transparent', 'mainBkg': 'transparent', 'secondBkg': 'transparent', 'nodeBkg': '#1565c0', 'nodeBorder': '#000000', 'clusterBkg': 'transparent', 'clusterBorder': '#000000', 'defaultLinkColor': '#333333', 'titleColor': '#333333', 'edgeLabelBackground': 'transparent', 'nodeTextColor': '#ffffff'}, 'flowchart': {'linkColor': '#333333', 'linkWidth': 2, 'nodeSpacing': 50, 'rankSpacing': 50}}}%%
    graph TD
        Input["LLM Input/Output"] --> Pipeline["Evaluation Pipeline"]
        
@@ -302,13 +342,21 @@ Evaluation Architecture
        Aggregator --> Final["Final Score: 0.85<br/>Detailed Feedback"]
        Final --> Storage["HoneyHive Storage"]
        
-       style Pipeline fill:#e3f2fd
-       style Aggregator fill:#f3e5f5
+       classDef inputClass fill:#1565c0,stroke:#000000,stroke-width:2px,color:#ffffff
+       classDef pipelineClass fill:#2e7d32,stroke:#000000,stroke-width:2px,color:#ffffff
+       classDef evalClass fill:#7b1fa2,stroke:#000000,stroke-width:2px,color:#ffffff
+       classDef resultClass fill:#ef6c00,stroke:#000000,stroke-width:2px,color:#ffffff
+       
+       class Input inputClass
+       class Pipeline,Parallel pipelineClass
+       class Eval1,Eval2,Eval3 evalClass
+       class Results1,Results2,Results3,Aggregator,Final,Storage resultClass
 
 **Multi-Evaluator Patterns**
 
 .. mermaid::
 
+   %%{init: {'theme':'base', 'themeVariables': {'primaryColor': '#1565c0', 'primaryTextColor': '#ffffff', 'primaryBorderColor': '#000000', 'lineColor': '#333333', 'secondaryColor': '#2e7d32', 'tertiaryColor': '#ef6c00', 'background': 'transparent', 'mainBkg': 'transparent', 'secondBkg': 'transparent', 'nodeBkg': '#1565c0', 'nodeBorder': '#000000', 'clusterBkg': 'transparent', 'clusterBorder': '#000000', 'defaultLinkColor': '#333333', 'titleColor': '#333333', 'edgeLabelBackground': 'transparent', 'nodeTextColor': '#ffffff'}, 'flowchart': {'linkColor': '#333333', 'linkWidth': 2, 'nodeSpacing': 50, 'rankSpacing': 50}}}%%
    graph LR
        subgraph "Evaluation Types"
            Technical["Technical Evaluators<br/>• Token efficiency<br/>• Response time<br/>• Error rates"]
@@ -329,6 +377,14 @@ Evaluation Architecture
        Weighted --> Decision["Final Decision"]
        Threshold --> Decision
        Custom --> Decision
+       
+       classDef evalClass fill:#1565c0,stroke:#000000,stroke-width:2px,color:#ffffff
+       classDef strategyClass fill:#2e7d32,stroke:#000000,stroke-width:2px,color:#ffffff
+       classDef decisionClass fill:#ef6c00,stroke:#000000,stroke-width:2px,color:#ffffff
+       
+       class Technical,Quality,Business evalClass
+       class Weighted,Threshold,Custom strategyClass
+       class Decision decisionClass
 
 Performance Optimization
 -------------------------
@@ -336,6 +392,8 @@ Performance Optimization
 **Sampling Strategies**
 
 .. mermaid::
+
+   %%{init: {'theme':'base', 'themeVariables': {'primaryColor': '#1565c0', 'primaryTextColor': '#ffffff', 'primaryBorderColor': '#000000', 'lineColor': '#333333', 'secondaryColor': '#2e7d32', 'tertiaryColor': '#ef6c00', 'background': 'transparent', 'mainBkg': 'transparent', 'secondBkg': 'transparent', 'nodeBkg': '#1565c0', 'nodeBorder': '#000000', 'clusterBkg': 'transparent', 'clusterBorder': '#000000', 'defaultLinkColor': '#333333', 'titleColor': '#333333', 'edgeLabelBackground': 'transparent', 'nodeTextColor': '#ffffff'}, 'flowchart': {'linkColor': '#333333', 'linkWidth': 2, 'nodeSpacing': 50, 'rankSpacing': 50}}}%%
 
    graph TD
        Request["Incoming Request"] --> Classifier["Request Classifier"]
@@ -352,14 +410,23 @@ Performance Optimization
        Sample50 --> Storage
        Sample5 --> Storage
        
-       style Critical fill:#ffebee
-       style Important fill:#fff3e0
-       style Standard fill:#f3e5f5
+       classDef requestClass fill:#1565c0,stroke:#000000,stroke-width:2px,color:#ffffff
+       classDef criticalClass fill:#c62828,stroke:#000000,stroke-width:2px,color:#ffffff
+       classDef importantClass fill:#ef6c00,stroke:#000000,stroke-width:2px,color:#ffffff
+       classDef standardClass fill:#7b1fa2,stroke:#000000,stroke-width:2px,color:#ffffff
+       classDef samplingClass fill:#2e7d32,stroke:#000000,stroke-width:2px,color:#ffffff
+       
+       class Request,Classifier requestClass
+       class Critical criticalClass
+       class Important importantClass
+       class Standard standardClass
+       class Sample100,Sample50,Sample5,Storage samplingClass
 
 **Batch Processing**
 
 .. mermaid::
 
+   %%{init: {'theme':'base', 'themeVariables': {'primaryColor': '#1565c0', 'primaryTextColor': '#ffffff', 'primaryBorderColor': '#333333', 'lineColor': '#333333', 'secondaryColor': '#2e7d32', 'tertiaryColor': '#ef6c00', 'background': 'transparent', 'mainBkg': 'transparent', 'secondBkg': 'transparent', 'nodeBkg': '#1565c0', 'nodeBorder': '#333333', 'clusterBkg': 'transparent', 'clusterBorder': '#333333', 'defaultLinkColor': '#333333', 'titleColor': '#333333', 'edgeLabelBackground': 'transparent', 'nodeTextColor': '#ffffff'}, 'flowchart': {'linkColor': '#333333', 'linkWidth': 2}}}%%
    graph LR
        subgraph "Input"
            Items["1000 Items<br/>to Process"]
@@ -394,6 +461,16 @@ Performance Optimization
        
        Thread1 --> Span1
        Thread2 --> Span2
+       
+       classDef inputClass fill:#1565c0,stroke:#333333,stroke-width:2px,color:#ffffff
+       classDef groupClass fill:#2e7d32,stroke:#333333,stroke-width:2px,color:#ffffff
+       classDef processClass fill:#ef6c00,stroke:#333333,stroke-width:2px,color:#ffffff
+       classDef spanClass fill:#7b1fa2,stroke:#333333,stroke-width:2px,color:#ffffff
+       
+       class Items inputClass
+       class Group1,Group2,Group3,GroupN groupClass
+       class Thread1,Thread2,Thread3 processClass
+       class Span1,Span2 spanClass
 
 Security Architecture
 ---------------------
@@ -402,6 +479,7 @@ Security Architecture
 
 .. mermaid::
 
+   %%{init: {'theme':'base', 'themeVariables': {'primaryColor': '#1565c0', 'primaryTextColor': '#ffffff', 'primaryBorderColor': '#000000', 'lineColor': '#333333', 'secondaryColor': '#2e7d32', 'tertiaryColor': '#ef6c00', 'background': 'transparent', 'mainBkg': 'transparent', 'secondBkg': 'transparent', 'nodeBkg': '#1565c0', 'nodeBorder': '#000000', 'clusterBkg': 'transparent', 'clusterBorder': '#000000', 'defaultLinkColor': '#333333', 'titleColor': '#333333', 'edgeLabelBackground': 'transparent', 'nodeTextColor': '#ffffff'}, 'flowchart': {'linkColor': '#333333', 'linkWidth': 2, 'nodeSpacing': 50, 'rankSpacing': 50}}}%%
    graph TD
        subgraph "Application Layer"
            App["Application"]
@@ -434,9 +512,15 @@ Security Architecture
        SDK --> Audit
        SDK --> HH
        
-       style Config fill:#ffebee
-       style Encrypt fill:#ffebee
-       style Audit fill:#ffebee
+       classDef appClass fill:#1565c0,stroke:#000000,stroke-width:2px,color:#ffffff
+       classDef securityClass fill:#c62828,stroke:#000000,stroke-width:2px,color:#ffffff
+       classDef storageClass fill:#2e7d32,stroke:#000000,stroke-width:2px,color:#ffffff
+       classDef externalClass fill:#ef6c00,stroke:#000000,stroke-width:2px,color:#ffffff
+       
+       class App,SDK appClass
+       class Config,Encrypt,Audit securityClass
+       class AWS,Vault,K8s storageClass
+       class HH externalClass
 
 Integration Patterns
 --------------------
@@ -445,6 +529,7 @@ Integration Patterns
 
 .. mermaid::
 
+   %%{init: {'theme':'base', 'themeVariables': {'primaryColor': '#1565c0', 'primaryTextColor': '#ffffff', 'primaryBorderColor': '#333333', 'lineColor': '#333333', 'secondaryColor': '#2e7d32', 'tertiaryColor': '#ef6c00', 'background': 'transparent', 'mainBkg': 'transparent', 'secondBkg': 'transparent', 'nodeBkg': '#1565c0', 'nodeBorder': '#333333', 'clusterBkg': 'transparent', 'clusterBorder': '#333333', 'defaultLinkColor': '#333333', 'titleColor': '#333333', 'edgeLabelBackground': 'transparent', 'nodeTextColor': '#ffffff'}, 'flowchart': {'linkColor': '#333333', 'linkWidth': 2}}}%%
    graph TB
        subgraph "Service Mesh (Istio)"
            Proxy1["Envoy Proxy"]
@@ -479,11 +564,20 @@ Integration Patterns
        Proxy1 --> Metrics
        Proxy2 --> Metrics
        Proxy3 --> Metrics
+       
+       classDef proxyClass fill:#1565c0,stroke:#333333,stroke-width:2px,color:#ffffff
+       classDef serviceClass fill:#2e7d32,stroke:#333333,stroke-width:2px,color:#ffffff
+       classDef observabilityClass fill:#ef6c00,stroke:#333333,stroke-width:2px,color:#ffffff
+       
+       class Proxy1,Proxy2,Proxy3 proxyClass
+       class Service1,Service2,Service3 serviceClass
+       class Jaeger,HoneyHive,Metrics observabilityClass
 
 **Context Propagation**
 
 .. mermaid::
 
+   %%{init: {'theme':'base', 'themeVariables': {'primaryColor': '#1565c0', 'primaryTextColor': '#ffffff', 'primaryBorderColor': '#333333', 'lineColor': '#333333', 'secondaryColor': '#2e7d32', 'tertiaryColor': '#ef6c00', 'background': 'transparent', 'mainBkg': 'transparent', 'secondBkg': 'transparent', 'actorBkg': '#1565c0', 'actorBorder': '#333333', 'actorTextColor': '#ffffff', 'actorLineColor': '#333333', 'signalColor': '#333333', 'signalTextColor': '#333333', 'activationBorderColor': '#333333', 'activationBkgColor': '#2e7d32', 'sequenceNumberColor': '#333333', 'sectionBkgColor': 'transparent', 'altSectionBkgColor': 'transparent', 'gridColor': '#333333', 'gridTextColor': '#333333', 'taskBkgColor': '#1565c0', 'taskTextColor': '#ffffff', 'taskTextLightColor': '#ffffff', 'taskTextOutsideColor': '#333333', 'taskTextClickableColor': '#333333', 'activeTaskBkgColor': '#2e7d32', 'activeTaskBorderColor': '#333333', 'gridTextSize': '11px', 'taskTextSize': '11px'}}}%%
    sequenceDiagram
        participant Client as Client Request
        participant Gateway as API Gateway

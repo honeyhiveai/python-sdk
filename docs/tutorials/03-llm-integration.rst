@@ -1,10 +1,13 @@
-LLM Provider Integration
-========================
+LLM Provider Integration Tutorial
+==================================
 
 .. note::
    **Tutorial Goal**: Learn to trace LLM calls from OpenAI, Anthropic, and other providers with zero code changes.
 
-This tutorial shows you how to add comprehensive LLM observability to your existing applications without modifying your LLM provider code.
+This **hands-on tutorial** walks you through integrating HoneyHive with popular LLM providers. You'll build a complete example that demonstrates the "Bring Your Own Instrumentor" architecture.
+
+.. tip::
+   **Looking for quick integration guides?** See :doc:`../how-to/index` for problem-specific solutions.
 
 What You'll Learn
 -----------------
@@ -884,7 +887,7 @@ What's Next?
 You now have comprehensive LLM tracing set up! Next steps:
 
 - :doc:`04-evaluation-basics` - Start evaluating your LLM outputs
-- :doc:`../how-to/integrations/index` - Advanced integration patterns
+- :doc:`../how-to/index` - Advanced integration patterns
 - :doc:`../explanation/concepts/llm-observability` - Understand LLM observability concepts
 
 Key Takeaways

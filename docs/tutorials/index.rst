@@ -58,5 +58,5 @@ After completing these tutorials:
 **Need Help?**
 
 - Join our `Discord community <https://discord.gg/honeyhive>`_
-- Check the :doc:`../how-to/troubleshooting` guide
+- Check the :doc:`../how-to/index` guide (Troubleshooting section)
 - Email support@honeyhive.ai

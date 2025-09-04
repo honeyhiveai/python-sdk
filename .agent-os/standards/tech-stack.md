@@ -127,6 +127,29 @@ docs/utils/
 └── user-journey-test.py      # End-to-end tutorial testing
 ```
 
+### Documentation Generation System
+```python
+# Automated template-based documentation generation
+docs/_templates/
+├── generate_provider_docs.py              # Generation script
+├── multi_instrumentor_integration_formal_template.rst  # Base template
+├── template_variables.md                  # Variable documentation
+└── README.md                             # Usage instructions
+```
+
+**Generation Commands**:
+```bash
+# Generate single provider documentation
+python docs/_templates/generate_provider_docs.py --provider openai
+
+# Regenerate all integration documentation
+for provider in openai anthropic google-ai google-adk bedrock azure-openai mcp; do
+    python docs/_templates/generate_provider_docs.py --provider $provider
+done
+```
+
+**See**: `.agent-os/standards/documentation-generation.md` for complete usage guide
+
 ### Documentation Deployment
 - **GitHub Pages**: Primary hosting platform for documentation
 - **Preview Builds**: Automatic PR previews for review using GitHub Actions

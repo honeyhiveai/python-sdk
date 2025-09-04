@@ -391,7 +391,7 @@ Need Help?
 
 If you encounter issues during migration:
 
-1. Check the :doc:`troubleshooting` guide
+1. Check the :doc:`index` troubleshooting section
 2. Review provider-specific integration docs:
    - :doc:`integrations/openai`
    - :doc:`integrations/anthropic`

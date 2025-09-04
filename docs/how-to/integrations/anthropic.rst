@@ -464,23 +464,6 @@ Comparison: OpenInference vs OpenLLMetry for Anthropic
      - Simple integrations, dev
      - Production, cost optimization
 
-Environment Configuration
---------------------------
-
-**Required Environment Variables** (both instrumentors):
-
-.. code-block:: bash
-
-   # HoneyHive configuration
-   export HH_API_KEY="your-honeyhive-api-key"
-   export HH_PROJECT="anthropic-integration"
-   export HH_SOURCE="production"
-   
-   # Anthropic configuration
-   export ANTHROPIC_API_KEY="your-anthropic-api-key"
-
-
-
 Migration Between Instrumentors
 -------------------------------
 
@@ -512,7 +495,7 @@ See Also
 --------
 
 - :doc:`multi-provider` - Use Anthropic with other providers
-- :doc:`../troubleshooting` - Common integration issues
+- :doc:`../index` - Common integration issues (see Troubleshooting section)
 - :doc:`../../tutorials/03-llm-integration` - LLM integration tutorial
 - :doc:`openai` - Similar integration for OpenAI GPT
 

@@ -1,5 +1,5 @@
 Integrate with {{PROVIDER_NAME}}
-===================================
+{{TITLE_UNDERLINE}}
 
 .. note::
    **Problem-solving guide for {{PROVIDER_NAME}} integration**
@@ -369,23 +369,6 @@ Comparison: OpenInference vs OpenLLMetry for {{PROVIDER_NAME}}
    * - **Best For**
      - Simple integrations, dev
      - Production, cost optimization
-
-Environment Configuration
---------------------------
-
-**Required Environment Variables** (both instrumentors):
-
-.. code-block:: bash
-
-   # HoneyHive configuration
-   export HH_API_KEY="your-honeyhive-api-key"
-   export HH_PROJECT="{{PROVIDER_KEY}}-integration"
-   export HH_SOURCE="production"
-   
-   # {{PROVIDER_NAME}} configuration
-   export {{PROVIDER_API_KEY_NAME}}="your-{{PROVIDER_KEY}}-api-key"
-
-{{ADDITIONAL_ENV_CONFIG}}
 
 Migration Between Instrumentors
 -------------------------------

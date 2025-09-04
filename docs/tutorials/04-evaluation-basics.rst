@@ -1,10 +1,13 @@
-Evaluation Basics
-=================
+Evaluation Basics Tutorial
+===========================
 
 .. note::
    **Tutorial Goal**: Learn to evaluate LLM outputs automatically with HoneyHive's evaluation framework.
 
-This tutorial teaches you how to set up automated evaluation of your LLM outputs, creating a feedback loop to improve your applications over time.
+This **hands-on tutorial** teaches you how to set up automated evaluation of your LLM outputs, creating a feedback loop to improve your applications over time.
+
+.. tip::
+   **Need specific evaluation solutions?** See :doc:`../how-to/evaluation/index` for problem-focused evaluation guides.
 
 What You'll Learn
 -----------------

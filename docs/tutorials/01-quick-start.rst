@@ -189,7 +189,7 @@ Troubleshooting
 
 **Need more help?**
 
-- Check our :doc:`../how-to/troubleshooting` guide
+- Check our :doc:`../how-to/index` guide (Troubleshooting section)
 - Join our `Discord community <https://discord.gg/honeyhive>`_
 - Email support@honeyhive.ai
 

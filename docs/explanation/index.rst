@@ -27,9 +27,6 @@ This section provides the conceptual foundation for effective use of HoneyHive.
 Architecture & Design
 ---------------------
 
-Core Design Principles
-~~~~~~~~~~~~~~~~~~~~~~
-
 .. toctree::
    :maxdepth: 2
 
@@ -39,19 +36,13 @@ Core Design Principles
 Architecture Diagrams
 ---------------------
 
-Visual System Design
-~~~~~~~~~~~~~~~~~~~~
-
 .. toctree::
    :maxdepth: 2
 
    architecture/diagrams
 
-Key Concepts
-------------
-
 Fundamental Concepts
-~~~~~~~~~~~~~~~~~~~~
+--------------------
 
 .. toctree::
    :maxdepth: 2

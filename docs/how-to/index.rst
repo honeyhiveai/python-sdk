@@ -27,23 +27,25 @@ How-to guides are organized by problem domain. Each guide provides step-by-step 
 Getting Started
 ---------------
 
-Essential setup and configuration:
+Essential setup and configuration guides will be added here as needed.
+
+LLM Provider Integration
+-------------------------
+
+Quick solutions for specific provider integration challenges. HoneyHive supports both OpenInference and OpenLLMetry instrumentors to automatically trace LLM calls from any provider with zero code changes.
 
 .. toctree::
    :maxdepth: 1
 
+   integrations/openai
+   integrations/anthropic
+   integrations/google-ai
+   integrations/google-adk
+   integrations/bedrock
+   integrations/azure-openai
+   integrations/mcp
+   integrations/multi-provider
    migration-guide
-   troubleshooting
-
-Integrate with LLM Providers
------------------------------
-
-Connect OpenAI, Anthropic, Google AI, and more:
-
-.. toctree::
-   :maxdepth: 1
-
-   integrations/index
 
 Custom Tracing
 --------------
@@ -76,7 +78,7 @@ Testing Your Application
        # Your test code here
        pass
 
-**SDK Development Testing**: For testing the HoneyHive SDK itself, see :doc:`../development/testing/index`.
+**SDK Development Testing**: For testing the HoneyHive SDK itself, see :doc:`../development/index`.
 
 
 Evaluate LLM Outputs
@@ -113,7 +115,7 @@ Implement proven architectural patterns:
 
 **Quick Solutions:**
 
-- :doc:`troubleshooting` - Fix common issues and setup problems
+- See "Troubleshooting" section below - Fix common issues and setup problems
 - :doc:`integrations/openai` - Add OpenAI tracing in 5 minutes  
 - :doc:`advanced-tracing/custom-spans` - Create custom trace spans
 - :doc:`integrations/multi-provider` - Use multiple LLM providers
@@ -127,12 +129,117 @@ Implement proven architectural patterns:
 - :doc:`evaluation/index` - Build comprehensive evaluation pipelines
 - :doc:`common-patterns` - Implement resilient agent patterns
 
+Troubleshooting
+---------------
+
+Common issues and step-by-step solutions for HoneyHive integration challenges.
+
+**Not seeing traces in your dashboard?**
+
+1. **Check API key configuration**:
+
+   .. code-block:: python
+
+      import os
+      print(f"API Key set: {'HH_API_KEY' in os.environ}")
+      print(f"Project set: {'HH_PROJECT' in os.environ}")
+
+2. **Verify network connectivity**:
+
+   .. code-block:: bash
+
+      # Test HoneyHive API connectivity
+      curl -H "Authorization: Bearer YOUR_API_KEY" https://api.honeyhive.ai/health
+
+3. **Check project settings** - Ensure your project name matches exactly in the HoneyHive dashboard.
+
+**Import or installation errors?**
+
+1. **Installation problems**:
+
+   .. code-block:: bash
+
+      # Update pip and install in clean environment
+      pip install --upgrade pip
+      python -m venv honeyhive-env
+      source honeyhive-env/bin/activate  # Linux/Mac
+      # honeyhive-env\Scripts\activate   # Windows
+      pip install honeyhive
+
+2. **Dependency conflicts**:
+
+   .. code-block:: bash
+
+      # Check for conflicts
+      pip check
+      
+      # Use fresh virtual environment (recommended)
+      python -m venv fresh-env
+      source fresh-env/bin/activate
+      pip install honeyhive
+
+3. **Python version compatibility** - HoneyHive requires Python 3.11+:
+
+   .. code-block:: python
+
+      import sys
+      if sys.version_info < (3, 11):
+          print("❌ Python 3.11+ required")
+      else:
+          print("✅ Python version compatible")
+
+**Tracing not working as expected?**
+
+1. **Debug trace collection**:
+
+   .. code-block:: python
+
+      # Enable debug logging
+      import logging
+      logging.basicConfig(level=logging.DEBUG)
+      
+      # Check tracer initialization
+      from honeyhive import HoneyHiveTracer
+      tracer = HoneyHiveTracer.init(
+          api_key="your-key",
+          project="your-project",
+          source="debug"
+      )
+      print(f"Tracer initialized: {tracer is not None}")
+
+2. **Validate event_type values** - Use proper EventType enum:
+
+   .. code-block:: python
+
+      from honeyhive.models import EventType
+      
+      # ✅ Correct usage
+      with tracer.trace("my_operation", event_type=EventType.tool) as span:
+          pass
+      
+      # ❌ Incorrect - don't use strings
+      # event_type="tool"
+
+3. **Instrumentor initialization order** - Initialize tracer before instrumentors:
+
+   .. code-block:: python
+
+      # ✅ Correct order
+      from honeyhive import HoneyHiveTracer
+      tracer = HoneyHiveTracer.init(api_key="...", project="...")
+      
+      # Then initialize instrumentors
+      from openinference.instrumentation.openai import OpenAIInstrumentor
+      OpenAIInstrumentor().instrument(tracer_provider=tracer.tracer_provider)
+
+For additional troubleshooting resources, see the HoneyHive documentation or contact support.
+
 Getting Help
 ------------
 
 If you can't find what you're looking for:
 
-1. Check :doc:`troubleshooting` for common issues
+1. Check the "Troubleshooting" section above for common issues
 2. Search the :doc:`../reference/index` for API details
 3. Read :doc:`../explanation/index` for conceptual understanding
 4. Join our `Discord community <https://discord.gg/honeyhive>`_

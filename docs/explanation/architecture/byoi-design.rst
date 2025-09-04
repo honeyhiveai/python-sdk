@@ -207,7 +207,11 @@ HoneyHive supports multiple instrumentor providers through its BYOI architecture
 .. note::
    **Compatibility Matrix Coming Soon**
    
-   A comprehensive compatibility matrix with full testing and generation documentation for all supported instrumentor providers is in development. This will include detailed installation guides, testing results, and performance benchmarks for each provider.
+   A comprehensive compatibility matrix with full testing and generation documentation for all supported instrumentor providers is in development. This will include:
+   
+   - Detailed installation guides
+   - Testing results
+   - Performance benchmarks for each provider
 
 **Custom Instrumentors:**
 
@@ -360,6 +364,7 @@ Trade-offs and Limitations
 **Trade-offs**
 
 **Pros:**
+
 - ✅ No dependency conflicts
 - ✅ Minimal required dependencies
 - ✅ Future-proof architecture
@@ -367,6 +372,7 @@ Trade-offs and Limitations
 - ✅ Custom instrumentor support
 
 **Cons:**
+
 - ❌ Requires explicit instrumentor installation
 - ❌ More setup steps than all-in-one SDKs
 - ❌ Need to track instrumentor compatibility
@@ -494,10 +500,14 @@ The BYOI architecture represents a fundamental shift from monolithic observabili
 - **Community-driven development** of instrumentors
 - **Production-ready reliability** without version conflicts
 
-This design philosophy aligns with modern software engineering practices of loose coupling, explicit dependencies, and composable architectures.
+This design philosophy aligns with modern software engineering practices:
+
+- Loose coupling
+- Explicit dependencies  
+- Composable architectures
 
 **Next Steps:**
 
 - :doc:`../../tutorials/03-llm-integration` - Try BYOI integration
-- :doc:`../../how-to/integrations/index` - Integration patterns
+- :doc:`../../how-to/index` - Integration patterns
 - :doc:`../concepts/llm-observability` - LLM observability concepts

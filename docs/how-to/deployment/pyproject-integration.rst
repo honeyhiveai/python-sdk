@@ -42,7 +42,7 @@ Single Provider Integration
        "honeyhive[openinference-openai]",        # OpenAI GPT models
        "honeyhive[openinference-anthropic]",     # Anthropic Claude models  
        "honeyhive[openinference-google-ai]",     # Google Gemini models
-       "honeyhive[openinference-aws-bedrock]",   # AWS Bedrock multi-model
+       "honeyhive[openinference-bedrock]",   # AWS Bedrock multi-model
        "honeyhive[openinference-azure-openai]",  # Azure-hosted OpenAI
    ]
 
@@ -129,7 +129,7 @@ Optional Dependencies Pattern (Recommended)
    openai = ["honeyhive[openinference-openai]"]
    anthropic = ["honeyhive[anthropic]"]
    google = ["honeyhive[google-ai]"]
-   aws = ["honeyhive[aws-bedrock]"]
+   aws = ["honeyhive[bedrock]"]
    azure = ["honeyhive[azure-openai]"]
 
    # Framework integrations
@@ -240,7 +240,7 @@ Available Optional Dependencies
      - Google Generative AI SDK + OpenInference Google instrumentor
    * - ``google-adk``
      - Google Agent Development Kit + OpenInference ADK instrumentor
-   * - ``aws-bedrock``
+   * - ``bedrock``
      - Boto3 + OpenInference Bedrock instrumentor
    * - ``azure-openai``
      - OpenAI SDK + Azure Identity + OpenInference OpenAI instrumentor
@@ -400,6 +400,6 @@ If a provider isn't available as an optional dependency:
 Next Steps
 ----------
 
-- **Quick Start**: :doc:`../integrations/index` - Choose your provider integration
+- **Quick Start**: :doc:`../index` - Choose your provider integration
 - **Examples**: :doc:`../../tutorials/index` - See complete examples
 - **Deployment**: :doc:`production` - Production deployment guides

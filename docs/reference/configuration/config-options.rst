@@ -6,7 +6,12 @@ Configuration Options Reference
    
    This document provides detailed specifications for all configuration options available in the HoneyHive SDK.
 
-The HoneyHive SDK can be configured through various methods: environment variables, configuration files, direct initialization parameters, and CLI options.
+The HoneyHive SDK can be configured through various methods:
+
+- Environment variables
+- Configuration files
+- Direct initialization parameters
+- CLI options
 
 Configuration Methods
 ---------------------

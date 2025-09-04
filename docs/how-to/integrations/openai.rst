@@ -506,24 +506,6 @@ Comparison: OpenInference vs OpenLLMetry for OpenAI
      - Simple integrations, dev
      - Production, cost optimization
 
-Environment Configuration
---------------------------
-
-**Required Environment Variables** (both instrumentors):
-
-.. code-block:: bash
-
-   # HoneyHive configuration
-   export HH_API_KEY="your-honeyhive-api-key"
-   export HH_PROJECT="openai-integration"
-   export HH_SOURCE="production"
-   
-   # OpenAI configuration
-   export OPENAI_API_KEY="your-openai-api-key"
-
-# OPENAI_API_KEY=your-openai-api-key
-# OPENAI_ORG_ID=your-org-id  # Optional
-
 Migration Between Instrumentors
 -------------------------------
 
@@ -555,7 +537,7 @@ See Also
 --------
 
 - :doc:`multi-provider` - Use OpenAI with other providers
-- :doc:`../troubleshooting` - Common integration issues
+- :doc:`../index` - Common integration issues (see Troubleshooting section)
 - :doc:`../../tutorials/03-llm-integration` - LLM integration tutorial
 - :doc:`anthropic` - Similar integration for Anthropic Claude
 

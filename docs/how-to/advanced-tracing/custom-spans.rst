@@ -745,6 +745,6 @@ See Also
 --------
 
 - :doc:`index` - Advanced tracing overview
-- :doc:`../integrations/index` - LLM provider integrations
+- :doc:`../index` - LLM provider integrations
 - :doc:`../monitoring/index` - Monitoring and operations
 - :doc:`../../reference/api/tracer` - HoneyHiveTracer API reference

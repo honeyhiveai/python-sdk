@@ -533,15 +533,13 @@ When reporting test results in commit messages, documentation, or communication:
 - State management verification (for agent-based instrumentors)
 - Real API credential testing (with proper environment variable setup)
 
-**2. Integration Documentation**: `docs/how-to/integrations/[provider]-[instrumentor].rst`
-- Quick start guide with installation instructions
-- Basic usage examples with working code
-- Advanced configuration patterns
-- Error handling and reliability patterns
-- Performance monitoring and optimization
-- Environment configuration for dev/staging/production
-- Best practices and common pitfalls
-- Comparison with similar providers/instrumentors
+**2. Integration Documentation**: `docs/how-to/integrations/[provider].rst`
+- **MANDATORY**: Use automated template generation system (see `.agent-os/standards/documentation-generation.md`)
+- **Command**: `python docs/_templates/generate_provider_docs.py --provider [provider]`
+- **Structure**: 4-tab interface (Installation | Basic Setup | Advanced Usage | Troubleshooting)
+- **Content**: Quick start, working examples, advanced patterns, error handling
+- **Environment**: Configuration in troubleshooting section (item 4)
+- **Quality**: All generated content must pass Sphinx build with `-W` flag
 
 **3. Example Implementation**: `examples/[instrumentor]_[provider]_example.py`
 - Complete working example demonstrating integration

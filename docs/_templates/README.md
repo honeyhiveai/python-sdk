@@ -146,9 +146,10 @@ python serve.py
 
 This template system is formally defined in Agent OS standards:
 
-- **Standards**: `.agent-os/standards/documentation-templates.md`
-- **Best Practices**: `.agent-os/standards/best-practices.md` 
-- **Quality Requirements**: All new integrations MUST use this template system
+- **📋 Complete Guide**: `.agent-os/standards/documentation-generation.md` - Comprehensive usage documentation
+- **🔧 Best Practices**: `.agent-os/standards/best-practices.md` - Integration requirements checklist
+- **⚙️ Tech Stack**: `.agent-os/standards/tech-stack.md` - Documentation tools and commands
+- **🚨 Quality Requirements**: All new integrations MUST use this template system
 
 ## 📖 **Examples**
 

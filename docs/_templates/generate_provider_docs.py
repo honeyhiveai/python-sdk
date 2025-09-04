@@ -273,6 +273,12 @@ PROVIDER_CONFIGS = {
        # Configure Google ADK
        adk.configure(api_key=os.getenv("GOOGLE_API_KEY"))''',
        
+        "USE_CASE_NAME": "multi_agent_analysis",
+        "STRATEGY_NAME": "parallel_processing", 
+        "MODELS_USED": '["gemini-pro", "gemini-ultra"]',
+        "FIRST_PARAM": "documents",
+        "RETURN_VALUE": '''{"processed_documents": len(results), "analysis_results": results, "workflow_completed": True}''',
+        
         "ADVANCED_IMPLEMENTATION": '''# Create specialized agents
        analyzer = adk.Agent(
            name="document_analyzer", 
@@ -304,7 +310,20 @@ PROVIDER_CONFIGS = {
                "document": doc,
                "analysis": analysis.output,
                "review": review.output
-           })''',
+           })
+           
+       # Add result metadata
+       enrich_span({
+           "business.successful": True,
+           "google-adk.models_used": ["gemini-pro", "gemini-ultra"],
+           "business.result_confidence": "high"
+       })
+       
+       return {
+           "processed_documents": len(results),
+           "analysis_results": results,
+           "workflow_completed": True
+       }''',
         
         "ADDITIONAL_ENV_CONFIG": "",
         
@@ -762,60 +781,9 @@ def generate_provider_docs(provider_key: str, output_path: Path = None) -> None:
         migration_pattern = r'Migration Between Instrumentors\n-+.*?(?=\nSee Also\n-+|\Z)'
         template_content = re.sub(migration_pattern, '', template_content, flags=re.DOTALL)
         
-        # For single-instrumentor providers, move all content after the OpenLLMetry section into the OpenInference tab
-        # This ensures everything is contained within the tabbed interface
-        
-        # Find content after the OpenLLMetry section and move it into the OpenInference Configuration tab
+        # Remove any standalone content after the OpenLLMetry section since all config goes in troubleshooting tabs
         after_openllmetry_pattern = r'(.. raw:: html\n\n   </div>\n   </div>\n\n)(.*?)(?=.. raw:: html\n\n   <script>)'
-        after_openllmetry_match = re.search(after_openllmetry_pattern, template_content, flags=re.DOTALL)
-        
-        if after_openllmetry_match:
-            remaining_content = after_openllmetry_match.group(2).strip()
-            
-            # Update environment configuration section title if present
-            remaining_content = remaining_content.replace(
-                '**Required Environment Variables** (both instrumentors):',
-                '**Required Environment Variables**:'
-            )
-            
-            # Remove the content from its current location
-            template_content = re.sub(after_openllmetry_pattern, r'\1', template_content, flags=re.DOTALL)
-            
-            # Add Configuration tab button
-            config_tab_button = '''     <button class="tab-button" onclick="showTab(event, '{{PROVIDER_KEY}}-openinference-config')">Configuration</button>'''
-            
-            template_content = template_content.replace(
-                '''     <button class="tab-button" onclick="showTab(event, '{{PROVIDER_KEY}}-openinference-troubleshoot')">Troubleshooting</button>''',
-                '''     <button class="tab-button" onclick="showTab(event, '{{PROVIDER_KEY}}-openinference-troubleshoot')">Troubleshooting</button>
-''' + config_tab_button
-            )
-            
-            # Add the Configuration tab content before the closing divs
-            config_tab_content = f'''
-.. raw:: html
-
-   </div>
-   <div id="{{{{PROVIDER_KEY}}}}-openinference-config" class="tab-content">
-
-{remaining_content}
-
-.. raw:: html
-
-   </div>
-   </div>
-
-.. raw:: html
-
-   </div>
-   </div>
-
-'''
-            
-            # Insert the configuration tab before the script section
-            template_content = template_content.replace(
-                '.. raw:: html\n\n   <script>',
-                config_tab_content + '.. raw:: html\n\n   <script>'
-            )
+        template_content = re.sub(after_openllmetry_pattern, r'\1', template_content, flags=re.DOTALL)
         
     else:
         template_content = template_content.replace(
@@ -945,6 +913,10 @@ def generate_provider_docs(provider_key: str, output_path: Path = None) -> None:
             ]
         }
     }
+    
+    # Add title underline variable
+    title = f"Integrate with {variables['PROVIDER_NAME']}"
+    variables['TITLE_UNDERLINE'] = "=" * len(title)
     
     # Replace all template variables first
     for key, value in variables.items():

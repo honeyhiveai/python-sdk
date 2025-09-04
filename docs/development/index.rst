@@ -15,15 +15,42 @@ This section covers internal development practices, testing strategies, and cont
 - Maintainers and core developers
 - Anyone making changes to the SDK codebase
 
-Development Best Practices
----------------------------
+Testing
+--------
 
-Core development workflows and standards:
+.. note::
+   **For HoneyHive SDK Developers and Contributors**
+   
+   This guide covers testing practices for developing the HoneyHive Python SDK itself, not for testing applications that use the SDK.
+
+This section provides comprehensive testing standards, practices, and tools used in HoneyHive Python SDK development. All contributors must follow these testing practices to maintain code quality and reliability.
+
+**Current Test Status**:
+
+- **Total Tests**: 972 tests (853 unit + 119 integration) - 100% success rate ✅
+- **Test Coverage**: 81.14% (above 80% requirement ✅)
+- **Test Types**: Unit, Integration, Lambda, Performance, Real API, CLI
+- **CI/CD Integration**: GitHub Actions with automated quality gates
+
+**Testing Strategy**:
+
+The HoneyHive SDK employs a **three-tier testing strategy**:
+
+1. **Continuous Testing** (Every PR/Push) - Docker simulation, unit/integration tests
+2. **Daily Scheduled Testing** - Real AWS Lambda deployment validation  
+3. **Release Candidate Testing** - Full comprehensive validation
 
 .. toctree::
    :maxdepth: 1
 
-   testing/index
+   testing/setup-and-commands
+   testing/unit-testing
+   testing/integration-testing
+   testing/lambda-testing
+   testing/performance-testing
+   testing/mocking-strategies
+   testing/ci-cd-integration
+   testing/troubleshooting-tests
 
 **Quick Development Setup:**
 

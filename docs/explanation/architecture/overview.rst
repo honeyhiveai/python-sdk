@@ -18,7 +18,7 @@ The HoneyHive Python SDK is built around several key architectural principles:
 
 .. mermaid::
 
-   %%{init: {'theme':'base', 'themeVariables': {'primaryColor': '#4F81BD', 'primaryTextColor': '#ffffff', 'primaryBorderColor': '#333333', 'lineColor': '#333333', 'mainBkg': 'transparent', 'secondBkg': 'transparent', 'tertiaryColor': 'transparent', 'clusterBkg': 'transparent', 'clusterBorder': '#333333', 'edgeLabelBackground': 'transparent', 'background': 'transparent'}, 'flowchart': {'linkColor': '#333333', 'linkWidth': 2}}}%%
+   %%{init: {'theme':'base', 'themeVariables': {'primaryColor': '#1565c0', 'primaryTextColor': '#ffffff', 'primaryBorderColor': '#333333', 'lineColor': '#333333', 'secondaryColor': '#2e7d32', 'tertiaryColor': '#ef6c00', 'background': 'transparent', 'mainBkg': 'transparent', 'secondBkg': 'transparent', 'nodeBkg': '#1565c0', 'nodeBorder': '#333333', 'clusterBkg': 'transparent', 'clusterBorder': '#333333', 'defaultLinkColor': '#333333', 'titleColor': '#333333', 'edgeLabelBackground': 'transparent', 'nodeTextColor': '#ffffff'}, 'flowchart': {'linkColor': '#333333', 'linkWidth': 2}}}%%
    graph TB
        subgraph "Application Layer"
            UA[User Code]
@@ -67,11 +67,11 @@ The HoneyHive Python SDK is built around several key architectural principles:
        R ==> EV
        R ==> M
        
-       classDef sdkLayer fill:#1a237e,stroke:#ffffff,stroke-width:4px,color:#ffffff
-       classDef otelLayer fill:#e65100,stroke:#ffffff,stroke-width:4px,color:#ffffff
-       classDef transportLayer fill:#ad1457,stroke:#ffffff,stroke-width:4px,color:#ffffff
-       classDef apiLayer fill:#4a148c,stroke:#ffffff,stroke-width:4px,color:#ffffff
-       classDef userLayer fill:#1b5e20,stroke:#ffffff,stroke-width:4px,color:#ffffff
+       classDef sdkLayer fill:#1a237e,stroke:#333333,stroke-width:2px,color:#ffffff
+       classDef otelLayer fill:#e65100,stroke:#333333,stroke-width:2px,color:#ffffff
+       classDef transportLayer fill:#ad1457,stroke:#333333,stroke-width:2px,color:#ffffff
+       classDef apiLayer fill:#4a148c,stroke:#333333,stroke-width:2px,color:#ffffff
+       classDef userLayer fill:#1b5e20,stroke:#333333,stroke-width:2px,color:#ffffff
        
        class T,API,E sdkLayer
        class TP,SE,I otelLayer

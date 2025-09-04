@@ -408,23 +408,6 @@ Comparison: OpenInference vs OpenLLMetry for Google AI
      - Simple integrations, dev
      - Production, cost optimization
 
-Environment Configuration
---------------------------
-
-**Required Environment Variables** (both instrumentors):
-
-.. code-block:: bash
-
-   # HoneyHive configuration
-   export HH_API_KEY="your-honeyhive-api-key"
-   export HH_PROJECT="google-ai-integration"
-   export HH_SOURCE="production"
-   
-   # Google AI configuration
-   export GOOGLE_API_KEY="your-google-ai-api-key"
-
-{{ADDITIONAL_ENV_CONFIG}}
-
 Migration Between Instrumentors
 -------------------------------
 
@@ -456,7 +439,7 @@ See Also
 --------
 
 - :doc:`multi-provider` - Use Google AI with other providers
-- :doc:`../troubleshooting` - Common integration issues
+- :doc:`../index` - Common integration issues (see Troubleshooting section)
 - :doc:`../../tutorials/03-llm-integration` - LLM integration tutorial
 - :doc:`openai` - Similar integration for OpenAI GPT
 

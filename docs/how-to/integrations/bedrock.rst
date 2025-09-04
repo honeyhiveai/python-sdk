@@ -554,25 +554,6 @@ Comparison: OpenInference vs OpenLLMetry for AWS Bedrock
      - Simple integrations, dev
      - Production, cost optimization
 
-Environment Configuration
---------------------------
-
-**Required Environment Variables** (both instrumentors):
-
-.. code-block:: bash
-
-   # HoneyHive configuration
-   export HH_API_KEY="your-honeyhive-api-key"
-   export HH_PROJECT="bedrock-integration"
-   export HH_SOURCE="production"
-   
-   # AWS Bedrock configuration
-   export AWS_ACCESS_KEY_ID="your-bedrock-api-key"
-
-# AWS_ACCESS_KEY_ID=your-aws-access-key
-# AWS_SECRET_ACCESS_KEY=your-aws-secret-key
-# AWS_REGION=us-east-1
-
 Migration Between Instrumentors
 -------------------------------
 
@@ -604,7 +585,7 @@ See Also
 --------
 
 - :doc:`multi-provider` - Use Bedrock with other providers
-- :doc:`../troubleshooting` - Common integration issues
+- :doc:`../index` - Common integration issues (see Troubleshooting section)
 - :doc:`../../tutorials/03-llm-integration` - LLM integration tutorial
 - :doc:`anthropic` - Similar integration for Anthropic Claude
 

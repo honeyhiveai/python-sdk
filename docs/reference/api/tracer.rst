@@ -1050,6 +1050,6 @@ See Also
 - :doc:`client` - HoneyHive client API reference
 - :doc:`../../tutorials/02-basic-tracing` - Basic tracing tutorial
 - :doc:`../../tutorials/advanced-setup` - Advanced configuration patterns
-- :doc:`../../how-to/troubleshooting` - Troubleshooting tracing issues
+- :doc:`../../how-to/index` - Troubleshooting tracing issues (see Troubleshooting section)
 - :doc:`../../explanation/concepts/tracing-fundamentals` - Tracing concepts and theory
 - :doc:`../../explanation/architecture/overview` - Architecture overview and patterns

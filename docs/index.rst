@@ -67,7 +67,7 @@ New to HoneyHive? Start here:
    <div class="doc-card">
      <h3><a href="how-to/index.html">🛠️ How-to Guides</a></h3>
      <p>Practical guides for solving specific problems. Jump straight to solutions for your use case.</p>
-     <a href="how-to/troubleshooting.html" class="quick-link">→ Troubleshooting</a>
+     <a href="how-to/index.html#troubleshooting" class="quick-link">→ Troubleshooting</a>
    </div>
    <div class="doc-card">
      <h3><a href="reference/index.html">📋 Reference</a></h3>
@@ -87,7 +87,7 @@ New to HoneyHive? Start here:
    <div class="doc-card">
      <h3><a href="development/index.html">🔧 SDK Development</a></h3>
      <p>For contributors and maintainers working on the SDK itself. Testing practices and development standards.</p>
-     <a href="development/testing/index.html" class="quick-link">→ Testing Practices</a>
+     <a href="development/index.html#testing" class="quick-link">→ SDK Testing</a>
    </div>
    </div>
 
@@ -143,13 +143,21 @@ New to HoneyHive? Start here:
 🔄 **Key Features**
 
 **Bring Your Own Instrumentor (BYOI) Architecture**
-   Avoid dependency conflicts by choosing exactly which LLM libraries to instrument. Supports multiple instrumentor providers including OpenInference, OpenLLMetry, or build your own.
+   Avoid dependency conflicts by choosing exactly which LLM libraries to instrument. Supports multiple instrumentor providers:
+   
+   - OpenInference
+   - OpenLLMetry
+   - Build your own custom instrumentors
 
 **Multi-Instance Tracer Support**
    Create independent tracer instances for different environments, workflows, or services within the same application.
 
 **Zero Code Changes for LLM Tracing**
-   Add comprehensive observability to existing OpenAI, Anthropic, or Google AI code without modifications.
+   Add comprehensive observability to existing LLM provider code without modifications:
+   
+   - OpenAI
+   - Anthropic
+   - Google AI
 
 **Production-Ready Evaluation**
    Built-in and custom evaluators with threading support for high-performance LLM evaluation workflows.
@@ -168,8 +176,8 @@ New to HoneyHive? Start here:
 
 **🔧 Solving Specific Problems?**
 
-- :doc:`how-to/troubleshooting` - Fix common issues
-- :doc:`development/testing/index` - Test your HoneyHive integration
+- :doc:`how-to/index` - Fix common issues (see Troubleshooting section)
+- :doc:`development/index` - SDK testing practices
 - :doc:`how-to/deployment/production` - Deploy to production
 - :doc:`how-to/integrations/openai` - OpenAI integration patterns
 - :doc:`how-to/evaluation/index` - Evaluation and analysis
@@ -399,7 +407,7 @@ New to HoneyHive? Start here:
 
 🆘 **Need Help?**
 
-- **Common Issues**: :doc:`how-to/troubleshooting`
+- **Common Issues**: :doc:`how-to/index` (Troubleshooting section)
 - **Discord Community**: `Join our Discord <https://discord.gg/honeyhive>`_
 - **GitHub Issues**: `Report bugs <https://github.com/honeyhiveai/python-sdk/issues>`_
 - **Email Support**: support@honeyhive.ai
