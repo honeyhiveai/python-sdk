@@ -35,7 +35,7 @@ Quick Start
 .. code-block:: bash
 
    # Recommended: Install with Google ADK integration
-   pip install honeyhive[google-adk]
+   pip install honeyhive[openinference-google-adk]
    
    # Alternative: Manual installation
    pip install honeyhive google-adk openinference-instrumentation-google-adk

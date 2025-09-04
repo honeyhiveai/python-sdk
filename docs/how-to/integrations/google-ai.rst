@@ -36,7 +36,7 @@ Quick Start
 .. code-block:: bash
 
    # Recommended: Install with Google AI integration
-   pip install honeyhive[google-ai]
+   pip install honeyhive[openinference-google-ai]
    
    # Alternative: Manual installation
    pip install honeyhive google-generativeai openinference-instrumentation-google-generativeai

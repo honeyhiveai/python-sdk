@@ -20,19 +20,19 @@ A comprehensive Python SDK for HoneyHive, providing LLM observability, evaluatio
 
 ```bash
 # Install with OpenAI integration (most common)
-pip install honeyhive[openai]
+pip install honeyhive[openinference-openai]
 
 # Install with Anthropic integration  
-pip install honeyhive[anthropic]
+pip install honeyhive[openinference-anthropic]
 
 # Install with Google AI integration
-pip install honeyhive[google-ai]
+pip install honeyhive[openinference-google-ai]
 
 # Install with multiple providers
-pip install honeyhive[openai,anthropic,google-ai]
+pip install honeyhive[openinference-openai,openinference-anthropic,openinference-google-ai]
 
 # Install all supported integrations
-pip install honeyhive[all-integrations]
+pip install honeyhive[all-openinference]
 ```
 
 **Basic Installation (manual instrumentor setup required):**

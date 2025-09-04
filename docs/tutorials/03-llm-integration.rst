@@ -45,7 +45,7 @@ The most common integration uses the OpenInference OpenAI instrumentor.
 .. code-block:: bash
 
    # Recommended: Install with OpenAI integration
-   pip install honeyhive[openai]
+   pip install honeyhive[openinference-openai]
    
    # Alternative: Manual installation
    pip install honeyhive openinference-instrumentation-openai openai
@@ -162,7 +162,7 @@ Add Anthropic Claude tracing with the same BYOI pattern.
 .. code-block:: bash
 
    # Recommended: Install with Anthropic integration
-   pip install honeyhive[anthropic]
+   pip install honeyhive[openinference-anthropic]
    
    # Alternative: Manual installation
    pip install honeyhive openinference-instrumentation-anthropic
@@ -222,7 +222,7 @@ Add Google AI (Gemini) tracing.
 .. code-block:: bash
 
    # Recommended: Install with Google AI integration
-   pip install honeyhive[google-ai]
+   pip install honeyhive[openinference-google-ai]
    
    # Alternative: Manual installation
    pip install honeyhive openinference-instrumentation-google-generativeai
@@ -342,7 +342,7 @@ Add Google Agent Development Kit (ADK) tracing for sophisticated agent workflows
 .. code-block:: bash
 
    # Recommended: Install with Google ADK integration
-   pip install honeyhive[google-adk]
+   pip install honeyhive[openinference-google-adk]
    
    # Alternative: Manual installation
    pip install honeyhive openinference-instrumentation-google-adk
@@ -405,7 +405,7 @@ MCP enables agents to securely connect to data sources and tools through a stand
 
 .. code-block:: bash
 
-   pip install honeyhive[mcp]
+   pip install honeyhive[openinference-mcp]
 
 **Step 2: Set Up MCP Tracing**
 

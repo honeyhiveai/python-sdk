@@ -1,5 +1,32 @@
 # Technical Decisions Log
 
+## Recent Decisions
+
+### 2025-09-04: Ecosystem-Specific Integration Keys (Major Enhancement)
+
+**Decision**: Implement ecosystem-specific integration keys in pyproject.toml for unlimited instrumentor ecosystem scalability
+
+**Context**: Need to support multiple instrumentor ecosystems (OpenInference, OpenLLMetry, custom enterprise) with a scalable, future-proof pattern
+
+**Solution**: 
+- **BREAKING CHANGE**: Replaced generic keys with ecosystem-specific keys:
+  - `openai = [...]` → `openinference-openai = [...]`
+  - `langchain = [...]` → `openinference-langchain = [...]`
+  - `all-integrations = [...]` → `all-openinference = [...]`
+- Added ecosystem-specific comments: `# Provider (ecosystem-package)`
+- Pattern enables future: `openllmetry-openai`, `enterprise-langchain`, etc.
+- Updated all documentation and examples
+
+**Impact**: 
+- 🚀 **REVOLUTIONARY**: First SDK with unlimited instrumentor ecosystem flexibility
+- ✅ Future-proof architecture supports any instrumentor ecosystem
+- ✅ Clear package correlation improves developer experience
+- ✅ Competitive advantage in instrumentor ecosystem choice
+- ⚠️ **BREAKING**: Requires update of installation commands
+- ✅ **NEW FEATURE**: No customer impact (never delivered to production)
+
+**Rationale**: Transparency in tooling architecture reduces cognitive load and improves debugging efficiency
+
 ## Architecture Decisions
 
 ### Decision: Multi-Instance Tracer Support

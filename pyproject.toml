@@ -60,125 +60,134 @@ docs = [
     "myst-parser>=2.0.0",
 ]
 
-# LLM Provider Integrations
+# LLM Provider Integrations (OpenInference Instrumentors)
 # Each integration group includes the instrumentor and commonly used provider SDK
 
-# OpenAI (GPT models)
-openai = [
+# OpenAI (openinference-openai)
+openinference-openai = [
     "openinference-instrumentation-openai>=0.1.0",
     "openai>=1.0.0",
 ]
 
-# Anthropic (Claude models)
-anthropic = [
+# Anthropic (openinference-anthropic)
+openinference-anthropic = [
     "openinference-instrumentation-anthropic>=0.1.0", 
     "anthropic>=0.18.0",
 ]
 
-# Google Generative AI (Gemini models)
-google-ai = [
+# Google Generative AI (openinference-google-generativeai)
+openinference-google-ai = [
     "openinference-instrumentation-google-generativeai>=0.1.0",
     "google-generativeai>=0.3.0",
 ]
 
-# Google Agent Development Kit
-google-adk = [
+# Google Agent Development Kit (openinference-google-adk)
+openinference-google-adk = [
     "openinference-instrumentation-google-adk>=0.1.0",
     "google-adk>=0.1.0",
 ]
 
-# AWS Bedrock
-aws-bedrock = [
+# AWS Bedrock (openinference-bedrock)
+openinference-aws-bedrock = [
     "openinference-instrumentation-bedrock>=0.1.0",
     "boto3>=1.26.0",
 ]
 
-# Azure OpenAI (uses OpenAI instrumentor)
-azure-openai = [
+# Azure OpenAI (openinference-openai)
+openinference-azure-openai = [
     "openinference-instrumentation-openai>=0.1.0",
     "openai>=1.0.0",
     "azure-identity>=1.12.0",
 ]
 
-# MCP (Model Context Protocol)
-mcp = [
+# MCP (openinference-mcp)
+openinference-mcp = [
     "openinference-instrumentation-mcp>=1.3.0",
 ]
 
-# Framework Integrations
-langchain = [
+# Framework Integrations (OpenInference Instrumentors)
+# LangChain (openinference-langchain)
+openinference-langchain = [
     "openinference-instrumentation-langchain>=0.1.0",
     "langchain>=0.1.0",
 ]
 
-llamaindex = [
+# LlamaIndex (openinference-llama-index)
+openinference-llamaindex = [
     "openinference-instrumentation-llama-index>=0.1.0", 
     "llama-index>=0.9.0",
 ]
 
-dspy = [
+# DSPy (openinference-dspy)
+openinference-dspy = [
     "openinference-instrumentation-dspy>=0.1.0",
     "dspy-ai>=2.0.0",
 ]
 
-# Additional Providers
-cohere = [
+# Additional LLM Providers (OpenInference Instrumentors)
+# Cohere (openinference-cohere)
+openinference-cohere = [
     "openinference-instrumentation-cohere>=0.1.0",
     "cohere>=4.0.0",
 ]
 
-huggingface = [
+# HuggingFace (openinference-huggingface)
+openinference-huggingface = [
     "openinference-instrumentation-huggingface>=0.1.0",
     "transformers>=4.20.0",
 ]
 
-mistralai = [
+# MistralAI (openinference-mistralai)
+openinference-mistralai = [
     "openinference-instrumentation-mistralai>=0.1.0", 
     "mistralai>=0.1.0",
 ]
 
-groq = [
+# Groq (openinference-groq)
+openinference-groq = [
     "openinference-instrumentation-groq>=0.1.0",
     "groq>=0.4.0",
 ]
 
-ollama = [
+# Ollama (openinference-ollama)
+openinference-ollama = [
     "openinference-instrumentation-ollama>=0.1.0",
     "ollama>=0.1.0",
 ]
 
-litellm = [
+# LiteLLM (openinference-litellm)
+openinference-litellm = [
     "openinference-instrumentation-litellm>=0.1.0",
     "litellm>=1.0.0",
 ]
 
-# Convenience groups
-all-integrations = [
-    "openinference-instrumentation-openai>=0.1.0",
-    "openinference-instrumentation-anthropic>=0.1.0",
-    "openinference-instrumentation-google-generativeai>=0.1.0",
-    "openinference-instrumentation-google-adk>=0.1.0",
-    "openinference-instrumentation-bedrock>=0.1.0",
-    "openinference-instrumentation-mcp>=1.3.0",
-    "openinference-instrumentation-langchain>=0.1.0",
-    "openinference-instrumentation-llama-index>=0.1.0",
-    "openinference-instrumentation-dspy>=0.1.0",
-    "openinference-instrumentation-cohere>=0.1.0",
-    "openinference-instrumentation-huggingface>=0.1.0",
-    "openinference-instrumentation-mistralai>=0.1.0",
-    "openinference-instrumentation-groq>=0.1.0",
-    "openinference-instrumentation-ollama>=0.1.0",
-    "openinference-instrumentation-litellm>=0.1.0",
+# Convenience Groups (OpenInference Instrumentors)
+# All Available OpenInference Integrations
+all-openinference = [
+    "openinference-openai",
+    "openinference-anthropic",
+    "openinference-google-ai",
+    "openinference-google-adk",
+    "openinference-aws-bedrock",
+    "openinference-azure-openai",
+    "openinference-mcp",
+    "openinference-langchain",
+    "openinference-llamaindex",
+    "openinference-dspy",
+    "openinference-cohere",
+    "openinference-huggingface",
+    "openinference-mistralai",
+    "openinference-groq",
+    "openinference-ollama",
+    "openinference-litellm",
 ]
 
-# Common LLM providers (most popular)
-llm-providers = [
-    "openinference-instrumentation-openai>=0.1.0",
-    "openinference-instrumentation-anthropic>=0.1.0",
-    "openinference-instrumentation-google-generativeai>=0.1.0",
-    "openai>=1.0.0",
-    "anthropic>=0.18.0", 
-    "google-generativeai>=0.3.0",
+# Common LLM Providers (OpenInference Ecosystem)
+openinference-llm-providers = [
+    "openinference-openai",
+    "openinference-anthropic",
+    "openinference-google-ai",
+    "openinference-aws-bedrock",
 ]
 
 [project.urls]

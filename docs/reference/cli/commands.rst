@@ -18,8 +18,8 @@ Installation and Setup
    # Install with CLI support
    pip install honeyhive[cli]
    
-   # Or install full package
-   pip install honeyhive[all]
+   # Or install with all OpenInference integrations
+   pip install honeyhive[all-openinference]
 
 **Authentication**:
 

@@ -112,6 +112,26 @@ tracer = HoneyHiveTracer.init(
 response = openai.chat.completions.create(...)
 ```
 
+#### 🚀 Ecosystem-Specific Integration Keys (NEW)
+```bash
+# Industry-leading ecosystem-specific installation pattern
+pip install honeyhive[openinference-openai]      # OpenInference ecosystem
+pip install honeyhive[openinference-langchain]   # LangChain via OpenInference
+pip install honeyhive[openinference-anthropic]   # Anthropic via OpenInference
+
+# Future multi-ecosystem support enabled
+pip install honeyhive[openllmetry-openai]        # Future: OpenLLMetry ecosystem
+pip install honeyhive[enterprise-langchain]      # Future: Custom enterprise
+pip install honeyhive[all-openinference]         # All OpenInference integrations
+```
+
+**Key Benefits:**
+- **Unlimited Scalability**: First SDK supporting multiple instrumentor ecosystems
+- **Clear Package Correlation**: Direct mapping to instrumentor packages
+- **Future-Proof Architecture**: Ready for emerging instrumentor technologies
+- **Developer Choice**: Select preferred instrumentor ecosystem
+- **Industry Leadership**: Sets new standard for SDK flexibility
+
 #### HTTP Tracing Control
 ```python
 # Disable HTTP tracing for performance

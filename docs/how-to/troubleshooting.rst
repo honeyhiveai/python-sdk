@@ -571,6 +571,7 @@ Event Type Validation
 .. code-block:: python
 
    from honeyhive import HoneyHiveTracer, trace
+   from honeyhive.models import EventType
    
    tracer = HoneyHiveTracer.init(api_key="your-key" )
    
@@ -580,7 +581,7 @@ Event Type Validation
        """For LLM model calls and interactions."""
        pass
    
-   @trace(tracer=tracer, event_type="tool") 
+   @trace(tracer=tracer, event_type=EventType.tool) 
    def api_call():
        """For tool/function calls and external APIs."""
        pass
@@ -710,7 +711,7 @@ Instrumentor Problems
       
       # For Anthropic
       # Recommended: Install with Anthropic integration
-      pip install honeyhive[anthropic]
+      pip install honeyhive[openinference-anthropic]
       
       # Alternative: Manual installation
       pip install honeyhive openinference-instrumentation-anthropic

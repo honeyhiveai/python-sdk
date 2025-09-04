@@ -29,7 +29,7 @@ Single Provider Integration
    name = "my-llm-app"
    version = "0.1.0"
    dependencies = [
-       "honeyhive[openai]",  # OpenAI + instrumentor + SDK
+       "honeyhive[openinference-openai]",  # OpenAI + instrumentor + SDK
        "fastapi>=0.100.0",
        "uvicorn>=0.20.0"
    ]
@@ -39,11 +39,11 @@ Single Provider Integration
 .. code-block:: toml
 
    dependencies = [
-       "honeyhive[openai]",        # OpenAI GPT models
-       "honeyhive[anthropic]",     # Anthropic Claude models  
-       "honeyhive[google-ai]",     # Google Gemini models
-       "honeyhive[aws-bedrock]",   # AWS Bedrock multi-model
-       "honeyhive[azure-openai]",  # Azure-hosted OpenAI
+       "honeyhive[openinference-openai]",        # OpenAI GPT models
+       "honeyhive[openinference-anthropic]",     # Anthropic Claude models  
+       "honeyhive[openinference-google-ai]",     # Google Gemini models
+       "honeyhive[openinference-aws-bedrock]",   # AWS Bedrock multi-model
+       "honeyhive[openinference-azure-openai]",  # Azure-hosted OpenAI
    ]
 
 Multiple Provider Integration  
@@ -57,7 +57,7 @@ Multiple Provider Integration
    name = "my-multi-provider-app"
    version = "1.0.0"
    dependencies = [
-       "honeyhive[openai,anthropic,google-ai]",  # Multiple providers
+       "honeyhive[openinference-openai,openinference-anthropic,openinference-google-ai]",  # Multiple providers
        "fastapi>=0.100.0",
        "pydantic>=2.0.0"
    ]
@@ -67,7 +67,7 @@ Multiple Provider Integration
 .. code-block:: toml
 
    dependencies = [
-       "honeyhive[llm-providers]",  # OpenAI + Anthropic + Google (most popular)
+       "honeyhive[openinference-llm-providers]",  # OpenAI + Anthropic + Google (most popular)
    ]
 
 Framework-Specific Integration
@@ -80,7 +80,7 @@ Framework-Specific Integration
    [project]
    name = "my-langchain-app"
    dependencies = [
-       "honeyhive[langchain]",     # LangChain + instrumentor
+       "honeyhive[openinference-langchain]",     # LangChain + instrumentor
        "honeyhive[openai]",        # Add your LLM provider  
        "chromadb>=0.4.0"
    ]
@@ -126,14 +126,14 @@ Optional Dependencies Pattern (Recommended)
 
    [project.optional-dependencies]
    # Let users choose their providers
-   openai = ["honeyhive[openai]"]
+   openai = ["honeyhive[openinference-openai]"]
    anthropic = ["honeyhive[anthropic]"]
    google = ["honeyhive[google-ai]"]
    aws = ["honeyhive[aws-bedrock]"]
    azure = ["honeyhive[azure-openai]"]
 
    # Framework integrations
-   langchain = ["honeyhive[langchain]"]
+   langchain = ["honeyhive[openinference-langchain]"]
    llamaindex = ["honeyhive[llamaindex]"]
 
    # Convenience groups
@@ -308,7 +308,7 @@ Best Practices
    
    # Good: Let users choose in a library
    [project.optional-dependencies]
-   openai = ["honeyhive[openai]"]
+   openai = ["honeyhive[openinference-openai]"]
 
 **❌ Avoid This**
 
@@ -320,13 +320,13 @@ Best Practices
    # Avoid: Manual instrumentor management
    dependencies = [
        "honeyhive",
-       "openinference-instrumentation-openai",  # Use honeyhive[openai] instead
+       "openinference-instrumentation-openai",  # Use honeyhive[openinference-openai] instead
        "openai"
    ]
 
 **🎯 Choosing the Right Pattern**
 
-- **Application**: Use specific provider extras like ``honeyhive[openai]``
+- **Application**: Use specific provider extras like ``honeyhive[openinference-openai]``
 - **Library**: Use optional dependencies to let users choose
 - **Enterprise**: Consider ``honeyhive[llm-providers]`` for popular providers
 - **Testing**: Use ``honeyhive[all-integrations]`` for comprehensive testing
@@ -371,10 +371,10 @@ Make sure you installed the right extra:
 .. code-block:: bash
 
    # If using OpenAI
-   pip install honeyhive[openai]
+   pip install honeyhive[openinference-openai]
    
    # If using multiple providers  
-   pip install honeyhive[openai,anthropic]
+   pip install honeyhive[openinference-openai,openinference-anthropic]
 
 **Version Conflicts**
 

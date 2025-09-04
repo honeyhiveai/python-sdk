@@ -1,6 +1,24 @@
 ## [Unreleased] - 2025-09-03
 
 ### Added
+- **🚀 REVOLUTIONARY: Ecosystem-Specific Integration Keys**
+  * Implemented unlimited instrumentor ecosystem scalability
+  * New installation pattern: `pip install honeyhive[openinference-openai]`
+  * Future-ready for multiple ecosystems: OpenLLMetry, enterprise, custom
+  * Pattern supports: `openllmetry-openai`, `enterprise-langchain`, etc.
+  * Updated all documentation and examples to new pattern
+  * Enhanced BYOI documentation with ecosystem-specific convenience groups
+  * First SDK with comprehensive instrumentor ecosystem flexibility
+
+### Changed
+- **🔄 BREAKING: Integration Key Migration**
+  * OLD: `pip install honeyhive[openai]` → NEW: `pip install honeyhive[openinference-openai]`
+  * OLD: `pip install honeyhive[langchain]` → NEW: `pip install honeyhive[openinference-langchain]`
+  * OLD: `pip install honeyhive[all-integrations]` → NEW: `pip install honeyhive[all-openinference]`
+  * Pattern enables future multi-ecosystem support
+  * All installation commands now use ecosystem-specific keys
+  * Documentation and examples updated throughout
+
 - **Compatibility testing infrastructure**
   * Backward compatibility test suite for API changes
   * Migration analysis tests for main branch patterns

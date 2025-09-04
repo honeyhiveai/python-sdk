@@ -33,13 +33,13 @@ Quick Start
 .. code-block:: bash
 
    # For OpenAI (includes instrumentor + SDK)
-   pip install honeyhive[openai]
+   pip install honeyhive[openinference-openai]
    
    # For Anthropic (includes instrumentor + SDK)  
-   pip install honeyhive[anthropic]
+   pip install honeyhive[openinference-anthropic]
    
    # For Google AI (includes instrumentor + SDK)
-   pip install honeyhive[google-ai]
+   pip install honeyhive[openinference-google-ai]
    
    # Alternative: Manual installation
    pip install honeyhive openinference-instrumentation-openai openai
@@ -148,7 +148,7 @@ Install the required packages:
 .. code-block:: bash
 
    # Recommended: Use integration groups
-   pip install honeyhive[<provider>]
+   pip install honeyhive[openinference-<provider>]
    
    # Alternative: Manual installation
    pip install honeyhive openinference-instrumentation-<provider> <provider-sdk>

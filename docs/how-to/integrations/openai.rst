@@ -30,7 +30,7 @@ Quick Setup
 .. code-block:: bash
 
    # Recommended: Install with OpenAI integration
-   pip install honeyhive[openai]
+   pip install honeyhive[openinference-openai]
    
    # Alternative: Manual installation
    pip install honeyhive openinference-instrumentation-openai openai

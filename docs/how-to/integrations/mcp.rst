@@ -40,7 +40,7 @@ Install MCP support for HoneyHive:
 
 .. code-block:: bash
 
-   pip install honeyhive[mcp]
+   pip install honeyhive[openinference-mcp]
 
 This installs the OpenInference MCP instrumentor (version 1.3.0+) alongside the HoneyHive SDK.
 
@@ -217,7 +217,7 @@ Handle MCP integration errors gracefully:
            instrumentor = MCPInstrumentor()
        except ImportError:
            print("MCP instrumentor not available.")
-           print("Install with: pip install honeyhive[mcp]")
+           print("Install with: pip install honeyhive[openinference-mcp]")
            return None
        
        try:
@@ -406,7 +406,7 @@ Troubleshooting
 
 .. code-block:: bash
 
-   pip install honeyhive[mcp]
+   pip install honeyhive[openinference-mcp]
 
 **Issue: Traces not appearing in dashboard**
 

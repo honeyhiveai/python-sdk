@@ -10,7 +10,7 @@ This example demonstrates:
 6. Real-world MCP usage patterns
 
 Prerequisites:
-- Install MCP support: pip install honeyhive[mcp]
+- Install MCP support: pip install honeyhive[openinference-mcp]
 - Set environment variables: HH_API_KEY, HH_PROJECT
 - Optional: Set up actual MCP server for real testing
 
@@ -63,7 +63,7 @@ def get_mcp_instrumentor():
         return MCPInstrumentor()
     except ImportError as e:
         print(f"⚠️  MCP instrumentor not available: {e}")
-        print("   Install with: pip install honeyhive[mcp]")
+        print("   Install with: pip install honeyhive[openinference-mcp]")
         return None
 
 

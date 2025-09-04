@@ -204,11 +204,13 @@ New to HoneyHive? Start here:
 
 .. code-block:: bash
 
-   # Core SDK (minimal dependencies)
+   # Core SDK only (minimal dependencies)
    pip install honeyhive
    
-   # With LLM provider support
-   pip install honeyhive openinference-instrumentation-openai  # or other instrumentor providers
+   # With LLM provider support (recommended)
+   pip install honeyhive[openinference-openai]      # OpenAI via OpenInference
+   pip install honeyhive[openinference-anthropic]   # Anthropic via OpenInference
+   pip install honeyhive[all-openinference]         # All OpenInference integrations
 
 🔧 **Quick Example**
 

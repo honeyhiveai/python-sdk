@@ -30,7 +30,7 @@ Quick Setup
 .. code-block:: bash
 
    # Recommended: Install with Anthropic integration
-   pip install honeyhive[anthropic]
+   pip install honeyhive[openinference-anthropic]
    
    # Alternative: Manual installation
    pip install honeyhive openinference-instrumentation-anthropic anthropic

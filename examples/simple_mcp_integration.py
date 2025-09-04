@@ -5,7 +5,7 @@ This example demonstrates the basic integration pattern for MCP instrumentor
 following the established simple integration format used by other providers.
 
 Prerequisites:
-- Install MCP support: pip install honeyhive[mcp]
+- Install MCP support: pip install honeyhive[openinference-mcp]
 - Set HH_API_KEY environment variable
 - Optional: Set up actual MCP server for real testing
 
@@ -38,7 +38,7 @@ def main():
         mcp_available = True
     except ImportError:
         print("⚠️  MCP instrumentor not available")
-        print("   Install with: pip install honeyhive[mcp]")
+        print("   Install with: pip install honeyhive[openinference-mcp]")
         mcp_available = False
 
     # Initialize HoneyHive tracer with MCP instrumentor

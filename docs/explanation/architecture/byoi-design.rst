@@ -85,14 +85,14 @@ You install only what you need:
    
    # Only if you use Anthropic  
    # Recommended: Install with Anthropic integration
-   pip install honeyhive[anthropic]
+   pip install honeyhive[openinference-anthropic]
    
    # Alternative: Manual installation
    pip install honeyhive openinference-instrumentation-anthropic
    
    # Only if you use Google AI
    # Recommended: Install with Google AI integration
-   pip install honeyhive[google-ai]
+   pip install honeyhive[openinference-google-ai]
    
    # Alternative: Manual installation
    pip install honeyhive openinference-instrumentation-google-generativeai
@@ -185,12 +185,12 @@ HoneyHive supports multiple instrumentor providers through its BYOI architecture
    # OpenInference Providers
    pip install openinference-instrumentation-openai
    # Recommended: Install with Anthropic integration
-   pip install honeyhive[anthropic]
+   pip install honeyhive[openinference-anthropic]
    
    # Alternative: Manual installation
    pip install honeyhive openinference-instrumentation-anthropic
    # Recommended: Install with Google AI integration
-   pip install honeyhive[google-ai]
+   pip install honeyhive[openinference-google-ai]
    
    # Alternative: Manual installation
    pip install honeyhive openinference-instrumentation-google-generativeai
@@ -378,24 +378,102 @@ Trade-offs and Limitations
 - **Single LLM provider** applications that will never change
 - **Teams unfamiliar** with dependency management concepts
 
-**Mitigation Strategies**
+**Mitigation Strategies: Ecosystem-Specific Package Groups**
+
+HoneyHive provides industry-leading ecosystem-specific convenience groupings that simplify BYOI setup while maintaining maximum flexibility:
 
 .. code-block:: bash
 
-   # Use dependency groups for easy setup
-   pip install honeyhive[openai]     # Installs OpenAI instrumentor
-   pip install honeyhive[anthropic]  # Installs Anthropic instrumentor
-   pip install honeyhive[all]        # Installs common instrumentors
+   # Ecosystem-specific integration groups (RECOMMENDED)
+   pip install honeyhive[openinference-openai]      # OpenAI via OpenInference
+   pip install honeyhive[openinference-langchain]   # LangChain via OpenInference
+   pip install honeyhive[openinference-anthropic]   # Anthropic via OpenInference
+   
+   # Multi-ecosystem installation
+   pip install honeyhive[openinference-openai,openinference-anthropic]
+   
+   # Convenience groups for common scenarios
+   pip install honeyhive[all-openinference]            # All OpenInference integrations
+   pip install honeyhive[openinference-llm-providers]  # Popular LLM providers only
+
+**Key Benefits of Ecosystem-Specific Groups:**
+
+- **🚀 Future-Proof**: Pattern ready for multiple instrumentor ecosystems
+- **🎯 Clear Attribution**: Know exactly which instrumentor ecosystem you're using
+- **📦 Optimal Dependencies**: Install only what you need for each ecosystem
+- **🔧 Easy Debugging**: Clear package correlation for troubleshooting
+- **⚡ Quick Setup**: One command installs instrumentor + provider SDK
+
+**Practical BYOI Examples with Ecosystem Groups**
+
+.. code-block:: python
+
+   # Example 1: Quick OpenAI setup with ecosystem-specific group
+   # pip install honeyhive[openinference-openai]
+   
+   from honeyhive import HoneyHiveTracer
+   from openinference.instrumentation.openai import OpenAIInstrumentor
+   
+   tracer = HoneyHiveTracer.init(
+       api_key="your-key",
+       instrumentors=[OpenAIInstrumentor()]  # Auto-installed via group
+   )
+
+.. code-block:: python
+
+   # Example 2: Multi-provider setup with convenience groups
+   # pip install honeyhive[openinference-llm-providers]
+   
+   from honeyhive import HoneyHiveTracer
+   from openinference.instrumentation.openai import OpenAIInstrumentor
+   from openinference.instrumentation.anthropic import AnthropicInstrumentor
+   
+   tracer = HoneyHiveTracer.init(
+       api_key="your-key",
+       instrumentors=[
+           OpenAIInstrumentor(),      # OpenAI via OpenInference
+           AnthropicInstrumentor()    # Anthropic via OpenInference
+       ]
+   )
+
+.. code-block:: bash
+
+   # Example 3: Framework integration with ecosystem clarity
+   pip install honeyhive[openinference-langchain]
+   # Installs: openinference-instrumentation-langchain + langchain
+
+This approach provides the best of both worlds: **BYOI flexibility** with **ecosystem-specific convenience**.
 
 Future Evolution
 ----------------
 
+**Multi-Ecosystem Support (Coming Soon)**
+
+The ecosystem-specific package groups enable future support for multiple instrumentor ecosystems:
+
+.. code-block:: bash
+
+   # Current: OpenInference ecosystem
+   pip install honeyhive[openinference-openai]
+   pip install honeyhive[openinference-langchain]
+   
+   # Future: OpenLLMetry ecosystem
+   pip install honeyhive[openllmetry-openai]
+   pip install honeyhive[openllmetry-langchain]
+   
+   # Future: Custom enterprise ecosystems  
+   pip install honeyhive[enterprise-openai]
+   pip install honeyhive[acme-corp-langchain]
+
+This pattern provides **unlimited scalability** for instrumentor ecosystem adoption while maintaining the core BYOI principles.
+
 **Upcoming Features**
 
-1. **Instrumentor Registry**: Discover available instrumentors
-2. **Compatibility Matrix**: Track tested version combinations
+1. **Instrumentor Registry**: Discover available instrumentors across ecosystems
+2. **Compatibility Matrix**: Track tested version combinations per ecosystem
 3. **Auto-detection**: Suggest instrumentors based on installed packages
 4. **Bundle Packages**: Pre-configured combinations for common use cases
+5. **Ecosystem Marketplace**: Community hub for instrumentor ecosystem discovery
 
 **Community Growth**
 

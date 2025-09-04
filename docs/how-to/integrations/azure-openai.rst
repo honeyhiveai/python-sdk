@@ -53,7 +53,7 @@ Quick Start
 .. code-block:: bash
 
    # Recommended: Install with Azure OpenAI integration
-   pip install honeyhive[azure-openai]
+   pip install honeyhive[openinference-azure-openai]
    
    # Alternative: Manual installation
    pip install honeyhive openai openinference-instrumentation-openai azure-identity
