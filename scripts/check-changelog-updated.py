@@ -28,31 +28,37 @@ def get_staged_files() -> list:
         return []
 
 
-def has_code_changes(staged_files: list) -> bool:
-    """Check if there are staged code changes that require CHANGELOG updates."""
-    code_patterns = [
-        "src/",
-        "tests/",
-        "scripts/",
-        ".github/workflows/",
-        "pyproject.toml",
-        "tox.ini",
+def has_significant_changes(staged_files: list) -> bool:
+    """Check if there are staged changes that require CHANGELOG updates."""
+    significant_patterns = [
+        "src/",  # Source code changes
+        "scripts/",  # Tooling changes
+        ".github/workflows/",  # CI/CD changes
+        "pyproject.toml",  # Dependency/config changes
+        "tox.ini",  # Build config changes
+        "docs/",  # Documentation changes (significant)
+        ".agent-os/",  # Agent OS documentation changes
+        "examples/",  # Example changes
     ]
 
     exclude_patterns = [
-        "test_",  # Test files don't always need CHANGELOG entries
         "__pycache__",
         ".pyc",
+        ".pytest_cache",
+        "_build/",  # Sphinx build artifacts
+        ".tox/",  # Tox artifacts
     ]
 
+    significant_files = []
     for file_path in staged_files:
-        # Check if it's a code file
-        if any(file_path.startswith(pattern) for pattern in code_patterns):
-            # But exclude test files and cache files
+        # Check if it's a significant file
+        if any(file_path.startswith(pattern) for pattern in significant_patterns):
+            # But exclude build artifacts and cache files
             if not any(exclude in file_path for exclude in exclude_patterns):
-                return True
+                significant_files.append(file_path)
 
-    return False
+    # Consider it significant if we have multiple files or any non-trivial changes
+    return len(significant_files) > 0
 
 
 def is_changelog_updated(staged_files: list) -> bool:
@@ -116,16 +122,16 @@ def main() -> NoReturn:
         print("✅ No staged files to check")
         sys.exit(0)
 
-    has_code = has_code_changes(staged_files)
+    has_significant = has_significant_changes(staged_files)
     changelog_updated = is_changelog_updated(staged_files)
 
     print(f"📁 Staged files: {len(staged_files)}")
-    print(f"🔧 Code changes detected: {'Yes' if has_code else 'No'}")
+    print(f"🔧 Significant changes detected: {'Yes' if has_significant else 'No'}")
     print(f"📝 CHANGELOG.md updated: {'Yes' if changelog_updated else 'No'}")
 
-    # If no significant code changes, allow commit
-    if not has_code:
-        print("✅ No significant code changes requiring CHANGELOG update")
+    # If no significant changes, allow commit
+    if not has_significant:
+        print("✅ No significant changes requiring CHANGELOG update")
         sys.exit(0)
 
     # If CHANGELOG is being updated, allow commit
@@ -148,7 +154,7 @@ def main() -> NoReturn:
 
     # Fail the check
     print("\n❌ CHANGELOG.md update required!")
-    print("\nCode changes detected but CHANGELOG.md not updated.")
+    print("\nSignificant changes detected but CHANGELOG.md not updated.")
     print("\nTo fix this:")
     print("1. Update CHANGELOG.md with your changes")
     print("2. Stage the CHANGELOG.md file: git add CHANGELOG.md")

@@ -61,18 +61,18 @@ def is_docs_only_commit(staged_files: list) -> bool:
         "CHANGELOG.md",
         ".agent-os/",
         ".cursorrules",
-        "*.md",
-        "*.rst",
     ]
+    
+    doc_extensions = [".md", ".rst", ".txt"]
 
     non_doc_files = []
     for file_path in staged_files:
-        if not any(
-            file_path.startswith(pattern.rstrip("*"))
-            or file_path.endswith(pattern.lstrip("*"))
-            or pattern in file_path
-            for pattern in doc_patterns
-        ):
+        is_doc_file = (
+            any(file_path.startswith(pattern) for pattern in doc_patterns)
+            or any(file_path.endswith(ext) for ext in doc_extensions)
+        )
+        
+        if not is_doc_file:
             non_doc_files.append(file_path)
 
     return len(non_doc_files) == 0
@@ -155,9 +155,21 @@ def main() -> NoReturn:
 
     print(f"📁 Staged files: {len(staged_files)}")
 
-    # Allow docs-only commits
-    if is_docs_only_commit(staged_files):
-        print("✅ Documentation-only commit")
+    # Check if docs-only commit but still validate changelog for significant doc changes
+    is_docs_only = is_docs_only_commit(staged_files)
+    if is_docs_only:
+        # Even docs-only commits need changelog if they're significant (>5 files or major restructuring)
+        if len(staged_files) > 5 and "CHANGELOG.md" not in staged_files:
+            print("⚠️  Large documentation changes detected without CHANGELOG update")
+            print(f"   {len(staged_files)} files changed - consider updating CHANGELOG.md")
+            print("\nTo fix:")
+            print("1. Update CHANGELOG.md with your documentation changes")
+            print("2. Stage it: git add CHANGELOG.md")
+            print("3. Re-commit")
+            # Don't fail, but warn
+            print("\n✅ Proceeding with warning...")
+        else:
+            print("✅ Documentation-only commit")
         sys.exit(0)
 
     # Allow emergency commits
