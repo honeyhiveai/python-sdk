@@ -187,6 +187,7 @@ New to HoneyHive? Start here:
 - :doc:`reference/api/tracer` - HoneyHiveTracer API
 - :doc:`reference/api/decorators` - @trace and @evaluate decorators
 - :doc:`reference/configuration/environment-vars` - Environment variables
+- :doc:`explanation/index` - Python & instrumentor compatibility
 
 **🤔 Want to Understand the Design?**
 

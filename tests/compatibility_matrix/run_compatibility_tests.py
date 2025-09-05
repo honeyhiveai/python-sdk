@@ -14,6 +14,46 @@ from pathlib import Path
 from typing import Dict, List, Optional, Tuple
 
 
+def load_env_file() -> None:
+    """Load environment variables from .env file if it exists."""
+    # Look for .env file in project root
+    env_file = Path(__file__).parent.parent.parent / ".env"
+
+    if env_file.exists():
+        print(f"📄 Loading environment variables from {env_file}")
+        with open(env_file, "r", encoding="utf-8") as f:
+            for line_num, line in enumerate(f, 1):
+                line = line.strip()
+                # Skip empty lines and comments
+                if not line or line.startswith("#"):
+                    continue
+
+                # Parse KEY=VALUE format
+                if "=" in line:
+                    key, value = line.split("=", 1)
+                    key = key.strip()
+                    value = value.strip()
+
+                    # Remove quotes if present
+                    if value.startswith('"') and value.endswith('"'):
+                        value = value[1:-1]
+                    elif value.startswith("'") and value.endswith("'"):
+                        value = value[1:-1]
+
+                    # Only set if not already in environment
+                    if key and not os.getenv(key):
+                        os.environ[key] = value
+                else:
+                    print(
+                        f"⚠️  Warning: Invalid line format in .env file (line {line_num}): {line}"
+                    )
+    else:
+        print(f"ℹ️  No .env file found at {env_file}")
+        print(
+            "   Set environment variables manually or create .env file from env.example"
+        )
+
+
 @dataclass
 class TestResult:
     """Result of a compatibility test."""
@@ -33,91 +73,95 @@ class CompatibilityTestRunner:
         self.test_dir = Path(__file__).parent
         self.results: List[TestResult] = []
 
-        # Map test files to provider info
+        # Map test files to provider info - Updated to match actual file names
         self.test_configs = {
-            # Direct Provider Support
-            "test_openai.py": {
+            # OpenInference Instrumentor Tests
+            "test_openinference_openai.py": {
                 "provider": "OpenAI",
                 "instrumentor": "openinference-instrumentation-openai",
+                "category": "openinference",
                 "required_env": ["OPENAI_API_KEY"],
             },
-            "test_azure_openai.py": {
+            "test_openinference_azure_openai.py": {
                 "provider": "Azure OpenAI",
                 "instrumentor": "openinference-instrumentation-openai",
+                "category": "openinference",
                 "required_env": [
                     "AZURE_OPENAI_ENDPOINT",
                     "AZURE_OPENAI_API_KEY",
                     "AZURE_OPENAI_DEPLOYMENT_NAME",
                 ],
             },
-            "test_anthropic.py": {
+            "test_openinference_anthropic.py": {
                 "provider": "Anthropic",
                 "instrumentor": "openinference-instrumentation-anthropic",
+                "category": "openinference",
                 "required_env": ["ANTHROPIC_API_KEY"],
             },
-            "test_cohere.py": {
-                "provider": "Cohere",
-                "instrumentor": "openinference-instrumentation-cohere",
-                "required_env": ["COHERE_API_KEY"],
-            },
-            "test_google_vertexai.py": {
-                "provider": "Google Vertex AI",
-                "instrumentor": "openinference-instrumentation-vertexai",
-                "required_env": ["GCP_PROJECT"],
-            },
-            "test_google_genai.py": {
+            "test_openinference_google_ai.py": {
                 "provider": "Google Generative AI",
                 "instrumentor": "openinference-instrumentation-google-generativeai",
+                "category": "openinference",
                 "required_env": ["GOOGLE_API_KEY"],
             },
-            # AWS Ecosystem
-            "test_aws_bedrock.py": {
+            "test_openinference_google_adk.py": {
+                "provider": "Google Agent Development Kit",
+                "instrumentor": "openinference-instrumentation-google-adk",
+                "category": "openinference",
+                "required_env": ["GOOGLE_ADK_API_KEY"],
+            },
+            "test_openinference_bedrock.py": {
                 "provider": "AWS Bedrock",
                 "instrumentor": "openinference-instrumentation-bedrock",
+                "category": "openinference",
                 "required_env": ["AWS_ACCESS_KEY_ID", "AWS_SECRET_ACCESS_KEY"],
             },
-            # Framework Integration
-            "test_langchain.py": {
-                "provider": "LangChain",
-                "instrumentor": "openinference-instrumentation-langchain",
-                "required_env": ["OPENAI_API_KEY"],  # Uses OpenAI as backend
+            "test_openinference_mcp.py": {
+                "provider": "Model Context Protocol",
+                "instrumentor": "openinference-instrumentation-mcp",
+                "category": "openinference",
+                "required_env": [],  # MCP may not require external API keys
             },
-            "test_llama_index.py": {
-                "provider": "LlamaIndex",
-                "instrumentor": "openinference-instrumentation-llama-index",
-                "required_env": ["OPENAI_API_KEY"],  # Uses OpenAI as backend
+            # Traceloop (OpenTelemetry) Instrumentor Tests
+            "test_traceloop_openai.py": {
+                "provider": "OpenAI (Traceloop)",
+                "instrumentor": "opentelemetry-instrumentation-openai",
+                "category": "traceloop",
+                "required_env": ["OPENAI_API_KEY"],
             },
-            "test_dspy.py": {
-                "provider": "DSPy",
-                "instrumentor": "openinference-instrumentation-dspy",
-                "required_env": ["OPENAI_API_KEY"],  # Uses OpenAI as backend
+            "test_traceloop_azure_openai.py": {
+                "provider": "Azure OpenAI (Traceloop)",
+                "instrumentor": "opentelemetry-instrumentation-openai",
+                "category": "traceloop",
+                "required_env": [
+                    "AZURE_OPENAI_ENDPOINT",
+                    "AZURE_OPENAI_API_KEY",
+                    "AZURE_OPENAI_DEPLOYMENT_NAME",
+                ],
             },
-            # Specialized Platforms
-            "test_groq.py": {
-                "provider": "Groq",
-                "instrumentor": "openinference-instrumentation-groq",
-                "required_env": ["GROQ_API_KEY"],
+            "test_traceloop_anthropic.py": {
+                "provider": "Anthropic (Traceloop)",
+                "instrumentor": "opentelemetry-instrumentation-anthropic",
+                "category": "traceloop",
+                "required_env": ["ANTHROPIC_API_KEY"],
             },
-            "test_mistralai.py": {
-                "provider": "Mistral AI",
-                "instrumentor": "openinference-instrumentation-mistralai",
-                "required_env": ["MISTRAL_API_KEY"],
+            "test_traceloop_google_ai.py": {
+                "provider": "Google AI (Traceloop)",
+                "instrumentor": "opentelemetry-instrumentation-google-generativeai",
+                "category": "traceloop",
+                "required_env": ["GOOGLE_API_KEY"],
             },
-            "test_ollama.py": {
-                "provider": "Ollama",
-                "instrumentor": "openinference-instrumentation-ollama",
-                "required_env": [],  # Runs locally, no API key needed
+            "test_traceloop_bedrock.py": {
+                "provider": "AWS Bedrock (Traceloop)",
+                "instrumentor": "opentelemetry-instrumentation-bedrock",
+                "category": "traceloop",
+                "required_env": ["AWS_ACCESS_KEY_ID", "AWS_SECRET_ACCESS_KEY"],
             },
-            # Open Source & Self-Hosted
-            "test_huggingface.py": {
-                "provider": "Hugging Face",
-                "instrumentor": "openinference-instrumentation-huggingface",
-                "required_env": [],  # Optional: HUGGINGFACE_API_KEY for private models
-            },
-            "test_litellm.py": {
-                "provider": "LiteLLM",
-                "instrumentor": "openinference-instrumentation-litellm",
-                "required_env": ["OPENAI_API_KEY"],  # Uses OpenAI as proxy backend
+            "test_traceloop_mcp.py": {
+                "provider": "Model Context Protocol (Traceloop)",
+                "instrumentor": "opentelemetry-instrumentation-mcp",
+                "category": "traceloop",
+                "required_env": [],
             },
         }
 
@@ -291,8 +335,31 @@ class CompatibilityTestRunner:
             print("❌ No results to generate matrix from")
             return
 
+        # Get Python version info
+        python_version = f"{sys.version_info.major}.{sys.version_info.minor}"
+
         lines = []
         lines.append("# HoneyHive Model Provider Compatibility Matrix")
+        lines.append("")
+        lines.append(f"**Python Version**: {python_version}")
+        lines.append(f"**HoneyHive SDK**: Compatible (requires Python >=3.11)")
+        lines.append("")
+
+        # Summary statistics
+        passed = len([r for r in self.results if r.status == "PASSED"])
+        failed = len([r for r in self.results if r.status == "FAILED"])
+        skipped = len([r for r in self.results if r.status == "SKIPPED"])
+
+        lines.append("## Summary")
+        lines.append("")
+        lines.append(f"- **Total Tests**: {len(self.results)}")
+        lines.append(f"- **✅ Passed**: {passed}")
+        lines.append(f"- **❌ Failed**: {failed}")
+        lines.append(f"- **⏭️ Skipped**: {skipped}")
+        lines.append("")
+
+        # Detailed results
+        lines.append("## Detailed Results")
         lines.append("")
         lines.append("| Provider | Instrumentor | Status | Duration | Notes |")
         lines.append("|----------|-------------|---------|----------|-------|")
@@ -312,12 +379,32 @@ class CompatibilityTestRunner:
             )
 
         lines.append("")
+
+        # Python version compatibility notes
+        lines.append("## Python Version Compatibility")
+        lines.append("")
+        if python_version in ["3.11", "3.12", "3.13"]:
+            lines.append(
+                f"✅ Python {python_version} is fully supported by HoneyHive SDK"
+            )
+        else:
+            lines.append(f"⚠️ Python {python_version} compatibility not verified")
+
+        lines.append("")
+        lines.append("**Instrumentor Compatibility Notes:**")
+        lines.append(
+            "- OpenInference instrumentors: Generally compatible with Python 3.11+"
+        )
+        lines.append("- Traceloop SDK: Compatible with Python 3.11+")
+        lines.append("- Some instrumentors may have Python version restrictions")
+        lines.append("")
+
         lines.append(f"Generated on: {time.strftime('%Y-%m-%d %H:%M:%S')}")
 
         report_content = "\n".join(lines)
 
         if output_file:
-            with open(output_file, "w") as f:
+            with open(output_file, "w", encoding="utf-8") as f:
                 f.write(report_content)
             print(f"📄 Matrix report saved to: {output_file}")
         else:
@@ -327,6 +414,9 @@ class CompatibilityTestRunner:
 
 def main():
     """Main entry point."""
+    # Load environment variables from .env file first
+    load_env_file()
+
     runner = CompatibilityTestRunner()
 
     # Parse command line arguments

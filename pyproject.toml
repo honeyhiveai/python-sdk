@@ -145,64 +145,11 @@ traceloop-mcp = [
     "opentelemetry-instrumentation-mcp>=0.46.0,<1.0.0",
 ]
 
-# Framework Integrations (OpenInference Instrumentors)
-# LangChain (openinference-langchain)
-openinference-langchain = [
-    "openinference-instrumentation-langchain>=0.1.0",
-    "langchain>=0.1.0",
-]
-
-# LlamaIndex (openinference-llama-index)
-openinference-llamaindex = [
-    "openinference-instrumentation-llama-index>=0.1.0", 
-    "llama-index>=0.9.0",
-]
-
-# DSPy (openinference-dspy)
-openinference-dspy = [
-    "openinference-instrumentation-dspy>=0.1.0",
-    "dspy-ai>=2.0.0",
-]
-
-# Additional LLM Providers (OpenInference Instrumentors)
-# Cohere (openinference-cohere)
-openinference-cohere = [
-    "openinference-instrumentation-cohere>=0.1.0",
-    "cohere>=4.0.0",
-]
-
-# HuggingFace (openinference-huggingface)
-openinference-huggingface = [
-    "openinference-instrumentation-huggingface>=0.1.0",
-    "transformers>=4.20.0",
-]
-
-# MistralAI (openinference-mistralai)
-openinference-mistralai = [
-    "openinference-instrumentation-mistralai>=0.1.0", 
-    "mistralai>=0.1.0",
-]
-
-# Groq (openinference-groq)
-openinference-groq = [
-    "openinference-instrumentation-groq>=0.1.0",
-    "groq>=0.4.0",
-]
-
-# Ollama (openinference-ollama)
-openinference-ollama = [
-    "openinference-instrumentation-ollama>=0.1.0",
-    "ollama>=0.1.0",
-]
-
-# LiteLLM (openinference-litellm)
-openinference-litellm = [
-    "openinference-instrumentation-litellm>=0.1.0",
-    "litellm>=1.0.0",
-]
+# Note: Only documented integrations are included
+# See docs/how-to/integrations/ for supported providers
 
 # Convenience Groups (OpenInference Instrumentors)
-# All Available OpenInference Integrations
+# All Available OpenInference Integrations (documented only)
 all-openinference = [
     "openinference-openai",
     "openinference-anthropic",
@@ -211,15 +158,6 @@ all-openinference = [
     "openinference-aws-bedrock",
     "openinference-azure-openai",
     "openinference-mcp",
-    "openinference-langchain",
-    "openinference-llamaindex",
-    "openinference-dspy",
-    "openinference-cohere",
-    "openinference-huggingface",
-    "openinference-mistralai",
-    "openinference-groq",
-    "openinference-ollama",
-    "openinference-litellm",
 ]
 
 # Common LLM Providers (OpenInference Ecosystem)
@@ -231,7 +169,7 @@ openinference-llm-providers = [
 ]
 
 # OpenLLMetry (Traceloop) Convenience Groups
-# All Available Traceloop Integrations
+# All Available Traceloop Integrations (documented only)
 all-traceloop = [
     "traceloop-openai",
     "traceloop-anthropic",

@@ -118,23 +118,13 @@ def is_emergency_commit(commit_msg: str) -> bool:
 
 def check_commit_message_has_docs_intent() -> bool:
     """Check if commit message indicates documentation intent."""
-    try:
-        result = subprocess.run(
-            ["git", "log", "--format=%B", "-n", "1", "HEAD"],
-            capture_output=True,
-            text=True,
-            check=True,
-        )
-        commit_msg = result.stdout.lower()
-
-        doc_keywords = [
-            "docs:", "doc:", "documentation", "changelog", "readme",
-            "update docs", "fix: docs", "feat: docs", "chore: docs",
-        ]
-
-        return any(keyword in commit_msg for keyword in doc_keywords)
-    except subprocess.CalledProcessError:
-        return False
+    # During pre-commit hooks, there is no commit message yet
+    # This function should not be used to bypass CHANGELOG requirements
+    # during pre-commit validation, only during post-commit analysis
+    
+    # For now, always return False during pre-commit to enforce CHANGELOG updates
+    # This ensures significant changes always require proper documentation
+    return False
 
 
 def main() -> NoReturn:

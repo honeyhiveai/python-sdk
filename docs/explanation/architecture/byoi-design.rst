@@ -205,13 +205,13 @@ HoneyHive supports multiple instrumentor providers through its BYOI architecture
    pip install openinference-instrumentation-langchain
 
 .. note::
-   **Compatibility Matrix Coming Soon**
+   **Compatibility Matrix Available**
    
-   A comprehensive compatibility matrix with full testing and generation documentation for all supported instrumentor providers is in development. This will include:
+   A comprehensive compatibility matrix with full testing documentation for all supported instrumentor providers is available in the :doc:`../index` section. This includes:
    
    - Detailed installation guides
-   - Testing results
-   - Performance benchmarks for each provider
+   - Testing results and compatibility status
+   - Python version support matrix
 
 **Custom Instrumentors:**
 

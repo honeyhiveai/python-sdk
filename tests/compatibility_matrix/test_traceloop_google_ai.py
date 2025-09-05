@@ -33,10 +33,48 @@ def test_traceloop_google_ai_integration():
         # Import dependencies
         import google.generativeai as genai
 
+        # Apply workaround for upstream bug in opentelemetry-instrumentation-google-generativeai
+        def setup_google_genai_workaround():
+            """
+            Workaround for upstream bug in opentelemetry-instrumentation-google-generativeai
+
+            The package incorrectly imports 'from google.genai.types' instead of
+            'from google.generativeai.types'. This function creates a monkey-patch
+            to make the import work.
+            """
+            try:
+                import sys
+                import types
+
+                import google.generativeai.types as real_types
+
+                # Create fake google.genai module structure
+                genai_module = types.ModuleType("google.genai")
+                genai_module.types = real_types
+
+                # Create fake google.genai.types module
+                genai_types_module = types.ModuleType("google.genai.types")
+                for attr in dir(real_types):
+                    setattr(genai_types_module, attr, getattr(real_types, attr))
+
+                # Register in sys.modules
+                sys.modules["google.genai"] = genai_module
+                sys.modules["google.genai.types"] = genai_types_module
+
+                return True
+
+            except ImportError:
+                return False
+
+        # Apply workaround before importing instrumentor
+        workaround_applied = setup_google_genai_workaround()
+        if workaround_applied:
+            print("✓ Google GenAI workaround applied successfully")
+
         # Try to import the OpenLLMetry instrumentor
         try:
             from opentelemetry.instrumentation.google_generativeai import (
-                GoogleGenerativeAIInstrumentor,
+                GoogleGenerativeAiInstrumentor,
             )
 
             instrumentor_available = True

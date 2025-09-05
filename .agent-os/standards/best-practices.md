@@ -49,6 +49,172 @@
   - Agent OS documentation (.agent-os/ files)
   - Examples and integration guides
 
+## 📋 Agent OS Specification Standards (MANDATORY)
+
+**🚨 CRITICAL**: All Agent OS specifications MUST follow the consistent file structure defined in the [Agent OS documentation](https://buildermethods.com/agent-os).
+
+### Required Spec File Structure
+
+**EVERY Agent OS spec MUST include these files:**
+
+```bash
+.agent-os/specs/YYYY-MM-DD-spec-name/
+├── srd.md              # Spec Requirements Document (MANDATORY)
+├── specs.md            # Technical Specifications (MANDATORY)  
+├── tasks.md            # Tasks Breakdown (MANDATORY)
+├── README.md           # Overview/Quick Start (RECOMMENDED)
+└── implementation.md   # Implementation Guide (OPTIONAL)
+```
+
+### File Content Requirements
+
+#### 1. **srd.md** - Spec Requirements Document
+**Purpose**: Goals, user stories, success criteria
+**Required Sections**:
+- Goals (Primary and Secondary)
+- User Stories (As a [role], I want [goal] so that [benefit])
+- Success Criteria (Functional, Quality, User Experience)
+- Acceptance Criteria (Must Have, Should Have, Could Have)
+- Out of Scope
+- Risk Assessment
+- Dependencies
+- Validation Plan
+
+#### 2. **specs.md** - Technical Specifications  
+**Purpose**: API design, database changes, UI requirements
+**Required Sections**:
+- Problem Statement
+- Solution Framework
+- Requirements (REQ-XXX-001 format)
+- Implementation Components (COMP-XXX format)
+- Validation Protocol
+- Success Criteria
+- Quality Gates
+- Testing Protocol
+
+#### 3. **tasks.md** - Tasks Breakdown
+**Purpose**: Trackable step-by-step implementation plan
+**Required Sections**:
+- Task Overview
+- Individual Tasks (TASK-001, TASK-002, etc.)
+- Each task must include:
+  - Status (✅ Completed, 🔄 In Progress, ⏳ Pending)
+  - Objective
+  - Scope
+  - Acceptance Criteria
+  - Implementation Details
+  - Validation Commands
+  - Test Results
+
+#### 4. **README.md** - Overview (Recommended)
+**Purpose**: Quick start and overview for developers
+**Recommended Sections**:
+- Overview
+- Quick Start
+- Problem Solved
+- Solution Delivered
+- Current Status
+- Usage Examples
+- Validation Commands
+
+#### 5. **implementation.md** - Implementation Guide (Optional)
+**Purpose**: Step-by-step implementation details
+**Optional Sections**:
+- Pre-Implementation Validation
+- Implementation Tasks
+- Quality Validation Sequence
+- Post-Implementation Checklist
+- Troubleshooting
+
+### Spec Creation Protocol
+
+**MANDATORY**: When creating new Agent OS specs, AI assistants MUST:
+
+1. **Get Current Date**:
+   ```bash
+   CURRENT_DATE=$(date +"%Y-%m-%d")
+   echo "Today is: $CURRENT_DATE"
+   ```
+
+2. **Create Directory with Proper Naming**:
+   ```bash
+   SPEC_NAME="your-spec-name"
+   SPEC_DIR=".agent-os/specs/${CURRENT_DATE}-${SPEC_NAME}"
+   mkdir -p "$SPEC_DIR"
+   ```
+
+3. **Create ALL Required Files**:
+   ```bash
+   # Create mandatory files
+   touch "$SPEC_DIR/srd.md"
+   touch "$SPEC_DIR/specs.md" 
+   touch "$SPEC_DIR/tasks.md"
+   
+   # Create recommended files
+   touch "$SPEC_DIR/README.md"
+   
+   # Create optional files (if needed)
+   touch "$SPEC_DIR/implementation.md"
+   ```
+
+4. **Use Proper Headers in Each File**:
+   ```markdown
+   # Spec Name - File Type
+   
+   **Date**: 2025-09-05
+   **Status**: Draft/Active/Completed
+   **Priority**: High/Medium/Low
+   ```
+
+### Validation Commands
+
+**Before committing any Agent OS spec:**
+
+```bash
+# Verify required files exist
+SPEC_DIR=".agent-os/specs/2025-09-05-your-spec-name"
+test -f "$SPEC_DIR/srd.md" && echo "✅ srd.md exists" || echo "❌ srd.md missing"
+test -f "$SPEC_DIR/specs.md" && echo "✅ specs.md exists" || echo "❌ specs.md missing"
+test -f "$SPEC_DIR/tasks.md" && echo "✅ tasks.md exists" || echo "❌ tasks.md missing"
+
+# Verify proper date format in directory name
+echo "$SPEC_DIR" | grep -E "202[0-9]-[0-1][0-9]-[0-3][0-9]" && echo "✅ Date format correct" || echo "❌ Date format wrong"
+
+# Check file headers have required fields
+grep -l "Date.*Status.*Priority" "$SPEC_DIR"/*.md | wc -l
+```
+
+### Common Violations to Prevent
+
+**❌ WRONG**:
+- Creating only `README.md` without `srd.md`, `specs.md`, `tasks.md`
+- Using wrong date formats (`01-30-2025`, `Jan 30, 2025`)
+- Missing required sections in files
+- Inconsistent file naming across specs
+
+**✅ CORRECT**:
+- Complete file structure with all mandatory files
+- ISO date format (`YYYY-MM-DD`)
+- All required sections present
+- Consistent headers and formatting
+
+### Integration with Agent OS Ecosystem
+
+This spec structure integrates with the [Agent OS three-layer context system](https://buildermethods.com/agent-os):
+
+- **Layer 1 (Standards)**: `.agent-os/standards/` - How you build
+- **Layer 2 (Product)**: `.agent-os/product/` - What you're building  
+- **Layer 3 (Specs)**: `.agent-os/specs/YYYY-MM-DD-name/` - What to build next
+
+### Enforcement
+
+- **Pre-commit hooks**: Validate spec structure before commits
+- **AI Assistant validation**: Check file structure during spec creation
+- **Documentation compliance**: Ensure all specs follow this standard
+- **Regular audits**: Monthly review of spec consistency
+
+This ensures every Agent OS specification provides complete context for AI assistants and maintains consistency across the entire codebase.
+
 ### Required Tools
 ```bash
 # Core development tools
@@ -324,8 +490,27 @@ tests/
 ├── integration/       # API integration tests
 │   ├── test_openai_integration.py
 │   └── test_langchain_integration.py
+├── compatibility_matrix/  # Instrumentor compatibility tests
+│   ├── test_openinference_openai.py
+│   ├── test_traceloop_openai.py
+│   └── test_<instrumentor>_<provider>.py
 └── fixtures/         # Shared test fixtures
 ```
+
+### Compatibility Matrix Test Naming Pattern
+
+**MANDATORY Pattern**: `test_<instrumentor>_<provider>.py`
+
+**Examples**:
+- `test_openinference_openai.py` - OpenInference OpenAI integration
+- `test_traceloop_anthropic.py` - Traceloop Anthropic integration
+- `test_openinference_bedrock.py` - OpenInference AWS Bedrock integration
+
+**Pattern Rules**:
+- `<instrumentor>`: The instrumentor library name (e.g., `openinference`, `traceloop`)
+- `<provider>`: The provider name matching documentation (e.g., `openai`, `anthropic`, `bedrock`)
+- Provider names must match the corresponding `docs/how-to/integrations/<provider>.rst` file
+- Use underscores for multi-word providers (e.g., `azure_openai`, `google_ai`)
 
 ### Testing Best Practices
 ```python
@@ -540,7 +725,7 @@ When reporting test results in commit messages, documentation, or communication:
 - Document the version lookup process and date in the specification
 - Use the most recent major version available at time of spec creation
 
-**1. Compatibility Matrix Test**: `tests/compatibility_matrix/test_[provider]_[instrumentor].py`
+**1. Compatibility Matrix Test**: `tests/compatibility_matrix/test_<instrumentor>_<provider>.py`
 - Complete integration test with actual provider API calls
 - Error handling validation (auth errors, rate limits, network failures)
 - Performance benchmarking (latency, throughput metrics)

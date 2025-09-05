@@ -17,6 +17,7 @@
   - `tox -e format` for code formatting checks
   - `tox -e py311`, `tox -e py312`, `tox -e py313` for Python version-specific testing
 - **Unit test files must follow the naming pattern `test_<module>_<file>.py`** - for example: `test_api_client.py`, `test_tracer_decorators.py`
+- **Compatibility matrix test files must follow the naming pattern `test_<instrumentor>_<provider>.py`** - for example: `test_openinference_openai.py`, `test_traceloop_anthropic.py`
 - **Required development tools**: Install `yamllint` and GitHub CLI (`gh`) for workflow validation and CI/CD investigation
 - **🚨 CRITICAL: Test Count Reporting** - Always report TOTAL test count correctly: "X tests passing (Y unit + Z integration)" - NEVER report partial counts as totals
 
