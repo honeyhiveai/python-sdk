@@ -51,7 +51,7 @@ repos:
         language: python
         pass_filenames: false
         files: |
-          ^(src/.*\.py|tests/.*\.py|docs/.*\.(rst|md)|examples/.*\.py|
+          ^(src/.*\.py|tests/.*\.py|docs/.*\.(rst|md)|examples/.*\.(py|md)|
           scripts/.*\.py|\.agent-os/.*\.md|pyproject\.toml|tox\.ini)$
         stages: [pre-commit]
 
