@@ -32,8 +32,6 @@ name: AWS Lambda Compatibility Tests
       - 'tox.ini'
       - 'pyproject.toml'
       - '.github/workflows/lambda-tests.yml'
-    paths-ignore:
-      - '.agent-os/**'
   pull_request:
     # Run on all PRs - immediate feedback on Lambda compatibility
     paths:
@@ -43,8 +41,6 @@ name: AWS Lambda Compatibility Tests
       - 'tox.ini'
       - 'pyproject.toml'
       - '.github/workflows/lambda-tests.yml'
-    paths-ignore:
-      - '.agent-os/**'
   schedule:
     # Run Lambda tests daily at 2 AM UTC
     - cron: '0 2 * * *'
