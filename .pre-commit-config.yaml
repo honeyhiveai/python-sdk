@@ -45,22 +45,13 @@ repos:
         files: '^(src/.*\.py|docs/reference/.*\.rst|\.agent-os/product/features\.md)$'
         stages: [pre-commit]
 
-      - id: changelog-update-check
-        name: CHANGELOG Update Check
-        entry: scripts/check-changelog-updated.py
-        language: python
-        files: >-
-          ^(src/.*\.py|tests/.*\.py|docs/.*\.(rst|md)|examples/.*\.py|
-          scripts/.*\.py|\.agent-os/.*\.md|pyproject\.toml|tox\.ini)$
-        stages: [pre-commit]
-
-      - id: mandatory-docs-update
-        name: Mandatory Documentation Update Check
-        entry: scripts/check-docs-updated.py
+      - id: documentation-compliance-check
+        name: Documentation Compliance Check
+        entry: scripts/check-documentation-compliance.py
         language: python
         pass_filenames: false
         files: >-
-          ^(src/.*\.py|tests/.*\.py|examples/.*\.py|docs/.*\.(rst|md)|
+          ^(src/.*\.py|tests/.*\.py|docs/.*\.(rst|md)|examples/.*\.py|
           scripts/.*\.py|\.agent-os/.*\.md|pyproject\.toml|tox\.ini)$
         stages: [pre-commit]
 

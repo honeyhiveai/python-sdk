@@ -31,6 +31,8 @@ This release represents a comprehensive modernization of the HoneyHive Python SD
 
 **✨ Major Additions**
 
+- **CSS-Based Dual-Theme System**: Automatic light/dark theme detection for Mermaid sequence diagrams with targeted styling for optimal readability across all browsers
+
 - **Documentation Quality Prevention System**: Comprehensive error prevention and validation framework
   
   - Zero Build Warnings: Documentation now builds cleanly without any Sphinx warnings  
@@ -71,7 +73,7 @@ This release represents a comprehensive modernization of the HoneyHive Python SD
 - **Developer Experience**: Enhanced tooling and workflows
   
   - Pre-commit hooks for code quality and documentation validation
-  - Automated changelog update checking
+  - Strict changelog enforcement for high-frequency development environments
   - Feature synchronization verification
   - Enhanced error messages and debugging information
 
