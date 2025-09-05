@@ -40,6 +40,8 @@ This release represents a comprehensive modernization of the HoneyHive Python SD
 
 **✨ Major Additions**
 
+- **Examples Directory Restructure**: Organized provider examples into dedicated integrations/ subdirectory with 39% size reduction, improved navigation, and focused approach eliminating external dependencies
+
 - **CSS-Based Dual-Theme System**: Automatic light/dark theme detection for Mermaid sequence diagrams with targeted styling for optimal readability across all browsers
 
 - **Documentation Quality Prevention System**: Comprehensive error prevention and validation framework

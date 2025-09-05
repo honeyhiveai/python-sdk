@@ -1,6 +1,5 @@
 # HoneyHive Python SDK Examples
 
-<!-- Test change to verify pre-commit hook -->
 
 This directory contains comprehensive examples demonstrating how to use the HoneyHive Python SDK with the **recommended initialization pattern**.
 
@@ -27,41 +26,29 @@ tracer = HoneyHiveTracer._instance
 ### **Core Functionality**
 - **[`basic_usage.py`](basic_usage.py)** - Basic SDK usage with `HoneyHiveTracer.init()`
 - **[`tracing_decorators.py`](tracing_decorators.py)** - Using `@trace`, `@atrace`, and `@trace_class` decorators
-- **[`enhanced_tracing_demo.py`](enhanced_tracing_demo.py)** - Advanced tracing features and manual span management
+- **[`advanced_usage.py`](advanced_usage.py)** - Advanced tracing features and manual span management
 
 ### **Provider Integration Examples**
 
-#### **OpenInference Instrumentors**
-- **[`openinference_openai_example.py`](openinference_openai_example.py)** - OpenAI integration with OpenInference
-- **[`openinference_anthropic_example.py`](openinference_anthropic_example.py)** - Anthropic integration with OpenInference
-- **[`openinference_google_ai_example.py`](openinference_google_ai_example.py)** - Google AI integration with OpenInference
-- **[`openinference_google_adk_example.py`](openinference_google_adk_example.py)** - Google Agent Development Kit integration with multi-step workflows
-- **[`openinference_bedrock_example.py`](openinference_bedrock_example.py)** - AWS Bedrock integration with OpenInference
-- **[`openinference_mcp_example.py`](openinference_mcp_example.py)** - MCP (Model Context Protocol) integration for agent tool orchestration
+**📁 See [`integrations/`](integrations/) directory for all LLM provider examples:**
 
-#### **OpenLLMetry (Traceloop) Instrumentors**
-- **[`traceloop_openai_example.py`](traceloop_openai_example.py)** - OpenAI integration with OpenLLMetry
-- **[`traceloop_anthropic_example.py`](traceloop_anthropic_example.py)** - Anthropic integration with OpenLLMetry
-- **[`traceloop_bedrock_example.py`](traceloop_bedrock_example.py)** - AWS Bedrock integration with OpenLLMetry (✅ multi-model support)
-- **[`traceloop_azure_openai_example.py`](traceloop_azure_openai_example.py)** - Azure OpenAI integration with OpenLLMetry (✅ multi-deployment support)
-- **[`traceloop_mcp_example.py`](traceloop_mcp_example.py)** - MCP integration with OpenLLMetry (✅ tool orchestration)
-- **[`traceloop_google_ai_example.py`](traceloop_google_ai_example.py)** - Google AI integration with OpenLLMetry (⚠️ upstream issue)
-- **[`traceloop_google_ai_example_with_workaround.py`](traceloop_google_ai_example_with_workaround.py)** - Google AI integration with working workaround (✅ functional)
+#### **OpenInference Instrumentors** (Lightweight)
+- **[`integrations/openinference_openai_example.py`](integrations/openinference_openai_example.py)** - OpenAI integration
+- **[`integrations/openinference_anthropic_example.py`](integrations/openinference_anthropic_example.py)** - Anthropic integration
+- **[`integrations/openinference_google_ai_example.py`](integrations/openinference_google_ai_example.py)** - Google AI integration
+- **[`integrations/openinference_bedrock_example.py`](integrations/openinference_bedrock_example.py)** - AWS Bedrock integration
+- **[`integrations/openinference_mcp_example.py`](integrations/openinference_mcp_example.py)** - MCP integration
 
-### **Migration Guide**
-- **[`migration_example.py`](migration_example.py)** - Complete migration guide from OpenInference to OpenLLMetry with code examples
-
-### **Evaluation Framework**
-- **[`evaluation_example.py`](evaluation_example.py)** - Using the evaluation framework with `@evaluator` decorators
+#### **Traceloop Instrumentors** (Enhanced)
+- **[`integrations/traceloop_openai_example.py`](integrations/traceloop_openai_example.py)** - OpenAI integration
+- **[`integrations/traceloop_anthropic_example.py`](integrations/traceloop_anthropic_example.py)** - Anthropic integration
+- **[`integrations/traceloop_bedrock_example.py`](integrations/traceloop_bedrock_example.py)** - AWS Bedrock (✅ multi-model)
+- **[`integrations/traceloop_azure_openai_example.py`](integrations/traceloop_azure_openai_example.py)** - Azure OpenAI (✅ multi-deployment)
+- **[`integrations/traceloop_google_ai_example_with_workaround.py`](integrations/traceloop_google_ai_example_with_workaround.py)** - Google AI (✅ functional)
 
 ### **Advanced Patterns**
-- **[`mcp_integration.py`](mcp_integration.py)** - Comprehensive MCP integration with multi-provider support, error handling, and async workflows
-- **[`pydantic_validation_demo.py`](pydantic_validation_demo.py)** - Pydantic validation with tracing
-- **[`verbose_demo.py`](verbose_demo.py)** - Verbose logging and debugging
-- **[`verbose_debugging_example.py`](verbose_debugging_example.py)** - Advanced debugging techniques
-
-### **Backwards Compatibility**
-- **[`backwards_compatibility_demo.py`](backwards_compatibility_demo.py)** - Demonstrating both initialization patterns
+- **[`verbose_example.py`](verbose_example.py)** - Verbose logging and debugging
+- **[`cli_example.py`](cli_example.py)** - Command-line interface usage
 
 ## 🔧 **Key Features Demonstrated**
 
@@ -126,8 +113,8 @@ The `@trace` decorator automatically detects function types and applies the appr
 2. **Set Environment Variables:**
    ```bash
    export HH_API_KEY="your-api-key"
-   export HH_PROJECT="your-project"
    export HH_SOURCE="development"
+   # Note: HH_PROJECT is deprecated - project derived from API key
    ```
 
 3. **Run Examples:**
@@ -139,7 +126,7 @@ The `@trace` decorator automatically detects function types and applies the appr
    python examples/tracing_decorators.py
    
    # Provider integration
-   python examples/openinference_openai_example.py
+   python examples/integrations/openinference_openai_example.py
    ```
 
 ## 🚀 **Enhanced Features Available**

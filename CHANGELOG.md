@@ -21,6 +21,14 @@
   * Zero-maintenance reference design with dynamic cross-references
   * Future-proof template-driven approach preventing inconsistencies
 
+- **🗂️ MAJOR: Examples Directory Restructure**
+  * Organized provider examples into dedicated integrations/ subdirectory
+  * Removed 6 oversized/redundant example files (39% size reduction: 6,075→3,729 lines)
+  * Eliminated external dependencies (Strands) and development-only files
+  * Fixed deprecated HH_PROJECT references and OpenLLMetry terminology in examples
+  * Consolidated MCP examples to provider-specific implementations (OpenInference/Traceloop)
+  * Improved navigation with clear separation of core vs integration examples
+
 ### Changed
 - **🔧 BREAKING: HH_PROJECT Environment Variable Deprecated**
   * Removed 55 obsolete HH_PROJECT usage examples from documentation
