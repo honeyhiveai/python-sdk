@@ -35,11 +35,11 @@ All workflows now include intelligent path detection to prevent unnecessary runs
 - **Logic**: Trigger when documentation, code, or Agent OS product/standards change
 
 **Testing Workflows** (`tox-full-suite`, `lambda-tests`):
-- **Excluded Paths**: `.agent-os/**` (all Agent OS files)
-- **Included Paths**: `src/**`, `tests/**`, `tox.ini`, `pyproject.toml`
-- **Logic**: Only trigger for code/test changes, not documentation updates
+- **Included Paths**: `src/**`, `tests/**`, `lambda_functions/**`, `tox.ini`, `pyproject.toml`
+- **Logic**: Trigger for code/test changes, regardless of other files in commit
+- **Benefit**: Ensures code changes are always tested, even when mixed with Agent OS changes
 
-**Benefit**: Agent OS task management (specs/tasks.md) doesn't trigger any workflows, but product/standards changes trigger documentation workflows appropriately
+**Optimization**: Agent OS task management files (specs/tasks.md, specs/srd.md) don't match any workflow paths, so they don't trigger unnecessary runs
 
 **Permissions Configuration** (Fixed 2025-09-05):
 

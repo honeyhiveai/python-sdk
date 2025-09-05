@@ -60,8 +60,6 @@ name: Tox Full Test Suite
       - 'tox.ini'
       - 'pyproject.toml'
       - '.github/workflows/tox-full-suite.yml'
-    paths-ignore:
-      - '.agent-os/**'
   pull_request:
     # Run on all PRs - immediate feedback on feature branch work
     paths:
@@ -70,8 +68,6 @@ name: Tox Full Test Suite
       - 'tox.ini'
       - 'pyproject.toml'
       - '.github/workflows/tox-full-suite.yml'
-    paths-ignore:
-      - '.agent-os/**'
 
 permissions:
   contents: read
