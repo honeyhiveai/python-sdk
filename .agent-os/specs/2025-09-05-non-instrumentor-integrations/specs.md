@@ -98,7 +98,26 @@ graph TB
   - Preserve existing span attributes and metadata
   - Handle span lifecycle events (start, end, error)
 
-#### REQ-NOI-003: Initialization Order Independence
+#### REQ-NOI-003: OTLP Span Export Integration
+**Requirement**: Ensure spans are exported to HoneyHive backend via OTLP protocol regardless of provider setup
+
+**Implementation Components**:
+- **COMP-SE-001**: OTLP Exporter Manager
+  - Configure OTLPSpanExporter with HoneyHive endpoint
+  - Set proper authentication headers (Bearer token, X-Project, X-Source)
+  - Handle OTLP export in both main and secondary provider scenarios
+
+- **COMP-SE-002**: Export Strategy Selector
+  - Main Provider Strategy: Add OTLP exporter directly to HoneyHive provider
+  - Secondary Provider Strategy: Add OTLP exporter to existing provider
+  - Fallback Strategy: Console export when OTLP integration fails
+
+- **COMP-SE-003**: Export Configuration Manager
+  - Endpoint: `{api_url}/opentelemetry/v1/traces`
+  - Headers: Authorization, X-Project, X-Source
+  - Batch processing with configurable batch size and timeout
+
+#### REQ-NOI-004: Initialization Order Independence
 **Requirement**: Work correctly regardless of HoneyHive vs framework initialization order
 
 **Implementation Components**:
@@ -119,6 +138,7 @@ graph TB
 # HoneyHive initializes first and becomes main provider
 tracer = HoneyHiveTracer.init(api_key="...", project="...")
 # Creates new TracerProvider, sets as global
+# Adds HoneyHive span processor + OTLP exporter
 
 # Framework uses existing global provider
 framework = AIFramework()  # Uses HoneyHive's TracerProvider
@@ -127,10 +147,26 @@ result = framework.execute("task")  # Automatically traced
 
 **Flow**:
 1. HoneyHive creates TracerProvider
-2. HoneyHive sets global TracerProvider
-3. Framework discovers existing provider
-4. Framework uses HoneyHive's provider
-5. All spans automatically enriched
+2. HoneyHive adds span processor for enrichment
+3. HoneyHive adds OTLP exporter to ship spans to backend
+4. HoneyHive sets global TracerProvider
+5. Framework discovers existing provider
+6. Framework uses HoneyHive's provider
+7. All spans automatically enriched and exported to HoneyHive
+
+**OTLP Export Configuration**:
+```python
+# Automatic OTLP exporter setup
+otlp_exporter = OTLPSpanExporter(
+    endpoint=f"{config.api_url}/opentelemetry/v1/traces",
+    headers={
+        "Authorization": f"Bearer {api_key}",
+        "X-Project": project,
+        "X-Source": source,
+    },
+)
+provider.add_span_processor(BatchSpanProcessor(otlp_exporter))
+```
 
 #### Pattern 2: Framework First (Secondary Provider)
 ```python
@@ -139,17 +175,42 @@ framework = AIFramework()  # Creates and sets TracerProvider
 
 # HoneyHive detects existing provider and integrates
 tracer = HoneyHiveTracer.init(api_key="...", project="...")
-# Adds span processor to existing provider
+# Adds span processor + OTLP exporter to existing provider
 
-result = framework.execute("task")  # Spans enriched by HoneyHive processor
+result = framework.execute("task")  # Spans enriched and exported to HoneyHive
 ```
 
 **Flow**:
 1. Framework creates TracerProvider
-2. Framework sets global TracerProvider
+2. Framework sets global TracerProvider (may have its own exporters)
 3. HoneyHive detects existing provider
-4. HoneyHive adds span processor to existing provider
-5. Framework spans enriched with HoneyHive context
+4. HoneyHive adds span processor to existing provider for enrichment
+5. HoneyHive adds OTLP exporter to existing provider for HoneyHive export
+6. Framework spans enriched with HoneyHive context and exported to both framework backend and HoneyHive
+
+**Critical OTLP Export Handling**:
+```python
+# HoneyHive adds OTLP exporter to existing provider
+existing_provider = trace.get_tracer_provider()
+
+# Add HoneyHive span processor for enrichment
+honeyhive_processor = HoneyHiveSpanProcessor(session_id=session_id)
+existing_provider.add_span_processor(honeyhive_processor)
+
+# Add OTLP exporter for HoneyHive backend
+if otlp_enabled and not test_mode:
+    otlp_exporter = OTLPSpanExporter(
+        endpoint=f"{config.api_url}/opentelemetry/v1/traces",
+        headers={
+            "Authorization": f"Bearer {api_key}",
+            "X-Project": project,
+            "X-Source": source,
+        },
+    )
+    existing_provider.add_span_processor(BatchSpanProcessor(otlp_exporter))
+    
+# Result: Spans go to both framework's exporters AND HoneyHive
+```
 
 #### Pattern 3: Multi-Framework Integration
 ```python
@@ -250,21 +311,80 @@ def validate_integration() -> IntegrationStatus:
     )
 ```
 
+### OTLP Export Strategy
+
+#### Export Endpoint Configuration
+```python
+# HoneyHive OTLP endpoint
+endpoint = f"{config.api_url}/opentelemetry/v1/traces"
+# Default: https://api.honeyhive.ai/opentelemetry/v1/traces
+
+# Required headers for authentication and context
+headers = {
+    "Authorization": f"Bearer {api_key}",
+    "X-Project": project,           # Project context
+    "X-Source": source,             # Environment (dev, staging, production)
+}
+```
+
+#### Export Scenarios
+
+**Scenario 1: HoneyHive as Main Provider**
+- HoneyHive controls the TracerProvider
+- Adds OTLP exporter directly to its provider
+- All spans (framework + custom) exported to HoneyHive
+- Framework may not have its own export mechanism
+
+**Scenario 2: HoneyHive as Secondary Provider**
+- Framework controls the TracerProvider
+- Framework may have its own exporters (console, custom backend, etc.)
+- HoneyHive adds OTLP exporter to existing provider
+- **Result**: Spans exported to BOTH framework backend AND HoneyHive
+- **Benefit**: Unified observability without disrupting existing telemetry
+
+**Scenario 3: Export Conflicts and Resolution**
+- Multiple OTLP exporters can coexist on same provider
+- Each exporter runs independently via BatchSpanProcessor
+- No conflicts between HoneyHive and framework exporters
+- Performance impact: Additional network calls per span batch
+
+#### Export Configuration Management
+```python
+# Environment variable controls
+HH_OTLP_ENABLED=true          # Enable/disable OTLP export (default: true)
+HH_OTLP_ENDPOINT=...          # Override default endpoint
+HH_API_URL=...                # Base API URL (affects OTLP endpoint)
+
+# Batch processing configuration
+OTEL_BSP_MAX_EXPORT_BATCH_SIZE=512    # Batch size (default: 512)
+OTEL_BSP_EXPORT_TIMEOUT=30000         # Export timeout ms (default: 30s)
+OTEL_BSP_SCHEDULE_DELAY=5000          # Batch delay ms (default: 5s)
+```
+
 ## Requirements
 
-### REQ-NOI-004: Performance Requirements
+### REQ-NOI-005: Performance Requirements
 - **Span Processing Overhead**: <1ms per span for HoneyHive enrichment
 - **Memory Overhead**: <5% increase in memory usage
 - **Provider Detection**: <10ms for provider detection and integration
+- **OTLP Export Overhead**: <2ms additional latency per span batch
 - **Concurrent Access**: Thread-safe operation in multi-threaded environments
 
-### REQ-NOI-005: Compatibility Requirements
+### REQ-NOI-006: OTLP Export Requirements
+- **Export Reliability**: 99.9% successful export rate under normal conditions
+- **Batch Processing**: Configurable batch size (default 512 spans)
+- **Export Timeout**: Configurable timeout with graceful degradation
+- **Dual Export Support**: Coexist with framework exporters without conflicts
+- **Authentication**: Proper Bearer token and project context headers
+- **Endpoint Flexibility**: Support custom HoneyHive API endpoints
+
+### REQ-NOI-007: Compatibility Requirements
 - **OpenTelemetry Versions**: Support OpenTelemetry SDK 1.20+
 - **Python Versions**: Support Python 3.11, 3.12, 3.13
 - **Framework Compatibility**: Work with any framework using OpenTelemetry directly
 - **Provider Types**: Support TracerProvider, ProxyTracerProvider, custom implementations
 
-### REQ-NOI-006: Error Handling Requirements
+### REQ-NOI-008: Error Handling Requirements
 - **Graceful Degradation**: Framework functionality preserved if HoneyHive integration fails
 - **Error Logging**: Clear error messages for integration failures
 - **Fallback Modes**: Console logging when full integration impossible
