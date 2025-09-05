@@ -6,24 +6,24 @@ Integrate with Google Agent Development Kit (ADK)
    
    This guide helps you solve specific problems when integrating HoneyHive with Google Agent Development Kit (ADK), with support for multiple instrumentor options.
 
-This guide covers Google Agent Development Kit (ADK) integration with HoneyHive's BYOI architecture, supporting both OpenInference and OpenLLMetry instrumentors.
+This guide covers Google Agent Development Kit (ADK) integration with HoneyHive's BYOI architecture, supporting both OpenInference and Traceloop instrumentors.
 
 Choose Your Instrumentor
 ------------------------
 
-**Problem**: I need to choose between OpenInference and OpenLLMetry for Google Agent Development Kit (ADK) integration.
+**Problem**: I need to choose between OpenInference and Traceloop for Google Agent Development Kit (ADK) integration.
 
 **Solution**: Choose the instrumentor that best fits your needs:
 
 - **OpenInference**: Open-source, lightweight, great for getting started
-- **OpenLLMetry**: OpenLLMetry does not currently provide a Google ADK instrumentor. Only OpenInference instrumentation is available for this provider.
+- **Traceloop**: Traceloop does not currently provide a Google ADK instrumentor. Only OpenInference instrumentation is available for this provider.
 
 .. raw:: html
 
    <div class="instrumentor-selector">
    <div class="instrumentor-tabs">
      <button class="instrumentor-button active" onclick="showInstrumentor(event, 'openinference-section')">OpenInference</button>
-     <button class="instrumentor-button" onclick="showInstrumentor(event, 'openllmetry-section')">OpenLLMetry</button>
+     <button class="instrumentor-button" onclick="showInstrumentor(event, 'openllmetry-section')">Traceloop</button>
    </div>
 
    <div id="openinference-section" class="instrumentor-content active">

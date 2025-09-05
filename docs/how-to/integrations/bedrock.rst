@@ -1,29 +1,29 @@
 Integrate with AWS Bedrock
-===================================
+==========================
 
 .. note::
    **Problem-solving guide for AWS Bedrock integration**
    
    This guide helps you solve specific problems when integrating HoneyHive with AWS Bedrock, with support for multiple instrumentor options.
 
-This guide covers AWS Bedrock integration with HoneyHive's BYOI architecture, supporting both OpenInference and OpenLLMetry instrumentors.
+This guide covers AWS Bedrock integration with HoneyHive's BYOI architecture, supporting both OpenInference and Traceloop instrumentors.
 
 Choose Your Instrumentor
 ------------------------
 
-**Problem**: I need to choose between OpenInference and OpenLLMetry for AWS Bedrock integration.
+**Problem**: I need to choose between OpenInference and Traceloop for AWS Bedrock integration.
 
 **Solution**: Choose the instrumentor that best fits your needs:
 
 - **OpenInference**: Open-source, lightweight, great for getting started
-- **OpenLLMetry**: Enhanced LLM metrics, cost tracking, production optimizations
+- **Traceloop**: Enhanced LLM metrics, cost tracking, production optimizations
 
 .. raw:: html
 
    <div class="instrumentor-selector">
    <div class="instrumentor-tabs">
      <button class="instrumentor-button active" onclick="showInstrumentor(event, 'openinference-section')">OpenInference</button>
-     <button class="instrumentor-button" onclick="showInstrumentor(event, 'openllmetry-section')">OpenLLMetry</button>
+     <button class="instrumentor-button" onclick="showInstrumentor(event, 'openllmetry-section')">Traceloop</button>
    </div>
 
    <div id="openinference-section" class="instrumentor-content active">
@@ -280,7 +280,7 @@ Choose Your Instrumentor
 
 .. code-block:: bash
 
-   # Recommended: Install with OpenLLMetry AWS Bedrock integration
+   # Recommended: Install with Traceloop AWS Bedrock integration
    pip install honeyhive[traceloop-bedrock]
    
    # Alternative: Manual installation
@@ -303,7 +303,7 @@ Choose Your Instrumentor
    # HH_API_KEY=your-honeyhive-key
    # AWS_ACCESS_KEY_ID=your-bedrock-key
 
-   # Initialize with OpenLLMetry instrumentor
+   # Initialize with Traceloop instrumentor
    tracer = HoneyHiveTracer.init(
        instrumentors=[BedrockInstrumentor()]  # Uses HH_API_KEY automatically
    )
@@ -327,7 +327,7 @@ Choose Your Instrumentor
                "messages": [{"role": "user", "content": "Hello from Bedrock!"}]
            })
        )
-       # Automatically traced by OpenLLMetry with enhanced metrics! ✨
+       # Automatically traced by Traceloop with enhanced metrics! ✨
    except botocore.exceptions.ClientError as e:
        print(f"AWS Bedrock API error: {e}")
    except Exception as e:
@@ -345,7 +345,7 @@ Choose Your Instrumentor
    from opentelemetry.instrumentation.bedrock import BedrockInstrumentor
    import boto3
 
-   # Initialize HoneyHive with OpenLLMetry instrumentor
+   # Initialize HoneyHive with Traceloop instrumentor
    tracer = HoneyHiveTracer.init(
        api_key="your-honeyhive-key",
        source="production",
@@ -444,13 +444,13 @@ Choose Your Instrumentor
    </div>
    <div id="bedrock-openllmetry-troubleshoot" class="tab-content">
 
-**Common OpenLLMetry Issues**:
+**Common Traceloop Issues**:
 
 1. **Missing Traces**
    
    .. code-block:: python
    
-      # Ensure OpenLLMetry instrumentor is passed to tracer
+      # Ensure Traceloop instrumentor is passed to tracer
       from opentelemetry.instrumentation.bedrock import BedrockInstrumentor
       
       tracer = HoneyHiveTracer.init(
@@ -468,18 +468,18 @@ Choose Your Instrumentor
       from opentelemetry.instrumentation.bedrock import BedrockInstrumentor
       tracer = HoneyHiveTracer.init(instrumentors=[BedrockInstrumentor()])
 
-3. **Multiple OpenLLMetry Instrumentors**
+3. **Multiple Traceloop Instrumentors**
    
    .. code-block:: python
    
-      # You can combine multiple OpenLLMetry instrumentors
+      # You can combine multiple Traceloop instrumentors
       from opentelemetry.instrumentation.bedrock import BedrockInstrumentor
        from opentelemetry.instrumentation.openai import OpenAIInstrumentor
        
        tracer = HoneyHiveTracer.init(
            instrumentors=[
-               BedrockInstrumentor(),       # OpenLLMetry Bedrock
-               OpenAIInstrumentor()         # OpenLLMetry OpenAI
+               BedrockInstrumentor(),       # Traceloop Bedrock
+               OpenAIInstrumentor()         # Traceloop OpenAI
            ]
        )
 
@@ -487,7 +487,7 @@ Choose Your Instrumentor
    
    .. code-block:: python
    
-      # OpenLLMetry instrumentors handle batching automatically
+      # Traceloop instrumentors handle batching automatically
       # No additional configuration needed for performance
 
 
@@ -505,7 +505,7 @@ Choose Your Instrumentor
       export AWS_SECRET_ACCESS_KEY="your-aws-secret-key"
       export AWS_DEFAULT_REGION="us-east-1"
       
-      # Optional: OpenLLMetry cloud features
+      # Optional: Traceloop cloud features
       export TRACELOOP_API_KEY="your-traceloop-key"
       export TRACELOOP_BASE_URL="https://api.traceloop.com"
 
@@ -519,7 +519,7 @@ Choose Your Instrumentor
    </div>
    </div>
 
-Comparison: OpenInference vs OpenLLMetry for AWS Bedrock
+Comparison: OpenInference vs Traceloop for AWS Bedrock
 ---------------------------------------------------------------
 
 .. list-table:: Feature Comparison
@@ -528,7 +528,7 @@ Comparison: OpenInference vs OpenLLMetry for AWS Bedrock
 
    * - Feature
      - OpenInference
-     - OpenLLMetry
+     - Traceloop
    * - **Setup Complexity**
      - Simple, single instrumentor
      - Single instrumentor setup
@@ -557,7 +557,7 @@ Comparison: OpenInference vs OpenLLMetry for AWS Bedrock
 Migration Between Instrumentors
 -------------------------------
 
-**From OpenInference to OpenLLMetry**:
+**From OpenInference to Traceloop**:
 
 .. code-block:: python
 
@@ -565,15 +565,15 @@ Migration Between Instrumentors
    from openinference.instrumentation.bedrock import BedrockInstrumentor
    tracer = HoneyHiveTracer.init(instrumentors=[BedrockInstrumentor()])
    
-   # After (OpenLLMetry) - different instrumentor package
+   # After (Traceloop) - different instrumentor package
    from opentelemetry.instrumentation.bedrock import BedrockInstrumentor
    tracer = HoneyHiveTracer.init(instrumentors=[BedrockInstrumentor()])
 
-**From OpenLLMetry to OpenInference**:
+**From Traceloop to OpenInference**:
 
 .. code-block:: python
 
-   # Before (OpenLLMetry)
+   # Before (Traceloop)
    from opentelemetry.instrumentation.bedrock import BedrockInstrumentor
    tracer = HoneyHiveTracer.init(instrumentors=[BedrockInstrumentor()])
    
@@ -585,7 +585,7 @@ See Also
 --------
 
 - :doc:`multi-provider` - Use Bedrock with other providers
-- :doc:`../index` - Common integration issues (see Troubleshooting section)
+- :doc:`../common-patterns` - Common integration patterns
 - :doc:`../../tutorials/03-llm-integration` - LLM integration tutorial
 - :doc:`anthropic` - Similar integration for Anthropic Claude
 

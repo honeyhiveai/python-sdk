@@ -30,9 +30,9 @@ PROVIDER_CONFIGS = {
         "OPENINFERENCE_IMPORT": "openinference.instrumentation.openai",
         "OPENINFERENCE_CLASS": "OpenAIInstrumentor",
         
-        "OPENLLMETRY_PACKAGE": "opentelemetry-instrumentation-openai",
-        "OPENLLMETRY_IMPORT": "opentelemetry.instrumentation.openai",
-        "OPENLLMETRY_CLASS": "OpenAIInstrumentor",
+        "TRACELOOP_PACKAGE": "opentelemetry-instrumentation-openai",
+        "TRACELOOP_IMPORT": "opentelemetry.instrumentation.openai",
+        "TRACELOOP_CLASS": "OpenAIInstrumentor",
         
         "BASIC_USAGE_EXAMPLE": '''client = openai.OpenAI()  # Uses OPENAI_API_KEY automatically
        response = client.chat.completions.create(
@@ -101,7 +101,7 @@ PROVIDER_CONFIGS = {
            ]
        )''',
        
-        "MULTIPLE_OPENLLMETRY_INSTRUMENTORS_EXAMPLE": '''from opentelemetry.instrumentation.openai import OpenAIInstrumentor
+        "MULTIPLE_TRACELOOP_INSTRUMENTORS_EXAMPLE": '''from opentelemetry.instrumentation.openai import OpenAIInstrumentor
        from opentelemetry.instrumentation.anthropic import AnthropicInstrumentor
        
        tracer = HoneyHiveTracer.init(
@@ -117,7 +117,7 @@ PROVIDER_CONFIGS = {
         "FIRST_PARAM": "prompt",
         
         "SEE_ALSO_LINKS": '''- :doc:`multi-provider` - Use OpenAI with other providers
-- :doc:`../troubleshooting` - Common integration issues
+- :doc:`../common-patterns` - Common integration patterns
 - :doc:`../../tutorials/03-llm-integration` - LLM integration tutorial
 - :doc:`anthropic` - Similar integration for Anthropic Claude'''
     },
@@ -134,9 +134,9 @@ PROVIDER_CONFIGS = {
         "OPENINFERENCE_IMPORT": "openinference.instrumentation.anthropic",
         "OPENINFERENCE_CLASS": "AnthropicInstrumentor",
         
-        "OPENLLMETRY_PACKAGE": "opentelemetry-instrumentation-anthropic",
-        "OPENLLMETRY_IMPORT": "opentelemetry.instrumentation.anthropic", 
-        "OPENLLMETRY_CLASS": "AnthropicInstrumentor",
+        "TRACELOOP_PACKAGE": "opentelemetry-instrumentation-anthropic",
+        "TRACELOOP_IMPORT": "opentelemetry.instrumentation.anthropic", 
+        "TRACELOOP_CLASS": "AnthropicInstrumentor",
         
         "BASIC_USAGE_EXAMPLE": '''client = anthropic.Anthropic()  # Uses ANTHROPIC_API_KEY automatically
        response = client.messages.create(
@@ -187,7 +187,7 @@ PROVIDER_CONFIGS = {
            ]
        )''',
        
-        "MULTIPLE_OPENLLMETRY_INSTRUMENTORS_EXAMPLE": '''from opentelemetry.instrumentation.anthropic import AnthropicInstrumentor
+        "MULTIPLE_TRACELOOP_INSTRUMENTORS_EXAMPLE": '''from opentelemetry.instrumentation.anthropic import AnthropicInstrumentor
        from opentelemetry.instrumentation.openai import OpenAIInstrumentor
        
        tracer = HoneyHiveTracer.init(
@@ -198,7 +198,7 @@ PROVIDER_CONFIGS = {
        )''',
        
         "SEE_ALSO_LINKS": '''- :doc:`multi-provider` - Use Anthropic with other providers
-- :doc:`../troubleshooting` - Common integration issues
+- :doc:`../common-patterns` - Common integration patterns
 - :doc:`../../tutorials/03-llm-integration` - LLM integration tutorial
 - :doc:`openai` - Similar integration for OpenAI GPT'''
     },
@@ -215,9 +215,9 @@ PROVIDER_CONFIGS = {
         "OPENINFERENCE_IMPORT": "openinference.instrumentation.google_generativeai",
         "OPENINFERENCE_CLASS": "GoogleGenerativeAIInstrumentor",
         
-        "OPENLLMETRY_PACKAGE": "opentelemetry-instrumentation-google-generativeai",
-        "OPENLLMETRY_IMPORT": "opentelemetry.instrumentation.google_generativeai",
-        "OPENLLMETRY_CLASS": "GoogleGenerativeAIInstrumentor",
+        "TRACELOOP_PACKAGE": "opentelemetry-instrumentation-google-generativeai",
+        "TRACELOOP_IMPORT": "opentelemetry.instrumentation.google_generativeai",
+        "TRACELOOP_CLASS": "GoogleGenerativeAIInstrumentor",
         
         "BASIC_USAGE_EXAMPLE": '''import google.generativeai as genai
        genai.configure(api_key=os.getenv("GOOGLE_API_KEY"))
@@ -233,7 +233,7 @@ PROVIDER_CONFIGS = {
         "FIRST_PARAM": "prompt",
         
         "SEE_ALSO_LINKS": '''- :doc:`multi-provider` - Use Google AI with other providers
-- :doc:`../troubleshooting` - Common integration issues
+- :doc:`../common-patterns` - Common integration patterns
 - :doc:`../../tutorials/03-llm-integration` - LLM integration tutorial
 - :doc:`openai` - Similar integration for OpenAI GPT'''
     },
@@ -250,10 +250,10 @@ PROVIDER_CONFIGS = {
         "OPENINFERENCE_IMPORT": "openinference.instrumentation.google_adk",
         "OPENINFERENCE_CLASS": "GoogleADKInstrumentor",
         
-        "OPENLLMETRY_PACKAGE": "opentelemetry-instrumentation-google-adk",
-        "OPENLLMETRY_IMPORT": "opentelemetry.instrumentation.google_adk",
-        "OPENLLMETRY_CLASS": "GoogleADKInstrumentor",
-        "OPENLLMETRY_AVAILABLE": False,
+        "TRACELOOP_PACKAGE": "opentelemetry-instrumentation-google-adk",
+        "TRACELOOP_IMPORT": "opentelemetry.instrumentation.google_adk",
+        "TRACELOOP_CLASS": "GoogleADKInstrumentor",
+        "TRACELOOP_AVAILABLE": False,
         "TRACELOOP_NOTE": "Traceloop does not currently provide a Google ADK instrumentor. Only OpenInference instrumentation is available for this provider.",
         
         "BASIC_USAGE_EXAMPLE": '''agent = adk.Agent(
@@ -337,7 +337,7 @@ PROVIDER_CONFIGS = {
            ]
        )''',
        
-        "MULTIPLE_OPENLLMETRY_INSTRUMENTORS_EXAMPLE": '''# Traceloop Google ADK instrumentor not available
+        "MULTIPLE_TRACELOOP_INSTRUMENTORS_EXAMPLE": '''# Traceloop Google ADK instrumentor not available
        # Use OpenInference for Google ADK + Traceloop for other providers
        from openinference.instrumentation.google_adk import GoogleADKInstrumentor
        from opentelemetry.instrumentation.openai import OpenAIInstrumentor
@@ -350,7 +350,7 @@ PROVIDER_CONFIGS = {
        )''',
        
         "SEE_ALSO_LINKS": '''- :doc:`multi-provider` - Use Google ADK with other providers
-- :doc:`../troubleshooting` - Common integration issues
+- :doc:`../common-patterns` - Common integration patterns
 - :doc:`../../tutorials/03-llm-integration` - LLM integration tutorial
 - :doc:`google-ai` - Similar integration for Google AI'''
     },
@@ -367,10 +367,10 @@ PROVIDER_CONFIGS = {
         "OPENINFERENCE_IMPORT": "openinference.instrumentation.bedrock",
         "OPENINFERENCE_CLASS": "BedrockInstrumentor",
         
-        "OPENLLMETRY_PACKAGE": "opentelemetry-instrumentation-bedrock",
-        "OPENLLMETRY_IMPORT": "opentelemetry.instrumentation.bedrock",
-        "OPENLLMETRY_CLASS": "BedrockInstrumentor",
-        "OPENLLMETRY_AVAILABLE": True,
+        "TRACELOOP_PACKAGE": "opentelemetry-instrumentation-bedrock",
+        "TRACELOOP_IMPORT": "opentelemetry.instrumentation.bedrock",
+        "TRACELOOP_CLASS": "BedrockInstrumentor",
+        "TRACELOOP_AVAILABLE": True,
         
         "BASIC_USAGE_EXAMPLE": '''import boto3
        
@@ -461,7 +461,7 @@ PROVIDER_CONFIGS = {
            ]
        )''',
        
-        "MULTIPLE_OPENLLMETRY_INSTRUMENTORS_EXAMPLE": '''from opentelemetry.instrumentation.bedrock import BedrockInstrumentor
+        "MULTIPLE_TRACELOOP_INSTRUMENTORS_EXAMPLE": '''from opentelemetry.instrumentation.bedrock import BedrockInstrumentor
        from opentelemetry.instrumentation.openai import OpenAIInstrumentor
        
        tracer = HoneyHiveTracer.init(
@@ -477,7 +477,7 @@ PROVIDER_CONFIGS = {
         "FIRST_PARAM": "prompts",
         
         "SEE_ALSO_LINKS": '''- :doc:`multi-provider` - Use Bedrock with other providers
-- :doc:`../troubleshooting` - Common integration issues
+- :doc:`../common-patterns` - Common integration patterns
 - :doc:`../../tutorials/03-llm-integration` - LLM integration tutorial
 - :doc:`anthropic` - Similar integration for Anthropic Claude'''
     },
@@ -494,10 +494,10 @@ PROVIDER_CONFIGS = {
         "OPENINFERENCE_IMPORT": "openinference.instrumentation.openai",
         "OPENINFERENCE_CLASS": "OpenAIInstrumentor",
         
-        "OPENLLMETRY_PACKAGE": "opentelemetry-instrumentation-openai",
-        "OPENLLMETRY_IMPORT": "opentelemetry.instrumentation.openai",
-        "OPENLLMETRY_CLASS": "OpenAIInstrumentor",
-        "OPENLLMETRY_AVAILABLE": True,
+        "TRACELOOP_PACKAGE": "opentelemetry-instrumentation-openai",
+        "TRACELOOP_IMPORT": "opentelemetry.instrumentation.openai",
+        "TRACELOOP_CLASS": "OpenAIInstrumentor",
+        "TRACELOOP_AVAILABLE": True,
         
         "BASIC_USAGE_EXAMPLE": '''from openai import AzureOpenAI
        
@@ -577,7 +577,7 @@ PROVIDER_CONFIGS = {
            ]
        )''',
        
-        "MULTIPLE_OPENLLMETRY_INSTRUMENTORS_EXAMPLE": '''from opentelemetry.instrumentation.openai import OpenAIInstrumentor
+        "MULTIPLE_TRACELOOP_INSTRUMENTORS_EXAMPLE": '''from opentelemetry.instrumentation.openai import OpenAIInstrumentor
        from opentelemetry.instrumentation.anthropic import AnthropicInstrumentor
        
        tracer = HoneyHiveTracer.init(
@@ -593,7 +593,7 @@ PROVIDER_CONFIGS = {
         "FIRST_PARAM": "prompts",
         
         "SEE_ALSO_LINKS": '''- :doc:`multi-provider` - Use Azure OpenAI with other providers
-- :doc:`../troubleshooting` - Common integration issues
+- :doc:`../common-patterns` - Common integration patterns
 - :doc:`../../tutorials/03-llm-integration` - LLM integration tutorial
 - :doc:`openai` - Similar integration for OpenAI'''
     },
@@ -610,10 +610,10 @@ PROVIDER_CONFIGS = {
         "OPENINFERENCE_IMPORT": "openinference.instrumentation.mcp",
         "OPENINFERENCE_CLASS": "MCPInstrumentor",
         
-        "OPENLLMETRY_PACKAGE": "opentelemetry-instrumentation-mcp",
-        "OPENLLMETRY_IMPORT": "opentelemetry.instrumentation.mcp",
-        "OPENLLMETRY_CLASS": "MCPInstrumentor",
-        "OPENLLMETRY_AVAILABLE": True,
+        "TRACELOOP_PACKAGE": "opentelemetry-instrumentation-mcp",
+        "TRACELOOP_IMPORT": "opentelemetry.instrumentation.mcp",
+        "TRACELOOP_CLASS": "MCPInstrumentor",
+        "TRACELOOP_AVAILABLE": True,
         
         "BASIC_USAGE_EXAMPLE": '''import mcp
        
@@ -697,7 +697,7 @@ PROVIDER_CONFIGS = {
            ]
        )''',
        
-        "MULTIPLE_OPENLLMETRY_INSTRUMENTORS_EXAMPLE": '''from opentelemetry.instrumentation.mcp import MCPInstrumentor
+        "MULTIPLE_TRACELOOP_INSTRUMENTORS_EXAMPLE": '''from opentelemetry.instrumentation.mcp import MCPInstrumentor
        from opentelemetry.instrumentation.openai import OpenAIInstrumentor
        
        tracer = HoneyHiveTracer.init(
@@ -713,9 +713,9 @@ PROVIDER_CONFIGS = {
         "FIRST_PARAM": "tasks",
         
         "SEE_ALSO_LINKS": '''- :doc:`multi-provider` - Use MCP with other providers
-- :doc:`../troubleshooting` - Common integration issues
+- :doc:`../common-patterns` - Common integration patterns
 - :doc:`../../tutorials/03-llm-integration` - LLM integration tutorial
-- :doc:`../advanced-tracing/tool-orchestration` - Tool orchestration patterns'''
+- :doc:`../advanced-tracing/index` - Advanced tracing patterns'''
     }
 }
 
@@ -737,11 +737,11 @@ def generate_provider_docs(provider_key: str, output_path: Path = None) -> None:
     variables = PROVIDER_CONFIGS[provider_key]
     
     # Handle Traceloop availability
-    if variables.get("OPENLLMETRY_AVAILABLE") == False:
+    if variables.get("TRACELOOP_AVAILABLE") == False:
         # Replace Traceloop description with unavailability note
-        openllmetry_desc = variables.get("OPENLLMETRY_NOTE", "Traceloop instrumentor not available for this provider.")
+        openllmetry_desc = variables.get("TRACELOOP_NOTE", "Traceloop instrumentor not available for this provider.")
         template_content = template_content.replace(
-            "{{OPENLLMETRY_NOTE if OPENLLMETRY_AVAILABLE == False else \"Enhanced LLM metrics, cost tracking, production optimizations\"}}",
+            "{{TRACELOOP_NOTE if TRACELOOP_AVAILABLE == False else \"Enhanced LLM metrics, cost tracking, production optimizations\"}}",
             openllmetry_desc
         )
         
@@ -787,7 +787,7 @@ def generate_provider_docs(provider_key: str, output_path: Path = None) -> None:
         
     else:
         template_content = template_content.replace(
-            "{{OPENLLMETRY_NOTE if OPENLLMETRY_AVAILABLE == False else \"Enhanced LLM metrics, cost tracking, production optimizations\"}}",
+            "{{TRACELOOP_NOTE if TRACELOOP_AVAILABLE == False else \"Enhanced LLM metrics, cost tracking, production optimizations\"}}",
             "Enhanced LLM metrics, cost tracking, production optimizations"
         )
     
@@ -804,7 +804,7 @@ def generate_provider_docs(provider_key: str, output_path: Path = None) -> None:
                 "# OpenAI configuration",
                 "export OPENAI_API_KEY=\"your-openai-api-key\""
             ],
-            "OPENLLMETRY_ADDITIONAL_ENV_VARS": [
+            "TRACELOOP_ADDITIONAL_ENV_VARS": [
                 "",
                 "# Optional: Traceloop cloud features",
                 "export TRACELOOP_API_KEY=\"your-traceloop-key\"",
@@ -822,7 +822,7 @@ def generate_provider_docs(provider_key: str, output_path: Path = None) -> None:
                 "# Anthropic configuration",
                 "export ANTHROPIC_API_KEY=\"your-anthropic-api-key\""
             ],
-            "OPENLLMETRY_ADDITIONAL_ENV_VARS": [
+            "TRACELOOP_ADDITIONAL_ENV_VARS": [
                 "",
                 "# Optional: Traceloop cloud features",
                 "export TRACELOOP_API_KEY=\"your-traceloop-key\"",
@@ -840,7 +840,7 @@ def generate_provider_docs(provider_key: str, output_path: Path = None) -> None:
                 "# Google AI configuration",
                 "export GOOGLE_API_KEY=\"your-google-ai-api-key\""
             ],
-            "OPENLLMETRY_ADDITIONAL_ENV_VARS": [
+            "TRACELOOP_ADDITIONAL_ENV_VARS": [
                 "",
                 "# Optional: Traceloop cloud features",
                 "export TRACELOOP_API_KEY=\"your-traceloop-key\"",
@@ -872,7 +872,7 @@ def generate_provider_docs(provider_key: str, output_path: Path = None) -> None:
                 "export AWS_SECRET_ACCESS_KEY=\"your-aws-secret-key\"",
                 "export AWS_DEFAULT_REGION=\"us-east-1\""
             ],
-            "OPENLLMETRY_ADDITIONAL_ENV_VARS": [
+            "TRACELOOP_ADDITIONAL_ENV_VARS": [
                 "",
                 "# Optional: Traceloop cloud features",
                 "export TRACELOOP_API_KEY=\"your-traceloop-key\"",
@@ -892,7 +892,7 @@ def generate_provider_docs(provider_key: str, output_path: Path = None) -> None:
                 "export AZURE_OPENAI_ENDPOINT=\"https://your-resource.openai.azure.com/\"",
                 "export AZURE_OPENAI_API_VERSION=\"2024-02-01\""
             ],
-            "OPENLLMETRY_ADDITIONAL_ENV_VARS": [
+            "TRACELOOP_ADDITIONAL_ENV_VARS": [
                 "",
                 "# Optional: Traceloop cloud features",
                 "export TRACELOOP_API_KEY=\"your-traceloop-key\"",
@@ -947,10 +947,10 @@ def generate_provider_docs(provider_key: str, output_path: Path = None) -> None:
             template_content = template_content.replace(openinference_match.group(0), replacement)
         
         # Add to Traceloop troubleshooting (item 5) if available
-        if variables.get("OPENLLMETRY_AVAILABLE", True):
+        if variables.get("TRACELOOP_AVAILABLE", True):
             openllmetry_env_vars = env_vars.copy()
-            if "OPENLLMETRY_ADDITIONAL_ENV_VARS" in provider_env_configs[provider_key]:
-                openllmetry_env_vars.extend(provider_env_configs[provider_key]["OPENLLMETRY_ADDITIONAL_ENV_VARS"])
+            if "TRACELOOP_ADDITIONAL_ENV_VARS" in provider_env_configs[provider_key]:
+                openllmetry_env_vars.extend(provider_env_configs[provider_key]["TRACELOOP_ADDITIONAL_ENV_VARS"])
             
             openllmetry_env_vars_block = "\n      ".join(openllmetry_env_vars)
             openllmetry_env_section = f'''
@@ -979,7 +979,7 @@ def generate_provider_docs(provider_key: str, output_path: Path = None) -> None:
     print(f"✅ Generated: {output_path}")
     print(f"🔧 Provider: {variables['PROVIDER_NAME']}")
     print(f"📦 OpenInference: {variables['OPENINFERENCE_PACKAGE']}")
-    print(f"📦 Traceloop: {variables['OPENLLMETRY_PACKAGE']}")
+    print(f"📦 Traceloop: {variables['TRACELOOP_PACKAGE']}")
 
 
 def main():

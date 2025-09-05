@@ -98,7 +98,7 @@ PROVIDER_SDK: "your-provider>=1.0.0"  # SDK package requirement
 ### Instrumentor Packages
 ```yaml
 OPENINFERENCE_PACKAGE: "openinference-instrumentation-your-provider"
-OPENLLMETRY_PACKAGE: "opentelemetry-instrumentation-your-provider"
+TRACELOOP_PACKAGE: "opentelemetry-instrumentation-your-provider"
 ```
 
 ### Code Examples

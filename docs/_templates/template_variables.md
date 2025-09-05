@@ -17,10 +17,10 @@ This document defines the template variables used in `multi_instrumentor_integra
 - `{{OPENINFERENCE_IMPORT}}` - Import path (e.g., "openinference.instrumentation.openai")
 - `{{OPENINFERENCE_CLASS}}` - Instrumentor class name (e.g., "OpenAIInstrumentor")
 
-### OpenLLMetry Configuration  
-- `{{OPENLLMETRY_PACKAGE}}` - Package name (e.g., "opentelemetry-instrumentation-openai")
-- `{{OPENLLMETRY_IMPORT}}` - Import path (e.g., "opentelemetry.instrumentation.openai")
-- `{{OPENLLMETRY_CLASS}}` - Instrumentor class name (e.g., "OpenAIInstrumentor")
+### Traceloop Configuration  
+- `{{TRACELOOP_PACKAGE}}` - Package name (e.g., "opentelemetry-instrumentation-openai")
+- `{{TRACELOOP_IMPORT}}` - Import path (e.g., "opentelemetry.instrumentation.openai")
+- `{{TRACELOOP_CLASS}}` - Instrumentor class name (e.g., "OpenAIInstrumentor")
 
 ### Code Examples
 - `{{BASIC_USAGE_EXAMPLE}}` - Simple usage example
@@ -37,7 +37,7 @@ This document defines the template variables used in `multi_instrumentor_integra
 ### Additional Configuration
 - `{{ADDITIONAL_ENV_CONFIG}}` - Provider-specific environment configuration
 - `{{MULTIPLE_INSTRUMENTORS_EXAMPLE}}` - Example of combining instrumentors
-- `{{MULTIPLE_OPENLLMETRY_INSTRUMENTORS_EXAMPLE}}` - Example of multiple OpenLLMetry instrumentors
+- `{{MULTIPLE_TRACELOOP_INSTRUMENTORS_EXAMPLE}}` - Example of multiple Traceloop instrumentors
 - `{{SEE_ALSO_LINKS}}` - Related documentation links
 
 ## Provider-Specific Variable Sets
@@ -55,9 +55,9 @@ OPENINFERENCE_PACKAGE: "openinference-instrumentation-openai"
 OPENINFERENCE_IMPORT: "openinference.instrumentation.openai"
 OPENINFERENCE_CLASS: "OpenAIInstrumentor"
 
-OPENLLMETRY_PACKAGE: "opentelemetry-instrumentation-openai"
-OPENLLMETRY_IMPORT: "opentelemetry.instrumentation.openai"
-OPENLLMETRY_CLASS: "OpenAIInstrumentor"
+TRACELOOP_PACKAGE: "opentelemetry-instrumentation-openai"
+TRACELOOP_IMPORT: "opentelemetry.instrumentation.openai"
+TRACELOOP_CLASS: "OpenAIInstrumentor"
 
 BASIC_USAGE_EXAMPLE: |
   client = openai.OpenAI()  # Uses OPENAI_API_KEY automatically
@@ -96,9 +96,9 @@ OPENINFERENCE_PACKAGE: "openinference-instrumentation-anthropic"
 OPENINFERENCE_IMPORT: "openinference.instrumentation.anthropic"
 OPENINFERENCE_CLASS: "AnthropicInstrumentor"
 
-OPENLLMETRY_PACKAGE: "opentelemetry-instrumentation-anthropic"
-OPENLLMETRY_IMPORT: "opentelemetry.instrumentation.anthropic"
-OPENLLMETRY_CLASS: "AnthropicInstrumentor"
+TRACELOOP_PACKAGE: "opentelemetry-instrumentation-anthropic"
+TRACELOOP_IMPORT: "opentelemetry.instrumentation.anthropic"
+TRACELOOP_CLASS: "AnthropicInstrumentor"
 
 BASIC_USAGE_EXAMPLE: |
   client = anthropic.Anthropic()  # Uses ANTHROPIC_API_KEY automatically

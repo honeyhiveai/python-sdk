@@ -6,24 +6,24 @@ Integrate with {{PROVIDER_NAME}}
    
    This guide helps you solve specific problems when integrating HoneyHive with {{PROVIDER_NAME}}, with support for multiple instrumentor options.
 
-This guide covers {{PROVIDER_NAME}} integration with HoneyHive's BYOI architecture, supporting both OpenInference and OpenLLMetry instrumentors.
+This guide covers {{PROVIDER_NAME}} integration with HoneyHive's BYOI architecture, supporting both OpenInference and Traceloop instrumentors.
 
 Choose Your Instrumentor
 ------------------------
 
-**Problem**: I need to choose between OpenInference and OpenLLMetry for {{PROVIDER_NAME}} integration.
+**Problem**: I need to choose between OpenInference and Traceloop for {{PROVIDER_NAME}} integration.
 
 **Solution**: Choose the instrumentor that best fits your needs:
 
 - **OpenInference**: Open-source, lightweight, great for getting started
-- **OpenLLMetry**: {{OPENLLMETRY_NOTE if OPENLLMETRY_AVAILABLE == False else "Enhanced LLM metrics, cost tracking, production optimizations"}}
+- **Traceloop**: {{TRACELOOP_NOTE if TRACELOOP_AVAILABLE == False else "Enhanced LLM metrics, cost tracking, production optimizations"}}
 
 .. raw:: html
 
    <div class="instrumentor-selector">
    <div class="instrumentor-tabs">
      <button class="instrumentor-button active" onclick="showInstrumentor(event, 'openinference-section')">OpenInference</button>
-     <button class="instrumentor-button" onclick="showInstrumentor(event, 'openllmetry-section')">OpenLLMetry</button>
+     <button class="instrumentor-button" onclick="showInstrumentor(event, 'openllmetry-section')">Traceloop</button>
    </div>
 
    <div id="openinference-section" class="instrumentor-content active">
@@ -190,11 +190,11 @@ Choose Your Instrumentor
 
 .. code-block:: bash
 
-   # Recommended: Install with OpenLLMetry {{PROVIDER_NAME}} integration
+   # Recommended: Install with Traceloop {{PROVIDER_NAME}} integration
    pip install honeyhive[traceloop-{{PROVIDER_KEY}}]
    
    # Alternative: Manual installation
-   pip install honeyhive {{OPENLLMETRY_PACKAGE}} {{PROVIDER_SDK}}
+   pip install honeyhive {{TRACELOOP_PACKAGE}} {{PROVIDER_SDK}}
 
 .. raw:: html
 
@@ -204,7 +204,7 @@ Choose Your Instrumentor
 .. code-block:: python
 
    from honeyhive import HoneyHiveTracer
-   from {{OPENLLMETRY_IMPORT}} import {{OPENLLMETRY_CLASS}}
+   from {{TRACELOOP_IMPORT}} import {{TRACELOOP_CLASS}}
    import {{PROVIDER_MODULE}}
    import os
 
@@ -213,15 +213,15 @@ Choose Your Instrumentor
    # HH_API_KEY=your-honeyhive-key
    # {{PROVIDER_API_KEY_NAME}}=your-{{PROVIDER_KEY}}-key
 
-   # Initialize with OpenLLMetry instrumentor
+   # Initialize with Traceloop instrumentor
    tracer = HoneyHiveTracer.init(
-       instrumentors=[{{OPENLLMETRY_CLASS}}()]  # Uses HH_API_KEY automatically
+       instrumentors=[{{TRACELOOP_CLASS}}()]  # Uses HH_API_KEY automatically
    )
 
    # Basic usage with automatic tracing
    try:
        {{BASIC_USAGE_EXAMPLE}}
-       # Automatically traced by OpenLLMetry with enhanced metrics! ✨
+       # Automatically traced by Traceloop with enhanced metrics! ✨
    except {{PROVIDER_EXCEPTION}} as e:
        print(f"{{PROVIDER_NAME}} API error: {e}")
    except Exception as e:
@@ -236,14 +236,14 @@ Choose Your Instrumentor
 
    from honeyhive import HoneyHiveTracer, trace, enrich_span
    from honeyhive.models import EventType
-   from {{OPENLLMETRY_IMPORT}} import {{OPENLLMETRY_CLASS}}
+   from {{TRACELOOP_IMPORT}} import {{TRACELOOP_CLASS}}
    import {{PROVIDER_MODULE}}
 
-   # Initialize HoneyHive with OpenLLMetry instrumentor
+   # Initialize HoneyHive with Traceloop instrumentor
    tracer = HoneyHiveTracer.init(
        api_key="your-honeyhive-key",
        source="production",
-       instrumentors=[{{OPENLLMETRY_CLASS}}()]
+       instrumentors=[{{TRACELOOP_CLASS}}()]
    )
 
    @trace(tracer=tracer, event_type=EventType.chain)
@@ -287,17 +287,17 @@ Choose Your Instrumentor
    </div>
    <div id="{{PROVIDER_KEY}}-openllmetry-troubleshoot" class="tab-content">
 
-**Common OpenLLMetry Issues**:
+**Common Traceloop Issues**:
 
 1. **Missing Traces**
    
    .. code-block:: python
    
-      # Ensure OpenLLMetry instrumentor is passed to tracer
-      from {{OPENLLMETRY_IMPORT}} import {{OPENLLMETRY_CLASS}}
+      # Ensure Traceloop instrumentor is passed to tracer
+      from {{TRACELOOP_IMPORT}} import {{TRACELOOP_CLASS}}
       
       tracer = HoneyHiveTracer.init(
-          instrumentors=[{{OPENLLMETRY_CLASS}}()]  # Don't forget this!
+          instrumentors=[{{TRACELOOP_CLASS}}()]  # Don't forget this!
       )
 
 2. **Enhanced Metrics Not Showing**
@@ -305,24 +305,24 @@ Choose Your Instrumentor
    .. code-block:: python
    
       # Ensure you're using the latest version
-      # pip install --upgrade {{OPENLLMETRY_PACKAGE}}
+      # pip install --upgrade {{TRACELOOP_PACKAGE}}
       
       # The instrumentor automatically captures enhanced metrics
-      from {{OPENLLMETRY_IMPORT}} import {{OPENLLMETRY_CLASS}}
-      tracer = HoneyHiveTracer.init(instrumentors=[{{OPENLLMETRY_CLASS}}()])
+      from {{TRACELOOP_IMPORT}} import {{TRACELOOP_CLASS}}
+      tracer = HoneyHiveTracer.init(instrumentors=[{{TRACELOOP_CLASS}}()])
 
-3. **Multiple OpenLLMetry Instrumentors**
+3. **Multiple Traceloop Instrumentors**
    
    .. code-block:: python
    
-      # You can combine multiple OpenLLMetry instrumentors
-      {{MULTIPLE_OPENLLMETRY_INSTRUMENTORS_EXAMPLE}}
+      # You can combine multiple Traceloop instrumentors
+      {{MULTIPLE_TRACELOOP_INSTRUMENTORS_EXAMPLE}}
 
 4. **Performance Optimization**
    
    .. code-block:: python
    
-      # OpenLLMetry instrumentors handle batching automatically
+      # Traceloop instrumentors handle batching automatically
       # No additional configuration needed for performance
 
 .. raw:: html
@@ -335,8 +335,8 @@ Choose Your Instrumentor
    </div>
    </div>
 
-Comparison: OpenInference vs OpenLLMetry for {{PROVIDER_NAME}}
----------------------------------------------------------------
+Comparison: OpenInference vs Traceloop for {{PROVIDER_NAME}}
+=======================================================================
 
 .. list-table:: Feature Comparison
    :header-rows: 1
@@ -344,7 +344,7 @@ Comparison: OpenInference vs OpenLLMetry for {{PROVIDER_NAME}}
 
    * - Feature
      - OpenInference
-     - OpenLLMetry
+     - Traceloop
    * - **Setup Complexity**
      - Simple, single instrumentor
      - Single instrumentor setup
@@ -373,7 +373,7 @@ Comparison: OpenInference vs OpenLLMetry for {{PROVIDER_NAME}}
 Migration Between Instrumentors
 -------------------------------
 
-**From OpenInference to OpenLLMetry**:
+**From OpenInference to Traceloop**:
 
 .. code-block:: python
 
@@ -381,17 +381,17 @@ Migration Between Instrumentors
    from {{OPENINFERENCE_IMPORT}} import {{OPENINFERENCE_CLASS}}
    tracer = HoneyHiveTracer.init(instrumentors=[{{OPENINFERENCE_CLASS}}()])
    
-   # After (OpenLLMetry) - different instrumentor package
-   from {{OPENLLMETRY_IMPORT}} import {{OPENLLMETRY_CLASS}}
-   tracer = HoneyHiveTracer.init(instrumentors=[{{OPENLLMETRY_CLASS}}()])
+   # After (Traceloop) - different instrumentor package
+   from {{TRACELOOP_IMPORT}} import {{TRACELOOP_CLASS}}
+   tracer = HoneyHiveTracer.init(instrumentors=[{{TRACELOOP_CLASS}}()])
 
-**From OpenLLMetry to OpenInference**:
+**From Traceloop to OpenInference**:
 
 .. code-block:: python
 
-   # Before (OpenLLMetry)
-   from {{OPENLLMETRY_IMPORT}} import {{OPENLLMETRY_CLASS}}
-   tracer = HoneyHiveTracer.init(instrumentors=[{{OPENLLMETRY_CLASS}}()])
+   # Before (Traceloop)
+   from {{TRACELOOP_IMPORT}} import {{TRACELOOP_CLASS}}
+   tracer = HoneyHiveTracer.init(instrumentors=[{{TRACELOOP_CLASS}}()])
    
    # After (OpenInference)
    from {{OPENINFERENCE_IMPORT}} import {{OPENINFERENCE_CLASS}}

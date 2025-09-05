@@ -6,24 +6,24 @@ Integrate with [Provider Name]
    
    This guide helps you solve specific problems when integrating HoneyHive with [Provider], with support for multiple instrumentor options.
 
-This guide covers [Provider] integration with HoneyHive's BYOI architecture, supporting both OpenInference and OpenLLMetry instrumentors.
+This guide covers [Provider] integration with HoneyHive's BYOI architecture, supporting both OpenInference and Traceloop instrumentors.
 
 Choose Your Instrumentor
 ------------------------
 
-**Problem**: I need to choose between OpenInference and OpenLLMetry for [Provider] integration.
+**Problem**: I need to choose between OpenInference and Traceloop for [Provider] integration.
 
 **Solution**: Both instrumentors work with HoneyHive. Choose based on your needs:
 
 - **OpenInference**: Open-source, lightweight, great for getting started
-- **OpenLLMetry**: Enhanced LLM metrics, cost tracking, production optimizations
+- **Traceloop**: Enhanced LLM metrics, cost tracking, production optimizations
 
 .. raw:: html
 
    <div class="instrumentor-selector">
    <div class="instrumentor-tabs">
      <button class="instrumentor-button active" onclick="showInstrumentor(event, 'openinference-section')">OpenInference</button>
-     <button class="instrumentor-button" onclick="showInstrumentor(event, 'openllmetry-section')">OpenLLMetry</button>
+     <button class="instrumentor-button" onclick="showInstrumentor(event, 'openllmetry-section')">Traceloop</button>
    </div>
 
    <div id="openinference-section" class="instrumentor-content active">
@@ -148,7 +148,7 @@ OpenInference Integration
 
    <div id="openllmetry-section" class="instrumentor-content">
 
-OpenLLMetry Integration
+Traceloop Integration
 -----------------------
 
 **Best for**: Production deployments, cost tracking, enhanced LLM observability
@@ -166,7 +166,7 @@ OpenLLMetry Integration
 
 .. code-block:: bash
 
-   # Recommended: Install with OpenLLMetry [Provider] integration
+   # Recommended: Install with Traceloop [Provider] integration
    pip install honeyhive[traceloop-[provider]]
    
    # Alternative: Manual installation
@@ -189,7 +189,7 @@ OpenLLMetry Integration
    # HH_API_KEY=your-honeyhive-key
    # [PROVIDER]_API_KEY=your-[provider]-key
 
-   # Initialize OpenLLMetry first
+   # Initialize Traceloop first
    Traceloop.init()
    
    # Initialize HoneyHive tracer
@@ -199,7 +199,7 @@ OpenLLMetry Integration
    try:
        client = [provider_sdk].[ClientClass]()  # Uses [PROVIDER]_API_KEY automatically
        # [Provider-specific API call example]
-       # Automatically traced by OpenLLMetry with enhanced metrics! ✨
+       # Automatically traced by Traceloop with enhanced metrics! ✨
    except [provider_sdk].[ProviderAPIError] as e:
        print(f"[Provider] API error: {e}")
    except Exception as e:
@@ -217,7 +217,7 @@ OpenLLMetry Integration
    from traceloop.sdk import Traceloop
    import [provider_sdk]
 
-   # Initialize OpenLLMetry with custom settings
+   # Initialize Traceloop with custom settings
    Traceloop.init(
        app_name="[your-app-name]",
        disable_batch=False,  # Enable batching for performance
@@ -245,7 +245,7 @@ OpenLLMetry Integration
        })
        
        try:
-           # [First API call - OpenLLMetry captures cost and token metrics]
+           # [First API call - Traceloop captures cost and token metrics]
            # [Second API call - Automatic latency and performance tracking]
            
            # Add result metadata
@@ -277,7 +277,7 @@ OpenLLMetry Integration
    </div>
    </div>
 
-Comparison: OpenInference vs OpenLLMetry
+Comparison: OpenInference vs Traceloop
 -----------------------------------------
 
 .. list-table:: Feature Comparison
@@ -286,7 +286,7 @@ Comparison: OpenInference vs OpenLLMetry
 
    * - Feature
      - OpenInference
-     - OpenLLMetry
+     - Traceloop
    * - **Setup Complexity**
      - Simple, minimal config
      - Slightly more setup steps
@@ -327,18 +327,18 @@ Environment Configuration
    # [Provider] configuration
    export [PROVIDER]_API_KEY="your-[provider]-api-key"
 
-**Additional for OpenLLMetry**:
+**Additional for Traceloop**:
 
 .. code-block:: bash
 
-   # Optional: OpenLLMetry cloud features
+   # Optional: Traceloop cloud features
    export TRACELOOP_API_KEY="your-traceloop-key"
    export TRACELOOP_BASE_URL="https://api.traceloop.com"
 
 Migration Between Instrumentors
 -------------------------------
 
-**From OpenInference to OpenLLMetry**:
+**From OpenInference to Traceloop**:
 
 .. code-block:: python
 
@@ -346,16 +346,16 @@ Migration Between Instrumentors
    from openinference.instrumentation.[provider] import [Provider]Instrumentor
    tracer = HoneyHiveTracer.init(instrumentors=[[Provider]Instrumentor()])
    
-   # After (OpenLLMetry)
+   # After (Traceloop)
    from traceloop.sdk import Traceloop
    Traceloop.init()
    tracer = HoneyHiveTracer.init()  # No instrumentors needed
 
-**From OpenLLMetry to OpenInference**:
+**From Traceloop to OpenInference**:
 
 .. code-block:: python
 
-   # Before (OpenLLMetry)
+   # Before (Traceloop)
    from traceloop.sdk import Traceloop
    Traceloop.init()
    tracer = HoneyHiveTracer.init()
@@ -378,7 +378,7 @@ Troubleshooting
           instrumentors=[[Provider]Instrumentor()]  # Don't forget this!
       )
 
-2. **OpenLLMetry: Import Conflicts**
+2. **Traceloop: Import Conflicts**
    
    .. code-block:: python
    
@@ -393,7 +393,7 @@ Troubleshooting
    
    .. code-block:: python
    
-      # OpenLLMetry: Enable batching
+      # Traceloop: Enable batching
       Traceloop.init(disable_batch=False, batch_size=100)
       
       # OpenInference: Use efficient span processors
