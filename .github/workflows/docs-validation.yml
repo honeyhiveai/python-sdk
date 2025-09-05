@@ -12,6 +12,9 @@ on:
   push:
     branches: [main]
     paths: ['docs/**', '.github/workflows/docs-*.yml']
+    paths-ignore:
+      - '.agent-os/**'
+      - 'docs/MERMAID_STANDARD.md'
 
   # Allow manual trigger for testing
   workflow_dispatch:

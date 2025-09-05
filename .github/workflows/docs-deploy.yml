@@ -12,6 +12,9 @@ on:
       - 'src/**'
       - '*.md'
       - 'pyproject.toml'
+    paths-ignore:
+      - '.agent-os/**'
+      - 'docs/MERMAID_STANDARD.md'
   release:
     types: [published]
   workflow_dispatch:

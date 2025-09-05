@@ -175,6 +175,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+### Changed
+- **CI/CD Optimization**: Added path-based detection logic to GitHub Actions workflows to prevent unnecessary runs on Agent OS specification changes (2025-09-05)
+  - Updated `tox-full-suite.yml`, `docs-deploy.yml`, `docs-preview.yml`, `docs-validation.yml`, and `lambda-tests.yml` with `paths-ignore` filters
+  - Excluded `.agent-os/**` directory and `docs/MERMAID_STANDARD.md` from triggering workflows
+  - Added comprehensive path filters to `lambda-tests.yml` for Lambda-specific changes
+  - Removed obsolete planning documents (`DIVIO_REORGANIZATION_PLAN.md`, `CONTENT_PARITY_ANALYSIS.md`)
+  - Added documentation in `docs/development/workflow-optimization.rst`
+
+### Fixed
+
 #### Enhanced Documentation System (2025-09-04)
 - **CSS-Based Dual-Theme System for Mermaid Sequence Diagrams**: Implemented automatic light/dark theme detection using `@media (prefers-color-scheme: dark)` with targeted CSS selectors for participant text (white on blue backgrounds) and message text (black in light mode, white in dark mode)
 - **Strict CHANGELOG Enforcement**: Removed 24-hour grace period from changelog update checks to ensure every significant change is documented immediately in high-frequency development environments

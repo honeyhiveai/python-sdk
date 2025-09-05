@@ -13,6 +13,9 @@ on:
       - '*.md'
       - 'pyproject.toml'
       - '.github/workflows/docs-*.yml'
+    paths-ignore:
+      - '.agent-os/**'
+      - 'docs/MERMAID_STANDARD.md'
 
 jobs:
   validate-api:

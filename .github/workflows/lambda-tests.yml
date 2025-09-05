@@ -25,8 +25,26 @@ name: AWS Lambda Compatibility Tests
         required: false
   push:
     branches: [main]  # Only run on pushes to the protected main branch
+    paths:
+      - 'src/**'
+      - 'tests/**'
+      - 'lambda_functions/**'
+      - 'tox.ini'
+      - 'pyproject.toml'
+      - '.github/workflows/lambda-tests.yml'
+    paths-ignore:
+      - '.agent-os/**'
   pull_request:
     # Run on all PRs - immediate feedback on Lambda compatibility
+    paths:
+      - 'src/**'
+      - 'tests/**'
+      - 'lambda_functions/**'
+      - 'tox.ini'
+      - 'pyproject.toml'
+      - '.github/workflows/lambda-tests.yml'
+    paths-ignore:
+      - '.agent-os/**'
   schedule:
     # Run Lambda tests daily at 2 AM UTC
     - cron: '0 2 * * *'

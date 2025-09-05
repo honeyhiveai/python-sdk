@@ -51,6 +51,7 @@ The HoneyHive SDK employs a **three-tier testing strategy**:
    testing/mocking-strategies
    testing/ci-cd-integration
    testing/troubleshooting-tests
+   workflow-optimization
 
 **Quick Development Setup:**
 
