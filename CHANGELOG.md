@@ -176,16 +176,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 
 ### Changed
-- **CI/CD Optimization**: Added path-based detection logic to GitHub Actions workflows to prevent unnecessary runs on Agent OS specification changes (2025-09-05)
+- **CI/CD Optimization**: ✅ COMPLETE - Added path-based detection logic to GitHub Actions workflows to prevent unnecessary runs on Agent OS specification changes (2025-09-05)
   - Updated `tox-full-suite.yml`, `docs-deploy.yml`, `docs-preview.yml`, `docs-validation.yml`, and `lambda-tests.yml` with `paths-ignore` filters
-  - Excluded `.agent-os/**` directory and `docs/MERMAID_STANDARD.md` from triggering workflows
+  - Excluded `.agent-os/**` directory from triggering workflows (Agent OS specifications no longer cause unnecessary CI runs)
   - Added comprehensive path filters to `lambda-tests.yml` for Lambda-specific changes
-  - Removed obsolete planning documents (`DIVIO_REORGANIZATION_PLAN.md`, `CONTENT_PARITY_ANALYSIS.md`)
+  - **Fixed workflow parsing failures**: Resolved duplicate permissions declarations causing workflows to fail at parsing stage
+  - **Permissions optimization**: Standardized on workflow-level permissions, removed conflicting job-level permissions
+  - Removed obsolete planning documents (`DIVIO_REORGANIZATION_PLAN.md`, `CONTENT_PARITY_ANALYSIS.md`, `MERMAID_STANDARD.md`)
   - Added documentation in `docs/development/workflow-optimization.rst`
   - **Added Agent OS rule**: Mandatory CI/CD workflow documentation synchronization requirement in `.cursorrules` and `.agent-os/standards/best-practices.md`
   - **Removed HH_PROJECT environment variable**: Cleaned up workflows to remove unused `HH_PROJECT` variable from `tox-full-suite.yml` and `lambda-tests.yml`
-  - **Updated CI/CD documentation**: Synchronized `docs/development/testing/ci-cd-integration.rst` with current workflow configuration
-  - **Removed redundant MERMAID_STANDARD.md**: Deleted `docs/MERMAID_STANDARD.md` as Mermaid standards are already documented in `.agent-os/standards/code-style.md`
+  - **Updated CI/CD documentation**: Synchronized `docs/development/testing/ci-cd-integration.rst` with current workflow configuration and permissions fixes
 
 ### Fixed
 

@@ -30,9 +30,15 @@ Our GitHub Actions Workflows
 
 All workflows now include intelligent path detection to prevent unnecessary runs:
 
-- **Excluded Paths**: `.agent-os/**`, `docs/MERMAID_STANDARD.md`
+- **Excluded Paths**: `.agent-os/**`
 - **Included Paths**: `src/**`, `tests/**`, `docs/**`, `tox.ini`, `pyproject.toml`
 - **Benefit**: Agent OS specification changes no longer trigger full CI/CD pipelines
+
+**Permissions Configuration** (Fixed 2025-09-05):
+
+- **Workflow-level permissions**: Defined at the top level for all jobs
+- **No duplicate job-level permissions**: Prevents workflow parsing failures
+- **GitHub Pages workflows**: Require `contents: read`, `pages: write`, `id-token: write`
 
 **Key Testing Commands Used in CI**:
 
@@ -168,7 +174,7 @@ This workflow deploys documentation to GitHub Pages with intelligent triggering:
      push:
        branches: [main, complete-refactor]
        paths: ['docs/**', 'src/**', '*.md', 'pyproject.toml']
-       paths-ignore: ['.agent-os/**', 'docs/MERMAID_STANDARD.md']
+       paths-ignore: ['.agent-os/**']
 
 - **Features**: AI Assistant validation protocol, Sphinx build with warnings as errors
 - **Deployment**: Automatic GitHub Pages deployment on successful build
