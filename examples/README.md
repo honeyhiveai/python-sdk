@@ -1,5 +1,7 @@
 # HoneyHive Python SDK Examples
 
+<!-- Test change to verify pre-commit hook -->
+
 This directory contains comprehensive examples demonstrating how to use the HoneyHive Python SDK with the **recommended initialization pattern**.
 
 ## 🚀 **Primary Initialization Pattern (Recommended)**
