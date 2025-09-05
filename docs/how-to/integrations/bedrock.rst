@@ -484,7 +484,7 @@ Choose Your Instrumentor
       # The instrumentor automatically captures enhanced metrics
       from opentelemetry.instrumentation.bedrock import BedrockInstrumentor
       # Step 1: Initialize HoneyHive tracer first (without instrumentors)
-   tracer = HoneyHiveTracer.init()
+      tracer = HoneyHiveTracer.init()
    
    # Step 2: Initialize instrumentor separately with tracer_provider
    instrumentor = BedrockInstrumentor()
