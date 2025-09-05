@@ -55,6 +55,7 @@ All workflows now include intelligent path detection to prevent unnecessary runs
    tox -e unit              # Unit tests (fast, mocked)
    tox -e integration       # Integration tests (component interaction)
    tox -e real-api          # Real API tests (live validation) - NEW!
+   tox -e docs              # Documentation build with clean cache (prevents Sphinx caching issues)
    tox -e lint             # Code quality (pylint + mypy)
    tox -e format           # Code formatting (black + isort)
    tox -e py311,py312,py313 # Multi-Python testing
