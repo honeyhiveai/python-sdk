@@ -67,11 +67,11 @@ Project Configuration
    :type: str
    :value: None
 
-   **Description**: Default project name for operations
+   **Description**: **[Deprecated]** Default project name for operations. Ignored - project derived from API key.
    
-   **Environment Variable**: ``HH_PROJECT``
+   **Environment Variable**: ``HH_PROJECT`` (deprecated)
    
-   **Required**: Yes (for most operations)
+   **Required**: No (deprecated - automatically derived)
    
    **Format**: Alphanumeric with hyphens and underscores
    

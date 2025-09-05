@@ -245,7 +245,6 @@ Choose Your Instrumentor
    
       # HoneyHive configuration
       export HH_API_KEY="your-honeyhive-api-key"
-      export HH_PROJECT="bedrock-integration"
       export HH_SOURCE="production"
       
       # AWS Bedrock configuration
@@ -497,7 +496,6 @@ Choose Your Instrumentor
    
       # HoneyHive configuration
       export HH_API_KEY="your-honeyhive-api-key"
-      export HH_PROJECT="bedrock-integration"
       export HH_SOURCE="production"
       
       # AWS Bedrock configuration
@@ -520,7 +518,7 @@ Choose Your Instrumentor
    </div>
 
 Comparison: OpenInference vs Traceloop for AWS Bedrock
----------------------------------------------------------------
+=======================================================================
 
 .. list-table:: Feature Comparison
    :header-rows: 1

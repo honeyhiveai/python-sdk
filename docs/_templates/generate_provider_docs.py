@@ -798,7 +798,6 @@ def generate_provider_docs(provider_key: str, output_path: Path = None) -> None:
             "ENV_VARS": [
                 "# HoneyHive configuration",
                 "export HH_API_KEY=\"your-honeyhive-api-key\"",
-                "export HH_PROJECT=\"openai-integration\"",
                 "export HH_SOURCE=\"production\"",
                 "",
                 "# OpenAI configuration",
@@ -816,7 +815,6 @@ def generate_provider_docs(provider_key: str, output_path: Path = None) -> None:
             "ENV_VARS": [
                 "# HoneyHive configuration",
                 "export HH_API_KEY=\"your-honeyhive-api-key\"",
-                "export HH_PROJECT=\"anthropic-integration\"",
                 "export HH_SOURCE=\"production\"",
                 "",
                 "# Anthropic configuration",
@@ -834,7 +832,6 @@ def generate_provider_docs(provider_key: str, output_path: Path = None) -> None:
             "ENV_VARS": [
                 "# HoneyHive configuration",
                 "export HH_API_KEY=\"your-honeyhive-api-key\"",
-                "export HH_PROJECT=\"google-ai-integration\"",
                 "export HH_SOURCE=\"production\"",
                 "",
                 "# Google AI configuration",
@@ -852,7 +849,6 @@ def generate_provider_docs(provider_key: str, output_path: Path = None) -> None:
             "ENV_VARS": [
                 "# HoneyHive configuration",
                 "export HH_API_KEY=\"your-honeyhive-api-key\"",
-                "export HH_PROJECT=\"google-adk-integration\"",
                 "export HH_SOURCE=\"production\"",
                 "",
                 "# Google Agent Development Kit (ADK) configuration",
@@ -864,7 +860,6 @@ def generate_provider_docs(provider_key: str, output_path: Path = None) -> None:
             "ENV_VARS": [
                 "# HoneyHive configuration",
                 "export HH_API_KEY=\"your-honeyhive-api-key\"",
-                "export HH_PROJECT=\"bedrock-integration\"",
                 "export HH_SOURCE=\"production\"",
                 "",
                 "# AWS Bedrock configuration",
@@ -884,7 +879,6 @@ def generate_provider_docs(provider_key: str, output_path: Path = None) -> None:
             "ENV_VARS": [
                 "# HoneyHive configuration",
                 "export HH_API_KEY=\"your-honeyhive-api-key\"",
-                "export HH_PROJECT=\"azure-openai-integration\"",
                 "export HH_SOURCE=\"production\"",
                 "",
                 "# Azure OpenAI configuration",
@@ -904,7 +898,6 @@ def generate_provider_docs(provider_key: str, output_path: Path = None) -> None:
             "ENV_VARS": [
                 "# HoneyHive configuration",
                 "export HH_API_KEY=\"your-honeyhive-api-key\"",
-                "export HH_PROJECT=\"mcp-integration\"",
                 "export HH_SOURCE=\"production\"",
                 "",
                 "# MCP configuration",

@@ -233,7 +233,6 @@ Choose Your Instrumentor
    
       # HoneyHive configuration
       export HH_API_KEY="your-honeyhive-api-key"
-      export HH_PROJECT="google-adk-integration"
       export HH_SOURCE="production"
       
       # Google Agent Development Kit (ADK) configuration

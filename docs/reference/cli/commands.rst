@@ -334,7 +334,7 @@ Manage tracing sessions.
 
    .. option:: Project name.
       
-      **Required**: Yes (or set via ``HH_PROJECT``)
+      **Required**: Yes (``HH_PROJECT`` deprecated - project derived from API key)
 
    .. option:: --limit <number>
 
@@ -1080,7 +1080,7 @@ The CLI respects these environment variables:
 
 .. envvar:: HH_PROJECT
 
-   Default project name for operations.
+   **[Deprecated]** Default project name for operations. Ignored - project derived from API key.
 
 .. envvar:: HH_CONFIG_FILE
 

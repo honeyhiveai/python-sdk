@@ -730,7 +730,6 @@ Use environment variables to manage multiple API keys:
 
    # .env file
    HH_API_KEY=your-honeyhive-key
-   HH_PROJECT=multi-llm-app
    
    OPENAI_API_KEY=your-openai-key
    ANTHROPIC_API_KEY=your-anthropic-key

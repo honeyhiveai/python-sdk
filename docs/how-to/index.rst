@@ -142,7 +142,7 @@ Common issues and step-by-step solutions for HoneyHive integration challenges.
 
       import os
       print(f"API Key set: {'HH_API_KEY' in os.environ}")
-      print(f"Project set: {'HH_PROJECT' in os.environ}")
+      print(f"Source set: {'HH_SOURCE' in os.environ}")  # Optional environment identifier
 
 2. **Verify network connectivity**:
 

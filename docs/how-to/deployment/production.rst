@@ -630,7 +630,6 @@ Kubernetes Deployment
    metadata:
      name: honeyhive-config
    data:
-     HH_PROJECT: "production-app"
      HH_SOURCE: "production"
      HH_BASE_URL: "https://api.honeyhive.ai"
 

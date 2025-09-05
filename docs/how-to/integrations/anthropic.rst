@@ -202,7 +202,6 @@ Choose Your Instrumentor
    
       # HoneyHive configuration
       export HH_API_KEY="your-honeyhive-api-key"
-      export HH_PROJECT="anthropic-integration"
       export HH_SOURCE="production"
       
       # Anthropic configuration
@@ -409,7 +408,6 @@ Choose Your Instrumentor
    
       # HoneyHive configuration
       export HH_API_KEY="your-honeyhive-api-key"
-      export HH_PROJECT="anthropic-integration"
       export HH_SOURCE="production"
       
       # Anthropic configuration
@@ -430,7 +428,7 @@ Choose Your Instrumentor
    </div>
 
 Comparison: OpenInference vs Traceloop for Anthropic
----------------------------------------------------------------
+=======================================================================
 
 .. list-table:: Feature Comparison
    :header-rows: 1

@@ -321,7 +321,6 @@ Environment Configuration
 
    # HoneyHive configuration
    export HH_API_KEY="your-honeyhive-api-key"
-   export HH_PROJECT="your-project-name"
    export HH_SOURCE="production"
    
    # [Provider] configuration

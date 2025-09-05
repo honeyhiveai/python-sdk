@@ -223,7 +223,6 @@ Choose Your Instrumentor
    
       # HoneyHive configuration
       export HH_API_KEY="your-honeyhive-api-key"
-      export HH_PROJECT="openai-integration"
       export HH_SOURCE="production"
       
       # OpenAI configuration
@@ -451,7 +450,6 @@ Choose Your Instrumentor
    
       # HoneyHive configuration
       export HH_API_KEY="your-honeyhive-api-key"
-      export HH_PROJECT="openai-integration"
       export HH_SOURCE="production"
       
       # OpenAI configuration
@@ -472,7 +470,7 @@ Choose Your Instrumentor
    </div>
 
 Comparison: OpenInference vs Traceloop for OpenAI
----------------------------------------------------------------
+=======================================================================
 
 .. list-table:: Feature Comparison
    :header-rows: 1

@@ -360,7 +360,6 @@ Development Environment
    # .env.development
    HH_API_KEY=hh_dev_1234567890abcdef
    HH_BASE_URL=https://api-dev.honeyhive.ai
-   HH_PROJECT=my-app-dev
    HH_TEST_MODE=false
    HH_DEBUG=true
 
@@ -381,7 +380,6 @@ Testing Environment
    # .env.test
    HH_API_KEY=hh_test_1234567890abcdef
    HH_BASE_URL=https://api-test.honeyhive.ai
-   HH_PROJECT=my-app-test
    HH_TEST_MODE=true
    HH_DEBUG=false
 
@@ -419,7 +417,6 @@ Production Environment
 
    # Production deployment
    export HH_API_KEY="hh_prod_secure_key_here"
-   export HH_PROJECT="my-app-prod"
    
    # Start application
    python app.py
@@ -456,7 +453,6 @@ GitHub Actions
        - name: Run tests
          env:
            HH_API_KEY: ${{ secrets.HH_TEST_API_KEY }}
-           HH_PROJECT: "ci-test-project"
            HH_TEST_MODE: "true"
          run: |
            pytest tests/
@@ -475,7 +471,6 @@ GitLab CI
    test:
      image: python:3.11
      variables:
-       HH_PROJECT: "gitlab-ci-test"
        HH_TEST_MODE: "true"
      script:
        - pip install honeyhive pytest
@@ -500,7 +495,6 @@ Jenkins
        
        environment {
            HH_API_KEY = credentials('honeyhive-test-api-key')
-           HH_PROJECT = 'jenkins-test'
            HH_TEST_MODE = 'true'
        }
        
@@ -563,7 +557,6 @@ Docker Authentication
        build: .
        environment:
          - HH_API_KEY=${HH_API_KEY}
-         - HH_PROJECT=docker-app
        env_file:
          - .env.production
 
