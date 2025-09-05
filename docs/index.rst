@@ -146,7 +146,7 @@ New to HoneyHive? Start here:
    Avoid dependency conflicts by choosing exactly which LLM libraries to instrument. Supports multiple instrumentor providers:
    
    - OpenInference
-   - OpenLLMetry
+   - Traceloop
    - Build your own custom instrumentors
 
 **Multi-Instance Tracer Support**
@@ -429,7 +429,7 @@ New to HoneyHive? Start here:
 - `Python SDK on PyPI <https://pypi.org/project/honeyhive/>`_
 - `GitHub Repository <https://github.com/honeyhiveai/python-sdk>`_
 - `OpenInference Instrumentors <https://github.com/Arize-ai/openinference>`_ (supported instrumentor provider)
-- `OpenLLMetry Instrumentors <https://github.com/traceloop/openllmetry>`_ (upcoming support)
+- `Traceloop Instrumentors <https://github.com/traceloop/openllmetry>`_ - Enhanced metrics and production optimizations
 - Compatibility Matrix (full testing documentation coming soon)
 
 Indices and Tables

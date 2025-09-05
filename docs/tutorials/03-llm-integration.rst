@@ -758,7 +758,7 @@ Here's a complete example using multiple providers with both instrumentor option
        instrumentors=[OpenAIInstrumentor(), AnthropicInstrumentor()]
    )
 
-**Using OpenLLMetry (Enhanced Metrics):**
+**Using Traceloop (Enhanced Metrics):**
 
 .. code-block:: python
 

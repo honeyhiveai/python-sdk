@@ -106,8 +106,8 @@ PROVIDER_CONFIGS = {
        
        tracer = HoneyHiveTracer.init(
            instrumentors=[
-               OpenAIInstrumentor(),      # OpenLLMetry OpenAI
-               AnthropicInstrumentor()    # OpenLLMetry Anthropic
+               OpenAIInstrumentor(),      # Traceloop OpenAI
+               AnthropicInstrumentor()    # Traceloop Anthropic
            ]
        )''',
        
@@ -192,8 +192,8 @@ PROVIDER_CONFIGS = {
        
        tracer = HoneyHiveTracer.init(
            instrumentors=[
-               AnthropicInstrumentor(),      # OpenLLMetry Anthropic
-               OpenAIInstrumentor()          # OpenLLMetry OpenAI
+               AnthropicInstrumentor(),      # Traceloop Anthropic
+               OpenAIInstrumentor()          # Traceloop OpenAI
            ]
        )''',
        
@@ -254,7 +254,7 @@ PROVIDER_CONFIGS = {
         "OPENLLMETRY_IMPORT": "opentelemetry.instrumentation.google_adk",
         "OPENLLMETRY_CLASS": "GoogleADKInstrumentor",
         "OPENLLMETRY_AVAILABLE": False,
-        "OPENLLMETRY_NOTE": "OpenLLMetry does not currently provide a Google ADK instrumentor. Only OpenInference instrumentation is available for this provider.",
+        "TRACELOOP_NOTE": "Traceloop does not currently provide a Google ADK instrumentor. Only OpenInference instrumentation is available for this provider.",
         
         "BASIC_USAGE_EXAMPLE": '''agent = adk.Agent(
            name="document_processor",
@@ -337,15 +337,15 @@ PROVIDER_CONFIGS = {
            ]
        )''',
        
-        "MULTIPLE_OPENLLMETRY_INSTRUMENTORS_EXAMPLE": '''# OpenLLMetry Google ADK instrumentor not available
-       # Use OpenInference for Google ADK + OpenLLMetry for other providers
+        "MULTIPLE_OPENLLMETRY_INSTRUMENTORS_EXAMPLE": '''# Traceloop Google ADK instrumentor not available
+       # Use OpenInference for Google ADK + Traceloop for other providers
        from openinference.instrumentation.google_adk import GoogleADKInstrumentor
        from opentelemetry.instrumentation.openai import OpenAIInstrumentor
        
        tracer = HoneyHiveTracer.init(
            instrumentors=[
                GoogleADKInstrumentor(),      # OpenInference (only option)
-               OpenAIInstrumentor()          # OpenLLMetry
+               OpenAIInstrumentor()          # Traceloop
            ]
        )''',
        
@@ -466,8 +466,8 @@ PROVIDER_CONFIGS = {
        
        tracer = HoneyHiveTracer.init(
            instrumentors=[
-               BedrockInstrumentor(),       # OpenLLMetry Bedrock
-               OpenAIInstrumentor()         # OpenLLMetry OpenAI
+               BedrockInstrumentor(),       # Traceloop Bedrock
+               OpenAIInstrumentor()         # Traceloop OpenAI
            ]
        )''',
        
@@ -583,7 +583,7 @@ PROVIDER_CONFIGS = {
        tracer = HoneyHiveTracer.init(
            instrumentors=[
                OpenAIInstrumentor(),      # Works for both OpenAI and Azure OpenAI
-               AnthropicInstrumentor()    # OpenLLMetry Anthropic
+               AnthropicInstrumentor()    # Traceloop Anthropic
            ]
        )''',
        
@@ -626,7 +626,7 @@ PROVIDER_CONFIGS = {
        # Execute tool via MCP
        result = client.call_tool(
            name="web_search",
-           arguments={"query": "OpenLLMetry MCP integration"}
+           arguments={"query": "Traceloop MCP integration"}
        )''',
        
         "ADVANCED_FUNCTION_NAME": "multi_tool_mcp_workflow",
@@ -702,8 +702,8 @@ PROVIDER_CONFIGS = {
        
        tracer = HoneyHiveTracer.init(
            instrumentors=[
-               MCPInstrumentor(),         # OpenLLMetry MCP
-               OpenAIInstrumentor()       # OpenLLMetry OpenAI
+               MCPInstrumentor(),         # Traceloop MCP
+               OpenAIInstrumentor()       # Traceloop OpenAI
            ]
        )''',
        
@@ -736,10 +736,10 @@ def generate_provider_docs(provider_key: str, output_path: Path = None) -> None:
     # Get provider configuration
     variables = PROVIDER_CONFIGS[provider_key]
     
-    # Handle OpenLLMetry availability
+    # Handle Traceloop availability
     if variables.get("OPENLLMETRY_AVAILABLE") == False:
-        # Replace OpenLLMetry description with unavailability note
-        openllmetry_desc = variables.get("OPENLLMETRY_NOTE", "OpenLLMetry instrumentor not available for this provider.")
+        # Replace Traceloop description with unavailability note
+        openllmetry_desc = variables.get("OPENLLMETRY_NOTE", "Traceloop instrumentor not available for this provider.")
         template_content = template_content.replace(
             "{{OPENLLMETRY_NOTE if OPENLLMETRY_AVAILABLE == False else \"Enhanced LLM metrics, cost tracking, production optimizations\"}}",
             openllmetry_desc
@@ -747,14 +747,14 @@ def generate_provider_docs(provider_key: str, output_path: Path = None) -> None:
         
         # Replace the instrumentor selection description
         template_content = template_content.replace(
-            "- **OpenLLMetry**: Enhanced LLM metrics, cost tracking, production optimizations",
-            f"- **OpenLLMetry**: {openllmetry_desc}"
+            "- **Traceloop**: Enhanced LLM metrics, cost tracking, production optimizations",
+            f"- **Traceloop**: {openllmetry_desc}"
         )
         
-        # Replace OpenLLMetry section content with unavailability message
+        # Replace Traceloop section content with unavailability message
         openllmetry_section_replacement = f'''
 .. note::
-   **OpenLLMetry Not Available**
+   **Traceloop Not Available**
    
    {openllmetry_desc}
    
@@ -765,23 +765,23 @@ def generate_provider_docs(provider_key: str, output_path: Path = None) -> None:
    </div>
    </div>'''
         
-        # Find and replace the OpenLLMetry section content
+        # Find and replace the Traceloop section content
         import re
         # Replace everything between openllmetry-section div and its closing
         pattern = r'(<div id="openllmetry-section"[^>]*>)(.*?)(<div class="instrumentor-content">|</div>\s*</div>)'
         replacement = r'\1' + openllmetry_section_replacement
         template_content = re.sub(pattern, replacement, template_content, flags=re.DOTALL)
         
-        # Remove comparison table and migration sections when OpenLLMetry is not available
+        # Remove comparison table and migration sections when Traceloop is not available
         # Remove comparison section
-        comparison_pattern = r'Comparison: OpenInference vs OpenLLMetry.*?(?=\n[A-Z][^\n]*\n-+|\nSee Also\n-+|\Z)'
+        comparison_pattern = r'Comparison: OpenInference vs Traceloop.*?(?=\n[A-Z][^\n]*\n-+|\nSee Also\n-+|\Z)'
         template_content = re.sub(comparison_pattern, '', template_content, flags=re.DOTALL)
         
         # Remove migration section
         migration_pattern = r'Migration Between Instrumentors\n-+.*?(?=\nSee Also\n-+|\Z)'
         template_content = re.sub(migration_pattern, '', template_content, flags=re.DOTALL)
         
-        # Remove any standalone content after the OpenLLMetry section since all config goes in troubleshooting tabs
+        # Remove any standalone content after the Traceloop section since all config goes in troubleshooting tabs
         after_openllmetry_pattern = r'(.. raw:: html\n\n   </div>\n   </div>\n\n)(.*?)(?=.. raw:: html\n\n   <script>)'
         template_content = re.sub(after_openllmetry_pattern, r'\1', template_content, flags=re.DOTALL)
         
@@ -806,7 +806,7 @@ def generate_provider_docs(provider_key: str, output_path: Path = None) -> None:
             ],
             "OPENLLMETRY_ADDITIONAL_ENV_VARS": [
                 "",
-                "# Optional: OpenLLMetry cloud features",
+                "# Optional: Traceloop cloud features",
                 "export TRACELOOP_API_KEY=\"your-traceloop-key\"",
                 "export TRACELOOP_BASE_URL=\"https://api.traceloop.com\""
             ]
@@ -824,7 +824,7 @@ def generate_provider_docs(provider_key: str, output_path: Path = None) -> None:
             ],
             "OPENLLMETRY_ADDITIONAL_ENV_VARS": [
                 "",
-                "# Optional: OpenLLMetry cloud features",
+                "# Optional: Traceloop cloud features",
                 "export TRACELOOP_API_KEY=\"your-traceloop-key\"",
                 "export TRACELOOP_BASE_URL=\"https://api.traceloop.com\""
             ]
@@ -842,7 +842,7 @@ def generate_provider_docs(provider_key: str, output_path: Path = None) -> None:
             ],
             "OPENLLMETRY_ADDITIONAL_ENV_VARS": [
                 "",
-                "# Optional: OpenLLMetry cloud features",
+                "# Optional: Traceloop cloud features",
                 "export TRACELOOP_API_KEY=\"your-traceloop-key\"",
                 "export TRACELOOP_BASE_URL=\"https://api.traceloop.com\""
             ]
@@ -874,7 +874,7 @@ def generate_provider_docs(provider_key: str, output_path: Path = None) -> None:
             ],
             "OPENLLMETRY_ADDITIONAL_ENV_VARS": [
                 "",
-                "# Optional: OpenLLMetry cloud features",
+                "# Optional: Traceloop cloud features",
                 "export TRACELOOP_API_KEY=\"your-traceloop-key\"",
                 "export TRACELOOP_BASE_URL=\"https://api.traceloop.com\""
             ]
@@ -894,7 +894,7 @@ def generate_provider_docs(provider_key: str, output_path: Path = None) -> None:
             ],
             "OPENLLMETRY_ADDITIONAL_ENV_VARS": [
                 "",
-                "# Optional: OpenLLMetry cloud features",
+                "# Optional: Traceloop cloud features",
                 "export TRACELOOP_API_KEY=\"your-traceloop-key\"",
                 "export TRACELOOP_BASE_URL=\"https://api.traceloop.com\""
             ]
@@ -946,7 +946,7 @@ def generate_provider_docs(provider_key: str, output_path: Path = None) -> None:
             replacement = openinference_match.group(1) + openinference_env_section + '\n\n' + openinference_match.group(2)
             template_content = template_content.replace(openinference_match.group(0), replacement)
         
-        # Add to OpenLLMetry troubleshooting (item 5) if available
+        # Add to Traceloop troubleshooting (item 5) if available
         if variables.get("OPENLLMETRY_AVAILABLE", True):
             openllmetry_env_vars = env_vars.copy()
             if "OPENLLMETRY_ADDITIONAL_ENV_VARS" in provider_env_configs[provider_key]:
@@ -960,7 +960,7 @@ def generate_provider_docs(provider_key: str, output_path: Path = None) -> None:
    
       {openllmetry_env_vars_block}'''
             
-            # Find OpenLLMetry troubleshooting section end (after variable substitution)
+            # Find Traceloop troubleshooting section end (after variable substitution)
             openllmetry_pattern = rf'(<div id="{provider_key}-openllmetry-troubleshoot".*?)(.. raw:: html\n\n   </div>\n   </div>)'
             openllmetry_match = re.search(openllmetry_pattern, template_content, re.DOTALL)
             
@@ -979,7 +979,7 @@ def generate_provider_docs(provider_key: str, output_path: Path = None) -> None:
     print(f"✅ Generated: {output_path}")
     print(f"🔧 Provider: {variables['PROVIDER_NAME']}")
     print(f"📦 OpenInference: {variables['OPENINFERENCE_PACKAGE']}")
-    print(f"📦 OpenLLMetry: {variables['OPENLLMETRY_PACKAGE']}")
+    print(f"📦 Traceloop: {variables['OPENLLMETRY_PACKAGE']}")
 
 
 def main():
