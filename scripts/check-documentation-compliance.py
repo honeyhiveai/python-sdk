@@ -128,7 +128,16 @@ def check_commit_message_has_docs_intent() -> bool:
 
 
 def main() -> NoReturn:
-    """Main validation function."""
+    """
+    Main validation function.
+    
+    Validation order (by priority):
+    1. PRIMARY: CHANGELOG.md updates for significant changes
+    2. SECONDARY: docs/changelog.rst sync when CHANGELOG.md is updated  
+    3. TERTIARY: Reference docs updates for new features (after changelog)
+    
+    This order ensures changelog entries are complete before derived documentation.
+    """
     print("📚 Documentation Compliance Check")
     print("=" * 40)
 
@@ -186,7 +195,25 @@ def main() -> NoReturn:
         print("✅ No significant changes requiring documentation updates")
         sys.exit(0)
 
-    # CRITICAL: If CHANGELOG.md is updated, docs/changelog.rst MUST be updated
+    # PRIMARY CHECK: Significant changes require CHANGELOG first
+    if has_significant and not changelog_updated:
+        # Check if this is explicitly a documentation commit
+        if check_commit_message_has_docs_intent():
+            print("✅ Documentation-focused commit detected")
+            sys.exit(0)
+
+        print("\n❌ CHANGELOG.md update required!")
+        print("\nSignificant changes detected but CHANGELOG.md not updated.")
+        print("\nCHANGELOG updates are required FIRST since reference docs are derived from changelog entries.")
+        print("\nTo fix this:")
+        print("1. Update CHANGELOG.md with your changes")
+        print("2. Update docs/changelog.rst with curated highlights")
+        print("3. Stage both files: git add CHANGELOG.md docs/changelog.rst")
+        print("4. Re-run your commit")
+        print("\nOr use a documentation commit message (docs:, fix: docs, etc.)")
+        sys.exit(1)
+
+    # SECONDARY CHECK: If CHANGELOG.md is updated, docs/changelog.rst MUST be updated
     if changelog_updated and not docs_changelog_updated:
         print("\n❌ Documentation changelog sync required!")
         print("\nCHANGELOG.md is being updated but docs/changelog.rst is not.")
@@ -200,33 +227,16 @@ def main() -> NoReturn:
         print("\n💡 The docs changelog should be lightweight and curated!")
         sys.exit(1)
 
-    # New features require reference documentation
+    # TERTIARY CHECK: New features require reference documentation (after CHANGELOG)
     if has_features and not reference_updated:
         print("\n❌ Reference documentation update required!")
         print("\nNew features detected but reference docs not updated.")
+        print("\nReference docs should be updated AFTER changelog entries are complete.")
         print("\nTo fix this:")
         print("1. Update docs/reference/index.rst with new features")
         print("2. Update .agent-os/product/features.md if applicable")
         print("3. Stage updated docs: git add docs/reference/index.rst")
         print("4. Re-run your commit")
-        sys.exit(1)
-
-    # Significant changes require CHANGELOG
-    if has_significant and not changelog_updated:
-        # Check if this is explicitly a documentation commit
-        if check_commit_message_has_docs_intent():
-            print("✅ Documentation-focused commit detected")
-            sys.exit(0)
-
-        print("\n❌ CHANGELOG.md update required!")
-        print("\nSignificant changes detected but CHANGELOG.md not updated.")
-        print("\nTo fix this:")
-        print("1. Update CHANGELOG.md with your changes")
-        print("2. Update docs/changelog.rst with curated highlights")
-        print("3. Stage both files: git add CHANGELOG.md docs/changelog.rst")
-        print("4. Re-run your commit")
-        print("\nOr use a documentation commit message (docs:, fix: docs, etc.)")
-        print("Or bypass in emergencies: git commit --no-verify")
         sys.exit(1)
 
     # All checks passed

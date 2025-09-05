@@ -67,10 +67,12 @@ Choose Your Instrumentor
    # HH_API_KEY=your-honeyhive-key
    # GOOGLE_API_KEY=your-google-adk-key
 
-   # Initialize with environment variables (secure)
-   tracer = HoneyHiveTracer.init(
-       instrumentors=[GoogleADKInstrumentor()]  # Uses HH_API_KEY automatically
-   )
+   # Step 1: Initialize HoneyHive tracer first (without instrumentors)
+   tracer = HoneyHiveTracer.init()  # Uses HH_API_KEY from environment
+   
+   # Step 2: Initialize instrumentor separately with tracer_provider
+   instrumentor = GoogleADKInstrumentor()
+   instrumentor.instrument(tracer_provider=tracer.provider)
 
    # Basic usage with error handling
    try:
@@ -102,11 +104,15 @@ Choose Your Instrumentor
    import google.adk
 
    # Initialize with custom configuration
+   # Step 1: Initialize HoneyHive tracer first (without instrumentors)
    tracer = HoneyHiveTracer.init(
        api_key="your-honeyhive-key",
-       source="production",
-       instrumentors=[GoogleADKInstrumentor()]
+       source="production"
    )
+   
+   # Step 2: Initialize instrumentor separately with tracer_provider
+   instrumentor = GoogleADKInstrumentor()
+   instrumentor.instrument(tracer_provider=tracer.provider)
 
    @trace(tracer=tracer, event_type=EventType.chain)
    def multi_agent_workflow(documents: List[str]) -> dict:
@@ -199,10 +205,13 @@ Choose Your Instrumentor
    
    .. code-block:: python
    
-      # Ensure instrumentor is passed to tracer
-      tracer = HoneyHiveTracer.init(
-          instrumentors=[GoogleADKInstrumentor()]  # Don't forget this!
-      )
+      # Use correct initialization pattern
+      # Step 1: Initialize HoneyHive tracer first (without instrumentors)
+      tracer = HoneyHiveTracer.init()
+      
+      # Step 2: Initialize instrumentor separately with tracer_provider
+      instrumentor = GoogleADKInstrumentor()
+      instrumentor.instrument(tracer_provider=tracer.provider)
 
 2. **Performance for High Volume**
    

@@ -41,6 +41,17 @@ name: Tox Full Test Suite
         required: false
       CODECOV_TOKEN:
         required: false
+      # LLM Provider API Keys for real instrumentor testing
+      OPENAI_API_KEY:
+        required: false
+      ANTHROPIC_API_KEY:
+        required: false
+      GOOGLE_API_KEY:
+        required: false
+      AWS_ACCESS_KEY_ID:
+        required: false
+      AWS_SECRET_ACCESS_KEY:
+        required: false
   push:
     branches: [main]  # Only run on pushes to the protected main branch
     paths:
@@ -126,6 +137,82 @@ jobs:
             .coverage
             coverage.xml
             .tox/*/log/
+          retention-days: 7
+
+  # === REAL API TESTING ===
+  real-api-tests:
+    name: "🌐 Real API Integration Tests"
+    if: >-
+      !contains(github.event.head_commit.message, '[skip-tests]') &&
+      !contains(github.event.head_commit.message, '[skip-real-api]')
+    runs-on: ubuntu-latest
+    # Only run if we have real API credentials
+    # This allows the job to be skipped gracefully when secrets aren't available
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Python 3.11
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: 'pip'
+
+      - name: Install tox and dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install tox>=4.0
+
+      - name: Check for real API credentials
+        id: check_credentials
+        run: |
+          if [[ -n "${{ secrets.HH_API_KEY }}" ]]; then
+            echo "has_honeyhive_key=true" >> $GITHUB_OUTPUT
+          else
+            echo "has_honeyhive_key=false" >> $GITHUB_OUTPUT
+          fi
+          if [[ -n "${{ secrets.OPENAI_API_KEY }}" ]]; then
+            echo "has_openai_key=true" >> $GITHUB_OUTPUT
+          else
+            echo "has_openai_key=false" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Run real API integration tests
+        if: steps.check_credentials.outputs.has_honeyhive_key == 'true'
+        run: |
+          echo "🌐 Running real API integration tests..."
+          tox -e real-api
+        env:
+          # HoneyHive credentials
+          HH_API_KEY: ${{ secrets.HH_API_KEY }}
+          HH_SOURCE: github-actions-real-api
+          HH_API_URL: https://api.honeyhive.ai
+          # LLM Provider credentials (optional - tests will skip if not available)
+          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+          GOOGLE_API_KEY: ${{ secrets.GOOGLE_API_KEY }}
+          AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          AWS_DEFAULT_REGION: us-east-1
+          # CI indicators
+          CI: true
+          GITHUB_ACTIONS: true
+
+      - name: Skip real API tests (no credentials)
+        if: steps.check_credentials.outputs.has_honeyhive_key == 'false'
+        run: |
+          echo "⚠️ Skipping real API tests - HH_API_KEY not available"
+          echo "Real API tests require HH_API_KEY secret to be configured"
+          echo "This is expected for external contributors and forks"
+
+      - name: Upload real API test results
+        if: always() && steps.check_credentials.outputs.has_honeyhive_key == 'true'
+        uses: actions/upload-artifact@v4
+        with:
+          name: real-api-test-results
+          path: |
+            .coverage
+            .tox/real-api/log/
           retention-days: 7
 
   # === CODE QUALITY & DOCUMENTATION ===

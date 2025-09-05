@@ -166,10 +166,12 @@ Enhance automatic tracing with business context:
    from openinference.instrumentation.openai import OpenAIInstrumentor
    import openai
    
-   tracer = HoneyHiveTracer.init(
-       api_key="your-api-key",
-       instrumentors=[OpenAIInstrumentor()]
-   )
+   # Step 1: Initialize HoneyHive tracer first (without instrumentors)
+   tracer = HoneyHiveTracer.init(api_key="your-api-key")
+   
+   # Step 2: Initialize instrumentor separately with tracer_provider
+   instrumentor = OpenAIInstrumentor()
+   instrumentor.instrument(tracer_provider=tracer.provider)
    
    @trace(tracer=tracer, event_type="customer_query")
    def handle_customer_question(customer_id: str, question: str, priority: str = "normal"):
@@ -252,10 +254,12 @@ Add Anthropic Claude tracing with the same BYOI pattern.
    import anthropic
    
    # Initialize with OpenInference Anthropic instrumentor
-   tracer = HoneyHiveTracer.init(
-       api_key="your-api-key",
-       instrumentors=[AnthropicInstrumentor()]
-   )
+   # Step 1: Initialize HoneyHive tracer first (without instrumentors)
+   tracer = HoneyHiveTracer.init(api_key="your-api-key")
+   
+   # Step 2: Initialize instrumentor separately with tracer_provider
+   instrumentor = AnthropicInstrumentor()
+   instrumentor.instrument(tracer_provider=tracer.provider)
 
 **Using Traceloop:**
 
@@ -266,10 +270,12 @@ Add Anthropic Claude tracing with the same BYOI pattern.
    import anthropic
    
    # Initialize with Traceloop Anthropic instrumentor
-   tracer = HoneyHiveTracer.init(
-       api_key="your-api-key",
-       instrumentors=[AnthropicInstrumentor()]
-   )
+   # Step 1: Initialize HoneyHive tracer first (without instrumentors)
+   tracer = HoneyHiveTracer.init(api_key="your-api-key")
+   
+   # Step 2: Initialize instrumentor separately with tracer_provider
+   instrumentor = AnthropicInstrumentor()
+   instrumentor.instrument(tracer_provider=tracer.provider)
 
 **The rest is identical regardless of instrumentor choice:**
 
@@ -330,10 +336,12 @@ Add Google AI (Gemini) tracing.
    import google.generativeai as genai
    
    # Initialize with Google AI instrumentor
-   tracer = HoneyHiveTracer.init(
-       api_key="your-api-key",
-       instrumentors=[GoogleGenerativeAIInstrumentor()]
-   )
+   # Step 1: Initialize HoneyHive tracer first (without instrumentors)
+   tracer = HoneyHiveTracer.init(api_key="your-api-key")
+   
+   # Step 2: Initialize instrumentor separately with tracer_provider
+   instrumentor = GoogleGenerativeAIInstrumentor()
+   instrumentor.instrument(tracer_provider=tracer.provider)
    
    # Configure Google AI
    genai.configure(api_key="your-google-api-key")
@@ -372,13 +380,15 @@ Use multiple LLM providers in the same application. You can mix instrumentor typ
    import anthropic
    
    # Initialize with multiple OpenInference instrumentors
-   tracer = HoneyHiveTracer.init(
-       api_key="your-api-key",
-       instrumentors=[
+   # Step 1: Initialize HoneyHive tracer first (without instrumentors)
+   tracer = HoneyHiveTracer.init(api_key="your-api-key")
+   
+   # Step 2: Initialize instrumentor separately with tracer_provider
+   instrumentor = 
            OpenAIInstrumentor(),    # OpenInference OpenAI
            AnthropicInstrumentor()  # OpenInference Anthropic
-       ]
-   )
+       
+   instrumentor.instrument(tracer_provider=tracer.provider)
 
 **Option B: All Traceloop**
 
@@ -391,13 +401,15 @@ Use multiple LLM providers in the same application. You can mix instrumentor typ
    import anthropic
    
    # Initialize with multiple Traceloop instrumentors
-   tracer = HoneyHiveTracer.init(
-       api_key="your-api-key",
-       instrumentors=[
+   # Step 1: Initialize HoneyHive tracer first (without instrumentors)
+   tracer = HoneyHiveTracer.init(api_key="your-api-key")
+   
+   # Step 2: Initialize instrumentor separately with tracer_provider
+   instrumentor = 
            OpenAIInstrumentor(),    # Traceloop OpenAI
            AnthropicInstrumentor()  # Traceloop Anthropic
-       ]
-   )
+       
+   instrumentor.instrument(tracer_provider=tracer.provider)
 
 **Option C: Mixed Instrumentors (Strategic)**
 
@@ -411,13 +423,15 @@ Use multiple LLM providers in the same application. You can mix instrumentor typ
    import anthropic
    
    # Initialize with mixed instrumentors
-   tracer = HoneyHiveTracer.init(
-       api_key="your-api-key",
-       instrumentors=[
+   # Step 1: Initialize HoneyHive tracer first (without instrumentors)
+   tracer = HoneyHiveTracer.init(api_key="your-api-key")
+   
+   # Step 2: Initialize instrumentor separately with tracer_provider
+   instrumentor = 
            OLOpenAI(),     # Traceloop for high-volume OpenAI (enhanced metrics)
            OIAnthropic()   # OpenInference for Anthropic (lightweight)
-       ]
-   )
+       
+   instrumentor.instrument(tracer_provider=tracer.provider)
 
 **The rest of your code remains identical:**
 
@@ -495,10 +509,12 @@ Add Google Agent Development Kit (ADK) tracing for sophisticated agent workflows
    import google.adk as adk
    
    # Initialize with Google ADK instrumentor
-   tracer = HoneyHiveTracer.init(
-       api_key="your-api-key",
-       instrumentors=[GoogleADKInstrumentor()]
-   )
+   # Step 1: Initialize HoneyHive tracer first (without instrumentors)
+   tracer = HoneyHiveTracer.init(api_key="your-api-key")
+   
+   # Step 2: Initialize instrumentor separately with tracer_provider
+   instrumentor = GoogleADKInstrumentor()
+   instrumentor.instrument(tracer_provider=tracer.provider)
    
    # Configure Google ADK
    adk.configure(api_key="your-google-adk-api-key")
@@ -555,10 +571,12 @@ MCP enables agents to securely connect to data sources and tools through a stand
    from openinference.instrumentation.mcp import MCPInstrumentor
    
    # Initialize with MCP instrumentor
-   tracer = HoneyHiveTracer.init(
-       api_key="your-api-key",
-       instrumentors=[MCPInstrumentor()]
-   )
+   # Step 1: Initialize HoneyHive tracer first (without instrumentors)
+   tracer = HoneyHiveTracer.init(api_key="your-api-key")
+   
+   # Step 2: Initialize instrumentor separately with tracer_provider
+   instrumentor = MCPInstrumentor()
+   instrumentor.instrument(tracer_provider=tracer.provider)
 
 **Step 3: Use MCP Client Normally**
 
@@ -633,14 +651,16 @@ You can also integrate custom or community instrumentors:
    from your_custom_instrumentor import CustomLLMInstrumentor
    
    # Use any OpenTelemetry-compatible instrumentor
-   tracer = HoneyHiveTracer.init(
-       api_key="your-api-key",
-       instrumentors=[
+   # Step 1: Initialize HoneyHive tracer first (without instrumentors)
+   tracer = HoneyHiveTracer.init(api_key="your-api-key")
+   
+   # Step 2: Initialize instrumentor separately with tracer_provider
+   instrumentor = 
            CustomLLMInstrumentor(),
            # Mix with standard instrumentors
            # OpenAIInstrumentor(),
-       ]
-   )
+       
+   instrumentor.instrument(tracer_provider=tracer.provider)
 
 Understanding Trace Data
 -------------------------

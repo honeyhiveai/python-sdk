@@ -71,7 +71,7 @@ OpenInference Integration
 
    # Initialize with environment variables (secure)
    tracer = HoneyHiveTracer.init(
-       instrumentors=[OpenAIInstrumentor()]  # Uses HH_API_KEY automatically
+       # FIXED: Use separate initialization instead  # Uses HH_API_KEY automatically
    )
 
    # Basic usage with error handling
@@ -101,11 +101,15 @@ OpenInference Integration
    import openai
 
    # Initialize with custom configuration
+   # Step 1: Initialize HoneyHive tracer first (without instrumentors)
    tracer = HoneyHiveTracer.init(
        api_key="your-honeyhive-key",
-       source="production",
-       instrumentors=[OpenAIInstrumentor()]
+       source="production"
    )
+   
+   # Step 2: Initialize instrumentor separately with tracer_provider
+   instrumentor = OpenAIInstrumentor()
+   instrumentor.instrument(tracer_provider=tracer.provider)
 
    @trace(tracer=tracer, event_type=EventType.chain)
    def analyze_sentiment(text: str) -> dict:
@@ -423,7 +427,7 @@ Migration Between Instrumentors
 
    # Before (OpenInference)
    from openinference.instrumentation.openai import OpenAIInstrumentor
-   tracer = HoneyHiveTracer.init(instrumentors=[OpenAIInstrumentor()])
+   tracer = HoneyHiveTracer.init(# FIXED: Use separate initialization instead)
    
    # After (OpenLLMetry) - easier setup!
    from traceloop.sdk import Traceloop
@@ -441,7 +445,7 @@ Migration Between Instrumentors
    
    # After (OpenInference)
    from openinference.instrumentation.openai import OpenAIInstrumentor
-   tracer = HoneyHiveTracer.init(instrumentors=[OpenAIInstrumentor()])
+   tracer = HoneyHiveTracer.init(# FIXED: Use separate initialization instead)
 
 Troubleshooting
 ---------------
@@ -454,7 +458,7 @@ Troubleshooting
    
       # Ensure instrumentor is passed to tracer
       tracer = HoneyHiveTracer.init(
-          instrumentors=[OpenAIInstrumentor()]  # Don't forget this!
+          # FIXED: Use separate initialization instead  # Don't forget this!
       )
 
 2. **OpenLLMetry: Import Order Matters**

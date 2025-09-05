@@ -35,15 +35,21 @@ Choose Your Instrumentor Strategy
    from openinference.instrumentation.openai import OpenAIInstrumentor
    from openinference.instrumentation.bedrock import BedrockInstrumentor
 
-   tracer = HoneyHiveTracer.init(
-       api_key="your-honeyhive-key",
-       instrumentors=[
-           OpenAIInstrumentor(),           # OpenInference
-           AnthropicInstrumentor(),        # OpenInference
-           GoogleGenerativeAIInstrumentor(), # OpenInference
-           BedrockInstrumentor()           # OpenInference
-       ]
-   )
+   # Step 1: Initialize HoneyHive tracer first (without instrumentors)
+   tracer = HoneyHiveTracer.init(api_key="your-honeyhive-key")
+   
+   # Step 2: Initialize each instrumentor separately with tracer_provider
+   openai_instrumentor = OpenAIInstrumentor()
+   openai_instrumentor.instrument(tracer_provider=tracer.provider)
+   
+   anthropic_instrumentor = AnthropicInstrumentor()
+   anthropic_instrumentor.instrument(tracer_provider=tracer.provider)
+   
+   google_instrumentor = GoogleGenerativeAIInstrumentor()
+   google_instrumentor.instrument(tracer_provider=tracer.provider)
+   
+   bedrock_instrumentor = BedrockInstrumentor()
+   bedrock_instrumentor.instrument(tracer_provider=tracer.provider)
 
 **Option 2: All Traceloop (Enhanced Metrics)**
 
@@ -55,15 +61,15 @@ Choose Your Instrumentor Strategy
    from opentelemetry.instrumentation.openai import OpenAIInstrumentor
    from opentelemetry.instrumentation.bedrock import BedrockInstrumentor
 
-   tracer = HoneyHiveTracer.init(
-       api_key="your-honeyhive-key",
-       instrumentors=[
-           OpenAIInstrumentor(),           # Traceloop
+   # Step 1: Initialize HoneyHive tracer first (without instrumentors)
+   tracer = HoneyHiveTracer.init(api_key="your-honeyhive-key")
+   
+   # Step 2: Initialize instrumentor separately with tracer_provider  
+   instrumentor = OpenAIInstrumentor(),           # Traceloop
            AnthropicInstrumentor(),        # Traceloop
            GoogleGenerativeAIInstrumentor(), # Traceloop
            BedrockInstrumentor()           # Traceloop
-       ]
-   )
+   instrumentor.instrument(tracer_provider=tracer.provider)
 
 **Option 3: Mixed Instrumentors (Strategic)**
 
@@ -76,14 +82,14 @@ Choose Your Instrumentor Strategy
    from opentelemetry.instrumentation.openai import OpenAIInstrumentor
    from opentelemetry.instrumentation.anthropic import AnthropicInstrumentor
 
-   tracer = HoneyHiveTracer.init(
-       api_key="your-honeyhive-key",
-       instrumentors=[
-           OpenAIInstrumentor(),           # Traceloop (enhanced metrics)
+   # Step 1: Initialize HoneyHive tracer first (without instrumentors)
+   tracer = HoneyHiveTracer.init(api_key="your-honeyhive-key")
+   
+   # Step 2: Initialize instrumentor separately with tracer_provider  
+   instrumentor = OpenAIInstrumentor(),           # Traceloop (enhanced metrics)
            AnthropicInstrumentor(),        # Traceloop (enhanced metrics)
            GoogleADKInstrumentor()         # OpenInference (only option available)
-       ]
-   )
+   instrumentor.instrument(tracer_provider=tracer.provider)
 
 **When to Use Each:**
 
@@ -106,16 +112,16 @@ Initialize HoneyHive with multiple instrumentors:
    from openinference.instrumentation.openai import OpenAIInstrumentor
 
    # Initialize with multiple instrumentors
-   tracer = HoneyHiveTracer.init(
-       api_key="your-honeyhive-key",
-       instrumentors=[
-           AnthropicInstrumentor(),
+   # Step 1: Initialize HoneyHive tracer first (without instrumentors)
+   tracer = HoneyHiveTracer.init(api_key="your-honeyhive-key")
+   
+   # Step 2: Initialize instrumentor separately with tracer_provider  
+   instrumentor = AnthropicInstrumentor(),
            GoogleGenerativeAIInstrumentor(),
            GoogleADKInstrumentor(),
            MCPInstrumentor(),          # Agent tool orchestration
            OpenAIInstrumentor()
-       ]
-   )
+   instrumentor.instrument(tracer_provider=tracer.provider)
 
    # Now all providers are automatically traced
    import anthropic
@@ -145,13 +151,13 @@ Multi-Provider Agent Workflow
    import anthropic
 
    # Initialize with multiple instrumentors
-   tracer = HoneyHiveTracer.init(
-       api_key="your-api-key",
-       instrumentors=[
-           OpenAIInstrumentor(),
+   # Step 1: Initialize HoneyHive tracer first (without instrumentors)
+   tracer = HoneyHiveTracer.init(api_key="your-api-key")
+   
+   # Step 2: Initialize instrumentor separately with tracer_provider  
+   instrumentor = OpenAIInstrumentor(),
            AnthropicInstrumentor()
-       ]
-   )
+   instrumentor.instrument(tracer_provider=tracer.provider)
 
    # Initialize clients
    openai_client = openai.OpenAI()

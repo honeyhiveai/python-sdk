@@ -43,9 +43,11 @@ def test_traceloop_openai_integration():
         tracer = HoneyHiveTracer.init(
             api_key=api_key,
             project=project,
-            instrumentors=[openai_instrumentor],  # Pass instrumentor to HoneyHive
             source="traceloop_compatibility_test",
         )
+
+        # Initialize instrumentor separately with tracer_provider
+        openai_instrumentor.instrument(tracer_provider=tracer.provider)
         print("✓ HoneyHive tracer initialized with Traceloop OpenAI instrumentor")
 
         # 3. Initialize OpenAI client

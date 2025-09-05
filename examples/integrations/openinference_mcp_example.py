@@ -41,20 +41,22 @@ def main():
         print("   Install with: pip install honeyhive[openinference-mcp]")
         mcp_available = False
 
-    # Initialize HoneyHive tracer with MCP instrumentor
-    instrumentors = []
-    if mcp_available:
-        instrumentors.append(MCPInstrumentor())
-
+    # Initialize HoneyHive tracer FIRST
     tracer = HoneyHiveTracer.init(
         api_key=os.getenv("HH_API_KEY", "demo-api-key"),
         project="simple-mcp-demo",
         source="example-script",
         test_mode=os.getenv("HH_API_KEY") is None,  # Use test mode if no real API key
-        instrumentors=instrumentors,
     )
+    print("✅ HoneyHive tracer initialized")
 
-    print(f"✅ HoneyHive tracer initialized with {len(instrumentors)} instrumentors")
+    # Initialize MCP instrumentor separately if available
+    if mcp_available:
+        mcp_instrumentor = MCPInstrumentor()
+        mcp_instrumentor.instrument(tracer_provider=tracer.provider)
+        print("✅ MCP instrumentor initialized with HoneyHive tracer_provider")
+    else:
+        print("⚠️ MCP instrumentor not available, continuing without MCP tracing")
 
     # Example MCP-style tool function with tracing
     @trace(event_type=EventType.tool)

@@ -433,6 +433,171 @@ logger.error(
 )
 ```
 
+## Comprehensive Testing Strategy
+
+### Multi-Layer Testing Approach
+
+**Lessons Learned from ProxyTracerProvider Bug (2025-09-05)**:
+- **Root Cause**: Over-mocking in tests prevented detection of real OpenTelemetry behavior
+- **Documentation Impact**: 85+ instances of incorrect patterns in integration docs
+- **Prevention**: Multi-layer testing with real environment validation
+
+**🚨 MANDATORY Testing Layers**:
+
+#### 1. Unit Tests (Fast, Isolated)
+```bash
+# Run with: tox -e unit
+```
+**Purpose**: Test individual function logic in isolation
+**Characteristics**:
+- Heavy mocking for external dependencies
+- Fast execution (< 1s each)
+- No external API calls
+- Isolated component testing
+
+**Use For**:
+- Function logic validation
+- Error handling paths
+- Configuration validation
+- Mock-friendly scenarios
+
+#### 2. Integration Tests (Real Components)
+```bash
+# Run with: tox -e integration
+```
+**Purpose**: Test component interaction with real dependencies
+**Characteristics**:
+- Minimal mocking (only external APIs)
+- Real OpenTelemetry components
+- Real database/cache interactions
+- Moderate execution time
+
+**Use For**:
+- Component interaction validation
+- Real API integration testing
+- TracerProvider scenarios
+- Multi-instance behavior
+
+#### 3. Real Environment Tests (Subprocess-Based)
+```bash
+# Run with: tox -e real_env (when implemented)
+```
+**Purpose**: Test fresh environment scenarios that catch integration bugs
+**Characteristics**:
+- No mocking whatsoever
+- Subprocess execution for fresh Python environments
+- Real instrumentor library behavior
+- Slower but comprehensive validation
+
+**Use For**:
+- Fresh environment scenarios (ProxyTracerProvider detection)
+- Instrumentor integration patterns
+- Environment-specific bugs
+- User experience validation
+
+**Example Real Environment Test**:
+```python
+def test_fresh_environment_proxy_tracer_provider_bug(self):
+    """Test ProxyTracerProvider handling in fresh environment."""
+    test_script = '''
+    from opentelemetry import trace
+    from honeyhive.tracer.otel_tracer import HoneyHiveTracer
+    
+    # Verify we start with ProxyTracerProvider (bug condition)
+    initial_provider = trace.get_tracer_provider()
+    assert "Proxy" in type(initial_provider).__name__
+    
+    # Initialize HoneyHive - should handle ProxyTracerProvider correctly
+    tracer = HoneyHiveTracer(api_key="test", project="test")
+    
+    # Should now have real TracerProvider
+    final_provider = trace.get_tracer_provider()
+    assert "Proxy" not in type(final_provider).__name__
+    '''
+    
+    # Run in subprocess for fresh environment
+    result = subprocess.run([sys.executable, script_path], ...)
+    assert result.returncode == 0
+```
+
+#### 4. Documentation Example Testing (MANDATORY)
+```bash
+# Run with: python docs/utils/test-examples.py
+```
+**Purpose**: Validate all documentation code examples work as written
+**Requirements**:
+- Every code block in documentation must be tested
+- Examples must use current API patterns
+- No hardcoded credentials in examples
+- Examples must follow documented best practices
+
+### Testing Quality Gates
+
+**🚨 CRITICAL: All Must Pass Before Commit**:
+
+1. **Unit Tests**: `tox -e unit` (100% pass rate)
+2. **Integration Tests**: `tox -e integration` (100% pass rate)
+3. **Linting**: `tox -e lint` (≥8.0/10.0 pylint score)
+4. **Formatting**: `tox -e format` (100% compliance)
+5. **Documentation Build**: `cd docs && make html` (zero warnings)
+6. **Example Testing**: All documentation examples executable
+
+**For New Features (Additional Requirements)**:
+- Real environment tests for instrumentor features
+- Compatibility matrix tests for new providers
+- Performance tests if feature affects performance
+- Documentation examples must be tested before docs are written
+
+### Test Coverage Requirements
+
+**Minimum Coverage**: 60% overall (currently achieving 73.22%)
+**New Code Coverage**: 80% minimum for new features
+**Critical Path Coverage**: 95% for core tracer functionality
+
+**Coverage Exclusions**:
+- Test files themselves
+- Debug/development utilities
+- Compatibility shims for deprecated features
+
+### Testing Anti-Patterns to Avoid
+
+**❌ Don't Do This**:
+```python
+# Over-mocking that hides real behavior
+@patch("opentelemetry.trace.get_tracer_provider")
+def test_tracer_init(mock_provider):
+    mock_provider.return_value = Mock()  # Hides ProxyTracerProvider!
+```
+
+**✅ Do This Instead**:
+```python
+# Test with real OpenTelemetry components
+def test_tracer_init_real_environment():
+    # Use subprocess to test fresh environment
+    # OR use real TracerProvider in integration tests
+```
+
+### Preventing Documentation Bugs
+
+**🚨 MANDATORY Process**:
+1. **Write Code First**: Implement the feature completely
+2. **Test Code**: Verify it works with real environment tests
+3. **Write Documentation**: Only after code is tested and working
+4. **Test Documentation**: Validate all examples work as written
+5. **Review Integration**: Ensure examples follow best practices
+
+**Documentation Testing Tools**:
+```bash
+# Validate all code examples
+python docs/utils/test-examples.py
+
+# Check for broken links
+python docs/utils/audit-content.py
+
+# Verify Divio compliance
+python docs/utils/validate-structure.py
+```
+
 ## Performance Optimization
 
 ### Connection Pooling
@@ -702,9 +867,11 @@ When reporting test results in commit messages, documentation, or communication:
 - May require updating test implementation (not removing tests)
 
 **Documentation Changes:**
-- All code examples in docs must be tested
-- Examples must use current API patterns
+- **🚨 MANDATORY: No New Documentation Without Testing Code First** - All code examples must be tested before documentation is written or updated
+- All code examples in docs must be tested and verified to work
+- Examples must use current API patterns and follow documented best practices
 - Integration with existing documentation must be verified
+- **ProxyTracerProvider Lesson**: The 2025-09-05 ProxyTracerProvider bug was caused by 85+ instances of untested documentation examples teaching incorrect patterns
 
 ### Emergency Procedures
 

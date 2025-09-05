@@ -226,11 +226,17 @@ Common issues and step-by-step solutions for HoneyHive integration challenges.
 
       # ✅ Correct order
       from honeyhive import HoneyHiveTracer
-      tracer = HoneyHiveTracer.init(api_key="...", project="...")
       
-      # Then initialize instrumentors
+      # Step 1: Initialize HoneyHive tracer FIRST (without instrumentors)
+      tracer = HoneyHiveTracer.init(api_key="...")
+      
+      # Step 2: Initialize instrumentors separately with tracer_provider
       from openinference.instrumentation.openai import OpenAIInstrumentor
-      OpenAIInstrumentor().instrument(tracer_provider=tracer.tracer_provider)
+      instrumentor = OpenAIInstrumentor()
+      instrumentor.instrument(tracer_provider=tracer.provider)
+
+   .. warning::
+      **Common Issue**: If you see "⚠️ Existing provider doesn't support span processors", this indicates a ProxyTracerProvider issue. The fix above resolves this by ensuring HoneyHive creates a real TracerProvider first.
 
 For additional troubleshooting resources, see the HoneyHive documentation or contact support.
 

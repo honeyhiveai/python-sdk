@@ -59,6 +59,7 @@ When working with AI coding assistants (like Claude, GPT-4, etc.), reference the
 2. **Type hints are MANDATORY** - All functions must have type hints
 3. **No code in `__init__.py`** - Only imports allowed
 4. **Graceful degradation** - SDK must never crash the host application
+5. **🚨 NO NEW DOCS WITHOUT TESTING CODE FIRST** - All documentation examples must be tested before writing docs (ProxyTracerProvider lesson learned)
 
 ### 🟡 Important Patterns
 1. **Multi-instance support** - No singleton pattern

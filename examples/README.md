@@ -140,7 +140,6 @@ tracer = HoneyHiveTracer.init(
     # project derived from API key (new simplified API)
     source="production",
     test_mode=True,  # Test mode support
-    instrumentors=[OpenAIInstrumentor()],  # Auto-integration
     disable_http_tracing=True  # Performance control
 )
 ```

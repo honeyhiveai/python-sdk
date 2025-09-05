@@ -145,21 +145,25 @@ init()
       from openinference.instrumentation.anthropic import AnthropicInstrumentor
       
       # Single instrumentor
-      tracer = HoneyHiveTracer.init(
-          api_key="hh_your_key",
-          instrumentors=[OpenAIInstrumentor()]
-      )
+      # Step 1: Initialize HoneyHive tracer first (without instrumentors)
+      tracer = HoneyHiveTracer.init(api_key="your-api-key")
+      
+      # Step 2: Initialize instrumentor separately with tracer_provider
+      instrumentor = OpenAIInstrumentor()
+      instrumentor.instrument(tracer_provider=tracer.provider)
       
       # Multiple instrumentors for multi-LLM applications
-      tracer = HoneyHiveTracer.init(
-          api_key="hh_your_key",
-          instrumentors=[
-              OpenAIInstrumentor(),
-              AnthropicInstrumentor()
-          ]
-      )
-   
-   **Multi-Instance Examples:**
+      # Step 1: Initialize HoneyHive tracer first (without instrumentors)
+      tracer = HoneyHiveTracer.init(api_key="your-api-key")
+      
+      # Step 2: Initialize instrumentors separately with tracer_provider
+      openai_instrumentor = OpenAIInstrumentor()
+      anthropic_instrumentor = AnthropicInstrumentor()
+      
+      openai_instrumentor.instrument(tracer_provider=tracer.provider)
+      anthropic_instrumentor.instrument(tracer_provider=tracer.provider)
+
+**Multi-Instance Examples:**
    
    .. code-block:: python
    
@@ -595,13 +599,19 @@ The HoneyHiveTracer supports multiple independent instances for flexible workflo
 .. code-block:: python
 
    # Different workflows with different instrumentors
-   chat_tracer = HoneyHiveTracer.init(
-       instrumentors=[OpenAIInstrumentor()]
-   )
+   chat_# Step 1: Initialize HoneyHive tracer first (without instrumentors)
+   tracer = HoneyHiveTracer.init()
    
-   analysis_tracer = HoneyHiveTracer.init(
-       instrumentors=[AnthropicInstrumentor()]
-   )
+   # Step 2: Initialize instrumentor separately with tracer_provider
+   instrumentor = OpenAIInstrumentor()
+   instrumentor.instrument(tracer_provider=tracer.provider)
+   
+   analysis_# Step 1: Initialize HoneyHive tracer first (without instrumentors)
+   tracer = HoneyHiveTracer.init()
+   
+   # Step 2: Initialize instrumentor separately with tracer_provider
+   instrumentor = AnthropicInstrumentor()
+   instrumentor.instrument(tracer_provider=tracer.provider)
    
    background_tracer = HoneyHiveTracer.init(
        # No instrumentors for non-LLM background tasks

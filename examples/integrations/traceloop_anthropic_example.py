@@ -37,12 +37,15 @@ def setup_tracing() -> HoneyHiveTracer:
     # Initialize OpenLLMetry Anthropic instrumentor
     anthropic_instrumentor = AnthropicInstrumentor()
     
-    # Initialize HoneyHive tracer with instrumentor
+    # Initialize HoneyHive tracer FIRST
     tracer = HoneyHiveTracer.init(
-        instrumentors=[anthropic_instrumentor],  # Pass instrumentor to HoneyHive
-        source="traceloop_anthropic_example",
+        source=__file__.split('/')[-1],  # Use script name for visibility
         project=os.getenv("HH_PROJECT", "anthropic-traceloop-demo")
     )
+    print("✓ HoneyHive tracer initialized")
+    
+    # Initialize instrumentor separately with tracer_provider
+    anthropic_instrumentor.instrument(tracer_provider=tracer.provider)
     
     print("✅ Tracing initialized with OpenLLMetry Anthropic instrumentor")
     return tracer
@@ -118,7 +121,7 @@ def advanced_anthropic_workflow(document: str) -> Dict[str, Any]:
         # Step 2: Detailed analysis with Claude Sonnet
         print("🔍 Step 2: Performing detailed analysis...")
         analysis_response = client.messages.create(
-            model="claude-3-sonnet-20240229",  # Use different model for analysis
+            model="claude-3-haiku-20240307",  # Use working model for analysis
             max_tokens=300,
             messages=[
                 {"role": "user", "content": f"Provide detailed analysis and insights for this document:\n\n{document}"}

@@ -1,5 +1,37 @@
 ## [Unreleased] - 2025-09-05
 
+### Fixed
+- **🐛 CRITICAL: ProxyTracerProvider Bug Resolution**
+  * Fixed ProxyTracerProvider detection in otel_tracer.py to properly handle OpenTelemetry's default provider
+  * Removed flawed instrumentors parameter from HoneyHiveTracer.__init__ and .init() methods
+  * Added trace.set_tracer_provider() call to ensure HoneyHive provider becomes global
+  * Resolved issue where detailed LLM traces weren't appearing in HoneyHive (only session data)
+  * Fixed 85+ instances of incorrect instrumentors=[...] pattern across all documentation
+  * Updated all integration examples to use correct two-step initialization pattern
+  * Fixed Anthropic model from claude-3-sonnet-20240229 to claude-3-haiku-20240307
+
+- **🧪 MAJOR: Real API Testing Infrastructure**
+  * Implemented comprehensive real API testing framework with conditional mocking
+  * Unified conftest.py with real_api_credentials and fresh_tracer_environment fixtures
+  * Added new tox environment 'real-api' for integration testing with actual provider APIs
+  * Created test_real_instrumentor_integration_comprehensive.py for end-to-end validation
+  * Removed deprecated HH_PROJECT from CI/CD and added LLM provider API key secrets
+  * Added GitHub Actions job for real API testing with conditional execution
+  * Created env.integration.example template for local testing setup
+
+- **📚 COMPREHENSIVE: Documentation Quality Overhaul**
+  * Regenerated all integration guides using corrected templates
+  * Added comprehensive post-mortem documenting ProxyTracerProvider bug and mock creep analysis
+  * Created integration-testing-strategy.rst and real-api-testing.rst documentation
+  * Updated CI/CD documentation to reflect new real API testing capabilities
+  * Enhanced all integration examples with script name visibility for better HoneyHive tracking
+
+- **🏗️ ENHANCED: Agent OS Integration**
+  * Added mandatory rule: No new documentation without testing code first
+  * Documented comprehensive testing strategy and lessons learned from mock creep
+  * Created specs for testing strategy, date usage standards, and commit message standards
+  * Updated best practices with multi-layer testing requirements (Unit, Integration, Real API, Lambda)
+
 ### Added
 - **🎯 COMPLETE: Compatibility Matrix Framework**
   * Comprehensive compatibility testing framework with 13 provider tests

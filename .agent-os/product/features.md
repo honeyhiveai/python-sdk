@@ -2,6 +2,20 @@
 
 ## Core Tracing Features
 
+### 🔧 Enhanced Compatibility & Reliability
+
+#### ProxyTracerProvider Detection & Handling
+- **Automatic Detection**: Identifies OpenTelemetry's default ProxyTracerProvider state
+- **Seamless Transition**: Automatically replaces ProxyTracerProvider with HoneyHive's TracerProvider
+- **Global Provider Management**: Ensures HoneyHive provider becomes the global OpenTelemetry provider
+- **Backward Compatibility**: Maintains compatibility with existing OpenTelemetry setups
+
+#### Real API Testing Infrastructure  
+- **Conditional Mocking**: Smart test fixtures that disable mocking for real API tests
+- **Multi-Provider Support**: Test framework supports OpenAI, Anthropic, Google AI, Bedrock, Azure
+- **Environment-Based Configuration**: Uses .env for local testing, environment variables for CI
+- **Comprehensive Validation**: End-to-end testing with actual LLM provider APIs
+
 ### 🔍 Automatic Instrumentation
 
 #### Universal @trace Decorator

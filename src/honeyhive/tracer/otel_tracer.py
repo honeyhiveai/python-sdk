@@ -63,7 +63,6 @@ class HoneyHiveTracer:
         source: str = "dev",
         test_mode: bool = False,
         session_name: Optional[str] = None,
-        instrumentors: Optional[list] = None,
         disable_http_tracing: bool = True,
         project: Optional[str] = None,  # Backward compatibility - ignored
         **kwargs: Any,
@@ -75,8 +74,14 @@ class HoneyHiveTracer:
             source: Source environment
             test_mode: Whether to run in test mode
             session_name: Optional session name for automatic session creation
-            instrumentors: List of OpenInference instrumentors to automatically integrate
             disable_http_tracing: Whether to disable HTTP tracing (defaults to True)
+
+        Note:
+            For LLM provider integration, initialize instrumentors separately:
+
+            tracer = HoneyHiveTracer.init(api_key="your-key")
+            instrumentor = OpenAIInstrumentor()
+            instrumentor.instrument(tracer_provider=tracer.provider)
         """
         if not OTEL_AVAILABLE:
             raise ImportError("OpenTelemetry is required for HoneyHiveTracer")
@@ -146,10 +151,6 @@ class HoneyHiveTracer:
         # Set up baggage context
         self._setup_baggage_context()
 
-        # Auto-integrate instrumentors if provided
-        if instrumentors:
-            self._integrate_instrumentors(instrumentors)
-
         print(f"✓ HoneyHiveTracer initialized for project: {self.project}")
         print(f"✓ Session name: {self.session_name}")
         print(f"✓ Tracer ID: {self._tracer_id}")
@@ -179,7 +180,6 @@ class HoneyHiveTracer:
         test_mode: bool = False,
         session_name: Optional[str] = None,
         server_url: Optional[str] = None,
-        instrumentors: Optional[list] = None,
         disable_http_tracing: bool = True,
         project: Optional[str] = None,  # Backward compatibility - ignored
         **kwargs: Any,
@@ -191,15 +191,25 @@ class HoneyHiveTracer:
 
         Args:
             api_key: HoneyHive API key
-            source: Source environment (defaults to "production")
+            source: Source environment (defaults to "dev")
             test_mode: Whether to run in test mode
             session_name: Optional session name for automatic session creation
             server_url: Optional server URL for self-hosted deployments
-            instrumentors: List of OpenInference instrumentors to automatically integrate
             disable_http_tracing: Whether to disable HTTP tracing (defaults to True)
 
         Returns:
             HoneyHiveTracer instance
+
+        Example:
+            Basic initialization:
+
+            tracer = HoneyHiveTracer.init(api_key="your-key")
+
+            With LLM provider integration:
+
+            tracer = HoneyHiveTracer.init(api_key="your-key")
+            instrumentor = OpenAIInstrumentor()
+            instrumentor.instrument(tracer_provider=tracer.provider)
         """
         # Load configuration from environment variables as defaults
         from ..utils.config import Config
@@ -226,7 +236,6 @@ class HoneyHiveTracer:
                     source=source,
                     test_mode=test_mode,
                     session_name=session_name,
-                    instrumentors=instrumentors,
                     disable_http_tracing=disable_http_tracing,
                     project=project,
                     **kwargs,
@@ -245,7 +254,6 @@ class HoneyHiveTracer:
                 source=source,
                 test_mode=test_mode,
                 session_name=session_name,
-                instrumentors=instrumentors,
                 disable_http_tracing=disable_http_tracing,
                 project=project,
                 **kwargs,
@@ -257,18 +265,23 @@ class HoneyHiveTracer:
         existing_provider = trace.get_tracer_provider()
         is_main_provider = False
 
-        # Check if the existing provider is a NoOp provider or None
+        # Check if the existing provider is a NoOp provider, ProxyTracerProvider, or None
+        # ProxyTracerProvider is OpenTelemetry's default placeholder that doesn't support span processors
         is_noop_provider = (
             existing_provider is None
             or str(type(existing_provider).__name__) == "NoOpTracerProvider"
+            or str(type(existing_provider).__name__) == "ProxyTracerProvider"
             or "NoOp" in str(type(existing_provider).__name__)
+            or "Proxy" in str(type(existing_provider).__name__)
         )
 
         if is_noop_provider:
-            # No existing provider or only NoOp provider, we can be the main provider
+            # No existing provider or only placeholder provider, we can be the main provider
             self.provider = TracerProvider()
             is_main_provider = True
             self.is_main_provider = True
+            # Set our provider as the global provider
+            trace.set_tracer_provider(self.provider)
             print("🔧 Creating new TracerProvider as main provider")
         else:
             # Use existing provider, we'll be a secondary provider
@@ -478,29 +491,6 @@ class HoneyHiveTracer:
         except Exception as e:
             print(f"⚠️  Warning: Failed to set up baggage context: {e}")
             # Continue without baggage context - spans will still be processed
-
-    def _integrate_instrumentors(self, instrumentors: list) -> None:
-        """Automatically integrate with provided instrumentors."""
-        for instrumentor in instrumentors:
-            try:
-                # Check if the instrumentor has an instrument method
-                if hasattr(instrumentor, "instrument") and callable(
-                    getattr(instrumentor, "instrument")
-                ):
-                    # Get the name for logging
-                    name = (
-                        getattr(instrumentor, "__class__", type(instrumentor)).__name__
-                        or "Unknown"
-                    )
-                    print(f"🔗 Integrating {name}...")
-                    instrumentor.instrument()
-                    print(f"✓ {name} integrated.")
-                else:
-                    print(
-                        f"⚠️  Skipping object without instrument method: {type(instrumentor)}"
-                    )
-            except Exception as e:
-                print(f"⚠️  Failed to integrate instrumentor {type(instrumentor)}: {e}")
 
     @contextmanager
     def start_span(

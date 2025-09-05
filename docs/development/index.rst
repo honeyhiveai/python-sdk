@@ -27,18 +27,19 @@ This section provides comprehensive testing standards, practices, and tools used
 
 **Current Test Status**:
 
-- **Total Tests**: 972 tests (853 unit + 119 integration) - 100% success rate ✅
+- **Total Tests**: 972+ tests (853 unit + 119+ integration) - 100% success rate ✅
 - **Test Coverage**: 81.14% (above 80% requirement ✅)
-- **Test Types**: Unit, Integration, Lambda, Performance, Real API, CLI
+- **Test Types**: Unit, Integration, Real API, Lambda, Performance, CLI
 - **CI/CD Integration**: GitHub Actions with automated quality gates
 
 **Testing Strategy**:
 
-The HoneyHive SDK employs a **three-tier testing strategy**:
+The HoneyHive SDK employs a **four-tier testing strategy**:
 
-1. **Continuous Testing** (Every PR/Push) - Docker simulation, unit/integration tests
-2. **Daily Scheduled Testing** - Real AWS Lambda deployment validation  
-3. **Release Candidate Testing** - Full comprehensive validation
+1. **Unit Testing** - Fast, isolated tests with mocking (every commit)
+2. **Integration Testing** - Component interaction tests (every PR)
+3. **Real API Testing** - Live API and instrumentor validation (when credentials available)
+4. **Lambda Testing** - AWS deployment and performance validation (daily/release)
 
 .. toctree::
    :maxdepth: 1
@@ -46,12 +47,24 @@ The HoneyHive SDK employs a **three-tier testing strategy**:
    testing/setup-and-commands
    testing/unit-testing
    testing/integration-testing
+   testing/integration-testing-strategy
+   testing/real-api-testing
    testing/lambda-testing
    testing/performance-testing
    testing/mocking-strategies
    testing/ci-cd-integration
    testing/troubleshooting-tests
    workflow-optimization
+
+Post-Mortems & Lessons Learned
+-------------------------------
+
+This section contains detailed post-mortems of significant issues and bugs discovered during SDK development. These documents provide valuable insights into our development processes, testing strategies, and lessons learned.
+
+.. toctree::
+   :maxdepth: 1
+
+   post-mortems/2025-09-05-proxy-tracer-provider-bug
 
 **Quick Development Setup:**
 

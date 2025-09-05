@@ -107,11 +107,12 @@ Connect them when initializing:
    from openinference.instrumentation.openai import OpenAIInstrumentor
    
    # Bring your own instrumentor
-   tracer = HoneyHiveTracer.init(
-       api_key="your-key",
-       # Simplified API - no project parameter needed
-       instrumentors=[OpenAIInstrumentor()]  # Your choice!
-   )
+   # Step 1: Initialize HoneyHive tracer first (without instrumentors)
+   tracer = HoneyHiveTracer.init(api_key="your-key")
+   
+   # Step 2: Initialize instrumentor separately with tracer_provider
+   instrumentor = OpenAIInstrumentor()  # Your choice!
+   instrumentor.instrument(tracer_provider=tracer.provider)
 
 Benefits of BYOI
 ----------------
@@ -140,12 +141,15 @@ Benefits of BYOI
    # New LLM provider? Just add its instrumentor
    from new_llm_instrumentor import NewLLMInstrumentor
    
-   tracer = HoneyHiveTracer.init(
-       instrumentors=[
-           OpenAIInstrumentor(),     # Existing
-           NewLLMInstrumentor()      # New provider
-       ]
-   )
+   # Step 1: Initialize HoneyHive tracer first (without instrumentors)
+   tracer = HoneyHiveTracer.init()
+   
+   # Step 2: Initialize instrumentors separately with tracer_provider
+   openai_instrumentor = OpenAIInstrumentor()     # Existing
+   openai_instrumentor.instrument(tracer_provider=tracer.provider)
+   
+   new_llm_instrumentor = NewLLMInstrumentor()    # New provider
+   new_llm_instrumentor.instrument(tracer_provider=tracer.provider)
 
 **Supply Chain Security**
 
@@ -284,10 +288,12 @@ Migration Examples
    from openinference.instrumentation.openai import OpenAIInstrumentor
    
    # You control openai version
-   tracer = HoneyHiveTracer.init(
-       api_key="key",
-       instrumentors=[OpenAIInstrumentor()]
-   )
+   # Step 1: Initialize HoneyHive tracer first (without instrumentors)
+   tracer = HoneyHiveTracer.init(api_key="your-api-key")
+   
+   # Step 2: Initialize instrumentor separately with tracer_provider
+   instrumentor = OpenAIInstrumentor()
+   instrumentor.instrument(tracer_provider=tracer.provider)
 
 **Adding New Providers**
 
@@ -298,12 +304,15 @@ Migration Examples
    
    pip install openinference-instrumentation-newprovider
    
-   tracer = HoneyHiveTracer.init(
-       instrumentors=[
+   # Step 1: Initialize HoneyHive tracer first (without instrumentors)
+   tracer = HoneyHiveTracer.init()
+   
+   # Step 2: Initialize instrumentor separately with tracer_provider
+   instrumentor = 
            OpenAIInstrumentor(),
            NewProviderInstrumentor()  # Immediate support
-       ]
-   )
+       
+   instrumentor.instrument(tracer_provider=tracer.provider)
 
 Best Practices
 --------------
@@ -322,13 +331,16 @@ Best Practices
 .. code-block:: python
 
    # Add providers as you adopt them
-   tracer = HoneyHiveTracer.init(
-       instrumentors=[
+   # Step 1: Initialize HoneyHive tracer first (without instrumentors)
+   tracer = HoneyHiveTracer.init()
+   
+   # Step 2: Initialize instrumentor separately with tracer_provider
+   instrumentor = 
            OpenAIInstrumentor(),
            AnthropicInstrumentor(),    # Added Anthropic
            GoogleGenAIInstrumentor()   # Added Google AI
-       ]
-   )
+       
+   instrumentor.instrument(tracer_provider=tracer.provider)
 
 **Version Pinning**
 
@@ -350,9 +362,12 @@ Best Practices
    )
    
    # Test with instrumentors for integration tests
-   tracer = HoneyHiveTracer.init(
-       instrumentors=[OpenAIInstrumentor()]
-   )
+   # Step 1: Initialize HoneyHive tracer first (without instrumentors)
+   tracer = HoneyHiveTracer.init()
+   
+   # Step 2: Initialize instrumentor separately with tracer_provider
+   instrumentor = OpenAIInstrumentor()
+   instrumentor.instrument(tracer_provider=tracer.provider)
 
 Trade-offs and Limitations
 --------------------------
@@ -430,13 +445,15 @@ HoneyHive provides industry-leading ecosystem-specific convenience groupings tha
    from openinference.instrumentation.openai import OpenAIInstrumentor
    from openinference.instrumentation.anthropic import AnthropicInstrumentor
    
-   tracer = HoneyHiveTracer.init(
-       api_key="your-key",
-       instrumentors=[
+   # Step 1: Initialize HoneyHive tracer first (without instrumentors)
+   tracer = HoneyHiveTracer.init(api_key="your-api-key")
+   
+   # Step 2: Initialize instrumentor separately with tracer_provider
+   instrumentor = 
            OpenAIInstrumentor(),      # OpenAI via OpenInference
            AnthropicInstrumentor()    # Anthropic via OpenInference
-       ]
-   )
+       
+   instrumentor.instrument(tracer_provider=tracer.provider)
 
 .. code-block:: bash
 
@@ -504,6 +521,49 @@ This design philosophy aligns with modern software engineering practices:
 - Loose coupling
 - Explicit dependencies  
 - Composable architectures
+
+Troubleshooting BYOI Integration
+----------------------------------
+
+**Common Issue: "Existing provider doesn't support span processors"**
+
+This warning indicates that OpenTelemetry's default ProxyTracerProvider is being used, which doesn't support the span processors needed for HoneyHive integration.
+
+**Root Cause**: ProxyTracerProvider is OpenTelemetry's placeholder provider that only supports basic tracing operations.
+
+**Solution**: Follow the correct initialization order:
+
+.. code-block:: python
+
+   # ✅ Correct: HoneyHive creates real TracerProvider first
+   from honeyhive import HoneyHiveTracer
+   from openinference.instrumentation.openai import OpenAIInstrumentor
+   
+   # Step 1: Initialize HoneyHive tracer (creates real TracerProvider)
+   tracer = HoneyHiveTracer.init(api_key="your-key")
+   
+   # Step 2: Initialize instrumentor with HoneyHive's provider
+   instrumentor = OpenAIInstrumentor()
+   instrumentor.instrument(tracer_provider=tracer.provider)
+
+.. code-block:: python
+
+   # ❌ INCORRECT: Passing instrumentors to init() (causes ProxyTracerProvider bug)
+   tracer = HoneyHiveTracer.init(
+       api_key="your-key",
+       instrumentors=[OpenAIInstrumentor()]  # This causes ProxyTracerProvider bug!
+   )
+   
+   # ✅ CORRECT: Initialize separately
+   tracer = HoneyHiveTracer.init(api_key="your-key")
+   instrumentor = OpenAIInstrumentor()
+   instrumentor.instrument(tracer_provider=tracer.provider)
+
+**Verification**: Look for these success messages:
+
+- ``🔧 Creating new TracerProvider as main provider``
+- ``✓ OTLP exporter configured to send spans``
+- ``🔍 SPAN INTERCEPTED`` (during LLM calls)
 
 **Next Steps:**
 

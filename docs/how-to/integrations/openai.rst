@@ -67,10 +67,12 @@ Choose Your Instrumentor
    # HH_API_KEY=your-honeyhive-key
    # OPENAI_API_KEY=your-openai-key
 
-   # Initialize with environment variables (secure)
-   tracer = HoneyHiveTracer.init(
-       instrumentors=[OpenAIInstrumentor()]  # Uses HH_API_KEY automatically
-   )
+   # Step 1: Initialize HoneyHive tracer first (without instrumentors)
+   tracer = HoneyHiveTracer.init()  # Uses HH_API_KEY from environment
+   
+   # Step 2: Initialize instrumentor separately with tracer_provider
+   instrumentor = OpenAIInstrumentor()
+   instrumentor.instrument(tracer_provider=tracer.provider)
 
    # Basic usage with error handling
    try:
@@ -99,11 +101,15 @@ Choose Your Instrumentor
    import openai
 
    # Initialize with custom configuration
+   # Step 1: Initialize HoneyHive tracer first (without instrumentors)
    tracer = HoneyHiveTracer.init(
        api_key="your-honeyhive-key",
-       source="production",
-       instrumentors=[OpenAIInstrumentor()]
+       source="production"
    )
+   
+   # Step 2: Initialize instrumentor separately with tracer_provider
+   instrumentor = OpenAIInstrumentor()
+   instrumentor.instrument(tracer_provider=tracer.provider)
 
    @trace(tracer=tracer, event_type=EventType.chain)
    def multi_model_comparison(prompt: str) -> dict:
@@ -189,10 +195,13 @@ Choose Your Instrumentor
    
    .. code-block:: python
    
-      # Ensure instrumentor is passed to tracer
-      tracer = HoneyHiveTracer.init(
-          instrumentors=[OpenAIInstrumentor()]  # Don't forget this!
-      )
+      # Use correct initialization pattern
+      # Step 1: Initialize HoneyHive tracer first (without instrumentors)
+      tracer = HoneyHiveTracer.init()
+      
+      # Step 2: Initialize instrumentor separately with tracer_provider
+      instrumentor = OpenAIInstrumentor()
+      instrumentor.instrument(tracer_provider=tracer.provider)
 
 2. **Performance for High Volume**
    
@@ -278,10 +287,12 @@ Choose Your Instrumentor
    # HH_API_KEY=your-honeyhive-key
    # OPENAI_API_KEY=your-openai-key
 
-   # Initialize with Traceloop instrumentor
-   tracer = HoneyHiveTracer.init(
-       instrumentors=[OpenAIInstrumentor()]  # Uses HH_API_KEY automatically
-   )
+   # Step 1: Initialize HoneyHive tracer first (without instrumentors)
+   tracer = HoneyHiveTracer.init()  # Uses HH_API_KEY from environment
+   
+   # Step 2: Initialize Traceloop instrumentor separately with tracer_provider
+   instrumentor = OpenAIInstrumentor()
+   instrumentor.instrument(tracer_provider=tracer.provider)
 
    # Basic usage with automatic tracing
    try:
@@ -310,11 +321,15 @@ Choose Your Instrumentor
    import openai
 
    # Initialize HoneyHive with Traceloop instrumentor
+   # Step 1: Initialize HoneyHive tracer first (without instrumentors)
    tracer = HoneyHiveTracer.init(
        api_key="your-honeyhive-key",
-       source="production",
-       instrumentors=[OpenAIInstrumentor()]
+       source="production"
    )
+   
+   # Step 2: Initialize instrumentor separately with tracer_provider
+   instrumentor = OpenAIInstrumentor()
+   instrumentor.instrument(tracer_provider=tracer.provider)
 
    @trace(tracer=tracer, event_type=EventType.chain)
    def multi_model_comparison(prompt: str) -> dict:
@@ -406,9 +421,12 @@ Choose Your Instrumentor
       # Ensure Traceloop instrumentor is passed to tracer
       from opentelemetry.instrumentation.openai import OpenAIInstrumentor
       
-      tracer = HoneyHiveTracer.init(
-          instrumentors=[OpenAIInstrumentor()]  # Don't forget this!
-      )
+      # Step 1: Initialize HoneyHive tracer first (without instrumentors)
+      tracer = HoneyHiveTracer.init()
+      
+      # Step 2: Initialize instrumentor separately with tracer_provider
+      instrumentor = OpenAIInstrumentor()
+      instrumentor.instrument(tracer_provider=tracer.provider)
 
 2. **Enhanced Metrics Not Showing**
    
@@ -419,7 +437,12 @@ Choose Your Instrumentor
       
       # The instrumentor automatically captures enhanced metrics
       from opentelemetry.instrumentation.openai import OpenAIInstrumentor
-      tracer = HoneyHiveTracer.init(instrumentors=[OpenAIInstrumentor()])
+      # Step 1: Initialize HoneyHive tracer first (without instrumentors)
+   tracer = HoneyHiveTracer.init()
+   
+   # Step 2: Initialize instrumentor separately with tracer_provider
+   instrumentor = OpenAIInstrumentor()
+   instrumentor.instrument(tracer_provider=tracer.provider)
 
 3. **Multiple Traceloop Instrumentors**
    
@@ -513,11 +536,21 @@ Migration Between Instrumentors
 
    # Before (OpenInference)
    from openinference.instrumentation.openai import OpenAIInstrumentor
-   tracer = HoneyHiveTracer.init(instrumentors=[OpenAIInstrumentor()])
+   # Step 1: Initialize HoneyHive tracer first (without instrumentors)
+   tracer = HoneyHiveTracer.init()
+   
+   # Step 2: Initialize instrumentor separately with tracer_provider
+   instrumentor = OpenAIInstrumentor()
+   instrumentor.instrument(tracer_provider=tracer.provider)
    
    # After (Traceloop) - different instrumentor package
    from opentelemetry.instrumentation.openai import OpenAIInstrumentor
-   tracer = HoneyHiveTracer.init(instrumentors=[OpenAIInstrumentor()])
+   # Step 1: Initialize HoneyHive tracer first (without instrumentors)
+   tracer = HoneyHiveTracer.init()
+   
+   # Step 2: Initialize instrumentor separately with tracer_provider
+   instrumentor = OpenAIInstrumentor()
+   instrumentor.instrument(tracer_provider=tracer.provider)
 
 **From Traceloop to OpenInference**:
 
@@ -525,11 +558,21 @@ Migration Between Instrumentors
 
    # Before (Traceloop)
    from opentelemetry.instrumentation.openai import OpenAIInstrumentor
-   tracer = HoneyHiveTracer.init(instrumentors=[OpenAIInstrumentor()])
+   # Step 1: Initialize HoneyHive tracer first (without instrumentors)
+   tracer = HoneyHiveTracer.init()
+   
+   # Step 2: Initialize instrumentor separately with tracer_provider
+   instrumentor = OpenAIInstrumentor()
+   instrumentor.instrument(tracer_provider=tracer.provider)
    
    # After (OpenInference)
    from openinference.instrumentation.openai import OpenAIInstrumentor
-   tracer = HoneyHiveTracer.init(instrumentors=[OpenAIInstrumentor()])
+   # Step 1: Initialize HoneyHive tracer first (without instrumentors)
+   tracer = HoneyHiveTracer.init()
+   
+   # Step 2: Initialize instrumentor separately with tracer_provider
+   instrumentor = OpenAIInstrumentor()
+   instrumentor.instrument(tracer_provider=tracer.provider)
 
 See Also
 --------

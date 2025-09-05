@@ -16,14 +16,19 @@ def main():
     print("🚀 Simple OpenAI + HoneyHive Integration")
     print("=" * 40)
     
-    # 1. Initialize HoneyHive with OpenAI instrumentor
+    # 1. Initialize HoneyHive tracer FIRST (without instrumentors)
     tracer = HoneyHiveTracer.init(
         api_key=os.getenv("HH_API_KEY", "your-honeyhive-key"),
         project=os.getenv("HH_PROJECT", "openai-simple-demo"),
-        source=os.getenv("HH_SOURCE", "development"),
-        instrumentors=[OpenAIInstrumentor()]  # This enables automatic tracing
+        source=__file__.split('/')[-1]  # Use script name for visibility
+        # ✅ NO instrumentors parameter - follow documented pattern
     )
-    print("✓ HoneyHive tracer initialized with OpenAI instrumentor")
+    print("✓ HoneyHive tracer initialized")
+    
+    # 2. Initialize instrumentor separately with tracer_provider
+    openai_instrumentor = OpenAIInstrumentor()
+    openai_instrumentor.instrument(tracer_provider=tracer.provider)
+    print("✓ OpenAI instrumentor initialized with HoneyHive tracer_provider")
     
     # 2. Use OpenAI exactly as you normally would
     client = openai.OpenAI(api_key=os.getenv("OPENAI_API_KEY", "your-openai-key"))
@@ -62,6 +67,13 @@ def main():
     except Exception as e:
         print(f"❌ Error: {e}")
         print("Make sure to set OPENAI_API_KEY environment variable")
+    
+    finally:
+        # Cleanup
+        print("\n📤 Flushing traces...")
+        tracer.force_flush()
+        openai_instrumentor.uninstrument()
+        print("✓ Cleanup completed")
 
 if __name__ == "__main__":
     main()

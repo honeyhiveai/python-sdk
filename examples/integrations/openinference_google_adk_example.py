@@ -55,9 +55,12 @@ def main():
         tracer = HoneyHiveTracer.init(
             api_key=hh_api_key,
             project=hh_project,
-            instrumentors=[adk_instrumentor],  # Pass instrumentor to HoneyHive
             source="google_adk_example"
         )
+        print("✓ HoneyHive tracer initialized")
+        
+        # Initialize instrumentor separately with tracer_provider
+        adk_instrumentor.instrument(tracer_provider=tracer.provider)
         print("✓ HoneyHive tracer initialized with Google ADK instrumentor")
         
         # 3. Configure Google ADK

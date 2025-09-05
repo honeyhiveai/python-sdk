@@ -17,7 +17,7 @@ Latest Release Notes
 Current Version Highlights
 ~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-**v0.1.0 (Unreleased) - Major Architectural Refactor**
+**v0.1.0 (Unreleased) - Major Architectural Refactor & Bug Fixes**
 
 **🎯 NEW: Compatibility Matrix Framework (2025-09-05)**
 

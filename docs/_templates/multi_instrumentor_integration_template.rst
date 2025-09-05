@@ -71,7 +71,7 @@ OpenInference Integration
 
    # Initialize with environment variables (secure)
    tracer = HoneyHiveTracer.init(
-       instrumentors=[[Provider]Instrumentor()]  # Uses HH_API_KEY automatically
+       # FIXED: Use separate initialization insteadInstrumentor()]  # Uses HH_API_KEY automatically
    )
 
    # Basic usage with error handling
@@ -100,7 +100,7 @@ OpenInference Integration
    tracer = HoneyHiveTracer.init(
        api_key="your-honeyhive-key",
        source="production",
-       instrumentors=[[Provider]Instrumentor()]
+       # FIXED: Use separate initialization insteadInstrumentor()]
    )
 
    @trace(tracer=tracer, event_type=EventType.chain)
@@ -343,7 +343,7 @@ Migration Between Instrumentors
 
    # Before (OpenInference)
    from openinference.instrumentation.[provider] import [Provider]Instrumentor
-   tracer = HoneyHiveTracer.init(instrumentors=[[Provider]Instrumentor()])
+   tracer = HoneyHiveTracer.init(# FIXED: Use separate initialization insteadInstrumentor()])
    
    # After (Traceloop)
    from traceloop.sdk import Traceloop
@@ -361,7 +361,7 @@ Migration Between Instrumentors
    
    # After (OpenInference)
    from openinference.instrumentation.[provider] import [Provider]Instrumentor
-   tracer = HoneyHiveTracer.init(instrumentors=[[Provider]Instrumentor()])
+   tracer = HoneyHiveTracer.init(# FIXED: Use separate initialization insteadInstrumentor()])
 
 Troubleshooting
 ---------------
@@ -374,7 +374,7 @@ Troubleshooting
    
       # Ensure instrumentor is passed to tracer
       tracer = HoneyHiveTracer.init(
-          instrumentors=[[Provider]Instrumentor()]  # Don't forget this!
+          # FIXED: Use separate initialization insteadInstrumentor()]  # Don't forget this!
       )
 
 2. **Traceloop: Import Conflicts**

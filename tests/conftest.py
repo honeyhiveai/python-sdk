@@ -1,14 +1,34 @@
 """Test configuration and fixtures for HoneyHive."""
 
 import os
+from pathlib import Path
 from unittest.mock import Mock, patch
 
 import pytest
+from dotenv import load_dotenv
 
 from honeyhive.api.client import HoneyHive
 from honeyhive.tracer import HoneyHiveTracer
 
 from .utils import cleanup_test_environment, setup_test_environment
+
+
+# Load environment variables for real API testing
+def _load_test_credentials():
+    """Load test credentials from .env file or environment variables."""
+    project_root = Path(__file__).parent.parent
+    env_files = [
+        project_root / ".env.integration",  # Integration-specific
+        project_root / ".env",  # General project
+    ]
+
+    for env_file in env_files:
+        if env_file.exists():
+            load_dotenv(env_file)
+            break
+
+
+_load_test_credentials()
 
 
 @pytest.fixture
@@ -87,6 +107,92 @@ def mock_async_response():
     return mock
 
 
+# Real API Testing Fixtures
+@pytest.fixture(scope="session")
+def real_api_credentials():
+    """Get real API credentials for integration tests."""
+    credentials = {
+        "api_key": os.environ.get("HH_API_KEY"),
+        "source": os.environ.get("HH_SOURCE", "pytest-integration"),
+        "api_url": os.environ.get("HH_API_URL", "https://api.honeyhive.ai"),
+    }
+
+    if not credentials["api_key"]:
+        pytest.skip(
+            "Real API credentials not found. For local testing, create .env file with:\n"
+            "HH_API_KEY=your_honeyhive_api_key\n"
+            "HH_SOURCE=pytest-integration  # Optional\n"
+            "For CI, set these as environment variables."
+        )
+
+    return credentials
+
+
+@pytest.fixture
+def real_honeyhive_tracer(real_api_credentials):
+    """Create a real HoneyHive tracer with NO MOCKING."""
+    tracer = HoneyHiveTracer(
+        api_key=real_api_credentials["api_key"],
+        source=real_api_credentials["source"],
+        test_mode=False,  # Real API mode
+        disable_http_tracing=True,  # Avoid HTTP conflicts in tests
+    )
+
+    yield tracer
+
+    # Cleanup
+    try:
+        tracer.force_flush()
+        tracer.shutdown()
+    except Exception:
+        pass
+
+
+@pytest.fixture
+def fresh_tracer_environment(real_api_credentials):
+    """Create a completely fresh tracer environment for each test."""
+    # Reset OpenTelemetry global state
+    try:
+        from opentelemetry import context, trace
+
+        # Clear context and reset tracer provider
+        context.attach(context.Context())
+        trace._TRACER_PROVIDER = None
+
+    except ImportError:
+        pass
+
+    # Create fresh tracer
+    tracer = HoneyHiveTracer(
+        api_key=real_api_credentials["api_key"],
+        source=f"{real_api_credentials['source']}-fresh",
+        test_mode=False,
+        disable_http_tracing=True,
+    )
+
+    yield tracer
+
+    # Cleanup
+    try:
+        tracer.force_flush()
+        tracer.shutdown()
+    except Exception:
+        pass
+
+
+@pytest.fixture(scope="session")
+def provider_api_keys():
+    """Get LLM provider API keys for real instrumentor testing."""
+    return {
+        "openai": os.environ.get("OPENAI_API_KEY"),
+        "anthropic": os.environ.get("ANTHROPIC_API_KEY"),
+        "google": os.environ.get("GOOGLE_API_KEY"),
+        "aws_access_key": os.environ.get("AWS_ACCESS_KEY_ID"),
+        "aws_secret_key": os.environ.get("AWS_SECRET_ACCESS_KEY"),
+        "aws_region": os.environ.get("AWS_DEFAULT_REGION", "us-east-1"),
+    }
+
+
 @pytest.fixture(autouse=True)
 def setup_test_env():
     """Setup test environment variables."""
@@ -151,9 +257,30 @@ def reset_opentelemetry_context():
         yield
 
 
+def _is_real_api_test(request):
+    """Check if the current test is marked as a real API test."""
+    return (
+        request.node.get_closest_marker("real_api") is not None
+        or request.node.get_closest_marker("real_instrumentor") is not None
+        or "real_api" in request.node.name
+        or "real_instrumentor" in request.node.name
+    )
+
+
 @pytest.fixture(autouse=True)
-def disable_tracing_during_tests():
-    """Disable tracing during tests to prevent I/O errors."""
+def conditional_disable_tracing(request):
+    """Conditionally disable tracing - only for non-real-API tests.
+
+    Real API tests need actual OpenTelemetry behavior to catch bugs
+    like the ProxyTracerProvider issue.
+    """
+    # Skip mocking for real API tests
+    if _is_real_api_test(request):
+        # Real API test - no mocking, let OpenTelemetry work normally
+        yield
+        return
+
+    # Regular unit test - apply mocking to prevent I/O
     # Set environment variables to disable tracing
     os.environ["HH_DISABLE_TRACING"] = "true"
     os.environ["HH_DISABLE_HTTP_TRACING"] = "true"
@@ -179,3 +306,48 @@ def disable_tracing_during_tests():
             create_mock_span_processor,
         ):
             yield
+
+
+# Pytest configuration for real API testing
+def pytest_configure(config):
+    """Configure pytest markers."""
+    config.addinivalue_line(
+        "markers", "real_api: mark test as requiring real API credentials"
+    )
+    config.addinivalue_line(
+        "markers", "real_instrumentor: mark test as requiring real instrumentor testing"
+    )
+    config.addinivalue_line(
+        "markers", "openai_required: mark test as requiring OpenAI API key"
+    )
+    config.addinivalue_line(
+        "markers", "anthropic_required: mark test as requiring Anthropic API key"
+    )
+
+
+def pytest_runtest_setup(item):
+    """Skip tests based on available credentials and markers."""
+    # Skip real API tests if no credentials
+    if item.get_closest_marker("real_api") or item.get_closest_marker(
+        "real_instrumentor"
+    ):
+        if not os.environ.get("HH_API_KEY"):
+            # Check if we're in CI environment
+            ci_indicators = ["CI", "GITHUB_ACTIONS", "GITLAB_CI", "JENKINS_URL"]
+            in_ci = any(os.environ.get(indicator) for indicator in ci_indicators)
+
+            if in_ci:
+                pytest.skip("Real API credentials not available in CI environment")
+            else:
+                pytest.skip(
+                    "Real API credentials not found. Create .env file with HH_API_KEY for local testing."
+                )
+
+    # Skip provider-specific tests if no API keys
+    if item.get_closest_marker("openai_required"):
+        if not os.environ.get("OPENAI_API_KEY"):
+            pytest.skip("OpenAI API key not available")
+
+    if item.get_closest_marker("anthropic_required"):
+        if not os.environ.get("ANTHROPIC_API_KEY"):
+            pytest.skip("Anthropic API key not available")

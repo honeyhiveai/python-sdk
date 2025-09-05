@@ -40,12 +40,15 @@ def setup_tracing() -> HoneyHiveTracer:
     # Initialize OpenLLMetry OpenAI instrumentor (works for Azure OpenAI)
     openai_instrumentor = OpenAIInstrumentor()
     
-    # Initialize HoneyHive tracer with instrumentor
+    # Initialize HoneyHive tracer FIRST
     tracer = HoneyHiveTracer.init(
-        instrumentors=[openai_instrumentor],
         source="traceloop_azure_openai_example",
         project=os.getenv("HH_PROJECT", "azure-openai-traceloop-demo")
     )
+    print("✓ HoneyHive tracer initialized")
+    
+    # Initialize instrumentor separately with tracer_provider
+    openai_instrumentor.instrument(tracer_provider=tracer.provider)
     
     print("✅ Tracing initialized with OpenLLMetry OpenAI instrumentor (Azure OpenAI compatible)")
     return tracer

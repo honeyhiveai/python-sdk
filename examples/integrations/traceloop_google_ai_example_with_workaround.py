@@ -91,9 +91,12 @@ def main():
         tracer = HoneyHiveTracer.init(
             api_key=os.getenv("HH_API_KEY"),
             project=os.getenv("HH_PROJECT"),
-            instrumentors=[google_ai_instrumentor],
             source="traceloop_example_with_workaround",
         )
+        print("✓ HoneyHive tracer initialized")
+        
+        # Initialize instrumentor separately with tracer_provider
+        google_ai_instrumentor.instrument(tracer_provider=tracer.provider)
         print("✅ HoneyHive tracer initialized")
         
         # Configure Google AI

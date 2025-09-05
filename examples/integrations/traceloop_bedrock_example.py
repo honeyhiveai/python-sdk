@@ -39,12 +39,15 @@ def setup_tracing() -> HoneyHiveTracer:
     # Initialize OpenLLMetry Bedrock instrumentor
     bedrock_instrumentor = BedrockInstrumentor()
     
-    # Initialize HoneyHive tracer with instrumentor
+    # Initialize HoneyHive tracer FIRST
     tracer = HoneyHiveTracer.init(
-        instrumentors=[bedrock_instrumentor],
         source="traceloop_bedrock_example",
         project=os.getenv("HH_PROJECT", "bedrock-traceloop-demo")
     )
+    print("✓ HoneyHive tracer initialized")
+    
+    # Initialize instrumentor separately with tracer_provider
+    bedrock_instrumentor.instrument(tracer_provider=tracer.provider)
     
     print("✅ Tracing initialized with OpenLLMetry Bedrock instrumentor")
     return tracer

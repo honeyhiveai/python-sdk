@@ -45,8 +45,9 @@ All workflows now include intelligent path detection to prevent unnecessary runs
 .. code-block:: bash
 
    # Our standard testing commands (used in GHA)
-   tox -e unit              # Unit tests (fast)
-   tox -e integration       # Integration tests  
+   tox -e unit              # Unit tests (fast, mocked)
+   tox -e integration       # Integration tests (component interaction)
+   tox -e real-api          # Real API tests (live validation) - NEW!
    tox -e lint             # Code quality (pylint + mypy)
    tox -e format           # Code formatting (black + isort)
    tox -e py311,py312,py313 # Multi-Python testing
@@ -91,20 +92,76 @@ The workflow uses **sequential execution** (not matrix) to provide clean PR inte
 
    jobs:
      # Python Version Testing (Sequential)
-     test-python-311:
-       name: "🐍 Python 3.11 Testing"
-     test-python-312: 
-       name: "🐍 Python 3.12 Testing"
-     test-python-313:
-       name: "🐍 Python 3.13 Testing"
+     python-tests:
+       name: "🐍 Python ${{ matrix.python-version }}"
+       strategy:
+         matrix:
+           python-version: ['3.11', '3.12', '3.13']
+     
+     # Real API Integration Testing (Added 2025-09-05)
+     real-api-tests:
+       name: "🌐 Real API Integration Tests"
+       # Only runs when HH_API_KEY secret is available
      
      # Quality Gates
-     code-quality:
-       name: "📊 Code Quality (Lint + Format)"
+     quality-and-docs:
+       name: "🔍 Quality & 📚 Docs"
+
+Real API Integration Testing
+----------------------------
+
+**Real API Testing Job in `tox-full-suite.yml`** (Added 2025-09-05):
+
+The `real-api-tests` job provides comprehensive testing with actual HoneyHive APIs and LLM provider instrumentors:
+
+**Key Features**:
+
+- **Conditional Execution**: Only runs when `HH_API_KEY` secret is available
+- **Graceful Skipping**: Skips cleanly for forks and external contributors
+- **Multi-Provider Support**: Tests OpenAI, Anthropic, AWS Bedrock instrumentors
+- **Real OpenTelemetry**: No mocking - catches bugs like ProxyTracerProvider issues
+- **Commit Controls**: Use `[skip-real-api]` in commit message to skip
+
+**Environment Setup**:
+
+.. code-block:: yaml
+
+   env:
+     # HoneyHive credentials
+     HH_API_KEY: ${{ secrets.HH_API_KEY }}
+     HH_SOURCE: github-actions-real-api
+     HH_API_URL: https://api.honeyhive.ai
      
-     # Coverage Reporting
-     coverage-report:
-       name: "📈 Coverage Analysis"
+     # LLM Provider credentials (optional)
+     OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+     ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+     GOOGLE_API_KEY: ${{ secrets.GOOGLE_API_KEY }}
+     AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+     AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+
+**Test Execution**:
+
+.. code-block:: bash
+
+   # Runs the real-api tox environment
+   tox -e real-api
+   
+   # Which executes:
+   pytest tests/integration -m "real_api or real_instrumentor" -v
+
+**What Gets Tested**:
+
+1. **ProxyTracerProvider Transition**: Ensures HoneyHive correctly replaces OpenTelemetry's default provider
+2. **Real Instrumentor Integration**: Tests actual OpenInference and Traceloop instrumentors
+3. **Multi-Instance Support**: Validates multiple tracer instances work independently
+4. **Error Handling**: Tests exception capture and span status in real environments
+5. **Performance Metrics**: Validates span timing and metadata enrichment
+
+**Credential Management**:
+
+- **Internal Repositories**: Use organization secrets for full testing
+- **Forks/External PRs**: Tests skip gracefully with informative messages
+- **Local Development**: Use `.env` file with `HH_API_KEY` for manual testing
 
 AWS Lambda Testing Workflow
 ---------------------------
@@ -272,8 +329,17 @@ Environment Variables in CI
    # Repository secrets (configured in GitHub)
    HH_API_KEY          # HoneyHive API key for real API testing
    HH_TEST_API_KEY     # Dedicated test environment key
-   AWS_ACCESS_KEY_ID   # For real Lambda testing (optional)
-   AWS_SECRET_ACCESS_KEY  # For real Lambda testing (optional)
+   
+   # LLM Provider API Keys (for real instrumentor testing)
+   OPENAI_API_KEY      # OpenAI API key (optional)
+   ANTHROPIC_API_KEY   # Anthropic API key (optional) 
+   GOOGLE_API_KEY      # Google AI API key (optional)
+   
+   # AWS Credentials (for Lambda and Bedrock testing)
+   AWS_ACCESS_KEY_ID   # For real Lambda/Bedrock testing (optional)
+   AWS_SECRET_ACCESS_KEY  # For real Lambda/Bedrock testing (optional)
+   
+   # Coverage and Reporting
    CODECOV_TOKEN       # For coverage reporting (optional)
 
 **Environment Variables Set in Workflows**:
@@ -364,7 +430,23 @@ Troubleshooting CI Failures
    # Validate navigation
    python docs/utils/validate_navigation.py --local
 
-**5. Workflow Not Triggering**:
+**5. Real API Test Failures** (Added 2025-09-05):
+
+.. code-block:: bash
+
+   # Check if real API credentials are available
+   echo $HH_API_KEY | wc -c  # Should be > 1
+   
+   # Run real API tests locally
+   tox -e real-api
+   
+   # Test specific provider instrumentors
+   pytest tests/integration -m "real_api and openai_required" -v
+   
+   # Check for ProxyTracerProvider issues
+   pytest tests/integration::TestRealInstrumentorIntegration::test_proxy_tracer_provider_bug_detection -v
+
+**6. Workflow Not Triggering**:
 
 Common reasons workflows don't run:
 
@@ -372,6 +454,7 @@ Common reasons workflows don't run:
 - **Branch filters**: Push to non-main branch with main-only workflow
 - **File types**: Changes to files not covered by path filters
 - **Workflow syntax**: YAML syntax errors prevent workflow execution
+- **Real API skipping**: No `HH_API_KEY` secret configured (expected for forks)
 
 Workflow Monitoring and Debugging
 ---------------------------------

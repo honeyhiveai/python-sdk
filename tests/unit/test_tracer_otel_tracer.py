@@ -178,25 +178,6 @@ class TestHoneyHiveTracer:
                 # Should use custom session name
                 assert tracer.session_name == "custom_session"
 
-    def test_instrumentors_integration(self) -> None:
-        """Test instrumentors integration."""
-        with patch("honeyhive.tracer.otel_tracer.OTEL_AVAILABLE", True):
-            with patch("honeyhive.tracer.otel_tracer.config") as mock_config:
-                with patch.object(
-                    HoneyHiveTracer, "_integrate_instrumentors"
-                ) as mock_integrate:
-                    mock_config.api_key = "test_key"
-                    mock_config.project = "test_project"
-
-                    instrumentors = ["test_instrumentor"]
-                    tracer = HoneyHiveTracer(
-                        api_key="test_key",
-                        instrumentors=instrumentors,
-                    )
-
-                    # Should call instrumentor integration
-                    mock_integrate.assert_called_once_with(instrumentors)
-
     def test_initialization_flow(self) -> None:
         """Test complete initialization flow."""
         with patch("honeyhive.tracer.otel_tracer.OTEL_AVAILABLE", True):

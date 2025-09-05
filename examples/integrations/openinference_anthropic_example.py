@@ -16,14 +16,19 @@ def main():
     print("🚀 Simple Anthropic + HoneyHive Integration")
     print("=" * 42)
     
-    # 1. Initialize HoneyHive with Anthropic instrumentor
+    # 1. Initialize HoneyHive tracer FIRST (without instrumentors)
     tracer = HoneyHiveTracer.init(
         api_key=os.getenv("HH_API_KEY", "your-honeyhive-key"),
         project=os.getenv("HH_PROJECT", "anthropic-simple-demo"),
-        source=os.getenv("HH_SOURCE", "development"),
-        instrumentors=[AnthropicInstrumentor()]  # This enables automatic tracing
+        source=__file__.split('/')[-1]  # Use script name for visibility
+        # ✅ NO instrumentors parameter - follow documented pattern
     )
-    print("✓ HoneyHive tracer initialized with Anthropic instrumentor")
+    print("✓ HoneyHive tracer initialized")
+    
+    # 2. Initialize instrumentor separately with tracer_provider
+    anthropic_instrumentor = AnthropicInstrumentor()
+    anthropic_instrumentor.instrument(tracer_provider=tracer.provider)
+    print("✓ Anthropic instrumentor initialized with HoneyHive tracer_provider")
     
     # 2. Use Anthropic exactly as you normally would
     client = anthropic.Anthropic(api_key=os.getenv("ANTHROPIC_API_KEY", "your-anthropic-key"))
@@ -69,6 +74,13 @@ def main():
     except Exception as e:
         print(f"❌ Error: {e}")
         print("Make sure to set ANTHROPIC_API_KEY environment variable")
+    
+    finally:
+        # Cleanup
+        print("\n📤 Flushing traces...")
+        tracer.force_flush()
+        anthropic_instrumentor.uninstrument()
+        print("✓ Cleanup completed")
 
 if __name__ == "__main__":
     main()

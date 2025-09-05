@@ -41,12 +41,15 @@ def setup_tracing() -> HoneyHiveTracer:
     # Initialize OpenLLMetry MCP instrumentor
     mcp_instrumentor = MCPInstrumentor()
     
-    # Initialize HoneyHive tracer with instrumentor
+    # Initialize HoneyHive tracer FIRST
     tracer = HoneyHiveTracer.init(
-        instrumentors=[mcp_instrumentor],
         source="traceloop_mcp_example",
         project=os.getenv("HH_PROJECT", "mcp-traceloop-demo")
     )
+    print("✓ HoneyHive tracer initialized")
+    
+    # Initialize instrumentor separately with tracer_provider
+    mcp_instrumentor.instrument(tracer_provider=tracer.provider)
     
     print("✅ Tracing initialized with OpenLLMetry MCP instrumentor")
     return tracer

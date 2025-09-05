@@ -37,12 +37,14 @@ def setup_tracing() -> HoneyHiveTracer:
     # Initialize OpenLLMetry OpenAI instrumentor
     openai_instrumentor = OpenAIInstrumentor()
     
-    # Initialize HoneyHive tracer with instrumentor
+    # Initialize HoneyHive tracer FIRST (without instrumentors)
     tracer = HoneyHiveTracer.init(
-        instrumentors=[openai_instrumentor],  # Pass instrumentor to HoneyHive
-        source="traceloop_openai_example",
+        source=__file__.split('/')[-1],  # Use script name for visibility
         project=os.getenv("HH_PROJECT", "openai-traceloop-demo")
     )
+    
+    # Then initialize instrumentor with tracer_provider
+    openai_instrumentor.instrument(tracer_provider=tracer.provider)
     
     print("✅ Tracing initialized with OpenLLMetry OpenAI instrumentor")
     return tracer

@@ -28,6 +28,8 @@ Core Capabilities
 - **Universal @trace Decorator**: Works with both sync and async functions with automatic detection
 - **Multi-Instance Architecture**: Create multiple independent tracers within the same runtime  
 - **Session Management**: Automatic session creation with dynamic naming based on initialization file
+- **ProxyTracerProvider Compatibility**: Automatic detection and handling of OpenTelemetry's default provider states
+- **Real API Testing**: Comprehensive testing framework with conditional mocking for production-grade validation
 - **Span Enrichment**: Rich context manager pattern for automatic span enrichment with OpenTelemetry native integration
 - **HTTP Instrumentation**: Automatic HTTP request tracing with configurable enable/disable
 

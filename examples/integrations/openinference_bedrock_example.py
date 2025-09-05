@@ -21,9 +21,13 @@ def main():
     tracer = HoneyHiveTracer.init(
         api_key=os.getenv("HH_API_KEY", "your-honeyhive-key"),
         project=os.getenv("HH_PROJECT", "bedrock-simple-demo"),
-        source=os.getenv("HH_SOURCE", "development"),
-        instrumentors=[BedrockInstrumentor()]  # This enables automatic tracing
+        source=os.getenv("HH_SOURCE", "development")
     )
+    print("✓ HoneyHive tracer initialized")
+    
+    # Initialize instrumentor separately with tracer_provider
+    bedrock_instrumentor = BedrockInstrumentor()
+    bedrock_instrumentor.instrument(tracer_provider=tracer.provider)
     print("✓ HoneyHive tracer initialized with Bedrock instrumentor")
     
     # 2. Set up AWS Bedrock client exactly as you normally would

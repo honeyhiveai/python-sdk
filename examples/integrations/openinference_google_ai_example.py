@@ -20,9 +20,13 @@ def main():
     tracer = HoneyHiveTracer.init(
         api_key=os.getenv("HH_API_KEY", "your-honeyhive-key"),
         project=os.getenv("HH_PROJECT", "google-ai-simple-demo"),
-        source=os.getenv("HH_SOURCE", "development"),
-        instrumentors=[GoogleGenerativeAIInstrumentor()]  # This enables automatic tracing
+        source=os.getenv("HH_SOURCE", "development")
     )
+    print("✓ HoneyHive tracer initialized")
+    
+    # Initialize instrumentor separately with tracer_provider
+    google_ai_instrumentor = GoogleGenerativeAIInstrumentor()
+    google_ai_instrumentor.instrument(tracer_provider=tracer.provider)
     print("✓ HoneyHive tracer initialized with Google AI instrumentor")
     
     # 2. Configure Google AI exactly as you normally would
