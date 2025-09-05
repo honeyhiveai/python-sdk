@@ -162,9 +162,20 @@ def main() -> NoReturn:
         print("🚨 Emergency commit detected - bypassing documentation requirements")
         sys.exit(0)
 
-    # Docs-only commits have relaxed requirements
+    # Docs-only commits: still require CHANGELOG for significant changes
     if is_docs_only:
-        if len(staged_files) > 5 and not changelog_updated:
+        if has_significant and not changelog_updated:
+            print("\n❌ CHANGELOG.md update required for significant documentation changes!")
+            print("\nEven documentation-only commits require CHANGELOG updates when they:")
+            print("- Affect user-facing behavior or examples")
+            print("- Change API documentation or reference materials")
+            print("- Include major template or generation system changes")
+            print("\nTo fix this:")
+            print("1. Update CHANGELOG.md with your documentation changes")
+            print("2. Stage the file: git add CHANGELOG.md")
+            print("3. Re-run your commit")
+            sys.exit(1)
+        elif len(staged_files) > 5 and not changelog_updated:
             print("\n⚠️  Large documentation change detected")
             print("Consider updating CHANGELOG.md for significant documentation changes")
         print("✅ Documentation-only commit")
