@@ -182,6 +182,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Added comprehensive path filters to `lambda-tests.yml` for Lambda-specific changes
   - Removed obsolete planning documents (`DIVIO_REORGANIZATION_PLAN.md`, `CONTENT_PARITY_ANALYSIS.md`)
   - Added documentation in `docs/development/workflow-optimization.rst`
+  - **Added Agent OS rule**: Mandatory CI/CD workflow documentation synchronization requirement in `.cursorrules` and `.agent-os/standards/best-practices.md`
 
 ### Fixed
 

@@ -29,7 +29,11 @@
 **Documentation Update Requirements**:
 - **Code changes**: CHANGELOG.md must be updated
 - **New features**: CHANGELOG.md + docs/reference/index.rst + .agent-os/product/features.md
-- **Workflow changes**: Update docs/development/testing/ and .agent-os/standards/
+- **🔄 CI/CD Workflow Changes (MANDATORY)**: When modifying `.github/workflows/*.yml` files:
+  - **ALWAYS update** `docs/development/testing/ci-cd-integration.rst` to reflect current workflow behavior
+  - **Required sections**: Triggers, path filters, job structure, environment variables, testing strategies
+  - **Cross-reference**: Update `docs/development/workflow-optimization.rst` for path-based detection changes
+  - **Validation**: Ensure documentation matches actual workflow implementation
 - **Mermaid diagrams**: MUST follow `.agent-os/standards/mermaid-diagrams.md` dual-theme standards
 - **Large changesets (>3 files)**: Comprehensive documentation review required
 - **AI Assistant commits**: Automatic documentation compliance checking via unified validation script

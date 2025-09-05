@@ -21,6 +21,12 @@
 - **Required development tools**: Install `yamllint` and GitHub CLI (`gh`) for workflow validation and CI/CD investigation
 - **🚨 CRITICAL: Test Count Reporting** - Always report TOTAL test count correctly: "X tests passing (Y unit + Z integration)" - NEVER report partial counts as totals
 
+## CI/CD Workflow Documentation Synchronization
+- **MANDATORY**: When making changes to `.github/workflows/*.yml` files, ALWAYS update `docs/development/testing/ci-cd-integration.rst`
+- **Required Updates**: Workflow triggers, path filters, job structure, environment variables, and testing strategies
+- **Validation**: Ensure documentation accurately reflects current workflow behavior and capabilities
+- **Cross-Reference**: Update related documentation in `docs/development/workflow-optimization.rst` for path-based detection changes
+
 ## Type Safety & Documentation Code Standards
 - **MANDATORY**: Use proper enum imports in ALL documentation examples
 - **MANDATORY**: Include complete import statements in every code example
