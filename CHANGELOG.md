@@ -136,6 +136,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
+
+#### Enhanced Documentation System (2025-09-04)
+- **CSS-Based Dual-Theme System for Mermaid Sequence Diagrams**: Implemented automatic light/dark theme detection using `@media (prefers-color-scheme: dark)` with targeted CSS selectors for participant text (white on blue backgrounds) and message text (black in light mode, white in dark mode)
+- **Strict CHANGELOG Enforcement**: Removed 24-hour grace period from changelog update checks to ensure every significant change is documented immediately in high-frequency development environments
 - **MCP (Model Context Protocol) Integration (2025-09-03)**: Complete support for OpenInference MCP instrumentor
   - Added `openinference-instrumentation-mcp>=1.3.0` to optional dependencies (`pip install honeyhive[mcp]`)
   - Comprehensive test suite: `tests/test_mcp_integration.py` and `tests/compatibility_matrix/test_mcp.py`

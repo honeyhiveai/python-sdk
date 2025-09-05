@@ -6,11 +6,8 @@ Ensures that CHANGELOG.md is updated when code changes are made.
 This prevents code changes from being committed without proper documentation.
 """
 
-import os
 import subprocess
 import sys
-from datetime import datetime
-from pathlib import Path
 from typing import NoReturn
 
 
@@ -66,19 +63,8 @@ def is_changelog_updated(staged_files: list) -> bool:
     return "CHANGELOG.md" in staged_files
 
 
-def get_changelog_last_modified() -> datetime:
-    """Get the last modification date of CHANGELOG.md."""
-    changelog_path = Path("CHANGELOG.md")
-    if not changelog_path.exists():
-        return datetime.min
-
-    return datetime.fromtimestamp(changelog_path.stat().st_mtime)
-
-
-def is_recent_update(last_modified: datetime, hours: int = 24) -> bool:
-    """Check if CHANGELOG was updated recently (within specified hours)."""
-    time_diff = datetime.now() - last_modified
-    return time_diff.total_seconds() < (hours * 3600)
+# Removed: get_changelog_last_modified() and is_recent_update() 
+# Grace period functions removed for high-frequency development compliance
 
 
 def check_commit_message_has_docs_intent() -> bool:
@@ -128,6 +114,7 @@ def main() -> NoReturn:
     print(f"📁 Staged files: {len(staged_files)}")
     print(f"🔧 Significant changes detected: {'Yes' if has_significant else 'No'}")
     print(f"📝 CHANGELOG.md updated: {'Yes' if changelog_updated else 'No'}")
+    print("⚡ High-frequency development mode: No grace period for CHANGELOG updates")
 
     # If no significant changes, allow commit
     if not has_significant:
@@ -139,13 +126,8 @@ def main() -> NoReturn:
         print("✅ CHANGELOG.md is being updated")
         sys.exit(0)
 
-    # Check if CHANGELOG was recently updated (within 24 hours)
-    last_modified = get_changelog_last_modified()
-    if is_recent_update(last_modified, hours=24):
-        print(
-            f"✅ CHANGELOG.md was recently updated ({last_modified.strftime('%Y-%m-%d %H:%M')})"
-        )
-        sys.exit(0)
+    # Removed: 24-hour grace period is inappropriate for high-frequency development
+    # Every significant change should be documented immediately
 
     # Check if this is explicitly a documentation commit
     if check_commit_message_has_docs_intent():
