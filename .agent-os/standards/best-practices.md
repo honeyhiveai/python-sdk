@@ -33,6 +33,10 @@
 - **Mermaid diagrams**: MUST follow `.agent-os/standards/mermaid-diagrams.md` dual-theme standards
 - **Large changesets (>3 files)**: Comprehensive documentation review required
 - **AI Assistant commits**: Automatic documentation compliance checking
+- **🧪 Test-First Documentation Standards (CRITICAL)**: When implementing fixes or changes that affect documentation standards:
+  1. **ALWAYS implement and test the solution FIRST**
+  2. **VERIFY the fix works** (build docs, test in browser, confirm behavior)  
+  3. **ONLY THEN update standards documentation** to reflect the working solution
 - **Enhanced Quality Gates**: Pre-commit hooks now validate ALL significant changes including:
   - Documentation restructuring (>5 files requires CHANGELOG)
   - Configuration changes (pyproject.toml, tox.ini)

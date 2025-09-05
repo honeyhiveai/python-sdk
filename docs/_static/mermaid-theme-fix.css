@@ -1,0 +1,170 @@
+/* Mermaid Dark Theme Fix for Sequence Diagrams */
+
+/* Default (Light Mode) - Use our existing blue colors */
+.mermaid .actor {
+    fill: #4F81BD !important;
+    stroke: #000000 !important;
+}
+
+.mermaid .actor-box {
+    fill: #4F81BD !important;
+    stroke: #000000 !important;
+}
+
+/* Removed - replaced with targeted approach */
+
+/* Specific overrides for message text (should be black in light mode) */
+.mermaid .messageText,
+.mermaid .loopText,
+.mermaid .noteText,
+.mermaid text.messageText,
+.mermaid g.message text,
+.mermaid .message text,
+.mermaid text[class*="message"],
+.mermaid text[class*="label"] {
+    fill: #000000 !important;
+    color: #000000 !important;
+    font-weight: normal !important;
+}
+
+.mermaid .messageLine0,
+.mermaid .messageLine1 {
+    stroke: #666666 !important;
+}
+
+.mermaid .messageText {
+    fill: #000000 !important;
+}
+
+.mermaid .note {
+    fill: #f9a825 !important;
+    stroke: #000000 !important;
+}
+
+.mermaid .noteText {
+    fill: #000000 !important;
+}
+
+.mermaid .activation0,
+.mermaid .activation1,
+.mermaid .activation2 {
+    fill: #2e7d32 !important;
+    stroke: #000000 !important;
+}
+
+/* Dark Mode Detection - Apply when system prefers dark mode */
+@media (prefers-color-scheme: dark) {
+    .mermaid .actor {
+        fill: #4F81BD !important;
+        stroke: #ffffff !important;
+    }
+    
+    .mermaid .actor-box {
+        fill: #4F81BD !important;
+        stroke: #ffffff !important;
+    }
+    
+    /* Comprehensive text styling for dark mode */
+    .mermaid text,
+    .mermaid .actor-label,
+    .mermaid .actor text,
+    .mermaid .sequenceDiagram text,
+    .mermaid g text,
+    .mermaid tspan {
+        fill: #ffffff !important;
+        font-weight: bold !important;
+    }
+    
+    /* Message and note text should be white in dark mode */
+    .mermaid .messageText,
+    .mermaid .loopText,
+    .mermaid text.messageText,
+    .mermaid g.message text,
+    .mermaid .message text,
+    .mermaid text[class*="message"],
+    .mermaid text[class*="label"] {
+        fill: #ffffff !important;
+        color: #ffffff !important;
+        font-weight: normal !important;
+    }
+    
+    .mermaid .messageLine0,
+    .mermaid .messageLine1 {
+        stroke: #cccccc !important;
+    }
+    
+    .mermaid .note {
+        fill: #f9a825 !important;
+        stroke: #ffffff !important;
+    }
+    
+    .mermaid .noteText {
+        fill: #000000 !important;
+        font-weight: normal !important;
+    }
+    
+    .mermaid .activation0,
+    .mermaid .activation1,
+    .mermaid .activation2 {
+        fill: #2e7d32 !important;
+        stroke: #ffffff !important;
+    }
+}
+
+/* Force blue fills for participant boxes specifically */
+.mermaid g.actor rect {
+    fill: #4F81BD !important;
+}
+
+/* Removed - now handled by targeted approach below */
+
+/* Targeted approach - only participant text should be white in light mode */
+.mermaid g.actor text,
+.mermaid .actor0 text,
+.mermaid .actor1 text,
+.mermaid .actor2 text,
+.mermaid .actor3 text,
+.mermaid .actor4 text,
+.mermaid .actor5 text,
+.mermaid .actor6 text,
+.mermaid text[class*="actor"],
+.mermaid g[class*="actor"] text {
+    fill: #ffffff !important;
+    color: #ffffff !important;
+    font-weight: bold !important;
+}
+
+/* Message text should be black in light mode for readability */
+.mermaid .messageText,
+.mermaid .loopText,
+.mermaid .noteText,
+.mermaid text.messageText,
+.mermaid g.message text,
+.mermaid .message text,
+.mermaid text[class*="message"],
+.mermaid text[class*="label"] {
+    fill: #000000 !important;
+    color: #000000 !important;
+    font-weight: normal !important;
+}
+
+@media (prefers-color-scheme: dark) {
+    .mermaid g.actor rect {
+        fill: #4F81BD !important;
+        stroke: #ffffff !important;
+    }
+    
+    .mermaid g.actor text,
+    .mermaid .actor0 text,
+    .mermaid .actor1 text,
+    .mermaid .actor2 text,
+    .mermaid .actor3 text,
+    .mermaid .actor4 text,
+    .mermaid .actor5 text,
+    .mermaid .actor6 text,
+    .mermaid text[class*="actor"],
+    .mermaid g[class*="actor"] text {
+        fill: #ffffff !important;
+        font-weight: bold !important;
+    }
+}

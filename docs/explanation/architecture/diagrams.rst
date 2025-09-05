@@ -184,7 +184,7 @@ Data Flow
 
 .. mermaid::
 
-   %%{init: {'theme':'base', 'themeVariables': {'primaryColor': '#1565c0', 'primaryTextColor': '#ffffff', 'primaryBorderColor': '#333333', 'lineColor': '#333333', 'secondaryColor': '#2e7d32', 'tertiaryColor': '#ef6c00', 'background': 'transparent', 'mainBkg': 'transparent', 'secondBkg': 'transparent', 'actorBkg': '#1565c0', 'actorBorder': '#333333', 'actorTextColor': '#ffffff', 'actorLineColor': '#333333', 'signalColor': '#333333', 'signalTextColor': '#333333', 'activationBorderColor': '#333333', 'activationBkgColor': '#2e7d32', 'sequenceNumberColor': '#333333', 'sectionBkgColor': 'transparent', 'altSectionBkgColor': 'transparent', 'gridColor': '#333333', 'gridTextColor': '#333333', 'taskBkgColor': '#1565c0', 'taskTextColor': '#ffffff', 'taskTextLightColor': '#ffffff', 'taskTextOutsideColor': '#333333', 'taskTextClickableColor': '#333333', 'activeTaskBkgColor': '#2e7d32', 'activeTaskBorderColor': '#333333', 'gridTextSize': '11px', 'taskTextSize': '11px'}}}%%
+   %%{init: {'theme':'base', 'themeVariables': {'primaryColor': '#4F81BD', 'primaryTextColor': '#ffffff', 'primaryBorderColor': '#000000', 'lineColor': '#666666', 'background': 'transparent', 'mainBkg': 'transparent', 'secondBkg': 'transparent'}}}%%
    sequenceDiagram
        participant App as Application
        participant SDK as HoneyHive SDK
@@ -212,7 +212,7 @@ Data Flow
 
 .. mermaid::
 
-   %%{init: {'theme':'base', 'themeVariables': {'primaryColor': '#1565c0', 'primaryTextColor': '#ffffff', 'primaryBorderColor': '#333333', 'lineColor': '#333333', 'secondaryColor': '#2e7d32', 'tertiaryColor': '#ef6c00', 'background': 'transparent', 'mainBkg': 'transparent', 'secondBkg': 'transparent', 'actorBkg': '#1565c0', 'actorBorder': '#333333', 'actorTextColor': '#ffffff', 'actorLineColor': '#333333', 'signalColor': '#333333', 'signalTextColor': '#333333', 'activationBorderColor': '#333333', 'activationBkgColor': '#2e7d32', 'sequenceNumberColor': '#333333', 'sectionBkgColor': 'transparent', 'altSectionBkgColor': 'transparent', 'gridColor': '#333333', 'gridTextColor': '#333333', 'taskBkgColor': '#1565c0', 'taskTextColor': '#ffffff', 'taskTextLightColor': '#ffffff', 'taskTextOutsideColor': '#333333', 'taskTextClickableColor': '#333333', 'activeTaskBkgColor': '#2e7d32', 'activeTaskBorderColor': '#333333', 'gridTextSize': '11px', 'taskTextSize': '11px'}}}%%
+   %%{init: {'theme':'base', 'themeVariables': {'primaryColor': '#4F81BD', 'primaryTextColor': '#ffffff', 'primaryBorderColor': '#000000', 'lineColor': '#666666', 'background': 'transparent', 'mainBkg': 'transparent', 'secondBkg': 'transparent'}}}%%
    sequenceDiagram
        participant App as Application
        participant SDK as HoneyHive SDK
@@ -577,7 +577,7 @@ Integration Patterns
 
 .. mermaid::
 
-   %%{init: {'theme':'base', 'themeVariables': {'primaryColor': '#1565c0', 'primaryTextColor': '#ffffff', 'primaryBorderColor': '#333333', 'lineColor': '#333333', 'secondaryColor': '#2e7d32', 'tertiaryColor': '#ef6c00', 'background': 'transparent', 'mainBkg': 'transparent', 'secondBkg': 'transparent', 'actorBkg': '#1565c0', 'actorBorder': '#333333', 'actorTextColor': '#ffffff', 'actorLineColor': '#333333', 'signalColor': '#333333', 'signalTextColor': '#333333', 'activationBorderColor': '#333333', 'activationBkgColor': '#2e7d32', 'sequenceNumberColor': '#333333', 'sectionBkgColor': 'transparent', 'altSectionBkgColor': 'transparent', 'gridColor': '#333333', 'gridTextColor': '#333333', 'taskBkgColor': '#1565c0', 'taskTextColor': '#ffffff', 'taskTextLightColor': '#ffffff', 'taskTextOutsideColor': '#333333', 'taskTextClickableColor': '#333333', 'activeTaskBkgColor': '#2e7d32', 'activeTaskBorderColor': '#333333', 'gridTextSize': '11px', 'taskTextSize': '11px'}}}%%
+   %%{init: {'theme':'base', 'themeVariables': {'primaryColor': '#4F81BD', 'primaryTextColor': '#ffffff', 'primaryBorderColor': '#000000', 'lineColor': '#666666', 'background': 'transparent', 'mainBkg': 'transparent', 'secondBkg': 'transparent'}}}%%
    sequenceDiagram
        participant Client as Client Request
        participant Gateway as API Gateway

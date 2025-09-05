@@ -354,3 +354,34 @@ cd .. && python -m doctest examples/*.py  # Examples work (MUST pass)
 - `.agent-os/specs/2025-09-03-commit-message-standards/` - Commit message requirements
 - `.agent-os/standards/best-practices.md` - Quality standards including date and commit protocols
 - `.agent-os/standards/tech-stack.md` - Technical requirements
+
+## 🧪 Test-First Documentation Updates (MANDATORY)
+
+**🚨 CRITICAL**: When implementing fixes or changes that affect documentation standards:
+
+1. **ALWAYS implement and test the solution FIRST**
+2. **VERIFY the fix works** (build docs, test in browser, confirm behavior)
+3. **ONLY THEN update standards documentation** to reflect the working solution
+
+### Common Violation Pattern (AVOID)
+```
+❌ User: "should we update the standards before verifying it works?"
+❌ Assistant: Updates MERMAID_STANDARD.md before testing the CSS fix
+```
+
+### Correct Pattern (FOLLOW)
+```
+✅ Assistant: Implements CSS fix → Tests build → Verifies in browser → Updates standards
+✅ User feedback: "verify approach before updating standards" → Assistant adds Agent OS rule
+```
+
+### Why This Matters
+- **Prevents Documentation Drift**: Standards should reflect working solutions, not theoretical approaches
+- **Ensures Accuracy**: Documentation matches actual implementation behavior
+- **Reduces Confusion**: Developers follow proven patterns, not untested theories
+- **Quality Assurance**: Standards become reliable reference material
+
+### Enforcement
+- AI assistants MUST test solutions before documenting them as standards
+- Standards updates should include verification steps and test results
+- When in doubt, implement → test → document (never document → implement)
