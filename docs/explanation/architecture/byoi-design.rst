@@ -165,12 +165,12 @@ HoneyHive supports multiple instrumentor providers through its BYOI architecture
 - **LLM-focused** with rich semantic conventions
 - **Multi-provider** support from day one
 
-**OpenLLMetry Instrumentors**
+**Traceloop Instrumentors**
 
-- **Comprehensive LLM coverage** across providers
-- **Production-ready** instrumentation
-- **Active development** and maintenance
-- **Enterprise support** available
+- **Enhanced metrics and monitoring** capabilities
+- **Production-ready** instrumentation with detailed cost tracking
+- **OpenTelemetry-based** for standardization
+- **Extended provider support** with performance analytics
 
 **Custom Instrumentors**
 
@@ -195,14 +195,10 @@ HoneyHive supports multiple instrumentor providers through its BYOI architecture
    # Alternative: Manual installation
    pip install honeyhive openinference-instrumentation-google-generativeai
    
-   # OpenLLMetry Providers (alternative)
-   pip install openllmetry[openai]
-   pip install openllmetry[anthropic]
-   pip install openllmetry[google]
-   
-   # Framework Support
-   pip install openinference-instrumentation-llamaindex
-   pip install openinference-instrumentation-langchain
+   # Traceloop Providers (alternative - enhanced metrics)
+   pip install opentelemetry-instrumentation-openai
+   pip install opentelemetry-instrumentation-anthropic
+   pip install opentelemetry-instrumentation-bedrock
 
 .. note::
    **Compatibility Matrix Available**
@@ -392,15 +388,15 @@ HoneyHive provides industry-leading ecosystem-specific convenience groupings tha
 
    # Ecosystem-specific integration groups (RECOMMENDED)
    pip install honeyhive[openinference-openai]      # OpenAI via OpenInference
-   pip install honeyhive[openinference-langchain]   # LangChain via OpenInference
    pip install honeyhive[openinference-anthropic]   # Anthropic via OpenInference
+   pip install honeyhive[openinference-bedrock]     # AWS Bedrock via OpenInference
+   pip install honeyhive[openinference-google-ai]   # Google AI via OpenInference
    
    # Multi-ecosystem installation
    pip install honeyhive[openinference-openai,openinference-anthropic]
    
    # Convenience groups for common scenarios
-   pip install honeyhive[all-openinference]            # All OpenInference integrations
-   pip install honeyhive[openinference-llm-providers]  # Popular LLM providers only
+   pip install honeyhive[all-openinference]         # All OpenInference integrations
 
 **Key Benefits of Ecosystem-Specific Groups:**
 
@@ -428,7 +424,7 @@ HoneyHive provides industry-leading ecosystem-specific convenience groupings tha
 .. code-block:: python
 
    # Example 2: Multi-provider setup with convenience groups
-   # pip install honeyhive[openinference-llm-providers]
+   # pip install honeyhive[all-openinference]
    
    from honeyhive import HoneyHiveTracer
    from openinference.instrumentation.openai import OpenAIInstrumentor
@@ -444,42 +440,45 @@ HoneyHive provides industry-leading ecosystem-specific convenience groupings tha
 
 .. code-block:: bash
 
-   # Example 3: Framework integration with ecosystem clarity
-   pip install honeyhive[openinference-langchain]
-   # Installs: openinference-instrumentation-langchain + langchain
+   # Example 3: Specialized provider integration
+   pip install honeyhive[openinference-google-adk]
+   # Installs: openinference-instrumentation-google-adk + dependencies
 
 This approach provides the best of both worlds: **BYOI flexibility** with **ecosystem-specific convenience**.
 
 Future Evolution
 ----------------
 
-**Multi-Ecosystem Support (Coming Soon)**
+**Multi-Ecosystem Support**
 
-The ecosystem-specific package groups enable future support for multiple instrumentor ecosystems:
+The ecosystem-specific package groups support multiple instrumentor ecosystems:
 
 .. code-block:: bash
 
-   # Current: OpenInference ecosystem
+   # OpenInference ecosystem (community-driven)
    pip install honeyhive[openinference-openai]
-   pip install honeyhive[openinference-langchain]
+   pip install honeyhive[openinference-anthropic]
+   pip install honeyhive[openinference-bedrock]
    
-   # Future: OpenLLMetry ecosystem
-   pip install honeyhive[openllmetry-openai]
-   pip install honeyhive[openllmetry-langchain]
-   
-   # Future: Custom enterprise ecosystems  
-   pip install honeyhive[enterprise-openai]
-   pip install honeyhive[acme-corp-langchain]
+   # Traceloop ecosystem (enhanced metrics)
+   pip install honeyhive[traceloop-openai]
+   pip install honeyhive[traceloop-anthropic]
+   pip install honeyhive[traceloop-bedrock]
 
 This pattern provides **unlimited scalability** for instrumentor ecosystem adoption while maintaining the core BYOI principles.
 
-**Upcoming Features**
+**Available Features**
+
+1. **Compatibility Matrix**: Complete testing documentation for all supported providers (:doc:`../index`)
+2. **Python Version Support**: Full validation across Python 3.11, 3.12, 3.13
+3. **Dynamic Generation**: Automated maintenance reducing manual work by 75%
+4. **Ecosystem-Specific Groups**: Convenient installation patterns for all supported providers
+
+**Future Features**
 
 1. **Instrumentor Registry**: Discover available instrumentors across ecosystems
-2. **Compatibility Matrix**: Track tested version combinations per ecosystem
-3. **Auto-detection**: Suggest instrumentors based on installed packages
-4. **Bundle Packages**: Pre-configured combinations for common use cases
-5. **Ecosystem Marketplace**: Community hub for instrumentor ecosystem discovery
+2. **Auto-detection**: Suggest instrumentors based on installed packages
+3. **Bundle Packages**: Pre-configured combinations for common use cases
 
 **Community Growth**
 
