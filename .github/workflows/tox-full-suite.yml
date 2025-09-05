@@ -68,7 +68,6 @@ env:
   # Test environment variables
   HH_API_KEY: test-api-key-12345
   HH_API_URL: https://api.honeyhive.ai
-  HH_PROJECT: test-project
   HH_SOURCE: github-actions
   HH_TEST_MODE: true
   HH_DEBUG_MODE: true
@@ -107,7 +106,6 @@ jobs:
           tox -e py${{ matrix.python-version == '3.11' && '311' || matrix.python-version == '3.12' && '312' || '313' }}
         env:
           HH_API_KEY: ${{ secrets.HH_API_KEY || env.HH_API_KEY }}
-          HH_PROJECT: ${{ secrets.HH_PROJECT || env.HH_PROJECT }}
 
       - name: Upload coverage reports
         if: inputs.upload_coverage != false
@@ -203,7 +201,6 @@ jobs:
       - name: Run integration tests with real API
         env:
           HH_API_KEY: ${{ secrets.HH_API_KEY }}
-          HH_PROJECT: ${{ secrets.HH_PROJECT }}
           HH_SOURCE: "github-actions-integration"
           HH_TEST_MODE: false
         run: tox -e integration

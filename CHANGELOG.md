@@ -183,6 +183,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Removed obsolete planning documents (`DIVIO_REORGANIZATION_PLAN.md`, `CONTENT_PARITY_ANALYSIS.md`)
   - Added documentation in `docs/development/workflow-optimization.rst`
   - **Added Agent OS rule**: Mandatory CI/CD workflow documentation synchronization requirement in `.cursorrules` and `.agent-os/standards/best-practices.md`
+  - **Removed HH_PROJECT environment variable**: Cleaned up workflows to remove unused `HH_PROJECT` variable from `tox-full-suite.yml` and `lambda-tests.yml`
+  - **Updated CI/CD documentation**: Synchronized `docs/development/testing/ci-cd-integration.rst` with current workflow configuration
 
 ### Fixed
 

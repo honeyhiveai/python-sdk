@@ -52,25 +52,31 @@ Tox Full Suite Workflow
 
 This workflow runs our complete tox-based testing suite with optimized triggering:
 
-**Triggers**:
+**Triggers and Path Filters**:
+
+.. code-block:: yaml
+
+   on:
+     push:
+       branches: [main]
+       paths:
+         - 'src/**'                    # Source code changes
+         - 'tests/**'                  # Test changes  
+         - 'tox.ini'                   # Tox configuration
+         - 'pyproject.toml'            # Project configuration
+         - '.github/workflows/tox-full-suite.yml'  # Workflow changes
+       paths-ignore:
+         - '.agent-os/**'              # Agent OS specifications
+         - 'docs/MERMAID_STANDARD.md'  # Documentation standards
+     pull_request:
+       # Same path filters as push
+     workflow_dispatch:               # Manual trigger with inputs
+     workflow_call:                   # Called by release-candidate
+
 - **Push to main**: Only when code/config files change (with path filters)
 - **Pull requests**: All PRs affecting relevant files
 - **Manual dispatch**: With configurable Python versions and tox environments
 - **Workflow call**: Called by release-candidate workflow
-
-**Path Filters**:
-
-.. code-block:: yaml
-
-   paths:
-     - 'src/**'                    # Source code changes
-     - 'tests/**'                  # Test changes  
-     - 'tox.ini'                   # Tox configuration
-     - 'pyproject.toml'            # Project configuration
-     - '.github/workflows/tox-full-suite.yml'  # Workflow changes
-   paths-ignore:
-     - '.agent-os/**'              # Agent OS specifications
-     - 'docs/MERMAID_STANDARD.md'  # Documentation standards
 
 **Job Structure**:
 
@@ -100,27 +106,34 @@ AWS Lambda Testing Workflow
 
 **`lambda-tests.yml` - Lambda Compatibility Testing**:
 
-This workflow tests AWS Lambda compatibility with **three-tier testing strategy**:
+This workflow tests AWS Lambda compatibility with a **three-tier testing strategy**:
 
-**Triggers**:
-- **Push to main**: Only when Lambda-related files change
-- **Pull requests**: All PRs affecting Lambda compatibility
-- **Daily schedule**: 2 AM UTC for comprehensive validation
-- **Workflow call**: Called by release-candidate workflow
-
-**Path Filters**:
+**Triggers and Path Filters**:
 
 .. code-block:: yaml
 
-   paths:
-     - 'src/**'                    # Source code affecting Lambda
-     - 'tests/**'                  # Test changes
-     - 'lambda_functions/**'       # Lambda-specific code
-     - 'tox.ini'                   # Build configuration
-     - 'pyproject.toml'            # Dependencies
-     - '.github/workflows/lambda-tests.yml'  # Workflow changes
-   paths-ignore:
-     - '.agent-os/**'              # Agent OS specifications
+   on:
+     push:
+       branches: [main]
+       paths:
+         - 'src/**'                    # Source code affecting Lambda
+         - 'tests/**'                  # Test changes
+         - 'lambda_functions/**'       # Lambda-specific code
+         - 'tox.ini'                   # Build configuration
+         - 'pyproject.toml'            # Dependencies
+         - '.github/workflows/lambda-tests.yml'  # Workflow changes
+       paths-ignore:
+         - '.agent-os/**'              # Agent OS specifications
+     pull_request:
+       # Same path filters as push
+     schedule:
+       - cron: '0 2 * * *'            # Daily at 2 AM UTC
+     workflow_call:                   # Called by release-candidate
+
+- **Push to main**: Only when Lambda-related files change
+- **Pull requests**: All PRs affecting Lambda compatibility  
+- **Daily schedule**: 2 AM UTC for comprehensive validation
+- **Workflow call**: Called by release-candidate workflow
 
 **Testing Tiers**:
 
@@ -144,29 +157,47 @@ Documentation Workflows
 
 **Documentation Pipeline** (Added 2025-09-05):
 
-The SDK now includes comprehensive documentation workflows with path-based optimization:
+The SDK includes comprehensive documentation workflows with path-based optimization:
 
 **`docs-deploy.yml` - GitHub Pages Deployment**:
-- **Triggers**: Push to main/complete-refactor, releases, manual dispatch
-- **Path filters**: `docs/**`, `src/**`, `*.md`, `pyproject.toml`
-- **Excludes**: `.agent-os/**`, `docs/MERMAID_STANDARD.md`
+
+This workflow deploys documentation to GitHub Pages with intelligent triggering:
+
+.. code-block:: yaml
+
+   on:
+     push:
+       branches: [main, complete-refactor]
+       paths: ['docs/**', 'src/**', '*.md', 'pyproject.toml']
+       paths-ignore: ['.agent-os/**', 'docs/MERMAID_STANDARD.md']
+
 - **Features**: AI Assistant validation protocol, Sphinx build with warnings as errors
+- **Deployment**: Automatic GitHub Pages deployment on successful build
 
 **`docs-preview.yml` - PR Documentation Previews**:
-- **Triggers**: PR opened/synchronized/reopened
-- **Path filters**: Same as docs-deploy with workflow files
-- **Features**: API surface validation, artifact upload for manual review
-- **Benefits**: Preview docs changes before merge
+
+Generates documentation previews for pull requests:
+
+- **Triggers**: PR opened/synchronized/reopened (with path filters)
+- **Validation**: API surface validation before building
+- **Output**: Downloadable documentation artifacts for manual review
+- **Benefits**: Preview documentation changes before merge
 
 **`docs-validation.yml` - Navigation Validation**:
-- **Triggers**: After docs deployment, weekly monitoring
-- **Features**: Link checking, navigation validation, deployment verification
-- **Monitoring**: Automatic detection of broken documentation
+
+Validates deployed documentation integrity:
+
+- **Triggers**: After documentation deployment, weekly monitoring
+- **Validation**: Link checking, navigation validation, deployment verification
+- **Monitoring**: Automatic detection of broken documentation links
 
 **`docs-versioned.yml` - Version Management**:
+
+Manages multiple documentation versions using mike:
+
 - **Triggers**: Main branch pushes, version tags, manual dispatch
-- **Features**: Mike-based versioning, multiple version support
-- **Purpose**: Maintain documentation for different SDK versions
+- **Features**: Mike-based versioning system for multiple SDK versions
+- **Purpose**: Maintain documentation for different release versions
 
 Release Candidate Workflow
 ---------------------------
@@ -175,7 +206,6 @@ Release Candidate Workflow
 
 This workflow provides complete release validation with configurable options:
 
-**Triggers**:
 - **Manual dispatch only**: Prevents accidental releases
 - **Configurable inputs**: Version type, pre-release identifier, test options
 
@@ -243,14 +273,15 @@ Environment Variables in CI
 
 **Environment Variables Set in Workflows**:
 
-Current workflow configuration uses these standardized environment variables:
+Current workflow configuration uses these environment variables:
+
+**tox-full-suite.yml** (Unit/Integration Testing):
 
 .. code-block:: bash
 
-   # Standard test environment (tox-full-suite.yml)
+   # Test environment variables
    HH_API_KEY=test-api-key-12345
    HH_API_URL=https://api.honeyhive.ai
-   HH_PROJECT=test-project
    HH_SOURCE=github-actions
    HH_TEST_MODE=true
    HH_DEBUG_MODE=true
@@ -258,10 +289,19 @@ Current workflow configuration uses these standardized environment variables:
    HH_DISABLE_HTTP_TRACING=false
    HH_OTLP_ENABLED=false
 
+**lambda-tests.yml** (Lambda Compatibility Testing):
+
+.. code-block:: bash
+
+   # Lambda test environment variables
+   HH_API_KEY=${{ secrets.HH_TEST_API_KEY || 'test-key' }}
+   HH_SOURCE=github-actions
+   HH_TEST_MODE=true
+
 **Environment Variable Usage by Workflow**:
 
-- **tox-full-suite.yml**: Uses test environment variables for unit/integration tests
-- **lambda-tests.yml**: Uses real API keys for Lambda compatibility testing
+- **tox-full-suite.yml**: Uses hardcoded test values for unit/integration tests
+- **lambda-tests.yml**: Uses secrets for real Lambda testing, fallback to test values
 - **release-candidate.yml**: Inherits secrets from called workflows
 - **docs-*.yml**: No HoneyHive-specific environment variables needed
 

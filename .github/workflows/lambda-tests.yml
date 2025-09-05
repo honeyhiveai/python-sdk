@@ -93,7 +93,6 @@ jobs:
       - name: Test Lambda compatibility with Docker
         env:
           HH_API_KEY: ${{ secrets.HH_TEST_API_KEY || 'test-key' }}
-          HH_PROJECT: "ci-lambda-test"
           HH_SOURCE: "github-actions"
           HH_TEST_MODE: "true"
         run: |
@@ -145,7 +144,6 @@ jobs:
       - name: Deploy and test real Lambda
         env:
           HH_API_KEY: ${{ secrets.HH_API_KEY }}
-          HH_PROJECT: ${{ secrets.HH_PROJECT || 'ci-lambda-test' }}
           HH_SOURCE: "aws-lambda-ci"
         run: |
           cd tests/lambda/aws-deployment
