@@ -13,6 +13,23 @@
   * File count optimization (25% reduction: 8→6 non-test files)
   * Automatic .env file loading and Python version reporting
 
+- **📚 MAJOR: Documentation Consistency Overhaul**
+  * Complete OpenLLMetry → Traceloop naming consistency (277 references fixed)
+  * Redesigned reference instrumentor table to eliminate maintenance burden
+  * Template system overhaul with proper variable names and cross-references
+  * All integration guides regenerated with consistent naming and fixed references
+  * Zero-maintenance reference design with dynamic cross-references
+  * Future-proof template-driven approach preventing inconsistencies
+
+### Changed
+- **🔧 BREAKING: HH_PROJECT Environment Variable Deprecated**
+  * Removed 55 obsolete HH_PROJECT usage examples from documentation
+  * Project information now automatically derived from API key scope
+  * Maintained backward compatibility with deprecation notices in reference docs
+  * Updated CLI, configuration, and API reference with deprecation status
+  * Eliminated user confusion while preserving complete API documentation
+  * Template system updated to prevent future obsolete examples
+
 ### Added
 - **🚀 REVOLUTIONARY: Ecosystem-Specific Integration Keys**
   * Implemented unlimited instrumentor ecosystem scalability
