@@ -166,14 +166,14 @@ jobs:
           ls -la _build/html/
 
       - name: Upload Pages artifact
-        if: '!inputs.validate_only'
+        if: inputs.validate_only != true
         uses: actions/upload-pages-artifact@v3
         with:
           path: ./docs/_build/html
 
   deploy:
     name: Deploy to GitHub Pages
-    if: '!inputs.validate_only'
+    if: inputs.validate_only != true
     environment:
       name: github-pages
       url: ${{ steps.deployment.outputs.page_url }}
