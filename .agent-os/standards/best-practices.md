@@ -32,11 +32,16 @@
 - **Workflow changes**: Update docs/development/testing/ and .agent-os/standards/
 - **Mermaid diagrams**: MUST follow `.agent-os/standards/mermaid-diagrams.md` dual-theme standards
 - **Large changesets (>3 files)**: Comprehensive documentation review required
-- **AI Assistant commits**: Automatic documentation compliance checking
+- **AI Assistant commits**: Automatic documentation compliance checking via unified validation script
 - **🧪 Test-First Documentation Standards (CRITICAL)**: When implementing fixes or changes that affect documentation standards:
   1. **ALWAYS implement and test the solution FIRST**
   2. **VERIFY the fix works** (build docs, test in browser, confirm behavior)  
   3. **ONLY THEN update standards documentation** to reflect the working solution
+- **📚 Dual Changelog Sync Requirement (CRITICAL)**: When updating CHANGELOG.md, docs/changelog.rst MUST also be updated:
+  - **CHANGELOG.md**: Detailed technical changes for developers
+  - **docs/changelog.rst**: Lightweight, curated highlights for users
+  - **Different Content Styles**: Maintain distinct purposes while keeping them in sync
+  - **Automatic Enforcement**: Pre-commit hooks prevent commits with only one changelog updated
 - **Enhanced Quality Gates**: Pre-commit hooks now validate ALL significant changes including:
   - Documentation restructuring (>5 files requires CHANGELOG)
   - Configuration changes (pyproject.toml, tox.ini)

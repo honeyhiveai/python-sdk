@@ -40,11 +40,13 @@
 - **pytest**: Test framework with fixtures and async support
 - **Coverage**: **Minimum 80% project-wide** (enforced), **70% individual files** (recommended)
 - **Pre-commit validation**: Automated test execution before commits
-- **Enhanced Quality Gates**: Comprehensive validation including:
-  - Changelog update enforcement for all significant changes
-  - Documentation compliance for large changesets (>5 files)
-  - AI assistant compliance with documentation standards
-  - File pattern matching for docs, config, tooling, and Agent OS files
+- **Enhanced Quality Gates**: Unified documentation compliance validation including:
+  - **Dual Changelog Sync**: Enforces CHANGELOG.md and docs/changelog.rst synchronization
+  - **Content Style Preservation**: Maintains different purposes (technical vs user-facing)
+  - **Changelog Updates**: Required for all significant changes (code, docs, config, tooling, Agent OS files)
+  - **Documentation Compliance**: Mandatory for new features and large changesets (>5 files)
+  - **AI Assistant Compliance**: Automatic enforcement with detailed feedback
+  - **Comprehensive Coverage**: File pattern matching for docs, config, tooling, and Agent OS files
 
 ### Testing Architecture
 - **Unit Tests**: Fast, isolated, mock external dependencies
