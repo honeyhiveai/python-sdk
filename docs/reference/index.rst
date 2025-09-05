@@ -40,7 +40,7 @@ Core Capabilities
 
 **LLM Integration**:
 
-- **BYOI Architecture**: Bring Your Own Instrumentor support for multiple providers (OpenInference, OpenLLMetry, custom)
+- **BYOI Architecture**: Bring Your Own Instrumentor support for multiple providers (OpenInference, Traceloop, custom)
 - **Auto-Instrumentor Support**: Zero-code integration with OpenAI, Anthropic, Google AI, and more
 - **Multi-Provider Support**: Simultaneous tracing across multiple LLM providers  
 - **Token Tracking**: Automatic token usage monitoring and cost tracking
@@ -253,16 +253,16 @@ LLM Integration Features
      - Instrumentor Package
    * - OpenAI
      - ✅ Supported
-     - ``openinference-instrumentation-openai`` (or OpenLLMetry equivalent)
+     - ``openinference-instrumentation-openai`` (or Traceloop equivalent)
    * - Anthropic
      - ✅ Supported
-     - ``openinference-instrumentation-anthropic`` (or OpenLLMetry equivalent)
+     - ``openinference-instrumentation-anthropic`` (or Traceloop equivalent)
    * - Google AI
      - ✅ Supported
-     - ``openinference-instrumentation-google-generativeai`` (or OpenLLMetry equivalent)
+     - ``openinference-instrumentation-google-generativeai`` (or Traceloop equivalent)
    * - AWS Bedrock
      - ✅ Supported
-     - ``openinference-instrumentation-bedrock`` (or OpenLLMetry equivalent)
+     - ``openinference-instrumentation-bedrock`` (or Traceloop equivalent)
    * - Other Providers
      - 🔄 Expanding
      - Multiple instrumentor provider support (see compatibility matrix)

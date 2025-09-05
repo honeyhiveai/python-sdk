@@ -49,7 +49,7 @@ You have two main options for LLM instrumentation:
 - Good for development and simple production setups
 - Consistent API across all providers
 
-**OpenLLMetry (Advanced Metrics)**
+**Traceloop (Advanced Metrics)**
 - Enhanced LLM-specific metrics and cost tracking
 - Production-optimized with detailed token analysis
 - Better performance monitoring capabilities
@@ -57,7 +57,7 @@ You have two main options for LLM instrumentation:
 
 **When to Use Each:**
 - **Start with OpenInference** if you're new to LLM observability
-- **Upgrade to OpenLLMetry** when you need detailed cost tracking and production metrics
+- **Upgrade to Traceloop** when you need detailed cost tracking and production metrics
 - **Mix both** strategically based on your provider usage patterns
 
 .. note::
@@ -66,7 +66,7 @@ You have two main options for LLM instrumentation:
 OpenAI Integration
 ------------------
 
-You can trace OpenAI calls using either OpenInference or OpenLLMetry instrumentors.
+You can trace OpenAI calls using either OpenInference or Traceloop instrumentors.
 
 **Step 1: Choose and Install Your Instrumentor**
 
@@ -80,11 +80,11 @@ You can trace OpenAI calls using either OpenInference or OpenLLMetry instrumento
    # Alternative: Manual installation
    pip install honeyhive openinference-instrumentation-openai openai
 
-**Option B: OpenLLMetry (Enhanced Metrics)**
+**Option B: Traceloop (Enhanced Metrics)**
 
 .. code-block:: bash
 
-   # Recommended: Install with OpenLLMetry integration
+   # Recommended: Install with Traceloop integration
    pip install honeyhive[traceloop-openai]
    
    # Alternative: Manual installation
@@ -108,7 +108,7 @@ You can trace OpenAI calls using either OpenInference or OpenLLMetry instrumento
        instrumentors=[OpenAIInstrumentor()]  # OpenInference version
    )
 
-**Using OpenLLMetry:**
+**Using Traceloop:**
 
 .. code-block:: python
 
@@ -117,11 +117,11 @@ You can trace OpenAI calls using either OpenInference or OpenLLMetry instrumento
    from opentelemetry.instrumentation.openai import OpenAIInstrumentor
    import openai
    
-   # Initialize HoneyHive with OpenLLMetry OpenAI instrumentor
+   # Initialize HoneyHive with Traceloop OpenAI instrumentor
    tracer = HoneyHiveTracer.init(
        api_key="your-api-key",
        source="development",
-       instrumentors=[OpenAIInstrumentor()]  # OpenLLMetry version
+       instrumentors=[OpenAIInstrumentor()]  # Traceloop version
    )
 
 **The rest is identical regardless of instrumentor choice:**
@@ -231,11 +231,11 @@ Add Anthropic Claude tracing with the same BYOI pattern.
    # Alternative: Manual installation
    pip install honeyhive openinference-instrumentation-anthropic
 
-**Option B: OpenLLMetry**
+**Option B: Traceloop**
 
 .. code-block:: bash
 
-   # Recommended: Install with OpenLLMetry integration
+   # Recommended: Install with Traceloop integration
    pip install honeyhive[traceloop-anthropic]
    
    # Alternative: Manual installation
@@ -257,7 +257,7 @@ Add Anthropic Claude tracing with the same BYOI pattern.
        instrumentors=[AnthropicInstrumentor()]
    )
 
-**Using OpenLLMetry:**
+**Using Traceloop:**
 
 .. code-block:: python
 
@@ -265,7 +265,7 @@ Add Anthropic Claude tracing with the same BYOI pattern.
    from opentelemetry.instrumentation.anthropic import AnthropicInstrumentor
    import anthropic
    
-   # Initialize with OpenLLMetry Anthropic instrumentor
+   # Initialize with Traceloop Anthropic instrumentor
    tracer = HoneyHiveTracer.init(
        api_key="your-api-key",
        instrumentors=[AnthropicInstrumentor()]
@@ -380,7 +380,7 @@ Use multiple LLM providers in the same application. You can mix instrumentor typ
        ]
    )
 
-**Option B: All OpenLLMetry**
+**Option B: All Traceloop**
 
 .. code-block:: python
 
@@ -390,12 +390,12 @@ Use multiple LLM providers in the same application. You can mix instrumentor typ
    import openai
    import anthropic
    
-   # Initialize with multiple OpenLLMetry instrumentors
+   # Initialize with multiple Traceloop instrumentors
    tracer = HoneyHiveTracer.init(
        api_key="your-api-key",
        instrumentors=[
-           OpenAIInstrumentor(),    # OpenLLMetry OpenAI
-           AnthropicInstrumentor()  # OpenLLMetry Anthropic
+           OpenAIInstrumentor(),    # Traceloop OpenAI
+           AnthropicInstrumentor()  # Traceloop Anthropic
        ]
    )
 
@@ -404,7 +404,7 @@ Use multiple LLM providers in the same application. You can mix instrumentor typ
 .. code-block:: python
 
    from honeyhive import HoneyHiveTracer, trace, enrich_span
-   # Mix OpenInference and OpenLLMetry
+   # Mix OpenInference and Traceloop
    from openinference.instrumentation.anthropic import AnthropicInstrumentor as OIAnthropic
    from opentelemetry.instrumentation.openai import OpenAIInstrumentor as OLOpenAI
    import openai
@@ -414,7 +414,7 @@ Use multiple LLM providers in the same application. You can mix instrumentor typ
    tracer = HoneyHiveTracer.init(
        api_key="your-api-key",
        instrumentors=[
-           OLOpenAI(),     # OpenLLMetry for high-volume OpenAI (enhanced metrics)
+           OLOpenAI(),     # Traceloop for high-volume OpenAI (enhanced metrics)
            OIAnthropic()   # OpenInference for Anthropic (lightweight)
        ]
    )
@@ -769,7 +769,7 @@ Here's a complete example using multiple providers with both instrumentor option
    import openai
    import anthropic
    
-   # Initialize with OpenLLMetry instrumentors
+   # Initialize with Traceloop instrumentors
    tracer = HoneyHiveTracer.init(
        api_key=os.getenv("HH_API_KEY"),
        instrumentors=[OpenAIInstrumentor(), AnthropicInstrumentor()]

@@ -10,10 +10,10 @@ Learn how to integrate multiple LLM providers in a single application using Hone
 Overview
 --------
 
-The HoneyHive SDK allows you to trace multiple LLM providers simultaneously using either OpenInference or OpenLLMetry instrumentors. This approach provides:
+The HoneyHive SDK allows you to trace multiple LLM providers simultaneously using either OpenInference or Traceloop instrumentors. This approach provides:
 
 - **Provider Flexibility**: Use any combination of OpenAI, Anthropic, Google AI, Google ADK, AWS Bedrock, Azure OpenAI, MCP
-- **Instrumentor Choice**: Choose between OpenInference (lightweight) or OpenLLMetry (enhanced metrics)
+- **Instrumentor Choice**: Choose between OpenInference (lightweight) or Traceloop (enhanced metrics)
 - **Zero Code Changes**: Existing LLM calls are automatically traced
 - **Unified Observability**: All providers appear in the same HoneyHive dashboard
 - **Independent Configuration**: Each provider can have different settings
@@ -21,7 +21,7 @@ The HoneyHive SDK allows you to trace multiple LLM providers simultaneously usin
 Choose Your Instrumentor Strategy
 ---------------------------------
 
-**Problem**: I need to choose between OpenInference and OpenLLMetry for multi-provider setups.
+**Problem**: I need to choose between OpenInference and Traceloop for multi-provider setups.
 
 **Solution**: You can mix and match instrumentors based on your needs:
 
@@ -45,7 +45,7 @@ Choose Your Instrumentor Strategy
        ]
    )
 
-**Option 2: All OpenLLMetry (Enhanced Metrics)**
+**Option 2: All Traceloop (Enhanced Metrics)**
 
 .. code-block:: python
 
@@ -58,10 +58,10 @@ Choose Your Instrumentor Strategy
    tracer = HoneyHiveTracer.init(
        api_key="your-honeyhive-key",
        instrumentors=[
-           OpenAIInstrumentor(),           # OpenLLMetry
-           AnthropicInstrumentor(),        # OpenLLMetry
-           GoogleGenerativeAIInstrumentor(), # OpenLLMetry
-           BedrockInstrumentor()           # OpenLLMetry
+           OpenAIInstrumentor(),           # Traceloop
+           AnthropicInstrumentor(),        # Traceloop
+           GoogleGenerativeAIInstrumentor(), # Traceloop
+           BedrockInstrumentor()           # Traceloop
        ]
    )
 
@@ -72,15 +72,15 @@ Choose Your Instrumentor Strategy
    from honeyhive import HoneyHiveTracer
    # OpenInference imports
    from openinference.instrumentation.google_adk import GoogleADKInstrumentor
-   # OpenLLMetry imports  
+   # Traceloop imports  
    from opentelemetry.instrumentation.openai import OpenAIInstrumentor
    from opentelemetry.instrumentation.anthropic import AnthropicInstrumentor
 
    tracer = HoneyHiveTracer.init(
        api_key="your-honeyhive-key",
        instrumentors=[
-           OpenAIInstrumentor(),           # OpenLLMetry (enhanced metrics)
-           AnthropicInstrumentor(),        # OpenLLMetry (enhanced metrics)
+           OpenAIInstrumentor(),           # Traceloop (enhanced metrics)
+           AnthropicInstrumentor(),        # Traceloop (enhanced metrics)
            GoogleADKInstrumentor()         # OpenInference (only option available)
        ]
    )
@@ -88,8 +88,8 @@ Choose Your Instrumentor Strategy
 **When to Use Each:**
 
 - **OpenInference**: Lightweight, open-source, good for development and simple production setups
-- **OpenLLMetry**: Enhanced LLM metrics, cost tracking, production optimizations, detailed token analysis
-- **Mixed**: Use OpenLLMetry for high-volume providers (cost tracking) and OpenInference for others
+- **Traceloop**: Enhanced LLM metrics, cost tracking, production optimizations, detailed token analysis
+- **Mixed**: Use Traceloop for high-volume providers (cost tracking) and OpenInference for others
 
 Quick Start
 -----------
