@@ -242,33 +242,23 @@ Evaluation Features
 LLM Integration Features
 ````````````````````````
 
-**Auto-Instrumentor Support**:
+**LLM Provider Integration**:
 
-.. list-table::
-   :header-rows: 1
-   :widths: 30 20 50
+HoneyHive supports automatic instrumentation for major LLM providers through the BYOI (Bring Your Own Instrumentor) architecture.
 
-   * - Provider
-     - Status
-     - Instrumentor Package
-   * - OpenAI
-     - ✅ Supported
-     - ``openinference-instrumentation-openai`` (or Traceloop equivalent)
-   * - Anthropic
-     - ✅ Supported
-     - ``openinference-instrumentation-anthropic`` (or Traceloop equivalent)
-   * - Google AI
-     - ✅ Supported
-     - ``openinference-instrumentation-google-generativeai`` (or Traceloop equivalent)
-   * - AWS Bedrock
-     - ✅ Supported
-     - ``openinference-instrumentation-bedrock`` (or Traceloop equivalent)
-   * - Other Providers
-     - 🔄 Expanding
-     - Multiple instrumentor provider support (see compatibility matrix)
-   * - Custom LLMs
-     - ✅ Supported
-     - Create custom instrumentors using OpenTelemetry standards
+**Supported Providers**: OpenAI, Anthropic, Google AI, Google ADK, AWS Bedrock, Azure OpenAI, MCP
+
+**Integration Options**:
+- **OpenInference Instrumentors**: Lightweight, community-driven
+- **Traceloop Instrumentors**: Enhanced metrics and production optimizations  
+- **Custom Instrumentors**: Build your own using OpenTelemetry standards
+
+.. note::
+   **Complete Integration Details**
+   
+   - **Provider-Specific Guides**: :doc:`../how-to/index` - Step-by-step integration for each provider
+   - **Compatibility Matrix**: :doc:`../explanation/index` - Full compatibility testing and Python version support
+   - **Multi-Provider Setup**: :doc:`../how-to/integrations/multi-provider` - Use multiple providers simultaneously
 
 **Integration Architecture**:
 
