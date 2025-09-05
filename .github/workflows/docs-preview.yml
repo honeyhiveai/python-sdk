@@ -13,8 +13,9 @@ on:
       - '*.md'
       - 'pyproject.toml'
       - '.github/workflows/docs-*.yml'
-    paths-ignore:
-      - '.agent-os/**'
+      - '.agent-os/product/**'
+      - '.agent-os/standards/**'
+      - 'examples/**'
 
 jobs:
   validate-api:

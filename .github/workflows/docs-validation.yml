@@ -11,9 +11,11 @@ on:
   # Also run on any push to main (docs may be deployed via push)
   push:
     branches: [main]
-    paths: ['docs/**', '.github/workflows/docs-*.yml']
-    paths-ignore:
-      - '.agent-os/**'
+    paths:
+      - 'docs/**'
+      - '.github/workflows/docs-*.yml'
+      - '.agent-os/product/**'
+      - '.agent-os/standards/**'
 
   # Allow manual trigger for testing
   workflow_dispatch:

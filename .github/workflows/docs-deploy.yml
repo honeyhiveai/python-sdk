@@ -12,8 +12,9 @@ on:
       - 'src/**'
       - '*.md'
       - 'pyproject.toml'
-    paths-ignore:
-      - '.agent-os/**'
+      - '.agent-os/product/**'
+      - '.agent-os/standards/**'
+      - 'examples/**'
   release:
     types: [published]
   workflow_dispatch:

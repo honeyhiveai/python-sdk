@@ -26,13 +26,20 @@ Our GitHub Actions Workflows
 6. **`docs-validation.yml`** - Documentation navigation and link validation
 7. **`docs-versioned.yml`** - Versioned documentation management with mike
 
-**Path-Based Optimization** (Added 2025-09-05):
+**Path-Based Optimization** (Updated 2025-09-05):
 
 All workflows now include intelligent path detection to prevent unnecessary runs:
 
-- **Excluded Paths**: `.agent-os/**`
-- **Included Paths**: `src/**`, `tests/**`, `docs/**`, `tox.ini`, `pyproject.toml`
-- **Benefit**: Agent OS specification changes no longer trigger full CI/CD pipelines
+**Documentation Workflows** (`docs-deploy`, `docs-preview`, `docs-validation`):
+- **Included Paths**: `docs/**`, `src/**`, `*.md`, `pyproject.toml`, `.agent-os/product/**`, `.agent-os/standards/**`, `examples/**`
+- **Logic**: Trigger when documentation, code, or Agent OS product/standards change
+
+**Testing Workflows** (`tox-full-suite`, `lambda-tests`):
+- **Excluded Paths**: `.agent-os/**` (all Agent OS files)
+- **Included Paths**: `src/**`, `tests/**`, `tox.ini`, `pyproject.toml`
+- **Logic**: Only trigger for code/test changes, not documentation updates
+
+**Benefit**: Agent OS task management (specs/tasks.md) doesn't trigger any workflows, but product/standards changes trigger documentation workflows appropriately
 
 **Permissions Configuration** (Fixed 2025-09-05):
 
