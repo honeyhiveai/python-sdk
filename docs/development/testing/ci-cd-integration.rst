@@ -67,7 +67,6 @@ This workflow runs our complete tox-based testing suite with optimized triggerin
          - '.github/workflows/tox-full-suite.yml'  # Workflow changes
        paths-ignore:
          - '.agent-os/**'              # Agent OS specifications
-         - 'docs/MERMAID_STANDARD.md'  # Documentation standards
      pull_request:
        # Same path filters as push
      workflow_dispatch:               # Manual trigger with inputs

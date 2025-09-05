@@ -135,7 +135,7 @@ Before committing ANY Mermaid diagram, verify:
 - ✅ Uses professional HoneyHive color palette
 - ✅ Arrows visible in both light and dark themes
 - ✅ Text readable on all colored backgrounds
-- ✅ Follows `docs/MERMAID_STANDARD.md` specification
+- ✅ Follows `.agent-os/standards/code-style.md` Mermaid diagram standards
 
 ## Documentation & Examples - Divio System
 

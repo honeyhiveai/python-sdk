@@ -185,6 +185,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - **Added Agent OS rule**: Mandatory CI/CD workflow documentation synchronization requirement in `.cursorrules` and `.agent-os/standards/best-practices.md`
   - **Removed HH_PROJECT environment variable**: Cleaned up workflows to remove unused `HH_PROJECT` variable from `tox-full-suite.yml` and `lambda-tests.yml`
   - **Updated CI/CD documentation**: Synchronized `docs/development/testing/ci-cd-integration.rst` with current workflow configuration
+  - **Removed redundant MERMAID_STANDARD.md**: Deleted `docs/MERMAID_STANDARD.md` as Mermaid standards are already documented in `.agent-os/standards/code-style.md`
 
 ### Fixed
 
