@@ -62,6 +62,10 @@ name: Tox Full Test Suite
     paths-ignore:
       - '.agent-os/**'
 
+permissions:
+  contents: read
+  actions: read
+
 env:
   # Test environment variables
   HH_API_KEY: test-api-key-12345

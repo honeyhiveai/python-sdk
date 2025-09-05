@@ -49,6 +49,10 @@ name: AWS Lambda Compatibility Tests
     # Run Lambda tests daily at 2 AM UTC
     - cron: '0 2 * * *'
 
+permissions:
+  contents: read
+  actions: read
+
 jobs:
   lambda-docker-tests:
     name: "🐳 Docker Simulation Suite"
