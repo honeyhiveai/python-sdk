@@ -50,7 +50,7 @@ repos:
         entry: scripts/check-documentation-compliance.py
         language: python
         pass_filenames: false
-        files: >-
+        files: |
           ^(src/.*\.py|tests/.*\.py|docs/.*\.(rst|md)|examples/.*\.py|
           scripts/.*\.py|\.agent-os/.*\.md|pyproject\.toml|tox\.ini)$
         stages: [pre-commit]
