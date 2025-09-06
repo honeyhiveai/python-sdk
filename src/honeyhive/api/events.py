@@ -332,6 +332,57 @@ class EventsAPI(BaseAPI):
         data = response.json()
         return [Event(**event_data) for event_data in data.get("events", [])]
 
+    def get_events(
+        self,
+        project: str,
+        filters: List[EventFilter],
+        date_range: Optional[Dict[str, str]] = None,
+        limit: int = 1000,
+        page: int = 1,
+    ) -> Dict[str, Any]:
+        """Get events using filters via /events/export endpoint.
+
+        This is the proper way to filter events by session_id and other criteria.
+
+        Args:
+            project: Name of the project associated with the event
+            filters: List of EventFilter objects to apply
+            date_range: Optional date range filter with $gte and $lte ISO strings
+            limit: Limit number of results (default 1000, max 7500)
+            page: Page number of results (default 1)
+
+        Returns:
+            Dict containing 'events' list and 'totalEvents' count
+        """
+        # Convert filters to proper format for API
+        filters_data = []
+        for filter_obj in filters:
+            filter_dict = filter_obj.model_dump(exclude_none=True)
+            # Convert enum values to strings for JSON serialization
+            if "operator" in filter_dict and hasattr(filter_dict["operator"], "value"):
+                filter_dict["operator"] = filter_dict["operator"].value
+            if "type" in filter_dict and hasattr(filter_dict["type"], "value"):
+                filter_dict["type"] = filter_dict["type"].value
+            filters_data.append(filter_dict)
+
+        request_data = {
+            "project": project,
+            "filters": filters_data,
+            "limit": limit,
+            "page": page,
+        }
+
+        if date_range:
+            request_data["dateRange"] = date_range
+
+        response = self.client.request("POST", "/events/export", json=request_data)
+        data = response.json()
+
+        # Parse events into Event objects
+        events = [Event(**event_data) for event_data in data.get("events", [])]
+
+        return {"events": events, "totalEvents": data.get("totalEvents", 0)}
+
     async def list_events_async(
         self, event_filter: EventFilter, limit: int = 100
     ) -> List[Event]:

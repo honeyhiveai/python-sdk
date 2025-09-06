@@ -110,6 +110,7 @@ class EventType(Enum):
     model = "model"
     tool = "tool"
     chain = "chain"
+    llm = "llm"  # Added for backward compatibility with backend
 
 
 class Event(BaseModel):

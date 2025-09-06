@@ -41,6 +41,8 @@ from ..api.events import CreateEventRequest, UpdateEventRequest
 from ..api.session import SessionAPI
 from ..models.generated import EventType1
 from ..utils.config import config
+from .processor_integrator import IntegrationManager
+from .provider_detector import IntegrationStrategy, ProviderDetector
 from .span_processor import HoneyHiveSpanProcessor
 
 
@@ -260,51 +262,68 @@ class HoneyHiveTracer:
             )
 
     def _initialize_otel(self) -> None:
-        """Initialize OpenTelemetry components."""
-        # Check if a tracer provider already exists
-        existing_provider = trace.get_tracer_provider()
-        is_main_provider = False
+        """Initialize OpenTelemetry components using enhanced provider detection."""
+        # Use new provider detection system
+        detector = ProviderDetector()
+        provider_info = detector.get_provider_info()
+        strategy = provider_info["integration_strategy"]
 
-        # Check if the existing provider is a NoOp provider, ProxyTracerProvider, or None
-        # ProxyTracerProvider is OpenTelemetry's default placeholder that doesn't support span processors
-        is_noop_provider = (
-            existing_provider is None
-            or str(type(existing_provider).__name__) == "NoOpTracerProvider"
-            or str(type(existing_provider).__name__) == "ProxyTracerProvider"
-            or "NoOp" in str(type(existing_provider).__name__)
-            or "Proxy" in str(type(existing_provider).__name__)
+        print(
+            f"🔧 Provider Detection: {provider_info['provider_class_name']} -> {strategy.value}"
         )
 
-        if is_noop_provider:
-            # No existing provider or only placeholder provider, we can be the main provider
+        if strategy == IntegrationStrategy.MAIN_PROVIDER:
+            # NoOp or Proxy provider - we become the main provider
             self.provider = TracerProvider()
-            is_main_provider = True
             self.is_main_provider = True
             # Set our provider as the global provider
             trace.set_tracer_provider(self.provider)
-            print("🔧 Creating new TracerProvider as main provider")
-        else:
-            # Use existing provider, we'll be a secondary provider
-            self.provider = existing_provider
+            print(
+                "🔧 Creating new TracerProvider as main provider (replaced placeholder)"
+            )
+
+            # Add our span processor directly
+            try:
+                self.span_processor = HoneyHiveSpanProcessor()
+                self.provider.add_span_processor(self.span_processor)
+                print("✅ Added HoneyHive span processor to new provider")
+            except (ImportError, StopIteration):
+                print("⚠️  HoneyHiveSpanProcessor not available, skipping integration.")
+
+        elif strategy == IntegrationStrategy.SECONDARY_PROVIDER:
+            # Real TracerProvider exists - integrate with it
+            self.provider = provider_info["provider_instance"]
             self.is_main_provider = False
             print(
-                f"🔧 Using existing TracerProvider: {type(existing_provider).__name__}"
+                f"🔧 Using existing TracerProvider: {provider_info['provider_class_name']}"
             )
             print("   HoneyHive will add span processors to the existing provider")
 
-        # Add span processor to enrich spans with HoneyHive attributes
-        try:
-            self.span_processor = HoneyHiveSpanProcessor()
-            # Only add span processor if we can (i.e., if it's a TracerProvider instance)
-            if hasattr(self.provider, "add_span_processor"):
-                self.provider.add_span_processor(self.span_processor)
+            # Use integration manager for secondary provider integration
+            integration_manager = IntegrationManager()
+            result = integration_manager.perform_integration(
+                source=getattr(self, "source", "dev"),
+                project=getattr(self, "project", None),
+            )
+
+            if result["success"]:
+                print("✅ Successfully integrated with existing provider")
+                # Get the processor from the integrator for tracking
+                processors = integration_manager.integrator.get_integrated_processors()
+                if processors:
+                    self.span_processor = processors[-1]  # Use the most recent one
             else:
-                print(
-                    "⚠️  Existing provider doesn't support span processors, skipping HoneyHive integration"
-                )
-        except (ImportError, StopIteration):
-            # Handle mocking issues in tests that cause StopIteration
-            print("⚠️  HoneyHiveSpanProcessor not available, skipping integration.")
+                print(f"❌ Integration failed: {result['message']}")
+
+        else:  # CONSOLE_FALLBACK
+            # Provider incompatible - use existing provider but log warning
+            self.provider = provider_info["provider_instance"]
+            self.is_main_provider = False
+            print(
+                f"⚠️  Provider {provider_info['provider_class_name']} doesn't support span processors"
+            )
+            print("   Falling back to console logging mode")
+            self.span_processor = None
 
         # Import required components
         try:
@@ -343,21 +362,21 @@ class HoneyHiveTracer:
                 )
 
                 # Add OTLP exporter with batch processing if provider supports it
-                if hasattr(self.provider, "add_span_processor"):
+                if self.provider and hasattr(self.provider, "add_span_processor"):
                     self.provider.add_span_processor(BatchSpanProcessor(otlp_exporter))
                     print(
                         f"✓ OTLP exporter configured to send spans to: {otlp_endpoint}"
                     )
                 else:
                     print(
-                        "⚠️  Existing provider doesn't support span processors, OTLP export disabled"
+                        "⚠️  Provider doesn't support span processors, OTLP export disabled"
                     )
 
             except ImportError:
                 print(
                     "⚠️  OTLP exporter not available, using console exporter for debugging"
                 )
-                if hasattr(self.provider, "add_span_processor"):
+                if self.provider and hasattr(self.provider, "add_span_processor"):
                     self.provider.add_span_processor(
                         BatchSpanProcessor(ConsoleSpanExporter())
                     )
@@ -367,7 +386,7 @@ class HoneyHiveTracer:
             # NoOpExporter was removed as it's not used
 
             # Use ConsoleSpanExporter instead of NoOpExporter to avoid type issues
-            if hasattr(self.provider, "add_span_processor"):
+            if self.provider and hasattr(self.provider, "add_span_processor"):
                 self.provider.add_span_processor(
                     BatchSpanProcessor(ConsoleSpanExporter())
                 )
@@ -381,9 +400,10 @@ class HoneyHiveTracer:
         )
 
         # Only set as global provider if we're the main provider
-        if is_main_provider:
-            trace.set_tracer_provider(self.provider)
-            print("✓ Set as global TracerProvider")
+        if self.is_main_provider:
+            if self.provider:
+                trace.set_tracer_provider(self.provider)
+                print("✓ Set as global TracerProvider")
         else:
             print("✓ Added to existing TracerProvider (not overriding global)")
 

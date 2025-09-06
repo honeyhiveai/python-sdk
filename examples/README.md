@@ -13,7 +13,7 @@ from honeyhive import HoneyHiveTracer
 # Initialize tracer using the recommended pattern
 HoneyHiveTracer.init(
     api_key="your-api-key",
-    # project derived from API key (new simplified API)
+    project="my-project",  # Required for OTLP tracing
     source="production"
 )
 
@@ -57,7 +57,7 @@ tracer = HoneyHiveTracer._instance
 # Recommended pattern (matches docs.honeyhive.ai)
 HoneyHiveTracer.init(
     api_key="your-key",
-    # project derived from API key (new simplified API)
+    project="my-project",  # Required for OTLP tracing
     source="production",
     server_url="https://custom-server.com"  # For self-hosted deployments
 )
@@ -68,7 +68,7 @@ HoneyHiveTracer.init(
 # The init method returns the tracer instance directly
 tracer = HoneyHiveTracer.init(
     api_key="your-api-key",
-    # project derived from API key (new simplified API)
+    project="my-project",  # Required for OTLP tracing
     source="production"
 )
 
@@ -137,7 +137,7 @@ All advanced features are now available in the `init` method:
 # Enhanced initialization with all features
 tracer = HoneyHiveTracer.init(
     api_key="your-key",
-    # project derived from API key (new simplified API)
+    project="my-project",  # Required for OTLP tracing
     source="production",
     test_mode=True,  # Test mode support
     disable_http_tracing=True  # Performance control

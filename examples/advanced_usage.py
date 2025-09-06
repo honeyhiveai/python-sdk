@@ -45,11 +45,15 @@ def main():
 
     # Create tracers for different environments - from docs
     prod_tracer = HoneyHiveTracer.init(
-        api_key="prod-key", # project derived from API key, source="prod"
+        api_key="prod-key",
+        project="production-project",  # Required for OTLP tracing
+        source="prod"
     )
 
     dev_tracer = HoneyHiveTracer.init(
-        api_key="dev-key", # project derived from API key, source="dev"
+        api_key="dev-key",
+        project="development-project",  # Required for OTLP tracing
+        source="dev"
     )
 
     print(f"✓ Production tracer: {prod_tracer.project}")

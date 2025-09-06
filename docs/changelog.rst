@@ -19,6 +19,17 @@ Current Version Highlights
 
 **v0.1.0 (Unreleased) - Major Architectural Refactor & Bug Fixes**
 
+**🚀 NEW: Non-Instrumentor Integration Framework (2025-09-05)**
+
+* **Comprehensive Framework**: Complete integration system for non-instrumentor AI frameworks (AWS Strands, custom frameworks)
+* **ProxyTracerProvider Strategy**: Automatic replacement strategy for better compatibility with frameworks that don't use OpenTelemetry instrumentors
+* **Enhanced Error Handling**: Retry strategies, fallback modes, and graceful degradation with comprehensive recovery mechanisms
+* **Extensive Testing Suite**: 50+ integration and unit tests with mock framework system and performance benchmarking
+* **Real API Validation**: AWS Strands integration testing with OTLP export verification and backend span capture validation
+* **Compatibility Matrix**: Testing across Python 3.11-3.13 and multiple framework combinations with automated compatibility detection
+* **Complete Documentation**: Comprehensive integration guide with troubleshooting examples and multi-framework patterns
+* **Project Parameter**: Restored to required status for OTLP tracing compatibility (was briefly optional in pre-release)
+
 **🎯 NEW: Compatibility Matrix Framework (2025-09-05)**
 
 * **Complete Testing Framework**: 13 provider compatibility tests with 100% success rate

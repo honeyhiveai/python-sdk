@@ -2,13 +2,15 @@
 
 This document lists all environment variables supported by the HoneyHive Python SDK, including both HoneyHive-specific and standard environment variables for maximum compatibility.
 
+> **⚠️ OTLP Tracing Requirement**: The `HH_PROJECT` environment variable is **required** when using OTLP tracing due to backend compatibility requirements. The OTLP ingestion service validates project information in both HTTP headers and span attributes.
+
 ## API Configuration
 
 | Environment Variable | Description | Default | Required |
 |---------------------|-------------|---------|----------|
 | `HH_API_KEY` | HoneyHive API key | None | **Yes** |
 | `HH_API_URL` | API base URL | `https://api.honeyhive.ai` | No |
-| `HH_PROJECT` | Project name | `default` | No |
+| `HH_PROJECT` | Project name | `default` | **Yes** (for OTLP) |
 | `HH_SOURCE` | Source environment | `production` | No |
 
 ## Tracing Configuration

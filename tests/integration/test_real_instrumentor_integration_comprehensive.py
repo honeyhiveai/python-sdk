@@ -14,6 +14,8 @@ from typing import Any, Dict
 
 import pytest
 
+from honeyhive import HoneyHiveTracer
+
 # Real API fixtures are now in the main conftest.py
 # No need for special imports - pytest will discover them automatically
 
@@ -161,7 +163,7 @@ print("✅ Subprocess integration test passed")
             assert "Hello" in response.choices[0].message.content
 
             # Force flush traces
-            tracer.force_flush(timeout=5.0)
+            tracer.force_flush()
 
             # Cleanup
             instrumentor.uninstrument()
@@ -207,7 +209,7 @@ print("✅ Subprocess integration test passed")
             assert "Hello" in response.content[0].text
 
             # Force flush traces
-            tracer.force_flush(timeout=5.0)
+            tracer.force_flush()
 
             # Cleanup
             instrumentor.uninstrument()
@@ -267,7 +269,7 @@ print("✅ Subprocess integration test passed")
                 span.set_attribute("count", len(available_instrumentors))
 
             # Force flush
-            tracer.force_flush(timeout=5.0)
+            tracer.force_flush()
 
         finally:
             # Cleanup all instrumentors
@@ -318,7 +320,7 @@ print("✅ Subprocess integration test passed")
             span.set_attribute("final_provider", final_type)
 
         # Cleanup
-        tracer.force_flush(timeout=5.0)
+        tracer.force_flush()
         tracer.shutdown()
 
     def test_span_processor_integration_real_api(self, real_honeyhive_tracer):
@@ -342,7 +344,7 @@ print("✅ Subprocess integration test passed")
                 nested_span.set_attribute("parent_test", "real_api_integration")
 
         # Force flush to ensure spans are processed
-        tracer.force_flush(timeout=10.0)
+        tracer.force_flush()
 
     def test_error_handling_real_environment(self, fresh_tracer_environment):
         """Test error handling in real OpenTelemetry environment."""
@@ -366,7 +368,7 @@ print("✅ Subprocess integration test passed")
             assert span.is_recording()
             span.set_attribute("after_error", True)
 
-        tracer.force_flush(timeout=5.0)
+        tracer.force_flush()
 
 
 @pytest.mark.real_api
@@ -403,7 +405,7 @@ class TestRealAPIWorkflows:
                 time.sleep(0.01)  # Simulate processing time
 
         # Force flush to ensure all spans are sent
-        tracer.force_flush(timeout=10.0)
+        tracer.force_flush()
 
     def test_concurrent_span_creation_real_api(self, real_honeyhive_tracer):
         """Test concurrent span creation with real API."""
@@ -457,4 +459,4 @@ class TestRealAPIWorkflows:
         assert success_count == 3, f"Expected 3 successful threads, got {success_count}"
 
         # Force flush
-        tracer.force_flush(timeout=10.0)
+        tracer.force_flush()

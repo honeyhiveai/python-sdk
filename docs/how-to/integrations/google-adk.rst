@@ -68,7 +68,7 @@ Choose Your Instrumentor
    # GOOGLE_API_KEY=your-google-adk-key
 
    # Step 1: Initialize HoneyHive tracer first (without instrumentors)
-   tracer = HoneyHiveTracer.init()  # Uses HH_API_KEY from environment
+   tracer = HoneyHiveTracer.init()  # Uses HH_API_KEY and HH_PROJECT from environment
    
    # Step 2: Initialize instrumentor separately with tracer_provider
    instrumentor = GoogleADKInstrumentor()
@@ -229,6 +229,7 @@ Choose Your Instrumentor
        from openinference.instrumentation.openai import OpenAIInstrumentor
        
        tracer = HoneyHiveTracer.init(
+           project="my-project",  # Required for OTLP tracing
            instrumentors=[
                GoogleADKInstrumentor(),
                OpenAIInstrumentor()
@@ -242,6 +243,7 @@ Choose Your Instrumentor
    
       # HoneyHive configuration
       export HH_API_KEY="your-honeyhive-api-key"
+      export HH_PROJECT="my-project"
       export HH_SOURCE="production"
       
       # Google Agent Development Kit (ADK) configuration

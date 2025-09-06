@@ -12,7 +12,7 @@
 
 2. **Zero-Disruption Integration**: Integrate with existing OpenTelemetry setups without breaking or interfering with framework-specific telemetry needs
 
-3. **Comprehensive Span Enrichment**: Ensure all spans from integrated frameworks receive HoneyHive context (session_id, project, source, custom metadata)
+3. **Comprehensive Span Enrichment**: Ensure all spans from integrated frameworks receive HoneyHive context (session_id, source, optional project, custom metadata)
 
 4. **Framework Agnostic Design**: Create patterns that work across diverse AI frameworks, not just AWS Strands
 
@@ -37,8 +37,8 @@
 
 ### As an AI Application Developer
 - **I want** to use multiple AI frameworks (Strands, custom pipelines, etc.) with a single HoneyHive tracer
-- **So that** all my AI operations are traced in a unified session
-- **Benefit**: Comprehensive visibility across complex multi-framework applications
+- **So that** all my AI operations are traced in a unified session with optional project organization
+- **Benefit**: Comprehensive visibility across complex multi-framework applications with flexible project management
 
 ### As a DevOps Engineer
 - **I want** HoneyHive integration to work reliably regardless of deployment order or framework initialization sequence
@@ -61,8 +61,8 @@
 
 #### FR-002: Existing Provider Detection
 - **Requirement**: Automatically detect and integrate with existing OpenTelemetry TracerProviders
-- **Acceptance**: Correctly identifies and integrates with TracerProvider, ProxyTracerProvider, and custom providers
-- **Test**: Integration tests with various provider types
+- **Acceptance**: Correctly identifies TracerProvider, ProxyTracerProvider (treated as replaceable), and custom providers
+- **Test**: Integration tests with various provider types including ProxyTracerProvider replacement scenarios
 
 #### FR-003: Span Processor Integration
 - **Requirement**: Add HoneyHive span processors to existing providers without disrupting existing processors
@@ -94,9 +94,9 @@
 ### User Experience Requirements
 
 #### UX-001: Simple Integration
-- **Requirement**: Integration requires minimal code changes (ideally just HoneyHiveTracer.init())
-- **Acceptance**: Single-line integration for most frameworks
-- **Test**: Documentation examples showing minimal integration code
+- **Requirement**: Integration requires minimal code changes (ideally just HoneyHiveTracer.init() with optional project)
+- **Acceptance**: Single-line integration for most frameworks with flexible project configuration
+- **Test**: Documentation examples showing minimal integration code with and without explicit project
 
 #### UX-002: Clear Diagnostics
 - **Requirement**: Provide clear feedback about integration status and any issues
@@ -146,7 +146,7 @@
 
 ### High Risk
 - **OpenTelemetry Version Compatibility**: Different frameworks may use incompatible OpenTelemetry versions
-- **Provider Conflicts**: Multiple systems trying to set global TracerProvider
+- **Provider Replacement Timing**: Replacing ProxyTracerProvider at wrong time could disrupt framework initialization
 - **Span Processor Ordering**: Order of span processors may affect functionality
 
 ### Medium Risk

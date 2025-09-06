@@ -82,7 +82,7 @@ def demonstrate_tracer_verbose():
     # Initialize tracer with verbose logging
     tracer = HoneyHiveTracer.init(
         api_key="demo-api-key",
-        # project derived from API key (simplified API)
+        project="verbose-demo-project",  # Required for OTLP tracing
         source="development",
         test_mode=True  # Use test mode
     )

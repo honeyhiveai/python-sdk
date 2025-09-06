@@ -49,6 +49,7 @@ from honeyhive import HoneyHiveTracer
 # Initialize HoneyHive tracer
 tracer = HoneyHiveTracer.init(
     api_key="your-api-key",
+    project="my-project",  # Required for OTLP tracing
     source="production"
 )
 

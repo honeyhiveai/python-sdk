@@ -44,6 +44,7 @@ Quick solutions for specific provider integration challenges. HoneyHive supports
    integrations/bedrock
    integrations/azure-openai
    integrations/mcp
+   integrations/non-instrumentor-frameworks
    integrations/multi-provider
    migration-guide
 

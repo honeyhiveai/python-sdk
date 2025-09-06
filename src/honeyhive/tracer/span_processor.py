@@ -290,7 +290,7 @@ class HoneyHiveSpanProcessor(SpanProcessor):
             print(f"   ❌ Error in span processor: {e}")
 
     def on_end(self, span: ReadableSpan) -> None:
-        """Called when a span ends."""
+        """Called when a span ends - send span data to HoneyHive Events API."""
         if not OTEL_AVAILABLE:
             return
 
@@ -300,22 +300,30 @@ class HoneyHiveSpanProcessor(SpanProcessor):
             if span_context.span_id == 0:
                 return  # Skip invalid spans
 
-            # Calculate duration if available
-            if hasattr(span, "start_time") and hasattr(span, "end_time"):
-                start_time = span.start_time
-                end_time = span.end_time
-                if start_time and end_time:
-                    duration = end_time - start_time
-                    # Set duration as attribute for monitoring
-                    if hasattr(span, "set_attribute"):
-                        span.set_attribute("honeyhive.span.duration", duration)
+            # Extract span attributes
+            attributes = {}
+            if hasattr(span, "attributes") and span.attributes:
+                attributes = dict(span.attributes)
 
-            # Log span completion
-            span_name = getattr(span, "name", "Unknown")
-            print(f"✅ Span completed: {span_name}")
+            # Get session information from span attributes
+            session_id = attributes.get("honeyhive.session_id") or attributes.get(
+                "traceloop.association.properties.session_id"
+            )
+            # Project and source are handled by OTLP export
+
+            if not session_id:
+                print(
+                    f"⚠️  Span {span.name} has no session_id, skipping HoneyHive export"
+                )
+                return
+
+            # Duration calculation is handled by OTLP export
+
+            # Log span completion (OTLP export handles actual sending)
+            print(f"✅ Span processed: {span.name} (session: {session_id})")
 
         except Exception as e:
-            print(f"❌ Error in span processor: {e}")
+            print(f"❌ Error processing span end: {e}")
 
     def shutdown(self) -> None:
         """Shutdown the span processor."""

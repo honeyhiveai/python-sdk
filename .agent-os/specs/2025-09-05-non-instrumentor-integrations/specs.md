@@ -80,7 +80,7 @@ graph TB
   - Detect custom provider implementations
 
 - **COMP-PD-002**: Integration Strategy Selector
-  - Main Provider Strategy: HoneyHive becomes global provider
+  - Main Provider Strategy: HoneyHive becomes global provider (NoOp/Proxy providers)
   - Secondary Provider Strategy: HoneyHive adds processors to existing provider
   - Fallback Strategy: Console logging when integration impossible
 
@@ -94,7 +94,7 @@ graph TB
   - Validate processor chain integrity
 
 - **COMP-SP-002**: HoneyHive Span Processor
-  - Enrich spans with HoneyHive context (session_id, project, source)
+  - Enrich spans with HoneyHive context (session_id, source)
   - Preserve existing span attributes and metadata
   - Handle span lifecycle events (start, end, error)
 
@@ -104,7 +104,7 @@ graph TB
 **Implementation Components**:
 - **COMP-SE-001**: OTLP Exporter Manager
   - Configure OTLPSpanExporter with HoneyHive endpoint
-  - Set proper authentication headers (Bearer token, X-Project, X-Source)
+  - Set proper authentication headers (Bearer token)
   - Handle OTLP export in both main and secondary provider scenarios
 
 - **COMP-SE-002**: Export Strategy Selector
@@ -114,7 +114,7 @@ graph TB
 
 - **COMP-SE-003**: Export Configuration Manager
   - Endpoint: `{api_url}/opentelemetry/v1/traces`
-  - Headers: Authorization, X-Project, X-Source
+  - Headers: Authorization
   - Batch processing with configurable batch size and timeout
 
 #### REQ-NOI-004: Initialization Order Independence
@@ -133,26 +133,34 @@ graph TB
 
 ### Integration Patterns
 
-#### Pattern 1: HoneyHive First (Main Provider)
+#### Pattern 1: HoneyHive as Main Provider (NoOp/Proxy Replacement)
 ```python
-# HoneyHive initializes first and becomes main provider
-tracer = HoneyHiveTracer.init(api_key="...", project="...")
+# Scenario A: HoneyHive initializes first
+tracer = HoneyHiveTracer.init(api_key="...")
 # Creates new TracerProvider, sets as global
 # Adds HoneyHive span processor + OTLP exporter
 
 # Framework uses existing global provider
 framework = AIFramework()  # Uses HoneyHive's TracerProvider
 result = framework.execute("task")  # Automatically traced
+
+# Scenario B: Framework sets ProxyTracerProvider first
+framework = AIFramework()  # Sets ProxyTracerProvider (placeholder)
+tracer = HoneyHiveTracer.init(api_key="...")
+# Detects ProxyTracerProvider, replaces with real TracerProvider
+# Framework operations now use HoneyHive's TracerProvider
+result = framework.execute("task")  # Automatically traced
 ```
 
 **Flow**:
-1. HoneyHive creates TracerProvider
-2. HoneyHive adds span processor for enrichment
-3. HoneyHive adds OTLP exporter to ship spans to backend
-4. HoneyHive sets global TracerProvider
-5. Framework discovers existing provider
-6. Framework uses HoneyHive's provider
-7. All spans automatically enriched and exported to HoneyHive
+1. HoneyHive detects NoOp or ProxyTracerProvider (safe to replace)
+2. HoneyHive creates real TracerProvider
+3. HoneyHive adds span processor for enrichment
+4. HoneyHive adds OTLP exporter to ship spans to backend
+5. HoneyHive sets global TracerProvider (replaces placeholder)
+6. Framework discovers real provider
+7. Framework uses HoneyHive's provider
+8. All spans automatically enriched and exported to HoneyHive
 
 **OTLP Export Configuration**:
 ```python
@@ -161,29 +169,28 @@ otlp_exporter = OTLPSpanExporter(
     endpoint=f"{config.api_url}/opentelemetry/v1/traces",
     headers={
         "Authorization": f"Bearer {api_key}",
-        "X-Project": project,
-        "X-Source": source,
     },
 )
 provider.add_span_processor(BatchSpanProcessor(otlp_exporter))
 ```
 
-#### Pattern 2: Framework First (Secondary Provider)
+#### Pattern 2: Framework First (Secondary Provider Integration)
 ```python
-# Framework initializes first and sets up provider
-framework = AIFramework()  # Creates and sets TracerProvider
+# Framework initializes first and sets up real TracerProvider
+framework = AIFramework()  # Creates and sets real TracerProvider (not Proxy)
 
 # HoneyHive detects existing provider and integrates
-tracer = HoneyHiveTracer.init(api_key="...", project="...")
+tracer = HoneyHiveTracer.init(api_key="...")
+# Detects real TracerProvider with add_span_processor capability
 # Adds span processor + OTLP exporter to existing provider
 
 result = framework.execute("task")  # Spans enriched and exported to HoneyHive
 ```
 
 **Flow**:
-1. Framework creates TracerProvider
+1. Framework creates real TracerProvider (not NoOp/Proxy)
 2. Framework sets global TracerProvider (may have its own exporters)
-3. HoneyHive detects existing provider
+3. HoneyHive detects existing real provider
 4. HoneyHive adds span processor to existing provider for enrichment
 5. HoneyHive adds OTLP exporter to existing provider for HoneyHive export
 6. Framework spans enriched with HoneyHive context and exported to both framework backend and HoneyHive
@@ -194,7 +201,7 @@ result = framework.execute("task")  # Spans enriched and exported to HoneyHive
 existing_provider = trace.get_tracer_provider()
 
 # Add HoneyHive span processor for enrichment
-honeyhive_processor = HoneyHiveSpanProcessor(session_id=session_id)
+honeyhive_processor = HoneyHiveSpanProcessor()
 existing_provider.add_span_processor(honeyhive_processor)
 
 # Add OTLP exporter for HoneyHive backend
@@ -203,8 +210,6 @@ if otlp_enabled and not test_mode:
         endpoint=f"{config.api_url}/opentelemetry/v1/traces",
         headers={
             "Authorization": f"Bearer {api_key}",
-            "X-Project": project,
-            "X-Source": source,
         },
     )
     existing_provider.add_span_processor(BatchSpanProcessor(otlp_exporter))
@@ -215,7 +220,7 @@ if otlp_enabled and not test_mode:
 #### Pattern 3: Multi-Framework Integration
 ```python
 # Single HoneyHive tracer with multiple frameworks
-tracer = HoneyHiveTracer.init(api_key="...", project="...")
+tracer = HoneyHiveTracer.init(api_key="...")
 
 # Multiple frameworks all use unified tracing
 strands_agent = StrandsAgent(model="claude-3")
@@ -242,8 +247,8 @@ def detect_provider_integration_strategy() -> IntegrationStrategy:
     """Detect existing provider and determine integration strategy."""
     existing_provider = trace.get_tracer_provider()
     
-    # Check for NoOp provider (no existing setup)
-    if is_noop_provider(existing_provider):
+    # Check for NoOp or Proxy provider (no real setup, safe to replace)
+    if is_noop_or_proxy_provider(existing_provider):
         return IntegrationStrategy.MAIN_PROVIDER
     
     # Check if provider supports span processors
@@ -253,12 +258,14 @@ def detect_provider_integration_strategy() -> IntegrationStrategy:
     # Fallback for incompatible providers
     return IntegrationStrategy.CONSOLE_FALLBACK
 
-def is_noop_provider(provider) -> bool:
-    """Check if provider is NoOp or equivalent."""
+def is_noop_or_proxy_provider(provider) -> bool:
+    """Check if provider is NoOp, Proxy, or equivalent placeholder."""
     return (
         provider is None
         or "NoOp" in type(provider).__name__
+        or "Proxy" in type(provider).__name__
         or str(type(provider).__name__) == "NoOpTracerProvider"
+        or str(type(provider).__name__) == "ProxyTracerProvider"
     )
 ```
 
@@ -274,7 +281,8 @@ class HoneyHiveSpanProcessor(SpanProcessor):
             span.set_attribute("honeyhive.session_id", session_id)
         
         # Add project and source context
-        span.set_attribute("honeyhive.project", self.project)
+        if self.project:
+            span.set_attribute("honeyhive.project", self.project)
         span.set_attribute("honeyhive.source", self.source)
         
         # Preserve framework-specific attributes
@@ -321,22 +329,21 @@ endpoint = f"{config.api_url}/opentelemetry/v1/traces"
 
 # Required headers for authentication and context
 headers = {
-    "Authorization": f"Bearer {api_key}",
-    "X-Project": project,           # Project context
-    "X-Source": source,             # Environment (dev, staging, production)
+    "Authorization": f"Bearer {api_key}"
 }
 ```
 
 #### Export Scenarios
 
-**Scenario 1: HoneyHive as Main Provider**
+**Scenario 1: HoneyHive as Main Provider (NoOp/Proxy Replacement)**
+- HoneyHive replaces NoOp or ProxyTracerProvider with real TracerProvider
 - HoneyHive controls the TracerProvider
 - Adds OTLP exporter directly to its provider
 - All spans (framework + custom) exported to HoneyHive
-- Framework may not have its own export mechanism
+- Framework gets real tracing capability instead of no-op placeholders
 
-**Scenario 2: HoneyHive as Secondary Provider**
-- Framework controls the TracerProvider
+**Scenario 2: HoneyHive as Secondary Provider (Real Provider Integration)**
+- Framework controls a real TracerProvider (not NoOp/Proxy)
 - Framework may have its own exporters (console, custom backend, etc.)
 - HoneyHive adds OTLP exporter to existing provider
 - **Result**: Spans exported to BOTH framework backend AND HoneyHive

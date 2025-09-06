@@ -68,7 +68,7 @@ Choose Your Instrumentor
    # GOOGLE_API_KEY=your-google-ai-key
 
    # Step 1: Initialize HoneyHive tracer first (without instrumentors)
-   tracer = HoneyHiveTracer.init()  # Uses HH_API_KEY from environment
+   tracer = HoneyHiveTracer.init()  # Uses HH_API_KEY and HH_PROJECT from environment
    
    # Step 2: Initialize instrumentor separately with tracer_provider
    instrumentor = GoogleGenerativeAIInstrumentor()
@@ -183,6 +183,7 @@ Choose Your Instrumentor
    
       # HoneyHive configuration
       export HH_API_KEY="your-honeyhive-api-key"
+      export HH_PROJECT="my-project"
       export HH_SOURCE="production"
       
       # Google AI configuration
@@ -239,7 +240,7 @@ Choose Your Instrumentor
    # GOOGLE_API_KEY=your-google-ai-key
 
    # Step 1: Initialize HoneyHive tracer first (without instrumentors)
-   tracer = HoneyHiveTracer.init()  # Uses HH_API_KEY from environment
+   tracer = HoneyHiveTracer.init()  # Uses HH_API_KEY and HH_PROJECT from environment
    
    # Step 2: Initialize Traceloop instrumentor separately with tracer_provider
    instrumentor = GoogleGenerativeAIInstrumentor()
@@ -349,10 +350,10 @@ Choose Your Instrumentor
       from opentelemetry.instrumentation.google_generativeai import GoogleGenerativeAIInstrumentor
       # Step 1: Initialize HoneyHive tracer first (without instrumentors)
       tracer = HoneyHiveTracer.init()
-   
-   # Step 2: Initialize instrumentor separately with tracer_provider
-   instrumentor = GoogleGenerativeAIInstrumentor()
-   instrumentor.instrument(tracer_provider=tracer.provider)
+      
+      # Step 2: Initialize instrumentor separately with tracer_provider
+      instrumentor = GoogleGenerativeAIInstrumentor()
+      instrumentor.instrument(tracer_provider=tracer.provider)
 
 3. **Multiple Traceloop Instrumentors**
    
@@ -375,6 +376,7 @@ Choose Your Instrumentor
    
       # HoneyHive configuration
       export HH_API_KEY="your-honeyhive-api-key"
+      export HH_PROJECT="my-project"
       export HH_SOURCE="production"
       
       # Google AI configuration

@@ -68,7 +68,7 @@ Choose Your Instrumentor
    # AWS_ACCESS_KEY_ID=your-bedrock-key
 
    # Step 1: Initialize HoneyHive tracer first (without instrumentors)
-   tracer = HoneyHiveTracer.init()  # Uses HH_API_KEY from environment
+   tracer = HoneyHiveTracer.init()  # Uses HH_API_KEY and HH_PROJECT from environment
    
    # Step 2: Initialize instrumentor separately with tracer_provider
    instrumentor = BedrockInstrumentor()
@@ -241,6 +241,7 @@ Choose Your Instrumentor
        from openinference.instrumentation.openai import OpenAIInstrumentor
        
        tracer = HoneyHiveTracer.init(
+           project="my-project",  # Required for OTLP tracing
            instrumentors=[
                BedrockInstrumentor(),
                OpenAIInstrumentor()
@@ -254,6 +255,7 @@ Choose Your Instrumentor
    
       # HoneyHive configuration
       export HH_API_KEY="your-honeyhive-api-key"
+      export HH_PROJECT="my-project"
       export HH_SOURCE="production"
       
       # AWS Bedrock configuration
@@ -312,7 +314,7 @@ Choose Your Instrumentor
    # AWS_ACCESS_KEY_ID=your-bedrock-key
 
    # Step 1: Initialize HoneyHive tracer first (without instrumentors)
-   tracer = HoneyHiveTracer.init()  # Uses HH_API_KEY from environment
+   tracer = HoneyHiveTracer.init()  # Uses HH_API_KEY and HH_PROJECT from environment
    
    # Step 2: Initialize Traceloop instrumentor separately with tracer_provider
    instrumentor = BedrockInstrumentor()
@@ -485,10 +487,10 @@ Choose Your Instrumentor
       from opentelemetry.instrumentation.bedrock import BedrockInstrumentor
       # Step 1: Initialize HoneyHive tracer first (without instrumentors)
       tracer = HoneyHiveTracer.init()
-   
-   # Step 2: Initialize instrumentor separately with tracer_provider
-   instrumentor = BedrockInstrumentor()
-   instrumentor.instrument(tracer_provider=tracer.provider)
+      
+      # Step 2: Initialize instrumentor separately with tracer_provider
+      instrumentor = BedrockInstrumentor()
+      instrumentor.instrument(tracer_provider=tracer.provider)
 
 3. **Multiple Traceloop Instrumentors**
    
@@ -499,6 +501,7 @@ Choose Your Instrumentor
        from opentelemetry.instrumentation.openai import OpenAIInstrumentor
        
        tracer = HoneyHiveTracer.init(
+           project="my-project",  # Required for OTLP tracing
            instrumentors=[
                BedrockInstrumentor(),       # Traceloop Bedrock
                OpenAIInstrumentor()         # Traceloop OpenAI
@@ -519,6 +522,7 @@ Choose Your Instrumentor
    
       # HoneyHive configuration
       export HH_API_KEY="your-honeyhive-api-key"
+      export HH_PROJECT="my-project"
       export HH_SOURCE="production"
       
       # AWS Bedrock configuration

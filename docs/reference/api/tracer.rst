@@ -59,7 +59,7 @@ init()
    :param disable_http_tracing: Whether to disable HTTP request tracing. Defaults to True for performance.
    :type disable_http_tracing: bool
    
-   :param project: **[Backward Compatibility]** Project name - ignored as projects are derived from API key scope. Kept for compatibility with existing code.
+   :param project: **[Required for OTLP]** Project name - required for OTLP tracing due to backend compatibility requirements. The OTLP ingestion service needs explicit project information in headers and span attributes.
    :type project: Optional[str]
    
    :param kwargs: Additional configuration options passed to the underlying tracer

@@ -1,5 +1,18 @@
 ## [Unreleased] - 2025-09-05
 
+### Added
+- **🚀 MAJOR: Non-Instrumentor Integration Framework**
+  * Implemented comprehensive framework for integrating with non-instrumentor AI frameworks (AWS Strands, custom frameworks)
+  * Added ProxyTracerProvider replacement strategy for better compatibility with frameworks that don't use OpenTelemetry instrumentors
+  * Created provider detection and processor integration modules for automatic framework compatibility
+  * Enhanced error handling system with retry strategies, fallback modes, and graceful degradation
+  * Added 50+ integration and unit tests across 6 test files with mock framework system
+  * Implemented performance benchmarking suite with pytest-benchmark integration
+  * Added real API integration testing with AWS Strands validation and OTLP export verification
+  * Created compatibility matrix testing across Python 3.11-3.13 and multiple framework combinations
+  * Added comprehensive documentation guide for non-instrumentor frameworks with troubleshooting examples
+  * Project parameter restored to required status for OTLP tracing (was briefly optional in pre-release)
+
 ### Fixed
 - **🐛 CRITICAL: ProxyTracerProvider Bug Resolution**
   * Fixed ProxyTracerProvider detection in otel_tracer.py to properly handle OpenTelemetry's default provider
