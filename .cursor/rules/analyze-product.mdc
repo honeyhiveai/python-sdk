@@ -25,10 +25,12 @@ src/honeyhive/
 #### Unified Decorators
 ```python
 # Single @trace works for both sync and async
-@trace(event_type="operation")
+from honeyhive.models import EventType
+
+@trace(event_type=EventType.tool)
 def sync_func(): pass
 
-@trace(event_type="operation")
+@trace(event_type=EventType.tool)
 async def async_func(): pass
 ```
 
@@ -40,10 +42,12 @@ async def async_func(): pass
 ### 3. Current Implementation Details
 
 #### Testing Framework
-- **203+ tests** currently passing
-- **90%+ coverage** target
+- **950+ tests** currently passing (831 unit + 119 integration)
+- **81.14% coverage** achieved (exceeds 80% requirement)
+- **Two-tier testing**: Unit (mocked, fast) vs Integration (real APIs, no mocks)
 - **tox** for test orchestration
 - Python 3.11, 3.12, 3.13 support
+- **NO MOCKS IN INTEGRATION TESTS** - Critical rule established
 
 #### Configuration
 - Environment variables: HH_*, HTTP_*, EXPERIMENT_*
@@ -87,14 +91,29 @@ async def async_func(): pass
 
 ## Critical Patterns to Maintain
 
-1. **Always use tox** for testing
-2. **Type hints mandatory** on all functions
-3. **No code in __init__.py** files
-4. **Multi-instance support** required
-5. **Graceful degradation** essential
+1. **NO MOCKS IN INTEGRATION TESTS** - Integration tests must use real systems
+2. **Always use tox** for testing - Never pytest directly
+3. **Type hints mandatory** on all functions with docstrings
+4. **No code in __init__.py** files - Only imports
+5. **Multi-instance support** required - No singleton pattern
+6. **Graceful degradation** essential - Never crash host app
+7. **EventType enums only** - Never string literals in documentation
+8. **80% test coverage** minimum (project-wide)
+9. **Test count reporting** - Always report total tests correctly (unit + integration)
+
+## Standards to Follow
+Always reference:
+- **Best Practices**: `.agent-os/standards/best-practices.md` (includes Agent OS spec standards)
+- **Technology Stack**: `.agent-os/standards/tech-stack.md` for technology choices
+- **Code Style**: `.agent-os/standards/code-style.md` for coding standards
 
 ## References
-- Product overview: `.agent-os/product/overview.md`
-- Technical decisions: `.agent-os/product/decisions.md`
-- Code standards: `.agent-os/standards/code-style.md`
-- Best practices: `.agent-os/standards/best-practices.md`
+- **Product Documentation**:
+  - Overview: `.agent-os/product/overview.md`
+  - Features: `.agent-os/product/features.md`
+  - Roadmap: `.agent-os/product/roadmap.md`
+  - Decisions: `.agent-os/product/decisions.md`
+- **Standards Documentation**:
+  - Best Practices: `.agent-os/standards/best-practices.md`
+  - Tech Stack: `.agent-os/standards/tech-stack.md`
+  - Code Style: `.agent-os/standards/code-style.md`

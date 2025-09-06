@@ -2050,3 +2050,103 @@ VALIDATION EVIDENCE:
 - Check for deprecation warnings before major code generation
 - Refresh codebase understanding if session > 2 hours
 - Always validate before final commits
+
+## 🛑 Commit Review Protocol - MANDATORY FOR AI ASSISTANTS
+
+**🚨 CRITICAL**: AI assistants must pause for user review before ANY commit actions, especially when CHANGELOG updates are involved.
+
+### Mandatory Review Checkpoints
+
+**ALWAYS prompt user before committing when:**
+
+1. **CHANGELOG.md updates are required** - Give user time to review entry accuracy
+2. **Any commit action is planned** - Allow user to choose new commit vs amend
+3. **Significant changes are staged** - Verify scope and impact with user
+4. **Documentation updates are included** - Ensure accuracy of what was done vs what needs implementation
+
+### Commit Decision Protocol
+
+**Before executing any `git commit` command, AI assistants MUST ask:**
+
+```
+🛑 COMMIT REVIEW CHECKPOINT
+
+I need to commit these changes:
+- [List of files and changes]
+- [CHANGELOG entry if applicable]
+
+CHANGELOG Entry Review:
+[Show proposed CHANGELOG text]
+
+Questions:
+1. Does this CHANGELOG entry accurately reflect what was DONE vs what needs IMPLEMENTATION?
+2. Should this be a NEW COMMIT or AMEND the previous commit?
+3. Are there any other changes that should be included?
+4. Is the commit message appropriate?
+
+Please review and advise how to proceed.
+```
+
+### Rapid Iteration Exceptions
+
+**AI assistants MAY iterate quickly WITHOUT review for:**
+- **Pre-commit hook fixes** (formatting, linting corrections)
+- **Technical corrections** that don't affect CHANGELOG
+- **Build/test fixes** during development iteration
+
+**But MUST pause for review when:**
+- CHANGELOG updates are identified as needed
+- Commit represents completion of a task/feature
+- Multiple files are being committed together
+- User explicitly requests review protocol
+
+### CHANGELOG Review Focus Areas
+
+**User should verify CHANGELOG entries for:**
+
+1. **Accuracy**: Does entry reflect what was actually done?
+2. **Language**: Uses "created/defined/planned" vs "implemented/completed" appropriately
+3. **Scope**: Covers all significant changes without overstating
+4. **Implementation Status**: Clear about specification vs implementation phase
+
+### Git History Management
+
+**Commit Strategy Decision Tree:**
+
+- **New Commit**: When adding genuinely new functionality or fixes
+- **Amend Commit**: When correcting errors in the previous commit (typos, CHANGELOG corrections, missed files)
+- **Squash Later**: When multiple related commits should be combined before PR
+
+### Example Review Interaction
+
+```
+AI: "I need to update CHANGELOG.md for the integration testing spec.
+
+Proposed entry:
+- Created integration testing consolidation specification
+- Updated MDC files with Agent OS standards
+- IMPLEMENTATION REQUIRED: Specification ready, code changes pending
+
+Should I:
+1. Create new commit with this CHANGELOG update?
+2. Amend previous commit to include corrected CHANGELOG?
+3. Modify the CHANGELOG entry before committing?
+
+Please review and let me know how to proceed."
+
+User: "The entry looks good, but this should amend the previous commit since it's just fixing the CHANGELOG accuracy."
+
+AI: "Understood. I'll amend the previous commit with the corrected CHANGELOG entry."
+```
+
+### Benefits of This Protocol
+
+- **Prevents incorrect CHANGELOG entries** that misrepresent work status
+- **Maintains clean git history** through appropriate use of amend vs new commits
+- **Gives user control** over commit strategy and messaging
+- **Reduces technical debt** from hasty or inaccurate commits
+- **Ensures documentation accuracy** matches actual implementation status
+
+### Enforcement
+
+This protocol is **MANDATORY** for all AI assistants working on the HoneyHive Python SDK project. Violations should be corrected immediately and the protocol reinforced.
