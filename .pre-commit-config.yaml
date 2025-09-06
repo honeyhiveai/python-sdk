@@ -50,9 +50,7 @@ repos:
         entry: scripts/check-documentation-compliance.py
         language: python
         pass_filenames: false
-        files: |
-          ^(src/.*\.py|tests/.*\.py|docs/.*\.(rst|md)|examples/.*\.(py|md)|
-          scripts/.*\.py|\.agent-os/.*\.md|pyproject\.toml|tox\.ini)$
+        always_run: true
         stages: [pre-commit]
 
       - id: invalid-tracer-pattern-check
