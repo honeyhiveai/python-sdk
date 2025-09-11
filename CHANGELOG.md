@@ -1,11 +1,16 @@
 ## [Unreleased]
 
 ### Added
-- Full backwards compatibility with main branch HoneyHiveTracer parameters
+- Full backwards compatibility with main branch HoneyHiveTracer parameters (all 16 original parameters)
 - Context association properties handling for multi-tracer coordination
 - Session ID UUID validation with proper error handling
 - Server URL parameter override functionality for custom deployments
 - Verbose parameter for debug output control throughout initialization
+- Evaluation baggage logic for evaluation workflows (run_id, dataset_id, datapoint_id)
+- Batch processing control via disable_batch parameter (SimpleSpanProcessor vs BatchSpanProcessor)
+- Git metadata collection for session creation with telemetry controls
+- Link/unlink/inject methods for context propagation with carriers
+- Inputs and metadata support in session creation for backwards compatibility
 - Performance tuning environment variables for OTLP export optimization
 - Configurable batch sizes and flush intervals for production environments
 - Pre-commit test suite execution (unit tests + basic integration tests)

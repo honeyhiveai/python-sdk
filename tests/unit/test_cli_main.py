@@ -736,15 +736,42 @@ class TestCLIMonitorCommands:
 
     @patch("honeyhive.utils.cache.get_global_cache")
     @patch("honeyhive.utils.connection_pool.get_global_pool")
+    @patch("honeyhive.cli.main.time.sleep", return_value=None)  # Speed up the test
+    @patch("honeyhive.cli.main.time.time")  # Mock time.time to control loop
     def test_monitor_watch_keyboard_interrupt(
-        self, mock_pool: Mock, mock_cache: Mock
+        self, mock_time: Mock, mock_sleep: Mock, mock_pool: Mock, mock_cache: Mock
     ) -> None:
         """Test monitor watch command with keyboard interrupt."""
-        # Mock cache and pool to raise KeyboardInterrupt
-        mock_cache.side_effect = KeyboardInterrupt()
+        # Mock cache to return stats first, then raise KeyboardInterrupt
+        mock_cache_instance = Mock()
+        mock_cache.return_value = mock_cache_instance
+        mock_cache_instance.get_stats.side_effect = [
+            {
+                "size": 5,
+                "max_size": 50,
+                "hit_rate": 0.9,
+                "hits": 45,
+                "misses": 5,
+            },
+            KeyboardInterrupt(),  # Raise on second call
+        ]
+
+        # Mock pool to return stats
+        mock_pool_instance = Mock()
+        mock_pool.return_value = mock_pool_instance
+        mock_pool_instance.get_stats.return_value = {
+            "total_requests": 100,
+            "pool_hits": 90,
+            "pool_misses": 10,
+            "active_connections": 3,
+        }
+
+        # Mock time.time to allow first iteration, then exit
+        # start_time, end_time calculation, first loop check, second loop check (after KeyboardInterrupt)
+        mock_time.side_effect = [0.0, 0.0, 0.0, 100.0]
 
         runner = CliRunner()
-        result = runner.invoke(cli, ["monitor", "watch", "--duration", "60"])
+        result = runner.invoke(cli, ["monitor", "watch", "--duration", "1"])
 
         # Should handle KeyboardInterrupt gracefully
         assert result.exit_code == 0

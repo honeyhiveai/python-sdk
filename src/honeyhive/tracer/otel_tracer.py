@@ -243,8 +243,12 @@ class HoneyHiveTracer:
 
         self._tracer_id = register_tracer(self)
 
-        # Set up baggage context
-        self._setup_baggage_context()
+        # Handle link_carrier context propagation (backwards compatibility)
+        if link_carrier is not None:
+            self.link(link_carrier)
+        else:
+            # Set up normal baggage context
+            self._setup_baggage_context()
 
         print(f"✓ HoneyHiveTracer initialized for project: {self.project}")
         print(f"✓ Session name: {self.session_name}")
@@ -458,13 +462,25 @@ class HoneyHiveTracer:
 
                 # Add OTLP exporter with batch processing if provider supports it
                 if self.provider and hasattr(self.provider, "add_span_processor"):
-                    # Configure batch processor with performance settings
-                    batch_processor = BatchSpanProcessor(
-                        otlp_exporter,
-                        max_export_batch_size=config.batch_size,
-                        schedule_delay_millis=int(config.flush_interval * 1000),
-                    )
-                    self.provider.add_span_processor(batch_processor)
+                    # Configure batch processor with performance settings (respect disable_batch parameter)
+                    if self.disable_batch:
+                        # Use simple span processor for immediate export (backwards compatibility)
+                        from opentelemetry.sdk.trace.export import SimpleSpanProcessor
+
+                        simple_processor = SimpleSpanProcessor(otlp_exporter)
+                        self.provider.add_span_processor(simple_processor)
+                        if self.verbose:
+                            print("✓ Using SimpleSpanProcessor (batch disabled)")
+                    else:
+                        # Use batch processor for performance
+                        batch_processor = BatchSpanProcessor(
+                            otlp_exporter,
+                            max_export_batch_size=config.batch_size,
+                            schedule_delay_millis=int(config.flush_interval * 1000),
+                        )
+                        self.provider.add_span_processor(batch_processor)
+                        if self.verbose:
+                            print("✓ Using BatchSpanProcessor (batch enabled)")
                     # OTLP exporter configured to send spans
                 else:
                     print(
@@ -557,9 +573,24 @@ class HoneyHiveTracer:
                 print(
                     f"🔍 Creating session with project: {self.project}, source: {self.source}"
                 )
-            session_response = self.session_api.start_session(
-                project=self.project, session_name=self.session_name, source=self.source
+            # Collect git metadata for session (backwards compatibility)
+            git_metadata = self._get_git_info() if not self.test_mode else None
+            metadata = (
+                git_metadata if git_metadata and "error" not in git_metadata else {}
             )
+
+            # Include inputs and metadata if provided for backwards compatibility
+            session_kwargs: Dict[str, Any] = {
+                "project": self.project,
+                "session_name": self.session_name,
+                "source": self.source,
+            }
+            if self.inputs:
+                session_kwargs["inputs"] = self.inputs
+            if metadata:
+                session_kwargs["metadata"] = metadata
+
+            session_response = self.session_api.start_session(**session_kwargs)
 
             if hasattr(session_response, "session_id"):
                 self.session_id = session_response.session_id
@@ -598,6 +629,19 @@ class HoneyHiveTracer:
             # Add tracer ID for auto-discovery (backward compatibility)
             baggage_items["honeyhive_tracer_id"] = self._tracer_id
             print(f"✓ Tracer ID injected: {self._tracer_id}")
+
+            # Add evaluation specific properties if needed (backwards compatibility)
+            if self.is_evaluation:
+                if self.run_id:
+                    baggage_items["run_id"] = self.run_id
+                if self.dataset_id:
+                    baggage_items["dataset_id"] = self.dataset_id
+                if self.datapoint_id:
+                    baggage_items["datapoint_id"] = self.datapoint_id
+                print(
+                    f"✓ Evaluation context injected: run_id={self.run_id}, "
+                    f"dataset_id={self.dataset_id}, datapoint_id={self.datapoint_id}"
+                )
 
             # Add experiment harness information to baggage if available
             if config.experiment_id:
@@ -1133,6 +1177,247 @@ class HoneyHiveTracer:
         ctx = ctx_param or context.get_current()
         result = baggage.get_baggage(key, ctx)
         return str(result) if result is not None else None
+
+    def _get_git_info(self) -> Dict[str, Any]:
+        """Collect git information for session metadata (backwards compatibility)."""
+        try:
+            import subprocess
+            import sys
+
+            # Check if telemetry is disabled
+            telemetry_disabled = os.getenv("HONEYHIVE_TELEMETRY", "true").lower() in [
+                "false",
+                "0",
+                "f",
+                "no",
+                "n",
+            ]
+            if telemetry_disabled:
+                if self.verbose:
+                    print("Telemetry disabled. Skipping git information collection.")
+                return {"error": "Telemetry disabled"}
+
+            cwd = os.getcwd()
+
+            # First check if this is a git repository
+            is_git_repo = subprocess.run(
+                ["git", "rev-parse", "--is-inside-work-tree"],
+                cwd=cwd,
+                capture_output=True,
+                text=True,
+                check=False,
+            )
+
+            # If not a git repo, return early with an error
+            if is_git_repo.returncode != 0:
+                if self.verbose:
+                    print("Not a git repository. Skipping git information collection.")
+                return {"error": "Not a git repository"}
+
+            commit_hash = subprocess.run(
+                ["git", "rev-parse", "HEAD"],
+                cwd=cwd,
+                capture_output=True,
+                text=True,
+                check=True,
+            ).stdout.strip()
+
+            branch = subprocess.run(
+                ["git", "rev-parse", "--abbrev-ref", "HEAD"],
+                cwd=cwd,
+                capture_output=True,
+                text=True,
+                check=True,
+            ).stdout.strip()
+
+            repo_url = (
+                subprocess.run(
+                    ["git", "config", "--get", "remote.origin.url"],
+                    cwd=cwd,
+                    capture_output=True,
+                    text=True,
+                    check=True,
+                )
+                .stdout.strip()
+                .rstrip(".git")
+            )
+
+            commit_link = (
+                f"{repo_url}/commit/{commit_hash}"
+                if "github.com" in repo_url
+                else repo_url
+            )
+
+            status = subprocess.run(
+                ["git", "status", "--porcelain"],
+                cwd=cwd,
+                capture_output=True,
+                text=True,
+                check=True,
+            ).stdout.strip()
+
+            has_uncommitted_changes = bool(status)
+
+            repo_root = subprocess.run(
+                ["git", "rev-parse", "--show-toplevel"],
+                cwd=cwd,
+                capture_output=True,
+                text=True,
+                check=True,
+            ).stdout.strip()
+
+            # Get relative path of the main module
+            main_module = sys.modules.get("__main__")
+            relative_path = None
+            if (
+                main_module
+                and hasattr(main_module, "__file__")
+                and main_module.__file__
+            ):
+                absolute_path = os.path.abspath(main_module.__file__)
+                relative_path = os.path.relpath(absolute_path, repo_root)
+
+            return {
+                "commit_hash": commit_hash,
+                "branch": branch,
+                "repo_url": repo_url,
+                "commit_link": commit_link,
+                "uncommitted_changes": has_uncommitted_changes,
+                "relative_path": relative_path,
+            }
+        except subprocess.CalledProcessError:
+            if self.verbose:
+                print("Failed to retrieve Git info. Is this a valid repo?")
+            return {"error": "Failed to retrieve Git info. Is this a valid repo?"}
+        except FileNotFoundError:
+            if self.verbose:
+                print("Git is not installed or not in PATH.")
+            return {"error": "Git is not installed or not in PATH."}
+        except Exception as e:
+            if self.verbose:
+                print(f"Error getting git info: {e}")
+            return {"error": f"Error getting git info: {e}"}
+
+    def _sanitize_carrier(
+        self, carrier: Dict[str, Any], getter: Optional[Any] = None
+    ) -> Dict[str, Any]:
+        """Sanitize carrier for baggage propagation (backwards compatibility)."""
+
+        # Simple default getter implementation
+        class DefaultGetter:
+            """Default getter for carrier propagation."""
+
+            @staticmethod
+            def get(carrier_dict: Dict[str, Any], key: str) -> Any:
+                """Get value from carrier dictionary."""
+                return carrier_dict.get(key)
+
+        if getter is None:
+            getter = DefaultGetter()
+
+        # Check for baggage in the headers, potentially re-cased
+        _propagation_carrier = {}
+        for key in ["baggage", "traceparent"]:
+            carrier_value = (
+                getter.get(carrier, key.lower())
+                or getter.get(carrier, key.capitalize())
+                or getter.get(carrier, key.upper())
+            )
+            if carrier_value is not None:
+                _propagation_carrier[key] = [carrier_value]
+        return _propagation_carrier
+
+    def link(
+        self, carrier: Optional[Dict[str, Any]] = None, getter: Optional[Any] = None
+    ) -> Any:
+        """Link to parent context via carrier (backwards compatibility)."""
+        if not OTEL_AVAILABLE:
+            return None
+
+        # Simple default getter implementation
+        class DefaultGetter:
+            """Default getter for carrier propagation."""
+
+            @staticmethod
+            def get(carrier_dict: Dict[str, Any], key: str) -> Any:
+                """Get value from carrier dictionary."""
+                return carrier_dict.get(key)
+
+        if carrier is None:
+            carrier = {}
+        if getter is None:
+            getter = DefaultGetter()
+
+        try:
+            ctx = context.get_current()  # deep copy of the current context
+
+            # Extract baggage from the carrier
+            sanitized_carrier = self._sanitize_carrier(carrier, getter)
+            if self.propagator:
+                ctx = self.propagator.extract(sanitized_carrier, ctx, getter=getter)
+
+            # Attach the baggage to the current context
+            token = context.attach(ctx)
+
+            # Set up baggage context with current tracer info
+            self._setup_baggage_context()
+
+            if self.verbose:
+                print("✓ Linked to parent context via carrier")
+
+            return token
+        except Exception as e:
+            if self.verbose:
+                print(f"⚠️  Failed to link carrier: {e}")
+            return None
+
+    def unlink(self, token: Any) -> None:
+        """Unlink from parent context (backwards compatibility)."""
+        if not OTEL_AVAILABLE or token is None:
+            return
+
+        try:
+            context.detach(token)
+            # Re-setup baggage context
+            self._setup_baggage_context()
+            if self.verbose:
+                print("✓ Unlinked from parent context")
+        except Exception as e:
+            if self.verbose:
+                print(f"⚠️  Failed to unlink: {e}")
+
+    def inject(
+        self, carrier: Optional[Dict[str, Any]] = None, setter: Optional[Any] = None
+    ) -> Dict[str, Any]:
+        """Inject current trace and baggage context into carrier (backwards compatibility)."""
+        if not OTEL_AVAILABLE:
+            return carrier or {}
+
+        # Simple default setter implementation
+        class DefaultSetter:
+            """Default setter for carrier propagation."""
+
+            @staticmethod
+            def set(carrier_dict: Dict[str, Any], key: str, value: Any) -> None:
+                """Set value in carrier dictionary."""
+                carrier_dict[key] = value
+
+        if carrier is None:
+            carrier = {}
+        if setter is None:
+            setter = DefaultSetter()
+
+        try:
+            # Inject current trace and baggage context into the carrier
+            if self.propagator:
+                self.propagator.inject(carrier, None, setter)
+            if self.verbose:
+                print("✓ Injected context into carrier")
+            return carrier
+        except Exception as e:
+            if self.verbose:
+                print(f"⚠️  Failed to inject context: {e}")
+            return carrier
 
     def set_baggage(
         self, key: str, value: str, ctx_param: Optional[Context] = None

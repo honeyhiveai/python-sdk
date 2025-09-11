@@ -327,7 +327,7 @@ All configuration supports the ``HH_*`` prefix pattern:
    **Runtime Configuration** (v0.1.0rc2+): Environment variables are now properly detected when set at runtime, enabling dynamic configuration without application restart.
 
 .. note::
-   **Backwards Compatibility** (v0.1.0rc2+): All 16 original parameters from the main branch are now supported, including ``server_url``, ``session_id``, ``disable_batch``, ``verbose``, evaluation parameters (``is_evaluation``, ``run_id``, ``dataset_id``, ``datapoint_id``), and context propagation (``link_carrier``).
+   **Complete Backwards Compatibility** (v0.1.0rc2+): All 16 original parameters from the main branch are now fully implemented, including ``server_url``, ``session_id``, ``disable_batch``, ``verbose``, evaluation parameters (``is_evaluation``, ``run_id``, ``dataset_id``, ``datapoint_id``), context propagation (``link_carrier``), session inputs, and git metadata collection. Features include evaluation baggage logic, batch processing control, and link/unlink/inject methods for context propagation.
 
 Security Features
 `````````````````
