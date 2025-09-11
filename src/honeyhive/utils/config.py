@@ -116,7 +116,7 @@ class TracingConfig:
     """Tracing configuration settings."""
 
     disable_tracing: bool = False
-    disable_http_tracing: bool = False
+    disable_http_tracing: bool = True  # Default: HTTP tracing disabled for performance
     test_mode: bool = False
     debug_mode: bool = False
     verbose: bool = False  # Enable verbose logging for API debugging

@@ -18,10 +18,13 @@ Configuration Methods
 
 The SDK supports multiple configuration approaches, listed in order of precedence (highest to lowest):
 
-1. **Direct Parameters** - Values passed directly to functions/classes
-2. **Environment Variables** - ``HH_*`` environment variables
-3. **Configuration Files** - YAML/JSON configuration files
+1. **Environment Variables** - ``HH_*`` environment variables (for backwards compatibility)
+2. **Direct Parameters** - Values passed directly to functions/classes
+3. **Configuration Files** - YAML/JSON configuration files  
 4. **Default Values** - Built-in SDK defaults
+
+.. note::
+   **API Key Precedence**: For backwards compatibility, ``HH_API_KEY`` environment variable takes precedence over the ``api_key`` constructor parameter. Other parameters follow standard precedence where constructor parameters override environment variables.
 
 Core Configuration Options
 --------------------------
@@ -221,13 +224,13 @@ Tracing Configuration
 
 .. py:data:: disable_http_tracing
    :type: bool
-   :value: False
+   :value: True
 
-   **Description**: Disable automatic HTTP request tracing
+   **Description**: Disable automatic HTTP request tracing (opt-in feature)
    
    **Environment Variable**: ``HH_DISABLE_HTTP_TRACING``
    
-   **Default**: ``False``
+   **Default**: ``True`` (HTTP tracing disabled by default for performance)
    
    **Use Cases**: 
    - Lambda environments (performance optimization)

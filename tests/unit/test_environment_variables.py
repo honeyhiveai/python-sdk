@@ -223,8 +223,8 @@ class TestTracingConfigEnvironmentVariables:
             config = TracingConfig()
             assert config.disable_tracing is False
             assert (
-                config.disable_http_tracing is False
-            )  # Default is False in TracingConfig
+                config.disable_http_tracing is True
+            )  # Default is True in TracingConfig (HTTP tracing disabled by default)
             assert config.test_mode is False
             assert config.debug_mode is False
 
@@ -596,10 +596,12 @@ class TestHoneyHiveTracerEnvironmentIntegration:
                 api_key="param-api-key", project="param-project", source="param-source"
             )
 
-            # Constructor params should override env vars
-            assert tracer.api_key == "param-api-key"
-            assert tracer.project == "param-project"
-            assert tracer.source == "param-source"
+            # For backwards compatibility: env vars take precedence for API key, constructor params for others
+            assert (
+                tracer.api_key == "env-api-key"
+            )  # Environment variable takes precedence
+            assert tracer.project == "param-project"  # Constructor parameter overrides
+            assert tracer.source == "param-source"  # Constructor parameter overrides
 
     def test_tracer_fallback_to_standard_env_vars(self):
         """Test HoneyHiveTracer falls back to standard environment variables."""

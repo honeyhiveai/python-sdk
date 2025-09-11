@@ -37,6 +37,9 @@ Current Version Highlights
 * **HH_API_URL Override**: Environment variables now properly picked up when set at runtime
 * **Boolean Variables**: Fixed HH_VERIFY_SSL and HH_FOLLOW_REDIRECTS precedence logic
 * **Fresh Config Loading**: API client and tracer use fresh config instances
+* **API Key Precedence**: Fixed HH_API_KEY environment variable precedence over constructor parameters
+* **HTTP Tracing Configuration**: Fixed disable_http_tracing environment variable handling for multi-instance support
+* **Comprehensive Testing**: Added 17 backwards compatibility integration tests covering runtime behavior
 
 **⚡ BREAKING: Structured Logging Infrastructure**
 

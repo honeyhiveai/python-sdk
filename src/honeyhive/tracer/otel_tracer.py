@@ -68,7 +68,7 @@ class HoneyHiveTracer:
         source: str = "dev",
         server_url: Optional[str] = None,
         session_id: Optional[str] = None,
-        disable_http_tracing: bool = True,  # Changed default for performance
+        disable_http_tracing: bool = True,  # Default: HTTP tracing disabled for performance
         disable_batch: bool = False,
         verbose: bool = False,
         inputs: Optional[Dict[str, Any]] = None,
@@ -161,7 +161,16 @@ class HoneyHiveTracer:
 
         # Store parameters for backwards compatibility
         self.test_mode = test_mode
-        self.disable_http_tracing = disable_http_tracing
+        # HTTP tracing configuration
+        # For multi-instance support: explicit False overrides environment, otherwise use environment
+        if disable_http_tracing is False:
+            # Explicitly disabled
+            self.disable_http_tracing = False
+        else:
+            # Use environment variable or default True
+            self.disable_http_tracing = (
+                config.tracing.disable_http_tracing if config.tracing else True
+            )
         self.verbose = verbose
         self.disable_batch = disable_batch
         self.is_evaluation = is_evaluation
@@ -183,20 +192,23 @@ class HoneyHiveTracer:
             else:
                 os.environ.pop("HH_API_URL", None)
 
-        # Set HTTP tracing environment variable based on parameter
-        if disable_http_tracing:
-            os.environ["HH_DISABLE_HTTP_TRACING"] = "true"
-        else:
-            os.environ["HH_DISABLE_HTTP_TRACING"] = "false"
+        # Note: HTTP tracing configuration is now handled via config.tracing.disable_http_tracing
+        # which respects environment variables properly
 
-        # In test mode, we can proceed without an API key
-        if not test_mode:
-            self.api_key = api_key or config.api_key
-            if not self.api_key:
-                raise ValueError("API key is required for HoneyHiveTracer")
+        # API key precedence: environment variable > constructor parameter > test fallback
+        # This maintains backwards compatibility where env vars take precedence
+        if config.api_key:
+            # Use environment variable (highest priority)
+            self.api_key = config.api_key
+        elif api_key and api_key.strip():  # Check for non-empty string
+            # Use constructor parameter (must be non-empty)
+            self.api_key = api_key
+        elif test_mode:
+            # Test mode fallback
+            self.api_key = "test-api-key"
         else:
-            # Use a dummy API key for test mode
-            self.api_key = api_key or config.api_key or "test-api-key"
+            # No API key available and not in test mode
+            raise ValueError("API key is required for HoneyHiveTracer")
 
         # Project is required by backend API - load from config if not provided
         if project is not None:

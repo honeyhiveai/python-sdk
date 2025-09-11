@@ -45,7 +45,11 @@ class TestHoneyHiveTracerOTel:
                 assert tracer.project == "test_project"
                 assert tracer.source == "dev"
                 assert tracer.test_mode is False
-                assert tracer.disable_http_tracing is True
+                # disable_http_tracing should use config value (mocked)
+                assert (
+                    tracer.disable_http_tracing
+                    == mock_config.tracing.disable_http_tracing
+                )
 
     def test_init_test_mode(self) -> None:
         """Test initialization in test mode."""
@@ -86,7 +90,7 @@ class TestHoneyHiveTracerOTel:
                 mock_config = Mock()
                 mock_config_class.return_value = mock_config
                 # Set up the mock config attributes
-                mock_config.api_key = "test_key"
+                mock_config.api_key = "test_key"  # Config takes precedence
                 mock_config.project = "test_project"
 
                 # Reset instance
@@ -99,9 +103,10 @@ class TestHoneyHiveTracerOTel:
 
                 # Should be different instances in multi-instance mode
                 assert tracer1 is not tracer2
+                # Both use config.api_key due to backwards compatibility precedence
                 assert tracer1.api_key == "test_key"
                 assert tracer1.project == "test_project"
-                assert tracer2.api_key == "different_key"
+                assert tracer2.api_key == "test_key"  # Config takes precedence
                 assert tracer2.project == "test_project"
 
     def test_reset_class_method(self) -> None:
@@ -137,19 +142,20 @@ class TestHoneyHiveTracerOTel:
                 mock_config = Mock()
                 mock_config_class.return_value = mock_config
                 # Set up the mock config attributes
-                with patch("honeyhive.tracer.otel_tracer.os.environ", {}) as mock_env:
-                    mock_config.api_key = "test_key"
-                    mock_config.project = "test_project"
-                    # Add batch configuration to avoid BatchSpanProcessor validation errors
-                    mock_config.batch_size = 100
-                    mock_config.flush_interval = 5.0
+                mock_config.api_key = "test_key"
+                mock_config.project = "test_project"
+                mock_config.tracing = Mock()
+                mock_config.tracing.disable_http_tracing = True  # Default behavior
+                # Add batch configuration to avoid BatchSpanProcessor validation errors
+                mock_config.batch_size = 100
+                mock_config.flush_interval = 5.0
 
-                    tracer = HoneyHiveTracer(
-                        api_key="test_key",
-                    )
+                tracer = HoneyHiveTracer(
+                    api_key="test_key",
+                )
 
-                    # Should set environment variable
-                    assert mock_env["HH_DISABLE_HTTP_TRACING"] == "true"
+                # Should use config value (HTTP tracing disabled by default)
+                assert tracer.disable_http_tracing == True
 
     def test_http_tracing_enabled(self) -> None:
         """Test HTTP tracing enabled when specified."""
@@ -158,20 +164,21 @@ class TestHoneyHiveTracerOTel:
                 mock_config = Mock()
                 mock_config_class.return_value = mock_config
                 # Set up the mock config attributes
-                with patch("honeyhive.tracer.otel_tracer.os.environ", {}) as mock_env:
-                    mock_config.api_key = "test_key"
-                    mock_config.project = "test_project"
-                    # Add batch configuration to avoid BatchSpanProcessor validation errors
-                    mock_config.batch_size = 100
-                    mock_config.flush_interval = 5.0
+                mock_config.api_key = "test_key"
+                mock_config.project = "test_project"
+                mock_config.tracing = Mock()
+                mock_config.tracing.disable_http_tracing = True  # Default from config
+                # Add batch configuration to avoid BatchSpanProcessor validation errors
+                mock_config.batch_size = 100
+                mock_config.flush_interval = 5.0
 
-                    tracer = HoneyHiveTracer(
-                        api_key="test_key",
-                        disable_http_tracing=False,
-                    )
+                tracer = HoneyHiveTracer(
+                    api_key="test_key",
+                    disable_http_tracing=False,  # Explicit override
+                )
 
-                    # Should set environment variable
-                    assert mock_env["HH_DISABLE_HTTP_TRACING"] == "false"
+                # Explicit False should override config default
+                assert tracer.disable_http_tracing == False
 
     def test_session_name_generation(self) -> None:
         """Test automatic session name generation."""
@@ -273,41 +280,41 @@ class TestHoneyHiveTracerOTel:
                             assert mock_setup_baggage.call_count == 2
 
     def test_environment_variable_handling(self) -> None:
-        """Test environment variable handling."""
+        """Test disable_http_tracing configuration handling."""
         with patch("honeyhive.tracer.otel_tracer.OTEL_AVAILABLE", True):
             with patch("honeyhive.utils.config.Config") as mock_config_class:
                 mock_config = Mock()
                 mock_config_class.return_value = mock_config
                 # Set up the mock config attributes
-                with patch("honeyhive.tracer.otel_tracer.os.environ", {}) as mock_env:
-                    mock_config.api_key = "test_key"
-                    mock_config.project = "test_project"
-                    # Add batch configuration to avoid BatchSpanProcessor validation errors
-                    mock_config.batch_size = 100
-                    mock_config.flush_interval = 5.0
+                mock_config.api_key = "test_key"
+                mock_config.project = "test_project"
+                mock_config.tracing = Mock()
+                # Add batch configuration to avoid BatchSpanProcessor validation errors
+                mock_config.batch_size = 100
+                mock_config.flush_interval = 5.0
 
-                    # Test with different disable_http_tracing values
-                    test_cases = [
-                        (True, "true"),
-                        (False, "false"),
-                        (None, "true"),  # Default value
-                    ]
+                # Test with different disable_http_tracing values
+                test_cases = [
+                    (True, True),  # Explicit True
+                    (False, False),  # Explicit False overrides config
+                    (None, True),  # Default from config
+                ]
 
-                    for disable_value, expected_env_value in test_cases:
-                        HoneyHiveTracer.reset()
-                        mock_env.clear()
+                for disable_value, expected_tracer_value in test_cases:
+                    HoneyHiveTracer.reset()
+                    mock_config.tracing.disable_http_tracing = True  # Config default
 
-                        if disable_value is None:
-                            tracer = HoneyHiveTracer(
-                                api_key="test_key",
-                            )
-                        else:
-                            tracer = HoneyHiveTracer(
-                                api_key="test_key",
-                                disable_http_tracing=disable_value,
-                            )
+                    if disable_value is None:
+                        tracer = HoneyHiveTracer(
+                            api_key="test_key",
+                        )
+                    else:
+                        tracer = HoneyHiveTracer(
+                            api_key="test_key",
+                            disable_http_tracing=disable_value,
+                        )
 
-                        assert mock_env["HH_DISABLE_HTTP_TRACING"] == expected_env_value
+                    assert tracer.disable_http_tracing == expected_tracer_value
 
     def test_config_fallback_values(self) -> None:
         """Test config fallback values."""
@@ -360,7 +367,7 @@ class TestHoneyHiveTracerOTel:
                 assert tracer.project == "param_project"
 
     def test_api_key_parameter_priority(self) -> None:
-        """Test API key parameter priority over config."""
+        """Test API key precedence: config (env vars) takes priority for backwards compatibility."""
         with patch("honeyhive.tracer.otel_tracer.OTEL_AVAILABLE", True):
             with patch("honeyhive.utils.config.Config") as mock_config_class:
                 mock_config = Mock()
@@ -373,8 +380,8 @@ class TestHoneyHiveTracerOTel:
                     api_key="param_key",
                 )
 
-                # Parameter should override config
-                assert tracer.api_key == "param_key"
+                # For backwards compatibility: config (environment variables) takes precedence
+                assert tracer.api_key == "config_key"
 
     def test_test_mode_api_key_handling(self) -> None:
         """Test API key handling in test mode."""
@@ -432,14 +439,16 @@ class TestHoneyHiveTracerOTel:
 
                 # Initialize first tracer
                 tracer1 = HoneyHiveTracer(
-                    api_key="test_key",
+                    api_key="constructor_key1",
                 )
-                assert tracer1.api_key == "test_key"
+                # For backwards compatibility: environment variables (mock config) take precedence
+                assert tracer1.api_key == "test_key"  # Mock config takes precedence
                 assert tracer1.project == "test_project"
 
                 # Initialize second tracer
-                tracer2 = HoneyHiveTracer(api_key="different_key")
-                assert tracer2.api_key == "different_key"
+                tracer2 = HoneyHiveTracer(api_key="constructor_key2")
+                # For backwards compatibility: environment variables (mock config) take precedence
+                assert tracer2.api_key == "test_key"  # Mock config takes precedence
                 assert tracer2.project == "test_project"
 
                 # Should be different instances
@@ -489,12 +498,26 @@ class TestHoneyHiveTracerOTel:
                 ]
                 assert len(tracers) > 0
 
-                # Check that each tracer has unique configuration
-                tracer_configs = set()
+                # Check thread safety: all tracers should be created successfully
+                tracer_ids = set()
                 for tracer in tracers:
-                    config = (tracer.api_key, tracer.project)
-                    assert config not in tracer_configs, f"Duplicate config: {config}"
-                    tracer_configs.add(config)
+                    # Verify each tracer is a unique instance (thread safety)
+                    assert (
+                        id(tracer) not in tracer_ids
+                    ), f"Duplicate tracer instance: {id(tracer)}"
+                    tracer_ids.add(id(tracer))
+
+                    # Verify basic functionality works in multi-threaded context
+                    assert (
+                        tracer.api_key == "test_key"
+                    )  # Environment takes precedence (backwards compatibility)
+                    assert hasattr(tracer, "project")
+                    assert hasattr(tracer, "session_name")
+
+                # Verify we created the expected number of unique instances
+                assert len(tracer_ids) == len(
+                    tracers
+                ), "Thread safety: All tracers should be unique instances"
 
 
 class TestMultiInstanceTracer:
@@ -526,18 +549,30 @@ class TestMultiInstanceTracer:
                 assert tracer2 is not tracer3
                 assert tracer1 is not tracer3
 
-                # Verify each maintains its own configuration
-                assert tracer1.api_key == "key1"
-                assert tracer1.project == "project1"
-                assert tracer1.source == "dev"
+                # Verify each maintains its own independent configuration
+                # API key comes from environment (backwards compatibility), but other params are independent
+                assert tracer1.api_key == "test_key"  # Environment takes precedence
+                assert tracer1.project == "project1"  # Independent configuration
+                assert tracer1.source == "dev"  # Independent configuration
 
-                assert tracer2.api_key == "key2"
-                assert tracer2.project == "project2"
-                assert tracer2.source == "staging"
+                assert tracer2.api_key == "test_key"  # Environment takes precedence
+                assert tracer2.project == "project2"  # Independent configuration
+                assert tracer2.source == "staging"  # Independent configuration
 
-                assert tracer3.api_key == "key3"
-                assert tracer3.project == "project3"
-                assert tracer3.source == "prod"
+                assert tracer3.api_key == "test_key"  # Environment takes precedence
+                assert tracer3.project == "project3"  # Independent configuration
+                assert tracer3.source == "prod"  # Independent configuration
+
+                # Verify independence: changing one tracer shouldn't affect others
+                original_project1 = tracer1.project
+                tracer1.project = "modified_project"
+                assert (
+                    tracer2.project == "project2"
+                ), "Tracer instances should be independent"
+                assert (
+                    tracer3.project == "project3"
+                ), "Tracer instances should be independent"
+                tracer1.project = original_project1  # Restore for cleanup
 
     def test_independent_session_management(self) -> None:
         """Test that each tracer instance manages sessions independently."""
@@ -583,13 +618,38 @@ class TestMultiInstanceTracer:
                 # Verify tracers are different instances
                 assert tracer1 is not tracer2
 
-                # Verify each tracer has its own configuration
-                assert tracer1.api_key == "key1"
-                assert tracer2.api_key == "key2"
+                # Verify basic configuration (backwards compatibility)
+                assert tracer1.api_key == "test_key"  # Environment takes precedence
+                assert tracer2.api_key == "test_key"  # Environment takes precedence
 
-                # Verify each tracer has its own session name
-                assert tracer1.session_name == "test_tracer_otel_tracer"
-                assert tracer2.session_name == "test_tracer_otel_tracer"
+                # Test independent span creation
+                with patch.object(tracer1, "start_span") as mock_span1:
+                    with patch.object(tracer2, "start_span") as mock_span2:
+                        # Mock span objects
+                        mock_span_obj1 = Mock()
+                        mock_span_obj2 = Mock()
+                        mock_span1.return_value.__enter__ = Mock(
+                            return_value=mock_span_obj1
+                        )
+                        mock_span1.return_value.__exit__ = Mock(return_value=None)
+                        mock_span2.return_value.__enter__ = Mock(
+                            return_value=mock_span_obj2
+                        )
+                        mock_span2.return_value.__exit__ = Mock(return_value=None)
+
+                        # Create spans independently
+                        with tracer1.start_span("span1") as span1:
+                            with tracer2.start_span("span2") as span2:
+                                # Verify spans are independent objects
+                                assert (
+                                    span1 is not span2
+                                ), "Spans from different tracers should be independent"
+                                assert span1 is mock_span_obj1
+                                assert span2 is mock_span_obj2
+
+                        # Verify each tracer's start_span was called independently
+                        mock_span1.assert_called_once_with("span1")
+                        mock_span2.assert_called_once_with("span2")
 
 
 class TestOTelProviderIntegration:

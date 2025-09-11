@@ -20,18 +20,31 @@ class TestHoneyHiveTracerAPI:
         # Reset the singleton for each test
         HoneyHiveTracer.reset()
 
-        # Mock OpenTelemetry availability
+        # Mock OpenTelemetry availability and config to avoid environment variable interference
         with patch.dict(os.environ, {"HH_OTLP_ENABLED": "false"}):
-            # Mock the _initialize_session method to prevent it from running
-            with patch.object(HoneyHiveTracer, "_initialize_session"):
-                # Create the tracer normally
-                self.tracer = HoneyHiveTracer(
-                    project="test-project",
-                    source="test",
-                    api_key="test-key",
-                    test_mode=True,
-                    disable_http_tracing=True,
-                )
+            with patch("honeyhive.utils.config.Config") as mock_config_class:
+                # Mock the _initialize_session method to prevent it from running
+                with patch.object(HoneyHiveTracer, "_initialize_session"):
+                    # Set up mock config to return test values
+                    mock_config = Mock()
+                    mock_config_class.return_value = mock_config
+                    mock_config.api_key = (
+                        "test-key"  # This will be used due to precedence
+                    )
+                    mock_config.project = "test-project"
+                    mock_config.source = "test"
+                    mock_config.test_mode = True
+                    mock_config.tracing = Mock()
+                    mock_config.tracing.disable_http_tracing = True
+
+                    # Create the tracer normally
+                    self.tracer = HoneyHiveTracer(
+                        project="test-project",
+                        source="test",
+                        api_key="test-key",
+                        test_mode=True,
+                        disable_http_tracing=True,
+                    )
 
                 # Now manually set up what we need for testing
                 self.tracer.session_id = "test-session-123"
@@ -73,24 +86,44 @@ class TestHoneyHiveTracerAPI:
     def test_tracer_singleton_pattern(self) -> None:
         """Test that singleton pattern is no longer used - multiple instances are created."""
         with patch("honeyhive.tracer.otel_tracer.OTEL_AVAILABLE", True):
-            with patch("honeyhive.tracer.otel_tracer.config") as mock_config:
-                mock_config.api_key = "test_key"
-                mock_config.project = "test_project"
+            # Mock environment variables for unit test isolation
+            with patch.dict(
+                os.environ,
+                {
+                    "HH_API_KEY": "env_api_key",  # Environment API key takes precedence
+                    "HH_OTLP_ENABLED": "false",
+                },
+                clear=False,
+            ):
+                with patch.object(HoneyHiveTracer, "_initialize_session"):
+                    # Reset instance
+                    HoneyHiveTracer.reset()
 
-                # Reset instance
-                HoneyHiveTracer.reset()
+                    tracer1 = HoneyHiveTracer(
+                        api_key="constructor_key1", project="constructor_project1"
+                    )
+                    tracer2 = HoneyHiveTracer(
+                        api_key="constructor_key2", project="constructor_project2"
+                    )
 
-                tracer1 = HoneyHiveTracer(api_key="test_key", project="test_project")
-                tracer2 = HoneyHiveTracer(
-                    api_key="different_key", project="different_project"
-                )
+                    # Should be different instances in multi-instance mode
+                    assert tracer1 is not tracer2
 
-                # Should be different instances in multi-instance mode
-                assert tracer1 is not tracer2
-                assert tracer1.api_key == "test_key"
-                assert tracer1.project == "test_project"
-                assert tracer2.api_key == "different_key"
-                assert tracer2.project == "different_project"
+                    # Test backwards compatibility behavior:
+                    # - API key: environment variable takes precedence
+                    # - Project: constructor parameter takes precedence
+                    assert (
+                        tracer1.api_key == "env_api_key"
+                    )  # Environment takes precedence
+                    assert (
+                        tracer1.project == "constructor_project1"
+                    )  # Constructor takes precedence
+                    assert (
+                        tracer2.api_key == "env_api_key"
+                    )  # Environment takes precedence
+                    assert (
+                        tracer2.project == "constructor_project2"
+                    )  # Constructor takes precedence
 
     def test_start_span(self) -> None:
         """Test starting a span."""
@@ -267,38 +300,46 @@ class TestHoneyHiveTracerAPI:
     def test_reset_static_state(self) -> None:
         """Test static state reset in multi-instance mode."""
         with patch("honeyhive.tracer.otel_tracer.OTEL_AVAILABLE", True):
-            with patch("honeyhive.tracer.otel_tracer.config") as mock_config:
-                mock_config.api_key = "test_key"
-                mock_config.project = "test_project"
+            # Mock environment variables for unit test isolation
+            # Clear HH_API_KEY to ensure constructor parameters are used
+            with patch.dict(
+                os.environ, {"HH_OTLP_ENABLED": "false"}, clear=True
+            ):  # Clear all environment variables for isolation
+                with patch.object(HoneyHiveTracer, "_initialize_session"):
+                    # Reset to ensure clean state
+                    HoneyHiveTracer.reset()
 
-                # Reset to ensure clean state
-                HoneyHiveTracer.reset()
+                    # Check that reset method works (no errors)
+                    # In multi-instance mode, reset just logs info
 
-                # Check that reset method works (no errors)
-                # In multi-instance mode, reset just logs info
+                    # Initialize first tracer
+                    tracer1 = HoneyHiveTracer(
+                        api_key="test_key", project="test_project"
+                    )
+                    assert (
+                        tracer1.api_key == "test_key"
+                    )  # Constructor parameter used (no env var)
+                    assert tracer1.project == "test_project"
 
-                # Initialize first tracer
-                tracer1 = HoneyHiveTracer(api_key="test_key", project="test_project")
-                assert tracer1.api_key == "test_key"
-                assert tracer1.project == "test_project"
+                    # Initialize second tracer
+                    tracer2 = HoneyHiveTracer(
+                        api_key="different_key", project="different_project"
+                    )
+                    assert (
+                        tracer2.api_key == "different_key"
+                    )  # Constructor parameter used (no env var)
+                    assert tracer2.project == "different_project"
 
-                # Initialize second tracer
-                tracer2 = HoneyHiveTracer(
-                    api_key="different_key", project="different_project"
-                )
-                assert tracer2.api_key == "different_key"
-                assert tracer2.project == "different_project"
-
-                # Should be different instances
-                assert tracer1 is not tracer2
+                    # Should be different instances
+                    assert tracer1 is not tracer2
 
     def test_tracer_configuration(self) -> None:
         """Test tracer configuration options."""
         # Reset for this test to avoid singleton conflicts
         HoneyHiveTracer.reset()
 
-        # Test with different configuration
-        with patch.dict(os.environ, {"HH_OTLP_ENABLED": "false"}):
+        # Test with different configuration - clear env vars for unit test isolation
+        with patch.dict(os.environ, {"HH_OTLP_ENABLED": "false"}, clear=True):
             tracer = HoneyHiveTracer(
                 project="config-test",
                 source="staging",
@@ -310,7 +351,9 @@ class TestHoneyHiveTracerAPI:
 
             assert tracer.project == "config-test"
             assert tracer.source == "staging"
-            assert tracer.api_key == "config-key"
+            assert (
+                tracer.api_key == "config-key"
+            )  # Constructor parameter used (no env var)
             assert tracer.session_name == "custom-session"
 
     def test_tracer_error_handling(self) -> None:
@@ -453,22 +496,26 @@ class TestHoneyHiveTracerAPI:
         """Test that the init() method works for backwards compatibility."""
         HoneyHiveTracer.reset()
 
-        with patch.object(HoneyHiveTracer, "_initialize_session"):
-            with patch.object(HoneyHiveTracer, "_initialize_otel"):
-                # Test init() method (official SDK pattern)
-                tracer = HoneyHiveTracer.init(
-                    api_key="test-key",
-                    project="test-project",
-                    source="test",
-                    session_name="test-session",
-                )
+        # Clear environment variables for unit test isolation
+        with patch.dict(os.environ, {"HH_OTLP_ENABLED": "false"}, clear=True):
+            with patch.object(HoneyHiveTracer, "_initialize_session"):
+                with patch.object(HoneyHiveTracer, "_initialize_otel"):
+                    # Test init() method (official SDK pattern)
+                    tracer = HoneyHiveTracer.init(
+                        api_key="test-key",
+                        project="test-project",
+                        source="test",
+                        session_name="test-session",
+                    )
 
-                # Verify it's a valid instance
-                assert isinstance(tracer, HoneyHiveTracer)
-                assert tracer.api_key == "test-key"
-                assert tracer.project == "test-project"
-                assert tracer.source == "test"
-                assert tracer.session_name == "test-session"
+                    # Verify it's a valid instance
+                    assert isinstance(tracer, HoneyHiveTracer)
+                    assert (
+                        tracer.api_key == "test-key"
+                    )  # Constructor parameter used (no env var)
+                    assert tracer.project == "test-project"
+                    assert tracer.source == "test"
+                    assert tracer.session_name == "test-session"
 
                 # In multi-instance mode, each tracer is independent
                 assert tracer is not None
@@ -484,56 +531,66 @@ class TestHoneyHiveTracerAPI:
         """Test all parameters of the init method."""
         HoneyHiveTracer.reset()
 
-        with patch.object(HoneyHiveTracer, "_initialize_session"):
-            with patch.object(HoneyHiveTracer, "_initialize_otel"):
-                # Test with all parameters
-                tracer = HoneyHiveTracer.init(
-                    api_key="test-api-key",
-                    project="test-project",
-                    source="test-source",
-                    session_name="test-session",
-                    server_url="https://custom-server.com",
-                )
+        # Clear environment variables for unit test isolation
+        with patch.dict(os.environ, {"HH_OTLP_ENABLED": "false"}, clear=True):
+            with patch.object(HoneyHiveTracer, "_initialize_session"):
+                with patch.object(HoneyHiveTracer, "_initialize_otel"):
+                    # Test with all parameters
+                    tracer = HoneyHiveTracer.init(
+                        api_key="test-api-key",
+                        project="test-project",
+                        source="test-source",
+                        session_name="test-session",
+                        server_url="https://custom-server.com",
+                    )
 
-                # Verify all parameters are set correctly
-                assert tracer.api_key == "test-api-key"
-                assert tracer.project == "test-project"
-                assert tracer.source == "test-source"
-                assert tracer.session_name == "test-session"
+                    # Verify all parameters are set correctly
+                    assert (
+                        tracer.api_key == "test-api-key"
+                    )  # Constructor parameter used (no env var)
+                    assert tracer.project == "test-project"
+                    assert tracer.source == "test-source"
+                    assert tracer.session_name == "test-session"
 
-                # In multi-instance mode, each tracer is independent
-                assert tracer is not None
+                    # In multi-instance mode, each tracer is independent
+                    assert tracer is not None
 
     def test_init_method_defaults(self):
         """Test init method with default values."""
         HoneyHiveTracer.reset()
 
-        with patch.object(HoneyHiveTracer, "_initialize_session"):
-            with patch.object(HoneyHiveTracer, "_initialize_otel"):
-                # Test with minimal parameters
-                tracer = HoneyHiveTracer.init(
-                    api_key="test-key", project="test-project"
-                )
+        # Clear environment variables for unit test isolation
+        with patch.dict(os.environ, {"HH_OTLP_ENABLED": "false"}, clear=True):
+            with patch.object(HoneyHiveTracer, "_initialize_session"):
+                with patch.object(HoneyHiveTracer, "_initialize_otel"):
+                    # Test with minimal parameters
+                    tracer = HoneyHiveTracer.init(
+                        api_key="test-key", project="test-project"
+                    )
 
-                # Verify defaults are applied
-                assert tracer.api_key == "test-key"
-                assert tracer.project == "test-project"
-                assert tracer.source == "dev"  # Default from official docs
-                assert tracer.session_name is not None  # Auto-generated
+                    # Verify defaults are applied
+                    assert (
+                        tracer.api_key == "test-key"
+                    )  # Constructor parameter used (no env var)
+                    assert tracer.project == "test-project"
+                    assert tracer.source == "dev"  # Default from official docs
+                    assert tracer.session_name is not None  # Auto-generated
 
-                # In multi-instance mode, each tracer is independent
-                assert tracer is not None
+                    # In multi-instance mode, each tracer is independent
+                    assert tracer is not None
 
     def test_init_method_server_url_handling(self):
         """Test init method with server_url parameter."""
         HoneyHiveTracer.reset()
 
-        with patch.object(HoneyHiveTracer, "_initialize_session"):
-            with patch.object(HoneyHiveTracer, "_initialize_otel"):
-                # Mock environment
-                with patch.dict(
-                    os.environ, {"HH_API_URL": "https://original-server.com"}
-                ):
+        # Clear environment variables for unit test isolation
+        with patch.dict(
+            os.environ,
+            {"HH_API_URL": "https://original-server.com", "HH_OTLP_ENABLED": "false"},
+            clear=True,
+        ):
+            with patch.object(HoneyHiveTracer, "_initialize_session"):
+                with patch.object(HoneyHiveTracer, "_initialize_otel"):
                     # Test with server_url
                     tracer = HoneyHiveTracer.init(
                         api_key="test-key",
@@ -543,7 +600,9 @@ class TestHoneyHiveTracerAPI:
 
                     # Verify tracer was created
                     assert isinstance(tracer, HoneyHiveTracer)
-                    assert tracer.api_key == "test-key"
+                    assert (
+                        tracer.api_key == "test-key"
+                    )  # Constructor parameter used (no env var)
                     assert tracer.project == "test-project"
 
                     # In multi-instance mode, each tracer is independent
@@ -596,24 +655,30 @@ class TestHoneyHiveTracerAPI:
         """Test that init method respects singleton pattern."""
         HoneyHiveTracer.reset()
 
-        with patch.object(HoneyHiveTracer, "_initialize_session"):
-            with patch.object(HoneyHiveTracer, "_initialize_otel"):
-                # Create first tracer with init
-                tracer1 = HoneyHiveTracer.init(api_key="key1", project="project1")
+        # Clear environment variables for unit test isolation
+        with patch.dict(os.environ, {"HH_OTLP_ENABLED": "false"}, clear=True):
+            with patch.object(HoneyHiveTracer, "_initialize_session"):
+                with patch.object(HoneyHiveTracer, "_initialize_otel"):
+                    # Create first tracer with init
+                    tracer1 = HoneyHiveTracer.init(api_key="key1", project="project1")
 
-                # Create second tracer with init (different parameters)
-                tracer2 = HoneyHiveTracer.init(api_key="key2", project="project2")
+                    # Create second tracer with init (different parameters)
+                    tracer2 = HoneyHiveTracer.init(api_key="key2", project="project2")
 
-                # In multi-instance mode, each tracer is independent
-                assert tracer1 is not tracer2
-                assert tracer1 is not None
-                assert tracer2 is not None
+                    # In multi-instance mode, each tracer is independent
+                    assert tracer1 is not tracer2
+                    assert tracer1 is not None
+                    assert tracer2 is not None
 
-                # Each tracer should have its own parameters
-                assert tracer1.api_key == "key1"
-                assert tracer1.project == "project1"
-                assert tracer2.api_key == "key2"
-                assert tracer2.project == "project2"
+                    # Each tracer should have its own parameters
+                    assert (
+                        tracer1.api_key == "key1"
+                    )  # Constructor parameter used (no env var)
+                    assert tracer1.project == "project1"
+                    assert (
+                        tracer2.api_key == "key2"
+                    )  # Constructor parameter used (no env var)
+                    assert tracer2.project == "project2"
 
     def test_init_method_mixed_patterns(self):
         """Test mixing init method and constructor patterns."""
@@ -639,10 +704,17 @@ class TestHoneyHiveTracerAPI:
                 assert tracer2 is not None
 
                 # Each tracer should have its own parameters
-                assert tracer1.api_key == "init-key"
-                assert tracer1.project == "init-project"
-                assert tracer2.api_key == "constructor-key"
-                assert tracer2.project == "constructor-project"
+                # For backwards compatibility: environment variables take precedence for API key
+                assert (
+                    tracer1.api_key == "test-api-key-12345"
+                )  # Environment variable takes precedence
+                assert tracer1.project == "init-project"  # Constructor parameter used
+                assert (
+                    tracer2.api_key == "test-api-key-12345"
+                )  # Environment variable takes precedence
+                assert (
+                    tracer2.project == "constructor-project"
+                )  # Constructor parameter used
 
     def test_init_method_error_handling(self):
         """Test init method error handling."""
@@ -670,10 +742,16 @@ class TestHoneyHiveTracerAPI:
                             api_key="test-key", source="test-source"
                         )
 
-                        # Should use explicit api_key, project loaded from HH_PROJECT environment
-                        assert tracer.api_key == "test-key"
-                        assert tracer.project == "env-project"
-                        assert tracer.source == "test-source"
+                        # For backwards compatibility: environment variables take precedence for API key
+                        assert (
+                            tracer.api_key == "test-api-key-12345"
+                        )  # Tox environment takes precedence
+                        assert (
+                            tracer.project == "env-project"
+                        )  # From HH_PROJECT environment
+                        assert (
+                            tracer.source == "test-source"
+                        )  # Constructor parameter used
 
     def test_init_method_return_type(self):
         """Test that init method returns correct type."""
@@ -705,11 +783,18 @@ class TestHoneyHiveTracerAPI:
                     server_url="MY_HONEYHIVE_SERVER_URL",
                 )
 
-                # Verify all parameters are set
-                assert tracer.api_key == "MY_HONEYHIVE_API_KEY"
-                assert tracer.project == "MY_HONEYHIVE_PROJECT_NAME"
-                assert tracer.source == "MY_SOURCE"
-                assert tracer.session_name == "MY_SESSION_NAME"
+                # Verify parameters are set according to backwards compatibility rules
+                # For backwards compatibility: environment variables take precedence for API key
+                assert (
+                    tracer.api_key == "test-api-key-12345"
+                )  # Tox environment takes precedence
+                assert (
+                    tracer.project == "MY_HONEYHIVE_PROJECT_NAME"
+                )  # Constructor parameter used
+                assert tracer.source == "MY_SOURCE"  # Constructor parameter used
+                assert (
+                    tracer.session_name == "MY_SESSION_NAME"
+                )  # Constructor parameter used
 
                 # In multi-instance mode, each tracer is independent
                 assert tracer is not None
@@ -782,37 +867,37 @@ class TestHoneyHiveTracerAPI:
 
                 assert tracer3.disable_http_tracing is True
 
-    def test_disable_http_tracing_environment_variable(self):
-        """Test that disable_http_tracing parameter sets environment variable correctly."""
+    def test_disable_http_tracing_configuration(self):
+        """Test that disable_http_tracing parameter works correctly."""
         HoneyHiveTracer.reset()
 
         with patch.object(HoneyHiveTracer, "_initialize_session"):
             with patch.object(HoneyHiveTracer, "_initialize_otel"):
-                import os
-
-                # Test with default value (True)
+                # Test with default value (True - HTTP tracing disabled by default)
                 tracer1 = HoneyHiveTracer.init(
-                    api_key="test-key", project="test-project"
+                    api_key="test-key", project="test-project", test_mode=True
                 )
 
-                assert os.environ.get("HH_DISABLE_HTTP_TRACING") == "true"
+                assert tracer1.disable_http_tracing is True
 
-                # Test with explicit False
+                # Test with explicit False (enable HTTP tracing)
                 HoneyHiveTracer.reset()
                 tracer2 = HoneyHiveTracer.init(
                     api_key="test-key",
                     project="test-project",
                     disable_http_tracing=False,
+                    test_mode=True,
                 )
 
-                assert os.environ.get("HH_DISABLE_HTTP_TRACING") == "false"
+                assert tracer2.disable_http_tracing is False
 
-                # Test with explicit True
+                # Test with explicit True (disable HTTP tracing)
                 HoneyHiveTracer.reset()
                 tracer3 = HoneyHiveTracer.init(
                     api_key="test-key",
                     project="test-project",
                     disable_http_tracing=True,
+                    test_mode=True,
                 )
 
-                assert os.environ.get("HH_DISABLE_HTTP_TRACING") == "true"
+                assert tracer3.disable_http_tracing is True

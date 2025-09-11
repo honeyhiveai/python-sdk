@@ -318,10 +318,13 @@ All configuration supports the ``HH_*`` prefix pattern:
 
 **Configuration Hierarchy**:
 
-1. Constructor parameters (highest priority)
-2. ``HH_*`` environment variables
+1. ``HH_*`` environment variables (highest priority for backwards compatibility)
+2. Constructor parameters  
 3. Standard environment variables (``HTTP_*``, ``EXPERIMENT_*``)
 4. Default values (lowest priority)
+
+.. note::
+   **API Key Special Case**: ``HH_API_KEY`` takes precedence over constructor ``api_key`` parameter for backwards compatibility. Other parameters follow standard precedence where constructor parameters can override environment variables.
 
 .. note::
    **Runtime Configuration** (v0.1.0rc2+): Environment variables are now properly detected when set at runtime, enabling dynamic configuration without application restart.
