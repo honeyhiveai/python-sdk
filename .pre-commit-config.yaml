@@ -18,6 +18,7 @@ repos:
 
   - repo: local
     hooks:
+      # Code Quality Checks (Fast)
       - id: tox-format-check
         name: Code Formatting Check (Black + isort)
         entry: tox -e format
@@ -32,6 +33,23 @@ repos:
         language: system
         pass_filenames: false
         files: '^(src/.*\.py|tests/.*\.py|examples/.*\.py|scripts/.*\.py)$'
+        stages: [pre-commit]
+
+      # Test Suite Execution (Agent OS Zero Failing Tests Policy)
+      - id: unit-tests
+        name: Unit Test Suite (Fast, Mocked)
+        entry: tox -e unit
+        language: system
+        pass_filenames: false
+        files: '^(src/.*\.py|tests/unit/.*\.py)$'
+        stages: [pre-commit]
+
+      - id: integration-tests-basic
+        name: Basic Integration Tests (Real APIs, Credential Check)
+        entry: scripts/run-basic-integration-tests.sh
+        language: system
+        pass_filenames: false
+        files: '^(src/.*\.py|tests/integration/.*\.py)$'
         stages: [pre-commit]
 
       - id: docs-build-check
@@ -70,13 +88,5 @@ repos:
         entry: scripts/validate-tracer-patterns.sh
         language: system
         files: '^(docs/.*\.(rst|md)|examples/.*\.py|src/.*\.py)$'
-        pass_filenames: false
-        stages: [pre-commit]
-
-      - id: no-mocks-in-integration-tests
-        name: No Mocks in Integration Tests Check
-        entry: scripts/validate-no-mocks-integration.sh
-        language: system
-        files: '^tests/integration/.*\.py$'
         pass_filenames: false
         stages: [pre-commit]

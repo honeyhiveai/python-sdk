@@ -3,6 +3,8 @@
 ### Added
 - Performance tuning environment variables for OTLP export optimization
 - Configurable batch sizes and flush intervals for production environments
+- Pre-commit test suite execution (unit tests + basic integration tests)
+- Zero failing tests policy enforcement at commit time
 
 ### Changed
 - Improved span processor performance with configurable batching
