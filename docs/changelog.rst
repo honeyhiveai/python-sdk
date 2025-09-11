@@ -22,7 +22,8 @@ Current Version Highlights
 **🔧 FIXES: GitHub Actions Integration**
 
 * **Workflow Environment Variables**: Fixed missing ``HH_PROJECT`` in GitHub Actions workflows
-* **Integration Test Reliability**: Resolved authentication failures in CI/CD pipeline
+* **Tox Environment Configuration**: Fixed missing ``HH_PROJECT`` in local tox test environments
+* **Integration Test Reliability**: Resolved authentication failures in both CI/CD and local testing
 * **Lambda Test Compatibility**: Added proper environment configuration for AWS Lambda tests
 
 **v0.1.0rc1 (2025-09-11) - Release Candidate with Performance Improvements**

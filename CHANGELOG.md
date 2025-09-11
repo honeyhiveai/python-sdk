@@ -10,6 +10,7 @@
 
 ### Fixed
 - Missing HH_PROJECT environment variable in GitHub Actions workflows causing integration test failures
+- Missing HH_PROJECT environment variable in tox test environments causing local test failures
 
 ### Removed
 - Temporary development files and validation artifacts
