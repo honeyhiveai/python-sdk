@@ -8,6 +8,9 @@
 - Improved span processor performance with configurable batching
 - Enhanced API client configurations with better error handling
 
+### Fixed
+- Missing HH_PROJECT environment variable in GitHub Actions workflows causing integration test failures
+
 ### Removed
 - Temporary development files and validation artifacts
 

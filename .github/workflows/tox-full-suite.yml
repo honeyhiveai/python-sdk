@@ -37,6 +37,8 @@ name: Tox Full Test Suite
     secrets:
       HH_API_KEY:
         required: false
+      HH_PROJECT:
+        required: false
       HH_TEST_API_KEY:
         required: false
       CODECOV_TOKEN:
@@ -225,6 +227,7 @@ jobs:
         env:
           # HoneyHive credentials (required)
           HH_API_KEY: ${{ secrets.HH_API_KEY }}
+          HH_PROJECT: ${{ secrets.HH_PROJECT }}
           HH_SOURCE: "github-actions-integration"
           HH_TEST_MODE: false
           HH_API_URL: https://api.honeyhive.ai

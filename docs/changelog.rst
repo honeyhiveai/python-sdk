@@ -17,6 +17,14 @@ Latest Release Notes
 Current Version Highlights
 ~~~~~~~~~~~~~~~~~~~~~~~~~~
 
+**v0.1.0rc2 (Development) - CI/CD and Performance Improvements**
+
+**🔧 FIXES: GitHub Actions Integration**
+
+* **Workflow Environment Variables**: Fixed missing ``HH_PROJECT`` in GitHub Actions workflows
+* **Integration Test Reliability**: Resolved authentication failures in CI/CD pipeline
+* **Lambda Test Compatibility**: Added proper environment configuration for AWS Lambda tests
+
 **v0.1.0rc1 (2025-09-11) - Release Candidate with Performance Improvements**
 
 **🚀 NEW: Performance Optimization Framework**
