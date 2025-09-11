@@ -27,7 +27,12 @@ How-to guides are organized by problem domain. Each guide provides step-by-step 
 Getting Started
 ---------------
 
-Essential setup and configuration guides will be added here as needed.
+Essential setup and configuration guides for HoneyHive SDK usage.
+
+.. toctree::
+   :maxdepth: 1
+
+   backwards-compatibility-guide
 
 LLM Provider Integration
 -------------------------

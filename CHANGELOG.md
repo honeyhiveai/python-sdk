@@ -11,6 +11,11 @@
 - Git metadata collection for session creation with telemetry controls
 - Link/unlink/inject methods for context propagation with carriers
 - Inputs and metadata support in session creation for backwards compatibility
+- Comprehensive backwards compatibility migration guide (main branch → complete-refactor)
+- Complete API reference documentation for all 16 backwards compatibility parameters
+- Environment variables documentation for backwards compatibility options (HONEYHIVE_TELEMETRY, HH_VERBOSE, HH_DISABLE_BATCH)
+- Context propagation methods documentation with usage examples (link/unlink/inject)
+- Evaluation workflow documentation with baggage context examples
 - Performance tuning environment variables for OTLP export optimization
 - Configurable batch sizes and flush intervals for production environments
 - Pre-commit test suite execution (unit tests + basic integration tests)

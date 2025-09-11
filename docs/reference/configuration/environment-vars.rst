@@ -238,6 +238,26 @@ Instrumentation Control
      - ``true``
      - Whether to capture exception details in traces
 
+Backwards Compatibility Configuration
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+.. list-table::
+   :header-rows: 1
+   :widths: 25 20 55
+
+   * - Variable
+     - Default
+     - Description
+   * - ``HONEYHIVE_TELEMETRY``
+     - ``true``
+     - Enable/disable git metadata collection for sessions
+   * - ``HH_VERBOSE``
+     - ``false``
+     - Enable verbose debug logging throughout tracer initialization
+   * - ``HH_DISABLE_BATCH``
+     - ``false``
+     - Use SimpleSpanProcessor instead of BatchSpanProcessor for immediate export
+
 **Examples:**
 
 .. code-block:: bash
@@ -252,6 +272,11 @@ Instrumentation Control
    export HH_CAPTURE_OUTPUTS="true"
    export HH_CAPTURE_EXCEPTIONS="true"
    export HH_DISABLE_HTTP_TRACING="false"
+   
+   # Backwards compatibility configuration
+   export HONEYHIVE_TELEMETRY="false"  # Disable git metadata collection
+   export HH_VERBOSE="true"             # Enable debug logging
+   export HH_DISABLE_BATCH="true"       # Use immediate export for debugging
 
 Sampling Configuration
 ~~~~~~~~~~~~~~~~~~~~~~

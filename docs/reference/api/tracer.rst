@@ -31,38 +31,68 @@ Class Methods
 init()
 ~~~~~~
 
-.. py:classmethod:: HoneyHiveTracer.init(api_key: Optional[str] = None, source: str = "production", test_mode: bool = False, session_name: Optional[str] = None, server_url: Optional[str] = None, instrumentors: Optional[list] = None, disable_http_tracing: bool = True, **kwargs) -> "HoneyHiveTracer"
+.. py:classmethod:: HoneyHiveTracer.init(api_key: Optional[str] = None, project: Optional[str] = None, session_name: Optional[str] = None, source: str = "dev", server_url: Optional[str] = None, session_id: Optional[str] = None, disable_http_tracing: bool = True, disable_batch: bool = False, verbose: bool = False, inputs: Optional[Dict[str, Any]] = None, is_evaluation: bool = False, run_id: Optional[str] = None, dataset_id: Optional[str] = None, datapoint_id: Optional[str] = None, link_carrier: Optional[Dict[str, Any]] = None, test_mode: bool = False, **kwargs) -> "HoneyHiveTracer"
    :no-index:
 
    Initialize a new HoneyHiveTracer instance with the specified configuration.
    
-   **Parameters:**
+   **Core Parameters:**
    
    :param api_key: HoneyHive API key. If not provided, reads from ``HH_API_KEY`` environment variable.
    :type api_key: Optional[str]
    
-   :param source: Source environment identifier (e.g., "production", "staging", "development"). Defaults to "production".
+   :param project: Project name (required by backend API). Auto-derived from API key if not provided.
+   :type project: Optional[str]
+   
+   :param session_name: Custom session name for grouping related traces. Auto-generated if not provided based on filename.
+   :type session_name: Optional[str]
+   
+   :param source: Source environment identifier (e.g., "production", "staging", "development"). Defaults to "dev".
    :type source: str
    
    :param test_mode: Enable test mode (no data sent to HoneyHive). Defaults to False.
    :type test_mode: bool
    
-   :param session_name: Custom session name for grouping related traces. Auto-generated if not provided based on filename.
-   :type session_name: Optional[str]
+   **Advanced Configuration:**
    
-   :param server_url: Custom HoneyHive server URL for self-hosted deployments.
+   :param server_url: Custom HoneyHive server URL for self-hosted deployments. Overrides ``HH_API_URL`` environment variable.
    :type server_url: Optional[str]
    
-   :param instrumentors: List of OpenTelemetry instrumentors to apply automatically (BYOI pattern).
-   :type instrumentors: Optional[List[BaseInstrumentor]]
+   :param session_id: Existing session ID to link to. Must be a valid UUID string. If invalid and not in test mode, raises ValueError.
+   :type session_id: Optional[str]
    
    :param disable_http_tracing: Whether to disable HTTP request tracing. Defaults to True for performance.
    :type disable_http_tracing: bool
    
-   :param project: **[Backward Compatibility]** Project name - ignored as projects are derived from API key scope. Kept for compatibility with existing code.
-   :type project: Optional[str]
+   :param disable_batch: Whether to disable batch processing and use SimpleSpanProcessor instead of BatchSpanProcessor. Defaults to False.
+   :type disable_batch: bool
    
-   :param kwargs: Additional configuration options passed to the underlying tracer
+   :param verbose: Enable verbose debug logging throughout tracer initialization. Defaults to False.
+   :type verbose: bool
+   
+   **Evaluation Parameters (Backwards Compatibility):**
+   
+   :param inputs: Session initialization inputs for backwards compatibility with main branch.
+   :type inputs: Optional[Dict[str, Any]]
+   
+   :param is_evaluation: Whether this is an evaluation session. When True, adds evaluation-specific baggage context.
+   :type is_evaluation: bool
+   
+   :param run_id: Evaluation run ID. Added to baggage context when ``is_evaluation`` is True.
+   :type run_id: Optional[str]
+   
+   :param dataset_id: Evaluation dataset ID. Added to baggage context when ``is_evaluation`` is True.
+   :type dataset_id: Optional[str]
+   
+   :param datapoint_id: Evaluation datapoint ID. Added to baggage context when ``is_evaluation`` is True.
+   :type datapoint_id: Optional[str]
+   
+   **Context Propagation (Backwards Compatibility):**
+   
+   :param link_carrier: Context propagation carrier for linking to parent traces. Uses OpenTelemetry propagation.
+   :type link_carrier: Optional[Dict[str, Any]]
+   
+   :param kwargs: Additional configuration options for future compatibility
    :type kwargs: Any
    
    **Returns:**
@@ -198,6 +228,58 @@ init()
       tracer = HoneyHiveTracer.init(
           api_key="hh_your_key",
           server_url="https://honeyhive.company.com"
+      )
+   
+   **Backwards Compatibility Examples (v0.1.0rc2+):**
+   
+   All 16 original parameters from the main branch are now supported:
+   
+   .. code-block:: python
+   
+      from honeyhive import HoneyHiveTracer
+      
+      # Full backwards compatibility - all original parameters work
+      tracer = HoneyHiveTracer.init(
+          api_key="hh_your_key",
+          project="my-project",                    # Auto-derived if not provided
+          session_name="evaluation-session",
+          source="production",
+          server_url="https://custom.honeyhive.ai", # Overrides HH_API_URL
+          session_id="550e8400-e29b-41d4-a716-446655440000", # Valid UUID
+          disable_http_tracing=True,               # Default for performance
+          disable_batch=False,                     # Use BatchSpanProcessor (default)
+          verbose=True,                            # Enable debug output
+          inputs={"user_id": "123", "query": "test"}, # Session inputs
+          is_evaluation=True,                      # Evaluation workflow
+          run_id="eval-run-001",                   # Evaluation run
+          dataset_id="dataset-123",                # Evaluation dataset
+          datapoint_id="datapoint-456",            # Evaluation datapoint
+          test_mode=False                          # Send data to HoneyHive
+      )
+      
+      # Evaluation workflow example
+      evaluation_tracer = HoneyHiveTracer.init(
+          api_key="hh_eval_key",
+          is_evaluation=True,
+          run_id="experiment-2024-001",
+          dataset_id="benchmark-dataset",
+          verbose=True  # See evaluation baggage being set
+      )
+      
+      # Context propagation example
+      parent_carrier = {"traceparent": "00-trace-id-span-id-01"}
+      child_tracer = HoneyHiveTracer.init(
+          api_key="hh_key",
+          link_carrier=parent_carrier,  # Links to parent trace
+          verbose=True
+      )
+      
+      # Performance tuning example
+      high_throughput_tracer = HoneyHiveTracer.init(
+          api_key="hh_key",
+          disable_batch=True,    # Use SimpleSpanProcessor for immediate export
+          disable_http_tracing=True,  # Reduce overhead
+          verbose=False          # Minimal logging
       )
 
 Constructor
@@ -492,6 +574,110 @@ close()
           tracer.close()
       
       atexit.register(cleanup_tracer)
+
+Context Propagation Methods (Backwards Compatibility)
+------------------------------------------------------
+
+link()
+~~~~~~
+
+.. py:method:: link(carrier: Optional[Dict[str, Any]] = None, getter: Optional[Any] = None) -> Any
+
+   Link to parent context via carrier for distributed tracing (backwards compatibility).
+   
+   **Parameters:**
+   
+   :param carrier: Context propagation carrier containing trace context
+   :type carrier: Optional[Dict[str, Any]]
+   
+   :param getter: Custom getter for extracting context from carrier
+   :type getter: Optional[Any]
+   
+   **Returns:**
+   
+   :rtype: Any
+   :returns: Context token for later unlinking
+   
+   **Usage:**
+   
+   .. code-block:: python
+   
+      # Link to parent trace from HTTP headers
+      headers = {"traceparent": "00-trace-id-span-id-01"}
+      token = tracer.link(headers)
+      
+      # Your traced operations will now be children of the parent trace
+      with tracer.trace("child_operation") as span:
+          span.set_attribute("linked_to_parent", True)
+      
+      # Unlink when done
+      tracer.unlink(token)
+
+unlink()
+~~~~~~~~
+
+.. py:method:: unlink(token: Any) -> None
+
+   Unlink from parent context (backwards compatibility).
+   
+   **Parameters:**
+   
+   :param token: Context token returned by link() method
+   :type token: Any
+   
+   **Usage:**
+   
+   .. code-block:: python
+   
+      # Link to parent context
+      token = tracer.link(parent_carrier)
+      
+      try:
+          # Operations linked to parent
+          with tracer.trace("linked_operation"):
+              do_work()
+      finally:
+          # Always unlink to restore original context
+          tracer.unlink(token)
+
+inject()
+~~~~~~~~
+
+.. py:method:: inject(carrier: Optional[Dict[str, Any]] = None, setter: Optional[Any] = None) -> Dict[str, Any]
+
+   Inject current trace and baggage context into carrier (backwards compatibility).
+   
+   **Parameters:**
+   
+   :param carrier: Carrier dictionary to inject context into
+   :type carrier: Optional[Dict[str, Any]]
+   
+   :param setter: Custom setter for injecting context into carrier
+   :type setter: Optional[Any]
+   
+   **Returns:**
+   
+   :rtype: Dict[str, Any]
+   :returns: Carrier with injected trace context
+   
+   **Usage:**
+   
+   .. code-block:: python
+   
+      # Inject current trace context into HTTP headers
+      headers = {"Content-Type": "application/json"}
+      headers_with_trace = tracer.inject(headers)
+      
+      # Make HTTP request with trace context
+      response = requests.post(
+          "https://api.example.com/data",
+          headers=headers_with_trace,
+          json=payload
+      )
+      
+      # Or inject into empty carrier
+      trace_context = tracer.inject()
+      print(f"Trace context: {trace_context}")
 
 Properties
 ----------
