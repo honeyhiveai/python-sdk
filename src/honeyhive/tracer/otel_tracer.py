@@ -41,6 +41,7 @@ from ..api.events import CreateEventRequest, UpdateEventRequest
 from ..api.session import SessionAPI
 from ..models.generated import EventType1
 from ..utils.config import config
+from ..utils.logger import get_logger
 from .processor_integrator import IntegrationManager
 from .provider_detector import IntegrationStrategy, ProviderDetector
 from .span_processor import HoneyHiveSpanProcessor
@@ -110,6 +111,9 @@ class HoneyHiveTracer:
         if not OTEL_AVAILABLE:
             raise ImportError("OpenTelemetry is required for HoneyHiveTracer")
 
+        # Initialize logger
+        self.logger = get_logger(f"honeyhive.tracer.{self.__class__.__name__}")
+
         # Check for existing context association properties (backwards compatibility)
         # This allows multiple tracers to coordinate and override parameters from context
         try:
@@ -138,8 +142,13 @@ class HoneyHiveTracer:
                     association_properties.get("datapoint_id") or datapoint_id
                 )
                 if verbose:
-                    print(
-                        f"🔄 Inherited context properties: session_id={session_id}, project={project}"
+                    self.logger.info(
+                        "Inherited context properties",
+                        honeyhive_data={
+                            "session_id": session_id,
+                            "project": project,
+                            "source": source,
+                        },
                     )
         except Exception:
             # Silently handle any context access errors
@@ -250,13 +259,15 @@ class HoneyHiveTracer:
             # Set up normal baggage context
             self._setup_baggage_context()
 
-        print(f"✓ HoneyHiveTracer initialized for project: {self.project}")
-        print(f"✓ Session name: {self.session_name}")
-        print(f"✓ Tracer ID: {self._tracer_id}")
-        if disable_http_tracing:
-            print("✓ HTTP tracing disabled")
-        else:
-            print("✓ HTTP tracing enabled")
+        self.logger.info(
+            "HoneyHiveTracer initialized",
+            honeyhive_data={
+                "project": self.project,
+                "session_name": self.session_name,
+                "tracer_id": self._tracer_id,
+                "http_tracing_enabled": not disable_http_tracing,
+            },
+        )
 
     @classmethod
     def reset(cls) -> None:
@@ -266,10 +277,13 @@ class HoneyHiveTracer:
         Each tracer instance is independent and can be discarded when no longer needed.
         """
         # In multi-instance mode, simply log that reset is not needed
-        print(
-            "ℹ️  Reset not needed in multi-instance mode. Each tracer instance is independent."
+        logger = get_logger("honeyhive.tracer.HoneyHiveTracer")
+        logger.info(
+            "Reset not needed in multi-instance mode",
+            honeyhive_data={
+                "message": "Each tracer instance is independent. Discard tracer instances when no longer needed instead of resetting."
+            },
         )
-        print("   Discard tracer instances when no longer needed instead of resetting.")
 
     @classmethod
     def init(
@@ -367,8 +381,12 @@ class HoneyHiveTracer:
         provider_info = detector.get_provider_info()
         strategy = provider_info["integration_strategy"]
 
-        print(
-            f"🔧 Provider Detection: {provider_info['provider_class_name']} -> {strategy.value}"
+        self.logger.debug(
+            "Provider detection completed",
+            honeyhive_data={
+                "provider_class": provider_info["provider_class_name"],
+                "integration_strategy": strategy.value,
+            },
         )
 
         if strategy == IntegrationStrategy.MAIN_PROVIDER:
@@ -377,26 +395,32 @@ class HoneyHiveTracer:
             self.is_main_provider = True
             # Set our provider as the global provider
             trace.set_tracer_provider(self.provider)
-            print(
-                "🔧 Creating new TracerProvider as main provider (replaced placeholder)"
+            self.logger.info(
+                "Creating new TracerProvider as main provider",
+                honeyhive_data={"replaced_placeholder": True},
             )
 
             # Add our span processor directly (processors can't be batched, only exporters can)
             try:
                 self.span_processor = HoneyHiveSpanProcessor()
                 self.provider.add_span_processor(self.span_processor)
-                print("✅ Added HoneyHive span processor to new provider")
+                self.logger.info("Added HoneyHive span processor to new provider")
             except (ImportError, StopIteration):
-                print("⚠️  HoneyHiveSpanProcessor not available, skipping integration.")
+                self.logger.warning(
+                    "HoneyHiveSpanProcessor not available, skipping integration"
+                )
 
         elif strategy == IntegrationStrategy.SECONDARY_PROVIDER:
             # Real TracerProvider exists - integrate with it
             self.provider = provider_info["provider_instance"]
             self.is_main_provider = False
-            print(
-                f"🔧 Using existing TracerProvider: {provider_info['provider_class_name']}"
+            self.logger.info(
+                "Using existing TracerProvider",
+                honeyhive_data={
+                    "provider_class": provider_info["provider_class_name"],
+                    "integration_mode": "secondary_provider",
+                },
             )
-            print("   HoneyHive will add span processors to the existing provider")
 
             # Use integration manager for secondary provider integration
             integration_manager = IntegrationManager()
@@ -406,22 +430,28 @@ class HoneyHiveTracer:
             )
 
             if result["success"]:
-                print("✅ Successfully integrated with existing provider")
+                self.logger.info("Successfully integrated with existing provider")
                 # Get the processor from the integrator for tracking
                 processors = integration_manager.integrator.get_integrated_processors()
                 if processors:
                     self.span_processor = processors[-1]  # Use the most recent one
             else:
-                print(f"❌ Integration failed: {result['message']}")
+                self.logger.error(
+                    "Integration failed",
+                    honeyhive_data={"error_message": result["message"]},
+                )
 
         else:  # CONSOLE_FALLBACK
             # Provider incompatible - use existing provider but log warning
             self.provider = provider_info["provider_instance"]
             self.is_main_provider = False
-            print(
-                f"⚠️  Provider {provider_info['provider_class_name']} doesn't support span processors"
+            self.logger.warning(
+                "Provider doesn't support span processors, falling back to console logging",
+                honeyhive_data={
+                    "provider_class": provider_info["provider_class_name"],
+                    "fallback_mode": "console_logging",
+                },
             )
-            print("   Falling back to console logging mode")
             self.span_processor = None
 
         # Import required components
@@ -431,7 +461,7 @@ class HoneyHiveTracer:
                 ConsoleSpanExporter,
             )
         except ImportError:
-            print("⚠️  Required OpenTelemetry components not available")
+            self.logger.warning("Required OpenTelemetry components not available")
             return
 
         # Check if OTLP export is enabled
@@ -470,7 +500,9 @@ class HoneyHiveTracer:
                         simple_processor = SimpleSpanProcessor(otlp_exporter)
                         self.provider.add_span_processor(simple_processor)
                         if self.verbose:
-                            print("✓ Using SimpleSpanProcessor (batch disabled)")
+                            self.logger.debug(
+                                "Using SimpleSpanProcessor (batch disabled)"
+                            )
                     else:
                         # Use batch processor for performance
                         batch_processor = BatchSpanProcessor(
@@ -480,11 +512,13 @@ class HoneyHiveTracer:
                         )
                         self.provider.add_span_processor(batch_processor)
                         if self.verbose:
-                            print("✓ Using BatchSpanProcessor (batch enabled)")
+                            self.logger.debug(
+                                "Using BatchSpanProcessor (batch enabled)"
+                            )
                     # OTLP exporter configured to send spans
                 else:
-                    print(
-                        "⚠️  Provider doesn't support span processors, OTLP export disabled"
+                    self.logger.warning(
+                        "Provider doesn't support span processors, OTLP export disabled"
                     )
 
             except ImportError:
@@ -505,9 +539,11 @@ class HoneyHiveTracer:
         if self.is_main_provider:
             if self.provider:
                 trace.set_tracer_provider(self.provider)
-                print("✓ Set as global TracerProvider")
+                self.logger.debug("Set as global TracerProvider")
         else:
-            print("✓ Added to existing TracerProvider (not overriding global)")
+            self.logger.debug(
+                "Added to existing TracerProvider (not overriding global)"
+            )
 
         # Create tracer using our provider
         if self.provider is not None:
@@ -543,11 +579,17 @@ class HoneyHiveTracer:
                         session_id.lower()
                     )  # Store in lowercase like original
                     if self.verbose:
-                        print(f"🔗 Using existing session: {self.session_id}")
+                        self.logger.debug(
+                            "Using existing session",
+                            honeyhive_data={"session_id": self.session_id},
+                        )
                     return
                 except (ValueError, AttributeError, TypeError) as e:
                     if self.verbose:
-                        print(f"⚠️  Invalid session_id format: {session_id}, error: {e}")
+                        self.logger.warning(
+                            "Invalid session_id format",
+                            honeyhive_data={"session_id": session_id, "error": str(e)},
+                        )
                     # In test mode, just log the error and continue
                     if not self.test_mode:
                         raise ValueError(
@@ -560,8 +602,9 @@ class HoneyHiveTracer:
                     # uuid module not available, accept as-is
                     self.session_id = session_id
                     if self.verbose:
-                        print(
-                            f"🔗 Using existing session (no UUID validation): {session_id}"
+                        self.logger.debug(
+                            "Using existing session (no UUID validation)",
+                            honeyhive_data={"session_id": session_id},
                         )
                     return
 
@@ -570,8 +613,9 @@ class HoneyHiveTracer:
                 # Suppress output unless verbose mode is enabled (backwards compatibility)
                 pass
             else:
-                print(
-                    f"🔍 Creating session with project: {self.project}, source: {self.source}"
+                self.logger.debug(
+                    "Creating session",
+                    honeyhive_data={"project": self.project, "source": self.source},
                 )
             # Collect git metadata for session (backwards compatibility)
             git_metadata = self._get_git_info() if not self.test_mode else None
@@ -594,16 +638,30 @@ class HoneyHiveTracer:
 
             if hasattr(session_response, "session_id"):
                 self.session_id = session_response.session_id
-                print(f"✓ HoneyHive session created: {self.session_id}")
+                self.logger.info(
+                    "HoneyHive session created",
+                    honeyhive_data={"session_id": self.session_id},
+                )
             else:
-                print(f"⚠️  Session response missing session_id: {session_response}")
+                self.logger.warning(
+                    "Session response missing session_id",
+                    honeyhive_data={"response": str(session_response)},
+                )
                 self.session_id = None
 
         except Exception as e:
             if not self.test_mode:
-                print(f"Warning: Failed to create session: {e}")
+                self.logger.warning(
+                    "Failed to create session", honeyhive_data={"error": str(e)}
+                )
                 # Log the full exception details
-                print(f"Exception details: {type(e).__name__}: {e}")
+                self.logger.debug(
+                    "Session creation exception details",
+                    honeyhive_data={
+                        "exception_type": type(e).__name__,
+                        "exception_message": str(e),
+                    },
+                )
             self.session_id = None
             # Keep the client even if session creation fails - it's still useful for other operations
             # self.client = None  # Don't set client to None
@@ -618,9 +676,12 @@ class HoneyHiveTracer:
 
             if self.session_id:
                 baggage_items["session_id"] = self.session_id
-                print(f"✓ Session context injected: {self.session_id}")
+                self.logger.debug(
+                    "Session context injected",
+                    honeyhive_data={"session_id": self.session_id},
+                )
             else:
-                print("⚠️  No session ID available, using project/source only")
+                self.logger.debug("No session ID available, using project/source only")
 
             # Always set project and source in baggage
             baggage_items["project"] = self.project
@@ -628,7 +689,9 @@ class HoneyHiveTracer:
 
             # Add tracer ID for auto-discovery (backward compatibility)
             baggage_items["honeyhive_tracer_id"] = self._tracer_id
-            print(f"✓ Tracer ID injected: {self._tracer_id}")
+            self.logger.debug(
+                "Tracer ID injected", honeyhive_data={"tracer_id": self._tracer_id}
+            )
 
             # Add evaluation specific properties if needed (backwards compatibility)
             if self.is_evaluation:
@@ -638,27 +701,43 @@ class HoneyHiveTracer:
                     baggage_items["dataset_id"] = self.dataset_id
                 if self.datapoint_id:
                     baggage_items["datapoint_id"] = self.datapoint_id
-                print(
-                    f"✓ Evaluation context injected: run_id={self.run_id}, "
-                    f"dataset_id={self.dataset_id}, datapoint_id={self.datapoint_id}"
+                self.logger.debug(
+                    "Evaluation context injected",
+                    honeyhive_data={
+                        "run_id": self.run_id,
+                        "dataset_id": self.dataset_id,
+                        "datapoint_id": self.datapoint_id,
+                    },
                 )
 
             # Add experiment harness information to baggage if available
             if config.experiment_id:
                 baggage_items["experiment_id"] = config.experiment_id
-                print(f"✓ Experiment ID injected: {config.experiment_id}")
+                self.logger.debug(
+                    "Experiment ID injected",
+                    honeyhive_data={"experiment_id": config.experiment_id},
+                )
 
             if config.experiment_name:
                 baggage_items["experiment_name"] = config.experiment_name
-                print(f"✓ Experiment name injected: {config.experiment_name}")
+                self.logger.debug(
+                    "Experiment name injected",
+                    honeyhive_data={"experiment_name": config.experiment_name},
+                )
 
             if config.experiment_variant:
                 baggage_items["experiment_variant"] = config.experiment_variant
-                print(f"✓ Experiment variant injected: {config.experiment_variant}")
+                self.logger.debug(
+                    "Experiment variant injected",
+                    honeyhive_data={"experiment_variant": config.experiment_variant},
+                )
 
             if config.experiment_group:
                 baggage_items["experiment_group"] = config.experiment_group
-                print(f"✓ Experiment group injected: {config.experiment_group}")
+                self.logger.debug(
+                    "Experiment group injected",
+                    honeyhive_data={"experiment_group": config.experiment_group},
+                )
 
             if config.experiment_metadata:
                 # Add experiment metadata as JSON string for baggage compatibility
@@ -666,15 +745,18 @@ class HoneyHiveTracer:
                     baggage_items["experiment_metadata"] = json.dumps(
                         config.experiment_metadata
                     )
-                    print(
-                        f"✓ Experiment metadata injected: {len(config.experiment_metadata)} items"
+                    self.logger.debug(
+                        "Experiment metadata injected",
+                        honeyhive_data={
+                            "metadata_items": len(config.experiment_metadata)
+                        },
                     )
                 except Exception:
                     # Fallback to string representation
                     baggage_items["experiment_metadata"] = str(
                         config.experiment_metadata
                     )
-                    print(f"✓ Experiment metadata injected (string format)")
+                    self.logger.debug("Experiment metadata injected (string format)")
 
             # Set up baggage context
             ctx = context.get_current()
@@ -685,10 +767,15 @@ class HoneyHiveTracer:
             # Activate the context
             context.attach(ctx)
 
-            print(f"✓ Baggage context set up with: {baggage_items}")
+            self.logger.debug(
+                "Baggage context set up",
+                honeyhive_data={"baggage_items": list(baggage_items.keys())},
+            )
 
         except Exception as e:
-            print(f"⚠️  Warning: Failed to set up baggage context: {e}")
+            self.logger.warning(
+                "Failed to set up baggage context", honeyhive_data={"error": str(e)}
+            )
             # Continue without baggage context - spans will still be processed
 
     @contextmanager
@@ -802,7 +889,7 @@ class HoneyHiveTracer:
         """
         if not self.session_id or not hasattr(self, "session_api"):
             if not self.test_mode:
-                print("Warning: Cannot create event - no active session")
+                self.logger.warning("Cannot create event - no active session")
             return None
 
         try:
@@ -851,16 +938,21 @@ class HoneyHiveTracer:
                 )
 
                 if not self.test_mode:
-                    print(f"✓ Event created: {event_response.event_id}")
+                    self.logger.debug(
+                        "Event created",
+                        honeyhive_data={"event_id": event_response.event_id},
+                    )
 
                 return event_response  # Return the full event object, not just the ID
 
-            print("Warning: Session API not available")
+            self.logger.warning("Session API not available")
             return None
 
         except Exception as e:
             if not self.test_mode:
-                print(f"Warning: Failed to create event: {e}")
+                self.logger.warning(
+                    "Failed to create event", honeyhive_data={"error": str(e)}
+                )
             return None
 
     def enrich_session(
@@ -891,7 +983,7 @@ class HoneyHiveTracer:
         """
         if not self.session_id:
             if not self.test_mode:
-                print("Warning: Cannot enrich session - no active session")
+                self.logger.warning("Cannot enrich session - no active session")
             return False
 
         try:
@@ -921,14 +1013,17 @@ class HoneyHiveTracer:
                 )
 
                 if self.test_mode:
-                    print(f"🔍 UpdateEventRequest created: {update_request}")
+                    self.logger.debug(
+                        "UpdateEventRequest created",
+                        honeyhive_data={"request": str(update_request)},
+                    )
 
                 # Send update request via the events API
                 if self.client and hasattr(self.client, "events"):
                     self.client.events.update_event(update_request)
                     return True
 
-                print("Warning: Client or events API not available")
+                self.logger.warning("Client or events API not available")
                 return False
             else:
                 # Fallback: create a new enrichment event if no event ID found
@@ -1015,15 +1110,21 @@ class HoneyHiveTracer:
                     if response.success:
                         return True
                     if not self.test_mode:
-                        print(f"Failed to enrich session {session_id}: API error")
+                        self.logger.error(
+                            "Failed to enrich session: API error",
+                            honeyhive_data={"session_id": session_id},
+                        )
                     return False
 
-                print("Warning: Client or events API not available")
+                self.logger.warning("Client or events API not available")
                 return False
 
         except Exception as e:
             if not self.test_mode:
-                print(f"Failed to enrich session {session_id}: {e}")
+                self.logger.error(
+                    "Failed to enrich session",
+                    honeyhive_data={"session_id": session_id, "error": str(e)},
+                )
             return False
 
     def enrich_span(
@@ -1113,17 +1214,17 @@ class HoneyHiveTracer:
                         self.client.events.update_event(update_request)
                         return True
 
-                    print("Warning: Client or events API not available")
+                    self.logger.warning("Client or events API not available")
                     return False
 
-                print("Warning: Invalid event_id")
+                self.logger.warning("Invalid event_id")
                 return False
 
             # Fallback: enrich the current OpenTelemetry span directly
             current_span = trace.get_current_span()
             if not current_span or current_span.get_span_context().span_id == 0:
                 if not self.test_mode:
-                    print("Warning: No active span to enrich")
+                    self.logger.warning("No active span to enrich")
                 return False
 
             # Set all enrichment data as span attributes with comprehensive coverage
@@ -1156,7 +1257,9 @@ class HoneyHiveTracer:
 
         except Exception as e:
             if not self.test_mode:
-                print(f"Failed to enrich span: {e}")
+                self.logger.error(
+                    "Failed to enrich span", honeyhive_data={"error": str(e)}
+                )
             return False
 
     def get_baggage(
@@ -1194,7 +1297,9 @@ class HoneyHiveTracer:
             ]
             if telemetry_disabled:
                 if self.verbose:
-                    print("Telemetry disabled. Skipping git information collection.")
+                    self.logger.debug(
+                        "Telemetry disabled. Skipping git information collection."
+                    )
                 return {"error": "Telemetry disabled"}
 
             cwd = os.getcwd()
@@ -1211,7 +1316,9 @@ class HoneyHiveTracer:
             # If not a git repo, return early with an error
             if is_git_repo.returncode != 0:
                 if self.verbose:
-                    print("Not a git repository. Skipping git information collection.")
+                    self.logger.debug(
+                        "Not a git repository. Skipping git information collection."
+                    )
                 return {"error": "Not a git repository"}
 
             commit_hash = subprocess.run(
@@ -1287,15 +1394,19 @@ class HoneyHiveTracer:
             }
         except subprocess.CalledProcessError:
             if self.verbose:
-                print("Failed to retrieve Git info. Is this a valid repo?")
+                self.logger.warning(
+                    "Failed to retrieve Git info. Is this a valid repo?"
+                )
             return {"error": "Failed to retrieve Git info. Is this a valid repo?"}
         except FileNotFoundError:
             if self.verbose:
-                print("Git is not installed or not in PATH.")
+                self.logger.warning("Git is not installed or not in PATH.")
             return {"error": "Git is not installed or not in PATH."}
         except Exception as e:
             if self.verbose:
-                print(f"Error getting git info: {e}")
+                self.logger.error(
+                    "Error getting git info", honeyhive_data={"error": str(e)}
+                )
             return {"error": f"Error getting git info: {e}"}
 
     def _sanitize_carrier(
@@ -1363,12 +1474,14 @@ class HoneyHiveTracer:
             self._setup_baggage_context()
 
             if self.verbose:
-                print("✓ Linked to parent context via carrier")
+                self.logger.debug("Linked to parent context via carrier")
 
             return token
         except Exception as e:
             if self.verbose:
-                print(f"⚠️  Failed to link carrier: {e}")
+                self.logger.warning(
+                    "Failed to link carrier", honeyhive_data={"error": str(e)}
+                )
             return None
 
     def unlink(self, token: Any) -> None:
@@ -1381,10 +1494,12 @@ class HoneyHiveTracer:
             # Re-setup baggage context
             self._setup_baggage_context()
             if self.verbose:
-                print("✓ Unlinked from parent context")
+                self.logger.debug("Unlinked from parent context")
         except Exception as e:
             if self.verbose:
-                print(f"⚠️  Failed to unlink: {e}")
+                self.logger.warning(
+                    "Failed to unlink", honeyhive_data={"error": str(e)}
+                )
 
     def inject(
         self, carrier: Optional[Dict[str, Any]] = None, setter: Optional[Any] = None
@@ -1412,11 +1527,13 @@ class HoneyHiveTracer:
             if self.propagator:
                 self.propagator.inject(carrier, None, setter)
             if self.verbose:
-                print("✓ Injected context into carrier")
+                self.logger.debug("Injected context into carrier")
             return carrier
         except Exception as e:
             if self.verbose:
-                print(f"⚠️  Failed to inject context: {e}")
+                self.logger.warning(
+                    "Failed to inject context", honeyhive_data={"error": str(e)}
+                )
             return carrier
 
     def set_baggage(
@@ -1511,7 +1628,7 @@ class HoneyHiveTracer:
             ...     print("Flush timeout or error occurred")
         """
         if not OTEL_AVAILABLE:
-            print("⚠️  OpenTelemetry not available, skipping force_flush")
+            self.logger.warning("OpenTelemetry not available, skipping force_flush")
             return True
 
         flush_results = []
@@ -1525,16 +1642,20 @@ class HoneyHiveTracer:
                     )
                     flush_results.append(("provider", provider_result))
                     if not self.test_mode:
-                        print(
-                            f"✓ Provider force_flush: {'success' if provider_result else 'failed'}"
+                        self.logger.debug(
+                            "Provider force_flush completed",
+                            honeyhive_data={"success": provider_result},
                         )
                 except Exception as e:
                     flush_results.append(("provider", False))
                     if not self.test_mode:
-                        print(f"❌ Provider force_flush error: {e}")
+                        self.logger.error(
+                            "Provider force_flush error",
+                            honeyhive_data={"error": str(e)},
+                        )
             else:
                 if not self.test_mode:
-                    print("ℹ️  Provider does not support force_flush")
+                    self.logger.debug("Provider does not support force_flush")
                 flush_results.append(
                     ("provider", True)
                 )  # Consider it successful if not supported
@@ -1547,13 +1668,17 @@ class HoneyHiveTracer:
                     )
                     flush_results.append(("span_processor", processor_result))
                     if not self.test_mode:
-                        print(
-                            f"✓ Span processor force_flush: {'success' if processor_result else 'failed'}"
+                        self.logger.debug(
+                            "Span processor force_flush completed",
+                            honeyhive_data={"success": processor_result},
                         )
                 except Exception as e:
                     flush_results.append(("span_processor", False))
                     if not self.test_mode:
-                        print(f"❌ Span processor force_flush error: {e}")
+                        self.logger.error(
+                            "Span processor force_flush error",
+                            honeyhive_data={"error": str(e)},
+                        )
             else:
                 flush_results.append(
                     ("span_processor", True)
@@ -1576,14 +1701,22 @@ class HoneyHiveTracer:
                                 )
                                 batch_results.append(result)
                                 if not self.test_mode:
-                                    print(
-                                        f"✓ Batch processor {i+1} force_flush: {'success' if result else 'failed'}"
+                                    self.logger.debug(
+                                        "Batch processor force_flush completed",
+                                        honeyhive_data={
+                                            "processor_index": i + 1,
+                                            "success": result,
+                                        },
                                     )
                             except Exception as e:
                                 batch_results.append(False)
                                 if not self.test_mode:
-                                    print(
-                                        f"❌ Batch processor {i+1} force_flush error: {e}"
+                                    self.logger.error(
+                                        "Batch processor force_flush error",
+                                        honeyhive_data={
+                                            "processor_index": i + 1,
+                                            "error": str(e),
+                                        },
                                     )
 
                         flush_results.append(("batch_processors", all(batch_results)))
@@ -1592,27 +1725,33 @@ class HoneyHiveTracer:
                 except Exception as e:
                     flush_results.append(("batch_processors", False))
                     if not self.test_mode:
-                        print(f"❌ Batch processors flush error: {e}")
+                        self.logger.error(
+                            "Batch processors flush error",
+                            honeyhive_data={"error": str(e)},
+                        )
 
             # Calculate overall result
             overall_success = all(result for _, result in flush_results)
 
             if not self.test_mode:
                 if overall_success:
-                    print("✓ Force flush completed successfully")
+                    self.logger.info("Force flush completed successfully")
                 else:
                     failed_components = [
                         name for name, result in flush_results if not result
                     ]
-                    print(
-                        f"⚠️  Force flush completed with failures: {failed_components}"
+                    self.logger.warning(
+                        "Force flush completed with failures",
+                        honeyhive_data={"failed_components": failed_components},
                     )
 
             return overall_success
 
         except Exception as e:
             if not self.test_mode:
-                print(f"❌ Force flush failed: {e}")
+                self.logger.error(
+                    "Force flush failed", honeyhive_data={"error": str(e)}
+                )
             return False
 
     def shutdown(self) -> None:
@@ -1625,19 +1764,26 @@ class HoneyHiveTracer:
                 and hasattr(self.provider, "shutdown")
             ):
                 self.provider.shutdown()
-                print("✓ Tracer provider shut down")
+                self.logger.info("Tracer provider shut down")
             else:
-                print("✓ Tracer instance closed (not main provider)")
+                self.logger.info("Tracer instance closed (not main provider)")
         except Exception as e:
             if not self.test_mode:
-                print(f"Error shutting down tracer: {e}")
+                self.logger.error(
+                    "Error shutting down tracer", honeyhive_data={"error": str(e)}
+                )
 
     @classmethod
     def _reset_static_state(cls) -> None:
         """Reset static state (no longer needed in multi-instance mode)."""
         # In multi-instance mode, this method is not needed
-        print("ℹ️  Static state reset not needed in multi-instance mode.")
-        print("   Each tracer instance manages its own state independently.")
+        logger = get_logger("honeyhive.tracer.HoneyHiveTracer")
+        logger.info(
+            "Static state reset not needed in multi-instance mode",
+            honeyhive_data={
+                "message": "Each tracer instance manages its own state independently"
+            },
+        )
 
 
 # Global helper functions for backward compatibility
@@ -1661,8 +1807,11 @@ def enrich_session(
         tracer: Tracer instance to use (required in multi-instance mode)
     """
     if tracer is None:
-        print("❌ Error: tracer parameter is required in multi-instance mode")
-        print("   Usage: tracer.enrich_session(session_id, metadata)")
+        logger = get_logger("honeyhive.tracer.enrich_session")
+        logger.error(
+            "Tracer parameter is required in multi-instance mode",
+            honeyhive_data={"usage": "tracer.enrich_session(session_id, metadata)"},
+        )
         return
 
     tracer.enrich_session(session_id, metadata)
@@ -1781,11 +1930,17 @@ def enrich_span(
     else:
         # Direct method call - delegate to tracer instance
         if tracer is None:
-            print("❌ Error: tracer parameter is required for direct method calls")
-            print("   Usage options:")
-            print("   1. tracer.enrich_span(metadata={'key': 'value'})")
-            print("   2. enrich_span(metadata={'key': 'value'}, tracer=my_tracer)")
-            print("   3. Use context manager: with enrich_span(event_type='demo'):")
+            logger = get_logger("honeyhive.tracer.enrich_span")
+            logger.error(
+                "Tracer parameter is required for direct method calls",
+                honeyhive_data={
+                    "usage_options": [
+                        "tracer.enrich_span(metadata={'key': 'value'})",
+                        "enrich_span(metadata={'key': 'value'}, tracer=my_tracer)",
+                        "Use context manager: with enrich_span(event_type='demo'):",
+                    ]
+                },
+            )
             return False
 
         return tracer.enrich_span(

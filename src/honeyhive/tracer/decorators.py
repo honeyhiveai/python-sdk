@@ -15,9 +15,13 @@ from opentelemetry import trace as otel_trace
 
 from ..models.tracing import TracingParams
 from ..utils.config import config
+from ..utils.logger import get_logger
 
 T = TypeVar("T")
 P = TypeVar("P")
+
+# Module-level logger for decorator functions
+logger = get_logger("honeyhive.tracer.decorators")
 
 
 def _set_span_attributes(span: Any, prefix: str, value: Any) -> None:
@@ -98,14 +102,17 @@ def _create_sync_wrapper(
 
             if tracer is None:
                 # No tracer available anywhere - function executes without tracing
-                print("⚠️  Warning: No tracer available for @trace decorator")
-                print("   Either:")
-                print("   1. Use @trace(tracer=my_tracer) with explicit tracer")
-                print(
-                    "   2. Use tracer.start_span() context manager for auto-discovery"
+                logger.warning(
+                    "No tracer available for @trace decorator",
+                    honeyhive_data={
+                        "function": f"{func.__module__}.{func.__name__}",
+                        "usage_options": [
+                            "Use @trace(tracer=my_tracer) with explicit tracer",
+                            "Use tracer.start_span() context manager for auto-discovery",
+                            "Set a global default with set_default_tracer()",
+                        ],
+                    },
                 )
-                print("   3. Set a global default with set_default_tracer()")
-                print("   Function will execute without tracing.")
                 return func(*args, **func_kwargs)
         except Exception:
             # If tracer discovery fails, just call the function
@@ -318,14 +325,17 @@ def _create_async_wrapper(
 
             if tracer is None:
                 # No tracer available anywhere - function executes without tracing
-                print("⚠️  Warning: No tracer available for @atrace decorator")
-                print("   Either:")
-                print("   1. Use @atrace(tracer=my_tracer) with explicit tracer")
-                print(
-                    "   2. Use tracer.start_span() context manager for auto-discovery"
+                logger.warning(
+                    "No tracer available for @atrace decorator",
+                    honeyhive_data={
+                        "function": f"{func.__module__}.{func.__name__}",
+                        "usage_options": [
+                            "Use @atrace(tracer=my_tracer) with explicit tracer",
+                            "Use tracer.start_span() context manager for auto-discovery",
+                            "Set a global default with set_default_tracer()",
+                        ],
+                    },
                 )
-                print("   3. Set a global default with set_default_tracer()")
-                print("   Function will execute without tracing.")
                 return await func(*args, **func_kwargs)
         except Exception:
             # If tracer discovery fails, just call the function
@@ -576,7 +586,9 @@ def trace(
             )
         except Exception as e:
             # If validation fails, log the error but continue with default values
-            logging.warning(f"Tracing parameter validation failed: {e}")
+            logger.warning(
+                "Tracing parameter validation failed", honeyhive_data={"error": str(e)}
+            )
             params = TracingParams()
 
         # Automatically detect sync vs async and use appropriate wrapper
@@ -643,7 +655,9 @@ def atrace(
             )
         except Exception as e:
             # If validation fails, log the error but continue with default values
-            logging.warning(f"Tracing parameter validation failed: {e}")
+            logger.warning(
+                "Tracing parameter validation failed", honeyhive_data={"error": str(e)}
+            )
             params = TracingParams()
 
         return _create_async_wrapper(func, params, **kwargs)

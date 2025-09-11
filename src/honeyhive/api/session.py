@@ -1,9 +1,13 @@
 """Session API module for HoneyHive."""
 
-from typing import Any, Optional
+from typing import TYPE_CHECKING, Any, Optional
 
 from ..models import Event, SessionStartRequest
+from ..utils.logger import get_logger
 from .base import BaseAPI
+
+if TYPE_CHECKING:
+    from .client import HoneyHive
 
 
 class SessionStartResponse:
@@ -57,6 +61,11 @@ class SessionResponse:
 
 class SessionAPI(BaseAPI):
     """API for session operations."""
+
+    def __init__(self, client: "HoneyHive") -> None:
+        """Initialize the SessionAPI with a logger."""
+        super().__init__(client)
+        self.logger = get_logger(f"honeyhive.api.{self.__class__.__name__}")
 
     def create_session(self, session: SessionStartRequest) -> SessionStartResponse:
         """Create a new session using SessionStartRequest model."""
@@ -136,7 +145,9 @@ class SessionAPI(BaseAPI):
         )
 
         data = response.json()
-        print(f"🔍 Session API response: {data}")
+        self.logger.debug(
+            "Session API response", honeyhive_data={"response_data": data}
+        )
 
         # Check if session_id exists in the response
         if "session_id" in data:
@@ -144,7 +155,10 @@ class SessionAPI(BaseAPI):
         elif "session" in data and "session_id" in data["session"]:
             return SessionStartResponse(session_id=data["session"]["session_id"])
         else:
-            print(f"⚠️  Unexpected session response structure: {data}")
+            self.logger.warning(
+                "Unexpected session response structure",
+                honeyhive_data={"response_data": data},
+            )
             # Try to find session_id in nested structures
             if "session" in data:
                 session_data = data["session"]

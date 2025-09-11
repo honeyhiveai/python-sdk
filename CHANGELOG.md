@@ -24,6 +24,7 @@
 ### Changed
 - Improved span processor performance with configurable batching
 - Enhanced API client configurations with better error handling
+- **BREAKING**: Replaced all print statements with structured logging infrastructure for better observability and production readiness
 
 ### Fixed
 - Environment variables not being picked up when set at runtime (customer issue with HH_API_URL)

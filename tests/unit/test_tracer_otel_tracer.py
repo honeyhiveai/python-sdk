@@ -866,12 +866,16 @@ class TestUnifiedEnrichSpan:
         """Test direct method call without tracer parameter (should fail gracefully)."""
         from honeyhive.tracer.otel_tracer import enrich_span
 
-        with patch("builtins.print") as mock_print:
+        with patch("honeyhive.tracer.otel_tracer.get_logger") as mock_get_logger:
+            mock_logger = Mock()
+            mock_get_logger.return_value = mock_logger
+
             result = enrich_span(metadata={"key": "value"})
 
-            # Should return False and print error message
+            # Should return False and log error message
             assert result is False
-            mock_print.assert_called()
+            mock_get_logger.assert_called_with("honeyhive.tracer.enrich_span")
+            mock_logger.error.assert_called_once()
 
     def test_enrich_span_experiment_attributes(self) -> None:
         """Test experiment harness attributes are properly set."""

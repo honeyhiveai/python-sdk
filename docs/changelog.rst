@@ -38,6 +38,13 @@ Current Version Highlights
 * **Boolean Variables**: Fixed HH_VERIFY_SSL and HH_FOLLOW_REDIRECTS precedence logic
 * **Fresh Config Loading**: API client and tracer use fresh config instances
 
+**⚡ BREAKING: Structured Logging Infrastructure**
+
+* **Production Ready**: Replaced all print statements with structured HoneyHive logging
+* **Better Observability**: Structured logging with honeyhive_data for context
+* **Proper Log Levels**: Debug, info, warning, and error levels for appropriate output
+* **Maintained Compatibility**: Docstring examples still use print statements per Python conventions
+
 **🚀 NEW: Pre-commit Test Suite Execution**
 
 * **Zero Failing Tests Policy**: Automated test execution in pre-commit hooks

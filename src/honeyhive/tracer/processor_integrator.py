@@ -17,6 +17,7 @@ try:
 except ImportError:
     OTEL_AVAILABLE = False
 
+from ..utils.logger import get_logger
 from .provider_detector import IntegrationStrategy, ProviderDetector
 from .span_processor import HoneyHiveSpanProcessor
 
@@ -41,6 +42,7 @@ class ProcessorIntegrator:
         if not OTEL_AVAILABLE:
             raise ImportError("OpenTelemetry is required for ProcessorIntegrator")
 
+        self.logger = get_logger(f"honeyhive.tracer.{self.__class__.__name__}")
         self._lock = threading.Lock()
         self._integrated_processors: List["SpanProcessor"] = []
 
@@ -67,8 +69,9 @@ class ProcessorIntegrator:
             try:
                 # Validate provider compatibility
                 if not self.validate_processor_compatibility(provider):
-                    print(
-                        f"❌ Provider {type(provider).__name__} doesn't support span processors"
+                    self.logger.warning(
+                        "Provider doesn't support span processors",
+                        honeyhive_data={"provider_class": type(provider).__name__},
                     )
                     return False
 
@@ -79,14 +82,19 @@ class ProcessorIntegrator:
                 # Track integrated processor
                 self._integrated_processors.append(honeyhive_processor)
 
-                print(
-                    f"✅ Successfully integrated HoneyHive span processor with {type(provider).__name__}"
+                self.logger.info(
+                    "Successfully integrated HoneyHive span processor",
+                    honeyhive_data={"provider_class": type(provider).__name__},
                 )
                 return True
 
             except Exception as e:
-                print(
-                    f"❌ Failed to integrate with provider {type(provider).__name__}: {e}"
+                self.logger.error(
+                    "Failed to integrate with provider",
+                    honeyhive_data={
+                        "provider_class": type(provider).__name__,
+                        "error": str(e),
+                    },
                 )
                 return False
 
@@ -139,10 +147,13 @@ class ProcessorIntegrator:
                     if hasattr(processor, "shutdown"):
                         processor.shutdown()
                 except Exception as e:
-                    print(f"⚠️  Error shutting down processor: {e}")
+                    self.logger.warning(
+                        "Error shutting down processor",
+                        honeyhive_data={"error": str(e)},
+                    )
 
             self._integrated_processors.clear()
-            print("🧹 Cleaned up integrated processors")
+            self.logger.info("Cleaned up integrated processors")
 
 
 class IntegrationManager:
