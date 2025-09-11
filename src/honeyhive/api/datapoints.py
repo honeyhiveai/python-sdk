@@ -18,7 +18,24 @@ class DatapointsAPI(BaseAPI):
         )
 
         data = response.json()
-        return Datapoint(**data)
+
+        # Handle new API response format that returns insertion result
+        if "result" in data and "insertedId" in data["result"]:
+            # New format: {"inserted": true, "result": {"insertedId": "...", ...}}
+            inserted_id = data["result"]["insertedId"]
+            # Create a Datapoint object with the inserted ID and original request data
+            return Datapoint(
+                _id=inserted_id,
+                inputs=request.inputs,
+                ground_truth=request.ground_truth,
+                metadata=request.metadata,
+                linked_event=request.linked_event,
+                linked_datasets=request.linked_datasets,
+                history=request.history,
+            )
+        else:
+            # Legacy format: direct datapoint object
+            return Datapoint(**data)
 
     def create_datapoint_from_dict(self, datapoint_data: dict) -> Datapoint:
         """Create a new datapoint from dictionary (legacy method)."""
@@ -27,7 +44,24 @@ class DatapointsAPI(BaseAPI):
         )
 
         data = response.json()
-        return Datapoint(**data)
+
+        # Handle new API response format that returns insertion result
+        if "result" in data and "insertedId" in data["result"]:
+            # New format: {"inserted": true, "result": {"insertedId": "...", ...}}
+            inserted_id = data["result"]["insertedId"]
+            # Create a Datapoint object with the inserted ID and original request data
+            return Datapoint(
+                _id=inserted_id,
+                inputs=datapoint_data.get("inputs"),
+                ground_truth=datapoint_data.get("ground_truth"),
+                metadata=datapoint_data.get("metadata"),
+                linked_event=datapoint_data.get("linked_event"),
+                linked_datasets=datapoint_data.get("linked_datasets"),
+                history=datapoint_data.get("history"),
+            )
+        else:
+            # Legacy format: direct datapoint object
+            return Datapoint(**data)
 
     async def create_datapoint_async(
         self, request: CreateDatapointRequest
@@ -40,7 +74,24 @@ class DatapointsAPI(BaseAPI):
         )
 
         data = response.json()
-        return Datapoint(**data)
+
+        # Handle new API response format that returns insertion result
+        if "result" in data and "insertedId" in data["result"]:
+            # New format: {"inserted": true, "result": {"insertedId": "...", ...}}
+            inserted_id = data["result"]["insertedId"]
+            # Create a Datapoint object with the inserted ID and original request data
+            return Datapoint(
+                _id=inserted_id,
+                inputs=request.inputs,
+                ground_truth=request.ground_truth,
+                metadata=request.metadata,
+                linked_event=request.linked_event,
+                linked_datasets=request.linked_datasets,
+                history=request.history,
+            )
+        else:
+            # Legacy format: direct datapoint object
+            return Datapoint(**data)
 
     async def create_datapoint_from_dict_async(self, datapoint_data: dict) -> Datapoint:
         """Create a new datapoint asynchronously from dictionary (legacy method)."""
@@ -49,19 +100,64 @@ class DatapointsAPI(BaseAPI):
         )
 
         data = response.json()
-        return Datapoint(**data)
+
+        # Handle new API response format that returns insertion result
+        if "result" in data and "insertedId" in data["result"]:
+            # New format: {"inserted": true, "result": {"insertedId": "...", ...}}
+            inserted_id = data["result"]["insertedId"]
+            # Create a Datapoint object with the inserted ID and original request data
+            return Datapoint(
+                _id=inserted_id,
+                inputs=datapoint_data.get("inputs"),
+                ground_truth=datapoint_data.get("ground_truth"),
+                metadata=datapoint_data.get("metadata"),
+                linked_event=datapoint_data.get("linked_event"),
+                linked_datasets=datapoint_data.get("linked_datasets"),
+                history=datapoint_data.get("history"),
+            )
+        else:
+            # Legacy format: direct datapoint object
+            return Datapoint(**data)
 
     def get_datapoint(self, datapoint_id: str) -> Datapoint:
         """Get a datapoint by ID."""
         response = self.client.request("GET", f"/datapoints/{datapoint_id}")
         data = response.json()
-        return Datapoint(**data)
+
+        # API returns {"datapoint": [datapoint_object]}
+        if (
+            "datapoint" in data
+            and isinstance(data["datapoint"], list)
+            and data["datapoint"]
+        ):
+            datapoint_data = data["datapoint"][0]
+            # Map 'id' to '_id' for the Datapoint model
+            if "id" in datapoint_data and "_id" not in datapoint_data:
+                datapoint_data["_id"] = datapoint_data["id"]
+            return Datapoint(**datapoint_data)
+        else:
+            # Fallback for unexpected format
+            return Datapoint(**data)
 
     async def get_datapoint_async(self, datapoint_id: str) -> Datapoint:
         """Get a datapoint by ID asynchronously."""
         response = await self.client.request_async("GET", f"/datapoints/{datapoint_id}")
         data = response.json()
-        return Datapoint(**data)
+
+        # API returns {"datapoint": [datapoint_object]}
+        if (
+            "datapoint" in data
+            and isinstance(data["datapoint"], list)
+            and data["datapoint"]
+        ):
+            datapoint_data = data["datapoint"][0]
+            # Map 'id' to '_id' for the Datapoint model
+            if "id" in datapoint_data and "_id" not in datapoint_data:
+                datapoint_data["_id"] = datapoint_data["id"]
+            return Datapoint(**datapoint_data)
+        else:
+            # Fallback for unexpected format
+            return Datapoint(**data)
 
     def list_datapoints(
         self,

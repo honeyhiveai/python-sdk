@@ -1,6 +1,6 @@
 [project]
 name = "honeyhive"
-version = "0.1.0"
+version = "0.1.0rc1"
 description = "HoneyHive Python SDK - LLM Observability and Evaluation Platform"
 readme = "README.md"
 requires-python = ">=3.11"
@@ -292,6 +292,7 @@ ignore-patterns = [
 
 [tool.mypy]
 python_version = "3.11"
+plugins = ["pydantic.mypy"]
 warn_return_any = true
 warn_unused_configs = true
 disallow_untyped_defs = true
@@ -313,6 +314,11 @@ module = [
     "requests.*",
 ]
 ignore_missing_imports = true
+
+[tool.pydantic-mypy]
+init_forbid_extra = true
+init_typed = true
+warn_required_dynamic_aliases = true
 
 [tool.pytest.ini_options]
 minversion = "7.0"
@@ -364,4 +370,13 @@ exclude_lines = [
 
 [tool.coverage.html]
 directory = "htmlcov"
+
+# Documentation quality configuration
+[tool.doc8]
+max-line-length = 79
+ignore = ["D002", "D004"]  # Allow trailing whitespace in some contexts
+
+[tool.docs-quality]
+max-issues-per-file = 1000
+enable-auto-fix = true
 

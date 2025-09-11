@@ -117,14 +117,16 @@ class TestHoneyHiveTracerAPI:
     def test_create_event(self) -> None:
         """Test creating an event."""
         # The events API is already mocked in setup_method
-        event_id = self.tracer.create_event(
+        event = self.tracer.create_event(
             event_type="model",  # Use valid EventType1 enum value
             inputs={"input": "data"},
             outputs={"output": "result"},
         )
 
-        # Verify the event was created successfully
-        assert event_id == "test-event-123"
+        # Verify the event was created successfully and returns full Event object
+        assert event is not None
+        assert hasattr(event, "event_id")
+        assert event.event_id == "test-event-123"
         self.mock_events_api.create_event_from_request.assert_called_once()
 
     def test_create_event_no_session(self) -> None:
@@ -663,14 +665,14 @@ class TestHoneyHiveTracerAPI:
                         mock_config.api_key = "env-key"
                         mock_config.project = "env-project"
 
-                        # Test init with api_key - project is now derived from API key
+                        # Test init with api_key - project loaded from environment
                         tracer = HoneyHiveTracer.init(
                             api_key="test-key", source="test-source"
                         )
 
-                        # Should use explicit api_key, project now derived from API key scope
+                        # Should use explicit api_key, project loaded from HH_PROJECT environment
                         assert tracer.api_key == "test-key"
-                        assert tracer.project == "api-key-derived"
+                        assert tracer.project == "env-project"
                         assert tracer.source == "test-source"
 
     def test_init_method_return_type(self):

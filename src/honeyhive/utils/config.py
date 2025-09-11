@@ -85,7 +85,7 @@ class APIConfig:
 
     api_key: Optional[str] = None
     api_url: str = "https://api.honeyhive.ai"
-    # project removed - backend derives from API key
+    project: Optional[str] = None  # Required by backend API
     source: str = "production"
 
     def __post_init__(self) -> None:
@@ -93,6 +93,10 @@ class APIConfig:
         # Load from HH_ prefixed variables first, then standard alternatives
         if self.api_key is None:
             self.api_key = os.getenv("HH_API_KEY")
+
+        # Project is required by backend API
+        if self.project is None:
+            self.project = os.getenv("HH_PROJECT")
 
         # API URL with fallback to standard
         env_api_url = os.getenv("HH_API_URL") or os.getenv("API_URL")
@@ -136,6 +140,8 @@ class OTLPConfig:
     otlp_enabled: bool = True
     otlp_endpoint: Optional[str] = None
     otlp_headers: Optional[dict] = None
+    batch_size: int = 100  # OTLP batch size for performance optimization
+    flush_interval: float = 5.0  # OTLP flush interval in seconds
 
     def __post_init__(self) -> None:
         """Load configuration from environment variables."""
@@ -155,6 +161,10 @@ class OTLPConfig:
         )
         if env_headers:
             self.otlp_headers = env_headers
+
+        # Batch processing configuration
+        self.batch_size = _get_env_int("HH_BATCH_SIZE", self.batch_size)
+        self.flush_interval = _get_env_float("HH_FLUSH_INTERVAL", self.flush_interval)
 
 
 @dataclass
@@ -342,15 +352,14 @@ class Config:
 
     @property
     def project(self) -> Optional[str]:
-        """Get project from sub-configuration - deprecated, returns None."""
-        # Project removed - backend derives from API key scope
-        return None
+        """Get project from sub-configuration."""
+        return self.api.project if self.api else None
 
     @project.setter
     def project(self, value: Optional[str]) -> None:
-        """Set project in sub-configuration - deprecated, no-op."""
-        # Project removed - backend derives from API key scope
-        pass
+        """Set project in sub-configuration."""
+        if self.api:
+            self.api.project = value
 
     @property
     def source(self) -> str:
@@ -432,6 +441,16 @@ class Config:
     def otlp_headers(self) -> Optional[dict]:
         """Get otlp_headers from sub-configuration."""
         return self.otlp.otlp_headers if self.otlp else None
+
+    @property
+    def batch_size(self) -> int:
+        """Get batch_size from sub-configuration."""
+        return self.otlp.batch_size if self.otlp else 100
+
+    @property
+    def flush_interval(self) -> float:
+        """Get flush_interval from sub-configuration."""
+        return self.otlp.flush_interval if self.otlp else 5.0
 
     @property
     def max_connections(self) -> int:

@@ -33,40 +33,28 @@ class HoneyHiveSpanProcessor(SpanProcessor):
             return
 
         try:
-            # DEBUG: Display span information before processing
-            span_name = getattr(span, "name", "Unknown")
-            span_kind = getattr(span, "kind", "Unknown")
-            span_attributes = getattr(span, "attributes", {})
-            print(f"🔍 SPAN INTERCEPTED: {span_name} (kind: {span_kind})")
-            print(f"   Attributes: {span_attributes}")
-            print(f"   Parent context: {parent_context}")
-
             # Get current context (use parent_context if provided, otherwise get_current)
             ctx = (
                 parent_context if parent_context is not None else context.get_current()
             )
             if not ctx:
-                print("   ❌ No context available")
                 return
-
-            print(f"   Context: {ctx}")
 
             # Compute attributes from baggage - no caching needed
             attributes_to_set = {}
 
             # Try to get session_id from baggage first
             session_id = baggage.get_baggage("session_id", ctx)
-            print(f"   Session ID from baggage: {session_id}")
 
             # If no session_id in baggage, try to get it from the span name or attributes
             # This helps catch OpenInference spans that might not have explicit baggage
             if not session_id:
                 # Check if this is an OpenAI-related span (OpenInference creates these)
                 if any(
-                    keyword in span_name.lower()
+                    keyword in span.name.lower()
                     for keyword in ["openai", "chat", "completion", "gpt"]
                 ):
-                    print(f"   🔍 This looks like an OpenInference span: {span_name}")
+                    # This looks like an OpenInference span
                     # Try to get session context from baggage instead of global state
                     session_id = baggage.get_baggage("session_id", ctx)
                     if session_id:
@@ -82,15 +70,10 @@ class HoneyHiveSpanProcessor(SpanProcessor):
                         if source:
                             attributes_to_set["honeyhive.source"] = source
 
-                        print(
-                            "✅ OpenInference span enriched with session context from baggage: "
-                            f"{span_name}"
-                        )
-                        print(f"✅ Added attributes: {attributes_to_set}")
-                    else:
-                        print("ℹ️  No session context in baggage, skipping enrichment")
-                else:
-                    print("ℹ️  Not an OpenInference span")
+                        # OpenInference span enriched with session context from baggage
+                        pass
+                    # else: No session context in baggage, skipping enrichment
+                # else: Not an OpenInference span
 
             # Always process association_properties for legacy support
             # This ensures backward compatibility regardless of session_id status
@@ -101,19 +84,16 @@ class HoneyHiveSpanProcessor(SpanProcessor):
                     if association_properties and isinstance(
                         association_properties, dict
                     ):
-                        print(
-                            f"   🔍 Found association_properties: {association_properties}"
-                        )
+                        # Found association_properties
                         for key, value in association_properties.items():
                             if value is not None and not baggage.get_baggage(key, ctx):
                                 # Always set traceloop.association.properties.* format for backend compatibility
                                 attr_key = f"traceloop.association.properties.{key}"
                                 attributes_to_set[attr_key] = str(value)
-                                print(
-                                    f"   ✅ Set traceloop.association.properties.{key} = {value}"
-                                )
-            except Exception as e:
-                print(f"   ❌ Error checking association_properties: {e}")
+                                # Set traceloop.association.properties attribute
+            except Exception:
+                # Error checking association_properties
+                pass
 
             # If we have session_id from baggage, process normally
             if session_id:
@@ -125,9 +105,8 @@ class HoneyHiveSpanProcessor(SpanProcessor):
                 if project:
                     attributes_to_set["honeyhive.project"] = project
                 else:
-                    print(
-                        f"   ℹ️  No project in baggage - backend will derive from API key"
-                    )
+                    # No project in baggage - backend will derive from API key
+                    pass
 
                 # Add source from baggage
                 source = baggage.get_baggage("source", ctx)
@@ -145,44 +124,36 @@ class HoneyHiveSpanProcessor(SpanProcessor):
                         attributes_to_set["honeyhive.experiment_id"] = (
                             config.experiment_id
                         )
-                        print(f"   ✅ Added experiment ID: {config.experiment_id}")
+                        # Added experiment ID
 
                     if config.experiment_name:
                         attributes_to_set["honeyhive.experiment_name"] = (
                             config.experiment_name
                         )
-                        print(f"   ✅ Added experiment name: {config.experiment_name}")
+                        # Added experiment name
 
                     if config.experiment_variant:
                         attributes_to_set["honeyhive.experiment_variant"] = (
                             config.experiment_variant
                         )
-                        print(
-                            "   ✅ Added experiment variant: "
-                            f"{config.experiment_variant}"
-                        )
+                        # Added experiment variant
 
                     if config.experiment_group:
                         attributes_to_set["honeyhive.experiment_group"] = (
                             config.experiment_group
                         )
-                        print(
-                            "   ✅ Added experiment group: "
-                            f"{config.experiment_group}"
-                        )
+                        # Added experiment group
 
                     if config.experiment_metadata:
                         # Add experiment metadata as individual attributes for better observability
                         for key, value in config.experiment_metadata.items():
                             attr_key = f"honeyhive.experiment_metadata.{key}"
                             attributes_to_set[attr_key] = str(value)
-                        print(
-                            "   ✅ Added experiment metadata: "
-                            f"{len(config.experiment_metadata)} items"
-                        )
+                        # Added experiment metadata
 
-                except Exception as e:
-                    print(f"   ⚠️  Error adding experiment attributes: {e}")
+                except Exception:
+                    # Error adding experiment attributes
+                    pass
 
                 # Set traceloop.association.properties.* attributes for backend compatibility
                 # BUT avoid duplicates with what's already set from association_properties
@@ -199,16 +170,11 @@ class HoneyHiveSpanProcessor(SpanProcessor):
                         parent_id
                     )
 
-                print(
-                    "   ✅ Set both honeyhive.* and traceloop.association.properties.* "
-                    "attributes for backend compatibility"
-                )
+                # Set both honeyhive.* and traceloop.association.properties.* attributes for backend compatibility
             else:
                 # No session_id, but we might have association_properties
-                print(
-                    "   ℹ️  No session_id in baggage, only processing "
-                    "association_properties"
-                )
+                # No session_id in baggage, only processing association_properties
+                pass
 
                 # Even without session_id, we can still add experiment attributes
                 try:
@@ -216,50 +182,38 @@ class HoneyHiveSpanProcessor(SpanProcessor):
                         attributes_to_set["honeyhive.experiment_id"] = (
                             config.experiment_id
                         )
-                        print(
-                            f"   ✅ Added experiment ID (no session): {config.experiment_id}"
-                        )
+                        # Added experiment ID (no session)
 
                     if config.experiment_name:
                         attributes_to_set["honeyhive.experiment_name"] = (
                             config.experiment_name
                         )
-                        print(
-                            f"   ✅ Added experiment name (no session): {config.experiment_name}"
-                        )
+                        # Added experiment name (no session)
 
                     if config.experiment_variant:
                         attributes_to_set["honeyhive.experiment_variant"] = (
                             config.experiment_variant
                         )
-                        print(
-                            "   ✅ Added experiment variant (no session): "
-                            f"{config.experiment_variant}"
-                        )
+                        # Added experiment variant (no session)
 
                     if config.experiment_group:
                         attributes_to_set["honeyhive.experiment_group"] = (
                             config.experiment_group
                         )
-                        print(
-                            "   ✅ Added experiment group (no session): "
-                            f"{config.experiment_group}"
-                        )
+                        # Added experiment group (no session)
 
                     if config.experiment_metadata:
                         # Add experiment metadata as individual attributes for better observability
                         for key, value in config.experiment_metadata.items():
                             attr_key = f"honeyhive.experiment_metadata.{key}"
                             attributes_to_set[attr_key] = str(value)
-                        print(
-                            "   ✅ Added experiment metadata (no session): "
-                            f"{len(config.experiment_metadata)} items"
-                        )
+                        # Added experiment metadata (no session)
 
-                except Exception as e:
-                    print(f"   ⚠️  Error adding experiment attributes (no session): {e}")
+                except Exception:
+                    # Error adding experiment attributes (no session)
+                    pass
 
-            print(f"   📝 Final attributes to set: {attributes_to_set}")
+            # Final attributes to set
 
             # Set all attributes at once (more efficient)
             for key, value in attributes_to_set.items():
@@ -283,11 +237,12 @@ class HoneyHiveSpanProcessor(SpanProcessor):
                     # Convert to string for any other type
                     span.set_attribute(key, str(value))
 
-            print(f"   ✅ Span processing complete")
+            # Span processing complete
 
-        except Exception as e:
+        except Exception:
             # Silently fail to avoid breaking the application
-            print(f"   ❌ Error in span processor: {e}")
+            # Error in span processor - silently continue
+            pass
 
     def on_end(self, span: ReadableSpan) -> None:
         """Called when a span ends - send span data to HoneyHive Events API."""
@@ -312,18 +267,17 @@ class HoneyHiveSpanProcessor(SpanProcessor):
             # Project and source are handled by OTLP export
 
             if not session_id:
-                print(
-                    f"⚠️  Span {span.name} has no session_id, skipping HoneyHive export"
-                )
+                # Span has no session_id, skipping HoneyHive export
                 return
 
             # Duration calculation is handled by OTLP export
 
             # Log span completion (OTLP export handles actual sending)
-            print(f"✅ Span processed: {span.name} (session: {session_id})")
+            # Span processed
 
-        except Exception as e:
-            print(f"❌ Error processing span end: {e}")
+        except Exception:
+            # Error processing span end
+            pass
 
     def shutdown(self) -> None:
         """Shutdown the span processor."""
@@ -364,13 +318,9 @@ class HoneyHiveSpanProcessor(SpanProcessor):
                 processor_healthy = False
 
             # Simulate flush completion for compatibility with OpenTelemetry patterns
-            if processor_healthy:
-                print("✓ HoneyHive span processor flush: validated and ready")
-                return True
-            else:
-                print("⚠️  HoneyHive span processor flush: validation issues detected")
-                return False
+            # HoneyHive span processor flush: validated and ready
+            return bool(processor_healthy)
 
-        except Exception as e:
-            print(f"❌ HoneyHive span processor flush error: {e}")
+        except Exception:
+            # HoneyHive span processor flush error
             return False

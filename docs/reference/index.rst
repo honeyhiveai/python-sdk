@@ -54,6 +54,8 @@ Core Capabilities
 - **Rate Limiting**: Built-in rate limiting for API calls with exponential backoff
 - **Graceful Degradation**: SDK never crashes host application, continues operation on failures
 - **Batch Processing**: Configurable span batching for optimal performance
+- **OTLP Performance Tuning**: Environment variables for batch size and flush interval optimization
+- **Production Optimization**: ``HH_BATCH_SIZE`` and ``HH_FLUSH_INTERVAL`` for fine-tuned performance control
 
 **Development & Quality**:
 
@@ -310,7 +312,7 @@ All configuration supports the ``HH_*`` prefix pattern:
 
 - **Authentication**: ``HH_API_KEY``, ``HH_SOURCE``
 - **Operational**: ``HH_TEST_MODE``, ``HH_DEBUG_MODE``, ``HH_DISABLE_TRACING``
-- **Performance**: ``HH_TIMEOUT``, ``HH_MAX_CONNECTIONS``, ``HH_RATE_LIMIT_*``
+- **Performance**: ``HH_TIMEOUT``, ``HH_MAX_CONNECTIONS``, ``HH_RATE_LIMIT_*``, ``HH_BATCH_SIZE``, ``HH_FLUSH_INTERVAL``
 - **Security**: ``HH_SSL_*``, ``HH_PROXY_*``
 
 **Configuration Hierarchy**:

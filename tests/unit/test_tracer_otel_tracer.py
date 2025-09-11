@@ -124,6 +124,9 @@ class TestHoneyHiveTracerOTel:
                 with patch("honeyhive.tracer.otel_tracer.os.environ", {}) as mock_env:
                     mock_config.api_key = "test_key"
                     mock_config.project = "test_project"
+                    # Add batch configuration to avoid BatchSpanProcessor validation errors
+                    mock_config.batch_size = 100
+                    mock_config.flush_interval = 5.0
 
                     tracer = HoneyHiveTracer(
                         api_key="test_key",
@@ -139,6 +142,9 @@ class TestHoneyHiveTracerOTel:
                 with patch("honeyhive.tracer.otel_tracer.os.environ", {}) as mock_env:
                     mock_config.api_key = "test_key"
                     mock_config.project = "test_project"
+                    # Add batch configuration to avoid BatchSpanProcessor validation errors
+                    mock_config.batch_size = 100
+                    mock_config.flush_interval = 5.0
 
                     tracer = HoneyHiveTracer(
                         api_key="test_key",
@@ -242,6 +248,9 @@ class TestHoneyHiveTracerOTel:
                 with patch("honeyhive.tracer.otel_tracer.os.environ", {}) as mock_env:
                     mock_config.api_key = "test_key"
                     mock_config.project = "test_project"
+                    # Add batch configuration to avoid BatchSpanProcessor validation errors
+                    mock_config.batch_size = 100
+                    mock_config.flush_interval = 5.0
 
                     # Test with different disable_http_tracing values
                     test_cases = [

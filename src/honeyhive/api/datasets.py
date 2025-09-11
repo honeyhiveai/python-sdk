@@ -14,40 +14,98 @@ class DatasetsAPI(BaseAPI):
         response = self.client.request(
             "POST",
             "/datasets",
-            json={"dataset": request.model_dump(mode="json", exclude_none=True)},
+            json=request.model_dump(mode="json", exclude_none=True),
         )
 
         data = response.json()
-        return Dataset(**data)
+
+        # Handle new API response format that returns insertion result
+        if "result" in data and "insertedId" in data["result"]:
+            # New format: {"inserted": true, "result": {"insertedId": "...", ...}}
+            _inserted_id = data["result"][
+                "insertedId"
+            ]  # Not used yet, but available for future use
+            # Create a Dataset object with the inserted ID and original request data
+            return Dataset(
+                project=request.project,
+                name=request.name,
+                description=request.description,
+            )
+        else:
+            # Legacy format: direct dataset object
+            return Dataset(**data)
 
     def create_dataset_from_dict(self, dataset_data: dict) -> Dataset:
         """Create a new dataset from dictionary (legacy method)."""
-        response = self.client.request(
-            "POST", "/datasets", json={"dataset": dataset_data}
-        )
+        response = self.client.request("POST", "/datasets", json=dataset_data)
 
         data = response.json()
-        return Dataset(**data)
+
+        # Handle new API response format that returns insertion result
+        if "result" in data and "insertedId" in data["result"]:
+            # New format: {"inserted": true, "result": {"insertedId": "...", ...}}
+            _inserted_id = data["result"][
+                "insertedId"
+            ]  # Not used yet, but available for future use
+            # Create a Dataset object with the inserted ID and original request data
+            return Dataset(
+                project=dataset_data.get("project"),
+                name=dataset_data.get("name"),
+                description=dataset_data.get("description"),
+            )
+        else:
+            # Legacy format: direct dataset object
+            return Dataset(**data)
 
     async def create_dataset_async(self, request: CreateDatasetRequest) -> Dataset:
         """Create a new dataset asynchronously using CreateDatasetRequest model."""
         response = await self.client.request_async(
             "POST",
             "/datasets",
-            json={"dataset": request.model_dump(mode="json", exclude_none=True)},
+            json=request.model_dump(mode="json", exclude_none=True),
         )
 
         data = response.json()
-        return Dataset(**data)
+
+        # Handle new API response format that returns insertion result
+        if "result" in data and "insertedId" in data["result"]:
+            # New format: {"inserted": true, "result": {"insertedId": "...", ...}}
+            _inserted_id = data["result"][
+                "insertedId"
+            ]  # Not used yet, but available for future use
+            # Create a Dataset object with the inserted ID and original request data
+            return Dataset(
+                project=request.project,
+                name=request.name,
+                description=request.description,
+            )
+        else:
+            # Legacy format: direct dataset object
+            return Dataset(**data)
 
     async def create_dataset_from_dict_async(self, dataset_data: dict) -> Dataset:
         """Create a new dataset asynchronously from dictionary (legacy method)."""
         response = await self.client.request_async(
-            "POST", "/datasets", json={"dataset": dataset_data}
+            "POST", "/datasets", json=dataset_data
         )
 
         data = response.json()
-        return Dataset(**data)
+
+        # Handle new API response format that returns insertion result
+        if "result" in data and "insertedId" in data["result"]:
+            # New format: {"inserted": true, "result": {"insertedId": "...", ...}}
+            _inserted_id = data["result"][
+                "insertedId"
+            ]  # Not used yet, but available for future use
+            # Create a Dataset object with the inserted ID and original request data
+            return Dataset(
+                project=dataset_data.get("project"),
+                name=dataset_data.get("name"),
+                description=dataset_data.get("description"),
+            )
+        else:
+            # Legacy format: direct dataset object
+            return Dataset(**data)
 
     def get_dataset(self, dataset_id: str) -> Dataset:
         """Get a dataset by ID."""

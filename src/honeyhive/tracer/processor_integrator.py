@@ -72,10 +72,8 @@ class ProcessorIntegrator:
                     )
                     return False
 
-                # Create HoneyHive span processor
+                # Create HoneyHive span processor directly (processors can't be batched, only exporters can)
                 honeyhive_processor = HoneyHiveSpanProcessor()
-
-                # Add processor to provider
                 provider.add_span_processor(honeyhive_processor)
 
                 # Track integrated processor

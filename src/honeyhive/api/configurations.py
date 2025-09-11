@@ -123,10 +123,16 @@ class ConfigurationsAPI(BaseAPI):
 
         response = self.client.request("GET", "/configurations", params=params)
         data = response.json()
-        return [
-            Configuration(**config_data)
-            for config_data in data.get("configurations", [])
-        ]
+
+        # Handle both formats: list directly or object with "configurations" key
+        if isinstance(data, list):
+            # New format: API returns list directly
+            configurations_data = data
+        else:
+            # Legacy format: API returns object with "configurations" key
+            configurations_data = data.get("configurations", [])
+
+        return [Configuration(**config_data) for config_data in configurations_data]
 
     async def list_configurations_async(
         self, project: Optional[str] = None, limit: int = 100
@@ -140,10 +146,16 @@ class ConfigurationsAPI(BaseAPI):
             "GET", "/configurations", params=params
         )
         data = response.json()
-        return [
-            Configuration(**config_data)
-            for config_data in data.get("configurations", [])
-        ]
+
+        # Handle both formats: list directly or object with "configurations" key
+        if isinstance(data, list):
+            # New format: API returns list directly
+            configurations_data = data
+        else:
+            # Legacy format: API returns object with "configurations" key
+            configurations_data = data.get("configurations", [])
+
+        return [Configuration(**config_data) for config_data in configurations_data]
 
     def update_configuration(
         self, config_id: str, request: PutConfigurationRequest

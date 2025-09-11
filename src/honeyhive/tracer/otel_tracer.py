@@ -66,7 +66,7 @@ class HoneyHiveTracer:
         test_mode: bool = False,
         session_name: Optional[str] = None,
         disable_http_tracing: bool = True,
-        project: Optional[str] = None,  # Backward compatibility - ignored
+        project: Optional[str] = None,  # Required by backend API
         **kwargs: Any,
     ) -> None:
         """Initialize the HoneyHive tracer.
@@ -88,6 +88,11 @@ class HoneyHiveTracer:
         if not OTEL_AVAILABLE:
             raise ImportError("OpenTelemetry is required for HoneyHiveTracer")
 
+        # Load configuration from environment variables
+        from ..utils.config import Config
+
+        config = Config()
+
         self.test_mode = test_mode
         self.disable_http_tracing = disable_http_tracing
 
@@ -106,9 +111,19 @@ class HoneyHiveTracer:
             # Use a dummy API key for test mode
             self.api_key = api_key or config.api_key or "test-api-key"
 
-        # Project is handled by the backend based on API key scope
-        # Use provided project for backward compatibility, fallback to placeholder
-        self.project = project if project is not None else "api-key-derived"
+        # Project is required by backend API - load from config if not provided
+        if project is not None:
+            self.project = project
+        elif config.project:
+            self.project = config.project
+        else:
+            # In test mode, allow missing project
+            if test_mode:
+                self.project = "test-project"
+            else:
+                raise ValueError(
+                    "HH_PROJECT is required. Set the HH_PROJECT environment variable or pass project parameter."
+                )
         self.source = source
 
         # Set default session name to the calling file name if not provided
@@ -183,7 +198,7 @@ class HoneyHiveTracer:
         session_name: Optional[str] = None,
         server_url: Optional[str] = None,
         disable_http_tracing: bool = True,
-        project: Optional[str] = None,  # Backward compatibility - ignored
+        project: Optional[str] = None,  # Required by backend API
         **kwargs: Any,
     ) -> "HoneyHiveTracer":
         """Initialize the HoneyHive tracer (official API for backwards compatibility).
@@ -224,6 +239,8 @@ class HoneyHiveTracer:
         # Only use env vars for None parameters
         if api_key is None:
             api_key = config.api_key
+        if project is None:
+            project = config.project
 
         # Handle server_url parameter (maps to api_url in our config)
         if server_url:
@@ -282,7 +299,7 @@ class HoneyHiveTracer:
                 "🔧 Creating new TracerProvider as main provider (replaced placeholder)"
             )
 
-            # Add our span processor directly
+            # Add our span processor directly (processors can't be batched, only exporters can)
             try:
                 self.span_processor = HoneyHiveSpanProcessor()
                 self.provider.add_span_processor(self.span_processor)
@@ -350,7 +367,7 @@ class HoneyHiveTracer:
                 # Your backend service is listening on the opentelemetry/v1/traces endpoint
                 otlp_endpoint = f"{config.api_url}/opentelemetry/v1/traces"
 
-                print(f"🔍 Sending spans to OTLP endpoint: {otlp_endpoint}")
+                # Sending spans to OTLP endpoint
 
                 otlp_exporter = OTLPSpanExporter(
                     endpoint=otlp_endpoint,
@@ -363,33 +380,24 @@ class HoneyHiveTracer:
 
                 # Add OTLP exporter with batch processing if provider supports it
                 if self.provider and hasattr(self.provider, "add_span_processor"):
-                    self.provider.add_span_processor(BatchSpanProcessor(otlp_exporter))
-                    print(
-                        f"✓ OTLP exporter configured to send spans to: {otlp_endpoint}"
+                    # Configure batch processor with performance settings
+                    batch_processor = BatchSpanProcessor(
+                        otlp_exporter,
+                        max_export_batch_size=config.batch_size,
+                        schedule_delay_millis=int(config.flush_interval * 1000),
                     )
+                    self.provider.add_span_processor(batch_processor)
+                    # OTLP exporter configured to send spans
                 else:
                     print(
                         "⚠️  Provider doesn't support span processors, OTLP export disabled"
                     )
 
             except ImportError:
-                print(
-                    "⚠️  OTLP exporter not available, using console exporter for debugging"
-                )
-                if self.provider and hasattr(self.provider, "add_span_processor"):
-                    self.provider.add_span_processor(
-                        BatchSpanProcessor(ConsoleSpanExporter())
-                    )
-        else:
-            print("🔍 OTLP export disabled, using no-op exporter for tests")
-
-            # NoOpExporter was removed as it's not used
-
-            # Use ConsoleSpanExporter instead of NoOpExporter to avoid type issues
-            if self.provider and hasattr(self.provider, "add_span_processor"):
-                self.provider.add_span_processor(
-                    BatchSpanProcessor(ConsoleSpanExporter())
-                )
+                # OTLP not available - use HoneyHive span processor only
+                pass
+        # For tests and when OTLP is disabled, rely on HoneyHiveSpanProcessor only
+        # This provides the user experience without expensive console output
 
         # Set up propagators
         self.propagator = CompositePropagator(
@@ -615,7 +623,7 @@ class HoneyHiveTracer:
         outputs: Optional[Dict[str, Any]] = None,
         metadata: Optional[Dict[str, Any]] = None,
         **kwargs: Any,
-    ) -> Optional[str]:
+    ) -> Optional[Any]:
         """Create a HoneyHive event associated with the current session.
 
         Args:
@@ -631,19 +639,40 @@ class HoneyHiveTracer:
             return None
 
         try:
+            # Remove conflicting parameters from kwargs to avoid duplicate arguments
+            filtered_kwargs = {
+                k: v
+                for k, v in kwargs.items()
+                if k
+                not in [
+                    "project",
+                    "source",
+                    "event_name",
+                    "event_type",
+                    "session_id",
+                    "config",
+                    "inputs",
+                    "outputs",
+                    "duration",
+                    "metadata",
+                ]
+            }
+
             # Create event request with all required fields
             event_request = CreateEventRequest(
                 project=self.project,
                 source=self.source,
-                event_name=f"event_{event_type}",
+                event_name=kwargs.get("event_name", f"event_{event_type}"),
                 event_type=EventType1.model,  # Use valid enum value
                 session_id=self.session_id,
-                config={},  # Required field, provide empty dict
+                config=kwargs.get("config", {}),  # Use provided config or empty dict
                 inputs=inputs or {},  # Required field, provide default
                 outputs=outputs or {},
-                duration=0.0,  # Required field
+                duration=kwargs.get(
+                    "duration", 0.0
+                ),  # Use provided duration or default
                 metadata=metadata or {},
-                **kwargs,
+                **filtered_kwargs,
             )
 
             # Create event via API
@@ -657,7 +686,7 @@ class HoneyHiveTracer:
                 if not self.test_mode:
                     print(f"✓ Event created: {event_response.event_id}")
 
-                return event_response.event_id  # type: ignore[no-any-return]
+                return event_response  # Return the full event object, not just the ID
 
             print("Warning: Session API not available")
             return None

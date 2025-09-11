@@ -1,4 +1,17 @@
-## [Unreleased] - 2025-09-06
+## [Unreleased]
+
+### Added
+- Performance tuning environment variables for OTLP export optimization
+- Configurable batch sizes and flush intervals for production environments
+
+### Changed
+- Improved span processor performance with configurable batching
+- Enhanced API client configurations with better error handling
+
+### Removed
+- Temporary development files and validation artifacts
+
+## [0.1.0rc1] - 2025-09-11
 
 ### Added
 - **🎯 REVOLUTIONARY: Automated Documentation Quality Control System**

@@ -29,6 +29,8 @@ This document lists all environment variables supported by the HoneyHive Python 
 | `HH_OTLP_ENABLED` | Enable OTLP export | `true` | No |
 | `HH_OTLP_ENDPOINT` | Custom OTLP endpoint | Auto-detected | No |
 | `HH_OTLP_HEADERS` | OTLP headers (JSON format) | None | No |
+| `HH_BATCH_SIZE` | OTLP batch size for performance optimization | `100` | No |
+| `HH_FLUSH_INTERVAL` | OTLP flush interval in seconds | `5.0` | No |
 
 ## HTTP Client Configuration
 
@@ -110,6 +112,22 @@ export HH_RATE_LIMIT_CALLS="200"
 export HH_RATE_LIMIT_WINDOW="30"
 export HH_HTTP_PROXY="http://proxy.company.com:8080"
 export HH_VERIFY_SSL="false"
+```
+
+### OTLP Performance Tuning
+
+```bash
+# Performance optimized (larger batches, faster flush)
+export HH_BATCH_SIZE="200"
+export HH_FLUSH_INTERVAL="1.0"
+
+# Memory optimized (smaller batches, slower flush)
+export HH_BATCH_SIZE="50"
+export HH_FLUSH_INTERVAL="10.0"
+
+# Real-time optimized (very fast flush)
+export HH_BATCH_SIZE="10"
+export HH_FLUSH_INTERVAL="0.5"
 ```
 
 ### Experiment Harness Integration

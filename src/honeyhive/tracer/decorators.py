@@ -217,10 +217,12 @@ def _create_sync_wrapper(
                         # Silently handle any exceptions when setting experiment attributes
                         pass
 
-                    # Set additional kwargs as attributes
+                    # Set additional kwargs as attributes (exclude tracer object)
                     try:
                         for key, value in kwargs.items():
-                            span.set_attribute(f"honeyhive_{key}", value)
+                            # Skip tracer object to avoid OpenTelemetry type warnings
+                            if key != "tracer":
+                                span.set_attribute(f"honeyhive_{key}", value)
                     except Exception:
                         # Silently handle any exceptions when setting kwargs attributes
                         pass
@@ -435,10 +437,12 @@ def _create_async_wrapper(
                         # Silently handle any exceptions when setting experiment attributes
                         pass
 
-                    # Set additional kwargs as attributes
+                    # Set additional kwargs as attributes (exclude tracer object)
                     try:
                         for key, value in kwargs.items():
-                            span.set_attribute(f"honeyhive_{key}", value)
+                            # Skip tracer object to avoid OpenTelemetry type warnings
+                            if key != "tracer":
+                                span.set_attribute(f"honeyhive_{key}", value)
                     except Exception:
                         # Silently handle any exceptions when setting kwargs attributes
                         pass

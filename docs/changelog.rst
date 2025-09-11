@@ -17,7 +17,19 @@ Latest Release Notes
 Current Version Highlights
 ~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-**v0.1.0 (Unreleased) - Major Architectural Refactor & Bug Fixes**
+**v0.1.0rc1 (2025-09-11) - Release Candidate with Performance Improvements**
+
+**🚀 NEW: Performance Optimization Framework**
+
+* **OTLP Performance Tuning**: Configurable batch sizes and flush intervals for production optimization
+* **Environment Variables**: ``HH_BATCH_SIZE`` and ``HH_FLUSH_INTERVAL`` for fine-tuned performance control
+* **Enhanced Span Processing**: Improved batching performance with configurable parameters
+* **API Client Improvements**: Better error handling and configuration management
+* **Documentation Navigation**: Comprehensive validation framework with 0 broken links across 69 URLs
+* **Integration Testing**: Consolidated two-tier testing strategy with real API validation
+* **RST Hierarchy**: Fixed documentation structure across all provider integration guides
+
+**v0.1.0 (Development) - Major Architectural Refactor & Bug Fixes**
 
 **🎯 NEW: Compatibility Matrix Framework (2025-09-05)**
 
