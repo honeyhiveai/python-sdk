@@ -121,7 +121,7 @@ Set a global default tracer for application-wide convenience:
    set_default_tracer(default_tracer)
    
    # Now @trace works everywhere without specification
-   @trace(event_type="computation")
+   @trace(event_type=EventType.tool)
    def compute_metrics(data):
        return {"accuracy": 0.95}
    
@@ -286,7 +286,7 @@ Async functions work seamlessly with decorator-based tracing:
    result = asyncio.run(main())
    
    # Alternative: Explicit tracer parameters (always works)
-   @atrace(tracer=tracer, event_type="explicit_async")
+   @atrace(tracer=tracer, event_type=EventType.tool)
    async def explicit_async_function():
        return "explicitly traced"
 
@@ -371,7 +371,7 @@ The system gracefully handles various error conditions:
    # Clear any default tracer
    set_default_tracer(None)
    
-   @trace(event_type="graceful")
+   @trace(event_type=EventType.tool)
    def function_without_tracer():
        # Executes normally without tracing
        return "success"
@@ -395,11 +395,11 @@ Understand how the priority system works:
    
    set_default_tracer(default_tracer)
    
-   @trace(event_type="flexible")
+   @trace(event_type=EventType.tool)
    def flexible_function():
        return "uses_current_priority"
    
-   @trace(tracer=explicit_tracer, event_type="explicit")
+   @trace(tracer=explicit_tracer, event_type=EventType.tool)
    def explicit_function():
        return "always_explicit"
    
@@ -518,7 +518,7 @@ Recommended Patterns by Use Case
 .. code-block:: python
 
    # Use decorators for business functions
-   @trace(tracer=workflow_tracer, event_type="workflow_step")
+   @trace(tracer=workflow_tracer, event_type=EventType.tool)
    def execute_step(step_data):
        return process_step(step_data)
    
@@ -536,7 +536,7 @@ Recommended Patterns by Use Case
 .. code-block:: python
 
    # Trace important business operations
-   @trace(event_type="critical_operation")
+   @trace(event_type=EventType.tool)
    def important_business_function():
        # Don't trace every utility call
        helper_result = utility_function()  # No decorator
@@ -547,7 +547,7 @@ Recommended Patterns by Use Case
 .. code-block:: python
 
    # Start with minimal decoration
-   @trace(event_type="legacy_integration")
+   @trace(event_type=EventType.tool)
    def legacy_wrapper():
        # Existing code unchanged
        return existing_legacy_function()

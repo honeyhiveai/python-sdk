@@ -68,7 +68,9 @@ Choose Your Instrumentor
    # GOOGLE_API_KEY=your-google-adk-key
 
    # Step 1: Initialize HoneyHive tracer first (without instrumentors)
-   tracer = HoneyHiveTracer.init()  # Uses HH_API_KEY from environment
+   tracer = HoneyHiveTracer.init(
+       project="your-project"  # Or set HH_PROJECT environment variable
+   )  # Uses HH_API_KEY from environment
    
    # Step 2: Initialize instrumentor separately with tracer_provider
    instrumentor = GoogleADKInstrumentor()
@@ -106,8 +108,9 @@ Choose Your Instrumentor
    # Initialize with custom configuration
    # Step 1: Initialize HoneyHive tracer first (without instrumentors)
    tracer = HoneyHiveTracer.init(
-       api_key="your-honeyhive-key",
-       source="production"
+       api_key="your-honeyhive-key",  # Or set HH_API_KEY environment variable
+       project="your-project",        # Or set HH_PROJECT environment variable
+       source="production"            # Or set HH_SOURCE environment variable
    )
    
    # Step 2: Initialize instrumentor separately with tracer_provider
@@ -207,7 +210,9 @@ Choose Your Instrumentor
    
       # Use correct initialization pattern
       # Step 1: Initialize HoneyHive tracer first (without instrumentors)
-      tracer = HoneyHiveTracer.init()
+      tracer = HoneyHiveTracer.init(
+          project="your-project"  # Or set HH_PROJECT environment variable
+      )
       
       # Step 2: Initialize instrumentor separately with tracer_provider
       instrumentor = GoogleADKInstrumentor()
@@ -228,8 +233,13 @@ Choose Your Instrumentor
       from openinference.instrumentation.google_adk import GoogleADKInstrumentor
        from openinference.instrumentation.openai import OpenAIInstrumentor
        
+       # Step 1: Initialize HoneyHive tracer first (without instrumentors)
        tracer = HoneyHiveTracer.init(
-           instrumentors=[
+           project="your-project"  # Or set HH_PROJECT environment variable
+       )
+       
+       # Step 2: Initialize instrumentors separately with tracer_provider
+       # REPLACE_WITH_INSTRUMENTOR_SETUP
                GoogleADKInstrumentor(),
                OpenAIInstrumentor()
            ]

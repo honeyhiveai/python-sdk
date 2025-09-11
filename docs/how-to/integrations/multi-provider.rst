@@ -36,7 +36,10 @@ Choose Your Instrumentor Strategy
    from openinference.instrumentation.bedrock import BedrockInstrumentor
 
    # Step 1: Initialize HoneyHive tracer first (without instrumentors)
-   tracer = HoneyHiveTracer.init(api_key="your-honeyhive-key")
+   tracer = HoneyHiveTracer.init(
+       api_key="your-honeyhive-key",  # Or set HH_API_KEY environment variable
+       project="your-project"         # Or set HH_PROJECT environment variable
+   )
    
    # Step 2: Initialize each instrumentor separately with tracer_provider
    openai_instrumentor = OpenAIInstrumentor()
@@ -62,7 +65,10 @@ Choose Your Instrumentor Strategy
    from opentelemetry.instrumentation.bedrock import BedrockInstrumentor
 
    # Step 1: Initialize HoneyHive tracer first (without instrumentors)
-   tracer = HoneyHiveTracer.init(api_key="your-honeyhive-key")
+   tracer = HoneyHiveTracer.init(
+       api_key="your-honeyhive-key",  # Or set HH_API_KEY environment variable
+       project="your-project"         # Or set HH_PROJECT environment variable
+   )
    
    # Step 2: Initialize instrumentor separately with tracer_provider  
    instrumentor = OpenAIInstrumentor(),           # Traceloop
@@ -83,7 +89,10 @@ Choose Your Instrumentor Strategy
    from opentelemetry.instrumentation.anthropic import AnthropicInstrumentor
 
    # Step 1: Initialize HoneyHive tracer first (without instrumentors)
-   tracer = HoneyHiveTracer.init(api_key="your-honeyhive-key")
+   tracer = HoneyHiveTracer.init(
+       api_key="your-honeyhive-key",  # Or set HH_API_KEY environment variable
+       project="your-project"         # Or set HH_PROJECT environment variable
+   )
    
    # Step 2: Initialize instrumentor separately with tracer_provider  
    instrumentor = OpenAIInstrumentor(),           # Traceloop (enhanced metrics)
@@ -113,7 +122,10 @@ Initialize HoneyHive with multiple instrumentors:
 
    # Initialize with multiple instrumentors
    # Step 1: Initialize HoneyHive tracer first (without instrumentors)
-   tracer = HoneyHiveTracer.init(api_key="your-honeyhive-key")
+   tracer = HoneyHiveTracer.init(
+       api_key="your-honeyhive-key",  # Or set HH_API_KEY environment variable
+       project="your-project"         # Or set HH_PROJECT environment variable
+   )
    
    # Step 2: Initialize instrumentor separately with tracer_provider  
    instrumentor = AnthropicInstrumentor(),
@@ -152,18 +164,24 @@ Multi-Provider Agent Workflow
 
    # Initialize with multiple instrumentors
    # Step 1: Initialize HoneyHive tracer first (without instrumentors)
-   tracer = HoneyHiveTracer.init(api_key="your-api-key")
+   tracer = HoneyHiveTracer.init(
+       api_key="your-api-key",        # Or set HH_API_KEY environment variable
+       project="your-project"         # Or set HH_PROJECT environment variable
+   )
    
-   # Step 2: Initialize instrumentor separately with tracer_provider  
-   instrumentor = OpenAIInstrumentor(),
-           AnthropicInstrumentor()
-   instrumentor.instrument(tracer_provider=tracer.provider)
+   # Step 2: Initialize instrumentors separately with tracer_provider  
+   openai_instrumentor = OpenAIInstrumentor()
+   anthropic_instrumentor = AnthropicInstrumentor()
+   
+   openai_instrumentor.instrument(tracer_provider=tracer.provider)
+   anthropic_instrumentor.instrument(tracer_provider=tracer.provider)
 
    # Initialize clients
    openai_client = openai.OpenAI()
    anthropic_client = anthropic.Anthropic()
 
    from honeyhive import trace, enrich_span, set_default_tracer
+   from honeyhive.models import EventType
    
    # Set up default tracer for cleaner code
    set_default_tracer(tracer)
@@ -487,10 +505,16 @@ Environment-Based Provider Selection
        else:
            instrumentors.append(OpenAIInstrumentor())
        
+       # Step 1: Initialize HoneyHive tracer first (without instrumentors)
        tracer = HoneyHiveTracer.init(
-           api_key=os.getenv("HH_API_KEY"),           source=environment,
-           instrumentors=instrumentors
+           api_key=os.getenv("HH_API_KEY"),     # Or set HH_API_KEY environment variable
+           project="your-project",             # Or set HH_PROJECT environment variable
+           source=environment                  # Or set HH_SOURCE environment variable
        )
+       
+       # Step 2: Initialize instrumentors separately with tracer_provider
+       for instrumentor in instrumentors:
+           instrumentor.instrument(tracer_provider=tracer.provider)
        
        return tracer, environment
 

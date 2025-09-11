@@ -34,6 +34,9 @@
 - Test focus alignment: Refactored tests to validate intended behavior (thread safety, independence, span isolation)
 - Backwards compatibility test expectations: Updated 60+ tests to match environment variable precedence behavior
 - Multi-instance tracer testing: Enhanced validation of tracer independence and configuration isolation
+- CRITICAL: Documentation examples using incorrect `instrumentors` parameter in `HoneyHiveTracer.init()` (instrumentors must be initialized separately)
+- Documentation examples missing required `project` parameter in `HoneyHiveTracer.init()` calls
+- Documentation examples using string literals instead of `EventType` enum values for type safety
 
 ### Changed
 - Advanced tracing documentation now prioritizes decorator pattern over context managers for better developer experience

@@ -29,11 +29,12 @@ Basic Custom Spans with Decorator-First Approach
 .. code-block:: python
 
    from honeyhive import HoneyHiveTracer, trace, enrich_span, set_default_tracer
+   from honeyhive.models import EventType
    import time
 
    tracer = HoneyHiveTracer.init(
-       api_key="your-api-key",
-       
+       api_key="your-api-key",      # Or set HH_API_KEY environment variable
+       project="your-project"       # Or set HH_PROJECT environment variable
    )
    set_default_tracer(tracer)
 

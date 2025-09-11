@@ -243,8 +243,12 @@ New to HoneyHive? Start here:
    # Initialize with BYOI architecture
    tracer = HoneyHiveTracer.init(
        api_key="your-api-key",
-       instrumentors=[OpenAIInstrumentor()]  # Your choice!
+       project="your-project"
    )
+   
+   # Initialize instrumentor separately (correct pattern)
+   instrumentor = OpenAIInstrumentor()
+   instrumentor.instrument(tracer_provider=tracer.provider)
    
    # Use @trace for custom functions
    @trace(tracer=tracer)
@@ -268,20 +272,24 @@ New to HoneyHive? Start here:
 .. code-block:: python
 
    from honeyhive import HoneyHiveTracer, trace, evaluate
+   from honeyhive.models import EventType
    from honeyhive.evaluation import QualityScoreEvaluator
    from openinference.instrumentation.openai import OpenAIInstrumentor
    import openai
    
    tracer = HoneyHiveTracer.init(
        api_key="your-api-key",
-       # Simplified API - no project parameter needed
-       instrumentors=[OpenAIInstrumentor()]
+       project="your-project"
    )
+   
+   # Initialize instrumentor separately (correct pattern)
+   instrumentor = OpenAIInstrumentor()
+   instrumentor.instrument(tracer_provider=tracer.provider)
    
    # Add automatic evaluation
    quality_evaluator = QualityScoreEvaluator(criteria=["relevance", "clarity"])
    
-   @trace(tracer=tracer, event_type="model")
+   @trace(tracer=tracer, event_type=EventType.model)
    @evaluate(evaluator=quality_evaluator)
    def handle_customer_query(query: str) -> str:
        client = openai.OpenAI()
@@ -313,14 +321,17 @@ New to HoneyHive? Start here:
    # Multi-provider setup with BYOI
    tracer = HoneyHiveTracer.init(
        api_key="your-api-key",
-       # Simplified API - no project parameter needed
-       instrumentors=[
-           OpenAIInstrumentor(),    # Traces OpenAI calls
-           AnthropicInstrumentor()  # Traces Anthropic calls
-       ]
+       project="your-project"
    )
    
-   @trace(tracer=tracer, event_type="chain")
+   # Initialize instrumentors separately (correct pattern)
+   openai_instrumentor = OpenAIInstrumentor()
+   anthropic_instrumentor = AnthropicInstrumentor()
+   
+   openai_instrumentor.instrument(tracer_provider=tracer.provider)
+   anthropic_instrumentor.instrument(tracer_provider=tracer.provider)
+   
+   @trace(tracer=tracer, event_type=EventType.chain)
    def compare_responses(prompt: str) -> dict:
        # Both calls automatically traced with provider context
        openai_client = openai.OpenAI()

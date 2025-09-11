@@ -148,19 +148,21 @@ Don't trace everything - focus on business-critical operations:
    from honeyhive import HoneyHiveTracer, trace
    import random
    
+   from honeyhive.models import EventType
+   
    tracer = HoneyHiveTracer.init(
        api_key=os.getenv("HH_API_KEY")
        
    )
    
    # Trace critical business operations
-   @trace(tracer=tracer, event_type="user_transaction")
+   @trace(tracer=tracer, event_type=EventType.session)
    def process_payment(user_id: str, amount: float):
        # Always trace financial operations
        pass
    
    # Sample high-frequency operations
-   @trace(tracer=tracer, event_type="api_request")
+   @trace(tracer=tracer, event_type=EventType.tool)
    def handle_api_request(request):
        # Only trace 1% of API requests
        if random.random() < 0.01:

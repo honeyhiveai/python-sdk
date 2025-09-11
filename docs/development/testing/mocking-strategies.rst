@@ -301,7 +301,11 @@ Patching Strategies
        
        # Your code
        from honeyhive import HoneyHiveTracer
-       tracer = HoneyHiveTracer.init(api_key="test")
+       tracer = HoneyHiveTracer.init(
+           api_key="test",          # Or set HH_API_KEY environment variable
+           project="test-project",  # Or set HH_PROJECT environment variable
+           test_mode=True           # Or set HH_TEST_MODE=true
+       )
        
        with tracer.trace("test") as span:
            span.set_attribute("key", "value")
@@ -427,7 +431,11 @@ Fixture-Based Mocking
        """Test with completely mocked HoneyHive class."""
        from honeyhive import HoneyHiveTracer
        
-       tracer = HoneyHiveTracer.init(api_key="test")
+       tracer = HoneyHiveTracer.init(
+           api_key="test",          # Or set HH_API_KEY environment variable
+           project="test-project",  # Or set HH_PROJECT environment variable
+           test_mode=True           # Or set HH_TEST_MODE=true
+       )
        mock_honeyhive_class.init.assert_called_once_with(api_key="test")
    
    def test_with_isolated_honeyhive(isolated_honeyhive):

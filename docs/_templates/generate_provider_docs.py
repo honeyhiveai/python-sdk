@@ -94,22 +94,32 @@ PROVIDER_CONFIGS = {
         "MULTIPLE_INSTRUMENTORS_EXAMPLE": '''from openinference.instrumentation.openai import OpenAIInstrumentor
        from openinference.instrumentation.anthropic import AnthropicInstrumentor
        
+       # Step 1: Initialize HoneyHive tracer first (without instrumentors)
        tracer = HoneyHiveTracer.init(
-           instrumentors=[
-               OpenAIInstrumentor(),
-               AnthropicInstrumentor()
-           ]
-       )''',
+           project="your-project"  # Or set HH_PROJECT environment variable
+       )
+       
+       # Step 2: Initialize instrumentors separately with tracer_provider
+       openai_instrumentor = OpenAIInstrumentor()
+       anthropic_instrumentor = AnthropicInstrumentor()
+       
+       openai_instrumentor.instrument(tracer_provider=tracer.provider)
+       anthropic_instrumentor.instrument(tracer_provider=tracer.provider)''',
        
         "MULTIPLE_TRACELOOP_INSTRUMENTORS_EXAMPLE": '''from opentelemetry.instrumentation.openai import OpenAIInstrumentor
        from opentelemetry.instrumentation.anthropic import AnthropicInstrumentor
        
+       # Step 1: Initialize HoneyHive tracer first (without instrumentors)
        tracer = HoneyHiveTracer.init(
-           instrumentors=[
-               OpenAIInstrumentor(),      # Traceloop OpenAI
-               AnthropicInstrumentor()    # Traceloop Anthropic
-           ]
-       )''',
+           project="your-project"  # Or set HH_PROJECT environment variable
+       )
+       
+       # Step 2: Initialize instrumentors separately with tracer_provider
+       openai_instrumentor = OpenAIInstrumentor()      # Traceloop OpenAI
+       anthropic_instrumentor = AnthropicInstrumentor() # Traceloop Anthropic
+       
+       openai_instrumentor.instrument(tracer_provider=tracer.provider)
+       anthropic_instrumentor.instrument(tracer_provider=tracer.provider)''',
        
         "USE_CASE_NAME": "model_comparison",
         "STRATEGY_NAME": "multi_model_analysis",
@@ -180,22 +190,32 @@ PROVIDER_CONFIGS = {
         "MULTIPLE_INSTRUMENTORS_EXAMPLE": '''from openinference.instrumentation.anthropic import AnthropicInstrumentor
        from openinference.instrumentation.openai import OpenAIInstrumentor
        
+       # Step 1: Initialize HoneyHive tracer first (without instrumentors)
        tracer = HoneyHiveTracer.init(
-           instrumentors=[
-               AnthropicInstrumentor(),
-               OpenAIInstrumentor()
-           ]
-       )''',
+           project="your-project"  # Or set HH_PROJECT environment variable
+       )
+       
+       # Step 2: Initialize instrumentors separately with tracer_provider
+       anthropic_instrumentor = AnthropicInstrumentor()
+       openai_instrumentor = OpenAIInstrumentor()
+       
+       anthropic_instrumentor.instrument(tracer_provider=tracer.provider)
+       openai_instrumentor.instrument(tracer_provider=tracer.provider)''',
        
         "MULTIPLE_TRACELOOP_INSTRUMENTORS_EXAMPLE": '''from opentelemetry.instrumentation.anthropic import AnthropicInstrumentor
        from opentelemetry.instrumentation.openai import OpenAIInstrumentor
        
+       # Step 1: Initialize HoneyHive tracer first (without instrumentors)
        tracer = HoneyHiveTracer.init(
-           instrumentors=[
-               AnthropicInstrumentor(),      # Traceloop Anthropic
-               OpenAIInstrumentor()          # Traceloop OpenAI
-           ]
-       )''',
+           project="your-project"  # Or set HH_PROJECT environment variable
+       )
+       
+       # Step 2: Initialize instrumentors separately with tracer_provider
+       anthropic_instrumentor = AnthropicInstrumentor()      # Traceloop Anthropic
+       openai_instrumentor = OpenAIInstrumentor()          # Traceloop OpenAI
+       
+       anthropic_instrumentor.instrument(tracer_provider=tracer.provider)
+       openai_instrumentor.instrument(tracer_provider=tracer.provider)''',
        
         "SEE_ALSO_LINKS": '''- :doc:`multi-provider` - Use Anthropic with other providers
 - :doc:`../common-patterns` - Common integration patterns
@@ -330,8 +350,13 @@ PROVIDER_CONFIGS = {
         "MULTIPLE_INSTRUMENTORS_EXAMPLE": '''from openinference.instrumentation.google_adk import GoogleADKInstrumentor
        from openinference.instrumentation.openai import OpenAIInstrumentor
        
+       # Step 1: Initialize HoneyHive tracer first (without instrumentors)
        tracer = HoneyHiveTracer.init(
-           instrumentors=[
+           project="your-project"  # Or set HH_PROJECT environment variable
+       )
+       
+       # Step 2: Initialize instrumentors separately with tracer_provider
+       # REPLACE_WITH_INSTRUMENTOR_SETUP
                GoogleADKInstrumentor(),
                OpenAIInstrumentor()
            ]
@@ -342,8 +367,13 @@ PROVIDER_CONFIGS = {
        from openinference.instrumentation.google_adk import GoogleADKInstrumentor
        from opentelemetry.instrumentation.openai import OpenAIInstrumentor
        
+       # Step 1: Initialize HoneyHive tracer first (without instrumentors)
        tracer = HoneyHiveTracer.init(
-           instrumentors=[
+           project="your-project"  # Or set HH_PROJECT environment variable
+       )
+       
+       # Step 2: Initialize instrumentors separately with tracer_provider
+       # REPLACE_WITH_INSTRUMENTOR_SETUP
                GoogleADKInstrumentor(),      # OpenInference (only option)
                OpenAIInstrumentor()          # Traceloop
            ]
@@ -454,8 +484,13 @@ PROVIDER_CONFIGS = {
         "MULTIPLE_INSTRUMENTORS_EXAMPLE": '''from openinference.instrumentation.bedrock import BedrockInstrumentor
        from openinference.instrumentation.openai import OpenAIInstrumentor
        
+       # Step 1: Initialize HoneyHive tracer first (without instrumentors)
        tracer = HoneyHiveTracer.init(
-           instrumentors=[
+           project="your-project"  # Or set HH_PROJECT environment variable
+       )
+       
+       # Step 2: Initialize instrumentors separately with tracer_provider
+       # REPLACE_WITH_INSTRUMENTOR_SETUP
                BedrockInstrumentor(),
                OpenAIInstrumentor()
            ]
@@ -464,8 +499,13 @@ PROVIDER_CONFIGS = {
         "MULTIPLE_TRACELOOP_INSTRUMENTORS_EXAMPLE": '''from opentelemetry.instrumentation.bedrock import BedrockInstrumentor
        from opentelemetry.instrumentation.openai import OpenAIInstrumentor
        
+       # Step 1: Initialize HoneyHive tracer first (without instrumentors)
        tracer = HoneyHiveTracer.init(
-           instrumentors=[
+           project="your-project"  # Or set HH_PROJECT environment variable
+       )
+       
+       # Step 2: Initialize instrumentors separately with tracer_provider
+       # REPLACE_WITH_INSTRUMENTOR_SETUP
                BedrockInstrumentor(),       # Traceloop Bedrock
                OpenAIInstrumentor()         # Traceloop OpenAI
            ]
@@ -570,8 +610,13 @@ PROVIDER_CONFIGS = {
         "MULTIPLE_INSTRUMENTORS_EXAMPLE": '''from openinference.instrumentation.openai import OpenAIInstrumentor
        from openinference.instrumentation.anthropic import AnthropicInstrumentor
        
+       # Step 1: Initialize HoneyHive tracer first (without instrumentors)
        tracer = HoneyHiveTracer.init(
-           instrumentors=[
+           project="your-project"  # Or set HH_PROJECT environment variable
+       )
+       
+       # Step 2: Initialize instrumentors separately with tracer_provider
+       # REPLACE_WITH_INSTRUMENTOR_SETUP
                OpenAIInstrumentor(),      # Works for both OpenAI and Azure OpenAI
                AnthropicInstrumentor()
            ]
@@ -580,8 +625,13 @@ PROVIDER_CONFIGS = {
         "MULTIPLE_TRACELOOP_INSTRUMENTORS_EXAMPLE": '''from opentelemetry.instrumentation.openai import OpenAIInstrumentor
        from opentelemetry.instrumentation.anthropic import AnthropicInstrumentor
        
+       # Step 1: Initialize HoneyHive tracer first (without instrumentors)
        tracer = HoneyHiveTracer.init(
-           instrumentors=[
+           project="your-project"  # Or set HH_PROJECT environment variable
+       )
+       
+       # Step 2: Initialize instrumentors separately with tracer_provider
+       # REPLACE_WITH_INSTRUMENTOR_SETUP
                OpenAIInstrumentor(),      # Works for both OpenAI and Azure OpenAI
                AnthropicInstrumentor()    # Traceloop Anthropic
            ]
@@ -690,8 +740,13 @@ PROVIDER_CONFIGS = {
         "MULTIPLE_INSTRUMENTORS_EXAMPLE": '''from openinference.instrumentation.mcp import MCPInstrumentor
        from openinference.instrumentation.openai import OpenAIInstrumentor
        
+       # Step 1: Initialize HoneyHive tracer first (without instrumentors)
        tracer = HoneyHiveTracer.init(
-           instrumentors=[
+           project="your-project"  # Or set HH_PROJECT environment variable
+       )
+       
+       # Step 2: Initialize instrumentors separately with tracer_provider
+       # REPLACE_WITH_INSTRUMENTOR_SETUP
                MCPInstrumentor(),
                OpenAIInstrumentor()
            ]
@@ -700,8 +755,13 @@ PROVIDER_CONFIGS = {
         "MULTIPLE_TRACELOOP_INSTRUMENTORS_EXAMPLE": '''from opentelemetry.instrumentation.mcp import MCPInstrumentor
        from opentelemetry.instrumentation.openai import OpenAIInstrumentor
        
+       # Step 1: Initialize HoneyHive tracer first (without instrumentors)
        tracer = HoneyHiveTracer.init(
-           instrumentors=[
+           project="your-project"  # Or set HH_PROJECT environment variable
+       )
+       
+       # Step 2: Initialize instrumentors separately with tracer_provider
+       # REPLACE_WITH_INSTRUMENTOR_SETUP
                MCPInstrumentor(),         # Traceloop MCP
                OpenAIInstrumentor()       # Traceloop OpenAI
            ]

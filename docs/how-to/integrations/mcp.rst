@@ -68,7 +68,9 @@ Choose Your Instrumentor
    # MCP_API_KEY=your-mcp-key
 
    # Step 1: Initialize HoneyHive tracer first (without instrumentors)
-   tracer = HoneyHiveTracer.init()  # Uses HH_API_KEY from environment
+   tracer = HoneyHiveTracer.init(
+       project="your-project"  # Or set HH_PROJECT environment variable
+   )  # Uses HH_API_KEY from environment
    
    # Step 2: Initialize instrumentor separately with tracer_provider
    instrumentor = MCPInstrumentor()
@@ -110,8 +112,9 @@ Choose Your Instrumentor
    # Initialize with custom configuration
    # Step 1: Initialize HoneyHive tracer first (without instrumentors)
    tracer = HoneyHiveTracer.init(
-       api_key="your-honeyhive-key",
-       source="production"
+       api_key="your-honeyhive-key",  # Or set HH_API_KEY environment variable
+       project="your-project",        # Or set HH_PROJECT environment variable
+       source="production"            # Or set HH_SOURCE environment variable
    )
    
    # Step 2: Initialize instrumentor separately with tracer_provider
@@ -212,7 +215,9 @@ Choose Your Instrumentor
    
       # Use correct initialization pattern
       # Step 1: Initialize HoneyHive tracer first (without instrumentors)
-      tracer = HoneyHiveTracer.init()
+      tracer = HoneyHiveTracer.init(
+          project="your-project"  # Or set HH_PROJECT environment variable
+      )
       
       # Step 2: Initialize instrumentor separately with tracer_provider
       instrumentor = MCPInstrumentor()
@@ -233,8 +238,13 @@ Choose Your Instrumentor
       from openinference.instrumentation.mcp import MCPInstrumentor
        from openinference.instrumentation.openai import OpenAIInstrumentor
        
+       # Step 1: Initialize HoneyHive tracer first (without instrumentors)
        tracer = HoneyHiveTracer.init(
-           instrumentors=[
+           project="your-project"  # Or set HH_PROJECT environment variable
+       )
+       
+       # Step 2: Initialize instrumentors separately with tracer_provider
+       # REPLACE_WITH_INSTRUMENTOR_SETUP
                MCPInstrumentor(),
                OpenAIInstrumentor()
            ]
@@ -304,7 +314,9 @@ Choose Your Instrumentor
    # MCP_API_KEY=your-mcp-key
 
    # Step 1: Initialize HoneyHive tracer first (without instrumentors)
-   tracer = HoneyHiveTracer.init()  # Uses HH_API_KEY from environment
+   tracer = HoneyHiveTracer.init(
+       project="your-project"  # Or set HH_PROJECT environment variable
+   )  # Uses HH_API_KEY from environment
    
    # Step 2: Initialize Traceloop instrumentor separately with tracer_provider
    instrumentor = MCPInstrumentor()
@@ -346,8 +358,9 @@ Choose Your Instrumentor
    # Initialize HoneyHive with Traceloop instrumentor
    # Step 1: Initialize HoneyHive tracer first (without instrumentors)
    tracer = HoneyHiveTracer.init(
-       api_key="your-honeyhive-key",
-       source="production"
+       api_key="your-honeyhive-key",  # Or set HH_API_KEY environment variable
+       project="your-project",        # Or set HH_PROJECT environment variable
+       source="production"            # Or set HH_SOURCE environment variable
    )
    
    # Step 2: Initialize instrumentor separately with tracer_provider
@@ -453,7 +466,9 @@ Choose Your Instrumentor
       from opentelemetry.instrumentation.mcp import MCPInstrumentor
       
       # Step 1: Initialize HoneyHive tracer first (without instrumentors)
-      tracer = HoneyHiveTracer.init()
+      tracer = HoneyHiveTracer.init(
+          project="your-project"  # Or set HH_PROJECT environment variable
+      )
       
       # Step 2: Initialize instrumentor separately with tracer_provider
       instrumentor = MCPInstrumentor()
@@ -469,11 +484,13 @@ Choose Your Instrumentor
       # The instrumentor automatically captures enhanced metrics
       from opentelemetry.instrumentation.mcp import MCPInstrumentor
       # Step 1: Initialize HoneyHive tracer first (without instrumentors)
-      tracer = HoneyHiveTracer.init()
-   
-   # Step 2: Initialize instrumentor separately with tracer_provider
-   instrumentor = MCPInstrumentor()
-   instrumentor.instrument(tracer_provider=tracer.provider)
+      tracer = HoneyHiveTracer.init(
+          project="your-project"  # Or set HH_PROJECT environment variable
+      )
+      
+      # Step 2: Initialize instrumentor separately with tracer_provider
+      instrumentor = MCPInstrumentor()
+      instrumentor.instrument(tracer_provider=tracer.provider)
 
 3. **Multiple Traceloop Instrumentors**
    
@@ -483,8 +500,13 @@ Choose Your Instrumentor
       from opentelemetry.instrumentation.mcp import MCPInstrumentor
        from opentelemetry.instrumentation.openai import OpenAIInstrumentor
        
+       # Step 1: Initialize HoneyHive tracer first (without instrumentors)
        tracer = HoneyHiveTracer.init(
-           instrumentors=[
+           project="your-project"  # Or set HH_PROJECT environment variable
+       )
+       
+       # Step 2: Initialize instrumentors separately with tracer_provider
+       # REPLACE_WITH_INSTRUMENTOR_SETUP
                MCPInstrumentor(),         # Traceloop MCP
                OpenAIInstrumentor()       # Traceloop OpenAI
            ]
@@ -521,7 +543,7 @@ Choose Your Instrumentor
    </div>
 
 Comparison: OpenInference vs Traceloop for Model Context Protocol (MCP)
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+=======================================================================
 
 .. list-table:: Feature Comparison
    :header-rows: 1
@@ -556,7 +578,7 @@ Comparison: OpenInference vs Traceloop for Model Context Protocol (MCP)
      - Production, cost optimization
 
 Migration Between Instrumentors
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+-------------------------------
 
 **From OpenInference to Traceloop**:
 
@@ -565,7 +587,9 @@ Migration Between Instrumentors
    # Before (OpenInference)
    from openinference.instrumentation.mcp import MCPInstrumentor
    # Step 1: Initialize HoneyHive tracer first (without instrumentors)
-   tracer = HoneyHiveTracer.init()
+   tracer = HoneyHiveTracer.init(
+       project="your-project"  # Or set HH_PROJECT environment variable
+   )
    
    # Step 2: Initialize instrumentor separately with tracer_provider
    instrumentor = MCPInstrumentor()
@@ -574,7 +598,9 @@ Migration Between Instrumentors
    # After (Traceloop) - different instrumentor package
    from opentelemetry.instrumentation.mcp import MCPInstrumentor
    # Step 1: Initialize HoneyHive tracer first (without instrumentors)
-   tracer = HoneyHiveTracer.init()
+   tracer = HoneyHiveTracer.init(
+       project="your-project"  # Or set HH_PROJECT environment variable
+   )
    
    # Step 2: Initialize instrumentor separately with tracer_provider
    instrumentor = MCPInstrumentor()
@@ -587,7 +613,9 @@ Migration Between Instrumentors
    # Before (Traceloop)
    from opentelemetry.instrumentation.mcp import MCPInstrumentor
    # Step 1: Initialize HoneyHive tracer first (without instrumentors)
-   tracer = HoneyHiveTracer.init()
+   tracer = HoneyHiveTracer.init(
+       project="your-project"  # Or set HH_PROJECT environment variable
+   )
    
    # Step 2: Initialize instrumentor separately with tracer_provider
    instrumentor = MCPInstrumentor()
@@ -596,7 +624,9 @@ Migration Between Instrumentors
    # After (OpenInference)
    from openinference.instrumentation.mcp import MCPInstrumentor
    # Step 1: Initialize HoneyHive tracer first (without instrumentors)
-   tracer = HoneyHiveTracer.init()
+   tracer = HoneyHiveTracer.init(
+       project="your-project"  # Or set HH_PROJECT environment variable
+   )
    
    # Step 2: Initialize instrumentor separately with tracer_provider
    instrumentor = MCPInstrumentor()

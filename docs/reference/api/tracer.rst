@@ -41,7 +41,7 @@ init()
    :param api_key: HoneyHive API key. If not provided, reads from ``HH_API_KEY`` environment variable.
    :type api_key: Optional[str]
    
-   :param project: Project name (required by backend API). Auto-derived from API key if not provided.
+   :param project: Project name (required by backend API). If not provided, reads from ``HH_PROJECT`` environment variable.
    :type project: Optional[str]
    
    :param session_name: Custom session name for grouping related traces. Auto-generated if not provided based on filename.
@@ -127,8 +127,8 @@ init()
         - HoneyHive API key
         - **Required**
       * - ``HH_PROJECT``
-        - **[Deprecated]** Project name (ignored - derived from API key)
-        - *Ignored*
+        - Project identifier
+        - **Required**
       * - ``HH_SOURCE``
         - Source identifier
         - "production"
@@ -152,19 +152,27 @@ init()
       from honeyhive import HoneyHiveTracer
       
       # Minimal setup (uses environment variables)
+      # Requires HH_API_KEY and HH_PROJECT environment variables to be set
       tracer = HoneyHiveTracer.init()
+      
+      # Or specify project explicitly
+      tracer = HoneyHiveTracer.init(
+          project="your-project"  # Or set HH_PROJECT environment variable
+      )
       
       # Explicit configuration
       tracer = HoneyHiveTracer.init(
-          api_key="hh_your_api_key_here",
-          source="production"
+          api_key="hh_your_api_key_here",  # Or set HH_API_KEY environment variable
+          project="your-project",          # Or set HH_PROJECT environment variable
+          source="production"              # Or set HH_SOURCE environment variable
       )
       
       # Development mode
       tracer = HoneyHiveTracer.init(
-          api_key="hh_dev_key",
-          source="development",
-          test_mode=True  # No data sent to HoneyHive
+          api_key="hh_dev_key",            # Or set HH_API_KEY environment variable
+          project="your-project",          # Or set HH_PROJECT environment variable
+          source="development",            # Or set HH_SOURCE environment variable
+          test_mode=True                   # No data sent to HoneyHive (or set HH_TEST_MODE=true)
       )
    
    **BYOI (Bring Your Own Instrumentor) Pattern:**
@@ -176,7 +184,10 @@ init()
       
       # Single instrumentor
       # Step 1: Initialize HoneyHive tracer first (without instrumentors)
-      tracer = HoneyHiveTracer.init(api_key="your-api-key")
+      tracer = HoneyHiveTracer.init(
+          api_key="your-api-key",  # Or set HH_API_KEY environment variable
+          project="your-project"   # Or set HH_PROJECT environment variable
+      )
       
       # Step 2: Initialize instrumentor separately with tracer_provider
       instrumentor = OpenAIInstrumentor()
@@ -184,7 +195,10 @@ init()
       
       # Multiple instrumentors for multi-LLM applications
       # Step 1: Initialize HoneyHive tracer first (without instrumentors)
-      tracer = HoneyHiveTracer.init(api_key="your-api-key")
+      tracer = HoneyHiveTracer.init(
+          api_key="your-api-key",  # Or set HH_API_KEY environment variable
+          project="your-project"   # Or set HH_PROJECT environment variable
+      )
       
       # Step 2: Initialize instrumentors separately with tracer_provider
       openai_instrumentor = OpenAIInstrumentor()
@@ -194,30 +208,67 @@ init()
       anthropic_instrumentor.instrument(tracer_provider=tracer.provider)
 
 **Multi-Instance Examples:**
+
+   .. note::
+      **Multi-Instance Pattern**: Each tracer instance requires a unique ``api_key`` + ``project`` pair to properly target different HoneyHive projects. For same project across environments, use the same API key but different ``source`` values.
+      
+      **Environment Variable Limitation**: Standard ``HH_API_KEY`` and ``HH_PROJECT`` environment variables are global per process and don't work for multi-project scenarios. Use explicit parameters or custom environment variables for each service.
    
    .. code-block:: python
    
-      # Different projects
+      # Different projects - MUST use explicit parameters (not HH_* env vars)
       user_tracer = HoneyHiveTracer.init(
+          api_key="hh_user_service_key",    # Unique API key for user-service project
+          project="user-service",           # Target project: user-service
+          source="production"               # Explicit source (HH_SOURCE won't work for multi-instance)
+      )
+      
+      payment_tracer = HoneyHiveTracer.init(
+          api_key="hh_payment_service_key", # Unique API key for payment-service project  
+          project="payment-service",        # Target project: payment-service
+          source="production"               # Explicit source (HH_SOURCE won't work for multi-instance)
+      )
+      
+      # Different environments - same project (can use HH_* env vars OR explicit params)
+      # Option 1: Explicit parameters (recommended for clarity)
+      prod_tracer = HoneyHiveTracer.init(
+          api_key="hh_my_project_key",     # Same API key for same project
+          project="my-project",            # Same target project
+          source="production"              # Different environment
+      )
+      
+      staging_tracer = HoneyHiveTracer.init(
+          api_key="hh_my_project_key",     # Same API key for same project
+          project="my-project",            # Same target project  
+          source="staging"                 # Different environment
+      )
+      
+      # Option 2: Environment variables (works for single project only)
+      # export HH_API_KEY="hh_my_project_key"
+      # export HH_PROJECT="my-project"
+      dev_tracer = HoneyHiveTracer.init(
+          source="development",            # Only source differs
+          test_mode=True                   # Enable test mode for development
+      )
+      
+      # Option 3: Custom environment variables for multi-project (recommended pattern)
+      # Use service-specific environment variables instead of global HH_* vars:
+      # export USER_SERVICE_API_KEY="hh_user_service_key"
+      # export USER_SERVICE_PROJECT="user-service"
+      # export PAYMENT_SERVICE_API_KEY="hh_payment_service_key"  
+      # export PAYMENT_SERVICE_PROJECT="payment-service"
+      
+      import os
+      user_tracer = HoneyHiveTracer.init(
+          api_key=os.getenv("USER_SERVICE_API_KEY"),      # Service-specific env var
+          project=os.getenv("USER_SERVICE_PROJECT"),      # Service-specific env var
           source="production"
       )
       
       payment_tracer = HoneyHiveTracer.init(
+          api_key=os.getenv("PAYMENT_SERVICE_API_KEY"),   # Service-specific env var
+          project=os.getenv("PAYMENT_SERVICE_PROJECT"),   # Service-specific env var
           source="production"
-      )
-      
-      # Different environments
-      prod_tracer = HoneyHiveTracer.init(
-          source="production"
-      )
-      
-      staging_tracer = HoneyHiveTracer.init(
-          source="staging"
-      )
-      
-      dev_tracer = HoneyHiveTracer.init(
-          source="development"
-          test_mode=True
       )
    
    **Self-Hosted Deployment:**
@@ -226,8 +277,9 @@ init()
    
       # Custom HoneyHive deployment
       tracer = HoneyHiveTracer.init(
-          api_key="hh_your_key",
-          server_url="https://honeyhive.company.com"
+          api_key="hh_your_key",                      # Or set HH_API_KEY environment variable
+          project="your-project",                     # Or set HH_PROJECT environment variable
+          server_url="https://honeyhive.company.com"  # Or set HH_API_URL environment variable
       )
    
    **Backwards Compatibility Examples (v0.1.0rc2+):**
@@ -240,8 +292,8 @@ init()
       
       # Full backwards compatibility - all original parameters work
       tracer = HoneyHiveTracer.init(
-          api_key="hh_your_key",
-          project="my-project",                    # Auto-derived if not provided
+          api_key="hh_your_key",                   # Or set HH_API_KEY environment variable
+          project="my-project",                    # Required parameter (or set HH_PROJECT)
           session_name="evaluation-session",
           source="production",
           server_url="https://custom.honeyhive.ai", # Overrides HH_API_URL
@@ -259,7 +311,8 @@ init()
       
       # Evaluation workflow example
       evaluation_tracer = HoneyHiveTracer.init(
-          api_key="hh_eval_key",
+          api_key="hh_eval_key",           # Or set HH_API_KEY environment variable
+          project="evaluation-project",    # Or set HH_PROJECT environment variable
           is_evaluation=True,
           run_id="experiment-2024-001",
           dataset_id="benchmark-dataset",
@@ -269,17 +322,19 @@ init()
       # Context propagation example
       parent_carrier = {"traceparent": "00-trace-id-span-id-01"}
       child_tracer = HoneyHiveTracer.init(
-          api_key="hh_key",
-          link_carrier=parent_carrier,  # Links to parent trace
+          api_key="hh_key",                # Or set HH_API_KEY environment variable
+          project="your-project",          # Or set HH_PROJECT environment variable
+          link_carrier=parent_carrier,     # Links to parent trace
           verbose=True
       )
       
       # Performance tuning example
       high_throughput_tracer = HoneyHiveTracer.init(
-          api_key="hh_key",
-          disable_batch=True,    # Use SimpleSpanProcessor for immediate export
-          disable_http_tracing=True,  # Reduce overhead
-          verbose=False          # Minimal logging
+          api_key="hh_key",                # Or set HH_API_KEY environment variable
+          project="your-project",          # Or set HH_PROJECT environment variable
+          disable_batch=True,              # Use SimpleSpanProcessor for immediate export
+          disable_http_tracing=True,       # Reduce overhead (or set HH_DISABLE_HTTP_TRACING=true)
+          verbose=False                    # Minimal logging
       )
 
 Constructor
@@ -557,7 +612,10 @@ close()
           tracer.close()
       
       # Using context manager for automatic cleanup
-      with HoneyHiveTracer.init(api_key="hh_key", ) as tracer:
+      with HoneyHiveTracer.init(
+          api_key="hh_key",        # Or set HH_API_KEY environment variable
+          project="your-project"   # Or set HH_PROJECT environment variable
+      ) as tracer:
           # Use tracer for operations
           with tracer.trace("operation"):
               do_work()
@@ -566,7 +624,10 @@ close()
       # In application cleanup handlers
       import atexit
       
-      tracer = HoneyHiveTracer.init(api_key="hh_key", )
+      tracer = HoneyHiveTracer.init(
+          api_key="hh_key",        # Or set HH_API_KEY environment variable
+          project="your-project"   # Or set HH_PROJECT environment variable
+      )
       
       def cleanup_tracer():
           print("Cleaning up tracer...")
@@ -692,7 +753,9 @@ project
    
    .. code-block:: python
    
-      tracer = HoneyHiveTracer.init()
+      # Uses HH_API_KEY and HH_PROJECT environment variables
+      # Or specify project explicitly:
+      tracer = HoneyHiveTracer.init(project="user-service")  # Or set HH_PROJECT environment variable
       print(f"Tracer project: {tracer.project}")  # "user-service"
 
 source
@@ -705,7 +768,11 @@ source
    
    .. code-block:: python
    
-      tracer = HoneyHiveTracer.init(source="production")
+      # Uses HH_API_KEY and HH_PROJECT environment variables
+      tracer = HoneyHiveTracer.init(
+          project="your-project",  # Or set HH_PROJECT environment variable
+          source="production"
+      )
       print(f"Environment: {tracer.source}")  # "production"
 
 session_id
@@ -718,7 +785,11 @@ session_id
    
    .. code-block:: python
    
-      tracer = HoneyHiveTracer.init(session_name="user-onboarding")
+      # Uses HH_API_KEY and HH_PROJECT environment variables
+      tracer = HoneyHiveTracer.init(
+          project="your-project",  # Or set HH_PROJECT environment variable
+          session_name="user-onboarding"
+      )
       print(f"Session ID: {tracer.session_id}")  # Auto-generated unique ID
 
 test_mode
@@ -731,7 +802,11 @@ test_mode
    
    .. code-block:: python
    
-      tracer = HoneyHiveTracer.init(test_mode=True)
+      # Requires HH_API_KEY environment variable
+      tracer = HoneyHiveTracer.init(
+          project="your-project",          # Or set HH_PROJECT environment variable
+          test_mode=True                   # Or set HH_TEST_MODE=true environment variable
+      )
       if tracer.test_mode:
           print("Running in test mode - no data will be sent")
 
@@ -746,21 +821,24 @@ The HoneyHiveTracer supports multiple independent instances for flexible workflo
 
    # Production tracer
    prod_tracer = HoneyHiveTracer.init(
-       api_key="prod-api-key",
-       source="production"
+       api_key="prod-api-key",      # Or set HH_API_KEY environment variable
+       project="my-project",        # Or set HH_PROJECT environment variable
+       source="production"          # Or set HH_SOURCE environment variable
    )
    
    # Staging tracer
    staging_tracer = HoneyHiveTracer.init(
-       api_key="staging-api-key",
-       source="staging"
+       api_key="staging-api-key",   # Or set HH_API_KEY environment variable
+       project="my-project",        # Or set HH_PROJECT environment variable
+       source="staging"             # Or set HH_SOURCE environment variable
    )
    
    # Development tracer
    dev_tracer = HoneyHiveTracer.init(
-       api_key="dev-api-key",
-       source="development"
-       test_mode=True
+       api_key="dev-api-key",       # Or set HH_API_KEY environment variable
+       project="my-project",        # Or set HH_PROJECT environment variable
+       source="development",        # Or set HH_SOURCE environment variable
+       test_mode=True               # Or set HH_TEST_MODE=true environment variable
    )
 
 **Service-Based Separation:**
@@ -768,15 +846,19 @@ The HoneyHiveTracer supports multiple independent instances for flexible workflo
 .. code-block:: python
 
    # Microservices architecture
+   # Each service uses HH_API_KEY environment variable
    auth_tracer = HoneyHiveTracer.init(
+       project="auth-service",
        session_name="auth_operations"
    )
    
    user_tracer = HoneyHiveTracer.init(
+       project="user-service",
        session_name="user_operations"
    )
    
    payment_tracer = HoneyHiveTracer.init(
+       project="payment-service",
        session_name="payment_operations"
    )
 
@@ -785,22 +867,29 @@ The HoneyHiveTracer supports multiple independent instances for flexible workflo
 .. code-block:: python
 
    # Different workflows with different instrumentors
-   chat_# Step 1: Initialize HoneyHive tracer first (without instrumentors)
-   tracer = HoneyHiveTracer.init()
+   # All tracers use HH_API_KEY environment variable
    
-   # Step 2: Initialize instrumentor separately with tracer_provider
-   instrumentor = OpenAIInstrumentor()
-   instrumentor.instrument(tracer_provider=tracer.provider)
+   # Chat workflow tracer
+   chat_tracer = HoneyHiveTracer.init(
+       project="chat-service"
+   )
    
-   analysis_# Step 1: Initialize HoneyHive tracer first (without instrumentors)
-   tracer = HoneyHiveTracer.init()
+   # Initialize instrumentor for chat workflow
+   chat_instrumentor = OpenAIInstrumentor()
+   chat_instrumentor.instrument(tracer_provider=chat_tracer.provider)
    
-   # Step 2: Initialize instrumentor separately with tracer_provider
-   instrumentor = AnthropicInstrumentor()
-   instrumentor.instrument(tracer_provider=tracer.provider)
+   # Analysis workflow tracer  
+   analysis_tracer = HoneyHiveTracer.init(
+       project="analysis-service"
+   )
    
+   # Initialize instrumentor for analysis workflow
+   analysis_instrumentor = AnthropicInstrumentor()
+   analysis_instrumentor.instrument(tracer_provider=analysis_tracer.provider)
+   
+   # Background tasks tracer (no LLM instrumentors needed)
    background_tracer = HoneyHiveTracer.init(
-       # No instrumentors for non-LLM background tasks
+       project="background-tasks"
    )
 
 Thread Safety
@@ -816,8 +905,8 @@ All HoneyHiveTracer instances are thread-safe and can be safely used across mult
    
    # Global tracer instance
    tracer = HoneyHiveTracer.init(
-       api_key="your-key",
-       
+       api_key="your-key",  # Or set HH_API_KEY environment variable
+       project="your-project"
    )
    
    @trace(tracer=tracer)
@@ -933,7 +1022,10 @@ The HoneyHiveTracer is designed for production resilience with graceful degradat
 
    # If HoneyHive API is unavailable, your application continues normally
    try:
-       tracer = HoneyHiveTracer.init(api_key="potentially_invalid_key")
+       tracer = HoneyHiveTracer.init(
+           api_key="potentially_invalid_key",  # Or set HH_API_KEY environment variable
+           project="your-project"              # Or set HH_PROJECT environment variable
+       )
    except Exception as e:
        # Tracer initialization failed, but app can continue
        print(f"Tracing unavailable: {e}")
@@ -1027,7 +1119,8 @@ Framework Integration Examples
    from flask import Flask, request, g
    
    app = Flask(__name__)
-   tracer = HoneyHiveTracer.init()
+   # Requires HH_API_KEY environment variable
+   tracer = HoneyHiveTracer.init(project="flask-app")
    
    @app.before_request
    def start_trace():
@@ -1064,7 +1157,8 @@ Framework Integration Examples
    import time
    
    app = FastAPI()
-   tracer = HoneyHiveTracer.init()
+   # Requires HH_API_KEY environment variable
+   tracer = HoneyHiveTracer.init(project="fastapi-app")
    
    @app.middleware("http")
    async def trace_requests(request: Request, call_next):
@@ -1103,7 +1197,8 @@ Framework Integration Examples
    from django.utils.deprecation import MiddlewareMixin
    from honeyhive import HoneyHiveTracer
    
-   tracer = HoneyHiveTracer.init()
+   # Requires HH_API_KEY environment variable
+   tracer = HoneyHiveTracer.init(project="django-app")
    
    class HoneyHiveMiddleware(MiddlewareMixin):
        def process_request(self, request):
@@ -1225,7 +1320,7 @@ Best Practices
    import signal
    import sys
    
-   tracer = HoneyHiveTracer.init()
+   tracer = HoneyHiveTracer.init(project="your-project")  # Requires HH_API_KEY environment variable
    
    def cleanup_handler(signum=None, frame=None):
        print("Shutting down, flushing traces...")

@@ -46,8 +46,8 @@ HoneyHive provides both built-in and custom evaluation capabilities:
    from honeyhive.evaluation import FactualAccuracyEvaluator
    
    tracer = HoneyHiveTracer.init(
-       api_key="your-api-key",
-       
+       api_key="your-api-key",      # Or set HH_API_KEY environment variable
+       project="your-project"       # Or set HH_PROJECT environment variable
    )
 
 **Key Concepts:**
@@ -71,8 +71,8 @@ HoneyHive provides several built-in evaluators for common use cases:
    import openai
    
    tracer = HoneyHiveTracer.init(
-       api_key="your-api-key",
-       
+       api_key="your-api-key",      # Or set HH_API_KEY environment variable
+       project="your-project"       # Or set HH_PROJECT environment variable
    )
    
    # Initialize the evaluator

@@ -44,10 +44,11 @@ The ``@trace`` decorator is the simplest way to add tracing:
 .. code-block:: python
 
    from honeyhive import HoneyHiveTracer, trace
+   from honeyhive.models import EventType
    
    tracer = HoneyHiveTracer.init(
-       api_key="your-api-key"  
-       
+       api_key="your-api-key",
+       project="your-project"
    )
    
    @trace(tracer=tracer)
@@ -84,8 +85,8 @@ For more control, create spans manually:
    from honeyhive import HoneyHiveTracer
    
    tracer = HoneyHiveTracer.init(
-       api_key="your-api-key"  
-       
+       api_key="your-api-key",
+       project="your-project"
    )
    
    def analyze_text_manually(text: str):
@@ -137,10 +138,11 @@ The ``@trace`` decorator works seamlessly with async functions:
    import asyncio
    import aiohttp
    from honeyhive import HoneyHiveTracer, trace
+   from honeyhive.models import EventType
    
    tracer = HoneyHiveTracer.init(
-       api_key="your-api-key"  
-       
+       api_key="your-api-key",
+       project="your-project"
    )
    
    @trace(tracer=tracer)
@@ -183,11 +185,12 @@ HoneyHive automatically captures exceptions, but you can add context:
 .. code-block:: python
 
    from honeyhive import HoneyHiveTracer, trace
+   from honeyhive.models import EventType
    import random
    
    tracer = HoneyHiveTracer.init(
-       api_key="your-api-key"  
-       
+       api_key="your-api-key",
+       project="your-project"
    )
    
    @trace(tracer=tracer)
@@ -235,11 +238,12 @@ Add business context and metadata to your spans:
 
 .. code-block:: python
 
-   from honeyhive import HoneyHiveTracer, trace, enrich_span
+   from honeyhive import HoneyHiveTracer, trace
+   from honeyhive.models import EventType, enrich_span
    
    tracer = HoneyHiveTracer.init(
-       api_key="your-api-key"  
-       
+       api_key="your-api-key",
+       project="your-project"
    )
    
    @trace(tracer=tracer, event_type="document_processing")
@@ -284,10 +288,11 @@ See how function calls flow through your application:
 .. code-block:: python
 
    from honeyhive import HoneyHiveTracer, trace
+   from honeyhive.models import EventType
    
    tracer = HoneyHiveTracer.init(
-       api_key="your-api-key"  
-       
+       api_key="your-api-key",
+       project="your-project"
    )
    
    @trace(tracer=tracer)
@@ -342,13 +347,14 @@ The ``@trace_class`` decorator provides automatic tracing for all public methods
 .. code-block:: python
 
    from honeyhive import HoneyHiveTracer, trace_class, enrich_span
+   from honeyhive.models import EventType
    
    tracer = HoneyHiveTracer.init(
-       api_key="your-api-key"  
-       
+       api_key="your-api-key",
+       project="your-project"
    )
    
-   @trace_class(event_type="tool", event_name="DocumentProcessor")
+   @trace_class(event_type=EventType.tool, event_name="DocumentProcessor")
    class DocumentProcessor:
        """Document processing service with automatic method tracing."""
        
@@ -614,7 +620,7 @@ Best Practices
        pass
    
    # Use @trace_class for service classes with multiple related methods
-   @trace_class(event_type="tool", event_name="DataService")
+   @trace_class(event_type=EventType.tool, event_name="DataService")
    class DataProcessor:
        def validate(self, data): pass
        def transform(self, data): pass  
@@ -661,11 +667,12 @@ Here's a complete example combining all patterns:
 .. code-block:: python
 
    import asyncio
-   from honeyhive import HoneyHiveTracer, trace, enrich_span
+   from honeyhive import HoneyHiveTracer, trace
+   from honeyhive.models import EventType, enrich_span
    
    tracer = HoneyHiveTracer.init(
-       api_key="your-api-key"  
-       
+       api_key="your-api-key",
+       project="your-project"
    )
    
    @trace(tracer=tracer, event_type="document_validation")

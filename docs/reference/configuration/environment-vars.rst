@@ -780,21 +780,27 @@ Configuration Factory
        @staticmethod
        def create_from_environment() -> HoneyHiveTracer:
            """Create tracer from environment variables."""
-           return HoneyHiveTracer.init()
+           return HoneyHiveTracer.init(
+               project=os.getenv('HH_PROJECT', 'default-project')  # Or set HH_PROJECT environment variable
+           )
        
        @staticmethod
        def create_for_testing() -> HoneyHiveTracer:
            """Create tracer configured for testing."""
            return HoneyHiveTracer.init(
-               api_key=os.getenv('HH_API_KEY', 'test_key'),               source='test',
-               test_mode=True
+               api_key=os.getenv('HH_API_KEY', 'test_key'),  # Or set HH_API_KEY environment variable
+               project=os.getenv('HH_PROJECT', 'test-project'),  # Or set HH_PROJECT environment variable
+               source='test',                                 # Or set HH_SOURCE environment variable
+               test_mode=True                                 # Or set HH_TEST_MODE=true environment variable
            )
        
        @staticmethod
        def create_for_production() -> HoneyHiveTracer:
            """Create production-optimized tracer."""
            return HoneyHiveTracer.init(
-               api_key=os.getenv('HH_API_KEY'),               source='production'
+               api_key=os.getenv('HH_API_KEY'),              # Or set HH_API_KEY environment variable
+               project=os.getenv('HH_PROJECT', 'production-project'),  # Or set HH_PROJECT environment variable
+               source='production'                           # Or set HH_SOURCE environment variable
            )
 
 Troubleshooting Configuration

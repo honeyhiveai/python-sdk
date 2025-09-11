@@ -118,11 +118,17 @@ Multi-Environment Configuration
        if not config.test_mode:
            instrumentors.append(OpenAIInstrumentor())
        
+       # Step 1: Initialize HoneyHive tracer first (without instrumentors)
        tracer = HoneyHiveTracer.init(
-           api_key=config.api_key,           source=config.source,
-           test_mode=config.test_mode,
-           instrumentors=instrumentors
+           api_key=config.api_key,           # Or set HH_API_KEY environment variable
+           project=config.project,           # Or set HH_PROJECT environment variable
+           source=config.source,             # Or set HH_SOURCE environment variable
+           test_mode=config.test_mode        # Or set HH_TEST_MODE environment variable
        )
+       
+       # Step 2: Initialize instrumentors separately with tracer_provider
+       for instrumentor in instrumentors:
+           instrumentor.instrument(tracer_provider=tracer.provider)
        
        print(f"HoneyHive initialized for {config.source} environment")
        return tracer
@@ -388,10 +394,14 @@ Custom Instrumentor Development
        capture_usage=True
    )
    
+   # Step 1: Initialize HoneyHive tracer first (without instrumentors)
    tracer = HoneyHiveTracer.init(
-       api_key="your-api-key",
-       instrumentors=[custom_instrumentor]
+       api_key="your-api-key",      # Or set HH_API_KEY environment variable
+       project="your-project"       # Or set HH_PROJECT environment variable
    )
+   
+   # Step 2: Initialize instrumentor separately with tracer_provider
+   custom_instrumentor.instrument(tracer_provider=tracer.provider)
    
    # Now your custom LLM calls will be automatically traced
    import custom_llm_sdk
@@ -431,7 +441,9 @@ Microservices Tracing Architecture
        def _initialize_tracer(self) -> HoneyHiveTracer:
            """Initialize service-specific tracer."""
            return HoneyHiveTracer.init(
-               api_key=os.getenv("HH_API_KEY"),               source=os.getenv("ENVIRONMENT", "production"),
+               api_key=os.getenv("HH_API_KEY"),              # Or set HH_API_KEY environment variable
+               project=os.getenv("HH_PROJECT", self.service_name),  # Or set HH_PROJECT environment variable
+               source=os.getenv("ENVIRONMENT", "production"), # Or set HH_SOURCE environment variable
                session_name=f"{self.service_name}-{self.version}"
            )
        
@@ -728,6 +740,7 @@ Performance Optimization Techniques
 
    # performance/batch_processing.py
    from honeyhive import HoneyHiveTracer, trace, enrich_span
+   from honeyhive.models import EventType
    import asyncio
    from concurrent.futures import ThreadPoolExecutor
    from typing import List, Dict, Any
@@ -1013,8 +1026,10 @@ Enterprise Security Configuration
            
            # Initialize with security settings
            tracer = HoneyHiveTracer.init(
-               api_key=config["api_key"],               source=environment,
-               base_url=config.get("base_url", "https://api.honeyhive.ai"),
+               api_key=config["api_key"],               # Or set HH_API_KEY environment variable
+               project=config.get("project", "secure-project"),  # Or set HH_PROJECT environment variable
+               source=environment,                      # Or set HH_SOURCE environment variable
+               base_url=config.get("base_url", "https://api.honeyhive.ai"),  # Or set HH_API_URL environment variable
                timeout=config.get("timeout", 30),
                # Security-specific settings
                verify_ssl=True,

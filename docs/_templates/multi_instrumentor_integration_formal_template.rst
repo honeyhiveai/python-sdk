@@ -68,7 +68,9 @@ Choose Your Instrumentor
    # {{PROVIDER_API_KEY_NAME}}=your-{{PROVIDER_KEY}}-key
 
    # Step 1: Initialize HoneyHive tracer first (without instrumentors)
-   tracer = HoneyHiveTracer.init()  # Uses HH_API_KEY from environment
+   tracer = HoneyHiveTracer.init(
+       project="your-project"  # Or set HH_PROJECT environment variable
+   )  # Uses HH_API_KEY from environment
    
    # Step 2: Initialize instrumentor separately with tracer_provider
    instrumentor = {{OPENINFERENCE_CLASS}}()
@@ -98,8 +100,9 @@ Choose Your Instrumentor
    # Initialize with custom configuration
    # Step 1: Initialize HoneyHive tracer first (without instrumentors)
    tracer = HoneyHiveTracer.init(
-       api_key="your-honeyhive-key",
-       source="production"
+       api_key="your-honeyhive-key",  # Or set HH_API_KEY environment variable
+       project="your-project",        # Or set HH_PROJECT environment variable
+       source="production"            # Or set HH_SOURCE environment variable
    )
    
    # Step 2: Initialize instrumentor separately with tracer_provider
@@ -152,7 +155,9 @@ Choose Your Instrumentor
    
       # Use correct initialization pattern
       # Step 1: Initialize HoneyHive tracer first (without instrumentors)
-      tracer = HoneyHiveTracer.init()
+      tracer = HoneyHiveTracer.init(
+          project="your-project"  # Or set HH_PROJECT environment variable
+      )
       
       # Step 2: Initialize instrumentor separately with tracer_provider
       instrumentor = {{OPENINFERENCE_CLASS}}()
@@ -223,7 +228,9 @@ Choose Your Instrumentor
    # {{PROVIDER_API_KEY_NAME}}=your-{{PROVIDER_KEY}}-key
 
    # Step 1: Initialize HoneyHive tracer first (without instrumentors)
-   tracer = HoneyHiveTracer.init()  # Uses HH_API_KEY from environment
+   tracer = HoneyHiveTracer.init(
+       project="your-project"  # Or set HH_PROJECT environment variable
+   )  # Uses HH_API_KEY from environment
    
    # Step 2: Initialize Traceloop instrumentor separately with tracer_provider
    instrumentor = {{TRACELOOP_CLASS}}()
@@ -253,8 +260,9 @@ Choose Your Instrumentor
    # Initialize HoneyHive with Traceloop instrumentor
    # Step 1: Initialize HoneyHive tracer first (without instrumentors)
    tracer = HoneyHiveTracer.init(
-       api_key="your-honeyhive-key",
-       source="production"
+       api_key="your-honeyhive-key",  # Or set HH_API_KEY environment variable
+       project="your-project",        # Or set HH_PROJECT environment variable
+       source="production"            # Or set HH_SOURCE environment variable
    )
    
    # Step 2: Initialize instrumentor separately with tracer_provider
@@ -312,7 +320,9 @@ Choose Your Instrumentor
       from {{TRACELOOP_IMPORT}} import {{TRACELOOP_CLASS}}
       
       # Step 1: Initialize HoneyHive tracer first (without instrumentors)
-      tracer = HoneyHiveTracer.init()
+      tracer = HoneyHiveTracer.init(
+          project="your-project"  # Or set HH_PROJECT environment variable
+      )
       
       # Step 2: Initialize instrumentor separately with tracer_provider
       instrumentor = {{TRACELOOP_CLASS}}()
@@ -328,11 +338,13 @@ Choose Your Instrumentor
       # The instrumentor automatically captures enhanced metrics
       from {{TRACELOOP_IMPORT}} import {{TRACELOOP_CLASS}}
       # Step 1: Initialize HoneyHive tracer first (without instrumentors)
-   tracer = HoneyHiveTracer.init()
-   
-   # Step 2: Initialize instrumentor separately with tracer_provider
-   instrumentor = {{TRACELOOP_CLASS}}()
-   instrumentor.instrument(tracer_provider=tracer.provider)
+      tracer = HoneyHiveTracer.init(
+          project="your-project"  # Or set HH_PROJECT environment variable
+      )
+      
+      # Step 2: Initialize instrumentor separately with tracer_provider
+      instrumentor = {{TRACELOOP_CLASS}}()
+      instrumentor.instrument(tracer_provider=tracer.provider)
 
 3. **Multiple Traceloop Instrumentors**
    
@@ -403,7 +415,9 @@ Migration Between Instrumentors
    # Before (OpenInference)
    from {{OPENINFERENCE_IMPORT}} import {{OPENINFERENCE_CLASS}}
    # Step 1: Initialize HoneyHive tracer first (without instrumentors)
-   tracer = HoneyHiveTracer.init()
+   tracer = HoneyHiveTracer.init(
+       project="your-project"  # Or set HH_PROJECT environment variable
+   )
    
    # Step 2: Initialize instrumentor separately with tracer_provider
    instrumentor = {{OPENINFERENCE_CLASS}}()
@@ -412,7 +426,9 @@ Migration Between Instrumentors
    # After (Traceloop) - different instrumentor package
    from {{TRACELOOP_IMPORT}} import {{TRACELOOP_CLASS}}
    # Step 1: Initialize HoneyHive tracer first (without instrumentors)
-   tracer = HoneyHiveTracer.init()
+   tracer = HoneyHiveTracer.init(
+       project="your-project"  # Or set HH_PROJECT environment variable
+   )
    
    # Step 2: Initialize instrumentor separately with tracer_provider
    instrumentor = {{TRACELOOP_CLASS}}()
@@ -425,7 +441,9 @@ Migration Between Instrumentors
    # Before (Traceloop)
    from {{TRACELOOP_IMPORT}} import {{TRACELOOP_CLASS}}
    # Step 1: Initialize HoneyHive tracer first (without instrumentors)
-   tracer = HoneyHiveTracer.init()
+   tracer = HoneyHiveTracer.init(
+       project="your-project"  # Or set HH_PROJECT environment variable
+   )
    
    # Step 2: Initialize instrumentor separately with tracer_provider
    instrumentor = {{TRACELOOP_CLASS}}()
@@ -434,7 +452,9 @@ Migration Between Instrumentors
    # After (OpenInference)
    from {{OPENINFERENCE_IMPORT}} import {{OPENINFERENCE_CLASS}}
    # Step 1: Initialize HoneyHive tracer first (without instrumentors)
-   tracer = HoneyHiveTracer.init()
+   tracer = HoneyHiveTracer.init(
+       project="your-project"  # Or set HH_PROJECT environment variable
+   )
    
    # Step 2: Initialize instrumentor separately with tracer_provider
    instrumentor = {{OPENINFERENCE_CLASS}}()

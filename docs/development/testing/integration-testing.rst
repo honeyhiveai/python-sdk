@@ -39,8 +39,9 @@ Quick Start
        
        # Initialize tracer with real API
        tracer = HoneyHiveTracer.init(
-           api_key=api_key,
-           test_mode=False  # Real integration test
+           api_key=api_key,         # Or set HH_API_KEY environment variable
+           project="test-project",  # Or set HH_PROJECT environment variable
+           test_mode=False          # Real integration test (or set HH_TEST_MODE=false)
        )
        
        # Initialize API client with real API
@@ -225,15 +226,22 @@ Testing Multi-Instance Patterns
            instrumentor = OpenAIInstrumentor()
            
            # Create tracers with shared instrumentor
+           # Step 1: Initialize tracers first (without instrumentors)
            tracer1 = HoneyHiveTracer.init(
-               api_key="shared-key-1",               instrumentors=[instrumentor],
-               test_mode=True
+               api_key="shared-key-1",      # Unique API key for tracer1
+               project="shared-project-1",  # Unique project for tracer1
+               test_mode=True               # Or set HH_TEST_MODE=true
            )
            
            tracer2 = HoneyHiveTracer.init(
-               api_key="shared-key-2",               instrumentors=[instrumentor],
-               test_mode=True
+               api_key="shared-key-2",      # Unique API key for tracer2
+               project="shared-project-2",  # Unique project for tracer2
+               test_mode=True               # Or set HH_TEST_MODE=true
            )
+           
+           # Step 2: Initialize shared instrumentor with both tracer providers
+           instrumentor.instrument(tracer_provider=tracer1.provider)
+           instrumentor.instrument(tracer_provider=tracer2.provider)
            
            # Both should have the instrumentor
            assert len(tracer1.instrumentors) > 0
@@ -261,10 +269,18 @@ Testing LLM Provider Integration
        @pytest.fixture
        def instrumented_tracer(self):
            """Create tracer with LLM instrumentors."""
-           return HoneyHiveTracer.init(
-               api_key="llm-test-key",               instrumentors=[OpenAIInstrumentor()],
-               test_mode=True
+           # Step 1: Initialize HoneyHive tracer first (without instrumentors)
+           tracer = HoneyHiveTracer.init(
+               api_key="llm-test-key",      # Or set HH_API_KEY environment variable
+               project="llm-test-project",  # Or set HH_PROJECT environment variable
+               test_mode=True               # Or set HH_TEST_MODE=true
            )
+           
+           # Step 2: Initialize instrumentor separately with tracer_provider
+           openai_instrumentor = OpenAIInstrumentor()
+           openai_instrumentor.instrument(tracer_provider=tracer.provider)
+           
+           return tracer
        
        @patch('openai.chat.completions.create')
        def test_openai_integration(self, mock_create, instrumented_tracer):

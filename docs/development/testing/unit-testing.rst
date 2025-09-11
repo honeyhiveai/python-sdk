@@ -23,7 +23,9 @@ Quick Start
    def test_tracer_initialization():
        """Test basic tracer initialization."""
        tracer = HoneyHiveTracer.init(
-           api_key="test-key",           test_mode=True  # Critical for unit tests
+           api_key="test-key",      # Or set HH_API_KEY environment variable
+           project="test-project",  # Or set HH_PROJECT environment variable
+           test_mode=True           # Critical for unit tests (or set HH_TEST_MODE=true)
        )
        
        assert tracer.api_key == "test-key"
@@ -49,7 +51,9 @@ Testing Tracer Initialization
        def test_basic_initialization(self):
            """Test basic tracer initialization."""
            tracer = HoneyHiveTracer.init(
-               api_key="test-key",               test_mode=True
+               api_key="test-key",      # Or set HH_API_KEY environment variable
+               project="test-project",  # Or set HH_PROJECT environment variable
+               test_mode=True           # Or set HH_TEST_MODE=true
            )
            
            assert tracer is not None
@@ -64,7 +68,9 @@ Testing Tracer Initialization
            os.environ["           os.environ["HH_TEST_MODE"] = "true"
            
            try:
-               tracer = HoneyHiveTracer.init()
+               tracer = HoneyHiveTracer.init(
+                   # Uses HH_API_KEY and HH_PROJECT environment variables
+               )
                
                assert tracer.api_key == "env-test-key"
                assert tracer.project == "env-test-project" 
@@ -113,7 +119,9 @@ Testing Span Operations
        def tracer(self):
            """Create test tracer fixture."""
            return HoneyHiveTracer.init(
-               api_key="test-key",               test_mode=True
+               api_key="test-key",      # Or set HH_API_KEY environment variable
+               project="test-project",  # Or set HH_PROJECT environment variable
+               test_mode=True           # Or set HH_TEST_MODE=true
            )
        
        def test_span_creation(self, tracer):
@@ -171,6 +179,7 @@ Testing Decorators
 
    from unittest.mock import Mock, patch
    from honeyhive import trace
+   from honeyhive.models import EventType
    
    class TestTraceDecorator:
        """Test trace decorator functionality."""
@@ -187,7 +196,7 @@ Testing Decorators
        
        def test_decorator_with_explicit_tracer(self, mock_tracer):
            """Test decorator with explicit tracer."""
-           @trace(tracer=mock_tracer, event_type="test")
+           @trace(tracer=mock_tracer, event_type=EventType.tool)
            def decorated_function(x, y):
                return x + y
            
@@ -199,7 +208,9 @@ Testing Decorators
        def test_decorator_captures_arguments(self):
            """Test that decorator captures function arguments."""
            tracer = HoneyHiveTracer.init(
-               api_key="test-key",               test_mode=True
+               api_key="test-key",      # Or set HH_API_KEY environment variable
+               project="test-project",  # Or set HH_PROJECT environment variable
+               test_mode=True           # Or set HH_TEST_MODE=true
            )
            
            @trace(tracer=tracer, include_inputs=True)
@@ -214,7 +225,9 @@ Testing Decorators
        def test_decorator_captures_return_value(self):
            """Test that decorator captures return values.""" 
            tracer = HoneyHiveTracer.init(
-               api_key="test-key",               test_mode=True
+               api_key="test-key",      # Or set HH_API_KEY environment variable
+               project="test-project",  # Or set HH_PROJECT environment variable
+               test_mode=True           # Or set HH_TEST_MODE=true
            )
            
            @trace(tracer=tracer, include_outputs=True)
@@ -229,7 +242,9 @@ Testing Decorators
        def test_decorator_handles_exceptions(self):
            """Test that decorator handles exceptions correctly."""
            tracer = HoneyHiveTracer.init(
-               api_key="test-key",               test_mode=True
+               api_key="test-key",      # Or set HH_API_KEY environment variable
+               project="test-project",  # Or set HH_PROJECT environment variable
+               test_mode=True           # Or set HH_TEST_MODE=true
            )
            
            @trace(tracer=tracer)
@@ -256,13 +271,17 @@ Testing Multi-Instance Behavior
        def test_independent_tracers(self):
            """Test that multiple tracers operate independently."""
            tracer1 = HoneyHiveTracer.init(
-               api_key="key1",               source="development"
-               test_mode=True
+               api_key="key1",          # Unique API key for tracer1
+               project="project1",      # Unique project for tracer1
+               source="development",    # Or set HH_SOURCE environment variable
+               test_mode=True           # Or set HH_TEST_MODE=true
            )
            
            tracer2 = HoneyHiveTracer.init(
-               api_key="key2",               source="development"
-               test_mode=True
+               api_key="key2",          # Unique API key for tracer2
+               project="project2",      # Unique project for tracer2
+               source="development",    # Or set HH_SOURCE environment variable
+               test_mode=True           # Or set HH_TEST_MODE=true
            )
            
            # Verify tracers are different instances
@@ -277,10 +296,14 @@ Testing Multi-Instance Behavior
            import time
            
            tracer1 = HoneyHiveTracer.init(
-               api_key="key1", test_mode=True
+               api_key="key1",          # Unique API key for tracer1
+               project="project1",      # Unique project for tracer1
+               test_mode=True           # Or set HH_TEST_MODE=true
            )
            tracer2 = HoneyHiveTracer.init(
-               api_key="key2", test_mode=True
+               api_key="key2",          # Unique API key for tracer2
+               project="project2",      # Unique project for tracer2
+               test_mode=True           # Or set HH_TEST_MODE=true
            )
            
            results = []
@@ -309,17 +332,21 @@ Testing Multi-Instance Behavior
        def test_decorator_with_different_tracers(self):
            """Test decorators with different tracer instances."""
            tracer1 = HoneyHiveTracer.init(
-               api_key="key1", test_mode=True
+               api_key="key1",          # Unique API key for tracer1
+               project="project1",      # Unique project for tracer1
+               test_mode=True           # Or set HH_TEST_MODE=true
            )
            tracer2 = HoneyHiveTracer.init(
-               api_key="key2", test_mode=True
+               api_key="key2",          # Unique API key for tracer2
+               project="project2",      # Unique project for tracer2
+               test_mode=True           # Or set HH_TEST_MODE=true
            )
            
-           @trace(tracer=tracer1, event_type="function1")
+           @trace(tracer=tracer1, event_type=EventType.tool)
            def function1():
                return "from tracer1"
            
-           @trace(tracer=tracer2, event_type="function2") 
+           @trace(tracer=tracer2, event_type=EventType.tool) 
            def function2():
                return "from tracer2"
            
@@ -348,7 +375,9 @@ Testing Error Handling
        @pytest.fixture
        def tracer(self):
            return HoneyHiveTracer.init(
-               api_key="test-key",               test_mode=True
+               api_key="test-key",      # Or set HH_API_KEY environment variable
+               project="test-project",  # Or set HH_PROJECT environment variable
+               test_mode=True           # Or set HH_TEST_MODE=true
            )
        
        def test_span_exception_recording(self, tracer):
@@ -432,7 +461,10 @@ Testing Configuration Loading
            os.environ["           os.environ["HH_SOURCE"] = "fallback-source"
            
            try:
-               tracer = HoneyHiveTracer.init(test_mode=True)
+               tracer = HoneyHiveTracer.init(
+                   # Uses HH_API_KEY and HH_PROJECT environment variables
+                   test_mode=True  # Or set HH_TEST_MODE=true
+               )
                
                assert tracer.api_key == "fallback-key"
                assert tracer.project == "fallback-project"
@@ -469,7 +501,9 @@ Testing Session Management
        @pytest.fixture
        def tracer(self):
            return HoneyHiveTracer.init(
-               api_key="test-key",               test_mode=True
+               api_key="test-key",      # Or set HH_API_KEY environment variable
+               project="test-project",  # Or set HH_PROJECT environment variable
+               test_mode=True           # Or set HH_TEST_MODE=true
            )
        
        def test_session_creation(self, tracer):
@@ -481,10 +515,14 @@ Testing Session Management
        def test_session_uniqueness(self):
            """Test that different tracers have unique sessions."""
            tracer1 = HoneyHiveTracer.init(
-               api_key="key1", test_mode=True
+               api_key="key1",          # Unique API key for tracer1
+               project="project1",      # Unique project for tracer1
+               test_mode=True           # Or set HH_TEST_MODE=true
            )
            tracer2 = HoneyHiveTracer.init(
-               api_key="key2", test_mode=True
+               api_key="key2",          # Unique API key for tracer2
+               project="project2",      # Unique project for tracer2
+               test_mode=True           # Or set HH_TEST_MODE=true
            )
            
            assert tracer1.session_id != tracer2.session_id
@@ -518,7 +556,9 @@ Testing Performance Impact
        def test_tracing_overhead(self):
            """Test that tracing adds minimal overhead."""
            tracer = HoneyHiveTracer.init(
-               api_key="test-key",               test_mode=True
+               api_key="test-key",      # Or set HH_API_KEY environment variable
+               project="test-project",  # Or set HH_PROJECT environment variable
+               test_mode=True           # Or set HH_TEST_MODE=true
            )
            
            # Measure baseline performance
@@ -566,7 +606,9 @@ Testing Performance Impact
            tracers = []
            for i in range(10):
                tracer = HoneyHiveTracer.init(
-                   api_key=f"test-key-{i}",                   test_mode=True
+                   api_key=f"test-key-{i}",     # Unique API key for each tracer instance
+                   project=f"test-project-{i}", # Unique project for each tracer instance
+                   test_mode=True               # Or set HH_TEST_MODE=true
                )
                tracers.append(tracer)
                

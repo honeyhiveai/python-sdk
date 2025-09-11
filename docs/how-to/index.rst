@@ -207,9 +207,9 @@ Common issues and step-by-step solutions for HoneyHive integration challenges.
       # Check tracer initialization
       from honeyhive import HoneyHiveTracer
       tracer = HoneyHiveTracer.init(
-          api_key="your-key",
-          project="your-project",
-          source="debug"
+          api_key="your-key",      # Or set HH_API_KEY environment variable
+          project="your-project",  # Or set HH_PROJECT environment variable
+          source="debug"           # Or set HH_SOURCE environment variable
       )
       print(f"Tracer initialized: {tracer is not None}")
 
@@ -234,7 +234,10 @@ Common issues and step-by-step solutions for HoneyHive integration challenges.
       from honeyhive import HoneyHiveTracer
       
       # Step 1: Initialize HoneyHive tracer FIRST (without instrumentors)
-      tracer = HoneyHiveTracer.init(api_key="...")
+      tracer = HoneyHiveTracer.init(
+          api_key="...",           # Or set HH_API_KEY environment variable
+          project="your-project"   # Or set HH_PROJECT environment variable
+      )
       
       # Step 2: Initialize instrumentors separately with tracer_provider
       from openinference.instrumentation.openai import OpenAIInstrumentor

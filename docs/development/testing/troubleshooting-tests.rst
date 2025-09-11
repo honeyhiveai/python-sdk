@@ -167,7 +167,9 @@ Common Test Failures
        def test_isolation_example_1(self):
            """Test that might affect global state."""
            tracer = HoneyHiveTracer.init(
-               api_key="test-1",               test_mode=True
+               api_key="test-1",        # Or set HH_API_KEY environment variable
+               project="test-project",  # Or set HH_PROJECT environment variable
+               test_mode=True           # Or set HH_TEST_MODE=true
            )
            # Test logic here
        

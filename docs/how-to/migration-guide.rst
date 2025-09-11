@@ -85,13 +85,17 @@ Your HoneyHive initialization code remains identical:
    from opentelemetry.instrumentation.anthropic import AnthropicInstrumentor
    
    # Initialization code is identical
+   # Step 1: Initialize HoneyHive tracer first (without instrumentors)
    tracer = HoneyHiveTracer.init(
-       api_key="your-api-key",
-       instrumentors=[
-           OpenAIInstrumentor(),
-           AnthropicInstrumentor()
-       ]
+       api_key="your-api-key",      # Or set HH_API_KEY environment variable
+       project="your-project"       # Or set HH_PROJECT environment variable
    )
+   
+   # Step 2: Initialize instrumentors separately
+   openai_instrumentor = OpenAIInstrumentor()
+   anthropic_instrumentor = AnthropicInstrumentor()
+   openai_instrumentor.instrument(tracer_provider=tracer.provider)
+   anthropic_instrumentor.instrument(tracer_provider=tracer.provider)
 
 **Step 4: Your LLM Code Remains Unchanged**
 
@@ -206,13 +210,17 @@ You can use both instrumentor types in the same application:
    from openinference.instrumentation.anthropic import AnthropicInstrumentor as OIAnthropic
    from opentelemetry.instrumentation.openai import OpenAIInstrumentor as OLOpenAI
    
+   # Step 1: Initialize HoneyHive tracer first (without instrumentors)
    tracer = HoneyHiveTracer.init(
-       api_key="your-api-key",
-       instrumentors=[
-           OLOpenAI(),     # OpenLLMetry for OpenAI (enhanced metrics)
-           OIAnthropic()   # OpenInference for Anthropic (lightweight)
-       ]
+       api_key="your-api-key",      # Or set HH_API_KEY environment variable
+       project="your-project"       # Or set HH_PROJECT environment variable
    )
+   
+   # Step 2: Initialize mixed instrumentors separately
+   openai_instrumentor = OLOpenAI()     # OpenLLMetry for OpenAI (enhanced metrics)
+   anthropic_instrumentor = OIAnthropic()   # OpenInference for Anthropic (lightweight)
+   openai_instrumentor.instrument(tracer_provider=tracer.provider)
+   anthropic_instrumentor.instrument(tracer_provider=tracer.provider)
 
 **Strategic Mixed Usage:**
 - Use OpenLLMetry for high-volume, cost-sensitive providers
@@ -357,12 +365,17 @@ Best Practices for Migration
 .. code-block:: python
 
    # Good: Gradual migration
+   # Step 1: Initialize HoneyHive tracer first (without instrumentors)
    tracer = HoneyHiveTracer.init(
-       instrumentors=[
-           OpenAIInstrumentor(),           # Migrated to OpenLLMetry
-           OIAnthropicInstrumentor()       # Still using OpenInference
-       ]
+       api_key="your-api-key",      # Or set HH_API_KEY environment variable
+       project="your-project"       # Or set HH_PROJECT environment variable
    )
+   
+   # Step 2: Initialize instrumentors separately (gradual migration)
+   openai_instrumentor = OpenAIInstrumentor()           # Migrated to OpenLLMetry
+   anthropic_instrumentor = OIAnthropicInstrumentor()       # Still using OpenInference
+   openai_instrumentor.instrument(tracer_provider=tracer.provider)
+   anthropic_instrumentor.instrument(tracer_provider=tracer.provider)
 
 **2. Test in Development First**
 

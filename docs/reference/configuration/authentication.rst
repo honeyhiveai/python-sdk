@@ -82,8 +82,8 @@ Environment Variable
    
    # Automatically uses HH_API_KEY environment variable
    tracer = HoneyHiveTracer.init(
-       
-       # api_key not needed - loaded from environment
+       project="your-project"  # Or set HH_PROJECT environment variable
+       # api_key not needed - loaded from HH_API_KEY environment variable
    )
 
 Direct Parameter
@@ -97,8 +97,8 @@ Direct Parameter
    
    # Direct API key parameter
    tracer = HoneyHiveTracer.init(
-       api_key="hh_your_api_key_here",
-       
+       api_key="hh_your_api_key_here",  # Or set HH_API_KEY environment variable
+       project="your-project"           # Or set HH_PROJECT environment variable
    )
 
 **Use Cases**:
@@ -188,8 +188,8 @@ The SDK resolves authentication in this order (highest to lowest precedence):
 
    # This takes precedence over all other methods
    tracer = HoneyHiveTracer.init(
-       api_key="hh_direct_key",  # Highest precedence
-       
+       api_key="hh_direct_key",  # Highest precedence (or set HH_API_KEY environment variable)
+       project="your-project"    # Or set HH_PROJECT environment variable
    )
 
 .. code-block:: bash
@@ -238,8 +238,8 @@ API Key Management
 
    # Use read-only keys for monitoring
    monitoring_tracer = HoneyHiveTracer.init(
-       api_key="hh_readonly_key_here",
-       
+       api_key="hh_readonly_key_here",  # Or set HH_API_KEY environment variable
+       project="your-project"           # Or set HH_PROJECT environment variable
    )
 
 **Don'ts**:
@@ -250,8 +250,8 @@ API Key Management
 
    # DON'T DO THIS
    tracer = HoneyHiveTracer.init(
-       api_key="hh_1234567890abcdef...",  # Never hardcode!
-       
+       api_key="hh_1234567890abcdef...",  # Never hardcode! Use HH_API_KEY environment variable
+       project="your-project"             # Or set HH_PROJECT environment variable
    )
 
 ❌ **Don't Share Keys**:
@@ -324,7 +324,10 @@ Storage Security
       from decouple import config
       
       api_key = config('HH_API_KEY')
-      tracer = HoneyHiveTracer.init(api_key=api_key, )
+      tracer = HoneyHiveTracer.init(
+          api_key=api_key,         # Or set HH_API_KEY environment variable
+          project="your-project"   # Or set HH_PROJECT environment variable
+      )
 
 Access Control
 ~~~~~~~~~~~~~~
@@ -345,7 +348,8 @@ Access Control
 
    # SDK handles rate limiting automatically
    tracer = HoneyHiveTracer.init(
-       api_key="hh_your_key",
+       api_key="hh_your_key",       # Or set HH_API_KEY environment variable
+       project="your-project",      # Or set HH_PROJECT environment variable
        # Rate limiting is automatic
    )
 
@@ -370,7 +374,9 @@ Development Environment
    load_dotenv('.env.development')
    
    from honeyhive import HoneyHiveTracer
-   tracer = HoneyHiveTracer.init()
+   tracer = HoneyHiveTracer.init(
+       project="your-project"  # Or set HH_PROJECT environment variable
+   )  # Uses HH_API_KEY from .env.development
 
 Testing Environment
 ~~~~~~~~~~~~~~~~~~~
@@ -393,7 +399,8 @@ Testing Environment
    def test_honeyhive_integration():
        from honeyhive import HoneyHiveTracer
        tracer = HoneyHiveTracer.init(
-           test_mode=True  # No real API calls
+           project="your-project",  # Or set HH_PROJECT environment variable
+           test_mode=True            # No real API calls (or set HH_TEST_MODE=true)
        )
        # Test your code here
 
@@ -731,8 +738,9 @@ Debugging Tools
    
    # Enable debug mode
    tracer = HoneyHiveTracer.init(
-       api_key="hh_your_key",
-       debug=True  # Enables debug logging
+       api_key="hh_your_key",       # Or set HH_API_KEY environment variable
+       project="your-project",      # Or set HH_PROJECT environment variable
+       debug=True                   # Enables debug logging (or set HH_DEBUG_MODE=true)
    )
 
 **Authentication Test Script**:

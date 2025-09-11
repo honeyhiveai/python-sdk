@@ -206,7 +206,9 @@ Tracking how different prompts affect outcomes:
 
 .. code-block:: python
 
-   @trace(tracer=tracer, event_type="prompt_engineering")
+   from honeyhive.models import EventType
+   
+   @trace(tracer=tracer, event_type=EventType.tool)
    def test_prompt_variations(query: str):
        """Test different prompt strategies."""
        

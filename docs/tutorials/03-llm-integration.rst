@@ -102,11 +102,16 @@ You can trace OpenAI calls using either OpenInference or Traceloop instrumentors
    import openai
    
    # Initialize HoneyHive with OpenInference OpenAI instrumentor
+   # Step 1: Initialize HoneyHive tracer first (without instrumentors)
    tracer = HoneyHiveTracer.init(
-       api_key="your-api-key",
-       source="development",
-       instrumentors=[OpenAIInstrumentor()]  # OpenInference version
+       api_key="your-api-key",      # Or set HH_API_KEY environment variable
+       project="your-project",      # Or set HH_PROJECT environment variable
+       source="development"         # Or set HH_SOURCE environment variable
    )
+   
+   # Step 2: Initialize OpenInference instrumentor separately
+   openai_instrumentor = OpenAIInstrumentor()  # OpenInference version
+   openai_instrumentor.instrument(tracer_provider=tracer.provider)
 
 **Using Traceloop:**
 
@@ -118,11 +123,16 @@ You can trace OpenAI calls using either OpenInference or Traceloop instrumentors
    import openai
    
    # Initialize HoneyHive with Traceloop OpenAI instrumentor
+   # Step 1: Initialize HoneyHive tracer first (without instrumentors)
    tracer = HoneyHiveTracer.init(
-       api_key="your-api-key",
-       source="development",
-       instrumentors=[OpenAIInstrumentor()]  # Traceloop version
+       api_key="your-api-key",      # Or set HH_API_KEY environment variable
+       project="your-project",      # Or set HH_PROJECT environment variable
+       source="development"         # Or set HH_SOURCE environment variable
    )
+   
+   # Step 2: Initialize Traceloop instrumentor separately
+   openai_instrumentor = OpenAIInstrumentor()  # Traceloop version
+   openai_instrumentor.instrument(tracer_provider=tracer.provider)
 
 **The rest is identical regardless of instrumentor choice:**
 
@@ -173,7 +183,7 @@ Enhance automatic tracing with business context:
    instrumentor = OpenAIInstrumentor()
    instrumentor.instrument(tracer_provider=tracer.provider)
    
-   @trace(tracer=tracer, event_type="customer_query")
+   @trace(tracer=tracer, event_type=EventType.session)
    def handle_customer_question(customer_id: str, question: str, priority: str = "normal"):
        """Handle a customer support question with full context."""
        
@@ -437,7 +447,7 @@ Use multiple LLM providers in the same application. You can mix instrumentor typ
 
 .. code-block:: python
 
-   @trace(tracer=tracer, event_type="llm_comparison")
+   @trace(tracer=tracer, event_type=EventType.tool)
    def compare_llm_responses(question: str) -> dict:
        """Compare responses from multiple LLM providers."""
        
@@ -694,11 +704,11 @@ Best Practices for LLM Tracing
 
 .. code-block:: python
 
-   @trace(tracer=tracer, event_type="content_generation")
+   @trace(tracer=tracer, event_type=EventType.tool)
    def generate_blog_post():
        pass
    
-   @trace(tracer=tracer, event_type="document_analysis")
+   @trace(tracer=tracer, event_type=EventType.tool)
    def analyze_contract():
        pass
 
@@ -775,10 +785,17 @@ Here's a complete example using multiple providers with both instrumentor option
    import anthropic
    
    # Initialize with OpenInference instrumentors
+   # Step 1: Initialize HoneyHive tracer first (without instrumentors)
    tracer = HoneyHiveTracer.init(
-       api_key=os.getenv("HH_API_KEY"),
-       instrumentors=[OpenAIInstrumentor(), AnthropicInstrumentor()]
+       api_key=os.getenv("HH_API_KEY"),         # Or set HH_API_KEY environment variable
+       project=os.getenv("HH_PROJECT"),        # Or set HH_PROJECT environment variable
    )
+   
+   # Step 2: Initialize OpenInference instrumentors separately
+   openai_instrumentor = OpenAIInstrumentor()
+   anthropic_instrumentor = AnthropicInstrumentor()
+   openai_instrumentor.instrument(tracer_provider=tracer.provider)
+   anthropic_instrumentor.instrument(tracer_provider=tracer.provider)
 
 **Using Traceloop (Enhanced Metrics):**
 
@@ -792,16 +809,23 @@ Here's a complete example using multiple providers with both instrumentor option
    import anthropic
    
    # Initialize with Traceloop instrumentors
+   # Step 1: Initialize HoneyHive tracer first (without instrumentors)
    tracer = HoneyHiveTracer.init(
-       api_key=os.getenv("HH_API_KEY"),
-       instrumentors=[OpenAIInstrumentor(), AnthropicInstrumentor()]
+       api_key=os.getenv("HH_API_KEY"),         # Or set HH_API_KEY environment variable
+       project=os.getenv("HH_PROJECT"),        # Or set HH_PROJECT environment variable
    )
+   
+   # Step 2: Initialize Traceloop instrumentors separately
+   openai_instrumentor = OpenAIInstrumentor()
+   anthropic_instrumentor = AnthropicInstrumentor()
+   openai_instrumentor.instrument(tracer_provider=tracer.provider)
+   anthropic_instrumentor.instrument(tracer_provider=tracer.provider)
 
 **The pipeline functions are identical regardless of instrumentor choice:**
 
 .. code-block:: python
 
-   @trace(tracer=tracer, event_type="content_outline")
+   @trace(tracer=tracer, event_type=EventType.tool)
    def generate_outline(topic: str) -> str:
        """Generate content outline using GPT-4."""
        client = openai.OpenAI()
@@ -818,7 +842,7 @@ Here's a complete example using multiple providers with both instrumentor option
        
        return response.choices[0].message.content
    
-   @trace(tracer=tracer, event_type="content_writing")
+   @trace(tracer=tracer, event_type=EventType.tool)
    def write_content(outline: str) -> str:
        """Write content using Claude."""
        client = anthropic.Anthropic()
@@ -835,7 +859,7 @@ Here's a complete example using multiple providers with both instrumentor option
        
        return response.content[0].text
    
-   @trace(tracer=tracer, event_type="content_review")
+   @trace(tracer=tracer, event_type=EventType.tool)
    def review_content(content: str) -> dict:
        """Review content quality using GPT-3.5."""
        client = openai.OpenAI()
@@ -858,7 +882,7 @@ Here's a complete example using multiple providers with both instrumentor option
            "review_length": len(review)
        }
    
-   @trace(tracer=tracer, event_type="content_pipeline")
+   @trace(tracer=tracer, event_type=EventType.chain)
    def create_blog_post(topic: str) -> dict:
        """Complete content creation pipeline."""
        

@@ -61,22 +61,23 @@ Initialization
    .. code-block:: python
    
       from honeyhive import HoneyHive
+      from honeyhive.models import EventType
       
       # Basic initialization
-      client = HoneyHive(api_key="hh_your_api_key_here")
+      client = HoneyHive(api_key="hh_your_api_key_here")  # Or set HH_API_KEY environment variable
       
       # With custom configuration
       client = HoneyHive(
-          api_key="hh_your_api_key_here",
-          base_url="https://api.honeyhive.ai",
+          api_key="hh_your_api_key_here",  # Or set HH_API_KEY environment variable
+          base_url="https://api.honeyhive.ai",  # Or set HH_API_URL environment variable
           timeout=60.0,
           max_retries=5
       )
       
       # Test mode for development
       client = HoneyHive(
-          api_key="hh_test_key",
-          test_mode=True
+          api_key="hh_test_key",           # Or set HH_API_KEY environment variable
+          test_mode=True                   # Or set HH_TEST_MODE=true environment variable
       )
 
 Session Management
@@ -523,7 +524,7 @@ Asynchronous version of the HoneyHive client for non-blocking operations.
    from honeyhive import AsyncHoneyHive
 
    async def async_example():
-       async with AsyncHoneyHive(api_key="your-key") as client:
+       async with AsyncHoneyHive(api_key="your-key") as client:  # Or set HH_API_KEY environment variable
            session = await client.create_session(
                session_name="async-session"
            )
@@ -582,7 +583,7 @@ Initialization
       from honeyhive import AsyncHoneyHive
       
       async def main():
-          async with AsyncHoneyHive(api_key="hh_your_key") as client:
+          async with AsyncHoneyHive(api_key="hh_your_key") as client:  # Or set HH_API_KEY environment variable
               # Use async client
               session = await client.create_session(
                   source="production"
@@ -606,7 +607,7 @@ All session management methods have async equivalents:
 .. code-block:: python
 
    async def manage_sessions():
-       async with AsyncHoneyHive(api_key="hh_key") as client:
+       async with AsyncHoneyHive(api_key="hh_key") as client:  # Or set HH_API_KEY environment variable
            # Create session
            session = await client.create_session(
                source="production"
@@ -628,7 +629,7 @@ All event management methods have async equivalents:
 .. code-block:: python
 
    async def manage_events():
-       async with AsyncHoneyHive(api_key="hh_key") as client:
+       async with AsyncHoneyHive(api_key="hh_key") as client:  # Or set HH_API_KEY environment variable
            session = await client.create_session(
                source="production"
            )
@@ -638,7 +639,7 @@ All event management methods have async equivalents:
            for i in range(10):
                task = client.create_event(
                    session_id=session['session_id'],
-                   event_type="tool",
+                   event_type=EventType.tool,
                    event_name=f"task_{i}",
                    inputs={"task_id": i},
                    outputs={"result": f"completed_{i}"}
@@ -739,7 +740,7 @@ Error Handling Examples
    from honeyhive import HoneyHive, HoneyHiveAPIError, HoneyHiveRateLimitError
    import time
    
-   client = HoneyHive(api_key="hh_your_key")
+   client = HoneyHive(api_key="hh_your_key")  # Or set HH_API_KEY environment variable
    
    def robust_api_call():
        max_retries = 3
@@ -787,8 +788,8 @@ Advanced Configuration Options
    
    # Production configuration
    client = HoneyHive(
-       api_key="hh_prod_key",
-       base_url="https://api.honeyhive.ai",
+       api_key="hh_prod_key",               # Or set HH_API_KEY environment variable
+       base_url="https://api.honeyhive.ai", # Or set HH_API_URL environment variable
        timeout=30.0,
        max_retries=3,
        
@@ -866,7 +867,7 @@ Context Manager Usage
 .. code-block:: python
 
    # Automatic resource cleanup
-   with HoneyHive(api_key="hh_key") as client:
+   with HoneyHive(api_key="hh_key") as client:  # Or set HH_API_KEY environment variable
        session = client.create_session(
            source="production"
        )
@@ -875,7 +876,7 @@ Context Manager Usage
        for i in range(10):
            client.create_event(
                session_id=session['session_id'],
-               event_type="loop_operation",
+               event_type=EventType.tool,
                event_name=f"iteration_{i}",
                inputs={"iteration": i},
                outputs={"result": i * 2}
@@ -900,14 +901,14 @@ Dependency Injection
        def process_user_request(self, user_id: str, request_data: dict):
            # Create session for this request
            session = self.client.create_session(
-               source="development"
+               source="development",
                user_id=user_id
            )
            
            # Process and log events
            event = self.client.create_event(
                session_id=session['session_id'],
-               event_type="user_request",
+               event_type=EventType.session,
                event_name="process_request",
                inputs={"user_id": user_id, "request": request_data},
                outputs={"result": "processed"}
@@ -916,7 +917,7 @@ Dependency Injection
            return event
    
    # Dependency injection
-   client = HoneyHive(api_key="hh_key")
+   client = HoneyHive(api_key="hh_key")  # Or set HH_API_KEY environment variable
    service = MyService(honeyhive_client=client)
 
 Factory Pattern
@@ -930,7 +931,7 @@ Factory Pattern
        @staticmethod
        def create_production_client(api_key: str) -> HoneyHive:
            return HoneyHive(
-               api_key=api_key,
+               api_key=api_key,  # Or set HH_API_KEY environment variable
                timeout=60.0,
                max_retries=5,
                rate_limit_calls=200,
@@ -940,8 +941,8 @@ Factory Pattern
        @staticmethod
        def create_development_client(api_key: str) -> HoneyHive:
            return HoneyHive(
-               api_key=api_key,
-               test_mode=True,
+               api_key=api_key,      # Or set HH_API_KEY environment variable
+               test_mode=True,       # Or set HH_TEST_MODE=true environment variable
                timeout=10.0,
                max_retries=1,
                debug=True,
@@ -951,8 +952,8 @@ Factory Pattern
        @staticmethod
        def create_testing_client() -> HoneyHive:
            return HoneyHive(
-               api_key="test_key",
-               test_mode=True,
+               api_key="test_key",   # Or set HH_API_KEY environment variable
+               test_mode=True,       # Or set HH_TEST_MODE=true environment variable
                timeout=5.0,
                max_retries=0
            )
@@ -979,7 +980,7 @@ Connection Pooling
 
    # Configure connection pooling for high-throughput applications
    client = HoneyHive(
-       api_key="hh_key",
+       api_key="hh_key",             # Or set HH_API_KEY environment variable
        max_connections=100,          # Total connection pool size
        max_keepalive_connections=20, # Persistent connections
        keepalive_expiry=60.0,        # Connection lifetime
@@ -997,7 +998,7 @@ Request Batching
    from honeyhive import AsyncHoneyHive
    
    async def batch_events_efficiently():
-       async with AsyncHoneyHive(api_key="hh_key") as client:
+       async with AsyncHoneyHive(api_key="hh_key") as client:  # Or set HH_API_KEY environment variable
            session = await client.create_session(
                source="production"
            )

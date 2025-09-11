@@ -70,7 +70,9 @@ The core SDK provides:
    
    # Just the tracing infrastructure
    tracer = HoneyHiveTracer.init(
-       api_key="your-key"   )
+       api_key="your-key",      # Or set HH_API_KEY environment variable
+       project="your-project"   # Or set HH_PROJECT environment variable
+   )
 
 **Dependencies**: Only OpenTelemetry and HTTP libraries
 
@@ -108,7 +110,10 @@ Connect them when initializing:
    
    # Bring your own instrumentor
    # Step 1: Initialize HoneyHive tracer first (without instrumentors)
-   tracer = HoneyHiveTracer.init(api_key="your-key")
+   tracer = HoneyHiveTracer.init(
+       api_key="your-key",      # Or set HH_API_KEY environment variable
+       project="your-project"   # Or set HH_PROJECT environment variable
+   )
    
    # Step 2: Initialize instrumentor separately with tracer_provider
    instrumentor = OpenAIInstrumentor()  # Your choice!
@@ -142,7 +147,10 @@ Benefits of BYOI
    from new_llm_instrumentor import NewLLMInstrumentor
    
    # Step 1: Initialize HoneyHive tracer first (without instrumentors)
-   tracer = HoneyHiveTracer.init()
+   tracer = HoneyHiveTracer.init(
+       api_key="your-api-key",  # Or set HH_API_KEY environment variable
+       project="your-project"   # Or set HH_PROJECT environment variable
+   )
    
    # Step 2: Initialize instrumentors separately with tracer_provider
    openai_instrumentor = OpenAIInstrumentor()     # Existing
@@ -289,7 +297,10 @@ Migration Examples
    
    # You control openai version
    # Step 1: Initialize HoneyHive tracer first (without instrumentors)
-   tracer = HoneyHiveTracer.init(api_key="your-api-key")
+   tracer = HoneyHiveTracer.init(
+       api_key="your-api-key",  # Or set HH_API_KEY environment variable
+       project="your-project"   # Or set HH_PROJECT environment variable
+   )
    
    # Step 2: Initialize instrumentor separately with tracer_provider
    instrumentor = OpenAIInstrumentor()
@@ -305,7 +316,10 @@ Migration Examples
    pip install openinference-instrumentation-newprovider
    
    # Step 1: Initialize HoneyHive tracer first (without instrumentors)
-   tracer = HoneyHiveTracer.init()
+   tracer = HoneyHiveTracer.init(
+       api_key="your-api-key",  # Or set HH_API_KEY environment variable
+       project="your-project"   # Or set HH_PROJECT environment variable
+   )
    
    # Step 2: Initialize instrumentor separately with tracer_provider
    instrumentor = 
@@ -322,9 +336,15 @@ Best Practices
 .. code-block:: python
 
    # Begin with just what you need
+   # Step 1: Initialize HoneyHive tracer first (without instrumentors)
    tracer = HoneyHiveTracer.init(
-       instrumentors=[OpenAIInstrumentor()]  # Only OpenAI
+       api_key="your-api-key",  # Or set HH_API_KEY environment variable
+       project="your-project"   # Or set HH_PROJECT environment variable
    )
+   
+   # Step 2: Initialize instrumentor separately with tracer_provider
+   openai_instrumentor = OpenAIInstrumentor()  # Only OpenAI
+   openai_instrumentor.instrument(tracer_provider=tracer.provider)
 
 **Add Incrementally**
 
@@ -332,7 +352,10 @@ Best Practices
 
    # Add providers as you adopt them
    # Step 1: Initialize HoneyHive tracer first (without instrumentors)
-   tracer = HoneyHiveTracer.init()
+   tracer = HoneyHiveTracer.init(
+       api_key="your-api-key",  # Or set HH_API_KEY environment variable
+       project="your-project"   # Or set HH_PROJECT environment variable
+   )
    
    # Step 2: Initialize instrumentor separately with tracer_provider
    instrumentor = 
@@ -358,12 +381,16 @@ Best Practices
 
    # Test without instrumentors for unit tests
    tracer = HoneyHiveTracer.init(
-       instrumentors=[]  # No automatic tracing
+       project="test-project",  # Or set HH_PROJECT environment variable
+       test_mode=True           # No automatic tracing (or set HH_TEST_MODE=true)
    )
    
    # Test with instrumentors for integration tests
    # Step 1: Initialize HoneyHive tracer first (without instrumentors)
-   tracer = HoneyHiveTracer.init()
+   tracer = HoneyHiveTracer.init(
+       api_key="your-api-key",  # Or set HH_API_KEY environment variable
+       project="your-project"   # Or set HH_PROJECT environment variable
+   )
    
    # Step 2: Initialize instrumentor separately with tracer_provider
    instrumentor = OpenAIInstrumentor()
@@ -431,10 +458,15 @@ HoneyHive provides industry-leading ecosystem-specific convenience groupings tha
    from honeyhive import HoneyHiveTracer
    from openinference.instrumentation.openai import OpenAIInstrumentor
    
+   # Step 1: Initialize HoneyHive tracer first (without instrumentors)
    tracer = HoneyHiveTracer.init(
-       api_key="your-key",
-       instrumentors=[OpenAIInstrumentor()]  # Auto-installed via group
+       api_key="your-key",      # Or set HH_API_KEY environment variable
+       project="your-project"   # Or set HH_PROJECT environment variable
    )
+   
+   # Step 2: Initialize instrumentor separately with tracer_provider
+   openai_instrumentor = OpenAIInstrumentor()  # Auto-installed via group
+   openai_instrumentor.instrument(tracer_provider=tracer.provider)
 
 .. code-block:: python
 
@@ -446,7 +478,10 @@ HoneyHive provides industry-leading ecosystem-specific convenience groupings tha
    from openinference.instrumentation.anthropic import AnthropicInstrumentor
    
    # Step 1: Initialize HoneyHive tracer first (without instrumentors)
-   tracer = HoneyHiveTracer.init(api_key="your-api-key")
+   tracer = HoneyHiveTracer.init(
+       api_key="your-api-key",  # Or set HH_API_KEY environment variable
+       project="your-project"   # Or set HH_PROJECT environment variable
+   )
    
    # Step 2: Initialize instrumentor separately with tracer_provider
    instrumentor = 
@@ -540,7 +575,10 @@ This warning indicates that OpenTelemetry's default ProxyTracerProvider is being
    from openinference.instrumentation.openai import OpenAIInstrumentor
    
    # Step 1: Initialize HoneyHive tracer (creates real TracerProvider)
-   tracer = HoneyHiveTracer.init(api_key="your-key")
+   tracer = HoneyHiveTracer.init(
+       api_key="your-key",      # Or set HH_API_KEY environment variable
+       project="your-project"   # Or set HH_PROJECT environment variable
+   )
    
    # Step 2: Initialize instrumentor with HoneyHive's provider
    instrumentor = OpenAIInstrumentor()
@@ -550,12 +588,16 @@ This warning indicates that OpenTelemetry's default ProxyTracerProvider is being
 
    # ❌ INCORRECT: Passing instrumentors to init() (causes ProxyTracerProvider bug)
    tracer = HoneyHiveTracer.init(
-       api_key="your-key",
+       api_key="your-key",      # Or set HH_API_KEY environment variable
+       project="your-project",  # Or set HH_PROJECT environment variable
        instrumentors=[OpenAIInstrumentor()]  # This causes ProxyTracerProvider bug!
    )
    
    # ✅ CORRECT: Initialize separately
-   tracer = HoneyHiveTracer.init(api_key="your-key")
+   tracer = HoneyHiveTracer.init(
+       api_key="your-key",      # Or set HH_API_KEY environment variable
+       project="your-project"   # Or set HH_PROJECT environment variable
+   )
    instrumentor = OpenAIInstrumentor()
    instrumentor.instrument(tracer_provider=tracer.provider)
 

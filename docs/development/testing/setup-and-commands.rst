@@ -122,9 +122,10 @@ This script installs:
 
    # Test configuration
    test_tracer = HoneyHiveTracer.init(
-       api_key="test-api-key",
-       source="development",
-       test_mode=True,  # Enable test mode
+       api_key="test-api-key",  # Or set HH_API_KEY environment variable
+       project="test-project",  # Or set HH_PROJECT environment variable
+       source="development",    # Or set HH_SOURCE environment variable
+       test_mode=True,          # Enable test mode (or set HH_TEST_MODE=true)
        disable_http_tracing=True  # Optimize for testing
    )
 
@@ -167,8 +168,9 @@ This script installs:
    
    def test_basic_integration():
        tracer = HoneyHiveTracer.init(
-           api_key="test-key",
-           test_mode=True  # Important: enables test mode
+           api_key="test-key",      # Or set HH_API_KEY environment variable
+           project="test-project",  # Or set HH_PROJECT environment variable
+           test_mode=True           # Important: enables test mode (or set HH_TEST_MODE=true)
        )
        
        with tracer.trace("test-operation") as span:
@@ -197,10 +199,14 @@ This script installs:
 
    def test_multiple_tracers():
        tracer1 = HoneyHiveTracer.init(
-           api_key="key1", test_mode=True
+           api_key="key1",          # Unique API key for project1
+           project="project1",      # Unique project identifier
+           test_mode=True           # Or set HH_TEST_MODE=true
        )
        tracer2 = HoneyHiveTracer.init(
-           api_key="key2", test_mode=True
+           api_key="key2",          # Unique API key for project2
+           project="project2",      # Unique project identifier
+           test_mode=True           # Or set HH_TEST_MODE=true
        )
        
        # Verify independence

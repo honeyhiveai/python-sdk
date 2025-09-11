@@ -120,6 +120,8 @@ Advanced Configuration
 
 .. code-block:: python
 
+   from honeyhive.models import EventType
+   
    @trace(
        tracer=tracer,
        event_type=EventType.tool,

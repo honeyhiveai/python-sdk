@@ -57,8 +57,9 @@ Create a new file called ``hello_honeyhive.py``:
    
    # Initialize the tracer (simplified in v0.1.0+)
    tracer = HoneyHiveTracer.init(
-       api_key="your-api-key-here",  # Replace with your actual API key
-       source="tutorial"
+       api_key="your-api-key-here",  # Or set HH_API_KEY environment variable
+       project="your-project",       # Or set HH_PROJECT environment variable
+       source="tutorial"             # Or set HH_SOURCE environment variable
    )
    
    # You can also specify additional configuration:
@@ -162,7 +163,9 @@ Then update your code:
 .. code-block:: python
 
    # This will automatically use your environment variables
-   tracer = HoneyHiveTracer.init()
+   tracer = HoneyHiveTracer.init(
+       project="your-project"  # Or set HH_PROJECT environment variable
+   )
 
 What's Next?
 ------------

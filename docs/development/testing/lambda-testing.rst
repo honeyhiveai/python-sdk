@@ -38,9 +38,11 @@ Quick Start
    
    # Initialize outside handler for container reuse
    tracer = HoneyHiveTracer.init(
-       api_key=os.getenv("HH_API_KEY", "test-key"),       source="development"
-       test_mode=True,
-       disable_http_tracing=True  # Optimize for Lambda
+       api_key=os.getenv("HH_API_KEY", "test-key"),    # Or set HH_API_KEY environment variable
+       project=os.getenv("HH_PROJECT", "test-project"), # Or set HH_PROJECT environment variable
+       source="development",                            # Or set HH_SOURCE environment variable
+       test_mode=True,                                  # Or set HH_TEST_MODE=true
+       disable_http_tracing=True                        # Optimize for Lambda (or set HH_DISABLE_HTTP_TRACING=true)
    )
    
    def lambda_handler(event, context):
@@ -974,10 +976,16 @@ Production Lambda Testing
        """Production Lambda test with real API calls."""
        
        # Initialize with production settings
+       # Step 1: Initialize HoneyHive tracer first (without instrumentors)
        tracer = HoneyHiveTracer.init(
-           api_key=os.environ.get("HH_API_KEY"),           source="development"
-           instrumentors=[OpenAIInstrumentor()]
+           api_key=os.environ.get("HH_API_KEY"),    # Or set HH_API_KEY environment variable
+           project=os.environ.get("HH_PROJECT"),    # Or set HH_PROJECT environment variable
+           source="development"                     # Or set HH_SOURCE environment variable
        )
+       
+       # Step 2: Initialize instrumentor separately with tracer_provider
+       openai_instrumentor = OpenAIInstrumentor()
+       openai_instrumentor.instrument(tracer_provider=tracer.provider)
        
        try:
            with tracer.start_span("lambda-openai-test") as span:
@@ -1043,15 +1051,20 @@ Lambda Optimization Best Practices
 .. code-block:: python
 
    # Optimized Lambda configuration
+   # Step 1: Initialize HoneyHive tracer first (without instrumentors)
    tracer = HoneyHiveTracer.init(
-       api_key=os.environ.get("HH_API_KEY"), "lambda-app"),
-       source="development"
+       api_key=os.environ.get("HH_API_KEY"),                                    # Or set HH_API_KEY environment variable
+       project=os.environ.get("HH_PROJECT", "lambda-app"),                     # Or set HH_PROJECT environment variable
+       source="development",                                                    # Or set HH_SOURCE environment variable
        session_name=os.environ.get("AWS_LAMBDA_FUNCTION_NAME", "lambda-function"),
        # Optimize for Lambda constraints
-       test_mode=os.environ.get("HH_TEST_MODE", "false").lower() == "true",
-       disable_http_tracing=True,  # Reduce overhead in Lambda
-       instrumentors=[OpenAIInstrumentor()],  # Only needed instrumentors
+       test_mode=os.environ.get("HH_TEST_MODE", "false").lower() == "true",    # Or set HH_TEST_MODE environment variable
+       disable_http_tracing=True,  # Reduce overhead in Lambda (or set HH_DISABLE_HTTP_TRACING=true)
    )
+   
+   # Step 2: Initialize instrumentor separately with tracer_provider
+   openai_instrumentor = OpenAIInstrumentor()  # Only needed instrumentors
+   openai_instrumentor.instrument(tracer_provider=tracer.provider)
 
 **Performance Optimization Checklist**:
 

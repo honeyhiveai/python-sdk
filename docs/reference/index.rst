@@ -7,7 +7,7 @@ API Reference
    This reference provides comprehensive technical specifications for all HoneyHive SDK components. Use this section to look up exact API details, parameters, and return values.
 
 .. note::
-   **API Simplified in v0.1.0**: The ``project`` parameter has been removed from ``HoneyHiveTracer.init()`` and ``HoneyHiveTracer()``. Your API key is already scoped to your project, so the SDK automatically derives project information from your API key.
+   **API Requirements**: The ``project`` parameter is required for ``HoneyHiveTracer.init()`` and ``HoneyHiveTracer()``. This parameter specifies which project in your HoneyHive workspace to send traces to.
 
 **Quick Navigation:**
 

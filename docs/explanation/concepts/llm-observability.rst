@@ -75,9 +75,11 @@ Understanding how different prompts affect outcomes:
 
 .. code-block:: python
 
+   from honeyhive.models import EventType
+   
    # Example: Tracking prompt effectiveness
    
-   @trace(tracer=tracer, event_type="prompt_engineering")
+   @trace(tracer=tracer, event_type=EventType.tool)
    def test_prompt_variations(user_query: str) -> str:
        """Test different prompt strategies."""
        
@@ -111,7 +113,7 @@ Different models have different strengths and costs:
 
 .. code-block:: python
 
-   @trace(tracer=tracer, event_type="model_comparison")
+   @trace(tracer=tracer, event_type=EventType.tool)
    def compare_model_performance(task: str, content: str) -> dict:
        """Compare different models for the same task."""
        
@@ -150,7 +152,7 @@ Understanding and optimizing token usage:
 
 .. code-block:: python
 
-   @trace(tracer=tracer, event_type="token_analysis")
+   @trace(tracer=tracer, event_type=EventType.tool)
    def analyze_token_efficiency(prompt: str, response: str) -> dict:
        """Analyze token usage patterns."""
        
@@ -218,7 +220,7 @@ Understanding how users interact with LLM features:
 
 .. code-block:: python
 
-   @trace(tracer=tracer, event_type="user_interaction")
+   @trace(tracer=tracer, event_type=EventType.session)
    def track_user_experience(user_id: str, query: str, response: str) -> dict:
        """Track user interaction patterns."""
        
@@ -274,7 +276,7 @@ Ensuring equitable responses across different user groups:
 
 .. code-block:: python
 
-   @trace(tracer=tracer, event_type="bias_monitoring")
+   @trace(tracer=tracer, event_type=EventType.tool)
    def monitor_response_bias(user_profile: dict, query: str) -> str:
        """Monitor for biased responses based on user profile."""
        
@@ -302,7 +304,7 @@ Tracking and optimizing context usage:
 
 .. code-block:: python
 
-   @trace(tracer=tracer, event_type="context_management")
+   @trace(tracer=tracer, event_type=EventType.tool)
    def manage_conversation_context(conversation_history: list, new_message: str) -> str:
        """Manage conversation context within token limits."""
        
@@ -355,7 +357,7 @@ Observability Architecture Patterns
 
    # Example: Event-driven quality monitoring
    
-   @trace(tracer=tracer, event_type="quality_monitoring")
+   @trace(tracer=tracer, event_type=EventType.tool)
    def monitor_quality_degradation(responses: list) -> dict:
        """Monitor for quality degradation patterns."""
        
@@ -380,7 +382,7 @@ For applications using multiple LLM capabilities:
 
 .. code-block:: python
 
-   @trace(tracer=tracer, event_type="multi_modal_operation")
+   @trace(tracer=tracer, event_type=EventType.tool)
    def process_multi_modal_request(text: str, image_data: bytes) -> dict:
        """Process request involving text and image."""
        
@@ -415,7 +417,7 @@ Focus on metrics that matter to your business:
 .. code-block:: python
 
    # Good: Business-focused metrics
-   @trace(tracer=tracer, event_type="customer_support")
+   @trace(tracer=tracer, event_type=EventType.session)
    def handle_support_ticket(ticket: dict) -> dict:
        """Handle support ticket with business metrics."""
        
@@ -448,7 +450,7 @@ Start simple, add complexity gradually:
        return llm_call(prompt)
    
    # Phase 3: Add business context
-   @trace(tracer=tracer, event_type="customer_interaction")
+   @trace(tracer=tracer, event_type=EventType.session)
    @evaluate(evaluator=comprehensive_evaluator)
    def full_observability_call(prompt: str, customer_context: dict) -> str:
        enrich_span({
@@ -490,7 +492,7 @@ Use observability data to improve the system:
 
 .. code-block:: python
 
-   @trace(tracer=tracer, event_type="feedback_integration")
+   @trace(tracer=tracer, event_type=EventType.tool)
    def learn_from_feedback(query: str, response: str, user_feedback: dict) -> None:
        """Integrate user feedback into observability."""
        
@@ -535,7 +537,7 @@ Integration with Development Workflow
 
 .. code-block:: python
 
-   @trace(tracer=tracer, event_type="ab_test")
+   @trace(tracer=tracer, event_type=EventType.tool)
    def ab_test_prompts(user_id: str, query: str) -> str:
        """A/B test different prompt strategies."""
        

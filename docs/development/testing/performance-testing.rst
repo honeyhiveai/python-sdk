@@ -24,7 +24,9 @@ Quick Start
    def quick_performance_test():
        """Quick performance impact assessment."""
        tracer = HoneyHiveTracer.init(
-           api_key="test-key",           test_mode=True
+           api_key="test-key",      # Or set HH_API_KEY environment variable
+           project="test-project",  # Or set HH_PROJECT environment variable
+           test_mode=True           # Or set HH_TEST_MODE=true
        )
        
        # Baseline measurement
@@ -310,7 +312,9 @@ Performance Testing Framework
    def test_comprehensive_performance():
        """Comprehensive performance test using the framework."""
        tracer = HoneyHiveTracer.init(
-           api_key="perf-test-key",           test_mode=True
+           api_key="perf-test-key", # Or set HH_API_KEY environment variable
+           project="perf-project",  # Or set HH_PROJECT environment variable
+           test_mode=True           # Or set HH_TEST_MODE=true
        )
        
        tester = PerformanceTester(tracer)
@@ -390,7 +394,9 @@ Memory Performance Testing
            tracers = []
            for i in range(num_tracers):
                tracer = HoneyHiveTracer.init(
-                   api_key=f"memory-test-key-{i}",                   test_mode=True
+                   api_key=f"memory-test-key-{i}",  # Unique API key for each tracer instance
+                   project=f"memory-project-{i}",   # Unique project for each tracer instance
+                   test_mode=True                    # Or set HH_TEST_MODE=true
                )
                tracers.append(tracer)
                
@@ -424,7 +430,9 @@ Memory Performance Testing
        def test_span_memory_growth(self, num_spans: int = 1000) -> Dict[str, float]:
            """Test memory growth with many spans."""
            tracer = HoneyHiveTracer.init(
-               api_key="span-memory-test",               test_mode=True
+               api_key="span-memory-test",  # Or set HH_API_KEY environment variable
+               project="span-memory-project", # Or set HH_PROJECT environment variable
+               test_mode=True               # Or set HH_TEST_MODE=true
            )
            
            self.start_monitoring()
@@ -463,7 +471,9 @@ Memory Performance Testing
        def test_long_running_memory_stability(self, duration_seconds: int = 60) -> Dict[str, Any]:
            """Test memory stability over time."""
            tracer = HoneyHiveTracer.init(
-               api_key="stability-test",               test_mode=True
+               api_key="stability-test",    # Or set HH_API_KEY environment variable
+               project="stability-project", # Or set HH_PROJECT environment variable
+               test_mode=True               # Or set HH_TEST_MODE=true
            )
            
            self.start_monitoring()
@@ -628,10 +638,14 @@ Async Performance Testing
 
 .. code-block:: python
 
+   from honeyhive.models import EventType
+   
    async def test_async_performance():
        """Test async performance with HoneyHive tracing."""
        tracer = HoneyHiveTracer.init(
-           api_key="async-test-key",           test_mode=True
+           api_key="async-test-key",    # Or set HH_API_KEY environment variable
+           project="async-test-project", # Or set HH_PROJECT environment variable
+           test_mode=True               # Or set HH_TEST_MODE=true
        )
        
        tester = AsyncPerformanceTester(tracer)
@@ -641,7 +655,7 @@ Async Performance Testing
            await asyncio.sleep(0.01)  # Simulate async work
            return sum(range(100))
        
-       @atrace(tracer=tracer, event_type="async_test")
+       @atrace(tracer=tracer, event_type=EventType.tool)
        async def traced_async_operation():
            await asyncio.sleep(0.01)  # Simulate async work
            return sum(range(100))
@@ -796,12 +810,14 @@ Load Testing
    def test_high_load_performance():
        """Test performance under high load."""
        tracer = HoneyHiveTracer.init(
-           api_key="load-test-key",           test_mode=True
+           api_key="load-test-key",     # Or set HH_API_KEY environment variable
+           project="load-test-project", # Or set HH_PROJECT environment variable
+           test_mode=True               # Or set HH_TEST_MODE=true
        )
        
        tester = LoadTester(tracer)
        
-       @trace(tracer=tracer, event_type="load_test")
+       @trace(tracer=tracer, event_type=EventType.tool)
        def load_test_operation():
            """Operation to test under load."""
            # Simulate realistic work
@@ -1139,7 +1155,11 @@ Performance Benchmarking
        benchmark = PerformanceBenchmark()
        
        # Run performance test
-       tracer = HoneyHiveTracer.init(api_key="test", test_mode=True)
+       tracer = HoneyHiveTracer.init(
+           api_key="test",          # Or set HH_API_KEY environment variable
+           project="test-project",  # Or set HH_PROJECT environment variable
+           test_mode=True           # Or set HH_TEST_MODE=true
+       )
        tester = PerformanceTester(tracer)
        
        # Measure performance
