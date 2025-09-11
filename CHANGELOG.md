@@ -1,6 +1,11 @@
 ## [Unreleased]
 
 ### Added
+- Full backwards compatibility with main branch HoneyHiveTracer parameters
+- Context association properties handling for multi-tracer coordination
+- Session ID UUID validation with proper error handling
+- Server URL parameter override functionality for custom deployments
+- Verbose parameter for debug output control throughout initialization
 - Performance tuning environment variables for OTLP export optimization
 - Configurable batch sizes and flush intervals for production environments
 - Pre-commit test suite execution (unit tests + basic integration tests)

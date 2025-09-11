@@ -62,21 +62,43 @@ class HoneyHiveTracer:
     def __init__(
         self,
         api_key: Optional[str] = None,
-        source: str = "dev",
-        test_mode: bool = False,
+        project: Optional[str] = None,
         session_name: Optional[str] = None,
-        disable_http_tracing: bool = True,
-        project: Optional[str] = None,  # Required by backend API
+        source: str = "dev",
+        server_url: Optional[str] = None,
+        session_id: Optional[str] = None,
+        disable_http_tracing: bool = True,  # Changed default for performance
+        disable_batch: bool = False,
+        verbose: bool = False,
+        inputs: Optional[Dict[str, Any]] = None,
+        is_evaluation: bool = False,
+        run_id: Optional[str] = None,
+        dataset_id: Optional[str] = None,
+        datapoint_id: Optional[str] = None,
+        link_carrier: Optional[Dict[str, Any]] = None,
+        test_mode: bool = False,  # New parameter for enhanced testing
         **kwargs: Any,
     ) -> None:
         """Initialize the HoneyHive tracer.
 
         Args:
             api_key: HoneyHive API key
-            source: Source environment
-            test_mode: Whether to run in test mode
+            project: Project name (required by backend API)
             session_name: Optional session name for automatic session creation
-            disable_http_tracing: Whether to disable HTTP tracing (defaults to True)
+            source: Source environment (default: "dev")
+            server_url: Custom server URL for self-hosted deployments
+            session_id: Existing session ID to link to
+            disable_http_tracing: Whether to disable HTTP tracing (default: True for performance)
+            disable_batch: Whether to disable batch processing (legacy parameter)
+            verbose: Enable verbose logging (legacy parameter)
+            inputs: Session initialization inputs (legacy parameter)
+            is_evaluation: Whether this is an evaluation session (legacy parameter)
+            run_id: Evaluation run ID (legacy parameter)
+            dataset_id: Evaluation dataset ID (legacy parameter)
+            datapoint_id: Evaluation datapoint ID (legacy parameter)
+            link_carrier: Context propagation carrier (legacy parameter)
+            test_mode: Whether to run in test mode
+            **kwargs: Additional parameters for future compatibility
 
         Note:
             For LLM provider integration, initialize instrumentors separately:
@@ -88,13 +110,69 @@ class HoneyHiveTracer:
         if not OTEL_AVAILABLE:
             raise ImportError("OpenTelemetry is required for HoneyHiveTracer")
 
+        # Check for existing context association properties (backwards compatibility)
+        # This allows multiple tracers to coordinate and override parameters from context
+        try:
+            from opentelemetry import context as otel_context
+
+            ctx = otel_context.get_current()
+            # Use getattr to safely access association_properties
+            association_properties = (
+                getattr(ctx, "association_properties", None)
+                if ctx is not None
+                else None
+            )
+            if association_properties is not None and hasattr(
+                association_properties, "get"
+            ):
+                # Override parameters from context if available
+                session_id = association_properties.get("session_id") or session_id
+                project = association_properties.get("project") or project
+                source = association_properties.get("source") or source
+                disable_http_tracing = association_properties.get(
+                    "disable_http_tracing", disable_http_tracing
+                )
+                run_id = association_properties.get("run_id") or run_id
+                dataset_id = association_properties.get("dataset_id") or dataset_id
+                datapoint_id = (
+                    association_properties.get("datapoint_id") or datapoint_id
+                )
+                if verbose:
+                    print(
+                        f"🔄 Inherited context properties: session_id={session_id}, project={project}"
+                    )
+        except Exception:
+            # Silently handle any context access errors
+            pass
+
         # Load configuration from environment variables
         from ..utils.config import Config
 
         config = Config()
 
+        # Store parameters for backwards compatibility
         self.test_mode = test_mode
         self.disable_http_tracing = disable_http_tracing
+        self.verbose = verbose
+        self.disable_batch = disable_batch
+        self.is_evaluation = is_evaluation
+        self.inputs = inputs
+        self.run_id = run_id
+        self.dataset_id = dataset_id
+        self.datapoint_id = datapoint_id
+        self.link_carrier = link_carrier
+        # Handle server_url parameter (overrides environment variable)
+        if server_url:
+            # Temporarily set the environment variable for this initialization
+            original_api_url = os.environ.get("HH_API_URL")
+            os.environ["HH_API_URL"] = server_url
+            # Reload config to pick up the new URL
+            config = Config()
+            # Restore original value after config load
+            if original_api_url is not None:
+                os.environ["HH_API_URL"] = original_api_url
+            else:
+                os.environ.pop("HH_API_URL", None)
 
         # Set HTTP tracing environment variable based on parameter
         if disable_http_tracing:
@@ -158,7 +236,7 @@ class HoneyHiveTracer:
         self._initialize_otel()
 
         # Initialize session management
-        self._initialize_session()
+        self._initialize_session(session_id=session_id)
 
         # Register this tracer instance for auto-discovery
         from .registry import register_tracer
@@ -422,7 +500,7 @@ class HoneyHiveTracer:
             # Fallback to global tracer
             self.tracer = trace.get_tracer("honeyhive", "0.1.0")
 
-    def _initialize_session(self) -> None:
+    def _initialize_session(self, session_id: Optional[str] = None) -> None:
         """Initialize session management."""
         try:
             # Create client and session API
@@ -438,10 +516,47 @@ class HoneyHiveTracer:
             )
             self.session_api = SessionAPI(self.client)
 
+            # If session_id is provided, validate and use it directly instead of creating a new session
+            if session_id:
+                # Validate that session_id is a valid UUID (backwards compatibility)
+                try:
+                    import uuid
+
+                    uuid.UUID(session_id)
+                    self.session_id = (
+                        session_id.lower()
+                    )  # Store in lowercase like original
+                    if self.verbose:
+                        print(f"🔗 Using existing session: {self.session_id}")
+                    return
+                except (ValueError, AttributeError, TypeError) as e:
+                    if self.verbose:
+                        print(f"⚠️  Invalid session_id format: {session_id}, error: {e}")
+                    # In test mode, just log the error and continue
+                    if not self.test_mode:
+                        raise ValueError(
+                            f"session_id must be a valid UUID string: {session_id}"
+                        )
+                    # In test mode, set session_id to None and continue
+                    self.session_id = None
+                    return
+                except ImportError:
+                    # uuid module not available, accept as-is
+                    self.session_id = session_id
+                    if self.verbose:
+                        print(
+                            f"🔗 Using existing session (no UUID validation): {session_id}"
+                        )
+                    return
+
             # Create a new session automatically
-            print(
-                f"🔍 Creating session with project: {self.project}, source: {self.source}"
-            )
+            if not self.verbose:
+                # Suppress output unless verbose mode is enabled (backwards compatibility)
+                pass
+            else:
+                print(
+                    f"🔍 Creating session with project: {self.project}, source: {self.source}"
+                )
             session_response = self.session_api.start_session(
                 project=self.project, session_name=self.session_name, source=self.source
             )

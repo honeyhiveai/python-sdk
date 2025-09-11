@@ -32,6 +32,7 @@ Core Capabilities
 - **Real API Testing**: Comprehensive testing framework with conditional mocking for production-grade validation
 - **Span Enrichment**: Rich context manager pattern for automatic span enrichment with OpenTelemetry native integration
 - **HTTP Instrumentation**: Automatic HTTP request tracing with configurable enable/disable
+- **Full Backwards Compatibility**: Complete parameter compatibility with main branch for seamless upgrades
 
 **Evaluation Framework**:
 
@@ -324,6 +325,9 @@ All configuration supports the ``HH_*`` prefix pattern:
 
 .. note::
    **Runtime Configuration** (v0.1.0rc2+): Environment variables are now properly detected when set at runtime, enabling dynamic configuration without application restart.
+
+.. note::
+   **Backwards Compatibility** (v0.1.0rc2+): All 16 original parameters from the main branch are now supported, including ``server_url``, ``session_id``, ``disable_batch``, ``verbose``, evaluation parameters (``is_evaluation``, ``run_id``, ``dataset_id``, ``datapoint_id``), and context propagation (``link_carrier``).
 
 Security Features
 `````````````````

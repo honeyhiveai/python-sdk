@@ -17,7 +17,15 @@ Latest Release Notes
 Current Version Highlights
 ~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-**v0.1.0rc2 (Development) - Environment Variable Fixes and CI/CD Improvements**
+**v0.1.0rc2 (Development) - Full Backwards Compatibility and Environment Variable Fixes**
+
+**🔄 NEW: Full Backwards Compatibility**
+
+* **All 16 Original Parameters**: Complete parameter compatibility with main branch HoneyHiveTracer
+* **Context Association Properties**: Multi-tracer coordination support for complex deployments
+* **Session ID Validation**: UUID validation with proper error handling for session linking
+* **Server URL Override**: Custom deployment support with runtime URL configuration
+* **Verbose Debug Control**: Granular output control throughout tracer initialization
 
 **🔧 FIXED: Runtime Environment Variable Support**
 
