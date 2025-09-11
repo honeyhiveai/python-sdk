@@ -7,6 +7,7 @@
 - Independent span creation testing for tracer isolation verification
 - Enhanced API key validation with empty string rejection
 - Tox environment isolation for unit tests (removed real environment variable passthrough)
+- Decorator-first approach in advanced tracing documentation with clear usage guidelines
 - Full backwards compatibility with main branch HoneyHiveTracer parameters (all 16 original parameters)
 - Context association properties handling for multi-tracer coordination
 - Session ID UUID validation with proper error handling
@@ -35,6 +36,8 @@
 - Multi-instance tracer testing: Enhanced validation of tracer independence and configuration isolation
 
 ### Changed
+- Advanced tracing documentation now prioritizes decorator pattern over context managers for better developer experience
+- Multi-instance tracer philosophy properly documented with explicit tracer usage patterns to avoid overriding existing tracers
 - Improved span processor performance with configurable batching
 - Enhanced API client configurations with better error handling
 - **BREAKING**: Replaced all print statements with structured logging infrastructure for better observability and production readiness
