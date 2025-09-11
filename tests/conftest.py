@@ -44,6 +44,37 @@ def project():
 
 
 @pytest.fixture
+def integration_project_name(integration_client):
+    """Integration test project name derived from API key."""
+    # Get the actual project ID by creating a test session
+    import uuid
+
+    from honeyhive.models.generated import SessionStartRequest
+
+    try:
+        # Create a temporary session to get the actual project ID
+        temp_session = SessionStartRequest(
+            project="api-key-derived",
+            session_name=f"temp-project-lookup-{uuid.uuid4().hex[:8]}",
+            source="test",
+        )
+        # Create session to trigger project resolution, but we need the raw response
+        # The typed response only contains session_id, we need the full response for project_id
+        raw_response = integration_client.request(
+            "POST",
+            "/session/start",
+            json={"session": temp_session.model_dump(mode="json", exclude_none=True)},
+        )
+        if raw_response.status_code == 200:
+            session_data = raw_response.json()
+            return session_data.get("project", "api-key-derived")
+        return "api-key-derived"
+    except Exception:
+        # Fallback to the placeholder if session creation fails
+        return "api-key-derived"
+
+
+@pytest.fixture
 def source():
     """Test source."""
     return "test"
@@ -118,13 +149,15 @@ def real_api_credentials():
     }
 
     if not credentials["api_key"]:
-        pytest.skip(
-            "Real API credentials not found. For local testing, create .env file with:\n"
+        pytest.fail(
+            "Real API credentials not found. The .env file should contain:\n"
             "HH_API_KEY=your_honeyhive_api_key\n"
             "HH_SOURCE=pytest-integration  # Optional\n"
-            "For CI, set these as environment variables."
+            "According to Agent OS Zero Failing Tests Policy, tests must not skip."
         )
 
+    # Add project for integration tests (derived from API key)
+    credentials["project"] = "api-key-derived"
     return credentials
 
 
@@ -191,6 +224,58 @@ def provider_api_keys():
         "aws_secret_key": os.environ.get("AWS_SECRET_ACCESS_KEY"),
         "aws_region": os.environ.get("AWS_DEFAULT_REGION", "us-east-1"),
     }
+
+
+# Removed skip_if_no_real_credentials fixture - Agent OS Zero Failing Tests Policy
+# requires NO SKIPPING. All tests must exercise real systems with real credentials.
+
+
+# Missing fixture aliases that tests expect
+@pytest.fixture(scope="session")
+def real_api_key(real_api_credentials):
+    """Real API key for integration tests."""
+    return real_api_credentials["api_key"]
+
+
+@pytest.fixture(scope="session")
+def real_project():
+    """Real project for integration tests - derived from API key."""
+    # Project is now derived from API key, not from environment
+    return "api-key-derived"
+
+
+@pytest.fixture(scope="session")
+def real_source(real_api_credentials):
+    """Real source for integration tests."""
+    return real_api_credentials["source"]
+
+
+@pytest.fixture
+def integration_client(real_api_key):
+    """HoneyHive client for integration tests with real API credentials."""
+    return HoneyHive(api_key=real_api_key, test_mode=False)
+
+
+@pytest.fixture
+def integration_tracer(real_api_key, real_project, real_source):
+    """HoneyHive tracer for integration tests with real API credentials."""
+    tracer = HoneyHiveTracer(
+        api_key=real_api_key,
+        project=real_project,
+        source=real_source,
+        session_name="integration-test",
+        test_mode=False,
+        disable_batch=True,  # For immediate API calls in tests
+    )
+
+    yield tracer
+
+    # Cleanup
+    try:
+        tracer.force_flush()
+        tracer.shutdown()
+    except Exception:
+        pass
 
 
 @pytest.fixture(autouse=True)
@@ -325,29 +410,5 @@ def pytest_configure(config):
     )
 
 
-def pytest_runtest_setup(item):
-    """Skip tests based on available credentials and markers."""
-    # Skip real API tests if no credentials
-    if item.get_closest_marker("real_api") or item.get_closest_marker(
-        "real_instrumentor"
-    ):
-        if not os.environ.get("HH_API_KEY"):
-            # Check if we're in CI environment
-            ci_indicators = ["CI", "GITHUB_ACTIONS", "GITLAB_CI", "JENKINS_URL"]
-            in_ci = any(os.environ.get(indicator) for indicator in ci_indicators)
-
-            if in_ci:
-                pytest.skip("Real API credentials not available in CI environment")
-            else:
-                pytest.skip(
-                    "Real API credentials not found. Create .env file with HH_API_KEY for local testing."
-                )
-
-    # Skip provider-specific tests if no API keys
-    if item.get_closest_marker("openai_required"):
-        if not os.environ.get("OPENAI_API_KEY"):
-            pytest.skip("OpenAI API key not available")
-
-    if item.get_closest_marker("anthropic_required"):
-        if not os.environ.get("ANTHROPIC_API_KEY"):
-            pytest.skip("Anthropic API key not available")
+# Removed pytest_runtest_setup - Agent OS Zero Failing Tests Policy requires NO SKIPPING
+# All tests must run with real credentials and exercise real systems

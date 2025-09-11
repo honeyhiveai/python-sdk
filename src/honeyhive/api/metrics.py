@@ -12,7 +12,9 @@ class MetricsAPI(BaseAPI):
     def create_metric(self, request: Metric) -> Metric:
         """Create a new metric using Metric model."""
         response = self.client.request(
-            "POST", "/metrics", json={"metric": request.model_dump(exclude_none=True)}
+            "POST",
+            "/metrics",
+            json={"metric": request.model_dump(mode="json", exclude_none=True)},
         )
 
         data = response.json()
@@ -28,7 +30,9 @@ class MetricsAPI(BaseAPI):
     async def create_metric_async(self, request: Metric) -> Metric:
         """Create a new metric asynchronously using Metric model."""
         response = await self.client.request_async(
-            "POST", "/metrics", json={"metric": request.model_dump(exclude_none=True)}
+            "POST",
+            "/metrics",
+            json={"metric": request.model_dump(mode="json", exclude_none=True)},
         )
 
         data = response.json()
@@ -82,7 +86,9 @@ class MetricsAPI(BaseAPI):
     def update_metric(self, metric_id: str, request: MetricEdit) -> Metric:
         """Update a metric using MetricEdit model."""
         response = self.client.request(
-            "PUT", f"/metrics/{metric_id}", json=request.model_dump(exclude_none=True)
+            "PUT",
+            f"/metrics/{metric_id}",
+            json=request.model_dump(mode="json", exclude_none=True),
         )
 
         data = response.json()
@@ -98,7 +104,9 @@ class MetricsAPI(BaseAPI):
     async def update_metric_async(self, metric_id: str, request: MetricEdit) -> Metric:
         """Update a metric asynchronously using MetricEdit model."""
         response = await self.client.request_async(
-            "PUT", f"/metrics/{metric_id}", json=request.model_dump(exclude_none=True)
+            "PUT",
+            f"/metrics/{metric_id}",
+            json=request.model_dump(mode="json", exclude_none=True),
         )
 
         data = response.json()

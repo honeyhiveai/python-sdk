@@ -35,11 +35,11 @@ All workflows now include intelligent path detection to prevent unnecessary runs
 - **Logic**: Trigger when documentation, code, or Agent OS product/standards change
 
 **Testing Workflows** (`tox-full-suite`, `lambda-tests`):
-- **Included Paths**: `src/**`, `tests/**`, `lambda_functions/**`, `tox.ini`, `pyproject.toml`
-- **Logic**: Trigger for code/test changes, regardless of other files in commit
-- **Benefit**: Ensures code changes are always tested, even when mixed with Agent OS changes
+- **Excluded Paths**: `.agent-os/**` (all Agent OS files)
+- **Included Paths**: `src/**`, `tests/**`, `tox.ini`, `pyproject.toml`
+- **Logic**: Only trigger for code/test changes, not documentation updates
 
-**Optimization**: Agent OS task management files (specs/tasks.md, specs/srd.md) don't match any workflow paths, so they don't trigger unnecessary runs
+**Benefit**: Agent OS task management (specs/tasks.md) doesn't trigger any workflows, but product/standards changes trigger documentation workflows appropriately
 
 **Permissions Configuration** (Fixed 2025-09-05):
 
@@ -53,9 +53,7 @@ All workflows now include intelligent path detection to prevent unnecessary runs
 
    # Our standard testing commands (used in GHA)
    tox -e unit              # Unit tests (fast, mocked)
-   tox -e integration       # Integration tests (component interaction)
-   tox -e real-api          # Real API tests (live validation) - NEW!
-   tox -e docs              # Documentation build with clean cache (prevents Sphinx caching issues)
+   tox -e integration       # Integration tests (real APIs, no mocks)
    tox -e lint             # Code quality (pylint + mypy)
    tox -e format           # Code formatting (black + isort)
    tox -e py311,py312,py313 # Multi-Python testing
@@ -107,7 +105,7 @@ The workflow uses **sequential execution** (not matrix) to provide clean PR inte
            python-version: ['3.11', '3.12', '3.13']
      
      # Real API Integration Testing (Added 2025-09-05)
-     real-api-tests:
+     integration-tests:
        name: "🌐 Real API Integration Tests"
        # Only runs when HH_API_KEY secret is available
      
@@ -120,7 +118,7 @@ Real API Integration Testing
 
 **Real API Testing Job in `tox-full-suite.yml`** (Added 2025-09-05):
 
-The `real-api-tests` job provides comprehensive testing with actual HoneyHive APIs and LLM provider instrumentors:
+The `integration-tests` job provides comprehensive testing with actual HoneyHive APIs and LLM provider instrumentors:
 
 **Key Features**:
 
@@ -128,7 +126,7 @@ The `real-api-tests` job provides comprehensive testing with actual HoneyHive AP
 - **Graceful Skipping**: Skips cleanly for forks and external contributors
 - **Multi-Provider Support**: Tests OpenAI, Anthropic, AWS Bedrock instrumentors
 - **Real OpenTelemetry**: No mocking - catches bugs like ProxyTracerProvider issues
-- **Commit Controls**: Use `[skip-real-api]` in commit message to skip
+- **Commit Controls**: Use `[skip-integration]` in commit message to skip
 
 **Environment Setup**:
 
@@ -137,7 +135,7 @@ The `real-api-tests` job provides comprehensive testing with actual HoneyHive AP
    env:
      # HoneyHive credentials
      HH_API_KEY: ${{ secrets.HH_API_KEY }}
-     HH_SOURCE: github-actions-real-api
+     HH_SOURCE: github-actions-integration
      HH_API_URL: https://api.honeyhive.ai
      
      # LLM Provider credentials (optional)
@@ -151,11 +149,11 @@ The `real-api-tests` job provides comprehensive testing with actual HoneyHive AP
 
 .. code-block:: bash
 
-   # Runs the real-api tox environment
-   tox -e real-api
+   # Runs the integration tox environment
+   tox -e integration
    
    # Which executes:
-   pytest tests/integration -m "real_api or real_instrumentor" -v
+   pytest tests/integration -v
 
 **What Gets Tested**:
 
@@ -445,11 +443,11 @@ Troubleshooting CI Failures
    # Check if real API credentials are available
    echo $HH_API_KEY | wc -c  # Should be > 1
    
-   # Run real API tests locally
-   tox -e real-api
+   # Run integration tests locally
+   tox -e integration
    
    # Test specific provider instrumentors
-   pytest tests/integration -m "real_api and openai_required" -v
+   pytest tests/integration -v
    
    # Check for ProxyTracerProvider issues
    pytest tests/integration::TestRealInstrumentorIntegration::test_proxy_tracer_provider_bug_detection -v

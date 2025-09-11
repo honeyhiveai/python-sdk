@@ -12,8 +12,8 @@ from honeyhive.tracer import HoneyHiveTracer
 pytest_mark_asyncio = pytest.mark.asyncio  # type: ignore
 
 
-class TestHoneyHiveTracer:
-    """Test HoneyHiveTracer functionality."""
+class TestHoneyHiveTracerAPI:
+    """Test HoneyHiveTracer high-level API functionality."""
 
     def setup_method(self) -> None:
         """Set up test fixtures."""

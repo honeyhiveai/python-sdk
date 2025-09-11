@@ -43,8 +43,8 @@ Step 2: Get Your API Key
 .. important::
    Keep your API key secure! Never commit it to version control.
 
-.. warning::
-   **OTLP Tracing Requirement**: You **must** specify a project name when using OTLP tracing due to backend compatibility requirements. Set the ``HH_PROJECT`` environment variable or pass the ``project`` parameter to ``HoneyHiveTracer.init()``.
+.. note::
+   **New in v0.1.0**: You no longer need to specify a project name! Your API key is already scoped to your project, so the SDK automatically derives the project information.
 
 Step 3: Create Your First Traced Function
 -----------------------------------------
@@ -55,17 +55,14 @@ Create a new file called ``hello_honeyhive.py``:
 
    from honeyhive import HoneyHiveTracer, trace
    
-   # Initialize the tracer with required project parameter
+   # Initialize the tracer (simplified in v0.1.0+)
    tracer = HoneyHiveTracer.init(
        api_key="your-api-key-here",  # Replace with your actual API key
-       project="My First Project",   # Required for OTLP tracing
        source="tutorial"
    )
    
-   # You can also use environment variables (recommended):
-   # export HH_API_KEY="your-api-key-here"
-   # export HH_PROJECT="My First Project"
-   # tracer = HoneyHiveTracer.init(source="tutorial")
+   # You can also specify additional configuration:
+   # tracer = HoneyHiveTracer.init(api_key="...", source="tutorial")
    
    # Use the @trace decorator to automatically trace this function
    @trace(tracer=tracer)

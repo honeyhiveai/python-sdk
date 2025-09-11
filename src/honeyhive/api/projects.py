@@ -12,7 +12,9 @@ class ProjectsAPI(BaseAPI):
     def create_project(self, request: CreateProjectRequest) -> Project:
         """Create a new project using CreateProjectRequest model."""
         response = self.client.request(
-            "POST", "/projects", json={"project": request.model_dump(exclude_none=True)}
+            "POST",
+            "/projects",
+            json={"project": request.model_dump(mode="json", exclude_none=True)},
         )
 
         data = response.json()
@@ -30,7 +32,9 @@ class ProjectsAPI(BaseAPI):
     async def create_project_async(self, request: CreateProjectRequest) -> Project:
         """Create a new project asynchronously using CreateProjectRequest model."""
         response = await self.client.request_async(
-            "POST", "/projects", json={"project": request.model_dump(exclude_none=True)}
+            "POST",
+            "/projects",
+            json={"project": request.model_dump(mode="json", exclude_none=True)},
         )
 
         data = response.json()
@@ -76,7 +80,9 @@ class ProjectsAPI(BaseAPI):
     def update_project(self, project_id: str, request: UpdateProjectRequest) -> Project:
         """Update a project using UpdateProjectRequest model."""
         response = self.client.request(
-            "PUT", f"/projects/{project_id}", json=request.model_dump(exclude_none=True)
+            "PUT",
+            f"/projects/{project_id}",
+            json=request.model_dump(mode="json", exclude_none=True),
         )
 
         data = response.json()
@@ -96,7 +102,9 @@ class ProjectsAPI(BaseAPI):
     ) -> Project:
         """Update a project asynchronously using UpdateProjectRequest model."""
         response = await self.client.request_async(
-            "PUT", f"/projects/{project_id}", json=request.model_dump(exclude_none=True)
+            "PUT",
+            f"/projects/{project_id}",
+            json=request.model_dump(mode="json", exclude_none=True),
         )
 
         data = response.json()

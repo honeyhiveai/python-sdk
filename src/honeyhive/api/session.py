@@ -63,7 +63,7 @@ class SessionAPI(BaseAPI):
         response = self.client.request(
             "POST",
             "/session/start",
-            json={"session": session.model_dump(exclude_none=True)},
+            json={"session": session.model_dump(mode="json", exclude_none=True)},
         )
 
         data = response.json()
@@ -89,7 +89,7 @@ class SessionAPI(BaseAPI):
         response = await self.client.request_async(
             "POST",
             "/session/start",
-            json={"session": session.model_dump(exclude_none=True)},
+            json={"session": session.model_dump(mode="json", exclude_none=True)},
         )
 
         data = response.json()
@@ -132,7 +132,7 @@ class SessionAPI(BaseAPI):
         response = self.client.request(
             "POST",
             "/session/start",
-            json={"session": request_data.model_dump(exclude_none=True)},
+            json={"session": request_data.model_dump(mode="json", exclude_none=True)},
         )
 
         data = response.json()
@@ -174,7 +174,7 @@ class SessionAPI(BaseAPI):
         response = await self.client.request_async(
             "POST",
             "/session/start",
-            json={"session": request_data.model_dump(exclude_none=True)},
+            json={"session": request_data.model_dump(mode="json", exclude_none=True)},
         )
 
         data = response.json()

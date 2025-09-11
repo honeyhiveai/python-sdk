@@ -567,18 +567,21 @@ class TestConfigurationsAPI:
         with patch.object(client, "request") as mock_request:
             mock_response = Mock()
             mock_response.json.return_value = {
-                "_id": "cfg-123",
-                "name": "test-config",
-                "project": "test-project",
-                "provider": "test-provider",
-                "parameters": {"call_type": "chat", "model": "gpt-4"},
+                "acknowledged": True,
+                "insertedId": "cfg-123",
+                "success": True,
             }
             mock_request.return_value = mock_response
 
             response = configs_api.create_configuration(config_request)
 
-            assert isinstance(response, Configuration)
-            assert response.name == "test-config"
+            # Should return CreateConfigurationResponse, not Configuration
+            from honeyhive.api.configurations import CreateConfigurationResponse
+
+            assert isinstance(response, CreateConfigurationResponse)
+            assert response.acknowledged is True
+            assert response.inserted_id == "cfg-123"
+            assert response.success is True
             mock_request.assert_called_once()
 
 

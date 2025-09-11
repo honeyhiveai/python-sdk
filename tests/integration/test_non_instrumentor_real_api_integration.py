@@ -2,7 +2,6 @@
 
 import os
 import time
-from unittest.mock import Mock, patch
 
 import pytest
 
@@ -27,10 +26,12 @@ class TestNonInstrumentorRealAPIIntegration:
         self.has_strands = self._check_strands_availability()
 
         if not self.api_key:
-            pytest.skip("HH_API_KEY not set - skipping real API tests")
+            pytest.fail(
+                "HH_API_KEY not set - real API credentials required for integration tests"
+            )
 
         if not self.has_strands:
-            pytest.skip(
+            pytest.fail(
                 "AWS Strands not available - install with: pip install strands-agents"
             )
 

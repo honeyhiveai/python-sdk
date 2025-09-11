@@ -63,6 +63,9 @@ Core Capabilities
 - **Pre-Commit Integration**: Automated quality gates using tox environments for consistency
 - **Enhanced Quality Gates**: Comprehensive changelog and documentation validation for all significant changes
 - **Documentation Quality Control**: Sphinx-based validation with warnings-as-errors enforcement
+- **Navigation Validation Framework**: Comprehensive validation of documentation structure, toctrees, and cross-references
+- **RST Hierarchy Validation**: Automated checking of reStructuredText section hierarchy consistency
+- **Integration Testing Consolidation**: Two-tier testing strategy with clear unit vs integration boundaries
 - **Post-Deploy Navigation Validation**: Automatic validation after every documentation deployment
 - **Self-Updating Documentation Validation**: System automatically adapts as documentation grows
 - **Git Branching Strategy**: Simplified workflow with main as single protected branch and feature-based development

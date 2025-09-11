@@ -3,7 +3,11 @@
 #
 # IMPORTANT: All code quality checks use tox environments to ensure consistency
 # between local development, pre-commit, and CI/CD environments.
+#
+# STRICT MODE: These hooks will BLOCK commits with ANY issues
+# Auto-fix runs first, then validation ensures no issues remain
 ---
+fail_fast: true  # Stop on first failure - no bypassing quality checks
 repos:
   - repo: https://github.com/adrienverge/yamllint
     rev: v1.37.0
@@ -38,6 +42,14 @@ repos:
         files: '^(docs/.*\.(rst|md)|README\.md|CHANGELOG\.md|\.agent-os/.*\.md)$'
         stages: [pre-commit]
 
+      - id: docs-navigation-validation
+        name: Documentation Navigation Validation (Agent OS Required)
+        entry: scripts/validate-docs-navigation.sh
+        language: system
+        pass_filenames: false
+        files: '^(docs/.*\.(rst|md)|README\.md|CHANGELOG\.md|\.agent-os/.*\.md)$'
+        stages: [pre-commit]
+
       - id: feature-list-sync
         name: Feature Documentation Synchronization Check
         entry: scripts/check-feature-sync.py
@@ -55,11 +67,16 @@ repos:
 
       - id: invalid-tracer-pattern-check
         name: Invalid Tracer Pattern Check
-        entry: bash
-        args:
-          - -c
-          - 'if grep -r "@.*\.trace(" docs/ examples/ src/ 2>/dev/null; then echo "❌ Invalid patterns!"; exit 1; fi'
+        entry: scripts/validate-tracer-patterns.sh
         language: system
         files: '^(docs/.*\.(rst|md)|examples/.*\.py|src/.*\.py)$'
+        pass_filenames: false
+        stages: [pre-commit]
+
+      - id: no-mocks-in-integration-tests
+        name: No Mocks in Integration Tests Check
+        entry: scripts/validate-no-mocks-integration.sh
+        language: system
+        files: '^tests/integration/.*\.py$'
         pass_filenames: false
         stages: [pre-commit]

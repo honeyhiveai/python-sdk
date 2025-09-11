@@ -1,5 +1,6 @@
 """Configurations API module for HoneyHive."""
 
+from dataclasses import dataclass
 from typing import List, Optional
 
 from ..models import (
@@ -10,52 +11,93 @@ from ..models import (
 from .base import BaseAPI
 
 
+@dataclass
+class CreateConfigurationResponse:
+    """Response from configuration creation API.
+
+    Note: This is a custom response model because the configurations API returns
+    a MongoDB-style operation result (acknowledged, insertedId, etc.) rather than
+    the created Configuration object like other APIs. This should ideally be added
+    to the generated models if this response format is standardized.
+    """
+
+    acknowledged: bool
+    inserted_id: str
+    success: bool = True
+
+
 class ConfigurationsAPI(BaseAPI):
     """API for configuration operations."""
 
-    def create_configuration(self, request: PostConfigurationRequest) -> Configuration:
+    def create_configuration(
+        self, request: PostConfigurationRequest
+    ) -> CreateConfigurationResponse:
         """Create a new configuration using PostConfigurationRequest model."""
         response = self.client.request(
             "POST",
             "/configurations",
-            json={"configuration": request.model_dump(exclude_none=True)},
+            json=request.model_dump(mode="json", exclude_none=True),
         )
 
         data = response.json()
-        return Configuration(**data)
-
-    def create_configuration_from_dict(self, config_data: dict) -> Configuration:
-        """Create a new configuration from dictionary (legacy method)."""
-        response = self.client.request(
-            "POST", "/configurations", json={"configuration": config_data}
+        return CreateConfigurationResponse(
+            acknowledged=data.get("acknowledged", False),
+            inserted_id=data.get("insertedId", ""),
+            success=data.get("acknowledged", False),
         )
 
+    def create_configuration_from_dict(
+        self, config_data: dict
+    ) -> CreateConfigurationResponse:
+        """Create a new configuration from dictionary (legacy method).
+
+        Note: This method now returns CreateConfigurationResponse to match the actual API behavior.
+        The API returns MongoDB-style operation results, not the full Configuration object.
+        """
+        response = self.client.request("POST", "/configurations", json=config_data)
+
         data = response.json()
-        return Configuration(**data)
+        return CreateConfigurationResponse(
+            acknowledged=data.get("acknowledged", False),
+            inserted_id=data.get("insertedId", ""),
+            success=data.get("acknowledged", False),
+        )
 
     async def create_configuration_async(
         self, request: PostConfigurationRequest
-    ) -> Configuration:
+    ) -> CreateConfigurationResponse:
         """Create a new configuration asynchronously using PostConfigurationRequest model."""
         response = await self.client.request_async(
             "POST",
             "/configurations",
-            json={"configuration": request.model_dump(exclude_none=True)},
+            json=request.model_dump(mode="json", exclude_none=True),
         )
 
         data = response.json()
-        return Configuration(**data)
+        return CreateConfigurationResponse(
+            acknowledged=data.get("acknowledged", False),
+            inserted_id=data.get("insertedId", ""),
+            success=data.get("acknowledged", False),
+        )
 
     async def create_configuration_from_dict_async(
         self, config_data: dict
-    ) -> Configuration:
-        """Create a new configuration asynchronously from dictionary (legacy method)."""
+    ) -> CreateConfigurationResponse:
+        """Create a new configuration asynchronously from dictionary (legacy method).
+
+        Note: This method now returns CreateConfigurationResponse to match the actual API behavior.
+        The API returns MongoDB-style operation results, not the full Configuration object.
+        """
         response = await self.client.request_async(
-            "POST", "/configurations", json={"configuration": config_data}
+            "POST", "/configurations", json=config_data
         )
 
         data = response.json()
-        return Configuration(**data)
+        return CreateConfigurationResponse(
+            acknowledged=data.get("acknowledged", False),
+            inserted_id=data.get("insertedId", ""),
+            success=data.get("acknowledged", False),
+        )
 
     def get_configuration(self, config_id: str) -> Configuration:
         """Get a configuration by ID."""
@@ -110,7 +152,7 @@ class ConfigurationsAPI(BaseAPI):
         response = self.client.request(
             "PUT",
             f"/configurations/{config_id}",
-            json=request.model_dump(exclude_none=True),
+            json=request.model_dump(mode="json", exclude_none=True),
         )
 
         data = response.json()
@@ -134,7 +176,7 @@ class ConfigurationsAPI(BaseAPI):
         response = await self.client.request_async(
             "PUT",
             f"/configurations/{config_id}",
-            json=request.model_dump(exclude_none=True),
+            json=request.model_dump(mode="json", exclude_none=True),
         )
 
         data = response.json()

@@ -407,8 +407,12 @@ class HoneyHiveTracer:
         else:
             print("✓ Added to existing TracerProvider (not overriding global)")
 
-        # Create tracer
-        self.tracer = trace.get_tracer("honeyhive", "0.1.0")
+        # Create tracer using our provider
+        if self.provider is not None:
+            self.tracer = self.provider.get_tracer("honeyhive", "0.1.0")
+        else:
+            # Fallback to global tracer
+            self.tracer = trace.get_tracer("honeyhive", "0.1.0")
 
     def _initialize_session(self) -> None:
         """Initialize session management."""
@@ -591,8 +595,15 @@ class HoneyHiveTracer:
                 if value:
                     ctx = baggage.set_baggage(key, str(value), ctx)
 
-        # Start span with context
-        with trace.get_tracer("honeyhive").start_as_current_span(
+        # Start span with context using our tracer instance
+        # Use our own tracer to ensure we use the correct provider
+        if self.tracer is None:
+            # Fallback to global tracer if our tracer isn't initialized
+            tracer = trace.get_tracer("honeyhive")
+        else:
+            tracer = self.tracer
+
+        with tracer.start_as_current_span(
             name, context=ctx, attributes=span_attributes
         ) as span:
             yield span

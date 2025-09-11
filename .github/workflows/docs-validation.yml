@@ -119,6 +119,7 @@ jobs:
         run: |
           pip install -e .
           pip install -r docs/utils/requirements.txt
+          pip install restructuredtext-lint rstcheck-core doc8
 
       - name: Build documentation locally
         run: |
@@ -133,6 +134,10 @@ jobs:
       - name: Run tox docs build
         run: |
           tox -e docs
+
+      - name: Documentation Quality Check
+        run: |
+          python scripts/docs-quality.py check --path docs
 
       - name: Validate local build navigation
         run: |

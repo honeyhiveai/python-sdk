@@ -269,23 +269,27 @@ class ConcurrentBenchmark:
         for burst_idx in range(burst_count):
             print(f"   Executing burst {burst_idx + 1}/{burst_count}...")
 
-            def burst_worker_task(worker_id: int) -> Dict[str, Any]:
+            def burst_worker_task(
+                worker_id: int, current_burst_idx: int
+            ) -> Dict[str, Any]:
                 """Single operation for burst testing."""
-                framework = MockFrameworkA(f"BurstWorker_{burst_idx}_{worker_id}")
+                framework = MockFrameworkA(
+                    f"BurstWorker_{current_burst_idx}_{worker_id}"
+                )
 
                 start_time = time.perf_counter()
 
                 try:
                     result = framework.execute_operation(
-                        f"burst_op_{burst_idx}_{worker_id}",
-                        burst_index=burst_idx,
+                        f"burst_op_{current_burst_idx}_{worker_id}",
+                        burst_index=current_burst_idx,
                         worker_id=worker_id,
                     )
 
                     end_time = time.perf_counter()
 
                     return {
-                        "burst_index": burst_idx,
+                        "burst_index": current_burst_idx,
                         "worker_id": worker_id,
                         "latency": end_time - start_time,
                         "success": True,
@@ -296,7 +300,7 @@ class ConcurrentBenchmark:
                     end_time = time.perf_counter()
 
                     return {
-                        "burst_index": burst_idx,
+                        "burst_index": current_burst_idx,
                         "worker_id": worker_id,
                         "latency": end_time - start_time,
                         "success": False,
@@ -309,7 +313,7 @@ class ConcurrentBenchmark:
 
             with ThreadPoolExecutor(max_workers=burst_size) as executor:
                 futures = [
-                    executor.submit(burst_worker_task, worker_id)
+                    executor.submit(burst_worker_task, worker_id, burst_idx)
                     for worker_id in range(burst_size)
                 ]
 

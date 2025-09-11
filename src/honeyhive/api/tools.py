@@ -12,7 +12,9 @@ class ToolsAPI(BaseAPI):
     def create_tool(self, request: CreateToolRequest) -> Tool:
         """Create a new tool using CreateToolRequest model."""
         response = self.client.request(
-            "POST", "/tools", json={"tool": request.model_dump(exclude_none=True)}
+            "POST",
+            "/tools",
+            json={"tool": request.model_dump(mode="json", exclude_none=True)},
         )
 
         data = response.json()
@@ -28,7 +30,9 @@ class ToolsAPI(BaseAPI):
     async def create_tool_async(self, request: CreateToolRequest) -> Tool:
         """Create a new tool asynchronously using CreateToolRequest model."""
         response = await self.client.request_async(
-            "POST", "/tools", json={"tool": request.model_dump(exclude_none=True)}
+            "POST",
+            "/tools",
+            json={"tool": request.model_dump(mode="json", exclude_none=True)},
         )
 
         data = response.json()
@@ -80,7 +84,9 @@ class ToolsAPI(BaseAPI):
     def update_tool(self, tool_id: str, request: UpdateToolRequest) -> Tool:
         """Update a tool using UpdateToolRequest model."""
         response = self.client.request(
-            "PUT", f"/tools/{tool_id}", json=request.model_dump(exclude_none=True)
+            "PUT",
+            f"/tools/{tool_id}",
+            json=request.model_dump(mode="json", exclude_none=True),
         )
 
         data = response.json()
@@ -96,7 +102,9 @@ class ToolsAPI(BaseAPI):
     async def update_tool_async(self, tool_id: str, request: UpdateToolRequest) -> Tool:
         """Update a tool asynchronously using UpdateToolRequest model."""
         response = await self.client.request_async(
-            "PUT", f"/tools/{tool_id}", json=request.model_dump(exclude_none=True)
+            "PUT",
+            f"/tools/{tool_id}",
+            json=request.model_dump(mode="json", exclude_none=True),
         )
 
         data = response.json()

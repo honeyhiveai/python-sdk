@@ -1,7 +1,6 @@
 """Integration tests for multi-instance tracer functionality in HoneyHive."""
 
 import time
-from unittest.mock import Mock, patch
 
 import pytest
 

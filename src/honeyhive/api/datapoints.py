@@ -14,7 +14,7 @@ class DatapointsAPI(BaseAPI):
         response = self.client.request(
             "POST",
             "/datapoints",
-            json={"datapoint": request.model_dump(exclude_none=True)},
+            json={"datapoint": request.model_dump(mode="json", exclude_none=True)},
         )
 
         data = response.json()
@@ -36,7 +36,7 @@ class DatapointsAPI(BaseAPI):
         response = await self.client.request_async(
             "POST",
             "/datapoints",
-            json={"datapoint": request.model_dump(exclude_none=True)},
+            json={"datapoint": request.model_dump(mode="json", exclude_none=True)},
         )
 
         data = response.json()
@@ -108,7 +108,7 @@ class DatapointsAPI(BaseAPI):
         response = self.client.request(
             "PUT",
             f"/datapoints/{datapoint_id}",
-            json=request.model_dump(exclude_none=True),
+            json=request.model_dump(mode="json", exclude_none=True),
         )
 
         data = response.json()
@@ -132,7 +132,7 @@ class DatapointsAPI(BaseAPI):
         response = await self.client.request_async(
             "PUT",
             f"/datapoints/{datapoint_id}",
-            json=request.model_dump(exclude_none=True),
+            json=request.model_dump(mode="json", exclude_none=True),
         )
 
         data = response.json()

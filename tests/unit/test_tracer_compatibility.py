@@ -1,7 +1,8 @@
-"""Integration tests for backward compatibility with @trace decorator (complete-refactor branch).
+"""Unit tests for backward compatibility with @trace decorator (complete-refactor branch).
 
 This test module validates that the new baggage-based tracer discovery
 maintains 100% backward compatibility while enabling new functionality.
+Uses mocking to avoid real API calls and focus on decorator behavior.
 
 IMPORTANT: These tests are for features in the complete-refactor branch.
 """
@@ -295,33 +296,39 @@ class TestBackwardCompatibility:
         with pytest.raises(ValueError, match="Original async error"):
             asyncio.run(async_error_function())
 
-    def test_performance_minimal_overhead(self):
-        """Test that tracing adds minimal performance overhead."""
-        tracer = HoneyHiveTracer(test_mode=True)
+    def test_decorator_functionality_unit(self):
+        """Test that trace decorator properly wraps functions (unit test)."""
+        # This is a proper unit test focusing on decorator behavior, not performance
+        mock_tracer = MagicMock()
+        mock_span = MagicMock()
+        mock_tracer.start_span.return_value = mock_span
 
-        @trace(tracer=tracer, event_type="performance")
-        def performance_function():
-            return sum(range(1000))
+        @trace(tracer=mock_tracer, event_type="test_operation")
+        def test_function(x: int, y: int = 10) -> int:
+            """Test function to be decorated."""
+            return x + y
 
-        # Measure with tracing
-        start_time = time.time()
-        for _ in range(100):
-            performance_function()
-        traced_duration = time.time() - start_time
+        # Test that the function works correctly
+        result = test_function(5, y=15)
+        assert result == 20
 
-        # Measure without tracing
-        def plain_function():
-            return sum(range(1000))
+        # Test that the tracer was called with correct parameters
+        mock_tracer.start_span.assert_called_once()
+        call_args = mock_tracer.start_span.call_args
+        # The span name should include the function name
+        assert "test_function" in str(call_args)
 
-        start_time = time.time()
-        for _ in range(100):
-            plain_function()
-        plain_duration = time.time() - start_time
+        # Test that span context manager was used
+        mock_span.__enter__.assert_called_once()
+        mock_span.__exit__.assert_called_once()
 
-        # Tracing overhead should be reasonable in test environment
-        # Note: In development/test environment with mocking, overhead is higher than production
-        overhead_ratio = traced_duration / plain_duration if plain_duration > 0 else 1
-        assert overhead_ratio < 50.0  # Adjusted for test environment overhead
+        # Test function signature preservation
+        import inspect
+
+        sig = inspect.signature(test_function)
+        assert "x" in sig.parameters
+        assert "y" in sig.parameters
+        assert sig.parameters["y"].default == 10
 
     def test_trace_class_decorator_compatibility(self):
         """Test that trace_class decorator maintains compatibility."""

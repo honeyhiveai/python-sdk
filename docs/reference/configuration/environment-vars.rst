@@ -42,9 +42,6 @@ Authentication
 Project Configuration
 ~~~~~~~~~~~~~~~~~~~~~
 
-.. warning::
-   **OTLP Tracing Requirement**: The ``HH_PROJECT`` environment variable is **required** when using OTLP tracing due to backend compatibility requirements. The OTLP ingestion service validates project information in both HTTP headers and span attributes.
-
 .. list-table::
    :header-rows: 1
    :widths: 25 20 55
@@ -53,8 +50,8 @@ Project Configuration
      - Default
      - Description
    * - ``HH_PROJECT``
-     - *Required for OTLP*
-     - **Required for OTLP tracing** - Project name for backwards compatibility with OTLP ingestion service
+     - *[Deprecated - Ignored]*
+     - **[Deprecated]** Ignored - project derived from API key
    * - ``HH_SOURCE``
      - ``"unknown"``
      - Source environment identifier (e.g., production, staging)
@@ -66,14 +63,12 @@ Project Configuration
 
 .. code-block:: bash
 
-   # Production configuration
-   export HH_PROJECT="My Production Project"
-   export HH_SOURCE="production"
+     # Production configuration
+  export HH_SOURCE="production"
    export HH_SESSION_NAME="prod-session-$(date +%Y%m%d)"
    
-   # Development configuration
-   export HH_PROJECT="My Dev Project"
-   export HH_SOURCE="development"
+     # Development configuration
+  export HH_SOURCE="development"
    export HH_SESSION_NAME="dev-local"
 
 Network Configuration

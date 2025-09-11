@@ -312,7 +312,7 @@ class TestErrorHandler:
 
     def test_recovery_attempt_success(self):
         """Test successful recovery attempt."""
-        with patch("honeyhive.tracer.error_handler.trace") as mock_trace:
+        with patch("opentelemetry.trace") as mock_trace:
             mock_provider = Mock()
             mock_tracer = Mock()
             mock_span = Mock()
@@ -333,7 +333,7 @@ class TestErrorHandler:
 
     def test_recovery_attempt_failure(self):
         """Test failed recovery attempt."""
-        with patch("honeyhive.tracer.error_handler.trace") as mock_trace:
+        with patch("opentelemetry.trace") as mock_trace:
             mock_trace.get_tracer_provider.side_effect = Exception("Recovery failed")
 
             result = self.error_handler._attempt_recovery()

@@ -189,3 +189,13 @@ test-results/
 htmlcov/
 .tox/
 # Netlify integration removed - triggering fresh status checks
+# Quality metrics data (SQLite database should not be in git)
+quality-data/*.db
+quality-data/*.log
+.env.quality-metrics
+
+
+# Documentation quality reports (AI-consumable)
+.docs-quality-*.json
+.docs-quality-*.csv
+.docs-quality-*.md

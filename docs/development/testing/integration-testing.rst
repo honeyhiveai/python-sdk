@@ -1,12 +1,19 @@
 Integration Testing Strategies
 ==============================
 
+.. warning::
+   **🚨 CRITICAL: NO MOCKS IN INTEGRATION TESTS**
+   
+   Integration tests MUST use real systems, real APIs, and real OpenTelemetry components. Any test that uses mocking (``unittest.mock``, ``@patch``, ``Mock()``) belongs in ``tests/unit/``, not ``tests/integration/``.
+   
+   **Why**: Mocked integration tests create false security and miss critical bugs like the ProxyTracerProvider issue.
+
 .. note::
    **Problem-solving guide for integration testing HoneyHive SDK components**
    
-   Practical solutions for testing how SDK components work together and integrate with external systems.
+   Practical solutions for testing how SDK components work together and integrate with real external systems.
 
-Integration testing verifies that different parts of the HoneyHive SDK work correctly together and integrate properly with external systems like OpenAI, Anthropic, and HoneyHive APIs.
+Integration testing verifies that different parts of the HoneyHive SDK work correctly together and integrate properly with real external systems like OpenAI, Anthropic, and HoneyHive APIs using actual API calls and real OpenTelemetry components.
 
 Quick Start
 -----------
@@ -25,15 +32,21 @@ Quick Start
    @pytest.mark.integration
    def test_complete_workflow():
        """Test complete tracer + API client workflow."""
-       # Initialize tracer
+       # Skip if no real API credentials
+       api_key = os.getenv("HH_API_KEY")
+       if not api_key:
+           pytest.skip("Real API credentials required for integration tests")
+       
+       # Initialize tracer with real API
        tracer = HoneyHiveTracer.init(
-           api_key=os.getenv("HH_TEST_API_KEY", "test-key"),           test_mode=True
+           api_key=api_key,
+           test_mode=False  # Real integration test
        )
        
-       # Initialize API client
+       # Initialize API client with real API
        client = HoneyHive(
-           api_key=os.getenv("HH_TEST_API_KEY", "test-key"),
-           test_mode=True
+           api_key=api_key,
+           test_mode=False  # Real integration test
        )
        
        # Test tracer + client integration
@@ -59,6 +72,7 @@ Testing Component Interactions
 .. code-block:: python
 
    import pytest
+   import os
    from honeyhive import HoneyHiveTracer
    from honeyhive.api.client import HoneyHive
    
@@ -68,13 +82,18 @@ Testing Component Interactions
        @pytest.fixture
        def integration_setup(self):
            """Setup tracer and client for integration testing."""
+           api_key = os.getenv("HH_API_KEY")
+           if not api_key:
+               pytest.skip("Real API credentials required for integration tests")
+           
            tracer = HoneyHiveTracer.init(
-               api_key="integration-test-key",               test_mode=True
+               api_key=api_key,
+               test_mode=False  # Real integration test
            )
            
            client = HoneyHive(
-               api_key="integration-test-key",
-               test_mode=True
+               api_key=api_key,
+               test_mode=False  # Real integration test
            )
            
            return {"tracer": tracer, "client": client}
@@ -316,12 +335,12 @@ Testing Real API Integration
    from honeyhive import HoneyHiveTracer
    from honeyhive.api.client import HoneyHive
    
-   @pytest.mark.real_api
+   @pytest.mark.integration
    class TestRealAPIIntegration:
        """Test integration with real HoneyHive API endpoints."""
        
        @pytest.fixture(autouse=True)
-       def setup_real_api(self):
+       def setup_integration(self):
            """Setup real API credentials."""
            self.api_key = os.getenv("HH_INTEGRATION_API_KEY")
            self.project = os.getenv("HH_INTEGRATION_PROJECT", "integration-test")
@@ -355,7 +374,7 @@ Testing Real API Integration
        def test_real_event_creation(self):
            """Test creating real events."""
            with self.tracer.trace("real-integration-test") as span:
-               span.set_attribute("test.type", "real_api_integration")
+               span.set_attribute("test.type", "integration")
                span.set_attribute("api.project", self.project)
                
                # Add some realistic test data
@@ -740,14 +759,14 @@ Running Integration Tests
    
    # Run specific integration test categories
    pytest tests/integration/ -v
-   pytest tests/integration/ -m "real_api" -v
+   pytest tests/integration/ -v
    pytest tests/integration/ -m "llm_provider" -v
    
    # Run integration tests with coverage
    pytest tests/integration/ --cov=honeyhive --cov-report=term-missing
    
    # Run integration tests with real API (requires credentials)
-   HH_INTEGRATION_API_KEY=your_key pytest tests/integration/ -m "real_api" -v
+   HH_API_KEY=your_key pytest tests/integration/ -v
    
    # Run performance integration tests
    pytest tests/integration/ -m "performance" -v
@@ -803,8 +822,8 @@ Running Integration Tests
        """Basic integration test."""
        pass
    
-   @pytest.mark.real_api
-   def test_real_api_integration():
+   @pytest.mark.integration
+   def test_integration():
        """Test with real API (requires credentials)."""
        pass
    
@@ -849,7 +868,7 @@ Best Practices
        assert result.is_valid()
    
    # Pattern 2: External System Integration
-   @pytest.mark.real_api
+   @pytest.mark.integration
    def test_external_integration():
        client = create_real_client()
        response = client.make_request()

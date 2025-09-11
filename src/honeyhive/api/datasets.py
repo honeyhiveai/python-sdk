@@ -12,7 +12,9 @@ class DatasetsAPI(BaseAPI):
     def create_dataset(self, request: CreateDatasetRequest) -> Dataset:
         """Create a new dataset using CreateDatasetRequest model."""
         response = self.client.request(
-            "POST", "/datasets", json={"dataset": request.model_dump(exclude_none=True)}
+            "POST",
+            "/datasets",
+            json={"dataset": request.model_dump(mode="json", exclude_none=True)},
         )
 
         data = response.json()
@@ -30,7 +32,9 @@ class DatasetsAPI(BaseAPI):
     async def create_dataset_async(self, request: CreateDatasetRequest) -> Dataset:
         """Create a new dataset asynchronously using CreateDatasetRequest model."""
         response = await self.client.request_async(
-            "POST", "/datasets", json={"dataset": request.model_dump(exclude_none=True)}
+            "POST",
+            "/datasets",
+            json={"dataset": request.model_dump(mode="json", exclude_none=True)},
         )
 
         data = response.json()
@@ -84,7 +88,9 @@ class DatasetsAPI(BaseAPI):
     def update_dataset(self, dataset_id: str, request: DatasetUpdate) -> Dataset:
         """Update a dataset using DatasetUpdate model."""
         response = self.client.request(
-            "PUT", f"/datasets/{dataset_id}", json=request.model_dump(exclude_none=True)
+            "PUT",
+            f"/datasets/{dataset_id}",
+            json=request.model_dump(mode="json", exclude_none=True),
         )
 
         data = response.json()
@@ -104,7 +110,9 @@ class DatasetsAPI(BaseAPI):
     ) -> Dataset:
         """Update a dataset asynchronously using DatasetUpdate model."""
         response = await self.client.request_async(
-            "PUT", f"/datasets/{dataset_id}", json=request.model_dump(exclude_none=True)
+            "PUT",
+            f"/datasets/{dataset_id}",
+            json=request.model_dump(mode="json", exclude_none=True),
         )
 
         data = response.json()

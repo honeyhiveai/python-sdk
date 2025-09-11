@@ -119,7 +119,9 @@ class EventsAPI(BaseAPI):
     def create_event(self, event: CreateEventRequest) -> CreateEventResponse:
         """Create a new event using CreateEventRequest model."""
         response = self.client.request(
-            "POST", "/events", json={"event": event.model_dump(exclude_none=True)}
+            "POST",
+            "/events",
+            json={"event": event.model_dump(mode="json", exclude_none=True)},
         )
 
         data = response.json()
@@ -143,7 +145,9 @@ class EventsAPI(BaseAPI):
     ) -> CreateEventResponse:
         """Create a new event from CreateEventRequest object."""
         response = self.client.request(
-            "POST", "/events", json={"event": event.model_dump(exclude_none=True)}
+            "POST",
+            "/events",
+            json={"event": event.model_dump(mode="json", exclude_none=True)},
         )
 
         data = response.json()
@@ -154,7 +158,9 @@ class EventsAPI(BaseAPI):
     ) -> CreateEventResponse:
         """Create a new event asynchronously using CreateEventRequest model."""
         response = await self.client.request_async(
-            "POST", "/events", json={"event": event.model_dump(exclude_none=True)}
+            "POST",
+            "/events",
+            json={"event": event.model_dump(mode="json", exclude_none=True)},
         )
 
         data = response.json()
@@ -180,7 +186,9 @@ class EventsAPI(BaseAPI):
     ) -> CreateEventResponse:
         """Create a new event asynchronously."""
         response = await self.client.request_async(
-            "POST", "/events", json={"event": event.model_dump(exclude_none=True)}
+            "POST",
+            "/events",
+            json={"event": event.model_dump(mode="json", exclude_none=True)},
         )
 
         data = response.json()
@@ -252,7 +260,9 @@ class EventsAPI(BaseAPI):
         self, request: BatchCreateEventRequest
     ) -> BatchCreateEventResponse:
         """Create multiple events using BatchCreateEventRequest model."""
-        events_data = [event.model_dump(exclude_none=True) for event in request.events]
+        events_data = [
+            event.model_dump(mode="json", exclude_none=True) for event in request.events
+        ]
         response = self.client.request(
             "POST", "/events/batch", json={"events": events_data}
         )
@@ -266,7 +276,9 @@ class EventsAPI(BaseAPI):
         self, events: List[CreateEventRequest]
     ) -> BatchCreateEventResponse:
         """Create multiple events from a list of CreateEventRequest objects."""
-        events_data = [event.model_dump(exclude_none=True) for event in events]
+        events_data = [
+            event.model_dump(mode="json", exclude_none=True) for event in events
+        ]
         response = self.client.request(
             "POST", "/events/batch", json={"events": events_data}
         )
@@ -280,7 +292,9 @@ class EventsAPI(BaseAPI):
         self, request: BatchCreateEventRequest
     ) -> BatchCreateEventResponse:
         """Create multiple events asynchronously using BatchCreateEventRequest model."""
-        events_data = [event.model_dump(exclude_none=True) for event in request.events]
+        events_data = [
+            event.model_dump(mode="json", exclude_none=True) for event in request.events
+        ]
         response = await self.client.request_async(
             "POST", "/events/batch", json={"events": events_data}
         )
@@ -294,7 +308,9 @@ class EventsAPI(BaseAPI):
         self, events: List[CreateEventRequest]
     ) -> BatchCreateEventResponse:
         """Create multiple events asynchronously from a list of CreateEventRequest objects."""
-        events_data = [event.model_dump(exclude_none=True) for event in events]
+        events_data = [
+            event.model_dump(mode="json", exclude_none=True) for event in events
+        ]
         response = await self.client.request_async(
             "POST", "/events/batch", json={"events": events_data}
         )
@@ -357,7 +373,7 @@ class EventsAPI(BaseAPI):
         # Convert filters to proper format for API
         filters_data = []
         for filter_obj in filters:
-            filter_dict = filter_obj.model_dump(exclude_none=True)
+            filter_dict = filter_obj.model_dump(mode="json", exclude_none=True)
             # Convert enum values to strings for JSON serialization
             if "operator" in filter_dict and hasattr(filter_dict["operator"], "value"):
                 filter_dict["operator"] = filter_dict["operator"].value

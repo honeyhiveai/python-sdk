@@ -365,7 +365,7 @@ Add Google AI (Gemini) tracing.
    )
 
 Multi-Provider Setup
---------------------
+~~~~~~~~~~~~~~~~~~~~~
 
 Use multiple LLM providers in the same application. You can mix instrumentor types:
 
@@ -640,8 +640,11 @@ MCP enables agents to securely connect to data sources and tools through a stand
 - **Error handling** (timeouts, connection failures)
 - **Performance metrics** (latency, throughput)
 
-Advanced: Custom Instrumentor Integration
-------------------------------------------
+Advanced Integration Topics
+----------------------------
+
+Custom Instrumentor Integration
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 You can also integrate custom or community instrumentors:
 
@@ -742,7 +745,7 @@ Best Practices for LLM Tracing
        })
 
 Environment Variables for Multiple Providers
----------------------------------------------
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 Use environment variables to manage multiple API keys:
 
@@ -756,7 +759,7 @@ Use environment variables to manage multiple API keys:
    GOOGLE_API_KEY=your-google-key
 
 Complete Example: Multi-LLM Content Pipeline
----------------------------------------------
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 Here's a complete example using multiple providers with both instrumentor options:
 

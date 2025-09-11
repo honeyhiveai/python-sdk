@@ -466,7 +466,7 @@ class TestEvaluationAPIIntegration:
         reason="Evaluation run creation requires write permissions not available in CI",
     )
     def test_create_evaluation_run_integration(
-        self, integration_client, integration_project_name, skip_if_no_real_credentials
+        self, integration_client, integration_project_name
     ):
         """Test evaluation run creation integration with REAL API."""
         # Create evaluation results
@@ -494,7 +494,7 @@ class TestEvaluationAPIIntegration:
         reason="Evaluation run creation requires write permissions not available in CI",
     )
     def test_evaluation_workflow_end_to_end(
-        self, integration_client, integration_project_name, skip_if_no_real_credentials
+        self, integration_client, integration_project_name
     ):
         """Test complete evaluation workflow end-to-end with REAL API."""
         # Step 1: Create evaluation dataset
@@ -542,7 +542,7 @@ class TestEvaluationAPIIntegration:
         reason="Evaluation run creation requires write permissions not available in CI",
     )
     def test_large_dataset_api_integration(
-        self, integration_client, integration_project_name, skip_if_no_real_credentials
+        self, integration_client, integration_project_name
     ):
         """Test large dataset evaluation with REAL API integration."""
         # Create larger dataset

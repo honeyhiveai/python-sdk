@@ -29,17 +29,16 @@ This section provides comprehensive testing standards, practices, and tools used
 
 - **Total Tests**: 972+ tests (853 unit + 119+ integration) - 100% success rate ✅
 - **Test Coverage**: 81.14% (above 80% requirement ✅)
-- **Test Types**: Unit, Integration, Real API, Lambda, Performance, CLI
+- **Test Types**: Unit, Integration, Lambda, Performance, CLI
 - **CI/CD Integration**: GitHub Actions with automated quality gates
 
 **Testing Strategy**:
 
-The HoneyHive SDK employs a **four-tier testing strategy**:
+The HoneyHive SDK employs a **three-tier testing strategy**:
 
 1. **Unit Testing** - Fast, isolated tests with mocking (every commit)
-2. **Integration Testing** - Component interaction tests (every PR)
-3. **Real API Testing** - Live API and instrumentor validation (when credentials available)
-4. **Lambda Testing** - AWS deployment and performance validation (daily/release)
+2. **Integration Testing** - Real system tests with live APIs and no mocking (every PR)
+3. **Lambda Testing** - AWS deployment and performance validation (daily/release)
 
 .. toctree::
    :maxdepth: 1
@@ -48,7 +47,6 @@ The HoneyHive SDK employs a **four-tier testing strategy**:
    testing/unit-testing
    testing/integration-testing
    testing/integration-testing-strategy
-   testing/real-api-testing
    testing/lambda-testing
    testing/performance-testing
    testing/mocking-strategies

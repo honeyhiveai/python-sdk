@@ -43,7 +43,9 @@ class EvaluationsAPI(BaseAPI):
     def create_run(self, request: CreateRunRequest) -> CreateRunResponse:
         """Create a new evaluation run using CreateRunRequest model."""
         response = self.client.request(
-            "POST", "/runs", json={"run": request.model_dump(exclude_none=True)}
+            "POST",
+            "/runs",
+            json={"run": request.model_dump(mode="json", exclude_none=True)},
         )
 
         data = response.json()
@@ -67,7 +69,9 @@ class EvaluationsAPI(BaseAPI):
     async def create_run_async(self, request: CreateRunRequest) -> CreateRunResponse:
         """Create a new evaluation run asynchronously using CreateRunRequest model."""
         response = await self.client.request_async(
-            "POST", "/runs", json={"run": request.model_dump(exclude_none=True)}
+            "POST",
+            "/runs",
+            json={"run": request.model_dump(mode="json", exclude_none=True)},
         )
 
         data = response.json()
@@ -145,7 +149,9 @@ class EvaluationsAPI(BaseAPI):
     def update_run(self, run_id: str, request: UpdateRunRequest) -> UpdateRunResponse:
         """Update an evaluation run using UpdateRunRequest model."""
         response = self.client.request(
-            "PUT", f"/runs/{run_id}", json=request.model_dump(exclude_none=True)
+            "PUT",
+            f"/runs/{run_id}",
+            json=request.model_dump(mode="json", exclude_none=True),
         )
 
         data = response.json()
@@ -163,7 +169,9 @@ class EvaluationsAPI(BaseAPI):
     ) -> UpdateRunResponse:
         """Update an evaluation run asynchronously using UpdateRunRequest model."""
         response = await self.client.request_async(
-            "PUT", f"/runs/{run_id}", json=request.model_dump(exclude_none=True)
+            "PUT",
+            f"/runs/{run_id}",
+            json=request.model_dump(mode="json", exclude_none=True),
         )
 
         data = response.json()

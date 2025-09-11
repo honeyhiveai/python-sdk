@@ -1,10 +1,10 @@
 """Real API integration tests for multi-tracer functionality in HoneyHive."""
 
 import time
-from unittest.mock import Mock, patch
 
 import pytest
 
+from honeyhive.models import EventType
 from honeyhive.tracer.decorators import atrace, trace
 from honeyhive.tracer.otel_tracer import HoneyHiveTracer
 
@@ -141,12 +141,12 @@ class TestRealAPIMultiTracer:
         )
 
         # Test functions decorated with different tracers
-        @trace(event_name="function1", event_type="test", tracer=tracer1)
+        @trace(event_name="function1", event_type=EventType.tool, tracer=tracer1)
         def function1(x, y):
             time.sleep(0.1)  # Simulate work
             return x + y
 
-        @trace(event_name="function2", event_type="test", tracer=tracer2)
+        @trace(event_name="function2", event_type=EventType.tool, tracer=tracer2)
         def function2(x, y):
             time.sleep(0.05)  # Simulate different work
             return x * y
@@ -191,12 +191,12 @@ class TestRealAPIMultiTracer:
         )
 
         # Test async functions decorated with different tracers
-        @atrace(event_name="async_function1", event_type="test", tracer=tracer1)
+        @atrace(event_name="async_function1", event_type=EventType.tool, tracer=tracer1)
         async def async_function1(x, y):
             await asyncio.sleep(0.1)  # Simulate async work
             return x + y
 
-        @atrace(event_name="async_function2", event_type="test", tracer=tracer2)
+        @atrace(event_name="async_function2", event_type=EventType.tool, tracer=tracer2)
         async def async_function2(x, y):
             await asyncio.sleep(0.05)  # Simulate different async work
             return x * y

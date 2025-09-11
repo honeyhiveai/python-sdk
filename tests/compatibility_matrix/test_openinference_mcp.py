@@ -52,7 +52,7 @@ class TestMCPCompatibilityMatrix:
     def test_mcp_instrumentor_package_availability(self):
         """Test MCP instrumentor package can be imported and instantiated."""
         if not self.mcp_available:
-            pytest.skip(
+            pytest.fail(
                 "MCP instrumentor not available. Install with: pip install honeyhive[mcp]"
             )
 
@@ -414,7 +414,9 @@ class TestMCPCompatibilityMatrix:
     def test_mcp_instrumentor_version_compatibility(self):
         """Test MCP instrumentor version compatibility."""
         if not self.mcp_available:
-            pytest.skip("MCP instrumentor not available")
+            pytest.fail(
+                "MCP instrumentor not available - install required dependencies"
+            )
 
         import openinference.instrumentation.mcp
 

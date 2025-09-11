@@ -10,7 +10,6 @@ import subprocess
 import sys
 import tempfile
 from pathlib import Path
-from unittest.mock import patch
 
 import pytest
 
@@ -48,12 +47,18 @@ assert "Proxy" in provider_type, f"Expected ProxyTracerProvider, got {provider_t
 # Now test HoneyHive initialization
 from honeyhive.tracer.otel_tracer import HoneyHiveTracer
 
+# Get real API key for integration test
+api_key = os.getenv("HH_API_KEY")
+if not api_key:
+    print("⚠️ HH_API_KEY not available, using test key for ProxyTracerProvider test")
+    api_key = "test-key-for-proxy-test"
+
 # Initialize HoneyHive - this should handle ProxyTracerProvider correctly
 tracer = HoneyHiveTracer(
-    api_key="test-key",
-    project="test-project", 
-    source="test-source",
-    test_mode=True,
+    api_key=api_key,
+    project="integration-test-project", 
+    source="integration-test-source",
+    test_mode=False,  # Use real API for integration testing
     disable_http_tracing=True
 )
 
@@ -122,12 +127,18 @@ from honeyhive.tracer.otel_tracer import HoneyHiveTracer
 
 print("Testing correct initialization order...")
 
+# Get real API key for integration test
+api_key = os.getenv("HH_API_KEY")
+if not api_key:
+    print("⚠️ HH_API_KEY not available, using test key for initialization order test")
+    api_key = "test-key-for-init-order-test"
+
 # ✅ CORRECT: HoneyHive first, then instrumentor separately
 tracer = HoneyHiveTracer(
-    api_key="test-key",
-    project="test-project",
-    source="test-source", 
-    test_mode=True,
+    api_key=api_key,
+    project="integration-test-project",
+    source="integration-test-source", 
+    test_mode=False,  # Use real API for integration testing
     disable_http_tracing=True
 )
 
@@ -191,12 +202,18 @@ sys.path.insert(0, "/Users/josh/src/github.com/honeyhiveai/python-sdk/src")
 from opentelemetry import trace
 from honeyhive.tracer.otel_tracer import HoneyHiveTracer
 
+# Get real API key for integration test
+api_key = os.getenv("HH_API_KEY")
+if not api_key:
+    print("⚠️ HH_API_KEY not available, using test key for span processor test")
+    api_key = "test-key-for-span-processor-test"
+
 # Initialize HoneyHive
 tracer = HoneyHiveTracer(
-    api_key="test-key",
-    project="test-project",
-    source="test-source",
-    test_mode=True,
+    api_key=api_key,
+    project="integration-test-project",
+    source="integration-test-source",
+    test_mode=False,  # Use real API for integration testing
     disable_http_tracing=True
 )
 
@@ -261,12 +278,18 @@ sys.path.insert(0, "/Users/josh/src/github.com/honeyhiveai/python-sdk/src")
 from opentelemetry import trace
 from honeyhive.tracer.otel_tracer import HoneyHiveTracer
 
+# Get real API key for integration test
+api_key = os.getenv("HH_API_KEY")
+if not api_key:
+    print("⚠️ HH_API_KEY not available, using test key for real instrumentor test")
+    api_key = "test-key-for-real-instrumentor-test"
+
 # Step 1: Initialize HoneyHive first
 tracer = HoneyHiveTracer(
-    api_key="test-key",
-    project="test-project",
-    source="test-source",
-    test_mode=True,
+    api_key=api_key,
+    project="integration-test-project",
+    source="integration-test-source",
+    test_mode=False,  # Use real API for integration testing
     disable_http_tracing=True
 )
 

@@ -181,7 +181,7 @@ class TestOpenTelemetryVersionCompatibility:
             otel_version = getattr(opentelemetry, "__version__", "unknown")
             print(f"   OpenTelemetry version: {otel_version}")
         except ImportError:
-            pytest.skip("OpenTelemetry not available")
+            pytest.fail("OpenTelemetry not available - install required dependencies")
 
         # Test basic OpenTelemetry functionality
         from opentelemetry import trace
@@ -584,7 +584,9 @@ class TestPerformanceRegression:
 
             process = psutil.Process()
         except ImportError:
-            pytest.skip("psutil not available for memory testing")
+            pytest.fail(
+                "psutil not available for memory testing - install required dependencies"
+            )
 
         # Baseline memory
         baseline_memory = process.memory_info().rss / 1024 / 1024  # MB

@@ -68,7 +68,7 @@ Choose Your Instrumentor
    # {{PROVIDER_API_KEY_NAME}}=your-{{PROVIDER_KEY}}-key
 
    # Step 1: Initialize HoneyHive tracer first (without instrumentors)
-   tracer = HoneyHiveTracer.init()  # Uses HH_API_KEY and HH_PROJECT from environment
+   tracer = HoneyHiveTracer.init()  # Uses HH_API_KEY from environment
    
    # Step 2: Initialize instrumentor separately with tracer_provider
    instrumentor = {{OPENINFERENCE_CLASS}}()
@@ -223,7 +223,7 @@ Choose Your Instrumentor
    # {{PROVIDER_API_KEY_NAME}}=your-{{PROVIDER_KEY}}-key
 
    # Step 1: Initialize HoneyHive tracer first (without instrumentors)
-   tracer = HoneyHiveTracer.init()  # Uses HH_API_KEY and HH_PROJECT from environment
+   tracer = HoneyHiveTracer.init()  # Uses HH_API_KEY from environment
    
    # Step 2: Initialize Traceloop instrumentor separately with tracer_provider
    instrumentor = {{TRACELOOP_CLASS}}()

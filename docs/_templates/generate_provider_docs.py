@@ -95,7 +95,6 @@ PROVIDER_CONFIGS = {
        from openinference.instrumentation.anthropic import AnthropicInstrumentor
        
        tracer = HoneyHiveTracer.init(
-           project="my-project",  # Required for OTLP tracing
            instrumentors=[
                OpenAIInstrumentor(),
                AnthropicInstrumentor()
@@ -106,7 +105,6 @@ PROVIDER_CONFIGS = {
        from opentelemetry.instrumentation.anthropic import AnthropicInstrumentor
        
        tracer = HoneyHiveTracer.init(
-           project="my-project",  # Required for OTLP tracing
            instrumentors=[
                OpenAIInstrumentor(),      # Traceloop OpenAI
                AnthropicInstrumentor()    # Traceloop Anthropic
@@ -183,7 +181,6 @@ PROVIDER_CONFIGS = {
        from openinference.instrumentation.openai import OpenAIInstrumentor
        
        tracer = HoneyHiveTracer.init(
-           project="my-project",  # Required for OTLP tracing
            instrumentors=[
                AnthropicInstrumentor(),
                OpenAIInstrumentor()
@@ -194,7 +191,6 @@ PROVIDER_CONFIGS = {
        from opentelemetry.instrumentation.openai import OpenAIInstrumentor
        
        tracer = HoneyHiveTracer.init(
-           project="my-project",  # Required for OTLP tracing
            instrumentors=[
                AnthropicInstrumentor(),      # Traceloop Anthropic
                OpenAIInstrumentor()          # Traceloop OpenAI
@@ -335,7 +331,6 @@ PROVIDER_CONFIGS = {
        from openinference.instrumentation.openai import OpenAIInstrumentor
        
        tracer = HoneyHiveTracer.init(
-           project="my-project",  # Required for OTLP tracing
            instrumentors=[
                GoogleADKInstrumentor(),
                OpenAIInstrumentor()
@@ -348,7 +343,6 @@ PROVIDER_CONFIGS = {
        from opentelemetry.instrumentation.openai import OpenAIInstrumentor
        
        tracer = HoneyHiveTracer.init(
-           project="my-project",  # Required for OTLP tracing
            instrumentors=[
                GoogleADKInstrumentor(),      # OpenInference (only option)
                OpenAIInstrumentor()          # Traceloop
@@ -461,7 +455,6 @@ PROVIDER_CONFIGS = {
        from openinference.instrumentation.openai import OpenAIInstrumentor
        
        tracer = HoneyHiveTracer.init(
-           project="my-project",  # Required for OTLP tracing
            instrumentors=[
                BedrockInstrumentor(),
                OpenAIInstrumentor()
@@ -472,7 +465,6 @@ PROVIDER_CONFIGS = {
        from opentelemetry.instrumentation.openai import OpenAIInstrumentor
        
        tracer = HoneyHiveTracer.init(
-           project="my-project",  # Required for OTLP tracing
            instrumentors=[
                BedrockInstrumentor(),       # Traceloop Bedrock
                OpenAIInstrumentor()         # Traceloop OpenAI
@@ -579,7 +571,6 @@ PROVIDER_CONFIGS = {
        from openinference.instrumentation.anthropic import AnthropicInstrumentor
        
        tracer = HoneyHiveTracer.init(
-           project="my-project",  # Required for OTLP tracing
            instrumentors=[
                OpenAIInstrumentor(),      # Works for both OpenAI and Azure OpenAI
                AnthropicInstrumentor()
@@ -590,7 +581,6 @@ PROVIDER_CONFIGS = {
        from opentelemetry.instrumentation.anthropic import AnthropicInstrumentor
        
        tracer = HoneyHiveTracer.init(
-           project="my-project",  # Required for OTLP tracing
            instrumentors=[
                OpenAIInstrumentor(),      # Works for both OpenAI and Azure OpenAI
                AnthropicInstrumentor()    # Traceloop Anthropic
@@ -701,7 +691,6 @@ PROVIDER_CONFIGS = {
        from openinference.instrumentation.openai import OpenAIInstrumentor
        
        tracer = HoneyHiveTracer.init(
-           project="my-project",  # Required for OTLP tracing
            instrumentors=[
                MCPInstrumentor(),
                OpenAIInstrumentor()
@@ -712,7 +701,6 @@ PROVIDER_CONFIGS = {
        from opentelemetry.instrumentation.openai import OpenAIInstrumentor
        
        tracer = HoneyHiveTracer.init(
-           project="my-project",  # Required for OTLP tracing
            instrumentors=[
                MCPInstrumentor(),         # Traceloop MCP
                OpenAIInstrumentor()       # Traceloop OpenAI
@@ -810,7 +798,6 @@ def generate_provider_docs(provider_key: str, output_path: Path = None) -> None:
             "ENV_VARS": [
                 "# HoneyHive configuration",
                 "export HH_API_KEY=\"your-honeyhive-api-key\"",
-                "export HH_PROJECT=\"my-project\"",
                 "export HH_SOURCE=\"production\"",
                 "",
                 "# OpenAI configuration",
@@ -828,7 +815,6 @@ def generate_provider_docs(provider_key: str, output_path: Path = None) -> None:
             "ENV_VARS": [
                 "# HoneyHive configuration",
                 "export HH_API_KEY=\"your-honeyhive-api-key\"",
-                "export HH_PROJECT=\"my-project\"",
                 "export HH_SOURCE=\"production\"",
                 "",
                 "# Anthropic configuration",
@@ -846,7 +832,6 @@ def generate_provider_docs(provider_key: str, output_path: Path = None) -> None:
             "ENV_VARS": [
                 "# HoneyHive configuration",
                 "export HH_API_KEY=\"your-honeyhive-api-key\"",
-                "export HH_PROJECT=\"my-project\"",
                 "export HH_SOURCE=\"production\"",
                 "",
                 "# Google AI configuration",
@@ -864,7 +849,6 @@ def generate_provider_docs(provider_key: str, output_path: Path = None) -> None:
             "ENV_VARS": [
                 "# HoneyHive configuration",
                 "export HH_API_KEY=\"your-honeyhive-api-key\"",
-                "export HH_PROJECT=\"my-project\"",
                 "export HH_SOURCE=\"production\"",
                 "",
                 "# Google Agent Development Kit (ADK) configuration",
@@ -876,7 +860,6 @@ def generate_provider_docs(provider_key: str, output_path: Path = None) -> None:
             "ENV_VARS": [
                 "# HoneyHive configuration",
                 "export HH_API_KEY=\"your-honeyhive-api-key\"",
-                "export HH_PROJECT=\"my-project\"",
                 "export HH_SOURCE=\"production\"",
                 "",
                 "# AWS Bedrock configuration",
@@ -896,7 +879,6 @@ def generate_provider_docs(provider_key: str, output_path: Path = None) -> None:
             "ENV_VARS": [
                 "# HoneyHive configuration",
                 "export HH_API_KEY=\"your-honeyhive-api-key\"",
-                "export HH_PROJECT=\"my-project\"",
                 "export HH_SOURCE=\"production\"",
                 "",
                 "# Azure OpenAI configuration",
@@ -916,7 +898,6 @@ def generate_provider_docs(provider_key: str, output_path: Path = None) -> None:
             "ENV_VARS": [
                 "# HoneyHive configuration",
                 "export HH_API_KEY=\"your-honeyhive-api-key\"",
-                "export HH_PROJECT=\"my-project\"",
                 "export HH_SOURCE=\"production\"",
                 "",
                 "# MCP configuration",
@@ -1001,7 +982,7 @@ def main():
     )
     parser.add_argument(
         "--provider",
-        required=False,
+        required=True,
         choices=list(PROVIDER_CONFIGS.keys()),
         help="Provider to generate documentation for"
     )

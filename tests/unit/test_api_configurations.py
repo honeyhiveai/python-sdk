@@ -63,14 +63,22 @@ class TestConfigurationsAPI:
 
         with patch.object(client, "request") as mock_request:
             mock_response = Mock()
-            mock_response.json.return_value = mock_configuration_data
+            mock_response.json.return_value = {
+                "acknowledged": True,
+                "insertedId": "config-123",
+                "success": True,
+            }
             mock_request.return_value = mock_response
 
             result = client.configurations.create_configuration(config_request)
 
-            assert result.project == "test-project"
-            assert result.name == "test-config"
-            assert result.provider == "openai"
+            # Should return CreateConfigurationResponse, not Configuration
+            from honeyhive.api.configurations import CreateConfigurationResponse
+
+            assert isinstance(result, CreateConfigurationResponse)
+            assert result.acknowledged is True
+            assert result.inserted_id == "config-123"
+            assert result.success is True
             mock_request.assert_called_once()
 
     def test_create_configuration_from_dict(self, client, mock_configuration_data):
@@ -84,13 +92,22 @@ class TestConfigurationsAPI:
 
         with patch.object(client, "request") as mock_request:
             mock_response = Mock()
-            mock_response.json.return_value = mock_configuration_data
+            mock_response.json.return_value = {
+                "acknowledged": True,
+                "insertedId": "config-123",
+                "success": True,
+            }
             mock_request.return_value = mock_response
 
             result = client.configurations.create_configuration_from_dict(config_data)
 
-            assert result.project == "test-project"
-            assert result.name == "test-config"
+            # Should return CreateConfigurationResponse, not Configuration
+            from honeyhive.api.configurations import CreateConfigurationResponse
+
+            assert isinstance(result, CreateConfigurationResponse)
+            assert result.acknowledged is True
+            assert result.inserted_id == "config-123"
+            assert result.success is True
             mock_request.assert_called_once()
 
     def test_get_configuration(self, client, mock_configuration_data):
@@ -256,13 +273,22 @@ class TestConfigurationsAPI:
 
         with patch.object(client, "request_async") as mock_request:
             mock_response = Mock()
-            mock_response.json.return_value = mock_configuration_data
+            mock_response.json.return_value = {
+                "acknowledged": True,
+                "insertedId": "config-123",
+                "success": True,
+            }
             mock_request.return_value = mock_response
 
             result = await client.configurations.create_configuration_async(
                 config_request
             )
 
-            assert result.project == "test-project"
-            assert result.name == "test-config"
+            # Should return CreateConfigurationResponse, not Configuration
+            from honeyhive.api.configurations import CreateConfigurationResponse
+
+            assert isinstance(result, CreateConfigurationResponse)
+            assert result.acknowledged is True
+            assert result.inserted_id == "config-123"
+            assert result.success is True
             mock_request.assert_called_once()

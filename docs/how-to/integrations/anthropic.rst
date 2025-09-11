@@ -68,7 +68,7 @@ Choose Your Instrumentor
    # ANTHROPIC_API_KEY=your-anthropic-key
 
    # Step 1: Initialize HoneyHive tracer first (without instrumentors)
-   tracer = HoneyHiveTracer.init()  # Uses HH_API_KEY and HH_PROJECT from environment
+   tracer = HoneyHiveTracer.init()  # Uses HH_API_KEY from environment
    
    # Step 2: Initialize instrumentor separately with tracer_provider
    instrumentor = AnthropicInstrumentor()
@@ -198,7 +198,6 @@ Choose Your Instrumentor
        from openinference.instrumentation.openai import OpenAIInstrumentor
        
        tracer = HoneyHiveTracer.init(
-           project="my-project",  # Required for OTLP tracing
            instrumentors=[
                AnthropicInstrumentor(),
                OpenAIInstrumentor()
@@ -212,7 +211,6 @@ Choose Your Instrumentor
    
       # HoneyHive configuration
       export HH_API_KEY="your-honeyhive-api-key"
-      export HH_PROJECT="my-project"
       export HH_SOURCE="production"
       
       # Anthropic configuration
@@ -269,7 +267,7 @@ Choose Your Instrumentor
    # ANTHROPIC_API_KEY=your-anthropic-key
 
    # Step 1: Initialize HoneyHive tracer first (without instrumentors)
-   tracer = HoneyHiveTracer.init()  # Uses HH_API_KEY and HH_PROJECT from environment
+   tracer = HoneyHiveTracer.init()  # Uses HH_API_KEY from environment
    
    # Step 2: Initialize Traceloop instrumentor separately with tracer_provider
    instrumentor = AnthropicInstrumentor()
@@ -397,13 +395,12 @@ Choose Your Instrumentor
       
       # The instrumentor automatically captures enhanced metrics
       from opentelemetry.instrumentation.anthropic import AnthropicInstrumentor
-      
       # Step 1: Initialize HoneyHive tracer first (without instrumentors)
       tracer = HoneyHiveTracer.init()
-      
-      # Step 2: Initialize instrumentor separately with tracer_provider
-      instrumentor = AnthropicInstrumentor()
-      instrumentor.instrument(tracer_provider=tracer.provider)
+   
+   # Step 2: Initialize instrumentor separately with tracer_provider
+   instrumentor = AnthropicInstrumentor()
+   instrumentor.instrument(tracer_provider=tracer.provider)
 
 3. **Multiple Traceloop Instrumentors**
    
@@ -414,7 +411,6 @@ Choose Your Instrumentor
        from opentelemetry.instrumentation.openai import OpenAIInstrumentor
        
        tracer = HoneyHiveTracer.init(
-           project="my-project",  # Required for OTLP tracing
            instrumentors=[
                AnthropicInstrumentor(),      # Traceloop Anthropic
                OpenAIInstrumentor()          # Traceloop OpenAI
@@ -435,7 +431,6 @@ Choose Your Instrumentor
    
       # HoneyHive configuration
       export HH_API_KEY="your-honeyhive-api-key"
-      export HH_PROJECT="my-project"
       export HH_SOURCE="production"
       
       # Anthropic configuration
@@ -456,7 +451,7 @@ Choose Your Instrumentor
    </div>
 
 Comparison: OpenInference vs Traceloop for Anthropic
-=======================================================================
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 .. list-table:: Feature Comparison
    :header-rows: 1
@@ -491,7 +486,7 @@ Comparison: OpenInference vs Traceloop for Anthropic
      - Production, cost optimization
 
 Migration Between Instrumentors
--------------------------------
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 **From OpenInference to Traceloop**:
 

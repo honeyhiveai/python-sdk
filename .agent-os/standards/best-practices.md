@@ -1921,6 +1921,100 @@ else:
 - Comprehensive examples
 - Active community support
 
+### 🧹 Temporary File Cleanup Protocol - MANDATORY FOR AI ASSISTANTS
+
+**🚨 CRITICAL**: AI assistants MUST clean up temporary analysis files created during specification work.
+
+#### What Constitutes a Temporary File
+
+**Temporary Files** are analysis documents created during specification development that:
+- Are **NOT** part of the permanent project structure
+- Contain analysis, research, or planning information
+- Are created to support specification development but not needed long-term
+- Have names indicating temporary/analysis nature
+
+**Common Temporary File Patterns**:
+```bash
+# Analysis documents
+*-analysis.md
+*-gap-analysis.md
+*-governance-analysis.md
+
+# Planning documents  
+*-naming-standard.md
+*-implementation-plan.md
+*-research-notes.md
+
+# Investigation files
+*-investigation.md
+*-findings.md
+*-comparison.md
+```
+
+#### Cleanup Requirements
+
+**1. Mandatory Cleanup Task**
+- EVERY specification MUST include a cleanup task as the final implementation step
+- Cleanup task MUST be included in requirements (REQ-*-XXX: Temporary File Cleanup)
+- Cleanup task MUST be included in implementation components (COMP-CLEANUP)
+
+**2. Integration Verification**
+- Confirm ALL analysis findings are integrated into Agent OS specification
+- Verify no critical information is lost during cleanup
+- Ensure cleanup doesn't affect permanent documentation or code
+
+**3. Automated Validation**
+```bash
+# Verify temporary files are removed
+find . -maxdepth 1 -name "*analysis*.md" -o -name "*governance*.md" -o -name "*naming-standard*.md" -o -name "*investigation*.md" | wc -l | grep -q "^0$" && echo "✅ Project root clean" || echo "❌ Temporary files remain"
+```
+
+#### Permanent vs Temporary Files
+
+**✅ KEEP (Permanent Files)**:
+- Agent OS specifications (`.agent-os/specs/*/`)
+- Project documentation (`docs/`)
+- Code files (`src/`, `tests/`)
+- Configuration files (`pyproject.toml`, `tox.ini`, etc.)
+- README files and changelogs
+
+**🗑️ REMOVE (Temporary Files)**:
+- Analysis documents created during spec development
+- Research notes and investigation files
+- Naming standard documents (content should be in spec)
+- Gap analysis documents (findings should be in spec)
+- Planning documents (plans should be in tasks.md)
+
+#### Example Cleanup Implementation
+
+**In specs.md**:
+```markdown
+### REQ-XXX-YYY: Temporary File Cleanup
+**Priority**: Medium
+**Description**: Clean up temporary analysis files created during specification implementation
+**Acceptance Criteria**:
+- Remove all temporary analysis documents from project root
+- Verify no temporary files remain that could confuse future development
+- Confirm all analysis findings are properly integrated into Agent OS specification
+```
+
+**In tasks.md**:
+```markdown
+- [ ] **Cleanup Temporary Analysis Files** ⏱️ 20 minutes
+  - Remove `*-analysis.md` files
+  - Remove `*-naming-standard.md` files  
+  - Remove `*-investigation.md` files
+  - Verify project root cleanliness
+  - Confirm all findings integrated into spec
+```
+
+#### Why This Matters
+
+- **Professional Delivery**: Clean project structure without development artifacts
+- **Future Clarity**: No confusion from leftover temporary documents
+- **Maintainability**: Clear separation between permanent and temporary content
+- **Standards Compliance**: Consistent approach across all Agent OS specifications
+
 ## Common Pitfalls to Avoid
 
 ### Anti-Patterns
@@ -2150,3 +2244,308 @@ AI: "Understood. I'll amend the previous commit with the corrected CHANGELOG ent
 ### Enforcement
 
 This protocol is **MANDATORY** for all AI assistants working on the HoneyHive Python SDK project. Violations should be corrected immediately and the protocol reinforced.
+
+## 📚 Documentation Quality Prevention System
+
+### Overview
+
+The HoneyHive Python SDK implements a **prevention-first** documentation quality system. Issues are caught and fixed **before commit** via pre-commit hooks, with CI serving as a safety net to block merges if anything slips through.
+
+### 🏗️ Prevention Architecture
+
+```
+Developer writes docs → Pre-commit hooks → Auto-fix → Validation → Commit allowed/blocked
+                                    ↓
+                              CI Safety Net (backup validation)
+```
+
+**Philosophy**: Prevention at commit time is 100x better than reactive monitoring.
+
+### 🛡️ Consolidated Documentation Quality Mini-App
+
+#### **Documentation Quality Controller** (`scripts/docs-quality.py`)
+**Purpose**: Unified documentation quality control system that replaces individual validation scripts
+**Usage**: 
+```bash
+# Check all documentation
+python scripts/docs-quality.py check --path docs
+
+# Auto-fix all issues
+python scripts/docs-quality.py fix --path docs
+
+# Generate comprehensive report
+python scripts/docs-quality.py report --path docs --json
+
+# Validate specific aspects only
+python scripts/docs-quality.py check --path docs --only eventtype rst_quality
+
+# Check specific files
+python scripts/docs-quality.py check --path docs/tutorials/01-quick-start.rst
+```
+
+**Integrated Validators**:
+- **EventType Validator**: Prevents string literal violations (`event_type="model"` → `EventType.model`)
+- **RST Quality Validator**: Checks formatting, structure, title underlines, blank lines
+- **Code Example Validator**: Validates Python syntax, imports, detects hardcoded credentials
+- **Navigation Validator**: Validates `:doc:` and `:ref:` links, auto-fixes cross-tree references
+
+**What it catches** (comprehensive detection):
+- ❌ `event_type="model"` → ✅ `event_type=EventType.model`
+- ❌ Missing `from honeyhive.models import EventType`
+- ❌ Title underline length mismatches
+- ❌ Missing blank lines around directives
+- ❌ Malformed code block indentation
+- ❌ Syntax errors in code blocks
+- ❌ Missing import statements
+- ❌ Hardcoded API keys (security issue)
+- ❌ Broken `:doc:` and `:ref:` references
+- ❌ Cross-tree references that should be HTML links
+
+**Performance Benefits**:
+- **Single-pass processing**: All validations run simultaneously for better performance
+- **Shared state**: Coordinated fixing across different validation types
+- **Enhanced detection**: Finds more issues than individual scripts
+- **Unified reporting**: Consistent output format and comprehensive summaries
+
+#### **Documentation Coverage Checker** (`scripts/check-doc-coverage.py`)
+**Purpose**: Ensures comprehensive documentation coverage of all APIs and features
+**Usage**:
+```bash
+python scripts/check-doc-coverage.py                      # Full coverage analysis
+python scripts/check-doc-coverage.py --fix                # Auto-generate doc stubs
+python scripts/check-doc-coverage.py --json               # JSON output for CI/CD
+```
+
+**Coverage Analysis**:
+- **API Coverage**: Verifies all public classes, functions, and methods are documented
+- **Feature Coverage**: Ensures all Agent OS features have documentation
+- **Cross-References**: Validates proper linking between documentation sections
+- **Orphaned Files**: Identifies documentation files not referenced anywhere
+- **Example Coverage**: Checks if APIs have usage examples
+
+**Metrics Tracked**:
+- API coverage percentage (currently ~11.5%)
+- Feature coverage percentage (currently 0.0%)
+- Orphaned file count (currently 51)
+- Broken reference count (currently 99)
+- Missing example count (currently 5)
+
+#### **Performance Benchmarking** (`scripts/benchmark-docs-performance.py`)
+**Purpose**: Measures documentation validation performance and identifies optimization opportunities
+**Usage**:
+```bash
+python scripts/benchmark-docs-performance.py                  # Standard benchmark
+python scripts/benchmark-docs-performance.py --iterations 5   # More iterations
+python scripts/benchmark-docs-performance.py --json           # JSON output
+```
+
+**Performance Metrics**:
+- **Quality Validation**: ~0.29s (very fast)
+- **Coverage Analysis**: ~0.36s (fast)
+- **Navigation Validation**: ~0.17s (fastest)
+- **Sphinx Build**: Variable (depends on documentation quality)
+- **Parallel Execution**: May be slower for small tasks due to overhead
+
+**CI/CD Optimizations Implemented**:
+- **Enhanced Caching**: Python dependencies, Sphinx builds, system packages
+- **Single Python Version**: Reduced matrix overhead for documentation validation
+- **Parallel Task Execution**: Background processing of validation tasks
+- **Conditional Validation**: Link validation only on main branches
+- **Shallow Clones**: Faster repository checkout
+- **Optimized Dependencies**: Only essential packages for documentation tasks
+
+#### **Quality Dashboard** (`scripts/docs-quality-dashboard.py`)
+**Purpose**: Web-based real-time monitoring and visualization of documentation quality metrics
+**Usage**:
+```bash
+python scripts/docs-quality-dashboard.py                     # Start dashboard on port 8000
+python scripts/docs-quality-dashboard.py --port 8080        # Custom port
+python scripts/docs-quality-dashboard.py --collect-only     # Data collection only
+```
+
+**Dashboard Features**:
+- **Real-time Metrics**: Live quality overview, coverage statistics, build status
+- **Historical Trends**: Interactive charts showing quality evolution over time
+- **Performance Monitoring**: Validation timing and performance benchmarks
+- **Auto-refresh**: Configurable automatic data updates
+- **Responsive Design**: Modern web interface with mobile support
+- **Data Persistence**: SQLite database for historical trend analysis
+
+**Metrics Visualized**:
+- **Quality Overview**: Total issues, errors, warnings breakdown with trend indicators
+- **Coverage Metrics**: API coverage percentage, feature coverage, orphaned files
+- **Build Status**: Sphinx warnings/errors, build success rate, build timing
+- **Performance**: Validation speed, coverage analysis time, build duration
+- **Historical Trends**: Multi-metric time series with configurable date ranges
+
+**Technical Architecture**:
+- **Backend**: Flask web server with REST API endpoints
+- **Database**: SQLite for metrics storage and historical data
+- **Frontend**: Modern HTML5/CSS3/JavaScript with Chart.js for visualizations
+- **Data Collection**: Automated integration with existing validation tools
+- **Caching**: Intelligent data collection with configurable refresh intervals
+
+#### **Legacy Navigation Validator** (`docs/utils/validate_navigation.py`)
+**Purpose**: Validates documentation links and cross-references (specialized use cases)
+**Usage**:
+```bash
+python docs/utils/validate_navigation.py --source-only    # Check RST links
+python docs/utils/validate_navigation.py --local          # Check with server
+python docs/utils/validate_navigation.py --fix            # Auto-fix references
+```
+
+**What it catches**:
+- ❌ Broken `:doc:` references
+- ❌ Cross-tree reference issues
+- ❌ Missing toctree entries
+- ❌ Orphaned documentation files
+
+### 🔒 Pre-commit Integration
+
+All validation scripts are integrated into pre-commit hooks to prevent quality issues:
+
+```yaml
+# .pre-commit-config.yaml
+- id: eventtype-validation
+  name: EventType Enum Validation (Prevent String Literals)
+  entry: python scripts/check-doc-types.py
+
+- id: rst-quality-validation  
+  name: RST Quality Validation (Formatting & Structure)
+  entry: python scripts/check-rst-quality.py
+
+- id: code-example-validation
+  name: Code Example Validation (Syntax & Imports)
+  entry: python scripts/test-doc-examples.py
+
+- id: docs-navigation-validation
+  name: Documentation Navigation Validation
+  entry: scripts/validate-docs-navigation.sh
+```
+
+### 🚀 GitHub Actions Integration
+
+The `.github/workflows/documentation-quality.yml` workflow runs comprehensive validation on all PRs:
+
+- **Multi-Python testing** (3.11, 3.12, 3.13)
+- **Zero-warning Sphinx builds** (fails on any warnings)
+- **Comprehensive validation** (all scripts run)
+- **Quality reports** generated and uploaded as artifacts
+- **Link validation** on main branch
+
+### 📋 Quality Standards
+
+#### **EventType Usage**
+```python
+# ✅ CORRECT - Always use enums
+from honeyhive.models import EventType
+
+@trace(event_type=EventType.model)    # LLM calls
+@trace(event_type=EventType.tool)     # Individual functions
+@trace(event_type=EventType.chain)    # Multi-step workflows
+@trace(event_type=EventType.session)  # User interactions
+
+# ❌ WRONG - Never use string literals
+@trace(event_type="model")  # Breaks type safety
+```
+
+#### **Code Examples**
+```python
+# ✅ CORRECT - Complete, working examples
+from honeyhive import HoneyHiveTracer, trace
+from honeyhive.models import EventType
+from os import getenv
+
+tracer = HoneyHiveTracer.init(api_key=getenv("HH_API_KEY"))
+
+@trace(event_type=EventType.model)
+def my_function():
+    return "Hello, World!"
+
+# ❌ WRONG - Missing imports, hardcoded keys
+@trace(event_type="model")  # Missing import and enum
+def my_function():
+    tracer = HoneyHiveTracer.init(api_key="sk-1234...")  # Hardcoded key
+```
+
+#### **RST Formatting**
+```rst
+✅ CORRECT - Proper title underlines
+Section Title
+=============
+
+Subsection Title
+----------------
+
+.. code-block:: python
+
+   # Properly indented (3 spaces minimum)
+   print("Hello, World!")
+
+❌ WRONG - Mismatched underlines
+Section Title
+===========  # Too short!
+
+.. code-block:: python
+
+ # Wrong indentation (only 1 space)
+ print("Hello, World!")
+```
+
+### 🎯 Success Metrics
+
+The system maintains these quality standards:
+
+- **0 Sphinx build warnings** (enforced in CI)
+- **0 EventType string literals** (enforced by pre-commit)
+- **100% working code examples** (syntax validated)
+- **0 broken internal links** (navigation validated)
+
+### 🔧 Developer Workflow
+
+#### **Before Committing**
+```bash
+# Run all validations locally
+python scripts/check-doc-types.py
+python scripts/check-rst-quality.py  
+python scripts/test-doc-examples.py
+python docs/utils/validate_navigation.py --source-only
+
+# Or let pre-commit handle it
+pre-commit run --all-files
+```
+
+#### **Fixing Issues**
+```bash
+# Auto-fix what's possible
+python scripts/check-doc-types.py --fix
+python scripts/check-rst-quality.py --fix
+python scripts/test-doc-examples.py --fix
+python docs/utils/validate_navigation.py --source-only --fix
+
+# Manual fixes for complex issues
+# - Syntax errors in code blocks
+# - Complex table formatting
+# - Security issues (hardcoded keys)
+```
+
+#### **CI/CD Integration**
+- **Pull Requests**: All validation runs automatically
+- **Main Branch**: Additional link validation with live server
+- **Quality Reports**: Generated for each Python version
+- **Artifacts**: Documentation builds and reports uploaded
+
+### 🚨 Error Prevention
+
+This system prevents the types of errors that previously caused:
+- **99 EventType violations** → Now caught by pre-commit
+- **236 Sphinx warnings** → Now enforced as zero-tolerance
+- **Broken navigation links** → Now validated automatically
+- **Syntax errors in examples** → Now caught before commit
+
+### 📖 References
+
+- **Specification**: `.agent-os/specs/2025-09-03-documentation-quality-prevention/`
+- **Validation Scripts**: `scripts/check-*.py`, `scripts/test-*.py`
+- **GitHub Workflow**: `.github/workflows/documentation-quality.yml`
+- **Pre-commit Config**: `.pre-commit-config.yaml`

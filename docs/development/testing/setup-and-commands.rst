@@ -68,8 +68,8 @@ This script installs:
    # Performance tests
    cd tests/lambda && make test-performance
    
-   # Real API tests (requires credentials)
-   pytest -m real_api -v
+   # Integration tests (requires real API credentials)
+   tox -e integration
 
 ### Coverage and Quality
 

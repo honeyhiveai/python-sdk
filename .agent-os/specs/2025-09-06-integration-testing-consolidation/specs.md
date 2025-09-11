@@ -119,6 +119,40 @@ The root cause is architectural: the testing strategy lacks clear boundaries and
 - EventType enum usage requirements and examples included
 - Current test metrics and product information updated
 
+### REQ-ITC-009: Integration Test Coverage Analysis and Reconstruction
+**Priority**: Critical  
+**Description**: Analyze testing gaps introduced by mock removal and rebuild proper integration test coverage based on documented integrations  
+**Acceptance Criteria**:
+- Complete gap analysis documenting lost test coverage from mock removal
+- Comprehensive integration test naming standard based on `docs/how-to/integrations/`
+- Four-tier integration test categorization: Infrastructure, Instrumentor, Non-Instrumentor, SDK
+- Implementation roadmap for 13+ missing integration tests
+- Full coverage of all documented provider integrations (OpenAI, Anthropic, Bedrock, Google AI, Google ADK, Azure OpenAI, MCP)
+- Real API integration tests for both OpenInference and Traceloop instrumentors where available
+
+### REQ-ITC-010: Unit Test Governance and Duplicate Resolution
+**Priority**: Critical  
+**Description**: Ensure moved mocked tests follow proper unit test conventions and resolve duplicate test classes  
+**Acceptance Criteria**:
+- Zero duplicate test class names across all unit test files
+- All moved tests follow `test_<module>_<component>.py` naming convention
+- Duplicate `TestHoneyHiveTracer` classes resolved with scope differentiation
+- Duplicate `TestTracerProviderIntegration` classes resolved or merged
+- Test discovery validation ensures all tests are discoverable by pytest
+- No coverage regression from test consolidation or renaming
+- Clear scope differentiation between overlapping test classes
+
+### REQ-ITC-011: Temporary File Cleanup
+**Priority**: Medium  
+**Description**: Clean up temporary analysis files created during specification implementation per Agent OS standards  
+**Reference**: `.agent-os/standards/best-practices.md` - Temporary File Cleanup Protocol  
+**Acceptance Criteria**:
+- Remove all temporary analysis documents from project root per Agent OS cleanup protocol
+- Verify no temporary files remain that could confuse future development
+- Confirm all analysis findings are properly integrated into Agent OS specification
+- Maintain clean project structure post-implementation
+- Follow Agent OS temporary file patterns and validation commands
+
 ## Implementation Components
 
 ### COMP-DOC: Documentation Consolidation
@@ -198,6 +232,55 @@ The root cause is architectural: the testing strategy lacks clear boundaries and
 - Current test metrics (950+ tests: 831 unit + 119 integration)
 - Graceful degradation patterns and type safety requirements
 
+### COMP-GAP: Integration Test Gap Analysis and Reconstruction
+**Description**: Comprehensive analysis and reconstruction of integration test coverage based on documented integrations  
+**Files Created**:
+- `integration-testing-gap-analysis.md` (detailed gap analysis)
+- `integration-test-naming-standard.md` (naming conventions and categories)
+
+**Key Deliverables**:
+- **Four-Tier Test Categorization**:
+  - Infrastructure Integration Tests (`test_infra_*.py`) - 3 critical tests needed
+  - Instrumentor Integration Tests (`test_instrumentor_<provider>_<instrumentor>.py`) - 13 tests needed
+  - Non-Instrumentor Integration Tests (`test_provider_*_direct.py`) - 1 additional test needed  
+  - General SDK Functionality Tests (`test_sdk_*.py`) - 5 tests already exist
+- **Documentation-Based Analysis**: Derived from actual `docs/how-to/integrations/` content
+- **Provider Coverage**: OpenAI, Anthropic, Bedrock, Google AI, Google ADK, Azure OpenAI, MCP
+- **Instrumentor Coverage**: OpenInference (7 providers) + Traceloop (6 providers where available)
+- **Implementation Roadmap**: Prioritized Infrastructure → OpenInference → Traceloop → Custom frameworks
+- **Gap Analysis**: Identified 13+ missing integration tests from mock removal impact
+
+### COMP-UNIT: Unit Test Governance and Duplicate Resolution
+**Description**: Ensure proper unit test organization and resolve duplicate test classes from moved mocked tests  
+**Files Created**:
+- `unit-test-governance-analysis.md` (duplicate analysis and resolution plan)
+
+**Key Issues Identified**:
+- **Duplicate Test Classes**: `TestHoneyHiveTracer` exists in both `test_tracer.py` and `test_tracer_otel_tracer.py`
+- **Duplicate Provider Tests**: `TestTracerProviderIntegration` exists in both `test_tracer_provider.py` and `test_tracer_otel_tracer.py`
+- **Naming Convention Compliance**: All 7 moved files already follow `test_<module>_<component>.py` pattern ✅
+
+**Resolution Strategy**:
+- **Scope Differentiation**: Rename duplicate classes with specific scope suffixes
+- **Content Analysis**: Compare test methods to identify merge vs rename opportunities
+- **Test Discovery Validation**: Ensure pytest can discover all tests without conflicts
+- **Coverage Verification**: Maintain test coverage levels after consolidation
+
+### COMP-CLEANUP: Temporary File Cleanup
+**Description**: Clean up temporary analysis files per Agent OS Temporary File Cleanup Protocol  
+**Reference**: `.agent-os/standards/best-practices.md` - Temporary File Cleanup Protocol  
+**Files to Remove**:
+- `integration-testing-gap-analysis.md` (temporary analysis document)
+- `integration-test-naming-standard.md` (temporary naming standard document)
+- `unit-test-governance-analysis.md` (temporary governance analysis document)
+
+**Cleanup Process** (per Agent OS standards):
+- **Pattern Matching**: Files match Agent OS temporary file patterns (`*-analysis.md`, `*-governance*.md`, `*-naming-standard.md`)
+- **Integration Verification**: Confirm all analysis findings are integrated into Agent OS specification
+- **Documentation Preservation**: Ensure no critical information is lost during cleanup
+- **Project Structure**: Maintain clean project root without temporary analysis files
+- **Automated Validation**: Use Agent OS validation commands to verify cleanup completion
+
 ## Validation Protocol
 
 ### Pre-Implementation Validation
@@ -250,6 +333,15 @@ The root cause is architectural: the testing strategy lacks clear boundaries and
    - Unit tests complete in <30 seconds
    - Integration tests complete in <5 minutes
    - No significant performance regression
+
+3. **Cleanup Validation** (per Agent OS Temporary File Cleanup Protocol):
+   ```bash
+   # Agent OS standard validation command
+   find . -maxdepth 1 -name "*analysis*.md" -o -name "*governance*.md" -o -name "*naming-standard*.md" -o -name "*investigation*.md" | wc -l | grep -q "^0$" && echo "✅ Project root clean" || echo "❌ Temporary files remain"
+   
+   # Verify specific files are removed
+   ls -la integration-testing-gap-analysis.md integration-test-naming-standard.md unit-test-governance-analysis.md 2>/dev/null && echo "❌ Temporary files still exist" || echo "✅ Cleanup complete"
+   ```
 
 ## Success Criteria
 
