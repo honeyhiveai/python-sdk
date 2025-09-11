@@ -18,6 +18,15 @@ repos:
 
   - repo: local
     hooks:
+      # Structural Validation (Must Run First)
+      - id: no-mocks-in-integration-tests
+        name: No Mocks in Integration Tests Check
+        entry: scripts/validate-no-mocks-integration.sh
+        language: system
+        files: '^tests/integration/.*\.py$'
+        pass_filenames: false
+        stages: [pre-commit]
+
       # Code Quality Checks (Fast)
       - id: tox-format-check
         name: Code Formatting Check (Black + isort)
