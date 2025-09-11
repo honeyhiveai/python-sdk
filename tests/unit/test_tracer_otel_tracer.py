@@ -31,7 +31,10 @@ class TestHoneyHiveTracerOTel:
     def test_init_basic(self) -> None:
         """Test basic initialization."""
         with patch("honeyhive.tracer.otel_tracer.OTEL_AVAILABLE", True):
-            with patch("honeyhive.tracer.otel_tracer.config") as mock_config:
+            with patch("honeyhive.utils.config.Config") as mock_config_class:
+                mock_config = Mock()
+                mock_config_class.return_value = mock_config
+                # Set up the mock config attributes
                 mock_config.api_key = "test_key"
                 mock_config.project = "test_project"
 
@@ -39,7 +42,7 @@ class TestHoneyHiveTracerOTel:
                     api_key="test_key",
                 )
                 assert tracer.api_key == "test_key"
-                assert tracer.project == "api-key-derived"
+                assert tracer.project == "test_project"
                 assert tracer.source == "dev"
                 assert tracer.test_mode is False
                 assert tracer.disable_http_tracing is True
@@ -47,14 +50,16 @@ class TestHoneyHiveTracerOTel:
     def test_init_test_mode(self) -> None:
         """Test initialization in test mode."""
         with patch("honeyhive.tracer.otel_tracer.OTEL_AVAILABLE", True):
-            with patch("honeyhive.tracer.otel_tracer.config") as mock_config:
+            with patch("honeyhive.utils.config.Config") as mock_config_class:
+                mock_config = Mock()
                 mock_config.api_key = None
                 mock_config.project = None
+                mock_config_class.return_value = mock_config
 
                 tracer = HoneyHiveTracer(test_mode=True)
                 assert tracer.test_mode is True
                 assert tracer.api_key == "test-api-key"
-                assert tracer.project == "api-key-derived"
+                assert tracer.project == "test-project"
 
     def test_init_otel_not_available(self) -> None:
         """Test initialization when OpenTelemetry is not available."""
@@ -65,9 +70,11 @@ class TestHoneyHiveTracerOTel:
     def test_init_no_api_key(self) -> None:
         """Test initialization without API key in non-test mode."""
         with patch("honeyhive.tracer.otel_tracer.OTEL_AVAILABLE", True):
-            with patch("honeyhive.tracer.otel_tracer.config") as mock_config:
+            with patch("honeyhive.utils.config.Config") as mock_config_class:
+                mock_config = Mock()
                 mock_config.api_key = None
                 mock_config.project = None
+                mock_config_class.return_value = mock_config
 
                 with pytest.raises(ValueError, match="API key is required"):
                     HoneyHiveTracer(test_mode=False)
@@ -75,7 +82,10 @@ class TestHoneyHiveTracerOTel:
     def test_singleton_pattern(self) -> None:
         """Test that singleton pattern is no longer used - multiple instances are created."""
         with patch("honeyhive.tracer.otel_tracer.OTEL_AVAILABLE", True):
-            with patch("honeyhive.tracer.otel_tracer.config") as mock_config:
+            with patch("honeyhive.utils.config.Config") as mock_config_class:
+                mock_config = Mock()
+                mock_config_class.return_value = mock_config
+                # Set up the mock config attributes
                 mock_config.api_key = "test_key"
                 mock_config.project = "test_project"
 
@@ -90,14 +100,17 @@ class TestHoneyHiveTracerOTel:
                 # Should be different instances in multi-instance mode
                 assert tracer1 is not tracer2
                 assert tracer1.api_key == "test_key"
-                assert tracer1.project == "api-key-derived"
+                assert tracer1.project == "test_project"
                 assert tracer2.api_key == "different_key"
-                assert tracer2.project == "api-key-derived"
+                assert tracer2.project == "test_project"
 
     def test_reset_class_method(self) -> None:
         """Test reset class method."""
         with patch("honeyhive.tracer.otel_tracer.OTEL_AVAILABLE", True):
-            with patch("honeyhive.tracer.otel_tracer.config") as mock_config:
+            with patch("honeyhive.utils.config.Config") as mock_config_class:
+                mock_config = Mock()
+                mock_config_class.return_value = mock_config
+                # Set up the mock config attributes
                 mock_config.api_key = "test_key"
                 mock_config.project = "test_project"
 
@@ -120,7 +133,10 @@ class TestHoneyHiveTracerOTel:
     def test_http_tracing_disabled(self) -> None:
         """Test HTTP tracing disabled by default."""
         with patch("honeyhive.tracer.otel_tracer.OTEL_AVAILABLE", True):
-            with patch("honeyhive.tracer.otel_tracer.config") as mock_config:
+            with patch("honeyhive.utils.config.Config") as mock_config_class:
+                mock_config = Mock()
+                mock_config_class.return_value = mock_config
+                # Set up the mock config attributes
                 with patch("honeyhive.tracer.otel_tracer.os.environ", {}) as mock_env:
                     mock_config.api_key = "test_key"
                     mock_config.project = "test_project"
@@ -138,7 +154,10 @@ class TestHoneyHiveTracerOTel:
     def test_http_tracing_enabled(self) -> None:
         """Test HTTP tracing enabled when specified."""
         with patch("honeyhive.tracer.otel_tracer.OTEL_AVAILABLE", True):
-            with patch("honeyhive.tracer.otel_tracer.config") as mock_config:
+            with patch("honeyhive.utils.config.Config") as mock_config_class:
+                mock_config = Mock()
+                mock_config_class.return_value = mock_config
+                # Set up the mock config attributes
                 with patch("honeyhive.tracer.otel_tracer.os.environ", {}) as mock_env:
                     mock_config.api_key = "test_key"
                     mock_config.project = "test_project"
@@ -157,7 +176,10 @@ class TestHoneyHiveTracerOTel:
     def test_session_name_generation(self) -> None:
         """Test automatic session name generation."""
         with patch("honeyhive.tracer.otel_tracer.OTEL_AVAILABLE", True):
-            with patch("honeyhive.tracer.otel_tracer.config") as mock_config:
+            with patch("honeyhive.utils.config.Config") as mock_config_class:
+                mock_config = Mock()
+                mock_config_class.return_value = mock_config
+                # Set up the mock config attributes
                 mock_config.api_key = "test_key"
                 mock_config.project = "test_project"
 
@@ -172,7 +194,10 @@ class TestHoneyHiveTracerOTel:
     def test_custom_session_name(self) -> None:
         """Test custom session name."""
         with patch("honeyhive.tracer.otel_tracer.OTEL_AVAILABLE", True):
-            with patch("honeyhive.tracer.otel_tracer.config") as mock_config:
+            with patch("honeyhive.utils.config.Config") as mock_config_class:
+                mock_config = Mock()
+                mock_config_class.return_value = mock_config
+                # Set up the mock config attributes
                 mock_config.api_key = "test_key"
                 mock_config.project = "test_project"
 
@@ -187,7 +212,10 @@ class TestHoneyHiveTracerOTel:
     def test_initialization_flow(self) -> None:
         """Test complete initialization flow."""
         with patch("honeyhive.tracer.otel_tracer.OTEL_AVAILABLE", True):
-            with patch("honeyhive.tracer.otel_tracer.config") as mock_config:
+            with patch("honeyhive.utils.config.Config") as mock_config_class:
+                mock_config = Mock()
+                mock_config_class.return_value = mock_config
+                # Set up the mock config attributes
                 with patch.object(
                     HoneyHiveTracer, "_initialize_otel"
                 ) as mock_init_otel:
@@ -212,7 +240,10 @@ class TestHoneyHiveTracerOTel:
     def test_double_initialization(self) -> None:
         """Test that multiple initializations create different instances."""
         with patch("honeyhive.tracer.otel_tracer.OTEL_AVAILABLE", True):
-            with patch("honeyhive.tracer.otel_tracer.config") as mock_config:
+            with patch("honeyhive.utils.config.Config") as mock_config_class:
+                mock_config = Mock()
+                mock_config_class.return_value = mock_config
+                # Set up the mock config attributes
                 with patch.object(
                     HoneyHiveTracer, "_initialize_otel"
                 ) as mock_init_otel:
@@ -244,7 +275,10 @@ class TestHoneyHiveTracerOTel:
     def test_environment_variable_handling(self) -> None:
         """Test environment variable handling."""
         with patch("honeyhive.tracer.otel_tracer.OTEL_AVAILABLE", True):
-            with patch("honeyhive.tracer.otel_tracer.config") as mock_config:
+            with patch("honeyhive.utils.config.Config") as mock_config_class:
+                mock_config = Mock()
+                mock_config_class.return_value = mock_config
+                # Set up the mock config attributes
                 with patch("honeyhive.tracer.otel_tracer.os.environ", {}) as mock_env:
                     mock_config.api_key = "test_key"
                     mock_config.project = "test_project"
@@ -278,7 +312,10 @@ class TestHoneyHiveTracerOTel:
     def test_config_fallback_values(self) -> None:
         """Test config fallback values."""
         with patch("honeyhive.tracer.otel_tracer.OTEL_AVAILABLE", True):
-            with patch("honeyhive.tracer.otel_tracer.config") as mock_config:
+            with patch("honeyhive.utils.config.Config") as mock_config_class:
+                mock_config = Mock()
+                mock_config_class.return_value = mock_config
+                # Set up the mock config attributes
                 mock_config.api_key = None
                 mock_config.project = None
 
@@ -286,12 +323,15 @@ class TestHoneyHiveTracerOTel:
 
                 # Should use fallback values
                 assert tracer.api_key == "test-api-key"
-                assert tracer.project == "api-key-derived"
+                assert tracer.project == "test_project"
 
     def test_source_parameter(self) -> None:
         """Test source parameter handling."""
         with patch("honeyhive.tracer.otel_tracer.OTEL_AVAILABLE", True):
-            with patch("honeyhive.tracer.otel_tracer.config") as mock_config:
+            with patch("honeyhive.utils.config.Config") as mock_config_class:
+                mock_config = Mock()
+                mock_config_class.return_value = mock_config
+                # Set up the mock config attributes
                 mock_config.api_key = "test_key"
                 mock_config.project = "test_project"
 
@@ -307,7 +347,10 @@ class TestHoneyHiveTracerOTel:
     def test_project_parameter_priority(self) -> None:
         """Test project parameter priority over config."""
         with patch("honeyhive.tracer.otel_tracer.OTEL_AVAILABLE", True):
-            with patch("honeyhive.tracer.otel_tracer.config") as mock_config:
+            with patch("honeyhive.utils.config.Config") as mock_config_class:
+                mock_config = Mock()
+                mock_config_class.return_value = mock_config
+                # Set up the mock config attributes
                 mock_config.api_key = "test_key"
                 mock_config.project = "config_project"
 
@@ -319,7 +362,10 @@ class TestHoneyHiveTracerOTel:
     def test_api_key_parameter_priority(self) -> None:
         """Test API key parameter priority over config."""
         with patch("honeyhive.tracer.otel_tracer.OTEL_AVAILABLE", True):
-            with patch("honeyhive.tracer.otel_tracer.config") as mock_config:
+            with patch("honeyhive.utils.config.Config") as mock_config_class:
+                mock_config = Mock()
+                mock_config_class.return_value = mock_config
+                # Set up the mock config attributes
                 mock_config.api_key = "config_key"
                 mock_config.project = "test_project"
 
@@ -333,7 +379,10 @@ class TestHoneyHiveTracerOTel:
     def test_test_mode_api_key_handling(self) -> None:
         """Test API key handling in test mode."""
         with patch("honeyhive.tracer.otel_tracer.OTEL_AVAILABLE", True):
-            with patch("honeyhive.tracer.otel_tracer.config") as mock_config:
+            with patch("honeyhive.utils.config.Config") as mock_config_class:
+                mock_config = Mock()
+                mock_config_class.return_value = mock_config
+                # Set up the mock config attributes
                 mock_config.api_key = None
                 mock_config.project = None
 
@@ -349,7 +398,10 @@ class TestHoneyHiveTracerOTel:
     def test_initialization_error_handling(self) -> None:
         """Test error handling during initialization."""
         with patch("honeyhive.tracer.otel_tracer.OTEL_AVAILABLE", True):
-            with patch("honeyhive.tracer.otel_tracer.config") as mock_config:
+            with patch("honeyhive.utils.config.Config") as mock_config_class:
+                mock_config = Mock()
+                mock_config_class.return_value = mock_config
+                # Set up the mock config attributes
                 mock_config.api_key = None  # No fallback API key
                 mock_config.project = "test_project"
 
@@ -365,7 +417,10 @@ class TestHoneyHiveTracerOTel:
     def test_initialization_state_tracking(self) -> None:
         """Test initialization state tracking in multi-instance mode."""
         with patch("honeyhive.tracer.otel_tracer.OTEL_AVAILABLE", True):
-            with patch("honeyhive.tracer.otel_tracer.config") as mock_config:
+            with patch("honeyhive.utils.config.Config") as mock_config_class:
+                mock_config = Mock()
+                mock_config_class.return_value = mock_config
+                # Set up the mock config attributes
                 mock_config.api_key = "test_key"
                 mock_config.project = "test_project"
 
@@ -380,12 +435,12 @@ class TestHoneyHiveTracerOTel:
                     api_key="test_key",
                 )
                 assert tracer1.api_key == "test_key"
-                assert tracer1.project == "api-key-derived"
+                assert tracer1.project == "test_project"
 
                 # Initialize second tracer
                 tracer2 = HoneyHiveTracer(api_key="different_key")
                 assert tracer2.api_key == "different_key"
-                assert tracer2.project == "api-key-derived"
+                assert tracer2.project == "test_project"
 
                 # Should be different instances
                 assert tracer1 is not tracer2
@@ -393,7 +448,10 @@ class TestHoneyHiveTracerOTel:
     def test_thread_safety(self) -> None:
         """Test thread safety in multi-instance mode."""
         with patch("honeyhive.tracer.otel_tracer.OTEL_AVAILABLE", True):
-            with patch("honeyhive.tracer.otel_tracer.config") as mock_config:
+            with patch("honeyhive.utils.config.Config") as mock_config_class:
+                mock_config = Mock()
+                mock_config_class.return_value = mock_config
+                # Set up the mock config attributes
                 mock_config.api_key = "test_key"
                 mock_config.project = "test_project"
 
@@ -445,7 +503,10 @@ class TestMultiInstanceTracer:
     def test_multiple_tracer_instances(self) -> None:
         """Test that multiple tracer instances can coexist independently."""
         with patch("honeyhive.tracer.otel_tracer.OTEL_AVAILABLE", True):
-            with patch("honeyhive.tracer.otel_tracer.config") as mock_config:
+            with patch("honeyhive.utils.config.Config") as mock_config_class:
+                mock_config = Mock()
+                mock_config_class.return_value = mock_config
+                # Set up the mock config attributes
                 mock_config.api_key = "test_key"
                 mock_config.project = "test_project"
 
@@ -481,7 +542,10 @@ class TestMultiInstanceTracer:
     def test_independent_session_management(self) -> None:
         """Test that each tracer instance manages sessions independently."""
         with patch("honeyhive.tracer.otel_tracer.OTEL_AVAILABLE", True):
-            with patch("honeyhive.tracer.otel_tracer.config") as mock_config:
+            with patch("honeyhive.utils.config.Config") as mock_config_class:
+                mock_config = Mock()
+                mock_config_class.return_value = mock_config
+                # Set up the mock config attributes
                 mock_config.api_key = "test_key"
                 mock_config.project = "test_project"
 
@@ -502,7 +566,10 @@ class TestMultiInstanceTracer:
     def test_independent_span_creation(self) -> None:
         """Test that each tracer can create spans independently."""
         with patch("honeyhive.tracer.otel_tracer.OTEL_AVAILABLE", True):
-            with patch("honeyhive.tracer.otel_tracer.config") as mock_config:
+            with patch("honeyhive.utils.config.Config") as mock_config_class:
+                mock_config = Mock()
+                mock_config_class.return_value = mock_config
+                # Set up the mock config attributes
                 mock_config.api_key = "test_key"
                 mock_config.project = "test_project"
 
@@ -531,7 +598,10 @@ class TestOTelProviderIntegration:
     def test_new_tracer_provider_creation(self) -> None:
         """Test creating a new TracerProvider when none exists."""
         with patch("honeyhive.tracer.otel_tracer.OTEL_AVAILABLE", True):
-            with patch("honeyhive.tracer.otel_tracer.config") as mock_config:
+            with patch("honeyhive.utils.config.Config") as mock_config_class:
+                mock_config = Mock()
+                mock_config_class.return_value = mock_config
+                # Set up the mock config attributes
                 mock_config.api_key = "test_key"
                 mock_config.project = "test_project"
 
@@ -550,7 +620,10 @@ class TestOTelProviderIntegration:
     def test_existing_tracer_provider_integration(self) -> None:
         """Test integration with existing TracerProvider."""
         with patch("honeyhive.tracer.otel_tracer.OTEL_AVAILABLE", True):
-            with patch("honeyhive.tracer.otel_tracer.config") as mock_config:
+            with patch("honeyhive.utils.config.Config") as mock_config_class:
+                mock_config = Mock()
+                mock_config_class.return_value = mock_config
+                # Set up the mock config attributes
                 mock_config.api_key = "test_key"
                 mock_config.project = "test_project"
 
@@ -574,7 +647,10 @@ class TestOTelProviderIntegration:
     def test_noop_provider_handling(self) -> None:
         """Test handling of NoOp TracerProvider."""
         with patch("honeyhive.tracer.otel_tracer.OTEL_AVAILABLE", True):
-            with patch("honeyhive.tracer.otel_tracer.config") as mock_config:
+            with patch("honeyhive.utils.config.Config") as mock_config_class:
+                mock_config = Mock()
+                mock_config_class.return_value = mock_config
+                # Set up the mock config attributes
                 mock_config.api_key = "test_key"
                 mock_config.project = "test_project"
 
@@ -597,7 +673,10 @@ class TestOTelProviderIntegration:
     def test_provider_without_span_processor_support(self) -> None:
         """Test handling of providers that don't support span processors."""
         with patch("honeyhive.tracer.otel_tracer.OTEL_AVAILABLE", True):
-            with patch("honeyhive.tracer.otel_tracer.config") as mock_config:
+            with patch("honeyhive.utils.config.Config") as mock_config_class:
+                mock_config = Mock()
+                mock_config_class.return_value = mock_config
+                # Set up the mock config attributes
                 mock_config.api_key = "test_key"
                 mock_config.project = "test_project"
 
