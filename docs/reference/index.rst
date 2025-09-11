@@ -322,6 +322,9 @@ All configuration supports the ``HH_*`` prefix pattern:
 3. Standard environment variables (``HTTP_*``, ``EXPERIMENT_*``)
 4. Default values (lowest priority)
 
+.. note::
+   **Runtime Configuration** (v0.1.0rc2+): Environment variables are now properly detected when set at runtime, enabling dynamic configuration without application restart.
+
 Security Features
 `````````````````
 

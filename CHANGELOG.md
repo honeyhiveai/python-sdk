@@ -11,6 +11,9 @@
 - Enhanced API client configurations with better error handling
 
 ### Fixed
+- Environment variables not being picked up when set at runtime (customer issue with HH_API_URL)
+- Boolean environment variable precedence logic in HTTPClientConfig (HH_VERIFY_SSL, HH_FOLLOW_REDIRECTS)
+- API client and tracer now use fresh config instances to detect runtime environment changes
 - Missing HH_PROJECT environment variable in GitHub Actions workflows causing integration test failures
 - Missing HH_PROJECT environment variable in tox test environments causing local test failures
 

@@ -17,7 +17,13 @@ Latest Release Notes
 Current Version Highlights
 ~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-**v0.1.0rc2 (Development) - CI/CD and Performance Improvements**
+**v0.1.0rc2 (Development) - Environment Variable Fixes and CI/CD Improvements**
+
+**🔧 FIXED: Runtime Environment Variable Support**
+
+* **HH_API_URL Override**: Environment variables now properly picked up when set at runtime
+* **Boolean Variables**: Fixed HH_VERIFY_SSL and HH_FOLLOW_REDIRECTS precedence logic
+* **Fresh Config Loading**: API client and tracer use fresh config instances
 
 **🚀 NEW: Pre-commit Test Suite Execution**
 

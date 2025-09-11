@@ -123,24 +123,29 @@ class HoneyHive:
             test_mode: Enable test mode (None = use config default)
             verbose: Enable verbose logging for API debugging
         """
-        self.api_key = api_key or config.api_key
+        # Load fresh config to ensure environment variables are picked up
+        from ..utils.config import Config
+
+        fresh_config = Config()
+
+        self.api_key = api_key or fresh_config.api_key
         if not self.api_key:
             raise ValueError("API key is required")
 
-        self.base_url = base_url or config.api_url
-        self.timeout = timeout or config.timeout
+        self.base_url = base_url or fresh_config.api_url
+        self.timeout = timeout or fresh_config.timeout
         self.retry_config = retry_config or RetryConfig()
-        self.test_mode = config.test_mode if test_mode is None else test_mode
-        self.verbose = verbose or config.verbose
+        self.test_mode = fresh_config.test_mode if test_mode is None else test_mode
+        self.verbose = verbose or fresh_config.verbose
 
         # Initialize rate limiter and connection pool with configuration values
         self.rate_limiter = RateLimiter(
-            rate_limit_calls or config.rate_limit_calls,
-            rate_limit_window or config.rate_limit_window,
+            rate_limit_calls or fresh_config.rate_limit_calls,
+            rate_limit_window or fresh_config.rate_limit_window,
         )
         self.connection_pool = ConnectionPool(
-            max_connections or config.max_connections,
-            max_keepalive or config.max_keepalive_connections,
+            max_connections or fresh_config.max_connections,
+            max_keepalive or fresh_config.max_keepalive_connections,
         )
 
         # Initialize logger

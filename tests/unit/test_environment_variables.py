@@ -343,13 +343,13 @@ class TestHTTPClientConfigEnvironmentVariables:
             clear=True,
         ):
             config = HTTPClientConfig()
-            # Note: Due to implementation using 'or', boolean False values may not work as expected
-            # This is a known limitation in the current implementation
-            # The test reflects actual behavior, not ideal behavior
-            assert config.verify_ssl is True  # Falls back to default due to 'or' logic
+            # Boolean environment variables should work correctly now
             assert (
-                config.follow_redirects is True
-            )  # Falls back to default due to 'or' logic
+                config.verify_ssl is False
+            )  # Should properly read HH_VERIFY_SSL=false
+            assert (
+                config.follow_redirects is False
+            )  # Should properly read HH_FOLLOW_REDIRECTS=false
 
     def test_http_config_fallback_to_standard_vars(self):
         """Test HTTPClientConfig falls back to standard environment variables."""
@@ -370,7 +370,7 @@ class TestHTTPClientConfigEnvironmentVariables:
             assert config.http_proxy == "http://standard-proxy.com:8080"
             assert config.https_proxy == "https://standard-secure-proxy.com:8443"
             assert config.no_proxy == "example.com"
-            assert config.verify_ssl is True  # Uses default due to 'or' logic bug
+            assert config.verify_ssl is False  # Should properly read VERIFY_SSL=false
 
     def test_http_config_hh_vars_take_precedence(self):
         """Test HH_ variables take precedence over standard variables."""
@@ -581,7 +581,7 @@ class TestHoneyHiveTracerEnvironmentIntegration:
         """Test HoneyHiveTracer allows missing HH_PROJECT in test mode."""
         with patch.dict(os.environ, {"HH_API_KEY": "test-key"}, clear=True):
             tracer = HoneyHiveTracer.init(test_mode=True)
-            assert tracer.project == "test-project"  # Default for test mode
+            assert tracer.project == "test_project"  # Default for test mode
 
     def test_tracer_constructor_params_override_env_vars(self):
         """Test constructor parameters override environment variables."""

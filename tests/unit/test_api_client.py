@@ -35,10 +35,10 @@ class TestHoneyHive:
 
     def test_client_initialization_missing_api_key(self, monkeypatch: Any) -> None:
         """Test client initialization without API key."""
-        # Patch the config object directly to ensure no API key
-        from honeyhive.utils.config import config
-
-        monkeypatch.setattr(config, "api_key", None)
+        # Clear environment variables to ensure no API key is available
+        monkeypatch.delenv("HH_API_KEY", raising=False)
+        monkeypatch.delenv("HONEYHIVE_API_KEY", raising=False)
+        monkeypatch.delenv("API_KEY", raising=False)
 
         with pytest.raises(ValueError, match="API key is required"):
             HoneyHive(api_key=None)

@@ -8,6 +8,11 @@ Environment Variables Reference
 
 The HoneyHive SDK supports comprehensive configuration through environment variables, allowing for flexible deployment across different environments without code changes.
 
+.. note::
+   **Runtime Configuration Support** (v0.1.0rc2+)
+   
+   Environment variables are now properly picked up when set at runtime, after SDK import. This enables dynamic configuration changes without restarting the application.
+
 Core Configuration Variables
 ----------------------------
 

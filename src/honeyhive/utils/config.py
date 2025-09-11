@@ -225,12 +225,19 @@ class HTTPClientConfig:
         )
 
         # SSL and redirects
-        self.verify_ssl = _get_env_bool(
-            "HH_VERIFY_SSL", self.verify_ssl
-        ) or _get_env_bool("VERIFY_SSL", self.verify_ssl)
-        self.follow_redirects = _get_env_bool(
-            "HH_FOLLOW_REDIRECTS", self.follow_redirects
-        ) or _get_env_bool("FOLLOW_REDIRECTS", self.follow_redirects)
+        if os.getenv("HH_VERIFY_SSL"):
+            self.verify_ssl = _get_env_bool("HH_VERIFY_SSL", self.verify_ssl)
+        elif os.getenv("VERIFY_SSL"):
+            self.verify_ssl = _get_env_bool("VERIFY_SSL", self.verify_ssl)
+
+        if os.getenv("HH_FOLLOW_REDIRECTS"):
+            self.follow_redirects = _get_env_bool(
+                "HH_FOLLOW_REDIRECTS", self.follow_redirects
+            )
+        elif os.getenv("FOLLOW_REDIRECTS"):
+            self.follow_redirects = _get_env_bool(
+                "FOLLOW_REDIRECTS", self.follow_redirects
+            )
 
 
 @dataclass

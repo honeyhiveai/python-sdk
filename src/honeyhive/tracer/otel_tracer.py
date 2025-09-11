@@ -119,7 +119,7 @@ class HoneyHiveTracer:
         else:
             # In test mode, allow missing project
             if test_mode:
-                self.project = "test-project"
+                self.project = "test_project"
             else:
                 raise ValueError(
                     "HH_PROJECT is required. Set the HH_PROJECT environment variable or pass project parameter."
@@ -426,8 +426,15 @@ class HoneyHiveTracer:
         """Initialize session management."""
         try:
             # Create client and session API
+            # Load fresh config to ensure environment variables are picked up
+            from ..utils.config import Config
+
+            fresh_config = Config()
+
             self.client = HoneyHive(
-                api_key=self.api_key, base_url=config.api_url, test_mode=self.test_mode
+                api_key=self.api_key,
+                base_url=fresh_config.api_url,
+                test_mode=self.test_mode,
             )
             self.session_api = SessionAPI(self.client)
 
@@ -452,7 +459,8 @@ class HoneyHiveTracer:
                 # Log the full exception details
                 print(f"Exception details: {type(e).__name__}: {e}")
             self.session_id = None
-            self.client = None
+            # Keep the client even if session creation fails - it's still useful for other operations
+            # self.client = None  # Don't set client to None
             self.session_api = None
 
     def _setup_baggage_context(self) -> None:

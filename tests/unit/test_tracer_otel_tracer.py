@@ -59,7 +59,7 @@ class TestHoneyHiveTracerOTel:
                 tracer = HoneyHiveTracer(test_mode=True)
                 assert tracer.test_mode is True
                 assert tracer.api_key == "test-api-key"
-                assert tracer.project == "test-project"
+                assert tracer.project == "test_project"
 
     def test_init_otel_not_available(self) -> None:
         """Test initialization when OpenTelemetry is not available."""
