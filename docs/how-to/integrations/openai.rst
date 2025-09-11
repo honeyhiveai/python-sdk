@@ -515,7 +515,7 @@ Choose Your Instrumentor
    </div>
 
 Comparison: OpenInference vs Traceloop for OpenAI
-=======================================================================
+-----------------------------------------------------------------------
 
 .. list-table:: Feature Comparison
    :header-rows: 1
