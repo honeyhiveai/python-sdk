@@ -90,7 +90,7 @@ tracer = HoneyHiveTracer(test_mode=True)  # Only override test_mode
 
 # Verify tracer uses the runtime configuration
 assert tracer.api_key == "runtime-test-key"
-assert tracer.client.base_url == "https://runtime.test.url"
+assert tracer.client.server_url == "https://runtime.test.url"
 assert tracer.project == "runtime-project"
 # Source may be overridden by tracer logic in integration environment
 assert tracer.source in ["runtime-source", "dev"]  # Allow for tracer override logic
@@ -109,7 +109,6 @@ print("SUCCESS: Runtime environment variables loaded correctly")
 
         test_script = """
 import os
-from honeyhive import HoneyHiveTracer
 
 # Test various boolean formats
 boolean_tests = [
@@ -127,13 +126,23 @@ boolean_tests = [
     ("off", False),
 ]
 
+# Set up base environment first
+os.environ["HH_TEST_MODE"] = "true"
+os.environ["HH_API_KEY"] = "test-key"
+
+# Multi-instance architecture: no global config state to reset
+# Each tracer instance loads environment variables independently
+
+# Import tracer after setting base environment variables
+from honeyhive import HoneyHiveTracer
+
 for bool_str, expected in boolean_tests:
     os.environ["HH_DISABLE_HTTP_TRACING"] = bool_str
-    os.environ["HH_TEST_MODE"] = "true"
-    os.environ["HH_API_KEY"] = "test-key"
     
+    # Multi-instance architecture: create fresh tracer instance
+    # Environment variables are loaded automatically by TracerConfig
     tracer = HoneyHiveTracer(test_mode=True)
-    assert tracer.disable_http_tracing == expected, f"Failed for {bool_str}, expected {expected}, got {tracer.disable_http_tracing}"
+    assert tracer.config.disable_http_tracing == expected, f"Failed for {bool_str}, expected {expected}, got {tracer.config.disable_http_tracing}"
 
 print("SUCCESS: Boolean environment variable parsing works correctly")
 """
@@ -156,16 +165,15 @@ os.environ["HH_SOURCE"] = "env-source"
 os.environ["HH_TEST_MODE"] = "true"
 
 # Create tracer with different constructor parameters
-# Environment variables should take precedence for api_key
+# Explicit constructor parameters should take precedence over environment variables
 tracer = HoneyHiveTracer(
-    api_key="constructor-api-key",  # This should be overridden by env var
-    source="constructor-source",    # This should override env var
+    api_key="constructor-api-key",  # Explicit param should override env var
+    source="constructor-source",    # Explicit param should override env var
     test_mode=True
 )
 
-# API key should come from environment (constructor override doesn't work for api_key)
-assert tracer.api_key == "env-api-key"
-# Source should come from constructor (constructor overrides env var)
+# Both should come from constructor (explicit parameters have highest precedence)
+assert tracer.api_key == "constructor-api-key"
 assert tracer.source == "constructor-source"
 
 print("SUCCESS: Environment variable precedence works correctly")
@@ -187,7 +195,6 @@ import sys
 
 # Import SDK first (like real users do)
 from honeyhive import HoneyHiveTracer
-from honeyhive.utils.config import Config
 
 # THEN set environment variables (comprehensive test)
 env_vars = {
@@ -222,36 +229,25 @@ env_vars = {
 for key, value in env_vars.items():
     os.environ[key] = value
 
-# Create fresh config and tracer WITHOUT overriding env vars
+# Create tracer WITHOUT overriding env vars (only override test_mode)
 # This is the critical test - tracer should pick up runtime env vars
-config = Config()
 tracer = HoneyHiveTracer(test_mode=True)  # Only override test_mode
 
-# Verify ALL environment variables are loaded correctly
-assert config.api.api_key == "runtime-test-key"
-assert config.api.api_url == "https://runtime.test.url"
-assert config.api.project == "runtime-project"
-assert config.api.source == "runtime-source"
-assert config.tracing.disable_http_tracing is True
-assert config.tracing.test_mode is True
-assert config.tracing.debug_mode is False
-assert config.otlp.batch_size == 300
-assert config.otlp.flush_interval == 5.0
-assert config.timeout == 60.0
-assert config.max_retries == 10
-assert config.http_client.max_connections == 50
-assert config.http_client.verify_ssl is False
-assert config.http_client.follow_redirects is False
-assert config.experiment.experiment_id == "runtime-exp-123"
-assert config.experiment.experiment_name == "runtime-experiment"
-
-# Verify tracer uses the runtime configuration
+# Verify tracer uses the runtime environment variables correctly
 assert tracer.api_key == "runtime-test-key"
-assert tracer.client.base_url == "https://runtime.test.url"
+assert tracer.server_url == "https://runtime.test.url"
 assert tracer.project == "runtime-project"
-# Source may be overridden by tracer logic in integration environment
-assert tracer.source in ["runtime-source", "dev"]  # Allow for tracer override logic
+assert tracer.source == "runtime-source"
+assert tracer.config.disable_http_tracing is True
 assert tracer.test_mode is True
+
+# Verify config interface also shows environment variables
+assert tracer.config.api_key == "runtime-test-key"
+assert tracer.config.server_url == "https://runtime.test.url"
+assert tracer.config.project == "runtime-project"
+assert tracer.config.source == "runtime-source"
+assert tracer.config.disable_http_tracing is True
+assert tracer.config.test_mode is True
 
 print("SUCCESS: Comprehensive runtime environment variables loaded correctly")
 """

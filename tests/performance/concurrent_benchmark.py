@@ -8,13 +8,17 @@ This module tests performance under concurrent load with:
 - Scalability testing
 """
 
+# pylint: disable=duplicate-code
+# pylint: disable=too-many-lines,protected-access,redefined-outer-name,too-many-public-methods,line-too-long
+# Justification: Performance benchmark file with comprehensive concurrent testing requiring extensive test coverage
+
 import queue
 import statistics
 import threading
 import time
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from dataclasses import dataclass
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List, Union
 
 from honeyhive import HoneyHiveTracer
 from tests.mocks.mock_frameworks import MockFrameworkA, MockFrameworkB, MockFrameworkC
@@ -40,16 +44,18 @@ class ConcurrentTestResult:
 class ConcurrentBenchmark:
     """Concurrent performance benchmark suite."""
 
-    def __init__(self):
-        self.results_queue = queue.Queue()
-        self.error_queue = queue.Queue()
+    def __init__(self) -> None:
+        self.results_queue: queue.Queue[Dict[str, Any]] = queue.Queue()
+        self.error_queue: queue.Queue[str] = queue.Queue()
 
     def run_throughput_benchmark(
         self, num_threads: int = 10, operations_per_thread: int = 100
     ) -> ConcurrentTestResult:
         """Benchmark concurrent operation throughput."""
         print(
-            f"🚀 Running throughput benchmark: {num_threads} threads, {operations_per_thread} ops/thread"
+            "🚀 Running throughput benchmark: %s threads, %s ops/thread",
+            num_threads,
+            operations_per_thread,
         )
 
         # Initialize tracer
@@ -150,7 +156,8 @@ class ConcurrentBenchmark:
     ) -> ConcurrentTestResult:
         """Benchmark concurrent operations across different framework types."""
         print(
-            f"🔀 Running mixed framework benchmark: {num_threads} threads, mixed frameworks"
+            "🔀 Running mixed framework benchmark: %s threads, mixed frameworks",
+            num_threads,
         )
 
         # Initialize tracer
@@ -166,6 +173,7 @@ class ConcurrentBenchmark:
             # Create different framework types for each worker
             framework_type = worker_id % 3
 
+            framework: Union[MockFrameworkA, MockFrameworkB, MockFrameworkC]
             if framework_type == 0:
                 framework = MockFrameworkA(f"MixedWorkerA_{worker_id}")
             elif framework_type == 1:
@@ -253,7 +261,9 @@ class ConcurrentBenchmark:
     ) -> List[ConcurrentTestResult]:
         """Benchmark performance under burst load patterns."""
         print(
-            f"💥 Running burst load benchmark: {burst_count} bursts of {burst_size} operations"
+            "💥 Running burst load benchmark: %s bursts of %s operations",
+            burst_count,
+            burst_size,
         )
 
         # Initialize tracer
@@ -380,7 +390,7 @@ class ConcurrentBenchmark:
         )
 
 
-def run_concurrent_benchmark_suite():
+def run_concurrent_benchmark_suite() -> Dict[str, Any]:
     """Run the complete concurrent benchmark suite."""
     print("⚡ Running Concurrent Performance Benchmark Suite")
     print("=" * 60)

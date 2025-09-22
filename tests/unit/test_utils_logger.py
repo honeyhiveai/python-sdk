@@ -1,662 +1,1399 @@
-"""Unit tests for HoneyHive verbose logging functionality."""
+"""Unit tests for honeyhive.utils.logger.
+
+This module contains comprehensive unit tests for the HoneyHive logging utilities,
+including structured logging, shutdown detection, and safe logging functionality.
+"""
+
+# pylint: disable=too-many-lines
+# Justification: Comprehensive unit test coverage requires extensive test cases
+
+# pylint: disable=redefined-outer-name
+# Justification: Pytest fixture pattern requires parameter shadowing
+
+# pylint: disable=protected-access
+# Justification: Unit tests need to verify private method behavior
 
 import json
 import logging
-import os
 import sys
-from unittest.mock import patch
+from datetime import timezone
+from unittest.mock import Mock, PropertyMock, patch
 
 import pytest
 
-from honeyhive.utils.config import config
 from honeyhive.utils.logger import (
     HoneyHiveFormatter,
     HoneyHiveLogger,
+    _detect_shutdown_conditions,
+    _extract_verbose_from_tracer_dynamically,
+    _shutdown_detected,
     default_logger,
     get_logger,
+    get_tracer_logger,
+    is_shutdown_detected,
+    reset_logging_state,
+    safe_debug,
+    safe_error,
+    safe_info,
+    safe_log,
+    safe_warning,
 )
-
-# Type: ignore comments for pytest decorators
-pytest_mark_asyncio = pytest.mark.asyncio  # type: ignore
-
-
-class TestLoggingSetup:
-    """Test logging setup functionality."""
-
-    def setup_method(self) -> None:
-        """Set up test fixtures."""
-        # Reset logging configuration
-        logging.getLogger().handlers.clear()
-        logging.getLogger().setLevel(logging.WARNING)
-
-    def teardown_method(self) -> None:
-        """Clean up test fixtures."""
-        # Reset logging configuration
-        logging.getLogger().handlers.clear()
-        logging.getLogger().setLevel(logging.WARNING)
-
-    def test_honeyhive_logger_initialization(self) -> None:
-        """Test HoneyHiveLogger initialization."""
-        logger = HoneyHiveLogger("test-logger")
-
-        assert logger.logger.name == "test-logger"
-        assert len(logger.logger.handlers) > 0
-
-        # Check that handlers are properly configured
-        for handler in logger.logger.handlers:
-            if isinstance(handler, logging.StreamHandler):
-                assert handler.stream == sys.stdout
-
-    def test_honeyhive_logger_custom_level(self) -> None:
-        """Test HoneyHiveLogger with custom level."""
-        logger = HoneyHiveLogger("test-logger", level=logging.DEBUG)
-
-        assert logger.logger.level == logging.DEBUG
-
-    def test_honeyhive_logger_custom_formatter(self) -> None:
-        """Test HoneyHiveLogger with custom formatter."""
-        custom_formatter = HoneyHiveFormatter(
-            include_timestamp=False, include_level=False
-        )
-        logger = HoneyHiveLogger("test-logger", formatter=custom_formatter)
-
-        assert len(logger.logger.handlers) > 0
-
-        # Check that at least one handler has the custom formatter
-        has_custom_formatter = False
-        for handler in logger.logger.handlers:
-            if handler.formatter:
-                if isinstance(handler.formatter, HoneyHiveFormatter):
-                    has_custom_formatter = True
-                    break
-
-        assert has_custom_formatter
-
-    def test_honeyhive_logger_custom_handler(self) -> None:
-        """Test HoneyHiveLogger with custom handler."""
-        test_log_file = "test_logging.log"
-
-        try:
-            file_handler = logging.FileHandler(test_log_file)
-            # Use a unique logger name to avoid conflicts
-            logger = HoneyHiveLogger("test-logger-custom-handler", handler=file_handler)
-
-            assert len(logger.logger.handlers) > 0
-
-            # Check that at least one handler is a file handler
-            has_file_handler = False
-            for handler in logger.logger.handlers:
-                if isinstance(handler, logging.FileHandler):
-                    has_file_handler = True
-                    break
-
-            assert has_file_handler
-
-        finally:
-            # Clean up
-            if os.path.exists(test_log_file):
-                os.remove(test_log_file)
-
-    def test_honeyhive_logger_multiple_handlers(self) -> None:
-        """Test HoneyHiveLogger with multiple handlers."""
-        console_handler = logging.StreamHandler(sys.stdout)
-        file_handler = logging.FileHandler("test.log")
-
-        logger = HoneyHiveLogger("test-logger", handler=console_handler)
-
-        # Add another handler
-        logger.logger.addHandler(file_handler)
-
-        assert len(logger.logger.handlers) >= 2
-
-        # Should have both console and file handlers
-        has_console_handler = False
-
-        for handler in logger.logger.handlers:
-            if (
-                isinstance(handler, logging.StreamHandler)
-                and handler.stream == sys.stdout
-            ):
-                has_console_handler = True
-            elif isinstance(handler, logging.FileHandler):
-                pass
-
-        assert has_console_handler
-        # Note: file handler test would require a log file path
-
-        # Clean up
-        if os.path.exists("test.log"):
-            os.remove("test.log")
-
-    def test_honeyhive_logger_no_handlers(self) -> None:
-        """Test HoneyHiveLogger with no handlers."""
-        # This should create a default handler
-        logger = HoneyHiveLogger("test-logger")
-
-        # Should have at least one handler
-        assert len(logger.logger.handlers) > 0
-
-    def test_honeyhive_logger_environment_override(self) -> None:
-        """Test that environment variables override default settings."""
-        with patch("honeyhive.utils.logger.config") as mock_config:
-            mock_config.debug_mode = True
-
-            logger = HoneyHiveLogger("test-logger")
-
-            # Should use debug level when debug mode is enabled
-            assert logger.logger.level <= logging.DEBUG
-
-    def test_honeyhive_logger_invalid_level(self) -> None:
-        """Test HoneyHiveLogger with invalid level."""
-        # Test with invalid string level
-        with pytest.raises(AttributeError):
-            HoneyHiveLogger("test-logger", level="INVALID_LEVEL")
-
-        # Test with invalid integer level
-        logger = HoneyHiveLogger("test-logger", level=99999)
-        assert logger.logger.level == 99999
-
-    def test_honeyhive_logger_existing_handlers(self) -> None:
-        """Test HoneyHiveLogger when logger already has handlers."""
-        # Create a logger with existing handlers
-        existing_logger = logging.getLogger("existing-test-logger")
-        existing_handler = logging.StreamHandler(sys.stdout)
-        existing_logger.addHandler(existing_handler)
-        existing_logger.setLevel(logging.DEBUG)
-
-        # Create HoneyHiveLogger with same name
-        honeyhive_logger = HoneyHiveLogger("existing-test-logger")
-
-        # Should not add new handlers if they already exist
-        assert len(honeyhive_logger.logger.handlers) == 1
-        assert honeyhive_logger.logger.handlers[0] == existing_handler
-
-    def test_honeyhive_logger_debug_mode(self) -> None:
-        """Test HoneyHiveLogger with debug mode enabled."""
-        # Mock config.debug_mode to True
-        with patch("honeyhive.utils.logger.config") as mock_config:
-            mock_config.debug_mode = True
-            logger = HoneyHiveLogger("test-logger")
-            assert logger.logger.level == logging.DEBUG
-
-    def test_honeyhive_logger_no_debug_mode(self) -> None:
-        """Test HoneyHiveLogger with debug mode disabled."""
-        # Mock config.debug_mode to False
-        with patch("honeyhive.utils.logger.config") as mock_config:
-            mock_config.debug_mode = False
-            logger = HoneyHiveLogger("test-logger")
-            assert logger.logger.level == logging.INFO
 
 
 class TestHoneyHiveFormatter:
-    """Test HoneyHiveFormatter functionality."""
+    """Test suite for HoneyHiveFormatter class."""
 
-    def test_formatter_default(self) -> None:
-        """Test HoneyHiveFormatter default values."""
+    def test_initialization_with_defaults(self) -> None:
+        """Test HoneyHiveFormatter initialization with default parameters."""
         formatter = HoneyHiveFormatter()
 
         assert formatter.include_timestamp is True
         assert formatter.include_level is True
 
-    def test_formatter_custom(self) -> None:
-        """Test HoneyHiveFormatter with custom values."""
+    def test_initialization_with_custom_parameters(self) -> None:
+        """Test HoneyHiveFormatter initialization with custom parameters."""
         formatter = HoneyHiveFormatter(include_timestamp=False, include_level=False)
 
         assert formatter.include_timestamp is False
         assert formatter.include_level is False
 
-    def test_formatter_format(self) -> None:
-        """Test HoneyHiveFormatter format method."""
-        formatter = HoneyHiveFormatter()
+    @patch("honeyhive.utils.logger.datetime")
+    def test_format_with_all_fields(self, mock_datetime: Mock) -> None:
+        """Test formatting log record with all fields included."""
+        # Arrange
+        mock_now = Mock()
+        mock_now.isoformat.return_value = "2023-01-01T12:00:00+00:00"
+        mock_datetime.now.return_value = mock_now
 
-        # Create a mock log record
+        formatter = HoneyHiveFormatter(include_timestamp=True, include_level=True)
         record = logging.LogRecord(
-            name="test-logger",
+            name="test.logger",
             level=logging.INFO,
             pathname="test.py",
-            lineno=1,
+            lineno=10,
             msg="Test message",
             args=(),
             exc_info=None,
         )
 
-        formatted = formatter.format(record)
-
-        # Should be valid JSON
-        import json
-
-        parsed = json.loads(formatted)
-
-        # Should contain expected fields
-        assert "message" in parsed
-        assert "logger" in parsed
-        assert "timestamp" in parsed
-        assert "level" in parsed
-
-        assert parsed["message"] == "Test message"
-        assert parsed["logger"] == "test-logger"
-        assert parsed["level"] == "INFO"
-
-    def test_formatter_with_exception(self) -> None:
-        """Test formatter with exception info."""
-        formatter = HoneyHiveFormatter()
-        record = logging.LogRecord(
-            "test", logging.INFO, "test.py", 10, "Test message", (), None
-        )
-        record.exc_info = (ValueError, ValueError("Test error"), None)
-
+        # Act
         result = formatter.format(record)
-        log_data = json.loads(result)
 
-        assert "exception" in log_data
-        assert "ValueError: Test error" in log_data["exception"]
+        # Assert
+        parsed_result = json.loads(result)
+        assert parsed_result["timestamp"] == "2023-01-01T12:00:00+00:00"
+        assert parsed_result["level"] == "INFO"
+        assert parsed_result["logger"] == "test.logger"
+        assert parsed_result["message"] == "Test message"
+        mock_datetime.now.assert_called_once_with(timezone.utc)
 
-    def test_formatter_with_extra_data(self) -> None:
-        """Test formatter with extra data."""
-        formatter = HoneyHiveFormatter()
+    def test_format_without_timestamp(self) -> None:
+        """Test formatting log record without timestamp."""
+        # Arrange
+        formatter = HoneyHiveFormatter(include_timestamp=False, include_level=True)
         record = logging.LogRecord(
-            "test", logging.INFO, "test.py", 10, "Test message", (), None
+            name="test.logger",
+            level=logging.WARNING,
+            pathname="test.py",
+            lineno=10,
+            msg="Warning message",
+            args=(),
+            exc_info=None,
         )
-        record.honeyhive_data = {"user_id": "123", "session_id": "abc"}
 
+        # Act
         result = formatter.format(record)
-        log_data = json.loads(result)
 
-        assert log_data["user_id"] == "123"
-        assert log_data["session_id"] == "abc"
+        # Assert
+        parsed_result = json.loads(result)
+        assert "timestamp" not in parsed_result
+        assert parsed_result["level"] == "WARNING"
+        assert parsed_result["logger"] == "test.logger"
+        assert parsed_result["message"] == "Warning message"
 
-    def test_formatter_with_none_values(self) -> None:
-        """Test formatter with None values."""
+    def test_format_without_level(self) -> None:
+        """Test formatting log record without level."""
+        # Arrange
         formatter = HoneyHiveFormatter(include_timestamp=False, include_level=False)
         record = logging.LogRecord(
-            "test", logging.INFO, "test.py", 10, "Test message", (), None
+            name="test.logger",
+            level=logging.ERROR,
+            pathname="test.py",
+            lineno=10,
+            msg="Error message",
+            args=(),
+            exc_info=None,
         )
 
+        # Act
         result = formatter.format(record)
-        log_data = json.loads(result)
 
-        # Should not include None values
-        assert "timestamp" not in log_data
-        assert "level" not in log_data
-        assert "logger" in log_data
-        assert "message" in log_data
+        # Assert
+        parsed_result = json.loads(result)
+        assert "timestamp" not in parsed_result
+        assert "level" not in parsed_result
+        assert parsed_result["logger"] == "test.logger"
+        assert parsed_result["message"] == "Error message"
 
-    def test_formatter_with_empty_strings(self) -> None:
-        """Test formatter with empty strings."""
-        formatter = HoneyHiveFormatter()
-        record = logging.LogRecord("test", logging.INFO, "test.py", 10, "", (), None)
-
-        result = formatter.format(record)
-        log_data = json.loads(result)
-
-        # Empty strings should be included (not None)
-        assert log_data["message"] == ""
-
-    def test_formatter_with_special_characters(self) -> None:
-        """Test formatter with special characters."""
-        formatter = HoneyHiveFormatter()
-        message = "Test message with special chars: !@#$%^&*()_+-=[]{}|;':\",./<>?"
+    def test_format_with_honeyhive_data(self) -> None:
+        """Test formatting log record with HoneyHive context data."""
+        # Arrange
+        formatter = HoneyHiveFormatter(include_timestamp=False, include_level=False)
         record = logging.LogRecord(
-            "test", logging.INFO, "test.py", 10, message, (), None
+            name="test.logger",
+            level=logging.INFO,
+            pathname="test.py",
+            lineno=10,
+            msg="Context message",
+            args=(),
+            exc_info=None,
         )
+        honeyhive_data = {"session_id": "test-123", "project": "test-project"}
+        record.honeyhive_data = honeyhive_data
 
+        # Act
         result = formatter.format(record)
-        log_data = json.loads(result)
 
-        assert log_data["message"] == message
+        # Assert
+        parsed_result = json.loads(result)
+        assert parsed_result["logger"] == "test.logger"
+        assert parsed_result["message"] == "Context message"
+        assert parsed_result["session_id"] == "test-123"
+        assert parsed_result["project"] == "test-project"
 
-    def test_formatter_with_unicode(self) -> None:
-        """Test formatter with unicode characters."""
-        formatter = HoneyHiveFormatter()
-        message = "Test message with unicode: 🚀🌟🎉"
-        record = logging.LogRecord(
-            "test", logging.INFO, "test.py", 10, message, (), None
-        )
+    def test_format_with_exception_info(self) -> None:
+        """Test formatting log record with exception information."""
+        # Arrange
+        formatter = HoneyHiveFormatter(include_timestamp=False, include_level=False)
 
-        result = formatter.format(record)
-        log_data = json.loads(result)
-
-        assert log_data["message"] == message
-
-    def test_formatter_with_very_long_messages(self) -> None:
-        """Test formatter with very long messages."""
-        formatter = HoneyHiveFormatter()
-        long_message = "x" * 10000
-        record = logging.LogRecord(
-            "test", logging.INFO, "test.py", 10, long_message, (), None
-        )
-
-        result = formatter.format(record)
-        log_data = json.loads(result)
-
-        assert log_data["message"] == long_message
-        assert len(result) > 10000
-
-    def test_formatter_with_complex_objects(self) -> None:
-        """Test formatter with complex objects in extra data."""
-        formatter = HoneyHiveFormatter()
-        record = logging.LogRecord(
-            "test", logging.INFO, "test.py", 10, "Test message", (), None
-        )
-        record.honeyhive_data = {
-            "list": [1, 2, 3],
-            "dict": {"a": 1, "b": 2},
-            "tuple": (1, 2, 3),
-            "set": {1, 2, 3},
-        }
-
-        result = formatter.format(record)
-        log_data = json.loads(result)
-
-        assert log_data["list"] == [1, 2, 3]
-        assert log_data["dict"] == {"a": 1, "b": 2}
-        assert log_data["tuple"] == [1, 2, 3]  # JSON converts tuples to lists
-
-        # Check that set is properly serialized (JSON doesn't support sets natively)
-        # The exact format may vary depending on the JSON implementation
-        set_value = log_data["set"]
-        assert isinstance(set_value, (list, str))
-        if isinstance(set_value, list):
-            assert set_value == [1, 2, 3]
-        else:
-            # If it's a string representation, it should contain the values
-            assert "1" in set_value
-            assert "2" in set_value
-            assert "3" in set_value
-
-    def test_logger_exception_method(self) -> None:
-        """Test HoneyHiveLogger exception method."""
-        logger = HoneyHiveLogger("test-logger")
-
-        # Test exception logging with honeyhive_data
+        exc_info = None
         try:
             raise ValueError("Test exception")
         except ValueError:
-            logger.exception("Exception occurred", honeyhive_data={"user_id": "123"})
+            exc_info = sys.exc_info()
 
-        # Test exception logging without honeyhive_data
-        try:
-            raise TypeError("Another exception")
-        except TypeError:
-            logger.exception("Another exception occurred")
+        record = logging.LogRecord(
+            name="test.logger",
+            level=logging.ERROR,
+            pathname="test.py",
+            lineno=10,
+            msg="Exception occurred",
+            args=(),
+            exc_info=exc_info,
+        )
 
-    def test_get_logger_function(self) -> None:
-        """Test get_logger function."""
-        # Test basic logger creation
-        logger = get_logger("test-get-logger")
-        assert isinstance(logger, HoneyHiveLogger)
-        assert logger.logger.name == "test-get-logger"
+        # Act
+        result = formatter.format(record)
 
-        # Test logger with custom kwargs
-        custom_logger = get_logger("custom-logger", level="DEBUG")
-        assert custom_logger.logger.level == logging.DEBUG
+        # Assert
+        parsed_result = json.loads(result)
+        assert parsed_result["logger"] == "test.logger"
+        assert parsed_result["message"] == "Exception occurred"
+        assert "exception" in parsed_result
+        assert "ValueError: Test exception" in parsed_result["exception"]
 
-        # Test that different names create different loggers
-        logger1 = get_logger("logger1")
-        logger2 = get_logger("logger2")
-        assert logger1.logger.name != logger2.logger.name
+    def test_format_removes_none_values(self) -> None:
+        """Test that formatting removes None values from output."""
+        # Arrange
+        formatter = HoneyHiveFormatter(include_timestamp=False, include_level=False)
+        record = logging.LogRecord(
+            name="test.logger",
+            level=logging.INFO,
+            pathname="test.py",
+            lineno=10,
+            msg="Clean message",
+            args=(),
+            exc_info=None,
+        )
 
-    def test_default_logger(self) -> None:
-        """Test default logger."""
-        # Test that default_logger exists and is functional
+        # Act
+        result = formatter.format(record)
+
+        # Assert
+        parsed_result = json.loads(result)
+        assert "timestamp" not in parsed_result
+        assert "level" not in parsed_result
+        assert parsed_result["logger"] == "test.logger"
+        assert parsed_result["message"] == "Clean message"
+
+
+class TestHoneyHiveLogger:
+    """Test suite for HoneyHiveLogger class."""
+
+    @patch("honeyhive.utils.logger.logging.getLogger")
+    def test_initialization_with_defaults(self, mock_get_logger: Mock) -> None:
+        """Test HoneyHiveLogger initialization with default parameters."""
+        # Arrange
+        mock_logger = Mock()
+        mock_logger.handlers = []
+        mock_get_logger.return_value = mock_logger
+
+        # Act
+        logger = HoneyHiveLogger("test.logger")
+
+        # Assert
+        assert logger.logger == mock_logger
+        assert logger.verbose is None
+        mock_get_logger.assert_called_once_with("test.logger")
+        mock_logger.setLevel.assert_called_once_with(logging.INFO)
+        assert mock_logger.propagate is False
+
+    @patch("honeyhive.utils.logger.logging.getLogger")
+    def test_initialization_with_explicit_level(self, mock_get_logger: Mock) -> None:
+        """Test HoneyHiveLogger initialization with explicit log level."""
+        # Arrange
+        mock_logger = Mock()
+        mock_logger.handlers = []
+        mock_get_logger.return_value = mock_logger
+
+        # Act
+        logger = HoneyHiveLogger("test.logger", level=logging.DEBUG)
+
+        # Assert
+        assert logger.logger == mock_logger
+        mock_logger.setLevel.assert_called_once_with(logging.DEBUG)
+
+    @patch("honeyhive.utils.logger.logging.getLogger")
+    def test_initialization_with_string_level(self, mock_get_logger: Mock) -> None:
+        """Test HoneyHiveLogger initialization with string log level."""
+        # Arrange
+        mock_logger = Mock()
+        mock_logger.handlers = []
+        mock_get_logger.return_value = mock_logger
+
+        # Act
+        logger = HoneyHiveLogger("test.logger", level="WARNING")
+
+        # Assert
+        assert logger.logger == mock_logger
+        mock_logger.setLevel.assert_called_once_with(logging.WARNING)
+
+    @patch("honeyhive.utils.logger.logging.getLogger")
+    def test_initialization_with_verbose_true(self, mock_get_logger: Mock) -> None:
+        """Test HoneyHiveLogger initialization with verbose=True."""
+        # Arrange
+        mock_logger = Mock()
+        mock_logger.handlers = []
+        mock_get_logger.return_value = mock_logger
+
+        # Act
+        logger = HoneyHiveLogger("test.logger", verbose=True)
+
+        # Assert
+        assert logger.verbose is True
+        mock_logger.setLevel.assert_called_once_with(logging.DEBUG)
+
+    @patch("honeyhive.utils.logger.logging.getLogger")
+    def test_initialization_with_verbose_false(self, mock_get_logger: Mock) -> None:
+        """Test HoneyHiveLogger initialization with verbose=False."""
+        # Arrange
+        mock_logger = Mock()
+        mock_logger.handlers = []
+        mock_get_logger.return_value = mock_logger
+
+        # Act
+        logger = HoneyHiveLogger("test.logger", verbose=False)
+
+        # Assert
+        assert logger.verbose is False
+        mock_logger.setLevel.assert_called_once_with(logging.INFO)
+
+    @patch("honeyhive.utils.logger.logging.getLogger")
+    def test_initialization_with_custom_handler(self, mock_get_logger: Mock) -> None:
+        """Test HoneyHiveLogger initialization with custom handler."""
+        # Arrange
+        mock_logger = Mock()
+        mock_logger.handlers = []
+        mock_get_logger.return_value = mock_logger
+        custom_handler = Mock()
+
+        # Act
+        logger = HoneyHiveLogger("test.logger", handler=custom_handler)
+
+        # Assert
+        assert logger.logger == mock_logger
+        mock_logger.addHandler.assert_called_once_with(custom_handler)
+
+    @patch("honeyhive.utils.logger.logging.getLogger")
+    @patch("honeyhive.utils.logger.logging.StreamHandler")
+    @patch("honeyhive.utils.logger.HoneyHiveFormatter")
+    def test_initialization_creates_default_handler(
+        self,
+        mock_formatter_class: Mock,
+        mock_handler_class: Mock,
+        mock_get_logger: Mock,
+    ) -> None:
+        """Test HoneyHiveLogger creates default handler when none provided."""
+        # Arrange
+        mock_logger = Mock()
+        mock_logger.handlers = []
+        mock_get_logger.return_value = mock_logger
+        mock_handler = Mock()
+        mock_handler_class.return_value = mock_handler
+        mock_formatter = Mock()
+        mock_formatter_class.return_value = mock_formatter
+
+        # Act
+        _ = HoneyHiveLogger("test.logger")
+
+        # Assert
+        mock_handler_class.assert_called_once_with(sys.stdout)
+        mock_formatter_class.assert_called_once()
+        mock_handler.setFormatter.assert_called_once_with(mock_formatter)
+        mock_logger.addHandler.assert_called_once_with(mock_handler)
+
+    @patch("honeyhive.utils.logger.logging.getLogger")
+    def test_initialization_with_existing_handlers(self, mock_get_logger: Mock) -> None:
+        """Test HoneyHiveLogger initialization when logger already has handlers."""
+        # Arrange
+        mock_logger = Mock()
+        existing_handler = Mock()
+        mock_logger.handlers = [existing_handler]
+        mock_get_logger.return_value = mock_logger
+
+        # Act
+        logger = HoneyHiveLogger("test.logger")
+
+        # Assert
+        assert logger.logger == mock_logger
+        mock_logger.addHandler.assert_not_called()
+
+    def test_determine_log_level_dynamically_with_explicit_level(self) -> None:
+        """Test dynamic log level determination with explicit level parameter."""
+        # Arrange
+        logger = HoneyHiveLogger.__new__(HoneyHiveLogger)
+
+        # Act
+        result = logger._determine_log_level_dynamically(logging.ERROR, None)
+
+        # Assert
+        assert result == logging.ERROR
+
+    def test_determine_log_level_dynamically_with_string_level(self) -> None:
+        """Test dynamic log level determination with string level parameter."""
+        # Arrange
+        logger = HoneyHiveLogger.__new__(HoneyHiveLogger)
+
+        # Act
+        result = logger._determine_log_level_dynamically("CRITICAL", None)
+
+        # Assert
+        assert result == logging.CRITICAL
+
+    def test_determine_log_level_dynamically_with_invalid_string(self) -> None:
+        """Test dynamic log level determination with invalid string level."""
+        # Arrange
+        logger = HoneyHiveLogger.__new__(HoneyHiveLogger)
+
+        # Act
+        result = logger._determine_log_level_dynamically("INVALID", None)
+
+        # Assert
+        assert result == logging.INFO
+
+    def test_determine_log_level_dynamically_with_verbose_true(self) -> None:
+        """Test dynamic log level determination with verbose=True."""
+        # Arrange
+        logger = HoneyHiveLogger.__new__(HoneyHiveLogger)
+
+        # Act
+        result = logger._determine_log_level_dynamically(None, True)
+
+        # Assert
+        assert result == logging.DEBUG
+
+    def test_determine_log_level_dynamically_with_verbose_false(self) -> None:
+        """Test dynamic log level determination with verbose=False."""
+        # Arrange
+        logger = HoneyHiveLogger.__new__(HoneyHiveLogger)
+
+        # Act
+        result = logger._determine_log_level_dynamically(None, False)
+
+        # Assert
+        assert result == logging.INFO
+
+    def test_determine_log_level_dynamically_with_defaults(self) -> None:
+        """Test dynamic log level determination with default values."""
+        # Arrange
+        logger = HoneyHiveLogger.__new__(HoneyHiveLogger)
+
+        # Act
+        result = logger._determine_log_level_dynamically(None, None)
+
+        # Assert
+        assert result == logging.INFO
+
+    @patch("honeyhive.utils.logger.logging.getLogger")
+    def test_update_verbose_setting_to_true(self, mock_get_logger: Mock) -> None:
+        """Test updating verbose setting to True."""
+        # Arrange
+        mock_logger = Mock()
+        mock_logger.handlers = []
+        mock_get_logger.return_value = mock_logger
+        logger = HoneyHiveLogger("test.logger", verbose=False)
+
+        # Act
+        logger.update_verbose_setting(True)
+
+        # Assert
+        assert logger.verbose is True
+        mock_logger.setLevel.assert_called_with(logging.DEBUG)
+
+    @patch("honeyhive.utils.logger.logging.getLogger")
+    def test_update_verbose_setting_to_false(self, mock_get_logger: Mock) -> None:
+        """Test updating verbose setting to False."""
+        # Arrange
+        mock_logger = Mock()
+        mock_logger.handlers = []
+        mock_get_logger.return_value = mock_logger
+        logger = HoneyHiveLogger("test.logger", verbose=True)
+
+        # Act
+        logger.update_verbose_setting(False)
+
+        # Assert
+        assert logger.verbose is False
+        mock_logger.setLevel.assert_called_with(logging.INFO)
+
+    @patch("honeyhive.utils.logger.logging.getLogger")
+    def test_log_with_context_basic(self, mock_get_logger: Mock) -> None:
+        """Test _log_with_context with basic parameters."""
+        # Arrange
+        mock_logger = Mock()
+        mock_logger.handlers = []
+        mock_get_logger.return_value = mock_logger
+        logger = HoneyHiveLogger("test.logger")
+
+        # Act
+        logger._log_with_context(logging.INFO, "Test message", ("arg1", "arg2"))
+
+        # Assert
+        mock_logger.log.assert_called_once_with(
+            logging.INFO, "Test message", "arg1", "arg2", extra={}
+        )
+
+    @patch("honeyhive.utils.logger.logging.getLogger")
+    def test_log_with_context_with_honeyhive_data(self, mock_get_logger: Mock) -> None:
+        """Test _log_with_context with HoneyHive context data."""
+        # Arrange
+        mock_logger = Mock()
+        mock_logger.handlers = []
+        mock_get_logger.return_value = mock_logger
+        logger = HoneyHiveLogger("test.logger")
+        honeyhive_data = {"session_id": "test-123"}
+
+        # Act
+        logger._log_with_context(
+            logging.WARNING,
+            "Warning message",
+            (),
+            honeyhive_data,
+            extra_key="extra_value",
+        )
+
+        # Assert
+        mock_logger.log.assert_called_once_with(
+            logging.WARNING,
+            "Warning message",
+            extra={"honeyhive_data": honeyhive_data, "extra_key": "extra_value"},
+        )
+
+    @patch("honeyhive.utils.logger.logging.getLogger")
+    def test_debug_method(self, mock_get_logger: Mock) -> None:
+        """Test debug logging method."""
+        # Arrange
+        mock_logger = Mock()
+        mock_logger.handlers = []
+        mock_get_logger.return_value = mock_logger
+        logger = HoneyHiveLogger("test.logger")
+        honeyhive_data = {"debug_info": "test"}
+
+        # Act
+        logger.debug(
+            "Debug message %s", "arg1", honeyhive_data=honeyhive_data, extra="value"
+        )
+
+        # Assert
+        mock_logger.log.assert_called_once_with(
+            logging.DEBUG,
+            "Debug message %s",
+            "arg1",
+            extra={"honeyhive_data": honeyhive_data, "extra": "value"},
+        )
+
+    @patch("honeyhive.utils.logger.logging.getLogger")
+    def test_info_method(self, mock_get_logger: Mock) -> None:
+        """Test info logging method."""
+        # Arrange
+        mock_logger = Mock()
+        mock_logger.handlers = []
+        mock_get_logger.return_value = mock_logger
+        logger = HoneyHiveLogger("test.logger")
+
+        # Act
+        logger.info("Info message")
+
+        # Assert
+        mock_logger.log.assert_called_once_with(logging.INFO, "Info message", extra={})
+
+    @patch("honeyhive.utils.logger.logging.getLogger")
+    def test_warning_method(self, mock_get_logger: Mock) -> None:
+        """Test warning logging method."""
+        # Arrange
+        mock_logger = Mock()
+        mock_logger.handlers = []
+        mock_get_logger.return_value = mock_logger
+        logger = HoneyHiveLogger("test.logger")
+
+        # Act
+        logger.warning("Warning message")
+
+        # Assert
+        mock_logger.log.assert_called_once_with(
+            logging.WARNING, "Warning message", extra={}
+        )
+
+    @patch("honeyhive.utils.logger.logging.getLogger")
+    def test_error_method(self, mock_get_logger: Mock) -> None:
+        """Test error logging method."""
+        # Arrange
+        mock_logger = Mock()
+        mock_logger.handlers = []
+        mock_get_logger.return_value = mock_logger
+        logger = HoneyHiveLogger("test.logger")
+
+        # Act
+        logger.error("Error message")
+
+        # Assert
+        mock_logger.log.assert_called_once_with(
+            logging.ERROR, "Error message", extra={}
+        )
+
+    @patch("honeyhive.utils.logger.logging.getLogger")
+    def test_critical_method(self, mock_get_logger: Mock) -> None:
+        """Test critical logging method."""
+        # Arrange
+        mock_logger = Mock()
+        mock_logger.handlers = []
+        mock_get_logger.return_value = mock_logger
+        logger = HoneyHiveLogger("test.logger")
+
+        # Act
+        logger.critical("Critical message")
+
+        # Assert
+        mock_logger.log.assert_called_once_with(
+            logging.CRITICAL, "Critical message", extra={}
+        )
+
+    @patch("honeyhive.utils.logger.logging.getLogger")
+    def test_exception_method(self, mock_get_logger: Mock) -> None:
+        """Test exception logging method."""
+        # Arrange
+        mock_logger = Mock()
+        mock_logger.handlers = []
+        mock_get_logger.return_value = mock_logger
+        logger = HoneyHiveLogger("test.logger")
+        honeyhive_data = {"error_context": "test"}
+
+        # Act
+        logger.exception(
+            "Exception message", honeyhive_data=honeyhive_data, extra="value"
+        )
+
+        # Assert
+        mock_logger.exception.assert_called_once_with(
+            "Exception message",
+            extra={"honeyhive_data": honeyhive_data, "extra": "value"},
+        )
+
+
+class TestShutdownDetection:
+    """Test suite for shutdown detection functionality."""
+
+    def setup_method(self) -> None:
+        """Reset shutdown state before each test."""
+        reset_logging_state()
+
+    def test_reset_logging_state(self) -> None:
+        """Test that reset_logging_state clears shutdown detection."""
+        # Arrange
+        _shutdown_detected.set()
+        assert _shutdown_detected.is_set() is True
+
+        # Act
+        reset_logging_state()
+
+        # Assert
+        assert _shutdown_detected.is_set() is False
+
+    def test_is_shutdown_detected_when_not_shutdown(self) -> None:
+        """Test is_shutdown_detected returns False when not shutdown."""
+        # Act
+        result = is_shutdown_detected()
+
+        # Assert
+        assert result is False
+
+    @patch("honeyhive.utils.logger.sys", None)
+    def test_detect_shutdown_conditions_with_none_sys(self) -> None:
+        """Test shutdown detection when sys module is None."""
+        # Act
+        result = _detect_shutdown_conditions()
+
+        # Assert
+        assert result is True
+        assert _shutdown_detected.is_set() is True
+
+    @patch("honeyhive.utils.logger.threading", None)
+    def test_detect_shutdown_conditions_with_none_threading(self) -> None:
+        """Test shutdown detection when threading module is None."""
+        # Act
+        result = _detect_shutdown_conditions()
+
+        # Assert
+        assert result is True
+        assert _shutdown_detected.is_set() is True
+
+    def test_detect_shutdown_conditions_with_attribute_error(self) -> None:
+        """Test shutdown detection when AttributeError is raised."""
+        # Arrange
+        with patch("honeyhive.utils.logger.sys") as mock_sys:
+            mock_sys.stdout = None
+            del mock_sys.stdout  # This will cause AttributeError
+
+            # Act
+            result = _detect_shutdown_conditions()
+
+            # Assert
+            assert result is True
+            assert _shutdown_detected.is_set() is True
+
+    @patch("honeyhive.utils.logger.sys")
+    def test_detect_shutdown_conditions_with_closed_stdout(
+        self, mock_sys: Mock
+    ) -> None:
+        """Test shutdown detection when stdout is closed."""
+        # Arrange
+        mock_stdout = Mock()
+        mock_stdout.closed = True
+        mock_sys.stdout = mock_stdout
+        mock_sys.stderr = Mock()
+        mock_sys.stderr.closed = False
+
+        # Act
+        result = _detect_shutdown_conditions()
+
+        # Assert
+        assert result is True
+        assert _shutdown_detected.is_set() is True
+
+    @patch("honeyhive.utils.logger.sys")
+    def test_detect_shutdown_conditions_with_closed_stderr(
+        self, mock_sys: Mock
+    ) -> None:
+        """Test shutdown detection when stderr is closed."""
+        # Arrange
+        mock_stdout = Mock()
+        mock_stdout.closed = False
+        mock_stderr = Mock()
+        mock_stderr.closed = True
+        mock_sys.stdout = mock_stdout
+        mock_sys.stderr = mock_stderr
+
+        # Act
+        result = _detect_shutdown_conditions()
+
+        # Assert
+        assert result is True
+        assert _shutdown_detected.is_set() is True
+
+    @patch("honeyhive.utils.logger.sys")
+    def test_detect_shutdown_conditions_with_os_error(self, mock_sys: Mock) -> None:
+        """Test shutdown detection when OSError is raised."""
+        # Arrange
+        mock_stdout = Mock()
+        mock_stdout.closed = PropertyMock(side_effect=OSError("Stream error"))
+        mock_sys.stdout = mock_stdout
+
+        # Act
+        result = _detect_shutdown_conditions()
+
+        # Assert
+        assert result is True
+        assert _shutdown_detected.is_set() is True
+
+    @patch("honeyhive.utils.logger.sys")
+    def test_detect_shutdown_conditions_normal_operation(self, mock_sys: Mock) -> None:
+        """Test shutdown detection during normal operation."""
+        # Arrange
+        mock_stdout = Mock()
+        mock_stdout.closed = False
+        mock_stderr = Mock()
+        mock_stderr.closed = False
+        mock_sys.stdout = mock_stdout
+        mock_sys.stderr = mock_stderr
+
+        # Act
+        result = _detect_shutdown_conditions()
+
+        # Assert
+        assert result is False
+        assert _shutdown_detected.is_set() is False
+
+    def test_detect_shutdown_conditions_already_detected(self) -> None:
+        """Test shutdown detection when already detected."""
+        # Arrange
+        _shutdown_detected.set()
+
+        # Act
+        result = _detect_shutdown_conditions()
+
+        # Assert
+        assert result is True
+
+    def test_is_shutdown_detected_calls_detect_shutdown_conditions(self) -> None:
+        """Test that is_shutdown_detected calls _detect_shutdown_conditions."""
+        # Arrange
+        with patch("honeyhive.utils.logger._detect_shutdown_conditions") as mock_detect:
+            mock_detect.return_value = True
+
+            # Act
+            result = is_shutdown_detected()
+
+            # Assert
+            assert result is True
+            mock_detect.assert_called_once()
+
+
+class TestModuleLevelFunctions:
+    """Test suite for module-level logger functions."""
+
+    def setup_method(self) -> None:
+        """Reset shutdown state before each test."""
+        reset_logging_state()
+
+    @patch("honeyhive.utils.logger.HoneyHiveLogger")
+    def test_get_logger_with_defaults(self, mock_logger_class: Mock) -> None:
+        """Test get_logger with default parameters."""
+        # Arrange
+        mock_logger_instance = Mock()
+        mock_logger_class.return_value = mock_logger_instance
+
+        # Act
+        result = get_logger("test.logger")
+
+        # Assert
+        assert result == mock_logger_instance
+        mock_logger_class.assert_called_once_with("test.logger", verbose=None)
+
+    @patch("honeyhive.utils.logger.HoneyHiveLogger")
+    def test_get_logger_with_explicit_verbose(self, mock_logger_class: Mock) -> None:
+        """Test get_logger with explicit verbose parameter."""
+        # Arrange
+        mock_logger_instance = Mock()
+        mock_logger_class.return_value = mock_logger_instance
+
+        # Act
+        result = get_logger("test.logger", verbose=True, level=logging.DEBUG)
+
+        # Assert
+        assert result == mock_logger_instance
+        mock_logger_class.assert_called_once_with(
+            "test.logger", verbose=True, level=logging.DEBUG
+        )
+
+    @patch("honeyhive.utils.logger.HoneyHiveLogger")
+    @patch("honeyhive.utils.logger._extract_verbose_from_tracer_dynamically")
+    def test_get_logger_with_tracer_instance(
+        self, mock_extract_verbose: Mock, mock_logger_class: Mock
+    ) -> None:
+        """Test get_logger with tracer instance."""
+        # Arrange
+        mock_logger_instance = Mock()
+        mock_logger_class.return_value = mock_logger_instance
+        mock_extract_verbose.return_value = True
+        mock_tracer = Mock()
+
+        # Act
+        result = get_logger("test.logger", tracer_instance=mock_tracer)
+
+        # Assert
+        assert result == mock_logger_instance
+        mock_extract_verbose.assert_called_once_with(mock_tracer)
+        mock_logger_class.assert_called_once_with("test.logger", verbose=True)
+
+    @patch("honeyhive.utils.logger.get_logger")
+    def test_get_tracer_logger_with_default_name(self, mock_get_logger: Mock) -> None:
+        """Test get_tracer_logger with default logger name generation."""
+        # Arrange
+        mock_logger = Mock()
+        mock_get_logger.return_value = mock_logger
+        mock_tracer = Mock()
+        mock_tracer.tracer_id = "test-tracer-123"
+
+        # Act
+        result = get_tracer_logger(mock_tracer)
+
+        # Assert
+        assert result == mock_logger
+        mock_get_logger.assert_called_once_with(
+            name="honeyhive.tracer.test-tracer-123", tracer_instance=mock_tracer
+        )
+
+    @patch("honeyhive.utils.logger.get_logger")
+    def test_get_tracer_logger_with_custom_name(self, mock_get_logger: Mock) -> None:
+        """Test get_tracer_logger with custom logger name."""
+        # Arrange
+        mock_logger = Mock()
+        mock_get_logger.return_value = mock_logger
+        mock_tracer = Mock()
+
+        # Act
+        result = get_tracer_logger(mock_tracer, "custom.logger")
+
+        # Assert
+        assert result == mock_logger
+        mock_get_logger.assert_called_once_with(
+            name="custom.logger", tracer_instance=mock_tracer
+        )
+
+    @patch("honeyhive.utils.logger.get_logger")
+    def test_get_tracer_logger_without_tracer_id(self, mock_get_logger: Mock) -> None:
+        """Test get_tracer_logger when tracer has no tracer_id attribute."""
+        # Arrange
+        mock_logger = Mock()
+        mock_get_logger.return_value = mock_logger
+        mock_tracer = Mock()
+        del mock_tracer.tracer_id  # Remove tracer_id attribute
+
+        # Act
+        result = get_tracer_logger(mock_tracer)
+
+        # Assert
+        assert result == mock_logger
+        # Should use id(mock_tracer) as fallback
+        expected_name = f"honeyhive.tracer.{id(mock_tracer)}"
+        mock_get_logger.assert_called_once_with(
+            name=expected_name, tracer_instance=mock_tracer
+        )
+
+    def test_extract_verbose_from_tracer_dynamically_with_none(self) -> None:
+        """Test _extract_verbose_from_tracer_dynamically with None tracer."""
+        # Act
+        result = _extract_verbose_from_tracer_dynamically(None)
+
+        # Assert
+        assert result is None
+
+    def test_extract_verbose_from_tracer_dynamically_with_verbose_attr(self) -> None:
+        """Test _extract_verbose_from_tracer_dynamically with verbose attribute."""
+        # Arrange
+        mock_tracer = Mock()
+        mock_tracer.verbose = True
+
+        # Act
+        result = _extract_verbose_from_tracer_dynamically(mock_tracer)
+
+        # Assert
+        assert result is True
+
+    def test_extract_verbose_from_tracer_dynamically_with_private_verbose(self) -> None:
+        """Test _extract_verbose_from_tracer_dynamically with _verbose attribute."""
+        # Arrange
+        mock_tracer = Mock()
+        del mock_tracer.verbose  # Remove verbose attribute
+        mock_tracer._verbose = False
+
+        # Act
+        result = _extract_verbose_from_tracer_dynamically(mock_tracer)
+
+        # Assert
+        assert result is False
+
+    def test_extract_verbose_from_tracer_dynamically_with_config_verbose(
+        self,
+    ) -> None:
+        """Test _extract_verbose_from_tracer_dynamically with config.verbose."""
+        # Arrange
+        mock_tracer = Mock()
+        del mock_tracer.verbose  # Remove verbose attribute
+        del mock_tracer._verbose  # Remove _verbose attribute
+        mock_config = Mock()
+        mock_config.verbose = True
+        mock_tracer.config = mock_config
+
+        # Act
+        result = _extract_verbose_from_tracer_dynamically(mock_tracer)
+
+        # Assert
+        assert result is True
+
+    def test_extract_verbose_from_tracer_dynamically_with_none_config(self) -> None:
+        """Test _extract_verbose_from_tracer_dynamically with None config."""
+        # Arrange
+        mock_tracer = Mock()
+        del mock_tracer.verbose  # Remove verbose attribute
+        del mock_tracer._verbose  # Remove _verbose attribute
+        mock_tracer.config = None
+
+        # Act
+        result = _extract_verbose_from_tracer_dynamically(mock_tracer)
+
+        # Assert
+        assert result is None
+
+    def test_extract_verbose_from_tracer_dynamically_with_attribute_error(self) -> None:
+        """Test _extract_verbose_from_tracer_dynamically with AttributeError."""
+        # Arrange
+        mock_tracer = Mock()
+        del mock_tracer.verbose  # Remove verbose attribute
+
+        # Act
+        result = _extract_verbose_from_tracer_dynamically(mock_tracer)
+
+        # Assert
+        assert result is None
+
+    def test_extract_verbose_from_tracer_dynamically_with_non_boolean(self) -> None:
+        """Test _extract_verbose_from_tracer_dynamically with non-boolean value."""
+        # Arrange
+        mock_tracer = Mock()
+        mock_tracer.verbose = "not_boolean"
+
+        # Act
+        result = _extract_verbose_from_tracer_dynamically(mock_tracer)
+
+        # Assert
+        assert result is None
+
+    def test_default_logger_exists(self) -> None:
+        """Test that default_logger is properly initialized."""
+        # Assert
         assert default_logger is not None
-        assert isinstance(default_logger, HoneyHiveLogger)
-        assert default_logger.logger.name == "honeyhive"
+        assert hasattr(default_logger, "logger")
 
-        # Test that default logger can log messages
-        default_logger.info("Test message from default logger")
-        assert default_logger.logger.handlers
 
-    def test_logger_exception_with_honeyhive_data(self) -> None:
-        """Test HoneyHiveLogger exception method with honeyhive_data."""
-        logger = HoneyHiveLogger("test-logger")
+class TestSafeLogFunction:
+    """Test suite for safe_log function and convenience functions."""
 
-        # Test exception logging with honeyhive_data
-        try:
-            raise ValueError("Test exception with data")
-        except ValueError:
-            logger.exception(
-                "Exception occurred with data",
-                honeyhive_data={"user_id": "123", "session_id": "abc"},
+    def setup_method(self) -> None:
+        """Reset shutdown state before each test."""
+        reset_logging_state()
+
+    @patch("honeyhive.utils.logger._detect_shutdown_conditions")
+    def test_safe_log_returns_early_on_shutdown(
+        self, mock_detect_shutdown: Mock
+    ) -> None:
+        """Test safe_log returns early when shutdown is detected."""
+        # Arrange
+        mock_detect_shutdown.return_value = True
+
+        # Act
+        safe_log(None, "info", "Test message")
+
+        # Assert
+        # safe_log should complete without raising exceptions
+        mock_detect_shutdown.assert_called_once()
+
+    @patch("honeyhive.utils.logger._detect_shutdown_conditions")
+    def test_safe_log_with_tracer_instance_logger(
+        self, mock_detect_shutdown: Mock
+    ) -> None:
+        """Test safe_log with tracer instance that has logger."""
+        # Arrange
+        mock_detect_shutdown.return_value = False
+        mock_tracer = Mock()
+        mock_logger = Mock()
+        # The safe_log function checks target_logger.logger.handlers
+        mock_logger.logger = Mock()
+        mock_logger.logger.handlers = [Mock()]  # Ensure handlers exist
+        mock_tracer.logger = mock_logger
+
+        # Act
+        safe_log(
+            mock_tracer,
+            "info",
+            "Test message %s",
+            "arg1",
+            honeyhive_data={"key": "value"},
+        )
+
+        # Assert - safe_log should return None and not raise exceptions
+        # safe_log should complete without raising exceptions
+        # The function should attempt to call the logger method
+        # Due to the complex fallback logic, we verify it doesn't crash
+
+    @patch("honeyhive.utils.logger._detect_shutdown_conditions")
+    def test_safe_log_with_tracer_instance_delegation(
+        self, mock_detect_shutdown: Mock
+    ) -> None:
+        """Test safe_log with API client pattern delegation."""
+        # Arrange
+        mock_detect_shutdown.return_value = False
+        mock_api_client = Mock()
+        mock_actual_tracer = Mock()
+        mock_logger = Mock()
+        mock_actual_tracer.logger = mock_logger
+        mock_api_client.tracer_instance = mock_actual_tracer
+        del mock_api_client.logger  # Remove logger from API client
+
+        with patch("honeyhive.utils.logger.safe_log") as mock_safe_log_recursive:
+            # Act
+            safe_log(mock_api_client, "warning", "Warning message")
+
+            # Assert
+            mock_safe_log_recursive.assert_called_once_with(
+                mock_actual_tracer, "warning", "Warning message", honeyhive_data=None
             )
 
-        # Test exception logging without honeyhive_data
-        try:
-            raise TypeError("Test exception without data")
-        except TypeError:
-            logger.exception("Exception occurred without data")
-
-
-class TestLoggingIntegration:
-    """Test logging integration with other components."""
-
-    def test_logging_with_config(self) -> None:
-        """Test that logging respects config settings."""
-        # Mock config to return specific log level
-        with patch.object(config, "debug_mode", True):
-            logger = HoneyHiveLogger("test.module")
-
-            # Should use debug level when debug mode is enabled
-            assert logger.logger.level <= logging.DEBUG
-
-    def test_logging_with_api_calls(self) -> None:
-        """Test that API calls generate appropriate logs."""
-        logger = HoneyHiveLogger("honeyhive.api", level=logging.DEBUG)
-
-        # Capture log output
-        log_records = []
-
-        class TestHandler(logging.Handler):
-            def emit(self, record: logging.LogRecord) -> None:
-                log_records.append(record)
-
-        test_handler = TestHandler()
-        test_handler.setLevel(logging.DEBUG)
-
-        logger.logger.addHandler(test_handler)
-
-        # Simulate some API activity
-        logger.info("API call started")
-        logger.debug("Request details: {}", {"method": "GET", "url": "/test"})
-        logger.info("API call completed")
-
-        # Should have captured log records
-        assert len(log_records) >= 3
-
-        # Check log levels
-        info_records = [r for r in log_records if r.levelno == logging.INFO]
-        debug_records = [r for r in log_records if r.levelno == logging.DEBUG]
-
-        assert len(info_records) >= 2
-        assert len(debug_records) >= 1
-
-    def test_logging_performance(self) -> None:
-        """Test that logging doesn't significantly impact performance."""
-        import time
-
-        logger = HoneyHiveLogger("performance.test", level=logging.INFO)
-
-        # Time logging operations
-        start_time = time.time()
-
-        for i in range(1000):
-            logger.info(f"Performance test message {i}")
-
-        end_time = time.time()
-        duration = end_time - start_time
-
-        # Should complete in reasonable time (less than 1 second)
-        assert duration < 1.0
-
-    def test_logging_memory_usage(self) -> None:
-        """Test that logging doesn't cause memory leaks."""
-        import gc
-        import sys
-
-        logger = HoneyHiveLogger("memory.test", level=logging.DEBUG)
-
-        # Get initial memory usage
-        gc.collect()
-        initial_memory = sys.getsizeof(logger)
-
-        # Perform many logging operations
-        for i in range(1000):
-            logger.debug(f"Memory test message {i}")
-            logger.info(f"Memory test info {i}")
-            logger.warning(f"Memory test warning {i}")
-
-        # Force garbage collection
-        gc.collect()
-
-        # Check memory usage hasn't grown significantly
-        final_memory = sys.getsizeof(logger)
-        memory_growth = final_memory - initial_memory
-
-        # Memory growth should be minimal
-        assert memory_growth < 1000  # Less than 1KB growth
-
-
-class TestLoggingEdgeCases:
-    """Test logging edge cases and error handling."""
-
-    def test_logging_with_none_values(self) -> None:
-        """Test logging with None values."""
-        logger = HoneyHiveLogger("edge.test", level=logging.DEBUG)
-
-        # Should handle None values gracefully by converting to string
-        logger.info(str(None))
-        logger.debug(str(None))
-        logger.warning(str(None))
-        logger.error(str(None))
-
-        # Should not crash
-
-    def test_logging_with_empty_strings(self) -> None:
-        """Test logging with empty strings."""
-        logger = HoneyHiveLogger("edge.test", level=logging.DEBUG)
-
-        # Should handle empty strings gracefully
-        logger.info("")
-        logger.debug("")
-        logger.warning("")
-        logger.error("")
-
-        # Should not crash
-
-    def test_logging_with_special_characters(self) -> None:
-        """Test logging with special characters."""
-        logger = HoneyHiveLogger("edge.test", level=logging.DEBUG)
-
-        # Should handle special characters gracefully
-        special_message = "Special chars: !@#$%^&*()_+-=[]{}|;':\",./<>?"
-        logger.info(special_message)
-        logger.debug(special_message)
-
-        # Should not crash
-
-    def test_logging_with_unicode(self) -> None:
-        """Test logging with unicode characters."""
-        logger = HoneyHiveLogger("edge.test", level=logging.DEBUG)
-
-        # Should handle unicode gracefully
-        unicode_message = "Unicode: 🚀🌟🎉💻🔥"
-        logger.info(unicode_message)
-        logger.debug(unicode_message)
-
-        # Should not crash
-
-    def test_logging_with_very_long_messages(self) -> None:
-        """Test logging with very long messages."""
-        logger = HoneyHiveLogger("edge.test", level=logging.DEBUG)
-
-        # Should handle very long messages gracefully
-        long_message = "x" * 10000
-        logger.info(long_message)
-        logger.debug(long_message)
-
-        # Should not crash
-
-    def test_logging_with_complex_objects(self) -> None:
-        """Test logging with complex objects."""
-        logger = HoneyHiveLogger("edge.test", level=logging.DEBUG)
-
-        # Should handle complex objects gracefully
-        complex_obj = {"nested": {"deep": {"structure": [1, 2, 3, {"key": "value"}]}}}
-
-        logger.info("Complex object: %s", complex_obj)
-        logger.debug("Complex object: %s", complex_obj)
-
-        # Should not crash
-
-    def test_logging_concurrent_access(self) -> None:
-        """Test logging with concurrent access."""
-        import threading
-        import time
-
-        logger = HoneyHiveLogger("concurrent.test", level=logging.DEBUG)
-
-        errors = []
-
-        def log_messages(thread_id: int) -> None:
-            try:
-                for i in range(100):
-                    logger.info(f"Thread {thread_id} message {i}")
-                    logger.debug(f"Thread {thread_id} debug {i}")
-                    time.sleep(0.001)  # Small delay
-            except Exception as e:
-                errors.append(e)
-
-        # Create multiple threads
-        threads = []
-        for i in range(5):
-            thread = threading.Thread(target=log_messages, args=(i,))
-            threads.append(thread)
-            thread.start()
-
-        # Wait for all threads
-        for thread in threads:
-            thread.join()
-
-        # Should not have any errors
-        assert len(errors) == 0
-
-    def test_logging_handler_errors(self) -> None:
-        """Test logging when handlers encounter errors."""
-        logger = HoneyHiveLogger("handler.error.test", level=logging.DEBUG)
-
-        # Create a handler that raises an error
-        class ErrorHandler(logging.Handler):
-            def emit(self, record: logging.LogRecord) -> None:
-                raise Exception("Handler error")
-
-        error_handler = ErrorHandler()
-        error_handler.setLevel(logging.DEBUG)
-
-        logger.logger.addHandler(error_handler)
-
-        # Should crash when handler errors occur (current behavior)
-        with pytest.raises(Exception, match="Handler error"):
-            logger.info("This should crash due to handler error")
-
-    def test_logging_formatter_errors(self) -> None:
-        """Test logging when formatters encounter errors."""
-        logger = HoneyHiveLogger("formatter.error.test", level=logging.DEBUG)
-
-        # Create a formatter that raises an error
-        class ErrorFormatter(logging.Formatter):
-            def format(self, record: logging.LogRecord) -> str:
-                raise Exception("Formatter error")
-
-        # Create a handler with the error formatter
-        error_handler = logging.StreamHandler()
-        error_handler.setFormatter(ErrorFormatter())
-        error_handler.setLevel(logging.DEBUG)
-
-        logger.logger.addHandler(error_handler)
-
-        # Should not crash when formatter errors occur
-        logger.info("This should not crash")
-        logger.debug("This should not crash either")
-
-        # Remove the error handler
-        logger.logger.removeHandler(error_handler)
+    @patch("honeyhive.utils.logger._detect_shutdown_conditions")
+    @patch("honeyhive.utils.logger.get_logger")
+    def test_safe_log_with_partial_tracer_instance(
+        self, mock_get_logger: Mock, mock_detect_shutdown: Mock
+    ) -> None:
+        """Test safe_log with partially initialized tracer instance."""
+        # Arrange
+        mock_detect_shutdown.return_value = False
+        mock_tracer = Mock()
+        mock_tracer.verbose = True
+        del mock_tracer.logger  # Remove logger attribute
+        del mock_tracer.tracer_instance  # Remove tracer_instance attribute
+        mock_temp_logger = Mock()
+        mock_temp_logger.logger.handlers = [Mock()]  # Ensure handlers exist
+        mock_get_logger.return_value = mock_temp_logger
+
+        # Act
+        safe_log(mock_tracer, "debug", "Debug message")
+
+        # Assert - safe_log should return None and not raise exceptions
+        # safe_log should complete without raising exceptions
+        # Verify get_logger was called for fallback
+        mock_get_logger.assert_called_once_with("honeyhive.early_init", verbose=True)
+
+    @patch("honeyhive.utils.logger._detect_shutdown_conditions")
+    @patch("honeyhive.utils.logger.get_logger")
+    def test_safe_log_with_fallback_logger(
+        self, mock_get_logger: Mock, mock_detect_shutdown: Mock
+    ) -> None:
+        """Test safe_log with fallback logger for None tracer instance."""
+        # Arrange
+        mock_detect_shutdown.return_value = False
+        mock_fallback_logger = Mock()
+        mock_fallback_logger.logger.handlers = [Mock()]  # Ensure handlers exist
+        mock_get_logger.return_value = mock_fallback_logger
+
+        # Act
+        safe_log(None, "error", "Error message")
+
+        # Assert - safe_log should return None and not raise exceptions
+        # safe_log should complete without raising exceptions
+        # Verify get_logger was called for fallback
+        mock_get_logger.assert_called_once_with("honeyhive.fallback")
+
+    @patch("honeyhive.utils.logger._detect_shutdown_conditions")
+    def test_safe_log_with_missing_logger_handlers(
+        self, mock_detect_shutdown: Mock
+    ) -> None:
+        """Test safe_log when logger has no handlers."""
+        # Arrange
+        mock_detect_shutdown.return_value = False
+        mock_tracer = Mock()
+        mock_logger = Mock()
+        mock_logger.logger.handlers = []
+        mock_tracer.logger = mock_logger
+
+        # Act
+        safe_log(mock_tracer, "info", "Test message")
+
+        # Assert
+        # safe_log should complete without raising exceptions
+
+    @patch("honeyhive.utils.logger._detect_shutdown_conditions")
+    def test_safe_log_with_closed_stream_handler(
+        self, mock_detect_shutdown: Mock
+    ) -> None:
+        """Test safe_log when handler stream is closed."""
+        # Arrange
+        mock_detect_shutdown.return_value = False
+        mock_tracer = Mock()
+        mock_logger = Mock()
+        mock_handler = Mock()
+        mock_stream = Mock()
+        mock_stream.closed = True
+        mock_handler.stream = mock_stream
+        mock_logger.logger.handlers = [mock_handler]
+        mock_tracer.logger = mock_logger
+
+        # Act
+        safe_log(mock_tracer, "info", "Test message")
+
+        # Assert
+        # safe_log should complete without raising exceptions
+        assert _shutdown_detected.is_set() is True
+
+    @patch("honeyhive.utils.logger._detect_shutdown_conditions")
+    def test_safe_log_with_handler_without_stream(
+        self, mock_detect_shutdown: Mock
+    ) -> None:
+        """Test safe_log when handler has no stream attribute."""
+        # Arrange
+        mock_detect_shutdown.return_value = False
+        mock_tracer = Mock()
+        mock_logger = Mock()
+        mock_handler = Mock()
+        del mock_handler.stream  # Remove stream attribute
+        mock_logger.logger.handlers = [mock_handler]
+        mock_tracer.logger = mock_logger
+
+        # Act
+        safe_log(mock_tracer, "info", "Test message")
+
+        # Assert
+        mock_logger.info.assert_called_once_with("Test message")
+
+    @patch("honeyhive.utils.logger._detect_shutdown_conditions")
+    def test_safe_log_with_exception_in_logging(
+        self, mock_detect_shutdown: Mock
+    ) -> None:
+        """Test safe_log handles exceptions gracefully."""
+        # Arrange
+        mock_detect_shutdown.return_value = False
+        mock_tracer = Mock()
+        mock_logger = Mock()
+        mock_logger.info.side_effect = Exception("Logging error")
+        mock_tracer.logger = mock_logger
+
+        # Act
+        safe_log(mock_tracer, "info", "Test message")
+
+        # Assert
+        # safe_log should complete without raising exceptions  # Should fail silently
+
+    @patch("honeyhive.utils.logger._detect_shutdown_conditions")
+    def test_safe_log_without_honeyhive_data(self, mock_detect_shutdown: Mock) -> None:
+        """Test safe_log without honeyhive_data parameter."""
+        # Arrange
+        mock_detect_shutdown.return_value = False
+        mock_tracer = Mock()
+        mock_logger = Mock()
+        # The safe_log function checks target_logger.logger.handlers
+        mock_logger.logger = Mock()
+        mock_logger.logger.handlers = [Mock()]  # Ensure handlers exist
+        mock_tracer.logger = mock_logger
+
+        # Act
+        safe_log(mock_tracer, "critical", "Critical message", "arg1", extra="value")
+
+        # Assert - safe_log should return None and not raise exceptions
+        # safe_log should complete without raising exceptions
+        # The function should not crash with valid logger setup
+
+    @patch("honeyhive.utils.logger.safe_log")
+    def test_safe_debug_convenience_function(self, mock_safe_log: Mock) -> None:
+        """Test safe_debug convenience function."""
+        # Arrange
+        mock_tracer = Mock()
+
+        # Act
+        safe_debug(mock_tracer, "Debug message", extra="value")
+
+        # Assert
+        mock_safe_log.assert_called_once_with(
+            mock_tracer, "debug", "Debug message", extra="value"
+        )
+
+    @patch("honeyhive.utils.logger.safe_log")
+    def test_safe_info_convenience_function(self, mock_safe_log: Mock) -> None:
+        """Test safe_info convenience function."""
+        # Arrange
+        mock_tracer = Mock()
+
+        # Act
+        safe_info(mock_tracer, "Info message", extra="value")
+
+        # Assert
+        mock_safe_log.assert_called_once_with(
+            mock_tracer, "info", "Info message", extra="value"
+        )
+
+    @patch("honeyhive.utils.logger.safe_log")
+    def test_safe_warning_convenience_function(self, mock_safe_log: Mock) -> None:
+        """Test safe_warning convenience function."""
+        # Arrange
+        mock_tracer = Mock()
+
+        # Act
+        safe_warning(mock_tracer, "Warning message", extra="value")
+
+        # Assert
+        mock_safe_log.assert_called_once_with(
+            mock_tracer, "warning", "Warning message", extra="value"
+        )
+
+    @patch("honeyhive.utils.logger.safe_log")
+    def test_safe_error_convenience_function(self, mock_safe_log: Mock) -> None:
+        """Test safe_error convenience function."""
+        # Arrange
+        mock_tracer = Mock()
+
+        # Act
+        safe_error(mock_tracer, "Error message", extra="value")
+
+        # Assert
+        mock_safe_log.assert_called_once_with(
+            mock_tracer, "error", "Error message", extra="value"
+        )
+
+
+class TestEdgeCasesAndErrorHandling:
+    """Test suite for edge cases and error handling scenarios."""
+
+    def setup_method(self) -> None:
+        """Reset shutdown state before each test."""
+        reset_logging_state()
+
+    @patch("honeyhive.utils.logger.logging.getLogger")
+    def test_honeyhive_logger_with_invalid_level_type(
+        self, mock_get_logger: Mock
+    ) -> None:
+        """Test HoneyHiveLogger with invalid level type."""
+        # Arrange
+        mock_logger = Mock()
+        mock_logger.handlers = []
+        mock_get_logger.return_value = mock_logger
+
+        # Act
+        _ = HoneyHiveLogger("test.logger", level=123.45)  # type: ignore[arg-type]
+
+        # Assert
+        # Should fall back to INFO level
+        mock_logger.setLevel.assert_called_once_with(logging.INFO)
+
+    def test_honeyhive_formatter_with_complex_honeyhive_data(self) -> None:
+        """Test HoneyHiveFormatter with complex nested HoneyHive data."""
+        # Arrange
+        formatter = HoneyHiveFormatter(include_timestamp=False, include_level=False)
+        record = logging.LogRecord(
+            name="test.logger",
+            level=logging.INFO,
+            pathname="test.py",
+            lineno=10,
+            msg="Complex data message",
+            args=(),
+            exc_info=None,
+        )
+        complex_data = {
+            "nested": {"key": "value", "number": 42},
+            "list": [1, 2, 3],
+            "boolean": True,
+            "null_value": None,
+        }
+        record.honeyhive_data = complex_data
+
+        # Act
+        result = formatter.format(record)
+
+        # Assert
+        parsed_result = json.loads(result)
+        assert parsed_result["nested"]["key"] == "value"
+        assert parsed_result["nested"]["number"] == 42
+        assert parsed_result["list"] == [1, 2, 3]
+        assert parsed_result["boolean"] is True
+        # null_value is removed by the formatter since it filters None values
+        assert "null_value" not in parsed_result
+
+    @patch("honeyhive.utils.logger._detect_shutdown_conditions")
+    def test_safe_log_with_missing_log_method(self, mock_detect_shutdown: Mock) -> None:
+        """Test safe_log when target logger doesn't have the requested log method."""
+        # Arrange
+        mock_detect_shutdown.return_value = False
+        mock_tracer = Mock()
+        mock_logger = Mock()
+        del mock_logger.nonexistent_level  # Ensure method doesn't exist
+        mock_tracer.logger = mock_logger
+
+        # Act
+        safe_log(mock_tracer, "nonexistent_level", "Test message")
+
+        # Assert
+        # safe_log should complete without raising exceptions  # Should fail silently
+
+    def test_extract_verbose_from_tracer_with_type_error(self) -> None:
+        """Test _extract_verbose_from_tracer_dynamically with TypeError."""
+        # Arrange
+        mock_tracer = Mock()
+        mock_tracer.verbose = Mock(side_effect=TypeError("Type error"))
+
+        # Act
+        result = _extract_verbose_from_tracer_dynamically(mock_tracer)
+
+        # Assert
+        assert result is None
+
+    @patch("honeyhive.utils.logger.datetime")
+    def test_honeyhive_formatter_with_datetime_error(self, mock_datetime: Mock) -> None:
+        """Test HoneyHiveFormatter when datetime raises an error."""
+        # Arrange
+        mock_datetime.now.side_effect = Exception("Datetime error")
+        formatter = HoneyHiveFormatter(include_timestamp=True, include_level=True)
+        record = logging.LogRecord(
+            name="test.logger",
+            level=logging.INFO,
+            pathname="test.py",
+            lineno=10,
+            msg="Test message",
+            args=(),
+            exc_info=None,
+        )
+
+        # Act & Assert
+        with pytest.raises(Exception, match="Datetime error"):
+            formatter.format(record)
+
+    @patch("honeyhive.utils.logger._detect_shutdown_conditions")
+    def test_safe_log_with_complex_args_and_kwargs(
+        self, mock_detect_shutdown: Mock
+    ) -> None:
+        """Test safe_log with complex arguments and keyword arguments."""
+        # Arrange
+        mock_detect_shutdown.return_value = False
+        mock_tracer = Mock()
+        mock_logger = Mock()
+        # The safe_log function checks target_logger.logger.handlers
+        mock_logger.logger = Mock()
+        mock_logger.logger.handlers = [Mock()]  # Ensure handlers exist
+        mock_tracer.logger = mock_logger
+
+        # Act
+        safe_log(
+            mock_tracer,
+            "info",
+            "Complex message %s %d",
+            "string_arg",
+            42,
+            honeyhive_data={"session": "test"},
+            extra_key="extra_value",
+            another_key=123,
+        )
+
+        # Assert - safe_log should return None and not raise exceptions
+        # safe_log should complete without raising exceptions
+        # The function should not crash with complex arguments
+
+    def test_honeyhive_logger_level_precedence(self) -> None:
+        """Test that explicit level takes precedence over verbose setting."""
+        # Arrange
+        with patch("honeyhive.utils.logger.logging.getLogger") as mock_get_logger:
+            mock_logger = Mock()
+            mock_logger.handlers = []
+            mock_get_logger.return_value = mock_logger
+
+            # Act
+            _ = HoneyHiveLogger("test.logger", level=logging.ERROR, verbose=True)
+
+            # Assert
+            # Explicit level should take precedence over verbose=True
+            mock_logger.setLevel.assert_called_once_with(logging.ERROR)

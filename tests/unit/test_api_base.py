@@ -1,784 +1,624 @@
-"""Comprehensive tests for HoneyHive API modules."""
+"""Unit tests for honeyhive.api.base.
 
+This module contains comprehensive unit tests for the BaseAPI class,
+covering initialization, error context creation, and dynamic data processing.
+"""
+
+# pylint: disable=too-many-lines,duplicate-code
+# Justification: Comprehensive unit test coverage requires extensive test cases
+
+# pylint: disable=redefined-outer-name
+# Justification: Pytest fixture pattern requires parameter shadowing
+
+# pylint: disable=protected-access
+# Justification: Unit tests need to verify private method behavior
+
+from typing import Any, Dict
 from unittest.mock import Mock, patch
 
-import pytest
-
-from honeyhive.api.client import HoneyHive
-from honeyhive.api.configurations import ConfigurationsAPI
-from honeyhive.api.datapoints import DatapointsAPI
-from honeyhive.api.datasets import DatasetsAPI
-from honeyhive.api.evaluations import EvaluationsAPI
-from honeyhive.api.events import (
-    BatchCreateEventRequest,
-    BatchCreateEventResponse,
-    CreateEventResponse,
-    EventsAPI,
-    UpdateEventRequest,
-)
-from honeyhive.api.metrics import MetricsAPI
-from honeyhive.api.projects import ProjectsAPI
-from honeyhive.api.session import SessionAPI, SessionResponse, SessionStartResponse
-from honeyhive.api.tools import ToolsAPI
-from honeyhive.models import (
-    Configuration,
-    CreateDatapointRequest,
-    CreateDatasetRequest,
-    CreateEventRequest,
-    CreateProjectRequest,
-    CreateRunRequest,
-    CreateToolRequest,
-    Datapoint,
-    Dataset,
-    EventFilter,
-    Metric,
-    PostConfigurationRequest,
-    Project,
-    SessionStartRequest,
-    Tool,
-    UpdateToolRequest,
-)
-
-# Type: ignore comments for pytest decorators
-pytest_mark_asyncio = pytest.mark.asyncio  # type: ignore
+from honeyhive.api.base import BaseAPI
+from honeyhive.utils.error_handler import ErrorContext
 
 
-class TestSessionAPI:
-    """Test Session API functionality."""
+class TestBaseAPIInitialization:
+    """Test suite for BaseAPI initialization."""
 
-    def test_session_api_initialization(self, api_key: str) -> None:
-        """Test SessionAPI initialization."""
-        client = HoneyHive(api_key=api_key)
-        session_api = SessionAPI(client)
-        assert session_api.client == client
+    def test_initialization_success(self, mock_client: Mock) -> None:
+        """Test successful BaseAPI initialization.
 
-    def test_start_session(self, api_key: str) -> None:
-        """Test starting a session."""
-        client = HoneyHive(api_key=api_key)
-        session_api = SessionAPI(client)
+        Verifies that BaseAPI initializes correctly with a client,
+        sets up error handler, and stores client name.
+        """
+        # Arrange
+        mock_client.server_url = "https://api.honeyhive.ai"
 
-        with patch.object(client, "request") as mock_request:
-            mock_response = Mock()
-            mock_response.json.return_value = {"session_id": "test-session-123"}
-            mock_request.return_value = mock_response
+        with patch("honeyhive.api.base.get_error_handler") as mock_get_handler:
+            mock_error_handler = Mock()
+            mock_get_handler.return_value = mock_error_handler
 
-            response = session_api.start_session(
-                project="test-project", session_name="test-session", source="test"
+            # Act
+            base_api = BaseAPI(mock_client)
+
+            # Assert
+            assert base_api.client == mock_client
+            assert base_api.error_handler == mock_error_handler
+            assert base_api._client_name == "BaseAPI"
+            mock_get_handler.assert_called_once()
+
+    def test_initialization_with_different_client_types(
+        self, mock_client: Mock
+    ) -> None:
+        """Test BaseAPI initialization with different client configurations.
+
+        Verifies that BaseAPI works with various client configurations
+        and properly stores the client reference.
+        """
+        # Arrange
+        mock_client.server_url = "https://custom.api.com"
+        mock_client.api_key = "test-key-123"
+
+        with patch("honeyhive.api.base.get_error_handler") as mock_get_handler:
+            mock_error_handler = Mock()
+            mock_get_handler.return_value = mock_error_handler
+
+            # Act
+            base_api = BaseAPI(mock_client)
+
+            # Assert
+            assert base_api.client.server_url == "https://custom.api.com"
+            assert base_api.client.api_key == "test-key-123"
+            assert base_api._client_name == "BaseAPI"
+
+    def test_client_name_reflects_subclass(self, mock_client: Mock) -> None:
+        """Test that _client_name reflects the actual subclass name.
+
+        Verifies that when BaseAPI is subclassed, the _client_name
+        attribute correctly reflects the subclass name.
+        """
+
+        # Arrange
+        class TestAPISubclass(BaseAPI):
+            """Test subclass of BaseAPI."""
+
+            def test_method(self) -> str:
+                """Test method to satisfy pylint."""
+                return "test"
+
+            def another_method(self) -> str:
+                """Another method to satisfy pylint."""
+                return "another"
+
+        with patch("honeyhive.api.base.get_error_handler") as mock_get_handler:
+            mock_error_handler = Mock()
+            mock_get_handler.return_value = mock_error_handler
+
+            # Act
+            subclass_api = TestAPISubclass(mock_client)
+
+            # Assert
+            assert subclass_api._client_name == "TestAPISubclass"
+
+
+class TestBaseAPICreateErrorContext:
+    """Test suite for BaseAPI._create_error_context method."""
+
+    def test_create_error_context_minimal_parameters(self, mock_client: Mock) -> None:
+        """Test error context creation with minimal parameters.
+
+        Verifies that error context is created correctly with just
+        the operation parameter and default values for optional parameters.
+        """
+        # Arrange
+        mock_client.server_url = "https://api.honeyhive.ai"
+
+        with patch("honeyhive.api.base.get_error_handler"):
+            base_api = BaseAPI(mock_client)
+
+            # Act
+            context = base_api._create_error_context("test_operation")
+
+            # Assert
+            assert isinstance(context, ErrorContext)
+            assert context.operation == "test_operation"
+            assert context.method is None
+            assert context.url is None
+            assert context.params is None
+            assert context.json_data is None
+            assert context.client_name == "BaseAPI"
+            assert context.additional_context == {}
+
+    def test_create_error_context_with_path(self, mock_client: Mock) -> None:
+        """Test error context creation with path parameter.
+
+        Verifies that when a path is provided, the URL is constructed
+        correctly by combining client base_url and the path.
+        """
+        # Arrange
+        mock_client.server_url = "https://api.honeyhive.ai"
+
+        with patch("honeyhive.api.base.get_error_handler"):
+            base_api = BaseAPI(mock_client)
+
+            # Act
+            context = base_api._create_error_context("create_event", path="/events")
+
+            # Assert
+            assert context.operation == "create_event"
+            assert context.url == "https://api.honeyhive.ai/events"
+
+    def test_create_error_context_with_all_parameters(self, mock_client: Mock) -> None:
+        """Test error context creation with all parameters provided.
+
+        Verifies that error context is created correctly when all
+        optional parameters are provided with their expected values.
+        """
+        # Arrange
+        mock_client.server_url = "https://api.honeyhive.ai"
+        test_params = {"limit": 10, "offset": 0}
+        test_json_data = {"name": "test_event", "data": {"key": "value"}}
+        additional_context = {"request_id": "req-123", "user_id": "user-456"}
+
+        with patch("honeyhive.api.base.get_error_handler"):
+            base_api = BaseAPI(mock_client)
+
+            # Act
+            context = base_api._create_error_context(
+                operation="create_event",
+                method="POST",
+                path="/events",
+                params=test_params,
+                json_data=test_json_data,
+                **additional_context,
             )
 
-            assert isinstance(response, SessionStartResponse)
-            assert response.session_id == "test-session-123"
-            mock_request.assert_called_once()
+            # Assert
+            assert context.operation == "create_event"
+            assert context.method == "POST"
+            assert context.url == "https://api.honeyhive.ai/events"
+            assert context.params == test_params
+            assert context.json_data == test_json_data
+            assert context.client_name == "BaseAPI"
+            assert context.additional_context == additional_context
 
-    @pytest_mark_asyncio  # type: ignore
-    async def test_start_session_async(self, api_key: str) -> None:
-        """Test starting a session asynchronously."""
-        client = HoneyHive(api_key=api_key)
-        session_api = SessionAPI(client)
+    def test_create_error_context_without_path(self, mock_client: Mock) -> None:
+        """Test error context creation without path parameter.
 
-        with patch.object(client, "request_async") as mock_request:
-            mock_response = Mock()
-            mock_response.json.return_value = {"session_id": "test-session-123"}
-            mock_request.return_value = mock_response
+        Verifies that when no path is provided, the URL remains None
+        and other parameters are handled correctly.
+        """
+        # Arrange
+        mock_client.server_url = "https://api.honeyhive.ai"
 
-            response = await session_api.start_session_async(
-                project="test-project", session_name="test-session", source="test"
+        with patch("honeyhive.api.base.get_error_handler"):
+            base_api = BaseAPI(mock_client)
+
+            # Act
+            context = base_api._create_error_context(
+                operation="validate_config", method="GET"
             )
 
-            assert isinstance(response, SessionStartResponse)
-            assert response.session_id == "test-session-123"
-            mock_request.assert_called_once()
-
-    def test_get_session(self, api_key: str) -> None:
-        """Test getting a session."""
-        client = HoneyHive(api_key=api_key)
-        session_api = SessionAPI(client)
-
-        with patch.object(client, "request") as mock_request:
-            mock_response = Mock()
-            mock_response.json.return_value = {"event_id": "test-event-123"}
-            mock_request.return_value = mock_response
-
-            response = session_api.get_session("test-session-123")
-
-            assert isinstance(response, SessionResponse)
-            assert response.event.event_id == "test-event-123"
-            mock_request.assert_called_once()
-
-    def test_create_session_with_model(self, api_key: str) -> None:
-        """Test creating a session using SessionStartRequest model."""
-        client = HoneyHive(api_key=api_key)
-        session_api = SessionAPI(client)
-
-        session_request = SessionStartRequest(
-            project="test-project", session_name="test-session", source="test"
-        )
-
-        with patch.object(client, "request") as mock_request:
-            mock_response = Mock()
-            mock_response.json.return_value = {"session_id": "test-session-123"}
-            mock_request.return_value = mock_response
-
-            response = session_api.create_session(session_request)
-
-            assert isinstance(response, SessionStartResponse)
-            assert response.session_id == "test-session-123"
-            mock_request.assert_called_once()
-            # Verify the model was serialized correctly
-            call_args = mock_request.call_args
-            assert "session" in call_args[1]["json"]
-            assert call_args[1]["json"]["session"]["project"] == "test-project"
-
-    def test_create_session_from_dict_legacy(self, api_key: str) -> None:
-        """Test creating a session using legacy dictionary method."""
-        client = HoneyHive(api_key=api_key)
-        session_api = SessionAPI(client)
-
-        session_data = {
-            "project": "test-project",
-            "session_name": "test-session",
-            "source": "test",
-        }
-
-        with patch.object(client, "request") as mock_request:
-            mock_response = Mock()
-            mock_response.json.return_value = {"session_id": "test-session-123"}
-            mock_request.return_value = mock_response
-
-            response = session_api.create_session_from_dict(session_data)
-
-            assert isinstance(response, SessionStartResponse)
-            assert response.session_id == "test-session-123"
-            mock_request.assert_called_once()
-
-
-class TestEventsAPI:
-    """Test Events API functionality."""
-
-    def test_events_api_initialization(self, api_key: str) -> None:
-        """Test EventsAPI initialization."""
-        client = HoneyHive(api_key=api_key)
-        events_api = EventsAPI(client)
-        assert events_api.client == client
-
-    def test_create_event(self, api_key: str) -> None:
-        """Test creating an event."""
-        client = HoneyHive(api_key=api_key)
-        events_api = EventsAPI(client)
-
-        event_request = CreateEventRequest(
-            project="test-project",
-            source="test",
-            event_name="test-event",
-            event_type="tool",
-            config={"model": "test-model"},
-            inputs={"prompt": "test prompt"},
-            duration=100.0,
-        )
-
-        with patch.object(client, "request") as mock_request:
-            mock_response = Mock()
-            mock_response.json.return_value = {
-                "event_id": "test-event-123",
-                "success": True,
-            }
-            mock_request.return_value = mock_response
-
-            response = events_api.create_event(event_request)
-
-            assert isinstance(response, CreateEventResponse)
-            assert response.event_id == "test-event-123"
-            assert response.success is True
-            mock_request.assert_called_once()
-
-    def test_update_event(self, api_key: str) -> None:
-        """Test updating an event."""
-        client = HoneyHive(api_key=api_key)
-        events_api = EventsAPI(client)
-
-        update_request = UpdateEventRequest(
-            event_id="test-event-123", metadata={"test": "value"}
-        )
-
-        with patch.object(client, "request") as mock_request:
-            mock_request.return_value = Mock()
-
-            events_api.update_event(update_request)
-
-            mock_request.assert_called_once()
-
-    def test_create_event_batch(self, api_key: str) -> None:
-        """Test creating multiple events."""
-        client = HoneyHive(api_key=api_key)
-        events_api = EventsAPI(client)
-
-        events = [
-            CreateEventRequest(
-                project="test-project",
-                source="test",
-                event_name="test-event-1",
-                event_type="tool",
-                config={"model": "test-model-1"},
-                inputs={"prompt": "test prompt 1"},
-                duration=100.0,
-            ),
-            CreateEventRequest(
-                project="test-project",
-                source="test",
-                event_name="test-event-2",
-                event_type="tool",
-                config={"model": "test-model-2"},
-                inputs={"prompt": "test prompt 2"},
-                duration=150.0,
-            ),
-        ]
-
-        with patch.object(client, "request") as mock_request:
-            mock_response = Mock()
-            mock_response.json.return_value = {
-                "event_ids": ["event-1", "event-2"],
-                "success": True,
-            }
-            mock_request.return_value = mock_response
-
-            batch_request = BatchCreateEventRequest(events=events)
-            response = events_api.create_event_batch(batch_request)
-
-            assert isinstance(response, BatchCreateEventResponse)
-            assert len(response.event_ids) == 2
-            assert response.success is True
-
-    def test_create_event_batch_from_list(self, api_key: str) -> None:
-        """Test creating multiple events from list using new model-based method."""
-        client = HoneyHive(api_key=api_key)
-        events_api = EventsAPI(client)
-
-        events = [
-            CreateEventRequest(
-                project="test-project",
-                source="test",
-                event_name="test-event-1",
-                event_type="tool",
-                config={"model": "test-model-1"},
-                inputs={"prompt": "test prompt 1"},
-                duration=100.0,
-            ),
-            CreateEventRequest(
-                project="test-project",
-                source="test",
-                event_name="test-event-2",
-                event_type="tool",
-                config={"model": "test-model-2"},
-                inputs={"prompt": "test prompt 2"},
-                duration=150.0,
-            ),
-        ]
-
-        with patch.object(client, "request") as mock_request:
-            mock_response = Mock()
-            mock_response.json.return_value = {
-                "event_ids": ["event-1", "event-2"],
-                "success": True,
-            }
-            mock_request.return_value = mock_response
-
-            response = events_api.create_event_batch_from_list(events)
-
-            assert isinstance(response, BatchCreateEventResponse)
-            assert len(response.event_ids) == 2
-            assert response.success is True
-
-    def test_list_events_with_filter_model(self, api_key: str) -> None:
-        """Test listing events using EventFilter model."""
-        client = HoneyHive(api_key=api_key)
-        events_api = EventsAPI(client)
-
-        event_filter = EventFilter(
-            field="metadata.demo_type", value="api_client_models"
-        )
-
-        with patch.object(client, "request") as mock_request:
-            mock_response = Mock()
-            mock_response.json.return_value = {
-                "events": [
-                    {"event_id": "event-1", "event_name": "Event 1"},
-                    {"event_id": "event-2", "event_name": "Event 2"},
-                ]
-            }
-            mock_request.return_value = mock_response
-
-            events = events_api.list_events(event_filter, limit=50)
-
-            assert len(events) == 2
-            mock_request.assert_called_once()
-            # Verify filter parameters were converted correctly
-            call_args = mock_request.call_args
-            assert call_args[1]["params"]["field"] == "metadata.demo_type"
-            assert call_args[1]["params"]["value"] == "api_client_models"
-
-
-class TestToolsAPI:
-    """Test Tools API functionality."""
-
-    def test_tools_api_initialization(self, api_key: str) -> None:
-        """Test ToolsAPI initialization."""
-        client = HoneyHive(api_key=api_key)
-        tools_api = ToolsAPI(client)
-        assert tools_api.client == client
-
-    def test_create_tool(self, api_key: str) -> None:
-        """Test creating a tool."""
-        client = HoneyHive(api_key=api_key)
-        tools_api = ToolsAPI(client)
-
-        tool_request = CreateToolRequest(
-            task="test-project",
-            name="test-tool",
-            description="A test tool",
-            parameters={"param1": "value1"},
-            type="function",
-        )
-
-        with patch.object(client, "request") as mock_request:
-            mock_response = Mock()
-            mock_response.json.return_value = {
-                "field_id": "tool-123",
-                "name": "test-tool",
-                "task": "test-project",
-                "parameters": {"param1": "value1"},
-                "tool_type": "function",
-            }
-            mock_request.return_value = mock_response
-
-            response = tools_api.create_tool(tool_request)
-
-            assert isinstance(response, Tool)
-            assert response.name == "test-tool"
-            mock_request.assert_called_once()
-
-    def test_get_tool(self, api_key: str) -> None:
-        """Test getting a tool."""
-        client = HoneyHive(api_key=api_key)
-        tools_api = ToolsAPI(client)
-
-        with patch.object(client, "request") as mock_request:
-            mock_response = Mock()
-            mock_response.json.return_value = {
-                "_id": "tool-123",
-                "name": "test-tool",
-                "task": "test-project",
-                "parameters": {"param1": "value1"},
-                "tool_type": "function",
-            }
-            mock_request.return_value = mock_response
-
-            response = tools_api.get_tool("tool-123")
-
-            assert isinstance(response, Tool)
-            assert response.field_id == "tool-123"
-            mock_request.assert_called_once()
-
-    def test_list_tools(self, api_key: str) -> None:
-        """Test listing tools."""
-        client = HoneyHive(api_key=api_key)
-        tools_api = ToolsAPI(client)
-
-        with patch.object(client, "request") as mock_request:
-            mock_response = Mock()
-            mock_response.json.return_value = {
-                "tools": [
-                    {
-                        "id": "tool-1",
-                        "name": "tool-1",
-                        "task": "test-project",
-                        "parameters": {"param1": "value1"},
-                        "tool_type": "function",
-                    },
-                    {
-                        "id": "tool-2",
-                        "name": "tool-2",
-                        "task": "test-project",
-                        "parameters": {"param2": "value2"},
-                        "tool_type": "function",
-                    },
-                ]
-            }
-            mock_request.return_value = mock_response
-
-            response = tools_api.list_tools(project="test-project")
-
-            assert len(response) == 2
-            assert all(isinstance(tool, Tool) for tool in response)
-            mock_request.assert_called_once()
-
-    def test_update_tool(self, api_key: str) -> None:
-        """Test updating a tool."""
-        client = HoneyHive(api_key=api_key)
-        tools_api = ToolsAPI(client)
-
-        update_request = UpdateToolRequest(
-            id="tool-123",
-            name="updated-tool",
-            description="Updated description",
-            parameters={"param1": "updated-value"},
-        )
-
-        with patch.object(client, "request") as mock_request:
-            mock_response = Mock()
-            mock_response.json.return_value = {
-                "field_id": "tool-123",
-                "name": "updated-tool",
-                "task": "test-project",
-                "parameters": {"param1": "updated-value"},
-                "tool_type": "function",
-            }
-            mock_request.return_value = mock_response
-
-            response = tools_api.update_tool("tool-123", update_request)
-
-            assert isinstance(response, Tool)
-            assert response.name == "updated-tool"
-            mock_request.assert_called_once()
-
-    def test_delete_tool(self, api_key: str) -> None:
-        """Test deleting a tool."""
-        client = HoneyHive(api_key=api_key)
-        tools_api = ToolsAPI(client)
-
-        with patch.object(client, "request") as mock_request:
-            mock_response = Mock()
-            mock_response.status_code = 200
-            mock_request.return_value = mock_response
-
-            result = tools_api.delete_tool("tool-123")
-
-            assert result is True
-            mock_request.assert_called_once()
-
-
-class TestDatapointsAPI:
-    """Test Datapoints API functionality."""
-
-    def test_datapoints_api_initialization(self, api_key: str) -> None:
-        """Test DatapointsAPI initialization."""
-        client = HoneyHive(api_key=api_key)
-        datapoints_api = DatapointsAPI(client)
-        assert datapoints_api.client == client
-
-    def test_create_datapoint(self, api_key: str) -> None:
-        """Test creating a datapoint."""
-        client = HoneyHive(api_key=api_key)
-        datapoints_api = DatapointsAPI(client)
-
-        datapoint_request = CreateDatapointRequest(
-            project="test-project", inputs={"key": "value"}
-        )
-
-        with patch.object(client, "request") as mock_request:
-            mock_response = Mock()
-            mock_response.json.return_value = {
-                "_id": "dp-123",
-                "inputs": {"key": "value"},
-                "project_id": "test-project",
-            }
-            mock_request.return_value = mock_response
-
-            response = datapoints_api.create_datapoint(datapoint_request)
-
-            assert isinstance(response, Datapoint)
-            assert response.field_id == "dp-123"
-            mock_request.assert_called_once()
-
-    def test_list_datapoints(self, api_key: str) -> None:
-        """Test listing datapoints."""
-        client = HoneyHive(api_key=api_key)
-        datapoints_api = DatapointsAPI(client)
-
-        with patch.object(client, "request") as mock_request:
-            mock_response = Mock()
-            mock_response.json.return_value = {
-                "datapoints": [
-                    {"id": "dp-1", "data": {"key": "value1"}},
-                    {"id": "dp-2", "data": {"key": "value2"}},
-                ]
-            }
-            mock_request.return_value = mock_response
-
-            response = datapoints_api.list_datapoints(project="test-project")
-
-            assert len(response) == 2
-            assert all(isinstance(dp, Datapoint) for dp in response)
-            mock_request.assert_called_once()
-
-
-class TestDatasetsAPI:
-    """Test Datasets API functionality."""
-
-    def test_datasets_api_initialization(self, api_key: str) -> None:
-        """Test DatasetsAPI initialization."""
-        client = HoneyHive(api_key=api_key)
-        datasets_api = DatasetsAPI(client)
-        assert datasets_api.client == client
-
-    def test_create_dataset(self, api_key: str) -> None:
-        """Test creating a dataset."""
-        client = HoneyHive(api_key=api_key)
-        datasets_api = DatasetsAPI(client)
-
-        dataset_request = CreateDatasetRequest(
-            project="test-project", name="test-dataset", description="A test dataset"
-        )
-
-        with patch.object(client, "request") as mock_request:
-            mock_response = Mock()
-            mock_response.json.return_value = {"id": "ds-123", "name": "test-dataset"}
-            mock_request.return_value = mock_response
-
-            response = datasets_api.create_dataset(dataset_request)
-
-            assert isinstance(response, Dataset)
-            assert response.name == "test-dataset"
-            mock_request.assert_called_once()
-
-
-class TestConfigurationsAPI:
-    """Test Configurations API functionality."""
-
-    def test_configurations_api_initialization(self, api_key: str) -> None:
-        """Test ConfigurationsAPI initialization."""
-        client = HoneyHive(api_key=api_key)
-        configs_api = ConfigurationsAPI(client)
-        assert configs_api.client == client
-
-    def test_create_configuration(self, api_key: str) -> None:
-        """Test creating a configuration."""
-        client = HoneyHive(api_key=api_key)
-        configs_api = ConfigurationsAPI(client)
-
-        from honeyhive.models.generated import Parameters2
-
-        config_request = PostConfigurationRequest(
-            project="test-project",
-            provider="test-provider",
-            name="test-config",
-            parameters=Parameters2(call_type="chat", model="gpt-4"),
-        )
-
-        with patch.object(client, "request") as mock_request:
-            mock_response = Mock()
-            mock_response.json.return_value = {
-                "acknowledged": True,
-                "insertedId": "cfg-123",
-                "success": True,
-            }
-            mock_request.return_value = mock_response
-
-            response = configs_api.create_configuration(config_request)
-
-            # Should return CreateConfigurationResponse, not Configuration
-            from honeyhive.api.configurations import CreateConfigurationResponse
-
-            assert isinstance(response, CreateConfigurationResponse)
-            assert response.acknowledged is True
-            assert response.inserted_id == "cfg-123"
-            assert response.success is True
-            mock_request.assert_called_once()
-
-
-class TestProjectsAPI:
-    """Test Projects API functionality."""
-
-    def test_projects_api_initialization(self, api_key: str) -> None:
-        """Test ProjectsAPI initialization."""
-        client = HoneyHive(api_key=api_key)
-        projects_api = ProjectsAPI(client)
-        assert projects_api.client == client
-
-    def test_create_project(self, api_key: str) -> None:
-        """Test creating a project."""
-        client = HoneyHive(api_key=api_key)
-        projects_api = ProjectsAPI(client)
-
-        project_request = CreateProjectRequest(
-            name="test-project", description="A test project"
-        )
-
-        with patch.object(client, "request") as mock_request:
-            mock_response = Mock()
-            mock_response.json.return_value = {
-                "id": "proj-123",
-                "name": "test-project",
-                "description": "A test project",
-            }
-            mock_request.return_value = mock_response
-
-            response = projects_api.create_project(project_request)
-
-            assert isinstance(response, Project)
-            assert response.name == "test-project"
-            mock_request.assert_called_once()
-
-
-class TestMetricsAPI:
-    """Test Metrics API functionality."""
-
-    def test_metrics_api_initialization(self, api_key: str) -> None:
-        """Test MetricsAPI initialization."""
-        client = HoneyHive(api_key=api_key)
-        metrics_api = MetricsAPI(client)
-        assert metrics_api.client == client
-
-    def test_create_metric(self, api_key: str) -> None:
-        """Test creating a metric."""
-        client = HoneyHive(api_key=api_key)
-        metrics_api = MetricsAPI(client)
-
-        metric = Metric(
-            name="test-metric",
-            description="A test metric",
-            task="test-task",
-            type="custom",
-            return_type="float",
-        )
-
-        with patch.object(client, "request") as mock_request:
-            mock_response = Mock()
-            mock_response.json.return_value = {
-                "_id": "metric-123",
-                "name": "test-metric",
-                "description": "A test metric",
-                "task": "test-task",
-                "type": "custom",
-                "return_type": "float",
-            }
-            mock_request.return_value = mock_response
-
-            response = metrics_api.create_metric(metric)
-
-            assert isinstance(response, Metric)
-            assert response.name == "test-metric"
-            mock_request.assert_called_once()
-
-
-class TestEvaluationsAPI:
-    """Test Evaluations API functionality."""
-
-    def test_evaluations_api_initialization(self, api_key: str) -> None:
-        """Test EvaluationsAPI initialization."""
-        client = HoneyHive(api_key=api_key)
-        evaluations_api = EvaluationsAPI(client)
-        assert evaluations_api.client == client
-
-    def test_create_evaluation_run(self, api_key: str) -> None:
-        """Test creating an evaluation run."""
-        client = HoneyHive(api_key=api_key)
-        evaluations_api = EvaluationsAPI(client)
-
-        from uuid import uuid4
-
-        from honeyhive.models.generated import UUIDType
-
-        run_request = CreateRunRequest(
-            project="test-project",
-            name="test-evaluation-run",
-            event_ids=[UUIDType(uuid4()), UUIDType(uuid4())],
-        )
-
-        with patch.object(client, "request") as mock_request:
-            mock_response = Mock()
-            mock_response.json.return_value = {
-                "evaluation": {"run_id": "run-123"},
-                "run_id": "run-123",
-            }
-            mock_request.return_value = mock_response
-
-            # Mock the CreateRunResponse creation to avoid UUIDType validation issues
-            with patch(
-                "honeyhive.api.evaluations.CreateRunResponse"
-            ) as mock_response_class:
-                mock_response_instance = Mock()
-                mock_response_instance.run_id = "run-123"
-                mock_response_class.return_value = mock_response_instance
-
-                response = evaluations_api.create_run(run_request)
-
-                assert response.run_id == "run-123"
-                mock_request.assert_called_once()
-
-
-class TestAPIErrorHandling:
-    """Test API error handling."""
-
-    def test_api_error_handling(self, api_key: str) -> None:
-        """Test API error handling."""
-        client = HoneyHive(api_key=api_key)
-        session_api = SessionAPI(client)
-
-        with patch.object(client, "request") as mock_request:
-            mock_request.side_effect = Exception("API Error")
-
-            with pytest.raises(Exception, match="API Error"):
-                session_api.start_session(
-                    project="test-project", session_name="test-session", source="test"
+            # Assert
+            assert context.operation == "validate_config"
+            assert context.method == "GET"
+            assert context.url is None
+
+    def test_create_error_context_with_empty_additional_context(
+        self, mock_client: Mock
+    ) -> None:
+        """Test error context creation with empty additional context.
+
+        Verifies that when no additional context is provided,
+        the additional_context field is an empty dictionary.
+        """
+        # Arrange
+        mock_client.server_url = "https://api.honeyhive.ai"
+
+        with patch("honeyhive.api.base.get_error_handler"):
+            base_api = BaseAPI(mock_client)
+
+            # Act
+            context = base_api._create_error_context("test_operation")
+
+            # Assert
+            assert context.additional_context == {}
+
+
+class TestBaseAPIProcessDataDynamically:
+    """Test suite for BaseAPI._process_data_dynamically method."""
+
+    def test_process_empty_data_list(self, mock_client: Mock) -> None:
+        """Test processing empty data list.
+
+        Verifies that when an empty list is provided,
+        the method returns an empty list without processing.
+        """
+        # Arrange
+        with patch("honeyhive.api.base.get_error_handler"):
+            base_api = BaseAPI(mock_client)
+
+            # Act
+            result = base_api._process_data_dynamically([], Mock, "test_items")
+
+            # Assert
+            assert not result
+
+    def test_process_small_dataset_success(self, mock_client: Mock) -> None:
+        """Test processing small dataset successfully.
+
+        Verifies that small datasets (≤100 items) are processed
+        using the simple processing path with proper model instantiation.
+        """
+        # Arrange
+        mock_model_class = Mock()
+        mock_instance_1 = Mock()
+        mock_instance_2 = Mock()
+        mock_model_class.side_effect = [mock_instance_1, mock_instance_2]
+
+        test_data = [{"id": 1, "name": "item1"}, {"id": 2, "name": "item2"}]
+
+        with patch("honeyhive.api.base.get_error_handler"):
+            base_api = BaseAPI(mock_client)
+
+            with patch.object(base_api.client, "_log") as mock_log:
+                # Act
+                result = base_api._process_data_dynamically(
+                    test_data, mock_model_class, "test_items"
                 )
 
-    def test_api_invalid_response(self, api_key: str) -> None:
-        """Test API invalid response handling."""
-        client = HoneyHive(api_key=api_key)
-        session_api = SessionAPI(client)
+                # Assert
+                assert len(result) == 2
+                assert result[0] == mock_instance_1
+                assert result[1] == mock_instance_2
 
-        with patch.object(client, "request") as mock_request:
-            mock_response = Mock()
-            mock_response.json.side_effect = Exception("Invalid JSON")
-            mock_request.return_value = mock_response
+                # Verify model class was called with correct data
+                assert mock_model_class.call_count == 2
+                mock_model_class.assert_any_call(**test_data[0])
+                mock_model_class.assert_any_call(**test_data[1])
 
-            with pytest.raises(Exception, match="Invalid JSON"):
-                session_api.start_session(
-                    project="test-project", session_name="test-session", source="test"
-                )
+                # Verify no debug logging for small datasets
+                mock_log.assert_not_called()
 
+    def test_process_small_dataset_with_validation_errors(
+        self, mock_client: Mock
+    ) -> None:
+        """Test processing small dataset with validation errors.
 
-class TestAPIPerformance:
-    """Test API performance characteristics."""
-
-    def test_api_batch_operations(self, api_key: str) -> None:
-        """Test API batch operations performance."""
-        client = HoneyHive(api_key=api_key)
-        events_api = EventsAPI(client)
-
-        # Create many events
-        events = [
-            CreateEventRequest(
-                project="test-project",
-                source="test",
-                event_name=f"test-event-{i}",
-                event_type="tool",
-                config={"model": f"test-model-{i}"},
-                inputs={"prompt": f"test prompt {i}"},
-                duration=100.0 + i,
-            )
-            for i in range(100)
+        Verifies that validation errors in small datasets are logged
+        and invalid items are skipped while valid items are processed.
+        """
+        # Arrange
+        mock_model_class = Mock()
+        mock_instance = Mock()
+        mock_model_class.side_effect = [
+            ValueError("Invalid data"),  # First item fails
+            mock_instance,  # Second item succeeds
         ]
 
-        with patch.object(client, "request") as mock_request:
-            mock_response = Mock()
-            mock_response.json.return_value = {
-                "event_ids": [f"event-{i}" for i in range(100)],
-                "success": True,
-            }
-            mock_request.return_value = mock_response
+        test_data = [{"id": "invalid"}, {"id": 2, "name": "valid_item"}]
 
-            import time
+        with patch("honeyhive.api.base.get_error_handler"):
+            base_api = BaseAPI(mock_client)
 
-            start_time = time.time()
+            with patch.object(base_api.client, "_log") as mock_log:
+                # Act
+                result = base_api._process_data_dynamically(
+                    test_data, mock_model_class, "test_items"
+                )
 
-            batch_request = BatchCreateEventRequest(events=events)
-            response = events_api.create_event_batch(batch_request)
+                # Assert
+                assert len(result) == 1
+                assert result[0] == mock_instance
 
-            end_time = time.time()
-            duration = end_time - start_time
+                # Verify error was logged
+                mock_log.assert_called_once()
+                log_call = mock_log.call_args
+                assert log_call[0][0] == "warning"
+                assert "validation error" in log_call[0][1]
 
-            # Should complete in reasonable time
-            assert duration < 1.0
-            assert len(response.event_ids) == 100
-            assert response.success is True
+    def test_process_large_dataset_success(self, mock_client: Mock) -> None:
+        """Test processing large dataset successfully.
+
+        Verifies that large datasets (>100 items) use the optimized
+        processing path with progress logging and performance monitoring.
+        """
+        # Arrange
+        mock_model_class = Mock()
+        mock_instances = [Mock() for _ in range(150)]
+        mock_model_class.side_effect = mock_instances
+
+        test_data = [{"id": i, "name": f"item{i}"} for i in range(150)]
+
+        with patch("honeyhive.api.base.get_error_handler"):
+            base_api = BaseAPI(mock_client)
+
+            with patch.object(base_api.client, "_log") as mock_log:
+                # Act
+                result = base_api._process_data_dynamically(
+                    test_data, mock_model_class, "test_items"
+                )
+
+                # Assert
+                assert len(result) == 150
+                assert all(instance in mock_instances for instance in result)
+
+                # Verify debug logging for large dataset
+                debug_calls = [
+                    call for call in mock_log.call_args_list if call[0][0] == "debug"
+                ]
+                assert len(debug_calls) >= 2  # Initial + completion logs
+
+                # Verify initial processing log
+                initial_log = debug_calls[0]
+                assert (
+                    "Processing large test_items dataset: 150 items"
+                    in initial_log[0][1]
+                )
+
+                # Verify completion log with success rate
+                completion_log = debug_calls[-1]
+                assert "processing complete" in completion_log[0][1]
+                assert "150/150 items" in completion_log[0][1]
+                assert "100.0% success rate" in completion_log[0][1]
+
+    def test_process_large_dataset_with_progress_logging(
+        self, mock_client: Mock
+    ) -> None:
+        """Test large dataset processing with progress logging.
+
+        Verifies that very large datasets (>500 items) include
+        progress logging every 100 items for monitoring.
+        """
+        # Arrange
+        mock_model_class = Mock()
+        mock_instances = [Mock() for _ in range(600)]
+        mock_model_class.side_effect = mock_instances
+
+        test_data = [{"id": i, "name": f"item{i}"} for i in range(600)]
+
+        with patch("honeyhive.api.base.get_error_handler"):
+            base_api = BaseAPI(mock_client)
+
+            with patch.object(base_api.client, "_log") as mock_log:
+                # Act
+                result = base_api._process_data_dynamically(
+                    test_data, mock_model_class, "test_items"
+                )
+
+                # Assert
+                assert len(result) == 600
+
+                # Verify progress logging occurred
+                progress_calls = [
+                    call
+                    for call in mock_log.call_args_list
+                    if call[0][0] == "debug" and "Processed" in call[0][1]
+                ]
+                assert (
+                    len(progress_calls) >= 5
+                )  # Should have progress logs at 100, 200, 300, 400, 500
+
+    def test_process_large_dataset_early_termination(self, mock_client: Mock) -> None:
+        """Test large dataset processing with early termination due to errors.
+
+        Verifies that when error count exceeds max_errors (dataset_size // 10),
+        processing stops early to prevent performance degradation.
+        """
+        # Arrange
+        mock_model_class = Mock()
+        # Create side effects: first 21 items fail (max_errors = 20 for 200 items),
+        # rest would succeed
+        side_effects = [ValueError("Validation error") for _ in range(21)]
+        side_effects.extend([Mock() for _ in range(179)])
+        mock_model_class.side_effect = side_effects
+
+        test_data = [{"id": i, "name": f"item{i}"} for i in range(200)]
+
+        with patch("honeyhive.api.base.get_error_handler"):
+            base_api = BaseAPI(mock_client)
+
+            with patch.object(base_api.client, "_log") as mock_log:
+                # Act
+                result = base_api._process_data_dynamically(
+                    test_data, mock_model_class, "test_items"
+                )
+
+                # Assert
+                # Processing should stop early due to high error rate
+                assert len(result) < 200
+
+                # Verify early termination warning was logged
+                warning_calls = [
+                    call
+                    for call in mock_log.call_args_list
+                    if call[0][0] == "warning"
+                    and "Too many validation errors" in call[0][1]
+                ]
+                assert len(warning_calls) == 1
+
+                termination_log = warning_calls[0]
+                assert (
+                    "Stopping processing to prevent performance degradation"
+                    in termination_log[0][1]
+                )
+
+    def test_process_large_dataset_error_logging_suppression(
+        self, mock_client: Mock
+    ) -> None:
+        """Test error logging suppression in large datasets.
+
+        Verifies that after the first 3 validation errors,
+        subsequent error logs are suppressed with a suppression message.
+        """
+        # Arrange
+        mock_model_class = Mock()
+        # First 5 items fail, rest succeed
+        side_effects = [ValueError(f"Error {i}") for i in range(5)]
+        side_effects.extend([Mock() for _ in range(150)])
+        mock_model_class.side_effect = side_effects
+
+        test_data = [{"id": i, "name": f"item{i}"} for i in range(155)]
+
+        with patch("honeyhive.api.base.get_error_handler"):
+            base_api = BaseAPI(mock_client)
+
+            with patch.object(base_api.client, "_log") as mock_log:
+                # Act
+                result = base_api._process_data_dynamically(
+                    test_data, mock_model_class, "test_items"
+                )
+
+                # Assert
+                assert len(result) == 150  # 5 failed, 150 succeeded
+
+                # Verify error suppression message was logged
+                suppression_calls = [
+                    call
+                    for call in mock_log.call_args_list
+                    if call[0][0] == "warning" and "Suppressing further" in call[0][1]
+                ]
+                assert len(suppression_calls) == 1
+
+                suppression_log = suppression_calls[0]
+                assert "test_items validation error logs" in suppression_log[0][1]
+
+    def test_process_data_with_custom_data_type(self, mock_client: Mock) -> None:
+        """Test processing data with custom data type parameter.
+
+        Verifies that the data_type parameter is used correctly
+        in logging messages and error reporting.
+        """
+        # Arrange
+        mock_model_class = Mock()
+        mock_instance = Mock()
+        mock_model_class.return_value = mock_instance
+
+        test_data = [{"id": 1, "name": "custom_item"}]
+
+        with patch("honeyhive.api.base.get_error_handler"):
+            base_api = BaseAPI(mock_client)
+
+            with patch.object(base_api.client, "_log") as mock_log:
+                # Act
+                result = base_api._process_data_dynamically(
+                    test_data, mock_model_class, "custom_metrics"
+                )
+
+                # Assert
+                assert len(result) == 1
+                assert result[0] == mock_instance
+
+                # No logging should occur for small successful datasets
+                mock_log.assert_not_called()
+
+    def test_process_data_zero_success_rate_calculation(
+        self, mock_client: Mock
+    ) -> None:
+        """Test success rate calculation with zero items processed.
+
+        Verifies that when no items are successfully processed,
+        the success rate calculation handles division by zero correctly.
+        """
+        # Arrange
+        mock_model_class = Mock()
+        mock_model_class.side_effect = [
+            ValueError("All items fail") for _ in range(150)
+        ]
+
+        test_data = [{"id": i, "invalid": True} for i in range(150)]
+
+        with patch("honeyhive.api.base.get_error_handler"):
+            base_api = BaseAPI(mock_client)
+
+            with patch.object(base_api.client, "_log") as mock_log:
+                # Act
+                result = base_api._process_data_dynamically(
+                    test_data, mock_model_class, "test_items"
+                )
+
+                # Assert
+                assert len(result) == 0
+
+                # Verify completion log handles zero success rate
+                completion_calls = [
+                    call
+                    for call in mock_log.call_args_list
+                    if call[0][0] == "debug" and "processing complete" in call[0][1]
+                ]
+                assert len(completion_calls) == 1
+
+                completion_log = completion_calls[0]
+                assert "0/150 items" in completion_log[0][1]
+                assert "0.0% success rate" in completion_log[0][1]
+
+
+class TestBaseAPIIntegration:
+    """Test suite for BaseAPI integration scenarios."""
+
+    def test_error_context_integration_with_processing(self, mock_client: Mock) -> None:
+        """Test integration between error context creation and data processing.
+
+        Verifies that BaseAPI methods work together correctly
+        in realistic usage scenarios.
+        """
+        # Arrange
+        mock_client.server_url = "https://api.honeyhive.ai"
+
+        with patch("honeyhive.api.base.get_error_handler"):
+            base_api = BaseAPI(mock_client)
+
+            # Test error context creation
+            context = base_api._create_error_context(
+                "process_events", method="POST", path="/events/batch"
+            )
+
+            # Test data processing
+            mock_model = Mock()
+            mock_model.return_value = Mock()
+            test_data = [{"event_id": 1}, {"event_id": 2}]
+
+            with patch.object(base_api.client, "_log"):
+                result = base_api._process_data_dynamically(
+                    test_data, mock_model, "events"
+                )
+
+            # Assert
+            assert context.operation == "process_events"
+            assert context.url == "https://api.honeyhive.ai/events/batch"
+            assert len(result) == 2
+
+    def test_subclass_behavior_preservation(self, mock_client: Mock) -> None:
+        """Test that BaseAPI behavior is preserved in subclasses.
+
+        Verifies that when BaseAPI is subclassed, all functionality
+        continues to work correctly with proper inheritance.
+        """
+
+        # Arrange
+        class EventsAPI(BaseAPI):
+            """Test subclass representing an Events API."""
+
+            def create_event(self, event_data: Dict[str, Any]) -> Dict[str, Any]:
+                """Create an event using BaseAPI functionality."""
+                context = self._create_error_context(
+                    "create_event", method="POST", path="/events", json_data=event_data
+                )
+                return {"context": context, "data": event_data}
+
+            def get_events(self) -> Dict[str, Any]:
+                """Get events - additional method to satisfy pylint."""
+                return {"events": []}
+
+        mock_client.server_url = "https://api.honeyhive.ai"
+
+        with patch("honeyhive.api.base.get_error_handler"):
+            events_api = EventsAPI(mock_client)
+
+            # Act
+            event_data = {"name": "test_event", "type": "user_action"}
+            result = events_api.create_event(event_data)
+
+            # Assert
+            assert events_api._client_name == "EventsAPI"
+            assert result["context"].operation == "create_event"
+            assert result["context"].json_data == event_data
+            assert result["data"] == event_data

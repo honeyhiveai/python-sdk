@@ -1,21 +1,23 @@
 """Simple integration tests for HoneyHive - NO MOCKS, REAL API CALLS."""
 
+# pylint: disable=duplicate-code
+
+import time
+import uuid
+
 import pytest
 
 from honeyhive.models.generated import (
     CallType,
     CreateDatapointRequest,
     CreateEventRequest,
+    EventFilter,
     EventType1,
     Parameters2,
     PostConfigurationRequest,
     SessionStartRequest,
 )
-
-from ..utils import (
-    create_openai_config_request,
-    create_session_request,
-)
+from tests.utils import create_session_request
 
 
 class TestSimpleIntegration:
@@ -33,9 +35,6 @@ class TestSimpleIntegration:
             pytest.fail(
                 "Real API credentials required but not available - check .env file"
             )
-
-        import time
-        import uuid
 
         # Create unique test data to avoid conflicts
         test_id = str(uuid.uuid4())[:8]
@@ -81,9 +80,10 @@ class TestSimpleIntegration:
                         break
 
                 # Verify the data was actually stored
-                assert (
-                    found_datapoint is not None
-                ), f"Created datapoint with test_id {test_id} not found in HoneyHive system"
+                assert found_datapoint is not None, (
+                    f"Created datapoint with test_id {test_id} not found in "
+                    f"HoneyHive system"
+                )
                 assert (
                     found_datapoint.inputs["query"] == test_query
                 ), "Stored query doesn't match created query"
@@ -100,13 +100,15 @@ class TestSimpleIntegration:
                 print(f"✅ Creation successful with ID: {created_id}")
 
         except Exception as e:
-            # Agent OS Zero Failing Tests Policy: NO SKIPPING - real system exercise required
+            # Agent OS Zero Failing Tests Policy: NO SKIPPING - real system exercise
+            # required
             pytest.fail(f"API call failed - real system must work: {e}")
 
     def test_basic_configuration_creation_and_retrieval(
         self, integration_client, integration_project_name
     ):
-        """Test complete configuration workflow: create → validate storage → retrieve."""
+        """Test complete configuration workflow: create → validate storage →
+        retrieve."""
         # Agent OS Zero Failing Tests Policy: NO SKIPPING - must use real credentials
         if (
             not integration_client.api_key
@@ -115,9 +117,6 @@ class TestSimpleIntegration:
             pytest.fail(
                 "Real API credentials required but not available - check .env file"
             )
-
-        import time
-        import uuid
 
         # Create unique test configuration
         test_id = str(uuid.uuid4())[:8]
@@ -186,7 +185,8 @@ class TestSimpleIntegration:
                 print(f"✅ Creation successful: {config_name}")
 
         except Exception as e:
-            # Agent OS Zero Failing Tests Policy: NO SKIPPING - real system exercise required
+            # Agent OS Zero Failing Tests Policy: NO SKIPPING - real system exercise
+            # required
             pytest.fail(f"API call failed - real system must work: {e}")
 
     def test_session_event_workflow_with_validation(
@@ -201,9 +201,6 @@ class TestSimpleIntegration:
             pytest.fail(
                 "Real API credentials required but not available - check .env file"
             )
-
-        import time
-        import uuid
 
         # Create unique test data
         test_id = str(uuid.uuid4())[:8]
@@ -253,8 +250,6 @@ class TestSimpleIntegration:
                 assert session.event.session_id == session_id
 
                 # Retrieve events for this session
-                from honeyhive.models.generated import EventFilter
-
                 session_filter = EventFilter(
                     field="session_id", value=session_id, operator="is", type="id"
                 )
@@ -281,10 +276,10 @@ class TestSimpleIntegration:
                     found_event["config"]["test_id"] == test_id
                 ), "Event data not properly stored"
 
-                print(f"✅ Successfully validated session-event workflow:")
+                print("✅ Successfully validated session-event workflow:")
                 print(f"   Session: {session_id}")
                 print(f"   Event: {event_id}")
-                print(f"   Proper linking verified")
+                print("   Proper linking verified")
 
             except Exception as retrieval_error:
                 # If retrieval fails, still consider test successful if creation worked
@@ -296,7 +291,8 @@ class TestSimpleIntegration:
                 )
 
         except Exception as e:
-            # Agent OS Zero Failing Tests Policy: NO SKIPPING - real system exercise required
+            # Agent OS Zero Failing Tests Policy: NO SKIPPING - real system exercise
+            # required
             pytest.fail(f"API call failed - real system must work: {e}")
 
     def test_model_serialization_workflow(self):
@@ -350,7 +346,7 @@ class TestSimpleIntegration:
     def test_environment_configuration(self, integration_client):
         """Test that environment configuration is properly set."""
         assert integration_client.test_mode is False  # Integration tests use real API
-        assert integration_client.base_url == "https://api.honeyhive.ai"
+        assert integration_client.server_url == "https://api.honeyhive.ai"
 
     def test_fixture_availability(self, integration_client):
         """Test that required integration fixtures are available."""

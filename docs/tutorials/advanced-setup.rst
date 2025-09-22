@@ -10,6 +10,7 @@ What You'll Learn
 -----------------
 
 - Multi-environment configuration strategies
+- Multi-instance architecture for complex applications
 - Custom instrumentor development
 - Advanced tracing patterns for microservices
 - Performance optimization techniques
@@ -180,6 +181,141 @@ Multi-Environment Configuration
        environment:
          - ENVIRONMENT=production
          - HH_API_KEY_PROD=${HH_API_KEY_PROD}
+
+Multi-Instance Architecture
+----------------------------
+
+**Problem**: You need multiple independent HoneyHive tracers in the same application for different services, teams, or workflows.
+
+**Solution**: Use HoneyHive's multi-instance architecture with intelligent provider strategy selection.
+
+**Use Cases for Multi-Instance Architecture:**
+
+- **Microservices**: Each service has its own tracer with different projects
+- **Multi-tenant applications**: Separate tracing per tenant or customer
+- **Team isolation**: Different teams use different HoneyHive projects
+- **Environment separation**: Dev/staging/prod tracers in the same codebase
+- **Workflow separation**: Different AI workflows tracked separately
+
+**Step 1: Create Multiple Tracer Instances**
+
+.. code-block:: python
+
+   from honeyhive import HoneyHiveTracer
+   from openinference.instrumentation.openai import OpenAIInstrumentor
+   from openinference.instrumentation.anthropic import AnthropicInstrumentor
+   
+   # Service A: Customer support AI
+   support_tracer = HoneyHiveTracer.init(
+       api_key="your-api-key",           # Or set HH_API_KEY environment variable
+       project="customer-support-ai",    # Or set HH_PROJECT environment variable
+       source="support-service"          # Or set HH_SOURCE environment variable
+   )
+   
+   # Service B: Content generation AI
+   content_tracer = HoneyHiveTracer.init(
+       api_key="your-api-key",           # Or set HH_API_KEY environment variable
+       project="content-generation-ai",  # Different project
+       source="content-service"          # Different source
+   )
+   
+   # Service C: Analytics AI
+   analytics_tracer = HoneyHiveTracer.init(
+       api_key="your-api-key",           # Or set HH_API_KEY environment variable
+       project="analytics-ai",           # Different project
+       source="analytics-service"        # Different source
+   )
+
+**Step 2: Configure Instrumentors Per Tracer**
+
+.. code-block:: python
+
+   # Each tracer gets its own instrumentor configuration
+   
+   # Support service uses OpenAI
+   openai_instrumentor = OpenAIInstrumentor()
+   openai_instrumentor.instrument(tracer_provider=support_tracer.provider)
+   
+   # Content service uses Anthropic
+   anthropic_instrumentor = AnthropicInstrumentor()
+   anthropic_instrumentor.instrument(tracer_provider=content_tracer.provider)
+   
+   # Analytics service uses both (multi-provider)
+   openai_analytics = OpenAIInstrumentor()
+   openai_analytics.instrument(tracer_provider=analytics_tracer.provider)
+   
+   anthropic_analytics = AnthropicInstrumentor()
+   anthropic_analytics.instrument(tracer_provider=analytics_tracer.provider)
+
+**Step 3: Use Tracers in Application Code**
+
+.. code-block:: python
+
+   from honeyhive import trace
+   
+   # Support service code
+   @trace(event_type="chain", event_name="support_query")
+   def handle_support_query(query: str) -> str:
+       # This goes to customer-support-ai project
+       response = openai_client.chat.completions.create(
+           model="gpt-4",
+           messages=[{"role": "user", "content": query}]
+       )
+       return response.choices[0].message.content
+   
+   # Content service code
+   @trace(event_type="chain", event_name="generate_content")
+   def generate_blog_post(topic: str) -> str:
+       # This goes to content-generation-ai project
+       response = anthropic_client.messages.create(
+           model="claude-3-sonnet-20240229",
+           messages=[{"role": "user", "content": f"Write about {topic}"}]
+       )
+       return response.content[0].text
+
+**Provider Strategy Intelligence in Multi-Instance Setups**
+
+HoneyHive automatically handles complex provider scenarios:
+
+.. code-block:: python
+
+   # Scenario 1: First tracer becomes main provider
+   tracer1 = HoneyHiveTracer.init(
+       api_key="your-api-key",      # Or set HH_API_KEY environment variable
+       project="project-1"          # Or set HH_PROJECT environment variable
+   )
+   print(f"Tracer 1 is main provider: {tracer1.is_main_provider}")  # True
+   
+   # Scenario 2: Second tracer creates independent provider
+   tracer2 = HoneyHiveTracer.init(
+       api_key="your-api-key",      # Or set HH_API_KEY environment variable
+       project="project-2"          # Different project
+   )
+   print(f"Tracer 2 is main provider: {tracer2.is_main_provider}")  # False
+   
+   # Both tracers work independently:
+   # - OpenAI spans → tracer1 (main provider) → project-1
+   # - HoneyHive spans from tracer2 → tracer2 (independent) → project-2
+
+**Best Practices for Multi-Instance Architecture:**
+
+1. **Use descriptive project names**: ``customer-support-ai``, ``content-generation``
+2. **Set different sources**: ``support-service``, ``content-service``
+3. **Initialize tracers early**: During application startup
+4. **Store tracer references**: Use dependency injection or global variables
+5. **Monitor provider strategy**: Check ``is_main_provider`` flag in logs
+
+**Verification Commands:**
+
+.. code-block:: python
+
+   # Check tracer configuration
+   for tracer in [support_tracer, content_tracer, analytics_tracer]:
+       print(f"Project: {tracer.project}")
+       print(f"Source: {tracer.source}")
+       print(f"Is main provider: {tracer.is_main_provider}")
+       print(f"Provider: {type(tracer.provider).__name__}")
+       print("---")
 
 Custom Instrumentor Development
 --------------------------------

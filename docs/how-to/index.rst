@@ -32,6 +32,11 @@ Essential setup and configuration guides for HoneyHive SDK usage.
 .. toctree::
    :maxdepth: 1
 
+   migration-guide
+
+.. toctree::
+   :maxdepth: 1
+
    backwards-compatibility-guide
 
 LLM Provider Integration

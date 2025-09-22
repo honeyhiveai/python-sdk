@@ -69,7 +69,9 @@ class MetricsAPI(BaseAPI):
 
         response = self.client.request("GET", "/metrics", params=params)
         data = response.json()
-        return [Metric(**metric_data) for metric_data in data.get("metrics", [])]
+        return self._process_data_dynamically(
+            data.get("metrics", []), Metric, "metrics"
+        )
 
     async def list_metrics_async(
         self, project: Optional[str] = None, limit: int = 100
@@ -81,7 +83,9 @@ class MetricsAPI(BaseAPI):
 
         response = await self.client.request_async("GET", "/metrics", params=params)
         data = response.json()
-        return [Metric(**metric_data) for metric_data in data.get("metrics", [])]
+        return self._process_data_dynamically(
+            data.get("metrics", []), Metric, "metrics"
+        )
 
     def update_metric(self, metric_id: str, request: MetricEdit) -> Metric:
         """Update a metric using MetricEdit model."""

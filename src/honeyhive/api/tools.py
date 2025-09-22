@@ -67,7 +67,9 @@ class ToolsAPI(BaseAPI):
 
         response = self.client.request("GET", "/tools", params=params)
         data = response.json()
-        return [Tool(**tool_data) for tool_data in data.get("tools", [])]
+        # Handle both formats: list directly or object with "tools" key
+        tools_data = data if isinstance(data, list) else data.get("tools", [])
+        return self._process_data_dynamically(tools_data, Tool, "tools")
 
     async def list_tools_async(
         self, project: Optional[str] = None, limit: int = 100
@@ -79,7 +81,9 @@ class ToolsAPI(BaseAPI):
 
         response = await self.client.request_async("GET", "/tools", params=params)
         data = response.json()
-        return [Tool(**tool_data) for tool_data in data.get("tools", [])]
+        # Handle both formats: list directly or object with "tools" key
+        tools_data = data if isinstance(data, list) else data.get("tools", [])
+        return self._process_data_dynamically(tools_data, Tool, "tools")
 
     def update_tool(self, tool_id: str, request: UpdateToolRequest) -> Tool:
         """Update a tool using UpdateToolRequest model."""

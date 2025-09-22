@@ -1,9 +1,7 @@
 """DotDict implementation for attribute-style dictionary access."""
 
 import copy
-from typing import Any, Dict, Optional
-
-from typing_extensions import override
+from typing import Any, Dict
 
 
 class DotDict(dict):

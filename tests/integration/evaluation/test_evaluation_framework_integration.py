@@ -11,22 +11,24 @@ These tests use REAL API credentials from the .env file to test actual
 HoneyHive API integration.
 """
 
+import asyncio
 import os
+import queue
+import threading
 import time
-from concurrent.futures import ThreadPoolExecutor
+
+# Removed unused import: ThreadPoolExecutor
 from typing import Any, Dict, Optional
 
 import psutil
 import pytest
 
-from honeyhive import HoneyHive
-from honeyhive.evaluation.evaluators import (
+# Removed unused import: HoneyHive
+from honeyhive.evaluation.evaluators import (  # Unused evaluators excluded
     BaseEvaluator,
+    EvaluationContext,
     EvaluationResult,
-    ExactMatchEvaluator,
-    F1ScoreEvaluator,
     LengthEvaluator,
-    SemanticSimilarityEvaluator,
     aevaluator,
     create_evaluation_run,
     evaluate,
@@ -34,10 +36,13 @@ from honeyhive.evaluation.evaluators import (
     evaluate_decorator,
     evaluate_with_evaluators,
     evaluator,
+    get_evaluator,
 )
 
 
-class TestCustomEvaluator(BaseEvaluator):
+class CustomEvaluatorForIntegration(
+    BaseEvaluator
+):  # pylint: disable=too-few-public-methods
     """Custom evaluator for integration testing."""
 
     def __init__(self, name: str = "test_custom", tolerance: float = 0.1):
@@ -79,7 +84,9 @@ class TestCustomEvaluator(BaseEvaluator):
         }
 
 
-class TestPerformanceEvaluator(BaseEvaluator):
+class PerformanceEvaluatorForIntegration(
+    BaseEvaluator
+):  # pylint: disable=too-few-public-methods
     """Performance-focused evaluator for testing threading."""
 
     def __init__(self, name: str = "performance_test"):
@@ -111,7 +118,7 @@ class TestPerformanceEvaluator(BaseEvaluator):
 class TestEvaluationFrameworkIntegration:
     """Integration tests for the evaluation framework."""
 
-    def test_basic_evaluation_integration(self):
+    def test_basic_evaluation_integration(self) -> None:
         """Test basic evaluation functionality integration."""
         # Test with built-in evaluators using the correct function signature
         result = evaluate(
@@ -123,15 +130,16 @@ class TestEvaluationFrameworkIntegration:
         assert result is not None
         assert hasattr(result, "score")
         assert hasattr(result, "metrics")
-        # The evaluate function flattens metrics, so they're not nested under evaluator names
+        # The evaluate function flattens metrics, so they're not nested
+        # under evaluator names
         assert "exact_match" in result.metrics
         assert (
             "char_count" in result.metrics
         )  # Length evaluator adds char_count directly
 
-    def test_custom_evaluator_integration(self):
+    def test_custom_evaluator_integration(self) -> None:
         """Test custom evaluator integration."""
-        custom_evaluator = TestCustomEvaluator(tolerance=0.2)
+        custom_evaluator = CustomEvaluatorForIntegration(tolerance=0.2)
 
         result = evaluate_with_evaluators(
             evaluators=[custom_evaluator],
@@ -150,7 +158,7 @@ class TestEvaluationFrameworkIntegration:
         )  # Custom logic should give high score
         assert result.metrics["test_custom"]["tolerance"] == 0.2
 
-    def test_threading_integration_basic(self):
+    def test_threading_integration_basic(self) -> None:
         """Test basic threading integration."""
         # Small dataset to test threading
         inputs = {"prompt": "Question"}
@@ -169,7 +177,7 @@ class TestEvaluationFrameworkIntegration:
         assert "exact_match" in result.metrics
         assert "length" in result.metrics
 
-    def test_threading_integration_large_dataset(self):
+    def test_threading_integration_large_dataset(self) -> None:
         """Test threading integration with larger dataset."""
         # Test with multiple evaluators to exercise threading
         inputs = {"prompt": "Question"}
@@ -194,7 +202,7 @@ class TestEvaluationFrameworkIntegration:
         assert hasattr(result, "score")
         assert hasattr(result, "metrics")
 
-    def test_batch_evaluation_integration(self):
+    def test_batch_evaluation_integration(self) -> None:
         """Test batch evaluation integration."""
         dataset = [
             {"inputs": {"prompt": "Hello"}, "outputs": {"response": "Hi"}},
@@ -219,7 +227,7 @@ class TestEvaluationFrameworkIntegration:
             assert hasattr(result, "score")
             assert hasattr(result, "metrics")
 
-    def test_decorator_integration(self):
+    def test_decorator_integration(self) -> None:
         """Test decorator pattern integration."""
 
         @evaluate_decorator(evaluators=["exact_match", "length"])
@@ -233,7 +241,7 @@ class TestEvaluationFrameworkIntegration:
         assert isinstance(result, str)
         assert "Response to: Hello" in result
 
-    def test_tracing_evaluator_decorator_integration(self):
+    def test_tracing_evaluator_decorator_integration(self) -> None:
         """Test tracing evaluator decorator integration."""
 
         @evaluator(evaluators=["exact_match", "length"])
@@ -247,7 +255,7 @@ class TestEvaluationFrameworkIntegration:
         assert isinstance(result, str)
         assert "Traced response: Test prompt" in result
 
-    def test_async_evaluator_decorator_integration(self):
+    def test_async_evaluator_decorator_integration(self) -> None:
         """Test async evaluator decorator integration."""
 
         @aevaluator(evaluators=["exact_match", "length"])
@@ -255,16 +263,15 @@ class TestEvaluationFrameworkIntegration:
             return f"Async response: {prompt}"
 
         # Test async function (we'll run it in sync context for testing)
-        import asyncio
 
         result = asyncio.run(async_function("Async test"))
 
         assert isinstance(result, str)
         assert "Async response: Async test" in result
 
-    def test_mixed_evaluator_types_integration(self):
+    def test_mixed_evaluator_types_integration(self) -> None:
         """Test integration with mixed evaluator types."""
-        custom_evaluator = TestCustomEvaluator()
+        custom_evaluator = CustomEvaluatorForIntegration()
 
         result = evaluate_with_evaluators(
             evaluators=[
@@ -292,9 +299,9 @@ class TestEvaluationFrameworkIntegration:
         # Lambda function key is "<lambda>" not "lambda"
         assert "<lambda>" in result.metrics
 
-    def test_context_propagation_integration(self):
+    def test_context_propagation_integration(self) -> None:
         """Test context propagation in threaded evaluation."""
-        from honeyhive.evaluation.evaluators import EvaluationContext
+        # EvaluationContext imported at top level
 
         context = EvaluationContext(
             project="test-project",
@@ -326,17 +333,19 @@ class TestEvaluationFrameworkIntegration:
                 assert context_data["source"] == "test-source"
                 assert context_data["metadata"]["test_mode"] is True
 
-    def test_error_handling_integration(self):
+    def test_error_handling_integration(self) -> None:
         """Test error handling integration in threaded evaluation."""
 
-        class FailingEvaluator(BaseEvaluator):
+        class FailingEvaluator(BaseEvaluator):  # pylint: disable=too-few-public-methods
             """Test evaluator that always fails for error handling tests."""
 
             def __init__(self, name: str = "failing"):
                 super().__init__(name)
 
-            def evaluate(self, inputs, outputs, ground_truth=None, **kwargs):
-                raise Exception("Simulated evaluator failure")
+            def evaluate(
+                self, inputs: Any, outputs: Any, ground_truth: Any = None, **kwargs: Any
+            ) -> Any:
+                raise ValueError("Simulated evaluator failure")
 
         failing_evaluator = FailingEvaluator()
 
@@ -357,10 +366,10 @@ class TestEvaluationFrameworkIntegration:
         # The exact error handling behavior depends on implementation
         assert result is not None
 
-    def test_performance_evaluator_threading(self):
+    def test_performance_evaluator_threading(self) -> None:
         """Test performance evaluator with threading."""
         # Test with performance evaluator that has small delays
-        performance_evaluator = TestPerformanceEvaluator()
+        performance_evaluator = PerformanceEvaluatorForIntegration()
 
         start_time = time.time()
         result = evaluate_with_evaluators(
@@ -380,7 +389,7 @@ class TestEvaluationFrameworkIntegration:
         assert "performance_test" in result.metrics
         assert result.metrics["performance_test"]["response_length"] > 0
 
-    def test_memory_efficient_batch_processing(self):
+    def test_memory_efficient_batch_processing(self) -> None:
         """Test memory-efficient batch processing integration."""
         # Large dataset to test memory management
         dataset_size = 100
@@ -412,9 +421,9 @@ class TestEvaluationFrameworkIntegration:
             assert result is not None
             assert "length" in result.metrics
 
-    def test_evaluator_registry_integration(self):
+    def test_evaluator_registry_integration(self) -> None:
         """Test evaluator registry and discovery integration."""
-        from honeyhive.evaluation.evaluators import get_evaluator
+        # get_evaluator imported at top level
 
         # Test getting built-in evaluators
         exact_match = get_evaluator("exact_match")
@@ -428,9 +437,9 @@ class TestEvaluationFrameworkIntegration:
         # Test getting custom evaluator
         # Note: Custom evaluators need to be registered or passed directly
         # This test verifies the basic registry functionality
-        TestCustomEvaluator()  # Instantiate to test it works
+        CustomEvaluatorForIntegration()  # Instantiate to test it works
 
-    def test_score_normalization_integration(self):
+    def test_score_normalization_integration(self) -> None:
         """Test score normalization integration."""
         # Test that scores are properly normalized to 0.0-1.0 range
         result = evaluate_with_evaluators(
@@ -466,8 +475,8 @@ class TestEvaluationAPIIntegration:
         reason="Evaluation run creation requires write permissions not available in CI",
     )
     def test_create_evaluation_run_integration(
-        self, integration_client, integration_project_name
-    ):
+        self, integration_client: Any, integration_project_name: Any
+    ) -> None:
         """Test evaluation run creation integration with REAL API."""
         # Create evaluation results
         results = [
@@ -479,7 +488,7 @@ class TestEvaluationAPIIntegration:
         run = create_evaluation_run(
             name="integration-test-run",
             project=integration_project_name,
-            results=results,
+            _results=results,
             metadata={"test_mode": True, "integration_test": True},
             client=integration_client,
         )
@@ -494,8 +503,8 @@ class TestEvaluationAPIIntegration:
         reason="Evaluation run creation requires write permissions not available in CI",
     )
     def test_evaluation_workflow_end_to_end(
-        self, integration_client, integration_project_name
-    ):
+        self, integration_client: Any, integration_project_name: Any
+    ) -> None:
         """Test complete evaluation workflow end-to-end with REAL API."""
         # Step 1: Create evaluation dataset
         dataset = [
@@ -527,7 +536,7 @@ class TestEvaluationAPIIntegration:
         run = create_evaluation_run(
             name="end-to-end-test",
             project=integration_project_name,
-            results=results,
+            _results=results,
             metadata={"workflow_test": True, "integration_test": True},
             client=integration_client,
         )
@@ -542,8 +551,8 @@ class TestEvaluationAPIIntegration:
         reason="Evaluation run creation requires write permissions not available in CI",
     )
     def test_large_dataset_api_integration(
-        self, integration_client, integration_project_name
-    ):
+        self, integration_client: Any, integration_project_name: Any
+    ) -> None:
         """Test large dataset evaluation with REAL API integration."""
         # Create larger dataset
         dataset_size = 50
@@ -572,7 +581,7 @@ class TestEvaluationAPIIntegration:
         run = create_evaluation_run(
             name="large-dataset-test",
             project=integration_project_name,
-            results=results,
+            _results=results,
             metadata={
                 "dataset_size": dataset_size,
                 "evaluation_time": evaluation_time,
@@ -593,7 +602,7 @@ class TestEvaluationAPIIntegration:
 class TestEvaluationPerformanceIntegration:
     """Performance integration tests for the evaluation framework."""
 
-    def test_threading_scalability_integration(self):
+    def test_threading_scalability_integration(self) -> None:
         """Test threading scalability with real workloads."""
         # Test different worker configurations
         worker_configs = [1, 2, 4, 8]
@@ -639,7 +648,7 @@ class TestEvaluationPerformanceIntegration:
         # Performance improvements are not guaranteed for small datasets due to overhead
         print(f"Performance results: {performance_results}")
 
-    def test_memory_usage_integration(self):
+    def test_memory_usage_integration(self) -> None:
         """Test memory usage in real evaluation scenarios."""
         # Get initial memory usage
         process = psutil.Process(os.getpid())
@@ -682,17 +691,16 @@ class TestEvaluationPerformanceIntegration:
             assert result is not None
             assert "length" in result.metrics
 
-    def test_concurrent_evaluation_integration(self):
+    def test_concurrent_evaluation_integration(self) -> None:
         """Test concurrent evaluation scenarios."""
-        import queue
-        import threading
+        # queue and threading imported at top level
 
         # Test concurrent evaluation from multiple threads
-        results_queue = queue.Queue()
+        results_queue: queue.Queue[Any] = queue.Queue()
         num_threads = 4
         items_per_thread = 25
 
-        def evaluate_thread(thread_id: int):
+        def evaluate_thread(thread_id: int) -> None:
             """Evaluation function for each thread."""
             dataset = [
                 {

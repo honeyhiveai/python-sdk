@@ -1,417 +1,687 @@
-Migration Guide: OpenInference ↔ OpenLLMetry
-==============================================
+========================================
+Migration Guide: v0.1.0+ Architecture
+========================================
 
-This guide helps you migrate between OpenInference and OpenLLMetry instrumentors for LLM provider integrations.
+.. meta::
+   :description: Complete migration guide for upgrading to HoneyHive SDK v0.1.0+ with new modular architecture and hybrid configuration
+   :keywords: migration guide, upgrade, v0.1.0, modular architecture, hybrid configuration
+
+Overview
+========
+
+This guide helps you migrate from earlier versions of the HoneyHive SDK to v0.1.0+, which introduces a completely rewritten modular architecture and hybrid configuration system.
 
 .. contents:: Table of Contents
    :local:
-   :depth: 2
+   :depth: 3
 
-When to Migrate
----------------
+What's New in v0.1.0+
+=====================
 
-**Migrate to OpenLLMetry when you need:**
-- Enhanced LLM-specific metrics and cost tracking
-- Production-optimized performance monitoring
-- Detailed token usage analysis
-- Advanced error handling and retry mechanisms
+Major Changes
+-------------
 
-**Migrate to OpenInference when you need:**
-- Lightweight, minimal overhead instrumentation
-- Open-source community support
-- Simple development and testing setups
-- Consistent API across all providers
+1. **🏗️ Modular Tracer Architecture**: Complete rewrite with 35 files across 6 modules
+2. **🔧 Hybrid Configuration System**: New Pydantic config objects alongside traditional parameters
+3. **🎯 Enhanced Multi-Instance Support**: True multi-instance architecture with independent configurations
+4. **🛡️ Improved Error Handling**: Graceful degradation throughout the system
+5. **📊 Better Performance**: Optimized connection pooling, caching, and batch processing
 
-Migration is Safe and Reversible
----------------------------------
+.. important::
+   **100% Backwards Compatibility Guaranteed**
+   
+   All existing code continues to work unchanged. This is a **non-breaking upgrade** with enhanced capabilities.
 
-**Key Points:**
-- Both instrumentors use the same OpenTelemetry standard
-- Your existing HoneyHive traces remain unchanged
-- No data loss during migration
-- You can switch back at any time
-- Code changes are minimal (just import statements)
+Migration Strategies
+====================
 
-OpenInference → OpenLLMetry Migration
--------------------------------------
+Strategy 1: No Migration Required (Recommended)
+------------------------------------------------
 
-**Step 1: Update Dependencies**
+**Best for**: Existing applications that work well with current patterns.
 
-Replace OpenInference packages with OpenLLMetry equivalents:
+**Action**: Simply upgrade to v0.1.0+ - no code changes needed.
 
 .. code-block:: bash
 
-   # Before: OpenInference packages
-   pip uninstall openinference-instrumentation-openai
-   pip uninstall openinference-instrumentation-anthropic
-   
-   # After: OpenLLMetry packages
-   pip install opentelemetry-instrumentation-openai
-   pip install opentelemetry-instrumentation-anthropic
+   pip install --upgrade honeyhive
 
-**Or use HoneyHive's convenience packages:**
-
-.. code-block:: bash
-
-   # Before: OpenInference extras
-   pip install honeyhive[openinference-openai,openinference-anthropic]
-   
-   # After: OpenLLMetry extras
-   pip install honeyhive[traceloop-openai,traceloop-anthropic]
-
-**Step 2: Update Import Statements**
-
-Change your import statements to use OpenLLMetry packages:
+Your existing code continues to work exactly as before:
 
 .. code-block:: python
 
-   # Before: OpenInference imports
-   from openinference.instrumentation.openai import OpenAIInstrumentor
-   from openinference.instrumentation.anthropic import AnthropicInstrumentor
+   # This code works identically in v0.1.0+
+   from honeyhive import HoneyHiveTracer, trace
    
-   # After: OpenLLMetry imports
-   from opentelemetry.instrumentation.openai import OpenAIInstrumentor
-   from opentelemetry.instrumentation.anthropic import AnthropicInstrumentor
+   tracer = HoneyHiveTracer.init(
+       api_key="hh_1234567890abcdef",
+       project="my-project",
+       verbose=True
+   )
+   
+   @trace(tracer=tracer)
+   def my_function():
+       return "Hello, World!"
 
-**Step 3: Update Initialization (No Changes Needed)**
+Strategy 2: Gradual Migration (Recommended for New Features)
+------------------------------------------------------------
 
-Your HoneyHive initialization code remains identical:
+**Best for**: Applications wanting to adopt new features gradually.
+
+**Action**: Keep existing code, use new patterns for new features.
+
+.. code-block:: python
+
+   # Existing tracer (keep as-is)
+   legacy_tracer = HoneyHiveTracer.init(
+       api_key="hh_1234567890abcdef",
+       project="legacy-project"
+   )
+   
+   # New tracer with modern config (for new features)
+   from honeyhive.config.models import TracerConfig
+   
+   config = TracerConfig(
+       api_key="hh_1234567890abcdef",
+       project="new-features",
+       verbose=True,
+       cache_enabled=True
+   )
+   modern_tracer = HoneyHiveTracer(config=config)
+
+Strategy 3: Full Migration (For Maximum Benefits)
+--------------------------------------------------
+
+**Best for**: Applications wanting all new features and enhanced type safety.
+
+**Action**: Migrate to new configuration patterns systematically.
+
+See the detailed migration steps below.
+
+Detailed Migration Steps
+========================
+
+Step 1: Update Dependencies
+---------------------------
+
+Update to the latest version:
+
+.. code-block:: bash
+
+   pip install --upgrade honeyhive>=0.1.0
+
+Verify the upgrade:
+
+.. code-block:: python
+
+   import honeyhive
+   print(f"HoneyHive SDK version: {honeyhive.__version__}")
+   # Should show 0.1.0 or higher
+
+Step 2: Assess Current Usage
+----------------------------
+
+Identify your current usage patterns:
+
+**Pattern A: Basic Tracer Initialization**
+
+.. code-block:: python
+
+   # Current code (works unchanged)
+   tracer = HoneyHiveTracer.init(
+       api_key="hh_key",
+       project="my-project",
+       verbose=True
+   )
+
+**Pattern B: Environment Variable Usage**
+
+.. code-block:: python
+
+   # Current code (works unchanged)
+   import os
+   os.environ["HH_API_KEY"] = "hh_key"
+   os.environ["HH_PROJECT"] = "my-project"
+   
+   tracer = HoneyHiveTracer.init()
+
+**Pattern C: Multiple Tracer Instances**
+
+.. code-block:: python
+
+   # Current code (works unchanged)
+   prod_tracer = HoneyHiveTracer.init(api_key="prod_key", project="prod")
+   dev_tracer = HoneyHiveTracer.init(api_key="dev_key", project="dev")
+
+Step 3: Choose Migration Approach (Optional)
+---------------------------------------------
+
+If you want to adopt the new patterns, choose based on your needs:
+
+**Option A: Keep Traditional .init() Method**
+
+.. code-block:: python
+
+   # Recommended for existing applications
+   tracer = HoneyHiveTracer.init(
+       api_key="hh_1234567890abcdef",
+       project="my-project",
+       verbose=True,
+       cache_enabled=True  # New feature available
+   )
+
+**Option B: Adopt Modern Config Objects**
+
+.. code-block:: python
+
+   # Recommended for new applications or enhanced type safety
+   from honeyhive.config.models import TracerConfig
+   
+   config = TracerConfig(
+       api_key="hh_1234567890abcdef",
+       project="my-project",
+       verbose=True,
+       cache_enabled=True,
+       cache_max_size=5000
+   )
+   
+   tracer = HoneyHiveTracer(config=config)
+
+**Option C: Mixed Approach**
+
+.. code-block:: python
+
+   # Use config for base settings, parameters for overrides
+   from honeyhive.config.models import TracerConfig
+   
+   base_config = TracerConfig(
+       api_key="hh_1234567890abcdef",
+       project="my-project"
+   )
+   
+   # Different tracers with selective overrides
+   verbose_tracer = HoneyHiveTracer(config=base_config, verbose=True)
+   quiet_tracer = HoneyHiveTracer(config=base_config, verbose=False)
+
+Step 4: Update Advanced Usage (Optional)
+-----------------------------------------
+
+If you use advanced patterns, consider these enhancements:
+
+**Multi-Instance Management**
+
+.. code-block:: python
+
+   # Before: Manual management
+   tracers = {}
+   tracers["prod"] = HoneyHiveTracer.init(api_key="prod_key", project="prod")
+   tracers["dev"] = HoneyHiveTracer.init(api_key="dev_key", project="dev")
+   
+   # After: Enhanced with config objects (optional)
+   from honeyhive.config.models import TracerConfig
+   
+   configs = {
+       "prod": TracerConfig(api_key="prod_key", project="prod", verbose=False),
+       "dev": TracerConfig(api_key="dev_key", project="dev", verbose=True)
+   }
+   
+   tracers = {
+       env: HoneyHiveTracer(config=config)
+       for env, config in configs.items()
+   }
+
+**Environment-Based Configuration**
+
+.. code-block:: python
+
+   # Before: Manual environment handling
+   import os
+   
+   if os.getenv("ENVIRONMENT") == "production":
+       tracer = HoneyHiveTracer.init(
+           api_key=os.getenv("PROD_API_KEY"),
+           project="prod-app",
+           verbose=False
+       )
+   else:
+       tracer = HoneyHiveTracer.init(
+           api_key=os.getenv("DEV_API_KEY"),
+           project="dev-app",
+           verbose=True
+       )
+   
+   # After: Enhanced with validation (optional)
+   from honeyhive.config.models import TracerConfig
+   
+   def create_tracer_for_environment():
+       env = os.getenv("ENVIRONMENT", "development")
+       
+       if env == "production":
+           config = TracerConfig(
+               api_key=os.getenv("PROD_API_KEY"),
+               project="prod-app",
+               verbose=False,
+               cache_enabled=True,
+               cache_max_size=10000
+           )
+       else:
+           config = TracerConfig(
+               api_key=os.getenv("DEV_API_KEY"),
+               project="dev-app",
+               verbose=True,
+               test_mode=True  # Don't send data in dev
+           )
+       
+       return HoneyHiveTracer(config=config)
+   
+   tracer = create_tracer_for_environment()
+
+Step 5: Test Your Migration
+----------------------------
+
+Verify everything works correctly:
+
+.. code-block:: python
+
+   # Test basic functionality
+   @tracer.trace
+   def test_function():
+       return "Migration successful!"
+   
+   result = test_function()
+   print(f"Test result: {result}")
+   
+   # Test tracer properties
+   print(f"Project: {tracer.project_name}")
+   print(f"Source: {tracer.source_environment}")
+   print(f"Initialized: {tracer.is_initialized}")
+
+Common Migration Scenarios
+==========================
+
+Scenario 1: Simple Application
+-------------------------------
+
+**Before (works unchanged):**
+
+.. code-block:: python
+
+   from honeyhive import HoneyHiveTracer, trace
+   
+   tracer = HoneyHiveTracer.init(
+       api_key="hh_1234567890abcdef",
+       project="simple-app"
+   )
+   
+   @trace(tracer=tracer)
+   def process_data(data):
+       return data.upper()
+
+**After (optional enhancement):**
+
+.. code-block:: python
+
+   from honeyhive import HoneyHiveTracer, trace
+   from honeyhive.config.models import TracerConfig
+   
+   # Option 1: Keep traditional approach (recommended)
+   tracer = HoneyHiveTracer.init(
+       api_key="hh_1234567890abcdef",
+       project="simple-app",
+       cache_enabled=True  # New feature
+   )
+   
+   # Option 2: Modern config approach (optional)
+   config = TracerConfig(
+       api_key="hh_1234567890abcdef",
+       project="simple-app",
+       cache_enabled=True,
+       verbose=True
+   )
+   tracer = HoneyHiveTracer(config=config)
+   
+   @trace(tracer=tracer)
+   def process_data(data):
+       return data.upper()
+
+Scenario 2: Multi-Environment Application
+------------------------------------------
+
+**Before (works unchanged):**
+
+.. code-block:: python
+
+   import os
+   from honeyhive import HoneyHiveTracer
+   
+   # Environment-based initialization
+   api_key = os.getenv("HH_API_KEY")
+   project = os.getenv("HH_PROJECT")
+   
+   tracer = HoneyHiveTracer.init(
+       api_key=api_key,
+       project=project,
+       verbose=os.getenv("DEBUG") == "true"
+   )
+
+**After (optional enhancement):**
+
+.. code-block:: python
+
+   import os
+   from honeyhive import HoneyHiveTracer
+   from honeyhive.config.models import TracerConfig
+   
+   # Option 1: Enhanced traditional approach
+   tracer = HoneyHiveTracer.init(
+       api_key=os.getenv("HH_API_KEY"),
+       project=os.getenv("HH_PROJECT"),
+       verbose=os.getenv("DEBUG") == "true",
+       cache_enabled=os.getenv("CACHE_ENABLED", "true") == "true"
+   )
+   
+   # Option 2: Modern config with environment loading
+   config = TracerConfig()  # Automatically loads from HH_* env vars
+   tracer = HoneyHiveTracer(config=config)
+
+Scenario 3: LLM Integration Application
+----------------------------------------
+
+**Before (works unchanged):**
 
 .. code-block:: python
 
    from honeyhive import HoneyHiveTracer
-   # Import statements changed above, but usage is identical
-   from opentelemetry.instrumentation.openai import OpenAIInstrumentor
-   from opentelemetry.instrumentation.anthropic import AnthropicInstrumentor
-   
-   # Initialization code is identical
-   # Step 1: Initialize HoneyHive tracer first (without instrumentors)
-   tracer = HoneyHiveTracer.init(
-       api_key="your-api-key",      # Or set HH_API_KEY environment variable
-       project="your-project"       # Or set HH_PROJECT environment variable
-   )
-   
-   # Step 2: Initialize instrumentors separately
-   openai_instrumentor = OpenAIInstrumentor()
-   anthropic_instrumentor = AnthropicInstrumentor()
-   openai_instrumentor.instrument(tracer_provider=tracer.provider)
-   anthropic_instrumentor.instrument(tracer_provider=tracer.provider)
-
-**Step 4: Your LLM Code Remains Unchanged**
-
-All your existing LLM calls work exactly the same:
-
-.. code-block:: python
-
-   import openai
-   import anthropic
-   
-   # These calls work identically with both instrumentors
-   openai_client = openai.OpenAI()
-   anthropic_client = anthropic.Anthropic()
-   
-   # No changes needed to your LLM calls
-   response = openai_client.chat.completions.create(
-       model="gpt-3.5-turbo",
-       messages=[{"role": "user", "content": "Hello!"}]
-   )
-
-OpenLLMetry → OpenInference Migration
--------------------------------------
-
-**Step 1: Update Dependencies**
-
-Replace OpenLLMetry packages with OpenInference equivalents:
-
-.. code-block:: bash
-
-   # Before: OpenLLMetry packages
-   pip uninstall opentelemetry-instrumentation-openai
-   pip uninstall opentelemetry-instrumentation-anthropic
-   
-   # After: OpenInference packages
-   pip install openinference-instrumentation-openai
-   pip install openinference-instrumentation-anthropic
-
-**Or use HoneyHive's convenience packages:**
-
-.. code-block:: bash
-
-   # Before: OpenLLMetry extras
-   pip install honeyhive[traceloop-openai,traceloop-anthropic]
-   
-   # After: OpenInference extras
-   pip install honeyhive[openinference-openai,openinference-anthropic]
-
-**Step 2: Update Import Statements**
-
-Change your import statements to use OpenInference packages:
-
-.. code-block:: python
-
-   # Before: OpenLLMetry imports
-   from opentelemetry.instrumentation.openai import OpenAIInstrumentor
-   from opentelemetry.instrumentation.anthropic import AnthropicInstrumentor
-   
-   # After: OpenInference imports
    from openinference.instrumentation.openai import OpenAIInstrumentor
-   from openinference.instrumentation.anthropic import AnthropicInstrumentor
+   
+   # Initialize tracer
+   tracer = HoneyHiveTracer.init(
+       api_key="hh_1234567890abcdef",
+       project="llm-app"
+   )
+   
+   # Initialize instrumentor
+   instrumentor = OpenAIInstrumentor()
+   instrumentor.instrument(tracer_provider=tracer.provider)
 
-**Step 3: Everything Else Remains Identical**
-
-Your HoneyHive initialization and LLM code work exactly the same.
-
-Provider-Specific Migration Notes
----------------------------------
-
-**OpenAI**
-- Both instrumentors support identical OpenAI SDK versions
-- All model types (GPT-3.5, GPT-4, etc.) work with both
-- Function calling and streaming are supported by both
-
-**Anthropic**
-- Both instrumentors support Claude 3 models
-- Message API and legacy completion API both supported
-- Streaming responses work with both instrumentors
-
-**Google AI**
-- Both instrumentors support Gemini models
-- Google AI Studio and Vertex AI both supported
-- Multi-modal inputs (text + images) work with both
-
-**AWS Bedrock**
-- Both instrumentors support all Bedrock model providers
-- Cross-region access works with both
-- Custom model endpoints supported by both
-
-**Azure OpenAI**
-- Both instrumentors use the same OpenAI instrumentor
-- Azure-specific authentication works with both
-- Deployment-specific endpoints supported by both
-
-**MCP (Model Context Protocol)**
-- Both instrumentors support MCP client-server communication
-- Tool orchestration tracing works with both
-- Async/await patterns supported by both
-
-**Google ADK**
-- Only OpenInference instrumentor is available
-- No migration needed - continue using OpenInference
-
-Mixed Instrumentor Setups
--------------------------
-
-You can use both instrumentor types in the same application:
+**After (optional enhancement):**
 
 .. code-block:: python
 
    from honeyhive import HoneyHiveTracer
-   # Mix OpenInference and OpenLLMetry
-   from openinference.instrumentation.anthropic import AnthropicInstrumentor as OIAnthropic
-   from opentelemetry.instrumentation.openai import OpenAIInstrumentor as OLOpenAI
-   
-   # Step 1: Initialize HoneyHive tracer first (without instrumentors)
-   tracer = HoneyHiveTracer.init(
-       api_key="your-api-key",      # Or set HH_API_KEY environment variable
-       project="your-project"       # Or set HH_PROJECT environment variable
-   )
-   
-   # Step 2: Initialize mixed instrumentors separately
-   openai_instrumentor = OLOpenAI()     # OpenLLMetry for OpenAI (enhanced metrics)
-   anthropic_instrumentor = OIAnthropic()   # OpenInference for Anthropic (lightweight)
-   openai_instrumentor.instrument(tracer_provider=tracer.provider)
-   anthropic_instrumentor.instrument(tracer_provider=tracer.provider)
-
-**Strategic Mixed Usage:**
-- Use OpenLLMetry for high-volume, cost-sensitive providers
-- Use OpenInference for occasional or development providers
-- Gradually migrate providers based on monitoring needs
-
-Validation After Migration
---------------------------
-
-**1. Verify Traces Are Still Appearing**
-
-Check your HoneyHive dashboard to ensure traces are being captured:
-
-.. code-block:: python
-
-   # Test with a simple LLM call
-   import openai
-   
-   client = openai.OpenAI()
-   response = client.chat.completions.create(
-       model="gpt-3.5-turbo",
-       messages=[{"role": "user", "content": "Test migration"}]
-   )
-   print("Migration test successful!")
-
-**2. Check Trace Attributes**
-
-Both instrumentors capture similar attributes, but OpenLLMetry may include additional LLM-specific metrics:
-
-- Model name and version
-- Token usage (input, output, total)
-- Request/response content
-- Timing information
-- Error details
-
-**3. Monitor Performance**
-
-Compare performance before and after migration:
-- Trace collection latency
-- Application overhead
-- Memory usage
-- Network traffic to HoneyHive
-
-Rollback Procedure
-------------------
-
-If you need to rollback a migration:
-
-**1. Reinstall Previous Packages**
-
-.. code-block:: bash
-
-   # Rollback to OpenInference
-   pip uninstall opentelemetry-instrumentation-openai
-   pip install openinference-instrumentation-openai
-
-**2. Revert Import Statements**
-
-.. code-block:: python
-
-   # Change back to previous imports
+   from honeyhive.config.models import TracerConfig
    from openinference.instrumentation.openai import OpenAIInstrumentor
+   
+   # Option 1: Keep traditional approach (recommended)
+   tracer = HoneyHiveTracer.init(
+       api_key="hh_1234567890abcdef",
+       project="llm-app",
+       cache_enabled=True,  # Cache LLM responses
+       cache_max_size=1000
+   )
+   
+   # Option 2: Modern config approach (optional)
+   config = TracerConfig(
+       api_key="hh_1234567890abcdef",
+       project="llm-app",
+       cache_enabled=True,
+       cache_max_size=1000,
+       verbose=True
+   )
+   tracer = HoneyHiveTracer(config=config)
+   
+   # Instrumentor setup (unchanged)
+   instrumentor = OpenAIInstrumentor()
+   instrumentor.instrument(tracer_provider=tracer.provider)
 
-**3. Restart Your Application**
+New Features Available
+======================
 
-No other changes needed - your application will work exactly as before.
+Enhanced Configuration Options
+-------------------------------
 
-Common Migration Issues
------------------------
-
-**Import Errors After Migration**
-
-.. code-block:: bash
-
-   # Solution: Clear Python cache and reinstall
-   pip cache purge
-   pip uninstall honeyhive
-   pip install honeyhive[traceloop-openai]  # or your desired extras
-
-**Traces Not Appearing After Migration**
-
-1. Verify the new instrumentor packages are installed:
+New configuration options available in v0.1.0+:
 
 .. code-block:: python
 
-   # Check installed packages
-   import pkg_resources
+   # Available in both .init() and config objects
+   tracer = HoneyHiveTracer.init(
+       api_key="hh_1234567890abcdef",
+       project="my-project",
+       
+       # Caching options (new)
+       cache_enabled=True,
+       cache_max_size=5000,
+       cache_ttl=3600,
+       cache_cleanup_interval=300,
+       
+       # Enhanced control (new)
+       disable_tracing=False,  # Emergency override
+       test_mode=False,        # Don't send data to backend
+       
+       # Existing options (enhanced)
+       verbose=True,
+       disable_http_tracing=True,
+       disable_batch=False
+   )
+
+Multi-Instance Architecture
+---------------------------
+
+Enhanced support for multiple independent tracers:
+
+.. code-block:: python
+
+   # Each tracer is completely independent
+   data_tracer = HoneyHiveTracer.init(
+       api_key="hh_data_key",
+       project="data-pipeline",
+       cache_enabled=True,
+       cache_max_size=10000
+   )
+   
+   llm_tracer = HoneyHiveTracer.init(
+       api_key="hh_llm_key",
+       project="llm-inference",
+       verbose=True,
+       cache_enabled=True,
+       cache_max_size=5000
+   )
+   
+   # Independent operation
+   @data_tracer.trace
+   def process_data():
+       pass
+   
+   @llm_tracer.trace
+   def generate_response():
+       pass
+
+Type Safety and Validation
+---------------------------
+
+With modern config objects, get enhanced type safety:
+
+.. code-block:: python
+
+   from honeyhive.config.models import TracerConfig
+   
+   # Type-safe configuration with validation
+   config = TracerConfig(
+       api_key="hh_1234567890abcdef",  # Validated format
+       project="my-project",           # Required field
+       cache_max_size=5000,            # Validated range
+       server_url="https://api.honeyhive.ai"  # Validated URL
+   )
+   
+   # IDE autocomplete and type checking
+   tracer = HoneyHiveTracer(config=config)
+
+Breaking Changes
+================
+
+.. important::
+   **No Breaking Changes in v0.1.0+**
+   
+   This release maintains 100% backwards compatibility. All existing code continues to work unchanged.
+
+**Non-Breaking Enhancements:**
+
+1. **New Configuration Options**: Additional parameters available but not required
+2. **Enhanced Error Handling**: Better error messages and graceful degradation
+3. **Improved Performance**: Optimizations that don't affect existing APIs
+4. **New Import Paths**: Additional import paths available (existing paths still work)
+
+Troubleshooting
+===============
+
+Common Issues and Solutions
+---------------------------
+
+**Issue 1: Import Errors**
+
+.. code-block:: python
+
+   # If you see import errors for new features
+   from honeyhive.config.models import TracerConfig  # New import
+   
+   # Solution: Make sure you're on v0.1.0+
+   pip install --upgrade honeyhive>=0.1.0
+
+**Issue 2: Configuration Validation Errors**
+
+.. code-block:: python
+
+   # If using config objects and getting validation errors
+   from honeyhive.config.models import TracerConfig
    
    try:
-       pkg_resources.get_distribution("opentelemetry-instrumentation-openai")
-       print("OpenLLMetry OpenAI instrumentor installed")
-   except pkg_resources.DistributionNotFound:
-       print("OpenLLMetry OpenAI instrumentor NOT installed")
+       config = TracerConfig(
+           api_key="invalid_key",  # Missing 'hh_' prefix
+           project="my-project"
+       )
+   except ValueError as e:
+       print(f"Configuration error: {e}")
+       
+       # Solution: Fix the configuration
+       config = TracerConfig(
+           api_key="hh_1234567890abcdef",  # Correct format
+           project="my-project"
+       )
 
-2. Restart your application completely
-3. Check HoneyHive API key and project settings
-
-**Performance Differences**
-
-- OpenLLMetry may have slightly higher overhead due to enhanced metrics
-- OpenInference is generally lighter weight
-- Both are production-ready with minimal performance impact
-
-**Package Conflicts**
-
-If you encounter dependency conflicts:
-
-.. code-block:: bash
-
-   # Create a fresh virtual environment
-   python -m venv fresh_env
-   source fresh_env/bin/activate  # On Windows: fresh_env\Scripts\activate
-   pip install honeyhive[traceloop-openai]  # Install fresh
-
-Migration Checklist
---------------------
-
-**Pre-Migration:**
-- [ ] Document current instrumentor packages and versions
-- [ ] Test current setup to ensure traces are working
-- [ ] Backup your requirements.txt or pyproject.toml
-- [ ] Plan migration during low-traffic period
-
-**During Migration:**
-- [ ] Update package dependencies
-- [ ] Change import statements
-- [ ] Test with simple LLM calls
-- [ ] Verify traces appear in HoneyHive dashboard
-- [ ] Check for any error logs
-
-**Post-Migration:**
-- [ ] Monitor application performance
-- [ ] Validate all LLM providers are working
-- [ ] Update documentation and deployment scripts
-- [ ] Train team on any new features (if migrating to OpenLLMetry)
-
-Best Practices for Migration
------------------------------
-
-**1. Migrate One Provider at a Time**
+**Issue 3: Performance Differences**
 
 .. code-block:: python
 
-   # Good: Gradual migration
-   # Step 1: Initialize HoneyHive tracer first (without instrumentors)
+   # If you notice performance changes
    tracer = HoneyHiveTracer.init(
-       api_key="your-api-key",      # Or set HH_API_KEY environment variable
-       project="your-project"       # Or set HH_PROJECT environment variable
+       api_key="hh_1234567890abcdef",
+       project="my-project",
+       
+       # Tune performance settings
+       cache_enabled=True,      # Enable caching
+       cache_max_size=10000,    # Increase cache size
+       disable_batch=False      # Use batching
+   )
+
+**Issue 4: Multiple Tracer Conflicts**
+
+.. code-block:: python
+
+   # If multiple tracers interfere with each other
+   
+   # Each tracer is now completely independent
+   tracer1 = HoneyHiveTracer.init(
+       api_key="hh_key1",
+       project="project1"
    )
    
-   # Step 2: Initialize instrumentors separately (gradual migration)
-   openai_instrumentor = OpenAIInstrumentor()           # Migrated to OpenLLMetry
-   anthropic_instrumentor = OIAnthropicInstrumentor()       # Still using OpenInference
-   openai_instrumentor.instrument(tracer_provider=tracer.provider)
-   anthropic_instrumentor.instrument(tracer_provider=tracer.provider)
+   tracer2 = HoneyHiveTracer.init(
+       api_key="hh_key2", 
+       project="project2"
+   )
+   
+   # No conflicts - each has independent state
 
-**2. Test in Development First**
-
-Always test migrations in development/staging before production.
-
-**3. Use Version Pinning**
-
-.. code-block:: bash
-
-   # Good: Pin versions for stability
-   pip install opentelemetry-instrumentation-openai==1.20.0
-
-**4. Monitor After Migration**
-
-Set up alerts for:
-- Trace collection failures
-- Performance regressions
-- Error rate increases
-
-**5. Document Your Choice**
-
-Document why you chose each instrumentor type for future team members.
-
-Need Help?
-----------
+Getting Help
+============
 
 If you encounter issues during migration:
 
-1. Check the :doc:`index` troubleshooting section
-2. Review provider-specific integration docs:
-   - :doc:`integrations/openai`
-   - :doc:`integrations/anthropic`
-   - :doc:`integrations/google-ai`
-3. Contact HoneyHive support with:
-   - Your current instrumentor setup
-   - Error messages or logs
-   - Steps you've already tried
+1. **Check the Documentation**:
+   
+   - :doc:`../reference/configuration/hybrid-config-approach` - Configuration guide
+   - :doc:`../reference/api/config-models` - Configuration API reference
+   - :doc:`../reference/api/tracer-architecture` - Architecture overview
 
-Remember: Migration between instrumentors is safe, reversible, and requires minimal code changes. Both instrumentor types are production-ready and work seamlessly with HoneyHive's BYOI architecture.
+2. **Review Examples**:
+   
+   - Check ``examples/basic_usage.py`` for updated patterns
+   - Review ``examples/integrations/`` for LLM integration examples
+
+3. **Test Incrementally**:
+   
+   - Start with no changes (backwards compatibility)
+   - Add new features gradually
+   - Test each change thoroughly
+
+4. **Contact Support**:
+   
+   - Join our `Discord community <https://discord.gg/honeyhive>`_
+   - Email support@honeyhive.ai
+   - Create an issue on GitHub
+
+Migration Checklist
+====================
+
+Use this checklist to track your migration progress:
+
+**Pre-Migration**
+
+- [ ] Backup your current code
+- [ ] Review current HoneyHive usage patterns
+- [ ] Test current functionality
+- [ ] Plan migration strategy
+
+**Migration**
+
+- [ ] Upgrade to HoneyHive SDK v0.1.0+
+- [ ] Verify existing code still works
+- [ ] Choose migration approach (none/gradual/full)
+- [ ] Update configuration patterns (optional)
+- [ ] Add new features as needed (optional)
+
+**Post-Migration**
+
+- [ ] Test all functionality thoroughly
+- [ ] Verify tracer initialization
+- [ ] Check trace data in HoneyHive dashboard
+- [ ] Monitor performance and adjust settings
+- [ ] Update team documentation
+
+**Validation**
+
+- [ ] All existing traces still work
+- [ ] New features work as expected
+- [ ] Performance is acceptable
+- [ ] Error handling works correctly
+- [ ] Multi-instance setup (if applicable)
+
+Conclusion
+==========
+
+The HoneyHive SDK v0.1.0+ provides significant architectural improvements while maintaining complete backwards compatibility. You can:
+
+1. **Upgrade immediately** with no code changes
+2. **Adopt new features gradually** as needed
+3. **Migrate fully** for maximum benefits
+
+The modular architecture, hybrid configuration system, and enhanced multi-instance support provide a solid foundation for scaling your LLM observability as your applications grow.
+
+**Next Steps:**
+
+- Review the :doc:`../tutorials/advanced-configuration` tutorial
+- Explore the :doc:`../reference/api/tracer-architecture` documentation
+- Try the enhanced examples in ``examples/``
+
+Welcome to HoneyHive SDK v0.1.0+! 🚀

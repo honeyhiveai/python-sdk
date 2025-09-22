@@ -78,11 +78,14 @@ def setup_test_environment():
 
     # Patch the config module to use test values
     try:
-        from honeyhive.utils.config import config
+        from honeyhive.utils.config import (  # pylint: disable=import-outside-toplevel
+            config,
+        )
 
         # Reset the config to use default values
         config.api_url = "https://api.honeyhive.ai"
     except ImportError:
+        # Config module doesn't exist or has changed - this is expected
         pass
 
 

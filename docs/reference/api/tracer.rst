@@ -6,6 +6,16 @@ HoneyHiveTracer API Reference
    
    The primary interface for tracing LLM operations and custom application logic with HoneyHive observability.
 
+.. important::
+   **🆕 NEW: Modular Architecture & Hybrid Configuration**
+   
+   The ``HoneyHiveTracer`` has been completely rewritten with a modular, mixin-based architecture and now supports Pydantic configuration models.
+   
+   **See Also:**
+   
+   - :doc:`tracer-architecture` - Detailed architectural information
+   - :doc:`config-models` - Complete configuration models API reference
+
 .. currentmodule:: honeyhive
 
 .. autoclass:: HoneyHiveTracer
@@ -15,8 +25,25 @@ HoneyHiveTracer API Reference
 
 The ``HoneyHiveTracer`` is the core component of the HoneyHive SDK, providing OpenTelemetry-based tracing with LLM-specific optimizations and BYOI (Bring Your Own Instrumentor) architecture support.
 
+**🆕 Architecture Overview:**
+
+The tracer is now composed from multiple mixins using dynamic inheritance:
+
+.. code-block:: python
+
+   class HoneyHiveTracer(HoneyHiveTracerBase, TracerOperationsMixin, TracerContextMixin):
+       """Main tracer class composed from multiple mixins."""
+
+**Modular Components:**
+
+- **HoneyHiveTracerBase**: Core initialization and configuration (``tracer/core/base.py``)
+- **TracerOperationsMixin**: Span creation and event management (``tracer/core/operations.py``)
+- **TracerContextMixin**: Context and baggage management (``tracer/core/context.py``)
+
 **Key Features:**
 
+- **🆕 Hybrid Configuration**: Supports both Pydantic config objects and traditional parameters
+- **🆕 Modular Architecture**: Mixin-based composition with 35 files across 6 modules
 - Multi-instance support for different projects/environments
 - Automatic OpenTelemetry configuration and management  
 - LLM-specific span attributes and conventions
@@ -24,6 +51,48 @@ The ``HoneyHiveTracer`` is the core component of the HoneyHive SDK, providing Op
 - Built-in instrumentor management
 - Thread-safe operations
 - Context propagation across async/threaded operations
+
+**🆕 Configuration Options:**
+
+The tracer supports three initialization patterns:
+
+.. tabs::
+
+   .. tab:: 🆕 Modern Config Objects (Recommended)
+
+      .. code-block:: python
+
+         from honeyhive import HoneyHiveTracer
+         from honeyhive.config.models import TracerConfig
+         
+         config = TracerConfig(
+             api_key="hh_1234567890abcdef",
+             project="my-llm-project",
+             verbose=True
+         )
+         tracer = HoneyHiveTracer(config=config)
+
+   .. tab:: 🔄 Traditional Parameters (Backwards Compatible)
+
+      .. code-block:: python
+
+         from honeyhive import HoneyHiveTracer
+         
+         tracer = HoneyHiveTracer(
+             api_key="hh_1234567890abcdef",
+             project="my-llm-project",
+             verbose=True
+         )
+
+   .. tab:: 🔀 Mixed Approach
+
+      .. code-block:: python
+
+         from honeyhive import HoneyHiveTracer
+         from honeyhive.config.models import TracerConfig
+         
+         config = TracerConfig(api_key="hh_1234567890abcdef", project="my-llm-project")
+         tracer = HoneyHiveTracer(config=config, verbose=True)  # verbose overrides config
 
 Class Methods
 -------------

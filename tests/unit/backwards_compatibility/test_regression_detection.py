@@ -108,7 +108,7 @@ env_vars = {
     "HH_FLUSH_INTERVAL": "5.0",
     "HH_MAX_CONNECTIONS": "50",
     "HH_TEST_MODE": "true",
-    "HH_DEBUG_MODE": "true",
+    "HH_VERBOSE": "true",
     "HH_VERIFY_SSL": "false",
     "HH_FOLLOW_REDIRECTS": "false",
     "HH_DISABLE_HTTP_TRACING": "true"
@@ -116,34 +116,32 @@ env_vars = {
 
 # Set environment variables AFTER import (critical test)
 from honeyhive import HoneyHiveTracer
-from honeyhive.utils.config import Config
 
 for key, value in env_vars.items():
     os.environ[key] = value
 
-# Create fresh config and tracer
-config = Config()
+# Create tracer - per-instance config loads environment variables automatically
 tracer = HoneyHiveTracer(test_mode=True)
 
-# Verify ALL environment variables are loaded
-assert config.api_key == "regression-test-key", f"API key regression: {config.api_key}"
-assert config.api_url == "https://regression.test.url", f"API URL regression: {config.api_url}"
-assert config.project == "regression-project", f"Project regression: {config.project}"
-assert config.source == "regression-source", f"Source regression: {config.source}"
-assert config.timeout == 60.0, f"Timeout regression: {config.timeout}"
-assert config.max_retries == 10, f"Max retries regression: {config.max_retries}"
-assert config.batch_size == 300, f"Batch size regression: {config.batch_size}"
-assert config.flush_interval == 5.0, f"Flush interval regression: {config.flush_interval}"
-assert config.max_connections == 50, f"Max connections regression: {config.max_connections}"
-assert config.test_mode is True, f"Test mode regression: {config.test_mode}"
-assert config.debug_mode is True, f"Debug mode regression: {config.debug_mode}"
-assert config.verify_ssl is False, f"Verify SSL regression: {config.verify_ssl}"
-assert config.follow_redirects is False, f"Follow redirects regression: {config.follow_redirects}"
-assert config.disable_http_tracing is True, f"Disable HTTP tracing regression: {config.disable_http_tracing}"
+# Verify ALL environment variables are loaded via tracer.config interface
+assert tracer.config.api_key == "regression-test-key", f"API key regression: {tracer.config.api_key}"
+assert tracer.config.server_url == "https://regression.test.url", f"Server URL regression: {tracer.config.server_url}"
+assert tracer.config.project == "regression-project", f"Project regression: {tracer.config.project}"
+assert tracer.config.source == "regression-source", f"Source regression: {tracer.config.source}"
+assert tracer.config.http.timeout == 60.0, f"Timeout regression: {tracer.config.http.timeout}"
+assert tracer.config.http.max_retries == 10, f"Max retries regression: {tracer.config.http.max_retries}"
+assert tracer.config.otlp.batch_size == 300, f"Batch size regression: {tracer.config.otlp.batch_size}"
+assert tracer.config.otlp.flush_interval == 5.0, f"Flush interval regression: {tracer.config.otlp.flush_interval}"
+assert tracer.config.http.max_connections == 50, f"Max connections regression: {tracer.config.http.max_connections}"
+assert tracer.config.test_mode is True, f"Test mode regression: {tracer.config.test_mode}"
+assert tracer.config.get("verbose", False) is True, f"Verbose mode regression: {tracer.config.get('verbose')}"
+assert tracer.config.http.verify_ssl is False, f"Verify SSL regression: {tracer.config.http.verify_ssl}"
+assert tracer.config.http.follow_redirects is False, f"Follow redirects regression: {tracer.config.http.follow_redirects}"
+assert tracer.config.disable_http_tracing is True, f"Disable HTTP tracing regression: {tracer.config.disable_http_tracing}"
 
-# Verify tracer uses the configuration
+# Verify tracer instance uses the configuration
 assert tracer.api_key == "regression-test-key", f"Tracer API key regression: {tracer.api_key}"
-assert tracer.client.base_url == "https://regression.test.url", f"Tracer URL regression: {tracer.client.base_url}"
+assert tracer.client.server_url == "https://regression.test.url", f"Tracer URL regression: {tracer.client.server_url}"
 assert tracer.project == "regression-project", f"Tracer project regression: {tracer.project}"
 
 print("SUCCESS: No environment variable regression detected")

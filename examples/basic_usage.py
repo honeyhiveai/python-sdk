@@ -17,43 +17,63 @@ import os
 import time
 import asyncio
 from honeyhive import HoneyHive, HoneyHiveTracer, trace
+from honeyhive.config.models import TracerConfig
 
 # Set environment variables for configuration
 os.environ["HH_API_KEY"] = "your-api-key-here"
 os.environ["HH_PROJECT"] = "my-project"
 os.environ["HH_SOURCE"] = "development"
 
+
 def main():
     """Main function demonstrating basic usage."""
-    
+
     print("🚀 HoneyHive SDK Basic Usage Example")
     print("=" * 50)
     print("This example demonstrates the code snippets from the documentation")
     print("as full functioning executable examples.\n")
-    
+
     # ========================================================================
-    # 1. BASIC INITIALIZATION (from docs)
+    # 1. HYBRID CONFIGURATION EXAMPLES (new in v0.1.0+)
     # ========================================================================
-    print("1. Basic Initialization")
-    print("-" * 25)
-    
-    # Initialize tracer (creates new instance) - from docs
-    tracer = HoneyHiveTracer.init(
+    print("1. Hybrid Configuration Examples")
+    print("-" * 35)
+
+    # Method 1: Traditional .init() Method (Backwards Compatible - Recommended)
+    print("\n🔄 Method 1: Traditional .init() Method (Backwards Compatible)")
+    tracer_traditional = HoneyHiveTracer.init(
         api_key="your-api-key",
         project="my-project",  # Required for OTLP tracing
-        source="production"
+        source="production",
+        verbose=True
     )
-    
-    print(f"✓ Tracer initialized for project: {tracer.project}")
-    print(f"✓ Source environment: {tracer.source}")
-    print(f"✓ Session ID: {tracer.session_id}")
-    
+    print(f"✓ Traditional tracer initialized for project: {tracer_traditional.project_name}")
+
+    # Method 2: Modern Pydantic Config Objects (New Pattern)
+    print("\n🆕 Method 2: Modern Config Objects (New Pattern)")
+    config = TracerConfig(
+        api_key="your-api-key",
+        project="my-project",
+        source="production",
+        verbose=True
+    )
+    tracer_modern = HoneyHiveTracer(config=config)
+    print(f"✓ Modern tracer initialized for project: {tracer_modern.project_name}")
+
+    # Method 3: Environment Variables with .init() (DevOps Friendly)
+    print("\n🌍 Method 3: Environment Variables with .init()")
+    tracer_env = HoneyHiveTracer.init()  # Loads from HH_* environment variables
+    print(f"✓ Environment tracer initialized for project: {tracer_env.project_name}")
+
+    # Use the traditional tracer for the rest of the examples (backwards compatible)
+    tracer = tracer_traditional
+
     # ========================================================================
     # 2. BASIC TRACING (from docs)
     # ========================================================================
     print("\n2. Basic Tracing")
     print("-" * 17)
-    
+
     # Pass tracer instance explicitly (recommended) - from docs
     @trace(tracer=tracer)
     def my_function():
@@ -61,11 +81,11 @@ def main():
         print("  📝 Executing my_function...")
         time.sleep(0.1)  # Simulate some work
         return "Hello, World!"
-    
+
     # Test the traced function
     result = my_function()
     print(f"✓ Function result: {result}")
-    
+
     # Demonstrate dynamic sync/async detection
     @trace(tracer=tracer)
     async def my_async_function():
@@ -73,17 +93,17 @@ def main():
         print("  📝 Executing my_async_function...")
         await asyncio.sleep(0.1)  # Simulate async work
         return "Hello, Async World!"
-    
+
     # Test the async traced function
     async_result = asyncio.run(my_async_function())
     print(f"✓ Async function result: {async_result}")
-    
+
     # ========================================================================
     # 3. MANUAL SPAN MANAGEMENT (from docs)
     # ========================================================================
     print("\n3. Manual Span Management")
     print("-" * 26)
-    
+
     # Manual span management - from docs
     with tracer.start_span("custom-operation") as span:
         if span is not None:
@@ -102,16 +122,15 @@ def main():
     # ========================================================================
     print("\n4. API Client Usage")
     print("-" * 20)
-    
+
     # Initialize API client
     client = HoneyHive(
-        api_key="your-api-key-here",
-        test_mode=True  # Use test mode for examples
+        api_key="your-api-key-here", test_mode=True  # Use test mode for examples
     )
     print("✓ API client initialized")
     print("✓ Ready for API operations (events, datasets, etc.)")
     print("  Note: API client is separate from tracer - used for direct API calls")
-    
+
     print("\n🎉 Basic usage example completed successfully!")
     print("\nKey patterns demonstrated:")
     print("✅ Basic tracer initialization")

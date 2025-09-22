@@ -31,9 +31,8 @@ class DatasetsAPI(BaseAPI):
                 name=request.name,
                 description=request.description,
             )
-        else:
-            # Legacy format: direct dataset object
-            return Dataset(**data)
+        # Legacy format: direct dataset object
+        return Dataset(**data)
 
     def create_dataset_from_dict(self, dataset_data: dict) -> Dataset:
         """Create a new dataset from dictionary (legacy method)."""
@@ -53,9 +52,8 @@ class DatasetsAPI(BaseAPI):
                 name=dataset_data.get("name"),
                 description=dataset_data.get("description"),
             )
-        else:
-            # Legacy format: direct dataset object
-            return Dataset(**data)
+        # Legacy format: direct dataset object
+        return Dataset(**data)
 
     async def create_dataset_async(self, request: CreateDatasetRequest) -> Dataset:
         """Create a new dataset asynchronously using CreateDatasetRequest model."""
@@ -79,9 +77,8 @@ class DatasetsAPI(BaseAPI):
                 name=request.name,
                 description=request.description,
             )
-        else:
-            # Legacy format: direct dataset object
-            return Dataset(**data)
+        # Legacy format: direct dataset object
+        return Dataset(**data)
 
     async def create_dataset_from_dict_async(self, dataset_data: dict) -> Dataset:
         """Create a new dataset asynchronously from dictionary (legacy method)."""
@@ -103,9 +100,8 @@ class DatasetsAPI(BaseAPI):
                 name=dataset_data.get("name"),
                 description=dataset_data.get("description"),
             )
-        else:
-            # Legacy format: direct dataset object
-            return Dataset(**data)
+        # Legacy format: direct dataset object
+        return Dataset(**data)
 
     def get_dataset(self, dataset_id: str) -> Dataset:
         """Get a dataset by ID."""
@@ -129,7 +125,9 @@ class DatasetsAPI(BaseAPI):
 
         response = self.client.request("GET", "/datasets", params=params)
         data = response.json()
-        return [Dataset(**dataset_data) for dataset_data in data.get("datasets", [])]
+        return self._process_data_dynamically(
+            data.get("datasets", []), Dataset, "datasets"
+        )
 
     async def list_datasets_async(
         self, project: Optional[str] = None, limit: int = 100
@@ -141,7 +139,9 @@ class DatasetsAPI(BaseAPI):
 
         response = await self.client.request_async("GET", "/datasets", params=params)
         data = response.json()
-        return [Dataset(**dataset_data) for dataset_data in data.get("datasets", [])]
+        return self._process_data_dynamically(
+            data.get("datasets", []), Dataset, "datasets"
+        )
 
     def update_dataset(self, dataset_id: str, request: DatasetUpdate) -> Dataset:
         """Update a dataset using DatasetUpdate model."""

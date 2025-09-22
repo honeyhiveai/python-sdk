@@ -81,6 +81,7 @@ repos:
         name: Feature Documentation Synchronization Check
         entry: scripts/check-feature-sync.py
         language: python
+        pass_filenames: false
         files: '^(src/.*\.py|docs/reference/.*\.rst|\.agent-os/product/features\.md)$'
         stages: [pre-commit]
 

@@ -1,394 +1,65 @@
 # HoneyHive Python SDK - AI Assistant Rules
-# This file defines rules that AI assistants must follow when working on this project
+# Forwarding Entry Point to Agent OS Standards
 
 ## 🚨 AGENT OS INTEGRATION
 **This project uses Agent OS for structured development guidance.**
-- **Standards**: `.agent-os/standards/` - Global coding standards
-- **Product Docs**: `.agent-os/product/` - Product documentation
-- **Specifications**: `.agent-os/specs/` - Feature specifications
-- **Use Cursor Rules**: `.cursor/rules/*.mdc` - @plan-product, @create-spec, @execute-tasks, @analyze-product
 
-## Testing & Development
-- ALWAYS use tox for running tests - Never run pytest directly
-- Use specific tox environments:
-  - `tox -e unit` for unit tests only
-  - `tox -e integration` for integration tests
-  - `tox -e lint` for linting (pylint + mypy)
-  - `tox -e format` for code formatting checks
-  - `tox -e py311`, `tox -e py312`, `tox -e py313` for Python version-specific testing
-- **Unit test files must follow the naming pattern `test_<module>_<file>.py`** - for example: `test_api_client.py`, `test_tracer_decorators.py`
-- **Compatibility matrix test files must follow the naming pattern `test_<instrumentor>_<provider>.py`** - for example: `test_openinference_openai.py`, `test_traceloop_anthropic.py`
-- **Required development tools**: Install `yamllint` and GitHub CLI (`gh`) for workflow validation and CI/CD investigation
-- **🚨 CRITICAL: Test Count Reporting** - Always report TOTAL test count correctly: "X tests passing (Y unit + Z integration)" - NEVER report partial counts as totals
-
-## CI/CD Workflow Documentation Synchronization
-- **MANDATORY**: When making changes to `.github/workflows/*.yml` files, ALWAYS update `docs/development/testing/ci-cd-integration.rst`
-- **Required Updates**: Workflow triggers, path filters, job structure, environment variables, and testing strategies
-- **Validation**: Ensure documentation accurately reflects current workflow behavior and capabilities
-- **Cross-Reference**: Update related documentation in `docs/development/workflow-optimization.rst` for path-based detection changes
-
-## Type Safety & Documentation Code Standards
-- **MANDATORY**: Use proper enum imports in ALL documentation examples
-- **MANDATORY**: Include complete import statements in every code example
-- **Pattern**: Always import `from honeyhive.models import EventType`
-- **Usage**: Use `EventType.model`, `EventType.tool`, `EventType.chain`, `EventType.session` 
-- **NEVER**: Use string literals like `event_type="model"` - always use enum values
-- **Validation**: All examples must pass mypy type checking
-- **Semantic Mapping**: 
-  - `EventType.model` → LLM calls, AI model operations
-  - `EventType.tool` → Individual functions, utilities, data processing
-  - `EventType.chain` → Multi-step workflows, business logic orchestration
-  - `EventType.session` → High-level user interactions
-
-## Virtual Environment & Dependencies
-- ALWAYS use virtual environments - Never install packages globally
-- **Use a virtual environment named "python-sdk"** for this project
-- Use the project's pyproject.toml for dependency management
-- Install in development mode when working on the project: `pip install -e .`
-- Respect the requires-python = ">=3.11" constraint
-
-## Code Quality & Standards
-- **Follow `.agent-os/standards/code-style.md`** for comprehensive style guide
-- Follow the established formatting rules:
-  - Black with line-length = 88
-  - isort with black profile
-  - pylint and mypy for static analysis
-- Use the project's existing configuration files (pyproject.toml, tox.ini)
-- Maintain Python 3.11+ compatibility
-- **ALL code must contain docstrings** - every function, class, and module should have proper documentation
-- **MANDATORY: Run Black on Python files on save** when Cursor works on them
-- **MANDATORY: Install pre-commit hooks**: Run `./scripts/setup-dev.sh` once
-- **MANDATORY: Pre-commit verification**: Run `tox -e format && tox -e lint` before every commit
-- **MANDATORY: Documentation updates**: Update CHANGELOG.md for all code changes
-- **MANDATORY: Feature documentation**: Update docs/reference/index.rst and .agent-os/product/features.md for new features
-- **MANDATORY: Workflow documentation**: Update docs/development/testing/ for CI/CD changes
-- **ALL Python code must use type hinting/annotations** - functions, methods, variables, and class attributes should be properly typed
-
-## Project Structure
-- Respect the src/ layout with `src/honeyhive/` as the main package
-- Use the established module structure (api/, tracer/, evaluation/, etc.)
-- Follow the existing import patterns and package organization
-- **NO code should be in `__init__.py` files** - only imports and package-level variables
-
-## Architecture Patterns (from Agent OS)
-- **Multi-instance tracers** - No singleton pattern
-- **Unified @trace decorator** - Works for both sync and async
-- **Graceful degradation** - SDK must never crash host application
-- **HTTP tracing disabled by default** - Performance optimization
-- **Check `.agent-os/product/decisions.md`** for architectural rationale
-
-## Environment Variables
-- Use the test environment variables defined in tox.ini when running tests
-- Respect the HH_* environment variable patterns established in the project
-- Support HTTP_*, EXPERIMENT_* patterns for compatibility
-- Set HH_TEST_MODE appropriately for different test types
-
-## 🎨 Mermaid Diagram Standards (MANDATORY)
-
-### **🚨 CRITICAL: All Mermaid diagrams MUST use HoneyHive dual-theme configuration**
-
-**MANDATORY Configuration** - Copy this EXACT configuration for ALL Mermaid diagrams:
-
-```rst
-.. mermaid::
-
-   %%{init: {'theme':'base', 'themeVariables': {'primaryColor': '#4F81BD', 'primaryTextColor': '#ffffff', 'primaryBorderColor': '#333333', 'lineColor': '#333333', 'mainBkg': 'transparent', 'secondBkg': 'transparent', 'tertiaryColor': 'transparent', 'clusterBkg': 'transparent', 'clusterBorder': '#333333', 'edgeLabelBackground': 'transparent', 'background': 'transparent'}, 'flowchart': {'linkColor': '#333333', 'linkWidth': 2}}}%%
-   graph TB
-       // Your diagram content here
-```
-
-### **🎯 Dual-Theme Requirements**
-- ✅ **Node Text**: ALWAYS use `color:#ffffff` in ALL classDef definitions
-- ✅ **Node Fills**: Use HoneyHive professional colors (deep blues, greens, oranges)
-- ✅ **Arrows/Lines**: Dark gray (`#333333`) for visibility in both light and dark themes
-- ✅ **Borders**: Dark gray (`#333333`) for visibility in both themes
-- ✅ **Backgrounds**: Transparent for theme flexibility
-
-### **🎨 HoneyHive Color Palette**
-**MANDATORY**: Use these professional colors for node fills:
-- **Primary Blue**: `#1565c0` (Deep blue for main elements)
-- **Success Green**: `#2e7d32` (Deep green for success states)
-- **Warning Orange**: `#ef6c00` (Deep orange for warnings/results)
-- **Action Purple**: `#7b1fa2` (Deep purple for actions/tests)
-- **Alert Yellow**: `#f9a825` (Deep yellow for alerts)
-- **Error Red**: `#c62828` (Deep red for errors/failures)
-
-### **✅ ClassDef Pattern**
-**MANDATORY**: ALL classDef definitions MUST include `color:#ffffff`:
-```
-classDef success fill:#2e7d32,stroke:#333333,stroke-width:2px,color:#ffffff
-classDef warning fill:#ef6c00,stroke:#333333,stroke-width:2px,color:#ffffff
-classDef error fill:#c62828,stroke:#333333,stroke-width:2px,color:#ffffff
-```
-
-### **❌ NEVER Use These Patterns**
-- ❌ Light fill colors (`#ffcdd2`, `#e3f2fd`) - poor contrast in dark themes
-- ❌ Missing `color:#ffffff` in classDef - text invisible in dark themes
-- ❌ White arrows (`linkColor: '#ffffff'`) - invisible in light themes
-- ❌ Dark text (`primaryTextColor: '#333333'`) - invisible in dark themes
-- ❌ Non-transparent backgrounds - conflicts with theme switching
-
-### **📋 Quality Checklist**
-Before committing ANY Mermaid diagram, verify:
-- ✅ Uses exact HoneyHive dual-theme configuration
-- ✅ All classDef include `color:#ffffff`
-- ✅ Uses professional HoneyHive color palette
-- ✅ Arrows visible in both light and dark themes
-- ✅ Text readable on all colored backgrounds
-- ✅ Follows `.agent-os/standards/code-style.md` Mermaid diagram standards
-
-## Documentation & Examples - Divio System
-
-### 🎯 Divio Documentation Architecture
-**Follow the [Divio Documentation System](https://docs.divio.com/documentation-system/) for all documentation:**
-
-### 📱 **MANDATORY: Tabbed Interface for Integration How-To Docs**
-**ALL new instrumentor integration HOW-TO documentation MUST use the interactive tabbed interface pattern** defined in `.agent-os/standards/documentation-templates.md`:
-
-- **SCOPE**: Apply to `docs/how-to/integrations/[provider].rst` only, NOT tutorials
-- **3 Required Tabs**: Installation | Basic Setup | Advanced Usage
-- **Progressive Disclosure**: Start simple, advance to real-world patterns
-- **Consistent UX**: Same pattern across all provider integrations
-- **Copy-Paste Ready**: Complete, working examples in each tab
-
-#### 1. TUTORIALS (Learning-oriented) - `docs/tutorials/`
-- **Purpose**: Help newcomers get started and achieve early success
-- **User mindset**: "I want to learn by doing"
-- **Structure**: Objective → Prerequisites → Steps → Results → Next Steps
-- **Requirements**:
-  - Maximum 15-20 minutes per tutorial
-  - Step-by-step instructions with working code examples
-  - Test with actual beginners (3+ users monthly)
-  - Clear expected outcomes at each step
-
-#### 2. HOW-TO GUIDES (Problem-oriented) - `docs/how-to/`
-- **Purpose**: Solve specific real-world problems
-- **User mindset**: "I want to solve this specific problem"
-- **Title format**: "How to [solve specific problem]"
-- **Structure**: Problem → Solution → Implementation → Verification
-- **Requirements**:
-  - Minimal background explanation
-  - Clear steps to solution
-  - Prerequisites clearly stated
-  - Links to reference docs
-
-#### 3. REFERENCE (Information-oriented) - `docs/reference/`
-- **Purpose**: Provide comprehensive technical specifications
-- **User mindset**: "I need to look up exact details"
-- **Requirements**:
-  - 100% API coverage with working examples
-  - Accurate parameter descriptions and return values
-  - Error condition documentation
-  - Cross-references between related items
-  - Automated testing of all code examples
-
-#### 4. EXPLANATION (Understanding-oriented) - `docs/explanation/`
-- **Purpose**: Provide context, background, and design decisions
-- **User mindset**: "I want to understand how this works and why"
-- **Requirements**:
-  - Design decision rationale
-  - Architecture overviews
-  - Historical context when relevant
-  - Comparison with alternatives
-
-### Documentation Quality Standards
-- **Sphinx build warnings**: Must be fixed before considering docs complete
-- **Cross-linking**: Tutorials → How-to, How-to → Reference, Reference → Explanation
-- **Content testing**: Use `docs/utils/` scripts for validation
-- **Accessibility**: WCAG 2.1 AA compliance for all content
-- **Visual standards**: Use Mermaid diagrams with HoneyHive dual-theme standard, sanitize credentials in screenshots
-
-### Update Requirements
-- Update examples/ when making changes that affect usage
-- **Update `.agent-os/product/` docs** for significant changes
-- Follow established example patterns in examples/
-- **NEW INSTRUMENTOR DOCS**: Use automated template generation system from `.agent-os/standards/documentation-generation.md`
-- **MANDATORY**: Generate integration docs with `python docs/_templates/generate_provider_docs.py --provider [name]`
-- Test all documentation examples before committing
-
-## Specific Commands to Use
-- Testing: `tox -e [environment]` instead of direct pytest calls
-- Linting: `tox -e lint`
-- Formatting: `tox -e format`
-- Documentation: `tox -e docs`
-- Installation: `pip install -e .` in a virtual environment
-
-## Important Notes
-- This project uses pytest for testing; if pytest is not installed, it should be installed and used for running tests
-- In the HoneyHive project, omit or do not configure the meter_provider because there is no metrics endpoint currently
-- **Complete-refactor branch** includes multi-instance support and unified decorators
-
-## HoneyHive Official Documentation Context
-- **Official Docs URL**: https://docs.honeyhive.ai/llms.txt
-- **Reference this documentation** when implementing features or providing guidance
-- **Ensure consistency** with official HoneyHive platform capabilities and APIs
-- **Cross-reference** local SDK documentation with official platform documentation
-- **Use official terminology** and concepts from the HoneyHive platform
-
-## Agent OS Quick Reference
-- **Product Overview**: `.agent-os/product/overview.md`
-- **Development Roadmap**: `.agent-os/product/roadmap.md`
-- **Feature Catalog**: `.agent-os/product/features.md`
-- **Tech Stack**: `.agent-os/standards/tech-stack.md`
-- **Best Practices**: `.agent-os/standards/best-practices.md`
-
-## 🤖 AI Assistant Quality Framework (MANDATORY)
-
-**🎯 MISSION**: Enable AI assistants to autonomously ship production-quality solutions
-
-### Pre-Generation Validation Protocol (REQUIRED)
-
-**CRITICAL**: Execute BEFORE generating ANY code:
-
-```bash
-# 1. Get Current Date (MANDATORY for all dated content)
-CURRENT_DATE=$(date +"%Y-%m-%d")
-echo "Today is: $CURRENT_DATE"
-
-# 2. Validate Current Codebase State
-read_file src/honeyhive/__init__.py     # Check current API exports
-grep -r "from honeyhive import" examples/  # Verify import patterns  
-grep -r "class.*:" src/honeyhive/       # Validate class names
-git status --porcelain                  # Ensure clean working directory
-git branch --show-current              # Verify correct branch
-```
-
-### Autonomous Quality Gates (ALL MUST PASS)
-
-**MANDATORY**: Every code change must pass ALL quality gates:
-
-```bash
-# Code Quality Gates
-tox -e format           # Black formatting (MUST pass)
-tox -e lint            # Pylint analysis ≥8.0/10.0 (MUST pass)
-tox -e unit            # Unit tests 100% (MUST pass)
-tox -e integration     # Integration tests 100% (MUST pass)
-tox -e py311 -e py312 -e py313  # Python compatibility (MUST pass)
-
-# Documentation Gates  
-cd docs && make html   # Sphinx build, zero warnings (MUST pass)
-cd .. && python -m doctest examples/*.py  # Examples work (MUST pass)
-
-# Enhanced Pre-Commit Quality Gates (NEW)
-# These run automatically via pre-commit hooks for ALL significant changes:
-# - CHANGELOG update validation for documentation, configuration, and code changes
-# - Mandatory documentation updates for new features and large changesets
-# - Comprehensive file pattern matching (docs, scripts, config, Agent OS files)
-# - AI assistant compliance checking with automatic enforcement
-```
-
-### Zero Failing Tests Policy
-
-**❌ NEVER COMMIT** if ANY test fails
-**❌ NEVER PUSH** failing tests to ANY branch
-**❌ NEVER USE** `git commit --no-verify` without immediate fix
-**❌ NEVER USE** hardcoded dates - always use `date +"%Y-%m-%d"`
-**❌ NEVER SKIP TESTS** - AI assistants MUST fix failing tests, never skip them
-**❌ NEVER USE** `@pytest.mark.skip` or commenting out failing tests
-
-### Autonomous Decision Framework
-
-**AI Assistants MUST autonomously:**
-
-1. **Handle Test Failures**: Fix import errors, type annotations, coverage gaps
-2. **Maintain Quality**: Apply formatting, resolve linting issues, update docs  
-3. **Ensure Compatibility**: Test across Python versions, validate examples
-4. **Prevent Regressions**: Run full test suite, verify existing functionality
-
-### Date Usage Requirements - MANDATORY
-
-**🚨 CRITICAL**: AI Assistants consistently make date errors. Follow these rules:
-
-1. **ALWAYS get current date first**: `CURRENT_DATE=$(date +"%Y-%m-%d")`
-2. **Use ISO 8601 format**: `YYYY-MM-DD` (e.g., 2025-09-03)
-3. **For new specs**: `.agent-os/specs/${CURRENT_DATE}-spec-name/`
-4. **In file headers**: `**Date**: $CURRENT_DATE`
-5. **NEVER hardcode dates**: Don't use 2025-01-30 when today is 2025-09-03
-
-**Common Date Errors to Prevent:**
-- ❌ Using random past dates (2025-01-30) 
-- ❌ Wrong formats (09/03/2025, Sep 3, 2025)
-- ❌ Hardcoded dates instead of system date
-- ❌ Inconsistent dates across files
-
-### Commit Message Standards - MANDATORY
-
-**🚨 CRITICAL**: AI Assistants consistently make commit message formatting errors. Follow these rules:
-
-1. **Use Conventional Commits**: `<type>: <description>` (max 50 chars)
-2. **NO unnecessary quotes**: Don't wrap entire commit titles in quotes
-3. **Match quotes properly**: If you start a quote, always close it
-4. **Types**: feat, fix, docs, style, refactor, perf, test, build, ci, chore
-5. **Body lines**: Maximum 72 characters each
-
-**Common Commit Errors to Prevent:**
-- ❌ Missing closing quotes: `git commit -m "feat: Add feature`
-- ❌ Unnecessary quotes: `git commit -m "\"feat: Add feature\""`
-- ❌ Too long: `feat: Add comprehensive documentation quality control system validation` (71 chars)
-- ❌ Wrong format: Missing type prefix or colon
-- ❌ Periods at end: `feat: Add feature.`
-
-### Documentation Quality Prevention
-
-**MANDATORY**: Follow `.agent-os/specs/2025-09-03-documentation-quality-control/`
-
-1. ✅ **RST Structure**: Title underlines, blank lines, proper indentation
-2. ✅ **Type Safety**: EventType enums only, complete imports
-3. ✅ **Code Examples**: Valid syntax, working imports, tested execution
-4. ✅ **Cross-References**: Working internal links, toctree inclusion
-
-### Escalation Protocol
-
-**Hand off to human when:**
-- **Repeated Failures**: Cannot resolve test failures after 3 attempts
-- **Architecture Changes**: Major structural modifications needed
-- **Security Issues**: Authentication or data protection concerns
-- **Performance Problems**: Significant latency or resource issues
-
-### Success Metrics
-
-**Framework succeeds when:**
-- 100% of commits pass all tests on first attempt
-- 90%+ of development tasks handled autonomously
-- Zero production bugs from AI-generated code
-- Code quality metrics consistently improve
-
-### Implementation References
-
-- `.agent-os/specs/2025-09-03-ai-assistant-quality-framework/` - Complete framework
-- `.agent-os/specs/2025-09-03-zero-failing-tests-policy/` - Testing requirements
-- `.agent-os/specs/2025-09-03-date-usage-standards/` - Date usage requirements
-- `.agent-os/specs/2025-09-03-commit-message-standards/` - Commit message requirements
-- `.agent-os/standards/best-practices.md` - Quality standards including date and commit protocols
-- `.agent-os/standards/tech-stack.md` - Technical requirements
-
-## 🧪 Test-First Documentation Updates (MANDATORY)
-
-**🚨 CRITICAL**: When implementing fixes or changes that affect documentation standards:
-
-1. **ALWAYS implement and test the solution FIRST**
-2. **VERIFY the fix works** (build docs, test in browser, confirm behavior)
-3. **ONLY THEN update standards documentation** to reflect the working solution
-
-### Common Violation Pattern (AVOID)
-```
-❌ User: "should we update the standards before verifying it works?"
-❌ Assistant: Updates MERMAID_STANDARD.md before testing the CSS fix
-```
-
-### Correct Pattern (FOLLOW)
-```
-✅ Assistant: Implements CSS fix → Tests build → Verifies in browser → Updates standards
-✅ User feedback: "verify approach before updating standards" → Assistant adds Agent OS rule
-```
-
-### Why This Matters
-- **Prevents Documentation Drift**: Standards should reflect working solutions, not theoretical approaches
-- **Ensures Accuracy**: Documentation matches actual implementation behavior
-- **Reduces Confusion**: Developers follow proven patterns, not untested theories
-- **Quality Assurance**: Standards become reliable reference material
-
-### Enforcement
-- AI assistants MUST test solutions before documenting them as standards
-- Standards updates should include verification steps and test results
-- When in doubt, implement → test → document (never document → implement)
+### **🚨 MANDATORY FIRST STEP: COMPLIANCE CHECKING**
+**EVERY AI assistant interaction MUST begin with:**
+- **📋 [Compliance Checking](/.agent-os/standards/ai-assistant/compliance-checking.md)** - Check existing standards FIRST
+- **🔍 Verify established patterns** before proceeding with any task
+- **📚 Review relevant Agent OS standards** for the specific task type
+
+### **🧪 TEST GENERATION (MANDATORY FRAMEWORK)**
+**ALL test generation MUST follow V3 RESTORED framework:**
+- **📋 [Test Generation Framework Hub](/.agent-os/standards/ai-assistant/code-generation/tests/README.md)** - **START HERE**
+- **🚨 CRITICAL: [V3 Framework Core](/.agent-os/standards/ai-assistant/code-generation/tests/v3/framework-core.md)** - **RESTORED 80%+ SUCCESS RATE**
+- **⚡ [Quick Navigation](/.agent-os/standards/ai-assistant/code-generation/tests/v3/phase-navigation.md)** - **Phase checklist**
+- **🛤️ Path-Specific Guidance**: [Unit (Mock Everything)](/.agent-os/standards/ai-assistant/code-generation/tests/v3/paths/unit-path.md) | [Integration (Real APIs)](/.agent-os/standards/ai-assistant/code-generation/tests/v3/paths/integration-path.md)
+- **🔍 Deep Analysis**: AST parsing, attribute detection, signature extraction (Phase 1)
+- **🚨 MANDATORY Acknowledgment Contract** - Required before proceeding
+- **🎯 Quality Targets**: 100% pass rate + 90%+ coverage + 10.0/10 Pylint + 0 MyPy errors
+- **🚨 AUTOMATED VALIDATION**: Phase 8 requires `validate-test-quality.py` exit code 0
+- **⚠️ V2 DEPRECATED**: V2 caused 22% pass rate failure - use V3 only
+
+### **🏗️ PRODUCTION CODE GENERATION (MANDATORY FRAMEWORK)**
+**ALL production code generation MUST follow comprehensive framework:**
+- **📋 [Production Code Framework Hub](/.agent-os/standards/ai-assistant/code-generation/production/README.md)** - **START HERE**
+- **⚡ NEW: [Modular Framework v2](/.agent-os/standards/ai-assistant/code-generation/production/v2/framework-core.md)** - **OPTIMIZED FOR AI CONSUMPTION**
+- **🔀 Complexity-Based Paths**: Simple Functions → Complex Functions → Classes
+- **📋 Template-Driven Generation** with checkpoint gates
+- **🎯 Quality Targets**: 10.0/10 Pylint + 0 MyPy errors + Complete type annotations + Comprehensive docstrings
+
+### **🛡️ CRITICAL SAFETY RULES**
+- **🚨 [Git Safety Rules](/.agent-os/standards/ai-assistant/git-safety-rules.md)** - NEVER use forbidden operations
+- **🚫 Pre-commit hooks CANNOT be bypassed** - All quality checks must pass
+- **⚠️ Escalation required** for dangerous operations or uncertainty
+
+### **📋 COMPREHENSIVE STANDARDS HIERARCHY**
+- **🤖 [AI Assistant Standards Hub](/.agent-os/standards/ai-assistant/README.md)** - Complete AI guidelines
+- **📚 [Standards Overview](/.agent-os/standards/README.md)** - All development standards
+- **🎯 [Quality Framework](/.agent-os/standards/ai-assistant/quality-framework.md)** - Autonomous quality gates
+- **🔧 [Tech Stack Requirements](/.agent-os/standards/tech-stack.md)** - Python 3.11+, tool versions
+- **📖 [Best Practices](/.agent-os/standards/best-practices.md)** - Core development practices
+
+### **⚡ Quick Commands**
+- **Testing**: `tox -e [environment]` (never direct pytest)
+- **Linting**: `tox -e lint`
+- **Formatting**: `tox -e format`
+- **Environment**: Use `python-sdk` virtual environment
+
+### **🎯 Task-Specific Entry Points**
+- **Test Generation**: Follow `.agent-os/standards/ai-assistant/code-generation/tests/README.md`
+- **Production Code**: Follow `.agent-os/standards/ai-assistant/code-generation/production/README.md`
+- **Documentation**: Follow `.agent-os/standards/documentation-templates.md`
+- **Git Operations**: Check `.agent-os/standards/ai-assistant/git-safety-rules.md` first
+
+## 📚 **For Complete Details**
+**See Agent OS documentation in `.agent-os/` - this file serves as forwarding entry point only.**
+
+## 🚨 **CRITICAL REMINDER**
+**AI assistants MUST:**
+1. **Check compliance FIRST** - Always verify existing standards before proceeding
+2. **Follow mandatory frameworks** - Test generation and production code frameworks are NON-NEGOTIABLE
+3. **Never bypass safety rules** - Git safety and quality gates cannot be circumvented
+4. **Use Agent OS hierarchy** - Complete standards available in `.agent-os/standards/`

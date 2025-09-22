@@ -1,7 +1,6 @@
 """Caching utilities for HoneyHive."""
 
 import hashlib
-import json
 import threading
 import time
 from dataclasses import dataclass
@@ -377,8 +376,11 @@ class Cache:
         self.close()
 
 
-class FunctionCache:
-    """Function result cache decorator."""
+class FunctionCache:  # pylint: disable=too-few-public-methods
+    """Function result cache decorator.
+
+    Note: too-few-public-methods disabled - Decorator classes need __init__/__call__.
+    """
 
     def __init__(
         self,
@@ -427,8 +429,11 @@ class FunctionCache:
         return cached_func
 
 
-class AsyncFunctionCache:
-    """Async function result cache decorator."""
+class AsyncFunctionCache:  # pylint: disable=too-few-public-methods
+    """Async function result cache decorator.
+
+    Note: too-few-public-methods disabled - Decorator classes need __init__/__call__.
+    """
 
     def __init__(
         self,
@@ -477,12 +482,181 @@ class AsyncFunctionCache:
         return cached_func
 
 
-# Global cache instance
+# Multi-Instance Cache Management
+# Note: Global cache functions maintained for CLI compatibility only
+
+
+class CacheManager:
+    """Multi-instance cache manager for tracer instances.
+
+    This class provides per-instance cache management that aligns with
+    the multi-instance tracer architecture. Each tracer instance can
+    have its own isolated cache instances.
+    """
+
+    def __init__(self, instance_id: str, config: Optional[CacheConfig] = None):
+        """Initialize cache manager for a specific instance.
+
+        Args:
+            instance_id: Unique identifier for the instance (e.g., tracer ID)
+            config: Cache configuration
+        """
+        self.instance_id = instance_id
+        self.config = config or CacheConfig()
+        self._caches: Dict[str, Cache] = {}
+
+    def get_cache(self, cache_name: str, config: Optional[CacheConfig] = None) -> Cache:
+        """Get or create a named cache for this instance.
+
+        Args:
+            cache_name: Name of the cache (e.g., 'attributes', 'resources')
+            config: Optional cache-specific configuration
+
+        Returns:
+            Cache instance for the specified name
+        """
+        if cache_name not in self._caches:
+            cache_config = config or self.config
+            self._caches[cache_name] = Cache(cache_config)
+
+        return self._caches[cache_name]
+
+    def close_all(self) -> None:
+        """Close all caches managed by this instance."""
+        for cache in self._caches.values():
+            cache.close()
+        self._caches.clear()
+
+    def get_stats(self) -> Dict[str, Dict[str, Any]]:
+        """Get statistics for all caches in this instance.
+
+        Returns:
+            Dictionary mapping cache names to their statistics
+        """
+        return {name: cache.get_stats() for name, cache in self._caches.items()}
+
+    # Domain-specific cache methods for tracer functionality
+    def get_config_value(
+        self,
+        config_hash: str,
+        key: str,
+        default: Any,
+        resolver_func: Callable[[], Any],
+    ) -> Any:
+        """Get cached configuration value or resolve and cache it.
+
+        Args:
+            config_hash: Hash of the configuration object
+            key: Configuration key
+            default: Default value if not found
+            resolver_func: Function to resolve the value if not cached
+
+        Returns:
+            Cached or resolved configuration value
+        """
+        cache = self.get_cache(
+            "config",
+            CacheConfig(
+                max_size=100,
+                default_ttl=900.0,  # 15-minute TTL for config stability
+                cleanup_interval=180.0,
+            ),
+        )
+
+        cache_key = f"config:{config_hash}:{key}:{hash(str(default))}"
+
+        # Check cache first
+        if cached := cache.get(cache_key):
+            return cached
+
+        # Resolve and cache
+        try:
+            value = resolver_func()
+            cache.set(cache_key, value)
+            return value
+        except Exception:
+            return default
+
+    def get_cached_attributes(
+        self,
+        attr_key: str,
+        normalizer_func: Callable[[], Any],
+    ) -> Any:
+        """Get cached normalized attributes or normalize and cache them.
+
+        Args:
+            attr_key: Attribute cache key
+            normalizer_func: Function to normalize the attribute if not cached
+
+        Returns:
+            Cached or normalized attribute value
+        """
+        cache = self.get_cache(
+            "attributes",
+            CacheConfig(
+                max_size=1000,  # High frequency operations
+                default_ttl=300.0,  # 5-minute TTL
+                cleanup_interval=60.0,
+            ),
+        )
+
+        # Check cache first
+        if cached := cache.get(attr_key):
+            return cached
+
+        # Normalize and cache
+        try:
+            value = normalizer_func()
+            cache.set(attr_key, value)
+            return value
+        except Exception:
+            return None
+
+    def get_cached_resources(
+        self,
+        resource_key: str,
+        detector_func: Callable[[], Dict[str, Any]],
+    ) -> Dict[str, Any]:
+        """Get cached resource detection results or detect and cache them.
+
+        Args:
+            resource_key: Resource cache key
+            detector_func: Function to detect resources if not cached
+
+        Returns:
+            Cached or detected resource information
+        """
+        cache = self.get_cache(
+            "resources",
+            CacheConfig(
+                max_size=50,  # Lower frequency, stable data
+                default_ttl=3600.0,  # 1-hour TTL for system info
+                cleanup_interval=300.0,
+            ),
+        )
+
+        # Check cache first
+        if cached := cache.get(resource_key):
+            return cached  # type: ignore[no-any-return]
+
+        # Detect and cache
+        try:
+            resources = detector_func()
+            cache.set(resource_key, resources)
+            return resources
+        except Exception:
+            return {}
+
+
+# Legacy global cache support for CLI and backward compatibility
 _global_cache: Optional[Cache] = None
 
 
 def get_global_cache(config: Optional[CacheConfig] = None) -> Cache:
     """Get or create global cache instance.
+
+    Note: This function is maintained for CLI and backward compatibility.
+    For tracer instances, use CacheManager for proper multi-instance isolation.
 
     Args:
         config: Cache configuration
@@ -490,7 +664,7 @@ def get_global_cache(config: Optional[CacheConfig] = None) -> Cache:
     Returns:
         Global cache instance
     """
-    global _global_cache
+    global _global_cache  # pylint: disable=global-statement
 
     if _global_cache is None:
         _global_cache = Cache(config)
@@ -499,8 +673,11 @@ def get_global_cache(config: Optional[CacheConfig] = None) -> Cache:
 
 
 def close_global_cache() -> None:
-    """Close global cache instance."""
-    global _global_cache
+    """Close global cache instance.
+
+    Note: This function is maintained for CLI and backward compatibility.
+    """
+    global _global_cache  # pylint: disable=global-statement
 
     if _global_cache is not None:
         _global_cache.close()

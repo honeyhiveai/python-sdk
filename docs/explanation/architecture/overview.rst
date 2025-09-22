@@ -154,6 +154,22 @@ Enables:
 - Workflow-specific configuration
 - Team-based access control
 
+**Provider Strategy Intelligence**
+
+HoneyHive automatically detects the OpenTelemetry environment and chooses the optimal integration strategy:
+
+- **Main Provider**: When no functioning provider exists (NoOp/Proxy/Empty TracerProvider)
+  
+  - HoneyHive becomes the global TracerProvider
+  - All instrumentor spans (OpenAI, Anthropic, etc.) flow through HoneyHive
+  - Prevents span loss from empty providers
+  
+- **Independent Provider**: When a functioning provider already exists
+  
+  - HoneyHive creates an isolated TracerProvider
+  - Maintains complete separation from existing observability systems
+  - Ensures no interference with existing tracing infrastructure
+
 See Also
 --------
 

@@ -8,23 +8,24 @@ The registry uses weak references to prevent memory leaks and automatically
 cleans up when tracer instances are garbage collected.
 """
 
+# pylint: disable=global-statement
+# Justification: This module implements a global tracer registry for multi-instance
+# support. Global statements are necessary to manage registry state (_TRACER_REGISTRY,
+# _DEFAULT_TRACER) and ensure thread-safe operations across the application lifecycle.
+
+# pylint: disable=not-callable
+# Note: _DEFAULT_TRACER is a weakref.ref object which is callable, but pylint
+# doesn't recognize this. Calling _DEFAULT_TRACER() either returns the original
+# tracer object or None if it was garbage collected.
+
 import weakref
-from typing import TYPE_CHECKING, Dict, Optional
+from typing import TYPE_CHECKING, Dict, List, Optional
+
+from opentelemetry import baggage, context
+from opentelemetry.context import Context
 
 if TYPE_CHECKING:
-    from opentelemetry import baggage, context
-    from opentelemetry.context import Context
-
-try:
-    from opentelemetry import baggage, context
-    from opentelemetry.context import Context
-
-    OTEL_AVAILABLE = True
-except ImportError:
-    OTEL_AVAILABLE = False
-
-if TYPE_CHECKING:
-    from .otel_tracer import HoneyHiveTracer
+    from .core import HoneyHiveTracer
 
 # Global tracer registry using weak references for automatic cleanup
 _TRACER_REGISTRY: "weakref.WeakValueDictionary[str, HoneyHiveTracer]" = (
@@ -33,6 +34,9 @@ _TRACER_REGISTRY: "weakref.WeakValueDictionary[str, HoneyHiveTracer]" = (
 
 # Default tracer for global fallback (backward compatibility)
 _DEFAULT_TRACER: "Optional[weakref.ReferenceType[HoneyHiveTracer]]" = None
+
+# PYTEST-XDIST COMPATIBLE: Disabled cross-process locks
+# _registry_lock = threading.Lock()
 
 
 def register_tracer(tracer: "HoneyHiveTracer") -> str:
@@ -45,11 +49,12 @@ def register_tracer(tracer: "HoneyHiveTracer") -> str:
         Unique tracer ID for use in baggage context
 
     Example:
-        >>> tracer = HoneyHiveTracer(api_key="your-api-key")  # project derived from API key
+        >>> tracer = HoneyHiveTracer(api_key="your-api-key")  # project from API key
         >>> tracer_id = register_tracer(tracer)
         >>> print(f"Registered tracer with ID: {tracer_id}")
     """
     tracer_id = str(id(tracer))
+    # PYTEST-XDIST COMPATIBLE: No cross-process locks needed
     _TRACER_REGISTRY[tracer_id] = tracer
     return tracer_id
 
@@ -95,8 +100,6 @@ def get_tracer_from_baggage(
         >>> if tracer:
         ...     print(f"Found tracer for project: {tracer.project}")
     """
-    if not OTEL_AVAILABLE:
-        return None
 
     try:
         ctx = ctx or context.get_current()
@@ -123,7 +126,7 @@ def set_default_tracer(tracer: "Optional[HoneyHiveTracer]") -> None:
                 or None to clear the default
 
     Example:
-        >>> default_tracer = HoneyHiveTracer(api_key="your-api-key")  # project derived from API key
+        >>> default_tracer = HoneyHiveTracer(api_key="your-api-key")  # auto project
         >>> set_default_tracer(default_tracer)
         >>>
         >>> # Now @trace will use default_tracer when no context available
@@ -133,6 +136,7 @@ def set_default_tracer(tracer: "Optional[HoneyHiveTracer]") -> None:
     """
     global _DEFAULT_TRACER
 
+    # PYTEST-XDIST COMPATIBLE: No cross-process locks needed
     if tracer is None:
         _DEFAULT_TRACER = None
     else:
@@ -155,14 +159,14 @@ def get_default_tracer() -> "Optional[HoneyHiveTracer]":
     """
     global _DEFAULT_TRACER
 
+    # PYTEST-XDIST COMPATIBLE: No cross-process locks needed
     if _DEFAULT_TRACER is not None:
         # Weak reference - check if still alive
         tracer = _DEFAULT_TRACER()
         if tracer is not None:
             return tracer
-        else:
-            # Tracer was garbage collected, clear the reference
-            _DEFAULT_TRACER = None
+        # Tracer was garbage collected, clear the reference
+        _DEFAULT_TRACER = None
 
     return None
 
@@ -213,6 +217,19 @@ def discover_tracer(
 
     # No tracer found
     return None
+
+
+def get_all_tracers() -> List["HoneyHiveTracer"]:
+    """Get all registered tracers.
+
+    Returns:
+        List of all registered HoneyHiveTracer instances
+
+    Example:
+        >>> tracers = get_all_tracers()
+        >>> print(f"Found {len(tracers)} active tracers")
+    """
+    return list(_TRACER_REGISTRY.values())
 
 
 def get_registry_stats() -> Dict[str, int]:

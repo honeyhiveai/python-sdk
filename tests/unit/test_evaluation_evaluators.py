@@ -1,5 +1,14 @@
 """Tests for HoneyHive evaluation module."""
 
+# pylint: disable=too-many-lines,protected-access,redefined-outer-name,too-few-public-methods
+# pylint: disable=missing-class-docstring,import-outside-toplevel,broad-exception-raised
+# pylint: disable=unused-argument,unused-import,unused-variable
+# Justification: Comprehensive test coverage requires extensive test cases, testing
+# private methods requires protected access, pytest fixtures redefine outer names by
+# design, test classes may have few methods, test helper classes don't need docstrings,
+# dynamic imports needed for testing, test exceptions can be broad, and test helper
+# functions may not use all arguments. This file will be dramatically changed in future.
+
 from typing import Any, Callable, TypeVar, cast
 from unittest.mock import Mock, patch
 
@@ -223,8 +232,8 @@ class TestBaseEvaluator:
 class TestCustomEvaluator:
     """Test custom evaluator functionality."""
 
-    class TestCustomEvaluator(BaseEvaluator):
-        """Test custom evaluator implementation."""
+    class CustomEvaluatorImpl(BaseEvaluator):
+        """Custom evaluator implementation for testing."""
 
         def evaluate(
             self, inputs: dict, outputs: dict, ground_truth=None, **kwargs: Any
@@ -236,7 +245,7 @@ class TestCustomEvaluator:
 
     def test_custom_evaluator_usage(self) -> None:
         """Test using a custom evaluator."""
-        evaluator = self.TestCustomEvaluator("custom_test")
+        evaluator = self.CustomEvaluatorImpl("custom_test")
 
         result = evaluator.evaluate({"expected": "hello"}, {"response": "hello"})
 
@@ -472,7 +481,7 @@ class TestCreateEvaluationRun:
 
         # Test the function
         result = create_evaluation_run(
-            name="test-run", project="test-project", results=results
+            name="test-run", project="test-project", _results=results
         )
 
         assert result is not None
@@ -489,7 +498,7 @@ class TestCreateEvaluationRun:
         results = [EvaluationResult(score=0.8, metrics={"accuracy": 0.8})]
 
         result = create_evaluation_run(
-            name="test-run", project="test-project", results=results
+            name="test-run", project="test-project", _results=results
         )
 
         assert result is None
@@ -504,7 +513,7 @@ class TestCreateEvaluationRun:
         results = [EvaluationResult(score=0.8, metrics={"accuracy": 0.8})]
 
         result = create_evaluation_run(
-            name="test-run", project="test-project", results=results
+            name="test-run", project="test-project", _results=results
         )
 
         assert result is None
@@ -653,7 +662,7 @@ class TestEvaluationResult:
         result = EvaluationResult(score=0.5, metrics={})
 
         assert result.score == 0.5
-        assert result.metrics == {}
+        assert not result.metrics
         assert result.feedback is None
         assert result.metadata is None
 
@@ -818,7 +827,7 @@ class TestThreadingFeatures:
             "exact_match",
             "f1_score",
             "length",
-            TestCustomEvaluator.TestCustomEvaluator("custom"),
+            TestCustomEvaluator.CustomEvaluatorImpl("custom"),
         ]
 
         inputs = {"question": "What is 2+2?", "expected": "4"}
@@ -986,7 +995,7 @@ class TestThreadingFeatures:
         outputs = {"response": "test"}
 
         # Test with max_workers=2
-        results = evaluate_with_evaluators(
+        _results = evaluate_with_evaluators(
             evaluators=evaluators,
             inputs=inputs,
             outputs=outputs,
@@ -1051,7 +1060,7 @@ class TestThreadingFeatures:
             evaluators=evaluators, dataset=dataset, max_workers=4, run_concurrently=True
         )
 
-        assert results == []
+        assert not results
 
     def test_single_item_dataset_threading(self):
         """Test threading with single item dataset (should not use threading)."""

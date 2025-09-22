@@ -7,11 +7,10 @@ that real AI frameworks might employ.
 
 import threading
 import time
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List
 
 from opentelemetry import trace
 from opentelemetry.sdk.trace import TracerProvider
-from opentelemetry.trace import Span
 
 
 class MockFrameworkA:
@@ -29,7 +28,7 @@ class MockFrameworkA:
         self.tracer = trace.get_tracer(f"{name}.tracer")
         self._operations: List[Dict[str, Any]] = []
 
-    def execute_operation(self, operation_name: str, **kwargs) -> Dict[str, Any]:
+    def execute_operation(self, operation_name: str, **kwargs: Any) -> Dict[str, Any]:
         """Execute a traced operation."""
         with self.tracer.start_as_current_span(f"{self.name}.{operation_name}") as span:
             span.set_attribute("framework.name", self.name)
@@ -61,7 +60,7 @@ class MockFrameworkA:
         """Get list of executed operations."""
         return self._operations.copy()
 
-    def reset(self):
+    def reset(self) -> None:
         """Reset operation history."""
         self._operations.clear()
 
@@ -85,13 +84,13 @@ class MockFrameworkB:
             # Start with whatever provider is currently set
             self.tracer = trace.get_tracer(f"{name}.tracer")
 
-    def _setup_provider(self):
+    def _setup_provider(self) -> None:
         """Set up the real TracerProvider."""
         self.provider = TracerProvider()
         trace.set_tracer_provider(self.provider)
         self.tracer = trace.get_tracer(f"{self.name}.tracer")
 
-    def initialize(self):
+    def initialize(self) -> None:
         """Initialize the framework (potentially setting up provider)."""
         if self.delay_provider_setup:
             self._setup_provider()
@@ -136,7 +135,7 @@ class MockFrameworkB:
         """Get list of executed operations."""
         return self._operations.copy()
 
-    def reset(self):
+    def reset(self) -> None:
         """Reset operation history."""
         self._operations.clear()
 
@@ -218,7 +217,7 @@ class MockFrameworkC:
         """Get list of executed operations."""
         return self._operations.copy()
 
-    def reset(self):
+    def reset(self) -> None:
         """Reset operation history."""
         self._operations.clear()
 
@@ -231,12 +230,12 @@ class ConcurrentFrameworkManager:
     operations simultaneously.
     """
 
-    def __init__(self):
+    def __init__(self) -> None:
         self.frameworks: Dict[str, Any] = {}
         self.results: List[Dict[str, Any]] = []
         self._lock = threading.Lock()
 
-    def add_framework(self, name: str, framework: Any):
+    def add_framework(self, name: str, framework: Any) -> None:
         """Add a framework to the manager."""
         self.frameworks[name] = framework
 
@@ -257,7 +256,7 @@ class ConcurrentFrameworkManager:
         """
         threads = []
 
-        def execute_operation(op_spec: Dict[str, Any]):
+        def execute_operation(op_spec: Dict[str, Any]) -> None:
             try:
                 framework = self.frameworks[op_spec["framework"]]
                 method = getattr(framework, op_spec["method"])
@@ -308,7 +307,7 @@ class ConcurrentFrameworkManager:
                 all_operations[name] = framework.get_operations()
         return all_operations
 
-    def reset_all(self):
+    def reset_all(self) -> None:
         """Reset all frameworks and results."""
         self.results.clear()
         for framework in self.frameworks.values():

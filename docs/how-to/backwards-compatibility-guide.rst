@@ -35,7 +35,7 @@ The complete-refactor branch supports **every parameter** from the original main
 
 **Core Parameters:**
 - ``api_key`` - HoneyHive API key
-- ``project`` - Project name (auto-derived if not provided)
+- ``project`` - Project name (required field)
 - ``session_name`` - Session name for trace grouping
 - ``source`` - Environment identifier (default changed to "dev")
 
@@ -83,7 +83,7 @@ Migration Examples
    # Same parameters, enhanced functionality
    tracer = HoneyHiveTracer(
        api_key="hh_your_key",
-       project="my-project",                    # Auto-derived if not provided
+       project="my-project",                    # Required field
        session_name="evaluation-session",
        source="production",
        server_url="https://custom.honeyhive.ai", # New: overrides HH_API_URL
@@ -216,7 +216,7 @@ All environment variables from main branch continue to work, plus new ones:
 .. code-block:: bash
 
    export HH_API_KEY="hh_your_key"
-   export HH_PROJECT="my-project"        # Auto-derived if not set
+   export HH_PROJECT="my-project"        # Required field
    export HH_SOURCE="production"
    export HH_SESSION_NAME="prod-session"
    export HH_DISABLE_HTTP_TRACING="true"

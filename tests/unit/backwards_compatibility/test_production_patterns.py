@@ -54,11 +54,11 @@ tracer = HoneyHiveTracer(test_mode=True)
 
 # Verify all Docker-injected values are used
 assert tracer.api_key == "docker-injected-key"
-assert tracer.client.base_url == "https://docker.honeyhive.internal"
+assert tracer.client.server_url == "https://docker.honeyhive.internal"
 assert tracer.project == "docker-project"
 # Source may be overridden by tracer logic in integration environment
 assert tracer.source in ["production", "dev"]  # Allow for tracer override logic
-assert tracer.disable_http_tracing is True
+assert tracer.config.disable_http_tracing is True
 
 print("SUCCESS: Docker environment pattern works")
 """
@@ -106,7 +106,7 @@ tracer = HoneyHiveTracer(test_mode=True)
 
 # Verify K8s-injected values work
 assert tracer.api_key == "k8s-secret-key"
-assert tracer.client.base_url == "https://honeyhive.namespace.svc.cluster.local"
+assert tracer.client.server_url == "https://honeyhive.namespace.svc.cluster.local"
 assert tracer.project == "k8s-project"
 assert tracer.source in ["kubernetes", "dev"]  # Allow for tracer override logic
 
@@ -158,7 +158,7 @@ tracer = HoneyHiveTracer(test_mode=True)
 assert tracer.api_key == "lambda-key"
 assert tracer.project == "lambda-project"
 assert tracer.source in ["aws-lambda", "dev"]  # Allow for tracer override logic
-assert tracer.disable_http_tracing is True
+assert tracer.config.disable_http_tracing is True
 
 print("SUCCESS: Lambda pattern works")
 """
@@ -207,7 +207,7 @@ tracer = HoneyHiveTracer(test_mode=True)
 assert tracer.api_key == "cloudrun-key"
 assert tracer.project == "cloudrun-project"
 assert tracer.source in ["google-cloud-run", "dev"]  # Allow for tracer override logic
-assert tracer.client.base_url == "https://honeyhive-internal.run.app"
+assert tracer.client.server_url == "https://honeyhive-internal.run.app"
 
 print("SUCCESS: Cloud Run pattern works")
 """
@@ -256,7 +256,7 @@ tracer = HoneyHiveTracer(test_mode=True)
 assert tracer.api_key == "azure-func-key"
 assert tracer.project == "azure-functions-project"
 assert tracer.source in ["azure-functions", "dev"]  # Allow for tracer override logic
-assert tracer.disable_http_tracing is True
+assert tracer.config.disable_http_tracing is True
 
 print("SUCCESS: Azure Functions pattern works")
 """
@@ -320,7 +320,7 @@ try:
     assert tracer.api_key == "dev-api-key"
     assert tracer.project == "local-dev-project"
     assert tracer.source in ["development", "dev"]  # Allow for tracer override logic
-    assert tracer.client.base_url == "https://dev.honeyhive.local"
+    assert tracer.client.server_url == "https://dev.honeyhive.local"
     assert tracer.test_mode is True
 
     print("SUCCESS: Development .env pattern works")

@@ -6,28 +6,184 @@ Configuration Options Reference
    
    This document provides detailed specifications for all configuration options available in the HoneyHive SDK.
 
-The HoneyHive SDK can be configured through various methods:
+.. important::
+   **🆕 NEW: Hybrid Configuration System**
+   
+   The HoneyHive SDK now supports a **hybrid configuration approach** that combines modern Pydantic config objects with full backwards compatibility. You can use either approach or mix them together.
 
-- Environment variables
-- Configuration files
-- Direct initialization parameters
+The HoneyHive SDK supports multiple configuration approaches:
+
+**🎯 Recommended Approaches (Choose One)**:
+
+1. **Modern Pydantic Config Objects** (Recommended for new code)
+2. **Traditional Parameter Passing** (Backwards compatible)
+3. **Mixed Approach** (Config objects + parameter overrides)
+
+**📚 Additional Configuration Sources**:
+
+- Environment variables (``HH_*`` prefixed)
+- Configuration files (YAML/JSON)
 - CLI options
 
 Configuration Methods
 ---------------------
 
-The SDK supports multiple configuration approaches, listed in order of precedence (highest to lowest):
+.. tabs::
 
-1. **Environment Variables** - ``HH_*`` environment variables (for backwards compatibility)
-2. **Direct Parameters** - Values passed directly to functions/classes
-3. **Configuration Files** - YAML/JSON configuration files  
+   .. tab:: 🆕 Modern Config Objects (Recommended)
+
+      **Type-safe, validated configuration with IDE support:**
+
+      .. code-block:: python
+
+         from honeyhive import HoneyHiveTracer
+         from honeyhive.config.models import TracerConfig, SessionConfig
+         
+         # Create configuration objects
+         config = TracerConfig(
+             api_key="hh_1234567890abcdef",
+             project="my-llm-project",
+             source="production",
+             verbose=True,
+             disable_http_tracing=True,
+             test_mode=False
+         )
+         
+         session_config = SessionConfig(
+             session_name="user-chat-session",
+             inputs={"user_id": "123", "query": "Hello world"}
+         )
+         
+         # Initialize with config objects
+         tracer = HoneyHiveTracer(
+             config=config,
+             session_config=session_config
+         )
+
+      **Benefits**: Type safety, IDE autocomplete, validation, reduced argument count
+
+   .. tab:: 🔄 Traditional Parameters (Backwards Compatible)
+
+      **Existing code continues to work exactly as before:**
+
+      .. code-block:: python
+
+         from honeyhive import HoneyHiveTracer
+         
+         # This continues to work exactly as before
+         tracer = HoneyHiveTracer(
+             api_key="hh_1234567890abcdef",
+             project="my-llm-project",
+             session_name="user-chat-session",
+             source="production",
+             verbose=True,
+             disable_http_tracing=True,
+             test_mode=False
+         )
+
+      **Benefits**: No code changes required, familiar pattern
+
+   .. tab:: 🔀 Mixed Approach
+
+      **Config objects with parameter overrides (individual parameters take precedence):**
+
+      .. code-block:: python
+
+         from honeyhive import HoneyHiveTracer
+         from honeyhive.config.models import TracerConfig
+         
+         # Base configuration
+         config = TracerConfig(
+             api_key="hh_1234567890abcdef",
+             project="my-llm-project",
+             source="production"
+         )
+         
+         # Individual parameters override config values
+         tracer = HoneyHiveTracer(
+             config=config,
+             verbose=True,  # Overrides config.verbose
+             session_name="override-session"  # Additional parameter
+         )
+
+      **Benefits**: Flexible configuration with selective overrides
+
+Configuration Precedence
+-------------------------
+
+The SDK follows this precedence order (highest to lowest):
+
+1. **Individual Parameters** - Direct parameters to ``HoneyHiveTracer()``
+2. **Config Object Values** - Values from ``TracerConfig`` objects
+3. **Environment Variables** - ``HH_*`` environment variables
 4. **Default Values** - Built-in SDK defaults
 
 .. note::
-   **API Key Precedence**: For backwards compatibility, ``HH_API_KEY`` environment variable takes precedence over the ``api_key`` constructor parameter. Other parameters follow standard precedence where constructor parameters override environment variables.
+   **API Key Special Case**: For backwards compatibility, ``HH_API_KEY`` environment variable takes precedence over both config objects and constructor parameters.
+
+.. seealso::
+   **📖 Complete Hybrid Configuration Guide**
+   
+   For detailed examples, advanced patterns, and comprehensive usage scenarios, see :doc:`hybrid-config-approach`.
+
+Configuration Classes
+-----------------------
+
+.. py:class:: honeyhive.config.models.TracerConfig
+   :no-index:
+
+   **Primary configuration class for HoneyHive tracer initialization.**
+
+   Inherits common fields from :py:class:`BaseHoneyHiveConfig` and adds tracer-specific parameters.
+
+   **Key Features**:
+   
+   - Type-safe Pydantic validation
+   - Environment variable loading via ``AliasChoices``
+   - Graceful degradation on invalid values
+   - IDE autocomplete support
+
+   **Example**:
+
+   .. code-block:: python
+
+      from honeyhive.config.models import TracerConfig
+      
+      config = TracerConfig(
+          api_key="hh_1234567890abcdef",
+          project="my-llm-project",
+          source="production",
+          verbose=True
+      )
+
+.. py:class:: honeyhive.config.models.BaseHoneyHiveConfig
+   :no-index:
+
+   **Base configuration class with common fields shared across all HoneyHive components.**
+
+   **Common Fields**: ``api_key``, ``project``, ``test_mode``, ``verbose``
+
+.. py:class:: honeyhive.config.models.SessionConfig
+   :no-index:
+
+   **Session-specific configuration for tracer initialization.**
+
+   **Key Fields**: ``session_name``, ``inputs``, ``outputs``, ``metadata``
+
+.. py:class:: honeyhive.config.models.APIClientConfig
+   :no-index:
+
+   **Configuration for HoneyHive API client settings.**
+
+.. py:class:: honeyhive.config.models.HTTPClientConfig
+   :no-index:
+
+   **HTTP client configuration including connection pooling and retry settings.**
 
 Core Configuration Options
 --------------------------
+
+The following options are available through both traditional parameters and config objects:
 
 Authentication
 ~~~~~~~~~~~~~~
@@ -47,6 +203,36 @@ Authentication
    **Example**: ``"hh_1234567890abcdef..."``
    
    **Security**: Keep this secure and never commit to code repositories
+
+   **Usage Examples**:
+
+   .. tabs::
+
+      .. tab:: Config Object
+
+         .. code-block:: python
+
+            from honeyhive.config.models import TracerConfig
+            
+            config = TracerConfig(api_key="hh_1234567890abcdef")
+            tracer = HoneyHiveTracer(config=config)
+
+      .. tab:: Traditional Parameter
+
+         .. code-block:: python
+
+            tracer = HoneyHiveTracer(api_key="hh_1234567890abcdef")
+
+      .. tab:: Environment Variable
+
+         .. code-block:: bash
+
+            export HH_API_KEY="hh_1234567890abcdef"
+
+         .. code-block:: python
+
+            # API key loaded automatically from environment
+            tracer = HoneyHiveTracer(project="my-project")
 
 .. py:data:: base_url
    :type: str
@@ -70,11 +256,11 @@ Project Configuration
    :type: str
    :value: None
 
-   **Description**: **[Deprecated]** Default project name for operations. Ignored - project derived from API key.
+   **Description**: Default project name for operations. Required field that must match your HoneyHive project.
    
-   **Environment Variable**: ``HH_PROJECT`` (deprecated)
+   **Environment Variable**: ``HH_PROJECT``
    
-   **Required**: No (deprecated - automatically derived)
+   **Required**: Yes
    
    **Format**: Alphanumeric with hyphens and underscores
    

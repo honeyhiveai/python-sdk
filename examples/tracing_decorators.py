@@ -16,7 +16,7 @@ from honeyhive.models import EventType
 tracer = HoneyHiveTracer.init(
     api_key="your-api-key",
     project="my-project",  # Required for OTLP tracing
-    source="development"
+    source="development",
 )
 
 print("🚀 HoneyHive Tracing Decorators Example")

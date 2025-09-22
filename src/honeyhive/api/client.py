@@ -1,12 +1,17 @@
 """HoneyHive API Client - HTTP client with retry support."""
 
+import asyncio
 import time
 from typing import Any, Dict, Optional
 
 import httpx
 
-from ..utils.config import config
-from ..utils.logger import get_logger
+from ..config.models.api_client import APIClientConfig
+
+# Removed get_config import - using hardcoded version for User-Agent
+from ..utils.connection_pool import ConnectionPool, PoolConfig
+from ..utils.error_handler import ErrorContext, get_error_handler
+from ..utils.logger import HoneyHiveLogger, get_logger, safe_log
 from ..utils.retry import RetryConfig
 from .configurations import ConfigurationsAPI
 from .datapoints import DatapointsAPI
@@ -63,43 +68,20 @@ class RateLimiter:
             time.sleep(0.1)  # Small delay
 
 
-class ConnectionPool:
-    """Connection pool for HTTP clients.
-
-    Manages HTTP connection limits and keepalive settings.
-    """
-
-    def __init__(self, max_connections: int = 10, max_keepalive: int = 20):
-        """Initialize the connection pool.
-
-        Args:
-            max_connections: Maximum number of connections in the pool
-            max_keepalive: Maximum number of keepalive connections
-        """
-        self.max_connections = max_connections
-        self.max_keepalive = max_keepalive
-
-    def get_limits(self) -> Dict[str, Any]:
-        """Get connection limits for httpx.
-
-        Returns:
-            Dictionary containing httpx connection limits configuration
-        """
-        return {
-            "limits": httpx.Limits(
-                max_connections=self.max_connections,
-                max_keepalive_connections=self.max_keepalive,
-            )
-        }
+# ConnectionPool is now imported from utils.connection_pool for full feature support
 
 
-class HoneyHive:
+class HoneyHive:  # pylint: disable=too-many-instance-attributes
     """Main HoneyHive API client."""
 
-    def __init__(
+    # Type annotations for instance attributes
+    logger: Optional[HoneyHiveLogger]
+
+    def __init__(  # pylint: disable=too-many-arguments
         self,
+        *,
         api_key: Optional[str] = None,
-        base_url: Optional[str] = None,
+        server_url: Optional[str] = None,
         timeout: Optional[float] = None,
         retry_config: Optional[RetryConfig] = None,
         rate_limit_calls: int = 100,
@@ -108,12 +90,13 @@ class HoneyHive:
         max_keepalive: int = 20,
         test_mode: Optional[bool] = None,
         verbose: bool = False,
+        tracer_instance: Optional[Any] = None,
     ):
         """Initialize the HoneyHive client.
 
         Args:
             api_key: API key for authentication
-            base_url: Base URL for the API
+            server_url: Server URL for the API
             timeout: Request timeout in seconds
             retry_config: Retry configuration
             rate_limit_calls: Maximum calls per time window
@@ -122,37 +105,58 @@ class HoneyHive:
             max_keepalive: Maximum keepalive connections
             test_mode: Enable test mode (None = use config default)
             verbose: Enable verbose logging for API debugging
+            tracer_instance: Optional tracer instance for multi-instance logging
         """
-        # Load fresh config to ensure environment variables are picked up
-        from ..utils.config import Config
+        # Load fresh config using per-instance configuration
 
-        fresh_config = Config()
+        # Create fresh config instance to pick up environment variables
+        fresh_config = APIClientConfig()
 
         self.api_key = api_key or fresh_config.api_key
-        if not self.api_key:
-            raise ValueError("API key is required")
+        # Allow initialization without API key for degraded mode
+        # API calls will fail gracefully if no key is provided
 
-        self.base_url = base_url or fresh_config.api_url
-        self.timeout = timeout or fresh_config.timeout
+        self.server_url = server_url or fresh_config.server_url
+        # pylint: disable=no-member
+        # fresh_config.http_config is HTTPClientConfig instance, not FieldInfo
+        self.timeout = timeout or fresh_config.http_config.timeout
         self.retry_config = retry_config or RetryConfig()
         self.test_mode = fresh_config.test_mode if test_mode is None else test_mode
         self.verbose = verbose or fresh_config.verbose
+        self.tracer_instance = tracer_instance
 
         # Initialize rate limiter and connection pool with configuration values
         self.rate_limiter = RateLimiter(
-            rate_limit_calls or fresh_config.rate_limit_calls,
-            rate_limit_window or fresh_config.rate_limit_window,
-        )
-        self.connection_pool = ConnectionPool(
-            max_connections or fresh_config.max_connections,
-            max_keepalive or fresh_config.max_keepalive_connections,
+            rate_limit_calls or fresh_config.http_config.rate_limit_calls,
+            rate_limit_window or fresh_config.http_config.rate_limit_window,
         )
 
-        # Initialize logger
-        if self.verbose:
-            self.logger = get_logger("honeyhive.client", level="DEBUG")
+        # ENVIRONMENT-AWARE CONNECTION POOL: Full features in production, \
+        # safe in pytest-xdist
+        # Uses feature-complete connection pool with automatic environment detection
+        self.connection_pool = ConnectionPool(
+            config=PoolConfig(
+                max_connections=max_connections
+                or fresh_config.http_config.max_connections,
+                max_keepalive_connections=max_keepalive
+                or fresh_config.http_config.max_keepalive_connections,
+                timeout=self.timeout,
+                keepalive_expiry=30.0,  # Default keepalive expiry
+                retries=self.retry_config.max_retries,
+                pool_timeout=10.0,  # Default pool timeout
+            )
+        )
+
+        # Initialize logger for independent use (when not used by tracer)
+        # When used by tracer, logging goes through tracer's safe_log
+        if not self.tracer_instance:
+            if self.verbose:
+                self.logger = get_logger("honeyhive.client", level="DEBUG")
+            else:
+                self.logger = get_logger("honeyhive.client")
         else:
-            self.logger = get_logger("honeyhive.client")
+            # When used by tracer, we don't need an independent logger
+            self.logger = None
 
         # Lazy initialization of HTTP clients
         self._sync_client: Optional[httpx.Client] = None
@@ -169,14 +173,41 @@ class HoneyHive:
         self.metrics = MetricsAPI(self)
         self.evaluations = EvaluationsAPI(self)
 
-        self.logger.info(
+        # Log initialization after all setup is complete
+        # Enhanced safe_log handles tracer_instance delegation and fallbacks
+        safe_log(
+            self,
+            "info",
             "HoneyHive client initialized",
             honeyhive_data={
-                "base_url": self.base_url,
+                "server_url": self.server_url,
                 "test_mode": self.test_mode,
                 "verbose": self.verbose,
             },
         )
+
+    def _log(
+        self,
+        level: str,
+        message: str,
+        honeyhive_data: Optional[Dict[str, Any]] = None,
+        **kwargs: Any,
+    ) -> None:
+        """Unified logging method using enhanced safe_log with automatic delegation.
+
+        Enhanced safe_log automatically handles:
+        - Tracer instance delegation when self.tracer_instance exists
+        - Independent logger usage when self.logger exists
+        - Graceful fallback for all other cases
+
+        Args:
+            level: Log level (debug, info, warning, error)
+            message: Log message
+            honeyhive_data: Optional structured data
+            **kwargs: Additional keyword arguments
+        """
+        # Enhanced safe_log handles all the delegation logic automatically
+        safe_log(self, level, message, honeyhive_data=honeyhive_data, **kwargs)
 
     @property
     def client_kwargs(self) -> Dict[str, Any]:
@@ -185,10 +216,15 @@ class HoneyHive:
             "headers": {
                 "Authorization": f"Bearer {self.api_key}",
                 "Content-Type": "application/json",
-                "User-Agent": f"HoneyHive-Python-SDK/{config.version}",
+                "User-Agent": "HoneyHive-Python-SDK/0.1.0rc2",
             },
             "timeout": self.timeout,
-            **self.connection_pool.get_limits(),
+            "limits": httpx.Limits(
+                max_connections=self.connection_pool.config.max_connections,
+                max_keepalive_connections=(
+                    self.connection_pool.config.max_keepalive_connections
+                ),
+            ),
         }
 
     @property
@@ -209,17 +245,17 @@ class HoneyHive:
         """Create full URL from path."""
         if path.startswith("http"):
             return path
-        return f"{self.base_url.rstrip('/')}/{path.lstrip('/')}"
+        return f"{self.server_url.rstrip('/')}/{path.lstrip('/')}"
 
     def get_health(self) -> Dict[str, Any]:
-        """Get API health status. Returns basic info since health endpoint may not exist."""
-        from ..utils.error_handler import ErrorContext, get_error_handler
+        """Get API health status. Returns basic info since health endpoint \
+        may not exist."""
 
         error_handler = get_error_handler()
         context = ErrorContext(
             operation="get_health",
             method="GET",
-            url=f"{self.base_url}/api/v1/health",
+            url=f"{self.server_url}/api/v1/health",
             client_name="HoneyHive",
         )
 
@@ -236,19 +272,19 @@ class HoneyHive:
         return {
             "status": "healthy",
             "message": "API client is operational",
-            "base_url": self.base_url,
+            "server_url": self.server_url,
             "timestamp": time.time(),
         }
 
     async def get_health_async(self) -> Dict[str, Any]:
-        """Get API health status asynchronously. Returns basic info since health endpoint may not exist."""
-        from ..utils.error_handler import ErrorContext, get_error_handler
+        """Get API health status asynchronously. Returns basic info since \
+        health endpoint may not exist."""
 
         error_handler = get_error_handler()
         context = ErrorContext(
             operation="get_health_async",
             method="GET",
-            url=f"{self.base_url}/api/v1/health",
+            url=f"{self.server_url}/api/v1/health",
             client_name="HoneyHive",
         )
 
@@ -265,7 +301,7 @@ class HoneyHive:
         return {
             "status": "healthy",
             "message": "API client is operational",
-            "base_url": self.base_url,
+            "server_url": self.server_url,
             "timestamp": time.time(),
         }
 
@@ -278,12 +314,29 @@ class HoneyHive:
         **kwargs: Any,
     ) -> httpx.Response:
         """Make a synchronous HTTP request with rate limiting and retry logic."""
+        # Enhanced debug logging for pytest hang investigation
+        self._log(
+            "debug",
+            "🔍 REQUEST START",
+            honeyhive_data={
+                "method": method,
+                "path": path,
+                "params": params,
+                "json": json,
+                "test_mode": self.test_mode,
+            },
+        )
+
         # Apply rate limiting
+        self._log("debug", "🔍 Applying rate limiting...")
         self.rate_limiter.wait_if_needed()
+        self._log("debug", "🔍 Rate limiting completed")
 
         url = self._make_url(path)
+        self._log("debug", f"🔍 URL created: {url}")
 
-        self.logger.debug(
+        self._log(
+            "debug",
             "Making request",
             honeyhive_data={
                 "method": method,
@@ -294,7 +347,8 @@ class HoneyHive:
         )
 
         if self.verbose:
-            self.logger.info(
+            self._log(
+                "info",
                 "API Request Details",
                 honeyhive_data={
                     "method": method,
@@ -307,8 +361,8 @@ class HoneyHive:
             )
 
         # Import error handler here to avoid circular imports
-        from ..utils.error_handler import ErrorContext, get_error_handler
 
+        self._log("debug", "🔍 Creating error handler...")
         error_handler = get_error_handler()
         context = ErrorContext(
             operation="request",
@@ -318,14 +372,22 @@ class HoneyHive:
             json_data=json,
             client_name="HoneyHive",
         )
+        self._log("debug", "🔍 Error handler created")
 
+        self._log("debug", "🔍 Starting HTTP request...")
         with error_handler.handle_operation(context):
+            self._log("debug", "🔍 Making sync_client.request call...")
             response = self.sync_client.request(
                 method, url, params=params, json=json, **kwargs
             )
+            self._log(
+                "debug",
+                f"🔍 HTTP request completed with status: {response.status_code}",
+            )
 
             if self.verbose:
-                self.logger.info(
+                self._log(
+                    "info",
                     "API Response Details",
                     honeyhive_data={
                         "method": method,
@@ -359,7 +421,8 @@ class HoneyHive:
 
         url = self._make_url(path)
 
-        self.logger.debug(
+        self._log(
+            "debug",
             "Making async request",
             honeyhive_data={
                 "method": method,
@@ -370,7 +433,8 @@ class HoneyHive:
         )
 
         if self.verbose:
-            self.logger.info(
+            self._log(
+                "info",
                 "API Request Details",
                 honeyhive_data={
                     "method": method,
@@ -383,7 +447,6 @@ class HoneyHive:
             )
 
         # Import error handler here to avoid circular imports
-        from ..utils.error_handler import ErrorContext, get_error_handler
 
         error_handler = get_error_handler()
         context = ErrorContext(
@@ -401,7 +464,8 @@ class HoneyHive:
             )
 
             if self.verbose:
-                self.logger.info(
+                self._log(
+                    "info",
                     "API Async Response Details",
                     honeyhive_data={
                         "method": method,
@@ -439,33 +503,30 @@ class HoneyHive:
             if delay > 0:
                 time.sleep(delay)
 
-            # Check if logging is still available before attempting to log
-            if hasattr(self.logger, "logger") and self.logger.logger.handlers:
-                try:
-                    self.logger.info(
-                        f"Retrying request (attempt {attempt})",
-                        honeyhive_data={
-                            "method": method,
-                            "path": path,
-                            "attempt": attempt,
-                        },
-                    )
+            # Use unified logging - safe_log handles shutdown detection automatically
+            self._log(
+                "info",
+                f"Retrying request (attempt {attempt})",
+                honeyhive_data={
+                    "method": method,
+                    "path": path,
+                    "attempt": attempt,
+                },
+            )
 
-                    if self.verbose:
-                        self.logger.info(
-                            "Retry Request Details",
-                            honeyhive_data={
-                                "method": method,
-                                "path": path,
-                                "attempt": attempt,
-                                "delay": delay,
-                                "params": params,
-                                "json": json,
-                            },
-                        )
-                except (ValueError, OSError, AttributeError):
-                    # Ignore logging errors during shutdown
-                    pass
+            if self.verbose:
+                self._log(
+                    "info",
+                    "Retry Request Details",
+                    honeyhive_data={
+                        "method": method,
+                        "path": path,
+                        "attempt": attempt,
+                        "delay": delay,
+                        "params": params,
+                        "json": json,
+                    },
+                )
 
             try:
                 response = self.sync_client.request(
@@ -477,7 +538,7 @@ class HoneyHive:
                     raise
                 continue
 
-        raise Exception("Max retries exceeded")
+        raise httpx.RequestError("Max retries exceeded")
 
     async def _retry_request_async(
         self,
@@ -493,37 +554,33 @@ class HoneyHive:
             if self.retry_config.backoff_strategy:
                 delay = self.retry_config.backoff_strategy.get_delay(attempt)
             if delay > 0:
-                import asyncio
 
                 await asyncio.sleep(delay)
 
-            # Check if logging is still available before attempting to log
-            if hasattr(self.logger, "logger") and self.logger.logger.handlers:
-                try:
-                    self.logger.info(
-                        f"Retrying async request (attempt {attempt})",
-                        honeyhive_data={
-                            "method": method,
-                            "path": path,
-                            "attempt": attempt,
-                        },
-                    )
+            # Use unified logging - safe_log handles shutdown detection automatically
+            self._log(
+                "info",
+                f"Retrying async request (attempt {attempt})",
+                honeyhive_data={
+                    "method": method,
+                    "path": path,
+                    "attempt": attempt,
+                },
+            )
 
-                    if self.verbose:
-                        self.logger.info(
-                            "Retry Async Request Details",
-                            honeyhive_data={
-                                "method": method,
-                                "path": path,
-                                "attempt": attempt,
-                                "delay": delay,
-                                "params": params,
-                                "json": json,
-                            },
-                        )
-                except (ValueError, OSError, AttributeError):
-                    # Ignore logging errors during shutdown
-                    pass
+            if self.verbose:
+                self._log(
+                    "info",
+                    "Retry Async Request Details",
+                    honeyhive_data={
+                        "method": method,
+                        "path": path,
+                        "attempt": attempt,
+                        "delay": delay,
+                        "params": params,
+                        "json": json,
+                    },
+                )
 
             try:
                 response = await self.async_client.request(
@@ -535,7 +592,7 @@ class HoneyHive:
                     raise
                 continue
 
-        raise Exception("Max retries exceeded")
+        raise httpx.RequestError("Max retries exceeded")
 
     def close(self) -> None:
         """Close the HTTP clients."""
@@ -548,17 +605,8 @@ class HoneyHive:
             # So we'll just set it to None and let it be garbage collected
             self._async_client = None
 
-        # Check if logging is still available before attempting to log
-        if hasattr(self.logger, "logger") and self.logger.logger.handlers:
-            try:
-                # Check if the logging system is in a shutdown state
-                import logging
-
-                if logging.getLogger().handlers:
-                    self.logger.info("HoneyHive client closed")
-            except (ValueError, OSError, AttributeError, RuntimeError):
-                # Ignore logging errors during shutdown - the logging stream may already be closed
-                pass
+        # Use unified logging - safe_log handles shutdown detection automatically
+        self._log("info", "HoneyHive client closed")
 
     async def aclose(self) -> None:
         """Close the HTTP clients asynchronously."""
@@ -566,17 +614,8 @@ class HoneyHive:
             await self._async_client.aclose()
             self._async_client = None
 
-        # Check if logging is still available before attempting to log
-        if hasattr(self.logger, "logger") and self.logger.logger.handlers:
-            try:
-                # Check if the logging system is in a shutdown state
-                import logging
-
-                if logging.getLogger().handlers:
-                    self.logger.info("HoneyHive async client closed")
-            except (ValueError, OSError, AttributeError, RuntimeError):
-                # Ignore logging errors during shutdown - the logging stream may already be closed
-                pass
+        # Use unified logging - safe_log handles shutdown detection automatically
+        self._log("info", "HoneyHive async client closed")
 
     def __enter__(self) -> "HoneyHive":
         """Context manager entry."""

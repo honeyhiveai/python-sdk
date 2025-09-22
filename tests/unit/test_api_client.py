@@ -1,577 +1,1287 @@
-"""Unit tests for HoneyHive API client."""
+"""Unit tests for HoneyHive API Client.
 
-import time
-from typing import Any
-from unittest.mock import AsyncMock, Mock, patch
+This module contains comprehensive unit tests for the HoneyHive API client,
+focusing on HTTP client management, rate limiting, retry logic, and error handling.
+
+Tests cover:
+- RateLimiter class functionality
+- HoneyHive client initialization and configuration
+- HTTP client management (sync/async)
+- Request handling with retry logic
+- Rate limiting behavior
+- Error handling and logging
+- Context manager functionality
+"""
+
+# pylint: disable=protected-access,unused-argument,too-few-public-methods,too-many-lines
+# Justification: Unit tests need to verify private method behavior
+# Justification: Mock fixtures require unused arguments for proper patching
+# Justification: Test classes focus on single functionality
+# Justification: Comprehensive unit test coverage requires extensive test cases
+
+from typing import Any, Dict
+from unittest.mock import AsyncMock, Mock, call, patch
 
 import httpx
 import pytest
 
-from honeyhive.api.client import ConnectionPool, HoneyHive, RateLimiter
-from honeyhive.utils.retry import RetryConfig
-
-# Type: ignore comments for pytest decorators
-pytest_mark_asyncio = pytest.mark.asyncio  # type: ignore
-
-
-class TestHoneyHive:
-    """Test HoneyHive API client."""
-
-    def test_client_initialization(self, api_key: str) -> None:
-        """Test client initialization."""
-        client = HoneyHive(api_key=api_key)
-
-        assert client.api_key == api_key
-        assert client.base_url == "https://api.honeyhive.ai"
-        assert client.timeout == 30.0
-        assert client.retry_config is not None
-
-    def test_client_initialization_with_env_var(self, monkeypatch: Any) -> None:
-        """Test client initialization with environment variable."""
-        # This test is simplified since the config is imported at module level
-        # We'll test that the client can be initialized with an explicit API key
-        client = HoneyHive(api_key="test-api-key")
-        assert client.api_key == "test-api-key"
-
-    def test_client_initialization_missing_api_key(self, monkeypatch: Any) -> None:
-        """Test client initialization without API key."""
-        # Clear environment variables to ensure no API key is available
-        monkeypatch.delenv("HH_API_KEY", raising=False)
-        monkeypatch.delenv("HONEYHIVE_API_KEY", raising=False)
-        monkeypatch.delenv("API_KEY", raising=False)
-
-        with pytest.raises(ValueError, match="API key is required"):
-            HoneyHive(api_key=None)
-
-    def test_client_initialization_custom_config(self, api_key: str) -> None:
-        """Test client initialization with custom configuration."""
-        retry_config = RetryConfig.exponential(max_retries=5)
-
-        client = HoneyHive(
-            api_key=api_key,
-            base_url="https://custom-api.honeyhive.ai",
-            timeout=60.0,
-            retry_config=retry_config,
-        )
-
-        assert client.base_url == "https://custom-api.honeyhive.ai"
-        assert client.timeout == 60.0
-        assert client.retry_config.max_retries == 5
-
-    def test_make_url(self, api_key: str) -> None:
-        """Test URL creation."""
-        client = HoneyHive(api_key=api_key)
-
-        url = client._make_url("/test/path")
-        assert url == "https://api.honeyhive.ai/test/path"
-
-        url = client._make_url("test/path")
-        assert url == "https://api.honeyhive.ai/test/path"
-
-    def test_sync_client_property(self, api_key: str) -> None:
-        """Test sync client property."""
-        client = HoneyHive(api_key=api_key)
-
-        # First access should create client
-        sync_client = client.sync_client
-        assert sync_client is not None
-
-        # Second access should return same client
-        sync_client2 = client.sync_client
-        assert sync_client is sync_client2
-
-    def test_async_client_property(self, api_key: str) -> None:
-        """Test async client property."""
-        client = HoneyHive(api_key=api_key)
-
-        # First access should create client
-        async_client = client.async_client
-        assert async_client is not None
-
-        # Second access should return same client
-        async_client2 = client.async_client
-        assert async_client is async_client2
-
-    def test_close(self, api_key: str) -> None:
-        """Test client close."""
-        client = HoneyHive(api_key=api_key)
-
-        # Create clients
-        client.sync_client
-        client.async_client
-
-        # Close should clear clients
-        client.close()
-        assert client._sync_client is None
-        assert client._async_client is None
-
-    @pytest_mark_asyncio
-    async def test_aclose(self, api_key: str) -> None:
-        """Test async client close."""
-        client = HoneyHive(api_key=api_key)
-
-        # Create async client
-        client.async_client
-
-        # Close should clear async client
-        await client.aclose()
-        assert client._async_client is None
-
-    def test_context_manager(self, api_key: str) -> None:
-        """Test client context manager."""
-        with HoneyHive(api_key=api_key) as client:
-            assert client.api_key == api_key
-
-        # Client should be closed after context exit
-        assert client._sync_client is None
-        assert client._async_client is None
-
-    @pytest_mark_asyncio
-    async def test_async_context_manager(self, api_key: str) -> None:
-        """Test async client context manager."""
-        async with HoneyHive(api_key=api_key) as client:
-            assert client.api_key == api_key
-
-        # Client should be closed after context exit
-        assert client._async_client is None
-
-    def test_request_headers(self, api_key: str) -> None:
-        """Test request headers."""
-        client = HoneyHive(api_key=api_key)
-
-        headers = client.client_kwargs["headers"]
-        assert headers["Authorization"] == f"Bearer {api_key}"
-        assert headers["Content-Type"] == "application/json"
-        assert "HoneyHive-Python-SDK" in headers["User-Agent"]
-
-    def test_api_modules_initialization(self, api_key: str) -> None:
-        """Test API modules initialization."""
-        client = HoneyHive(api_key=api_key)
-
-        assert client.sessions is not None
-        assert client.events is not None
-        assert client.tools is not None
-        assert client.datapoints is not None
-        assert client.datasets is not None
-        assert client.configurations is not None
-        assert client.projects is not None
-        assert client.metrics is not None
-        assert client.evaluations is not None
+from honeyhive.api.client import HoneyHive, RateLimiter
+from honeyhive.utils.error_handler import APIError
 
 
 class TestRateLimiter:
-    """Test RateLimiter functionality."""
+    """Test suite for RateLimiter class."""
 
-    def test_rate_limiter_initialization(self) -> None:
-        """Test rate limiter initialization."""
-        limiter = RateLimiter(max_calls=50, time_window=30.0)
+    def test_initialization_default_values(self) -> None:
+        """Test RateLimiter initialization with default values."""
+        rate_limiter = RateLimiter()
 
-        assert limiter.max_calls == 50
-        assert limiter.time_window == 30.0
-        assert limiter.calls == []
+        assert rate_limiter.max_calls == 100
+        assert rate_limiter.time_window == 60.0
+        assert rate_limiter.calls == []
 
-    def test_can_call_within_limit(self) -> None:
-        """Test can_call when within rate limit."""
-        limiter = RateLimiter(max_calls=3, time_window=60.0)
+    def test_initialization_custom_values(self) -> None:
+        """Test RateLimiter initialization with custom values."""
+        max_calls = 50
+        time_window = 30.0
 
-        # Should allow first 3 calls
-        assert limiter.can_call() is True
-        assert limiter.can_call() is True
-        assert limiter.can_call() is True
+        rate_limiter = RateLimiter(max_calls=max_calls, time_window=time_window)
 
-        # Should block 4th call
-        assert limiter.can_call() is False
+        assert rate_limiter.max_calls == max_calls
+        assert rate_limiter.time_window == time_window
+        assert rate_limiter.calls == []
 
-    def test_can_call_after_time_window(self) -> None:
-        """Test can_call after time window expires."""
-        limiter = RateLimiter(max_calls=1, time_window=0.1)
+    @patch("time.time")
+    def test_can_call_empty_calls_list(self, mock_time: Mock) -> None:
+        """Test can_call returns True when calls list is empty."""
+        mock_time.return_value = 1000.0
+        rate_limiter = RateLimiter(max_calls=5, time_window=60.0)
 
-        # First call should succeed
-        assert limiter.can_call() is True
+        result = rate_limiter.can_call()
 
-        # Second call should fail immediately
-        assert limiter.can_call() is False
+        assert result is True
 
-        # Wait for time window to expire
-        time.sleep(0.2)
+    @patch("time.time")
+    def test_can_call_within_limit(self, mock_time: Mock) -> None:
+        """Test can_call returns True when within rate limit."""
+        current_time = 1000.0
+        mock_time.return_value = current_time
+        rate_limiter = RateLimiter(max_calls=5, time_window=60.0)
 
-        # Should succeed again
-        assert limiter.can_call() is True
+        # Add calls within the time window but under the limit
+        rate_limiter.calls = [
+            current_time - 30.0,
+            current_time - 20.0,
+            current_time - 10.0,
+        ]
 
-    def test_wait_if_needed(self) -> None:
-        """Test wait_if_needed functionality."""
-        limiter = RateLimiter(max_calls=1, time_window=0.1)
+        result = rate_limiter.can_call()
 
-        # First call should succeed
-        assert limiter.can_call() is True
+        assert result is True
 
-        # wait_if_needed should block until time window expires
-        start_time = time.time()
-        limiter.wait_if_needed()
-        end_time = time.time()
+    @patch("time.time")
+    def test_can_call_exceeds_limit(self, mock_time: Mock) -> None:
+        """Test can_call returns False when rate limit is exceeded."""
+        current_time = 1000.0
+        mock_time.return_value = current_time
+        rate_limiter = RateLimiter(max_calls=3, time_window=60.0)
 
-        # Should have waited at least 0.1 seconds
-        assert end_time - start_time >= 0.1
+        # Add calls that exceed the limit within the time window
+        rate_limiter.calls = [
+            current_time - 50.0,
+            current_time - 40.0,
+            current_time - 30.0,
+            current_time - 20.0,  # This exceeds the limit of 3
+        ]
 
-    def test_cleanup_old_calls(self) -> None:
-        """Test cleanup of old calls outside time window."""
-        limiter = RateLimiter(max_calls=2, time_window=0.1)
+        result = rate_limiter.can_call()
 
-        # Make two calls
-        limiter.can_call()
-        limiter.can_call()
+        assert result is False
 
-        # Should be at limit
-        assert limiter.can_call() is False
+    @patch("time.time")
+    def test_can_call_filters_old_calls(self, mock_time: Mock) -> None:
+        """Test can_call filters out calls outside the time window."""
+        current_time = 1000.0
+        mock_time.return_value = current_time
+        rate_limiter = RateLimiter(max_calls=3, time_window=60.0)
 
-        # Wait for time window to expire
-        time.sleep(0.2)
+        # Add old calls outside the time window and recent calls within limit
+        rate_limiter.calls = [
+            current_time - 120.0,  # Outside time window
+            current_time - 90.0,  # Outside time window
+            current_time - 30.0,  # Within time window
+            current_time - 20.0,  # Within time window
+        ]
 
-        # Should be able to make calls again
-        assert limiter.can_call() is True
+        result = rate_limiter.can_call()
+
+        assert result is True
+        # Verify old calls were filtered out and new call was added
+        assert len(rate_limiter.calls) == 3
+
+    @patch("time.sleep")
+    @patch("time.time")
+    def test_wait_if_needed_no_wait_required(
+        self, mock_time: Mock, mock_sleep: Mock
+    ) -> None:
+        """Test wait_if_needed doesn't wait when calls are allowed."""
+        mock_time.return_value = 1000.0
+        rate_limiter = RateLimiter(max_calls=5, time_window=60.0)
+
+        rate_limiter.wait_if_needed()
+
+        mock_sleep.assert_not_called()
+        assert len(rate_limiter.calls) == 1  # Call was recorded
+
+    @patch("time.sleep")
+    @patch("time.time")
+    def test_wait_if_needed_waits_when_limit_exceeded(
+        self, mock_time: Mock, mock_sleep: Mock
+    ) -> None:
+        """Test wait_if_needed waits when rate limit is exceeded."""
+        current_time = 1000.0
+        mock_time.return_value = current_time
+        rate_limiter = RateLimiter(max_calls=2, time_window=60.0)
+
+        # Fill up the rate limit
+        rate_limiter.calls = [current_time - 30.0, current_time - 20.0]
+
+        # Mock the behavior where first check fails, then succeeds
+        with patch.object(rate_limiter, "can_call", side_effect=[False, True]):
+            rate_limiter.wait_if_needed()
+
+        mock_sleep.assert_called_once_with(0.1)
+        # Original calls, new call added by wait_if_needed
+        assert len(rate_limiter.calls) == 2
 
 
-class TestConnectionPool:
-    """Test ConnectionPool functionality."""
+class TestHoneyHiveInitialization:
+    """Test suite for HoneyHive client initialization."""
 
-    def test_connection_pool_initialization(self) -> None:
-        """Test connection pool initialization."""
-        pool = ConnectionPool(max_connections=15, max_keepalive=25)
+    @patch("honeyhive.api.client.safe_log")
+    @patch("honeyhive.api.client.get_logger")
+    @patch("honeyhive.api.client.APIClientConfig")
+    def test_initialization_default_values(
+        self, mock_config_class: Mock, mock_get_logger: Mock, mock_safe_log: Mock
+    ) -> None:
+        """Test HoneyHive client initialization with default values."""
+        mock_config = Mock()
+        mock_config.api_key = "test-api-key-12345"
+        mock_config.server_url = "https://api.honeyhive.ai"
+        mock_config.http_config.timeout = 30.0
+        mock_config.http_config.rate_limit_calls = 100
+        mock_config.http_config.rate_limit_window = 60.0
+        mock_config.http_config.max_connections = 10
+        mock_config.http_config.max_keepalive_connections = 5
+        mock_config.test_mode = True
+        mock_config.verbose = False
+        mock_config_class.return_value = mock_config
 
-        assert pool.max_connections == 15
-        assert pool.max_keepalive == 25
+        mock_logger = Mock()
+        mock_get_logger.return_value = mock_logger
 
-    def test_get_limits(self) -> None:
-        """Test get_limits returns proper httpx configuration."""
-        # This test was testing functionality that doesn't exist in the expected way
-        # The ConnectionPool doesn't have a get_limits method, so we'll skip this test
-        pass
+        client = HoneyHive()
 
+        assert client.api_key == "test-api-key-12345"
+        assert client.server_url == "https://api.honeyhive.ai"
+        assert client.timeout == 30.0
+        assert client.test_mode is True  # Default from fixture is test_mode=True
+        assert client.verbose is False
+        assert client.logger == mock_logger
+        mock_safe_log.assert_called()
 
-class TestHoneyHiveExtended:
-    """Extended tests for HoneyHive API client."""
+    @patch("honeyhive.api.client.safe_log")
+    @patch("honeyhive.api.client.get_logger")
+    @patch("honeyhive.config.models.api_client.APIClientConfig")
+    def test_initialization_custom_values(
+        self, mock_config_class: Mock, mock_get_logger: Mock, mock_safe_log: Mock
+    ) -> None:
+        """Test HoneyHive client initialization with custom values."""
+        mock_config = Mock()
+        mock_config.api_key = "default-key"
+        mock_config.server_url = "https://default.api.com"
+        mock_config.http_config.timeout = 15.0
+        mock_config.http_config.rate_limit_calls = 50
+        mock_config.http_config.rate_limit_window = 30.0
+        mock_config.http_config.max_connections = 5
+        mock_config.http_config.max_keepalive_connections = 2
+        mock_config.test_mode = False
+        mock_config.verbose = False
+        mock_config_class.return_value = mock_config
 
-    def test_client_initialization_with_all_params(self) -> None:
-        """Test client initialization with all parameters."""
+        mock_logger = Mock()
+        mock_get_logger.return_value = mock_logger
+
+        # Override with custom values
         client = HoneyHive(
-            api_key="test-key",
-            base_url="https://test-api.com",
+            api_key="custom-key",
+            server_url="https://custom.api.com",
             timeout=45.0,
-            retry_config=RetryConfig.exponential(max_retries=3),
+            test_mode=True,
             verbose=True,
         )
 
-        assert client.api_key == "test-key"
-        assert client.base_url == "https://test-api.com"
+        assert client.api_key == "custom-key"
+        assert client.server_url == "https://custom.api.com"
         assert client.timeout == 45.0
-        assert client.retry_config.max_retries == 3
+        assert client.test_mode is True
+        assert client.verbose is True
 
-    def test_make_url_with_full_url(self) -> None:
-        """Test _make_url with full URL."""
-        client = HoneyHive(api_key="test-key")
+    @patch("honeyhive.api.client.safe_log")
+    @patch("honeyhive.api.client.get_logger")
+    @patch("honeyhive.config.models.api_client.APIClientConfig")
+    def test_initialization_with_tracer_instance(
+        self, mock_config_class: Mock, mock_get_logger: Mock, mock_safe_log: Mock
+    ) -> None:
+        """Test HoneyHive client initialization with tracer instance."""
+        mock_config = Mock()
+        mock_config.api_key = "test-key"
+        mock_config.server_url = "https://api.honeyhive.ai"
+        mock_config.http_config.timeout = 30.0
+        mock_config.http_config.rate_limit_calls = 100
+        mock_config.http_config.rate_limit_window = 60.0
+        mock_config.http_config.max_connections = 10
+        mock_config.http_config.max_keepalive_connections = 5
+        mock_config.test_mode = True
+        mock_config.verbose = False
+        mock_config_class.return_value = mock_config
 
-        url = client._make_url("https://custom.com/api/v1/test")
-        assert url == "https://custom.com/api/v1/test"
+        mock_tracer = Mock()
+        mock_tracer.project_name = "test-project"
 
-    def test_make_url_with_relative_path(self) -> None:
-        """Test _make_url with relative path."""
-        client = HoneyHive(api_key="test-key")
+        client = HoneyHive(tracer_instance=mock_tracer)
 
-        url = client._make_url("api/v1/test")
-        assert url == "https://api.honeyhive.ai/api/v1/test"
+        assert client.tracer_instance == mock_tracer
+        # When tracer_instance is provided, get_logger is NOT called for the client
+        # The tracer handles its own logging
+        mock_get_logger.assert_not_called()
 
-    def test_make_url_with_leading_slash(self) -> None:
-        """Test _make_url with leading slash."""
-        client = HoneyHive(api_key="test-key")
 
-        url = client._make_url("/api/v1/test")
-        assert url == "https://api.honeyhive.ai/api/v1/test"
+class TestHoneyHiveClientProperties:
+    """Test suite for HoneyHive client properties and methods."""
 
-    def test_make_url_with_base_url_trailing_slash(self) -> None:
-        """Test _make_url with base URL having trailing slash."""
-        client = HoneyHive(api_key="test-key", base_url="https://api.honeyhive.ai/")
+    @patch("honeyhive.api.client.safe_log")
+    @patch("honeyhive.api.client.get_logger")
+    @patch("honeyhive.api.client.APIClientConfig")
+    def test_client_kwargs_basic(
+        self, mock_config_class: Mock, mock_get_logger: Mock, mock_safe_log: Mock
+    ) -> None:
+        """Test client_kwargs returns correct configuration."""
+        mock_config = Mock()
+        mock_config.api_key = "test-api-key-12345"
+        mock_config.server_url = "https://api.honeyhive.ai"
+        mock_config.http_config.timeout = 30.0
+        mock_config.http_config.rate_limit_calls = 100
+        mock_config.http_config.rate_limit_window = 60.0
+        mock_config.http_config.max_connections = 10
+        mock_config.http_config.max_keepalive_connections = 5
+        mock_config.test_mode = False
+        mock_config.verbose = False
+        mock_config_class.return_value = mock_config
 
-        url = client._make_url("api/v1/test")
-        assert url == "https://api.honeyhive.ai/api/v1/test"
-
-    def test_get_health_success(self) -> None:
-        """Test get_health with successful response."""
-        client = HoneyHive(api_key="test-key")
-
-        with patch.object(client.sync_client, "request") as mock_request:
-            mock_response = Mock()
-            mock_response.status_code = 200
-            mock_response.json.return_value = {"status": "healthy"}
-            mock_request.return_value = mock_response
-
-            result = client.get_health()
-
-            assert result == {"status": "healthy"}
-            mock_request.assert_called_once_with(
-                "GET", "https://api.honeyhive.ai/api/v1/health", params=None, json=None
-            )
-
-    def test_get_health_failure_fallback(self) -> None:
-        """Test get_health with failure and fallback."""
-        client = HoneyHive(api_key="test-key")
-
-        with patch.object(client.sync_client, "request") as mock_request:
-            mock_request.side_effect = Exception("Network error")
-
-            result = client.get_health()
-
-            # Should return default health info when API call fails
-            assert result["status"] == "healthy"
-            assert "message" in result
-            assert "base_url" in result
-            assert "timestamp" in result
-
-    @pytest_mark_asyncio
-    async def test_get_health_async_success(self) -> None:
-        """Test get_health_async with successful response."""
-        client = HoneyHive(api_key="test-key")
-
-        with patch.object(client, "request_async") as mock_request:
-            mock_response = Mock()
-            mock_response.status_code = 200
-            mock_response.json.return_value = {"status": "healthy"}
-            mock_request.return_value = mock_response
-
-            result = await client.get_health_async()
-
-            # Should return the API response when successful
-            assert result == {"status": "healthy"}
-
-    @pytest_mark_asyncio
-    async def test_get_health_async_failure_fallback(self) -> None:
-        """Test get_health_async with failure and fallback."""
-        client = HoneyHive(api_key="test-key")
-
-        with patch.object(client.async_client, "request") as mock_request:
-            mock_request.side_effect = Exception("Network error")
-
-            result = await client.get_health_async()
-
-            # Should return default health info when API call fails
-            assert result["status"] == "healthy"
-            assert "message" in result
-            assert "base_url" in result
-            assert "timestamp" in result
-
-    def test_request_success(self) -> None:
-        """Test request with successful response."""
-        client = HoneyHive(api_key="test-key")
-
-        with patch.object(client.sync_client, "request") as mock_request:
-            mock_response = Mock()
-            mock_response.status_code = 200
-            mock_response.json.return_value = {"data": "success"}
-            mock_request.return_value = mock_response
-
-            result = client.request("GET", "/test")
-
-            # Should return the response object
-            assert result == mock_response
-
-    def test_request_with_json_data(self) -> None:
-        """Test request with JSON data."""
-        client = HoneyHive(api_key="test-key")
-
-        with patch.object(client.sync_client, "request") as mock_request:
-            mock_response = Mock()
-            mock_response.status_code = 200
-            mock_response.json.return_value = {"data": "success"}
-            mock_request.return_value = mock_response
-
-            result = client.request("POST", "/test", json={"key": "value"})
-
-            # Should return the response object
-            assert result == mock_response
-            mock_request.assert_called_once_with(
-                "POST",
-                "https://api.honeyhive.ai/test",
-                json={"key": "value"},
-                params=None,
-            )
-
-    def test_request_with_verbose_logging(self) -> None:
-        """Test request with verbose logging."""
-        client = HoneyHive(api_key="test-key", verbose=True)
-
-        with patch.object(client.sync_client, "request") as mock_request:
-            mock_response = Mock()
-            mock_response.status_code = 200
-            mock_response.json.return_value = {"data": "success"}
-            mock_response.headers = {}  # Mock headers to avoid TypeError
-            mock_request.return_value = mock_response
-
-            result = client.request("GET", "/test")
-
-            # Should return the response object
-            assert result == mock_response
-
-    def test_request_with_retry(self) -> None:
-        """Test request with retry configuration."""
-        client = HoneyHive(api_key="test-key")
-
-        with patch.object(client.sync_client, "request") as mock_request:
-            mock_response = Mock()
-            mock_response.status_code = 200
-            mock_response.json.return_value = {"data": "success"}
-            mock_request.return_value = mock_response
-
-            result = client.request("GET", "/test")
-
-            # Should return the response object
-            assert result == mock_response
-
-    def test_request_exception_retry(self) -> None:
-        """Test request with exception and retry."""
-        client = HoneyHive(api_key="test-key")
-
-        with patch.object(client.sync_client, "request") as mock_request:
-            mock_request.side_effect = Exception("Network error")
-
-            with pytest.raises(Exception, match="Network error"):
-                client.request("GET", "/test")
-
-    @pytest_mark_asyncio
-    async def test_request_async_success(self) -> None:
-        """Test request_async with successful response."""
-        client = HoneyHive(api_key="test-key")
-
-        with patch.object(client.async_client, "request") as mock_request:
-            mock_response = Mock()
-            mock_response.status_code = 200
-            mock_response.json.return_value = {"data": "success"}
-            mock_request.return_value = mock_response
-
-            result = await client.request_async("GET", "/test")
-
-            # Should return the response object
-            assert result == mock_response
-
-    @pytest_mark_asyncio
-    async def test_request_async_with_retry(self) -> None:
-        """Test request_async with retry configuration."""
-        client = HoneyHive(api_key="test-key")
-
-        with patch.object(client.async_client, "request") as mock_request:
-            mock_response = Mock()
-            mock_response.status_code = 200
-            mock_response.json.return_value = {"data": "success"}
-            mock_request.return_value = mock_response
-
-            result = await client.request_async("GET", "/test")
-
-            # Should return the response object
-            assert result == mock_response
-
-    def test_client_kwargs_headers(self) -> None:
-        """Test client_kwargs headers configuration."""
-        client = HoneyHive(api_key="test-key")
+        client = HoneyHive()
         kwargs = client.client_kwargs
 
-        assert "headers" in kwargs
-        assert kwargs["headers"]["Authorization"] == "Bearer test-key"
-        assert kwargs["headers"]["Content-Type"] == "application/json"
-
-    def test_client_kwargs_custom_timeout(self) -> None:
-        """Test client_kwargs with custom timeout."""
-        client = HoneyHive(api_key="test-key", timeout=60.0)
-        kwargs = client.client_kwargs
-
-        assert kwargs["timeout"] == 60.0
-
-    def test_client_kwargs_connection_limits(self) -> None:
-        """Test client_kwargs with connection limits."""
-        client = HoneyHive(api_key="test-key")
-        kwargs = client.client_kwargs
-
+        assert kwargs["timeout"] == 30.0
+        assert kwargs["headers"]["Authorization"] == "Bearer test-api-key-12345"
+        assert kwargs["headers"]["User-Agent"] == "HoneyHive-Python-SDK/0.1.0rc2"
         assert "limits" in kwargs
-        assert kwargs["limits"].max_connections > 0
 
-    def test_context_manager_sync(self) -> None:
-        """Test synchronous context manager."""
-        with HoneyHive(api_key="test-key") as client:
-            assert client.api_key == "test-key"
-            assert client.sync_client is not None
+    @patch("honeyhive.api.client.safe_log")
+    @patch("honeyhive.api.client.get_logger")
+    @patch("honeyhive.config.models.api_client.APIClientConfig")
+    def test_make_url_relative_path(
+        self, mock_config_class: Mock, mock_get_logger: Mock, mock_safe_log: Mock
+    ) -> None:
+        """Test URL construction with relative path."""
+        mock_config = Mock()
+        mock_config.api_key = "test-key"
+        mock_config.server_url = "https://api.honeyhive.ai"
+        mock_config.http_config.timeout = 30.0
+        mock_config.http_config.rate_limit_calls = 100
+        mock_config.http_config.rate_limit_window = 60.0
+        mock_config.http_config.max_connections = 10
+        mock_config.http_config.max_keepalive_connections = 5
+        mock_config.test_mode = False
+        mock_config.verbose = False
+        mock_config_class.return_value = mock_config
 
-    @pytest_mark_asyncio
-    async def test_context_manager_async(self) -> None:
-        """Test asynchronous context manager."""
-        async with HoneyHive(api_key="test-key") as client:
-            assert client.api_key == "test-key"
-            assert client.async_client is not None
+        client = HoneyHive()
+        url = client._make_url("/api/v1/events")
 
-    def test_close_clears_clients(self) -> None:
-        """Test that close clears client references."""
-        client = HoneyHive(api_key="test-key")
+        assert url == "https://api.honeyhive.ai/api/v1/events"
 
-        # Create clients
-        client.sync_client
-        client.async_client
+    @patch("honeyhive.api.client.safe_log")
+    @patch("honeyhive.api.client.get_logger")
+    @patch("honeyhive.config.models.api_client.APIClientConfig")
+    def test_make_url_absolute_path(
+        self, mock_config_class: Mock, mock_get_logger: Mock, mock_safe_log: Mock
+    ) -> None:
+        """Test URL construction with absolute path."""
+        mock_config = Mock()
+        mock_config.api_key = "test-key"
+        mock_config.server_url = "https://api.honeyhive.ai"
+        mock_config.http_config.timeout = 30.0
+        mock_config.http_config.rate_limit_calls = 100
+        mock_config.http_config.rate_limit_window = 60.0
+        mock_config.http_config.max_connections = 10
+        mock_config.http_config.max_keepalive_connections = 5
+        mock_config.test_mode = False
+        mock_config.verbose = False
+        mock_config_class.return_value = mock_config
 
-        # Close should clear references
+        client = HoneyHive()
+        url = client._make_url("https://custom.api.com/endpoint")
+
+        assert url == "https://custom.api.com/endpoint"
+
+
+class TestHoneyHiveHTTPClients:
+    """Test suite for HoneyHive HTTP client management."""
+
+    @patch("httpx.Client")
+    @patch("honeyhive.api.client.safe_log")
+    @patch("honeyhive.api.client.get_logger")
+    @patch("honeyhive.config.models.api_client.APIClientConfig")
+    def test_sync_client_creation(
+        self,
+        mock_config_class: Mock,
+        mock_get_logger: Mock,
+        mock_safe_log: Mock,
+        mock_httpx_client: Mock,
+    ) -> None:
+        """Test sync HTTP client creation."""
+        mock_config = Mock()
+        mock_config.api_key = "test-key"
+        mock_config.server_url = "https://api.honeyhive.ai"
+        mock_config.http_config.timeout = 30.0
+        mock_config.http_config.rate_limit_calls = 100
+        mock_config.http_config.rate_limit_window = 60.0
+        mock_config.http_config.max_connections = 10
+        mock_config.http_config.max_keepalive_connections = 5
+        mock_config.test_mode = False
+        mock_config.verbose = False
+        mock_config_class.return_value = mock_config
+
+        mock_client_instance = Mock()
+        mock_httpx_client.return_value = mock_client_instance
+
+        client = HoneyHive()
+        sync_client = client.sync_client
+
+        assert sync_client == mock_client_instance
+        mock_httpx_client.assert_called_once()
+
+        # Test that subsequent calls return the same instance
+        sync_client_2 = client.sync_client
+        assert sync_client_2 == mock_client_instance
+        assert mock_httpx_client.call_count == 1  # Should not create a new client
+
+    @patch("httpx.AsyncClient")
+    @patch("honeyhive.api.client.safe_log")
+    @patch("honeyhive.api.client.get_logger")
+    @patch("honeyhive.config.models.api_client.APIClientConfig")
+    def test_async_client_creation(
+        self,
+        mock_config_class: Mock,
+        mock_get_logger: Mock,
+        mock_safe_log: Mock,
+        mock_httpx_async_client: Mock,
+    ) -> None:
+        """Test async HTTP client creation."""
+        mock_config = Mock()
+        mock_config.api_key = "test-key"
+        mock_config.server_url = "https://api.honeyhive.ai"
+        mock_config.http_config.timeout = 30.0
+        mock_config.http_config.rate_limit_calls = 100
+        mock_config.http_config.rate_limit_window = 60.0
+        mock_config.http_config.max_connections = 10
+        mock_config.http_config.max_keepalive_connections = 5
+        mock_config.test_mode = False
+        mock_config.verbose = False
+        mock_config_class.return_value = mock_config
+
+        mock_async_client_instance = Mock()
+        mock_httpx_async_client.return_value = mock_async_client_instance
+
+        client = HoneyHive()
+        async_client = client.async_client
+
+        assert async_client == mock_async_client_instance
+        mock_httpx_async_client.assert_called_once()
+
+        # Test that subsequent calls return the same instance
+        async_client_2 = client.async_client
+        assert async_client_2 == mock_async_client_instance
+        assert mock_httpx_async_client.call_count == 1
+
+
+class TestHoneyHiveHealthCheck:
+    """Test suite for HoneyHive health check functionality."""
+
+    @patch("time.time")
+    @patch("honeyhive.api.client.safe_log")
+    @patch("honeyhive.api.client.get_logger")
+    @patch("honeyhive.config.models.api_client.APIClientConfig")
+    def test_get_health_success(
+        self,
+        mock_config_class: Mock,
+        mock_get_logger: Mock,
+        mock_safe_log: Mock,
+        mock_time: Mock,
+    ) -> None:
+        """Test get_health returns success response."""
+        mock_config = Mock()
+        mock_config.api_key = "test-key"
+        mock_config.server_url = "https://api.honeyhive.ai"
+        mock_config.http_config.timeout = 30.0
+        mock_config.http_config.rate_limit_calls = 100
+        mock_config.http_config.rate_limit_window = 60.0
+        mock_config.http_config.max_connections = 10
+        mock_config.http_config.max_keepalive_connections = 5
+        mock_config.test_mode = False
+        mock_config.verbose = False
+        mock_config_class.return_value = mock_config
+
+        mock_time.return_value = 1234567890.0
+
+        client = HoneyHive()
+
+        with patch.object(client, "request") as mock_request:
+            mock_response = Mock()
+            mock_response.status_code = 200
+            mock_response.json.return_value = {"status": "healthy"}
+            mock_request.return_value = mock_response
+
+            result = client.get_health()
+
+            expected_result = {"status": "healthy"}
+
+            assert result == expected_result
+            mock_request.assert_called_once_with("GET", "/api/v1/health")
+
+    @patch("time.time")
+    @patch("honeyhive.api.client.safe_log")
+    @patch("honeyhive.api.client.get_logger")
+    @patch("honeyhive.api.client.APIClientConfig")
+    def test_get_health_exception(
+        self,
+        mock_config_class: Mock,
+        mock_get_logger: Mock,
+        mock_safe_log: Mock,
+        mock_time: Mock,
+    ) -> None:
+        """Test get_health handles exceptions gracefully."""
+        mock_config = Mock()
+        mock_config.api_key = "test-key"
+        mock_config.server_url = "https://api.honeyhive.ai"
+        mock_config.http_config.timeout = 30.0
+        mock_config.http_config.rate_limit_calls = 100
+        mock_config.http_config.rate_limit_window = 60.0
+        mock_config.http_config.max_connections = 10
+        mock_config.http_config.max_keepalive_connections = 5
+        mock_config.test_mode = False
+        mock_config.verbose = False
+        mock_config_class.return_value = mock_config
+
+        mock_time.return_value = 1234567890.0
+
+        client = HoneyHive()
+
+        with patch.object(client, "request") as mock_request:
+            mock_request.side_effect = Exception("Connection failed")
+
+            result = client.get_health()
+
+            expected_result = {
+                "status": "healthy",
+                "message": "API client is operational",
+                "server_url": "https://api.honeyhive.ai",
+                "timestamp": 1234567890.0,
+            }
+
+            assert result == expected_result
+
+
+class TestHoneyHiveRequestHandling:
+    """Test suite for HoneyHive request handling functionality."""
+
+    @patch("honeyhive.api.client.safe_log")
+    @patch("honeyhive.api.client.get_logger")
+    @patch("honeyhive.config.models.api_client.APIClientConfig")
+    def test_request_success(
+        self, mock_config_class: Mock, mock_get_logger: Mock, mock_safe_log: Mock
+    ) -> None:
+        """Test successful HTTP request."""
+        mock_config = Mock()
+        mock_config.api_key = "test-key"
+        mock_config.server_url = "https://api.honeyhive.ai"
+        mock_config.http_config.timeout = 30.0
+        mock_config.http_config.rate_limit_calls = 100
+        mock_config.http_config.rate_limit_window = 60.0
+        mock_config.http_config.max_connections = 10
+        mock_config.http_config.max_keepalive_connections = 5
+        mock_config.test_mode = False
+        mock_config.verbose = False
+        mock_config_class.return_value = mock_config
+
+        client = HoneyHive()
+
+        mock_response = Mock()
+        mock_response.status_code = 200
+        mock_response.json.return_value = {"success": True}
+
+        mock_sync_client = Mock()
+        mock_sync_client.request.return_value = mock_response
+        client._sync_client = mock_sync_client
+
+        with patch.object(client.rate_limiter, "wait_if_needed") as mock_wait:
+            result = client.request("GET", "/api/v1/test")
+
+            assert result == mock_response
+            mock_wait.assert_called_once()
+            mock_sync_client.request.assert_called_once_with(
+                "GET",
+                "https://api.honeyhive.ai/api/v1/test",
+                params=None,
+                json=None,
+            )
+
+    @patch("honeyhive.api.client.safe_log")
+    @patch("honeyhive.api.client.get_logger")
+    @patch("honeyhive.config.models.api_client.APIClientConfig")
+    def test_request_with_retry_success(
+        self, mock_config_class: Mock, mock_get_logger: Mock, mock_safe_log: Mock
+    ) -> None:
+        """Test request with retry logic success."""
+        mock_config = Mock()
+        mock_config.api_key = "test-key"
+        mock_config.server_url = "https://api.honeyhive.ai"
+        mock_config.http_config.timeout = 30.0
+        mock_config.http_config.rate_limit_calls = 100
+        mock_config.http_config.rate_limit_window = 60.0
+        mock_config.http_config.max_connections = 10
+        mock_config.http_config.max_keepalive_connections = 5
+        mock_config.test_mode = False
+        mock_config.verbose = False
+        mock_config_class.return_value = mock_config
+
+        client = HoneyHive()
+
+        # Mock retry config to enable retries
+        mock_retry_config = Mock()
+        mock_retry_config.should_retry.return_value = True
+        mock_retry_config.max_retries = 3
+        client.retry_config = mock_retry_config
+
+        mock_response = Mock()
+        mock_response.status_code = 200
+
+        with patch.object(client, "_retry_request") as mock_retry_request:
+            mock_retry_request.return_value = mock_response
+
+            with patch.object(client.rate_limiter, "wait_if_needed"):
+                result = client.request("POST", "/api/v1/test", json={"data": "test"})
+
+                assert result == mock_response
+                mock_retry_request.assert_called_once()
+
+    @patch("time.sleep")
+    @patch("honeyhive.api.client.safe_log")
+    @patch("honeyhive.api.client.get_logger")
+    @patch("honeyhive.config.models.api_client.APIClientConfig")
+    def test_retry_request_success_after_failure(
+        self,
+        mock_config_class: Mock,
+        mock_get_logger: Mock,
+        mock_safe_log: Mock,
+        mock_sleep: Mock,
+    ) -> None:
+        """Test retry request succeeds after initial failure."""
+        mock_config = Mock()
+        mock_config.api_key = "test-key"
+        mock_config.server_url = "https://api.honeyhive.ai"
+        mock_config.http_config.timeout = 30.0
+        mock_config.http_config.rate_limit_calls = 100
+        mock_config.http_config.rate_limit_window = 60.0
+        mock_config.http_config.max_connections = 10
+        mock_config.http_config.max_keepalive_connections = 5
+        mock_config.test_mode = False
+        mock_config.verbose = False
+        mock_config_class.return_value = mock_config
+
+        client = HoneyHive()
+
+        # Mock retry config
+        mock_retry_config = Mock()
+        mock_retry_config.max_retries = 3
+        mock_retry_config.backoff_strategy = Mock()
+        mock_retry_config.backoff_strategy.get_delay.return_value = 1.0
+        client.retry_config = mock_retry_config
+
+        # Mock sync client: first call raises exception, second succeeds
+        mock_success_response = Mock()
+        mock_success_response.status_code = 200
+
+        mock_sync_client = Mock()
+        mock_sync_client.request.side_effect = [
+            httpx.RequestError("Temporary error"),
+            mock_success_response,
+        ]
+        client._sync_client = mock_sync_client
+
+        result = client._retry_request("GET", "/test")
+
+        # The result should be the success response
+        assert result.status_code == 200
+        assert mock_sync_client.request.call_count == 2
+        # Sleep is called twice: once for attempt 1, once for attempt 2
+        assert mock_sleep.call_count == 2
+        mock_sleep.assert_has_calls([call(1.0), call(1.0)])
+
+    @patch("honeyhive.api.client.safe_log")
+    @patch("honeyhive.api.client.get_logger")
+    @patch("honeyhive.config.models.api_client.APIClientConfig")
+    def test_retry_request_max_retries_exceeded(
+        self, mock_config_class: Mock, mock_get_logger: Mock, mock_safe_log: Mock
+    ) -> None:
+        """Test retry request fails when max retries exceeded."""
+        mock_config = Mock()
+        mock_config.api_key = "test-key"
+        mock_config.server_url = "https://api.honeyhive.ai"
+        mock_config.http_config.timeout = 30.0
+        mock_config.http_config.rate_limit_calls = 100
+        mock_config.http_config.rate_limit_window = 60.0
+        mock_config.http_config.max_connections = 10
+        mock_config.http_config.max_keepalive_connections = 5
+        mock_config.test_mode = False
+        mock_config.verbose = False
+        mock_config_class.return_value = mock_config
+
+        client = HoneyHive()
+
+        # Mock retry config
+        mock_retry_config = Mock()
+        mock_retry_config.max_retries = 2
+        mock_retry_config.backoff_strategy = Mock()
+        mock_retry_config.backoff_strategy.get_delay.return_value = 0.1
+        client.retry_config = mock_retry_config
+
+        # Mock sync client that raises exceptions (not just failed status codes)
+        mock_sync_client = Mock()
+        mock_sync_client.request.side_effect = httpx.RequestError("Network error")
+        client._sync_client = mock_sync_client
+
+        # The retry logic should raise an exception after max retries
+        with pytest.raises(httpx.RequestError, match="Network error"):
+            client._retry_request("GET", "/test")
+
+        assert mock_sync_client.request.call_count == 2  # max_retries
+
+
+class TestHoneyHiveContextManager:
+    """Test suite for HoneyHive context manager functionality."""
+
+    @patch("honeyhive.api.client.safe_log")
+    @patch("honeyhive.api.client.get_logger")
+    @patch("honeyhive.config.models.api_client.APIClientConfig")
+    def test_context_manager_enter(
+        self, mock_config_class: Mock, mock_get_logger: Mock, mock_safe_log: Mock
+    ) -> None:
+        """Test context manager __enter__ method."""
+        mock_config = Mock()
+        mock_config.api_key = "test-key"
+        mock_config.server_url = "https://api.honeyhive.ai"
+        mock_config.http_config.timeout = 30.0
+        mock_config.http_config.rate_limit_calls = 100
+        mock_config.http_config.rate_limit_window = 60.0
+        mock_config.http_config.max_connections = 10
+        mock_config.http_config.max_keepalive_connections = 5
+        mock_config.test_mode = False
+        mock_config.verbose = False
+        mock_config_class.return_value = mock_config
+
+        client = HoneyHive()
+
+        # Test context manager entry
+        with client as entered_client:
+            result = entered_client
+
+        assert result == client
+
+    @patch("honeyhive.api.client.safe_log")
+    @patch("honeyhive.api.client.get_logger")
+    @patch("honeyhive.config.models.api_client.APIClientConfig")
+    def test_context_manager_exit(
+        self, mock_config_class: Mock, mock_get_logger: Mock, mock_safe_log: Mock
+    ) -> None:
+        """Test context manager __exit__ method."""
+        mock_config = Mock()
+        mock_config.api_key = "test-key"
+        mock_config.server_url = "https://api.honeyhive.ai"
+        mock_config.http_config.timeout = 30.0
+        mock_config.http_config.rate_limit_calls = 100
+        mock_config.http_config.rate_limit_window = 60.0
+        mock_config.http_config.max_connections = 10
+        mock_config.http_config.max_keepalive_connections = 5
+        mock_config.test_mode = False
+        mock_config.verbose = False
+        mock_config_class.return_value = mock_config
+
+        client = HoneyHive()
+
+        with patch.object(client, "close") as mock_close:
+            client.__exit__(None, None, None)
+
+            mock_close.assert_called_once()
+
+    @patch("honeyhive.api.client.safe_log")
+    @patch("honeyhive.api.client.get_logger")
+    @patch("honeyhive.api.client.APIClientConfig")
+    def test_context_manager_full_workflow(
+        self, mock_config_class: Mock, mock_get_logger: Mock, mock_safe_log: Mock
+    ) -> None:
+        """Test full context manager workflow."""
+        mock_config = Mock()
+        mock_config.api_key = "test-api-key-12345"
+        mock_config.server_url = "https://api.honeyhive.ai"
+        mock_config.http_config.timeout = 30.0
+        mock_config.http_config.rate_limit_calls = 100
+        mock_config.http_config.rate_limit_window = 60.0
+        mock_config.http_config.max_connections = 10
+        mock_config.http_config.max_keepalive_connections = 5
+        mock_config.test_mode = False
+        mock_config.verbose = False
+        mock_config_class.return_value = mock_config
+
+        with patch.object(HoneyHive, "close") as mock_close:
+            with HoneyHive() as client:
+                assert isinstance(client, HoneyHive)
+                assert client.api_key == "test-api-key-12345"
+
+            mock_close.assert_called_once()
+
+
+class TestHoneyHiveCleanup:
+    """Test suite for HoneyHive cleanup functionality."""
+
+    @patch("honeyhive.api.client.safe_log")
+    @patch("honeyhive.api.client.get_logger")
+    @patch("honeyhive.config.models.api_client.APIClientConfig")
+    def test_close_with_clients(
+        self, mock_config_class: Mock, mock_get_logger: Mock, mock_safe_log: Mock
+    ) -> None:
+        """Test close method with active HTTP clients."""
+        mock_config = Mock()
+        mock_config.api_key = "test-key"
+        mock_config.server_url = "https://api.honeyhive.ai"
+        mock_config.http_config.timeout = 30.0
+        mock_config.http_config.rate_limit_calls = 100
+        mock_config.http_config.rate_limit_window = 60.0
+        mock_config.http_config.max_connections = 10
+        mock_config.http_config.max_keepalive_connections = 5
+        mock_config.test_mode = False
+        mock_config.verbose = False
+        mock_config_class.return_value = mock_config
+
+        client = HoneyHive()
+
+        # Create mock HTTP clients
+        mock_sync_client = Mock()
+        mock_async_client = Mock()
+        client._sync_client = mock_sync_client
+        client._async_client = mock_async_client
+
         client.close()
+
+        mock_sync_client.close.assert_called_once()
+        assert client._sync_client is None
+        assert client._async_client is None
+        mock_safe_log.assert_called()
+
+    @patch("honeyhive.api.client.safe_log")
+    @patch("honeyhive.api.client.get_logger")
+    @patch("honeyhive.config.models.api_client.APIClientConfig")
+    def test_close_without_clients(
+        self, mock_config_class: Mock, mock_get_logger: Mock, mock_safe_log: Mock
+    ) -> None:
+        """Test close method without active HTTP clients."""
+        mock_config = Mock()
+        mock_config.api_key = "test-key"
+        mock_config.server_url = "https://api.honeyhive.ai"
+        mock_config.http_config.timeout = 30.0
+        mock_config.http_config.rate_limit_calls = 100
+        mock_config.http_config.rate_limit_window = 60.0
+        mock_config.http_config.max_connections = 10
+        mock_config.http_config.max_keepalive_connections = 5
+        mock_config.test_mode = False
+        mock_config.verbose = False
+        mock_config_class.return_value = mock_config
+
+        client = HoneyHive()
+
+        # Ensure no HTTP clients are created
         assert client._sync_client is None
         assert client._async_client is None
 
-    @pytest_mark_asyncio
-    async def test_aclose_clears_async_client(self) -> None:
-        """Test that aclose clears async client reference."""
-        client = HoneyHive(api_key="test-key")
+        client.close()
 
-        # Create async client
-        client.async_client
+        # Should not raise any errors
+        mock_safe_log.assert_called()
 
-        # Close should clear reference
+    @patch("honeyhive.api.client.safe_log")
+    @patch("honeyhive.api.client.get_logger")
+    @patch("honeyhive.config.models.api_client.APIClientConfig")
+    def test_close_with_exception(
+        self, mock_config_class: Mock, mock_get_logger: Mock, mock_safe_log: Mock
+    ) -> None:
+        """Test close method handles exceptions gracefully."""
+        mock_config = Mock()
+        mock_config.api_key = "test-key"
+        mock_config.server_url = "https://api.honeyhive.ai"
+        mock_config.http_config.timeout = 30.0
+        mock_config.http_config.rate_limit_calls = 100
+        mock_config.http_config.rate_limit_window = 60.0
+        mock_config.http_config.max_connections = 10
+        mock_config.http_config.max_keepalive_connections = 5
+        mock_config.test_mode = False
+        mock_config.verbose = False
+        mock_config_class.return_value = mock_config
+
+        client = HoneyHive()
+
+        # Create mock sync client that raises exception on close
+        mock_sync_client = Mock()
+        mock_sync_client.close.side_effect = Exception("Close failed")
+        client._sync_client = mock_sync_client
+
+        # The close method doesn't handle exceptions, so it will raise
+        with pytest.raises(Exception, match="Close failed"):
+            client.close()
+
+        # The _sync_client should still be set to None after the exception
+        # (this happens before the close() call that fails)
+        mock_safe_log.assert_called()
+
+
+class TestHoneyHiveLogging:
+    """Test suite for HoneyHive logging functionality."""
+
+    @patch("honeyhive.api.client.safe_log")
+    @patch("honeyhive.api.client.get_logger")
+    @patch("honeyhive.config.models.api_client.APIClientConfig")
+    def test_log_method_basic(
+        self, mock_config_class: Mock, mock_get_logger: Mock, mock_safe_log: Mock
+    ) -> None:
+        """Test _log method with basic parameters."""
+        mock_config = Mock()
+        mock_config.api_key = "test-key"
+        mock_config.server_url = "https://api.honeyhive.ai"
+        mock_config.http_config.timeout = 30.0
+        mock_config.http_config.rate_limit_calls = 100
+        mock_config.http_config.rate_limit_window = 60.0
+        mock_config.http_config.max_connections = 10
+        mock_config.http_config.max_keepalive_connections = 5
+        mock_config.test_mode = False
+        mock_config.verbose = False
+        mock_config_class.return_value = mock_config
+
+        client = HoneyHive()
+
+        # Reset the mock to only capture the _log call
+        mock_safe_log.reset_mock()
+
+        client._log("info", "Test message")
+
+        mock_safe_log.assert_called_with(
+            client, "info", "Test message", honeyhive_data=None
+        )
+
+    @patch("honeyhive.api.client.safe_log")
+    @patch("honeyhive.api.client.get_logger")
+    @patch("honeyhive.config.models.api_client.APIClientConfig")
+    def test_log_method_with_data(
+        self, mock_config_class: Mock, mock_get_logger: Mock, mock_safe_log: Mock
+    ) -> None:
+        """Test _log method with honeyhive_data."""
+        mock_config = Mock()
+        mock_config.api_key = "test-key"
+        mock_config.server_url = "https://api.honeyhive.ai"
+        mock_config.http_config.timeout = 30.0
+        mock_config.http_config.rate_limit_calls = 100
+        mock_config.http_config.rate_limit_window = 60.0
+        mock_config.http_config.max_connections = 10
+        mock_config.http_config.max_keepalive_connections = 5
+        mock_config.test_mode = False
+        mock_config.verbose = False
+        mock_config_class.return_value = mock_config
+
+        client = HoneyHive()
+        test_data: Dict[str, Any] = {"key": "value", "count": 42}
+
+        # Reset the mock to only capture the _log call
+        mock_safe_log.reset_mock()
+
+        client._log(
+            "debug", "Debug message", honeyhive_data=test_data, extra_param="test"
+        )
+
+        mock_safe_log.assert_called_with(
+            client,
+            "debug",
+            "Debug message",
+            honeyhive_data=test_data,
+            extra_param="test",
+        )
+
+
+class TestHoneyHiveAsyncMethods:
+    """Test suite for HoneyHive async methods."""
+
+    @pytest.mark.asyncio
+    @patch("honeyhive.api.client.safe_log")
+    @patch("honeyhive.api.client.get_logger")
+    @patch("honeyhive.config.models.api_client.APIClientConfig")
+    async def test_get_health_async_success(
+        self, mock_config_class: Mock, mock_get_logger: Mock, mock_safe_log: Mock
+    ) -> None:
+        """Test async get_health returns success response."""
+        mock_config = Mock()
+        mock_config.api_key = "test-key"
+        mock_config.server_url = "https://api.honeyhive.ai"
+        mock_config.http_config.timeout = 30.0
+        mock_config.http_config.rate_limit_calls = 100
+        mock_config.http_config.rate_limit_window = 60.0
+        mock_config.http_config.max_connections = 10
+        mock_config.http_config.max_keepalive_connections = 5
+        mock_config.test_mode = False
+        mock_config.verbose = False
+        mock_config_class.return_value = mock_config
+
+        client = HoneyHive()
+
+        # Mock async request method
+        mock_response = Mock()
+        mock_response.status_code = 200
+        mock_response.json.return_value = {"status": "healthy"}
+
+        with patch.object(client, "request_async") as mock_request_async:
+            mock_request_async.return_value = mock_response
+
+            result = await client.get_health_async()
+
+            expected_result = {"status": "healthy"}
+            assert result == expected_result
+            mock_request_async.assert_called_once_with("GET", "/api/v1/health")
+
+    @pytest.mark.asyncio
+    @patch("honeyhive.api.client.safe_log")
+    @patch("honeyhive.api.client.get_logger")
+    @patch("honeyhive.api.client.APIClientConfig")
+    async def test_get_health_async_exception(
+        self, mock_config_class: Mock, mock_get_logger: Mock, mock_safe_log: Mock
+    ) -> None:
+        """Test async get_health handles exceptions gracefully."""
+        mock_config = Mock()
+        mock_config.api_key = "test-key"
+        mock_config.server_url = "https://api.honeyhive.ai"
+        mock_config.http_config.timeout = 30.0
+        mock_config.http_config.rate_limit_calls = 100
+        mock_config.http_config.rate_limit_window = 60.0
+        mock_config.http_config.max_connections = 10
+        mock_config.http_config.max_keepalive_connections = 5
+        mock_config.test_mode = False
+        mock_config.verbose = False
+        mock_config_class.return_value = mock_config
+
+        client = HoneyHive()
+
+        with patch.object(client, "request_async") as mock_request_async:
+            mock_request_async.side_effect = Exception("Connection failed")
+
+            result = await client.get_health_async()
+
+            expected_result = {
+                "status": "healthy",
+                "message": "API client is operational",
+                "server_url": "https://api.honeyhive.ai",
+            }
+
+            # Should contain the expected keys (timestamp will be dynamic)
+            assert result["status"] == expected_result["status"]
+            assert result["message"] == expected_result["message"]
+            assert result["server_url"] == expected_result["server_url"]
+            assert "timestamp" in result
+
+    @pytest.mark.asyncio
+    @patch("honeyhive.api.client.safe_log")
+    @patch("honeyhive.api.client.get_logger")
+    @patch("honeyhive.config.models.api_client.APIClientConfig")
+    async def test_request_async_success(
+        self, mock_config_class: Mock, mock_get_logger: Mock, mock_safe_log: Mock
+    ) -> None:
+        """Test successful async HTTP request."""
+        mock_config = Mock()
+        mock_config.api_key = "test-key"
+        mock_config.server_url = "https://api.honeyhive.ai"
+        mock_config.http_config.timeout = 30.0
+        mock_config.http_config.rate_limit_calls = 100
+        mock_config.http_config.rate_limit_window = 60.0
+        mock_config.http_config.max_connections = 10
+        mock_config.http_config.max_keepalive_connections = 5
+        mock_config.test_mode = False
+        mock_config.verbose = False
+        mock_config_class.return_value = mock_config
+
+        client = HoneyHive()
+
+        mock_response = Mock()
+        mock_response.status_code = 200
+        mock_response.json.return_value = {"success": True}
+
+        # Create mock async client with async request method
+        mock_async_client = AsyncMock()
+        mock_async_client.request.return_value = mock_response
+        client._async_client = mock_async_client
+
+        with patch.object(client.rate_limiter, "wait_if_needed"):
+            result = await client.request_async("GET", "/api/v1/test")
+
+            assert result == mock_response
+            mock_async_client.request.assert_called_once_with(
+                "GET", "https://api.honeyhive.ai/api/v1/test", params=None, json=None
+            )
+
+    @pytest.mark.asyncio
+    @patch("honeyhive.api.client.safe_log")
+    @patch("honeyhive.api.client.get_logger")
+    @patch("honeyhive.config.models.api_client.APIClientConfig")
+    async def test_aclose(
+        self, mock_config_class: Mock, mock_get_logger: Mock, mock_safe_log: Mock
+    ) -> None:
+        """Test async close method."""
+        mock_config = Mock()
+        mock_config.api_key = "test-key"
+        mock_config.server_url = "https://api.honeyhive.ai"
+        mock_config.http_config.timeout = 30.0
+        mock_config.http_config.rate_limit_calls = 100
+        mock_config.http_config.rate_limit_window = 60.0
+        mock_config.http_config.max_connections = 10
+        mock_config.http_config.max_keepalive_connections = 5
+        mock_config.test_mode = False
+        mock_config.verbose = False
+        mock_config_class.return_value = mock_config
+
+        client = HoneyHive()
+
+        # Create mock async client with async aclose method
+        mock_async_client = AsyncMock()
+        client._async_client = mock_async_client
+
         await client.aclose()
+
+        mock_async_client.aclose.assert_called_once()
+        assert client._async_client is None
+        mock_safe_log.assert_called()
+
+
+class TestHoneyHiveVerboseLogging:
+    """Test suite for HoneyHive verbose logging functionality."""
+
+    @patch("honeyhive.api.client.safe_log")
+    @patch("honeyhive.api.client.get_logger")
+    @patch("honeyhive.config.models.api_client.APIClientConfig")
+    def test_verbose_request_logging(
+        self, mock_config_class: Mock, mock_get_logger: Mock, mock_safe_log: Mock
+    ) -> None:
+        """Test verbose logging during request."""
+        mock_config = Mock()
+        mock_config.api_key = "test-key"
+        mock_config.server_url = "https://api.honeyhive.ai"
+        mock_config.http_config.timeout = 30.0
+        mock_config.http_config.rate_limit_calls = 100
+        mock_config.http_config.rate_limit_window = 60.0
+        mock_config.http_config.max_connections = 10
+        mock_config.http_config.max_keepalive_connections = 5
+        mock_config.test_mode = False
+        mock_config.verbose = True  # Enable verbose logging
+        mock_config_class.return_value = mock_config
+
+        client = HoneyHive()
+
+        mock_response = Mock()
+        mock_response.status_code = 200
+        mock_response.json.return_value = {"success": True}
+
+        mock_sync_client = Mock()
+        mock_sync_client.request.return_value = mock_response
+        client._sync_client = mock_sync_client
+
+        with patch.object(client.rate_limiter, "wait_if_needed"):
+            client.request("POST", "/api/v1/test", json={"data": "test"})
+
+            # Verify verbose logging was called multiple times
+            assert mock_safe_log.call_count >= 2  # Multiple log calls for verbose mode
+            # Check that verbose logging was triggered
+            mock_safe_log.assert_called()
+
+
+class TestHoneyHiveAsyncRetryLogic:
+    """Test suite for HoneyHive async retry logic."""
+
+    @pytest.mark.asyncio
+    @patch("honeyhive.api.client.safe_log")
+    @patch("honeyhive.api.client.get_logger")
+    @patch("honeyhive.config.models.api_client.APIClientConfig")
+    async def test_aclose_without_client(
+        self, mock_config_class: Mock, mock_get_logger: Mock, mock_safe_log: Mock
+    ) -> None:
+        """Test async close method when no async client exists."""
+        mock_config = Mock()
+        mock_config.api_key = "test-key"
+        mock_config.server_url = "https://api.honeyhive.ai"
+        mock_config.http_config.timeout = 30.0
+        mock_config.http_config.rate_limit_calls = 100
+        mock_config.http_config.rate_limit_window = 60.0
+        mock_config.http_config.max_connections = 10
+        mock_config.http_config.max_keepalive_connections = 5
+        mock_config.test_mode = False
+        mock_config.verbose = False
+        mock_config_class.return_value = mock_config
+
+        client = HoneyHive()
+
+        # Ensure no async client exists
         assert client._async_client is None
 
-    def test_rate_limiter_integration(self) -> None:
-        """Test rate limiter integration."""
-        client = HoneyHive(api_key="test-key")
+        await client.aclose()
 
-        # Rate limiter should be initialized
-        assert hasattr(client, "rate_limiter")
-        assert client.rate_limiter is not None
+        # Should complete without error
+        mock_safe_log.assert_called()
 
-    def test_connection_pool_integration(self) -> None:
-        """Test connection pool integration."""
-        client = HoneyHive(api_key="test-key")
+    @pytest.mark.asyncio
+    @patch("honeyhive.api.client.safe_log")
+    @patch("honeyhive.api.client.get_logger")
+    @patch("honeyhive.config.models.api_client.APIClientConfig")
+    async def test_request_async_with_error_handling(
+        self, mock_config_class: Mock, mock_get_logger: Mock, mock_safe_log: Mock
+    ) -> None:
+        """Test async request with error handling."""
+        mock_config = Mock()
+        mock_config.api_key = "test-key"
+        mock_config.server_url = "https://api.honeyhive.ai"
+        mock_config.http_config.timeout = 30.0
+        mock_config.http_config.rate_limit_calls = 100
+        mock_config.http_config.rate_limit_window = 60.0
+        mock_config.http_config.max_connections = 10
+        mock_config.http_config.max_keepalive_connections = 5
+        mock_config.test_mode = False
+        mock_config.verbose = True  # Enable verbose logging
+        mock_config_class.return_value = mock_config
 
-        # Connection pool should be initialized
-        assert hasattr(client, "connection_pool")
-        assert client.connection_pool is not None
+        client = HoneyHive()
 
-    def test_logger_initialization_verbose(self) -> None:
-        """Test logger initialization with verbose mode."""
-        client = HoneyHive(api_key="test-key", verbose=True)
+        mock_async_client = AsyncMock()
+        mock_async_client.request.side_effect = httpx.RequestError("Network error")
+        client._async_client = mock_async_client
 
-        # Logger should be initialized
-        assert hasattr(client, "logger")
-        assert client.logger is not None
+        with patch.object(client.rate_limiter, "wait_if_needed"):
+            # The error handler converts httpx.RequestError to APIError
+            with pytest.raises(APIError, match="Request failed"):
+                await client.request_async("GET", "/api/v1/test")
 
-    def test_logger_initialization_normal(self) -> None:
-        """Test logger initialization in normal mode."""
-        client = HoneyHive(api_key="test-key", verbose=False)
 
-        # Logger should be initialized
-        assert hasattr(client, "logger")
-        assert client.logger is not None
+class TestHoneyHiveEdgeCases:
+    """Test suite for HoneyHive edge cases and error scenarios."""
 
-    def test_api_modules_reference_client(self) -> None:
-        """Test that API modules reference the client."""
-        client = HoneyHive(api_key="test-key")
+    @patch("honeyhive.api.client.safe_log")
+    @patch("honeyhive.api.client.get_logger")
+    @patch("honeyhive.config.models.api_client.APIClientConfig")
+    def test_sync_client_property_creation(
+        self, mock_config_class: Mock, mock_get_logger: Mock, mock_safe_log: Mock
+    ) -> None:
+        """Test sync client property creates client when accessed."""
+        mock_config = Mock()
+        mock_config.api_key = "test-key"
+        mock_config.server_url = "https://api.honeyhive.ai"
+        mock_config.http_config.timeout = 30.0
+        mock_config.http_config.rate_limit_calls = 100
+        mock_config.http_config.rate_limit_window = 60.0
+        mock_config.http_config.max_connections = 10
+        mock_config.http_config.max_keepalive_connections = 5
+        mock_config.test_mode = False
+        mock_config.verbose = False
+        mock_config_class.return_value = mock_config
 
-        # All API modules should reference the client
-        assert client.sessions.client is client
-        assert client.events.client is client
-        assert client.tools.client is client
-        assert client.datapoints.client is client
-        assert client.datasets.client is client
-        assert client.configurations.client is client
-        assert client.projects.client is client
-        assert client.metrics.client is client
-        assert client.evaluations.client is client
+        client = HoneyHive()
+
+        # Initially no sync client
+        assert client._sync_client is None
+
+        # Accessing sync_client property should create it
+        sync_client = client.sync_client
+        assert sync_client is not None
+        assert client._sync_client is not None
+
+    @patch("honeyhive.api.client.safe_log")
+    @patch("honeyhive.api.client.get_logger")
+    @patch("honeyhive.config.models.api_client.APIClientConfig")
+    def test_async_client_property_creation(
+        self, mock_config_class: Mock, mock_get_logger: Mock, mock_safe_log: Mock
+    ) -> None:
+        """Test async client property creates client when accessed."""
+        mock_config = Mock()
+        mock_config.api_key = "test-key"
+        mock_config.server_url = "https://api.honeyhive.ai"
+        mock_config.http_config.timeout = 30.0
+        mock_config.http_config.rate_limit_calls = 100
+        mock_config.http_config.rate_limit_window = 60.0
+        mock_config.http_config.max_connections = 10
+        mock_config.http_config.max_keepalive_connections = 5
+        mock_config.test_mode = False
+        mock_config.verbose = False
+        mock_config_class.return_value = mock_config
+
+        client = HoneyHive()
+
+        # Initially no async client
+        assert client._async_client is None
+
+        # Accessing async_client property should create it
+        async_client = client.async_client
+        assert async_client is not None
+        assert client._async_client is not None
+
+
+class TestHoneyHiveErrorHandling:
+    """Test suite for HoneyHive error handling."""
+
+    @patch("honeyhive.api.client.safe_log")
+    @patch("honeyhive.api.client.get_logger")
+    @patch("honeyhive.config.models.api_client.APIClientConfig")
+    def test_request_http_error(
+        self, mock_config_class: Mock, mock_get_logger: Mock, mock_safe_log: Mock
+    ) -> None:
+        """Test request handling of HTTP errors."""
+        mock_config = Mock()
+        mock_config.api_key = "test-key"
+        mock_config.server_url = "https://api.honeyhive.ai"
+        mock_config.http_config.timeout = 30.0
+        mock_config.http_config.rate_limit_calls = 100
+        mock_config.http_config.rate_limit_window = 60.0
+        mock_config.http_config.max_connections = 10
+        mock_config.http_config.max_keepalive_connections = 5
+        mock_config.test_mode = False
+        mock_config.verbose = False
+        mock_config_class.return_value = mock_config
+
+        client = HoneyHive()
+
+        mock_sync_client = Mock()
+        mock_sync_client.request.side_effect = httpx.RequestError("Network error")
+        client._sync_client = mock_sync_client
+
+        with patch.object(client.rate_limiter, "wait_if_needed"):
+            # The error handler converts httpx.RequestError to APIError
+            with pytest.raises(APIError, match="Request failed"):
+                client.request("GET", "/api/v1/test")

@@ -1,5 +1,45 @@
 # HoneyHive Python SDK - Feature Catalog
 
+## 🏗️ NEW: Architectural Refactor (v0.1.0+)
+
+### Modular Tracer Architecture
+- **Complete Rewrite**: 35 new files across 6 core modules (core, infra, instrumentation, integration, lifecycle, processing, utils)
+- **Mixin-Based Composition**: Flexible architecture using mixin patterns for enhanced modularity
+- **Enhanced Multi-Instance Support**: True multi-instance architecture with independent configurations
+- **Provider Strategy Intelligence**: Advanced provider detection and management with intelligent fallback
+
+### Hybrid Configuration System
+- **Backwards Compatible**: Traditional `.init()` method remains primary, fully supported approach
+- **Modern Config Objects**: New Pydantic-based configuration models with type safety and validation
+- **Environment Variable Integration**: Enhanced support via AliasChoices with graceful degradation
+- **IDE Support**: Full autocomplete and type checking with modern config objects
+
+```python
+# Traditional approach (recommended for existing code)
+tracer = HoneyHiveTracer.init(
+    api_key="hh_1234567890abcdef",
+    project="my-project",
+    verbose=True
+)
+
+# Modern config objects (new pattern)
+from honeyhive.config.models import TracerConfig
+
+config = TracerConfig(
+    api_key="hh_1234567890abcdef",
+    project="my-project",
+    verbose=True,
+    cache_enabled=True
+)
+tracer = HoneyHiveTracer(config=config)
+```
+
+### Enhanced Performance & Reliability
+- **Optimized Connection Pooling**: Improved connection management with configurable parameters
+- **Advanced Caching**: Configurable TTL, cleanup intervals, and cache size management
+- **Circuit Breaker Patterns**: Enhanced error handling with graceful degradation
+- **Batch Processing Optimization**: Advanced span processing with performance tuning
+
 ## Core Tracing Features
 
 ### 🔧 Enhanced Compatibility & Reliability
@@ -545,6 +585,11 @@ rules:
 
 | Feature | Status | Version |
 |---------|--------|---------|
+| **🏗️ Modular Architecture** | ✅ **Stable** | **0.1.0** |
+| **🔧 Hybrid Configuration** | ✅ **Stable** | **0.1.0** |
+| **🎯 Enhanced Multi-Instance** | ✅ **Stable** | **0.1.0** |
+| **📚 Migration Guide** | ✅ **Stable** | **0.1.0** |
+| **🔄 Backwards Compatibility** | ✅ **Stable** | **0.1.0** |
 | @trace decorator | ✅ Stable | 0.1.0 |
 | Async support | ✅ Stable | 0.1.0 |
 | Multi-instance | ✅ Stable | 0.1.0 |

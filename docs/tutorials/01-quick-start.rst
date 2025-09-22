@@ -44,40 +44,120 @@ Step 2: Get Your API Key
    Keep your API key secure! Never commit it to version control.
 
 .. note::
-   **New in v0.1.0**: You no longer need to specify a project name! Your API key is already scoped to your project, so the SDK automatically derives the project information.
+   **Project Configuration**: You need to specify a project name when initializing the tracer. This is a required field that identifies which HoneyHive project your traces belong to.
+
+.. tip::
+   **🆕 New in v0.1.0+: Hybrid Configuration System**
+   
+   The HoneyHive SDK supports both traditional and modern configuration approaches:
+   
+   - **Traditional .init() Method**: Backwards compatible, fully supported (recommended for existing code)
+   - **Modern Config Objects**: Type-safe, IDE autocomplete, validation (new pattern)
+   - **Environment Variables**: DevOps-friendly, works with both approaches
 
 Step 3: Create Your First Traced Function
 -----------------------------------------
 
 Create a new file called ``hello_honeyhive.py``:
 
-.. code-block:: python
+.. tabs::
 
-   from honeyhive import HoneyHiveTracer, trace
-   
-   # Initialize the tracer (simplified in v0.1.0+)
-   tracer = HoneyHiveTracer.init(
-       api_key="your-api-key-here",  # Or set HH_API_KEY environment variable
-       project="your-project",       # Or set HH_PROJECT environment variable
-       source="tutorial"             # Or set HH_SOURCE environment variable
-   )
-   
-   # You can also specify additional configuration:
-   # tracer = HoneyHiveTracer.init(api_key="...", source="tutorial")
-   
-   # Use the @trace decorator to automatically trace this function
-   @trace(tracer=tracer)
-   def greet_user(name: str, language: str = "en") -> str:
-       """A simple function that greets users in different languages."""
-       
-       greetings = {
-           "en": f"Hello, {name}!",
-           "es": f"¡Hola, {name}!",
-           "fr": f"Bonjour, {name}!",
-           "de": f"Hallo, {name}!"
-       }
-       
-       greeting = greetings.get(language, greetings["en"])
+   .. tab:: 🔄 Traditional .init() Method (Recommended)
+
+      **Backwards compatible and fully supported:**
+
+      .. code-block:: python
+
+         from honeyhive import HoneyHiveTracer, trace
+         
+         # Initialize the tracer using .init() method (backwards compatible)
+         tracer = HoneyHiveTracer.init(
+             api_key="your-api-key-here",  # Or set HH_API_KEY environment variable
+             project="your-project",       # Or set HH_PROJECT environment variable
+             source="tutorial",            # Or set HH_SOURCE environment variable
+             verbose=True
+         )
+         
+         # Use the @trace decorator to automatically trace this function
+         @trace(tracer=tracer)
+         def greet_user(name: str, language: str = "en") -> str:
+             """A simple function that greets users in different languages."""
+             
+             greetings = {
+                 "en": f"Hello, {name}!",
+                 "es": f"¡Hola, {name}!",
+                 "fr": f"Bonjour, {name}!",
+                 "de": f"Hallo, {name}!"
+             }
+             
+             greeting = greetings.get(language, greetings["en"])
+
+   .. tab:: 🆕 Modern Config Objects (New Pattern)
+
+      **Type-safe configuration with IDE support:**
+
+      .. code-block:: python
+
+         from honeyhive import HoneyHiveTracer, trace
+         from honeyhive.config.models import TracerConfig
+         
+         # Create configuration object
+         config = TracerConfig(
+             api_key="your-api-key-here",  # Or set HH_API_KEY environment variable
+             project="your-project",       # Or set HH_PROJECT environment variable
+             source="tutorial",            # Or set HH_SOURCE environment variable
+             verbose=True                  # Enable detailed logging
+         )
+         
+         # Initialize tracer with config object
+         tracer = HoneyHiveTracer(config=config)
+         
+         # Use the @trace decorator to automatically trace this function
+         @trace(tracer=tracer)
+         def greet_user(name: str, language: str = "en") -> str:
+             """A simple function that greets users in different languages."""
+             
+             greetings = {
+                 "en": f"Hello, {name}!",
+                 "es": f"¡Hola, {name}!",
+                 "fr": f"Bonjour, {name}!",
+                 "de": f"Hallo, {name}!"
+             }
+             
+             greeting = greetings.get(language, greetings["en"])
+
+   .. tab:: 🌍 Environment Variables
+
+      **Set environment variables for automatic configuration:**
+
+      .. code-block:: bash
+
+         # Set environment variables
+         export HH_API_KEY="your-api-key-here"
+         export HH_PROJECT="your-project"
+         export HH_SOURCE="tutorial"
+         export HH_VERBOSE="true"
+
+      .. code-block:: python
+
+         from honeyhive import HoneyHiveTracer, trace
+         
+         # Configuration loaded automatically from environment using .init()
+         tracer = HoneyHiveTracer.init()  # Loads from HH_* environment variables
+         
+         # Use the @trace decorator to automatically trace this function
+         @trace(tracer=tracer)
+         def greet_user(name: str, language: str = "en") -> str:
+             """A simple function that greets users in different languages."""
+             
+             greetings = {
+                 "en": f"Hello, {name}!",
+                 "es": f"¡Hola, {name}!",
+                 "fr": f"Bonjour, {name}!",
+                 "de": f"Hallo, {name}!"
+             }
+             
+             greeting = greetings.get(language, greetings["en"])
        print(greeting)
        return greeting
    

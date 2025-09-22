@@ -9,9 +9,9 @@ from typing import Any, Dict
 def lambda_handler(event: Dict[str, Any], context: Any) -> Dict[str, Any]:
     """Simple Lambda handler for testing Docker setup."""
     print(f"🚀 Lambda invocation started: {getattr(context, 'aws_request_id', 'test')}")
-    
+
     start_time = time.time()
-    
+
     try:
         # Test basic Lambda functionality
         result = {
@@ -25,18 +25,20 @@ def lambda_handler(event: Dict[str, Any], context: Any) -> Dict[str, Any]:
             "execution_time_ms": (time.time() - start_time) * 1000,
             "timestamp": time.time(),
         }
-        
+
         return {
             "statusCode": 200,
             "body": json.dumps(result),
         }
-        
+
     except Exception as e:
         print(f"❌ Lambda execution failed: {e}")
         return {
             "statusCode": 500,
-            "body": json.dumps({
-                "error": str(e),
-                "execution_time_ms": (time.time() - start_time) * 1000,
-            }),
+            "body": json.dumps(
+                {
+                    "error": str(e),
+                    "execution_time_ms": (time.time() - start_time) * 1000,
+                }
+            ),
         }

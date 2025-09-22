@@ -607,6 +607,105 @@ This warning indicates that OpenTelemetry's default ProxyTracerProvider is being
 - ``✓ OTLP exporter configured to send spans``
 - ``🔍 SPAN INTERCEPTED`` (during LLM calls)
 
+Provider Strategy Intelligence
+------------------------------
+
+**Critical Feature: Preventing Span Loss**
+
+HoneyHive includes intelligent provider detection to prevent a common but serious issue: **instrumentor spans being lost in empty TracerProviders**.
+
+**The Problem:**
+
+.. code-block:: python
+
+   # Common scenario that causes span loss:
+   
+   # 1. Application creates empty TracerProvider
+   empty_provider = TracerProvider()  # No processors, no exporters
+   trace.set_tracer_provider(empty_provider)
+   
+   # 2. Instrumentors create spans on empty provider
+   openai_client = OpenAI()  # Creates spans on empty_provider
+   response = openai_client.chat.completions.create(...)  # Span lost!
+   
+   # 3. HoneyHive creates isolated provider (traditional approach)
+   honeyhive_provider = TracerProvider()  # Separate provider
+   # Result: OpenAI spans go to empty provider → disappear forever
+
+**HoneyHive's Solution: Provider Strategy Intelligence**
+
+HoneyHive automatically detects the OpenTelemetry environment and chooses the optimal strategy:
+
+.. code-block:: text
+
+   Provider Detection Logic:
+   
+   1. Detect existing provider type (NoOp/Proxy/TracerProvider/Custom)
+   2. Check if TracerProvider is functioning (has processors/exporters)
+   3. Choose strategy:
+      - MAIN_PROVIDER: Replace non-functioning providers
+      - INDEPENDENT_PROVIDER: Coexist with functioning providers
+
+**Strategy 1: Main Provider (Prevent Span Loss)**
+
+.. code-block:: python
+
+   # When: NoOp, Proxy, or Empty TracerProvider detected
+   # HoneyHive becomes the global provider
+   
+   # Before (empty provider):
+   empty_provider = TracerProvider()  # No processors
+   trace.set_tracer_provider(empty_provider)
+   
+   # HoneyHive initialization:
+   tracer = HoneyHiveTracer.init(
+       api_key="your-key",      # Or set HH_API_KEY environment variable
+       project="your-project"   # Or set HH_PROJECT environment variable
+   )
+   # Result: tracer.is_main_provider = True
+   
+   # After (HoneyHive provider):
+   # trace.get_tracer_provider() → HoneyHive's TracerProvider
+   # OpenAI spans → HoneyHive backend ✅
+
+**Strategy 2: Independent Provider (Coexistence)**
+
+.. code-block:: python
+
+   # When: Functioning TracerProvider with processors detected
+   # HoneyHive creates isolated provider
+   
+   # Existing functioning provider:
+   existing_provider = TracerProvider()
+   existing_provider.add_span_processor(ConsoleSpanProcessor())
+   trace.set_tracer_provider(existing_provider)
+   
+   # HoneyHive initialization:
+   tracer = HoneyHiveTracer.init(
+       api_key="your-key",      # Or set HH_API_KEY environment variable
+       project="your-project"   # Or set HH_PROJECT environment variable
+   )
+   # Result: tracer.is_main_provider = False
+   
+   # Coexistence:
+   # OpenAI spans → existing_provider → console ✅
+   # HoneyHive spans → honeyhive_provider → HoneyHive backend ✅
+
+**Verification Commands:**
+
+.. code-block:: python
+
+   # Check which strategy was chosen:
+   tracer = HoneyHiveTracer.init(
+       api_key="your-key",      # Or set HH_API_KEY environment variable
+       project="your-project"   # Or set HH_PROJECT environment variable
+   )
+   
+   if tracer.is_main_provider:
+       print("✅ HoneyHive is main provider - all spans captured")
+   else:
+       print("✅ HoneyHive is independent - coexisting with other system")
+
 **Next Steps:**
 
 - :doc:`../../tutorials/03-llm-integration` - Try BYOI integration

@@ -19,6 +19,8 @@ import os
 import re
 import subprocess
 import sys
+import time
+import traceback
 from pathlib import Path
 from typing import List, NoReturn, Set
 
@@ -32,7 +34,7 @@ def extract_features_from_reference_docs() -> Set[str]:
 
     content = reference_path.read_text()
     features = set()
-    
+
     # Extract features from RST sections and bullet points
     lines = content.split("\n")
     for i, line in enumerate(lines):
@@ -41,13 +43,13 @@ def extract_features_from_reference_docs() -> Set[str]:
             feature_name = lines[i - 1].strip()
             if feature_name and not feature_name.startswith("*"):
                 features.add(feature_name.lower())
-        
+
         # Look for bullet points with ** bold features
         if line.strip().startswith("- **") and "**:" in line:
-            feature_match = re.search(r'\*\*(.*?)\*\*', line)
+            feature_match = re.search(r"\*\*(.*?)\*\*", line)
             if feature_match:
                 features.add(feature_match.group(1).lower())
-    
+
     return features
 
 
@@ -107,16 +109,84 @@ def extract_core_components_from_codebase() -> Set[str]:
 
 
 def check_documentation_build() -> bool:
-    """Check if documentation builds successfully."""
+    """Check if documentation builds successfully with enhanced error reporting."""
     print("🔍 Checking documentation build...")
-    exit_code = os.system("tox -e docs > /dev/null 2>&1")
-    if exit_code != 0:
-        print("❌ Documentation build failed")
-        print("   Run 'tox -e docs' to see detailed errors")
+    
+    # Check for existing build artifacts that might cause conflicts
+    build_dir = Path("docs/_build")
+    if build_dir.exists():
+        print(f"   Found existing build directory: {build_dir}")
+        try:
+            # Try to clean up existing build
+            import shutil
+            shutil.rmtree(build_dir)
+            print("   Cleaned up existing build directory")
+        except Exception as e:
+            print(f"   Warning: Could not clean build directory: {e}")
+    
+    # Use subprocess for better error handling and output capture
+    start_time = time.time()
+    try:
+        print("   Running: tox -e docs")
+        result = subprocess.run(
+            ["tox", "-e", "docs"],
+            capture_output=True,
+            text=True,
+            timeout=180,  # 3 minute timeout
+            cwd=os.getcwd()
+        )
+        elapsed_time = time.time() - start_time
+        print(f"   Build completed in {elapsed_time:.2f} seconds")
+        
+        if result.returncode == 0:
+            print("✅ Documentation builds successfully")
+            return True
+        else:
+            print("❌ Documentation build failed")
+            print(f"   Exit code: {result.returncode}")
+            print(f"   Working directory: {os.getcwd()}")
+            print(f"   Command: tox -e docs")
+            
+            # Enhanced error reporting
+            if result.stdout:
+                print(f"   STDOUT (last 1000 chars):")
+                print(f"   {result.stdout[-1000:]}")
+            
+            if result.stderr:
+                print(f"   STDERR (last 1000 chars):")
+                print(f"   {result.stderr[-1000:]}")
+            
+            # Check for common error patterns
+            combined_output = (result.stdout or "") + (result.stderr or "")
+            if "Directory not empty" in combined_output:
+                print("   🔍 Detected 'Directory not empty' error - likely build artifact conflict")
+            if "Theme error" in combined_output:
+                print("   🔍 Detected 'Theme error' - likely Sphinx configuration issue")
+            if "OSError" in combined_output:
+                print("   🔍 Detected OSError - likely file system or permission issue")
+            
+            print("   Run 'tox -e docs' manually to see full detailed errors")
+            return False
+            
+    except subprocess.TimeoutExpired as e:
+        elapsed_time = time.time() - start_time
+        print(f"❌ Documentation build timed out after {elapsed_time:.2f} seconds")
+        print("   This may indicate a hanging process or resource contention")
+        print("   Run 'tox -e docs' manually to see detailed errors")
         return False
-    else:
-        print("✅ Documentation builds successfully")
-        return True
+        
+    except FileNotFoundError as e:
+        print(f"❌ Command not found: {e}")
+        print("   Ensure tox is installed and available in PATH")
+        print(f"   Current PATH: {os.environ.get('PATH', 'Not set')}")
+        return False
+        
+    except Exception as e:
+        print(f"❌ Unexpected error during documentation build: {e}")
+        print(f"   Exception type: {type(e).__name__}")
+        print(f"   Traceback:")
+        traceback.print_exc()
+        return False
 
 
 def check_required_docs_exist() -> bool:
@@ -125,7 +195,7 @@ def check_required_docs_exist() -> bool:
         "README.md",
         "CHANGELOG.md",
         "docs/reference/index.rst",
-        "docs/tutorials/index.rst", 
+        "docs/tutorials/index.rst",
         "docs/how-to/index.rst",
         "docs/explanation/index.rst",
         ".agent-os/product/features.md",
@@ -155,58 +225,91 @@ def check_required_docs_exist() -> bool:
 
 
 def main() -> NoReturn:
-    """Main validation function."""
+    """Main validation function with enhanced diagnostics."""
+    start_time = time.time()
     print("📚 Documentation Synchronization Check")
     print("=" * 50)
+    print(f"🕐 Started at: {time.strftime('%Y-%m-%d %H:%M:%S')}")
+    print(f"📁 Working directory: {os.getcwd()}")
+    print(f"🐍 Python version: {sys.version}")
+    print(f"🔧 Process ID: {os.getpid()}")
+    
+    # Environment diagnostics
+    print(f"🌍 Environment variables:")
+    for key in ['VIRTUAL_ENV', 'PATH', 'PYTHONPATH', 'TOX_ENV_NAME']:
+        value = os.environ.get(key, 'Not set')
+        print(f"   {key}: {value[:100]}{'...' if len(value) > 100 else ''}")
+    
+    try:
+        # Check if documentation builds
+        print(f"\n🔨 Step 1: Documentation Build Check")
+        build_ok = check_documentation_build()
 
-    # Check if documentation builds
-    build_ok = check_documentation_build()
+        # Check required docs exist
+        print(f"\n📋 Step 2: Required Documentation Check")
+        docs_exist = check_required_docs_exist()
 
-    # Check required docs exist
-    docs_exist = check_required_docs_exist()
+        # Extract features from different sources
+        print(f"\n🔍 Step 3: Feature Extraction")
+        reference_docs_features = extract_features_from_reference_docs()
+        agent_os_features = extract_features_from_agent_os()
+        codebase_components = extract_core_components_from_codebase()
 
-    # Extract features from different sources
-    reference_docs_features = extract_features_from_reference_docs()
-    agent_os_features = extract_features_from_agent_os()
-    codebase_components = extract_core_components_from_codebase()
-
-    print(f"\n📊 Feature Coverage Analysis:")
-    print(f"   Reference Docs (docs/reference/): {len(reference_docs_features)} features")
-    print(f"   Agent OS (product/): {len(agent_os_features)} features")
-    print(f"   Codebase components: {len(codebase_components)} components")
-
-    # Check for major discrepancies
-    all_good = True
-
-    if len(reference_docs_features) == 0:
-        print("❌ No features found in docs/reference/index.rst")
-        all_good = False
-
-    if len(agent_os_features) == 0:
-        print("❌ No features found in Agent OS features.md")
-        all_good = False
-
-    # Warn about significant gaps (more than 50% difference)
-    if len(reference_docs_features) > 0 and len(agent_os_features) > 0:
-        ratio = min(len(reference_docs_features), len(agent_os_features)) / max(
-            len(reference_docs_features), len(agent_os_features)
+        print(f"\n📊 Feature Coverage Analysis:")
+        print(
+            f"   Reference Docs (docs/reference/): {len(reference_docs_features)} features"
         )
-        if ratio < 0.5:
-            print(
-                f"⚠️  Significant feature count discrepancy: {len(reference_docs_features)} vs {len(agent_os_features)}"
-            )
-            print("   Consider updating documentation to ensure consistency")
+        print(f"   Agent OS (product/): {len(agent_os_features)} features")
+        print(f"   Codebase components: {len(codebase_components)} components")
 
-    # Final result
-    if build_ok and docs_exist and all_good:
-        print("\n✅ Documentation validation passed")
-        sys.exit(0)
-    else:
-        print("\n❌ Documentation validation failed")
-        print("\nTo fix:")
-        print("1. Ensure all documentation files exist and have content")
-        print("2. Fix any documentation build errors: tox -e docs")
-        print("3. Update feature documentation to stay synchronized")
+        # Check for major discrepancies
+        all_good = True
+
+        if len(reference_docs_features) == 0:
+            print("❌ No features found in docs/reference/index.rst")
+            all_good = False
+
+        if len(agent_os_features) == 0:
+            print("❌ No features found in Agent OS features.md")
+            all_good = False
+
+        # Warn about significant gaps (more than 50% difference)
+        if len(reference_docs_features) > 0 and len(agent_os_features) > 0:
+            ratio = min(len(reference_docs_features), len(agent_os_features)) / max(
+                len(reference_docs_features), len(agent_os_features)
+            )
+            if ratio < 0.5:
+                print(
+                    f"⚠️  Significant feature count discrepancy: {len(reference_docs_features)} vs {len(agent_os_features)}"
+                )
+                print("   Consider updating documentation to ensure consistency")
+
+        # Final result
+        elapsed_time = time.time() - start_time
+        print(f"\n⏱️  Total execution time: {elapsed_time:.2f} seconds")
+        
+        if build_ok and docs_exist and all_good:
+            print("\n✅ Documentation validation passed")
+            sys.exit(0)
+        else:
+            print("\n❌ Documentation validation failed")
+            print(f"\n🔍 Failure Summary:")
+            print(f"   Build OK: {build_ok}")
+            print(f"   Docs Exist: {docs_exist}")
+            print(f"   Feature Analysis OK: {all_good}")
+            print("\nTo fix:")
+            print("1. Ensure all documentation files exist and have content")
+            print("2. Fix any documentation build errors: tox -e docs")
+            print("3. Update feature documentation to stay synchronized")
+            sys.exit(1)
+            
+    except Exception as e:
+        elapsed_time = time.time() - start_time
+        print(f"\n💥 Unexpected error in main execution after {elapsed_time:.2f} seconds:")
+        print(f"   Exception: {e}")
+        print(f"   Type: {type(e).__name__}")
+        print(f"   Traceback:")
+        traceback.print_exc()
         sys.exit(1)
 
 

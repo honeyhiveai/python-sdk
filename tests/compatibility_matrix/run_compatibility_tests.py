@@ -163,6 +163,13 @@ class CompatibilityTestRunner:
                 "category": "traceloop",
                 "required_env": [],
             },
+            # Framework Integration Tests
+            "test_strands_integration.py": {
+                "provider": "AWS Strands",
+                "instrumentor": "strands-agents",
+                "category": "framework",
+                "required_env": [],  # Strands is optional - test will skip if not available
+            },
         }
 
     def check_base_requirements(self) -> bool:

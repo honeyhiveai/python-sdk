@@ -20,7 +20,7 @@ This document lists all environment variables supported by the HoneyHive Python 
 | `HH_DISABLE_TRACING` | Disable tracing | `false` | No |
 | `HH_DISABLE_HTTP_TRACING` | Disable HTTP instrumentation | `false` | No |
 | `HH_TEST_MODE` | Enable test mode | `false` | No |
-| `HH_DEBUG_MODE` | Enable debug mode | `false` | No |
+| `HH_VERBOSE` | Enable verbose logging | `false` | No |
 
 ## OTLP Configuration
 

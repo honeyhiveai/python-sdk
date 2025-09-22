@@ -9,9 +9,14 @@ These tests demonstrate the proper pattern for integration testing:
 NO MOCKS - REAL API CALLS ONLY
 """
 
+# pylint: disable=duplicate-code
+
+# pylint: disable=too-many-lines,protected-access,redefined-outer-name,too-many-public-methods,line-too-long
+# Justification: Integration test file with comprehensive end-to-end validation requiring real API calls
+
 import time
 import uuid
-from typing import Any, Dict
+from typing import Any
 
 import pytest
 
@@ -21,9 +26,17 @@ from honeyhive.models.generated import (
     CreateEventRequest,
     EventFilter,
     EventType1,
+    Operator,
     Parameters2,
     PostConfigurationRequest,
     SessionStartRequest,
+    Type,
+)
+from tests.utils import (  # pylint: disable=no-name-in-module
+    generate_test_id,
+    verify_datapoint_creation,
+    verify_event_creation,
+    verify_session_creation,
 )
 
 
@@ -32,7 +45,9 @@ from honeyhive.models.generated import (
 class TestEndToEndValidation:
     """End-to-end integration tests with full data validation."""
 
-    def test_complete_datapoint_lifecycle(self, integration_client):
+    def test_complete_datapoint_lifecycle(
+        self, integration_client: Any, real_project: Any
+    ) -> None:
         """Test complete datapoint lifecycle: create → store → retrieve → validate."""
         # Agent OS Zero Failing Tests Policy: NO SKIPPING - must use real credentials
         if (
@@ -59,54 +74,26 @@ class TestEndToEndValidation:
         }
 
         datapoint_request = CreateDatapointRequest(
-            project="api-key-derived",
+            project=real_project,
             inputs=test_data,
             ground_truth=expected_ground_truth,
             metadata={"integration_test": True, "test_id": test_id},
         )
 
         try:
-            # Step 1: Create datapoint
-            print(f"🔄 Creating datapoint with test_id: {test_id}")
-            datapoint_response = integration_client.datapoints.create_datapoint(
-                datapoint_request
+            # Use centralized validation helper for complete datapoint lifecycle
+
+            print(f"🔄 Creating and validating datapoint with test_id: {test_id}")
+            found_datapoint = verify_datapoint_creation(
+                client=integration_client,
+                project=real_project,
+                datapoint_request=datapoint_request,
+                test_id=test_id,
             )
 
-            # Validate creation response
-            assert hasattr(datapoint_response, "field_id"), "Response missing field_id"
-            assert datapoint_response.field_id is not None, "field_id is None"
-            created_id = datapoint_response.field_id
-            print(f"✅ Datapoint created with ID: {created_id}")
-
-            # Step 2: Wait for data propagation in real system
-            print("⏳ Waiting for data propagation...")
-            time.sleep(3)
-
-            # Step 3: Retrieve and validate data persistence using direct ID lookup
-            print(f"🔍 Retrieving datapoint by ID: {datapoint_response.field_id}")
-            found_datapoint = integration_client.datapoints.get_datapoint(
-                datapoint_response.field_id
+            print(
+                f"✅ Datapoint created and validated with ID: {found_datapoint.field_id}"
             )
-
-            # Step 4: Comprehensive validation
-            assert (
-                found_datapoint is not None
-            ), f"Datapoint with ID {datapoint_response.field_id} not found in HoneyHive system"
-            assert (
-                found_datapoint.field_id == datapoint_response.field_id
-            ), f"Retrieved datapoint ID mismatch: expected {datapoint_response.field_id}, got {found_datapoint.field_id}"
-
-            # Validate datapoint structure and basic fields
-            assert hasattr(found_datapoint, "inputs"), "Datapoint missing inputs field"
-            assert hasattr(
-                found_datapoint, "ground_truth"
-            ), "Datapoint missing ground_truth field"
-            assert hasattr(
-                found_datapoint, "metadata"
-            ), "Datapoint missing metadata field"
-            assert hasattr(
-                found_datapoint, "project_id"
-            ), "Datapoint missing project_id field"
             assert hasattr(
                 found_datapoint, "created_at"
             ), "Datapoint missing created_at field"
@@ -115,8 +102,9 @@ class TestEndToEndValidation:
             assert found_datapoint.project_id is not None, "Project ID is None"
 
             # Note: Current API behavior - inputs, ground_truth, and metadata are empty
-            # for standalone datapoints. This may require dataset context for full data storage.
-            print(f"📝 Datapoint structure validated:")
+            # for standalone datapoints. This may require dataset context for full
+            # data storage.
+            print("📝 Datapoint structure validated:")
             print(f"   - ID: {found_datapoint.field_id}")
             print(f"   - Project ID: {found_datapoint.project_id}")
             print(f"   - Created: {found_datapoint.created_at}")
@@ -133,19 +121,22 @@ class TestEndToEndValidation:
                     found_datapoint.metadata.get("test_id") == test_id
                 ), "Metadata test_id corrupted"
 
-            print(f"✅ FULL VALIDATION SUCCESSFUL:")
-            print(f"   - Datapoint ID: {created_id}")
+            print("✅ FULL VALIDATION SUCCESSFUL:")
+            print(f"   - Datapoint ID: {found_datapoint.field_id}")
             print(f"   - Test ID: {test_id}")
-            print(f"   - Input data integrity: ✓")
-            print(f"   - Ground truth integrity: ✓")
-            print(f"   - Metadata integrity: ✓")
-            print(f"   - Data persistence verified: ✓")
+            print("   - Input data integrity: ✓")
+            print("   - Ground truth integrity: ✓")
+            print("   - Metadata integrity: ✓")
+            print("   - Data persistence verified: ✓")
 
         except Exception as e:
-            # Agent OS Zero Failing Tests Policy: NO SKIPPING - real system exercise required
+            # Agent OS Zero Failing Tests Policy: NO SKIPPING - real system exercise
+            # required
             pytest.fail(f"Integration test failed - real system must work: {e}")
 
-    def test_session_event_relationship_validation(self, integration_client):
+    def test_session_event_relationship_validation(
+        self, integration_client: Any, real_project: Any
+    ) -> None:
         """Test session-event relationships with full data validation."""
         if (
             not integration_client.api_key
@@ -161,29 +152,38 @@ class TestEndToEndValidation:
         event_name = f"integration-event-{test_id}"
 
         try:
-            # Step 1: Create session
-            print(f"🔄 Creating session: {session_name}")
+            # Step 1: Create and validate session using centralized helper
+
+            print(f"🔄 Creating and validating session: {session_name}")
             session_request = SessionStartRequest(
-                project="api-key-derived",
+                project=real_project,
                 session_name=session_name,
                 source="integration-test",
                 metadata={"test_id": test_id, "integration_test": True},
             )
 
-            session_response = integration_client.sessions.create_session(
-                session_request
+            verified_session = verify_session_creation(
+                client=integration_client,
+                project=real_project,
+                session_request=session_request,
+                expected_session_name=session_name,
             )
-            assert hasattr(
-                session_response, "session_id"
-            ), "Session response missing session_id"
-            session_id = session_response.session_id
-            print(f"✅ Session created: {session_id}")
+            session_id = (
+                verified_session.session_id
+                if hasattr(verified_session, "session_id")
+                else verified_session.event.session_id
+            )
+            print(f"✅ Session created and validated: {session_id}")
 
-            # Step 2: Create multiple events linked to session
+            # Step 2: Create multiple events linked to session using centralized
+            # validation
+
             event_ids = []
             for i in range(3):  # Create multiple events to test relationships
+                _, unique_id = generate_test_id(f"end_to_end_event_{i}", test_id)
+
                 event_request = CreateEventRequest(
-                    project="api-key-derived",
+                    project=real_project,
                     source="integration-test",
                     event_name=f"{event_name}-{i}",
                     event_type=EventType1.model,
@@ -197,15 +197,22 @@ class TestEndToEndValidation:
                     outputs={"response": f"Test response {i}"},
                     session_id=session_id,
                     duration=100.0 + (i * 10),  # Varying durations
-                    metadata={"test_id": test_id, "event_index": i},
+                    metadata={
+                        "test_id": test_id,
+                        "event_index": i,
+                        "test.unique_id": unique_id,
+                    },
                 )
 
-                event_response = integration_client.events.create_event(event_request)
-                assert hasattr(
-                    event_response, "event_id"
-                ), f"Event {i} response missing event_id"
-                event_ids.append(event_response.event_id)
-                print(f"✅ Event {i} created: {event_response.event_id}")
+                verified_event = verify_event_creation(
+                    client=integration_client,
+                    project=real_project,
+                    event_request=event_request,
+                    unique_identifier=unique_id,
+                    expected_event_name=f"{event_name}-{i}",
+                )
+                event_ids.append(verified_event.event_id)
+                print(f"✅ Event {i} created and validated: {verified_event.event_id}")
 
             # Step 3: Wait for data propagation
             print("⏳ Waiting for relationship data propagation...")
@@ -224,11 +231,14 @@ class TestEndToEndValidation:
             # Step 5: Validate event-session relationships
             print("🔍 Validating event-session relationships...")
             session_filter = EventFilter(
-                field="session_id", value=session_id, operator="is", type="id"
+                field="session_id",
+                value=session_id,
+                operator=Operator.is_,
+                type=Type.string,
             )
 
             events_result = integration_client.events.get_events(
-                project="api-key-derived", filters=[session_filter], limit=20
+                project=real_project, filters=[session_filter], limit=20
             )
 
             assert "events" in events_result, "Events result missing 'events' key"
@@ -272,23 +282,24 @@ class TestEndToEndValidation:
                     event.outputs["response"] == f"Test response {expected_index}"
                 ), f"Event {i} output corrupted"
 
-            print(f"✅ RELATIONSHIP VALIDATION SUCCESSFUL:")
+            print("✅ RELATIONSHIP VALIDATION SUCCESSFUL:")
             print(f"   - Session ID: {session_id}")
             print(f"   - Events created: {len(event_ids)}")
             print(f"   - Events retrieved: {len(found_events)}")
-            print(f"   - Session-event linking: ✓")
-            print(f"   - Event data integrity: ✓")
-            print(f"   - Relationship persistence: ✓")
+            print("   - Session-event linking: ✓")
+            print("   - Event data integrity: ✓")
+            print("   - Relationship persistence: ✓")
 
         except Exception as e:
-            # Agent OS Zero Failing Tests Policy: NO SKIPPING - real system exercise required
+            # Agent OS Zero Failing Tests Policy: NO SKIPPING - real system exercise
+            # required
             pytest.fail(
                 f"Session-event integration test failed - real system must work: {e}"
             )
 
     def test_configuration_workflow_validation(
-        self, integration_client, integration_project_name
-    ):
+        self, integration_client: Any, integration_project_name: Any
+    ) -> None:
         """Test configuration creation and retrieval with full validation."""
         if (
             not integration_client.api_key
@@ -312,13 +323,15 @@ class TestEndToEndValidation:
                 parameters=Parameters2(
                     call_type=CallType.chat,
                     model="gpt-3.5-turbo",
-                    temperature=0.8,
-                    max_tokens=150,
-                    top_p=0.9,
-                    frequency_penalty=0.1,
-                    presence_penalty=0.1,
+                    hyperparameters={
+                        "temperature": 0.8,
+                        "max_tokens": 150,
+                        "top_p": 0.9,
+                        "frequency_penalty": 0.1,
+                        "presence_penalty": 0.1,
+                    },
                 ),
-                metadata={"test_id": test_id, "integration_test": True},
+                user_properties={"test_id": test_id, "integration_test": True},
             )
 
             config_response = integration_client.configurations.create_configuration(
@@ -370,12 +383,12 @@ class TestEndToEndValidation:
             assert params.call_type == CallType.chat, "Call type parameter corrupted"
             # Note: API currently only stores call_type and model, not temperature, max_tokens, etc.
 
-            print(f"✅ CONFIGURATION VALIDATION SUCCESSFUL:")
+            print("✅ CONFIGURATION VALIDATION SUCCESSFUL:")
             print(f"   - Configuration name: {config_name}")
             print(f"   - Provider: {found_config.provider}")
             print(f"   - Model: {params.model}")
-            print(f"   - Parameter integrity: ✓")
-            print(f"   - Data persistence: ✓")
+            print("   - Parameter integrity: ✓")
+            print("   - Data persistence: ✓")
 
         except Exception as e:
             # Agent OS Zero Failing Tests Policy: NO SKIPPING - real system exercise required
@@ -383,7 +396,9 @@ class TestEndToEndValidation:
                 f"Configuration integration test failed - real system must work: {e}"
             )
 
-    def test_cross_entity_data_consistency(self, integration_client):
+    def test_cross_entity_data_consistency(
+        self, integration_client: Any, real_project: Any
+    ) -> None:
         """Test data consistency across multiple entity types."""
         if (
             not integration_client.api_key
@@ -405,14 +420,14 @@ class TestEndToEndValidation:
             config_name = f"consistency-config-{test_id}"
             config_request = PostConfigurationRequest(
                 name=config_name,
-                project="api-key-derived",
+                project=real_project,
                 provider="openai",
                 parameters=Parameters2(
                     call_type=CallType.chat,
                     model="gpt-4",
-                    temperature=0.5,
+                    hyperparameters={"temperature": 0.5},
                 ),
-                metadata={"test_id": test_id, "timestamp": test_timestamp},
+                user_properties={"test_id": test_id, "timestamp": test_timestamp},
             )
             config_response = integration_client.configurations.create_configuration(
                 config_request
@@ -425,7 +440,7 @@ class TestEndToEndValidation:
             # 2. Create session
             session_name = f"consistency-session-{test_id}"
             session_request = SessionStartRequest(
-                project="api-key-derived",
+                project=real_project,
                 session_name=session_name,
                 source="consistency-test",
                 metadata={"test_id": test_id, "timestamp": test_timestamp},
@@ -440,7 +455,7 @@ class TestEndToEndValidation:
 
             # 3. Create datapoint
             datapoint_request = CreateDatapointRequest(
-                project="api-key-derived",
+                project=real_project,
                 inputs={"query": f"Consistency test query {test_id}"},
                 ground_truth={"response": f"Consistency test response {test_id}"},
                 metadata={"test_id": test_id, "timestamp": test_timestamp},
@@ -463,7 +478,7 @@ class TestEndToEndValidation:
 
             # Validate configuration exists with correct metadata
             configs = integration_client.configurations.list_configurations(
-                project="api-key-derived", limit=50
+                project=real_project, limit=50
             )
             found_config = next((c for c in configs if c.name == config_name), None)
             if found_config and hasattr(found_config, "metadata"):
@@ -495,7 +510,7 @@ class TestEndToEndValidation:
 
             # Validate datapoint exists
             datapoints = integration_client.datapoints.list_datapoints(
-                project="api-key-derived", limit=50
+                project=real_project, limit=50
             )
             found_datapoint = None
             for dp in datapoints:
@@ -518,7 +533,7 @@ class TestEndToEndValidation:
                 )
 
             # Report consistency results
-            print(f"✅ CROSS-ENTITY CONSISTENCY VALIDATION:")
+            print("✅ CROSS-ENTITY CONSISTENCY VALIDATION:")
             print(f"   - Test ID: {test_id}")
             print(f"   - Timestamp: {test_timestamp}")
             for check in consistency_checks:
@@ -526,7 +541,7 @@ class TestEndToEndValidation:
 
             # Assert at least basic entity creation succeeded
             assert len(entities_created) >= 3, "Not all entities were created"
-            print(f"   - All entities created and validated: ✓")
+            print("   - All entities created and validated: ✓")
 
         except Exception as e:
             # Agent OS Zero Failing Tests Policy: NO SKIPPING - real system exercise required

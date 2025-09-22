@@ -79,7 +79,8 @@ def run_tox_tests(env=None, description=""):
     if env:
         cmd.extend(["-e", env])
 
-    return run_command(cmd, description=f"Tox tests{f' ({env})' if env else ''}")
+    test_description = description or f"Tox tests{f' ({env})' if env else ''}"
+    return run_command(cmd, description=test_description)
 
 
 def main():

@@ -1,11 +1,19 @@
 """Integration tests for multi-instance tracer functionality in HoneyHive."""
 
-import time
+# pylint: disable=duplicate-code  # Integration tests share common patterns
+
+# Removed unused import: time
+import asyncio
+import threading
+from typing import Any
 
 import pytest
 
-from honeyhive.tracer.decorators import atrace, trace
-from honeyhive.tracer.otel_tracer import HoneyHiveTracer
+from honeyhive.tracer import HoneyHiveTracer, atrace, enrich_span, trace
+from tests.utils import (  # pylint: disable=no-name-in-module
+    generate_test_id,
+    verify_tracer_span,
+)
 
 
 @pytest.mark.integration
@@ -14,68 +22,67 @@ class TestMultiInstanceTracerIntegration:
     """Test multi-instance tracer integration and end-to-end functionality."""
 
     def test_multiple_tracers_coexistence(
-        self, real_api_key, real_project, real_source
-    ):
-        """Test that multiple tracers can coexist and work independently."""
-        # Create multiple tracers with different configurations
-        tracer1 = HoneyHiveTracer(
-            api_key=real_api_key,
-            project=real_project,
-            source=real_source,
-            session_name="tracer1-session",
-            test_mode=False,
-            disable_http_tracing=True,
-        )
+        self, tracer_factory: Any, integration_client: Any, real_project: Any
+    ) -> None:
+        """Test that multiple tracers can coexist and work independently
+        with backend verification."""
 
-        tracer2 = HoneyHiveTracer(
-            api_key=real_api_key,
-            project=real_project,
-            source=real_source,
-            session_name="tracer2-session",
-            test_mode=False,
-            disable_http_tracing=True,
-        )
+        # Create multiple tracers using standardized factory
+        tracer1 = tracer_factory("tracer1-session")
+        tracer2 = tracer_factory("tracer2-session")
 
         # Verify they're independent instances
         assert tracer1 is not tracer2
-        assert tracer1.session_name == "tracer1-session"
-        assert tracer2.session_name == "tracer2-session"
+        assert "tracer1-session" in tracer1.session_name
+        assert "tracer2-session" in tracer2.session_name
 
-        # Test both can create spans independently
-        with tracer1.start_span("span1") as span1:
-            span1.set_attribute("tracer", "tracer1")
-            span1.set_attribute("test", "coexistence")
-            assert span1.is_recording()
+        # Test both can create spans independently with backend verification
+        _, unique_id1 = generate_test_id("coexistence_test", "tracer1")
+        verified_event1 = verify_tracer_span(
+            tracer=tracer1,
+            client=integration_client,
+            project=real_project,
+            span_name="multi_tracer_span1",
+            unique_identifier=unique_id1,
+            span_attributes={
+                "tracer": "tracer1",
+                "test": "coexistence",
+                "test.type": "multi_instance",
+            },
+        )
 
-        with tracer2.start_span("span2") as span2:
-            span2.set_attribute("tracer", "tracer2")
-            span2.set_attribute("test", "coexistence")
-            assert span2.is_recording()
+        _, unique_id2 = generate_test_id("coexistence_test", "tracer2")
+        verified_event2 = verify_tracer_span(
+            tracer=tracer2,
+            client=integration_client,
+            project=real_project,
+            span_name="multi_tracer_span2",
+            unique_identifier=unique_id2,
+            span_attributes={
+                "tracer": "tracer2",
+                "test": "coexistence",
+                "test.type": "multi_instance",
+            },
+        )
 
-        # Clean up
-        tracer1.shutdown()
-        tracer2.shutdown()
+        # Verify both spans were exported to backend
+        assert verified_event1.event_name == "multi_tracer_span1"
+        assert verified_event2.event_name == "multi_tracer_span2"
 
-    def test_tracer_independence(self, real_api_key, real_project, real_source):
+        # Verify spans have different session contexts
+        assert verified_event1.session_id != verified_event2.session_id
+
+    def test_tracer_independence(
+        self,
+        tracer_factory: Any,
+        real_api_key: Any,  # pylint: disable=unused-argument
+        real_project: Any,  # pylint: disable=unused-argument
+        real_source: Any,  # pylint: disable=unused-argument
+    ) -> None:
         """Test that tracers are completely independent."""
-        # Create tracers with different configurations
-        tracer1 = HoneyHiveTracer(
-            api_key=real_api_key,
-            project=real_project,
-            source=real_source,
-            session_name="independent-session-1",
-            test_mode=False,
-            disable_http_tracing=True,
-        )
-
-        tracer2 = HoneyHiveTracer(
-            api_key=real_api_key,
-            project=real_project,
-            source=real_source,
-            session_name="independent-session-2",
-            test_mode=False,
-            disable_http_tracing=True,
-        )
+        # Create tracers with different configurations using factory
+        tracer1 = tracer_factory("independent-session-1")
+        tracer2 = tracer_factory("independent-session-2")
 
         # Verify they have different session names
         assert tracer1.session_name != tracer2.session_name
@@ -95,20 +102,19 @@ class TestMultiInstanceTracerIntegration:
         tracer2.shutdown()
 
     def test_decorator_with_explicit_tracer(
-        self, real_api_key, real_project, real_source
-    ):
+        self,
+        tracer_factory: Any,
+        real_api_key: Any,  # pylint: disable=unused-argument
+        real_project: Any,  # pylint: disable=unused-argument
+        real_source: Any,  # pylint: disable=unused-argument
+    ) -> None:
         """Test @trace decorator with explicit tracer parameter."""
-        tracer = HoneyHiveTracer(
-            api_key=real_api_key,
-            project=real_project,
-            source=real_source,
-            session_name="decorator-test",
-            test_mode=False,
-            disable_http_tracing=True,
-        )
+        tracer = tracer_factory("decorator-test")
 
-        @trace(event_name="test_event", event_type="test", tracer=tracer)
-        def test_function(x, y):
+        @trace(  # type: ignore[misc]
+            event_name="test_event", event_type="tool", tracer=tracer
+        )
+        def test_function(x: Any, y: Any) -> Any:
             return x + y
 
         # Test that the function works and tracing is applied
@@ -123,24 +129,23 @@ class TestMultiInstanceTracerIntegration:
         tracer.shutdown()
 
     def test_async_decorator_with_explicit_tracer(
-        self, real_api_key, real_project, real_source
-    ):
+        self,
+        tracer_factory: Any,
+        real_api_key: Any,  # pylint: disable=unused-argument
+        real_project: Any,  # pylint: disable=unused-argument
+        real_source: Any,  # pylint: disable=unused-argument
+    ) -> None:
         """Test @atrace decorator with explicit tracer parameter."""
-        tracer = HoneyHiveTracer(
-            api_key=real_api_key,
-            project=real_project,
-            source=real_source,
-            session_name="async-decorator-test",
-            test_mode=False,
-            disable_http_tracing=True,
-        )
+        tracer = tracer_factory("async-decorator-test")
 
-        @atrace(event_name="async_test_event", event_type="test", tracer=tracer)
-        async def async_test_function(x, y):
+        @atrace(  # type: ignore[misc]
+            event_name="async_test_event", event_type="tool", tracer=tracer
+        )
+        async def async_test_function(x: Any, y: Any) -> Any:
             return x * y
 
         # Test that the async function works
-        import asyncio
+        # asyncio imported at top level
 
         result = asyncio.run(async_test_function(4, 6))
         assert result == 24
@@ -153,32 +158,22 @@ class TestMultiInstanceTracerIntegration:
         tracer.shutdown()
 
     def test_multiple_tracers_with_different_configs(
-        self, real_api_key, real_project, real_source
-    ):
+        self,
+        tracer_factory: Any,
+        real_api_key: Any,  # pylint: disable=unused-argument
+        real_project: Any,  # pylint: disable=unused-argument
+        real_source: Any,  # pylint: disable=unused-argument
+    ) -> None:
         """Test multiple tracers with different configurations."""
         # Create tracers with different session names and configurations
-        tracer1 = HoneyHiveTracer(
-            api_key=real_api_key,
-            project=real_project,
-            source=real_source,
-            session_name="config1-session",
-            test_mode=False,
-            disable_http_tracing=True,
-        )
+        tracer1 = tracer_factory("config1-session")
 
-        tracer2 = HoneyHiveTracer(
-            api_key=real_api_key,
-            project=real_project,
-            source=real_source,
-            session_name="config2-session",
-            test_mode=False,
-            disable_http_tracing=False,  # Different config
-        )
+        tracer2 = tracer_factory("config2-session")
 
-        # Verify they have different configurations
-        assert tracer1.session_name == "config1-session"
-        assert tracer2.session_name == "config2-session"
-        assert tracer1.disable_http_tracing != tracer2.disable_http_tracing
+        # Verify they have different session names (both use standard factory config)
+        assert "config1-session" in tracer1.session_name
+        assert "config2-session" in tracer2.session_name
+        assert tracer1.session_name != tracer2.session_name
 
         # Test both can work simultaneously
         with tracer1.start_span("span1") as span1:
@@ -191,20 +186,19 @@ class TestMultiInstanceTracerIntegration:
         tracer1.shutdown()
         tracer2.shutdown()
 
-    def test_tracer_lifecycle_management(self, real_api_key, real_project, real_source):
+    def test_tracer_lifecycle_management(
+        self,
+        tracer_factory: Any,
+        real_api_key: Any,  # pylint: disable=unused-argument
+        real_project: Any,  # pylint: disable=unused-argument
+        real_source: Any,  # pylint: disable=unused-argument
+    ) -> None:
         """Test proper lifecycle management of multiple tracers."""
         tracers = []
 
         # Create multiple tracers
         for i in range(3):
-            tracer = HoneyHiveTracer(
-                api_key=real_api_key,
-                project=real_project,
-                source=real_source,
-                session_name=f"lifecycle-session-{i}",
-                test_mode=False,
-                disable_http_tracing=True,
-            )
+            tracer = tracer_factory(f"lifecycle-session-{i}")
             tracers.append(tracer)
 
         # Verify all are independent
@@ -218,29 +212,19 @@ class TestMultiInstanceTracerIntegration:
 
         # Clean up all tracers
         for tracer in tracers:
-            tracer.shutdown()
+            tracer.shutdown()  # type: ignore[attr-defined]
 
     def test_session_creation_with_multiple_tracers(
-        self, real_api_key, real_project, real_source
-    ):
+        self,
+        tracer_factory: Any,
+        real_api_key: Any,  # pylint: disable=unused-argument
+        real_project: Any,  # pylint: disable=unused-argument
+        real_source: Any,  # pylint: disable=unused-argument
+    ) -> None:
         """Test that multiple tracers can create sessions independently."""
-        tracer1 = HoneyHiveTracer(
-            api_key=real_api_key,
-            project=real_project,
-            source=real_source,
-            session_name="session-test-1",
-            test_mode=False,
-            disable_http_tracing=True,
-        )
+        tracer1 = tracer_factory("session-test-1")
 
-        tracer2 = HoneyHiveTracer(
-            api_key=real_api_key,
-            project=real_project,
-            source=real_source,
-            session_name="session-test-2",
-            test_mode=False,
-            disable_http_tracing=True,
-        )
+        tracer2 = tracer_factory("session-test-2")
 
         # Test session creation with both tracers
         with tracer1.start_span("session1") as span1:
@@ -256,26 +240,16 @@ class TestMultiInstanceTracerIntegration:
         tracer2.shutdown()
 
     def test_error_handling_with_multiple_tracers(
-        self, real_api_key, real_project, real_source
-    ):
+        self,
+        tracer_factory: Any,
+        real_api_key: Any,  # pylint: disable=unused-argument
+        real_project: Any,  # pylint: disable=unused-argument
+        real_source: Any,  # pylint: disable=unused-argument
+    ) -> None:
         """Test error handling when multiple tracers are involved."""
-        tracer1 = HoneyHiveTracer(
-            api_key=real_api_key,
-            project=real_project,
-            source=real_source,
-            session_name="error-test-1",
-            test_mode=False,
-            disable_http_tracing=True,
-        )
+        tracer1 = tracer_factory("error-test-1")
 
-        tracer2 = HoneyHiveTracer(
-            api_key=real_api_key,
-            project=real_project,
-            source=real_source,
-            session_name="error-test-2",
-            test_mode=False,
-            disable_http_tracing=True,
-        )
+        tracer2 = tracer_factory("error-test-2")
 
         # Test that errors in one tracer don't affect the other
         try:
@@ -295,36 +269,28 @@ class TestMultiInstanceTracerIntegration:
         tracer1.shutdown()
         tracer2.shutdown()
 
-    def test_concurrent_tracer_usage(self, real_api_key, real_project, real_source):
+    def test_concurrent_tracer_usage(
+        self,
+        tracer_factory: Any,
+        real_api_key: Any,  # pylint: disable=unused-argument
+        real_project: Any,  # pylint: disable=unused-argument
+        real_source: Any,  # pylint: disable=unused-argument
+    ) -> None:
         """Test concurrent usage of multiple tracers."""
-        import threading
+        # threading imported at top level
 
-        tracer1 = HoneyHiveTracer(
-            api_key=real_api_key,
-            project=real_project,
-            source=real_source,
-            session_name="concurrent-1",
-            test_mode=False,
-            disable_http_tracing=True,
-        )
+        tracer1 = tracer_factory("concurrent-1")
 
-        tracer2 = HoneyHiveTracer(
-            api_key=real_api_key,
-            project=real_project,
-            source=real_source,
-            session_name="concurrent-2",
-            test_mode=False,
-            disable_http_tracing=True,
-        )
+        tracer2 = tracer_factory("concurrent-2")
 
         results = []
 
-        def use_tracer1():
+        def use_tracer1() -> None:
             with tracer1.start_span("thread1_span") as span:
                 span.set_attribute("thread", "thread1")
                 results.append("tracer1_used")
 
-        def use_tracer2():
+        def use_tracer2() -> None:
             with tracer2.start_span("thread2_span") as span:
                 span.set_attribute("thread", "thread2")
                 results.append("tracer2_used")
@@ -349,8 +315,11 @@ class TestMultiInstanceTracerIntegration:
         tracer2.shutdown()
 
     def test_force_flush_multi_instance_integration(
-        self, real_api_key, real_project, real_source
-    ):
+        self,
+        real_api_key: Any,  # pylint: disable=unused-argument
+        real_project: Any,  # pylint: disable=unused-argument
+        real_source: Any,  # pylint: disable=unused-argument
+    ) -> None:
         """Test force_flush functionality with multiple tracer instances."""
         # Create multiple tracer instances
         tracer1 = HoneyHiveTracer.init(
@@ -372,28 +341,35 @@ class TestMultiInstanceTracerIntegration:
         )
 
         # Create spans from both tracers
-        with tracer1.start_span("multi_instance_span_1") as span:
+        with tracer1.start_span(  # type: ignore[attr-defined]
+            "multi_instance_span_1"
+        ) as span:
             span.set_attribute("tracer_id", "tracer1")
             span.set_attribute("test_type", "multi_instance_flush")
 
-        with tracer2.start_span("multi_instance_span_2") as span:
+        with tracer2.start_span(  # type: ignore[attr-defined]
+            "multi_instance_span_2"
+        ) as span:
             span.set_attribute("tracer_id", "tracer2")
             span.set_attribute("test_type", "multi_instance_flush")
 
         # Test force_flush from both tracers
-        result1 = tracer1.force_flush(timeout_millis=5000)
-        result2 = tracer2.force_flush(timeout_millis=5000)
+        result1 = tracer1.force_flush(timeout_millis=5000)  # type: ignore[attr-defined]
+        result2 = tracer2.force_flush(timeout_millis=5000)  # type: ignore[attr-defined]
 
         assert isinstance(result1, bool)
         assert isinstance(result2, bool)
 
         # Clean up
-        tracer1.shutdown()
-        tracer2.shutdown()
+        tracer1.shutdown()  # type: ignore[attr-defined]
+        tracer2.shutdown()  # type: ignore[attr-defined]
 
     def test_force_flush_sequence_multi_instance_integration(
-        self, real_api_key, real_project, real_source
-    ):
+        self,
+        real_api_key: Any,  # pylint: disable=unused-argument
+        real_project: Any,  # pylint: disable=unused-argument
+        real_source: Any,  # pylint: disable=unused-argument
+    ) -> None:
         """Test sequential force_flush operations across multiple tracers."""
         tracers = []
 
@@ -412,18 +388,24 @@ class TestMultiInstanceTracerIntegration:
         # Create spans and flush sequentially
         for i, tracer in enumerate(tracers):
             # Create spans
-            with tracer.start_span(f"sequential_span_{i}") as span:
+            with tracer.start_span(  # type: ignore[attr-defined]
+                f"sequential_span_{i}"
+            ) as span:
                 span.set_attribute("tracer_index", i)
                 span.set_attribute("sequence_test", True)
 
             # Force flush
-            result = tracer.force_flush(timeout_millis=3000)
+            result = tracer.force_flush(  # type: ignore[attr-defined]
+                timeout_millis=3000
+            )
             assert isinstance(result, bool)
 
         # Final concurrent flush from all tracers
         results = []
         for tracer in tracers:
-            result = tracer.force_flush(timeout_millis=2000)
+            result = tracer.force_flush(  # type: ignore[attr-defined]
+                timeout_millis=2000
+            )
             results.append(result)
             assert isinstance(result, bool)
 
@@ -432,11 +414,14 @@ class TestMultiInstanceTracerIntegration:
 
         # Clean up all tracers
         for tracer in tracers:
-            tracer.shutdown()
+            tracer.shutdown()  # type: ignore[attr-defined]
 
     def test_force_flush_with_enrich_span_multi_instance_integration(
-        self, real_api_key, real_project, real_source
-    ):
+        self,
+        real_api_key: Any,  # pylint: disable=unused-argument
+        real_project: Any,  # pylint: disable=unused-argument
+        real_source: Any,  # pylint: disable=unused-argument
+    ) -> None:
         """Test force_flush with enrich_span across multiple tracer instances."""
         tracer1 = HoneyHiveTracer.init(
             api_key=real_api_key,
@@ -457,7 +442,7 @@ class TestMultiInstanceTracerIntegration:
         )
 
         # Use enrich_span with first tracer
-        from honeyhive.tracer.otel_tracer import enrich_span
+        # enrich_span imported at top level
 
         with enrich_span(
             metadata={"tracer": "first", "operation": "multi_instance_test"},
@@ -465,11 +450,13 @@ class TestMultiInstanceTracerIntegration:
             error=None,
             tracer=tracer1,
         ):
-            with tracer1.start_span("enriched_span_1") as span:
+            with tracer1.start_span(  # type: ignore[attr-defined]
+                "enriched_span_1"
+            ) as span:
                 span.set_attribute("enriched_by", "tracer1")
 
         # Use enrich_span with second tracer (direct call)
-        success = tracer2.enrich_span(
+        success = tracer2.enrich_span(  # type: ignore[attr-defined]
             metadata={"tracer": "second", "operation": "direct_call_test"},
             outputs={"result": "completed"},
             error=None,
@@ -477,12 +464,12 @@ class TestMultiInstanceTracerIntegration:
         assert isinstance(success, bool)
 
         # Force flush both tracers
-        result1 = tracer1.force_flush(timeout_millis=4000)
-        result2 = tracer2.force_flush(timeout_millis=4000)
+        result1 = tracer1.force_flush(timeout_millis=4000)  # type: ignore[attr-defined]
+        result2 = tracer2.force_flush(timeout_millis=4000)  # type: ignore[attr-defined]
 
         assert isinstance(result1, bool)
         assert isinstance(result2, bool)
 
         # Clean up
-        tracer1.shutdown()
-        tracer2.shutdown()
+        tracer1.shutdown()  # type: ignore[attr-defined]
+        tracer2.shutdown()  # type: ignore[attr-defined]

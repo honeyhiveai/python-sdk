@@ -1,19 +1,10 @@
 """Baggage dictionary for OpenTelemetry context management."""
 
 from contextlib import contextmanager
-from typing import TYPE_CHECKING, Any, Dict, Iterator, KeysView, Optional, ValuesView
+from typing import Any, Dict, Iterator, KeysView, Optional, ValuesView
 
-if TYPE_CHECKING:
-    from opentelemetry import baggage, context
-    from opentelemetry.context import Context
-
-try:
-    from opentelemetry import baggage, context
-    from opentelemetry.context import Context
-
-    OTEL_AVAILABLE = True
-except ImportError:
-    OTEL_AVAILABLE = False
+from opentelemetry import baggage, context
+from opentelemetry.context import Context
 
 
 class BaggageDict:
@@ -30,8 +21,6 @@ class BaggageDict:
         Args:
             ctx: OpenTelemetry context. If None, uses current context.
         """
-        if not OTEL_AVAILABLE:
-            raise ImportError("OpenTelemetry is required for BaggageDict")
 
         self._context = ctx or context.get_current()
 
@@ -50,8 +39,6 @@ class BaggageDict:
         Returns:
             Value from baggage or default
         """
-        if not OTEL_AVAILABLE:
-            return default
 
         value = baggage.get_baggage(key, self._context)
         return value if value is not None else default
@@ -66,8 +53,6 @@ class BaggageDict:
         Returns:
             New BaggageDict with updated context
         """
-        if not OTEL_AVAILABLE:
-            return self
 
         new_context = baggage.set_baggage(key, str(value), self._context)
         return BaggageDict(new_context)
@@ -81,8 +66,6 @@ class BaggageDict:
         Returns:
             New BaggageDict with updated context
         """
-        if not OTEL_AVAILABLE:
-            return self
 
         new_context = baggage.set_baggage(key, None, self._context)
         return BaggageDict(new_context)
@@ -96,8 +79,6 @@ class BaggageDict:
         Returns:
             New BaggageDict with updated context
         """
-        if not OTEL_AVAILABLE:
-            return self
 
         new_context = self._context
         for key, value in kwargs.items():
@@ -111,8 +92,6 @@ class BaggageDict:
         Returns:
             New BaggageDict with empty baggage
         """
-        if not OTEL_AVAILABLE:
-            return self
 
         # Create new context without baggage
         new_context = context.get_current()
@@ -124,8 +103,6 @@ class BaggageDict:
         Returns:
             Dictionary of baggage key-value pairs
         """
-        if not OTEL_AVAILABLE:
-            return {}
 
         try:
             # Get current baggage context
@@ -179,18 +156,18 @@ class BaggageDict:
 
     @classmethod
     def from_dict(
-        cls, data: Dict[str, Any], context: Optional[Context] = None
+        cls, data: Dict[str, Any], ctx: Optional[Context] = None
     ) -> "BaggageDict":
         """Create BaggageDict from dictionary.
 
         Args:
             data: Dictionary of key-value pairs
-            context: Optional OpenTelemetry context
+            ctx: Optional OpenTelemetry context
 
         Returns:
             New BaggageDict with baggage from dictionary
         """
-        baggage_dict = cls(context)
+        baggage_dict = cls(ctx)
         return baggage_dict.update(**data)
 
     @contextmanager
@@ -202,10 +179,6 @@ class BaggageDict:
                 # baggage is available in this context
                 pass
         """
-        if not OTEL_AVAILABLE:
-            yield
-            return
-
         token = context.attach(self._context)
         try:
             yield

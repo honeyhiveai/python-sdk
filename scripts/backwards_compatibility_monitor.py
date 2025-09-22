@@ -20,7 +20,7 @@ from typing import Dict, Any, List
 
 class BackwardsCompatibilityMonitor:
     """Monitor for backwards compatibility regressions."""
-    
+
     def __init__(self, verbose: bool = False):
         self.verbose = verbose
         self.project_root = Path(__file__).parent.parent
@@ -32,20 +32,20 @@ class BackwardsCompatibilityMonitor:
             ("Boolean Environment Variables", self._test_boolean_env_vars),
             ("Configuration Reload", self._test_config_reload),
         ]
-    
+
     def run_all_checks(self) -> Dict[str, Any]:
         """Run all backwards compatibility checks."""
         results = {}
-        
+
         if self.verbose:
             print("🔍 Running backwards compatibility checks...")
             print(f"📁 Project root: {self.project_root}")
             print()
-        
+
         for test_name, test_func in self.test_scenarios:
             if self.verbose:
                 print(f"🧪 Testing: {test_name}")
-            
+
             try:
                 result = test_func()
                 results[test_name] = {"status": "PASS", "details": result}
@@ -55,29 +55,31 @@ class BackwardsCompatibilityMonitor:
                 results[test_name] = {"status": "FAIL", "error": str(e)}
                 if self.verbose:
                     print(f"   ❌ FAIL: {e}")
-            
+
             if self.verbose:
                 print()
-        
+
         return results
-    
+
     def _run_test_script(self, script: str, description: str) -> str:
         """Run a test script in subprocess and return success message."""
         result = subprocess.run(
             [sys.executable, "-c", script],
             capture_output=True,
             text=True,
-            cwd=self.project_root
+            cwd=self.project_root,
         )
-        
+
         if result.returncode != 0:
-            raise Exception(f"{description} failed: {result.stderr.strip() or result.stdout.strip()}")
-        
+            raise Exception(
+                f"{description} failed: {result.stderr.strip() or result.stdout.strip()}"
+            )
+
         return f"{description} work correctly"
-    
+
     def _test_runtime_env_vars(self) -> str:
         """Test runtime environment variable loading."""
-        script = '''
+        script = """
 import os
 from honeyhive import HoneyHiveTracer
 
@@ -90,13 +92,13 @@ tracer = HoneyHiveTracer(test_mode=True)
 assert tracer.client.base_url == "https://runtime.test.url"
 assert tracer.api_key == "runtime-key"
 assert tracer.project == "runtime-project"
-'''
-        
+"""
+
         return self._run_test_script(script, "Runtime environment variables")
-    
+
     def _test_main_branch_patterns(self) -> str:
         """Test main branch API patterns."""
-        script = '''
+        script = """
 from honeyhive import HoneyHiveTracer
 
 # Test comprehensive main branch initialization
@@ -122,13 +124,13 @@ tracer.unlink(token)
 
 # Test span enrichment
 tracer.enrich_span(metadata={"test": "metadata"})
-'''
-        
+"""
+
         return self._run_test_script(script, "Main branch API patterns")
-    
+
     def _test_production_patterns(self) -> str:
         """Test production deployment patterns."""
-        script = '''
+        script = """
 import os
 
 # Simulate Docker/K8s environment injection
@@ -151,13 +153,13 @@ assert tracer.api_key == "prod-key"
 assert tracer.project == "prod-project"
 # Source may be overridden by tracer logic, check for expected values
 assert tracer.source in ["production", "dev"]  # Allow for tracer override logic
-'''
-        
+"""
+
         return self._run_test_script(script, "Production deployment patterns")
-    
+
     def _test_environment_precedence(self) -> str:
         """Test environment variable precedence."""
-        script = '''
+        script = """
 import os
 from honeyhive import HoneyHiveTracer
 
@@ -174,13 +176,13 @@ tracer = HoneyHiveTracer(test_mode=True)
 assert tracer.client.base_url == "https://hh.priority.url"
 assert tracer.api_key == "hh-key"
 assert tracer.project == "hh-project"
-'''
-        
+"""
+
         return self._run_test_script(script, "Environment variable precedence")
-    
+
     def _test_boolean_env_vars(self) -> str:
         """Test boolean environment variable parsing."""
-        script = '''
+        script = """
 import os
 from honeyhive.utils.config import Config
 
@@ -197,13 +199,13 @@ assert config.verify_ssl is False
 assert config.follow_redirects is False
 assert config.test_mode is True
 assert config.debug_mode is True
-'''
-        
+"""
+
         return self._run_test_script(script, "Boolean environment variables")
-    
+
     def _test_config_reload(self) -> str:
         """Test configuration reload behavior."""
-        script = '''
+        script = """
 import os
 from honeyhive.utils.config import Config
 from honeyhive import HoneyHiveTracer
@@ -224,8 +226,8 @@ os.environ["HH_API_URL"] = "https://updated.url"
 updated_tracer = HoneyHiveTracer(test_mode=True)
 assert updated_tracer.api_key == "updated-key"
 assert updated_tracer.client.base_url == "https://updated.url"
-'''
-        
+"""
+
         return self._run_test_script(script, "Configuration reload")
 
 
@@ -235,21 +237,17 @@ def main():
         description="Monitor backwards compatibility for HoneyHive SDK"
     )
     parser.add_argument(
-        "--verbose", "-v",
-        action="store_true",
-        help="Enable verbose output"
+        "--verbose", "-v", action="store_true", help="Enable verbose output"
     )
     parser.add_argument(
-        "--json",
-        action="store_true",
-        help="Output results in JSON format"
+        "--json", action="store_true", help="Output results in JSON format"
     )
-    
+
     args = parser.parse_args()
-    
+
     monitor = BackwardsCompatibilityMonitor(verbose=args.verbose and not args.json)
     results = monitor.run_all_checks()
-    
+
     if args.json:
         # JSON output for CI/CD integration
         print(json.dumps(results, indent=2))
@@ -258,10 +256,10 @@ def main():
         if not args.verbose:
             print("🔍 Backwards Compatibility Monitor Results")
             print("=" * 50)
-        
+
         passed = 0
         failed = 0
-        
+
         for test_name, result in results.items():
             status = result["status"]
             if status == "PASS":
@@ -273,12 +271,14 @@ def main():
                 if not args.verbose:
                     print(f"❌ {test_name}: FAIL")
                     print(f"   Error: {result['error']}")
-        
+
         print()
         print(f"📊 Summary: {passed} passed, {failed} failed")
-    
+
     # Exit with error code if any tests failed
-    failed_tests = [name for name, result in results.items() if result["status"] == "FAIL"]
+    failed_tests = [
+        name for name, result in results.items() if result["status"] == "FAIL"
+    ]
     if failed_tests:
         if not args.json:
             print(f"\n🚨 BACKWARDS COMPATIBILITY REGRESSION DETECTED!")

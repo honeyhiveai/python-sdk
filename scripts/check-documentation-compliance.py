@@ -70,10 +70,10 @@ def has_new_features(staged_files: list) -> bool:
         "src/honeyhive/",  # Core SDK changes
         "examples/",  # New examples
     ]
-    
+
     return any(
-        file_path.startswith(pattern) 
-        for file_path in staged_files 
+        file_path.startswith(pattern)
+        for file_path in staged_files
         for pattern in feature_indicators
     )
 
@@ -90,10 +90,7 @@ def is_docs_changelog_updated(staged_files: list) -> bool:
 
 def is_reference_docs_updated(staged_files: list) -> bool:
     """Check if reference documentation is being updated."""
-    reference_files = [
-        "docs/reference/index.rst",
-        ".agent-os/product/features.md"
-    ]
+    reference_files = ["docs/reference/index.rst", ".agent-os/product/features.md"]
     return any(ref_file in staged_files for ref_file in reference_files)
 
 
@@ -101,17 +98,30 @@ def is_docs_only_commit(staged_files: list) -> bool:
     """Check if this is a documentation-only commit."""
     doc_patterns = ["docs/", "README.md", ".agent-os/"]
     non_doc_patterns = ["src/", "tests/", "examples/", "scripts/"]
-    
-    has_docs = any(file_path.startswith(pattern) for file_path in staged_files for pattern in doc_patterns)
-    has_non_docs = any(file_path.startswith(pattern) for file_path in staged_files for pattern in non_doc_patterns)
-    
+
+    has_docs = any(
+        file_path.startswith(pattern)
+        for file_path in staged_files
+        for pattern in doc_patterns
+    )
+    has_non_docs = any(
+        file_path.startswith(pattern)
+        for file_path in staged_files
+        for pattern in non_doc_patterns
+    )
+
     return has_docs and not has_non_docs
 
 
 def is_emergency_commit(commit_msg: str) -> bool:
     """Check if this is marked as an emergency commit."""
     emergency_keywords = [
-        "emergency", "hotfix", "urgent", "critical", "security:", "sec:"
+        "emergency",
+        "hotfix",
+        "urgent",
+        "critical",
+        "security:",
+        "sec:",
     ]
     return any(keyword in commit_msg.lower() for keyword in emergency_keywords)
 
@@ -121,7 +131,7 @@ def check_commit_message_has_docs_intent() -> bool:
     # During pre-commit hooks, there is no commit message yet
     # This function should not be used to bypass CHANGELOG requirements
     # during pre-commit validation, only during post-commit analysis
-    
+
     # For now, always return False during pre-commit to enforce CHANGELOG updates
     # This ensures significant changes always require proper documentation
     return False
@@ -130,12 +140,12 @@ def check_commit_message_has_docs_intent() -> bool:
 def main() -> NoReturn:
     """
     Main validation function.
-    
+
     Validation order (by priority):
     1. PRIMARY: CHANGELOG.md updates for significant changes
-    2. SECONDARY: docs/changelog.rst sync when CHANGELOG.md is updated  
+    2. SECONDARY: docs/changelog.rst sync when CHANGELOG.md is updated
     3. TERTIARY: Reference docs updates for new features (after changelog)
-    
+
     This order ensures changelog entries are complete before derived documentation.
     """
     print("📚 Documentation Compliance Check")
@@ -174,8 +184,12 @@ def main() -> NoReturn:
     # Docs-only commits: still require CHANGELOG for significant changes
     if is_docs_only:
         if has_significant and not changelog_updated:
-            print("\n❌ CHANGELOG.md update required for significant documentation changes!")
-            print("\nEven documentation-only commits require CHANGELOG updates when they:")
+            print(
+                "\n❌ CHANGELOG.md update required for significant documentation changes!"
+            )
+            print(
+                "\nEven documentation-only commits require CHANGELOG updates when they:"
+            )
             print("- Affect user-facing behavior or examples")
             print("- Change API documentation or reference materials")
             print("- Include major template or generation system changes")
@@ -186,7 +200,9 @@ def main() -> NoReturn:
             sys.exit(1)
         elif len(staged_files) > 5 and not changelog_updated:
             print("\n⚠️  Large documentation change detected")
-            print("Consider updating CHANGELOG.md for significant documentation changes")
+            print(
+                "Consider updating CHANGELOG.md for significant documentation changes"
+            )
         print("✅ Documentation-only commit")
         sys.exit(0)
 
@@ -204,7 +220,9 @@ def main() -> NoReturn:
 
         print("\n❌ CHANGELOG.md update required!")
         print("\nSignificant changes detected but CHANGELOG.md not updated.")
-        print("\nCHANGELOG updates are required FIRST since reference docs are derived from changelog entries.")
+        print(
+            "\nCHANGELOG updates are required FIRST since reference docs are derived from changelog entries."
+        )
         print("\nTo fix this:")
         print("1. Update CHANGELOG.md with your changes")
         print("2. Update docs/changelog.rst with curated highlights")
@@ -231,7 +249,9 @@ def main() -> NoReturn:
     if has_features and not reference_updated:
         print("\n❌ Reference documentation update required!")
         print("\nNew features detected but reference docs not updated.")
-        print("\nReference docs should be updated AFTER changelog entries are complete.")
+        print(
+            "\nReference docs should be updated AFTER changelog entries are complete."
+        )
         print("\nTo fix this:")
         print("1. Update docs/reference/index.rst with new features")
         print("2. Update .agent-os/product/features.md if applicable")
@@ -242,7 +262,7 @@ def main() -> NoReturn:
     # All checks passed
     if changelog_updated and docs_changelog_updated:
         print("✅ Both CHANGELOG.md and docs/changelog.rst are being updated")
-    
+
     print("✅ All documentation compliance requirements satisfied")
     sys.exit(0)
 

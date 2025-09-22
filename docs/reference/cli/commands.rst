@@ -334,7 +334,7 @@ Manage tracing sessions.
 
    .. option:: Project name.
       
-      **Required**: Yes (``HH_PROJECT`` deprecated - project derived from API key)
+      **Required**: Yes
 
    .. option:: --limit <number>
 
@@ -1080,7 +1080,7 @@ The CLI respects these environment variables:
 
 .. envvar:: HH_PROJECT
 
-   **[Deprecated]** Default project name for operations. Ignored - project derived from API key.
+   Default project name for operations. Required field that must match your HoneyHive project.
 
 .. envvar:: HH_CONFIG_FILE
 

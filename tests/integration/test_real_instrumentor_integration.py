@@ -9,7 +9,6 @@ import os
 import subprocess
 import sys
 import tempfile
-from pathlib import Path
 
 import pytest
 
@@ -45,7 +44,7 @@ print(f"Initial provider type: {provider_type}")
 assert "Proxy" in provider_type, f"Expected ProxyTracerProvider, got {provider_type}"
 
 # Now test HoneyHive initialization
-from honeyhive.tracer.otel_tracer import HoneyHiveTracer
+from honeyhive.tracer import HoneyHiveTracer
 
 # Get real API key for integration test
 api_key = os.getenv("HH_API_KEY")
@@ -123,7 +122,7 @@ import sys
 sys.path.insert(0, "/Users/josh/src/github.com/honeyhiveai/python-sdk/src")
 
 from opentelemetry import trace
-from honeyhive.tracer.otel_tracer import HoneyHiveTracer
+from honeyhive.tracer import HoneyHiveTracer
 
 print("Testing correct initialization order...")
 
@@ -200,7 +199,7 @@ import sys
 sys.path.insert(0, "/Users/josh/src/github.com/honeyhiveai/python-sdk/src")
 
 from opentelemetry import trace
-from honeyhive.tracer.otel_tracer import HoneyHiveTracer
+from honeyhive.tracer import HoneyHiveTracer
 
 # Get real API key for integration test
 api_key = os.getenv("HH_API_KEY")
@@ -276,7 +275,7 @@ sys.path.insert(0, "/Users/josh/src/github.com/honeyhiveai/python-sdk/src")
 
 # Test real instrumentor integration
 from opentelemetry import trace
-from honeyhive.tracer.otel_tracer import HoneyHiveTracer
+from honeyhive.tracer import HoneyHiveTracer
 
 # Get real API key for integration test
 api_key = os.getenv("HH_API_KEY")

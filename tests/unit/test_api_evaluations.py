@@ -1,7 +1,7 @@
 """Unit tests for HoneyHive API evaluations module."""
 
 import uuid
-from unittest.mock import AsyncMock, Mock, patch
+from unittest.mock import AsyncMock, Mock
 
 import pytest
 
@@ -18,7 +18,7 @@ from honeyhive.models import (
 from honeyhive.models.generated import Status, UUIDType
 
 
-class TestEvaluationsAPI:
+class TestEvaluationsAPI:  # pylint: disable=attribute-defined-outside-init
     """Test cases for EvaluationsAPI functionality."""
 
     def setup_method(self) -> None:
@@ -53,7 +53,7 @@ class TestEvaluationsAPI:
         assert isinstance(result, CreateRunResponse)
         assert result.run_id is not None
         assert result.evaluation is not None
-        assert result.evaluation.name == "test-run"
+        assert result.evaluation.name == "test-run"  # pylint: disable=no-member
 
         # Verify client call
         self.mock_client.request.assert_called_once_with(
@@ -272,9 +272,7 @@ class TestEvaluationsAPI:
         }
         self.mock_client.request.return_value = mock_response
 
-        request = UpdateRunRequest(
-            name="updated-run", description="Updated description"
-        )
+        request = UpdateRunRequest(name="updated-run")
         run_id = "test-run-id"
 
         result = self.api.update_run(run_id, request)
@@ -375,7 +373,7 @@ class TestEvaluationsAPI:
         )
 
 
-class TestEvaluationsAPIErrorScenarios:
+class TestEvaluationsAPIErrorScenarios:  # pylint: disable=attribute-defined-outside-init
     """Test error scenarios for EvaluationsAPI."""
 
     def setup_method(self) -> None:
@@ -441,7 +439,7 @@ class TestEvaluationsAPIErrorScenarios:
             await self.api.update_run_async("non-existent-id", request)
 
 
-class TestEvaluationsAPIIntegration:
+class TestEvaluationsAPIIntegration:  # pylint: disable=attribute-defined-outside-init
     """Integration tests for EvaluationsAPI."""
 
     def setup_method(self) -> None:

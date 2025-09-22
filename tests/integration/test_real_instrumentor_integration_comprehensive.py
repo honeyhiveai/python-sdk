@@ -5,16 +5,20 @@ bugs that mocked tests miss, such as the ProxyTracerProvider issue.
 """
 
 import os
+import queue
 import subprocess
 import sys
 import tempfile
 import time
 from pathlib import Path
-from typing import Any, Dict
+from typing import Any
 
 import pytest
 
-from honeyhive import HoneyHiveTracer
+from tests.utils import (  # pylint: disable=no-name-in-module
+    generate_test_id,
+    verify_tracer_span,
+)
 
 # Real API fixtures are now in the main conftest.py
 # No need for special imports - pytest will discover them automatically
@@ -25,14 +29,19 @@ from honeyhive import HoneyHiveTracer
 class TestRealInstrumentorIntegration:
     """Test real instrumentor integration with no mocking."""
 
-    def test_proxy_tracer_provider_bug_detection(self, fresh_tracer_environment):
-        """Test that we properly handle ProxyTracerProvider in fresh environments.
+    def test_proxy_tracer_provider_bug_detection(
+        self, fresh_tracer_environment: Any, integration_client: Any, real_project: Any
+    ) -> None:
+        """Test that we properly handle ProxyTracerProvider in fresh environments
+        with backend verification.
 
         This test reproduces the exact bug scenario:
-        1. Fresh Python environment starts with ProxyTracerProvider
+        1. Fresh Python environment starts with
+           ProxyTracerProvider
         2. HoneyHive should detect and replace it with real TracerProvider
         3. Span processor should be added successfully
         """
+
         tracer = fresh_tracer_environment
 
         # Verify we have a real TracerProvider, not ProxyTracerProvider
@@ -46,12 +55,29 @@ class TestRealInstrumentorIntegration:
         assert tracer.span_processor is not None
         assert hasattr(tracer.provider, "add_span_processor")
 
-        # Test that spans can be created and recorded
-        with tracer.start_span("test_span") as span:
-            assert span.is_recording()
-            span.set_attribute("test", "proxy_provider_bug")
+        # Test that spans can be created and recorded with backend verification
+        _, unique_id = generate_test_id("proxy_detection", "instrumentor")
+        verified_event = verify_tracer_span(
+            tracer=tracer,
+            client=integration_client,
+            project=real_project,
+            span_name="test_span",
+            unique_identifier=unique_id,
+            span_attributes={
+                "test": "proxy_provider_bug",
+                "provider_type": provider_type,
+                "test.type": "proxy_tracer_provider_bug_detection",
+            },
+        )
 
-    def test_subprocess_fresh_environment_integration(self, real_api_credentials):
+        # Verify backend verification succeeded
+        assert verified_event.event_name == "test_span"
+        print(f"✓ Backend verification successful: {verified_event.event_id}")
+
+    def test_subprocess_fresh_environment_integration(
+        self,
+        real_api_credentials: Any,  # pylint: disable=unused-argument
+    ) -> None:
         """Test instrumentor integration in a completely fresh subprocess.
 
         This catches issues that persist even with fixture cleanup.
@@ -70,13 +96,15 @@ initial_type = type(initial_provider).__name__
 print(f"Initial provider: {{initial_type}}")
 
 # Initialize HoneyHive
-from honeyhive.tracer.otel_tracer import HoneyHiveTracer
+from honeyhive.tracer import HoneyHiveTracer
 
 tracer = HoneyHiveTracer(
     api_key="{real_api_credentials['api_key']}",
-    source="subprocess-test",
+    project="{real_api_credentials['project']}",
+    source="{real_api_credentials['source']}",
+    session_name="subprocess_test",
     test_mode=False,
-    disable_http_tracing=True
+    disable_http_tracing=True,
 )
 
 # Verify we now have a real TracerProvider
@@ -127,17 +155,17 @@ print("✅ Subprocess integration test passed")
 
     @pytest.mark.openai_required
     def test_real_openai_instrumentor_integration(
-        self,
-        fresh_tracer_environment,
-        provider_api_keys,
-    ):
+        self, fresh_tracer_environment: Any, provider_api_keys: Any
+    ) -> None:
         """Test real OpenAI instrumentor integration with actual API calls."""
         tracer = fresh_tracer_environment
 
         try:
             # Import OpenAI and instrumentor
-            import openai
-            from openinference.instrumentation.openai import OpenAIInstrumentor
+            import openai  # type: ignore[import-not-found] # pylint: disable=import-outside-toplevel
+            from openinference.instrumentation.openai import (  # type: ignore[import-not-found] # pylint: disable=import-outside-toplevel
+                OpenAIInstrumentor,
+            )
 
             # Initialize OpenAI client
             client = openai.OpenAI(api_key=provider_api_keys["openai"])
@@ -171,22 +199,23 @@ print("✅ Subprocess integration test passed")
         except ImportError:
             # Agent OS Zero Failing Tests Policy: NO SKIPPING
             pytest.fail(
-                "OpenAI or OpenInference instrumentor not available - install required dependencies"
+                "OpenAI or OpenInference instrumentor not available - "
+                "install required dependencies"
             )
 
     @pytest.mark.anthropic_required
     def test_real_anthropic_instrumentor_integration(
-        self,
-        fresh_tracer_environment,
-        provider_api_keys,
-    ):
+        self, fresh_tracer_environment: Any, provider_api_keys: Any
+    ) -> None:
         """Test real Anthropic instrumentor integration with actual API calls."""
         tracer = fresh_tracer_environment
 
         try:
             # Import Anthropic and instrumentor
-            import anthropic
-            from openinference.instrumentation.anthropic import AnthropicInstrumentor
+            import anthropic  # type: ignore[import-not-found] # pylint: disable=import-outside-toplevel
+            from openinference.instrumentation.anthropic import (  # type: ignore[import-not-found] # pylint: disable=import-outside-toplevel
+                AnthropicInstrumentor,
+            )
 
             # Initialize Anthropic client
             client = anthropic.Anthropic(api_key=provider_api_keys["anthropic"])
@@ -220,15 +249,20 @@ print("✅ Subprocess integration test passed")
         except ImportError:
             # Agent OS Zero Failing Tests Policy: NO SKIPPING
             pytest.fail(
-                "Anthropic or OpenInference instrumentor not available - install required dependencies"
+                "Anthropic or OpenInference instrumentor not available - "
+                "install required dependencies"
             )
 
     def test_multiple_instrumentor_coexistence(
         self,
-        fresh_tracer_environment,
-        provider_api_keys,
-    ):
-        """Test that multiple instrumentors can coexist with real TracerProvider."""
+        fresh_tracer_environment: Any,
+        provider_api_keys: Any,
+        integration_client: Any,
+        real_project: Any,
+    ) -> None:
+        """Test that multiple instrumentors can coexist with real TracerProvider
+        with backend verification."""
+
         tracer = fresh_tracer_environment
         instrumentors = []
 
@@ -239,8 +273,10 @@ print("✅ Subprocess integration test passed")
             # OpenAI
             if provider_api_keys["openai"]:
                 try:
-                    import openai
-                    from openinference.instrumentation.openai import OpenAIInstrumentor
+                    import openai  # pylint: disable=import-outside-toplevel,unused-import
+                    from openinference.instrumentation.openai import (  # pylint: disable=import-outside-toplevel
+                        OpenAIInstrumentor,
+                    )
 
                     openai_instrumentor = OpenAIInstrumentor()
                     openai_instrumentor.instrument(tracer_provider=tracer.provider)
@@ -252,8 +288,8 @@ print("✅ Subprocess integration test passed")
             # Anthropic
             if provider_api_keys["anthropic"]:
                 try:
-                    import anthropic
-                    from openinference.instrumentation.anthropic import (
+                    import anthropic  # pylint: disable=import-outside-toplevel,unused-import
+                    from openinference.instrumentation.anthropic import (  # pylint: disable=import-outside-toplevel
                         AnthropicInstrumentor,
                     )
 
@@ -268,14 +304,32 @@ print("✅ Subprocess integration test passed")
             if not available_instrumentors:
                 # Agent OS Zero Failing Tests Policy: NO SKIPPING
                 pytest.fail(
-                    "No instrumentors available for testing - install required dependencies"
+                    "No instrumentors available for testing - "
+                    "install required dependencies"
                 )
 
             # Test that tracer still works with multiple instrumentors
-            with tracer.start_span("multi_instrumentor_test") as span:
-                assert span.is_recording()
-                span.set_attribute("instrumentors", ",".join(available_instrumentors))
-                span.set_attribute("count", len(available_instrumentors))
+            # with backend verification
+            _, unique_id = generate_test_id("multi_instrumentor", "coexistence")
+            verified_event = verify_tracer_span(
+                tracer=tracer,
+                client=integration_client,
+                project=real_project,
+                span_name="multi_instrumentor_test",
+                unique_identifier=unique_id,
+                span_attributes={
+                    "instrumentors": ",".join(available_instrumentors),
+                    "count": len(available_instrumentors),
+                    "test.type": "multiple_instrumentor_coexistence",
+                },
+            )
+
+            # Verify backend verification succeeded
+            assert verified_event.event_name == "multi_instrumentor_test"
+            print(
+                f"✓ Multi-instrumentor backend verification successful: "
+                f"{verified_event.event_id}"
+            )
 
             # Force flush
             tracer.force_flush()
@@ -288,27 +342,26 @@ print("✅ Subprocess integration test passed")
                 except Exception:
                     pass
 
-    def test_tracer_provider_transition_monitoring(self, real_api_credentials):
+    def test_tracer_provider_transition_monitoring(
+        self,
+        tracer_factory: Any,
+    ) -> None:
         """Test monitoring of TracerProvider transitions during initialization."""
         # Import OpenTelemetry
-        from opentelemetry import trace
+        from opentelemetry import trace  # pylint: disable=import-outside-toplevel
 
         # Record initial state
         initial_provider = trace.get_tracer_provider()
         initial_type = type(initial_provider).__name__
 
-        # Should start with ProxyTracerProvider in fresh environment
+        # Should start with ProxyTracerProvider or NoOpTracerProvider
+        # in fresh environment
         assert (
-            "Proxy" in initial_type
-        ), f"Expected ProxyTracerProvider, got {initial_type}"
+            "Proxy" in initial_type or "NoOp" in initial_type
+        ), f"Expected ProxyTracerProvider or NoOpTracerProvider, got {initial_type}"
 
         # Initialize HoneyHive tracer (project derived from API key)
-        tracer = HoneyHiveTracer(
-            api_key=real_api_credentials["api_key"],
-            source="transition-monitoring",
-            test_mode=False,
-            disable_http_tracing=True,
-        )
+        tracer = tracer_factory("tracer")
 
         # Record final state - check our tracer's provider, not global
         final_provider = tracer.provider
@@ -331,9 +384,11 @@ print("✅ Subprocess integration test passed")
 
         # Cleanup
         tracer.force_flush()
-        tracer.shutdown()
+        # Cleanup handled by tracer_factory fixture
 
-    def test_span_processor_integration_real_api(self, real_honeyhive_tracer):
+    def test_span_processor_integration_real_api(
+        self, real_honeyhive_tracer: Any
+    ) -> None:
         """Test that span processor correctly processes spans with real API."""
         tracer = real_honeyhive_tracer
 
@@ -356,27 +411,60 @@ print("✅ Subprocess integration test passed")
         # Force flush to ensure spans are processed
         tracer.force_flush()
 
-    def test_error_handling_real_environment(self, fresh_tracer_environment):
-        """Test error handling in real OpenTelemetry environment."""
+    def test_error_handling_real_environment(
+        self, fresh_tracer_environment: Any, integration_client: Any, real_project: Any
+    ) -> None:
+        """Test error handling in real OpenTelemetry environment with
+        backend verification."""
+
         tracer = fresh_tracer_environment
 
-        # Test span creation with errors
+        # Test span creation with errors and backend verification
+        _, unique_id1 = generate_test_id("error_handling", "error_test")
         try:
-            with tracer.start_span("error_test") as span:
-                assert span.is_recording()
-                span.set_attribute("test", "error_handling")
+            verified_event1 = verify_tracer_span(
+                tracer=tracer,
+                client=integration_client,
+                project=real_project,
+                span_name="error_test",
+                unique_identifier=unique_id1,
+                span_attributes={
+                    "test": "error_handling",
+                    "test.type": "error_handling_real_environment",
+                    "error_simulation": True,
+                },
+            )
 
-                # Simulate an error
-                raise ValueError("Test error for span recording")
+            # Simulate an error after span creation
+            raise ValueError("Test error for span recording")
 
         except ValueError:
             # Error should be handled gracefully
             pass
 
-        # Tracer should still be functional after error
-        with tracer.start_span("post_error_test") as span:
-            assert span.is_recording()
-            span.set_attribute("after_error", True)
+        # Verify error test span was recorded
+        assert verified_event1.event_name == "error_test"
+        print(
+            f"✓ Error handling span verification successful: {verified_event1.event_id}"
+        )
+
+        # Tracer should still be functional after error with backend verification
+        _, unique_id2 = generate_test_id("error_handling", "post_error")
+        verified_event2 = verify_tracer_span(
+            tracer=tracer,
+            client=integration_client,
+            project=real_project,
+            span_name="post_error_test",
+            unique_identifier=unique_id2,
+            span_attributes={
+                "after_error": True,
+                "test.type": "error_handling_real_environment",
+            },
+        )
+
+        # Verify post-error span was recorded
+        assert verified_event2.event_name == "post_error_test"
+        print(f"✓ Post-error span verification successful: {verified_event2.event_id}")
 
         tracer.force_flush()
 
@@ -385,47 +473,100 @@ print("✅ Subprocess integration test passed")
 class TestRealAPIWorkflows:
     """Test complete workflows with real API integration."""
 
-    def test_end_to_end_tracing_workflow(self, real_honeyhive_tracer):
-        """Test complete end-to-end tracing workflow with real API."""
+    def test_end_to_end_tracing_workflow(
+        self, real_honeyhive_tracer: Any, integration_client: Any, real_project: Any
+    ) -> None:
+        """Test complete end-to-end tracing workflow with real API and
+        backend verification."""
+
         tracer = real_honeyhive_tracer
 
-        # Simulate a complete AI application workflow
-        with tracer.start_span("ai_application_workflow") as main_span:
-            assert main_span.is_recording()
-            main_span.set_attribute("workflow.type", "ai_application")
-            main_span.set_attribute("workflow.version", "1.0")
+        # Simulate a complete AI application workflow with backend verification
+        _, unique_id_main = generate_test_id("ai_workflow", "main")
+        verified_main = verify_tracer_span(
+            tracer=tracer,
+            client=integration_client,
+            project=real_project,
+            span_name="ai_application_workflow",
+            unique_identifier=unique_id_main,
+            span_attributes={
+                "workflow.type": "ai_application",
+                "workflow.version": "1.0",
+                "test.type": "end_to_end_tracing_workflow",
+            },
+        )
 
-            # Step 1: Input processing
-            with tracer.start_span("input_processing") as input_span:
-                input_span.set_attribute("step", 1)
-                input_span.set_attribute("input.type", "user_query")
-                time.sleep(0.01)  # Simulate processing time
+        # Step 1: Input processing with backend verification
+        _, unique_id_input = generate_test_id("ai_workflow", "input")
+        verified_input = verify_tracer_span(
+            tracer=tracer,
+            client=integration_client,
+            project=real_project,
+            span_name="input_processing",
+            unique_identifier=unique_id_input,
+            span_attributes={
+                "step": 1,
+                "input.type": "user_query",
+                "test.type": "end_to_end_tracing_workflow",
+            },
+        )
 
-            # Step 2: Model inference (simulated)
-            with tracer.start_span("model_inference") as model_span:
-                model_span.set_attribute("step", 2)
-                model_span.set_attribute("model.name", "test_model")
-                model_span.set_attribute("model.temperature", 0.7)
-                time.sleep(0.02)  # Simulate inference time
+        # Step 2: Model inference with backend verification
+        _, unique_id_model = generate_test_id("ai_workflow", "model")
+        verified_model = verify_tracer_span(
+            tracer=tracer,
+            client=integration_client,
+            project=real_project,
+            span_name="model_inference",
+            unique_identifier=unique_id_model,
+            span_attributes={
+                "step": 2,
+                "model.name": "test_model",
+                "model.temperature": 0.7,
+                "test.type": "end_to_end_tracing_workflow",
+            },
+        )
 
-            # Step 3: Output processing
-            with tracer.start_span("output_processing") as output_span:
-                output_span.set_attribute("step", 3)
-                output_span.set_attribute("output.format", "json")
-                time.sleep(0.01)  # Simulate processing time
+        # Step 3: Output processing with backend verification
+        _, unique_id_output = generate_test_id("ai_workflow", "output")
+        verified_output = verify_tracer_span(
+            tracer=tracer,
+            client=integration_client,
+            project=real_project,
+            span_name="output_processing",
+            unique_identifier=unique_id_output,
+            span_attributes={
+                "step": 3,
+                "output.format": "json",
+                "test.type": "end_to_end_tracing_workflow",
+            },
+        )
+
+        # Verify all spans were recorded
+        assert verified_main.event_name == "ai_application_workflow"
+        assert verified_input.event_name == "input_processing"
+        assert verified_model.event_name == "model_inference"
+        assert verified_output.event_name == "output_processing"
+
+        print("✓ Complete workflow backend verification successful:")
+        print(f"  - Main: {verified_main.event_id}")
+        print(f"  - Input: {verified_input.event_id}")
+        print(f"  - Model: {verified_model.event_id}")
+        print(f"  - Output: {verified_output.event_id}")
 
         # Force flush to ensure all spans are sent
         tracer.force_flush()
 
-    def test_concurrent_span_creation_real_api(self, real_honeyhive_tracer):
+    def test_concurrent_span_creation_real_api(
+        self, real_honeyhive_tracer: Any
+    ) -> None:
         """Test concurrent span creation with real API."""
-        import queue
-        import threading
+        import threading  # pylint: disable=import-outside-toplevel
 
         tracer = real_honeyhive_tracer
-        results = queue.Queue()
+        results = queue.Queue()  # type: queue.Queue[Any]
 
-        def create_spans(thread_id: int):
+        def create_spans(thread_id: int) -> None:
             """Create spans in a separate thread."""
             try:
                 with tracer.start_span(f"thread_{thread_id}_main") as main_span:

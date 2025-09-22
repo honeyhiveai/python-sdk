@@ -43,6 +43,29 @@
 - No global state management needed
 - Slightly higher memory usage
 
+### Decision: Provider Strategy Intelligence
+**Date**: 2025-09-14
+**Status**: Implemented
+**Context**: Need to prevent instrumentor span loss in empty TracerProviders
+**Decision**: Intelligent provider detection with automatic strategy selection
+**Rationale**:
+- **Main Provider Strategy**: Replace non-functioning providers (NoOp/Proxy/Empty)
+  - Prevents OpenAI/Anthropic spans from being lost in empty providers
+  - HoneyHive becomes global provider to capture all instrumentor spans
+- **Independent Provider Strategy**: Coexist with functioning providers
+  - Creates isolated TracerProvider when existing provider has processors
+  - Maintains separation from existing observability systems
+- **Critical**: Someone must process instrumentor spans - empty providers lose data
+**Implementation**: 
+- `_is_functioning_tracer_provider()` checks for active processors/exporters
+- Automatic strategy selection based on provider state
+- `is_main_provider` flag indicates chosen strategy
+**Consequences**:
+- ✅ Prevents silent span loss (critical data integrity issue)
+- ✅ Automatic coexistence with existing observability systems
+- ✅ Zero configuration required - works intelligently out of the box
+- ⚠️ Slightly more complex initialization logic
+
 ### Decision: Unified @trace Decorator
 **Date**: 2024-12
 **Status**: Implemented

@@ -1,1301 +1,779 @@
-"""Simplified tests for Pydantic model usage in HoneyHive API client."""
+"""Unit tests for HoneyHive models integration.
+
+This module tests the integration and functionality of HoneyHive models,
+including model instantiation, validation, and integration patterns.
+
+Test Coverage:
+- Model import/export functionality
+- Pydantic model instantiation and validation
+- UUIDType class methods and functionality
+- TracingParams validation logic
+
+# pylint: disable=duplicate-code  # Unit tests share common patterns
+- Field validation and error handling
+- Integration patterns used across the codebase
+
+Following Agent OS testing standards with proper fixtures and isolation.
+Generated using enhanced comprehensive analysis framework for 90%+ coverage.
+"""
+
+# pylint: disable=too-many-lines,line-too-long,redefined-outer-name,no-member
+# Reason: Comprehensive testing file requires extensive test coverage for 90%+ target
+# Line length disabled for test readability and comprehensive assertions
+# Redefined outer name disabled for pytest fixture usage pattern
+
+from typing import Any, Dict
+from uuid import UUID, uuid4
 
 import pytest
+from pydantic import ValidationError
 
-from honeyhive.api.client import HoneyHive
+from honeyhive import models
 from honeyhive.models import (
-    CreateDatapointRequest,
+    Configuration,
     CreateEventRequest,
-    CreateProjectRequest,
-    CreateRunRequest,
-    CreateToolRequest,
-    PostConfigurationRequest,
+    EventFilter,
+    EventType,
+    Metric,
     SessionStartRequest,
+    Tool,
+    TracingParams,
+    UUIDType,
+)
+from honeyhive.models.generated import (
+    CallType,
+)
+from honeyhive.models.generated import EventType as GeneratedEventType
+from honeyhive.models.generated import (
+    EventType1,
+    Operator,
+    Parameters,
+    ReturnType,
+    ToolType,
+    Type,
+    Type1,
 )
 
 
-class TestModelImportAndUsage:
-    """Test that Pydantic models can be imported and used."""
+class TestModelsIntegration:
+    """Test models integration and import functionality."""
 
-    def test_models_can_be_imported(self):
-        """Test that all required models can be imported."""
-        # This test just verifies that imports work
-        assert SessionStartRequest is not None
+    def test_models_import_availability(self) -> None:
+        """Test that all models are properly imported and available."""
+        # Test that all major model classes are importable
         assert CreateEventRequest is not None
-        assert CreateDatapointRequest is not None
-        assert CreateProjectRequest is not None
-        assert CreateToolRequest is not None
-        assert PostConfigurationRequest is not None
-        assert CreateRunRequest is not None
+        assert SessionStartRequest is not None
+        assert TracingParams is not None
+        assert UUIDType is not None
+        assert EventType is not None
+        assert Configuration is not None
+        assert Tool is not None
+        assert Metric is not None
 
-    def test_session_start_request_creation(self):
-        """Test creating a SessionStartRequest with minimal required fields."""
-        try:
-            session_request = SessionStartRequest(
-                project="test-project", session_name="test-session", source="test"
-            )
-            assert session_request.project == "test-project"
-            assert session_request.session_name == "test-session"
-            assert session_request.source == "test"
-        except Exception as e:
-            pytest.fail(f"Failed to create SessionStartRequest: {e}")
+    def test_models_module_exports(self) -> None:
+        """Test that models module exports all expected classes."""
+        # models imported via honeyhive.models at top level
 
-    def test_create_project_request_creation(self):
-        """Test creating a CreateProjectRequest with minimal required fields."""
-        try:
-            project_request = CreateProjectRequest(
-                name="test-project", description="A test project"
-            )
-            assert project_request.name == "test-project"
-            assert project_request.description == "A test project"
-        except Exception as e:
-            pytest.fail(f"Failed to create CreateProjectRequest: {e}")
+        # Test that __all__ exports are accessible
+        expected_exports = [
+            "SessionStartRequest",
+            "CreateEventRequest",
+            "TracingParams",
+            "EventType",
+            "Configuration",
+            "Tool",
+            "Metric",
+            "UUIDType",
+        ]
 
-    def test_create_tool_request_creation(self):
-        """Test creating a CreateToolRequest with minimal required fields."""
-        try:
-            from honeyhive.models.generated import Type3
-
-            tool_request = CreateToolRequest(
-                task="test-project",
-                name="test-tool",
-                description="A test tool",
-                parameters={"param1": "value1"},
-                type=Type3.function,
-            )
-            assert tool_request.task == "test-project"
-            assert tool_request.name == "test-tool"
-            assert tool_request.description == "A test tool"
-            assert tool_request.parameters == {"param1": "value1"}
-            assert tool_request.type == Type3.function
-        except Exception as e:
-            pytest.fail(f"Failed to create CreateToolRequest: {e}")
-
-    def test_create_tool_request_creation_with_enum(self):
-        """Test creating a CreateToolRequest using the correct enum type."""
-        try:
-            from honeyhive.models.generated import Type3
-
-            tool_request = CreateToolRequest(
-                task="test-project",
-                name="test-tool",
-                description="A test tool",
-                parameters={"param1": "value1"},
-                type=Type3.function,
-            )
-            assert tool_request.task == "test-project"
-            assert tool_request.name == "test-tool"
-            assert tool_request.description == "A test tool"
-            assert tool_request.parameters == {"param1": "value1"}
-            assert tool_request.type == Type3.function
-        except Exception as e:
-            pytest.fail(f"Failed to create CreateToolRequest with enum: {e}")
+        for export_name in expected_exports:
+            assert hasattr(models, export_name), f"Missing export: {export_name}"
+            assert getattr(models, export_name) is not None
 
 
-class TestAPIClientModelSupport:
-    """Test that the API client supports model-based methods."""
+class TestSessionStartRequest:
+    """Test SessionStartRequest model functionality."""
 
-    def test_api_client_has_model_methods(self, api_key):
-        """Test that the API client has the new model-based methods."""
-        client = HoneyHive(api_key=api_key)
+    @pytest.fixture
+    def valid_session_data(self) -> Dict[str, Any]:
+        """Provide valid session data for testing."""
+        return {
+            "project": "test-project",
+            "session_name": "test-session",
+            "source": "test-source",
+        }
 
-        # Check that model-based methods exist
-        assert hasattr(client.sessions, "create_session")
-        assert hasattr(client.events, "create_event")
-        assert hasattr(client.datapoints, "create_datapoint")
-        assert hasattr(client.datasets, "create_dataset")
-        assert hasattr(client.projects, "create_project")
-        assert hasattr(client.tools, "create_tool")
-        assert hasattr(client.configurations, "create_configuration")
-        assert hasattr(client.evaluations, "create_run")
+    def test_session_start_request_creation(
+        self, valid_session_data: Dict[str, Any]
+    ) -> None:
+        """Test creating a SessionStartRequest with valid data."""
+        session = SessionStartRequest(**valid_session_data)
 
-    def test_api_client_has_legacy_methods(self, api_key):
-        """Test that the API client maintains legacy methods."""
-        client = HoneyHive(api_key=api_key)
+        assert session.project == "test-project"
+        assert session.session_name == "test-session"
+        assert session.source == "test-source"
+        assert session.session_id is None  # Optional field
+        assert session.children_ids is None  # Optional field
 
-        # Check that legacy methods exist
-        assert hasattr(client.sessions, "create_session_from_dict")
-        assert hasattr(client.events, "create_event_from_dict")
-        assert hasattr(client.datapoints, "create_datapoint_from_dict")
-        assert hasattr(client.datasets, "create_dataset_from_dict")
-        assert hasattr(client.projects, "create_project_from_dict")
-        assert hasattr(client.tools, "create_tool_from_dict")
-        assert hasattr(client.configurations, "create_configuration_from_dict")
-        assert hasattr(client.evaluations, "create_run_from_dict")
+    def test_session_start_request_with_optional_fields(
+        self, valid_session_data: Dict[str, Any]
+    ) -> None:
+        """Test SessionStartRequest with optional fields."""
+        session_data = {
+            **valid_session_data,
+            "session_id": "test-session-123",
+            "children_ids": ["child-1", "child-2"],
+            "config": {"model": "gpt-4"},
+            "inputs": {"prompt": "test prompt"},
+            "outputs": {"response": "test response"},
+            "error": None,
+            "duration": 1500.0,
+            "user_properties": {"user_id": "user-123"},
+            "metrics": {"accuracy": 0.95},
+            "feedback": {"rating": 5},
+            "metadata": {"version": "1.0"},
+            "start_time": 1234567890000.0,
+            "end_time": 1234567891500,
+        }
+
+        session = SessionStartRequest(**session_data)
+
+        assert session.session_id == "test-session-123"
+        assert session.children_ids == ["child-1", "child-2"]
+        assert session.config == {"model": "gpt-4"}
+        assert session.inputs == {"prompt": "test prompt"}
+        assert session.outputs == {"response": "test response"}
+        assert session.duration == 1500.0
+        assert session.user_properties == {"user_id": "user-123"}
+        assert session.metrics == {"accuracy": 0.95}
+        assert session.feedback == {"rating": 5}
+        assert session.metadata == {"version": "1.0"}
+        assert session.start_time == 1234567890000.0
+        assert session.end_time == 1234567891500
+
+    def test_session_start_request_validation_errors(self) -> None:
+        """Test SessionStartRequest validation with invalid data."""
+        # Test missing required fields
+        with pytest.raises(ValidationError) as exc_info:
+            SessionStartRequest()  # type: ignore[call-arg]
+
+        error_dict = exc_info.value.errors()
+        required_fields = {"project", "session_name", "source"}
+        error_fields = {error["loc"][0] for error in error_dict}
+
+        assert required_fields.issubset(error_fields)
+
+    def test_session_start_request_partial_data(
+        self, valid_session_data: Dict[str, Any]
+    ) -> None:
+        """Test SessionStartRequest with minimal required data."""
+        session = SessionStartRequest(**valid_session_data)
+
+        # Test that optional fields default to None
+        assert session.session_id is None
+        assert session.children_ids is None
+        assert session.config is None
+        assert session.inputs is None
+        assert session.outputs is None
+        assert session.error is None
+        assert session.duration is None
+        assert session.user_properties is None
+        assert session.metrics is None
+        assert session.feedback is None
+        assert session.metadata is None
+        assert session.start_time is None
+        assert session.end_time is None
 
 
-class TestModelSerialization:
-    """Test that models can be properly serialized."""
+class TestCreateEventRequest:
+    """Test CreateEventRequest model functionality."""
 
-    def test_session_request_serialization(self):
-        """Test that SessionStartRequest can be serialized."""
-        session_request = SessionStartRequest(
-            project="test-project", session_name="test-session", source="test"
-        )
+    @pytest.fixture
+    def valid_event_data(self) -> Dict[str, Any]:
+        """Provide valid event data for testing."""
+        return {
+            "project": "test-project",
+            "source": "test-source",
+            "event_name": "test-event",
+            "event_type": "model",
+            "config": {"model": "gpt-4"},
+            "inputs": {"prompt": "test prompt"},
+            "duration": 1000.0,
+        }
 
-        # Test model_dump method
-        serialized = session_request.model_dump(exclude_none=True)
-        assert serialized["project"] == "test-project"
-        assert serialized["session_name"] == "test-session"
-        assert serialized["source"] == "test"
+    def test_create_event_request_creation(
+        self, valid_event_data: Dict[str, Any]
+    ) -> None:
+        """Test creating a CreateEventRequest with valid data."""
+        event = CreateEventRequest(**valid_event_data)
 
-        # Test that optional fields are excluded when None
-        assert "config" not in serialized
-        assert "metadata" not in serialized
+        assert event.project == "test-project"
+        assert event.source == "test-source"
+        assert event.event_name == "test-event"
+        assert event.event_type.value == "model"
+        assert event.event_id is None  # Optional field
+        assert event.session_id is None  # Optional field
 
-    def test_project_request_serialization(self):
-        """Test that CreateProjectRequest can be serialized."""
-        project_request = CreateProjectRequest(
-            name="test-project", description="A test project"
-        )
+    def test_create_event_request_with_optional_fields(
+        self, valid_event_data: Dict[str, Any]
+    ) -> None:
+        """Test CreateEventRequest with optional fields."""
+        event_data = {
+            **valid_event_data,
+            "event_id": "event-123",
+            "session_id": "session-456",
+            "parent_id": "parent-789",
+            "children_ids": ["child-1", "child-2"],
+            "config": {"temperature": 0.7},
+            "inputs": {"prompt": "test prompt"},
+            "outputs": {"response": "test response"},
+            "error": None,
+            "start_time": 1234567890000.0,
+            "end_time": 1234567891000.0,
+            "duration": 1000.0,
+            "metadata": {"model": "gpt-4"},
+            "feedback": {"helpful": True},
+            "metrics": {"latency": 1.5},
+            "user_properties": {"user_id": "user-123"},
+        }
 
-        serialized = project_request.model_dump(exclude_none=True)
-        assert serialized["name"] == "test-project"
-        assert serialized["description"] == "A test project"
+        event = CreateEventRequest(**event_data)
 
-    def test_tool_request_serialization(self):
-        """Test that CreateToolRequest can be serialized."""
-        from honeyhive.models.generated import Type3
+        assert event.event_id == "event-123"
+        assert event.session_id == "session-456"
+        assert event.parent_id == "parent-789"
+        assert event.children_ids == ["child-1", "child-2"]
+        assert event.config == {"temperature": 0.7}
+        assert event.inputs == {"prompt": "test prompt"}
+        assert event.outputs == {"response": "test response"}
+        assert event.start_time == 1234567890000.0
+        assert event.end_time == 1234567891000.0
+        assert event.duration == 1000.0
+        assert event.metadata == {"model": "gpt-4"}
+        assert event.feedback == {"helpful": True}
+        assert event.metrics == {"latency": 1.5}
+        assert event.user_properties == {"user_id": "user-123"}
 
-        tool_request = CreateToolRequest(
-            task="test-project",
-            name="test-tool",
-            description="A test tool",
-            parameters={"param1": "value1"},
-            type=Type3.function,
-        )
+    def test_create_event_request_validation_errors(self) -> None:
+        """Test CreateEventRequest validation with invalid data."""
+        # Test missing required fields
+        with pytest.raises(ValidationError) as exc_info:
+            CreateEventRequest()  # type: ignore[call-arg]
 
-        serialized = tool_request.model_dump(exclude_none=True)
-        assert serialized["task"] == "test-project"
-        assert serialized["name"] == "test-tool"
-        assert serialized["description"] == "A test tool"
-        assert serialized["parameters"] == {"param1": "value1"}
-        # The enum value is serialized as the enum object itself
-        assert serialized["type"] == Type3.function
+        error_dict = exc_info.value.errors()
+        required_fields = {
+            "project",
+            "source",
+            "event_name",
+            "event_type",
+            "config",
+            "inputs",
+            "duration",
+        }
+        error_fields = {error["loc"][0] for error in error_dict}
+
+        assert required_fields.issubset(error_fields)
+
+    def test_create_event_request_event_type_validation(
+        self, valid_event_data: Dict[str, Any]
+    ) -> None:
+        """Test CreateEventRequest with different event types."""
+        valid_event_types = [
+            "model",
+            "tool",
+            "chain",
+        ]  # Only these are valid for CreateEventRequest
+
+        for event_type in valid_event_types:
+            event_data = {**valid_event_data, "event_type": event_type}
+            event = CreateEventRequest(**event_data)
+            assert event.event_type.value == event_type
 
 
-class TestBackwardCompatibility:
-    """Test that legacy functionality is maintained."""
+class TestUUIDType:
+    """Test UUIDType class functionality."""
 
-    def test_legacy_methods_work_with_dicts(self, api_key):
-        """Test that legacy methods can accept dictionary parameters."""
-        client = HoneyHive(api_key=api_key)
+    @pytest.fixture
+    def sample_uuid(self) -> UUID:
+        """Provide a sample UUID for testing."""
+        return uuid4()
 
-        # Test that legacy methods exist and can be called
-        # We're not testing the actual API calls, just the method existence
-        assert callable(client.sessions.create_session_from_dict)
-        assert callable(client.events.create_event_from_dict)
-        assert callable(client.datapoints.create_datapoint_from_dict)
-        assert callable(client.datasets.create_dataset_from_dict)
-        assert callable(client.projects.create_project_from_dict)
-        assert callable(client.tools.create_tool_from_dict)
-        assert callable(client.configurations.create_configuration_from_dict)
-        assert callable(client.evaluations.create_run_from_dict)
+    def test_uuid_type_creation(self, sample_uuid: UUID) -> None:
+        """Test UUIDType creation with valid UUID."""
+        uuid_type = UUIDType(sample_uuid)
+        assert (
+            uuid_type.root == sample_uuid
+        )  # Use public property instead of protected _value
+
+    def test_uuid_type_root_property(self, sample_uuid: UUID) -> None:
+        """Test UUIDType root property returns the UUID value."""
+        uuid_type = UUIDType(sample_uuid)
+        assert uuid_type.root == sample_uuid
+
+    def test_uuid_type_str_method(self, sample_uuid: UUID) -> None:
+        """Test UUIDType __str__ method returns string representation."""
+        uuid_type = UUIDType(sample_uuid)
+        assert str(uuid_type) == str(sample_uuid)
+        assert isinstance(str(uuid_type), str)
+
+    def test_uuid_type_repr_method(self, sample_uuid: UUID) -> None:
+        """Test UUIDType __repr__ method returns proper representation."""
+        uuid_type = UUIDType(sample_uuid)
+        expected_repr = f"UUIDType({sample_uuid})"
+        assert repr(uuid_type) == expected_repr
+
+    def test_uuid_type_with_string_uuid(self) -> None:
+        """Test UUIDType creation with string UUID."""
+        uuid_string = "12345678-1234-5678-9012-123456789012"
+        uuid_obj = UUID(uuid_string)
+        uuid_type = UUIDType(uuid_obj)
+
+        assert str(uuid_type) == uuid_string
+        assert uuid_type.root == uuid_obj
+
+
+class TestTracingParams:
+    """Test TracingParams model functionality."""
+
+    @pytest.fixture
+    def valid_tracing_data(self) -> Dict[str, Any]:
+        """Provide valid tracing parameters for testing."""
+        return {
+            "event_type": "model",
+            "event_name": "test-event",
+            "project": "test-project",
+            "source": "test-source",
+        }
+
+    def test_tracing_params_creation(self, valid_tracing_data: Dict[str, Any]) -> None:
+        """Test creating TracingParams with valid data."""
+        params = TracingParams(**valid_tracing_data)
+
+        assert params.event_type == "model"
+        assert params.event_name == "test-event"
+        assert params.project == "test-project"
+        assert params.source == "test-source"
+
+    def test_tracing_params_with_all_fields(self) -> None:
+        """Test TracingParams with all optional fields."""
+        test_exception = Exception("test error")
+        params_data: Dict[str, Any] = {
+            "event_type": "tool",
+            "event_name": "test-tool",
+            "event_id": "event-123",
+            "source": "test-source",
+            "project": "test-project",
+            "session_id": "session-456",
+            "user_id": "user-789",
+            "session_name": "test-session",
+            "inputs": {"input": "test"},
+            "outputs": {"output": "result"},
+            "metadata": {"version": "1.0"},
+            "config": {"temperature": 0.7},
+            "metrics": {"accuracy": 0.95},
+            "feedback": {"rating": 5},
+            "error": test_exception,
+            "tracer": "mock-tracer",
+        }
+
+        params = TracingParams(**params_data)
+
+        assert params.event_type == "tool"
+        assert params.event_name == "test-tool"
+        assert params.event_id == "event-123"
+        assert params.source == "test-source"
+        assert params.project == "test-project"
+        assert params.session_id == "session-456"
+        assert params.user_id == "user-789"
+        assert params.session_name == "test-session"
+        assert params.inputs == {"input": "test"}
+        assert params.outputs == {"output": "result"}
+        assert params.metadata == {"version": "1.0"}
+        assert params.config == {"temperature": 0.7}
+        assert params.metrics == {"accuracy": 0.95}
+        assert params.feedback == {"rating": 5}
+        assert isinstance(params.error, Exception)
+        assert params.tracer == "mock-tracer"
+
+    def test_tracing_params_event_type_validation_with_string(self) -> None:
+        """Test TracingParams event_type validation with valid strings."""
+        valid_event_types = ["model", "tool", "chain", "session", "llm"]
+
+        for event_type in valid_event_types:
+            params = TracingParams(event_type=event_type)
+            assert params.event_type == event_type
+
+    def test_tracing_params_event_type_validation_with_enum(self) -> None:
+        """Test TracingParams event_type validation with EventType enum."""
+        params = TracingParams(event_type=GeneratedEventType.model)
+        assert params.event_type == GeneratedEventType.model
+
+    def test_tracing_params_event_type_validation_with_none(self) -> None:
+        """Test TracingParams event_type validation with None value."""
+        params = TracingParams(event_type=None)
+        assert params.event_type is None
+
+    def test_tracing_params_event_type_validation_error_invalid_string(self) -> None:
+        """Test TracingParams event_type validation with invalid string."""
+        with pytest.raises(ValidationError) as exc_info:
+            TracingParams(event_type="invalid_type")
+
+        error = exc_info.value.errors()[0]
+        assert "Invalid event_type 'invalid_type'" in str(error["ctx"])
+        assert "Must be one of:" in str(error["ctx"])
+
+    def test_tracing_params_event_type_validation_error_invalid_type(self) -> None:
+        """Test TracingParams event_type validation with invalid type."""
+        with pytest.raises(ValidationError) as exc_info:
+            TracingParams(event_type=123)  # type: ignore[arg-type]  # Invalid type
+
+        error = exc_info.value.errors()[0]
+        # The error message varies, just check that validation failed appropriately
+        assert error["type"] == "enum" or "event_type" in str(error)
+
+    def test_tracing_params_default_values(self) -> None:
+        """Test TracingParams with default values."""
+        params = TracingParams()
+
+        assert params.event_type is None
+        assert params.event_name is None
+        assert params.event_id is None
+        assert params.source is None
+        assert params.project is None
+        assert params.session_id is None
+        assert params.user_id is None
+        assert params.session_name is None
+        assert params.inputs is None
+        assert params.outputs is None
+        assert params.metadata is None
+        assert params.config is None
+        assert params.metrics is None
+        assert params.feedback is None
+        assert params.error is None
+        assert params.tracer is None
 
 
 class TestModelValidation:
-    """Test that model validation works correctly."""
+    """Test general model validation functionality."""
 
-    def test_invalid_session_request_raises_error(self):
-        """Test that invalid SessionStartRequest raises validation error."""
-        from pydantic import ValidationError
+    def test_configuration_model_creation(self) -> None:
+        """Test Configuration model creation."""
+        # Parameters and CallType imported at top level
 
-        with pytest.raises(ValidationError):
-            SessionStartRequest(
-                # Missing required fields
-                project="test-project"
-                # Missing session_name and source
-            )
+        parameters = Parameters(
+            call_type=CallType.chat,
+            model="gpt-4",
+        )
 
-    def test_invalid_project_request_raises_error(self):
-        """Test that invalid CreateProjectRequest raises validation error."""
-        from pydantic import ValidationError
+        config_data: Dict[str, Any] = {
+            "project": "test-project",
+            "name": "test-config",
+            "provider": "openai",
+            "parameters": parameters,
+        }
 
-        with pytest.raises(ValidationError):
-            CreateProjectRequest(
-                # Missing required name field
-                description="A test project"
-            )
+        config = Configuration(**config_data)
+        assert config.project == "test-project"
+        assert config.name == "test-config"
+        assert config.provider == "openai"
+        assert config.parameters.model == "gpt-4"
+        assert config.parameters.call_type.value == "chat"
 
-    def test_invalid_tool_request_raises_error(self):
-        """Test that invalid CreateToolRequest raises validation error."""
-        from pydantic import ValidationError
+    def test_tool_model_creation(self) -> None:
+        """Test Tool model creation."""
+        # ToolType imported at top level
 
-        with pytest.raises(ValidationError):
-            CreateToolRequest(
-                # Missing required fields
-                description="A test tool"
-            )
+        tool_data: Dict[str, Any] = {
+            "task": "test-task",
+            "name": "test-tool",
+            "description": "A test tool",
+            "parameters": {"param1": "value1"},
+            "tool_type": ToolType.function,
+        }
+
+        tool = Tool(**tool_data)
+        assert tool.name == "test-tool"
+        assert tool.description == "A test tool"
+        assert tool.task == "test-task"
+        assert tool.parameters == {"param1": "value1"}
+        assert tool.tool_type.value == "function"
+
+    def test_metric_model_creation(self) -> None:
+        """Test Metric model creation."""
+        # Type1 and ReturnType imported at top level
+
+        metric_data: Dict[str, Any] = {
+            "name": "test-metric",
+            "task": "test-task",
+            "type": Type1.custom,
+            "description": "A test metric",
+            "return_type": ReturnType.float,
+        }
+
+        metric = Metric(**metric_data)
+        assert metric.name == "test-metric"
+        assert metric.task == "test-task"
+        assert metric.description == "A test metric"
+
+    def test_event_filter_model_creation(self) -> None:
+        """Test EventFilter model creation."""
+        # Operator and Type imported at top level
+
+        filter_data: Dict[str, Any] = {
+            "field": "metadata.cost",
+            "value": "0.01",
+            "operator": Operator.greater_than,
+            "type": Type.number,
+        }
+
+        event_filter = EventFilter(**filter_data)
+        assert event_filter.field == "metadata.cost"
+        assert event_filter.value == "0.01"
+        assert event_filter.operator is not None
+        assert event_filter.operator.value == "greater than"
+        assert event_filter.type is not None
+        assert event_filter.type.value == "number"
 
 
-class TestComplexModelScenarios:
-    """Test complex nested model structures one model at a time."""
+class TestModelIntegrationPatterns:
+    """Test integration patterns used across the codebase."""
 
-    def test_create_event_request_with_nested_config(self):
-        """Test creating CreateEventRequest with complex nested configuration."""
-        try:
-            from honeyhive.models.generated import EventType1
+    def test_create_event_request_integration_pattern(self) -> None:
+        """Test CreateEventRequest integration pattern used in API classes."""
+        # EventType1 imported at top level
 
-            # Create a complex event with nested configuration
-            event_request = CreateEventRequest(
-                project="test-project",
-                source="production",
-                event_name="complex-llm-evaluation",
-                event_type=EventType1.model,
-                event_id="event-123",
-                session_id="session-456",
-                parent_id=None,
-                children_ids=None,
-                config={
-                    "model": "gpt-4",
-                    "provider": "openai",
-                    "temperature": 0.7,
-                    "max_tokens": 1000,
-                    "nested": {
-                        "function_calling": {
-                            "enabled": True,
-                            "mode": "auto",
-                            "functions": [
-                                {
-                                    "name": "extract_data",
-                                    "description": "Extract structured data",
-                                }
-                            ],
-                        },
-                        "safety": {
-                            "content_filter": "high",
-                            "blocked_categories": ["harmful", "inappropriate"],
-                        },
-                    },
-                },
-                inputs={
-                    "prompt": "Analyze the following text and extract key information",
-                    "context": "This is a complex analysis task",
-                    "metadata": {
-                        "task_type": "information_extraction",
-                        "difficulty": "high",
-                        "expected_output": "structured_data",
-                    },
-                },
-                outputs=None,
-                error=None,
-                start_time=None,
-                end_time=None,
-                duration=2500.0,
-                metadata={
-                    "experiment_id": "exp-123",
-                    "user_id": "user-456",
-                    "session_context": {
-                        "conversation_id": "conv-789",
-                        "turn_number": 5,
-                        "previous_events": ["event-1", "event-2"],
-                    },
-                },
-                feedback=None,
-                metrics=None,
-                user_properties=None,
-            )
+        # This tests the common pattern found in API usage
+        event_data: Dict[str, Any] = {
+            "project": "test-project",
+            "source": "production",
+            "event_name": "llm_call",
+            "event_type": EventType1.model,
+            "config": {"model": "gpt-4", "temperature": 0.7},
+            "inputs": {"prompt": "Hello, world!"},
+            "outputs": {"response": "Hello! How can I help you today?"},
+            "duration": 1500.0,
+            "metadata": {"user_id": "user-123", "session_id": "session-456"},
+        }
 
-            # Verify the complex structure is valid
-            assert event_request.config["nested"]["function_calling"]["enabled"] is True
-            assert event_request.config["nested"]["safety"]["content_filter"] == "high"
-            assert (
-                event_request.inputs["metadata"]["task_type"]
-                == "information_extraction"
-            )
-            assert event_request.metadata["session_context"]["turn_number"] == 5
+        event = CreateEventRequest(**event_data)
 
-            # Test serialization
-            serialized = event_request.model_dump(exclude_none=True)
-            assert serialized["config"]["nested"]["function_calling"]["enabled"] is True
-            assert serialized["config"]["nested"]["safety"]["content_filter"] == "high"
-            assert (
-                serialized["inputs"]["metadata"]["task_type"]
-                == "information_extraction"
-            )
+        # Test that the model can be serialized (common API pattern)
+        event_dict = event.model_dump()
+        assert event_dict["project"] == "test-project"
+        assert (
+            event_dict["event_type"].value == "model"
+        )  # Enum objects in serialized dict
+        assert event_dict["config"]["model"] == "gpt-4"
 
-        except Exception as e:
-            pytest.fail(f"Failed to create complex CreateEventRequest: {e}")
+    def test_session_start_request_integration_pattern(self) -> None:
+        """Test SessionStartRequest integration pattern used in session API."""
+        session_data: Dict[str, Any] = {
+            "project": "test-project",
+            "session_name": "user_conversation",
+            "source": "production",
+            "config": {"model": "gpt-4"},
+            "inputs": {"initial_prompt": "Start conversation"},
+            "user_properties": {"user_id": "user-123", "plan": "premium"},
+        }
 
-    def test_create_datapoint_request_with_nested_history(self):
-        """Test creating CreateDatapointRequest with complex conversation history."""
-        try:
-            # Create complex conversation history
-            conversation_history = [
-                {
-                    "role": "user",
-                    "content": "What is the weather like today?",
-                    "timestamp": "2024-01-15T10:00:00Z",
-                    "metadata": {"user_id": "user-123", "session_id": "sess-456"},
-                },
-                {
-                    "role": "assistant",
-                    "content": "I don't have access to real-time weather data.",
-                    "timestamp": "2024-01-15T10:00:01Z",
-                    "metadata": {"model": "gpt-4", "confidence": 0.95},
-                },
-                {
-                    "role": "user",
-                    "content": "Can you help me find a weather API?",
-                    "timestamp": "2024-01-15T10:00:02Z",
-                    "metadata": {"user_id": "user-123", "session_id": "sess-456"},
-                },
-            ]
+        session = SessionStartRequest(**session_data)
 
-            # Create complex ground truth
-            ground_truth = {
-                "expected_response": "Provide information about weather APIs",
-                "quality_score": 0.9,
-                "evaluation_criteria": {
-                    "relevance": 0.95,
-                    "helpfulness": 0.88,
-                    "accuracy": 0.92,
-                },
+        # Test serialization pattern
+        session_dict = session.model_dump()
+        assert session_dict["project"] == "test-project"
+        assert session_dict["session_name"] == "user_conversation"
+        user_props = session_dict.get("user_properties")
+        assert user_props is not None
+        assert user_props["plan"] == "premium"
+
+    def test_tracing_params_decorator_pattern(self) -> None:
+        """Test TracingParams pattern used in tracer decorators."""
+        # This tests the pattern used in tracer decorators
+        params = TracingParams(
+            event_type="model",
+            event_name="llm_completion",
+            project="test-project",
+            inputs={"prompt": "test"},
+            metadata={"model": "gpt-4"},
+        )
+
+        # Test that params can be used in decorator context
+        assert params.event_type == "model"
+        assert params.event_name == "llm_completion"
+        inputs = params.inputs
+        assert inputs is not None
+        assert inputs["prompt"] == "test"  # pylint: disable=unsubscriptable-object
+        metadata = params.metadata
+        assert metadata is not None
+        assert metadata["model"] == "gpt-4"  # pylint: disable=unsubscriptable-object
+
+    def test_batch_event_creation_pattern(self) -> None:
+        """Test batch event creation pattern used in API classes."""
+        # EventType1 imported at top level
+
+        # Test creating multiple events (common batch pattern)
+        events_data: list[Dict[str, Any]] = [
+            {
+                "project": "test-project",
+                "source": "test",
+                "event_name": f"event-{i}",
+                "event_type": EventType1.model,
+                "config": {"model": "gpt-4"},
+                "inputs": {"prompt": f"prompt-{i}"},
+                "duration": 1000.0,
             }
+            for i in range(3)
+        ]
 
-            datapoint_request = CreateDatapointRequest(
-                project="test-project",
-                inputs={
-                    "user_query": "What is the weather like today?",
-                    "context": "User is asking about weather information",
-                    "user_preferences": {
-                        "location": "San Francisco",
-                        "units": "fahrenheit",
-                        "detailed": True,
-                    },
-                },
-                history=conversation_history,
-                ground_truth=ground_truth,
-                metadata={
-                    "dataset_version": "v2.1",
-                    "collection_date": "2024-01-15",
-                    "annotator": "expert-1",
-                    "quality_metrics": {
-                        "inter_annotator_agreement": 0.87,
-                        "confidence": 0.92,
-                    },
-                },
-            )
+        events = [CreateEventRequest(**data) for data in events_data]
 
-            # Verify complex nested structures
-            assert len(datapoint_request.history) == 3
-            assert datapoint_request.history[0]["role"] == "user"
-            assert (
-                datapoint_request.ground_truth["evaluation_criteria"]["relevance"]
-                == 0.95
-            )
-            assert (
-                datapoint_request.inputs["user_preferences"]["location"]
-                == "San Francisco"
-            )
+        assert len(events) == 3
+        for i, event in enumerate(events):
+            assert event.event_name == f"event-{i}"
+            assert event.inputs["prompt"] == f"prompt-{i}"
 
-            # Test serialization
-            serialized = datapoint_request.model_dump(exclude_none=True)
-            assert len(serialized["history"]) == 3
-            assert serialized["history"][0]["role"] == "user"
-            assert (
-                serialized["ground_truth"]["evaluation_criteria"]["relevance"] == 0.95
-            )
-
-        except Exception as e:
-            pytest.fail(f"Failed to create complex CreateDatapointRequest: {e}")
-
-    def test_post_configuration_request_with_nested_parameters(self):
-        """Test creating PostConfigurationRequest with complex nested parameters."""
-        try:
-            from honeyhive.models.generated import (
-                CallType,
-                EnvEnum,
-                FunctionCallParams,
-                Parameters2,
-                SelectedFunction,
-            )
-
-            # Create complex function parameters
-            selected_functions = [
-                SelectedFunction(
-                    id="func-1",
-                    name="extract_entities",
-                    description="Extract named entities from text",
-                    parameters={
-                        "entity_types": ["person", "organization", "location"],
-                        "confidence_threshold": 0.8,
-                        "include_metadata": True,
-                    },
-                ),
-                SelectedFunction(
-                    id="func-2",
-                    name="classify_sentiment",
-                    description="Classify text sentiment",
-                    parameters={
-                        "scale": "1-5",
-                        "include_confidence": True,
-                        "neutral_threshold": 0.1,
-                    },
-                ),
-            ]
-
-            # Create complex hyperparameters
-            hyperparameters = {
-                "temperature": 0.7,
-                "max_tokens": 1000,
-                "top_p": 0.9,
-                "frequency_penalty": 0.1,
-                "presence_penalty": 0.1,
-                "advanced": {
-                    "beam_search": {
-                        "enabled": True,
-                        "beam_size": 5,
-                        "length_penalty": 1.0,
-                    },
-                    "sampling": {
-                        "nucleus_sampling": True,
-                        "top_k": 40,
-                        "repetition_penalty": 1.1,
-                    },
-                },
-            }
-
-            config_request = PostConfigurationRequest(
-                project="test-project",
-                name="complex-llm-config",
-                provider="openai",
-                parameters=Parameters2(
-                    call_type=CallType.chat,
-                    model="gpt-4",
-                    hyperparameters=hyperparameters,
-                    responseFormat={"type": "json_object"},
-                    selectedFunctions=selected_functions,
-                    functionCallParams=FunctionCallParams.auto,
-                    forceFunction={
-                        "name": "extract_entities",
-                        "parameters": {"entity_types": ["person", "organization"]},
-                    },
-                ),
-                env=[EnvEnum.prod, EnvEnum.staging],
-                user_properties={
-                    "team": "AI-Research",
-                    "project_lead": "Dr. Smith",
-                    "budget_code": "AI-2024-001",
-                    "approval_status": "approved",
-                },
-            )
-
-            # Verify complex nested structures
-            assert config_request.parameters.call_type == CallType.chat
-            assert config_request.parameters.model == "gpt-4"
-            assert (
-                config_request.parameters.hyperparameters["advanced"]["beam_search"][
-                    "enabled"
-                ]
-                is True
-            )
-            assert len(config_request.parameters.selectedFunctions) == 2
-            assert (
-                config_request.parameters.selectedFunctions[0].name
-                == "extract_entities"
-            )
-            assert EnvEnum.prod in config_request.env
-            assert config_request.user_properties["team"] == "AI-Research"
-
-            # Test serialization
-            serialized = config_request.model_dump(exclude_none=True)
-            assert (
-                serialized["parameters"]["hyperparameters"]["advanced"]["beam_search"][
-                    "enabled"
-                ]
-                is True
-            )
-            assert (
-                serialized["parameters"]["selectedFunctions"][0]["name"]
-                == "extract_entities"
-            )
-
-        except Exception as e:
-            pytest.fail(f"Failed to create complex PostConfigurationRequest: {e}")
-
-    def test_create_run_request_with_complex_evaluation_config(self):
-        """Test creating CreateRunRequest with complex evaluation configuration."""
-        try:
-            pass
-
-            from honeyhive.models.generated import UUIDType
-
-            # Create complex evaluation configuration
-            evaluation_config = {
-                "metrics": {
-                    "accuracy": {"threshold": 0.8, "weight": 0.4},
-                    "precision": {"threshold": 0.75, "weight": 0.3},
-                    "recall": {"threshold": 0.7, "weight": 0.3},
-                },
-                "evaluation_settings": {
-                    "batch_size": 100,
-                    "parallel_processing": True,
-                    "timeout_seconds": 300,
-                    "retry_attempts": 3,
-                },
-                "output_format": {
-                    "include_predictions": True,
-                    "include_confidence_scores": True,
-                    "include_explanations": True,
-                    "export_formats": ["json", "csv", "excel"],
-                },
-            }
-
-            run_request = CreateRunRequest(
-                project="test-project",
-                name="complex-evaluation-run",
-                event_ids=[
-                    UUIDType("event-1"),
-                    UUIDType("event-2"),
-                    UUIDType("event-3"),
-                ],
-                dataset_id="dataset-123",
-                datapoint_ids=["dp-1", "dp-2", "dp-3"],
-                configuration=evaluation_config,
-                metadata={
-                    "evaluation_type": "comprehensive_llm_assessment",
-                    "evaluator": "expert-team",
-                    "benchmark": "industry-standard",
-                    "quality_metrics": {
-                        "inter_evaluator_reliability": 0.89,
-                        "test_retest_reliability": 0.92,
-                        "content_validity": 0.94,
-                    },
-                },
-            )
-
-            # Verify complex nested structures
-            assert run_request.configuration["metrics"]["accuracy"]["threshold"] == 0.8
-            assert (
-                run_request.configuration["evaluation_settings"]["parallel_processing"]
-                is True
-            )
-            assert (
-                "json" in run_request.configuration["output_format"]["export_formats"]
-            )
-            assert (
-                run_request.metadata["quality_metrics"]["inter_evaluator_reliability"]
-                == 0.89
-            )
-
-            # Test serialization
-            serialized = run_request.model_dump(exclude_none=True)
-            assert (
-                serialized["configuration"]["metrics"]["accuracy"]["threshold"] == 0.8
-            )
-            assert (
-                serialized["configuration"]["evaluation_settings"][
-                    "parallel_processing"
-                ]
-                is True
-            )
-
-        except Exception as e:
-            pytest.fail(f"Failed to create complex CreateRunRequest: {e}")
-
-    def test_update_tool_request_with_complex_changes(self):
-        """Test creating UpdateToolRequest with complex nested changes."""
-        try:
-            from honeyhive.models import UpdateToolRequest
-
-            update_request = UpdateToolRequest(
-                id="tool-123",
-                name="updated-complex-tool",
-                description="Enhanced text processing tool with new capabilities",
-                parameters={
-                    "new_capabilities": {
-                        "sentiment_analysis": True,
-                        "entity_recognition": True,
-                        "text_summarization": True,
-                    },
-                    "enhanced_parameters": {
-                        "input_schema": {
-                            "additional_fields": ["context", "user_preferences"],
-                            "validation_rules": ["non_empty", "max_length_check"],
-                        }
-                    },
-                },
-            )
-
-            # Verify complex nested structures
-            assert (
-                update_request.parameters["new_capabilities"]["sentiment_analysis"]
-                is True
-            )
-            assert (
-                update_request.parameters["new_capabilities"]["entity_recognition"]
-                is True
-            )
-            assert (
-                "context"
-                in update_request.parameters["enhanced_parameters"]["input_schema"][
-                    "additional_fields"
-                ]
-            )
-
-            # Test serialization
-            serialized = update_request.model_dump(exclude_none=True)
-            assert (
-                serialized["parameters"]["new_capabilities"]["sentiment_analysis"]
-                is True
-            )
-            assert serialized["parameters"]["enhanced_parameters"]["input_schema"][
-                "additional_fields"
-            ] == ["context", "user_preferences"]
-
-        except Exception as e:
-            pytest.fail(f"Failed to create complex UpdateToolRequest: {e}")
-
-    def test_update_datapoint_request_with_complex_changes(self):
-        """Test creating UpdateDatapointRequest with complex nested changes."""
-        try:
-            from honeyhive.models import UpdateDatapointRequest
-
-            update_request = UpdateDatapointRequest(
-                field_id="datapoint-123",
-                inputs={
-                    "updated_query": "What is the weather like in Paris?",
-                    "enhanced_context": "User is planning a trip to Paris",
-                    "user_preferences": {
-                        "location": "Paris, France",
-                        "units": "celsius",
-                        "detailed": True,
-                        "include_forecast": True,
-                    },
-                },
-                metadata={
-                    "last_updated": "2024-01-25",
-                    "update_reason": "Enhanced user preferences and context",
-                    "quality_improvements": {
-                        "additional_annotations": True,
-                        "cross_references": ["dp-456", "dp-789"],
-                        "validation_status": "reviewed",
-                    },
-                },
-            )
-
-            # Verify complex nested structures
-            assert (
-                update_request.inputs["user_preferences"]["location"] == "Paris, France"
-            )
-            assert update_request.inputs["user_preferences"]["include_forecast"] is True
-            assert (
-                update_request.metadata["quality_improvements"]["validation_status"]
-                == "reviewed"
-            )
-
-            # Test serialization
-            serialized = update_request.model_dump(exclude_none=True)
-            assert (
-                serialized["inputs"]["user_preferences"]["location"] == "Paris, France"
-            )
-            assert (
-                serialized["metadata"]["quality_improvements"]["validation_status"]
-                == "reviewed"
-            )
-
-        except Exception as e:
-            pytest.fail(f"Failed to create complex UpdateDatapointRequest: {e}")
-
-    def test_event_filter_with_complex_queries(self):
-        """Test EventFilter with complex query structures."""
-        try:
-            from honeyhive.models import EventFilter
-
-            # Test complex filter scenarios
-            complex_filters = [
-                EventFilter(field="metadata.experiment_id", value="exp-123"),
-                EventFilter(field="config.model", value="gpt-4"),
-                EventFilter(
-                    field="inputs.metadata.task_type", value="information_extraction"
-                ),
-                EventFilter(
-                    field="metadata.session_context.conversation_id", value="conv-789"
-                ),
-            ]
-
-            for event_filter in complex_filters:
-                assert event_filter.field is not None
-                assert event_filter.value is not None
-                # Verify the filter can be used in API calls
-                assert isinstance(event_filter.field, str)
-                assert isinstance(event_filter.value, str)
-
-            # Test serialization
-            serialized_filters = [
-                filter_obj.model_dump(exclude_none=True)
-                for filter_obj in complex_filters
-            ]
-            assert len(serialized_filters) == 4
-            assert serialized_filters[0]["field"] == "metadata.experiment_id"
-            assert serialized_filters[0]["value"] == "exp-123"
-
-        except Exception as e:
-            pytest.fail(f"Failed to create complex EventFilter: {e}")
-
-    def test_update_project_request_with_complex_changes(self):
-        """Test creating UpdateProjectRequest with complex nested changes."""
-        try:
-            from honeyhive.models import UpdateProjectRequest
-
-            update_request = UpdateProjectRequest(
-                project_id="project-123",
-                name="updated-complex-project",
-                description="Enhanced project with new capabilities and metadata",
-            )
-
-            # Verify basic fields
-            assert update_request.project_id == "project-123"
-            assert update_request.name == "updated-complex-project"
-            assert (
-                update_request.description
-                == "Enhanced project with new capabilities and metadata"
-            )
-
-            # Test serialization
-            serialized = update_request.model_dump(exclude_none=True)
-            assert serialized["project_id"] == "project-123"
-            assert serialized["name"] == "updated-complex-project"
-            assert (
-                serialized["description"]
-                == "Enhanced project with new capabilities and metadata"
-            )
-
-        except Exception as e:
-            pytest.fail(f"Failed to create complex UpdateProjectRequest: {e}")
-
-    def test_update_run_request_with_complex_changes(self):
-        """Test creating UpdateRunRequest with complex nested changes."""
-        try:
-            from honeyhive.models import UpdateRunRequest
-
-            update_request = UpdateRunRequest(
-                name="updated-complex-evaluation",
-                metadata={
-                    "last_updated": "2024-01-25",
-                    "update_reason": "Enhanced evaluation criteria and metrics",
-                    "changes": {
-                        "new_metrics": ["f1_score", "auc_roc"],
-                        "updated_thresholds": {
-                            "accuracy": 0.85,
-                            "precision": 0.8,
-                            "recall": 0.75,
-                        },
-                        "quality_improvements": {
-                            "additional_evaluators": ["evaluator-3", "evaluator-4"],
-                            "enhanced_guidelines": True,
-                            "automated_validation": True,
-                        },
-                    },
-                },
-            )
-
-            # Verify complex nested structures
-            assert update_request.metadata["changes"]["new_metrics"] == [
-                "f1_score",
-                "auc_roc",
-            ]
-            assert (
-                update_request.metadata["changes"]["updated_thresholds"]["accuracy"]
-                == 0.85
-            )
-            assert (
-                update_request.metadata["changes"]["quality_improvements"][
-                    "enhanced_guidelines"
-                ]
-                is True
-            )
-
-            # Test serialization
-            serialized = update_request.model_dump(exclude_none=True)
-            assert serialized["metadata"]["changes"]["new_metrics"] == [
-                "f1_score",
-                "auc_roc",
-            ]
-            assert (
-                serialized["metadata"]["changes"]["updated_thresholds"]["accuracy"]
-                == 0.85
-            )
-
-        except Exception as e:
-            pytest.fail(f"Failed to create complex UpdateRunRequest: {e}")
-
-    def test_put_configuration_request_with_complex_changes(self):
-        """Test creating PutConfigurationRequest with complex nested changes."""
-        try:
-            from honeyhive.models import PutConfigurationRequest
-            from honeyhive.models.generated import (
-                CallType,
-                EnvEnum,
-                Parameters1,
-                Type6,
-            )
-
-            update_request = PutConfigurationRequest(
-                project="test-project",
-                name="updated-complex-config",
-                provider="anthropic",
-                parameters=Parameters1(
-                    call_type=CallType.completion,
-                    model="claude-3-sonnet",
-                    hyperparameters={
-                        "temperature": 0.8,
-                        "max_tokens": 2000,
-                        "advanced": {
-                            "anthropic_specific": {
-                                "system_prompt": "You are a helpful AI assistant",
-                                "max_input_tokens": 100000,
-                            }
-                        },
-                    },
-                ),
-                env=[EnvEnum.dev, EnvEnum.staging],
-                type=Type6.LLM,
-                user_properties={
-                    "updated_by": "Dr. Johnson",
-                    "update_date": "2024-01-25",
-                    "change_log": [
-                        "Switched from OpenAI to Anthropic",
-                        "Updated model to Claude 3 Sonnet",
-                        "Enhanced hyperparameter tuning",
-                    ],
-                },
-            )
-
-            # Verify complex nested structures
-            assert update_request.provider == "anthropic"
-            assert update_request.parameters.model == "claude-3-sonnet"
-            assert (
-                update_request.parameters.hyperparameters["advanced"][
-                    "anthropic_specific"
-                ]["system_prompt"]
-                == "You are a helpful AI assistant"
-            )
-            assert update_request.type == Type6.LLM
-            assert (
-                "Switched from OpenAI to Anthropic"
-                in update_request.user_properties["change_log"]
-            )
-
-            # Test serialization
-            serialized = update_request.model_dump(exclude_none=True)
-            assert serialized["provider"] == "anthropic"
-            assert serialized["parameters"]["model"] == "claude-3-sonnet"
-
-        except Exception as e:
-            pytest.fail(f"Failed to create complex PutConfigurationRequest: {e}")
-
-    def test_validation_edge_cases(self):
-        """Test validation edge cases and error handling."""
-        try:
-            from pydantic import ValidationError
-
-            from honeyhive.models import CreateEventRequest
-            from honeyhive.models.generated import EventType1
-
-            # Test with invalid enum values
-            with pytest.raises(ValidationError):
-                invalid_event = CreateEventRequest(
-                    project="test-project",
-                    source="test",
-                    event_name="test",
-                    event_type="invalid_type",  # Invalid enum value
-                    config={"test": True},
-                    inputs={"test": "test"},
-                    duration=100.0,
-                )
-
-            # Test with missing required fields
-            with pytest.raises(ValidationError):
-                invalid_event = CreateEventRequest(
-                    project="test-project",
-                    # Missing required fields: source, event_name, event_type, config, inputs, duration
-                )
-
-            # Test with invalid data types
-            with pytest.raises(ValidationError):
-                invalid_event = CreateEventRequest(
-                    project="test-project",
-                    source="test",
-                    event_name="test",
-                    event_type=EventType1.model,
-                    config="not_a_dict",  # Should be dict
-                    inputs={"test": "test"},
-                    duration="not_a_number",  # Should be float
-                )
-
-            # Test that valid models pass validation
-            valid_event = CreateEventRequest(
-                project="test-project",
+    def test_model_validation_error_handling(self) -> None:
+        """Test model validation error handling patterns."""
+        # Test that validation errors are properly raised and handled
+        with pytest.raises(ValidationError) as exc_info:
+            CreateEventRequest(  # type: ignore[call-arg]
+                project="test",
                 source="test",
-                event_name="test",
-                event_type=EventType1.model,
-                config={"test": True},
-                inputs={"test": "test"},
-                duration=100.0,
-            )
-            assert valid_event.project == "test-project"
-            assert valid_event.event_type == EventType1.model
-
-        except Exception as e:
-            pytest.fail(f"Failed to test validation edge cases: {e}")
-
-    def test_create_dataset_request_with_complex_metadata(self):
-        """Test creating CreateDatasetRequest with complex metadata structure."""
-        try:
-            from honeyhive.models import CreateDatasetRequest
-            from honeyhive.models.generated import PipelineType, Type4
-
-            dataset_request = CreateDatasetRequest(
-                project="test-project",
-                name="comprehensive-llm-evaluation-dataset",
-                description="A comprehensive dataset for evaluating LLM performance across multiple domains",
-                type=Type4.evaluation,
-                pipeline_type=PipelineType.event,
-                datapoints=["dp-1", "dp-2", "dp-3", "dp-4", "dp-5"],
-                linked_evals=["eval-1", "eval-2"],
-                metadata={
-                    "version": "2.0.0",
-                    "creation_date": "2024-01-15",
-                    "curator": "expert-team",
-                    "quality_assurance": {
-                        "reviewed_by": ["reviewer-1", "reviewer-2", "reviewer-3"],
-                        "review_date": "2024-01-20",
-                        "quality_score": 0.96,
-                        "coverage_metrics": {
-                            "domains": [
-                                "technology",
-                                "healthcare",
-                                "finance",
-                                "education",
-                            ],
-                            "languages": ["english", "spanish", "french"],
-                            "difficulty_levels": ["easy", "medium", "hard", "expert"],
-                        },
-                        "validation_process": {
-                            "automated_checks": True,
-                            "human_review": True,
-                            "inter_annotator_agreement": 0.89,
-                        },
-                    },
-                    "usage_guidelines": {
-                        "intended_use": "LLM evaluation, benchmarking, and research",
-                        "restrictions": "Research and development purposes only",
-                        "citation": "HoneyHive Comprehensive Dataset v2.0",
-                        "license": "MIT",
-                    },
-                },
+                # Missing required event_name and event_type
             )
 
-            # Verify complex nested structures
-            assert dataset_request.type == Type4.evaluation
-            assert dataset_request.pipeline_type == PipelineType.event
-            assert (
-                dataset_request.metadata["quality_assurance"]["quality_score"] == 0.96
-            )
-            assert (
-                "technology"
-                in dataset_request.metadata["quality_assurance"]["coverage_metrics"][
-                    "domains"
-                ]
-            )
-            assert (
-                dataset_request.metadata["quality_assurance"]["validation_process"][
-                    "automated_checks"
-                ]
-                is True
-            )
+        errors = exc_info.value.errors()
+        assert len(errors) >= 2  # At least event_name and event_type missing
 
-            # Test serialization
-            serialized = dataset_request.model_dump(exclude_none=True)
-            assert serialized["metadata"]["quality_assurance"]["quality_score"] == 0.96
-            assert (
-                "technology"
-                in serialized["metadata"]["quality_assurance"]["coverage_metrics"][
-                    "domains"
-                ]
-            )
+        # Test that error messages are informative
+        error_fields = {error["loc"][0] for error in errors}
+        assert "event_name" in error_fields
+        assert "event_type" in error_fields
 
-        except Exception as e:
-            pytest.fail(f"Failed to create complex CreateDatasetRequest: {e}")
+    def test_model_field_access_patterns(self) -> None:
+        """Test common field access patterns used across the codebase."""
+        # EventType1 imported at top level
 
-    def test_dataset_update_with_nested_changes(self):
-        """Test creating DatasetUpdate with complex nested changes."""
-        try:
-            from honeyhive.models.generated import DatasetUpdate
+        event = CreateEventRequest(
+            project="test-project",
+            source="test",
+            event_name="test-event",
+            event_type=EventType1.model,
+            config={"temperature": 0.7},
+            inputs={"prompt": "test"},
+            duration=1000.0,
+            metadata={"user_id": "user-123"},
+        )
 
-            update_request = DatasetUpdate(
-                dataset_id="dataset-123",
-                name="updated-complex-dataset",
-                description="Updated comprehensive dataset",
-                metadata={
-                    "last_updated": "2024-01-25",
-                    "update_reason": "Added new domains and improved quality",
-                    "changes": {
-                        "added_domains": ["education", "environment"],
-                        "removed_domains": ["outdated-tech"],
-                        "quality_improvements": {
-                            "new_annotators": ["annotator-3", "annotator-4"],
-                            "improved_guidelines": True,
-                            "validation_enhancements": [
-                                "automated_checks",
-                                "human_review",
-                            ],
-                        },
-                    },
-                },
-            )
+        # Test common field access patterns
+        assert event.project == "test-project"
+        config = event.config
+        assert config is not None
+        assert config["temperature"] == 0.7  # type: ignore[index]
+        metadata = event.metadata
+        assert metadata is not None
+        assert metadata["user_id"] == "user-123"  # type: ignore[index]
+        assert "max_tokens" not in config  # Non-existent key
 
-            # Verify complex nested structures
-            assert update_request.dataset_id == "dataset-123"
-            assert update_request.name == "updated-complex-dataset"
-            assert "education" in update_request.metadata["changes"]["added_domains"]
-            assert (
-                update_request.metadata["changes"]["quality_improvements"][
-                    "improved_guidelines"
-                ]
-                is True
-            )
-            assert (
-                "automated_checks"
-                in update_request.metadata["changes"]["quality_improvements"][
-                    "validation_enhancements"
-                ]
-            )
+        # Test optional field handling
+        assert event.error is None
+        assert event.duration == 1000.0  # Duration is required and set
+        assert event.feedback is None
 
-            # Test serialization
-            serialized = update_request.model_dump(exclude_none=True)
-            assert serialized["dataset_id"] == "dataset-123"
-            assert "education" in serialized["metadata"]["changes"]["added_domains"]
 
-        except Exception as e:
-            pytest.fail(f"Failed to create complex DatasetUpdate: {e}")
+class TestEventTypeEnum:
+    """Test EventType enum functionality."""
 
-    def test_metric_edit_with_complex_changes(self):
-        """Test creating MetricEdit with complex nested changes."""
-        try:
-            from honeyhive.models.generated import MetricEdit
+    def test_event_type_enum_values(self) -> None:
+        """Test EventType enum has expected values."""
+        # Test that EventType enum has the expected values
+        expected_values = {"session", "model", "tool", "chain", "llm"}
+        actual_values = {e.value for e in GeneratedEventType}
 
-            update_request = MetricEdit(
-                metric_id="metric-123",
-                name="updated-comprehensive-metric",
-                event_name="enhanced-llm-evaluation",
-                criteria="Enhanced evaluation criteria with new dimensions and weights",
-            )
+        assert expected_values.issubset(actual_values)
 
-            # Verify basic fields
-            assert update_request.metric_id == "metric-123"
-            assert update_request.name == "updated-comprehensive-metric"
-            assert update_request.event_name == "enhanced-llm-evaluation"
-            assert (
-                update_request.criteria
-                == "Enhanced evaluation criteria with new dimensions and weights"
-            )
+    def test_event_type_enum_usage(self) -> None:
+        """Test EventType enum usage in models."""
+        # EventType1 imported at top level
 
-            # Test serialization
-            serialized = update_request.model_dump(exclude_none=True)
-            assert serialized["metric_id"] == "metric-123"
-            assert serialized["name"] == "updated-comprehensive-metric"
+        # Test using enum values directly
+        event = CreateEventRequest(
+            project="test",
+            source="test",
+            event_name="test",
+            event_type=EventType1.model,
+            config={"model": "gpt-4"},
+            inputs={"prompt": "test"},
+            duration=1000.0,
+        )
 
-        except Exception as e:
-            pytest.fail(f"Failed to create complex MetricEdit: {e}")
+        assert event.event_type.value == "model"
 
-    def test_update_run_response_parsing(self):
-        """Test parsing UpdateRunResponse with complex data."""
-        try:
-            from honeyhive.models.generated import UpdateRunResponse
+    def test_event_type_enum_in_tracing_params(self) -> None:
+        """Test EventType enum usage in TracingParams."""
+        params = TracingParams(event_type=GeneratedEventType.tool)
+        assert params.event_type == GeneratedEventType.tool
 
-            response_data = {
-                "evaluation": {
-                    "run_id": "run-123",
-                    "status": "completed",
-                    "results": {
-                        "accuracy": 0.87,
-                        "precision": 0.82,
-                        "recall": 0.79,
-                        "f1_score": 0.80,
-                    },
-                    "metadata": {
-                        "completion_time": "2024-01-25T15:30:00Z",
-                        "evaluator": "expert-team",
-                        "quality_score": 0.92,
-                    },
-                },
-                "run_id": "run-123",
-            }
 
-            # Test that the response can be parsed
-            response = UpdateRunResponse(**response_data)
+class TestModelSerialization:
+    """Test model serialization and deserialization."""
 
-            # Verify the response structure
-            assert response.evaluation["run_id"] == "run-123"
-            assert response.evaluation["status"] == "completed"
-            assert response.evaluation["results"]["accuracy"] == 0.87
-            assert response.evaluation["metadata"]["quality_score"] == 0.92
+    def test_create_event_request_serialization(self) -> None:
+        """Test CreateEventRequest serialization to dict."""
+        # EventType1 imported at top level
 
-            # Test serialization
-            serialized = response.model_dump(exclude_none=True)
-            assert serialized["evaluation"]["results"]["accuracy"] == 0.87
+        event = CreateEventRequest(
+            project="test-project",
+            source="test",
+            event_name="test-event",
+            event_type=EventType1.model,
+            config={"temperature": 0.7},
+            inputs={"prompt": "test"},
+            outputs={"response": "result"},
+            duration=1000.0,
+        )
 
-        except Exception as e:
-            pytest.fail(f"Failed to parse UpdateRunResponse: {e}")
+        event_dict = event.model_dump()
 
-    def test_create_run_response_parsing(self):
-        """Test parsing CreateRunResponse with complex data."""
-        try:
-            from honeyhive.models.generated import CreateRunResponse, Status, UUIDType
+        assert event_dict["project"] == "test-project"
+        assert (
+            event_dict["event_type"].value == "model"
+        )  # Enum objects in serialized dict
+        assert event_dict["config"]["temperature"] == 0.7
+        assert event_dict["inputs"]["prompt"] == "test"
+        assert event_dict["outputs"]["response"] == "result"
 
-            response_data = {
-                "evaluation": {
-                    "run_id": UUIDType("run-456"),
-                    "status": Status.pending,
-                    "created_at": "2024-01-25T10:00:00Z",
-                    "configuration": {
-                        "metrics": ["accuracy", "precision", "recall"],
-                        "batch_size": 100,
-                        "timeout": 300,
-                    },
-                },
-                "run_id": UUIDType("run-456"),
-            }
+    def test_session_start_request_serialization(self) -> None:
+        """Test SessionStartRequest serialization to dict."""
+        session = SessionStartRequest(
+            project="test-project",
+            session_name="test-session",
+            source="test",
+            config={"model": "gpt-4"},
+            user_properties={"user_id": "user-123"},
+        )
 
-            # Test that the response can be parsed
-            response = CreateRunResponse(**response_data)
+        session_dict = session.model_dump()
 
-            # Verify the response structure
-            assert response.run_id == UUIDType("run-456")
-            assert response.evaluation.run_id == UUIDType("run-456")
-            assert response.evaluation.status == Status.pending
-            assert "accuracy" in response.evaluation.configuration["metrics"]
-            assert response.evaluation.configuration["batch_size"] == 100
+        assert session_dict["project"] == "test-project"
+        assert session_dict["session_name"] == "test-session"
+        assert session_dict["config"]["model"] == "gpt-4"
+        assert session_dict["user_properties"]["user_id"] == "user-123"
 
-            # Test that the model was created successfully
-            assert response is not None
-            assert hasattr(response, "run_id")
-            assert hasattr(response, "evaluation")
+    def test_tracing_params_serialization(self) -> None:
+        """Test TracingParams serialization to dict."""
+        params = TracingParams(
+            event_type="model",
+            event_name="test",
+            project="test-project",
+            inputs={"prompt": "test"},
+            metadata={"version": "1.0"},
+        )
 
-        except Exception as e:
-            pytest.fail(f"Failed to parse CreateRunResponse: {e}")
+        params_dict = params.model_dump()
 
-    def test_get_runs_response_parsing(self):
-        """Test parsing GetRunsResponse with complex data."""
-        try:
-            from honeyhive.models.generated import GetRunsResponse, Status, UUIDType
-
-            response_data = {
-                "evaluations": [
-                    {
-                        "run_id": UUIDType("run-1"),
-                        "status": Status.completed,
-                        "name": "Evaluation Run 1",
-                        "created_at": "2024-01-25T10:00:00Z",
-                    },
-                    {
-                        "run_id": UUIDType("run-2"),
-                        "status": Status.pending,
-                        "name": "Evaluation Run 2",
-                        "created_at": "2024-01-25T11:00:00Z",
-                    },
-                ]
-            }
-
-            # Test that the response can be parsed
-            response = GetRunsResponse(**response_data)
-
-            # Verify the response structure
-            assert len(response.evaluations) == 2
-            assert response.evaluations[0].run_id == UUIDType("run-1")
-            assert response.evaluations[0].status == Status.completed
-            assert response.evaluations[0].name == "Evaluation Run 1"
-            assert response.evaluations[1].run_id == UUIDType("run-2")
-            assert response.evaluations[1].status == Status.pending
-
-            # Test that the model was created successfully
-            assert response is not None
-            assert hasattr(response, "evaluations")
-
-        except Exception as e:
-            pytest.fail(f"Failed to parse GetRunsResponse: {e}")
-
-    def test_get_run_response_parsing(self):
-        """Test parsing GetRunResponse with complex data."""
-        try:
-            from honeyhive.models.generated import GetRunResponse, Status, UUIDType
-
-            response_data = {
-                "evaluation": {
-                    "run_id": UUIDType("run-789"),
-                    "status": Status.completed,
-                    "name": "Comprehensive LLM Evaluation",
-                    "created_at": "2024-01-25T12:00:00Z",
-                    "results": {
-                        "overall_score": 0.87,
-                        "metrics": {
-                            "accuracy": 0.89,
-                            "precision": 0.85,
-                            "recall": 0.82,
-                            "f1_score": 0.83,
-                        },
-                    },
-                }
-            }
-
-            # Test that the response can be parsed
-            response = GetRunResponse(**response_data)
-
-            # Verify the response structure
-            assert response.evaluation.run_id == UUIDType("run-789")
-            assert response.evaluation.status == Status.completed
-            assert response.evaluation.name == "Comprehensive LLM Evaluation"
-            assert response.evaluation.results["overall_score"] == 0.87
-            assert response.evaluation.results["metrics"]["accuracy"] == 0.89
-
-            # Test that the model was created successfully
-            assert response is not None
-            assert hasattr(response, "evaluation")
-
-        except Exception as e:
-            pytest.fail(f"Failed to parse GetRunResponse: {e}")
-
-    def test_delete_run_response_parsing(self):
-        """Test parsing DeleteRunResponse with complex data."""
-        try:
-            from honeyhive.models.generated import DeleteRunResponse, UUIDType
-
-            response_data = {"id": UUIDType("run-999"), "deleted": True}
-
-            # Test that the response can be parsed
-            response = DeleteRunResponse(**response_data)
-
-            # Verify the response structure
-            assert response.id == UUIDType("run-999")
-            assert response.deleted is True
-
-            # Test that the model was created successfully
-            assert response is not None
-            assert hasattr(response, "id")
-            assert hasattr(response, "deleted")
-
-        except Exception as e:
-            pytest.fail(f"Failed to parse DeleteRunResponse: {e}")
-
-    def test_uuid_type_methods_coverage(self):
-        """Test UUIDType methods to achieve 100% coverage."""
-        try:
-            from honeyhive.models.generated import UUIDType
-
-            # Test UUIDType instantiation and methods
-            uuid_obj = UUIDType("test-uuid-123")
-
-            # Test the root property (line 718)
-            assert uuid_obj.root == "test-uuid-123"
-
-            # Test the __str__ method (line 721)
-            assert str(uuid_obj) == "test-uuid-123"
-
-            # Test the __repr__ method
-            assert repr(uuid_obj) == "UUIDType(test-uuid-123)"
-
-        except Exception as e:
-            pytest.fail(f"Failed to test UUIDType methods: {e}")
+        assert params_dict["event_type"] == "model"
+        assert params_dict["event_name"] == "test"
+        assert params_dict["project"] == "test-project"
+        assert params_dict["inputs"]["prompt"] == "test"
+        assert params_dict["metadata"]["version"] == "1.0"

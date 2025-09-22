@@ -76,6 +76,8 @@ Core Capabilities
 
 **Configuration & Security**:
 
+- **🆕 Hybrid Configuration System**: Modern Pydantic config objects with full backwards compatibility
+- **Type-Safe Configuration**: IDE autocomplete and validation with graceful degradation
 - **Environment Variables**: Comprehensive configuration via HH_* environment variables
 - **Multi-Environment Support**: Different configurations for development, staging, production
 - **API Key Management**: Secure handling with rotation support and validation
@@ -85,7 +87,8 @@ Main Components
 ~~~~~~~~~~~~~~~
 
 - **HoneyHive Client**: Direct API access for data management and configuration
-- **HoneyHiveTracer**: Distributed tracing engine with OpenTelemetry compliance  
+- **🆕 HoneyHiveTracer**: Modular distributed tracing engine with mixin-based architecture and OpenTelemetry compliance
+- **🆕 Configuration Classes**: Type-safe Pydantic models (``TracerConfig``, ``BaseHoneyHiveConfig``, ``SessionConfig``)  
 - **Decorators**: Simple observability with ``@trace``, ``@evaluate``, and ``@trace_class``
 - **Evaluators**: Built-in and custom evaluation functions with async support
 - **Instrumentors**: Auto-instrumentation for LLM providers (Bring Your Own Instrumentor)
@@ -101,6 +104,8 @@ Client Classes
 
    api/client
    api/tracer
+   api/tracer-architecture
+   api/config-models
 
 Decorators & Functions
 ~~~~~~~~~~~~~~~~~~~~~~
@@ -113,11 +118,14 @@ Decorators & Functions
 Configuration
 ~~~~~~~~~~~~~
 
+**🆕 Hybrid Configuration System**: The SDK now supports both modern Pydantic config objects and traditional parameter passing with full backwards compatibility.
+
 .. toctree::
    :maxdepth: 1
 
-   configuration/environment-vars
+   configuration/hybrid-config-approach
    configuration/config-options
+   configuration/environment-vars
    configuration/authentication
 
 Data Models
@@ -211,6 +219,12 @@ Tracing Features
      - Thread-safe operation with multiple active tracers
    * - Resource management
      - Independent lifecycle management for each tracer instance
+   * - Provider strategy intelligence
+     - Automatic detection and optimal integration with existing OpenTelemetry providers
+   * - Span loss prevention
+     - Main provider strategy prevents instrumentor spans from being lost in empty providers
+   * - Coexistence capability
+     - Independent provider strategy enables coexistence with functioning observability systems
 
 Evaluation Features
 ```````````````````
@@ -307,6 +321,14 @@ Performance Features
 Configuration Features
 ``````````````````````
 
+**🆕 Hybrid Configuration System**:
+
+The SDK supports three configuration approaches:
+
+1. **Modern Pydantic Config Objects** (Recommended)
+2. **Traditional Parameter Passing** (Backwards Compatible)  
+3. **Mixed Approach** (Config objects + parameter overrides)
+
 **Environment Variable Support**:
 
 All configuration supports the ``HH_*`` prefix pattern:
@@ -318,10 +340,10 @@ All configuration supports the ``HH_*`` prefix pattern:
 
 **Configuration Hierarchy**:
 
-1. ``HH_*`` environment variables (highest priority for backwards compatibility)
-2. Constructor parameters  
-3. Standard environment variables (``HTTP_*``, ``EXPERIMENT_*``)
-4. Default values (lowest priority)
+1. **Individual Parameters** - Direct parameters to ``HoneyHiveTracer()``
+2. **Config Object Values** - Values from ``TracerConfig`` objects
+3. **Environment Variables** - ``HH_*`` environment variables
+4. **Default Values** - Built-in SDK defaults
 
 .. note::
    **API Key Special Case**: ``HH_API_KEY`` takes precedence over constructor ``api_key`` parameter for backwards compatibility. Other parameters follow standard precedence where constructor parameters can override environment variables.

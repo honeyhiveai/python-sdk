@@ -1,5 +1,7 @@
 """Retry utilities for HTTP requests."""
 
+# pylint: disable=duplicate-code  # HTTP error types are standard across modules
+
 import random
 from dataclasses import dataclass
 from typing import Optional

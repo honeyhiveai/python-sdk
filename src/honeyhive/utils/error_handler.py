@@ -1,11 +1,10 @@
 """Standardized error handling middleware for HoneyHive API clients."""
 
 import json
-import sys
 import traceback
 from contextlib import contextmanager
 from dataclasses import dataclass, field
-from typing import Any, Callable, Dict, Generator, Optional, Type, Union
+from typing import Any, Callable, Dict, Generator, Optional, Type
 
 import httpx
 
@@ -82,35 +81,29 @@ class HoneyHiveError(Exception):
 class APIError(HoneyHiveError):
     """API-related errors."""
 
-    pass
-
 
 class ValidationError(HoneyHiveError):
     """Data validation errors."""
 
-    pass
 
-
-class ConnectionError(HoneyHiveError):
-    """Network connection errors."""
-
-    pass
+class HoneyHiveConnectionError(HoneyHiveError):
+    """Connection-related errors."""
 
 
 class RateLimitError(HoneyHiveError):
     """Rate limiting errors."""
 
-    pass
-
 
 class AuthenticationError(HoneyHiveError):
     """Authentication and authorization errors."""
 
-    pass
 
+class ErrorHandler:  # pylint: disable=too-few-public-methods
+    """Standardized error handling middleware.
 
-class ErrorHandler:
-    """Standardized error handling middleware."""
+    This class provides a single public method for error handling,
+    which is appropriate for its focused responsibility.
+    """
 
     def __init__(self, logger_name: str = "honeyhive.error_handler"):
         """Initialize error handler.
@@ -147,7 +140,8 @@ class ErrorHandler:
         Args:
             context: Error context information
             raise_on_error: Whether to raise exceptions or return error responses
-            return_error_response: Whether to return ErrorResponse objects instead of raising
+            return_error_response: Whether to return ErrorResponse objects \
+                instead of raising
 
         Yields:
             None
@@ -346,17 +340,16 @@ class ErrorHandler:
         message = error_response.error_message
 
         if error_response.error_type == "ConnectionError":
-            return ConnectionError(message, error_response, original_exception)
-        elif error_response.error_type == "AuthenticationError":
+            return HoneyHiveConnectionError(message, error_response, original_exception)
+        if error_response.error_type == "AuthenticationError":
             return AuthenticationError(message, error_response, original_exception)
-        elif error_response.error_type == "RateLimitError":
+        if error_response.error_type == "RateLimitError":
             return RateLimitError(message, error_response, original_exception)
-        elif error_response.error_type == "ValidationError":
+        if error_response.error_type == "ValidationError":
             return ValidationError(message, error_response, original_exception)
-        elif error_response.error_type in ("APIError", "RequestError", "JSONError"):
+        if error_response.error_type in ("APIError", "RequestError", "JSONError"):
             return APIError(message, error_response, original_exception)
-        else:
-            return HoneyHiveError(message, error_response, original_exception)
+        return HoneyHiveError(message, error_response, original_exception)
 
     def _log_error(self, error_response: ErrorResponse, exception: Exception) -> None:
         """Log error details.
@@ -405,8 +398,9 @@ def get_error_handler() -> ErrorHandler:
 
 # Convenience context manager
 @contextmanager
-def handle_api_errors(
+def handle_api_errors(  # pylint: disable=too-many-arguments
     operation: str,
+    *,
     method: Optional[str] = None,
     url: Optional[str] = None,
     params: Optional[Dict[str, Any]] = None,
@@ -434,6 +428,10 @@ def handle_api_errors(
         with handle_api_errors("create_project", method="POST", url="/projects"):
             response = client.request("POST", "/projects", json=data)
     """
+    # pylint: disable=duplicate-code
+    # ErrorContext creation pattern is intentionally duplicated between
+    # api.base and utils.error_handler as both modules need to create
+    # error contexts with the same standard parameter structure
     context = ErrorContext(
         operation=operation,
         method=method,

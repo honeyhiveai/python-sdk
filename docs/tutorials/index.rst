@@ -45,6 +45,7 @@ Once you've completed the core tutorials, explore these additional topics:
 .. toctree::
    :maxdepth: 1
 
+   advanced-configuration
    advanced-setup
 
 **Next Steps**

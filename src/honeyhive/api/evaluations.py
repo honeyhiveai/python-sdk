@@ -1,7 +1,6 @@
 """HoneyHive API evaluations module."""
 
-import uuid
-from typing import Any, Dict, List, Optional, cast
+from typing import Any, Optional, cast
 from uuid import UUID
 
 from ..models import (
@@ -31,10 +30,9 @@ def _convert_uuids_recursively(data: Any) -> Any:
             else:
                 result[key] = _convert_uuids_recursively(value)
         return result
-    elif isinstance(data, list):
+    if isinstance(data, list):
         return [_convert_uuids_recursively(item) for item in data]
-    else:
-        return data
+    return data
 
 
 class EvaluationsAPI(BaseAPI):
@@ -82,7 +80,8 @@ class EvaluationsAPI(BaseAPI):
         return CreateRunResponse(**data)
 
     async def create_run_from_dict_async(self, run_data: dict) -> CreateRunResponse:
-        """Create a new evaluation run asynchronously from dictionary (legacy method)."""
+        """Create a new evaluation run asynchronously from dictionary
+        (legacy method)."""
         response = await self.client.request_async(
             "POST", "/runs", json={"run": run_data}
         )

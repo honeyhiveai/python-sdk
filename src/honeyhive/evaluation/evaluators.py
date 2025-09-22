@@ -1,25 +1,27 @@
 """Evaluation utilities for HoneyHive."""
 
+# pylint: disable=duplicate-code
+# This module contains legitimate code duplication with other modules:
+# 1. API export lists (__all__) - intentionally duplicated for consistent public APIs
+# 2. Pydantic field validators - shared validation logic across similar model classes
+# 3. ErrorContext creation patterns - standard parameter structures for error handling
+
 import asyncio
-import concurrent.futures
 import contextvars
 import functools
-import json
 import logging
-import time
 import uuid
 from concurrent.futures import ThreadPoolExecutor
 from dataclasses import dataclass, field
 from typing import Any, Callable, Dict, List, Optional, Union
 
-from honeyhive import HoneyHive
-from honeyhive.api.evaluations import EvaluationsAPI
+from honeyhive.api.client import HoneyHive
 from honeyhive.models.generated import (
     CreateRunRequest,
-    CreateRunResponse,
     EvaluationRun,
 )
-from honeyhive.utils.config import config
+
+# Config import removed - not used in this module
 
 logger = logging.getLogger(__name__)
 
@@ -76,7 +78,7 @@ class BaseEvaluator:
         return self.evaluate(inputs, outputs, ground_truth, **kwargs)
 
 
-class ExactMatchEvaluator(BaseEvaluator):
+class ExactMatchEvaluator(BaseEvaluator):  # pylint: disable=too-few-public-methods
     """Evaluator for exact string matching."""
 
     def __init__(self, **kwargs: Any) -> None:
@@ -107,7 +109,7 @@ class ExactMatchEvaluator(BaseEvaluator):
         }
 
 
-class F1ScoreEvaluator(BaseEvaluator):
+class F1ScoreEvaluator(BaseEvaluator):  # pylint: disable=too-few-public-methods
     """Evaluator for F1 score calculation."""
 
     def __init__(self, **kwargs: Any) -> None:
@@ -149,7 +151,7 @@ class F1ScoreEvaluator(BaseEvaluator):
         return 2 * (precision * recall) / (precision + recall)
 
 
-class LengthEvaluator(BaseEvaluator):
+class LengthEvaluator(BaseEvaluator):  # pylint: disable=too-few-public-methods
     """Evaluator for response length analysis."""
 
     def __init__(self, **kwargs: Any) -> None:
@@ -183,6 +185,7 @@ class LengthEvaluator(BaseEvaluator):
 
 
 class SemanticSimilarityEvaluator(BaseEvaluator):
+    # pylint: disable=too-few-public-methods
     """Evaluator for semantic similarity using basic heuristics."""
 
     def __init__(self, **kwargs: Any) -> None:
@@ -280,12 +283,12 @@ def evaluate(
     # Run each metric
     for metric in metrics:
         if metric in BUILTIN_EVALUATORS:
-            evaluator = BUILTIN_EVALUATORS[metric]()
+            eval_instance = BUILTIN_EVALUATORS[metric]()
             try:
-                metric_result = evaluator.evaluate(inputs, outputs)
+                metric_result = eval_instance.evaluate(inputs, outputs)
                 result_metrics.update(metric_result)
             except Exception as e:
-                logger.warning(f"Failed to compute {metric}: {e}")
+                logger.warning("Failed to compute %s: %s", metric, e)
                 result_metrics[metric] = 0.0
 
     # Compute overall score (average of numeric metrics)
@@ -317,7 +320,7 @@ def evaluate_decorator(
 
     def decorator(func: Callable) -> Callable:
         # Check if function is async
-        if asyncio.iscoroutinefunction(func):
+        if asyncio.iscoroutinefunction(func):  # pylint: disable=no-else-return
 
             @functools.wraps(func)
             async def async_wrapper(*args: Any, **func_kwargs: Any) -> Any:
@@ -351,10 +354,10 @@ def evaluate_decorator(
                         else:
                             # If result is not a dict, we can't easily attach evaluation
                             # but we could log it or store it elsewhere
-                            logger.info(f"Evaluation result: {eval_result}")
+                            logger.info("Evaluation result: %s", eval_result)
 
                     except Exception as e:
-                        logger.warning(f"Evaluation failed: {e}")
+                        logger.warning("Evaluation failed: %s", e)
 
                 return result
 
@@ -393,10 +396,10 @@ def evaluate_decorator(
                         else:
                             # If result is not a dict, we can't easily attach evaluation
                             # but we could log it or store it elsewhere
-                            logger.info(f"Evaluation result: {eval_result}")
+                            logger.info("Evaluation result: %s", eval_result)
 
                     except Exception as e:
-                        logger.warning(f"Evaluation failed: {e}")
+                        logger.warning("Evaluation failed: %s", e)
 
                 return result
 
@@ -406,7 +409,7 @@ def evaluate_decorator(
 
 
 def evaluator(
-    name: Optional[str] = None, session_id: Optional[str] = None, **kwargs: Any
+    _name: Optional[str] = None, _session_id: Optional[str] = None, **_kwargs: Any
 ) -> Callable[[Callable], Callable]:
     """Decorator for synchronous evaluation functions.
 
@@ -422,7 +425,8 @@ def evaluator(
             # Execute evaluation
             result = func(*args, **kwargs)
 
-            # Note: Event creation for evaluation functions is disabled to avoid type issues
+            # Note: Event creation for evaluation functions is disabled to avoid \
+            # type issues
             # The evaluation functionality works independently of event creation
 
             return result
@@ -433,7 +437,7 @@ def evaluator(
 
 
 def aevaluator(
-    name: Optional[str] = None, session_id: Optional[str] = None, **kwargs: Any
+    _name: Optional[str] = None, _session_id: Optional[str] = None, **_kwargs: Any
 ) -> Callable[[Callable], Callable]:
     """Decorator for asynchronous evaluation functions.
 
@@ -449,7 +453,8 @@ def aevaluator(
             # Execute evaluation
             result = await func(*args, **kwargs)
 
-            # Note: Event creation for evaluation functions is disabled to avoid type issues
+            # Note: Event creation for evaluation functions is disabled to avoid \
+            # type issues
             # The evaluation functionality works independently of event creation
 
             return result
@@ -460,9 +465,11 @@ def aevaluator(
 
 
 def evaluate_with_evaluators(
+    # pylint: disable=too-many-arguments,too-many-branches
     evaluators: List[Union[str, BaseEvaluator, Callable]],
     inputs: Dict[str, Any],
     outputs: Dict[str, Any],
+    *,
     ground_truth: Optional[Dict[str, Any]] = None,
     context: Optional[EvaluationContext] = None,
     max_workers: int = 1,
@@ -501,8 +508,8 @@ def evaluate_with_evaluators(
         with ThreadPoolExecutor(max_workers=max_workers) as executor:
             # Submit evaluation tasks
             futures = []
-            for evaluator in evaluators:
-                eval_func = _get_evaluator_function(evaluator)
+            for eval_item in evaluators:
+                eval_func = _get_evaluator_function(eval_item)
 
                 # Create context for each thread
                 ctx = contextvars.copy_context()
@@ -512,52 +519,52 @@ def evaluate_with_evaluators(
                         _run_single_evaluator, eval_func, inputs, outputs, ground_truth
                     ),
                 )
-                futures.append((evaluator, future))
+                futures.append((eval_item, future))
 
             # Collect results
-            for evaluator, future in futures:
+            for eval_item, future in futures:
                 try:
                     result = future.result()
-                    if isinstance(evaluator, str):
-                        evaluator_name = evaluator
-                    elif isinstance(evaluator, BaseEvaluator):
-                        evaluator_name = evaluator.name
+                    if isinstance(eval_item, str):
+                        evaluator_name = eval_item
+                    elif isinstance(eval_item, BaseEvaluator):
+                        evaluator_name = eval_item.name
                     else:
-                        evaluator_name = getattr(evaluator, "__name__", str(evaluator))
+                        evaluator_name = getattr(eval_item, "__name__", str(eval_item))
 
                     metrics[evaluator_name] = result
                 except Exception as e:
-                    logger.warning(f"Evaluator {evaluator} failed: {e}")
-                    if isinstance(evaluator, str):
-                        evaluator_name = evaluator
-                    elif isinstance(evaluator, BaseEvaluator):
-                        evaluator_name = evaluator.name
+                    logger.warning("Evaluator %s failed: %s", eval_item, e)
+                    if isinstance(eval_item, str):
+                        evaluator_name = eval_item
+                    elif isinstance(eval_item, BaseEvaluator):
+                        evaluator_name = eval_item.name
                     else:
-                        evaluator_name = getattr(evaluator, "__name__", str(evaluator))
+                        evaluator_name = getattr(eval_item, "__name__", str(eval_item))
                     metrics[evaluator_name] = None
     else:
         # Run evaluators sequentially
-        for evaluator in evaluators:
+        for eval_item in evaluators:
             try:
-                eval_func = _get_evaluator_function(evaluator)
+                eval_func = _get_evaluator_function(eval_item)
 
-                if isinstance(evaluator, str):
-                    evaluator_name = evaluator
-                elif isinstance(evaluator, BaseEvaluator):
-                    evaluator_name = evaluator.name
+                if isinstance(eval_item, str):
+                    evaluator_name = eval_item
+                elif isinstance(eval_item, BaseEvaluator):
+                    evaluator_name = eval_item.name
                 else:
-                    evaluator_name = getattr(evaluator, "__name__", str(evaluator))
+                    evaluator_name = getattr(eval_item, "__name__", str(eval_item))
 
                 result = _run_single_evaluator(eval_func, inputs, outputs, ground_truth)
                 metrics[evaluator_name] = result
             except Exception as e:
-                logger.warning(f"Evaluator {evaluator} failed: {e}")
-                if isinstance(evaluator, str):
-                    evaluator_name = evaluator
-                elif isinstance(evaluator, BaseEvaluator):
-                    evaluator_name = evaluator.name
+                logger.warning("Evaluator %s failed: %s", eval_item, e)
+                if isinstance(eval_item, str):
+                    evaluator_name = eval_item
+                elif isinstance(eval_item, BaseEvaluator):
+                    evaluator_name = eval_item.name
                 else:
-                    evaluator_name = getattr(evaluator, "__name__", str(evaluator))
+                    evaluator_name = getattr(eval_item, "__name__", str(eval_item))
                 metrics[evaluator_name] = None
 
     # Calculate overall score
@@ -610,14 +617,13 @@ def _run_single_evaluator(
     try:
         if ground_truth is not None:
             return evaluator_func(inputs, outputs, ground_truth)
-        else:
-            return evaluator_func(inputs, outputs)
+        return evaluator_func(inputs, outputs)
     except Exception as e:
-        logger.error(f"Evaluator {evaluator_func.__name__} failed: {e}")
+        logger.error("Evaluator %s failed: %s", evaluator_func.__name__, e)
         raise
 
 
-def _get_evaluator_function(evaluator: Union[str, BaseEvaluator, Callable]) -> Callable:
+def _get_evaluator_function(eval_item: Union[str, BaseEvaluator, Callable]) -> Callable:
     """Get the evaluator function from different evaluator types.
 
     Args:
@@ -626,12 +632,11 @@ def _get_evaluator_function(evaluator: Union[str, BaseEvaluator, Callable]) -> C
     Returns:
         Callable evaluator function
     """
-    if isinstance(evaluator, str):
-        return get_evaluator(evaluator)
-    elif isinstance(evaluator, BaseEvaluator):
-        return evaluator.evaluate
-    else:
-        return evaluator
+    if isinstance(eval_item, str):
+        return get_evaluator(eval_item)
+    if isinstance(eval_item, BaseEvaluator):
+        return eval_item.evaluate
+    return eval_item
 
 
 def evaluate_batch(
@@ -645,7 +650,8 @@ def evaluate_batch(
 
     Args:
         evaluators: List of evaluators to apply
-        dataset: List of data points, each containing inputs, outputs, and optional ground_truth
+        dataset: List of data points, each containing inputs, outputs, and \
+        optional ground_truth
         max_workers: Maximum number of worker threads for parallel evaluation
         run_concurrently: Whether to run evaluations concurrently
         context: Evaluation context
@@ -690,7 +696,7 @@ def evaluate_batch(
                     result = future.result()
                     results.append(result)
                 except Exception as e:
-                    logger.warning(f"Batch evaluation failed: {e}")
+                    logger.warning("Batch evaluation failed: %s", e)
                     # Create empty result for failed evaluation
                     results.append(
                         EvaluationResult(
@@ -726,7 +732,7 @@ def evaluate_batch(
                 )
                 results.append(result)
             except Exception as e:
-                logger.warning(f"Batch evaluation failed: {e}")
+                logger.warning("Batch evaluation failed: %s", e)
                 # Create empty result for failed evaluation
                 results.append(
                     EvaluationResult(
@@ -747,7 +753,7 @@ def evaluate_batch(
 def create_evaluation_run(
     name: str,
     project: str,
-    results: List[EvaluationResult],
+    _results: List[EvaluationResult],
     metadata: Optional[Dict[str, Any]] = None,
     client: Optional[HoneyHive] = None,
 ) -> Optional[EvaluationRun]:
@@ -767,7 +773,7 @@ def create_evaluation_run(
         try:
             client = HoneyHive()
         except Exception as e:
-            logger.warning(f"Could not create HoneyHive client: {e}")
+            logger.warning("Could not create HoneyHive client: %s", e)
             return None
 
     try:
@@ -782,7 +788,8 @@ def create_evaluation_run(
             run_request = CreateRunRequest(
                 name=name,
                 project=project,  # This should be a valid UUID string
-                event_ids=[],  # Empty list for now - in production you'd want actual event IDs
+                event_ids=[],  # Empty list for now - in production you'd want \
+                # actual event IDs
                 dataset_id=None,
                 datapoint_ids=None,
                 configuration=None,
@@ -790,7 +797,7 @@ def create_evaluation_run(
                 metadata=metadata or {},
             )
         except Exception as e:
-            logger.warning(f"Could not create CreateRunRequest: {e}")
+            logger.warning("Could not create CreateRunRequest: %s", e)
             # Fallback: return None instead of crashing
             return None
 
@@ -798,12 +805,13 @@ def create_evaluation_run(
         response = client.evaluations.create_run(run_request)
 
         logger.info(
-            f"Created evaluation run: {response.evaluation.run_id if response.evaluation else 'unknown'}"
+            "Created evaluation run: %s",
+            response.evaluation.run_id if response.evaluation else "unknown",
         )
         return response.evaluation
 
     except Exception as e:
-        logger.error(f"Failed to create evaluation run: {e}")
+        logger.error("Failed to create evaluation run: %s", e)
         return None
 
 
@@ -818,8 +826,8 @@ def _compute_f1_score(prediction: str, ground_truth: str) -> float:
     Returns:
         F1 score between 0 and 1
     """
-    evaluator = F1ScoreEvaluator()
-    result = evaluator.evaluate({"expected": ground_truth}, {"response": prediction})
+    f1_evaluator = F1ScoreEvaluator()
+    result = f1_evaluator.evaluate({"expected": ground_truth}, {"response": prediction})
     f1_score = result.get("f1_score", 0.0)
     if isinstance(f1_score, (int, float)):
         return float(f1_score)

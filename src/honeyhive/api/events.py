@@ -6,7 +6,7 @@ from ..models import CreateEventRequest, Event, EventFilter
 from .base import BaseAPI
 
 
-class CreateEventResponse:
+class CreateEventResponse:  # pylint: disable=too-few-public-methods
     """Response from creating an event.
 
     Contains the result of an event creation operation including
@@ -42,15 +42,16 @@ class CreateEventResponse:
         return self.event_id
 
 
-class UpdateEventRequest:
+class UpdateEventRequest:  # pylint: disable=too-few-public-methods
     """Request for updating an event.
 
     Contains the fields that can be updated for an existing event.
     """
 
-    def __init__(
+    def __init__(  # pylint: disable=too-many-arguments
         self,
         event_id: str,
+        *,
         metadata: Optional[Dict[str, Any]] = None,
         feedback: Optional[Dict[str, Any]] = None,
         metrics: Optional[Dict[str, Any]] = None,
@@ -81,7 +82,7 @@ class UpdateEventRequest:
         self.duration = duration
 
 
-class BatchCreateEventRequest:
+class BatchCreateEventRequest:  # pylint: disable=too-few-public-methods
     """Request for creating multiple events.
 
     Allows bulk creation of multiple events in a single API call.
@@ -96,7 +97,7 @@ class BatchCreateEventRequest:
         self.events = events
 
 
-class BatchCreateEventResponse:
+class BatchCreateEventResponse:  # pylint: disable=too-few-public-methods
     """Response from creating multiple events.
 
     Contains the results of a bulk event creation operation.
@@ -169,7 +170,8 @@ class EventsAPI(BaseAPI):
     async def create_event_from_dict_async(
         self, event_data: dict
     ) -> CreateEventResponse:
-        """Create a new event asynchronously from event data dictionary (legacy method)."""
+        """Create a new event asynchronously from event data dictionary \
+        (legacy method)."""
         # Handle both direct event data and nested event data
         if "event" in event_data:
             request_data = event_data
@@ -307,7 +309,8 @@ class EventsAPI(BaseAPI):
     async def create_event_batch_from_list_async(
         self, events: List[CreateEventRequest]
     ) -> BatchCreateEventResponse:
-        """Create multiple events asynchronously from a list of CreateEventRequest objects."""
+        """Create multiple events asynchronously from a list of \
+        CreateEventRequest objects."""
         events_data = [
             event.model_dump(mode="json", exclude_none=True) for event in events
         ]
@@ -320,22 +323,50 @@ class EventsAPI(BaseAPI):
             event_ids=data["event_ids"], success=data["success"]
         )
 
-    def list_events(self, event_filter: EventFilter, limit: int = 100) -> List[Event]:
-        """List events using EventFilter model."""
-        # Convert EventFilter to query parameters
-        params = {"limit": str(limit)}
-        if event_filter.field:
-            params["field"] = str(event_filter.field)
-        if event_filter.value:
-            params["value"] = str(event_filter.value)
-        if event_filter.operator:
-            params["operator"] = str(event_filter.operator)
-        if event_filter.type:
-            params["type"] = str(event_filter.type)
+    def list_events(
+        self, event_filter: EventFilter, limit: int = 100, project: Optional[str] = None
+    ) -> List[Event]:
+        """List events using EventFilter model with dynamic processing optimization.
 
-        response = self.client.request("GET", "/events", params=params)
+        Uses the proper /events/export POST endpoint as specified in OpenAPI spec.
+
+        Args:
+            event_filter: EventFilter object with filtering criteria
+            limit: Maximum number of events to return
+            project: Project name to filter by (required by API)
+        """
+        if not project:
+            raise ValueError("project parameter is required for listing events")
+
+        # Build filters array as expected by /events/export endpoint
+        filters = []
+        if (
+            event_filter.field
+            and event_filter.value
+            and event_filter.operator
+            and event_filter.type
+        ):
+            filter_dict = {
+                "field": str(event_filter.field),
+                "value": str(event_filter.value),
+                "operator": event_filter.operator.value,
+                "type": event_filter.type.value,
+            }
+            filters.append(filter_dict)
+
+        # Build request body according to OpenAPI spec
+        request_body = {
+            "project": project,
+            "filters": filters,
+            "limit": limit,
+            "page": 1,
+        }
+
+        response = self.client.request("POST", "/events/export", json=request_body)
         data = response.json()
-        return [Event(**event_data) for event_data in data.get("events", [])]
+
+        # Dynamic processing: Use universal dynamic processor
+        return self._process_data_dynamically(data.get("events", []), Event, "events")
 
     def list_events_from_dict(
         self, event_filter: dict, limit: int = 100
@@ -346,12 +377,15 @@ class EventsAPI(BaseAPI):
 
         response = self.client.request("GET", "/events", params=params)
         data = response.json()
-        return [Event(**event_data) for event_data in data.get("events", [])]
 
-    def get_events(
+        # Dynamic processing: Use universal dynamic processor
+        return self._process_data_dynamically(data.get("events", []), Event, "events")
+
+    def get_events(  # pylint: disable=too-many-arguments
         self,
         project: str,
         filters: List[EventFilter],
+        *,
         date_range: Optional[Dict[str, str]] = None,
         limit: int = 1000,
         page: int = 1,
@@ -400,23 +434,49 @@ class EventsAPI(BaseAPI):
         return {"events": events, "totalEvents": data.get("totalEvents", 0)}
 
     async def list_events_async(
-        self, event_filter: EventFilter, limit: int = 100
+        self, event_filter: EventFilter, limit: int = 100, project: Optional[str] = None
     ) -> List[Event]:
-        """List events asynchronously using EventFilter model."""
-        # Convert EventFilter to query parameters
-        params = {"limit": str(limit)}
-        if event_filter.field:
-            params["field"] = str(event_filter.field)
-        if event_filter.value:
-            params["value"] = str(event_filter.value)
-        if event_filter.operator:
-            params["operator"] = str(event_filter.operator)
-        if event_filter.type:
-            params["type"] = str(event_filter.type)
+        """List events asynchronously using EventFilter model.
 
-        response = await self.client.request_async("GET", "/events", params=params)
+        Uses the proper /events/export POST endpoint as specified in OpenAPI spec.
+
+        Args:
+            event_filter: EventFilter object with filtering criteria
+            limit: Maximum number of events to return
+            project: Project name to filter by (required by API)
+        """
+        if not project:
+            raise ValueError("project parameter is required for listing events")
+
+        # Build filters array as expected by /events/export endpoint
+        filters = []
+        if (
+            event_filter.field
+            and event_filter.value
+            and event_filter.operator
+            and event_filter.type
+        ):
+            filter_dict = {
+                "field": str(event_filter.field),
+                "value": str(event_filter.value),
+                "operator": event_filter.operator.value,
+                "type": event_filter.type.value,
+            }
+            filters.append(filter_dict)
+
+        # Build request body according to OpenAPI spec
+        request_body = {
+            "project": project,
+            "filters": filters,
+            "limit": limit,
+            "page": 1,
+        }
+
+        response = await self.client.request_async(
+            "POST", "/events/export", json=request_body
+        )
         data = response.json()
-        return [Event(**event_data) for event_data in data.get("events", [])]
+        return self._process_data_dynamically(data.get("events", []), Event, "events")
 
     async def list_events_from_dict_async(
         self, event_filter: dict, limit: int = 100
@@ -427,4 +487,4 @@ class EventsAPI(BaseAPI):
 
         response = await self.client.request_async("GET", "/events", params=params)
         data = response.json()
-        return [Event(**event_data) for event_data in data.get("events", [])]
+        return self._process_data_dynamically(data.get("events", []), Event, "events")

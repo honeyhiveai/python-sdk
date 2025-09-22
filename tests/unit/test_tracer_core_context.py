@@ -1,0 +1,1315 @@
+"""Unit tests for honeyhive.tracer.core.context.
+
+This module contains comprehensive unit tests for TracerContextInterface and
+TracerContextMixin classes, focusing on context management, baggage operations,
+and session enrichment functionality.
+"""
+
+# pylint: disable=too-many-lines,redefined-outer-name,protected-access,R0917
+# Justification: Comprehensive unit test coverage requires extensive test cases
+# Pytest fixture pattern requires parameter shadowing
+# Protected access needed for testing internal methods
+# Justification: Unit tests need to verify private method behavior
+
+from abc import ABC
+from typing import Any, Dict, Optional
+from unittest.mock import MagicMock, Mock, patch
+
+import pytest
+from opentelemetry.context import Context
+
+from honeyhive.tracer.core.context import TracerContextInterface, TracerContextMixin
+
+
+class TestTracerContextInterface:
+    """Test suite for TracerContextInterface abstract base class."""
+
+    def test_interface_is_abstract(self) -> None:
+        """Test that TracerContextInterface is an abstract base class."""
+        assert issubclass(TracerContextInterface, ABC)
+
+        # Should not be able to instantiate directly
+        with pytest.raises(TypeError):
+            # pylint: disable=abstract-class-instantiated
+            TracerContextInterface()  # type: ignore[abstract]
+
+    def test_abstract_methods_defined(self) -> None:
+        """Test that required abstract methods are defined."""
+        abstract_methods = TracerContextInterface.__abstractmethods__
+
+        expected_methods = {
+            "_normalize_attribute_key_dynamically",
+            "_normalize_attribute_value_dynamically",
+        }
+
+        assert abstract_methods == expected_methods
+
+
+class MockTracerContextMixin(TracerContextMixin):
+    """Mock implementation of TracerContextMixin for testing."""
+
+    def __init__(self) -> None:
+        self.session_api: Optional[Any] = None
+        self._session_id: Optional[str] = None
+        self._baggage_lock = MagicMock()
+        self._cache_manager = None
+        self.propagator = MagicMock()
+
+    def _normalize_attribute_key_dynamically(self, key: str) -> str:
+        """Mock implementation of abstract method."""
+        return key.replace("-", "_").lower()
+
+    def _normalize_attribute_value_dynamically(self, value: Any) -> Any:
+        """Mock implementation of abstract method."""
+        if isinstance(value, dict):
+            return str(value)
+        return value
+
+
+class TestTracerContextMixin:
+    """Test suite for TracerContextMixin class."""
+
+    @pytest.fixture
+    def context_mixin(self) -> MockTracerContextMixin:
+        """Create a mock TracerContextMixin instance for testing."""
+        return MockTracerContextMixin()
+
+    @pytest.fixture
+    def mock_session_api(self) -> Mock:
+        """Create a mock session API."""
+        mock_api = Mock()
+        mock_api.update_session = Mock()
+        return mock_api
+
+
+class TestForceFlush:
+    """Test suite for force_flush method."""
+
+    @pytest.fixture
+    def context_mixin(self) -> MockTracerContextMixin:
+        """Create a mock TracerContextMixin instance for testing."""
+        return MockTracerContextMixin()
+
+    @patch("honeyhive.tracer.core.context.force_flush_tracer")
+    def test_force_flush_success(
+        self, mock_force_flush: Mock, context_mixin: MockTracerContextMixin
+    ) -> None:
+        """Test successful force flush operation."""
+        # Arrange
+        mock_force_flush.return_value = True
+        timeout_millis = 5000.0
+
+        # Act
+        result = context_mixin.force_flush(timeout_millis)
+
+        # Assert
+        assert result is True
+        mock_force_flush.assert_called_once_with(context_mixin, timeout_millis)
+
+    @patch("honeyhive.tracer.core.context.force_flush_tracer")
+    def test_force_flush_failure(
+        self, mock_force_flush: Mock, context_mixin: MockTracerContextMixin
+    ) -> None:
+        """Test force flush operation failure."""
+        # Arrange
+        mock_force_flush.return_value = False
+
+        # Act
+        result = context_mixin.force_flush()
+
+        # Assert
+        assert result is False
+        mock_force_flush.assert_called_once_with(context_mixin, 30000)
+
+    @patch("honeyhive.tracer.core.context.force_flush_tracer")
+    def test_force_flush_default_timeout(
+        self, mock_force_flush: Mock, context_mixin: MockTracerContextMixin
+    ) -> None:
+        """Test force flush with default timeout."""
+        # Arrange
+        mock_force_flush.return_value = True
+
+        # Act
+        result = context_mixin.force_flush()
+
+        # Assert
+        assert result is True
+        mock_force_flush.assert_called_once_with(context_mixin, 30000)
+
+
+class TestShutdown:
+    """Test suite for shutdown method."""
+
+    @pytest.fixture
+    def context_mixin(self) -> MockTracerContextMixin:
+        """Create a mock TracerContextMixin instance for testing."""
+        return MockTracerContextMixin()
+
+    @patch("honeyhive.tracer.core.context.safe_log")
+    @patch("honeyhive.tracer.core.context.shutdown_tracer")
+    def test_shutdown_without_cache_manager(
+        self,
+        mock_shutdown: Mock,
+        mock_safe_log: Mock,
+        context_mixin: MockTracerContextMixin,
+    ) -> None:
+        """Test shutdown without cache manager."""
+        # Arrange
+        context_mixin._cache_manager = None
+
+        # Act
+        context_mixin.shutdown()
+
+        # Assert
+        mock_shutdown.assert_called_once_with(context_mixin)
+        mock_safe_log.assert_not_called()
+
+    @patch("honeyhive.tracer.core.context.safe_log")
+    @patch("honeyhive.tracer.core.context.shutdown_tracer")
+    def test_shutdown_with_cache_manager_success(
+        self,
+        mock_shutdown: Mock,
+        mock_safe_log: Mock,
+        context_mixin: MockTracerContextMixin,
+    ) -> None:
+        """Test successful shutdown with cache manager."""
+        # Arrange
+        mock_cache_manager = Mock()
+        mock_cache_manager.close_all = Mock()
+        context_mixin._cache_manager = mock_cache_manager  # type: ignore[assignment]
+
+        # Act
+        context_mixin.shutdown()
+
+        # Assert
+        mock_cache_manager.close_all.assert_called_once()
+        mock_safe_log.assert_called_once_with(
+            context_mixin, "debug", "Cache manager closed successfully"
+        )
+        mock_shutdown.assert_called_once_with(context_mixin)
+
+    @patch("honeyhive.tracer.core.context.safe_log")
+    @patch("honeyhive.tracer.core.context.shutdown_tracer")
+    def test_shutdown_with_cache_manager_exception(
+        self,
+        mock_shutdown: Mock,
+        mock_safe_log: Mock,
+        context_mixin: MockTracerContextMixin,
+    ) -> None:
+        """Test shutdown with cache manager exception."""
+        # Arrange
+        mock_cache_manager = Mock()
+        test_error = RuntimeError("Cache close failed")
+        mock_cache_manager.close_all.side_effect = test_error
+        context_mixin._cache_manager = mock_cache_manager  # type: ignore[assignment]
+
+        # Act
+        context_mixin.shutdown()
+
+        # Assert
+        mock_cache_manager.close_all.assert_called_once()
+        mock_safe_log.assert_called_once_with(
+            context_mixin,
+            "warning",
+            f"Error closing cache manager during shutdown: {test_error}",
+        )
+        mock_shutdown.assert_called_once_with(context_mixin)
+
+
+class TestEnrichSession:
+    """Test suite for enrich_session method."""
+
+    @pytest.fixture
+    def context_mixin(self) -> MockTracerContextMixin:
+        """Create a mock TracerContextMixin instance for testing."""
+        return MockTracerContextMixin()
+
+    @pytest.fixture
+    def mock_session_api(self) -> Mock:
+        """Create a mock session API."""
+        mock_api = Mock()
+        mock_api.update_session = Mock()
+        return mock_api
+
+    @patch("honeyhive.tracer.core.context.safe_log")
+    def test_enrich_session_success(
+        self,
+        mock_safe_log: Mock,
+        context_mixin: MockTracerContextMixin,
+        mock_session_api: Mock,
+    ) -> None:
+        """Test successful session enrichment."""
+        # Arrange
+        context_mixin.session_api = mock_session_api
+        context_mixin._session_id = "test-session-123"
+
+        inputs = {"input_key": "input_value"}
+        outputs = {"output_key": "output_value"}
+        metadata = {"meta_key": "meta_value"}
+
+        # Act
+        context_mixin.enrich_session(inputs=inputs, outputs=outputs, metadata=metadata)
+
+        # Assert
+        mock_session_api.update_session.assert_called_once_with(
+            session_id="test-session-123",
+            inputs=inputs,
+            outputs=outputs,
+            metadata=metadata,
+        )
+        mock_safe_log.assert_called_once_with(
+            context_mixin,
+            "debug",
+            "Session enriched successfully",
+            honeyhive_data={
+                "session_id": "test-session-123",
+                "update_fields": ["inputs", "outputs", "metadata"],
+            },
+        )
+
+    @patch("honeyhive.tracer.core.context.safe_log")
+    def test_enrich_session_no_session_api(
+        self, mock_safe_log: Mock, context_mixin: MockTracerContextMixin
+    ) -> None:
+        """Test session enrichment without session API."""
+        # Arrange
+        context_mixin.session_api = None
+
+        # Act
+        context_mixin.enrich_session(inputs={"key": "value"})
+
+        # Assert
+        mock_safe_log.assert_called_once_with(
+            context_mixin, "debug", "No session API available for enrichment"
+        )
+
+    @patch("honeyhive.tracer.core.context.safe_log")
+    def test_enrich_session_no_session_id(
+        self,
+        mock_safe_log: Mock,
+        context_mixin: MockTracerContextMixin,
+        mock_session_api: Mock,
+    ) -> None:
+        """Test session enrichment without session ID."""
+        # Arrange
+        context_mixin.session_api = mock_session_api
+        context_mixin._session_id = None
+
+        with patch.object(
+            context_mixin,
+            "_get_session_id_for_enrichment_dynamically",
+            return_value=None,
+        ):
+            # Act
+            context_mixin.enrich_session(inputs={"key": "value"})
+
+        # Assert
+        mock_safe_log.assert_called_once_with(
+            context_mixin, "debug", "No session ID available for enrichment"
+        )
+        mock_session_api.update_session.assert_not_called()
+
+    @patch("honeyhive.tracer.core.context.safe_log")
+    def test_enrich_session_api_unavailable_warning(
+        self, mock_safe_log: Mock, context_mixin: MockTracerContextMixin
+    ) -> None:
+        """Test session enrichment with API unavailable warning."""
+        # Arrange
+        context_mixin.session_api = None
+        context_mixin._session_id = "test-session-123"
+
+        with patch.object(
+            context_mixin, "_can_enrich_session_dynamically", return_value=True
+        ):
+            with patch.object(
+                context_mixin,
+                "_get_session_id_for_enrichment_dynamically",
+                return_value="test-session-123",
+            ):
+                with patch.object(
+                    context_mixin,
+                    "_build_session_update_params_dynamically",
+                    return_value={"inputs": {"key": "value"}},
+                ):
+                    # Act
+                    context_mixin.enrich_session(inputs={"key": "value"})
+
+        # Assert - Check that warning was called (may be called multiple times)
+        mock_safe_log.assert_any_call(
+            context_mixin, "warning", "Session API not available for update"
+        )
+
+    @patch("honeyhive.tracer.core.context.safe_log")
+    def test_enrich_session_exception_handling(
+        self,
+        mock_safe_log: Mock,
+        context_mixin: MockTracerContextMixin,
+        mock_session_api: Mock,
+    ) -> None:
+        """Test session enrichment exception handling."""
+        # Arrange
+        context_mixin.session_api = mock_session_api
+        context_mixin._session_id = "test-session-123"
+        test_error = ValueError("Update failed")
+        mock_session_api.update_session.side_effect = test_error
+
+        # Act
+        context_mixin.enrich_session(inputs={"key": "value"})
+
+        # Assert
+        mock_safe_log.assert_called_once_with(
+            context_mixin,
+            "error",
+            f"Failed to enrich session: {test_error}",
+            honeyhive_data={"error_type": "ValueError"},
+        )
+
+    def test_enrich_session_with_kwargs(
+        self, context_mixin: MockTracerContextMixin, mock_session_api: Mock
+    ) -> None:
+        """Test session enrichment with additional kwargs."""
+        # Arrange
+        context_mixin.session_api = mock_session_api
+        context_mixin._session_id = "test-session-123"
+
+        with patch("honeyhive.tracer.core.context.safe_log"):
+            # Act
+            context_mixin.enrich_session(
+                inputs={"input": "value"}, custom_field="custom_value", another_field=42
+            )
+
+        # Assert
+        mock_session_api.update_session.assert_called_once()
+        call_args = mock_session_api.update_session.call_args
+        assert call_args[1]["session_id"] == "test-session-123"
+        assert call_args[1]["inputs"] == {"input": "value"}
+        assert call_args[1]["custom_field"] == "custom_value"
+        assert call_args[1]["another_field"] == 42
+
+
+class TestSessionStart:
+    """Test suite for session_start method."""
+
+    @pytest.fixture
+    def context_mixin(self) -> MockTracerContextMixin:
+        """Create a mock TracerContextMixin instance for testing."""
+        return MockTracerContextMixin()
+
+    @patch("honeyhive.tracer.core.context.safe_log")
+    def test_session_start_no_session_api(
+        self, mock_safe_log: Mock, context_mixin: MockTracerContextMixin
+    ) -> None:
+        """Test session start without session API."""
+        # Arrange
+        context_mixin.session_api = None
+
+        # Act
+        result = context_mixin.session_start()
+
+        # Assert
+        assert result is None
+        mock_safe_log.assert_called_once_with(
+            context_mixin, "warning", "No session API available for session creation"
+        )
+
+    @patch("honeyhive.tracer.core.context.safe_log")
+    def test_session_start_success(
+        self, mock_safe_log: Mock, context_mixin: MockTracerContextMixin
+    ) -> None:
+        """Test successful session start."""
+        # Arrange
+        context_mixin.session_api = Mock()
+        context_mixin._session_id = "new-session-456"
+
+        mock_create_session = Mock()
+        setattr(context_mixin, "_create_session_dynamically", mock_create_session)
+
+        # Act
+        result = context_mixin.session_start()
+
+        # Assert
+        assert result == "new-session-456"
+        mock_create_session.assert_called_once()
+        mock_safe_log.assert_not_called()
+
+    @patch("honeyhive.tracer.core.context.safe_log")
+    def test_session_start_no_create_method(
+        self, mock_safe_log: Mock, context_mixin: MockTracerContextMixin
+    ) -> None:
+        """Test session start without create method."""
+        # Arrange
+        context_mixin.session_api = Mock()
+        # Don't add _create_session_dynamically method
+
+        # Act
+        result = context_mixin.session_start()
+
+        # Assert
+        assert result is None
+        mock_safe_log.assert_called_once_with(
+            context_mixin, "error", "Session creation method not available"
+        )
+
+    @patch("honeyhive.tracer.core.context.safe_log")
+    def test_session_start_exception_handling(
+        self, mock_safe_log: Mock, context_mixin: MockTracerContextMixin
+    ) -> None:
+        """Test session start exception handling."""
+        # Arrange
+        context_mixin.session_api = Mock()
+        test_error = RuntimeError("Session creation failed")
+
+        mock_create_session = Mock(side_effect=test_error)
+        setattr(context_mixin, "_create_session_dynamically", mock_create_session)
+
+        # Act
+        result = context_mixin.session_start()
+
+        # Assert
+        assert result is None
+        mock_safe_log.assert_called_once_with(
+            context_mixin,
+            "error",
+            "Failed to start session",
+            honeyhive_data={"error": str(test_error), "error_type": "RuntimeError"},
+        )
+
+
+class TestPrivateHelperMethods:
+    """Test suite for private helper methods."""
+
+    @pytest.fixture
+    def context_mixin(self) -> MockTracerContextMixin:
+        """Create a mock TracerContextMixin instance for testing."""
+        return MockTracerContextMixin()
+
+    def test_can_enrich_session_dynamically_success(
+        self, context_mixin: MockTracerContextMixin
+    ) -> None:
+        """Test successful session enrichment capability check."""
+        # Arrange
+        context_mixin.session_api = Mock()
+        context_mixin._session_id = "test-session"
+
+        # Act
+        result = context_mixin._can_enrich_session_dynamically()
+
+        # Assert
+        assert result is True
+
+    @patch("honeyhive.tracer.core.context.safe_log")
+    def test_can_enrich_session_dynamically_no_api(
+        self, mock_safe_log: Mock, context_mixin: MockTracerContextMixin
+    ) -> None:
+        """Test session enrichment capability check without API."""
+        # Arrange
+        context_mixin.session_api = None
+
+        # Act
+        result = context_mixin._can_enrich_session_dynamically()
+
+        # Assert
+        assert result is False
+        mock_safe_log.assert_called_once_with(
+            context_mixin, "debug", "No session API available for enrichment"
+        )
+
+    @patch("honeyhive.tracer.core.context.safe_log")
+    def test_can_enrich_session_dynamically_no_session_id(
+        self, mock_safe_log: Mock, context_mixin: MockTracerContextMixin
+    ) -> None:
+        """Test session enrichment capability check without session ID."""
+        # Arrange
+        context_mixin.session_api = Mock()
+        context_mixin._session_id = None
+
+        with patch.object(
+            context_mixin,
+            "_get_session_id_for_enrichment_dynamically",
+            return_value=None,
+        ):
+            # Act
+            result = context_mixin._can_enrich_session_dynamically()
+
+        # Assert
+        assert result is False
+        mock_safe_log.assert_called_once_with(
+            context_mixin, "debug", "No session ID available for enrichment"
+        )
+
+    def test_get_session_id_for_enrichment_from_instance(
+        self, context_mixin: MockTracerContextMixin
+    ) -> None:
+        """Test getting session ID from instance variable."""
+        # Arrange
+        context_mixin._session_id = "instance-session-789"
+
+        # Act
+        result = context_mixin._get_session_id_for_enrichment_dynamically()
+
+        # Assert
+        assert result == "instance-session-789"
+
+    @patch("honeyhive.tracer.core.context.get_current_baggage")
+    @patch("honeyhive.tracer.core.context.safe_log")
+    def test_get_session_id_for_enrichment_from_baggage(
+        self,
+        mock_safe_log: Mock,
+        mock_get_baggage: Mock,
+        context_mixin: MockTracerContextMixin,
+    ) -> None:
+        """Test getting session ID from baggage."""
+        # Arrange
+        context_mixin._session_id = None
+        mock_get_baggage.return_value = {"session_id": "baggage-session-456"}
+
+        # Act
+        result = context_mixin._get_session_id_for_enrichment_dynamically()
+
+        # Assert
+        assert result == "baggage-session-456"
+        mock_safe_log.assert_not_called()
+
+    @patch("honeyhive.tracer.core.context.get_current_baggage")
+    @patch("honeyhive.tracer.core.context.safe_log")
+    def test_get_session_id_for_enrichment_baggage_exception(
+        self,
+        mock_safe_log: Mock,
+        mock_get_baggage: Mock,
+        context_mixin: MockTracerContextMixin,
+    ) -> None:
+        """Test getting session ID with baggage exception."""
+        # Arrange
+        context_mixin._session_id = None
+        test_error = RuntimeError("Baggage access failed")
+        mock_get_baggage.side_effect = test_error
+
+        # Act
+        result = context_mixin._get_session_id_for_enrichment_dynamically()
+
+        # Assert
+        assert result is None
+        mock_safe_log.assert_called_once_with(
+            context_mixin,
+            "debug",
+            "Failed to get session from baggage",
+            honeyhive_data={"error_type": "RuntimeError"},
+        )
+
+    def test_build_session_update_params_dynamically_all_params(
+        self, context_mixin: MockTracerContextMixin
+    ) -> None:
+        """Test building session update parameters with all parameters."""
+        # Arrange
+        inputs = {"input": "value"}
+        outputs = {"output": "value"}
+        metadata = {"meta": "value"}
+        config = {"config": "value"}
+        feedback = {"feedback": "value"}
+        metrics = {"metrics": "value"}
+
+        # Act
+        result = context_mixin._build_session_update_params_dynamically(
+            inputs=inputs,
+            outputs=outputs,
+            metadata=metadata,
+            config=config,
+            feedback=feedback,
+            metrics=metrics,
+            custom_field="custom_value",
+        )
+
+        # Assert
+        expected = {
+            "inputs": inputs,
+            "outputs": outputs,
+            "metadata": metadata,
+            "config": config,
+            "feedback": feedback,
+            "metrics": metrics,
+            "custom_field": "custom_value",
+        }
+        assert result == expected
+
+    def test_build_session_update_params_dynamically_empty_params(
+        self, context_mixin: MockTracerContextMixin
+    ) -> None:
+        """Test building session update parameters with empty parameters."""
+        # Act
+        result = context_mixin._build_session_update_params_dynamically(
+            inputs=None, outputs={}, metadata=None, config={}, feedback=None, metrics={}
+        )
+
+        # Assert
+        assert result == {}
+
+    def test_build_session_update_params_dynamically_partial_params(
+        self, context_mixin: MockTracerContextMixin
+    ) -> None:
+        """Test building session update parameters with partial parameters."""
+        # Act
+        result = context_mixin._build_session_update_params_dynamically(
+            inputs={"input": "value"},
+            outputs=None,
+            metadata={"meta": "value"},
+            config=None,
+            feedback=None,
+            metrics=None,
+            extra_field="extra_value",
+            none_field=None,
+        )
+
+        # Assert
+        expected = {
+            "inputs": {"input": "value"},
+            "metadata": {"meta": "value"},
+            "extra_field": "extra_value",
+        }
+        assert result == expected
+
+
+class TestEnrichSpan:
+    """Test suite for enrich_span method."""
+
+    @pytest.fixture
+    def context_mixin(self) -> MockTracerContextMixin:
+        """Create a mock TracerContextMixin instance for testing."""
+        return MockTracerContextMixin()
+
+    @patch("honeyhive.tracer.core.context.safe_log")
+    def test_enrich_span_success(
+        self, mock_safe_log: Mock, context_mixin: MockTracerContextMixin
+    ) -> None:
+        """Test successful span enrichment."""
+        # Arrange
+        mock_span = Mock()
+        mock_span.is_recording.return_value = True
+
+        attributes = {"attr_key": "attr_value"}
+        metadata = {"meta_key": "meta_value"}
+
+        with patch.object(
+            context_mixin, "_get_current_span_dynamically", return_value=mock_span
+        ):
+            with patch.object(
+                context_mixin,
+                "_build_enrichment_attributes_dynamically",
+                return_value={"normalized_attr": "value"},
+            ) as mock_build:
+                with patch.object(
+                    context_mixin, "_apply_attributes_to_span_dynamically"
+                ) as mock_apply:
+                    # Act
+                    result = context_mixin.enrich_span(
+                        attributes=attributes,
+                        metadata=metadata,
+                        custom_attr="custom_value",
+                    )
+
+        # Assert
+        assert result is True
+        mock_build.assert_called_once_with(
+            attributes=attributes, metadata=metadata, custom_attr="custom_value"
+        )
+        mock_apply.assert_called_once_with(mock_span, {"normalized_attr": "value"})
+        mock_safe_log.assert_called_once_with(
+            context_mixin,
+            "debug",
+            "Span enriched successfully",
+            honeyhive_data={"attribute_count": 1},
+        )
+
+    @patch("honeyhive.tracer.core.context.safe_log")
+    def test_enrich_span_no_active_span(
+        self, mock_safe_log: Mock, context_mixin: MockTracerContextMixin
+    ) -> None:
+        """Test span enrichment with no active span."""
+        # Arrange
+        with patch.object(
+            context_mixin, "_get_current_span_dynamically", return_value=None
+        ):
+            # Act
+            result = context_mixin.enrich_span(attributes={"key": "value"})
+
+        # Assert
+        assert result is False
+        mock_safe_log.assert_called_once_with(
+            context_mixin, "debug", "No active recording span for enrichment"
+        )
+
+    @patch("honeyhive.tracer.core.context.safe_log")
+    def test_enrich_span_not_recording(
+        self, mock_safe_log: Mock, context_mixin: MockTracerContextMixin
+    ) -> None:
+        """Test span enrichment with non-recording span."""
+        # Arrange
+        mock_span = Mock()
+        mock_span.is_recording.return_value = False
+
+        with patch.object(
+            context_mixin, "_get_current_span_dynamically", return_value=mock_span
+        ):
+            # Act
+            result = context_mixin.enrich_span(attributes={"key": "value"})
+
+        # Assert
+        assert result is False
+        mock_safe_log.assert_called_once_with(
+            context_mixin, "debug", "No active recording span for enrichment"
+        )
+
+    @patch("honeyhive.tracer.core.context.safe_log")
+    def test_enrich_span_exception_handling(
+        self, mock_safe_log: Mock, context_mixin: MockTracerContextMixin
+    ) -> None:
+        """Test span enrichment exception handling."""
+        # Arrange
+        test_error = ValueError("Span enrichment failed")
+
+        with patch.object(
+            context_mixin, "_get_current_span_dynamically", side_effect=test_error
+        ):
+            # Act
+            result = context_mixin.enrich_span(attributes={"key": "value"})
+
+        # Assert
+        assert result is False
+        mock_safe_log.assert_called_once_with(
+            context_mixin,
+            "error",
+            f"Failed to enrich span: {test_error}",
+            honeyhive_data={"error_type": "ValueError"},
+        )
+
+
+class TestSpanHelperMethods:
+    """Test suite for span-related helper methods."""
+
+    @pytest.fixture
+    def context_mixin(self) -> MockTracerContextMixin:
+        """Create a mock TracerContextMixin instance for testing."""
+        return MockTracerContextMixin()
+
+    @patch("honeyhive.tracer.core.context.trace.get_current_span")
+    def test_get_current_span_dynamically_success(
+        self, mock_get_span: Mock, context_mixin: MockTracerContextMixin
+    ) -> None:
+        """Test successful current span retrieval."""
+        # Arrange
+        mock_span = Mock()
+        mock_get_span.return_value = mock_span
+
+        # Act
+        result = context_mixin._get_current_span_dynamically()
+
+        # Assert
+        assert result == mock_span
+        mock_get_span.assert_called_once()
+
+    @patch("honeyhive.tracer.core.context.trace.get_current_span")
+    @patch("honeyhive.tracer.core.context.safe_log")
+    def test_get_current_span_dynamically_exception(
+        self,
+        mock_safe_log: Mock,
+        mock_get_span: Mock,
+        context_mixin: MockTracerContextMixin,
+    ) -> None:
+        """Test current span retrieval with exception."""
+        # Arrange
+        test_error = RuntimeError("Span access failed")
+        mock_get_span.side_effect = test_error
+
+        # Act
+        result = context_mixin._get_current_span_dynamically()
+
+        # Assert
+        assert result is None
+        mock_safe_log.assert_called_once_with(
+            context_mixin,
+            "debug",
+            "Failed to get current span",
+            honeyhive_data={"error_type": "RuntimeError"},
+        )
+
+    def test_build_enrichment_attributes_dynamically_all_sources(
+        self, context_mixin: MockTracerContextMixin
+    ) -> None:
+        """Test building enrichment attributes from all sources."""
+        # Arrange
+        attributes = {"direct_attr": "direct_value"}
+        metadata = {"meta_key": "meta_value"}
+
+        # Act
+        result = context_mixin._build_enrichment_attributes_dynamically(
+            attributes=attributes,
+            metadata=metadata,
+            custom_attr="custom_value",
+            none_attr=None,
+        )
+
+        # Assert
+        expected = {
+            "direct_attr": "direct_value",
+            "honeyhive.metadata.meta_key": "meta_value",
+            "custom_attr": "custom_value",
+        }
+        assert result == expected
+
+    def test_build_enrichment_attributes_dynamically_empty_sources(
+        self, context_mixin: MockTracerContextMixin
+    ) -> None:
+        """Test building enrichment attributes with empty sources."""
+        # Act
+        result = context_mixin._build_enrichment_attributes_dynamically()
+
+        # Assert
+        assert result == {}
+
+    def test_build_enrichment_attributes_dynamically_key_normalization(
+        self, context_mixin: MockTracerContextMixin
+    ) -> None:
+        """Test building enrichment attributes with key normalization."""
+        # Act
+        kwargs_dict: Dict[str, Any] = {
+            "custom-key": "value",
+            "UPPER_KEY": "upper_value",
+        }
+        result = context_mixin._build_enrichment_attributes_dynamically(**kwargs_dict)
+
+        # Assert
+        expected = {
+            "custom_key": "value",  # Normalized by mock implementation
+            "upper_key": "upper_value",  # Normalized by mock implementation
+        }
+        assert result == expected
+
+    @patch("honeyhive.tracer.core.context.safe_log")
+    def test_apply_attributes_to_span_dynamically_success(
+        self, mock_safe_log: Mock, context_mixin: MockTracerContextMixin
+    ) -> None:
+        """Test successful attribute application to span."""
+        # Arrange
+        mock_span = Mock()
+        attributes = {"attr1": "value1", "attr2": {"nested": "value"}}
+
+        # Act
+        context_mixin._apply_attributes_to_span_dynamically(mock_span, attributes)
+
+        # Assert
+        assert mock_span.set_attribute.call_count == 2
+        mock_span.set_attribute.assert_any_call("attr1", "value1")
+        mock_span.set_attribute.assert_any_call(
+            "attr2", "{'nested': 'value'}"
+        )  # Normalized by mock
+        mock_safe_log.assert_not_called()
+
+    @patch("honeyhive.tracer.core.context.safe_log")
+    def test_apply_attributes_to_span_dynamically_with_none_value(
+        self, mock_safe_log: Mock, context_mixin: MockTracerContextMixin
+    ) -> None:
+        """Test attribute application with None value."""
+        # Arrange
+        mock_span = Mock()
+        attributes = {"valid_attr": "value", "none_attr": None}
+
+        # Mock the normalization to return None for none_attr
+        def mock_normalize(value: Any) -> Any:
+            if value is None:
+                return None
+            return value
+
+        # Use setattr to avoid MyPy method assignment error
+        setattr(context_mixin, "_normalize_attribute_value_dynamically", mock_normalize)
+
+        # Act
+        context_mixin._apply_attributes_to_span_dynamically(mock_span, attributes)
+
+        # Assert
+        mock_span.set_attribute.assert_called_once_with("valid_attr", "value")
+        mock_safe_log.assert_not_called()
+
+    @patch("honeyhive.tracer.core.context.safe_log")
+    def test_apply_attributes_to_span_dynamically_exception(
+        self, mock_safe_log: Mock, context_mixin: MockTracerContextMixin
+    ) -> None:
+        """Test attribute application with exception."""
+        # Arrange
+        mock_span = Mock()
+        test_error = ValueError("Attribute setting failed")
+        mock_span.set_attribute.side_effect = test_error
+        attributes = {"failing_attr": "value"}
+
+        # Act
+        context_mixin._apply_attributes_to_span_dynamically(mock_span, attributes)
+
+        # Assert
+        mock_safe_log.assert_called_once_with(
+            context_mixin,
+            "warning",
+            f"Failed to set span attribute 'failing_attr': {test_error}",
+            honeyhive_data={"attribute_key": "failing_attr"},
+        )
+
+
+class TestBaggageOperations:
+    """Test suite for baggage operations."""
+
+    @pytest.fixture
+    def context_mixin(self) -> MockTracerContextMixin:
+        """Create a mock TracerContextMixin instance for testing."""
+        return MockTracerContextMixin()
+
+    @patch("honeyhive.tracer.core.context.get_current_baggage")
+    @patch("honeyhive.tracer.core.context.safe_log")
+    def test_get_baggage_success(
+        self,
+        mock_safe_log: Mock,
+        mock_get_baggage: Mock,
+        context_mixin: MockTracerContextMixin,
+    ) -> None:
+        """Test successful baggage retrieval."""
+        # Arrange
+        mock_get_baggage.return_value = {"test_key": "test_value"}
+
+        # Act
+        result = context_mixin.get_baggage("test_key")
+
+        # Assert
+        assert result == "test_value"
+        mock_safe_log.assert_called_once_with(
+            context_mixin,
+            "debug",
+            "Retrieved baggage: test_key",
+            honeyhive_data={"key": "test_key", "found_as": "test_key"},
+        )
+
+    @patch("honeyhive.tracer.core.context.get_current_baggage")
+    @patch("honeyhive.tracer.core.context.safe_log")
+    def test_get_baggage_key_variants(
+        self,
+        mock_safe_log: Mock,
+        mock_get_baggage: Mock,
+        context_mixin: MockTracerContextMixin,
+    ) -> None:
+        """Test baggage retrieval with key variants."""
+        # Arrange
+        mock_get_baggage.return_value = {"test_key": "normalized_value"}
+
+        # Act
+        result = context_mixin.get_baggage("test-key")  # Different format
+
+        # Assert
+        assert result == "normalized_value"
+        mock_safe_log.assert_called_once_with(
+            context_mixin,
+            "debug",
+            "Retrieved baggage: test-key",
+            honeyhive_data={"key": "test-key", "found_as": "test_key"},
+        )
+
+    @patch("honeyhive.tracer.core.context.get_current_baggage")
+    def test_get_baggage_not_found(
+        self, mock_get_baggage: Mock, context_mixin: MockTracerContextMixin
+    ) -> None:
+        """Test baggage retrieval when key not found."""
+        # Arrange
+        mock_get_baggage.return_value = {"other_key": "other_value"}
+
+        # Act
+        result = context_mixin.get_baggage("missing_key")
+
+        # Assert
+        assert result is None
+
+    @patch("honeyhive.tracer.core.context.get_current_baggage")
+    @patch("honeyhive.tracer.core.context.safe_log")
+    def test_get_baggage_exception(
+        self,
+        mock_safe_log: Mock,
+        mock_get_baggage: Mock,
+        context_mixin: MockTracerContextMixin,
+    ) -> None:
+        """Test baggage retrieval with exception."""
+        # Arrange
+        test_error = RuntimeError("Baggage access failed")
+        mock_get_baggage.side_effect = test_error
+
+        # Act
+        result = context_mixin.get_baggage("test_key")
+
+        # Assert
+        assert result is None
+        mock_safe_log.assert_called_once_with(
+            context_mixin,
+            "warning",
+            f"Failed to get baggage 'test_key': {test_error}",
+            honeyhive_data={"error_type": "RuntimeError"},
+        )
+
+    def test_normalize_baggage_key_dynamically(
+        self, context_mixin: MockTracerContextMixin
+    ) -> None:
+        """Test baggage key normalization."""
+        # Test various key formats
+        test_cases = [
+            ("test-key", "test_key"),
+            ("test.key", "test_key"),
+            ("test key", "test_key"),
+            ("Test-Key.Value", "test_key_value"),
+            ("UPPER_CASE", "upper_case"),
+        ]
+
+        for input_key, expected in test_cases:
+            result = context_mixin._normalize_baggage_key_dynamically(input_key)
+            assert result == expected
+
+    @patch("honeyhive.tracer.core.context.context.get_current")
+    @patch("honeyhive.tracer.core.context.baggage.set_baggage")
+    @patch("honeyhive.tracer.core.context.context.attach")
+    @patch("honeyhive.tracer.core.context.safe_log")
+    def test_set_baggage_success(
+        self,
+        mock_safe_log: Mock,
+        mock_attach: Mock,
+        mock_set_baggage: Mock,
+        mock_get_current: Mock,
+        context_mixin: MockTracerContextMixin,
+    ) -> None:
+        """Test successful baggage setting."""
+        # Arrange
+        mock_current_ctx = Mock()
+        mock_new_ctx = Mock()
+        mock_get_current.return_value = mock_current_ctx
+        mock_set_baggage.return_value = mock_new_ctx
+
+        # Act
+        context_mixin.set_baggage("test-key", "test_value")
+
+        # Assert
+        mock_set_baggage.assert_called_once_with(
+            "test_key", "test_value", mock_current_ctx
+        )
+        mock_attach.assert_called_once_with(mock_new_ctx)
+        mock_safe_log.assert_called_once_with(
+            context_mixin,
+            "debug",
+            "Set baggage: test-key",
+            honeyhive_data={
+                "key": "test-key",
+                "normalized_key": "test_key",
+                "value_length": 10,
+            },
+        )
+
+    def test_set_baggage_empty_key(self, context_mixin: MockTracerContextMixin) -> None:
+        """Test setting baggage with empty key."""
+        with patch("honeyhive.tracer.core.context.safe_log") as mock_safe_log:
+            # Act
+            context_mixin.set_baggage("", "value")
+
+            # Assert
+            mock_safe_log.assert_not_called()
+
+    def test_set_baggage_none_value(
+        self, context_mixin: MockTracerContextMixin
+    ) -> None:
+        """Test setting baggage with None value."""
+        with patch("honeyhive.tracer.core.context.safe_log") as mock_safe_log:
+            # Act
+            context_mixin.set_baggage("key", None)  # type: ignore[arg-type]
+
+            # Assert
+            mock_safe_log.assert_not_called()
+
+    @patch("honeyhive.tracer.core.context.context.get_current")
+    @patch("honeyhive.tracer.core.context.safe_log")
+    def test_set_baggage_exception(
+        self,
+        mock_safe_log: Mock,
+        mock_get_current: Mock,
+        context_mixin: MockTracerContextMixin,
+    ) -> None:
+        """Test setting baggage with exception."""
+        # Arrange
+        test_error = RuntimeError("Context access failed")
+        mock_get_current.side_effect = test_error
+
+        # Act
+        context_mixin.set_baggage("test_key", "test_value")
+
+        # Assert
+        mock_safe_log.assert_called_once_with(
+            context_mixin,
+            "error",
+            f"Failed to set baggage 'test_key': {test_error}",
+            honeyhive_data={"error_type": "RuntimeError"},
+        )
+
+
+class TestContextPropagation:
+    """Test suite for context propagation methods."""
+
+    @pytest.fixture
+    def context_mixin(self) -> MockTracerContextMixin:
+        """Create a mock TracerContextMixin instance for testing."""
+        return MockTracerContextMixin()
+
+    @patch("honeyhive.tracer.core.context.inject_context_into_carrier")
+    @patch("honeyhive.tracer.core.context.safe_log")
+    def test_inject_context_success(
+        self,
+        mock_safe_log: Mock,
+        mock_inject: Mock,
+        context_mixin: MockTracerContextMixin,
+    ) -> None:
+        """Test successful context injection."""
+        # Arrange
+        carrier: Dict[str, str] = {}
+
+        # Act
+        context_mixin.inject_context(carrier)
+
+        # Assert
+        mock_inject.assert_called_once_with(carrier, context_mixin)
+        mock_safe_log.assert_called_once_with(
+            context_mixin,
+            "debug",
+            "Context injected into carrier",
+            honeyhive_data={
+                "carrier_keys": [],
+                "injection_count": 0,
+            },
+        )
+
+    @patch("honeyhive.tracer.core.context.inject_context_into_carrier")
+    @patch("honeyhive.tracer.core.context.safe_log")
+    def test_inject_context_with_existing_keys(
+        self,
+        mock_safe_log: Mock,
+        mock_inject: Mock,
+        context_mixin: MockTracerContextMixin,
+    ) -> None:
+        """Test context injection with existing carrier keys."""
+        # Arrange
+        carrier = {"existing_key": "existing_value"}
+
+        # Act
+        context_mixin.inject_context(carrier)
+
+        # Assert
+        mock_inject.assert_called_once_with(carrier, context_mixin)
+        mock_safe_log.assert_called_once_with(
+            context_mixin,
+            "debug",
+            "Context injected into carrier",
+            honeyhive_data={
+                "carrier_keys": ["existing_key"],
+                "injection_count": 1,
+            },
+        )
+
+    @patch("honeyhive.tracer.core.context.inject_context_into_carrier")
+    @patch("honeyhive.tracer.core.context.safe_log")
+    def test_inject_context_exception(
+        self,
+        mock_safe_log: Mock,
+        mock_inject: Mock,
+        context_mixin: MockTracerContextMixin,
+    ) -> None:
+        """Test context injection with exception."""
+        # Arrange
+        test_error = ValueError("Injection failed")
+        mock_inject.side_effect = test_error
+        carrier: Dict[str, str] = {}
+
+        # Act
+        context_mixin.inject_context(carrier)
+
+        # Assert
+        mock_safe_log.assert_called_once_with(
+            context_mixin,
+            "error",
+            f"Failed to inject context: {test_error}",
+            honeyhive_data={"error_type": "ValueError"},
+        )
+
+    @patch("honeyhive.tracer.core.context.extract_context_from_carrier")
+    @patch("honeyhive.tracer.core.context.safe_log")
+    def test_extract_context_success(
+        self,
+        mock_safe_log: Mock,
+        mock_extract: Mock,
+        context_mixin: MockTracerContextMixin,
+    ) -> None:
+        """Test successful context extraction."""
+        # Arrange
+        mock_context = Mock(spec=Context)
+        mock_extract.return_value = mock_context
+        carrier = {"trace_key": "trace_value"}
+
+        # Act
+        result = context_mixin.extract_context(carrier)
+
+        # Assert
+        assert result == mock_context
+        mock_extract.assert_called_once_with(carrier, context_mixin)
+        mock_safe_log.assert_called_once_with(
+            context_mixin,
+            "debug",
+            "Context extracted from carrier",
+            honeyhive_data={
+                "carrier_keys": ["trace_key"],
+                "extraction_successful": True,
+            },
+        )
+
+    @patch("honeyhive.tracer.core.context.extract_context_from_carrier")
+    @patch("honeyhive.tracer.core.context.safe_log")
+    def test_extract_context_no_context_found(
+        self,
+        mock_safe_log: Mock,
+        mock_extract: Mock,
+        context_mixin: MockTracerContextMixin,
+    ) -> None:
+        """Test context extraction when no context found."""
+        # Arrange
+        mock_extract.return_value = None
+        carrier = {"other_key": "other_value"}
+
+        # Act
+        result = context_mixin.extract_context(carrier)
+
+        # Assert
+        assert result is None
+        mock_safe_log.assert_called_once_with(
+            context_mixin,
+            "debug",
+            "No context found in carrier",
+            honeyhive_data={"carrier_keys": ["other_key"]},
+        )
+
+    @patch("honeyhive.tracer.core.context.extract_context_from_carrier")
+    @patch("honeyhive.tracer.core.context.safe_log")
+    def test_extract_context_exception(
+        self,
+        mock_safe_log: Mock,
+        mock_extract: Mock,
+        context_mixin: MockTracerContextMixin,
+    ) -> None:
+        """Test context extraction with exception."""
+        # Arrange
+        test_error = RuntimeError("Extraction failed")
+        mock_extract.side_effect = test_error
+        carrier = {"trace_key": "trace_value"}
+
+        # Act
+        result = context_mixin.extract_context(carrier)
+
+        # Assert
+        assert result is None
+        mock_safe_log.assert_called_once_with(
+            context_mixin,
+            "error",
+            f"Failed to extract context: {test_error}",
+            honeyhive_data={"error_type": "RuntimeError"},
+        )

@@ -45,6 +45,7 @@ import time
 
 try:
     import toml  # type: ignore[import-untyped]
+
     TOML_AVAILABLE = True
 except ImportError:
     TOML_AVAILABLE = False
@@ -73,6 +74,7 @@ def setup_global_sphinx_docutils_integration() -> bool:
     try:
         from docutils.parsers.rst import directives, roles  # type: ignore[import-untyped]
         from docutils.parsers.rst.directives import unchanged, flag, positive_int  # type: ignore[import-untyped]
+
         # nodes already imported at module level
 
         # Custom Sphinx directive implementations
@@ -119,7 +121,13 @@ def setup_global_sphinx_docutils_integration() -> bool:
 
         # Sphinx role implementations
         def global_sphinx_role(  # pylint: disable=too-many-positional-arguments
-            name: str, rawtext: str, text: str, lineno: int, inliner: Any, options: Optional[Dict[str, Any]] = None, content: Optional[List[str]] = None
+            name: str,
+            rawtext: str,
+            text: str,
+            lineno: int,
+            inliner: Any,
+            options: Optional[Dict[str, Any]] = None,
+            content: Optional[List[str]] = None,
         ) -> Tuple[List[docutils.nodes.Node], List[str]]:
             """Generic Sphinx role handler."""
             if options is None:
@@ -237,11 +245,14 @@ except ImportError:
 # Sphinx is a hard requirement for documentation quality control
 try:
     import sphinx  # type: ignore[import-not-found]
+
     # Note: sphinx.parsers.rst is imported inside functions where needed
     SPHINX_AVAILABLE = True
 except ImportError:
     SPHINX_AVAILABLE = False
-    raise ImportError("Sphinx is required for documentation quality control. Install with: pip install sphinx")
+    raise ImportError(
+        "Sphinx is required for documentation quality control. Install with: pip install sphinx"
+    )
 
 
 def setup_logging(level: str = "INFO", json_output: bool = False) -> logging.Logger:
@@ -643,8 +654,7 @@ class EventTypeValidator(BaseValidator):
             event_type_value = issue.context["value"]
             quoted_value = (
                 f'"{event_type_value}"'
-                if event_type_value
-                in [v.strip("\"'") for v in self.event_type_mapping]
+                if event_type_value in [v.strip("\"'") for v in self.event_type_mapping]
                 else f"'{event_type_value}'"
             )
 
@@ -2659,6 +2669,7 @@ class EnhancedRSTProcessor:
         try:
             from docutils.parsers.rst import directives, roles
             from docutils.parsers.rst.directives import unchanged, flag, positive_int
+
             # nodes already imported at module level
 
             # Create a comprehensive toctree directive that handles navigation validation
@@ -2693,7 +2704,11 @@ class EnhancedRSTProcessor:
                                 self._validate_navigation_entry(line)
 
                     # Return a comment node to prevent rendering issues
-                    return [docutils.nodes.comment("", f"toctree: {len(self.content)} entries")]
+                    return [
+                        docutils.nodes.comment(
+                            "", f"toctree: {len(self.content)} entries"
+                        )
+                    ]
 
                 def _validate_navigation_entry(self, entry: str) -> None:
                     """Validate that a navigation entry exists."""
@@ -3157,6 +3172,7 @@ class EnhancedRSTProcessor:
         try:
             from sphinx.parsers.rst import Parser  # type: ignore[import-not-found] # pylint: disable=no-name-in-module
             from sphinx.util.docutils import docutils_namespace  # type: ignore[import-not-found]
+
             # io and redirect_stderr already imported at module level
 
             # Capture Sphinx warnings/errors
@@ -3274,7 +3290,6 @@ class EnhancedRSTProcessor:
         return unique_issues
 
 
-
 class DocsQualityController:
     """Main controller for documentation quality validation and fixing."""
 
@@ -3316,12 +3331,16 @@ class DocsQualityController:
         self.processed_files = 0
 
         # Results collection for summary generation
-        self.file_results: List[ValidationResult] = []  # List of ValidationResult objects from each file
+        self.file_results: List[ValidationResult] = (
+            []
+        )  # List of ValidationResult objects from each file
         self.results_lock = threading.Lock()
 
         # Black-inspired optimizations
         self._file_cache: Dict[str, str] = {}  # Cache parsed file contents
-        self._validation_cache: Dict[str, List[ValidationIssue]] = {}  # Cache validation results
+        self._validation_cache: Dict[str, List[ValidationIssue]] = (
+            {}
+        )  # Cache validation results
         # self._transformation_visitor = RSTTransformationVisitor(self.logger)  # Removed - dead code
 
     def add_to_dead_letter_queue(self, issue: Dict[str, Any], file_path: str) -> None:
@@ -3488,7 +3507,9 @@ class DocsQualityController:
         stagnant_iterations = 0
         max_stagnant_iterations = 5  # Increased from 3
         dead_letter_queue = set()  # Dead letter queue for truly unfixable issues
-        failed_attempts_per_issue: Dict[str, int] = {}  # Track attempts per specific issue
+        failed_attempts_per_issue: Dict[str, int] = (
+            {}
+        )  # Track attempts per specific issue
 
         # Count initial auto-fixable issues for progress tracking
         # initial_auto_fixable = len(

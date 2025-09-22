@@ -21,6 +21,7 @@ import time
 from typing import Any, Dict, Optional
 
 from honeyhive import HoneyHiveTracer, enrich_span, trace, trace_class
+from honeyhive.config.models import TracerConfig, SessionConfig
 from honeyhive.models import EventType
 
 # Set environment variables for configuration
@@ -47,13 +48,13 @@ def main():
     prod_tracer = HoneyHiveTracer.init(
         api_key="prod-key",
         project="production-project",  # Required for OTLP tracing
-        source="prod"
+        source="prod",
     )
 
     dev_tracer = HoneyHiveTracer.init(
         api_key="dev-key",
         project="development-project",  # Required for OTLP tracing
-        source="dev"
+        source="dev",
     )
 
     print(f"✓ Production tracer: {prod_tracer.project}")

@@ -1,408 +1,607 @@
-"""Unit tests for the tracer registry system (complete-refactor branch).
+"""Unit tests for HoneyHive tracer registry functionality (refactored version).
 
-This test module validates the automatic tracer discovery functionality
-that enables backward compatibility with the @trace decorator.
-
-IMPORTANT: These tests are for features in the complete-refactor branch.
+This module tests the tracer registry system including tracer registration,
+discovery, baggage-based lookup, and default tracer management.
 """
 
+# pylint: disable=protected-access,duplicate-code
+# Justification: Testing internal registry functionality requires access to
+# protected members
+
 import gc
+import threading
 import weakref
-from unittest.mock import MagicMock, patch
+from typing import cast
+from unittest.mock import Mock, patch
 
 import pytest
+from opentelemetry.context import Context
 
-# Mock OpenTelemetry imports to avoid dependency issues in testing
-with patch.dict(
-    "sys.modules",
-    {
-        "opentelemetry": MagicMock(),
-        "opentelemetry.baggage": MagicMock(),
-        "opentelemetry.context": MagicMock(),
-    },
-):
-    from src.honeyhive.tracer.registry import (
-        clear_registry,
-        discover_tracer,
-        get_default_tracer,
-        get_registry_stats,
-        get_tracer_from_baggage,
-        register_tracer,
-        set_default_tracer,
-        unregister_tracer,
-    )
+from honeyhive.tracer import registry
+from honeyhive.tracer.core import HoneyHiveTracer
+from honeyhive.tracer.registry import (
+    _TRACER_REGISTRY,
+    discover_tracer,
+    get_all_tracers,
+    get_default_tracer,
+    get_tracer_from_baggage,
+    register_tracer,
+    set_default_tracer,
+)
+from tests.utils import ensure_clean_otel_state  # pylint: disable=no-name-in-module
 
 
-class MockHoneyHiveTracer:
-    """Mock HoneyHiveTracer for testing."""
+class MockHoneyHiveTracer:  # pylint: disable=too-few-public-methods
+    """Mock HoneyHive tracer for testing registry functionality."""
 
-    def __init__(self, project: str = "test-project", source: str = "test"):
+    def __init__(
+        self,
+        project: str = "test-project",
+        source: str = "test-source",
+        api_key: str = "test-key",
+    ):
         self.project = project
         self.source = source
+        self.api_key = api_key
         self.test_mode = True
+        self.session_id = f"session-{id(self)}"
+
+    def __repr__(self) -> str:
+        return f"MockHoneyHiveTracer(project={self.project}, source={self.source})"
 
 
-class TestTracerRegistry:
+def mock_tracer_cast(
+    mock_tracer: MockHoneyHiveTracer,
+) -> HoneyHiveTracer:
+    """Helper function to cast MockHoneyHiveTracer to HoneyHiveTracer for type
+    checking."""
+    return cast(HoneyHiveTracer, mock_tracer)
+
+
+class TestTracerRegistry:  # pylint: disable=too-many-public-methods
     """Test the tracer registry functionality."""
 
-    def setup_method(self):
-        """Set up clean state for each test."""
-        clear_registry()
+    def setup_method(self) -> None:
+        """Set up clean state for each test method."""
+        # AGGRESSIVE STATE RESET - Same as integration tests
+        ensure_clean_otel_state()
 
-    def teardown_method(self):
-        """Clean up after each test."""
-        clear_registry()
-        gc.collect()  # Force garbage collection to test weak references
+        # Clear the global registry
+        _TRACER_REGISTRY.clear()
 
-    def test_register_tracer_returns_id(self):
-        """Test that registering a tracer returns a unique ID."""
+        # Clear the global default tracer
+        registry._DEFAULT_TRACER = None
+
+        # Force garbage collection to ensure clean state
+        gc.collect()
+
+    def teardown_method(self) -> None:
+        """Clean up after each test method."""
+        # AGGRESSIVE CLEANUP - Same as integration tests
+        ensure_clean_otel_state()
+
+        # Clear the global registry
+        _TRACER_REGISTRY.clear()
+
+        # Clear the global default tracer
+        registry._DEFAULT_TRACER = None
+
+        # Force garbage collection
+        gc.collect()
+
+    def test_register_tracer_success(self) -> None:
+        """Test successful tracer registration."""
         tracer = MockHoneyHiveTracer()
-        tracer_id = register_tracer(tracer)
 
+        tracer_id = register_tracer(mock_tracer_cast(tracer))
+
+        # Verify tracer ID was generated
+        assert tracer_id is not None
         assert isinstance(tracer_id, str)
         assert len(tracer_id) > 0
-        assert tracer_id == str(id(tracer))
 
-    def test_register_multiple_tracers(self):
-        """Test registering multiple tracers with unique IDs."""
+        # Verify tracer is in registry
+        assert tracer_id in _TRACER_REGISTRY
+        assert _TRACER_REGISTRY[tracer_id] is tracer
+
+    def test_register_multiple_tracers(self) -> None:
+        """Test registering multiple tracers generates unique IDs."""
         tracer1 = MockHoneyHiveTracer(project="project1")
         tracer2 = MockHoneyHiveTracer(project="project2")
+        tracer3 = MockHoneyHiveTracer(project="project3")
 
-        id1 = register_tracer(tracer1)
-        id2 = register_tracer(tracer2)
+        id1 = register_tracer(mock_tracer_cast(tracer1))
+        id2 = register_tracer(mock_tracer_cast(tracer2))
+        id3 = register_tracer(mock_tracer_cast(tracer3))
 
+        # Verify all IDs are unique
         assert id1 != id2
-        assert id1 == str(id(tracer1))
-        assert id2 == str(id(tracer2))
+        assert id2 != id3
+        assert id1 != id3
 
-    def test_unregister_tracer(self):
-        """Test unregistering a tracer by ID."""
+        # Verify all tracers are in registry
+        assert len(_TRACER_REGISTRY) == 3
+        assert _TRACER_REGISTRY[id1] is tracer1
+        assert _TRACER_REGISTRY[id2] is tracer2
+        assert _TRACER_REGISTRY[id3] is tracer3
+
+    def test_register_same_tracer_multiple_times(self) -> None:
+        """Test registering the same tracer multiple times returns same ID."""
         tracer = MockHoneyHiveTracer()
-        tracer_id = register_tracer(tracer)
 
-        # Tracer should be registered
-        stats = get_registry_stats()
-        assert stats["active_tracers"] == 1
+        id1 = register_tracer(mock_tracer_cast(tracer))
+        id2 = register_tracer(mock_tracer_cast(tracer))
 
-        # Unregister tracer
-        result = unregister_tracer(tracer_id)
-        assert result is True
+        # Should return the same ID
+        assert id1 == id2
 
-        # Registry should be empty
-        stats = get_registry_stats()
-        assert stats["active_tracers"] == 0
+        # Should only have one entry in registry
+        assert len(_TRACER_REGISTRY) == 1
 
-    def test_unregister_nonexistent_tracer(self):
-        """Test unregistering a tracer that doesn't exist."""
-        result = unregister_tracer("nonexistent-id")
-        assert result is False
-
-    def test_weak_reference_cleanup(self):
-        """Test that tracers are automatically cleaned up when garbage collected."""
+    def test_tracer_automatic_cleanup_on_garbage_collection(self) -> None:
+        """Test that tracers are automatically removed when garbage collected."""
         tracer = MockHoneyHiveTracer()
-        register_tracer(tracer)
+        tracer_id = register_tracer(mock_tracer_cast(tracer))
 
-        # Tracer should be registered
-        stats = get_registry_stats()
-        assert stats["active_tracers"] == 1
+        # Verify tracer is registered
+        assert tracer_id in _TRACER_REGISTRY
 
-        # Delete tracer and force garbage collection
+        # Delete the tracer and force garbage collection
         del tracer
         gc.collect()
 
-        # Registry should be empty due to weak references
-        stats = get_registry_stats()
-        assert stats["active_tracers"] == 0
+        # Verify tracer was automatically removed from registry
+        assert tracer_id not in _TRACER_REGISTRY
 
-    def test_set_default_tracer(self):
-        """Test setting a global default tracer."""
+    def test_get_tracer_from_baggage_success(self) -> None:
+        """Test successful tracer retrieval from baggage."""
         tracer = MockHoneyHiveTracer()
-        set_default_tracer(tracer)
+        tracer_id = register_tracer(mock_tracer_cast(tracer))
 
-        retrieved_tracer = get_default_tracer()
-        assert retrieved_tracer is tracer
+        # Mock baggage to return the tracer ID
+        with patch(
+            "honeyhive.tracer.registry.baggage.get_baggage", return_value=tracer_id
+        ):
+            result = get_tracer_from_baggage()
 
-        stats = get_registry_stats()
-        assert stats["has_default_tracer"] == 1
+            assert result is tracer
 
-    def test_set_default_tracer_none(self):
+    def test_get_tracer_from_baggage_with_context(self) -> None:
+        """Test tracer retrieval from baggage with specific context."""
+        tracer = MockHoneyHiveTracer()
+        tracer_id = register_tracer(mock_tracer_cast(tracer))
+
+        mock_context = Mock(spec=Context)
+
+        with patch(
+            "honeyhive.tracer.registry.baggage.get_baggage", return_value=tracer_id
+        ) as mock_get:
+            result = get_tracer_from_baggage(mock_context)
+
+            assert result is tracer
+            # Verify context was passed to baggage.get_baggage (positional argument)
+            mock_get.assert_called_once_with("honeyhive_tracer_id", mock_context)
+
+    def test_get_tracer_from_baggage_no_baggage(self) -> None:
+        """Test tracer retrieval when no baggage exists."""
+        with patch("honeyhive.tracer.registry.baggage.get_baggage", return_value=None):
+            result = get_tracer_from_baggage()
+
+            assert result is None
+
+    def test_get_tracer_from_baggage_invalid_id(self) -> None:
+        """Test tracer retrieval with invalid tracer ID in baggage."""
+        with patch(
+            "honeyhive.tracer.registry.baggage.get_baggage", return_value="invalid-id"
+        ):
+            result = get_tracer_from_baggage()
+
+            assert result is None
+
+    def test_get_tracer_from_baggage_exception_handling(self) -> None:
+        """Test tracer retrieval handles baggage exceptions gracefully."""
+        with patch(
+            "honeyhive.tracer.registry.baggage.get_baggage",
+            side_effect=Exception("Baggage error"),
+        ):
+            result = get_tracer_from_baggage()
+
+            # Should return None instead of raising exception
+            assert result is None
+
+    def test_set_default_tracer(self) -> None:
+        """Test setting a default tracer."""
+        tracer = MockHoneyHiveTracer()
+
+        set_default_tracer(mock_tracer_cast(tracer))
+
+        # Verify tracer was registered and set as default
+        assert mock_tracer_cast(tracer) in _TRACER_REGISTRY.values()
+        assert registry._DEFAULT_TRACER is not None
+        assert registry._DEFAULT_TRACER() is tracer
+
+    def test_set_default_tracer_none(self) -> None:
         """Test clearing the default tracer."""
+        # First set a default tracer
         tracer = MockHoneyHiveTracer()
-        set_default_tracer(tracer)
+        set_default_tracer(mock_tracer_cast(tracer))
+        assert registry._DEFAULT_TRACER is not None
 
-        # Clear the default
+        # Then clear it
         set_default_tracer(None)
+        assert registry._DEFAULT_TRACER is None
 
-        retrieved_tracer = get_default_tracer()
-        assert retrieved_tracer is None
-
-        stats = get_registry_stats()
-        assert stats["has_default_tracer"] == 0
-
-    def test_default_tracer_weak_reference(self):
-        """Test that default tracer uses weak references."""
+    def test_get_default_tracer_success(self) -> None:
+        """Test successful default tracer retrieval."""
         tracer = MockHoneyHiveTracer()
-        set_default_tracer(tracer)
+        set_default_tracer(mock_tracer_cast(tracer))
 
-        # Delete tracer and force garbage collection
+        result = get_default_tracer()
+
+        assert result is tracer
+
+    def test_get_default_tracer_none(self) -> None:
+        """Test default tracer retrieval when none is set."""
+        result = get_default_tracer()
+
+        assert result is None
+
+    def test_get_default_tracer_garbage_collected(self) -> None:
+        """Test default tracer retrieval when tracer was garbage collected."""
+        tracer = MockHoneyHiveTracer()
+        set_default_tracer(mock_tracer_cast(tracer))
+
+        # Delete the tracer and force garbage collection
         del tracer
         gc.collect()
 
-        # Default tracer should be None
-        retrieved_tracer = get_default_tracer()
-        assert retrieved_tracer is None
+        result = get_default_tracer()
 
-        stats = get_registry_stats()
-        assert stats["has_default_tracer"] == 0
+        # Should return None and clear the stale reference
+        assert result is None
+        assert registry._DEFAULT_TRACER is None
 
-    def test_get_tracer_from_baggage_success(self):
-        """Test successfully getting tracer from baggage."""
-        tracer = MockHoneyHiveTracer()
-        tracer_id = register_tracer(tracer)
+    def test_discover_tracer_explicit_priority(self) -> None:
+        """Test tracer discovery prioritizes explicit tracer parameter."""
+        explicit_tracer = MockHoneyHiveTracer(project="explicit")
+        baggage_tracer = MockHoneyHiveTracer(project="baggage")
+        default_tracer = MockHoneyHiveTracer(project="default")
 
-        # Since OpenTelemetry mocking is complex in this test environment,
-        # we'll test the core logic by directly adding the tracer_id to registry
-        # and verifying the lookup works when OTEL is available
+        # Set up baggage and default tracers
+        baggage_id = register_tracer(mock_tracer_cast(baggage_tracer))
+        set_default_tracer(mock_tracer_cast(default_tracer))
 
-        # Verify the tracer is registered using public API
-        stats = get_registry_stats()
-        assert stats["active_tracers"] >= 1  # At least our tracer is registered
+        with patch(
+            "honeyhive.tracer.registry.baggage.get_baggage", return_value=baggage_id
+        ):
+            result = discover_tracer(explicit_tracer=mock_tracer_cast(explicit_tracer))
 
-        # Test that get_tracer_from_baggage fails gracefully when OTEL is not available
-        # This tests the error handling path
-        retrieved_tracer = get_tracer_from_baggage()
+            # Should return explicit tracer (highest priority)
+            assert result is explicit_tracer
 
-        # In test environment without proper OTEL setup, this should return None
-        # The actual functionality is tested in integration tests
-        assert retrieved_tracer is None or retrieved_tracer is tracer
+    def test_discover_tracer_baggage_priority(self) -> None:
+        """Test tracer discovery prioritizes baggage tracer over default."""
+        baggage_tracer = MockHoneyHiveTracer(project="baggage")
+        default_tracer = MockHoneyHiveTracer(project="default")
 
-    @patch("src.honeyhive.tracer.registry.baggage")
-    @patch("src.honeyhive.tracer.registry.context")
-    def test_get_tracer_from_baggage_not_found(self, mock_context, mock_baggage):
-        """Test getting tracer from baggage when tracer ID not found."""
-        # Mock baggage returning None
-        mock_baggage.get_baggage.return_value = None
+        # Set up baggage and default tracers
+        baggage_id = register_tracer(mock_tracer_cast(baggage_tracer))
+        set_default_tracer(mock_tracer_cast(default_tracer))
 
-        retrieved_tracer = get_tracer_from_baggage()
+        with patch(
+            "honeyhive.tracer.registry.baggage.get_baggage", return_value=baggage_id
+        ):
+            result = discover_tracer()
 
-        assert retrieved_tracer is None
+            # Should return baggage tracer (second priority)
+            assert result is baggage_tracer
 
-    @patch("src.honeyhive.tracer.registry.baggage")
-    @patch("src.honeyhive.tracer.registry.context")
-    def test_get_tracer_from_baggage_invalid_id(self, mock_context, mock_baggage):
-        """Test getting tracer from baggage with invalid tracer ID."""
-        # Mock baggage returning an invalid ID
-        mock_baggage.get_baggage.return_value = "invalid-id"
+    def test_discover_tracer_default_fallback(self) -> None:
+        """Test tracer discovery falls back to default tracer."""
+        default_tracer = MockHoneyHiveTracer(project="default")
+        set_default_tracer(mock_tracer_cast(default_tracer))
 
-        retrieved_tracer = get_tracer_from_baggage()
+        with patch("honeyhive.tracer.registry.baggage.get_baggage", return_value=None):
+            result = discover_tracer()
 
-        assert retrieved_tracer is None
+            # Should return default tracer (fallback)
+            assert result is default_tracer
 
-    @patch("src.honeyhive.tracer.registry.baggage")
-    @patch("src.honeyhive.tracer.registry.context")
-    def test_get_tracer_from_baggage_exception(self, mock_context, mock_baggage):
-        """Test get_tracer_from_baggage handles exceptions gracefully."""
-        # Mock baggage raising an exception
-        mock_baggage.get_baggage.side_effect = Exception("Baggage error")
+    def test_discover_tracer_none_available(self) -> None:
+        """Test tracer discovery when no tracers are available."""
+        with patch("honeyhive.tracer.registry.baggage.get_baggage", return_value=None):
+            result = discover_tracer()
 
-        retrieved_tracer = get_tracer_from_baggage()
+            # Should return None
+            assert result is None
 
-        assert retrieved_tracer is None
+    def test_discover_tracer_with_context(self) -> None:
+        """Test tracer discovery with specific context."""
+        baggage_tracer = MockHoneyHiveTracer(project="baggage")
+        baggage_id = register_tracer(mock_tracer_cast(baggage_tracer))
 
-    def test_discover_tracer_explicit_priority(self):
-        """Test that explicit tracer has highest priority."""
-        tracer1 = MockHoneyHiveTracer(project="explicit")
-        _ = MockHoneyHiveTracer(project="baggage")
-        tracer3 = MockHoneyHiveTracer(project="default")
+        mock_context = Mock(spec=Context)
 
-        # Set up default tracer
-        set_default_tracer(tracer3)
+        with patch(
+            "honeyhive.tracer.registry.baggage.get_baggage", return_value=baggage_id
+        ) as mock_get:
+            result = discover_tracer(ctx=mock_context)
 
-        # Explicit tracer should have highest priority
-        discovered = discover_tracer(explicit_tracer=tracer1)
-        assert discovered is tracer1
+            assert result is baggage_tracer
+            # Verify context was passed through
+            mock_get.assert_called_once_with("honeyhive_tracer_id", mock_context)
 
-    def test_discover_tracer_baggage_priority(self):
-        """Test tracer discovery priority order."""
-        tracer1 = MockHoneyHiveTracer(project="explicit")
-        tracer2 = MockHoneyHiveTracer(project="default")
-
-        # Register tracers
-        register_tracer(tracer1)
-        register_tracer(tracer2)
-
-        # Set up default tracer
-        set_default_tracer(tracer2)
-
-        # Test explicit tracer priority (highest)
-        discovered = discover_tracer(explicit_tracer=tracer1)
-        assert discovered is tracer1
-
-        # Test default tracer discovery (when baggage not available)
-        discovered = discover_tracer()
-        assert discovered is tracer2  # Should fallback to default
-
-        # Test no tracer available
-        clear_registry()
-        discovered = discover_tracer()
-        assert discovered is None
-
-    @patch("src.honeyhive.tracer.registry.get_tracer_from_baggage")
-    def test_discover_tracer_default_priority(self, mock_get_from_baggage):
-        """Test that default tracer has lowest priority."""
-        tracer3 = MockHoneyHiveTracer(project="default")
-
-        # Mock baggage returning None
-        mock_get_from_baggage.return_value = None
-
-        # Set up default tracer
-        set_default_tracer(tracer3)
-
-        # Default tracer should be used as fallback
-        discovered = discover_tracer(explicit_tracer=None)
-        assert discovered is tracer3
-
-    @patch("src.honeyhive.tracer.registry.get_tracer_from_baggage")
-    def test_discover_tracer_none_available(self, mock_get_from_baggage):
-        """Test discover_tracer when no tracer is available."""
-        # Mock baggage returning None
-        mock_get_from_baggage.return_value = None
-
-        # No default tracer set
-        discovered = discover_tracer(explicit_tracer=None)
-        assert discovered is None
-
-    def test_get_registry_stats(self):
-        """Test get_registry_stats returns correct information."""
-        # Empty registry
-        stats = get_registry_stats()
-        assert stats["active_tracers"] == 0
-        assert stats["has_default_tracer"] == 0
-
-        # Add tracers
-        tracer1 = MockHoneyHiveTracer()
-        tracer2 = MockHoneyHiveTracer()
-        register_tracer(tracer1)
-        register_tracer(tracer2)
-
-        stats = get_registry_stats()
-        assert stats["active_tracers"] == 2
-        assert stats["has_default_tracer"] == 0
-
-        # Set default tracer
-        set_default_tracer(tracer1)
-
-        stats = get_registry_stats()
-        assert stats["active_tracers"] == 2
-        assert stats["has_default_tracer"] == 1
-
-    def test_clear_registry(self):
-        """Test clearing the entire registry."""
-        # Add some tracers
-        tracer1 = MockHoneyHiveTracer()
-        tracer2 = MockHoneyHiveTracer()
-        register_tracer(tracer1)
-        register_tracer(tracer2)
-        set_default_tracer(tracer1)
-
-        stats = get_registry_stats()
-        assert stats["active_tracers"] == 2
-        assert stats["has_default_tracer"] == 1
-
-        # Clear registry
-        clear_registry()
-
-        stats = get_registry_stats()
-        assert stats["active_tracers"] == 0
-        assert stats["has_default_tracer"] == 0
-
-    @patch("src.honeyhive.tracer.registry.OTEL_AVAILABLE", False)
-    def test_get_tracer_from_baggage_no_otel(self):
-        """Test get_tracer_from_baggage when OpenTelemetry is not available."""
-        retrieved_tracer = get_tracer_from_baggage()
-        assert retrieved_tracer is None
-
-
-class TestTracerRegistryIntegration:
-    """Integration tests for tracer registry with multiple tracers."""
-
-    def setup_method(self):
-        """Set up clean state for each test."""
-        clear_registry()
-
-    def teardown_method(self):
-        """Clean up after each test."""
-        clear_registry()
-
-    def test_multi_instance_registration(self):
-        """Test registering multiple tracer instances."""
+    def test_thread_safety_with_concurrent_registration(self) -> None:
+        """Test that tracer registration is thread-safe."""
         tracers = []
         tracer_ids = []
 
-        # Create multiple tracers for different projects
-        for i in range(5):
-            tracer = MockHoneyHiveTracer(project=f"project-{i}")
+        def register_worker(worker_id: int) -> None:
+            tracer = MockHoneyHiveTracer(project=f"project-{worker_id}")
             tracers.append(tracer)
-            tracer_id = register_tracer(tracer)
+            tracer_id = register_tracer(mock_tracer_cast(tracer))
             tracer_ids.append(tracer_id)
 
-        # All tracers should be registered
-        stats = get_registry_stats()
-        assert stats["active_tracers"] == 5
+        # Create multiple threads registering tracers
+        threads = []
+        for i in range(10):
+            thread = threading.Thread(target=register_worker, args=(i,))
+            threads.append(thread)
+            thread.start()
 
-        # All IDs should be unique
-        assert len(set(tracer_ids)) == 5
+        # Wait for all threads to complete
+        for thread in threads:
+            thread.join()
 
-    def test_concurrent_tracer_lifecycle(self):
-        """Test the lifecycle of multiple tracers."""
-        # Create tracers for different environments
-        prod_tracer = MockHoneyHiveTracer(project="production", source="prod")
-        dev_tracer = MockHoneyHiveTracer(project="development", source="dev")
-        test_tracer = MockHoneyHiveTracer(project="testing", source="test")
+        # Verify all tracers were registered with unique IDs
+        assert len(tracers) == 10
+        assert len(tracer_ids) == 10
+        assert len(set(tracer_ids)) == 10  # All IDs should be unique
+        assert len(_TRACER_REGISTRY) == 10
 
-        # Register all tracers
-        register_tracer(prod_tracer)
-        dev_id = register_tracer(dev_tracer)
-        register_tracer(test_tracer)
+    def test_thread_safety_with_concurrent_default_operations(self) -> None:
+        """Test that default tracer operations are thread-safe."""
+        results = []
 
-        # Set production as default
-        set_default_tracer(prod_tracer)
+        def default_tracer_worker(worker_id: int) -> None:
+            tracer = MockHoneyHiveTracer(project=f"project-{worker_id}")
+            set_default_tracer(mock_tracer_cast(tracer))
+            result = get_default_tracer()
+            results.append(result)
 
-        stats = get_registry_stats()
-        assert stats["active_tracers"] == 3
-        assert stats["has_default_tracer"] == 1
+        # Create multiple threads setting/getting default tracer
+        threads = []
+        for i in range(5):
+            thread = threading.Thread(target=default_tracer_worker, args=(i,))
+            threads.append(thread)
+            thread.start()
 
-        # Remove development tracer
-        unregister_tracer(dev_id)
+        # Wait for all threads to complete
+        for thread in threads:
+            thread.join()
 
-        stats = get_registry_stats()
-        assert stats["active_tracers"] == 2
-        assert stats["has_default_tracer"] == 1
+        # Verify all operations completed (one of the tracers should be default)
+        assert len(results) == 5
+        final_default = get_default_tracer()
+        assert final_default is not None
 
-        # Production should still be default
-        assert get_default_tracer() is prod_tracer
+    @pytest.mark.parametrize(
+        "explicit,baggage_available,default_available,expected_source",
+        [
+            (True, True, True, "explicit"),
+            (False, True, True, "baggage"),
+            (False, False, True, "default"),
+            (False, False, False, "none"),
+        ],
+    )
+    def test_discover_tracer_priority_matrix(
+        self,
+        explicit: bool,
+        baggage_available: bool,
+        default_available: bool,
+        expected_source: str,
+    ) -> None:
+        """Test tracer discovery priority with various availability combinations."""
+        explicit_tracer = MockHoneyHiveTracer(project="explicit") if explicit else None
+        baggage_tracer = (
+            MockHoneyHiveTracer(project="baggage") if baggage_available else None
+        )
+        default_tracer = (
+            MockHoneyHiveTracer(project="default") if default_available else None
+        )
 
-    def test_priority_fallback_chain(self):
-        """Test the complete priority fallback chain."""
-        # Set up tracers
-        explicit_tracer = MockHoneyHiveTracer(project="explicit")
-        default_tracer = MockHoneyHiveTracer(project="default")
+        # Set up baggage tracer
+        baggage_id = None
+        if baggage_tracer:
+            baggage_id = register_tracer(mock_tracer_cast(baggage_tracer))
 
-        # Register all tracers so they can be discovered
-        register_tracer(explicit_tracer)
-        register_tracer(default_tracer)
-        set_default_tracer(default_tracer)
+        # Set up default tracer
+        if default_tracer:
+            set_default_tracer(mock_tracer_cast(default_tracer))
 
-        # Test 1: Explicit tracer wins
-        discovered = discover_tracer(explicit_tracer=explicit_tracer)
-        assert discovered is explicit_tracer
+        with patch(
+            "honeyhive.tracer.registry.baggage.get_baggage", return_value=baggage_id
+        ):
+            result = discover_tracer(
+                explicit_tracer=(
+                    mock_tracer_cast(explicit_tracer) if explicit_tracer else None
+                )
+            )
 
-        # Test 2: Default tracer wins when no explicit (baggage not available in test)
-        discovered = discover_tracer(explicit_tracer=None)
-        assert discovered is default_tracer
+            if expected_source == "explicit":
+                assert result is explicit_tracer
+            elif expected_source == "baggage":
+                assert result is baggage_tracer
+            elif expected_source == "default":
+                assert result is default_tracer
+            else:  # "none"
+                assert result is None
 
-        # Test 3: None when no tracers available
-        set_default_tracer(None)
-        clear_registry()
-        discovered = discover_tracer(explicit_tracer=None)
-        assert discovered is None
+    def test_weak_reference_behavior(self) -> None:
+        """Test that registry uses weak references correctly."""
+        tracer = MockHoneyHiveTracer()
+        tracer_id = register_tracer(mock_tracer_cast(tracer))
+
+        # Get a weak reference to the tracer
+        weak_ref = weakref.ref(tracer)
+
+        # Verify tracer is accessible
+        assert weak_ref() is tracer
+        assert tracer_id in _TRACER_REGISTRY
+
+        # Delete the tracer
+        del tracer
+
+        # Force garbage collection
+        gc.collect()
+
+        # Verify weak reference is now None
+        assert weak_ref() is None
+        # Registry should automatically clean up
+        assert tracer_id not in _TRACER_REGISTRY
+
+    def test_registry_memory_efficiency(self) -> None:
+        """Test that registry doesn't prevent garbage collection."""
+        initial_registry_size = len(_TRACER_REGISTRY)
+
+        # Create and register many tracers
+        for i in range(100):
+            tracer = MockHoneyHiveTracer(project=f"project-{i}")
+            register_tracer(mock_tracer_cast(tracer))
+            # Explicitly delete the tracer reference
+            del tracer
+
+        # Force garbage collection multiple times to ensure cleanup
+        gc.collect()
+        gc.collect()  # Sometimes multiple collections are needed
+
+        # Registry should be cleaned up automatically
+        final_registry_size = len(_TRACER_REGISTRY)
+        assert final_registry_size == initial_registry_size
+
+    def test_baggage_key_consistency(self) -> None:
+        """Test that baggage operations use consistent key."""
+        tracer = MockHoneyHiveTracer()
+        tracer_id = register_tracer(mock_tracer_cast(tracer))
+
+        with patch("honeyhive.tracer.registry.baggage.get_baggage") as mock_get:
+            mock_get.return_value = tracer_id
+
+            get_tracer_from_baggage()
+
+            # Verify consistent baggage key is used
+            mock_get.assert_called_once_with("honeyhive_tracer_id", {})
+
+    def test_unregister_tracer_success(self) -> None:
+        """Test successful tracer unregistration."""
+        tracer = MockHoneyHiveTracer()
+        tracer_id = register_tracer(mock_tracer_cast(tracer))
+
+        # Verify tracer is registered
+        assert tracer_id in _TRACER_REGISTRY
+
+        # Unregister the tracer
+        result = registry.unregister_tracer(tracer_id)
+
+        # Verify unregistration was successful
+        assert result is True
+        assert tracer_id not in _TRACER_REGISTRY
+
+    def test_unregister_tracer_not_found(self) -> None:
+        """Test unregistering a tracer that doesn't exist."""
+        # Try to unregister a non-existent tracer
+        result = registry.unregister_tracer("non-existent-id")
+
+        # Should return False
+        assert result is False
+
+    def test_get_all_tracers_empty(self) -> None:
+        """Test getting all tracers when registry is empty."""
+        result = registry.get_all_tracers()
+
+        assert not result
+        assert isinstance(result, list)
+
+    def test_get_all_tracers_with_tracers(self) -> None:
+        """Test getting all tracers when registry has tracers."""
+        tracer1 = MockHoneyHiveTracer(project="project1")
+        tracer2 = MockHoneyHiveTracer(project="project2")
+
+        register_tracer(mock_tracer_cast(tracer1))
+        register_tracer(mock_tracer_cast(tracer2))
+
+        result = registry.get_all_tracers()
+
+        assert len(result) == 2
+        assert tracer1 in result
+        assert tracer2 in result
+        assert isinstance(result, list)
+
+    def test_get_registry_stats_empty(self) -> None:
+        """Test getting registry stats when empty."""
+        result = registry.get_registry_stats()
+
+        expected = {
+            "active_tracers": 0,
+            "has_default_tracer": 0,
+        }
+        assert result == expected
+        assert isinstance(result, dict)
+
+    def test_get_registry_stats_with_tracers_and_default(self) -> None:
+        """Test getting registry stats with tracers and default."""
+        tracer1 = MockHoneyHiveTracer(project="project1")
+        tracer2 = MockHoneyHiveTracer(project="project2")
+
+        register_tracer(mock_tracer_cast(tracer1))
+        register_tracer(mock_tracer_cast(tracer2))
+        set_default_tracer(mock_tracer_cast(tracer1))
+
+        result = registry.get_registry_stats()
+
+        expected = {
+            "active_tracers": 2,
+            "has_default_tracer": 1,
+        }
+        assert result == expected
+        assert isinstance(result, dict)
+
+    def test_get_registry_stats_with_tracers_no_default(self) -> None:
+        """Test getting registry stats with tracers but no default."""
+        tracer1 = MockHoneyHiveTracer(project="project1")
+        tracer2 = MockHoneyHiveTracer(project="project2")
+
+        register_tracer(mock_tracer_cast(tracer1))
+        register_tracer(mock_tracer_cast(tracer2))
+
+        result = registry.get_registry_stats()
+
+        expected = {
+            "active_tracers": 2,
+            "has_default_tracer": 0,
+        }
+        assert result == expected
+        assert isinstance(result, dict)
+
+    def test_clear_registry_functionality(self) -> None:
+        """Test clearing the registry removes all tracers and default."""
+        tracer1 = MockHoneyHiveTracer(project="project1")
+        tracer2 = MockHoneyHiveTracer(project="project2")
+
+        # Set up registry with tracers and default
+        register_tracer(mock_tracer_cast(tracer1))
+        register_tracer(mock_tracer_cast(tracer2))
+        set_default_tracer(mock_tracer_cast(tracer1))
+
+        # Verify setup
+        assert len(_TRACER_REGISTRY) == 2
+        assert registry._DEFAULT_TRACER is not None
+
+        # Clear registry
+        registry.clear_registry()
+
+        # Verify everything is cleared
+        assert len(_TRACER_REGISTRY) == 0
+        assert registry._DEFAULT_TRACER is None
+        assert get_default_tracer() is None
+        assert not get_all_tracers()

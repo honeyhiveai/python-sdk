@@ -6,7 +6,7 @@ HoneyHive Python SDK Documentation
 The HoneyHive Python SDK provides comprehensive observability, tracing, and evaluation capabilities for LLM applications with OpenTelemetry integration and a "Bring Your Own Instrumentor" architecture.
 
 .. note::
-   **API Simplified in v0.1.0**: The ``project`` parameter is now optional! Your API key is already scoped to your project, so the SDK automatically derives project information. Existing code with ``project`` parameter continues to work for backward compatibility.
+   **Project Configuration**: The ``project`` parameter is required when initializing the tracer. This identifies which HoneyHive project your traces belong to and must match your project name in the HoneyHive dashboard.
 
 🚀 **Quick Start**
 

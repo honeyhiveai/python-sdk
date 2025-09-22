@@ -57,7 +57,7 @@ This specification defines the comprehensive testing strategy for the HoneyHive 
 **🚨 MANDATORY: All Must Pass Before Commit**:
 1. Unit Tests: 100% pass rate
 2. Integration Tests: 100% pass rate  
-3. Linting: ≥8.0/10.0 pylint score
+3. Linting: ≥10.0/10.0 pylint score
 4. Formatting: 100% compliance
 5. Documentation Build: Zero warnings
 6. Example Testing: All documentation examples executable

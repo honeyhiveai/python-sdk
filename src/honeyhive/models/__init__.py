@@ -1,7 +1,7 @@
 """HoneyHive Models - Auto-generated from OpenAPI specification"""
 
 # Tracing models
-from .generated import (  # Session models; Event models; Metric models; Tool models;; Datapoint models; Dataset models; Project models; Configuration models;; Experiment/Run models; Utility models
+from .generated import (  # Generated models from OpenAPI specification
     Configuration,
     CreateDatapointRequest,
     CreateDatasetRequest,

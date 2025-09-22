@@ -1,0 +1,576 @@
+"""Context and baggage management for HoneyHive tracer.
+
+This module provides dynamic context management, baggage operations, and
+session enrichment capabilities. It uses dynamic logic for flexible
+context handling and robust state management.
+"""
+
+# pylint: disable=duplicate-code
+# Justification: Legitimate shared patterns with decorator and operations mixins.
+# Duplicate code represents common session enrichment and parameter building
+# patterns shared across core mixin classes for consistent behavior.
+
+from abc import ABC, abstractmethod
+from typing import TYPE_CHECKING, Any, Dict, Optional, cast
+
+from opentelemetry import baggage, context, trace
+from opentelemetry.context import Context
+
+from ...utils.logger import safe_log
+from ..lifecycle import force_flush_tracer, shutdown_tracer
+from ..processing.context import get_current_baggage
+
+# Context processing imports - handle potential circular imports gracefully
+try:
+    from ..processing.context import (
+        extract_context_from_carrier,
+        inject_context_into_carrier,
+    )
+except ImportError:
+    # Fallback for circular import issues
+    extract_context_from_carrier = None  # type: ignore[assignment]
+    inject_context_into_carrier = None  # type: ignore[assignment]
+
+if TYPE_CHECKING:
+    from . import HoneyHiveTracer
+
+
+class TracerContextInterface(ABC):  # pylint: disable=too-few-public-methods
+    """Abstract interface for tracer context operations.
+    This ABC defines the required methods that must be implemented by any class
+    that uses TracerContextMixin. Provides explicit type safety and clear contracts.
+
+    Note: too-few-public-methods disabled - ABC interface defines only abstract methods,
+    concrete implementations in TracerContextMixin provide public methods.
+    """
+
+    @abstractmethod
+    def _normalize_attribute_key_dynamically(self, key: str) -> str:
+        """Normalize attribute key dynamically for OpenTelemetry compatibility.
+        Args:
+            key: The attribute key to normalize
+
+        Returns:
+            Normalized key string
+        """
+
+    @abstractmethod
+    def _normalize_attribute_value_dynamically(self, value: Any) -> Any:
+        """Normalize attribute value dynamically for OpenTelemetry compatibility.
+
+        Args:
+            value: The attribute value to normalize
+
+        Returns:
+            Normalized value
+        """
+
+
+class TracerContextMixin(TracerContextInterface):
+    """Mixin providing dynamic context and baggage management for HoneyHive tracer.
+
+    This mixin uses dynamic logic for baggage operations, context propagation,
+    and session enrichment with comprehensive error handling and thread safety.
+
+    This mixin requires implementation of TracerContextInterface abstract methods.
+    """
+
+    # Type hint for mypy - these attributes will be provided by the composed class
+    if TYPE_CHECKING:
+        session_api: Optional[Any]
+        _session_id: Optional[str]
+        _baggage_lock: Any
+
+    def force_flush(self, timeout_millis: float = 30000) -> bool:
+        """Force flush tracer data with dynamic timeout handling.
+
+        Args:
+            timeout_millis: Timeout in milliseconds
+
+        Returns:
+            True if flush successful, False otherwise
+        """
+        return force_flush_tracer(self, timeout_millis)
+
+    def shutdown(self) -> None:
+        """Shutdown tracer with dynamic cleanup including cache management."""
+        # Clean up cache manager first to prevent resource leaks
+        if hasattr(self, "_cache_manager") and self._cache_manager:
+            try:
+                self._cache_manager.close_all()
+                safe_log(self, "debug", "Cache manager closed successfully")
+            except Exception as e:
+                # Graceful degradation - cache cleanup should not break shutdown
+                safe_log(
+                    self, "warning", f"Error closing cache manager during shutdown: {e}"
+                )
+
+        # Proceed with standard tracer shutdown
+        shutdown_tracer(self)
+
+    # pylint: disable=too-many-arguments
+    # Justification: Session enrichment requires multiple optional parameters
+    # for comprehensive session data (inputs, outputs, metadata, config, etc.).
+    def enrich_session(
+        self,
+        *,
+        inputs: Optional[Dict[str, Any]] = None,
+        outputs: Optional[Dict[str, Any]] = None,
+        metadata: Optional[Dict[str, Any]] = None,
+        config: Optional[Dict[str, Any]] = None,
+        feedback: Optional[Dict[str, Any]] = None,
+        metrics: Optional[Dict[str, Any]] = None,
+        **kwargs: Any,
+    ) -> None:
+        """Enrich current session with dynamic metadata management.
+
+        This method uses dynamic logic to update session metadata with
+        flexible parameter handling and automatic session detection.
+
+        Args:
+            inputs: Session input data
+            outputs: Session output data
+            metadata: Additional metadata
+            config: Configuration data
+            feedback: Feedback data
+            metrics: Metrics data
+            **kwargs: Additional dynamic parameters
+        """
+        if not self._can_enrich_session_dynamically():
+            return
+
+        try:
+            # Build session update parameters dynamically
+            update_params = self._build_session_update_params_dynamically(
+                inputs=inputs,
+                outputs=outputs,
+                metadata=metadata,
+                config=config,
+                feedback=feedback,
+                metrics=metrics,
+                **kwargs,
+            )
+
+            # Get target session ID dynamically
+            target_session_id = self._get_session_id_for_enrichment_dynamically()
+
+            if target_session_id and update_params:
+                # Update session via API
+                if self.session_api is not None:
+                    self.session_api.update_session(
+                        session_id=target_session_id, **update_params
+                    )
+                else:
+                    safe_log(self, "warning", "Session API not available for update")
+
+                safe_log(
+                    self,
+                    "debug",
+                    "Session enriched successfully",
+                    honeyhive_data={
+                        "session_id": target_session_id,
+                        "update_fields": list(update_params.keys()),
+                    },
+                )
+
+        except Exception as e:
+            safe_log(
+                self,
+                "error",
+                f"Failed to enrich session: {e}",
+                honeyhive_data={"error_type": type(e).__name__},
+            )
+
+    def session_start(self) -> Optional[str]:
+        """Start a new session and return session ID.
+
+        Creates a new session using the tracer's configuration and returns
+        the session ID. This provides backward compatibility with the original
+        SDK's session_start() method.
+
+        Returns:
+            Session ID if successful, None otherwise
+
+        Example:
+            >>> tracer = HoneyHiveTracer(api_key="...", project="...")
+            >>> session_id = tracer.session_start()
+            >>> print(f"Created session: {session_id}")
+        """
+        if not self.session_api:
+            safe_log(self, "warning", "No session API available for session creation")
+            return None
+
+        try:
+            # Use existing session creation logic from base class
+            if hasattr(self, "_create_session_dynamically"):
+                self._create_session_dynamically()  # type: ignore[attr-defined]
+                return getattr(self, "_session_id", None)
+
+            # Fallback: create session directly
+            safe_log(self, "error", "Session creation method not available")
+            return None
+        except Exception as e:
+            safe_log(
+                self,
+                "error",
+                "Failed to start session",
+                honeyhive_data={"error": str(e), "error_type": type(e).__name__},
+            )
+            return None
+
+    def _can_enrich_session_dynamically(self) -> bool:
+        """Dynamically check if session enrichment is possible."""
+        if not self.session_api:
+            safe_log(self, "debug", "No session API available for enrichment")
+            return False
+
+        if not self._get_session_id_for_enrichment_dynamically():
+            safe_log(self, "debug", "No session ID available for enrichment")
+            return False
+
+        return True
+
+    def _get_session_id_for_enrichment_dynamically(self) -> Optional[str]:
+        """Dynamically get session ID for enrichment operations."""
+        # Priority: explicit session_id, baggage session_id
+        if self._session_id:
+            return str(self._session_id)
+
+        # Check baggage dynamically
+        try:
+            # Use dynamic baggage access
+            current_baggage = get_current_baggage()
+            baggage_session = current_baggage.get("session_id")
+            if baggage_session:
+                return baggage_session
+        except Exception as e:
+            # Graceful degradation following Agent OS standards - never crash host
+            safe_log(
+                self,
+                "debug",
+                "Failed to get session from baggage",
+                honeyhive_data={"error_type": type(e).__name__},
+            )
+
+        return None
+
+    # pylint: disable=too-many-arguments
+    # Justification: Session parameter building requires multiple optional parameters
+    # for flexible session update configuration.
+    def _build_session_update_params_dynamically(
+        self,
+        *,
+        inputs: Optional[Dict[str, Any]] = None,
+        outputs: Optional[Dict[str, Any]] = None,
+        metadata: Optional[Dict[str, Any]] = None,
+        config: Optional[Dict[str, Any]] = None,
+        feedback: Optional[Dict[str, Any]] = None,
+        metrics: Optional[Dict[str, Any]] = None,
+        **kwargs: Any,
+    ) -> Dict[str, Any]:
+        """Dynamically build session update parameters."""
+        update_params = {}
+
+        # Add parameters dynamically if they have content
+        param_mapping = {
+            "inputs": inputs,
+            "outputs": outputs,
+            "metadata": metadata,
+            "config": config,
+            "feedback": feedback,
+            "metrics": metrics,
+        }
+
+        for param_name, param_value in param_mapping.items():
+            if param_value is not None and param_value:
+                update_params[param_name] = param_value
+
+        # Add additional kwargs dynamically
+        for key, value in kwargs.items():
+            if value is not None and key not in update_params:
+                update_params[key] = value
+
+        return update_params
+
+    def enrich_span(
+        self,
+        attributes: Optional[Dict[str, Any]] = None,
+        metadata: Optional[Dict[str, Any]] = None,
+        **kwargs: Any,
+    ) -> bool:
+        """Enrich current span with dynamic attribute management.
+
+        This method uses dynamic logic to add attributes to the current span
+        with flexible parameter handling and automatic span detection.
+
+        Args:
+            attributes: Span attributes to add
+            metadata: Metadata to add as attributes
+            **kwargs: Additional dynamic attributes
+
+        Returns:
+            True if enrichment succeeded, False otherwise
+        """
+        try:
+            # Get current span dynamically
+            current_span = self._get_current_span_dynamically()
+            if not current_span or not current_span.is_recording():
+                safe_log(self, "debug", "No active recording span for enrichment")
+                return False
+
+            # Build enrichment attributes dynamically
+            enrichment_attrs = self._build_enrichment_attributes_dynamically(
+                attributes=attributes, metadata=metadata, **kwargs
+            )
+
+            # Apply attributes to span
+            self._apply_attributes_to_span_dynamically(current_span, enrichment_attrs)
+
+            safe_log(
+                self,
+                "debug",
+                "Span enriched successfully",
+                honeyhive_data={"attribute_count": len(enrichment_attrs)},
+            )
+
+            return True
+
+        except Exception as e:
+            safe_log(
+                self,
+                "error",
+                f"Failed to enrich span: {e}",
+                honeyhive_data={"error_type": type(e).__name__},
+            )
+            return False
+
+    def _get_current_span_dynamically(self) -> Any:
+        """Dynamically get the current active span."""
+        try:
+            return trace.get_current_span()
+        except Exception as e:
+            # Graceful degradation following Agent OS standards - never crash host
+            safe_log(
+                self,
+                "debug",
+                "Failed to get current span",
+                honeyhive_data={"error_type": type(e).__name__},
+            )
+            return None
+
+    def _build_enrichment_attributes_dynamically(
+        self,
+        attributes: Optional[Dict[str, Any]] = None,
+        metadata: Optional[Dict[str, Any]] = None,
+        **kwargs: Any,
+    ) -> Dict[str, Any]:
+        """Dynamically build enrichment attributes from multiple sources."""
+        enrichment_attrs = {}
+
+        # Add direct attributes
+        if attributes:
+            enrichment_attrs.update(attributes)
+
+        # Add metadata with prefix
+        if metadata:
+            for key, value in metadata.items():
+                prefixed_key = f"honeyhive.metadata.{key}"
+                enrichment_attrs[prefixed_key] = value
+
+        # Add kwargs dynamically
+        for key, value in kwargs.items():
+            if value is not None:
+                # Normalize key for OpenTelemetry
+                normalized_key = self._normalize_attribute_key_dynamically(key)
+                enrichment_attrs[normalized_key] = value
+
+        return enrichment_attrs
+
+    def _apply_attributes_to_span_dynamically(
+        self, span: Any, attributes: Dict[str, Any]
+    ) -> None:
+        """Dynamically apply attributes to span with error handling."""
+        for key, value in attributes.items():
+            try:
+                # Normalize value for OpenTelemetry compatibility
+                normalized_value = self._normalize_attribute_value_dynamically(value)
+                if normalized_value is not None:
+                    span.set_attribute(key, normalized_value)
+            except Exception as e:
+                safe_log(
+                    self,
+                    "warning",
+                    f"Failed to set span attribute '{key}': {e}",
+                    honeyhive_data={"attribute_key": key},
+                )
+
+    def get_baggage(self, key: str) -> Optional[str]:
+        """Get baggage value using dynamic context access.
+
+        Args:
+            key: Baggage key to retrieve
+
+        Returns:
+            Baggage value if found, None otherwise
+        """
+        try:
+            # Use dynamic baggage access with error handling
+            current_baggage = get_current_baggage()
+
+            # Dynamic key lookup with normalization
+            normalized_key = self._normalize_baggage_key_dynamically(key)
+
+            # Try multiple key formats dynamically
+            key_variants = [key, normalized_key, key.lower(), key.upper()]
+
+            for variant in key_variants:
+                if variant in current_baggage:
+                    value = current_baggage[variant]
+                    safe_log(
+                        self,
+                        "debug",
+                        f"Retrieved baggage: {key}",
+                        honeyhive_data={"key": key, "found_as": variant},
+                    )
+                    return value
+
+            return None
+
+        except Exception as e:
+            safe_log(
+                self,
+                "warning",
+                f"Failed to get baggage '{key}': {e}",
+                honeyhive_data={"error_type": type(e).__name__},
+            )
+            return None
+
+    def _normalize_baggage_key_dynamically(self, key: str) -> str:
+        """Dynamically normalize baggage key for consistent access."""
+        # Replace common separators with underscores
+        normalized = key.replace("-", "_").replace(".", "_").replace(" ", "_")
+        return normalized.lower()
+
+    def set_baggage(self, key: str, value: str) -> None:
+        """Set baggage value using dynamic context management.
+
+        Args:
+            key: Baggage key to set
+            value: Baggage value to set
+        """
+        if not key or value is None:
+            return
+
+        try:
+            with self._baggage_lock:
+                # Dynamic baggage setting with context management
+                current_ctx = context.get_current()
+
+                # Normalize key and value dynamically
+                normalized_key = self._normalize_baggage_key_dynamically(key)
+                normalized_value = str(value) if value is not None else ""
+
+                # Set baggage in current context
+                new_ctx = baggage.set_baggage(
+                    normalized_key, normalized_value, current_ctx
+                )
+
+                # Attach context (implementation depends on usage pattern)
+                context.attach(new_ctx)
+
+                safe_log(
+                    self,
+                    "debug",
+                    f"Set baggage: {key}",
+                    honeyhive_data={
+                        "key": key,
+                        "normalized_key": normalized_key,
+                        "value_length": len(normalized_value),
+                    },
+                )
+
+        except Exception as e:
+            safe_log(
+                self,
+                "error",
+                f"Failed to set baggage '{key}': {e}",
+                honeyhive_data={"error_type": type(e).__name__},
+            )
+
+    def inject_context(self, carrier: Dict[str, str]) -> None:
+        """Inject current context into carrier using dynamic propagation.
+
+        Args:
+            carrier: Dictionary to inject context into
+        """
+        try:
+            # Dynamic context injection with error handling
+            if inject_context_into_carrier is not None:
+                inject_context_into_carrier(carrier, cast("HoneyHiveTracer", self))
+            else:
+                safe_log(self, "warning", "Context injection not available")
+
+            safe_log(
+                self,
+                "debug",
+                "Context injected into carrier",
+                honeyhive_data={
+                    "carrier_keys": list(carrier.keys()),
+                    "injection_count": len(carrier),
+                },
+            )
+
+        except Exception as e:
+            safe_log(
+                self,
+                "error",
+                f"Failed to inject context: {e}",
+                honeyhive_data={"error_type": type(e).__name__},
+            )
+
+    def extract_context(self, carrier: Dict[str, str]) -> Optional["Context"]:
+        """Extract context from carrier using dynamic propagation.
+
+        Args:
+            carrier: Dictionary to extract context from
+
+        Returns:
+            Extracted context if successful, None otherwise
+        """
+        try:
+            # Dynamic context extraction with validation
+            if extract_context_from_carrier is not None:
+                extracted_context = extract_context_from_carrier(
+                    carrier, cast("HoneyHiveTracer", self)
+                )
+            else:
+                extracted_context = None
+
+            if extracted_context:
+                safe_log(
+                    self,
+                    "debug",
+                    "Context extracted from carrier",
+                    honeyhive_data={
+                        "carrier_keys": list(carrier.keys()),
+                        "extraction_successful": True,
+                    },
+                )
+                return extracted_context
+
+            safe_log(
+                self,
+                "debug",
+                "No context found in carrier",
+                honeyhive_data={"carrier_keys": list(carrier.keys())},
+            )
+            return None
+
+        except Exception as e:
+            safe_log(
+                self,
+                "error",
+                f"Failed to extract context: {e}",
+                honeyhive_data={"error_type": type(e).__name__},
+            )
+            return None

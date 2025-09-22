@@ -33,9 +33,8 @@ class DatapointsAPI(BaseAPI):
                 linked_datasets=request.linked_datasets,
                 history=request.history,
             )
-        else:
-            # Legacy format: direct datapoint object
-            return Datapoint(**data)
+        # Legacy format: direct datapoint object
+        return Datapoint(**data)
 
     def create_datapoint_from_dict(self, datapoint_data: dict) -> Datapoint:
         """Create a new datapoint from dictionary (legacy method)."""
@@ -59,9 +58,8 @@ class DatapointsAPI(BaseAPI):
                 linked_datasets=datapoint_data.get("linked_datasets"),
                 history=datapoint_data.get("history"),
             )
-        else:
-            # Legacy format: direct datapoint object
-            return Datapoint(**data)
+        # Legacy format: direct datapoint object
+        return Datapoint(**data)
 
     async def create_datapoint_async(
         self, request: CreateDatapointRequest
@@ -89,9 +87,8 @@ class DatapointsAPI(BaseAPI):
                 linked_datasets=request.linked_datasets,
                 history=request.history,
             )
-        else:
-            # Legacy format: direct datapoint object
-            return Datapoint(**data)
+        # Legacy format: direct datapoint object
+        return Datapoint(**data)
 
     async def create_datapoint_from_dict_async(self, datapoint_data: dict) -> Datapoint:
         """Create a new datapoint asynchronously from dictionary (legacy method)."""
@@ -115,9 +112,8 @@ class DatapointsAPI(BaseAPI):
                 linked_datasets=datapoint_data.get("linked_datasets"),
                 history=datapoint_data.get("history"),
             )
-        else:
-            # Legacy format: direct datapoint object
-            return Datapoint(**data)
+        # Legacy format: direct datapoint object
+        return Datapoint(**data)
 
     def get_datapoint(self, datapoint_id: str) -> Datapoint:
         """Get a datapoint by ID."""
@@ -135,9 +131,8 @@ class DatapointsAPI(BaseAPI):
             if "id" in datapoint_data and "_id" not in datapoint_data:
                 datapoint_data["_id"] = datapoint_data["id"]
             return Datapoint(**datapoint_data)
-        else:
-            # Fallback for unexpected format
-            return Datapoint(**data)
+        # Fallback for unexpected format
+        return Datapoint(**data)
 
     async def get_datapoint_async(self, datapoint_id: str) -> Datapoint:
         """Get a datapoint by ID asynchronously."""
@@ -155,9 +150,8 @@ class DatapointsAPI(BaseAPI):
             if "id" in datapoint_data and "_id" not in datapoint_data:
                 datapoint_data["_id"] = datapoint_data["id"]
             return Datapoint(**datapoint_data)
-        else:
-            # Fallback for unexpected format
-            return Datapoint(**data)
+        # Fallback for unexpected format
+        return Datapoint(**data)
 
     def list_datapoints(
         self,
@@ -174,9 +168,9 @@ class DatapointsAPI(BaseAPI):
 
         response = self.client.request("GET", "/datapoints", params=params)
         data = response.json()
-        return [
-            Datapoint(**datapoint_data) for datapoint_data in data.get("datapoints", [])
-        ]
+        return self._process_data_dynamically(
+            data.get("datapoints", []), Datapoint, "datapoints"
+        )
 
     async def list_datapoints_async(
         self,
@@ -193,9 +187,9 @@ class DatapointsAPI(BaseAPI):
 
         response = await self.client.request_async("GET", "/datapoints", params=params)
         data = response.json()
-        return [
-            Datapoint(**datapoint_data) for datapoint_data in data.get("datapoints", [])
-        ]
+        return self._process_data_dynamically(
+            data.get("datapoints", []), Datapoint, "datapoints"
+        )
 
     def update_datapoint(
         self, datapoint_id: str, request: UpdateDatapointRequest

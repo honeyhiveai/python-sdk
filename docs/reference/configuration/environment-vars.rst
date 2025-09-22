@@ -55,8 +55,8 @@ Project Configuration
      - Default
      - Description
    * - ``HH_PROJECT``
-     - *[Deprecated - Ignored]*
-     - **[Deprecated]** Ignored - project derived from API key
+     - *Required*
+     - Project name for HoneyHive operations. Must match your HoneyHive project.
    * - ``HH_SOURCE``
      - ``"unknown"``
      - Source environment identifier (e.g., production, staging)

@@ -54,7 +54,7 @@ git push origin branch-name
 #### Code Quality Gates
 - [ ] **Black formatting**: 88-character lines, no formatting violations
 - [ ] **isort imports**: Properly sorted and grouped imports
-- [ ] **pylint analysis**: Score ≥ 8.0/10.0, no critical violations
+- [ ] **pylint analysis**: Score ≥ 10.0/10.0, no critical violations
 - [ ] **mypy typing**: 100% type coverage, no type errors
 - [ ] **yamllint**: YAML files properly formatted
 
@@ -192,7 +192,7 @@ def implement_feature(feature_spec):
 #### Code Quality Metrics
 - **Test Coverage**: Maintain ≥70% overall, ≥80% for new code
 - **Type Coverage**: 100% type annotations
-- **Lint Score**: Maintain ≥8.0/10.0 pylint score
+- **Lint Score**: Maintain ≥10.0/10.0 pylint score
 - **Documentation Coverage**: 100% API documentation
 
 #### Development Efficiency Metrics

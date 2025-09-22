@@ -1,12 +1,20 @@
 """Real API integration tests for multi-tracer functionality in HoneyHive."""
 
+# pylint: disable=duplicate-code  # Integration tests share common patterns
+
+import asyncio
+import threading
 import time
+from typing import Any
 
 import pytest
 
-from honeyhive.models import EventType
-from honeyhive.tracer.decorators import atrace, trace
-from honeyhive.tracer.otel_tracer import HoneyHiveTracer
+from honeyhive.tracer import atrace, trace
+from tests.utils import (  # pylint: disable=no-name-in-module
+    generate_test_id,
+    verify_span_export,
+    verify_tracer_span,
+)
 
 
 @pytest.mark.integration
@@ -16,138 +24,143 @@ class TestRealAPIMultiTracer:
     """Test multi-tracer functionality with real API calls."""
 
     def test_real_session_creation_with_multiple_tracers(
-        self, real_api_key, real_project, real_source
-    ):
-        """Test that multiple tracers can create real sessions independently."""
-        # Create multiple tracers with different session names
-        tracer1 = HoneyHiveTracer(
-            api_key=real_api_key,
-            project=real_project,
-            source=real_source,
-            session_name="real-session-test-1",
-            test_mode=False,
-            disable_http_tracing=True,
-        )
+        self, tracer_factory: Any, integration_client: Any, real_project: Any
+    ) -> None:
+        """Test that multiple tracers can create real sessions independently with
+        backend verification."""
 
-        tracer2 = HoneyHiveTracer(
-            api_key=real_api_key,
-            project=real_project,
-            source=real_source,
-            session_name="real-session-test-2",
-            test_mode=False,
-            disable_http_tracing=True,
-        )
+        # Create multiple tracers with standardized configuration
+        tracer1 = tracer_factory("real-session-1")
+        tracer2 = tracer_factory("real-session-2")
 
         # Verify they're independent
         assert tracer1 is not tracer2
         assert tracer1.session_name != tracer2.session_name
 
-        # Test real session creation with both tracers
-        with tracer1.start_span("real_session1") as span1:
-            span1.set_attribute("session", "tracer1")
-            span1.add_event(
-                "session_started", {"tracer": "tracer1", "timestamp": time.time()}
-            )
-            # Simulate some work
-            time.sleep(0.1)
-            span1.set_attribute("duration_ms", 100)
+        # Test real session creation with both tracers and backend verification
+        _, unique_id1 = generate_test_id("real_session_creation", "tracer1")
+        verified_event1 = verify_tracer_span(
+            tracer=tracer1,
+            client=integration_client,
+            project=real_project,
+            span_name="real_session1",
+            unique_identifier=unique_id1,
+            span_attributes={
+                "session": "tracer1",
+                "test.type": "real_session_creation",
+                "duration_ms": 100,
+            },
+        )
 
-        with tracer2.start_span("real_session2") as span2:
-            span2.set_attribute("session", "tracer2")
-            span2.add_event(
-                "session_started", {"tracer": "tracer2", "timestamp": time.time()}
-            )
-            # Simulate different work
-            time.sleep(0.05)
-            span2.set_attribute("duration_ms", 50)
+        _, unique_id2 = generate_test_id("real_session_creation", "tracer2")
+        verified_event2 = verify_tracer_span(
+            tracer=tracer2,
+            client=integration_client,
+            project=real_project,
+            span_name="real_session2",
+            unique_identifier=unique_id2,
+            span_attributes={
+                "session": "tracer2",
+                "test.type": "real_session_creation",
+                "duration_ms": 50,
+            },
+        )
 
-        # Clean up
-        tracer1.shutdown()
-        tracer2.shutdown()
+        # Verify both spans were exported to backend
+        assert verified_event1.event_name == "real_session1"
+        assert verified_event2.event_name == "real_session2"
+
+        # Verify spans have different session contexts
+        assert verified_event1.session_id != verified_event2.session_id
+        # Cleanup handled by tracer_factory fixture
 
     def test_real_event_creation_with_multiple_tracers(
-        self, real_api_key, real_project, real_source
-    ):
-        """Test that multiple tracers can create real events independently."""
-        # Create multiple tracers
-        tracer1 = HoneyHiveTracer(
-            api_key=real_api_key,
+        self, tracer_factory: Any, integration_client: Any, real_project: Any
+    ) -> None:
+        """Test that multiple tracers can create real events independently with
+        backend verification."""
+
+        # Create multiple tracers with standardized configuration
+        tracer1 = tracer_factory("real-event-1")
+        tracer2 = tracer_factory("real-event-2")
+
+        # Create events with both tracers and backend verification
+        _, unique_id1 = generate_test_id("real_event_creation", "tracer1")
+        verified_event1 = verify_tracer_span(
+            tracer=tracer1,
+            client=integration_client,
             project=real_project,
-            source=real_source,
-            session_name="real-event-test-1",
-            test_mode=False,
-            disable_http_tracing=True,
+            span_name="event_creation1",
+            unique_identifier=unique_id1,
+            span_attributes={
+                "event_type": "model_inference",
+                "model": "gpt-4",
+                "tracer": "tracer1",
+                "test.type": "real_event_creation",
+            },
         )
 
-        tracer2 = HoneyHiveTracer(
-            api_key=real_api_key,
+        _, unique_id2 = generate_test_id("real_event_creation", "tracer2")
+        verified_event2 = verify_tracer_span(
+            tracer=tracer2,
+            client=integration_client,
             project=real_project,
-            source=real_source,
-            session_name="real-event-test-2",
-            test_mode=False,
-            disable_http_tracing=True,
+            span_name="event_creation2",
+            unique_identifier=unique_id2,
+            span_attributes={
+                "event_type": "data_processing",
+                "dataset": "test_dataset",
+                "tracer": "tracer2",
+                "test.type": "real_event_creation",
+            },
         )
 
-        # Create events with both tracers
-        with tracer1.start_span("event_creation1") as span1:
-            span1.set_attribute("event_type", "model_inference")
-            span1.set_attribute("model", "gpt-4")
-            span1.set_attribute("tracer", "tracer1")
+        # Verify both events were exported to backend
+        assert verified_event1.event_name == "event_creation1"
+        assert verified_event2.event_name == "event_creation2"
 
-            # Simulate model inference
-            span1.add_event("inference_started", {"input_tokens": 100})
-            time.sleep(0.1)
-            span1.add_event(
-                "inference_completed", {"output_tokens": 150, "latency_ms": 100}
-            )
-
-        with tracer2.start_span("event_creation2") as span2:
-            span2.set_attribute("event_type", "data_processing")
-            span2.set_attribute("dataset", "test_dataset")
-            span2.set_attribute("tracer", "tracer2")
-
-            # Simulate data processing
-            span2.add_event("processing_started", {"records": 1000})
-            time.sleep(0.05)
-            span2.add_event(
-                "processing_completed", {"processed_records": 1000, "latency_ms": 50}
-            )
-
-        # Clean up
-        tracer1.shutdown()
-        tracer2.shutdown()
+        # Verify events have different session contexts
+        assert verified_event1.session_id != verified_event2.session_id
+        # Cleanup handled by tracer_factory fixture
 
     def test_real_decorator_integration_with_multiple_tracers(
-        self, real_api_key, real_project, real_source
-    ):
-        """Test @trace decorator with multiple tracers using real API."""
-        # Create multiple tracers
-        tracer1 = HoneyHiveTracer(
-            api_key=real_api_key,
-            project=real_project,
-            source=real_source,
-            session_name="decorator-test-1",
-            test_mode=False,
-            disable_http_tracing=True,
-        )
+        self, tracer_factory: Any, integration_client: Any, real_project: Any
+    ) -> None:
+        """Test @trace decorator with multiple tracers using real API with backend
+        verification."""
 
-        tracer2 = HoneyHiveTracer(
-            api_key=real_api_key,
-            project=real_project,
-            source=real_source,
-            session_name="decorator-test-2",
-            test_mode=False,
-            disable_http_tracing=True,
-        )
+        # Create multiple tracers
+        tracer1 = tracer_factory("decorator-test-1")
+        tracer2 = tracer_factory("decorator-test-2")
+
+        # Generate unique identifiers for backend verification
+        _, unique_id1 = generate_test_id("decorator_integration", "function1")
+        _, unique_id2 = generate_test_id("decorator_integration", "function2")
 
         # Test functions decorated with different tracers
-        @trace(event_name="function1", event_type=EventType.tool, tracer=tracer1)
-        def function1(x, y):
+        @trace(  # type: ignore[misc]
+            event_name="function1",
+            event_type="tool",
+            tracer=tracer1,
+            metadata={
+                "test.unique_id": unique_id1,
+                "test.type": "decorator_integration",
+            },
+        )
+        def function1(x: Any, y: Any) -> Any:
             time.sleep(0.1)  # Simulate work
             return x + y
 
-        @trace(event_name="function2", event_type=EventType.tool, tracer=tracer2)
-        def function2(x, y):
+        @trace(  # type: ignore[misc]
+            event_name="function2",
+            event_type="tool",
+            tracer=tracer2,
+            metadata={
+                "test.unique_id": unique_id2,
+                "test.type": "decorator_integration",
+            },
+        )
+        def function2(x: Any, y: Any) -> Any:
             time.sleep(0.05)  # Simulate different work
             return x * y
 
@@ -163,46 +176,54 @@ class TestRealAPIMultiTracer:
         assert tracer2.project == real_project
         assert tracer1.session_name != tracer2.session_name
 
-        # Clean up
-        tracer1.shutdown()
-        tracer2.shutdown()
+        # Backend verification for both decorated functions
+        verified_event1 = verify_span_export(
+            client=integration_client,
+            project=real_project,
+            unique_identifier=unique_id1,
+            expected_event_name="function1",
+        )
+
+        verified_event2 = verify_span_export(
+            client=integration_client,
+            project=real_project,
+            unique_identifier=unique_id2,
+            expected_event_name="function2",
+        )
+
+        # Verify both spans were exported to backend
+        assert verified_event1.event_name == "function1"
+        assert verified_event2.event_name == "function2"
+
+        # Verify spans have different session contexts
+        assert verified_event1.session_id != verified_event2.session_id
+        # Cleanup handled by tracer_factory fixture
 
     def test_real_async_decorator_integration_with_multiple_tracers(
-        self, real_api_key, real_project, real_source
-    ):
+        self, tracer_factory: Any, real_project: Any
+    ) -> None:
         """Test @atrace decorator with multiple tracers using real API."""
         # Create multiple tracers
-        tracer1 = HoneyHiveTracer(
-            api_key=real_api_key,
-            project=real_project,
-            source=real_source,
-            session_name="async-decorator-test-1",
-            test_mode=False,
-            disable_http_tracing=True,
-        )
+        tracer1 = tracer_factory("async-decorator-test-1")
 
-        tracer2 = HoneyHiveTracer(
-            api_key=real_api_key,
-            project=real_project,
-            source=real_source,
-            session_name="async-decorator-test-2",
-            test_mode=False,
-            disable_http_tracing=True,
-        )
+        tracer2 = tracer_factory("async-decorator-test-2")
 
         # Test async functions decorated with different tracers
-        @atrace(event_name="async_function1", event_type=EventType.tool, tracer=tracer1)
-        async def async_function1(x, y):
+        @atrace(  # type: ignore[misc]
+            event_name="async_function1", event_type="tool", tracer=tracer1
+        )
+        async def async_function1(x: Any, y: Any) -> Any:
             await asyncio.sleep(0.1)  # Simulate async work
             return x + y
 
-        @atrace(event_name="async_function2", event_type=EventType.tool, tracer=tracer2)
-        async def async_function2(x, y):
+        @atrace(  # type: ignore[misc]
+            event_name="async_function2", event_type="tool", tracer=tracer2
+        )
+        async def async_function2(x: Any, y: Any) -> Any:
             await asyncio.sleep(0.05)  # Simulate different async work
             return x * y
 
         # Execute both async functions
-        import asyncio
 
         result1 = asyncio.run(async_function1(5, 3))
         result2 = asyncio.run(async_function2(4, 6))
@@ -214,39 +235,19 @@ class TestRealAPIMultiTracer:
         assert tracer1.project == real_project
         assert tracer2.project == real_project
         assert tracer1.session_name != tracer2.session_name
+        # Cleanup handled by tracer_factory fixture
 
-        # Clean up
-        tracer1.shutdown()
-        tracer2.shutdown()
-
-    def test_real_concurrent_tracer_usage(
-        self, real_api_key, real_project, real_source
-    ):
+    def test_real_concurrent_tracer_usage(self, tracer_factory: Any) -> None:
         """Test concurrent usage of multiple tracers with real API."""
-        import threading
 
         # Create multiple tracers
-        tracer1 = HoneyHiveTracer(
-            api_key=real_api_key,
-            project=real_project,
-            source=real_source,
-            session_name="concurrent-test-1",
-            test_mode=False,
-            disable_http_tracing=True,
-        )
+        tracer1 = tracer_factory("concurrent-test-1")
 
-        tracer2 = HoneyHiveTracer(
-            api_key=real_api_key,
-            project=real_project,
-            source=real_source,
-            session_name="concurrent-test-2",
-            test_mode=False,
-            disable_http_tracing=True,
-        )
+        tracer2 = tracer_factory("concurrent-test-2")
 
         results = []
 
-        def use_tracer1():
+        def use_tracer1() -> None:
             with tracer1.start_span("thread1_span") as span:
                 span.set_attribute("thread", "thread1")
                 span.set_attribute("tracer", "tracer1")
@@ -255,7 +256,7 @@ class TestRealAPIMultiTracer:
                 span.add_event("work_completed", {"duration_ms": 100})
                 results.append("tracer1_used")
 
-        def use_tracer2():
+        def use_tracer2() -> None:
             with tracer2.start_span("thread2_span") as span:
                 span.set_attribute("thread", "thread2")
                 span.set_attribute("tracer", "tracer2")
@@ -278,29 +279,19 @@ class TestRealAPIMultiTracer:
         assert "tracer1_used" in results
         assert "tracer2_used" in results
         assert len(results) == 2
-
-        # Clean up
-        tracer1.shutdown()
-        tracer2.shutdown()
+        # Cleanup handled by tracer_factory fixture
 
     def test_real_tracer_lifecycle_with_api_calls(
-        self, real_api_key, real_project, real_source
-    ):
+        self, tracer_factory: Any, real_project: Any, real_source: Any
+    ) -> None:
         """Test complete tracer lifecycle with real API calls."""
         # Create tracer
-        tracer = HoneyHiveTracer(
-            api_key=real_api_key,
-            project=real_project,
-            source=real_source,
-            session_name="lifecycle-test",
-            test_mode=False,
-            disable_http_tracing=True,
-        )
+        tracer = tracer_factory("lifecycle-test")
 
         # Test initialization
         assert tracer.project == real_project
         assert tracer.source == real_source
-        assert tracer.session_name == "lifecycle-test"
+        assert "lifecycle-test" in tracer.session_name
 
         # Test span creation and API communication
         with tracer.start_span("lifecycle_span") as span:
@@ -320,33 +311,18 @@ class TestRealAPIMultiTracer:
             span.add_event("work_completed", {"duration_ms": 150})
 
         # Test shutdown
-        tracer.shutdown()
-
+        # Cleanup handled by tracer_factory fixture
         # Verify tracer is properly shut down
         assert hasattr(tracer, "shutdown")
 
     def test_real_error_handling_with_multiple_tracers(
-        self, real_api_key, real_project, real_source
-    ):
+        self, tracer_factory: Any
+    ) -> None:
         """Test error handling with multiple tracers using real API."""
         # Create multiple tracers
-        tracer1 = HoneyHiveTracer(
-            api_key=real_api_key,
-            project=real_project,
-            source=real_source,
-            session_name="error-test-1",
-            test_mode=False,
-            disable_http_tracing=True,
-        )
+        tracer1 = tracer_factory("error-test-1")
 
-        tracer2 = HoneyHiveTracer(
-            api_key=real_api_key,
-            project=real_project,
-            source=real_source,
-            session_name="error-test-2",
-            test_mode=False,
-            disable_http_tracing=True,
-        )
+        tracer2 = tracer_factory("error-test-2")
 
         # Test error handling in tracer1
         try:
@@ -363,33 +339,16 @@ class TestRealAPIMultiTracer:
             span.set_attribute("status", "working")
             span.add_event("operation_successful", {"tracer": "tracer2"})
             assert span.is_recording()
-
-        # Clean up
-        tracer1.shutdown()
-        tracer2.shutdown()
+        # Cleanup handled by tracer_factory fixture
 
     def test_real_performance_monitoring_with_multiple_tracers(
-        self, real_api_key, real_project, real_source
-    ):
+        self, tracer_factory: Any
+    ) -> None:
         """Test performance monitoring with multiple tracers using real API."""
         # Create multiple tracers
-        tracer1 = HoneyHiveTracer(
-            api_key=real_api_key,
-            project=real_project,
-            source=real_source,
-            session_name="performance-test-1",
-            test_mode=False,
-            disable_http_tracing=True,
-        )
+        tracer1 = tracer_factory("performance-test-1")
 
-        tracer2 = HoneyHiveTracer(
-            api_key=real_api_key,
-            project=real_project,
-            source=real_source,
-            session_name="performance-test-2",
-            test_mode=False,
-            disable_http_tracing=True,
-        )
+        tracer2 = tracer_factory("performance-test-2")
 
         # Test performance monitoring with tracer1
         with tracer1.start_span("performance_span1") as span1:
@@ -418,33 +377,16 @@ class TestRealAPIMultiTracer:
             span2.set_attribute("duration_ms", duration)
             span2.set_attribute("operation", "performance_test_2")
             span2.add_event("performance_measured", {"latency_ms": duration})
-
-        # Clean up
-        tracer1.shutdown()
-        tracer2.shutdown()
+        # Cleanup handled by tracer_factory fixture
 
     def test_real_metadata_and_attributes_with_multiple_tracers(
-        self, real_api_key, real_project, real_source
-    ):
+        self, tracer_factory: Any
+    ) -> None:
         """Test metadata and attributes with multiple tracers using real API."""
         # Create multiple tracers
-        tracer1 = HoneyHiveTracer(
-            api_key=real_api_key,
-            project=real_project,
-            source=real_source,
-            session_name="metadata-test-1",
-            test_mode=False,
-            disable_http_tracing=True,
-        )
+        tracer1 = tracer_factory("metadata-test-1")
 
-        tracer2 = HoneyHiveTracer(
-            api_key=real_api_key,
-            project=real_project,
-            source=real_source,
-            session_name="metadata-test-2",
-            test_mode=False,
-            disable_http_tracing=True,
-        )
+        tracer2 = tracer_factory("metadata-test-2")
 
         # Test rich metadata with tracer1
         with tracer1.start_span("metadata_span1") as span1:
@@ -478,7 +420,4 @@ class TestRealAPIMultiTracer:
                     "user_agent": "test-client",
                 },
             )
-
-        # Clean up
-        tracer1.shutdown()
-        tracer2.shutdown()
+        # Cleanup handled by tracer_factory fixture

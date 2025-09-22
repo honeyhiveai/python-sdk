@@ -1,16 +1,19 @@
 """Session API module for HoneyHive."""
 
+# pylint: disable=useless-parent-delegation
+# Note: BaseAPI.__init__ performs important setup (error_handler, _client_name)
+# The delegation is not useless despite pylint's false positive
+
 from typing import TYPE_CHECKING, Any, Optional
 
 from ..models import Event, SessionStartRequest
-from ..utils.logger import get_logger
 from .base import BaseAPI
 
 if TYPE_CHECKING:
     from .client import HoneyHive
 
 
-class SessionStartResponse:
+class SessionStartResponse:  # pylint: disable=too-few-public-methods
     """Response from starting a session.
 
     Contains the result of a session creation operation including
@@ -44,7 +47,7 @@ class SessionStartResponse:
         return self.session_id
 
 
-class SessionResponse:
+class SessionResponse:  # pylint: disable=too-few-public-methods
     """Response from getting a session.
 
     Contains the session data retrieved from the API.
@@ -63,9 +66,9 @@ class SessionAPI(BaseAPI):
     """API for session operations."""
 
     def __init__(self, client: "HoneyHive") -> None:
-        """Initialize the SessionAPI with a logger."""
+        """Initialize the SessionAPI."""
         super().__init__(client)
-        self.logger = get_logger(f"honeyhive.api.{self.__class__.__name__}")
+        # Session-specific initialization can be added here if needed
 
     def create_session(self, session: SessionStartRequest) -> SessionStartResponse:
         """Create a new session using SessionStartRequest model."""
@@ -107,7 +110,8 @@ class SessionAPI(BaseAPI):
     async def create_session_from_dict_async(
         self, session_data: dict
     ) -> SessionStartResponse:
-        """Create a new session asynchronously from session data dictionary (legacy method)."""
+        """Create a new session asynchronously from session data dictionary \
+        (legacy method)."""
         # Handle both direct session data and nested session data
         if "session" in session_data:
             request_data = session_data
@@ -145,28 +149,28 @@ class SessionAPI(BaseAPI):
         )
 
         data = response.json()
-        self.logger.debug(
-            "Session API response", honeyhive_data={"response_data": data}
+        self.client._log(  # pylint: disable=protected-access
+            "debug", "Session API response", honeyhive_data={"response_data": data}
         )
 
         # Check if session_id exists in the response
         if "session_id" in data:
             return SessionStartResponse(session_id=data["session_id"])
-        elif "session" in data and "session_id" in data["session"]:
+        if "session" in data and "session_id" in data["session"]:
             return SessionStartResponse(session_id=data["session"]["session_id"])
-        else:
-            self.logger.warning(
-                "Unexpected session response structure",
-                honeyhive_data={"response_data": data},
-            )
-            # Try to find session_id in nested structures
-            if "session" in data:
-                session_data = data["session"]
-                if isinstance(session_data, dict) and "session_id" in session_data:
-                    return SessionStartResponse(session_id=session_data["session_id"])
+        self.client._log(  # pylint: disable=protected-access
+            "warning",
+            "Unexpected session response structure",
+            honeyhive_data={"response_data": data},
+        )
+        # Try to find session_id in nested structures
+        if "session" in data:
+            session_data = data["session"]
+            if isinstance(session_data, dict) and "session_id" in session_data:
+                return SessionStartResponse(session_id=session_data["session_id"])
 
-            # If we still can't find it, raise an error with the full response
-            raise ValueError(f"Session ID not found in response: {data}")
+        # If we still can't find it, raise an error with the full response
+        raise ValueError(f"Session ID not found in response: {data}")
 
     async def start_session_async(
         self,

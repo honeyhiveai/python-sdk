@@ -51,8 +51,10 @@ class ConfigurationsAPI(BaseAPI):
     ) -> CreateConfigurationResponse:
         """Create a new configuration from dictionary (legacy method).
 
-        Note: This method now returns CreateConfigurationResponse to match the actual API behavior.
-        The API returns MongoDB-style operation results, not the full Configuration object.
+        Note: This method now returns CreateConfigurationResponse to match the \
+        actual API behavior.
+        The API returns MongoDB-style operation results, not the full \
+        Configuration object.
         """
         response = self.client.request("POST", "/configurations", json=config_data)
 
@@ -66,7 +68,8 @@ class ConfigurationsAPI(BaseAPI):
     async def create_configuration_async(
         self, request: PostConfigurationRequest
     ) -> CreateConfigurationResponse:
-        """Create a new configuration asynchronously using PostConfigurationRequest model."""
+        """Create a new configuration asynchronously using \
+        PostConfigurationRequest model."""
         response = await self.client.request_async(
             "POST",
             "/configurations",
@@ -85,8 +88,10 @@ class ConfigurationsAPI(BaseAPI):
     ) -> CreateConfigurationResponse:
         """Create a new configuration asynchronously from dictionary (legacy method).
 
-        Note: This method now returns CreateConfigurationResponse to match the actual API behavior.
-        The API returns MongoDB-style operation results, not the full Configuration object.
+        Note: This method now returns CreateConfigurationResponse to match the \
+        actual API behavior.
+        The API returns MongoDB-style operation results, not the full \
+        Configuration object.
         """
         response = await self.client.request_async(
             "POST", "/configurations", json=config_data

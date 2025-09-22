@@ -67,7 +67,9 @@ class ProjectsAPI(BaseAPI):
 
         response = self.client.request("GET", "/projects", params=params)
         data = response.json()
-        return [Project(**project_data) for project_data in data.get("projects", [])]
+        return self._process_data_dynamically(
+            data.get("projects", []), Project, "projects"
+        )
 
     async def list_projects_async(self, limit: int = 100) -> List[Project]:
         """List projects asynchronously with optional filtering."""
@@ -75,7 +77,9 @@ class ProjectsAPI(BaseAPI):
 
         response = await self.client.request_async("GET", "/projects", params=params)
         data = response.json()
-        return [Project(**project_data) for project_data in data.get("projects", [])]
+        return self._process_data_dynamically(
+            data.get("projects", []), Project, "projects"
+        )
 
     def update_project(self, project_id: str, request: UpdateProjectRequest) -> Project:
         """Update a project using UpdateProjectRequest model."""

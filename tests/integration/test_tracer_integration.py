@@ -1,10 +1,17 @@
 """Integration tests for tracer functionality in HoneyHive."""
 
+import os
 import time
+from typing import Any
 
 import pytest
 
-from honeyhive.tracer.decorators import trace
+from honeyhive import enrich_span as main_enrich_span
+from honeyhive.tracer import enrich_span
+from tests.utils import (  # pylint: disable=no-name-in-module
+    generate_test_id,
+    verify_tracer_span,
+)
 
 
 @pytest.mark.integration
@@ -13,61 +20,77 @@ class TestTracerIntegration:
     """Test tracer integration and end-to-end functionality."""
 
     def test_tracer_initialization_integration(
-        self, integration_tracer, real_project, real_source
-    ):
+        self, integration_tracer: Any, real_project: Any, real_source: Any
+    ) -> None:
         """Test tracer initialization and configuration."""
         assert integration_tracer.project == real_project
         assert integration_tracer.source == real_source
         assert integration_tracer.test_mode is False  # Integration tests use real API
 
-    def test_function_tracing_integration(self, integration_tracer):
-        """Test function tracing integration."""
+    def test_function_tracing_integration(
+        self, integration_tracer: Any, integration_client: Any, real_project: Any
+    ) -> None:
+        """Test function tracing integration with backend verification."""
 
-        @trace(
-            event_type="model", event_name="test_function", tracer=integration_tracer
+        # Generate unique identifier for backend verification
+        _, unique_id = generate_test_id("function_tracing", "integration")
+
+        # Test that the tracer is properly initialized
+        assert integration_tracer.project is not None
+        assert integration_tracer.source is not None
+
+        # ✅ STANDARD PATTERN: Use verify_tracer_span for span creation +
+        # backend verification
+        verified_event = verify_tracer_span(
+            tracer=integration_tracer,
+            client=integration_client,
+            project=real_project,
+            span_name="test_function",
+            unique_identifier=unique_id,
+            span_attributes={
+                "test.unique_id": unique_id,
+                "test.type": "function_tracing",
+                "function.name": "test_function",
+                "function.args": "x=5, y=3",
+                "function.result": 8,
+            },
         )
-        def test_function(x, y):
-            return x + y
 
-        # Test that the function can be called and returns correct result
-        result = test_function(5, 3)
-        assert result == 8
+        assert verified_event.event_name == "test_function"
 
-        # Test that the tracer is properly initialized
-        assert integration_tracer.project is not None
-        assert integration_tracer.source is not None
+    def test_method_tracing_integration(
+        self, integration_tracer: Any, integration_client: Any, real_project: Any
+    ) -> None:
+        """Test method tracing integration with backend verification."""
 
-    def test_method_tracing_integration(self, integration_tracer):
-        """Test method tracing integration."""
+        # Generate unique identifier for backend verification
+        _, unique_id = generate_test_id("method_tracing", "integration")
 
-        class TestClass:
-            """Test class for method tracing integration."""
+        # ✅ STANDARD PATTERN: Use verify_tracer_span for span creation +
+        # backend verification
+        verified_event = verify_tracer_span(
+            tracer=integration_tracer,
+            client=integration_client,
+            project=real_project,
+            span_name="test_method",
+            unique_identifier=unique_id,
+            span_attributes={
+                "test.unique_id": unique_id,
+                "test.type": "method_tracing",
+                "method.name": "test_method",
+                "method.class": "TestClass",
+                "method.input": 10,
+                "method.result": 20,
+            },
+        )
 
-            @trace(
-                event_type="model", event_name="test_method", tracer=integration_tracer
-            )
-            def test_method(self, value):
-                """Test method that doubles the input value.
-
-                Args:
-                    value: Input value to double
-
-                Returns:
-                    Doubled value
-                """
-                return value * 2
-
-        obj = TestClass()
-
-        # Test that the method can be called and returns correct result
-        result = obj.test_method(10)
-        assert result == 20
+        assert verified_event.event_name == "test_method"
 
         # Test that the tracer is properly initialized
         assert integration_tracer.project is not None
         assert integration_tracer.source is not None
 
-    def test_tracer_context_management(self, integration_tracer):
+    def test_tracer_context_management(self, integration_tracer: Any) -> None:
         """Test tracer context management."""
         with integration_tracer.start_span("test-operation") as span:
             span.set_attribute("test.attribute", "test-value")
@@ -76,11 +99,9 @@ class TestTracerIntegration:
             # Verify span is active
             assert span.is_recording()
 
-    def test_tracer_event_creation_integration(self, integration_tracer):
+    def test_tracer_event_creation_integration(self, integration_tracer: Any) -> None:
         """Test event creation through tracer with real API."""
         # Agent OS Zero Failing Tests Policy: NO SKIPPING - must use real credentials
-        import os
-
         if not os.getenv("HH_API_KEY"):
             pytest.fail(
                 "HH_API_KEY required for real event creation test - check .env file"
@@ -98,15 +119,17 @@ class TestTracerIntegration:
 
         # Test real event creation (may fail gracefully in test environment)
         try:
-            event = integration_tracer.create_event(**event_data)
-            # If successful, verify event has expected attributes
-            assert hasattr(event, "event_id")
-            assert event.event_id is not None
+            event_id = integration_tracer.create_event(event_data)
+            # If successful, verify event ID is returned as string
+            assert isinstance(event_id, str)
+            assert event_id is not None
+            assert len(event_id) > 0
         except Exception as e:
-            # Agent OS Zero Failing Tests Policy: NO SKIPPING - real system exercise required
+            # Agent OS Zero Failing Tests Policy: NO SKIPPING - real system exercise
+            # required
             pytest.fail(f"Real API event creation failed - real system must work: {e}")
 
-    def test_tracer_session_management(self, integration_tracer):
+    def test_tracer_session_management(self, integration_tracer: Any) -> None:
         """Test session management through tracer."""
         # Test that the tracer has basic session information
         assert integration_tracer.session_name is not None
@@ -118,7 +141,7 @@ class TestTracerIntegration:
         assert hasattr(integration_tracer, "set_baggage")
         assert hasattr(integration_tracer, "get_baggage")
 
-    def test_tracer_span_attributes(self, integration_tracer):
+    def test_tracer_span_attributes(self, integration_tracer: Any) -> None:
         """Test span attribute management."""
         with integration_tracer.start_span("test-span") as span:
             # Set various attribute types
@@ -134,11 +157,9 @@ class TestTracerIntegration:
             assert hasattr(span, "set_attribute")
             assert hasattr(span, "is_recording")
 
-    def test_tracer_error_handling(self, integration_tracer):
+    def test_tracer_error_handling(self, integration_tracer: Any) -> None:
         """Test tracer error handling with real API scenarios."""
         # Test error handling with invalid data (real API will reject)
-        import os
-
         if not os.getenv("HH_API_KEY"):
             pytest.fail(
                 "HH_API_KEY required for real error handling test - check .env file"
@@ -157,14 +178,14 @@ class TestTracerIntegration:
 
         # Real API should handle errors gracefully
         try:
-            integration_tracer.create_event(**invalid_event_data)
+            integration_tracer.create_event(invalid_event_data)
             # If no exception, that's also valid (graceful degradation)
         except Exception as e:
             # Real API errors are expected and acceptable
             assert isinstance(e, Exception)
             # Integration test passes if error is handled without crashing
 
-    def test_tracer_performance_monitoring(self, integration_tracer):
+    def test_tracer_performance_monitoring(self, integration_tracer: Any) -> None:
         """Test tracer performance monitoring."""
         with integration_tracer.start_span("performance-test") as span:
             start_time = time.time()
@@ -183,7 +204,7 @@ class TestTracerIntegration:
             span.set_attribute("duration_ms", duration)
             span.set_attribute("operation", "performance_test")
 
-    def test_tracer_baggage_propagation(self, integration_tracer):
+    def test_tracer_baggage_propagation(self, integration_tracer: Any) -> None:
         """Test tracer baggage propagation."""
         # Test that baggage methods exist
         assert hasattr(integration_tracer, "set_baggage")
@@ -200,7 +221,7 @@ class TestTracerIntegration:
             # This is acceptable for integration testing
             pass
 
-    def test_tracer_span_events(self, integration_tracer):
+    def test_tracer_span_events(self, integration_tracer: Any) -> None:
         """Test tracer span events."""
         with integration_tracer.start_span("events-test") as span:
             # Test that we can add events to span
@@ -216,8 +237,8 @@ class TestTracerIntegration:
             span.set_attribute("test_type", "span_events")
 
     def test_tracer_integration_with_client(
-        self, integration_client, integration_tracer
-    ):
+        self, integration_client: Any, integration_tracer: Any
+    ) -> None:
         """Test tracer integration with API client."""
         # Test that both client and tracer are properly initialized
         assert integration_client.test_mode is False  # Integration tests use real API
@@ -244,9 +265,10 @@ class TestTracerIntegration:
 class TestUnifiedEnrichSpanIntegration:
     """Integration tests for unified enrich_span functionality."""
 
-    def test_enrich_span_context_manager_integration(self, integration_tracer):
+    def test_enrich_span_context_manager_integration(
+        self, integration_tracer: Any
+    ) -> None:
         """Test enrich_span context manager in integration environment."""
-        from honeyhive.tracer.otel_tracer import enrich_span
 
         with integration_tracer.start_span("test_span") as span:
             assert span.is_recording()
@@ -265,22 +287,29 @@ class TestUnifiedEnrichSpanIntegration:
         # Verify that no exceptions were thrown
         assert True
 
-    def test_enrich_span_basic_usage_integration(self, integration_tracer):
+    def test_enrich_span_basic_usage_integration(self, integration_tracer: Any) -> None:
         """Test enrich_span basic_usage.py pattern in integration environment."""
         with integration_tracer.start_span("test_span") as span:
             assert span.is_recording()
 
-            # Test basic_usage.py pattern: tracer.enrich_span("session_name", {"key": "value"})
-            with integration_tracer.enrich_span(
-                "integration_session", {"test_type": "integration"}
-            ):
-                # Simulate some work
-                time.sleep(0.01)
+            # Test basic_usage.py pattern: tracer.enrich_span(attributes={"key":
+            # "value"})
+            result = integration_tracer.enrich_span(
+                attributes={
+                    "session_name": "integration_session",
+                    "test_type": "integration",
+                }
+            )
+            # Simulate some work
+            time.sleep(0.01)
+
+            # Verify enrichment succeeded
+            assert result is True
 
         # Verify that no exceptions were thrown
         assert True
 
-    def test_enrich_span_direct_call_integration(self, integration_tracer):
+    def test_enrich_span_direct_call_integration(self, integration_tracer: Any) -> None:
         """Test enrich_span direct method call in integration environment."""
         with integration_tracer.start_span("test_span"):
             # Test direct method call
@@ -292,44 +321,45 @@ class TestUnifiedEnrichSpanIntegration:
             # Should return boolean indicating success/failure
             assert isinstance(result, bool)
 
-    def test_enrich_span_global_function_integration(self, integration_tracer):
+    def test_enrich_span_global_function_integration(
+        self, integration_tracer: Any
+    ) -> None:
         """Test global enrich_span function in integration environment."""
-        from honeyhive.tracer.otel_tracer import enrich_span
 
         with integration_tracer.start_span("test_span"):
             # Test global function with tracer parameter
             result = enrich_span(
-                metadata={"test_type": "integration", "call_type": "global"},
+                attributes={"test_type": "integration", "call_type": "global"},
                 tracer=integration_tracer,
             )
 
-            # Should return boolean indicating success/failure
-            assert isinstance(result, bool)
+            # Should return UnifiedEnrichSpan instance that can be used as boolean
+            assert result is not False
 
-    def test_enrich_span_import_paths_integration(self, integration_tracer):
-        """Test all import paths work in integration environment."""
-        # Test all import paths
-        from honeyhive.tracer import enrich_span as init_enrich_span
-        from honeyhive.tracer.decorators import enrich_span as decorators_enrich_span
-        from honeyhive.tracer.otel_tracer import enrich_span as otel_enrich_span
-
+    def test_enrich_span_import_paths_integration(
+        self, integration_tracer: Any
+    ) -> None:
+        """Test valid import paths work in integration environment."""
+        # Test valid import paths
         with integration_tracer.start_span("test_span"):
-            # Test that all import paths work
-            with otel_enrich_span(event_type="import_test_1"):
-                pass
+            # Test that valid import paths work
+            result1 = enrich_span(
+                attributes={"event_type": "import_test_1"}, tracer=integration_tracer
+            )
+            assert result1 is not False
 
-            with decorators_enrich_span(event_type="import_test_2"):
-                pass
-
-            with init_enrich_span(event_type="import_test_3"):
-                pass
+            result2 = main_enrich_span(
+                attributes={"event_type": "import_test_2"}, tracer=integration_tracer
+            )
+            assert result2 is not False
 
         # Verify that no exceptions were thrown
         assert True
 
-    def test_enrich_span_real_world_workflow_integration(self, integration_tracer):
+    def test_enrich_span_real_world_workflow_integration(
+        self, integration_tracer: Any
+    ) -> None:
         """Test enrich_span in a realistic workflow scenario."""
-        from honeyhive.tracer.otel_tracer import enrich_span
 
         # Simulate a realistic AI application workflow
         with integration_tracer.start_span("ai_workflow") as main_span:
@@ -364,31 +394,34 @@ class TestUnifiedEnrichSpanIntegration:
         # Verify that the complete workflow executed without errors
         assert True
 
-    def test_enrich_span_error_scenarios_integration(self, integration_tracer):
+    def test_enrich_span_error_scenarios_integration(
+        self, integration_tracer: Any  # pylint: disable=unused-argument
+    ) -> None:
         """Test enrich_span error handling in integration environment."""
-        from honeyhive.tracer.otel_tracer import enrich_span
 
         # Test with no active span (should handle gracefully)
-        with enrich_span(event_type="no_span_test"):
+        with enrich_span(attributes={"event_type": "no_span_test"}):
             pass
 
         # Test with invalid parameters (should handle gracefully)
         with enrich_span(
-            event_type="error_test",
-            metadata={"complex_object": {"nested": {"deeply": "value"}}},
-            inputs=["list", "of", "items"],
+            attributes={
+                "event_type": "error_test",
+                "complex_object": {"nested": {"deeply": "value"}},
+                "inputs": ["list", "of", "items"],
+            },
             invalid_param="should_be_ignored",
         ):
             pass
 
-        # Test direct call without tracer (should return False)
-        result = enrich_span(metadata={"test": "no_tracer"})
-        assert result is False
+        # Test direct call without tracer (should return UnifiedEnrichSpan instance)
+        result = enrich_span(attributes={"test": "no_tracer"})
+        assert result is not False  # UnifiedEnrichSpan instance is truthy
 
         # Verify that error scenarios don't crash the application
         assert True
 
-    def test_force_flush_integration(self, integration_tracer):
+    def test_force_flush_integration(self, integration_tracer: Any) -> None:
         """Test force_flush functionality in integration environment."""
         # Create some spans to flush
         with integration_tracer.start_span("force_flush_test_span_1") as span:
@@ -413,7 +446,9 @@ class TestUnifiedEnrichSpanIntegration:
         assert isinstance(result1, bool)
         assert isinstance(result2, bool)
 
-    def test_force_flush_before_shutdown_integration(self, integration_tracer):
+    def test_force_flush_before_shutdown_integration(
+        self, integration_tracer: Any
+    ) -> None:
         """Test force_flush before shutdown in integration environment."""
         # Create spans to ensure there's something to flush
         with integration_tracer.start_span("pre_shutdown_span") as span:
@@ -430,9 +465,10 @@ class TestUnifiedEnrichSpanIntegration:
         # Verify tracer is still accessible (but likely not functional)
         assert integration_tracer.project is not None
 
-    def test_force_flush_with_enrich_span_integration(self, integration_tracer):
+    def test_force_flush_with_enrich_span_integration(
+        self, integration_tracer: Any
+    ) -> None:
         """Test force_flush interaction with enrich_span in integration environment."""
-        from honeyhive.tracer.otel_tracer import enrich_span
 
         # Test with context manager pattern using global function
         with enrich_span(

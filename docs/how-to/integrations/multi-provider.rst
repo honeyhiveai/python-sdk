@@ -17,6 +17,7 @@ The HoneyHive SDK allows you to trace multiple LLM providers simultaneously usin
 - **Zero Code Changes**: Existing LLM calls are automatically traced
 - **Unified Observability**: All providers appear in the same HoneyHive dashboard
 - **Independent Configuration**: Each provider can have different settings
+- **Intelligent Integration**: Automatic provider strategy selection prevents span loss and enables coexistence
 
 Choose Your Instrumentor Strategy
 ---------------------------------

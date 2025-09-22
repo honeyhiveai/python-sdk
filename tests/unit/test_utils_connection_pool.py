@@ -1,5 +1,8 @@
 """Unit tests for connection pool utilities."""
 
+# pylint: disable=too-many-lines,protected-access,redefined-outer-name,too-many-public-methods,line-too-long,too-few-public-methods,missing-class-docstring,import-outside-toplevel,reimported,unused-import,use-implicit-booleaness-not-comparison,unused-variable
+# Justification: Generated test file with comprehensive connection pool testing requiring extensive mocks and protected member access
+
 import asyncio
 import importlib
 import sys
@@ -1150,14 +1153,17 @@ class TestGlobalPool:
             assert isinstance(pool, ConnectionPool)
 
     def test_get_global_pool_returns_existing(self):
-        """Test that get_global_pool returns existing pool."""
-        # Ensure no global pool exists
+        """Test get_global_pool returns new instances (deprecated behavior)."""
+        # Note: get_global_pool now returns new instances for multi-instance compatibility
         close_global_pool()
 
         with patch("honeyhive.utils.connection_pool.HTTPX_AVAILABLE", True):
             pool1 = get_global_pool()
             pool2 = get_global_pool()
-            assert pool1 is pool2
+            # After refactor: each call returns a new instance to prevent deadlocks
+            assert pool1 is not pool2
+            assert isinstance(pool1, ConnectionPool)
+            assert isinstance(pool2, ConnectionPool)
 
     def test_get_global_pool_with_config(self):
         """Test get_global_pool with custom config."""
@@ -1171,14 +1177,17 @@ class TestGlobalPool:
             assert pool.config.max_connections == 50
 
     def test_close_global_pool(self):
-        """Test closing global pool."""
+        """Test closing global pool (deprecated no-op behavior)."""
         with patch("honeyhive.utils.connection_pool.HTTPX_AVAILABLE", True):
             # Create global pool
             pool = get_global_pool()
 
-            with patch.object(pool, "close_all") as mock_close:
-                close_global_pool()
-                mock_close.assert_called_once()
+            # After refactor: close_global_pool is now a no-op for multi-instance compatibility
+            # Each ConnectionPool is closed when its parent client is garbage collected
+            close_global_pool()  # Should not raise any exceptions
+
+            # Verify the pool is still functional (not closed by the no-op function)
+            assert isinstance(pool, ConnectionPool)
 
     def test_close_global_pool_when_none_exists(self):
         """Test closing global pool when none exists."""

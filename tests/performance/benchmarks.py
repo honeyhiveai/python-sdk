@@ -8,40 +8,42 @@ This module provides comprehensive benchmarks for:
 - Concurrent operation performance
 """
 
+# pylint: disable=too-many-lines,protected-access,redefined-outer-name,too-many-public-methods,line-too-long
+# Justification: Performance benchmark file with comprehensive testing requiring protected member access
+
 import gc
 import os
 import threading
 import time
 from concurrent.futures import ThreadPoolExecutor, as_completed
-from typing import Any, Dict, List
+from typing import Any, Optional
 
 import psutil
 import pytest
 
 from honeyhive import HoneyHiveTracer
-from honeyhive.tracer.processor_integrator import ProcessorIntegrator
-from honeyhive.tracer.provider_detector import IntegrationStrategy, ProviderDetector
+from honeyhive.tracer.integration.detection import IntegrationStrategy, ProviderDetector
 from tests.mocks.mock_frameworks import MockFrameworkA, MockFrameworkB, MockFrameworkC
 
 
 class PerformanceBenchmarks:
     """Comprehensive performance benchmark suite."""
 
-    def __init__(self):
+    def __init__(self) -> None:
         """Initialize benchmark class attributes."""
-        self.test_api_key = None
-        self.test_project = None
-        self.test_source = None
-        self.max_span_processing_time = None
-        self.max_provider_detection_time = None
-        self.max_memory_overhead_percent = None
-        self.benchmark_iterations = None
-        self.concurrent_threads = None
+        self.test_api_key: Optional[str] = None
+        self.test_project: Optional[str] = None
+        self.test_source: Optional[str] = None
+        self.max_span_processing_time: Optional[float] = None
+        self.max_provider_detection_time: Optional[float] = None
+        self.max_memory_overhead_percent: Optional[float] = None
+        self.benchmark_iterations: Optional[int] = None
+        self.concurrent_threads: Optional[int] = None
 
-    def setup_method(self):
+    def setup_method(self) -> None:
         """Set up benchmark fixtures."""
         # Reset OpenTelemetry state
-        from opentelemetry import trace
+        from opentelemetry import trace  # pylint: disable=import-outside-toplevel
 
         trace._TRACER_PROVIDER = None
 
@@ -59,10 +61,10 @@ class PerformanceBenchmarks:
         self.benchmark_iterations = 1000
         self.concurrent_threads = 10
 
-    def teardown_method(self):
+    def teardown_method(self) -> None:
         """Clean up after benchmarks."""
         # Reset OpenTelemetry state
-        from opentelemetry import trace
+        from opentelemetry import trace  # pylint: disable=import-outside-toplevel
 
         trace._TRACER_PROVIDER = None
 
@@ -70,7 +72,7 @@ class PerformanceBenchmarks:
         gc.collect()
 
     @pytest.mark.benchmark
-    def test_benchmark_span_processing_overhead(self, benchmark):
+    def test_benchmark_span_processing_overhead(self, benchmark: Any) -> float:
         """Benchmark span processing overhead."""
         # Initialize HoneyHive tracer
         _ = HoneyHiveTracer.init(
@@ -83,7 +85,7 @@ class PerformanceBenchmarks:
         # Create framework for span generation
         framework = MockFrameworkA("BenchmarkFramework")
 
-        def process_spans():
+        def process_spans() -> list[Any]:
             """Process a batch of spans."""
             results = []
             for i in range(100):  # Process 100 spans per iteration
@@ -101,29 +103,30 @@ class PerformanceBenchmarks:
         assert all(r["status"] == "completed" for r in result)
 
         # Calculate per-span processing time
-        per_span_time = benchmark.stats.mean / 100
+        per_span_time: float = benchmark.stats.mean / 100
 
         # Verify performance requirement: <1ms per span
-        assert (
-            per_span_time < self.max_span_processing_time
-        ), f"Span processing too slow: {per_span_time:.4f}s per span (max: {self.max_span_processing_time}s)"
+        assert per_span_time < (self.max_span_processing_time or 0.001), (
+            f"Span processing too slow: {per_span_time:.4f}s per span "
+            f"(max: {self.max_span_processing_time}s)"
+        )
 
         print(f"✅ Span processing benchmark: {per_span_time:.4f}s per span")
         return per_span_time
 
     @pytest.mark.benchmark
-    def test_benchmark_provider_detection_speed(self, benchmark):
+    def test_benchmark_provider_detection_speed(self, benchmark: Any) -> float:
         """Benchmark provider detection speed."""
 
-        def detect_providers():
+        def detect_providers() -> list[tuple[Any, Any]]:
             """Detect providers multiple times."""
             detector = ProviderDetector()
             results = []
 
             for _ in range(50):  # 50 detections per iteration
-                provider_info = detector.detect_current_provider()
-                strategy = detector.determine_integration_strategy(provider_info)
-                results.append((provider_info, strategy))
+                provider_type = detector.detect_provider_type()
+                strategy = detector.get_integration_strategy(provider_type)
+                results.append((provider_type, strategy))
 
             return results
 
@@ -135,12 +138,13 @@ class PerformanceBenchmarks:
         assert all(isinstance(strategy, IntegrationStrategy) for _, strategy in result)
 
         # Calculate per-detection time
-        per_detection_time = benchmark.stats.mean / 50
+        per_detection_time: float = benchmark.stats.mean / 50
 
         # Verify performance requirement: <10ms per detection
-        assert (
-            per_detection_time < self.max_provider_detection_time
-        ), f"Provider detection too slow: {per_detection_time:.4f}s per detection (max: {self.max_provider_detection_time}s)"
+        assert per_detection_time < (self.max_provider_detection_time or 0.010), (
+            f"Provider detection too slow: {per_detection_time:.4f}s per detection "
+            f"(max: {self.max_provider_detection_time}s)"
+        )
 
         print(
             f"✅ Provider detection benchmark: {per_detection_time:.4f}s per detection"
@@ -148,13 +152,13 @@ class PerformanceBenchmarks:
         return per_detection_time
 
     @pytest.mark.benchmark
-    def test_benchmark_memory_usage_patterns(self, benchmark):
+    def test_benchmark_memory_usage_patterns(self, benchmark: Any) -> float:
         """Benchmark memory usage patterns."""
         # Get baseline memory usage
         process = psutil.Process(os.getpid())
         baseline_memory = process.memory_info().rss / 1024 / 1024  # MB
 
-        def memory_intensive_operations():
+        def memory_intensive_operations() -> list[Any]:
             """Perform memory-intensive operations."""
             # Initialize tracer
             _ = HoneyHiveTracer.init(
@@ -204,25 +208,28 @@ class PerformanceBenchmarks:
 
         # Get peak memory usage
         peak_memory = process.memory_info().rss / 1024 / 1024  # MB
-        memory_overhead = ((peak_memory - baseline_memory) / baseline_memory) * 100
+        memory_overhead: float = (
+            (peak_memory - baseline_memory) / baseline_memory
+        ) * 100
 
         # Verify results
         assert len(result) == 30  # 10 frameworks × 3 types
         assert all(r["status"] == "completed" for r in result)
 
         # Verify performance requirement: <5% memory overhead
-        assert (
-            memory_overhead < self.max_memory_overhead_percent
-        ), f"Memory overhead too high: {memory_overhead:.2f}% (max: {self.max_memory_overhead_percent}%)"
+        assert memory_overhead < (self.max_memory_overhead_percent or 5.0), (
+            f"Memory overhead too high: {memory_overhead:.2f}% "
+            f"(max: {self.max_memory_overhead_percent}%)"
+        )
 
         print(f"✅ Memory usage benchmark: {memory_overhead:.2f}% overhead")
         return memory_overhead
 
     @pytest.mark.benchmark
-    def test_benchmark_concurrent_performance(self, benchmark):
+    def test_benchmark_concurrent_performance(self, benchmark: Any) -> float:
         """Benchmark concurrent operation performance."""
 
-        def concurrent_operations():
+        def concurrent_operations() -> list[Any]:
             """Execute operations concurrently."""
             # Initialize tracer
             _ = HoneyHiveTracer.init(
@@ -235,10 +242,10 @@ class PerformanceBenchmarks:
             # Create frameworks
             frameworks = [
                 MockFrameworkA(f"ConcurrentA_{i}")
-                for i in range(self.concurrent_threads)
+                for i in range(self.concurrent_threads or 10)
             ]
 
-            def worker_task(framework_index):
+            def worker_task(framework_index: int) -> list[Any]:
                 """Worker task for concurrent execution."""
                 framework = frameworks[framework_index]
                 results = []
@@ -255,10 +262,12 @@ class PerformanceBenchmarks:
 
             # Execute concurrent operations
             all_results = []
-            with ThreadPoolExecutor(max_workers=self.concurrent_threads) as executor:
+            with ThreadPoolExecutor(
+                max_workers=self.concurrent_threads or 10
+            ) as executor:
                 futures = [
                     executor.submit(worker_task, i)
-                    for i in range(self.concurrent_threads)
+                    for i in range(self.concurrent_threads or 10)
                 ]
 
                 for future in as_completed(futures):
@@ -271,18 +280,19 @@ class PerformanceBenchmarks:
         result = benchmark(concurrent_operations)
 
         # Verify results
-        expected_operations = self.concurrent_threads * 10
+        expected_operations = (self.concurrent_threads or 10) * 10
         assert len(result) == expected_operations
         assert all(r["status"] == "completed" for r in result)
 
         # Calculate operations per second
-        operations_per_second = expected_operations / benchmark.stats.mean
+        operations_per_second: float = expected_operations / benchmark.stats.mean
 
         # Verify reasonable concurrent performance (should handle at least 100 ops/sec)
         min_ops_per_second = 100
-        assert (
-            operations_per_second >= min_ops_per_second
-        ), f"Concurrent performance too low: {operations_per_second:.1f} ops/sec (min: {min_ops_per_second})"
+        assert operations_per_second >= min_ops_per_second, (
+            f"Concurrent performance too low: {operations_per_second:.1f} ops/sec "
+            f"(min: {min_ops_per_second})"
+        )
 
         print(
             f"✅ Concurrent performance benchmark: {operations_per_second:.1f} operations/second"
@@ -290,16 +300,18 @@ class PerformanceBenchmarks:
         return operations_per_second
 
     @pytest.mark.benchmark
-    def test_benchmark_initialization_overhead(self, benchmark):
+    def test_benchmark_initialization_overhead(self, benchmark: Any) -> float:
         """Benchmark tracer initialization overhead."""
 
-        def initialize_tracers():
+        def initialize_tracers() -> list[Any]:
             """Initialize multiple tracers."""
             tracers = []
 
             for i in range(10):  # Initialize 10 tracers per iteration
                 # Reset state for clean initialization
-                from opentelemetry import trace
+                from opentelemetry import (  # pylint: disable=import-outside-toplevel
+                    trace,
+                )
 
                 trace._TRACER_PROVIDER = None
 
@@ -321,7 +333,7 @@ class PerformanceBenchmarks:
         assert all(isinstance(tracer, HoneyHiveTracer) for tracer in result)
 
         # Calculate per-initialization time
-        per_init_time = benchmark.stats.mean / 10
+        per_init_time: float = benchmark.stats.mean / 10
 
         # Verify reasonable initialization time (<100ms per tracer)
         max_init_time = 0.1  # 100ms
@@ -333,10 +345,10 @@ class PerformanceBenchmarks:
         return per_init_time
 
     @pytest.mark.benchmark
-    def test_benchmark_framework_switching_overhead(self, benchmark):
+    def test_benchmark_framework_switching_overhead(self, benchmark: Any) -> float:
         """Benchmark overhead of switching between frameworks."""
 
-        def framework_switching():
+        def framework_switching() -> list[Any]:
             """Switch between different frameworks rapidly."""
             # Initialize tracer
             _ = HoneyHiveTracer.init(
@@ -384,13 +396,14 @@ class PerformanceBenchmarks:
         assert all(r["status"] == "completed" for r in result)
 
         # Calculate per-operation time
-        per_operation_time = benchmark.stats.mean / 30
+        per_operation_time: float = benchmark.stats.mean / 30
 
         # Verify reasonable switching performance (<2ms per operation)
         max_operation_time = 0.002  # 2ms
-        assert (
-            per_operation_time < max_operation_time
-        ), f"Framework switching too slow: {per_operation_time:.4f}s per operation (max: {max_operation_time}s)"
+        assert per_operation_time < max_operation_time, (
+            f"Framework switching too slow: {per_operation_time:.4f}s per operation "
+            f"(max: {max_operation_time}s)"
+        )
 
         print(
             f"✅ Framework switching benchmark: {per_operation_time:.4f}s per operation"
@@ -398,11 +411,11 @@ class PerformanceBenchmarks:
         return per_operation_time
 
 
-class MemoryProfiler:
+class MemoryProfiler:  # pylint: disable=too-few-public-methods
     """Memory profiling utilities for performance testing."""
 
     @staticmethod
-    def profile_memory_usage(func, *args, **kwargs):
+    def profile_memory_usage(func: Any, *args: Any, **kwargs: Any) -> dict[str, Any]:
         """Profile memory usage of a function."""
         process = psutil.Process(os.getpid())
 
@@ -438,13 +451,13 @@ class MemoryProfiler:
         }
 
 
-class ConcurrentBenchmark:
+class ConcurrentBenchmark:  # pylint: disable=too-few-public-methods
     """Utilities for concurrent performance testing."""
 
     @staticmethod
     def run_concurrent_benchmark(
-        worker_func, num_workers=10, operations_per_worker=100
-    ):
+        worker_func: Any, num_workers: int = 10, operations_per_worker: int = 100
+    ) -> dict[str, Any]:
         """Run a concurrent benchmark with multiple workers."""
         start_time = time.perf_counter()
 
@@ -475,7 +488,7 @@ class ConcurrentBenchmark:
 
 
 # Standalone benchmark functions for manual testing
-def benchmark_span_processing(iterations=1000):
+def benchmark_span_processing(iterations: int = 1000) -> float:
     """Standalone span processing benchmark."""
     _ = HoneyHiveTracer.init(
         api_key="benchmark-key",
@@ -496,7 +509,7 @@ def benchmark_span_processing(iterations=1000):
     total_time = end_time - start_time
     per_span_time = total_time / iterations
 
-    print(f"Span Processing Benchmark:")
+    print("Span Processing Benchmark:")
     print(f"  Total operations: {iterations}")
     print(f"  Total time: {total_time:.4f}s")
     print(f"  Time per span: {per_span_time:.6f}s")
@@ -505,22 +518,22 @@ def benchmark_span_processing(iterations=1000):
     return per_span_time
 
 
-def benchmark_provider_detection(iterations=100):
+def benchmark_provider_detection(iterations: int = 100) -> float:
     """Standalone provider detection benchmark."""
     detector = ProviderDetector()
 
     start_time = time.perf_counter()
 
     for _ in range(iterations):
-        provider_info = detector.detect_current_provider()
-        _ = detector.determine_integration_strategy(provider_info)  # strategy
+        provider_type = detector.detect_provider_type()
+        _ = detector.get_integration_strategy(provider_type)  # strategy
 
     end_time = time.perf_counter()
 
     total_time = end_time - start_time
     per_detection_time = total_time / iterations
 
-    print(f"Provider Detection Benchmark:")
+    print("Provider Detection Benchmark:")
     print(f"  Total detections: {iterations}")
     print(f"  Total time: {total_time:.4f}s")
     print(f"  Time per detection: {per_detection_time:.6f}s")
@@ -548,15 +561,15 @@ if __name__ == "__main__":
     print(f"  Provider detection: {detection_time:.6f}s per detection")
 
     # Performance requirements check
-    max_span_time = 0.001  # 1ms
-    max_detection_time = 0.010  # 10ms
+    MAX_SPAN_TIME = 0.001  # 1ms
+    MAX_DETECTION_TIME = 0.010  # 10ms
 
-    if span_time < max_span_time:
-        print(f"  ✅ Span processing meets requirement (<{max_span_time}s)")
+    if span_time < MAX_SPAN_TIME:
+        print(f"  ✅ Span processing meets requirement (<{MAX_SPAN_TIME}s)")
     else:
-        print(f"  ❌ Span processing exceeds requirement (>{max_span_time}s)")
+        print(f"  ❌ Span processing exceeds requirement (>{MAX_SPAN_TIME}s)")
 
-    if detection_time < max_detection_time:
-        print(f"  ✅ Provider detection meets requirement (<{max_detection_time}s)")
+    if detection_time < MAX_DETECTION_TIME:
+        print(f"  ✅ Provider detection meets requirement (<{MAX_DETECTION_TIME}s)")
     else:
-        print(f"  ❌ Provider detection exceeds requirement (>{max_detection_time}s)")
+        print(f"  ❌ Provider detection exceeds requirement (>{MAX_DETECTION_TIME}s)")

@@ -1,16 +1,19 @@
 """Enhanced CLI for HoneyHive."""
 
 import json
+import logging
 import sys
 import time
-from typing import Optional
+from io import StringIO
+from typing import Any, Dict, Optional
 
 import click
+import yaml
 
 from ..api.client import HoneyHive
+from ..config.models.tracer import TracerConfig
 from ..tracer import HoneyHiveTracer
 from ..utils.cache import close_global_cache, get_global_cache
-from ..utils.config import Config
 from ..utils.connection_pool import close_global_pool, get_global_pool
 
 
@@ -21,7 +24,7 @@ from ..utils.connection_pool import close_global_pool, get_global_pool
 )
 @click.option("--verbose", "-v", is_flag=True, help="Enable verbose logging")
 @click.option("--debug", is_flag=True, help="Enable debug mode")
-def cli(config: Optional[str], verbose: bool, debug: bool) -> None:
+def cli(config_file: Optional[str], verbose: bool, debug: bool) -> None:
     """HoneyHive CLI - LLM Observability and Evaluation Platform."""
     if verbose:
         click.echo("Verbose mode enabled")
@@ -29,8 +32,8 @@ def cli(config: Optional[str], verbose: bool, debug: bool) -> None:
     if debug:
         click.echo("Debug mode enabled")
 
-    if config:
-        click.echo(f"Using config file: {config}")
+    if config_file:
+        click.echo(f"Using config file: {config_file}")
 
 
 @cli.group()
@@ -61,66 +64,103 @@ def show(output_format: str) -> None:
             - yaml: YAML format
             - env: Environment variable format
     """
-    from ..utils.config import config
+
+    def _get_config_dict() -> Dict[str, Any]:
+        """Dynamically extract config attributes using proper tracer \
+        configuration resolution."""
+        # Create a tracer instance to get properly resolved configuration
+        # This ensures we get the same defaults that would actually be used
+
+        # Temporarily suppress all logging during tracer creation
+        old_level = logging.root.level
+        old_handlers = logging.root.handlers[:]
+        logging.root.handlers = []
+        logging.root.setLevel(logging.CRITICAL + 1)
+
+        # Also capture stdout to prevent any print statements
+        old_stdout = sys.stdout
+        sys.stdout = StringIO()
+
+        try:
+            tracer = HoneyHiveTracer(verbose=False, test_mode=True)
+            tracer_config = tracer.config
+
+            # Get the actual resolved values, including defaults
+            # The tracer's config merging system should have resolved defaults
+            server_url = tracer_config.get("server_url") or "https://api.honeyhive.ai"
+
+            config_dict = {
+                "api_key": tracer_config.get("api_key"),
+                "server_url": server_url,  # Use resolved default
+                "project": tracer_config.get("project"),
+                "source": tracer_config.get("source", "dev"),
+                "verbose": tracer_config.get("verbose", False),
+                "test_mode": tracer_config.get("test_mode", False),
+                "experiment_id": tracer_config.get("experiment_id"),
+                "experiment_name": tracer_config.get("experiment_name"),
+                "experiment_variant": tracer_config.get("experiment_variant"),
+                "experiment_group": tracer_config.get("experiment_group"),
+                "experiment_metadata": tracer_config.get("experiment_metadata"),
+            }
+
+            # Clean up the tracer instance
+            try:
+                tracer.shutdown()
+            except Exception:
+                pass  # Ignore shutdown errors in CLI context
+
+            return config_dict
+
+        except Exception:
+            # Fallback to basic TracerConfig if tracer creation fails
+            fallback_config = TracerConfig()
+            return {
+                "api_key": fallback_config.api_key,
+                "server_url": fallback_config.server_url or "https://api.honeyhive.ai",
+                "project": fallback_config.project,
+                "source": fallback_config.source,
+                "verbose": fallback_config.verbose,
+                "test_mode": fallback_config.test_mode,
+                "experiment_id": getattr(fallback_config, "experiment_id", None),
+                "experiment_name": getattr(fallback_config, "experiment_name", None),
+                "experiment_variant": getattr(
+                    fallback_config, "experiment_variant", None
+                ),
+                "experiment_group": getattr(fallback_config, "experiment_group", None),
+                "experiment_metadata": getattr(
+                    fallback_config, "experiment_metadata", None
+                ),
+            }
+        finally:
+            # Restore logging and stdout
+            sys.stdout = old_stdout
+            logging.root.handlers = old_handlers
+            logging.root.setLevel(old_level)
+
+    config_dict = _get_config_dict()
 
     if output_format == "json":
-        # Convert config to a serializable dictionary
-        config_dict = {
-            "api_key": config.api_key,
-            "api_url": config.api_url,
-            "project": config.project,
-            "source": config.source,
-            "debug_mode": config.debug_mode,
-            "test_mode": config.test_mode,
-            "experiment_id": config.experiment_id,
-            "experiment_name": config.experiment_name,
-            "experiment_variant": config.experiment_variant,
-            "experiment_group": config.experiment_group,
-            "experiment_metadata": config.experiment_metadata,
-        }
         click.echo(json.dumps(config_dict, indent=2))
     elif output_format == "yaml":
-        import yaml
 
-        # Convert config to a serializable dictionary
-        config_dict = {
-            "api_key": config.api_key,
-            "api_url": config.api_url,
-            "project": config.project,
-            "source": config.source,
-            "debug_mode": config.debug_mode,
-            "test_mode": config.test_mode,
-            "experiment_id": config.experiment_id,
-            "experiment_name": config.experiment_name,
-            "experiment_variant": config.experiment_variant,
-            "experiment_group": config.experiment_group,
-            "experiment_metadata": config.experiment_metadata,
-        }
         click.echo(yaml.dump(config_dict, default_flow_style=False))
     elif output_format == "env":
-        # Convert config to environment variables
-        config_dict = {
-            "api_key": config.api_key,
-            "api_url": config.api_url,
-            "project": config.project,
-            "source": config.source,
-            "debug_mode": config.debug_mode,
-            "test_mode": config.test_mode,
-            "experiment_id": config.experiment_id,
-            "experiment_name": config.experiment_name,
-            "experiment_variant": config.experiment_variant,
-            "experiment_group": config.experiment_group,
-            "experiment_metadata": config.experiment_metadata,
+        # Map config field names to environment variable names
+        env_name_mapping = {
+            "server_url": "API_URL",  # server_url maps to HH_API_URL for
+            # backwards compatibility
         }
+
         for key, value in config_dict.items():
             if value is not None:
-                click.echo(f"HH_{key.upper()}={value}")
+                env_name = env_name_mapping.get(key, key.upper())
+                click.echo(f"HH_{env_name}={value}")
 
 
-@config.command()
+@config.command("set")
 @click.option("--key", required=True, help="Configuration key")
 @click.option("--value", required=True, help="Configuration value")
-def set(key: str, value: str) -> None:
+def set_config(key: str, value: str) -> None:
     """Set configuration value.
 
     Update a specific configuration key with a new value.
@@ -129,14 +169,16 @@ def set(key: str, value: str) -> None:
         key: Configuration key to update
         value: New value for the configuration key
     """
-    from ..utils.config import config
-
-    if hasattr(config, key):
-        setattr(config, key, value)
-        click.echo(f"Set {key} = {value}")
-    else:
-        click.echo(f"Unknown configuration key: {key}", err=True)
-        sys.exit(1)
+    # Per-instance configuration - CLI cannot modify global config
+    click.echo(
+        "❌ Configuration modification not supported in per-instance architecture."
+    )
+    click.echo(
+        "💡 Use environment variables or tracer initialization parameters instead:"
+    )
+    click.echo(f"   export HH_{key.upper()}={value}")
+    click.echo("   # or")
+    click.echo(f"   tracer = HoneyHiveTracer({key}='{value}')")
 
 
 @cli.group()
@@ -175,10 +217,13 @@ def start(name: str, session_id: Optional[str], attributes: Optional[str]) -> No
                 click.echo("Invalid JSON for attributes", err=True)
                 sys.exit(1)
 
+        # Add session_id to attributes if provided
+        if session_id:
+            span_attributes = span_attributes or {}
+            span_attributes["session_id"] = session_id
+
         # Start span
-        with tracer.start_span(
-            name=name, session_id=session_id, attributes=span_attributes
-        ):
+        with tracer.start_span(name=name, attributes=span_attributes):
             click.echo(f"Started span: {name}")
             click.echo("Press Enter to end span...")
             input()
@@ -343,25 +388,29 @@ def status() -> None:
     tracer status, cache performance, and system health metrics.
     """
     try:
-        # Configuration status
-        config = Config()
+        # Configuration status using per-instance configuration
+        tracer_config = TracerConfig()
         click.echo("=== Configuration Status ===")
-        click.echo(f"API Key: {'✓' if config.api_key else '✗'}")
-        click.echo(f"Project: {config.project or 'Not set'}")
-        click.echo(f"Source: {config.source}")
-        click.echo(f"Debug Mode: {config.debug_mode}")
-        click.echo(f"Tracing Enabled: {not config.disable_tracing}")
+        click.echo(f"API Key: {'✓' if tracer_config.api_key else '✗'}")
+        click.echo(f"Project: {tracer_config.project or 'Not set'}")
+        click.echo(f"Source: {tracer_config.source}")
+        click.echo(f"Verbose Mode: {tracer_config.verbose}")
+        click.echo(f"HTTP Tracing Disabled: {tracer_config.disable_http_tracing}")
 
         # Tracer status
         click.echo("\n=== Tracer Status ===")
         try:
-            # Note: In the new multi-instance approach, we can't easily check for existing tracers
-            # Users should manage their own tracer instances
-            click.echo("ℹ️  Tracer status: Multi-instance mode enabled")
-            click.echo(
-                "   Create tracers with: HoneyHiveTracer(api_key='...', project='...')"
-            )
-            click.echo("   Multiple tracers can coexist in the same runtime")
+            # Multi-instance architecture: each tracer is independent
+            click.echo("✓ Multi-instance architecture enabled")
+            click.echo("  • Each tracer instance has independent configuration")
+            click.echo("  • Thread-safe and process-safe operation")
+            click.echo("  • Environment variables used as defaults")
+            click.echo("\n  Usage examples:")
+            click.echo("    # Individual parameters:")
+            click.echo("    tracer = HoneyHiveTracer(api_key='...', project='...')")
+            click.echo("    # Config object:")
+            click.echo("    config = TracerConfig(api_key='...', project='...')")
+            click.echo("    tracer = HoneyHiveTracer(config=config)")
         except Exception as e:
             click.echo(f"✗ Tracer error: {e}")
 
@@ -370,7 +419,7 @@ def status() -> None:
         try:
             cache = get_global_cache()
             stats = cache.get_stats()
-            click.echo(f"✓ Cache active")
+            click.echo("✓ Cache active")
             click.echo(f"  Size: {stats['size']}/{stats['max_size']}")
             click.echo(f"  Hit Rate: {stats['hit_rate']:.2%}")
         except Exception as e:
@@ -381,7 +430,7 @@ def status() -> None:
         try:
             pool = get_global_pool()
             stats = pool.get_stats()
-            click.echo(f"✓ Connection pool active")
+            click.echo("✓ Connection pool active")
             click.echo(f"  Total Requests: {stats['total_requests']}")
             click.echo(f"  Pool Hits: {stats['pool_hits']}")
             click.echo(f"  Pool Misses: {stats['pool_misses']}")
@@ -522,7 +571,8 @@ def benchmark(iterations: int, warmup: int) -> None:
         click.echo("=== Tracer Performance ===")
         try:
             if iterations > 0:
-                # Note: In the new multi-instance approach, we can't easily access existing tracers
+                # Note: In the new multi-instance approach, we can't easily \
+                # access existing tracers
                 # Users should create their own tracer instances for benchmarking
                 click.echo("ℹ️  Tracer benchmarks: Multi-instance mode enabled")
                 click.echo("   Create a tracer for benchmarking:")
@@ -575,4 +625,4 @@ def cleanup() -> None:
 
 
 if __name__ == "__main__":
-    cli()
+    cli()  # pylint: disable=no-value-for-parameter

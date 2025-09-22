@@ -8,15 +8,18 @@ This module provides detailed memory profiling for:
 - Garbage collection impact
 """
 
+# pylint: disable=too-many-lines,protected-access,redefined-outer-name,too-many-public-methods,line-too-long,import-error
+# Justification: Performance memory test file with comprehensive profiling requiring protected member access and optional memory_profiler
+
 import gc
 import os
-import threading
 import time
 from concurrent.futures import ThreadPoolExecutor
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List
 
-import psutil
-from memory_profiler import profile
+import psutil  # type: ignore[import-untyped]
+from memory_profiler import profile  # type: ignore[import-untyped]
+from opentelemetry import trace
 
 from honeyhive import HoneyHiveTracer
 from tests.mocks.mock_frameworks import MockFrameworkA, MockFrameworkB, MockFrameworkC
@@ -25,22 +28,23 @@ from tests.mocks.mock_frameworks import MockFrameworkA, MockFrameworkB, MockFram
 class MemoryProfiler:
     """Advanced memory profiling for HoneyHive integration."""
 
-    def __init__(self):
+    def __init__(self) -> None:
         self.process = psutil.Process(os.getpid())
         self.baseline_memory = None
         self.peak_memory = None
-        self.memory_samples = []
+        self.memory_samples: List[Dict[str, Any]] = []
 
-    def start_profiling(self):
+    def start_profiling(self) -> None:
         """Start memory profiling."""
         gc.collect()  # Clean up before baseline
         self.baseline_memory = self.process.memory_info().rss
         self.memory_samples = []
-        print(
-            f"🔍 Memory profiling started - Baseline: {self.baseline_memory / 1024 / 1024:.2f} MB"
-        )
+        if self.baseline_memory is not None:
+            print(
+                f"🔍 Memory profiling started - Baseline: {self.baseline_memory / 1024 / 1024:.2f} MB"
+            )
 
-    def sample_memory(self, label: str = ""):
+    def sample_memory(self, label: str = "") -> Dict[str, Any]:
         """Take a memory sample."""
         current_memory = self.process.memory_info().rss
         sample = {
@@ -61,8 +65,12 @@ class MemoryProfiler:
         gc.collect()  # Clean up after profiling
         final_memory = self.process.memory_info().rss
 
-        if not self.memory_samples:
-            return {"error": "No memory samples collected"}
+        if (
+            not self.memory_samples
+            or self.baseline_memory is None
+            or self.peak_memory is None
+        ):
+            return {"error": "No memory samples collected or profiling not started"}
 
         analysis = {
             "baseline_mb": self.baseline_memory / 1024 / 1024,
@@ -82,19 +90,25 @@ class MemoryProfiler:
             "samples": self.memory_samples,
         }
 
-        print(f"📊 Memory profiling completed:")
+        print("📊 Memory profiling completed:")
         print(f"   Baseline: {analysis['baseline_mb']:.2f} MB")
         print(
-            f"   Peak: {analysis['peak_mb']:.2f} MB (+{analysis['peak_overhead_mb']:.2f} MB, +{analysis['peak_overhead_percent']:.1f}%)"
+            "   Peak: %.2f MB (+%.2f MB, +%.1f%%)",
+            analysis["peak_mb"],
+            analysis["peak_overhead_mb"],
+            analysis["peak_overhead_percent"],
         )
         print(
-            f"   Final: {analysis['final_mb']:.2f} MB (+{analysis['final_overhead_mb']:.2f} MB, +{analysis['final_overhead_percent']:.1f}%)"
+            "   Final: %.2f MB (+%.2f MB, +%.1f%%)",
+            analysis["final_mb"],
+            analysis["final_overhead_mb"],
+            analysis["final_overhead_percent"],
         )
 
         return analysis
 
 
-def test_memory_usage_single_framework():
+def test_memory_usage_single_framework() -> Dict[str, Any]:
     """Test memory usage with a single framework."""
     profiler = MemoryProfiler()
     profiler.start_profiling()
@@ -135,7 +149,7 @@ def test_memory_usage_single_framework():
     return analysis
 
 
-def test_memory_usage_multiple_frameworks():
+def test_memory_usage_multiple_frameworks() -> Dict[str, Any]:
     """Test memory usage with multiple frameworks."""
     profiler = MemoryProfiler()
     profiler.start_profiling()
@@ -183,7 +197,7 @@ def test_memory_usage_multiple_frameworks():
     return analysis
 
 
-def test_memory_leak_detection():
+def test_memory_leak_detection() -> Dict[str, Any]:
     """Test for memory leaks over repeated operations."""
     profiler = MemoryProfiler()
     profiler.start_profiling()
@@ -224,7 +238,7 @@ def test_memory_leak_detection():
         memory_growth = last_cycle_memory - first_cycle_memory
         growth_percent = (memory_growth / first_cycle_memory) * 100
 
-        print(f"🔍 Memory leak analysis:")
+        print("🔍 Memory leak analysis:")
         print(f"   First cycle: {first_cycle_memory:.2f} MB")
         print(f"   Last cycle: {last_cycle_memory:.2f} MB")
         print(f"   Growth: {memory_growth:.2f} MB ({growth_percent:.1f}%)")
@@ -237,7 +251,7 @@ def test_memory_leak_detection():
     return analysis
 
 
-def test_concurrent_memory_usage():
+def test_concurrent_memory_usage() -> Dict[str, Any]:
     """Test memory usage under concurrent load."""
     profiler = MemoryProfiler()
     profiler.start_profiling()
@@ -251,7 +265,7 @@ def test_concurrent_memory_usage():
     )
     profiler.sample_memory("after_tracer_init")
 
-    def worker_task(worker_id: int, operations_count: int):
+    def worker_task(worker_id: int, operations_count: int) -> List[Any]:
         """Worker task for concurrent execution."""
         framework = MockFrameworkA(f"ConcurrentWorker_{worker_id}")
         results = []
@@ -291,14 +305,12 @@ def test_concurrent_memory_usage():
     return analysis
 
 
-@profile
-def memory_intensive_tracer_operations():
+@profile  # type: ignore[misc]
+def memory_intensive_tracer_operations() -> List[Any]:
     """Memory-intensive operations for line-by-line profiling."""
     # Initialize multiple tracers
     tracers = []
     for i in range(5):
-        from opentelemetry import trace
-
         trace._TRACER_PROVIDER = None  # Reset for clean initialization
 
         tracer = HoneyHiveTracer.init(
@@ -331,7 +343,7 @@ def memory_intensive_tracer_operations():
     return results
 
 
-def run_memory_profiling_suite():
+def run_memory_profiling_suite() -> Dict[str, Any]:
     """Run the complete memory profiling suite."""
     print("🧠 Running Memory Profiling Suite")
     print("=" * 50)
@@ -351,7 +363,7 @@ def run_memory_profiling_suite():
     # Test 3: Memory leak detection
     print("3. Memory Leak Detection")
     _ = test_memory_leak_detection()  # leak_analysis
-    print(f"   Result: No significant leaks detected")
+    print("   Result: No significant leaks detected")
     print()
 
     # Test 4: Concurrent memory usage

@@ -1,28 +1,24 @@
 """Unit tests for API workflows in HoneyHive."""
 
-from unittest.mock import Mock, patch
+import uuid
+from typing import Any, Dict
+from unittest.mock import Mock
 
 import pytest
 
 from honeyhive.api.client import HoneyHive
 from honeyhive.models.generated import (
-    CallType,
     CreateDatapointRequest,
     CreateEventRequest,
     CreateRunRequest,
     CreateToolRequest,
     EventType1,
-    Parameters2,
-    PostConfigurationRequest,
-    SessionStartRequest,
     Type3,
     UUIDType,
 )
 from tests.utils import (
     create_openai_config_request,
     create_session_request,
-    mock_api_error_response,
-    mock_success_response,
 )
 
 
@@ -30,7 +26,7 @@ class TestAPIWorkflows:
     """Unit tests for API workflows."""
 
     @pytest.fixture
-    def mock_client(self):
+    def mock_client(self) -> Mock:
         """Create a mock HoneyHive client for unit testing."""
         client = Mock(spec=HoneyHive)
         # Configure nested attributes for API endpoints
@@ -43,7 +39,7 @@ class TestAPIWorkflows:
         return client
 
     @pytest.fixture
-    def mock_responses(self):
+    def mock_responses(self) -> Dict[str, Any]:
         """Mock API response data for unit tests."""
         return {
             "session": {
@@ -86,7 +82,9 @@ class TestAPIWorkflows:
             },
         }
 
-    def test_session_creation_workflow(self, mock_client, mock_responses):
+    def test_session_creation_workflow(
+        self, mock_client: Any, mock_responses: Any
+    ) -> None:
         """Test session creation workflow with mocked client."""
         # Setup mock
         mock_client.sessions.create_session.return_value = Mock(
@@ -101,7 +99,9 @@ class TestAPIWorkflows:
         assert session_response.session_id == mock_responses["session"]["session_id"]
         mock_client.sessions.create_session.assert_called_once_with(session_request)
 
-    def test_event_creation_workflow(self, mock_client, mock_responses):
+    def test_event_creation_workflow(
+        self, mock_client: Any, mock_responses: Any
+    ) -> None:
         """Test event creation workflow with mocked client."""
         # Setup mock
         mock_client.events.create_event.return_value = Mock(
@@ -138,7 +138,9 @@ class TestAPIWorkflows:
         assert event_response.event_id == mock_responses["event"]["event_id"]
         mock_client.events.create_event.assert_called_once_with(event_request)
 
-    def test_datapoint_creation_workflow(self, mock_client, mock_responses):
+    def test_datapoint_creation_workflow(  # pylint: disable=unused-argument
+        self, mock_client: Any, mock_responses: Any
+    ) -> None:
         """Test datapoint creation workflow with mocked client."""
         # Setup mock
         mock_datapoint = Mock()
@@ -167,7 +169,9 @@ class TestAPIWorkflows:
             datapoint_request
         )
 
-    def test_configuration_workflow(self, mock_client, mock_responses):
+    def test_configuration_workflow(
+        self, mock_client: Any, mock_responses: Any
+    ) -> None:
         """Test configuration creation workflow with mocked client."""
         # Setup mock
         mock_config = Mock()
@@ -176,7 +180,7 @@ class TestAPIWorkflows:
 
         # Create request
         config_request = create_openai_config_request(
-            project="test-project", name="test-config"
+            "test-project", "test-config"  # Use positional args for compatibility
         )
 
         # Execute
@@ -190,7 +194,9 @@ class TestAPIWorkflows:
             config_request
         )
 
-    def test_tool_creation_workflow(self, mock_client, mock_responses):
+    def test_tool_creation_workflow(  # pylint: disable=unused-argument
+        self, mock_client: Any, mock_responses: Any
+    ) -> None:
         """Test tool creation workflow with mocked client."""
         # Setup mock
         mock_tool = Mock()
@@ -215,7 +221,7 @@ class TestAPIWorkflows:
         assert tool_response.name == "tool-integration-123"
         mock_client.tools.create_tool.assert_called_once_with(tool_request)
 
-    def test_evaluation_workflow(self, mock_client, mock_responses):
+    def test_evaluation_workflow(self, mock_client: Any) -> None:
         """Test evaluation run workflow with mocked client."""
         # Setup mock
         mock_client.evaluations.create_run.return_value = Mock(
@@ -226,7 +232,7 @@ class TestAPIWorkflows:
         run_request = CreateRunRequest(
             project="test-project",
             name="test-evaluation",
-            event_ids=[UUIDType("12345678-1234-1234-1234-123456789abc")],
+            event_ids=[UUIDType(uuid.UUID("12345678-1234-1234-1234-123456789abc"))],
             dataset_id=None,
             datapoint_ids=[],
             configuration={"metrics": ["accuracy", "precision"]},
@@ -241,7 +247,7 @@ class TestAPIWorkflows:
         assert str(run_response.run_id) == "12345678-1234-1234-1234-123456789abc"
         mock_client.evaluations.create_run.assert_called_once_with(run_request)
 
-    def test_list_operations_workflow(self, mock_client):
+    def test_list_operations_workflow(self, mock_client: Any) -> None:
         """Test list operations workflow with mocked client."""
         # Setup mock
         mock_config1 = Mock()
@@ -265,7 +271,7 @@ class TestAPIWorkflows:
         mock_client.configurations.list_configurations.assert_called_once_with(limit=10)
 
     @pytest.mark.error_handling
-    def test_error_handling_workflow(self, mock_client):
+    def test_error_handling_workflow(self, mock_client: Any) -> None:
         """Test error handling in workflows with mocked client."""
         # Setup mock to raise exception
         mock_client.sessions.create_session.side_effect = Exception("API Error")
@@ -276,7 +282,7 @@ class TestAPIWorkflows:
 
         mock_client.sessions.create_session.assert_called_once()
 
-    def test_async_workflow(self, mock_client, mock_responses):
+    def test_async_workflow(self, mock_client: Any, mock_responses: Any) -> None:
         """Test async API workflow with mocked client."""
         # Setup mock
         mock_client.sessions.start_session.return_value = Mock(

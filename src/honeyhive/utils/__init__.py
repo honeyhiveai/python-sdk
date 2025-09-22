@@ -1,14 +1,13 @@
 """HoneyHive utilities package."""
 
+# Global config removed - use per-instance configuration instead
 from .baggage_dict import BaggageDict
-from .cache import Cache, CacheConfig, CacheEntry
-from .config import Config, config, get_config, reload_config
+from .cache import Cache, CacheConfig, CacheEntry, CacheManager
 from .connection_pool import ConnectionPool, PoolConfig
 from .dotdict import DotDict
 from .error_handler import (
     APIError,
     AuthenticationError,
-    ConnectionError,
     ErrorContext,
     ErrorHandler,
     ErrorResponse,
@@ -26,10 +25,8 @@ __all__ = [
     "Cache",
     "CacheConfig",
     "CacheEntry",
-    "Config",
-    "config",
-    "get_config",
-    "reload_config",
+    "CacheManager",
+    # Global config exports removed - use per-instance configuration instead
     "ConnectionPool",
     "PoolConfig",
     "DotDict",
@@ -45,7 +42,6 @@ __all__ = [
     "HoneyHiveError",
     "APIError",
     "ValidationError",
-    "ConnectionError",
     "RateLimitError",
     "AuthenticationError",
     "get_error_handler",

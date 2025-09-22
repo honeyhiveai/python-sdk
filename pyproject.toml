@@ -30,6 +30,7 @@ dependencies = [
     "opentelemetry-exporter-otlp-proto-http>=1.20.0",
     "wrapt>=1.14.0",
     "pydantic>=2.0.0",
+    "pydantic-settings>=2.0.0",
     "python-dotenv>=1.0.0",
     "click>=8.0.0",
     "pyyaml>=6.0",
@@ -40,7 +41,7 @@ dependencies = [
 dev = [
     "pytest>=7.0.0",
     "pytest-asyncio>=0.21.0",
-    "pytest-cov>=4.0.0",
+    "pytest-cov>=7.0.0",
     "pytest-mock>=3.10.0",
     "pytest-xdist>=3.0.0",
     "tox>=4.0.0",
@@ -232,40 +233,10 @@ known_first_party = ["honeyhive"]
 
 [tool.pylint.messages_control]
 disable = [
-    "C0103",  # invalid-name (for generated models)
-    "C0301",  # line-too-long (for generated models)
-    "C0302",  # too-many-lines (for generated models)
-    "R0801",  # duplicate-code (acceptable in some cases)
-    "R0902",  # too-many-instance-attributes
-    "R0903",  # too-few-public-methods
-    "R0904",  # too-many-public-methods
-    "R0911",  # too-many-return-statements
-    "R0912",  # too-many-branches
-    "R0913",  # too-many-arguments
-    "R0915",  # too-many-statements
-    "W0212",  # protected-access (acceptable for testing)
-    "W0621",  # redefined-outer-name (acceptable in tests)
-    "W0622",  # redefined-builtin (acceptable in some cases)
     "W0702",  # bare-except (acceptable in some cases)
     "W0718",  # broad-exception-caught (acceptable in some cases)
-    "W0719",  # broad-exception-raised (acceptable in some cases)
-    "W1309",  # f-string-without-interpolation
-    "W0613",  # unused-argument (acceptable for interface compliance)
-    "W0611",  # unused-import (acceptable for conditional imports)
-    "C0415",  # import-outside-toplevel (acceptable in some cases)
-    "E0401",  # import-error (acceptable in test files)
-    "E0102",  # function-redefined (acceptable for decorators)
-    "E1120",  # no-value-for-parameter (acceptable in some cases)
-    "C0413",  # wrong-import-position (acceptable in some cases)
-    "W0107",  # unnecessary-pass (acceptable in some cases)
-    "W0603",  # global-statement (acceptable in some cases)
-    "R0914",  # too-many-locals (acceptable in some cases)
-    "R1702",  # too-many-nested-blocks (acceptable in some cases)
-    "R1705",  # no-else-return (acceptable in some cases)
-    "W0707",  # raise-missing-from (acceptable in some cases)
-    "W1203",  # logging-fstring-interpolation (acceptable in some cases)
-    "E1101",  # no-member (acceptable for dynamic attributes)
-    "R0401",  # cyclic-import (acceptable in test files)
+    "W0719",  # broad-exception-raised (acceptable for graceful degradation)
+    "W0212",  # protected-access (approved for test files)
 ]
 
 [tool.pylint.format]
@@ -284,6 +255,10 @@ max-statements = 100
 
 [tool.pylint.basic]
 good-names = ["i", "j", "k", "ex", "Run", "_", "id", "db", "api", "ui", "ui_", "id_", "ip_", "ip"]
+
+[tool.pylint.logging]
+# Recognize safe_log as a logging function for proper lazy formatting analysis
+logging-modules = ["logging", "honeyhive.utils.logger"]
 
 [tool.pylint.master]
 fail-under = 9.99
@@ -304,8 +279,6 @@ check_untyped_defs = true
 disallow_untyped_decorators = true
 no_implicit_optional = true
 warn_redundant_casts = true
-
-
 
 [[tool.mypy.overrides]]
 module = [
@@ -336,6 +309,7 @@ markers = [
 
 [tool.coverage.run]
 source = ["src/honeyhive"]
+parallel = true
 omit = [
     "*/tests/*",
     "*/test_*",

@@ -36,6 +36,9 @@ Each test file follows this pattern:
 - `test_traceloop_bedrock.py` - AWS Bedrock with enhanced metrics
 - `test_traceloop_mcp.py` - MCP with enhanced metrics
 
+### Framework Integration Tests
+- `test_strands_integration.py` - AWS Strands agent framework integration
+
 ## Running Tests
 
 ### Prerequisites
@@ -144,6 +147,7 @@ vim .env
 | **AWS Bedrock** | Traceloop | `test_traceloop_bedrock.py` | ✅ Implemented | Enhanced metrics |
 | **Model Context Protocol** | OpenInference | `test_openinference_mcp.py` | ✅ Implemented | MCP integration |
 | **Model Context Protocol** | Traceloop | `test_traceloop_mcp.py` | ✅ Implemented | Enhanced metrics |
+| **AWS Strands** | Framework | `test_strands_integration.py` | ✅ Implemented | Agent framework integration |
 
 ### Python Version Compatibility
 
