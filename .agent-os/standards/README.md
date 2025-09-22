@@ -20,6 +20,7 @@ This directory contains the comprehensive Agent OS standards that enable consist
 ### **🤖 AI Assistant Standards Hub**
 - **📋 [AI Assistant Hub](ai-assistant/README.md)** - Complete AI assistant guidelines
 - **🔒 [Compliance Checking](ai-assistant/compliance-checking.md)** - MANDATORY first step
+- **🔐 [Credential File Protection](ai-assistant/credential-file-protection.md)** - **CRITICAL**: Never write to .env files
 - **🛡️ [Git Safety Rules](ai-assistant/git-safety-rules.md)** - Forbidden operations
 
 ## 🚀 **Development Standards**
@@ -54,6 +55,7 @@ This directory contains the comprehensive Agent OS standards that enable consist
 
 ### **Core AI Assistant Guidelines**
 - **[Quality Framework](ai-assistant/quality-framework.md)** - Autonomous quality gates, pre-generation validation
+- **[Credential File Protection](ai-assistant/credential-file-protection.md)** - **CRITICAL**: Never write to .env or credential files
 - **[Git Safety Rules](ai-assistant/git-safety-rules.md)** - Forbidden operations, data loss prevention
 - **[Commit Protocols](ai-assistant/commit-protocols.md)** - Review checkpoints, CHANGELOG requirements
 - **[Compliance Checking](ai-assistant/compliance-checking.md)** - MANDATORY compliance verification
@@ -128,6 +130,7 @@ The following core files remain in the main standards directory:
 ### **AI Assistant Guidelines**
 - **[AI Assistant Hub](ai-assistant/README.md)** - Complete AI guidelines
 - **[Quality Framework](ai-assistant/quality-framework.md)** - Autonomous quality gates
+- **[Credential File Protection](ai-assistant/credential-file-protection.md)** - **CRITICAL**: Never write to .env files
 - **[Git Safety Rules](ai-assistant/git-safety-rules.md)** - Forbidden operations
 - **[Compliance Checking](ai-assistant/compliance-checking.md)** - MANDATORY first step
 
@@ -142,9 +145,10 @@ The following core files remain in the main standards directory:
 ### **🤖 AI Assistants**
 **MANDATORY SEQUENCE:**
 1. **[Compliance Checking](ai-assistant/compliance-checking.md)** - Check existing standards FIRST
-2. **[Test Generation Framework](ai-assistant/code-generation/tests/README.md)** - For test generation tasks
-3. **[Production Code Framework](ai-assistant/code-generation/production/README.md)** - For production code tasks
-4. **[Git Safety Rules](ai-assistant/git-safety-rules.md)** - Forbidden operations
+2. **[Credential File Protection](ai-assistant/credential-file-protection.md)** - **CRITICAL**: Never write to .env files
+3. **[Test Generation Framework](ai-assistant/code-generation/tests/README.md)** - For test generation tasks
+4. **[Production Code Framework](ai-assistant/code-generation/production/README.md)** - For production code tasks
+5. **[Git Safety Rules](ai-assistant/git-safety-rules.md)** - Forbidden operations
 
 ### **👩‍💻 Developers**
 **RECOMMENDED PATH:**

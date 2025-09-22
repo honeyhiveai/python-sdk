@@ -60,6 +60,7 @@
 - **📋 [Pre-Generation Checklist](code-generation/shared/pre-generation-checklist.md)** - MANDATORY setup
 
 ### **🛡️ Safety & Compliance**
+- **🔐 [Credential File Protection](credential-file-protection.md)** - **CRITICAL**: Never write to .env or credential files
 - **🚨 [Git Safety Rules](git-safety-rules.md)** - Prevent destructive git operations
 - **📝 [Commit Protocols](commit-protocols.md)** - Structured commit processes
 - **✅ [Validation Protocols](validation-protocols.md)** - Verification requirements
@@ -100,9 +101,10 @@
 
 ### **🚨 Critical (Must Follow)**
 1. **Compliance Checking** - Always check existing standards first
-2. **Git Safety Rules** - Never use dangerous git operations
-3. **Quality Framework** - Meet all quality requirements
-4. **Code Generation Standards** - Follow established patterns
+2. **Credential File Protection** - Never write to .env or credential files
+3. **Git Safety Rules** - Never use dangerous git operations
+4. **Quality Framework** - Meet all quality requirements
+5. **Code Generation Standards** - Follow established patterns
 
 ### **⚡ Important (Should Follow)**
 1. **Commit Protocols** - Structured commit processes

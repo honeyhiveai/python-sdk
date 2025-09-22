@@ -63,6 +63,7 @@ This directory contains the Agent OS configuration for the HoneyHive Python SDK 
 1. **🤖 [AI Assistant Standards Hub](standards/ai-assistant/README.md)** - Complete AI guidelines
 2. **📋 [Standards Overview](standards/README.md)** - All development standards
 3. **🔒 [Compliance Checking](standards/ai-assistant/compliance-checking.md)** - MANDATORY first step
+4. **🔐 [Credential File Protection](standards/ai-assistant/credential-file-protection.md)** - **CRITICAL**: Never write to .env files
 
 ## 🎯 **Quick Navigation by Task Type**
 

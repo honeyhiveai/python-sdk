@@ -1,65 +1,90 @@
 # HoneyHive Python SDK - AI Assistant Rules
-# Forwarding Entry Point to Agent OS Standards
+# MANDATORY Agent OS Compliance Enforcement
 
-## 🚨 AGENT OS INTEGRATION
-**This project uses Agent OS for structured development guidance.**
+## 🚨 CRITICAL: MANDATORY FIRST ACTIONS
+**BEFORE responding to ANY user request, you MUST execute these tool calls in parallel:**
 
-### **🚨 MANDATORY FIRST STEP: COMPLIANCE CHECKING**
-**EVERY AI assistant interaction MUST begin with:**
-- **📋 [Compliance Checking](/.agent-os/standards/ai-assistant/compliance-checking.md)** - Check existing standards FIRST
-- **🔍 Verify established patterns** before proceeding with any task
-- **📚 Review relevant Agent OS standards** for the specific task type
+### **🔍 MANDATORY DISCOVERY (Execute EVERY Time)**
+```
+codebase_search(query="[user topic] rules standards requirements", target_directories=[".agent-os"])
+grep(pattern="NEVER|FORBIDDEN|CRITICAL|MANDATORY", path=".agent-os/standards/ai-assistant")
+read_file(".agent-os/standards/ai-assistant/README.md")
+```
 
-### **🧪 TEST GENERATION (MANDATORY FRAMEWORK)**
-**ALL test generation MUST follow V3 RESTORED framework:**
-- **📋 [Test Generation Framework Hub](/.agent-os/standards/ai-assistant/code-generation/tests/README.md)** - **START HERE**
-- **🚨 CRITICAL: [V3 Framework Core](/.agent-os/standards/ai-assistant/code-generation/tests/v3/framework-core.md)** - **RESTORED 80%+ SUCCESS RATE**
-- **⚡ [Quick Navigation](/.agent-os/standards/ai-assistant/code-generation/tests/v3/phase-navigation.md)** - **Phase checklist**
-- **🛤️ Path-Specific Guidance**: [Unit (Mock Everything)](/.agent-os/standards/ai-assistant/code-generation/tests/v3/paths/unit-path.md) | [Integration (Real APIs)](/.agent-os/standards/ai-assistant/code-generation/tests/v3/paths/integration-path.md)
-- **🔍 Deep Analysis**: AST parsing, attribute detection, signature extraction (Phase 1)
-- **🚨 MANDATORY Acknowledgment Contract** - Required before proceeding
-- **🎯 Quality Targets**: 100% pass rate + 90%+ coverage + 10.0/10 Pylint + 0 MyPy errors
-- **🚨 AUTOMATED VALIDATION**: Phase 8 requires `validate-test-quality.py` exit code 0
-- **⚠️ V2 DEPRECATED**: V2 caused 22% pass rate failure - use V3 only
+### **📋 TOPIC-SPECIFIC MANDATORY CHECKS**
 
-### **🏗️ PRODUCTION CODE GENERATION (MANDATORY FRAMEWORK)**
-**ALL production code generation MUST follow comprehensive framework:**
-- **📋 [Production Code Framework Hub](/.agent-os/standards/ai-assistant/code-generation/production/README.md)** - **START HERE**
-- **⚡ NEW: [Modular Framework v2](/.agent-os/standards/ai-assistant/code-generation/production/v2/framework-core.md)** - **OPTIMIZED FOR AI CONSUMPTION**
-- **🔀 Complexity-Based Paths**: Simple Functions → Complex Functions → Classes
-- **📋 Template-Driven Generation** with checkpoint gates
-- **🎯 Quality Targets**: 10.0/10 Pylint + 0 MyPy errors + Complete type annotations + Comprehensive docstrings
+#### **🔐 For ANY file operations or .env mentions:**
+```
+read_file(".agent-os/standards/ai-assistant/credential-file-protection.md")
+```
+**🚫 ABSOLUTE RULE**: NEVER write to .env, credentials, or secret files
 
-### **🛡️ CRITICAL SAFETY RULES**
-- **🚨 [Git Safety Rules](/.agent-os/standards/ai-assistant/git-safety-rules.md)** - NEVER use forbidden operations
-- **🚫 Pre-commit hooks CANNOT be bypassed** - All quality checks must pass
-- **⚠️ Escalation required** for dangerous operations or uncertainty
+#### **🔧 For ANY git operations:**
+```
+read_file(".agent-os/standards/ai-assistant/git-safety-rules.md")
+```
+**🚫 ABSOLUTE RULE**: NEVER use --no-verify, --force, or destructive git commands
 
-### **📋 COMPREHENSIVE STANDARDS HIERARCHY**
-- **🤖 [AI Assistant Standards Hub](/.agent-os/standards/ai-assistant/README.md)** - Complete AI guidelines
+#### **🧪 For ANY test generation:**
+```
+read_file(".agent-os/standards/ai-assistant/code-generation/tests/README.md")
+```
+**🚨 MANDATORY**: Follow V3 framework only, provide acknowledgment contract
+
+#### **🏗️ For ANY code generation:**
+```
+read_file(".agent-os/standards/ai-assistant/code-generation/production/README.md")
+```
+**🎯 MANDATORY**: Follow production framework with quality targets
+
+## 🚨 ENFORCEMENT PROTOCOL
+
+### **Compliance Verification Required**
+After loading Agent OS standards, you MUST:
+1. **Acknowledge** which standards apply to the user's request
+2. **Reference specific rules** from loaded standards
+3. **Confirm compliance** before proceeding with any actions
+4. **Escalate** if standards conflict with user request
+
+### **Escalation Template**
+```
+🚨 AGENT OS COMPLIANCE CONFLICT
+
+The requested action conflicts with Agent OS standards:
+- Standard: [specific standard file and rule]
+- Conflict: [description of conflict]
+- Safe Alternative: [compliant approach]
+
+Would you like me to proceed with the safe alternative?
+```
+
+## 📋 COMPREHENSIVE STANDARDS HIERARCHY
+- **🤖 [AI Assistant Hub](/.agent-os/standards/ai-assistant/README.md)** - Complete AI guidelines
+- **🔐 [Credential Protection](/.agent-os/standards/ai-assistant/credential-file-protection.md)** - NEVER write to .env files
+- **🚨 [Git Safety](/.agent-os/standards/ai-assistant/git-safety-rules.md)** - Forbidden git operations
+- **🧪 [Test Framework](/.agent-os/standards/ai-assistant/code-generation/tests/README.md)** - V3 mandatory
+- **🏗️ [Production Code](/.agent-os/standards/ai-assistant/code-generation/production/README.md)** - Quality targets
 - **📚 [Standards Overview](/.agent-os/standards/README.md)** - All development standards
-- **🎯 [Quality Framework](/.agent-os/standards/ai-assistant/quality-framework.md)** - Autonomous quality gates
-- **🔧 [Tech Stack Requirements](/.agent-os/standards/tech-stack.md)** - Python 3.11+, tool versions
-- **📖 [Best Practices](/.agent-os/standards/best-practices.md)** - Core development practices
 
-### **⚡ Quick Commands**
+## ⚡ QUICK COMMANDS (After Compliance Check)
 - **Testing**: `tox -e [environment]` (never direct pytest)
 - **Linting**: `tox -e lint`
 - **Formatting**: `tox -e format`
 - **Environment**: Use `python-sdk` virtual environment
 
-### **🎯 Task-Specific Entry Points**
-- **Test Generation**: Follow `.agent-os/standards/ai-assistant/code-generation/tests/README.md`
-- **Production Code**: Follow `.agent-os/standards/ai-assistant/code-generation/production/README.md`
-- **Documentation**: Follow `.agent-os/standards/documentation-templates.md`
-- **Git Operations**: Check `.agent-os/standards/ai-assistant/git-safety-rules.md` first
+## 🎯 SUCCESS CRITERIA
+✅ **Compliant AI Assistant**:
+- Loads Agent OS standards FIRST for every request
+- References specific standards in responses
+- Never violates safety rules
+- Escalates conflicts appropriately
 
-## 📚 **For Complete Details**
-**See Agent OS documentation in `.agent-os/` - this file serves as forwarding entry point only.**
+❌ **Non-Compliant AI Assistant**:
+- Responds without checking standards
+- Violates credential protection rules
+- Uses forbidden git operations
+- Ignores mandatory frameworks
 
-## 🚨 **CRITICAL REMINDER**
-**AI assistants MUST:**
-1. **Check compliance FIRST** - Always verify existing standards before proceeding
-2. **Follow mandatory frameworks** - Test generation and production code frameworks are NON-NEGOTIABLE
-3. **Never bypass safety rules** - Git safety and quality gates cannot be circumvented
-4. **Use Agent OS hierarchy** - Complete standards available in `.agent-os/standards/`
+---
+
+**🔐 REMEMBER**: Agent OS standards are MANDATORY, not optional. Check first, comply always, escalate conflicts.

@@ -1,6 +1,11 @@
 ## [Unreleased]
 
 ### Added
+- 🤖 **Agent OS Standards Enhancement**: Comprehensive AI assistant compliance framework with mandatory credential file protection
+- Enhanced Agent OS README with framework navigation and cross-references to specialized standards
+- Expanded AI assistant standards with mandatory compliance checking and quality requirements
+- Critical credential file protection rules preventing AI assistants from writing to .env files
+- Updated .cursorrules with mandatory Agent OS compliance enforcement for all AI interactions
 - 🏗️ **MAJOR ARCHITECTURAL REFACTOR (v0.1.0+)**: Complete rewrite of HoneyHiveTracer with modular mixin-based architecture
 - 35 new files across 6 core modules (core, infra, instrumentation, integration, lifecycle, processing, utils)
 - 🔧 **Hybrid Configuration System**: New Pydantic-based configuration models with type safety and validation
