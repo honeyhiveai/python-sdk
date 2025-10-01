@@ -1,0 +1,36 @@
+{
+  "_comment": "Multiple completions response - n parameter > 1",
+  "_scenario": "User requests 2 different completions for same prompt",
+  "_source": "Based on CreateChatCompletionResponse schema with n=2",
+  "_note": "Multiple choices array when n > 1",
+  "id": "chatcmpl-multi456",
+  "object": "chat.completion",
+  "created": 1721596800,
+  "model": "gpt-4o-2024-08-06",
+  "choices": [
+    {
+      "index": 0,
+      "message": {
+        "role": "assistant",
+        "content": "The Eiffel Tower is located in Paris, France."
+      },
+      "logprobs": null,
+      "finish_reason": "stop"
+    },
+    {
+      "index": 1,
+      "message": {
+        "role": "assistant",
+        "content": "You can find the Eiffel Tower in the heart of Paris, the capital city of France."
+      },
+      "logprobs": null,
+      "finish_reason": "stop"
+    }
+  ],
+  "usage": {
+    "prompt_tokens": 10,
+    "completion_tokens": 28,
+    "total_tokens": 38
+  },
+  "system_fingerprint": "fp_3407719c7f"
+}

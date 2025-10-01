@@ -81,5 +81,61 @@ def test_with_external_mocks(mock_env, mock_safe_log, mock_tracer):
 - [ ] Pylint disables documented with justifications ✅/❌
 
 🚨 FRAMEWORK-VIOLATION: If proceeding without complete unit mock strategy
+
+---
+
+## 🚨 **COMMON AI MISINTERPRETATIONS (AVOID THESE)**
+
+### **Misinterpretation 1: "Mock All Methods to Achieve Isolation"**
+**❌ What AI Often Thinks**: Mock every method, including internal ones, for complete isolation
+
+**✅ Correct Understanding**: Mock only EXTERNAL dependencies. Internal methods of the class under test should execute normally to achieve coverage.
+
+**Why It Matters**:
+```python
+# ❌ WRONG - This achieves 0% coverage of internal methods
+@patch.object(ProviderCompiler, '_generate_extraction_function')
+def test_compile(mock_generate):
+    compiler.compile()  # Internal method mocked → no coverage
+
+# ✅ CORRECT - This achieves 95% coverage
+@patch('yaml.safe_load')  # Mock external dependency only
+def test_compile(mock_yaml):
+    compiler.compile()  # Internal methods execute → full coverage
+```
+
+### **Misinterpretation 2: "External = Third-Party Libraries Only"**
+**❌ What AI Often Thinks**: Only mock `requests`, `os`, etc. Everything else is internal
+
+**✅ Correct Understanding**: External = anything the class/function DEPENDS ON (third-party libraries + other project modules + I/O operations)
+
+**Classification**:
+```python
+# External (MOCK THESE):
+import yaml  # ✅ Third-party library
+import logging  # ✅ Standard library with side effects
+from honeyhive.utils.logger import safe_log  # ✅ Other project module
+from pathlib import Path  # ✅ I/O operations
+
+# Internal (DON'T MOCK):
+class ProviderCompiler:  # ❌ Class being tested
+    def _internal_method(self):  # ❌ Method of class under test
+    def _another_internal(self):  # ❌ Another internal method
+```
+
+### **Misinterpretation 3: "Complete Isolation = Mock Everything"**
+**❌ What AI Often Thinks**: True isolation means mocking all function/method calls
+
+**✅ Correct Understanding**: Isolation means the test doesn't depend on external services/files/state. Internal code execution is required for coverage.
+
+**Isolation Definition**:
+- ✅ Mock external API calls (requests.post)
+- ✅ Mock file system operations (Path.exists)
+- ✅ Mock environment variables (os.getenv)
+- ❌ Don't mock the code you're trying to test
+- ❌ Don't mock helper methods of the same class
+
+---
+
 🛑 UPDATE-TABLE: Phase 1.5 → Unit mock strategy complete with evidence
 🎯 NEXT-MANDATORY: [integration-real-strategy.md](integration-real-strategy.md)

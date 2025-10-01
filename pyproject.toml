@@ -262,6 +262,7 @@ logging-modules = ["logging", "honeyhive.utils.logger"]
 
 [tool.pylint.master]
 fail-under = 9.99
+init-hook = 'import sys; sys.path.insert(0, ".")'
 
 [tool.pylint.files]
 ignore-patterns = [

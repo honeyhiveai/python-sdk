@@ -1,0 +1,172 @@
+version: '1.0'
+provider: anthropic
+dsl_type: provider_structure_patterns
+
+# Anthropic Structure Patterns for Universal LLM Discovery Engine v4.0
+# This file defines patterns for detecting Anthropic Claude spans from various instrumentors
+# Updated for 2025-09-29 with current Claude model support
+
+patterns:
+  
+  # === OpenInference Anthropic Pattern ===
+  openinference_anthropic:
+    signature_fields:
+      - "llm.model_name"
+      - "llm.provider"
+      - "llm.input_messages"
+      - "llm.token_count.prompt"
+      - "llm.invocation_parameters.top_k"
+    optional_fields:
+      - "llm.output_messages"
+      - "llm.invocation_parameters.temperature"
+      - "llm.invocation_parameters.max_tokens"
+      - "llm.invocation_parameters.top_p"
+      - "llm.invocation_parameters.top_k"
+    confidence_weight: 0.98
+    description: "OpenInference semantic conventions for Anthropic Claude"
+    model_patterns:
+      - "claude-*"
+      - "claude-3-*"
+      - "claude-3.5-*"
+    provider_indicators:
+      - "anthropic"
+      - "claude"
+    
+  # === Traceloop Anthropic Pattern ===
+  traceloop_anthropic:
+    signature_fields:
+      - "gen_ai.request.model"
+      - "gen_ai.system"
+      - "gen_ai.usage.prompt_tokens"
+      - "gen_ai.completion"
+    optional_fields:
+      - "gen_ai.request.temperature"
+      - "gen_ai.request.max_tokens"
+      - "gen_ai.request.top_p"
+      - "gen_ai.request.top_k"
+      - "gen_ai.usage.completion_tokens"
+      - "gen_ai.response.finish_reason"
+    confidence_weight: 0.95
+    description: "Traceloop OpenLLMetry conventions for Anthropic Claude"
+    model_patterns:
+      - "claude-*"
+      - "claude-3-*"
+      - "claude-3.5-*"
+    provider_indicators:
+      - "anthropic"
+      - "claude"
+    
+  # === Direct Anthropic SDK Pattern ===
+  direct_anthropic:
+    signature_fields:
+      - "anthropic.model"
+      - "anthropic.messages"
+      - "anthropic.response"
+    optional_fields:
+      - "anthropic.usage.input_tokens"
+      - "anthropic.usage.output_tokens"
+      - "anthropic.system"
+      - "anthropic.temperature"
+      - "anthropic.max_tokens"
+    confidence_weight: 0.90
+    description: "Direct Anthropic SDK usage patterns"
+    model_patterns:
+      - "claude-*"
+      - "claude-3-*"
+      - "claude-3.5-*"
+    provider_indicators:
+      - "anthropic"
+      - "claude"
+    
+  # === LangChain Anthropic Pattern ===
+  langchain_anthropic:
+    signature_fields:
+      - "langchain.llm.model_name"
+      - "langchain.llm.provider"
+      - "langchain.llm.input"
+    optional_fields:
+      - "langchain.llm.output"
+      - "langchain.llm.token_usage.prompt_tokens"
+      - "langchain.llm.token_usage.completion_tokens"
+      - "langchain.llm.parameters.temperature"
+      - "langchain.llm.parameters.max_tokens"
+    confidence_weight: 0.85
+    description: "LangChain Anthropic integration patterns"
+    model_patterns:
+      - "claude-*"
+      - "claude-3-*"
+      - "claude-3.5-*"
+    provider_indicators:
+      - "anthropic"
+      - "claude"
+    
+  # === Haystack Anthropic Pattern ===
+  haystack_anthropic:
+    signature_fields:
+      - "haystack.component.type"
+      - "haystack.component.name"
+      - "haystack.anthropic.model"
+    optional_fields:
+      - "haystack.anthropic.messages"
+      - "haystack.anthropic.response"
+      - "haystack.anthropic.usage.input_tokens"
+      - "haystack.anthropic.usage.output_tokens"
+    confidence_weight: 0.80
+    description: "Haystack Anthropic component patterns"
+    model_patterns:
+      - "claude-*"
+      - "claude-3-*"
+      - "claude-3.5-*"
+    provider_indicators:
+      - "anthropic"
+      - "claude"
+    
+  # === Generic Anthropic Pattern ===
+  generic_anthropic:
+    signature_fields:
+      - "ai.model.provider"
+      - "ai.model.name"
+      - "ai.request.messages"
+    optional_fields:
+      - "ai.response.messages"
+      - "ai.usage.input_tokens"
+      - "ai.usage.output_tokens"
+      - "ai.request.temperature"
+      - "ai.request.max_tokens"
+    confidence_weight: 0.75
+    description: "Generic AI instrumentation patterns for Anthropic"
+    model_patterns:
+      - "claude-*"
+      - "claude-3-*"
+      - "claude-3.5-*"
+    provider_indicators:
+      - "anthropic"
+      - "claude"
+
+validation:
+  minimum_signature_fields: 3
+  maximum_patterns: 10
+  confidence_threshold: 0.7
+  required_model_patterns:
+    - "claude-*"
+  supported_models:
+    # Claude 3.5 models (current flagship - 2025-09-29)
+    - "claude-3-5-sonnet-20241022"
+    - "claude-3-5-sonnet-20240620"
+    - "claude-3-5-haiku-20241022"
+    
+    # Claude 3 models
+    - "claude-3-opus-20240229"
+    - "claude-3-sonnet-20240229"
+    - "claude-3-haiku-20240307"
+    
+    # Legacy Claude models
+    - "claude-2.1"
+    - "claude-2.0"
+    - "claude-instant-1.2"
+    
+  instrumentor_compatibility:
+    openinference: ["0.1.15", "0.1.16", "0.1.17"]
+    traceloop: ["0.46.2", "0.47.0", "0.48.0"]
+    langchain: ["0.1.0", "0.2.0"]
+    haystack: ["2.0.0", "2.1.0"]

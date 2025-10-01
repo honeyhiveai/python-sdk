@@ -6,6 +6,9 @@ This directory contains the comprehensive Agent OS standards that enable consist
 
 ## 🚨 **CRITICAL: AI Assistant Entry Points**
 
+### **🎯 Essential Project Context (MANDATORY FIRST)**
+- **📋 [SYSTEMATIC-DEVELOPMENT-CONTEXT.md](ai-assistant/SYSTEMATIC-DEVELOPMENT-CONTEXT.md)** - **MANDATORY READING** - Revolutionary AI-assisted development methodology and project context
+
 ### **🧪 Test Generation Framework (MANDATORY)**
 - **📋 [Test Generation Hub](ai-assistant/code-generation/tests/README.md)** - **START HERE FOR ALL TEST GENERATION**
 - **⚡ NEW: [Modular Framework v2](ai-assistant/code-generation/tests/v2/framework-core.md)** - **OPTIMIZED FOR AI CONSUMPTION (68% smaller)**

@@ -15,7 +15,7 @@ from enum import Enum
 from typing import Any, Dict, List, Optional, Union
 from uuid import UUID
 
-from pydantic import BaseModel, ConfigDict, Field
+from pydantic import BaseModel, ConfigDict, Field, field_serializer, field_validator
 
 
 class SessionStartRequest(BaseModel):
@@ -24,10 +24,32 @@ class SessionStartRequest(BaseModel):
     source: str = Field(
         ..., description="Source of the session - production, staging, etc"
     )
-    session_id: Optional[str] = Field(
+    session_id: Optional[Union[str, UUID]] = Field(
         None,
-        description="Unique id of the session, if not set, it will be auto-generated",
+        description="Unique UUID of the session, if not set, it will be auto-generated",
     )
+
+    @field_validator("session_id", mode="before")
+    @classmethod
+    def validate_session_id(cls, v: Union[UUID, str, None]) -> Optional[str]:
+        """Accept UUID objects, valid UUID strings, or reject invalid strings."""
+        if v is None:
+            return None
+        if isinstance(v, UUID):
+            return str(v)  # Convert UUID objects to strings
+        if isinstance(v, str):
+            try:
+                # Validate it's a proper UUID, then return as string
+                UUID(v)
+                return v
+            except ValueError as e:
+                raise ValueError(
+                    f"session_id must be a valid UUID string. Received: '{v}'"
+                ) from e
+        raise TypeError(
+            f"session_id must be a UUID string or UUID object, got {type(v).__name__}"
+        )
+
     children_ids: Optional[List[str]] = Field(
         None, description="Id of events that are nested within the session"
     )
@@ -75,8 +97,30 @@ class SessionPropertiesBatch(BaseModel):
     )
     session_id: Optional[str] = Field(
         None,
-        description="Unique id of the session, if not set, it will be auto-generated",
+        description="Unique UUID of the session, if not set, it will be auto-generated",
     )
+
+    @field_validator("session_id", mode="before")
+    @classmethod
+    def validate_session_id(cls, v: Union[UUID, str, None]) -> Optional[str]:
+        """Accept UUID objects, valid UUID strings, or reject invalid strings."""
+        if v is None:
+            return None
+        if isinstance(v, UUID):
+            return str(v)  # Convert UUID objects to strings
+        if isinstance(v, str):
+            try:
+                # Validate it's a proper UUID, then return as string
+                UUID(v)
+                return v
+            except ValueError as e:
+                raise ValueError(
+                    f"session_id must be a valid UUID string. Received: '{v}'"
+                ) from e
+        raise TypeError(
+            f"session_id must be a UUID string or UUID object, got {type(v).__name__}"
+        )
+
     config: Optional[Dict[str, Any]] = Field(
         None, description="Associated configuration for the session"
     )
@@ -131,8 +175,30 @@ class Event(BaseModel):
     )
     session_id: Optional[str] = Field(
         None,
-        description="Unique id of the session associated with the event, if not set, it will be auto-generated",
+        description="Unique UUID of the session associated with the event, if not set, it will be auto-generated",
     )
+
+    @field_validator("session_id", mode="before")
+    @classmethod
+    def validate_session_id(cls, v: Union[UUID, str, None]) -> Optional[str]:
+        """Accept UUID objects, valid UUID strings, or reject invalid strings."""
+        if v is None:
+            return None
+        if isinstance(v, UUID):
+            return str(v)  # Convert UUID objects to strings
+        if isinstance(v, str):
+            try:
+                # Validate it's a proper UUID, then return as string
+                UUID(v)
+                return v
+            except ValueError as e:
+                raise ValueError(
+                    f"session_id must be a valid UUID string. Received: '{v}'"
+                ) from e
+        raise TypeError(
+            f"session_id must be a UUID string or UUID object, got {type(v).__name__}"
+        )
+
     parent_id: Optional[str] = Field(
         None, description="Id of the parent event if nested"
     )
@@ -228,10 +294,32 @@ class CreateEventRequest(BaseModel):
         None,
         description="Unique id of the event, if not set, it will be auto-generated",
     )
-    session_id: Optional[str] = Field(
+    session_id: Optional[Union[str, UUID]] = Field(
         None,
-        description="Unique id of the session associated with the event, if not set, it will be auto-generated",
+        description="Unique UUID of the session associated with the event, if not set, it will be auto-generated",
     )
+
+    @field_validator("session_id", mode="before")
+    @classmethod
+    def validate_session_id(cls, v: Union[UUID, str, None]) -> Optional[str]:
+        """Accept UUID objects, valid UUID strings, or reject invalid strings."""
+        if v is None:
+            return None
+        if isinstance(v, UUID):
+            return str(v)  # Convert UUID objects to strings
+        if isinstance(v, str):
+            try:
+                # Validate it's a proper UUID, then return as string
+                UUID(v)
+                return v
+            except ValueError as e:
+                raise ValueError(
+                    f"session_id must be a valid UUID string. Received: '{v}'"
+                ) from e
+        raise TypeError(
+            f"session_id must be a UUID string or UUID object, got {type(v).__name__}"
+        )
+
     parent_id: Optional[str] = Field(
         None, description="Id of the parent event if nested"
     )

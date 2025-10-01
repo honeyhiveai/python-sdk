@@ -1,0 +1,121 @@
+# OpenAI Provider Research Sources
+
+**Provider**: OpenAI  
+**Last Updated**: 2025-09-29  
+**Version**: 1.0  
+
+## 📋 **Research Sources Used**
+
+### **Official OpenAI Documentation**
+- **OpenAI API Documentation**: https://platform.openai.com/docs/api-reference
+- **OpenAI Models Overview**: https://platform.openai.com/docs/models
+- **OpenAI Pricing**: https://openai.com/pricing
+- **OpenAI Model Release Notes**: https://help.openai.com/en/articles/9624314-model-release-notes
+
+### **Semantic Convention Standards**
+- **OpenInference Semantic Conventions**: https://github.com/Arize-ai/openinference
+  - Version: 0.1.15+
+  - Attributes: `llm.*` namespace
+  - Key patterns: `llm.model_name`, `llm.input_messages`, `llm.output_messages`
+  
+- **Traceloop OpenLLMetry**: https://github.com/traceloop/openllmetry
+  - Version: 0.46.2+
+  - Attributes: `gen_ai.*` namespace
+  - Key patterns: `gen_ai.request.model`, `gen_ai.completion`, `gen_ai.usage.*`
+
+- **Direct OpenAI SDK Patterns**:
+  - Based on OpenAI Python SDK v1.x
+  - Custom attributes: `openai.*` namespace
+  - Patterns derived from SDK response structure
+
+### **Model Information Sources**
+- **Current Models (as of 2025-09-29)**:
+  - GPT-4o models: `gpt-4o`, `gpt-4o-2024-11-20`, `gpt-4o-2024-08-06`, `gpt-4o-audio-preview`
+  - GPT-4o Mini: `gpt-4o-mini`, `gpt-4o-mini-2024-07-18`
+  - GPT-4 Turbo: `gpt-4-turbo`, `gpt-4-turbo-2024-04-09`
+  - o1 models: `o1-preview`, `o1-mini` (2024-09-12 versions)
+  - ChatGPT models: `chatgpt-4o-latest`
+  - Real-time API: `gpt-4o-realtime-preview`
+  - Fine-tuning: `ft:gpt-3.5-turbo`, `ft:gpt-4o-mini`
+  - Legacy: `gpt-3.5-turbo-instruct`, `davinci-002`, `babbage-002`
+
+### **Pricing Information Sources**
+- **Official OpenAI Pricing Page**: Last verified 2025-09-29
+- **Pricing per 1M tokens (USD)** - Updated December 2024:
+  - GPT-4o: $2.50 input / $10.00 output
+  - GPT-4o Mini: $0.15 input / $0.60 output
+  - GPT-4 Turbo: $10.00 input / $30.00 output
+  - o1-preview: $15.00 input / $60.00 output
+  - o1-mini: $3.00 input / $12.00 output
+  - GPT-3.5 Turbo: $0.50 input / $1.50 output
+  - Fine-tuned models: Variable pricing based on base model
+
+## 🔧 **Implementation Details**
+
+### **Structure Patterns**
+- **6 detection patterns** covering major instrumentors
+- **Unique signature**: Uses standard OpenInference fields
+- **Confidence weights**: 0.90-0.98 based on attribute completeness
+
+### **Navigation Rules**
+- **25+ extraction rules** for comprehensive data mapping
+- **Instrumentor-specific paths**: OpenInference, Traceloop, Direct SDK
+- **Fallback values**: Defined for all optional fields
+
+### **Field Mappings**
+- **HoneyHive 4-section schema**: inputs, outputs, config, metadata
+- **Required fields**: model (config), provider (metadata)
+- **Optional fields**: Comprehensive parameter and usage mapping
+
+### **Transforms**
+- **15 transformation functions** for data processing
+- **Cost calculation**: Current pricing table with 25+ model variants
+- **Instrumentor detection**: Pattern-based framework identification
+
+## 🔄 **Update Procedures**
+
+### **When to Update**
+1. **New OpenAI models released**
+2. **Pricing changes announced**
+3. **Semantic convention updates**
+4. **SDK version changes**
+
+### **Update Checklist**
+- [ ] Check OpenAI model documentation for new models
+- [ ] Verify current pricing on official pricing page
+- [ ] Update `structure_patterns.yaml` with new model patterns
+- [ ] Update `transforms.yaml` pricing table
+- [ ] Test compilation and validation
+- [ ] Update this documentation with sources and dates
+
+### **Key Files to Update**
+1. `structure_patterns.yaml` - Add new model patterns
+2. `navigation_rules.yaml` - Add new SDK attribute patterns
+3. `field_mappings.yaml` - Adjust mappings if needed
+4. `transforms.yaml` - Update pricing table and model list
+5. `RESEARCH_SOURCES.md` - Update documentation
+
+## 📚 **Additional References**
+
+### **Community Resources**
+- **OpenAI Community Forum**: https://community.openai.com/
+- **OpenAI Discord**: Developer discussions and updates
+- **GitHub Issues**: OpenAI Python SDK repository
+
+### **Monitoring Sources**
+- **OpenAI Status Page**: https://status.openai.com/
+- **OpenAI Blog**: https://openai.com/blog/ (for major announcements)
+- **OpenAI Twitter**: @OpenAI (for real-time updates)
+
+### **Integration Examples**
+- **HoneyHive Documentation**: Internal integration patterns
+- **OpenTelemetry Examples**: Standard instrumentation patterns
+- **SDK Examples**: Official OpenAI Python SDK examples
+
+---
+
+**📝 Notes for Future Updates**:
+- Always verify pricing against official sources
+- Test with actual API calls when possible
+- Consider backward compatibility for existing integrations
+- Document any breaking changes in semantic conventions

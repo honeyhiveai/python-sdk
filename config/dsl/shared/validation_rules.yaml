@@ -1,0 +1,278 @@
+version: "1.0"
+dsl_type: "validation_rules"
+
+# Universal Validation Rules for Provider Configurations
+# These rules apply across all providers and ensure consistency and correctness
+
+# Provider file validation rules
+provider_file_validation:
+  required_files:
+    - "structure_patterns.yaml"
+    - "navigation_rules.yaml"
+    - "field_mappings.yaml"
+    - "transforms.yaml"
+    
+  file_size_limits:
+    max_file_size: 10240      # 10KB max per file
+    recommended_size: 2048    # 2KB recommended per file
+    
+  required_sections:
+    structure_patterns:
+      - "version"
+      - "provider"
+      - "dsl_type"
+      - "patterns"
+      - "validation"
+    navigation_rules:
+      - "version"
+      - "provider"
+      - "dsl_type"
+      - "navigation_rules"
+    field_mappings:
+      - "version"
+      - "provider"
+      - "dsl_type"
+      - "field_mappings"
+    transforms:
+      - "version"
+      - "provider"
+      - "dsl_type"
+      - "transforms"
+
+# Structure patterns validation
+structure_patterns_validation:
+  patterns:
+    minimum_patterns: 1
+    maximum_patterns: 10
+    required_fields:
+      - "signature_fields"
+      - "confidence_weight"
+      - "description"
+    
+  signature_fields:
+    minimum_fields: 2         # At least 2 fields for reliable detection
+    maximum_fields: 10        # No more than 10 fields per pattern
+    field_name_pattern: "^[a-zA-Z][a-zA-Z0-9._-]*$"
+    max_field_name_length: 64
+    
+  confidence_weights:
+    minimum_confidence: 0.50  # 50% minimum confidence
+    maximum_confidence: 1.00  # 100% maximum confidence
+    recommended_primary: 0.90 # 90%+ recommended for primary patterns
+    
+  optional_fields:
+    maximum_optional: 20      # Max 20 optional fields per pattern
+    
+# Navigation rules validation
+navigation_rules_validation:
+  rules:
+    minimum_rules: 5          # At least 5 extraction rules
+    maximum_rules: 50         # No more than 50 rules per provider
+    required_fields:
+      - "source_field"
+      - "extraction_method"
+      - "fallback_value"
+      - "description"
+      
+  source_fields:
+    field_name_pattern: "^[a-zA-Z][a-zA-Z0-9._\\[\\]\\*-]*$"
+    max_field_path_length: 128
+    allowed_path_separators: [".", "[", "]"]
+    
+  extraction_methods:
+    allowed_methods:
+      - "direct_copy"
+      - "array_flatten"
+      - "object_merge"
+      - "string_concat"
+      - "numeric_sum"
+      - "first_non_null"
+      
+  fallback_values:
+    allowed_types: ["string", "number", "boolean", "array", "object", "null"]
+    max_string_length: 1000
+    max_array_length: 100
+    
+# Field mappings validation
+field_mappings_validation:
+  honeyhive_sections:
+    required_sections: ["inputs", "outputs", "config", "metadata"]
+    
+  section_limits:
+    inputs:
+      max_fields: 25
+      allow_empty: true
+    outputs:
+      max_fields: 25
+      allow_empty: true
+    config:
+      max_fields: 20
+      allow_empty: false
+      require_model_field: true
+    metadata:
+      max_fields: 30
+      allow_empty: false
+      require_provider_field: true
+      
+  field_definitions:
+    required_fields:
+      - "source_rule"
+      - "required"
+      - "description"
+    optional_fields:
+      - "validation"
+      - "transform"
+      - "default_value"
+      
+  source_rules:
+    rule_name_pattern: "^[a-zA-Z][a-zA-Z0-9_]*$"
+    max_rule_name_length: 64
+    
+# Transforms validation
+transforms_validation:
+  transforms:
+    minimum_transforms: 3     # At least 3 transforms per provider
+    maximum_transforms: 30    # No more than 30 transforms per provider
+    required_fields:
+      - "function_type"
+      - "implementation"
+      - "description"
+      
+  function_types:
+    allowed_types:
+      - "string_extraction"
+      - "array_transformation"
+      - "numeric_calculation"
+      - "object_transformation"
+      
+  implementations:
+    string_extraction:
+      - "extract_user_message_content"
+      - "extract_assistant_message_content"
+      - "extract_system_message_content"
+      - "extract_first_non_empty"
+      - "detect_instrumentor_framework"
+    array_transformation:
+      - "flatten_and_join"
+      - "filter_by_role"
+      - "extract_field_values"
+      - "deduplicate_array"
+    numeric_calculation:
+      - "sum_fields"
+      - "average_fields"
+      - "max_fields"
+      - "min_fields"
+    object_transformation:
+      - "merge_objects"
+      - "filter_object_fields"
+      - "rename_object_keys"
+      - "flatten_nested_object"
+      
+  parameters:
+    max_parameters: 10
+    parameter_name_pattern: "^[a-zA-Z][a-zA-Z0-9_]*$"
+    max_parameter_name_length: 32
+
+# Cross-file validation rules
+cross_file_validation:
+  consistency_checks:
+    provider_name_match: true      # Provider name must match across all files
+    version_consistency: true      # Version must be consistent across files
+    
+  reference_validation:
+    navigation_rules_referenced: true   # All navigation rules must be referenced
+    transforms_referenced: true        # All transforms must be referenced
+    no_circular_references: true       # No circular transform references
+    
+  completeness_checks:
+    all_honeyhive_sections: true      # All 4 HoneyHive sections must be mapped
+    required_transforms: true         # Required transforms must be present
+    fallback_coverage: true          # All extractions must have fallbacks
+
+# Performance validation rules
+performance_validation:
+  compilation_limits:
+    max_compilation_time: 10.0      # 10 seconds max compilation time
+    max_bundle_size: 1048576        # 1MB max bundle size
+    
+  runtime_limits:
+    max_detection_time: 0.01        # 0.01ms max detection time
+    max_extraction_time: 0.05       # 0.05ms max extraction time
+    max_memory_usage: 30720         # 30KB max memory usage
+    
+  signature_efficiency:
+    min_signature_selectivity: 0.8  # 80% selectivity for signatures
+    max_signature_overlap: 0.2      # 20% max overlap between signatures
+
+# Security validation rules
+security_validation:
+  field_sanitization:
+    max_field_value_length: 10000   # 10KB max field value
+    no_script_injection: true       # No script tags in values
+    no_sql_injection: true          # No SQL injection patterns
+    
+  resource_limits:
+    max_nested_depth: 10            # Max 10 levels of nesting
+    max_array_size: 1000            # Max 1000 elements in arrays
+    max_object_keys: 100            # Max 100 keys per object
+    
+# Error handling validation
+error_handling_validation:
+  required_error_handling:
+    invalid_input_handling: true    # Must handle invalid inputs gracefully
+    missing_field_handling: true    # Must handle missing fields
+    type_mismatch_handling: true    # Must handle type mismatches
+    
+  fallback_requirements:
+    all_extractions_have_fallbacks: true
+    fallback_type_consistency: true
+    no_null_fallbacks_for_required: true
+
+# Documentation validation
+documentation_validation:
+  required_documentation:
+    description_fields: true        # All items must have descriptions
+    min_description_length: 10      # Minimum 10 characters
+    max_description_length: 200     # Maximum 200 characters
+    
+  documentation_quality:
+    no_placeholder_text: true      # No "TODO" or placeholder text
+    proper_grammar: false          # Grammar checking (optional)
+    consistent_terminology: true    # Use consistent terms
+
+# Validation severity levels
+severity_levels:
+  error:
+    description: "Critical issues that prevent compilation or runtime"
+    examples:
+      - "Missing required files"
+      - "Invalid YAML syntax"
+      - "Circular references"
+      - "Security violations"
+      
+  warning:
+    description: "Issues that may cause problems but don't prevent operation"
+    examples:
+      - "Performance concerns"
+      - "Missing optional fields"
+      - "Suboptimal patterns"
+      
+  info:
+    description: "Suggestions for improvement"
+    examples:
+      - "Documentation improvements"
+      - "Style consistency"
+      - "Best practice recommendations"
+
+# Validation reporting
+validation_reporting:
+  report_format: "structured"
+  include_suggestions: true
+  include_examples: true
+  group_by_severity: true
+  
+  output_formats:
+    - "json"
+    - "yaml"
+    - "text"
+    - "markdown"

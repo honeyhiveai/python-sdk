@@ -4,16 +4,30 @@
 
 🛑 VALIDATE-GATE: Phase 7 Entry Requirements
 - [ ] Phase 6 completed with comprehensive evidence ✅/❌
+- [ ] **⛔ Phase 6.5 Pre-Write Validation posted in chat with 0 violations** ✅/❌
 - [ ] Test file generated successfully ✅/❌
 - [ ] Framework contract acknowledged and binding ✅/❌
 - [ ] Phase 6 progress table updated ✅/❌
 
-🚨 FRAMEWORK-VIOLATION: If proceeding without Phase 6 completion
+🚨 **FRAMEWORK-VIOLATION**: If proceeding without Phase 6 AND Phase 6.5 completion
+
+⛔ **BLOCKING**: You CANNOT enter Phase 7 without posting Phase 6.5 validation results in chat
 
 ## 🚨 **ENTRY CHECKPOINT**
 - [ ] Phase 6 completed and generation authorized
+- [ ] **⛔ Phase 6.5 validation posted in chat (scroll up to verify)**
+- [ ] Phase 6.5 showed 0 violations (or all violations fixed)
 - [ ] Test file generated successfully
 - [ ] Framework contract acknowledged: [../../core/binding-contract.md](../../core/binding-contract.md)
+
+**🛑 CRITICAL VERIFICATION**: Before proceeding, scroll up in the chat to confirm you posted:
+```
+✅ PRE-WRITE VALIDATION COMPLETE - TASK-XXX
+Validation 1-6: [results]
+Total Violations: 0
+```
+
+If you cannot find this post above, you skipped Phase 6.5 and must STOP NOW and complete it.
 
 ## 📋 **COMPONENTS**
 

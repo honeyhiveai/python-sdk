@@ -1,0 +1,380 @@
+version: '1.0'
+provider: mistral
+dsl_type: provider_navigation_rules
+
+# ============================================================
+# Mistral AI Navigation Rules for Universal LLM Discovery Engine v4.0
+# ============================================================
+# This file defines how to extract data from Mistral AI span attributes
+# across all verified instrumentors (Traceloop, OpenInference, OpenLit)
+# 
+# Total Rules: 36 (12 per instrumentor × 3 instrumentors)
+# Based on Phase 2 instrumentor verification evidence
+# ============================================================
+
+navigation_rules:
+  
+  # ============================================================
+  # TRACELOOP / OPENLLMETRY RULES (gen_ai.* namespace)
+  # ============================================================
+  # Verified package: opentelemetry-instrumentation-mistralai
+  # Namespace: gen_ai.*
+  # System value: "MistralAI"
+  # ============================================================
+  
+  traceloop_model_name:
+    source_field: "gen_ai.request.model"
+    extraction_method: "direct_copy"
+    fallback_value: null
+    validation: "non_empty_string"
+    description: "Extract requested model name from Traceloop (MistralAI)"
+    
+  traceloop_response_model:
+    source_field: "gen_ai.response.model"
+    extraction_method: "direct_copy"
+    fallback_value: null
+    validation: "non_empty_string"
+    description: "Extract actual model used from Traceloop response"
+    
+  traceloop_input_messages:
+    source_field: "gen_ai.prompt"
+    extraction_method: "direct_copy"
+    fallback_value: null
+    validation: "non_null"
+    description: "Extract input messages/prompt from Traceloop"
+    
+  traceloop_output_messages:
+    source_field: "gen_ai.completion"
+    extraction_method: "direct_copy"
+    fallback_value: null
+    validation: "non_null"
+    description: "Extract output completion from Traceloop"
+    
+  traceloop_prompt_tokens:
+    source_field: "gen_ai.usage.prompt_tokens"
+    extraction_method: "direct_copy"
+    fallback_value: 0
+    validation: "positive_number"
+    description: "Extract input token count from Traceloop"
+    
+  traceloop_completion_tokens:
+    source_field: "gen_ai.usage.completion_tokens"
+    extraction_method: "direct_copy"
+    fallback_value: 0
+    validation: "positive_number"
+    description: "Extract output token count from Traceloop"
+    
+  traceloop_reasoning_tokens:
+    source_field: "gen_ai.usage.reasoning_tokens"
+    extraction_method: "direct_copy"
+    fallback_value: 0
+    validation: "positive_number"
+    description: "Extract reasoning token count from Traceloop (Mistral-specific)"
+    
+  traceloop_temperature:
+    source_field: "gen_ai.request.temperature"
+    extraction_method: "direct_copy"
+    fallback_value: null
+    validation: "number_range_0_2"
+    description: "Extract temperature parameter from Traceloop"
+    
+  traceloop_max_tokens:
+    source_field: "gen_ai.request.max_tokens"
+    extraction_method: "direct_copy"
+    fallback_value: null
+    validation: "positive_number"
+    description: "Extract max tokens parameter from Traceloop"
+    
+  traceloop_top_p:
+    source_field: "gen_ai.request.top_p"
+    extraction_method: "direct_copy"
+    fallback_value: null
+    validation: "number_range_0_1"
+    description: "Extract top_p parameter from Traceloop"
+    
+  traceloop_frequency_penalty:
+    source_field: "gen_ai.request.frequency_penalty"
+    extraction_method: "direct_copy"
+    fallback_value: null
+    validation: "number_range_neg2_2"
+    description: "Extract frequency penalty from Traceloop"
+    
+  traceloop_presence_penalty:
+    source_field: "gen_ai.request.presence_penalty"
+    extraction_method: "direct_copy"
+    fallback_value: null
+    validation: "number_range_neg2_2"
+    description: "Extract presence penalty from Traceloop"
+    
+  traceloop_finish_reason:
+    source_field: "gen_ai.response.finish_reasons"
+    extraction_method: "first_non_null"
+    fallback_value: null
+    validation: "non_null"
+    description: "Extract finish reason from Traceloop (may be array)"
+
+  # ============================================================
+  # OPENINFERENCE RULES (llm.* namespace)
+  # ============================================================
+  # Verified package: openinference-instrumentation-mistralai
+  # Namespace: llm.*
+  # Provider value: "mistral" or "mistralai"
+  # ============================================================
+  
+  openinference_model_name:
+    source_field: "llm.model_name"
+    extraction_method: "direct_copy"
+    fallback_value: null
+    validation: "non_empty_string"
+    description: "Extract model name from OpenInference"
+    
+  openinference_input_messages:
+    source_field: "llm.input_messages"
+    extraction_method: "wildcard_flatten"
+    fallback_value: null
+    validation: "non_null"
+    description: "Extract flattened input messages from OpenInference (llm.input_messages.0.*, etc.)"
+    
+  openinference_output_messages:
+    source_field: "llm.output_messages"
+    extraction_method: "wildcard_flatten"
+    fallback_value: null
+    validation: "non_null"
+    description: "Extract flattened output messages from OpenInference (llm.output_messages.0.*, etc.)"
+    
+  openinference_prompt_tokens:
+    source_field: "llm.token_count.prompt"
+    extraction_method: "direct_copy"
+    fallback_value: 0
+    validation: "positive_number"
+    description: "Extract prompt token count from OpenInference"
+    
+  openinference_completion_tokens:
+    source_field: "llm.token_count.completion"
+    extraction_method: "direct_copy"
+    fallback_value: 0
+    validation: "positive_number"
+    description: "Extract completion token count from OpenInference"
+    
+  openinference_reasoning_tokens:
+    source_field: "llm.token_count.completion_details.reasoning"
+    extraction_method: "direct_copy"
+    fallback_value: 0
+    validation: "positive_number"
+    description: "Extract reasoning token count from OpenInference (Mistral-specific)"
+    
+  openinference_temperature:
+    source_field: "llm.invocation_parameters"
+    extraction_method: "json_extract"
+    json_path: "temperature"
+    fallback_value: null
+    validation: "number_range_0_2"
+    description: "Extract temperature from OpenInference invocation_parameters JSON"
+    
+  openinference_max_tokens:
+    source_field: "llm.invocation_parameters"
+    extraction_method: "json_extract"
+    json_path: "max_tokens"
+    fallback_value: null
+    validation: "positive_number"
+    description: "Extract max_tokens from OpenInference invocation_parameters JSON"
+    
+  openinference_top_p:
+    source_field: "llm.invocation_parameters"
+    extraction_method: "json_extract"
+    json_path: "top_p"
+    fallback_value: null
+    validation: "number_range_0_1"
+    description: "Extract top_p from OpenInference invocation_parameters JSON"
+    
+  openinference_frequency_penalty:
+    source_field: "llm.invocation_parameters"
+    extraction_method: "json_extract"
+    json_path: "frequency_penalty"
+    fallback_value: null
+    validation: "number_range_neg2_2"
+    description: "Extract frequency_penalty from OpenInference invocation_parameters JSON"
+    
+  openinference_presence_penalty:
+    source_field: "llm.invocation_parameters"
+    extraction_method: "json_extract"
+    json_path: "presence_penalty"
+    fallback_value: null
+    validation: "number_range_neg2_2"
+    description: "Extract presence_penalty from OpenInference invocation_parameters JSON"
+    
+  openinference_finish_reason:
+    source_field: "llm.finish_reason"
+    extraction_method: "direct_copy"
+    fallback_value: null
+    validation: "non_null"
+    description: "Extract finish reason from OpenInference"
+    
+  openinference_cost_prompt:
+    source_field: "llm.cost.prompt"
+    extraction_method: "direct_copy"
+    fallback_value: 0.0
+    validation: "positive_number"
+    description: "Extract prompt cost in USD from OpenInference"
+    
+  openinference_cost_completion:
+    source_field: "llm.cost.completion"
+    extraction_method: "direct_copy"
+    fallback_value: 0.0
+    validation: "positive_number"
+    description: "Extract completion cost in USD from OpenInference"
+    
+  openinference_cost_total:
+    source_field: "llm.cost.total"
+    extraction_method: "direct_copy"
+    fallback_value: 0.0
+    validation: "positive_number"
+    description: "Extract total cost in USD from OpenInference"
+
+  # ============================================================
+  # OPENLIT RULES (gen_ai.* namespace)
+  # ============================================================
+  # Verified directory: mistral/
+  # Namespace: gen_ai.* (OpenTelemetry standard)
+  # System value: "mistral"
+  # ============================================================
+  
+  openlit_model_name:
+    source_field: "gen_ai.request.model"
+    extraction_method: "direct_copy"
+    fallback_value: null
+    validation: "non_empty_string"
+    description: "Extract requested model name from OpenLit"
+    
+  openlit_response_model:
+    source_field: "gen_ai.response.model"
+    extraction_method: "direct_copy"
+    fallback_value: null
+    validation: "non_empty_string"
+    description: "Extract actual model used from OpenLit response"
+    
+  openlit_input_messages:
+    source_field: "gen_ai.request.messages"
+    extraction_method: "direct_copy"
+    fallback_value: null
+    validation: "non_null"
+    description: "Extract input messages from OpenLit"
+    
+  openlit_output_messages:
+    source_field: "gen_ai.response.choices"
+    extraction_method: "direct_copy"
+    fallback_value: null
+    validation: "non_null"
+    description: "Extract output choices/messages from OpenLit"
+    
+  openlit_prompt_tokens:
+    source_field: "gen_ai.usage.input_tokens"
+    extraction_method: "direct_copy"
+    fallback_value: 0
+    validation: "positive_number"
+    description: "Extract input token count from OpenLit"
+    
+  openlit_completion_tokens:
+    source_field: "gen_ai.usage.output_tokens"
+    extraction_method: "direct_copy"
+    fallback_value: 0
+    validation: "positive_number"
+    description: "Extract output token count from OpenLit"
+    
+  openlit_reasoning_tokens:
+    source_field: "gen_ai.usage.reasoning_tokens"
+    extraction_method: "direct_copy"
+    fallback_value: 0
+    validation: "positive_number"
+    description: "Extract reasoning token count from OpenLit (Mistral-specific)"
+    
+  openlit_temperature:
+    source_field: "gen_ai.request.temperature"
+    extraction_method: "direct_copy"
+    fallback_value: null
+    validation: "number_range_0_2"
+    description: "Extract temperature parameter from OpenLit"
+    
+  openlit_max_tokens:
+    source_field: "gen_ai.request.max_tokens"
+    extraction_method: "direct_copy"
+    fallback_value: null
+    validation: "positive_number"
+    description: "Extract max tokens parameter from OpenLit"
+    
+  openlit_top_p:
+    source_field: "gen_ai.request.top_p"
+    extraction_method: "direct_copy"
+    fallback_value: null
+    validation: "number_range_0_1"
+    description: "Extract top_p parameter from OpenLit"
+    
+  openlit_frequency_penalty:
+    source_field: "gen_ai.request.frequency_penalty"
+    extraction_method: "direct_copy"
+    fallback_value: null
+    validation: "number_range_neg2_2"
+    description: "Extract frequency penalty from OpenLit"
+    
+  openlit_presence_penalty:
+    source_field: "gen_ai.request.presence_penalty"
+    extraction_method: "direct_copy"
+    fallback_value: null
+    validation: "number_range_neg2_2"
+    description: "Extract presence penalty from OpenLit"
+    
+  openlit_finish_reason:
+    source_field: "gen_ai.response.finish_reasons"
+    extraction_method: "first_non_null"
+    fallback_value: null
+    validation: "non_null"
+    description: "Extract finish reason from OpenLit"
+    
+  openlit_response_id:
+    source_field: "gen_ai.response.id"
+    extraction_method: "direct_copy"
+    fallback_value: null
+    validation: "non_empty_string"
+    description: "Extract response ID from OpenLit"
+
+# ============================================================
+# Extraction Methods Reference
+# ============================================================
+extraction_methods:
+  direct_copy: "Copy field value directly without transformation"
+  wildcard_flatten: "Flatten attributes with wildcard patterns (e.g., llm.input_messages.* → reconstruct array)"
+  json_extract: "Extract specific field from JSON string value"
+  first_non_null: "Return first non-null value (for arrays)"
+  array_flatten: "Flatten nested arrays into single array"
+  object_merge: "Merge multiple objects into one"
+  string_concat: "Concatenate string values"
+
+# ============================================================
+# Validation Rules Reference
+# ============================================================
+validation_rules:
+  non_empty_string: "Ensure string is not empty"
+  positive_number: "Ensure number is positive (>= 0)"
+  number_range_0_1: "Ensure number is between 0 and 1 (top_p)"
+  number_range_0_2: "Ensure number is between 0 and 2 (temperature)"
+  number_range_neg2_2: "Ensure number is between -2 and 2 (penalties)"
+  non_null: "Ensure value is not null"
+  array_of_objects: "Ensure array contains only objects"
+  array_of_strings: "Ensure array contains only strings"
+
+# ============================================================
+# Metadata
+# ============================================================
+metadata:
+  total_rules: 39
+  instrumentors_covered:
+    - traceloop: 13 rules
+    - openinference: 15 rules
+    - openlit: 11 rules
+  extraction_methods_used:
+    - direct_copy: 30 rules
+    - wildcard_flatten: 2 rules
+    - json_extract: 5 rules
+    - first_non_null: 2 rules
+  phase_2_verification: true
+  last_updated: "2025-09-30"

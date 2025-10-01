@@ -1,0 +1,308 @@
+[
+  {
+    "index": 0,
+    "event_id": "86b25f5f-955b-4d48-893d-c235cafffc02",
+    "event_type": "EventType.model",
+    "event_name": "openai.chat",
+    "has_metadata": true,
+    "has_config": true,
+    "has_inputs": true,
+    "has_outputs": true,
+    "structure": {
+      "top_level_keys": [
+        "project_id",
+        "source",
+        "event_name",
+        "event_type",
+        "event_id",
+        "session_id",
+        "parent_id",
+        "children_ids",
+        "config",
+        "inputs",
+        "outputs",
+        "error",
+        "start_time",
+        "end_time",
+        "duration",
+        "metadata",
+        "feedback",
+        "metrics",
+        "user_properties"
+      ],
+      "metadata_keys": [
+        "scope",
+        "llm.request.type",
+        "disable_http_tracing",
+        "run_id",
+        "dataset_id",
+        "datapoint_id",
+        "gen_ai.openai.api_base",
+        "response_model",
+        "system_fingerprint",
+        "total_tokens",
+        "completion_tokens",
+        "prompt_tokens"
+      ],
+      "config_keys": [
+        "provider",
+        "model",
+        "headers",
+        "is_streaming"
+      ],
+      "input_keys": [
+        "chat_history"
+      ],
+      "output_keys": [
+        "finish_reason",
+        "role",
+        "content"
+      ]
+    }
+  },
+  {
+    "index": 1,
+    "event_id": "aaa24ba9-5ca2-4145-b29b-467fabcd833c",
+    "event_type": "EventType.model",
+    "event_name": "openai.chat",
+    "has_metadata": true,
+    "has_config": true,
+    "has_inputs": true,
+    "has_outputs": true,
+    "structure": {
+      "top_level_keys": [
+        "project_id",
+        "source",
+        "event_name",
+        "event_type",
+        "event_id",
+        "session_id",
+        "parent_id",
+        "children_ids",
+        "config",
+        "inputs",
+        "outputs",
+        "error",
+        "start_time",
+        "end_time",
+        "duration",
+        "metadata",
+        "feedback",
+        "metrics",
+        "user_properties"
+      ],
+      "metadata_keys": [
+        "scope",
+        "llm.request.type",
+        "disable_http_tracing",
+        "run_id",
+        "dataset_id",
+        "datapoint_id",
+        "gen_ai.openai.api_base",
+        "response_model",
+        "system_fingerprint",
+        "total_tokens",
+        "completion_tokens",
+        "prompt_tokens"
+      ],
+      "config_keys": [
+        "provider",
+        "model",
+        "headers",
+        "is_streaming"
+      ],
+      "input_keys": [
+        "chat_history"
+      ],
+      "output_keys": [
+        "finish_reason",
+        "role",
+        "content"
+      ]
+    }
+  },
+  {
+    "index": 2,
+    "event_id": "16958c53-79dc-4c6c-9e7c-44f725320c8c",
+    "event_type": "EventType.model",
+    "event_name": "openai.chat",
+    "has_metadata": true,
+    "has_config": true,
+    "has_inputs": true,
+    "has_outputs": true,
+    "structure": {
+      "top_level_keys": [
+        "project_id",
+        "source",
+        "event_name",
+        "event_type",
+        "event_id",
+        "session_id",
+        "parent_id",
+        "children_ids",
+        "config",
+        "inputs",
+        "outputs",
+        "error",
+        "start_time",
+        "end_time",
+        "duration",
+        "metadata",
+        "feedback",
+        "metrics",
+        "user_properties"
+      ],
+      "metadata_keys": [
+        "scope",
+        "llm.request.type",
+        "disable_http_tracing",
+        "run_id",
+        "dataset_id",
+        "datapoint_id",
+        "gen_ai.openai.api_base",
+        "response_model",
+        "system_fingerprint",
+        "total_tokens",
+        "completion_tokens",
+        "prompt_tokens"
+      ],
+      "config_keys": [
+        "provider",
+        "model",
+        "headers",
+        "is_streaming"
+      ],
+      "input_keys": [
+        "chat_history"
+      ],
+      "output_keys": [
+        "finish_reason",
+        "role",
+        "content"
+      ]
+    }
+  },
+  {
+    "index": 3,
+    "event_id": "2a6c2d31-7f7a-494e-85c2-86634b0387ba",
+    "event_type": "EventType.model",
+    "event_name": "openai.chat",
+    "has_metadata": true,
+    "has_config": true,
+    "has_inputs": true,
+    "has_outputs": true,
+    "structure": {
+      "top_level_keys": [
+        "project_id",
+        "source",
+        "event_name",
+        "event_type",
+        "event_id",
+        "session_id",
+        "parent_id",
+        "children_ids",
+        "config",
+        "inputs",
+        "outputs",
+        "error",
+        "start_time",
+        "end_time",
+        "duration",
+        "metadata",
+        "feedback",
+        "metrics",
+        "user_properties"
+      ],
+      "metadata_keys": [
+        "scope",
+        "llm.request.type",
+        "disable_http_tracing",
+        "run_id",
+        "dataset_id",
+        "datapoint_id",
+        "gen_ai.openai.api_base",
+        "response_model",
+        "system_fingerprint",
+        "total_tokens",
+        "completion_tokens",
+        "prompt_tokens"
+      ],
+      "config_keys": [
+        "provider",
+        "model",
+        "headers",
+        "is_streaming"
+      ],
+      "input_keys": [
+        "chat_history"
+      ],
+      "output_keys": [
+        "finish_reason",
+        "role",
+        "content"
+      ]
+    }
+  },
+  {
+    "index": 4,
+    "event_id": "7854db6d-acff-4d8e-a6c4-39dd2cb29905",
+    "event_type": "EventType.model",
+    "event_name": "openai.chat",
+    "has_metadata": true,
+    "has_config": true,
+    "has_inputs": true,
+    "has_outputs": true,
+    "structure": {
+      "top_level_keys": [
+        "project_id",
+        "source",
+        "event_name",
+        "event_type",
+        "event_id",
+        "session_id",
+        "parent_id",
+        "children_ids",
+        "config",
+        "inputs",
+        "outputs",
+        "error",
+        "start_time",
+        "end_time",
+        "duration",
+        "metadata",
+        "feedback",
+        "metrics",
+        "user_properties"
+      ],
+      "metadata_keys": [
+        "scope",
+        "llm.request.type",
+        "disable_http_tracing",
+        "run_id",
+        "dataset_id",
+        "datapoint_id",
+        "gen_ai.openai.api_base",
+        "response_model",
+        "system_fingerprint",
+        "total_tokens",
+        "completion_tokens",
+        "prompt_tokens"
+      ],
+      "config_keys": [
+        "provider",
+        "model",
+        "headers",
+        "is_streaming"
+      ],
+      "input_keys": [
+        "chat_history",
+        "functions"
+      ],
+      "output_keys": [
+        "finish_reason",
+        "role",
+        "content"
+      ]
+    }
+  }
+]

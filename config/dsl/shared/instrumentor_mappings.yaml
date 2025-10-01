@@ -1,0 +1,210 @@
+version: "1.0"
+dsl_type: "instrumentor_mappings"
+
+# Instrumentor Detection and Mapping Configuration
+# This file defines how to detect which instrumentor framework is being used
+# and provides mappings for instrumentor-specific attribute patterns
+
+instrumentor_detection:
+  openinference:
+    description: "OpenInference instrumentation from Arize AI"
+    package_patterns:
+      - "openinference"
+      - "arize"
+      - "phoenix"
+    attribute_patterns:
+      # Core OpenInference semantic conventions
+      - "llm.input_messages"
+      - "llm.output_messages"
+      - "llm.model_name"
+      - "llm.token_count_prompt"
+      - "llm.token_count_completion"
+      - "llm.invocation_parameters"
+      - "llm.response_model"
+    signature_confidence: 0.95
+    priority: 1
+    
+  traceloop:
+    description: "Traceloop OpenLLMetry instrumentation"
+    package_patterns:
+      - "traceloop"
+      - "openllmetry"
+      - "opentelemetry-instrumentation-openai"
+    attribute_patterns:
+      # Traceloop Gen AI semantic conventions
+      - "gen_ai.request.model"
+      - "gen_ai.response.model"
+      - "gen_ai.usage.prompt_tokens"
+      - "gen_ai.usage.completion_tokens"
+      - "gen_ai.system"
+      - "gen_ai.completion"
+      - "gen_ai.request.temperature"
+      - "gen_ai.request.max_tokens"
+    signature_confidence: 0.90
+    priority: 2
+    
+  openlit:
+    description: "OpenLit observability framework"
+    package_patterns:
+      - "openlit"
+    attribute_patterns:
+      # OpenLit specific patterns
+      - "openlit.model"
+      - "openlit.usage"
+      - "openlit.cost"
+      - "openlit.provider"
+    signature_confidence: 0.85
+    priority: 3
+    
+  langchain:
+    description: "LangChain framework with tracing"
+    package_patterns:
+      - "langchain"
+      - "langsmith"
+    attribute_patterns:
+      # LangChain tracing patterns
+      - "langchain.task"
+      - "langchain.type"
+      - "langsmith.run_id"
+    signature_confidence: 0.80
+    priority: 4
+    
+  llamaindex:
+    description: "LlamaIndex framework with tracing"
+    package_patterns:
+      - "llama_index"
+      - "llamaindex"
+    attribute_patterns:
+      # LlamaIndex tracing patterns
+      - "llama_index.task"
+      - "llama_index.type"
+    signature_confidence: 0.80
+    priority: 5
+    
+  direct:
+    description: "Direct SDK usage without instrumentation"
+    package_patterns: []
+    attribute_patterns:
+      # Direct provider SDK patterns
+      - "openai.model"
+      - "openai.messages"
+      - "anthropic.model"
+      - "anthropic.messages"
+      - "google.model"
+      - "cohere.model"
+    signature_confidence: 0.70
+    priority: 10
+    
+  custom:
+    description: "Custom or unknown instrumentation"
+    package_patterns: []
+    attribute_patterns: []
+    signature_confidence: 0.50
+    priority: 99
+
+# Instrumentor-specific field mappings
+# Maps instrumentor-specific fields to common semantic conventions
+instrumentor_field_mappings:
+  openinference:
+    # OpenInference -> Common mapping
+    common_fields:
+      model: "llm.model_name"
+      input_messages: "llm.input_messages"
+      output_messages: "llm.output_messages"
+      prompt_tokens: "llm.token_count_prompt"
+      completion_tokens: "llm.token_count_completion"
+      temperature: "llm.invocation_parameters.temperature"
+      max_tokens: "llm.invocation_parameters.max_tokens"
+      
+  traceloop:
+    # Traceloop -> Common mapping
+    common_fields:
+      model: "gen_ai.request.model"
+      input_messages: "gen_ai.prompt"
+      output_messages: "gen_ai.completion"
+      prompt_tokens: "gen_ai.usage.prompt_tokens"
+      completion_tokens: "gen_ai.usage.completion_tokens"
+      temperature: "gen_ai.request.temperature"
+      max_tokens: "gen_ai.request.max_tokens"
+      system_message: "gen_ai.system"
+      
+  openlit:
+    # OpenLit -> Common mapping
+    common_fields:
+      model: "openlit.model"
+      prompt_tokens: "openlit.usage.prompt_tokens"
+      completion_tokens: "openlit.usage.completion_tokens"
+      cost: "openlit.cost"
+      provider: "openlit.provider"
+
+# Detection algorithm configuration
+detection_algorithm:
+  method: "weighted_scoring"
+  minimum_confidence: 0.60
+  use_package_detection: true
+  use_attribute_patterns: true
+  
+  scoring_weights:
+    package_match: 0.4      # 40% weight for package detection
+    attribute_match: 0.5    # 50% weight for attribute patterns
+    signature_confidence: 0.1  # 10% weight for base confidence
+    
+  tie_breaking:
+    method: "priority"      # Use priority field for tie breaking
+    fallback: "highest_confidence"
+
+# Package detection configuration
+package_detection:
+  method: "sys_modules"     # Check sys.modules for loaded packages
+  cache_results: true       # Cache package detection results
+  cache_ttl: 300           # Cache TTL in seconds (5 minutes)
+  
+  detection_patterns:
+    exact_match: 1.0        # Exact package name match
+    prefix_match: 0.8       # Package name starts with pattern
+    contains_match: 0.6     # Package name contains pattern
+    
+# Attribute pattern matching
+attribute_pattern_matching:
+  method: "frozenset_intersection"  # Use frozenset for O(1) matching
+  minimum_matches: 2        # Minimum attribute matches required
+  match_threshold: 0.5      # Minimum match ratio (matches/total_patterns)
+  
+  scoring:
+    exact_match: 1.0        # Exact attribute name match
+    prefix_match: 0.8       # Attribute starts with pattern
+    contains_match: 0.6     # Attribute contains pattern
+
+# Instrumentor metadata
+instrumentor_metadata:
+  openinference:
+    documentation_url: "https://github.com/Arize-ai/openinference"
+    semantic_conventions_url: "https://github.com/Arize-ai/openinference/blob/main/python/openinference-semantic-conventions"
+    supported_providers: ["openai", "anthropic", "bedrock", "gemini", "cohere"]
+    version_compatibility: [">=0.1.0"]
+    
+  traceloop:
+    documentation_url: "https://github.com/traceloop/openllmetry"
+    semantic_conventions_url: "https://github.com/traceloop/openllmetry/blob/main/packages/opentelemetry-semantic-conventions-ai"
+    supported_providers: ["openai", "anthropic", "cohere", "bedrock", "vertex_ai"]
+    version_compatibility: [">=0.46.0"]
+    
+  openlit:
+    documentation_url: "https://github.com/openlit/openlit"
+    semantic_conventions_url: "https://github.com/openlit/openlit/blob/main/sdk/python/src/openlit/semcov"
+    supported_providers: ["openai", "anthropic", "cohere", "bedrock", "azure_openai"]
+    version_compatibility: [">=1.0.0"]
+
+# Validation rules
+validation:
+  max_instrumentors: 20
+  required_fields: ["description", "attribute_patterns", "signature_confidence"]
+  confidence_range: [0.0, 1.0]
+  priority_range: [1, 99]
+  
+# Fallback configuration
+fallback:
+  unknown_instrumentor: "custom"
+  default_confidence: 0.50
+  log_unknown_patterns: true
+  create_fingerprint: true   # Create fingerprint for unknown patterns

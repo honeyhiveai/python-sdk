@@ -135,7 +135,7 @@ class TestSessionResponse:
         # Arrange
         event_data = {
             "event_id": "event-real-456",
-            "session_id": "session-real-789",
+            "session_id": "550e8400-e29b-41d4-a716-446655440001",
             "event_name": "test_event",
             "event_type": "model",
             "project": "test-project",
@@ -156,7 +156,7 @@ class TestSessionResponse:
         # Assert
         assert response.event == test_event
         assert response.event.event_id == "event-real-456"
-        assert response.event.session_id == "session-real-789"
+        assert response.event.session_id == "550e8400-e29b-41d4-a716-446655440001"
         assert response.event.event_name == "test_event"
 
     def test_initialization_preserves_event_attributes(self) -> None:
@@ -297,11 +297,13 @@ class TestSessionAPICreateSession:
             project="test-project",
             session_name="test-session",
             source="test-source",
-            session_id="custom-session-456",
+            session_id="550e8400-e29b-41d4-a716-446655440002",
         )
 
         mock_response = Mock()
-        mock_response.json.return_value = {"session_id": "custom-session-456"}
+        mock_response.json.return_value = {
+            "session_id": "550e8400-e29b-41d4-a716-446655440002"
+        }
 
         with patch("honeyhive.api.base.get_error_handler"):
             session_api = SessionAPI(mock_client)
@@ -311,7 +313,7 @@ class TestSessionAPICreateSession:
                 result = session_api.create_session(session_request)
 
                 # Assert
-                assert result.session_id == "custom-session-456"
+                assert result.session_id == "550e8400-e29b-41d4-a716-446655440002"
 
                 # Verify the request included the custom session_id
                 call_args = mock_client.request.call_args
@@ -502,7 +504,9 @@ class TestSessionAPIStartSession:
         """
         # Arrange
         mock_response = Mock()
-        mock_response.json.return_value = {"session_id": "custom-start-456"}
+        mock_response.json.return_value = {
+            "session_id": "550e8400-e29b-41d4-a716-446655440003"
+        }
 
         with patch("honeyhive.api.base.get_error_handler"):
             session_api = SessionAPI(mock_client)
@@ -514,11 +518,11 @@ class TestSessionAPIStartSession:
                         project="test-project",
                         session_name="test-session",
                         source="test-source",
-                        session_id="custom-start-456",
+                        session_id="550e8400-e29b-41d4-a716-446655440003",
                     )
 
                     # Assert
-                    assert result.session_id == "custom-start-456"
+                    assert result.session_id == "550e8400-e29b-41d4-a716-446655440003"
 
     def test_start_session_with_kwargs(self, mock_client: Mock) -> None:
         """Test session start with additional keyword arguments.
@@ -643,7 +647,7 @@ class TestSessionAPIGetSession:
         and returns a SessionResponse with the Event data.
         """
         # Arrange
-        session_id = "session-get-123"
+        session_id = "550e8400-e29b-41d4-a716-446655440004"
         event_data = {
             "event_id": "event-123",
             "session_id": session_id,
@@ -684,10 +688,10 @@ class TestSessionAPIGetSession:
         """
         # Arrange
         session_ids = [
-            "simple-123",
-            "session-with-dashes-456",
-            "session_with_underscores_789",
-            "SessionWithCamelCase123",
+            "550e8400-e29b-41d4-a716-446655440005",
+            "550e8400-e29b-41d4-a716-446655440008",
+            "550e8400-e29b-41d4-a716-446655440009",
+            "550e8400-e29b-41d4-a716-446655440010",
         ]
 
         with patch("honeyhive.api.base.get_error_handler"):
@@ -1001,7 +1005,7 @@ class TestSessionAPIAsyncMethods:
         and returns a SessionResponse with the Event data.
         """
         # Arrange
-        session_id = "session-get-async-abc"
+        session_id = "550e8400-e29b-41d4-a716-446655440006"
         event_data = {
             "event_id": "event-async-123",
             "session_id": session_id,
@@ -1120,7 +1124,7 @@ class TestSessionAPIIntegration:
             "source": "integration-test",
         }
 
-        session_id = "session-lifecycle-123"
+        session_id = "550e8400-e29b-41d4-a716-446655440007"
 
         # Mock responses for different operations
         create_response = Mock()

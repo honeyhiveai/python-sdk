@@ -121,7 +121,7 @@ class TestSessionStartRequest:
         """Test SessionStartRequest with optional fields."""
         session_data = {
             **valid_session_data,
-            "session_id": "test-session-123",
+            "session_id": "550e8400-e29b-41d4-a716-446655440011",
             "children_ids": ["child-1", "child-2"],
             "config": {"model": "gpt-4"},
             "inputs": {"prompt": "test prompt"},
@@ -138,7 +138,7 @@ class TestSessionStartRequest:
 
         session = SessionStartRequest(**session_data)
 
-        assert session.session_id == "test-session-123"
+        assert session.session_id == "550e8400-e29b-41d4-a716-446655440011"
         assert session.children_ids == ["child-1", "child-2"]
         assert session.config == {"model": "gpt-4"}
         assert session.inputs == {"prompt": "test prompt"}
@@ -221,7 +221,7 @@ class TestCreateEventRequest:
         event_data = {
             **valid_event_data,
             "event_id": "event-123",
-            "session_id": "session-456",
+            "session_id": "550e8400-e29b-41d4-a716-446655440012",
             "parent_id": "parent-789",
             "children_ids": ["child-1", "child-2"],
             "config": {"temperature": 0.7},
@@ -240,7 +240,7 @@ class TestCreateEventRequest:
         event = CreateEventRequest(**event_data)
 
         assert event.event_id == "event-123"
-        assert event.session_id == "session-456"
+        assert event.session_id == "550e8400-e29b-41d4-a716-446655440012"
         assert event.parent_id == "parent-789"
         assert event.children_ids == ["child-1", "child-2"]
         assert event.config == {"temperature": 0.7}
@@ -363,7 +363,7 @@ class TestTracingParams:
             "event_id": "event-123",
             "source": "test-source",
             "project": "test-project",
-            "session_id": "session-456",
+            "session_id": "550e8400-e29b-41d4-a716-446655440012",
             "user_id": "user-789",
             "session_name": "test-session",
             "inputs": {"input": "test"},
@@ -383,7 +383,7 @@ class TestTracingParams:
         assert params.event_id == "event-123"
         assert params.source == "test-source"
         assert params.project == "test-project"
-        assert params.session_id == "session-456"
+        assert params.session_id == "550e8400-e29b-41d4-a716-446655440012"
         assert params.user_id == "user-789"
         assert params.session_name == "test-session"
         assert params.inputs == {"input": "test"}
@@ -552,7 +552,10 @@ class TestModelIntegrationPatterns:
             "inputs": {"prompt": "Hello, world!"},
             "outputs": {"response": "Hello! How can I help you today?"},
             "duration": 1500.0,
-            "metadata": {"user_id": "user-123", "session_id": "session-456"},
+            "metadata": {
+                "user_id": "user-123",
+                "session_id": "550e8400-e29b-41d4-a716-446655440012",
+            },
         }
 
         event = CreateEventRequest(**event_data)

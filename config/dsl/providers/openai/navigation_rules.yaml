@@ -1,0 +1,544 @@
+version: '1.0'
+provider: openai
+dsl_type: provider_navigation_rules
+navigation_rules:
+  openinference_id:
+    source_field: llm.id
+    extraction_method: direct_copy
+    nullable: false
+    fallback_value: ''
+    description: Extract id from openinference
+  traceloop_id:
+    source_field: gen_ai.id
+    extraction_method: direct_copy
+    nullable: false
+    fallback_value: ''
+    description: Extract id from traceloop
+  openlit_id:
+    source_field: gen_ai.id
+    extraction_method: direct_copy
+    nullable: false
+    fallback_value: ''
+    description: Extract id from openlit
+  openinference_created:
+    source_field: llm.created
+    extraction_method: direct_copy
+    nullable: false
+    fallback_value: 0
+    description: Extract created from openinference
+  traceloop_created:
+    source_field: gen_ai.created
+    extraction_method: direct_copy
+    nullable: false
+    fallback_value: 0
+    description: Extract created from traceloop
+  openlit_created:
+    source_field: gen_ai.created
+    extraction_method: direct_copy
+    nullable: false
+    fallback_value: 0
+    description: Extract created from openlit
+  openinference_model:
+    source_field: llm.model
+    extraction_method: direct_copy
+    nullable: false
+    fallback_value: ''
+    description: Extract model from openinference
+  traceloop_model:
+    source_field: gen_ai.model
+    extraction_method: direct_copy
+    nullable: false
+    fallback_value: ''
+    description: Extract model from traceloop
+  openlit_model:
+    source_field: gen_ai.model
+    extraction_method: direct_copy
+    nullable: false
+    fallback_value: ''
+    description: Extract model from openlit
+  openinference_choices:
+    source_field: llm.choices
+    extraction_method: array_reconstruction
+    nullable: false
+    fallback_value: []
+    description: Extract choices from openinference
+  traceloop_choices:
+    source_field: gen_ai.choices
+    extraction_method: array_reconstruction
+    nullable: false
+    fallback_value: []
+    description: Extract choices from traceloop
+  openlit_choices:
+    source_field: gen_ai.choices
+    extraction_method: array_reconstruction
+    nullable: false
+    fallback_value: []
+    description: Extract choices from openlit
+  openinference_choices_array_index:
+    source_field: llm.choices.0.index
+    extraction_method: array_reconstruction
+    nullable: false
+    fallback_value: 0
+    description: Extract choices[].index from openinference
+  traceloop_choices_array_index:
+    source_field: gen_ai.completion.0.index
+    extraction_method: array_reconstruction
+    nullable: false
+    fallback_value: 0
+    description: Extract choices[].index from traceloop
+  openlit_choices_array_index:
+    source_field: gen_ai.completion.0.index
+    extraction_method: array_reconstruction
+    nullable: false
+    fallback_value: 0
+    description: Extract choices[].index from openlit
+  openinference_choices_array_message_role:
+    source_field: llm.choices.0.message.role
+    extraction_method: array_reconstruction
+    nullable: false
+    fallback_value: ''
+    description: Extract choices[].message.role from openinference
+  traceloop_choices_array_message_role:
+    source_field: gen_ai.completion.0.message.role
+    extraction_method: array_reconstruction
+    nullable: false
+    fallback_value: ''
+    description: Extract choices[].message.role from traceloop
+  openlit_choices_array_message_role:
+    source_field: gen_ai.completion.0.message.role
+    extraction_method: array_reconstruction
+    nullable: false
+    fallback_value: ''
+    description: Extract choices[].message.role from openlit
+  openinference_choices_array_message_content:
+    source_field: llm.choices.0.message.content
+    extraction_method: array_reconstruction
+    nullable: false
+    fallback_value: null
+    description: Extract choices[].message.content from openinference
+  traceloop_choices_array_message_content:
+    source_field: gen_ai.completion.0.message.content
+    extraction_method: array_reconstruction
+    nullable: false
+    fallback_value: null
+    description: Extract choices[].message.content from traceloop
+  openlit_choices_array_message_content:
+    source_field: gen_ai.completion.0.message.content
+    extraction_method: array_reconstruction
+    nullable: false
+    fallback_value: null
+    description: Extract choices[].message.content from openlit
+  openinference_choices_array_message_tool_calls:
+    source_field: llm.choices.0.message.tool_calls
+    extraction_method: array_reconstruction
+    nullable: false
+    fallback_value: []
+    description: Extract choices[].message.tool_calls from openinference
+  traceloop_choices_array_message_tool_calls:
+    source_field: gen_ai.completion.0.message.tool_calls
+    extraction_method: array_reconstruction
+    nullable: false
+    fallback_value: []
+    description: Extract choices[].message.tool_calls from traceloop
+  openlit_choices_array_message_tool_calls:
+    source_field: gen_ai.completion.0.message.tool_calls
+    extraction_method: array_reconstruction
+    nullable: false
+    fallback_value: []
+    description: Extract choices[].message.tool_calls from openlit
+  openinference_choices_array_message_tool_calls_array_id:
+    source_field: llm.choices.0.message.tool_calls.0.id
+    extraction_method: array_reconstruction
+    nullable: false
+    fallback_value: ''
+    description: Extract choices[].message.tool_calls[].id from openinference
+  traceloop_choices_array_message_tool_calls_array_id:
+    source_field: gen_ai.completion.0.message.tool_calls.0.id
+    extraction_method: array_reconstruction
+    nullable: false
+    fallback_value: ''
+    description: Extract choices[].message.tool_calls[].id from traceloop
+  openlit_choices_array_message_tool_calls_array_id:
+    source_field: gen_ai.completion.0.message.tool_calls.0.id
+    extraction_method: array_reconstruction
+    nullable: false
+    fallback_value: ''
+    description: Extract choices[].message.tool_calls[].id from openlit
+  openinference_choices_array_message_tool_calls_array_type:
+    source_field: llm.choices.0.message.tool_calls.0.type
+    extraction_method: array_reconstruction
+    nullable: false
+    fallback_value: ''
+    description: Extract choices[].message.tool_calls[].type from openinference
+  traceloop_choices_array_message_tool_calls_array_type:
+    source_field: gen_ai.completion.0.message.tool_calls.0.type
+    extraction_method: array_reconstruction
+    nullable: false
+    fallback_value: ''
+    description: Extract choices[].message.tool_calls[].type from traceloop
+  openlit_choices_array_message_tool_calls_array_type:
+    source_field: gen_ai.completion.0.message.tool_calls.0.type
+    extraction_method: array_reconstruction
+    nullable: false
+    fallback_value: ''
+    description: Extract choices[].message.tool_calls[].type from openlit
+  openinference_choices_array_message_tool_calls_array_function_name:
+    source_field: llm.choices.0.message.tool_calls.0.function.name
+    extraction_method: array_reconstruction
+    nullable: false
+    fallback_value: ''
+    description: Extract choices[].message.tool_calls[].function.name from openinference
+  traceloop_choices_array_message_tool_calls_array_function_name:
+    source_field: gen_ai.completion.0.message.tool_calls.0.function.name
+    extraction_method: array_reconstruction
+    nullable: false
+    fallback_value: ''
+    description: Extract choices[].message.tool_calls[].function.name from traceloop
+  openlit_choices_array_message_tool_calls_array_function_name:
+    source_field: gen_ai.completion.0.message.tool_calls.0.function.name
+    extraction_method: array_reconstruction
+    nullable: false
+    fallback_value: ''
+    description: Extract choices[].message.tool_calls[].function.name from openlit
+  openinference_choices_array_message_tool_calls_array_function_arguments:
+    source_field: llm.choices.0.message.tool_calls.0.function.arguments
+    extraction_method: array_reconstruction
+    nullable: false
+    fallback_value: ''
+    description: Extract choices[].message.tool_calls[].function.arguments from openinference
+  traceloop_choices_array_message_tool_calls_array_function_arguments:
+    source_field: gen_ai.completion.0.message.tool_calls.0.function.arguments
+    extraction_method: array_reconstruction
+    nullable: false
+    fallback_value: ''
+    description: Extract choices[].message.tool_calls[].function.arguments from traceloop
+  openlit_choices_array_message_tool_calls_array_function_arguments:
+    source_field: gen_ai.completion.0.message.tool_calls.0.function.arguments
+    extraction_method: array_reconstruction
+    nullable: false
+    fallback_value: ''
+    description: Extract choices[].message.tool_calls[].function.arguments from openlit
+  openinference_choices_array_message_refusal:
+    source_field: llm.choices.0.message.refusal
+    extraction_method: array_reconstruction
+    nullable: false
+    fallback_value: ''
+    description: Extract choices[].message.refusal from openinference
+  traceloop_choices_array_message_refusal:
+    source_field: gen_ai.completion.0.message.refusal
+    extraction_method: array_reconstruction
+    nullable: false
+    fallback_value: ''
+    description: Extract choices[].message.refusal from traceloop
+  openlit_choices_array_message_refusal:
+    source_field: gen_ai.completion.0.message.refusal
+    extraction_method: array_reconstruction
+    nullable: false
+    fallback_value: ''
+    description: Extract choices[].message.refusal from openlit
+  openinference_choices_array_message_audio_id:
+    source_field: llm.choices.0.message.audio.id
+    extraction_method: array_reconstruction
+    nullable: false
+    fallback_value: ''
+    description: Extract choices[].message.audio.id from openinference
+  traceloop_choices_array_message_audio_id:
+    source_field: gen_ai.completion.0.message.audio.id
+    extraction_method: array_reconstruction
+    nullable: false
+    fallback_value: ''
+    description: Extract choices[].message.audio.id from traceloop
+  openlit_choices_array_message_audio_id:
+    source_field: gen_ai.completion.0.message.audio.id
+    extraction_method: array_reconstruction
+    nullable: false
+    fallback_value: ''
+    description: Extract choices[].message.audio.id from openlit
+  openinference_choices_array_message_audio_expires_at:
+    source_field: llm.choices.0.message.audio.expires_at
+    extraction_method: array_reconstruction
+    nullable: false
+    fallback_value: 0
+    description: Extract choices[].message.audio.expires_at from openinference
+  traceloop_choices_array_message_audio_expires_at:
+    source_field: gen_ai.completion.0.message.audio.expires_at
+    extraction_method: array_reconstruction
+    nullable: false
+    fallback_value: 0
+    description: Extract choices[].message.audio.expires_at from traceloop
+  openlit_choices_array_message_audio_expires_at:
+    source_field: gen_ai.completion.0.message.audio.expires_at
+    extraction_method: array_reconstruction
+    nullable: false
+    fallback_value: 0
+    description: Extract choices[].message.audio.expires_at from openlit
+  openinference_choices_array_message_audio_data:
+    source_field: llm.choices.0.message.audio.data
+    extraction_method: array_reconstruction
+    nullable: false
+    fallback_value: ''
+    description: Extract choices[].message.audio.data from openinference
+  traceloop_choices_array_message_audio_data:
+    source_field: gen_ai.completion.0.message.audio.data
+    extraction_method: array_reconstruction
+    nullable: false
+    fallback_value: ''
+    description: Extract choices[].message.audio.data from traceloop
+  openlit_choices_array_message_audio_data:
+    source_field: gen_ai.completion.0.message.audio.data
+    extraction_method: array_reconstruction
+    nullable: false
+    fallback_value: ''
+    description: Extract choices[].message.audio.data from openlit
+  openinference_choices_array_message_audio_transcript:
+    source_field: llm.choices.0.message.audio.transcript
+    extraction_method: array_reconstruction
+    nullable: false
+    fallback_value: ''
+    description: Extract choices[].message.audio.transcript from openinference
+  traceloop_choices_array_message_audio_transcript:
+    source_field: gen_ai.completion.0.message.audio.transcript
+    extraction_method: array_reconstruction
+    nullable: false
+    fallback_value: ''
+    description: Extract choices[].message.audio.transcript from traceloop
+  openlit_choices_array_message_audio_transcript:
+    source_field: gen_ai.completion.0.message.audio.transcript
+    extraction_method: array_reconstruction
+    nullable: false
+    fallback_value: ''
+    description: Extract choices[].message.audio.transcript from openlit
+  openinference_choices_array_message_name:
+    source_field: llm.choices.0.message.name
+    extraction_method: array_reconstruction
+    nullable: false
+    fallback_value: ''
+    description: Extract choices[].message.name from openinference
+  traceloop_choices_array_message_name:
+    source_field: gen_ai.completion.0.message.name
+    extraction_method: array_reconstruction
+    nullable: false
+    fallback_value: ''
+    description: Extract choices[].message.name from traceloop
+  openlit_choices_array_message_name:
+    source_field: gen_ai.completion.0.message.name
+    extraction_method: array_reconstruction
+    nullable: false
+    fallback_value: ''
+    description: Extract choices[].message.name from openlit
+  openinference_choices_array_logprobs:
+    source_field: llm.choices.0.logprobs
+    extraction_method: array_reconstruction
+    nullable: false
+    fallback_value: null
+    description: Extract choices[].logprobs from openinference
+  traceloop_choices_array_logprobs:
+    source_field: gen_ai.completion.0.logprobs
+    extraction_method: array_reconstruction
+    nullable: false
+    fallback_value: null
+    description: Extract choices[].logprobs from traceloop
+  openlit_choices_array_logprobs:
+    source_field: gen_ai.completion.0.logprobs
+    extraction_method: array_reconstruction
+    nullable: false
+    fallback_value: null
+    description: Extract choices[].logprobs from openlit
+  openinference_choices_array_finish_reason:
+    source_field: llm.choices.0.finish_reason
+    extraction_method: array_reconstruction
+    nullable: false
+    fallback_value: ''
+    description: Extract choices[].finish_reason from openinference
+  traceloop_choices_array_finish_reason:
+    source_field: gen_ai.completion.0.finish_reason
+    extraction_method: array_reconstruction
+    nullable: false
+    fallback_value: ''
+    description: Extract choices[].finish_reason from traceloop
+  openlit_choices_array_finish_reason:
+    source_field: gen_ai.completion.0.finish_reason
+    extraction_method: array_reconstruction
+    nullable: false
+    fallback_value: ''
+    description: Extract choices[].finish_reason from openlit
+  openinference_usage:
+    source_field: llm.usage
+    extraction_method: direct_copy
+    nullable: false
+    fallback_value: null
+    description: Extract usage from openinference
+  traceloop_usage:
+    source_field: gen_ai.usage
+    extraction_method: direct_copy
+    nullable: false
+    fallback_value: null
+    description: Extract usage from traceloop
+  openlit_usage:
+    source_field: gen_ai.usage
+    extraction_method: direct_copy
+    nullable: false
+    fallback_value: null
+    description: Extract usage from openlit
+  openinference_usage_prompt_tokens:
+    source_field: llm.usage.prompt_tokens
+    extraction_method: direct_copy
+    nullable: false
+    fallback_value: 0
+    description: Extract usage.prompt_tokens from openinference
+  traceloop_usage_prompt_tokens:
+    source_field: gen_ai.usage.prompt_tokens
+    extraction_method: direct_copy
+    nullable: false
+    fallback_value: 0
+    description: Extract usage.prompt_tokens from traceloop
+  openlit_usage_prompt_tokens:
+    source_field: gen_ai.usage.prompt_tokens
+    extraction_method: direct_copy
+    nullable: false
+    fallback_value: 0
+    description: Extract usage.prompt_tokens from openlit
+  openinference_usage_completion_tokens:
+    source_field: llm.usage.completion_tokens
+    extraction_method: direct_copy
+    nullable: false
+    fallback_value: 0
+    description: Extract usage.completion_tokens from openinference
+  traceloop_usage_completion_tokens:
+    source_field: gen_ai.usage.completion_tokens
+    extraction_method: direct_copy
+    nullable: false
+    fallback_value: 0
+    description: Extract usage.completion_tokens from traceloop
+  openlit_usage_completion_tokens:
+    source_field: gen_ai.usage.completion_tokens
+    extraction_method: direct_copy
+    nullable: false
+    fallback_value: 0
+    description: Extract usage.completion_tokens from openlit
+  openinference_usage_total_tokens:
+    source_field: llm.usage.total_tokens
+    extraction_method: direct_copy
+    nullable: false
+    fallback_value: 0
+    description: Extract usage.total_tokens from openinference
+  traceloop_usage_total_tokens:
+    source_field: gen_ai.usage.total_tokens
+    extraction_method: direct_copy
+    nullable: false
+    fallback_value: 0
+    description: Extract usage.total_tokens from traceloop
+  openlit_usage_total_tokens:
+    source_field: gen_ai.usage.total_tokens
+    extraction_method: direct_copy
+    nullable: false
+    fallback_value: 0
+    description: Extract usage.total_tokens from openlit
+  openinference_usage_prompt_tokens_details_cached_tokens:
+    source_field: llm.usage.prompt_tokens_details.cached_tokens
+    extraction_method: direct_copy
+    nullable: false
+    fallback_value: 0
+    description: Extract usage.prompt_tokens_details.cached_tokens from openinference
+  traceloop_usage_prompt_tokens_details_cached_tokens:
+    source_field: gen_ai.usage.prompt_tokens_details.cached_tokens
+    extraction_method: direct_copy
+    nullable: false
+    fallback_value: 0
+    description: Extract usage.prompt_tokens_details.cached_tokens from traceloop
+  openlit_usage_prompt_tokens_details_cached_tokens:
+    source_field: gen_ai.usage.prompt_tokens_details.cached_tokens
+    extraction_method: direct_copy
+    nullable: false
+    fallback_value: 0
+    description: Extract usage.prompt_tokens_details.cached_tokens from openlit
+  openinference_usage_prompt_tokens_details_audio_tokens:
+    source_field: llm.usage.prompt_tokens_details.audio_tokens
+    extraction_method: direct_copy
+    nullable: false
+    fallback_value: 0
+    description: Extract usage.prompt_tokens_details.audio_tokens from openinference
+  traceloop_usage_prompt_tokens_details_audio_tokens:
+    source_field: gen_ai.usage.prompt_tokens_details.audio_tokens
+    extraction_method: direct_copy
+    nullable: false
+    fallback_value: 0
+    description: Extract usage.prompt_tokens_details.audio_tokens from traceloop
+  openlit_usage_prompt_tokens_details_audio_tokens:
+    source_field: gen_ai.usage.prompt_tokens_details.audio_tokens
+    extraction_method: direct_copy
+    nullable: false
+    fallback_value: 0
+    description: Extract usage.prompt_tokens_details.audio_tokens from openlit
+  openinference_usage_completion_tokens_details_reasoning_tokens:
+    source_field: llm.usage.completion_tokens_details.reasoning_tokens
+    extraction_method: direct_copy
+    nullable: false
+    fallback_value: 0
+    description: Extract usage.completion_tokens_details.reasoning_tokens from openinference
+  traceloop_usage_completion_tokens_details_reasoning_tokens:
+    source_field: gen_ai.usage.completion_tokens_details.reasoning_tokens
+    extraction_method: direct_copy
+    nullable: false
+    fallback_value: 0
+    description: Extract usage.completion_tokens_details.reasoning_tokens from traceloop
+  openlit_usage_completion_tokens_details_reasoning_tokens:
+    source_field: gen_ai.usage.completion_tokens_details.reasoning_tokens
+    extraction_method: direct_copy
+    nullable: false
+    fallback_value: 0
+    description: Extract usage.completion_tokens_details.reasoning_tokens from openlit
+  openinference_usage_completion_tokens_details_audio_tokens:
+    source_field: llm.usage.completion_tokens_details.audio_tokens
+    extraction_method: direct_copy
+    nullable: false
+    fallback_value: 0
+    description: Extract usage.completion_tokens_details.audio_tokens from openinference
+  traceloop_usage_completion_tokens_details_audio_tokens:
+    source_field: gen_ai.usage.completion_tokens_details.audio_tokens
+    extraction_method: direct_copy
+    nullable: false
+    fallback_value: 0
+    description: Extract usage.completion_tokens_details.audio_tokens from traceloop
+  openlit_usage_completion_tokens_details_audio_tokens:
+    source_field: gen_ai.usage.completion_tokens_details.audio_tokens
+    extraction_method: direct_copy
+    nullable: false
+    fallback_value: 0
+    description: Extract usage.completion_tokens_details.audio_tokens from openlit
+  openinference_system_fingerprint:
+    source_field: llm.system_fingerprint
+    extraction_method: direct_copy
+    nullable: false
+    fallback_value: ''
+    description: Extract system_fingerprint from openinference
+  traceloop_system_fingerprint:
+    source_field: gen_ai.system_fingerprint
+    extraction_method: direct_copy
+    nullable: false
+    fallback_value: ''
+    description: Extract system_fingerprint from traceloop
+  openlit_system_fingerprint:
+    source_field: gen_ai.system_fingerprint
+    extraction_method: direct_copy
+    nullable: false
+    fallback_value: ''
+    description: Extract system_fingerprint from openlit
+  openinference_service_tier:
+    source_field: llm.service_tier
+    extraction_method: direct_copy
+    nullable: false
+    fallback_value: ''
+    description: Extract service_tier from openinference
+  traceloop_service_tier:
+    source_field: gen_ai.service_tier
+    extraction_method: direct_copy
+    nullable: false
+    fallback_value: ''
+    description: Extract service_tier from traceloop
+  openlit_service_tier:
+    source_field: gen_ai.service_tier
+    extraction_method: direct_copy
+    nullable: false
+    fallback_value: ''
+    description: Extract service_tier from openlit

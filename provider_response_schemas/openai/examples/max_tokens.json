@@ -1,0 +1,27 @@
+{
+  "_comment": "Maximum tokens response - cut off at token limit",
+  "_scenario": "Response truncated due to max_tokens limit",
+  "_source": "Based on CreateChatCompletionResponse schema",
+  "_note": "finish_reason is 'length', content is incomplete",
+  "id": "chatcmpl-length999",
+  "object": "chat.completion",
+  "created": 1721597000,
+  "model": "gpt-4o-2024-08-06",
+  "choices": [
+    {
+      "index": 0,
+      "message": {
+        "role": "assistant",
+        "content": "This is a very long response that was cut off because it reached the maximum token limit specified in the request. The model had more to say but"
+      },
+      "logprobs": null,
+      "finish_reason": "length"
+    }
+  ],
+  "usage": {
+    "prompt_tokens": 10,
+    "completion_tokens": 50,
+    "total_tokens": 60
+  },
+  "system_fingerprint": "fp_3407719c7f"
+}

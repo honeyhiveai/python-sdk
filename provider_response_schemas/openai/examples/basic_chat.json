@@ -1,0 +1,25 @@
+{
+  "_comment": "Basic chat completion response - simple text interaction",
+  "_scenario": "User asks 'What is the capital of France?'",
+  "id": "chatcmpl-9nYAG9LPNonX8DAyrkwYfemr3C8HC",
+  "object": "chat.completion",
+  "created": 1721596428,
+  "model": "gpt-4o-2024-08-06",
+  "choices": [
+    {
+      "index": 0,
+      "message": {
+        "role": "assistant",
+        "content": "Paris is the capital of France."
+      },
+      "logprobs": null,
+      "finish_reason": "stop"
+    }
+  ],
+  "usage": {
+    "prompt_tokens": 12,
+    "completion_tokens": 7,
+    "total_tokens": 19
+  },
+  "system_fingerprint": "fp_3407719c7f"
+}

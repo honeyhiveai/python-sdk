@@ -27,6 +27,14 @@ repos:
         pass_filenames: false
         stages: [pre-commit]
 
+      - id: provider-config-validation
+        name: Provider Configuration Validation (YAML + Signatures + Compilation + Performance)
+        entry: scripts/validate-provider-config.sh
+        language: system
+        pass_filenames: false
+        files: '^(config/dsl/providers/.*\.yaml|src/honeyhive/tracer/processing/semantic_conventions/.*\.py|scripts/compile_providers\.py)$'
+        stages: [pre-commit]
+
       # Code Quality Checks (Fast)
       - id: tox-format-check
         name: Code Formatting Check (Black + isort)

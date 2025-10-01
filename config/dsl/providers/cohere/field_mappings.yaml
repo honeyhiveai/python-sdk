@@ -1,0 +1,77 @@
+version: '1.0'
+provider: cohere
+dsl_type: provider_field_mappings
+field_mappings:
+  inputs:
+    chat_history:
+      source_rule: extract_input_messages
+      required: false
+      description: cohere input message array
+    prompt:
+      source_rule: extract_user_prompt
+      required: false
+      description: User prompt text
+    context:
+      source_rule: extract_context_data
+      required: false
+      description: Additional context information
+  outputs:
+    response:
+      source_rule: extract_output_messages
+      required: false
+      description: cohere response message array
+    completion:
+      source_rule: extract_completion_text
+      required: false
+      description: Completion text content
+    tool_calls:
+      source_rule: extract_tool_calls
+      required: false
+      description: Function/tool call results
+  config:
+    model:
+      source_rule: extract_model_name
+      required: true
+      description: cohere model identifier
+    temperature:
+      source_rule: extract_temperature
+      required: false
+      description: Model temperature setting
+    max_tokens:
+      source_rule: extract_max_tokens
+      required: false
+      description: Maximum token limit
+  metadata:
+    provider:
+      source_rule: static_cohere
+      required: true
+      description: Provider identifier
+    prompt_tokens:
+      source_rule: extract_prompt_tokens
+      required: false
+      description: Input token count
+    completion_tokens:
+      source_rule: extract_completion_tokens
+      required: false
+      description: Output token count
+    total_tokens:
+      source_rule: calculate_total_tokens
+      required: false
+      description: Total token usage
+    instrumentor:
+      source_rule: detect_instrumentor
+      required: false
+      description: Instrumentor framework used
+schema_validation:
+  inputs:
+    allow_empty: true
+    max_fields: 20
+  outputs:
+    allow_empty: true
+    max_fields: 20
+  config:
+    require_model: true
+    allow_empty: false
+  metadata:
+    require_provider: true
+    allow_empty: false

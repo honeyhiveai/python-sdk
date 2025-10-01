@@ -1,0 +1,388 @@
+version: '1.0'
+provider: gemini
+dsl_type: provider_navigation_rules
+
+# Gemini Navigation Rules for Universal LLM Discovery Engine v4.0
+# This file defines how to extract specific data from Google Gemini span attributes
+# Rules are organized by extraction target with simple source field mappings
+
+navigation_rules:
+  
+  # === OpenInference specific extractions ===
+  openinference_input_messages:
+    source_field: "llm.input_messages"
+    extraction_method: "direct_copy"
+    fallback_value: []
+    validation: "array_of_objects"
+    description: "Extract input message array from OpenInference"
+    
+  openinference_output_messages:
+    source_field: "llm.output_messages"
+    extraction_method: "direct_copy"
+    fallback_value: []
+    validation: "array_of_objects"
+    description: "Extract output message array from OpenInference"
+    
+  openinference_model_name:
+    source_field: "llm.model_name"
+    extraction_method: "direct_copy"
+    fallback_value: "unknown"
+    validation: "non_empty_string"
+    description: "Extract model name from OpenInference"
+    
+  openinference_prompt_tokens:
+    source_field: "llm.token_count.prompt"
+    extraction_method: "direct_copy"
+    fallback_value: 0
+    validation: "positive_number"
+    description: "Extract prompt token count from OpenInference"
+    
+  openinference_completion_tokens:
+    source_field: "llm.token_count.completion"
+    extraction_method: "direct_copy"
+    fallback_value: 0
+    validation: "positive_number"
+    description: "Extract completion token count from OpenInference"
+    
+  openinference_temperature:
+    source_field: "llm.invocation_parameters.temperature"
+    extraction_method: "direct_copy"
+    fallback_value: 1.0
+    validation: "number_range_0_1"
+    description: "Extract temperature from OpenInference"
+    
+  openinference_max_output_tokens:
+    source_field: "llm.invocation_parameters.max_output_tokens"
+    extraction_method: "direct_copy"
+    fallback_value: null
+    validation: "positive_number"
+    description: "Extract max output tokens from OpenInference"
+    
+  openinference_top_p:
+    source_field: "llm.invocation_parameters.top_p"
+    extraction_method: "direct_copy"
+    fallback_value: null
+    validation: "number_range_0_1"
+    description: "Extract top_p from OpenInference"
+    
+  openinference_top_k:
+    source_field: "llm.invocation_parameters.top_k"
+    extraction_method: "direct_copy"
+    fallback_value: null
+    validation: "positive_number"
+    description: "Extract top_k from OpenInference"
+    
+  openinference_candidate_count:
+    source_field: "llm.invocation_parameters.candidate_count"
+    extraction_method: "direct_copy"
+    fallback_value: 1
+    validation: "positive_number"
+    description: "Extract candidate count from OpenInference"
+    
+  openinference_safety_settings:
+    source_field: "llm.invocation_parameters.safety_settings"
+    extraction_method: "direct_copy"
+    fallback_value: []
+    validation: "array_of_objects"
+    description: "Extract safety settings from OpenInference"
+
+  # === Traceloop specific extractions ===
+  traceloop_request_model:
+    source_field: "gen_ai.request.model"
+    extraction_method: "direct_copy"
+    fallback_value: "unknown"
+    validation: "non_empty_string"
+    description: "Extract request model from Traceloop"
+    
+  traceloop_completion:
+    source_field: "gen_ai.completion"
+    extraction_method: "direct_copy"
+    fallback_value: ""
+    validation: "non_empty_string"
+    description: "Extract completion text from Traceloop"
+    
+  traceloop_prompt_tokens:
+    source_field: "gen_ai.usage.prompt_tokens"
+    extraction_method: "direct_copy"
+    fallback_value: 0
+    validation: "positive_number"
+    description: "Extract prompt token count from Traceloop"
+    
+  traceloop_completion_tokens:
+    source_field: "gen_ai.usage.completion_tokens"
+    extraction_method: "direct_copy"
+    fallback_value: 0
+    validation: "positive_number"
+    description: "Extract completion token count from Traceloop"
+    
+  traceloop_system_message:
+    source_field: "gen_ai.system"
+    extraction_method: "direct_copy"
+    fallback_value: ""
+    validation: "non_empty_string"
+    description: "Extract system message from Traceloop"
+    
+  traceloop_temperature:
+    source_field: "gen_ai.request.temperature"
+    extraction_method: "direct_copy"
+    fallback_value: 1.0
+    validation: "number_range_0_1"
+    description: "Extract temperature from Traceloop"
+    
+  traceloop_max_tokens:
+    source_field: "gen_ai.request.max_tokens"
+    extraction_method: "direct_copy"
+    fallback_value: null
+    validation: "positive_number"
+    description: "Extract max tokens from Traceloop"
+    
+  traceloop_top_p:
+    source_field: "gen_ai.request.top_p"
+    extraction_method: "direct_copy"
+    fallback_value: null
+    validation: "number_range_0_1"
+    description: "Extract top_p from Traceloop"
+    
+  traceloop_top_k:
+    source_field: "gen_ai.request.top_k"
+    extraction_method: "direct_copy"
+    fallback_value: null
+    validation: "positive_number"
+    description: "Extract top_k from Traceloop"
+    
+  traceloop_candidate_count:
+    source_field: "gen_ai.request.candidate_count"
+    extraction_method: "direct_copy"
+    fallback_value: 1
+    validation: "positive_number"
+    description: "Extract candidate count from Traceloop"
+    
+  traceloop_finish_reason:
+    source_field: "gen_ai.response.finish_reason"
+    extraction_method: "direct_copy"
+    fallback_value: "unknown"
+    validation: "non_empty_string"
+    description: "Extract finish reason from Traceloop"
+    
+  traceloop_safety_settings:
+    source_field: "gen_ai.request.safety_settings"
+    extraction_method: "direct_copy"
+    fallback_value: []
+    validation: "array_of_objects"
+    description: "Extract safety settings from Traceloop"
+
+  # === Direct Google AI SDK specific extractions ===
+  direct_gemini_model:
+    source_field: "gemini.model"
+    extraction_method: "direct_copy"
+    fallback_value: "unknown"
+    validation: "non_empty_string"
+    description: "Extract model name from direct Google AI SDK"
+    
+  direct_gemini_contents:
+    source_field: "gemini.contents"
+    extraction_method: "direct_copy"
+    fallback_value: []
+    validation: "array_of_objects"
+    description: "Extract contents from direct Google AI SDK"
+    
+  direct_gemini_response:
+    source_field: "gemini.response"
+    extraction_method: "direct_copy"
+    fallback_value: {}
+    validation: "object_not_empty"
+    description: "Extract response object from direct Google AI SDK"
+    
+  direct_gemini_generation_config:
+    source_field: "gemini.generation_config"
+    extraction_method: "direct_copy"
+    fallback_value: {}
+    validation: "object_not_empty"
+    description: "Extract generation config from direct Google AI SDK"
+    
+  direct_gemini_prompt_tokens:
+    source_field: "gemini.usage_metadata.prompt_token_count"
+    extraction_method: "direct_copy"
+    fallback_value: 0
+    validation: "positive_number"
+    description: "Extract prompt tokens from direct Google AI SDK"
+    
+  direct_gemini_completion_tokens:
+    source_field: "gemini.usage_metadata.candidates_token_count"
+    extraction_method: "direct_copy"
+    fallback_value: 0
+    validation: "positive_number"
+    description: "Extract completion tokens from direct Google AI SDK"
+    
+  direct_gemini_safety_settings:
+    source_field: "gemini.safety_settings"
+    extraction_method: "direct_copy"
+    fallback_value: []
+    validation: "array_of_objects"
+    description: "Extract safety settings from direct Google AI SDK"
+    
+  direct_gemini_system_instruction:
+    source_field: "gemini.system_instruction"
+    extraction_method: "direct_copy"
+    fallback_value: ""
+    validation: "non_empty_string"
+    description: "Extract system instruction from direct Google AI SDK"
+    
+  direct_gemini_tools:
+    source_field: "gemini.tools"
+    extraction_method: "direct_copy"
+    fallback_value: []
+    validation: "array_of_objects"
+    description: "Extract tools from direct Google AI SDK"
+
+  # === Vertex AI specific extractions ===
+  vertex_ai_model:
+    source_field: "vertex_ai.model"
+    extraction_method: "direct_copy"
+    fallback_value: "unknown"
+    validation: "non_empty_string"
+    description: "Extract model name from Vertex AI"
+    
+  vertex_ai_project_id:
+    source_field: "vertex_ai.project_id"
+    extraction_method: "direct_copy"
+    fallback_value: ""
+    validation: "non_empty_string"
+    description: "Extract project ID from Vertex AI"
+    
+  vertex_ai_location:
+    source_field: "vertex_ai.location"
+    extraction_method: "direct_copy"
+    fallback_value: ""
+    validation: "non_empty_string"
+    description: "Extract location from Vertex AI"
+    
+  vertex_ai_request:
+    source_field: "vertex_ai.request"
+    extraction_method: "direct_copy"
+    fallback_value: {}
+    validation: "object_not_empty"
+    description: "Extract request from Vertex AI"
+    
+  vertex_ai_response:
+    source_field: "vertex_ai.response"
+    extraction_method: "direct_copy"
+    fallback_value: {}
+    validation: "object_not_empty"
+    description: "Extract response from Vertex AI"
+    
+  vertex_ai_input_tokens:
+    source_field: "vertex_ai.usage.input_tokens"
+    extraction_method: "direct_copy"
+    fallback_value: 0
+    validation: "positive_number"
+    description: "Extract input tokens from Vertex AI"
+    
+  vertex_ai_output_tokens:
+    source_field: "vertex_ai.usage.output_tokens"
+    extraction_method: "direct_copy"
+    fallback_value: 0
+    validation: "positive_number"
+    description: "Extract output tokens from Vertex AI"
+
+  # === LangChain specific extractions ===
+  langchain_model_name:
+    source_field: "langchain.llm.model_name"
+    extraction_method: "direct_copy"
+    fallback_value: "unknown"
+    validation: "non_empty_string"
+    description: "Extract model name from LangChain"
+    
+  langchain_input:
+    source_field: "langchain.llm.input"
+    extraction_method: "direct_copy"
+    fallback_value: ""
+    validation: "non_empty_string"
+    description: "Extract input from LangChain"
+    
+  langchain_output:
+    source_field: "langchain.llm.output"
+    extraction_method: "direct_copy"
+    fallback_value: ""
+    validation: "non_empty_string"
+    description: "Extract output from LangChain"
+    
+  langchain_prompt_tokens:
+    source_field: "langchain.llm.token_usage.prompt_tokens"
+    extraction_method: "direct_copy"
+    fallback_value: 0
+    validation: "positive_number"
+    description: "Extract prompt tokens from LangChain"
+    
+  langchain_completion_tokens:
+    source_field: "langchain.llm.token_usage.completion_tokens"
+    extraction_method: "direct_copy"
+    fallback_value: 0
+    validation: "positive_number"
+    description: "Extract completion tokens from LangChain"
+    
+  langchain_candidate_count:
+    source_field: "langchain.gemini.candidate_count"
+    extraction_method: "direct_copy"
+    fallback_value: 1
+    validation: "positive_number"
+    description: "Extract candidate count from LangChain"
+
+  # === Generic AI extractions ===
+  generic_ai_model_name:
+    source_field: "ai.model.name"
+    extraction_method: "direct_copy"
+    fallback_value: "unknown"
+    validation: "non_empty_string"
+    description: "Extract model name from generic AI instrumentation"
+    
+  generic_ai_messages:
+    source_field: "ai.request.messages"
+    extraction_method: "direct_copy"
+    fallback_value: []
+    validation: "array_of_objects"
+    description: "Extract request messages from generic AI instrumentation"
+    
+  generic_ai_response_messages:
+    source_field: "ai.response.messages"
+    extraction_method: "direct_copy"
+    fallback_value: []
+    validation: "array_of_objects"
+    description: "Extract response messages from generic AI instrumentation"
+    
+  generic_ai_input_tokens:
+    source_field: "ai.usage.input_tokens"
+    extraction_method: "direct_copy"
+    fallback_value: 0
+    validation: "positive_number"
+    description: "Extract input tokens from generic AI instrumentation"
+    
+  generic_ai_output_tokens:
+    source_field: "ai.usage.output_tokens"
+    extraction_method: "direct_copy"
+    fallback_value: 0
+    validation: "positive_number"
+    description: "Extract output tokens from generic AI instrumentation"
+    
+  generic_ai_candidate_count:
+    source_field: "ai.google.candidate_count"
+    extraction_method: "direct_copy"
+    fallback_value: 1
+    validation: "positive_number"
+    description: "Extract candidate count from generic AI instrumentation"
+
+extraction_methods:
+  direct_copy: "Copy field value directly"
+  array_flatten: "Flatten nested arrays"
+  object_merge: "Merge multiple objects"
+  string_concat: "Concatenate string values"
+  first_non_null: "Return first non-null value from array"
+
+validation_rules:
+  non_empty_string: "Ensure string is not empty"
+  positive_number: "Ensure number is positive"
+  array_of_objects: "Ensure array contains only objects"
+  array_of_strings: "Ensure array contains only strings"
+  non_null: "Ensure value is not null"
+  number_range_0_1: "Ensure number is between 0 and 1"
+  object_not_empty: "Ensure object is not empty"

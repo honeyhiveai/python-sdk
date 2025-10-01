@@ -1,0 +1,36 @@
+{
+  "_comment": "Tool calls response - model requests to call get_weather function",
+  "_scenario": "User asks 'What's the weather in San Francisco?'",
+  "_critical_note": "function.arguments is a JSON STRING, not an object!",
+  "id": "chatcmpl-abc123def456",
+  "object": "chat.completion",
+  "created": 1721596500,
+  "model": "gpt-4o-2024-08-06",
+  "choices": [
+    {
+      "index": 0,
+      "message": {
+        "role": "assistant",
+        "content": null,
+        "tool_calls": [
+          {
+            "id": "call_abc123",
+            "type": "function",
+            "function": {
+              "name": "get_weather",
+              "arguments": "{\"location\": \"San Francisco\", \"unit\": \"celsius\"}"
+            }
+          }
+        ]
+      },
+      "logprobs": null,
+      "finish_reason": "tool_calls"
+    }
+  ],
+  "usage": {
+    "prompt_tokens": 82,
+    "completion_tokens": 17,
+    "total_tokens": 99
+  },
+  "system_fingerprint": "fp_3407719c7f"
+}

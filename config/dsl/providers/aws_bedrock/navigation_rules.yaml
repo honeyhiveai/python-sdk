@@ -1,0 +1,46 @@
+version: '1.0'
+provider: aws_bedrock
+dsl_type: provider_navigation_rules
+navigation_rules:
+  extract_input_messages:
+    source_field: llm.input_messages
+    extraction_method: direct_copy
+    fallback_value: []
+    validation: array_of_objects
+    description: Extract input message array
+  extract_output_messages:
+    source_field: llm.output_messages
+    extraction_method: direct_copy
+    fallback_value: []
+    validation: array_of_objects
+    description: Extract output message array
+  extract_model_name:
+    source_field: llm.model_name
+    extraction_method: direct_copy
+    fallback_value: unknown
+    validation: non_empty_string
+    description: Extract model name
+  extract_prompt_tokens:
+    source_field: llm.token_count_prompt
+    extraction_method: direct_copy
+    fallback_value: 0
+    validation: positive_number
+    description: Extract prompt token count
+  extract_completion_tokens:
+    source_field: llm.token_count_completion
+    extraction_method: direct_copy
+    fallback_value: 0
+    validation: positive_number
+    description: Extract completion token count
+extraction_methods:
+  direct_copy: Copy field value directly
+  array_flatten: Flatten nested arrays
+  object_merge: Merge multiple objects
+  string_concat: Concatenate string values
+  first_non_null: Return first non-null value from array
+validation_rules:
+  non_empty_string: Ensure string is not empty
+  positive_number: Ensure number is positive
+  array_of_objects: Ensure array contains only objects
+  array_of_strings: Ensure array contains only strings
+  non_null: Ensure value is not null

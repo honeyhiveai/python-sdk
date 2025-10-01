@@ -1,0 +1,26 @@
+version: '1.0'
+provider: ollama
+dsl_type: provider_structure_patterns
+patterns:
+  ollama_primary:
+    signature_fields:
+    - field1
+    - field2
+    - field3
+    optional_fields:
+    - optional1
+    - optional2
+    confidence_weight: 0.95
+    description: Primary ollama detection pattern
+  ollama_secondary:
+    signature_fields:
+    - alt_field1
+    - alt_field2
+    optional_fields:
+    - alt_optional1
+    confidence_weight: 0.85
+    description: Secondary ollama detection pattern
+validation:
+  minimum_signature_fields: 2
+  maximum_patterns: 5
+  confidence_threshold: 0.8

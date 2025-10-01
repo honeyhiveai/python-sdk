@@ -1,6 +1,7 @@
 """Session API module for HoneyHive."""
 
-from typing import Any, Optional
+from typing import Any, Optional, Union
+from uuid import UUID
 
 from ..models import Event, SessionStartRequest
 from .base import BaseAPI
@@ -117,7 +118,7 @@ class SessionAPI(BaseAPI):
         project: str,
         session_name: str,
         source: str,
-        session_id: Optional[str] = None,
+        session_id: Optional[Union[str, UUID]] = None,
         **kwargs: Any,
     ) -> SessionStartResponse:
         """Start a new session using SessionStartRequest model."""
@@ -159,7 +160,7 @@ class SessionAPI(BaseAPI):
         project: str,
         session_name: str,
         source: str,
-        session_id: Optional[str] = None,
+        session_id: Optional[Union[str, UUID]] = None,
         **kwargs: Any,
     ) -> SessionStartResponse:
         """Start a new session asynchronously using SessionStartRequest model."""

@@ -154,6 +154,10 @@ def mock_safe_log() -> Mock:
 
     This fixture provides a consistent mock for the safe_log utility function
     that is used across all tracer components for logging operations.
+    
+    Note: This fixture only provides the Mock object. For automatic patching,
+    individual tests should use @patch decorators or create module-specific
+    fixtures that handle the patching.
     """
     return Mock()
 

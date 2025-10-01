@@ -6,10 +6,11 @@
 
 Before attempting any task, AI assistants MUST:
 
-1. **Check existing Agent OS standards** for established patterns
-2. **Verify project-specific rules** in `.cursorrules` and repo documentation
-3. **Follow established patterns** rather than inventing alternatives
-4. **Reference existing documentation** before creating new approaches
+1. **Read [SYSTEMATIC-DEVELOPMENT-CONTEXT.md](SYSTEMATIC-DEVELOPMENT-CONTEXT.md)** - Essential project methodology and context
+2. **Check existing Agent OS standards** for established patterns
+3. **Verify project-specific rules** in `.cursorrules` and repo documentation
+4. **Follow established patterns** rather than inventing alternatives
+5. **Reference existing documentation** before creating new approaches
 
 ## 📋 **Pre-Task Compliance Checklist**
 

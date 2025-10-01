@@ -118,7 +118,7 @@ class TestAPIWorkflows:
             inputs={"prompt": "test prompt"},
             duration=150.0,
             event_id="test-event-id",
-            session_id="test-session-id",
+            session_id="550e8400-e29b-41d4-a716-446655440014",
             parent_id="test-parent-id",
             children_ids=[],
             outputs={},

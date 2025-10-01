@@ -1,0 +1,22 @@
+{
+  "_comment": "Streaming response chunk - delta format",
+  "_scenario": "User receives streaming chunks during generation",
+  "_source": "Based on CreateChatCompletionStreamResponse schema",
+  "_note": "Streaming uses 'delta' instead of 'message' in choices",
+  "id": "chatcmpl-stream123",
+  "object": "chat.completion.chunk",
+  "created": 1721596700,
+  "model": "gpt-4o-2024-08-06",
+  "choices": [
+    {
+      "index": 0,
+      "delta": {
+        "role": "assistant",
+        "content": "Hello"
+      },
+      "logprobs": null,
+      "finish_reason": null
+    }
+  ],
+  "system_fingerprint": "fp_3407719c7f"
+}

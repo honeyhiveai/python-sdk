@@ -24,9 +24,9 @@ class SessionStartRequest(BaseModel):
     source: str = Field(
         ..., description="Source of the session - production, staging, etc"
     )
-    session_id: Optional[str] = Field(
+    session_id: Optional[UUID] = Field(
         None,
-        description="Unique id of the session, if not set, it will be auto-generated",
+        description="Unique UUID of the session, if not set, it will be auto-generated",
     )
     children_ids: Optional[List[str]] = Field(
         None, description="Id of events that are nested within the session"
@@ -73,9 +73,9 @@ class SessionPropertiesBatch(BaseModel):
     source: Optional[str] = Field(
         None, description="Source of the session - production, staging, etc"
     )
-    session_id: Optional[str] = Field(
+    session_id: Optional[UUID] = Field(
         None,
-        description="Unique id of the session, if not set, it will be auto-generated",
+        description="Unique UUID of the session, if not set, it will be auto-generated",
     )
     config: Optional[Dict[str, Any]] = Field(
         None, description="Associated configuration for the session"
@@ -130,7 +130,7 @@ class Event(BaseModel):
     )
     session_id: Optional[str] = Field(
         None,
-        description="Unique id of the session associated with the event, if not set, it will be auto-generated",
+        description="Unique UUID of the session associated with the event, if not set, it will be auto-generated",
     )
     parent_id: Optional[str] = Field(
         None, description="Id of the parent event if nested"
@@ -229,7 +229,7 @@ class CreateEventRequest(BaseModel):
     )
     session_id: Optional[str] = Field(
         None,
-        description="Unique id of the session associated with the event, if not set, it will be auto-generated",
+        description="Unique UUID of the session associated with the event, if not set, it will be auto-generated",
     )
     parent_id: Optional[str] = Field(
         None, description="Id of the parent event if nested"
@@ -718,7 +718,7 @@ class Metric1(BaseModel):
 
 class Datapoint1(BaseModel):
     datapoint_id: Optional[str] = None
-    session_id: Optional[str] = None
+    session_id: Optional[UUID] = None
     passed: Optional[bool] = None
     metrics: Optional[List[Metric1]] = None
 

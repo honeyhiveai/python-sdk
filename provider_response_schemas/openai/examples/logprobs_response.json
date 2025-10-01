@@ -1,0 +1,48 @@
+{
+  "_comment": "Response with log probabilities - detailed token info",
+  "_scenario": "User requests logprobs for model confidence",
+  "_source": "Based on CreateChatCompletionResponse schema with logprobs",
+  "_note": "logprobs contains content array with token-level probabilities",
+  "id": "chatcmpl-logprobs456",
+  "object": "chat.completion",
+  "created": 1721597200,
+  "model": "gpt-4o-2024-08-06",
+  "choices": [
+    {
+      "index": 0,
+      "message": {
+        "role": "assistant",
+        "content": "Hello"
+      },
+      "logprobs": {
+        "content": [
+          {
+            "token": "Hello",
+            "logprob": -0.0001,
+            "bytes": [72, 101, 108, 108, 111],
+            "top_logprobs": [
+              {
+                "token": "Hello",
+                "logprob": -0.0001,
+                "bytes": [72, 101, 108, 108, 111]
+              },
+              {
+                "token": "Hi",
+                "logprob": -8.5,
+                "bytes": [72, 105]
+              }
+            ]
+          }
+        ],
+        "refusal": null
+      },
+      "finish_reason": "stop"
+    }
+  ],
+  "usage": {
+    "prompt_tokens": 5,
+    "completion_tokens": 1,
+    "total_tokens": 6
+  },
+  "system_fingerprint": "fp_3407719c7f"
+}

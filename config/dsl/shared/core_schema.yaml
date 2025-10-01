@@ -1,0 +1,196 @@
+version: "1.0"
+dsl_type: "honeyhive_core_schema"
+
+# HoneyHive 4-Section Schema Definition
+# This defines the target schema that all provider data will be mapped to
+
+honeyhive_schema:
+  inputs:
+    description: "User inputs, chat history, prompts, context"
+    purpose: "Capture all user-provided information and conversation context"
+    required_fields: []
+    optional_fields:
+      - "chat_history"      # Array of conversation messages
+      - "prompt"            # User prompt text
+      - "context"           # Additional context information
+      - "system_message"    # System instructions
+      - "user_message"      # Current user message
+      - "conversation_id"   # Conversation identifier
+      - "session_id"        # Session identifier
+    field_types:
+      chat_history: "array_of_objects"
+      prompt: "string"
+      context: "object"
+      system_message: "string"
+      user_message: "string"
+      conversation_id: "string"
+      session_id: "string"
+    
+  outputs:
+    description: "Model responses, completions, tool calls, results"
+    purpose: "Capture all model-generated outputs and results"
+    required_fields: []
+    optional_fields:
+      - "response"          # Model response messages
+      - "completion"        # Completion text content
+      - "tool_calls"        # Function/tool call results
+      - "function_calls"    # Legacy function calls
+      - "choices"           # Multiple response choices
+      - "finish_reason"     # Completion finish reason
+      - "refusal"           # Content refusal information
+      - "audio"             # Audio response data
+    field_types:
+      response: "array_of_objects"
+      completion: "string"
+      tool_calls: "array_of_objects"
+      function_calls: "array_of_objects"
+      choices: "array_of_objects"
+      finish_reason: "string"
+      refusal: "string"
+      audio: "object"
+    
+  config:
+    description: "Model parameters, temperature, max tokens, system prompts"
+    purpose: "Capture model configuration and parameters used"
+    required_fields: []
+    optional_fields:
+      - "model"             # Model identifier (highly recommended)
+      - "temperature"       # Model temperature setting
+      - "max_tokens"        # Maximum token limit
+      - "top_p"             # Top-p sampling parameter
+      - "top_k"             # Top-k sampling parameter
+      - "frequency_penalty" # Frequency penalty
+      - "presence_penalty"  # Presence penalty
+      - "stop_sequences"    # Stop sequences
+      - "seed"              # Random seed
+      - "response_format"   # Response format specification
+    field_types:
+      model: "string"
+      temperature: "number"
+      max_tokens: "integer"
+      top_p: "number"
+      top_k: "integer"
+      frequency_penalty: "number"
+      presence_penalty: "number"
+      stop_sequences: "array_of_strings"
+      seed: "integer"
+      response_format: "object"
+    
+  metadata:
+    description: "Usage metrics, timestamps, provider info, performance data"
+    purpose: "Capture operational metrics and system information"
+    required_fields:
+      - "provider"          # Provider identifier (REQUIRED)
+    optional_fields:
+      - "prompt_tokens"     # Input token count
+      - "completion_tokens" # Output token count
+      - "total_tokens"      # Total token usage
+      - "latency"           # Response latency in ms
+      - "cost"              # Estimated cost
+      - "timestamp"         # Request timestamp
+      - "trace_id"          # Trace identifier
+      - "span_id"           # Span identifier
+      - "instrumentor"      # Instrumentor framework
+      - "model_version"     # Specific model version
+      - "api_version"       # API version used
+      - "request_id"        # Provider request ID
+      - "organization_id"   # Organization identifier
+    field_types:
+      provider: "string"
+      prompt_tokens: "integer"
+      completion_tokens: "integer"
+      total_tokens: "integer"
+      latency: "number"
+      cost: "number"
+      timestamp: "string"
+      trace_id: "string"
+      span_id: "string"
+      instrumentor: "string"
+      model_version: "string"
+      api_version: "string"
+      request_id: "string"
+      organization_id: "string"
+
+# Schema validation rules
+schema_validation:
+  global:
+    max_total_fields: 100
+    max_field_name_length: 64
+    max_string_value_length: 10000
+    max_array_length: 1000
+    max_object_depth: 10
+    
+  inputs:
+    allow_empty: true
+    max_fields: 25
+    require_at_least_one: false
+    
+  outputs:
+    allow_empty: true
+    max_fields: 25
+    require_at_least_one: false
+    
+  config:
+    allow_empty: false
+    max_fields: 20
+    require_model_recommended: true
+    
+  metadata:
+    allow_empty: false
+    max_fields: 30
+    require_provider: true
+
+# Field type definitions
+field_type_definitions:
+  string: "Text value"
+  integer: "Whole number"
+  number: "Numeric value (integer or float)"
+  boolean: "True/false value"
+  array_of_strings: "Array containing only string values"
+  array_of_objects: "Array containing only object values"
+  array_of_numbers: "Array containing only numeric values"
+  object: "Key-value object structure"
+  null: "Null/empty value"
+
+# Common patterns for field values
+common_patterns:
+  provider_names:
+    - "openai"
+    - "anthropic"
+    - "google"
+    - "gemini"
+    - "cohere"
+    - "aws_bedrock"
+    - "mistral"
+    - "nvidia"
+    - "ibm"
+    - "groq"
+    - "ollama"
+    
+  instrumentor_names:
+    - "openinference"
+    - "traceloop"
+    - "openlit"
+    - "direct"
+    - "custom"
+    
+  finish_reasons:
+    - "stop"
+    - "length"
+    - "tool_calls"
+    - "function_call"
+    - "content_filter"
+    - "max_tokens"
+    - "stop_sequence"
+    - "end_turn"
+    - "safety"
+    - "recitation"
+    - "guardrail_intervened"
+
+# Version and compatibility information
+version_info:
+  schema_version: "1.0"
+  compatible_versions: ["1.0"]
+  last_updated: "2025-01-27"
+  breaking_changes: []
+  deprecation_warnings: []

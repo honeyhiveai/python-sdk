@@ -6,6 +6,7 @@
 
 ### **🔍 MANDATORY DISCOVERY (Execute EVERY Time)**
 ```
+read_file(".agent-os/standards/ai-assistant/SYSTEMATIC-DEVELOPMENT-CONTEXT.md")
 codebase_search(query="[user topic] rules standards requirements", target_directories=[".agent-os"])
 grep(pattern="NEVER|FORBIDDEN|CRITICAL|MANDATORY", path=".agent-os/standards/ai-assistant")
 read_file(".agent-os/standards/ai-assistant/README.md")

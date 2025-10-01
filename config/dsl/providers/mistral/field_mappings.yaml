@@ -1,0 +1,216 @@
+version: '1.0'
+provider: mistral
+dsl_type: provider_field_mappings
+
+# ============================================================
+# Mistral AI Field Mappings for Universal LLM Discovery Engine v4.0
+# ============================================================
+# Maps extracted Mistral AI data to the HoneyHive 4-section schema
+# Uses BASE rule names (no instrumentor prefix) for dynamic routing
+# Compiler routes to instrumentor-specific navigation rules at runtime
+# ============================================================
+
+field_mappings:
+  
+  # ============================================================
+  # INPUTS SECTION
+  # ============================================================
+  # Maps user inputs, prompts, messages, and request parameters
+  # ============================================================
+  inputs:
+    # Primary input data
+    messages:
+      source_rule: "input_messages"  # Routes to {instrumentor}_input_messages
+      required: true
+      description: "Input messages or prompt sent to Mistral AI model"
+      
+    # LLM parameters (included in inputs as they are request configuration)
+    temperature:
+      source_rule: "temperature"  # Routes to {instrumentor}_temperature
+      required: false
+      description: "Sampling temperature parameter (0.0-2.0)"
+      
+    max_tokens:
+      source_rule: "max_tokens"  # Routes to {instrumentor}_max_tokens
+      required: false
+      description: "Maximum tokens to generate"
+      
+    top_p:
+      source_rule: "top_p"  # Routes to {instrumentor}_top_p
+      required: false
+      description: "Nucleus sampling parameter (0.0-1.0)"
+      
+    frequency_penalty:
+      source_rule: "frequency_penalty"  # Routes to {instrumentor}_frequency_penalty
+      required: false
+      description: "Frequency penalty (-2.0 to 2.0)"
+      
+    presence_penalty:
+      source_rule: "presence_penalty"  # Routes to {instrumentor}_presence_penalty
+      required: false
+      description: "Presence penalty (-2.0 to 2.0)"
+
+  # ============================================================
+  # OUTPUTS SECTION
+  # ============================================================
+  # Maps model outputs, responses, completions, and results
+  # ============================================================
+  outputs:
+    # Primary output data
+    response:
+      source_rule: "output_messages"  # Routes to {instrumentor}_output_messages
+      required: false
+      description: "Mistral AI response messages/completion"
+      
+    # Completion metadata
+    finish_reason:
+      source_rule: "finish_reason"  # Routes to {instrumentor}_finish_reason
+      required: false
+      description: "Reason for model finishing generation (stop, length, model_length, error, tool_calls)"
+      transform: "normalize_finish_reason"  # Apply finish reason normalization from Phase 7
+
+  # ============================================================
+  # CONFIG SECTION
+  # ============================================================
+  # Maps model configuration and persistent settings
+  # ============================================================
+  config:
+    # Required model field
+    model:
+      source_rule: "model_name"  # Routes to {instrumentor}_model_name or {instrumentor}_response_model
+      required: true
+      description: "Mistral AI model identifier (e.g., mistral-large-latest, mistral-medium-latest)"
+      
+    # Model configuration parameters (can be in config for persistence)
+    temperature:
+      source_rule: "temperature"  # Routes to {instrumentor}_temperature
+      required: false
+      description: "Sampling temperature used"
+      
+    max_tokens:
+      source_rule: "max_tokens"  # Routes to {instrumentor}_max_tokens
+      required: false
+      description: "Maximum tokens configured"
+      
+    top_p:
+      source_rule: "top_p"  # Routes to {instrumentor}_top_p
+      required: false
+      description: "Top-p sampling value used"
+      
+    frequency_penalty:
+      source_rule: "frequency_penalty"  # Routes to {instrumentor}_frequency_penalty
+      required: false
+      description: "Frequency penalty applied"
+      
+    presence_penalty:
+      source_rule: "presence_penalty"  # Routes to {instrumentor}_presence_penalty
+      required: false
+      description: "Presence penalty applied"
+
+  # ============================================================
+  # METADATA SECTION
+  # ============================================================
+  # Maps provider metadata, usage statistics, and processing info
+  # ============================================================
+  metadata:
+    # Required provider field
+    provider:
+      source_rule: "static_mistral"  # Static value set to "mistral"
+      required: true
+      description: "Provider identifier - Mistral AI"
+      
+    # Instrumentor detection
+    instrumentor:
+      source_rule: "detect_instrumentor"  # Detected instrumentor (traceloop/openinference/openlit)
+      required: false
+      description: "Instrumentor framework used (traceloop, openinference, openlit)"
+      
+    # Token usage statistics
+    prompt_tokens:
+      source_rule: "prompt_tokens"  # Routes to {instrumentor}_prompt_tokens
+      required: false
+      description: "Input token count"
+      
+    completion_tokens:
+      source_rule: "completion_tokens"  # Routes to {instrumentor}_completion_tokens
+      required: false
+      description: "Output token count"
+      
+    reasoning_tokens:
+      source_rule: "reasoning_tokens"  # Routes to {instrumentor}_reasoning_tokens
+      required: false
+      description: "Reasoning token count (Mistral-specific for advanced models)"
+      
+    total_tokens:
+      source_rule: "calculate_total_tokens"  # Transform: sum of prompt + completion + reasoning
+      required: false
+      description: "Total token usage (prompt + completion + reasoning)"
+      transform: "sum_tokens"  # Apply token summation transform from Phase 7
+      
+    # Cost information (primarily from OpenInference)
+    cost_prompt:
+      source_rule: "cost_prompt"  # Routes to openinference_cost_prompt (OpenInference only)
+      required: false
+      description: "Input cost in USD (if available from OpenInference)"
+      
+    cost_completion:
+      source_rule: "cost_completion"  # Routes to openinference_cost_completion (OpenInference only)
+      required: false
+      description: "Output cost in USD (if available from OpenInference)"
+      
+    cost_total:
+      source_rule: "cost_total"  # Routes to openinference_cost_total (OpenInference only)
+      required: false
+      description: "Total cost in USD (if available from OpenInference)"
+      
+    # Response metadata (from OpenLit)
+    response_id:
+      source_rule: "response_id"  # Routes to openlit_response_id (OpenLit only)
+      required: false
+      description: "Response ID from Mistral AI (if available from OpenLit)"
+      
+    # Model information
+    response_model:
+      source_rule: "response_model"  # Routes to {instrumentor}_response_model (actual model used)
+      required: false
+      description: "Actual model used by Mistral AI (may differ from requested)"
+
+# ============================================================
+# Schema Validation Rules
+# ============================================================
+schema_validation:
+  inputs:
+    allow_empty: false  # At least messages required
+    max_fields: 20
+    require_messages: true
+    
+  outputs:
+    allow_empty: false  # At least response required for LLM calls
+    max_fields: 20
+    
+  config:
+    require_model: true  # Model MUST be present
+    allow_empty: false
+    max_fields: 20
+    
+  metadata:
+    require_provider: true  # Provider MUST be present
+    allow_empty: false
+    max_fields: 30
+
+# ============================================================
+# Metadata
+# ============================================================
+metadata:
+  total_fields: 21
+  required_fields: 3  # messages, model, provider
+  optional_fields: 18
+  sections:
+    inputs: 6 fields
+    outputs: 2 fields
+    config: 6 fields
+    metadata: 11 fields
+  base_rule_naming: true  # Uses base names for dynamic routing
+  instrumentor_routing: true  # Compiler routes to instrumentor-specific rules
+  phase_5_navigation: true  # Based on 42 navigation rules from Phase 5
+  last_updated: "2025-09-30"

@@ -39,6 +39,7 @@ from ..processing.otlp_session import (
     create_dynamic_otlp_config,
     get_default_otlp_config,
 )
+from ..processing.provider_interception import setup_provider_interception
 from ..processing.span_processor import HoneyHiveSpanProcessor
 
 if TYPE_CHECKING:
@@ -297,6 +298,9 @@ def _initialize_otel_components(tracer_instance: Any) -> None:
 
     # Create tracer instance (no longer needs to set global provider)
     _create_tracer_instance(tracer_instance)
+
+    # Setup provider-level span interception for all spans
+    setup_provider_interception(tracer_instance)
 
 
 def _setup_main_provider_components(

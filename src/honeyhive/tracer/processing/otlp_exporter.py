@@ -66,6 +66,7 @@ class HoneyHiveOTLPExporter(SpanExporter):
         self.use_optimized_session = use_optimized_session
         self._session: Optional[requests.Session] = None
         self._is_shutdown = False
+        self._processed_event_data: Optional[dict] = None
 
         # Create optimized session if requested and not already provided
         if use_optimized_session and "session" not in kwargs:
@@ -140,9 +141,71 @@ class HoneyHiveOTLPExporter(SpanExporter):
             honeyhive_data={"span_count": len(spans)},
         )
 
+        # DEBUG: Dump span contents before export (temporarily disabled)
+        # for i, span in enumerate(spans):
+        #     print(f"🔍 OTLP EXPORTER SPAN {i} DUMP:")
+        #     print(f"  Name: {span.name}")
+        #     print(f"  Attributes ({len(span.attributes)} total):")
+        #     for key, value in span.attributes.items():
+        #         if key.startswith(('honeyhive_', 'llm.', 'openinference')):
+        #             print(f"    {key}: {str(value)[:100]}...")
+        #     print(f"🔍 END SPAN {i} DUMP")
+
         try:
+            # CRITICAL FIX: Send processed event data via client API if available
+            has_event_data = self._processed_event_data is not None
+            has_tracer = self.tracer_instance is not None
+            has_client = (
+                has_tracer
+                and hasattr(self.tracer_instance, "client")
+                and self.tracer_instance.client is not None
+            )
+            has_events_api = (
+                has_client
+                and hasattr(self.tracer_instance.client, "events")
+                and hasattr(self.tracer_instance.client.events, "create")
+            )
+
+            if has_event_data and has_events_api:
+                try:
+                    print("📤 OTLP EXPORTER: Sending processed event via client API")
+                    response = self.tracer_instance.client.events.create(
+                        **self._processed_event_data
+                    )
+                    print(
+                        (
+                            f"✅ OTLP EXPORTER: Processed event sent successfully: "
+                            f"{response}"
+                        )
+                    )
+                    safe_log(
+                        self.tracer_instance,
+                        "info",
+                        (
+                            "✅ Processed HoneyHive event sent via client API "
+                            "from OTLP exporter"
+                        ),
+                    )
+
+                    # Clear the processed event data after successful send
+                    self._processed_event_data = None
+
+                except Exception as client_error:
+                    print(
+                        (
+                            f"❌ OTLP EXPORTER: Failed to send processed event "
+                            f"via client API: {client_error}"
+                        )
+                    )
+                    safe_log(
+                        self.tracer_instance,
+                        "warning",
+                        "Failed to send processed event via client API: %s",
+                        client_error,
+                    )
+
+            # Also send the original span via OTLP for compatibility/debugging
             # All span processing completed by HoneyHiveSpanProcessor
-            # This exporter simply passes the spans to the underlying OTLP exporter
             return self._otlp_exporter.export(spans)
 
         except Exception as e:
@@ -153,6 +216,22 @@ class HoneyHiveOTLPExporter(SpanExporter):
                 honeyhive_data={"error_type": type(e).__name__},
             )
             return SpanExportResult.FAILURE
+
+    def set_processed_event_data(self, event_data: dict) -> None:
+        """Set processed HoneyHive event data for the next export.
+
+        Args:
+            event_data: Processed HoneyHive event data dictionary
+        """
+        self._processed_event_data = event_data
+        safe_log(
+            self.tracer_instance,
+            "debug",
+            "📤 Stored processed event data for HoneyHive client API export",
+            honeyhive_data={
+                "event_keys": list(event_data.keys()) if event_data else []
+            },
+        )
 
     def force_flush(self, timeout_millis: int = 30000) -> bool:
         """Force flush any buffered spans."""

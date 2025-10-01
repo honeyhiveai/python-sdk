@@ -1,0 +1,221 @@
+version: '1.0'
+provider: gemini
+dsl_type: provider_transforms
+
+# Gemini Transform Functions for Universal LLM Discovery Engine v4.0
+# This file defines data transformation functions used during Gemini field mapping
+# Updated for 2025-09-29 with current Gemini model support and pricing
+
+transforms:
+  
+  # === STRING EXTRACTION TRANSFORMS ===
+  extract_user_prompt:
+    function_type: "string_extraction"
+    implementation: "extract_message_content_by_role"
+    parameters:
+      source_field: "chat_history"
+      role_filter: "user"
+      content_field: "content"
+      join_multiple: true
+      separator: "\n\n"
+    description: "Extract user prompt from chat history"
+    
+  extract_system_prompt:
+    function_type: "string_extraction"
+    implementation: "extract_message_content_by_role"
+    parameters:
+      source_field: "chat_history"
+      role_filter: "system"
+      content_field: "content"
+      join_multiple: true
+      separator: "\n\n"
+    description: "Extract system prompt from chat history"
+    
+  extract_completion_text:
+    function_type: "string_extraction"
+    implementation: "extract_message_content_by_role"
+    parameters:
+      source_field: "response"
+      role_filter: "model"
+      content_field: "content"
+      join_multiple: true
+      separator: "\n\n"
+    description: "Extract completion text from response messages"
+    
+  extract_finish_reason_normalized:
+    function_type: "string_extraction"
+    implementation: "normalize_finish_reason"
+    parameters:
+      reason_mappings:
+        "STOP": "stop"
+        "MAX_TOKENS": "length"
+        "SAFETY": "content_filter"
+        "RECITATION": "content_filter"
+        "OTHER": "unknown"
+      valid_reasons: ["stop", "length", "content_filter", "unknown"]
+    description: "Extract and normalize Gemini finish reason"
+    
+  extract_latency:
+    function_type: "numeric_extraction"
+    implementation: "extract_duration"
+    parameters:
+      duration_field: "duration"
+      unit: "milliseconds"
+    description: "Extract response latency"
+    
+  extract_request_id:
+    function_type: "string_extraction"
+    implementation: "extract_request_identifier"
+    parameters:
+      id_field: "request_id"
+    description: "Extract provider request ID"
+
+  # === ARRAY TRANSFORMATION TRANSFORMS ===
+  extract_tool_calls:
+    function_type: "array_transformation"
+    implementation: "extract_field_values_from_messages"
+    parameters:
+      source_field: "response"
+      message_role_filter: "model"
+      target_field: "function_call"
+      preserve_structure: true
+    description: "Extract tool call information from model messages"
+    
+  extract_candidates:
+    function_type: "array_transformation"
+    implementation: "extract_gemini_candidates"
+    parameters:
+      source_field: "response"
+      preserve_structure: true
+      include_safety_ratings: true
+    description: "Extract multiple response candidates from Gemini"
+
+  # === NUMERIC CALCULATION TRANSFORMS ===
+  calculate_total_tokens:
+    function_type: "numeric_calculation"
+    implementation: "sum_fields"
+    parameters:
+      source_fields:
+        - "prompt_tokens"
+        - "completion_tokens"
+      fallback_value: 0
+    description: "Calculate total token usage"
+    
+  calculate_cost:
+    function_type: "numeric_calculation"
+    implementation: "calculate_gemini_cost"
+    parameters:
+      model_field: "model"
+      prompt_tokens_field: "prompt_tokens"
+      completion_tokens_field: "completion_tokens"
+      # Updated pricing as of 2025-09-29
+      pricing_table:
+        # Gemini 1.5 Pro models (current flagship)
+        "gemini-1.5-pro-002": {"input": 0.00125, "output": 0.005}
+        "gemini-1.5-pro-001": {"input": 0.00125, "output": 0.005}
+        "gemini-1.5-pro": {"input": 0.00125, "output": 0.005}
+        
+        # Gemini 1.5 Flash models (fast and efficient)
+        "gemini-1.5-flash-002": {"input": 0.000075, "output": 0.0003}
+        "gemini-1.5-flash-001": {"input": 0.000075, "output": 0.0003}
+        "gemini-1.5-flash": {"input": 0.000075, "output": 0.0003}
+        "gemini-1.5-flash-8b": {"input": 0.0000375, "output": 0.00015}
+        
+        # Gemini 1.0 Pro models
+        "gemini-1.0-pro-002": {"input": 0.0005, "output": 0.0015}
+        "gemini-1.0-pro-001": {"input": 0.0005, "output": 0.0015}
+        "gemini-1.0-pro": {"input": 0.0005, "output": 0.0015}
+        "gemini-1.0-pro-vision": {"input": 0.00025, "output": 0.0005}
+        
+        # Legacy models
+        "gemini-pro": {"input": 0.0005, "output": 0.0015}
+        "gemini-pro-vision": {"input": 0.00025, "output": 0.0005}
+        "gemini-ultra": {"input": 0.0125, "output": 0.0375}
+        
+        # Generic fallback patterns
+        "gemini-1.5-pro": {"input": 0.00125, "output": 0.005}
+        "gemini-1.5-flash": {"input": 0.000075, "output": 0.0003}
+        "gemini-1.0-pro": {"input": 0.0005, "output": 0.0015}
+    description: "Calculate estimated cost based on current Gemini pricing"
+
+  # === DETECTION TRANSFORMS ===
+  detect_instrumentor:
+    function_type: "string_extraction"
+    implementation: "detect_instrumentor_framework"
+    parameters:
+      attribute_patterns:
+        openinference:
+          - "llm.input_messages"
+          - "llm.output_messages"
+          - "llm.model_name"
+        traceloop:
+          - "gen_ai.request.model"
+          - "gen_ai.completion"
+          - "gen_ai.system"
+        direct:
+          - "gemini.model"
+          - "gemini.contents"
+          - "gemini.response"
+        vertex_ai:
+          - "vertex_ai.model"
+          - "vertex_ai.project_id"
+          - "vertex_ai.location"
+        langchain:
+          - "langchain.llm.model_name"
+          - "langchain.llm.provider"
+        generic:
+          - "ai.model.provider"
+          - "ai.model.name"
+    description: "Detect which instrumentor framework is being used"
+    
+  static_gemini:
+    function_type: "static_value"
+    implementation: "return_value"
+    parameters:
+      value: "gemini"
+    description: "Statically return 'gemini' as the provider"
+
+function_registry:
+  string_extraction:
+    - "extract_message_content_by_role"
+    - "extract_first_non_empty"
+    - "detect_instrumentor_framework"
+    - "normalize_finish_reason"
+    - "extract_parameter_value"
+    - "extract_duration"
+    - "extract_request_identifier"
+  array_transformation:
+    - "flatten_and_join"
+    - "filter_by_role"
+    - "extract_field_values_from_messages"
+    - "extract_gemini_candidates"
+    - "deduplicate_array"
+  numeric_calculation:
+    - "sum_fields"
+    - "average_fields"
+    - "max_fields"
+    - "min_fields"
+    - "calculate_gemini_cost"
+  numeric_extraction:
+    - "extract_parameter_value"
+    - "extract_duration"
+  object_transformation:
+    - "merge_objects"
+    - "filter_object_fields"
+    - "rename_object_keys"
+    - "flatten_nested_object"
+  static_value:
+    - "return_value"
+
+validation:
+  max_transforms_per_provider: 50
+  required_parameters:
+    - "function_type"
+    - "implementation"
+  allowed_function_types:
+    - "string_extraction"
+    - "array_transformation"
+    - "numeric_calculation"
+    - "numeric_extraction"
+    - "object_transformation"
+    - "static_value"

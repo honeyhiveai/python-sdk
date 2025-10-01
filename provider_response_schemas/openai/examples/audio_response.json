@@ -1,0 +1,40 @@
+{
+  "_comment": "Audio response - model generates audio output",
+  "_scenario": "User requests audio modality with gpt-4o-audio-preview",
+  "_source": "Based on ChatCompletionResponseMessage schema audio field",
+  "_note": "audio.data is base64 encoded, includes transcript",
+  "id": "chatcmpl-audio123",
+  "object": "chat.completion",
+  "created": 1721597100,
+  "model": "gpt-4o-audio-preview",
+  "choices": [
+    {
+      "index": 0,
+      "message": {
+        "role": "assistant",
+        "content": "Hello, how can I assist you today?",
+        "refusal": null,
+        "audio": {
+          "id": "audio_abc123",
+          "expires_at": 1721683500,
+          "data": "UklGRiQAAABXQVZFZm10IBAAAAABAAEAQB8AAAB9AAACABAAZGF0YQAAAAA=",
+          "transcript": "Hello, how can I assist you today?"
+        }
+      },
+      "logprobs": null,
+      "finish_reason": "stop"
+    }
+  ],
+  "usage": {
+    "prompt_tokens": 8,
+    "completion_tokens": 12,
+    "total_tokens": 20,
+    "completion_tokens_details": {
+      "audio_tokens": 120,
+      "reasoning_tokens": 0,
+      "accepted_prediction_tokens": 0,
+      "rejected_prediction_tokens": 0
+    }
+  },
+  "system_fingerprint": "fp_audio_v1"
+}

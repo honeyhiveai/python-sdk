@@ -16,6 +16,17 @@ from typing import Any, Dict, Optional, Union
 # Internal shutdown state tracking - managed automatically by safe_log
 _shutdown_detected = threading.Event()
 
+# Per-instance logger cache - isolated per tracer instance
+# Key: tracer_instance id -> logger instance
+# This maintains multi-instance isolation while preventing repeated logger creation
+_instance_logger_cache: Dict[int, "HoneyHiveLogger"] = {}
+_instance_logger_cache_lock = threading.Lock()
+
+# Named logger cache - for loggers created with explicit names (not tied to tracer instances)
+# These are intentionally shared (e.g., module-level loggers) but NOT used in safe_log fallback
+_named_logger_cache: Dict[str, "HoneyHiveLogger"] = {}
+_named_logger_cache_lock = threading.Lock()
+
 
 def _detect_shutdown_conditions() -> bool:
     """Dynamically detect shutdown conditions without external signaling.
@@ -328,8 +339,15 @@ def get_logger(
 ) -> HoneyHiveLogger:
     """Get a HoneyHive logger instance with dynamic configuration.
 
-    Uses dynamic logic to determine logger configuration based on
-    tracer instance settings or explicit parameters.
+    Multi-Instance Architecture:
+    - If tracer_instance is provided: Creates/caches logger PER tracer instance
+    - If tracer_instance is None: Creates/caches logger by name (shared named loggers)
+    
+    This ensures multi-instance isolation: each tracer has its own logger,
+    while still allowing shared module-level loggers when appropriate.
+
+    Performance: Caches logger instances to avoid creating new loggers
+    on every call. This is critical for hot-path code like provider detection.
 
     Args:
         name: Logger name
@@ -338,13 +356,51 @@ def get_logger(
         **kwargs: Additional logger parameters
 
     Returns:
-        Configured HoneyHive logger instance
+        Configured HoneyHive logger instance (cached appropriately)
     """
     # Dynamic verbose detection from tracer instance
     if verbose is None and tracer_instance is not None:
         verbose = _extract_verbose_from_tracer_dynamically(tracer_instance)
 
-    return HoneyHiveLogger(name, verbose=verbose, **kwargs)
+    # Determine caching strategy based on tracer_instance presence
+    if tracer_instance is not None:
+        # PER-INSTANCE CACHING: Each tracer gets its own logger
+        tracer_id = id(tracer_instance)
+        
+        # Check per-instance cache first
+        if tracer_id in _instance_logger_cache:
+            return _instance_logger_cache[tracer_id]
+        
+        # Create new logger for this tracer instance (thread-safe)
+        with _instance_logger_cache_lock:
+            # Double-check after acquiring lock
+            if tracer_id in _instance_logger_cache:
+                return _instance_logger_cache[tracer_id]
+            
+            # Create logger with tracer-specific configuration
+            logger_instance = HoneyHiveLogger(name, verbose=verbose, **kwargs)
+            _instance_logger_cache[tracer_id] = logger_instance
+            return logger_instance
+    
+    else:
+        # NAMED LOGGER CACHING: Shared loggers (for module-level use)
+        # Create cache key from name and verbose setting
+        cache_key = f"{name}::{verbose}"
+        
+        # Check named cache first
+        if cache_key in _named_logger_cache:
+            return _named_logger_cache[cache_key]
+        
+        # Create new named logger (thread-safe)
+        with _named_logger_cache_lock:
+            # Double-check after acquiring lock
+            if cache_key in _named_logger_cache:
+                return _named_logger_cache[cache_key]
+            
+            # Create and cache new named logger
+            logger_instance = HoneyHiveLogger(name, verbose=verbose, **kwargs)
+            _named_logger_cache[cache_key] = logger_instance
+            return logger_instance
 
 
 def _extract_verbose_from_tracer_dynamically(tracer_instance: Any) -> Optional[bool]:
@@ -475,10 +531,11 @@ def safe_log(
         return None
 
     try:
-        # Enhanced fallback logic for early initialization and multi-instance safety
+        # Multi-instance architecture: Each tracer MUST have its own logger
+        # Fallback strategies are minimal to preserve instance isolation
         target_logger = None
 
-        # Strategy 1: Use tracer instance logger if fully initialized
+        # Strategy 1: Use tracer instance logger if fully initialized (PRIMARY PATH)
         if (
             tracer_instance
             and hasattr(tracer_instance, "logger")
@@ -487,13 +544,13 @@ def safe_log(
             target_logger = tracer_instance.logger
 
         # Strategy 2: Check if tracer_instance has its own tracer_instance
-        # (API client pattern)
+        # (API client pattern - delegate to actual tracer)
         elif (
             tracer_instance
             and hasattr(tracer_instance, "tracer_instance")
             and tracer_instance.tracer_instance
         ):
-            # API client with tracer_instance - delegate to the actual tracer
+            # API client with tracer_instance - recursive delegation
             return safe_log(
                 tracer_instance.tracer_instance,
                 level,
@@ -503,28 +560,27 @@ def safe_log(
                 **kwargs,
             )
 
-        # Strategy 3: Use tracer_instance's own logger if it has one
-        # (API client independent mode)
-        elif (
-            tracer_instance
-            and hasattr(tracer_instance, "logger")
-            and tracer_instance.logger
-        ):
-            target_logger = tracer_instance.logger
-
-        # Strategy 4: Use tracer instance for logger creation if partially
-        # initialized
+        # Strategy 3: Tracer exists but logger not initialized yet
+        # Use PER-INSTANCE logger (not shared) for early initialization
         elif tracer_instance and hasattr(tracer_instance, "verbose"):
-            # Tracer exists but logger not ready - create temporary logger with
-            # tracer's verbose setting
+            # Create logger tied to THIS tracer instance (maintains isolation)
             verbose_setting = getattr(tracer_instance, "verbose", False)
-            target_logger = get_logger("honeyhive.early_init", verbose=verbose_setting)
+            target_logger = get_logger(
+                "honeyhive.early_init",
+                verbose=verbose_setting,
+                tracer_instance=tracer_instance,  # ✅ Per-instance cache
+            )
 
-        # Strategy 5: Fallback to default logger for None tracer_instance or
-        # no verbose setting
+        # Strategy 4: No tracer_instance at all (module-level logging)
+        # SKIP DEBUG LOGGING to avoid polluting logs from untraced components
         else:
-            # Complete fallback for early initialization or None tracer_instance
-            target_logger = get_logger("honeyhive.fallback")
+            # For multi-instance architecture: components without tracer_instance
+            # should only log warnings/errors, not debug/info
+            if level in ("debug", "info"):
+                return None  # Skip low-level logs from non-tracer components
+            
+            # For warnings/errors: use shared named logger (intentional, for critical issues)
+            target_logger = get_logger("honeyhive.untraced")  # Shared named logger
 
         # Check if the logger and its handlers are still available
         if not hasattr(target_logger, "logger") or not target_logger.logger.handlers:

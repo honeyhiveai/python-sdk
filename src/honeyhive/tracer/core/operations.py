@@ -23,6 +23,8 @@ from ...utils.logger import is_shutdown_detected, safe_log
 from ..lifecycle.core import (
     is_new_span_creation_disabled,
 )
+
+# Note: Span interception now handled at provider level in initialization.py
 from .base import NoOpSpan
 
 if TYPE_CHECKING:
@@ -144,7 +146,10 @@ class TracerOperationsMixin(TracerOperationsInterface):
         # Prepare attributes including event_type if provided
         attributes = kwargs.copy()
         if event_type is not None:
-            attributes["honeyhive.event_type"] = event_type
+            # Convert EventType enum to string value for OpenTelemetry compatibility
+            attributes["honeyhive.event_type"] = (
+                event_type.value if hasattr(event_type, "value") else str(event_type)
+            )
         # Use the tracer's start_span method which handles all the HoneyHive logic
         return self.start_span(name=name, attributes=attributes if attributes else None)
 
@@ -269,6 +274,9 @@ class TracerOperationsMixin(TracerOperationsInterface):
             # Create span using OpenTelemetry tracer
             span = self.tracer.start_span(**span_params)
 
+            # Note: Span interception now handled at provider level
+            # All spans from our provider are automatically intercepted
+
             # Dynamic attribute processing
             self._process_span_attributes_dynamically(span, attributes)
 
@@ -294,6 +302,9 @@ class TracerOperationsMixin(TracerOperationsInterface):
             )
             # Graceful degradation
             return NoOpSpan()
+
+    # Note: Pre-end interception method removed - now handled at provider level
+    # See provider_interception.py for the correct implementation
 
     # pylint: disable=too-many-arguments
     # Justification: Parameter building method needs multiple optional parameters

@@ -1,0 +1,19 @@
+version: '1.0'
+provider: openai
+dsl_type: provider_transforms
+transforms:
+  extract_choices_array_message_tool_calls:
+    function_type: array_reconstruction
+    implementation: reconstruct_array_from_flattened
+    parameters:
+      prefix: choices.message.tool_calls
+      preserve_json_strings:
+      - function.arguments
+    description: Reconstruct choices[].message.tool_calls from flattened attributes
+  extract_choices[]_message_tool_calls[]_function_arguments:
+    function_type: string_extraction
+    implementation: extract_first_non_empty
+    parameters:
+      preserve_as_json: true
+    description: Extract choices[].message.tool_calls[].function.arguments as JSON
+      string

@@ -1,0 +1,135 @@
+version: '1.0'
+provider: anthropic
+dsl_type: provider_field_mappings
+
+# Anthropic Field Mappings for Universal LLM Discovery Engine v4.0
+# This file defines how extracted Anthropic data maps to the HoneyHive 4-section schema
+# Mappings are organized by HoneyHive schema sections: inputs, outputs, config, metadata
+
+field_mappings:
+  
+  # === INPUTS SECTION ===
+  # Maps user inputs, chat history, prompts, and context information
+  inputs:
+    chat_history:
+      source_rule: "openinference_input_messages"
+      required: false
+      description: "Anthropic input message array with role/content structure"
+      
+    prompt:
+      source_rule: "extract_user_prompt"
+      required: false
+      description: "User prompt text extracted from messages"
+      
+    system_message:
+      source_rule: "extract_system_prompt"
+      required: false
+      description: "System message extracted from messages"
+
+  # === OUTPUTS SECTION ===
+  # Maps model outputs, responses, completions, and results
+  outputs:
+    response:
+      source_rule: "openinference_output_messages"
+      required: false
+      description: "Anthropic response message array"
+      
+    completion:
+      source_rule: "extract_completion_text"
+      required: false
+      description: "Completion text content"
+      
+    tool_calls:
+      source_rule: "extract_tool_calls"
+      required: false
+      description: "Function/tool call results"
+      
+    finish_reason:
+      source_rule: "extract_finish_reason_normalized"
+      required: false
+      description: "Reason for model finishing generation"
+
+  # === CONFIG SECTION ===
+  # Maps model configuration, parameters, and settings
+  config:
+    model:
+      source_rule: "openinference_model_name"
+      required: true
+      description: "Anthropic Claude model identifier"
+      
+    temperature:
+      source_rule: "openinference_temperature"
+      required: false
+      description: "Model temperature setting"
+      
+    max_tokens:
+      source_rule: "openinference_max_tokens"
+      required: false
+      description: "Maximum token limit"
+      
+    top_p:
+      source_rule: "openinference_top_p"
+      required: false
+      description: "Top-p sampling parameter"
+      
+    top_k:
+      source_rule: "openinference_top_k"
+      required: false
+      description: "Top-k sampling parameter"
+
+  # === METADATA SECTION ===
+  # Maps provider metadata, usage statistics, and processing information
+  metadata:
+    provider:
+      source_rule: "static_anthropic"
+      required: true
+      description: "Provider identifier"
+      
+    prompt_tokens:
+      source_rule: "openinference_prompt_tokens"
+      required: false
+      description: "Input token count"
+      
+    completion_tokens:
+      source_rule: "openinference_completion_tokens"
+      required: false
+      description: "Output token count"
+      
+    total_tokens:
+      source_rule: "calculate_total_tokens"
+      required: false
+      description: "Total token usage"
+      
+    instrumentor:
+      source_rule: "detect_instrumentor"
+      required: false
+      description: "Instrumentor framework used"
+      
+    latency:
+      source_rule: "extract_latency"
+      required: false
+      description: "Response latency in ms"
+      
+    cost:
+      source_rule: "calculate_cost"
+      required: false
+      description: "Estimated cost"
+      
+    request_id:
+      source_rule: "extract_request_id"
+      required: false
+      description: "Provider request ID"
+
+schema_validation:
+  inputs:
+    allow_empty: true
+    max_fields: 20
+  outputs:
+    allow_empty: true
+    max_fields: 20
+  config:
+    require_model: true
+    allow_empty: false
+  metadata:
+    require_provider: true
+    allow_empty: false

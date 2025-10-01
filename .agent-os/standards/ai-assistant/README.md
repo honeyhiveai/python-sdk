@@ -4,11 +4,13 @@
 
 ## 🚨 **CRITICAL: Start Here**
 
-**EVERY AI assistant interaction MUST begin with compliance checking:**
+**EVERY AI assistant interaction MUST begin with essential context and compliance checking:**
 
-1. **📋 [Compliance Checking](compliance-checking.md)** - MANDATORY first step before any task
-2. **🎯 [Quality Framework](quality-framework.md)** - Overall quality requirements and standards
-3. **⚡ [Quick Reference](quick-reference.md)** - Fast lookup for common patterns
+1. **🎯 [SYSTEMATIC-DEVELOPMENT-CONTEXT.md](SYSTEMATIC-DEVELOPMENT-CONTEXT.md)** - **MANDATORY READING** - Revolutionary AI-assisted development methodology context
+2. **📋 [Compliance Checking](compliance-checking.md)** - MANDATORY first step before any task
+3. **🎯 [Quality Framework](quality-framework.md)** - Overall quality requirements and standards
+4. **⚡ [Quick Reference](quick-reference.md)** - Fast lookup for common patterns
+5. **🔧 [Tool Usage Patterns](tool-usage-patterns.md)** - **Cursor-specific limitations and workarounds** (5K line write limit)
 
 ## 🧪 **MANDATORY: Test Generation Framework**
 

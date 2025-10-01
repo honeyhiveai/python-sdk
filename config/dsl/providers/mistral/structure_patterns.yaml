@@ -1,0 +1,99 @@
+version: '1.0'
+provider: mistral
+dsl_type: provider_structure_patterns
+
+# ============================================================
+# Mistral AI Detection Patterns
+# ============================================================
+# Based on verified instrumentor support from Phase 2
+# All patterns use explicit provider identification (0.95 confidence)
+# ============================================================
+
+patterns:
+  # --------------------------------------------------------
+  # Pattern 1: Traceloop/OpenLLMetry Instrumentation
+  # --------------------------------------------------------
+  traceloop_mistral:
+    signature_fields:
+      - "gen_ai.system"              # Value: "MistralAI" (explicit provider)
+      - "gen_ai.request.model"       # Requested model name
+      - "gen_ai.response.model"      # Actual model used
+    optional_fields:
+      - "gen_ai.usage.prompt_tokens"       # Input token count
+      - "gen_ai.usage.completion_tokens"   # Output token count
+      - "gen_ai.usage.reasoning_tokens"    # Reasoning tokens (Mistral-specific)
+      - "gen_ai.request.temperature"       # Temperature parameter
+      - "gen_ai.request.top_p"             # Top-p parameter
+      - "gen_ai.request.max_tokens"        # Max tokens parameter
+    confidence_weight: 0.95
+    description: "Mistral AI via Traceloop/OpenLLMetry instrumentation"
+    instrumentor_framework: "traceloop"
+    detection_note: "Explicit provider identification via gen_ai.system = 'MistralAI'"
+
+  # --------------------------------------------------------
+  # Pattern 2: OpenInference Instrumentation
+  # --------------------------------------------------------
+  openinference_mistral:
+    signature_fields:
+      - "llm.provider"               # Value: "mistral" or "mistralai" (explicit)
+      - "llm.model_name"             # Model identifier
+    optional_fields:
+      - "llm.input_messages"                        # Input messages (flattened)
+      - "llm.output_messages"                       # Output messages (flattened)
+      - "llm.token_count.prompt"                    # Input token count
+      - "llm.token_count.completion"                # Output token count
+      - "llm.token_count.completion_details.reasoning"  # Reasoning tokens (special)
+      - "llm.invocation_parameters"                 # JSON string with parameters
+      - "llm.cost.prompt"                           # Input cost in USD
+      - "llm.cost.completion"                       # Output cost in USD
+      - "llm.cost.total"                            # Total cost in USD
+    confidence_weight: 0.95
+    description: "Mistral AI via OpenInference instrumentation"
+    instrumentor_framework: "openinference"
+    detection_note: "Explicit provider identification via llm.provider = 'mistral' or 'mistralai'"
+
+  # --------------------------------------------------------
+  # Pattern 3: OpenLit Instrumentation
+  # --------------------------------------------------------
+  openlit_mistral:
+    signature_fields:
+      - "gen_ai.system"              # Value: "mistral" (explicit provider)
+      - "gen_ai.request.model"       # Requested model name
+      - "gen_ai.response.model"      # Actual model used
+    optional_fields:
+      - "gen_ai.usage.input_tokens"        # Input token count
+      - "gen_ai.usage.output_tokens"       # Output token count
+      - "gen_ai.usage.reasoning_tokens"    # Reasoning tokens (Mistral-specific)
+      - "gen_ai.request.temperature"       # Temperature parameter
+      - "gen_ai.request.top_p"             # Top-p parameter
+      - "gen_ai.request.max_tokens"        # Max tokens parameter
+      - "gen_ai.request.frequency_penalty" # Frequency penalty
+      - "gen_ai.request.presence_penalty"  # Presence penalty
+      - "gen_ai.response.finish_reasons"   # Finish reason
+      - "gen_ai.response.id"               # Response ID
+    confidence_weight: 0.95
+    description: "Mistral AI via OpenLit instrumentation"
+    instrumentor_framework: "openlit"
+    detection_note: "Explicit provider identification via gen_ai.system = 'mistral'"
+
+# ============================================================
+# Validation Rules
+# ============================================================
+validation:
+  minimum_signature_fields: 2
+  maximum_patterns: 5
+  confidence_threshold: 0.8
+
+# ============================================================
+# Metadata
+# ============================================================
+metadata:
+  total_patterns: 3
+  instrumentors_covered:
+    - traceloop
+    - openinference
+    - openlit
+  all_verified_from_source: true
+  detection_mechanism: "value_based"  # All use explicit provider names
+  last_updated: "2025-09-30"
+  phase_2_verification: true

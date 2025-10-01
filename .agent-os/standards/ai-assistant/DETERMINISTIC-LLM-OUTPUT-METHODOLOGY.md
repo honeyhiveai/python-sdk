@@ -125,10 +125,12 @@ agent_os_llm_optimized = {
 
 ### **Three-Tier Discovery-Driven Architecture**
 
-#### **Tier 1: Side-Loaded Context Files (≤100 lines)**
+#### **Tier 1: Side-Loaded Context Files (≤100 lines target, ≤150 lines practical)**
 ```markdown
 Purpose: Systematic execution instructions automatically injected into AI context
-Size: ≤100 lines for optimal AI processing (context side-loading limitations)
+Size Target: ≤100 lines (optimal AI processing)
+Size Practical: ≤150 lines (acceptable for complex context)
+Size Reality: Some files 200-330 lines (improvement opportunities, not blockers)
 Discovery: Entry Point → Compliance → Hub → Framework Core → Side-Loaded Files
 AI Consumption: Read during systematic execution phases
 Content:
@@ -136,7 +138,11 @@ Content:
 - Specific commands and validation criteria
 - Clear success/failure conditions
 - Sequential dependencies
-Example: unit-path.md, phase-navigation.md
+Example: unit-path.md (331 lines - refactor opportunity), phase files (~80 lines - compliant)
+
+Note: File size targets are quality improvement goals for Agent OS retrospectives,
+      not commit-blocking requirements. Agent OS is a living documentation system
+      that improves iteratively through systematic refinement sessions.
 ```
 
 #### **Tier 2: Active Read Files (200-500 lines, ideally ~250)**

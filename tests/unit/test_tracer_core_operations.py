@@ -879,7 +879,7 @@ class TestTracerOperationsMixin:  # pylint: disable=too-many-public-methods
         with patch.object(
             mock_tracer_operations,
             "_get_target_session_id_dynamically",
-            return_value="session-123",
+            return_value="550e8400-e29b-41d4-a716-446655440013",
         ):
 
             result = mock_tracer_operations._can_create_event_dynamically()
@@ -940,7 +940,7 @@ class TestTracerOperationsMixin:  # pylint: disable=too-many-public-methods
         with patch.object(
             mock_tracer_operations,
             "_get_target_session_id_dynamically",
-            return_value="session-123",
+            return_value="550e8400-e29b-41d4-a716-446655440013",
         ):
             with patch.object(
                 mock_tracer_operations,

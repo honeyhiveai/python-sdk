@@ -1,0 +1,27 @@
+{
+  "_comment": "Content filter response - content omitted due to filter",
+  "_scenario": "Model stops due to content filter trigger",
+  "_source": "Based on CreateChatCompletionResponse schema",
+  "_note": "finish_reason is 'content_filter', content may be partial or null",
+  "id": "chatcmpl-filter789",
+  "object": "chat.completion",
+  "created": 1721596900,
+  "model": "gpt-4o-2024-08-06",
+  "choices": [
+    {
+      "index": 0,
+      "message": {
+        "role": "assistant",
+        "content": null
+      },
+      "logprobs": null,
+      "finish_reason": "content_filter"
+    }
+  ],
+  "usage": {
+    "prompt_tokens": 20,
+    "completion_tokens": 5,
+    "total_tokens": 25
+  },
+  "system_fingerprint": "fp_3407719c7f"
+}

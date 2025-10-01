@@ -1,0 +1,27 @@
+{
+  "_comment": "Model refusal response - model declines to fulfill request",
+  "_scenario": "User requests something against safety policy",
+  "_note": "content is null, refusal field contains explanation",
+  "id": "chatcmpl-refusal789",
+  "object": "chat.completion",
+  "created": 1721596600,
+  "model": "gpt-4o-2024-08-06",
+  "choices": [
+    {
+      "index": 0,
+      "message": {
+        "role": "assistant",
+        "content": null,
+        "refusal": "I'm sorry, I cannot assist with that request as it violates our usage policies."
+      },
+      "logprobs": null,
+      "finish_reason": "stop"
+    }
+  ],
+  "usage": {
+    "prompt_tokens": 15,
+    "completion_tokens": 18,
+    "total_tokens": 33
+  },
+  "system_fingerprint": "fp_3407719c7f"
+}

@@ -53,6 +53,7 @@ The HoneyHive SDK employs a **three-tier testing strategy**:
    testing/mocking-strategies
    testing/ci-cd-integration
    testing/troubleshooting-tests
+   universal-llm-discovery-engine
    workflow-optimization
 
 Post-Mortems & Lessons Learned
@@ -104,6 +105,10 @@ This section contains detailed post-mortems of significant issues and bugs disco
    │   ├── unit/               # Fast unit tests
    │   ├── integration/        # Integration tests
    │   └── compatibility_matrix/ # Provider compatibility
+   ├── config/dsl/              # Universal LLM Discovery Engine DSL
+   │   ├── providers/          # Provider-specific DSL files
+   │   ├── shared/             # Shared configuration
+   │   └── compiler.py         # DSL compiler
    ├── docs/                   # Documentation source
    ├── scripts/               # Development scripts
    └── .agent-os/             # Agent OS standards

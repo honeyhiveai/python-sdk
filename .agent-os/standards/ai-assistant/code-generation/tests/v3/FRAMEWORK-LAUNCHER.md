@@ -57,6 +57,26 @@ selected_path = "unit"  # or "integration"
 ⚠️ MUST-READ: [core/progress-table-template.md](core/progress-table-template.md)
 🛑 PASTE-OUTPUT: Complete progress table in chat window
 
+🚨 FRAMEWORK-VIOLATION: If you proceed past Phase 1 without showing the progress table in chat
+
+**MANDATORY TABLE FORMAT** (paste this in your next response BEFORE starting Phase 1):
+```markdown
+| Phase | Status | Evidence | Commands |
+|-------|--------|----------|----------|
+| 0. Context Loading | ⏳ PENDING | | 0/8 |
+| 1. Method Verification | ⏳ PENDING | | 0/4 |
+| 2. Logging Analysis | ⏳ PENDING | | 0/4 |
+| 3. Dependency Analysis | ⏳ PENDING | | 0/4 |
+| 4. Usage Pattern Analysis | ⏳ PENDING | | 0/4 |
+| 5. Coverage Analysis | ⏳ PENDING | | 0/4 |
+| 6. Pre-Generation | ⏳ PENDING | | 0/8 |
+| 6.5 Pre-Write Validation | ⏳ PENDING | | 0/6 |
+| 7. Test Generation & Metrics | ⏳ PENDING | | 0/5 |
+| 8. Quality Validation | ⏳ PENDING | | 0/4 |
+```
+
+**🎯 PASTE THIS TABLE IN YOUR RESPONSE BEFORE EXECUTING ANY PHASES**
+
 ### **Step 4: Execute Framework Phases**
 🎯 NEXT-MANDATORY: [phases/1/shared-analysis.md](phases/1/shared-analysis.md)
 ⚠️ MUST-COMPLETE: All 8 phases with evidence
@@ -110,6 +130,17 @@ python scripts/generate-test-from-framework.py \
 - [ ] **Execute**: Template selection, fixture integration, Pylint disable discovery
 - [ ] **Evidence**: Complete generation plan with all components ready
 - [ ] **Validation**: All prerequisites satisfied for generation
+
+### **Phase 6.5: Pre-Write Standards Validation** ⛔ **ABSOLUTELY BLOCKING - NOT OPTIONAL**
+- [ ] **Read**: [phases/6/pre-write-validation.md](phases/6/pre-write-validation.md)
+- [ ] **Execute**: Validate planned code against ALL loaded standards from Phase 0
+- [ ] **Evidence**: 6/6 validations passed (imports, types, booleans, pylint, mocking, structure)
+- [ ] **⛔ MANDATORY**: Post validation results in chat using exact template from phase doc
+- [ ] **BLOCKING**: Cannot proceed to Phase 7 without posting 0 violations in chat
+
+🚨 **FRAMEWORK-VIOLATION**: If file written without completing Phase 6.5 validation
+
+⛔ **CRITICAL**: This phase was created because AI assistants repeatedly violated standards despite loading them in Phase 0. You MUST post validation results in chat. No exceptions. If you skip this phase, you will introduce standards violations that require rework.
 
 ### **Phase 7: Test Generation**
 - [ ] **Read**: [phases/7/shared-analysis.md](phases/7/shared-analysis.md)

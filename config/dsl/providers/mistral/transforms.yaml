@@ -1,0 +1,248 @@
+version: '1.0'
+provider: mistral
+dsl_type: provider_transforms
+
+# ============================================================
+# Mistral AI Transform Functions for Universal LLM Discovery Engine v4.0
+# ============================================================
+# This file defines data transformation functions for Mistral AI
+# Updated for 2025-09-30 with current Mistral AI pricing
+# Based on Phase 3 pricing verification and Phase 7 transform requirements
+# ============================================================
+
+transforms:
+  
+  # ============================================================
+  # STRING EXTRACTION TRANSFORMS
+  # ============================================================
+  
+  extract_user_prompt:
+    function_type: "string_extraction"
+    implementation: "extract_message_content_by_role"
+    parameters:
+      source_field: "messages"
+      role_filter: "user"
+      content_field: "content"
+      join_multiple: true
+      separator: "\\n\\n"
+    description: "Extract user prompt from Mistral AI messages"
+    
+  extract_system_prompt:
+    function_type: "string_extraction"
+    implementation: "extract_message_content_by_role"
+    parameters:
+      source_field: "messages"
+      role_filter: "system"
+      content_field: "content"
+      join_multiple: true
+      separator: "\\n\\n"
+    description: "Extract system prompt from Mistral AI messages"
+    
+  extract_completion_text:
+    function_type: "string_extraction"
+    implementation: "extract_message_content_by_role"
+    parameters:
+      source_field: "response"
+      role_filter: "assistant"
+      content_field: "content"
+      join_multiple: true
+      separator: "\\n\\n"
+    description: "Extract completion text from Mistral AI response"
+    
+  normalize_finish_reason:
+    function_type: "string_extraction"
+    implementation: "normalize_finish_reason"
+    parameters:
+      reason_mappings:
+        "model_length": "length"      # Mistral-specific: model hit length limit
+        "length": "length"             # Standard: token limit reached
+        "stop": "stop"                 # Standard: natural completion
+        "tool_calls": "tool_calls"     # Standard: function calling
+        "error": "error"               # Error condition
+      valid_reasons: ["stop", "length", "tool_calls", "error", "content_filter"]
+      default_reason: "stop"
+    description: "Normalize Mistral AI finish reasons to standard values (from Phase 3.3)"
+
+  # ============================================================
+  # ARRAY TRANSFORMATION TRANSFORMS
+  # ============================================================
+  
+  extract_tool_calls:
+    function_type: "array_transformation"
+    implementation: "extract_field_values_from_messages"
+    parameters:
+      source_field: "response"
+      message_role_filter: "assistant"
+      target_field: "tool_calls"
+      preserve_structure: true
+    description: "Extract tool call information from Mistral AI assistant messages"
+
+  # ============================================================
+  # NUMERIC CALCULATION TRANSFORMS
+  # ============================================================
+  
+  sum_tokens:
+    function_type: "numeric_calculation"
+    implementation: "sum_fields"
+    parameters:
+      source_fields:
+        - "prompt_tokens"
+        - "completion_tokens"
+        - "reasoning_tokens"  # Mistral-specific: reasoning tokens
+      fallback_value: 0
+    description: "Calculate total token usage including reasoning tokens (Mistral-specific)"
+    
+  calculate_total_tokens:
+    function_type: "numeric_calculation"
+    implementation: "sum_fields"
+    parameters:
+      source_fields:
+        - "prompt_tokens"
+        - "completion_tokens"
+        - "reasoning_tokens"
+      fallback_value: 0
+    description: "Calculate total Mistral AI token usage (prompt + completion + reasoning)"
+    
+  calculate_mistral_cost:
+    function_type: "numeric_calculation"
+    implementation: "calculate_provider_cost"
+    parameters:
+      model_field: "model"
+      prompt_tokens_field: "prompt_tokens"
+      completion_tokens_field: "completion_tokens"
+      reasoning_tokens_field: "reasoning_tokens"  # Mistral-specific
+      # ========================================================
+      # VERIFIED PRICING (as of 2025-09-30)
+      # ========================================================
+      # Source: https://mistral.ai/pricing
+      # Verified in Phase 3.2
+      # Pricing is per 1 million tokens (USD)
+      # ========================================================
+      pricing_table:
+        # --- FLAGSHIP MODELS ---
+        "mistral-large-latest": {"input": 2.00, "output": 6.00}
+        "mistral-large-2407": {"input": 2.00, "output": 6.00}
+        
+        # --- BALANCED MODELS ---
+        "mistral-medium-latest": {"input": 0.40, "output": 2.00}
+        
+        # --- BUDGET-FRIENDLY MODELS (Estimated) ---
+        "mistral-small-latest": {"input": 0.20, "output": 0.60}
+        
+        # --- SPECIALIZED MODELS ---
+        "codestral-latest": {"input": 0.30, "output": 0.90}         # Code specialist
+        "pixtral-12b-2409": {"input": 0.15, "output": 0.15}         # Multimodal (estimated)
+        "mistral-embed": {"input": 0.10, "output": 0.00}            # Embeddings only (estimated)
+        "mistral-nemo": {"input": 0.15, "output": 0.15}             # NVIDIA collab (estimated)
+        
+        # --- LEGACY OPEN-WEIGHT MODELS ---
+        "open-mistral-7b": {"input": 0.25, "output": 0.25}          # Open-weight legacy
+        "open-mixtral-8x7b": {"input": 0.70, "output": 0.70}        # MoE legacy
+        "open-mixtral-8x22b": {"input": 2.00, "output": 2.00}       # Large MoE legacy
+        
+      # Fallback pricing for unknown models (use mistral-medium-latest pricing)
+      fallback_pricing: {"input": 0.40, "output": 2.00}
+      
+      # Pricing unit (per million tokens)
+      pricing_unit: "per_million_tokens"
+      currency: "USD"
+      
+    description: "Calculate Mistral AI cost based on verified 2025-09-30 pricing (Phase 3.2)"
+
+  # ============================================================
+  # INSTRUMENTOR DETECTION
+  # ============================================================
+  
+  detect_instrumentor:
+    function_type: "string_extraction"
+    implementation: "detect_instrumentor_framework"
+    parameters:
+      attribute_patterns:
+        # Traceloop/OpenLLMetry (gen_ai.* namespace)
+        traceloop:
+          - "gen_ai.system"
+          - "gen_ai.request.model"
+          - "gen_ai.completion"
+        # OpenInference (llm.* namespace)
+        openinference:
+          - "llm.provider"
+          - "llm.model_name"
+          - "llm.input_messages"
+        # OpenLit (gen_ai.* namespace, but different structure)
+        openlit:
+          - "gen_ai.system"
+          - "gen_ai.request.model"
+          - "gen_ai.usage.input_tokens"  # Uses input_tokens vs prompt_tokens
+      priority_order:
+        - "openinference"  # Check OpenInference first (unique llm.* namespace)
+        - "openlit"        # Then OpenLit (gen_ai.usage.input_tokens is unique)
+        - "traceloop"      # Finally Traceloop (default gen_ai.*)
+      fallback: "unknown"
+    description: "Detect instrumentor framework (traceloop, openinference, openlit) from Phase 2 verification"
+
+  # ============================================================
+  # STATIC VALUE TRANSFORMS
+  # ============================================================
+  
+  static_mistral:
+    function_type: "static_value"
+    implementation: "return_constant"
+    parameters:
+      value: "mistral"
+    description: "Return static provider value 'mistral'"
+
+# ============================================================
+# Function Registry
+# ============================================================
+# Available implementations for each function type
+# ============================================================
+function_registry:
+  string_extraction:
+    - "extract_message_content_by_role"
+    - "normalize_finish_reason"
+    - "detect_instrumentor_framework"
+    - "return_constant"
+    
+  array_transformation:
+    - "extract_field_values_from_messages"
+    - "flatten_and_join"
+    - "filter_by_role"
+    - "deduplicate_array"
+    
+  numeric_calculation:
+    - "sum_fields"
+    - "calculate_provider_cost"
+    - "average_fields"
+    - "max_fields"
+    - "min_fields"
+    
+  static_value:
+    - "return_constant"
+
+# ============================================================
+# Validation Rules
+# ============================================================
+validation:
+  max_transforms_per_provider: 20
+  required_parameters:
+    - "function_type"
+    - "implementation"
+  allowed_function_types:
+    - "string_extraction"
+    - "array_transformation"
+    - "numeric_calculation"
+    - "object_transformation"
+    - "static_value"
+
+# ============================================================
+# Metadata
+# ============================================================
+metadata:
+  total_transforms: 10
+  pricing_verified: true
+  pricing_date: "2025-09-30"
+  pricing_source: "https://mistral.ai/pricing"
+  phase_3_verification: true
+  models_with_verified_pricing: 3  # mistral-large, mistral-medium, codestral
+  models_with_estimated_pricing: 8
+  last_updated: "2025-09-30"

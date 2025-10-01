@@ -1,0 +1,12 @@
+{
+  "_comment": "API error response - rate limit exceeded",
+  "_scenario": "User exceeds API rate limit",
+  "_source": "Based on OpenAI API error format",
+  "_note": "Error responses use different structure than completion responses",
+  "error": {
+    "message": "Rate limit exceeded for requests",
+    "type": "rate_limit_error",
+    "param": null,
+    "code": "rate_limit_exceeded"
+  }
+}

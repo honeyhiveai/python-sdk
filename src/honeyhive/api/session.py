@@ -4,7 +4,8 @@
 # Note: BaseAPI.__init__ performs important setup (error_handler, _client_name)
 # The delegation is not useless despite pylint's false positive
 
-from typing import TYPE_CHECKING, Any, Optional
+from typing import TYPE_CHECKING, Any, Optional, Union
+from uuid import UUID
 
 from ..models import Event, SessionStartRequest
 from .base import BaseAPI
@@ -130,10 +131,17 @@ class SessionAPI(BaseAPI):
         project: str,
         session_name: str,
         source: str,
-        session_id: Optional[str] = None,
+        session_id: Optional[Union[str, UUID]] = None,
         **kwargs: Any,
     ) -> SessionStartResponse:
-        """Start a new session using SessionStartRequest model."""
+        """Start a new session using SessionStartRequest model.
+
+        Args:
+            session_id: UUID string or UUID object. The model will validate UUID format.
+        """
+        # Graceful degradation: pass session_id directly to model for validation
+        # The model handles UUID validation and provides appropriate error messages
+
         request_data = SessionStartRequest(
             project=project,
             session_name=session_name,
@@ -177,10 +185,17 @@ class SessionAPI(BaseAPI):
         project: str,
         session_name: str,
         source: str,
-        session_id: Optional[str] = None,
+        session_id: Optional[Union[str, UUID]] = None,
         **kwargs: Any,
     ) -> SessionStartResponse:
-        """Start a new session asynchronously using SessionStartRequest model."""
+        """Start a new session asynchronously using SessionStartRequest model.
+
+        Args:
+            session_id: UUID string or UUID object. The model will validate UUID format.
+        """
+        # Graceful degradation: pass session_id directly to model for validation
+        # The model handles UUID validation and provides appropriate error messages
+
         request_data = SessionStartRequest(
             project=project,
             session_name=session_name,

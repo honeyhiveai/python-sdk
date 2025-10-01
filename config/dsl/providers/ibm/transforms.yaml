@@ -1,0 +1,90 @@
+version: '1.0'
+provider: ibm
+dsl_type: provider_transforms
+transforms:
+  extract_user_prompt:
+    function_type: string_extraction
+    implementation: extract_user_message_content
+    parameters:
+      role_filter: user
+      content_field: content
+      join_multiple: true
+      separator: '
+
+
+        '
+    description: Extract user prompt from ibm messages
+  extract_completion_text:
+    function_type: string_extraction
+    implementation: extract_assistant_message_content
+    parameters:
+      role_filter: assistant
+      content_field: content
+      join_multiple: true
+      separator: '
+
+        '
+    description: Extract completion text from ibm response
+  calculate_total_tokens:
+    function_type: numeric_calculation
+    implementation: sum_fields
+    parameters:
+      source_fields:
+      - prompt_tokens
+      - completion_tokens
+      fallback_value: 0
+    description: Calculate total ibm token usage
+  extract_tool_calls:
+    function_type: array_transformation
+    implementation: extract_field_values
+    parameters:
+      source_array: tool_calls
+      extract_field: function
+      preserve_structure: true
+    description: Extract tool call information
+  detect_instrumentor:
+    function_type: string_extraction
+    implementation: detect_instrumentor_framework
+    parameters:
+      attribute_patterns:
+        openinference:
+        - llm.input_messages
+        - llm.output_messages
+        traceloop:
+        - gen_ai.request.model
+        - gen_ai.completion
+        direct:
+        - ibm.model
+        - ibm.messages
+    description: Detect which instrumentor framework is being used
+function_registry:
+  string_extraction:
+  - extract_user_message_content
+  - extract_assistant_message_content
+  - extract_system_message_content
+  - extract_first_non_empty
+  array_transformation:
+  - flatten_and_join
+  - filter_by_role
+  - extract_field_values
+  - deduplicate_array
+  numeric_calculation:
+  - sum_fields
+  - average_fields
+  - max_fields
+  - min_fields
+  object_transformation:
+  - merge_objects
+  - filter_object_fields
+  - rename_object_keys
+  - flatten_nested_object
+validation:
+  max_transforms_per_provider: 20
+  required_parameters:
+  - function_type
+  - implementation
+  allowed_function_types:
+  - string_extraction
+  - array_transformation
+  - numeric_calculation
+  - object_transformation
