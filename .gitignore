@@ -1,3 +1,6 @@
+# Agent OS MCP/RAG Cache (gitignored per spec)
+.agent-os/.cache/
+
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[cod]

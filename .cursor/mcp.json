@@ -1,0 +1,19 @@
+{
+  "mcpServers": {
+    "agent-os-rag": {
+      "command": "/Users/josh/src/github.com/honeyhiveai/python-sdk/python-sdk/bin/python",
+      "args": [
+        "/Users/josh/src/github.com/honeyhiveai/python-sdk/.agent-os/run_mcp_server.py"
+      ],
+      "env": {
+        "HONEYHIVE_ENABLED": "true"
+      },
+      "autoApprove": [
+        "search_standards",
+        "get_current_phase",
+        "get_workflow_state"
+      ]
+    }
+  }
+}
+

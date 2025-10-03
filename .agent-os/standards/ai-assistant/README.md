@@ -61,6 +61,7 @@
 
 ### **🛡️ Safety & Compliance**
 - **🔐 [Credential File Protection](credential-file-protection.md)** - **CRITICAL**: Never write to .env or credential files
+- **🚨 [Import Verification Rules](import-verification-rules.md)** - **CRITICAL**: Verify imports before using (NEVER assume paths)
 - **🚨 [Git Safety Rules](git-safety-rules.md)** - Prevent destructive git operations
 - **📝 [Commit Protocols](commit-protocols.md)** - Structured commit processes
 - **✅ [Validation Protocols](validation-protocols.md)** - Verification requirements

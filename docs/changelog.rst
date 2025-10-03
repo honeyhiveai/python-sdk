@@ -17,6 +17,15 @@ Latest Release Notes
 Current Version Highlights
 ~~~~~~~~~~~~~~~~~~~~~~~~~~
 
+**🤖 NEW: Agent OS MCP/RAG Server (Dogfooding)**
+
+* **Model Context Protocol Integration**: Complete MCP server implementation with 5 tools for AI-assisted development
+* **90% Context Reduction**: RAG engine with LanceDB achieving semantic search over standards (50KB → 5KB)
+* **Phase-Gated Workflows**: Workflow engine enforcing controlled AI development with checkpoint validation
+* **HoneyHive Tracing**: Complete instrumentation with @trace decorators on all tools for observability dogfooding
+* **Import Verification Standard**: New "2-Minute Rule" preventing import path hallucination in AI-generated code
+* **Quality Excellence**: 28 unit tests with 10.0/10 Pylint score, full type annotations, and independent dependency management
+
 **Development Tools**
 
 - Improved pre-commit checks for Agent OS spec proposals

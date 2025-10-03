@@ -4,6 +4,20 @@
 - 🔧 **Pre-commit Documentation Check**: Exclude `.agent-os/specs/` from CHANGELOG requirement - spec proposals require CHANGELOG on implementation, not during design phase
 
 ### Added
+- 🤖 **Agent OS MCP/RAG Server**: Complete Model Context Protocol server implementation with HoneyHive tracing dogfooding
+  - RAG engine with LanceDB vector search achieving 90%+ retrieval accuracy and <100ms latency
+  - Workflow engine with phase gating and checkpoint validation for controlled AI development
+  - 5 MCP tools: `search_standards`, `start_workflow`, `get_current_phase`, `complete_phase`, `get_workflow_state`
+  - Semantic search over Agent OS standards with 90% context reduction (50KB → 5KB)
+  - Automatic index rebuilding via file watching for hot reload during development
+  - Complete HoneyHive instrumentation with `@trace` decorators and span enrichment on all tools
+  - Environment variable loading from .env with export syntax support
+  - Single tracer instance with initialization guard preventing duplicate sessions
+  - Import verification rules standard (the "2-Minute Rule") preventing import path hallucination
+  - 28 comprehensive unit tests with 10.0/10 Pylint score and full type annotations
+  - Migration from ChromaDB to LanceDB for better metadata filtering and incremental updates
+  - Independent dependency management (lancedb, sentence-transformers, watchdog) isolated from main SDK
+  - Comprehensive documentation: Evolution from Builder Methods Agent OS to MCP/RAG approach
 - 🤖 **Agent OS Standards Enhancement**: Comprehensive AI assistant compliance framework with mandatory credential file protection
 - Enhanced Agent OS README with framework navigation and cross-references to specialized standards
 - Expanded AI assistant standards with mandatory compliance checking and quality requirements

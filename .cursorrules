@@ -1,48 +1,127 @@
 # HoneyHive Python SDK - AI Assistant Rules
-# MANDATORY Agent OS Compliance Enforcement
+# MANDATORY Agent OS Compliance Enforcement via MCP RAG
 
 ## 🚨 CRITICAL: MANDATORY FIRST ACTIONS
-**BEFORE responding to ANY user request, you MUST execute these tool calls in parallel:**
+**BEFORE responding to ANY user request, you MUST use the MCP RAG server for Agent OS discovery:**
 
 ### **🔍 MANDATORY DISCOVERY (Execute EVERY Time)**
+Use the `mcp_agent-os-rag_search_standards` tool to search Agent OS standards:
 ```
-codebase_search(query="[user topic] rules standards requirements", target_directories=[".agent-os"])
-grep(pattern="NEVER|FORBIDDEN|CRITICAL|MANDATORY", path=".agent-os/standards/ai-assistant")
-read_file(".agent-os/standards/ai-assistant/README.md")
+mcp_agent-os-rag_search_standards(
+  query="[user topic] rules standards requirements",
+  n_results=5
+)
 ```
+
+## 🚫 ABSOLUTELY FORBIDDEN - WILL CAUSE IMMEDIATE FAILURE
+
+**YOU MUST NEVER ACCESS .agent-os/ DIRECTLY:**
+- ❌ `read_file(".agent-os/...")` - **FORBIDDEN**
+- ❌ `codebase_search(target_directories=[".agent-os"])` - **FORBIDDEN**
+- ❌ `grep(path=".agent-os/...")` - **FORBIDDEN**
+- ❌ `list_dir(".agent-os/standards")` - **FORBIDDEN**
+- ❌ Reading any file in `.agent-os/standards/` - **FORBIDDEN**
+- ❌ Reading any file in `.agent-os/specs/` - **FORBIDDEN**
+
+**ONLY ALLOWED METHOD**: `mcp_agent-os-rag_search_standards()`
+
+**WHY THIS RULE EXISTS:**
+- Direct file access bypasses the 90% context reduction MCP/RAG provides
+- You will read 50KB when you need 5KB
+- You will see all 8 phases when you should only see Phase 1
+- This defeats the entire purpose of the system
+
+**IF YOU BYPASS MCP:**
+- You are not following the architecture
+- You are wasting context window
+- You are demonstrating the problem MCP/RAG was built to solve
+
+**ONLY EXCEPTION:**
+Direct file access to `.agent-os/` is ONLY allowed in **AUTHORSHIP MODE**:
+
+**✅ ALLOWED (AI Authorship - Writing/Maintaining):**
+- Writing NEW standards (e.g., "Create a rule for X")
+- Updating EXISTING standards (e.g., "Update test framework")
+- Modifying MCP server code (`.agent-os/mcp_servers/`)
+- Updating specification documents (`.agent-os/specs/*/tasks.md`)
+- Maintaining the RAG infrastructure itself
+- User explicitly says "read the file" or "edit this file"
+
+**❌ FORBIDDEN (AI Consumption - Reading for guidance):**
+- "How should I handle X?" → Use `mcp_agent-os-rag_search_standards`
+- "What are the rules for Y?" → Use `mcp_agent-os-rag_search_standards`
+- "Show me the test framework" → Use `mcp_agent-os-rag_search_standards`
+- Reading standards to answer questions → **ALWAYS USE MCP**
+
+**Key Distinction:**
+- **Writing standards** = AI authorship = Direct access OK
+- **Using standards** = AI consumption = MCP REQUIRED
 
 ### **📋 TOPIC-SPECIFIC MANDATORY CHECKS**
 
 #### **🔐 For ANY file operations or .env mentions:**
 ```
-read_file(".agent-os/standards/ai-assistant/credential-file-protection.md")
+mcp_agent-os-rag_search_standards(
+  query="credential file protection rules for .env files",
+  n_results=3
+)
 ```
 **🚫 ABSOLUTE RULE**: NEVER write to .env, credentials, or secret files
 
 #### **🔧 For ANY git operations:**
 ```
-read_file(".agent-os/standards/ai-assistant/git-safety-rules.md")
+mcp_agent-os-rag_search_standards(
+  query="git safety rules forbidden operations",
+  n_results=3
+)
 ```
 **🚫 ABSOLUTE RULE**: NEVER use --no-verify, --force, or destructive git commands
 
 #### **🧪 For ANY test generation:**
+Use the **workflow engine** for test generation:
 ```
-read_file(".agent-os/standards/ai-assistant/code-generation/tests/README.md")
+mcp_agent-os-rag_start_workflow(
+  workflow_type="test_generation_v3",
+  target_file="path/to/file_test.py"
+)
 ```
-**🚨 MANDATORY**: Follow V3 framework only, provide acknowledgment contract
+**🚨 MANDATORY**: Follow V3 framework with phase gating
 
-#### **🏗️ For ANY code generation:**
+#### **🏗️ For ANY production code generation:**
+Use the **workflow engine** for production code:
 ```
-read_file(".agent-os/standards/ai-assistant/code-generation/production/README.md")
+mcp_agent-os-rag_start_workflow(
+  workflow_type="production_code_v2",
+  target_file="path/to/file.py"
+)
 ```
-**🎯 MANDATORY**: Follow production framework with quality targets
+**🎯 MANDATORY**: Follow production framework with phase gating and quality targets
+
+## 🤖 MCP RAG TOOLS AVAILABLE
+
+### **Discovery & Search**
+- `mcp_agent-os-rag_search_standards` - Semantic search over Agent OS standards
+
+### **Workflow Management** 
+- `mcp_agent-os-rag_start_workflow` - Initialize phase-gated workflow session
+- `mcp_agent-os-rag_get_current_phase` - Retrieve current phase requirements
+- `mcp_agent-os-rag_complete_phase` - Submit evidence and advance to next phase
+- `mcp_agent-os-rag_get_workflow_state` - Query complete workflow state
 
 ## 🚨 ENFORCEMENT PROTOCOL
 
+### **Self-Check Before Every Response**
+Before responding to ANY request about Agent OS, ask yourself:
+1. ❓ Did I use `mcp_agent-os-rag_search_standards` to find the answer?
+2. ❓ Or did I just read `.agent-os/` files directly?
+3. ❓ If I read files directly, was it one of the allowed exceptions?
+
+**If you bypassed MCP without exception → STOP and use MCP instead**
+
 ### **Compliance Verification Required**
-After loading Agent OS standards, you MUST:
+After using MCP RAG to load Agent OS standards, you MUST:
 1. **Acknowledge** which standards apply to the user's request
-2. **Reference specific rules** from loaded standards
+2. **Reference specific rules** from retrieved standards
 3. **Confirm compliance** before proceeding with any actions
 4. **Escalate** if standards conflict with user request
 
@@ -51,20 +130,12 @@ After loading Agent OS standards, you MUST:
 🚨 AGENT OS COMPLIANCE CONFLICT
 
 The requested action conflicts with Agent OS standards:
-- Standard: [specific standard file and rule]
+- Standard: [specific standard from MCP search results]
 - Conflict: [description of conflict]
 - Safe Alternative: [compliant approach]
 
 Would you like me to proceed with the safe alternative?
 ```
-
-## 📋 COMPREHENSIVE STANDARDS HIERARCHY
-- **🤖 [AI Assistant Hub](/.agent-os/standards/ai-assistant/README.md)** - Complete AI guidelines
-- **🔐 [Credential Protection](/.agent-os/standards/ai-assistant/credential-file-protection.md)** - NEVER write to .env files
-- **🚨 [Git Safety](/.agent-os/standards/ai-assistant/git-safety-rules.md)** - Forbidden git operations
-- **🧪 [Test Framework](/.agent-os/standards/ai-assistant/code-generation/tests/README.md)** - V3 mandatory
-- **🏗️ [Production Code](/.agent-os/standards/ai-assistant/code-generation/production/README.md)** - Quality targets
-- **📚 [Standards Overview](/.agent-os/standards/README.md)** - All development standards
 
 ## ⚡ QUICK COMMANDS (After Compliance Check)
 - **Testing**: `tox -e [environment]` (never direct pytest)
@@ -74,17 +145,26 @@ Would you like me to proceed with the safe alternative?
 
 ## 🎯 SUCCESS CRITERIA
 ✅ **Compliant AI Assistant**:
-- Loads Agent OS standards FIRST for every request
-- References specific standards in responses
+- Uses MCP RAG for Agent OS standards discovery
+- Uses workflow engine for test/code generation with phase gating
+- References specific standards from MCP search results
 - Never violates safety rules
 - Escalates conflicts appropriately
 
-❌ **Non-Compliant AI Assistant**:
-- Responds without checking standards
-- Violates credential protection rules
-- Uses forbidden git operations
-- Ignores mandatory frameworks
+❌ **Non-Compliant AI Assistant (IMMEDIATE FAILURE)**:
+- ❌ Uses `read_file`, `codebase_search`, `grep`, `list_dir` on `.agent-os/` without exception
+- ❌ Responds to Agent OS questions without using MCP search first
+- ❌ Reads entire framework files (50KB) instead of querying for 5KB chunks
+- ❌ Violates credential protection rules
+- ❌ Uses forbidden git operations
+- ❌ Ignores mandatory frameworks
+- ❌ Skips phase gating in workflows
+- ❌ Updates tasks.md without searching for task update standards via MCP
+- ❌ Assumes import paths without verification (see import-verification-rules.md)
 
 ---
 
-**🔐 REMEMBER**: Agent OS standards are MANDATORY, not optional. Check first, comply always, escalate conflicts.
+**🔐 REMEMBER**: 
+- Agent OS standards are MANDATORY, accessed via MCP RAG
+- All test/code generation MUST use workflow engine with phase gating
+- Check first (via MCP), comply always, escalate conflicts

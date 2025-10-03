@@ -254,7 +254,7 @@ max-returns = 10
 max-statements = 100
 
 [tool.pylint.basic]
-good-names = ["i", "j", "k", "ex", "Run", "_", "id", "db", "api", "ui", "ui_", "id_", "ip_", "ip"]
+good-names = ["i", "j", "k", "ex", "Run", "_", "id", "db", "api", "ui", "ui_", "id_", "ip_", "ip", "setUp", "tearDown"]
 
 [tool.pylint.logging]
 # Recognize safe_log as a logging function for proper lazy formatting analysis
@@ -262,6 +262,7 @@ logging-modules = ["logging", "honeyhive.utils.logger"]
 
 [tool.pylint.master]
 fail-under = 9.99
+init-hook = 'import sys; from pathlib import Path; sys.path.insert(0, str(Path.cwd() / ".agent-os"))'
 
 [tool.pylint.files]
 ignore-patterns = [

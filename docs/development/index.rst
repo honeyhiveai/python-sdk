@@ -55,6 +55,16 @@ The HoneyHive SDK employs a **three-tier testing strategy**:
    testing/troubleshooting-tests
    workflow-optimization
 
+AI-Assisted Development Infrastructure
+---------------------------------------
+
+This section covers the Agent OS MCP/RAG server—our evolution of the Builder Methods Agent OS system into an intelligent Model Context Protocol server with semantic search and phase-gated workflows.
+
+.. toctree::
+   :maxdepth: 1
+
+   agent-os-mcp-server
+
 Post-Mortems & Lessons Learned
 -------------------------------
 

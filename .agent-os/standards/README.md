@@ -131,6 +131,7 @@ The following core files remain in the main standards directory:
 - **[AI Assistant Hub](ai-assistant/README.md)** - Complete AI guidelines
 - **[Quality Framework](ai-assistant/quality-framework.md)** - Autonomous quality gates
 - **[Credential File Protection](ai-assistant/credential-file-protection.md)** - **CRITICAL**: Never write to .env files
+- **[Import Verification Rules](ai-assistant/import-verification-rules.md)** - **CRITICAL**: Verify imports before using
 - **[Git Safety Rules](ai-assistant/git-safety-rules.md)** - Forbidden operations
 - **[Compliance Checking](ai-assistant/compliance-checking.md)** - MANDATORY first step
 
