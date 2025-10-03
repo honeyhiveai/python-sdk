@@ -17,6 +17,10 @@ Latest Release Notes
 Current Version Highlights
 ~~~~~~~~~~~~~~~~~~~~~~~~~~
 
+**Development Tools**
+
+- Improved pre-commit checks for Agent OS spec proposals
+
 **v0.1.0+ (Development) - Major Architectural Refactor**
 
 **🏗️ NEW: Modular Tracer Architecture**

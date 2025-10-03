@@ -53,6 +53,7 @@ def has_significant_changes(staged_files: list) -> bool:
         ".pytest_cache",
         "_build/",  # Sphinx build artifacts
         ".tox/",  # Tox artifacts
+        ".agent-os/specs/",  # Spec proposals - CHANGELOG required on implementation, not proposal
     ]
 
     significant_files = []

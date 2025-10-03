@@ -1,5 +1,8 @@
 ## [Unreleased]
 
+### Fixed
+- 🔧 **Pre-commit Documentation Check**: Exclude `.agent-os/specs/` from CHANGELOG requirement - spec proposals require CHANGELOG on implementation, not during design phase
+
 ### Added
 - 🤖 **Agent OS Standards Enhancement**: Comprehensive AI assistant compliance framework with mandatory credential file protection
 - Enhanced Agent OS README with framework navigation and cross-references to specialized standards
