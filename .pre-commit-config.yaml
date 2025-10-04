@@ -66,7 +66,7 @@ repos:
         entry: tox -e docs
         language: system
         pass_filenames: false
-        files: '^(docs/.*\.(rst|md)|README\.md|CHANGELOG\.md|\.agent-os/.*\.md)$'
+        files: '^(docs/.*\.(rst|md)|README\.md|CHANGELOG\.md|\.agent-os/(?!specs/).*\.md)$'
         stages: [pre-commit]
 
       - id: docs-navigation-validation
@@ -74,7 +74,7 @@ repos:
         entry: scripts/validate-docs-navigation.sh
         language: system
         pass_filenames: false
-        files: '^(docs/.*\.(rst|md)|README\.md|CHANGELOG\.md|\.agent-os/.*\.md)$'
+        files: '^(docs/.*\.(rst|md)|README\.md|CHANGELOG\.md|\.agent-os/(?!specs/).*\.md)$'
         stages: [pre-commit]
 
       - id: feature-list-sync
