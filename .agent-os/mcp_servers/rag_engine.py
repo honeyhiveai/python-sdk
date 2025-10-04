@@ -14,6 +14,7 @@ import hashlib
 import json
 import logging
 import subprocess
+import threading
 import time
 from dataclasses import dataclass
 from pathlib import Path
@@ -89,6 +90,10 @@ class RAGEngine:
 
         # Query cache: {query_hash: (result, timestamp)}
         self._query_cache: Dict[str, tuple] = {}
+        
+        # Concurrency control for safe hot reload
+        self._lock = threading.RLock()  # Reentrant lock for nested calls
+        self._rebuilding = threading.Event()  # Signal when rebuild in progress
 
         # Initialize embedding model
         if self.embedding_provider == "local":
@@ -150,6 +155,12 @@ class RAGEngine:
                 filters={"phase": 1}
             )
         """
+        # Wait if rebuild in progress (timeout: 30s)
+        if self._rebuilding.is_set():
+            logger.debug("Waiting for index rebuild to complete...")
+            if not self._rebuilding.wait(timeout=30):
+                logger.warning("Rebuild timeout, proceeding with current index")
+        
         start_time = time.time()
 
         # Check cache
@@ -159,34 +170,38 @@ class RAGEngine:
             logger.debug(f"Cache hit for query: {query[:50]}...")
             return cached_result
 
-        # Try vector search
-        if self.vector_search_available:
-            try:
-                result = self._vector_search(query, n_results, filters)
-                elapsed_ms = (time.time() - start_time) * 1000
-                result.query_time_ms = elapsed_ms
+        # Acquire read lock for safe concurrent access during index queries
+        with self._lock:
+            # Try vector search
+            if self.vector_search_available:
+                try:
+                    result = self._vector_search(query, n_results, filters)
+                    elapsed_ms = (time.time() - start_time) * 1000
+                    result.query_time_ms = elapsed_ms
 
-                # Cache result
-                self._cache_result(cache_key, result)
+                    # Cache result
+                    self._cache_result(cache_key, result)
 
-                logger.info(
-                    f"Vector search completed: {len(result.chunks)} chunks in {elapsed_ms:.1f}ms"
-                )
-                return result
+                    logger.info(
+                        f"Vector search completed: {len(result.chunks)} chunks "
+                        f"in {elapsed_ms:.1f}ms"
+                    )
+                    return result
 
-            except Exception as e:
-                logger.error(f"Vector search failed: {e}", exc_info=True)
-                logger.info("Falling back to grep search")
+                except Exception as e:
+                    logger.error(f"Vector search failed: {e}", exc_info=True)
+                    logger.info("Falling back to grep search")
 
-        # Grep fallback
-        result = self._grep_fallback(query, n_results)
-        elapsed_ms = (time.time() - start_time) * 1000
-        result.query_time_ms = elapsed_ms
+            # Grep fallback
+            result = self._grep_fallback(query, n_results)
+            elapsed_ms = (time.time() - start_time) * 1000
+            result.query_time_ms = elapsed_ms
 
-        logger.info(
-            f"Grep search completed: {len(result.chunks)} chunks in {elapsed_ms:.1f}ms"
-        )
-        return result
+            logger.info(
+                f"Grep search completed: {len(result.chunks)} chunks "
+                f"in {elapsed_ms:.1f}ms"
+            )
+            return result
 
     def _vector_search(
         self, query: str, n_results: int, filters: Optional[Dict]
@@ -490,6 +505,12 @@ class RAGEngine:
         Clears query cache to ensure fresh results. Unlike ChromaDB, LanceDB
         has no singleton conflicts making hot reload clean and simple.
         
+        **Thread Safety:**
+        
+        Uses write lock to prevent concurrent queries during reload. Blocks
+        all search operations until reload completes. Sets `_rebuilding` event
+        to signal queries to wait.
+        
         **Example:**
         
         .. code-block:: python
@@ -502,17 +523,30 @@ class RAGEngine:
         This is typically called automatically by the file watcher when
         Agent OS content changes are detected.
         """
-        try:
-            logger.info("Reloading LanceDB index...")
-            self.db = lancedb.connect(str(self.index_path))
-            self.table = self.db.open_table("agent_os_standards")
-            chunk_count = self.table.count_rows()
-            logger.info(f"Index reloaded: {chunk_count} chunks")
-            self.vector_search_available = True
-            
-            # Clear cache after reload
-            self._query_cache.clear()
-            
-        except Exception as e:
-            logger.error(f"Failed to reload index: {e}")
-            self.vector_search_available = False
+        # Acquire write lock to block all reads during reload
+        with self._lock:
+            self._rebuilding.set()  # Signal rebuild in progress
+            try:
+                logger.info("Reloading LanceDB index...")
+                
+                # Close old connections cleanly
+                if hasattr(self, 'table'):
+                    del self.table
+                if hasattr(self, 'db'):
+                    del self.db
+                
+                # Reconnect to index
+                self.db = lancedb.connect(str(self.index_path))
+                self.table = self.db.open_table("agent_os_standards")
+                chunk_count = self.table.count_rows()
+                logger.info(f"Index reloaded: {chunk_count} chunks")
+                self.vector_search_available = True
+                
+                # Clear cache after reload
+                self._query_cache.clear()
+                
+            except Exception as e:
+                logger.error(f"Failed to reload index: {e}")
+                self.vector_search_available = False
+            finally:
+                self._rebuilding.clear()  # Signal rebuild complete

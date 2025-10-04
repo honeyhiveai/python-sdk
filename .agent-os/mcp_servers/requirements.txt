@@ -2,7 +2,8 @@
 # 100% AI-authored via human orchestration
 
 # Vector database for RAG (switched from ChromaDB to LanceDB for better filtering)
-lancedb>=0.3.0
+# Locked to 0.25.x series for stability (latest stable as of Oct 2025)
+lancedb~=0.25.0
 
 # Model Context Protocol
 mcp>=1.0.0

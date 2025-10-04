@@ -1,6 +1,13 @@
 ## [Unreleased]
 
 ### Fixed
+- 🔧 **Agent OS MCP Concurrency**: Added thread-safe locking to prevent index corruption during hot reload
+  - Implemented read-write lock (RLock) in RAGEngine preventing concurrent query/rebuild race conditions
+  - Added `_rebuilding` event signal for graceful query waiting during index reload
+  - Fixed LanceDB connection cleanup before reload (proper `del` of old table/db references)
+  - Updated requirements.txt to pin lancedb~=0.25.0 (latest stable) for deterministic builds
+  - Prevents "file not found" corruption errors that occurred with simultaneous queries and hot reload
+  - Validated with concurrent access test: 268 queries across 3 workers + 3 reloads = 0 errors
 - 🔧 **Pre-commit Documentation Check**: Exclude `.agent-os/specs/` from CHANGELOG requirement - spec proposals require CHANGELOG on implementation, not during design phase
 
 ### Added

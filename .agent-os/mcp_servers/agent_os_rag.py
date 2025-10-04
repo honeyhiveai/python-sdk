@@ -199,7 +199,7 @@ class AgentOSFileWatcher(FileSystemEventHandler):
         self.rebuild_pending = True
         
         def rebuild_after_debounce() -> None:
-            """Wait for debounce period, then incrementally update index."""
+            """Wait for debounce period, then incrementally update index with locking."""
             time.sleep(self.debounce_seconds)
             
             logger.info(
@@ -219,7 +219,8 @@ class AgentOSFileWatcher(FileSystemEventHandler):
                 
                 result = builder.build_index(force=False, incremental=True)
                 
-                # Reload RAG engine - clean and simple with LanceDB!
+                # Reload RAG engine with thread-safe locking
+                # The reload_index() method acquires write lock automatically
                 if self.rag_engine and result["status"] == "success":
                     self.rag_engine.reload_index()
                     build_type = result.get("build_type", "update")
