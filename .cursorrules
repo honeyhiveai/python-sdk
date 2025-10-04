@@ -11,6 +11,7 @@
 1. Question about Agent OS/SDK? → Query MCP first, respond second
 2. Uncertain about your role? → Query MCP: `"operating model"`
 3. Tempted to read .agent-os/ directly? → Ask: "Writing standards (authorship) or using standards (consumption)?"
+4. About to write ANY code? → Query MCP: `"production code universal checklist"` (ALL code is production code)
 
 ## 🚨 USE MCP FOR ALL AGENT OS GUIDANCE
 
