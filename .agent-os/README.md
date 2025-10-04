@@ -38,6 +38,36 @@ This directory contains the Agent OS configuration for the HoneyHive Python SDK 
     └── [17+ additional specifications]
 ```
 
+## 🚀 **Quick Start for AI Assistants**
+
+**First Time Here? Follow this discovery path:**
+
+### **Step 1: Understand Your Role** (60-line read)
+**📋 [Operating Model](standards/ai-assistant/OPERATING-MODEL.md)** - CRITICAL mental model
+- You are the **CODE AUTHOR** (100% implementation)
+- Human is the **ORCHESTRATOR** (direction, decisions, approval)
+- Read this first to avoid "helper" mode mistakes
+
+### **Step 2: Learn MCP Tools** (90-line read)
+**🤖 [MCP Tool Usage Guide](standards/ai-assistant/mcp-tool-usage-guide.md)** - Tool selection reference
+- `search_standards` - For process/framework questions
+- `start_workflow` - For test/code generation
+- Query MCP with: `"mcp tool routing guide"` for detailed usage
+
+### **Step 3: Understand MCP Enforcement** (100-line read)
+**🚨 [MCP Enforcement Rules](standards/ai-assistant/mcp-enforcement-rules.md)** - Why MCP exists
+- NEVER bypass MCP to read `.agent-os/` directly (except authorship mode)
+- MCP provides 90% context reduction (50KB → 5KB)
+- Authorship vs consumption distinction
+
+### **Step 4: Start Working**
+**Use MCP for everything:**
+- Questions? → `mcp_agent-os-rag_search_standards(query="your question")`
+- Generate tests? → `mcp_agent-os-rag_start_workflow(type="test_generation_v3", ...)`
+- Generate code? → `mcp_agent-os-rag_start_workflow(type="production_code_v2", ...)`
+
+---
+
 ## 🚨 **CRITICAL: AI Assistant Entry Points**
 
 ### **🧪 For Test Generation (MANDATORY)**

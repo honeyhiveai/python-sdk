@@ -4,6 +4,12 @@
 - 🔧 **Pre-commit Documentation Check**: Exclude `.agent-os/specs/` from CHANGELOG requirement - spec proposals require CHANGELOG on implementation, not during design phase
 
 ### Added
+- 🤖 **Agent OS MCP Enforcement Standards**: New AI assistant operating model and MCP compliance framework
+  - Operating model documentation defining human-agent roles and responsibilities
+  - MCP enforcement rules requiring RAG consumption instead of direct file access
+  - MCP tool usage guide with routing logic and consumption patterns
+  - Updated .cursorrules to mandate MCP usage for all Agent OS guidance
+  - Context reduction enforcement ensuring 90% efficiency (50KB → 5KB via RAG)
 - 🤖 **Agent OS MCP/RAG Server**: Complete Model Context Protocol server implementation with HoneyHive tracing dogfooding
   - RAG engine with LanceDB vector search achieving 90%+ retrieval accuracy and <100ms latency
   - Workflow engine with phase gating and checkpoint validation for controlled AI development
