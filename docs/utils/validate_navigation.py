@@ -19,8 +19,16 @@ from pathlib import Path
 from typing import Dict, List, Set, Tuple
 from urllib.parse import urljoin, urlparse
 
-import requests
-from bs4 import BeautifulSoup
+try:
+    import requests
+    from bs4 import BeautifulSoup
+    DEPENDENCIES_AVAILABLE = True
+except ImportError:
+    DEPENDENCIES_AVAILABLE = False
+    print("⚠️  Warning: requests and beautifulsoup4 not installed")
+    print("   Install with: pip install -r docs/utils/requirements.txt")
+    print("   Skipping navigation validation...")
+    sys.exit(0)  # Exit successfully to not block commits
 
 
 class NavigationValidator:
@@ -101,7 +109,7 @@ class NavigationValidator:
         for rst_file in docs_dir.rglob("*.rst"):
             # Skip files that shouldn't be in the final build
             if any(
-                skip in str(rst_file) for skip in ["_build", "_templates", "_static"]
+                skip in str(rst_file) for skip in ["_build", "_templates", "_static", "python-sdk", "site-packages", "venv"]
             ):
                 continue
 

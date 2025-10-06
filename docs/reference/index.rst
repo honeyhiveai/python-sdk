@@ -138,13 +138,33 @@ Data Models
    data-models/spans
    data-models/evaluations
 
-Evaluation Framework
-~~~~~~~~~~~~~~~~~~~~
+Experiments Module
+~~~~~~~~~~~~~~~~~~
+
+**Modern evaluation framework** with decorator-based evaluators and backend-powered aggregation.
+
+.. toctree::
+   :maxdepth: 2
+
+   experiments/experiments
+   experiments/core-functions
+   experiments/evaluators
+   experiments/results
+   experiments/models
+   experiments/utilities
+
+Evaluation Framework (Deprecated)
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+.. warning::
+   The ``evaluation`` module is deprecated. Use ``experiments`` module instead.
+   See :doc:`evaluation/deprecation-notice` for migration details.
 
 .. toctree::
    :maxdepth: 1
 
    evaluation/evaluators
+   evaluation/deprecation-notice
 
 Command Line Interface
 ~~~~~~~~~~~~~~~~~~~~~~

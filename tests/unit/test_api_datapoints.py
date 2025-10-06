@@ -169,11 +169,9 @@ class TestDatapointsAPI:  # pylint: disable=too-many-public-methods
             mock_request.assert_called_once_with(
                 "POST",
                 "/datapoints",
-                json={
-                    "datapoint": sample_datapoint_request.model_dump(
-                        mode="json", exclude_none=True
-                    )
-                },
+                json=sample_datapoint_request.model_dump(
+                    mode="json", exclude_none=True
+                ),
             )
 
             # Verify response handling
@@ -204,11 +202,9 @@ class TestDatapointsAPI:  # pylint: disable=too-many-public-methods
             mock_request.assert_called_once_with(
                 "POST",
                 "/datapoints",
-                json={
-                    "datapoint": sample_datapoint_request.model_dump(
-                        mode="json", exclude_none=True
-                    )
-                },
+                json=sample_datapoint_request.model_dump(
+                    mode="json", exclude_none=True
+                ),
             )
 
             # Verify response handling
@@ -232,7 +228,7 @@ class TestDatapointsAPI:  # pylint: disable=too-many-public-methods
 
             # Verify request was made correctly
             mock_request.assert_called_once_with(
-                "POST", "/datapoints", json={"datapoint": sample_datapoint_dict}
+                "POST", "/datapoints", json=sample_datapoint_dict
             )
 
             # Verify response handling
@@ -258,7 +254,7 @@ class TestDatapointsAPI:  # pylint: disable=too-many-public-methods
 
             # Verify request was made correctly
             mock_request.assert_called_once_with(
-                "POST", "/datapoints", json={"datapoint": sample_datapoint_dict}
+                "POST", "/datapoints", json=sample_datapoint_dict
             )
 
             # Verify response handling
@@ -286,11 +282,9 @@ class TestDatapointsAPI:  # pylint: disable=too-many-public-methods
             mock_request.assert_called_once_with(
                 "POST",
                 "/datapoints",
-                json={
-                    "datapoint": sample_datapoint_request.model_dump(
-                        mode="json", exclude_none=True
-                    )
-                },
+                json=sample_datapoint_request.model_dump(
+                    mode="json", exclude_none=True
+                ),
             )
 
             # Verify response handling
@@ -317,7 +311,7 @@ class TestDatapointsAPI:  # pylint: disable=too-many-public-methods
 
             # Verify request was made correctly
             mock_request.assert_called_once_with(
-                "POST", "/datapoints", json={"datapoint": sample_datapoint_dict}
+                "POST", "/datapoints", json=sample_datapoint_dict
             )
 
             # Verify response handling
@@ -651,11 +645,7 @@ class TestDatapointsAPI:  # pylint: disable=too-many-public-methods
             mock_request.assert_called_once_with(
                 "POST",
                 "/datapoints",
-                json={
-                    "datapoint": minimal_request.model_dump(
-                        mode="json", exclude_none=True
-                    )
-                },
+                json=minimal_request.model_dump(mode="json", exclude_none=True),
             )
 
             # Verify response handling
@@ -762,9 +752,7 @@ class TestDatapointsAPI:  # pylint: disable=too-many-public-methods
             result = datapoints_api.create_datapoint_from_dict(empty_dict)
 
             # Verify request was made correctly
-            mock_request.assert_called_once_with(
-                "POST", "/datapoints", json={"datapoint": empty_dict}
-            )
+            mock_request.assert_called_once_with("POST", "/datapoints", json=empty_dict)
 
             # Verify response handling
             assert isinstance(result, Datapoint)

@@ -10,7 +10,7 @@ set -e
 echo "🔍 Checking for mocks in integration tests..."
 
 # Use the comprehensive Python validation script
-if python scripts/validate-no-mocks-integration.py; then
+if python3 scripts/validate-no-mocks-integration.py; then
     echo "✅ No mocks found in integration tests"
     exit 0
 else
@@ -24,6 +24,6 @@ else
     echo "  2. Replace mocks with real API calls using test_mode=False"
     echo "  3. Use real credentials and skip tests if not available"
     echo ""
-    echo "📋 Run 'python scripts/validate-no-mocks-integration.py --fix' to auto-move heavily mocked files"
+    echo "📋 Run 'python3 scripts/validate-no-mocks-integration.py --fix' to auto-move heavily mocked files"
     exit 1
 fi

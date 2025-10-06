@@ -14,7 +14,7 @@ class DatapointsAPI(BaseAPI):
         response = self.client.request(
             "POST",
             "/datapoints",
-            json={"datapoint": request.model_dump(mode="json", exclude_none=True)},
+            json=request.model_dump(mode="json", exclude_none=True),
         )
 
         data = response.json()
@@ -38,9 +38,7 @@ class DatapointsAPI(BaseAPI):
 
     def create_datapoint_from_dict(self, datapoint_data: dict) -> Datapoint:
         """Create a new datapoint from dictionary (legacy method)."""
-        response = self.client.request(
-            "POST", "/datapoints", json={"datapoint": datapoint_data}
-        )
+        response = self.client.request("POST", "/datapoints", json=datapoint_data)
 
         data = response.json()
 
@@ -68,7 +66,7 @@ class DatapointsAPI(BaseAPI):
         response = await self.client.request_async(
             "POST",
             "/datapoints",
-            json={"datapoint": request.model_dump(mode="json", exclude_none=True)},
+            json=request.model_dump(mode="json", exclude_none=True),
         )
 
         data = response.json()
@@ -93,7 +91,7 @@ class DatapointsAPI(BaseAPI):
     async def create_datapoint_from_dict_async(self, datapoint_data: dict) -> Datapoint:
         """Create a new datapoint asynchronously from dictionary (legacy method)."""
         response = await self.client.request_async(
-            "POST", "/datapoints", json={"datapoint": datapoint_data}
+            "POST", "/datapoints", json=datapoint_data
         )
 
         data = response.json()

@@ -1180,15 +1180,38 @@ def _create_new_session(tracer_instance: Any) -> None:
                     break
                 frame = frame.f_back
 
-            if not session_name:
-                session_name = "unknown"  # Match original SDK fallback
+        if not session_name:
+            session_name = "unknown"  # Match original SDK fallback
 
-        # Create session via API
+        # Collect evaluation/experiment metadata if available
+        # This ensures run_id, dataset_id, datapoint_id are included in session metadata
+        session_metadata = {}
+
+        if hasattr(tracer_instance, "run_id") and tracer_instance.run_id:
+            session_metadata["run_id"] = str(tracer_instance.run_id)
+
+        if hasattr(tracer_instance, "dataset_id") and tracer_instance.dataset_id:
+            session_metadata["dataset_id"] = str(tracer_instance.dataset_id)
+
+        if hasattr(tracer_instance, "datapoint_id") and tracer_instance.datapoint_id:
+            session_metadata["datapoint_id"] = str(tracer_instance.datapoint_id)
+
+        # Log metadata being added
+        if session_metadata:
+            safe_log(
+                tracer_instance,
+                "debug",
+                "Including evaluation/experiment metadata in session",
+                honeyhive_data={"metadata": session_metadata},
+            )
+
+        # Create session via API with metadata
         session_response = tracer_instance.session_api.start_session(
             project=tracer_instance.project_name,
             session_name=session_name,
             source=tracer_instance.source_environment,
             inputs=tracer_instance.config.session.inputs,
+            metadata=session_metadata if session_metadata else None,
         )
 
         if session_response and hasattr(session_response, "session_id"):

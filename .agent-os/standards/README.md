@@ -50,6 +50,7 @@ This directory contains the comprehensive Agent OS standards that enable consist
 - **[Documentation Templates](documentation/documentation-templates.md)** - Reusable patterns and templates
 - **[Mermaid Diagrams](documentation/mermaid-diagrams.md)** - Dual-theme diagram standards
 - **[Requirements](documentation/requirements.md)** - Documentation requirements and standards
+- **[HoneyHive Docs Access](documentation/honeyhive-docs-access.md)** - **How to access docs.honeyhive.ai via llms.txt and markdown**
 
 ## 🤖 **AI Assistant Standards (Comprehensive)**
 
@@ -112,6 +113,7 @@ The following core files remain in the main standards directory:
 1. **[Documentation Generation](documentation/documentation-generation.md)** - Template automation
 2. **[Documentation Templates](documentation/documentation-templates.md)** - Reusable patterns
 3. **[Requirements](documentation/requirements.md)** - Documentation standards
+4. **[HoneyHive Docs Access](documentation/honeyhive-docs-access.md)** - Access docs via llms.txt and markdown
 
 ### **🔧 Development Setup Tasks**
 **Environment and process setup**
@@ -164,6 +166,7 @@ The following core files remain in the main standards directory:
 2. **[Documentation Templates](documentation/documentation-templates.md)** - Reusable patterns
 3. **[Requirements](documentation/requirements.md)** - Documentation standards
 4. **[Mermaid Diagrams](documentation/mermaid-diagrams.md)** - Diagram standards
+5. **[HoneyHive Docs Access](documentation/honeyhive-docs-access.md)** - Access docs via llms.txt
 
 ---
 

@@ -1,5 +1,14 @@
 ## [Unreleased]
 
+### Documentation
+- **MAJOR**: Restructured evaluation documentation with modular how-to guides following Divio Documentation System
+  - Created 9 focused how-to guides: running-experiments, creating-evaluators, comparing-experiments, dataset-management, server-side-evaluators, multi-step-experiments, result-analysis, best-practices, troubleshooting
+  - Simplified tutorial (04-evaluation-basics.rst) to be introductory, moved advanced content to how-to guides
+  - Reformatted all guides to use questions as section titles for better readability
+  - Updated navigation index with clear toctree and quick links
+  - All guides focus on `evaluate()` function with `@evaluator` decorator as secondary
+- Fixed pre-commit hooks to use python3 and activate venv for documentation validation
+
 ### Fixed
 - 🔧 **Agent OS MCP Concurrency**: Added thread-safe locking to prevent index corruption during hot reload
   - Implemented read-write lock (RLock) in RAGEngine preventing concurrent query/rebuild race conditions

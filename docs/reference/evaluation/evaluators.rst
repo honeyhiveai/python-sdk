@@ -30,10 +30,15 @@ Base Classes
 BaseEvaluator
 ~~~~~~~~~~~~~
 
-.. autoclass:: BaseEvaluator
-   :members:
-   :undoc-members:
-   :show-inheritance:
+.. note::
+   
+   The ``BaseEvaluator`` class has been deprecated in favor of the decorator-based approach.
+   Please use the ``@evaluator`` decorator instead. See :doc:`../experiments/evaluators` for details.
+
+.. .. autoclass:: BaseEvaluator (DEPRECATED - commented out)
+..    :members:
+..    :undoc-members:
+..    :show-inheritance:
 
 The abstract base class for all evaluators.
 
@@ -288,10 +293,15 @@ Evaluates the factual accuracy of outputs using external knowledge sources.
 LengthEvaluator
 ~~~~~~~~~~~~~~~
 
-.. autoclass:: LengthEvaluator
-   :members:
-   :undoc-members:
-   :show-inheritance:
+.. note::
+   
+   The ``LengthEvaluator`` class has been deprecated in favor of the decorator-based approach.
+   Please implement custom length evaluators using the ``@evaluator`` decorator.
+
+.. .. autoclass:: LengthEvaluator (DEPRECATED - commented out)
+..    :members:
+..    :undoc-members:
+..    :show-inheritance:
 
 Evaluates output length against specified constraints.
 

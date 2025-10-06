@@ -1,6 +1,6 @@
 """HoneyHive API evaluations module."""
 
-from typing import Any, Optional, cast
+from typing import Any, Dict, Optional, cast
 from uuid import UUID
 
 from ..models import (
@@ -16,17 +16,34 @@ from ..models.generated import UUIDType
 from .base import BaseAPI
 
 
+def _convert_uuid_string(value: str) -> Any:
+    """Convert a single UUID string to UUIDType, or return original on error."""
+    try:
+        return cast(Any, UUIDType(UUID(value)))
+    except ValueError:
+        return value
+
+
+def _convert_uuid_list(items: list) -> list:
+    """Convert a list of UUID strings to UUIDType objects."""
+    converted = []
+    for item in items:
+        if isinstance(item, str):
+            converted.append(_convert_uuid_string(item))
+        else:
+            converted.append(item)
+    return converted
+
+
 def _convert_uuids_recursively(data: Any) -> Any:
     """Recursively convert string UUIDs to UUIDType objects in response data."""
     if isinstance(data, dict):
         result = {}
         for key, value in data.items():
             if key in ["run_id", "id"] and isinstance(value, str):
-                try:
-                    result[key] = cast(Any, UUIDType(UUID(value)))
-                except ValueError:
-                    # If UUID conversion fails, keep the original string value
-                    result[key] = value
+                result[key] = _convert_uuid_string(value)
+            elif key == "event_ids" and isinstance(value, list):
+                result[key] = _convert_uuid_list(value)
             else:
                 result[key] = _convert_uuids_recursively(value)
         return result
@@ -222,3 +239,200 @@ class EvaluationsAPI(BaseAPI):
             data = _convert_uuids_recursively(data)
 
             return DeleteRunResponse(**data)
+
+    def get_run_result(
+        self, run_id: str, aggregate_function: str = "average"
+    ) -> Dict[str, Any]:
+        """
+        Get aggregated result for a run from backend.
+
+        Backend Endpoint: GET /runs/:run_id/result?aggregate_function=<function>
+
+        The backend computes all aggregations, pass/fail status, and composite metrics.
+
+        Args:
+            run_id: Experiment run ID
+            aggregate_function: Aggregation function ("average", "sum", "min", "max")
+
+        Returns:
+            Dictionary with aggregated results from backend
+
+        Example:
+            >>> results = client.evaluations.get_run_result("run-123", "average")
+            >>> results["success"]
+            True
+            >>> results["metrics"]["accuracy"]
+            {'aggregate': 0.85, 'values': [0.8, 0.9, 0.85]}
+        """
+        response = self.client.request(
+            "GET",
+            f"/runs/{run_id}/result",
+            params={"aggregate_function": aggregate_function},
+        )
+        return cast(Dict[str, Any], response.json())
+
+    async def get_run_result_async(
+        self, run_id: str, aggregate_function: str = "average"
+    ) -> Dict[str, Any]:
+        """Get aggregated result for a run asynchronously."""
+        response = await self.client.request_async(
+            "GET",
+            f"/runs/{run_id}/result",
+            params={"aggregate_function": aggregate_function},
+        )
+        return cast(Dict[str, Any], response.json())
+
+    def get_run_metrics(self, run_id: str) -> Dict[str, Any]:
+        """
+        Get raw metrics for a run (without aggregation).
+
+        Backend Endpoint: GET /runs/:run_id/metrics
+
+        Args:
+            run_id: Experiment run ID
+
+        Returns:
+            Dictionary with raw metrics data
+
+        Example:
+            >>> metrics = client.evaluations.get_run_metrics("run-123")
+            >>> metrics["events"]
+            [{'event_id': '...', 'metrics': {...}}, ...]
+        """
+        response = self.client.request("GET", f"/runs/{run_id}/metrics")
+        return cast(Dict[str, Any], response.json())
+
+    async def get_run_metrics_async(self, run_id: str) -> Dict[str, Any]:
+        """Get raw metrics for a run asynchronously."""
+        response = await self.client.request_async("GET", f"/runs/{run_id}/metrics")
+        return cast(Dict[str, Any], response.json())
+
+    def compare_runs(
+        self, new_run_id: str, old_run_id: str, aggregate_function: str = "average"
+    ) -> Dict[str, Any]:
+        """
+        Compare two experiment runs using backend aggregated comparison.
+
+        Backend Endpoint: GET /runs/:new_run_id/compare-with/:old_run_id
+
+        The backend computes metric deltas, percent changes, and datapoint differences.
+
+        Args:
+            new_run_id: New experiment run ID
+            old_run_id: Old experiment run ID
+            aggregate_function: Aggregation function ("average", "sum", "min", "max")
+
+        Returns:
+            Dictionary with aggregated comparison data
+
+        Example:
+            >>> comparison = client.evaluations.compare_runs("run-new", "run-old")
+            >>> comparison["metric_deltas"]["accuracy"]
+            {'new_value': 0.85, 'old_value': 0.80, 'delta': 0.05}
+        """
+        response = self.client.request(
+            "GET",
+            f"/runs/{new_run_id}/compare-with/{old_run_id}",
+            params={"aggregate_function": aggregate_function},
+        )
+        return cast(Dict[str, Any], response.json())
+
+    async def compare_runs_async(
+        self, new_run_id: str, old_run_id: str, aggregate_function: str = "average"
+    ) -> Dict[str, Any]:
+        """Compare two experiment runs asynchronously (aggregated)."""
+        response = await self.client.request_async(
+            "GET",
+            f"/runs/{new_run_id}/compare-with/{old_run_id}",
+            params={"aggregate_function": aggregate_function},
+        )
+        return cast(Dict[str, Any], response.json())
+
+    def compare_run_events(
+        self,
+        new_run_id: str,
+        old_run_id: str,
+        *,
+        event_name: Optional[str] = None,
+        event_type: Optional[str] = None,
+        limit: int = 100,
+        page: int = 1,
+    ) -> Dict[str, Any]:
+        """
+        Compare events between two experiment runs with datapoint-level matching.
+
+        Backend Endpoint: GET /runs/compare/events
+
+        The backend matches events by datapoint_id and provides detailed
+        per-datapoint comparison with improved/degraded/same classification.
+
+        Args:
+            new_run_id: New experiment run ID (run_id_1)
+            old_run_id: Old experiment run ID (run_id_2)
+            event_name: Optional event name filter (e.g., "initialization")
+            event_type: Optional event type filter (e.g., "session")
+            limit: Pagination limit (default: 100)
+            page: Pagination page (default: 1)
+
+        Returns:
+            Dictionary with detailed comparison including:
+            - commonDatapoints: List of common datapoint IDs
+            - metrics: Per-metric comparison with improved/degraded/same lists
+            - events: Paired events (event_1, event_2) for each datapoint
+            - event_details: Event presence information
+            - old_run: Old run metadata
+            - new_run: New run metadata
+
+        Example:
+            >>> comparison = client.evaluations.compare_run_events(
+            ...     "run-new", "run-old",
+            ...     event_name="initialization",
+            ...     event_type="session"
+            ... )
+            >>> len(comparison["commonDatapoints"])
+            3
+            >>> comparison["metrics"][0]["improved"]
+            ["EXT-c1aed4cf0dfc3f16"]
+        """
+        params = {
+            "run_id_1": new_run_id,
+            "run_id_2": old_run_id,
+            "limit": limit,
+            "page": page,
+        }
+
+        if event_name:
+            params["event_name"] = event_name
+        if event_type:
+            params["event_type"] = event_type
+
+        response = self.client.request("GET", "/runs/compare/events", params=params)
+        return cast(Dict[str, Any], response.json())
+
+    async def compare_run_events_async(
+        self,
+        new_run_id: str,
+        old_run_id: str,
+        *,
+        event_name: Optional[str] = None,
+        event_type: Optional[str] = None,
+        limit: int = 100,
+        page: int = 1,
+    ) -> Dict[str, Any]:
+        """Compare events between two experiment runs asynchronously."""
+        params = {
+            "run_id_1": new_run_id,
+            "run_id_2": old_run_id,
+            "limit": limit,
+            "page": page,
+        }
+
+        if event_name:
+            params["event_name"] = event_name
+        if event_type:
+            params["event_type"] = event_type
+
+        response = await self.client.request_async(
+            "GET", "/runs/compare/events", params=params
+        )
+        return cast(Dict[str, Any], response.json())

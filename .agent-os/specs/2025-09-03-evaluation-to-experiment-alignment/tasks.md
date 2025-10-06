@@ -1,737 +1,801 @@
 # Evaluation to Experiment Framework Alignment - Task Breakdown
 
 **Date**: 2025-09-04  
-**Status**: Planning  
+**Last Updated**: 2025-10-02 (v2.0)  
+**Status**: Implementation Ready  
 **Priority**: High  
 **Branch**: complete-refactor  
+**Version**: 2.0
 
-## Task Overview - Same-Day Implementation
+> **Version 2.0 Update**: Task breakdown updated based on comprehensive backend analysis, tracer architecture validation, and generated models review. Implementation approach significantly refined from v1.0.
 
-This document breaks down the implementation plan from the specification into actionable tasks for **same-day release candidate delivery**. All tasks are prioritized for rapid, focused implementation within a single business day.
+## Task Overview - 2-Day Implementation
 
-## Phase 1: Core Setup (Hours 0-1) - 9:00-10:00 AM
+This document breaks down the implementation plan from the v2.0 specification into actionable tasks for **2-day implementation**. All tasks prioritized for focused, test-driven development.
 
-### Task 1.1: Rapid Module Structure Setup
-**Priority**: Critical  
-**Estimated Time**: 30 minutes  
-**Dependencies**: None  
-
-**Description**: Rapidly create experiment module structure with generated models integration.
-
-**Deliverables**:
-- [ ] Create `src/honeyhive/experiments/` directory
-- [ ] Create `src/honeyhive/experiments/__init__.py` with generated model imports
-- [ ] Create `src/honeyhive/experiments/core.py` for evaluate function
-- [ ] Create `src/honeyhive/experiments/context.py` for ExperimentContext
-- [ ] Update `src/honeyhive/evaluation/__init__.py` with compatibility aliases
-
-**Acceptance Criteria**:
-- [ ] Module imports work immediately
-- [ ] All generated models properly imported
-- [ ] Zero breaking changes to existing evaluation module
-
-### Task 1.2: Backward Compatibility Implementation  
-**Priority**: Critical  
-**Estimated Time**: 30 minutes  
-**Dependencies**: Task 1.1  
-
-**Description**: Immediate backward compatibility with deprecation warnings.
-
-**Deliverables**:
-- [ ] Direct aliases to generated models: `EvaluationRun = EvaluationRun`
-- [ ] Direct aliases: `EvaluationResult = ExperimentResultResponse`  
-- [ ] Function aliases: `create_evaluation_run = create_experiment_run`
-- [ ] Import compatibility in main `__init__.py`
-
-**Acceptance Criteria**:
-- [ ] All existing imports work without changes
-- [ ] Deprecation warnings logged appropriately
-- [ ] No functional changes to existing behavior
+### Key Changes from v1.0:
+- ✅ Use backend result endpoints (NO client-side aggregation)
+- ✅ Implement EXT- prefix transformation for external datasets
+- ✅ Use tracer multi-instance pattern (one tracer per datapoint)
+- ✅ Extend generated models (Metrics, Status) instead of creating from scratch
+- ✅ More realistic 2-day timeline (was 1 day in v1.0)
 
 ---
 
-### Task 1.3: Generated Models Integration
-**Priority**: Critical  
-**Estimated Time**: 15 minutes  
-**Dependencies**: Task 1.1, Task 1.2  
+## Phase 1: Core Infrastructure (Day 1, Hours 0-2)
 
-**Description**: Set up imports and aliases using only generated models from OpenAPI spec.
-
-**Deliverables**:
-- [ ] Import all models from `honeyhive.models.generated`
-- [ ] Create simple aliases: `ExperimentRun = EvaluationRun`
-- [ ] Create simple aliases: `ExperimentResult = ExperimentResultResponse`
-- [ ] **No custom dataclasses**: Only use generated models and type aliases
-- [ ] Update `__init__.py` files with proper exports
-
-**Acceptance Criteria**:
-- [ ] All imports work with generated models only
-- [ ] Type aliases provide experiment terminology
-- [ ] Zero custom model classes created
-
----
-
-### Task 1.4: Rapid Test Validation
-**Priority**: Medium  
-**Estimated Time**: 15 minutes  
-**Dependencies**: Task 1.3  
-
-**Description**: Quick validation that existing tests still pass with new aliases.
-
-**Deliverables**:
-- [ ] Run existing test suite to verify no breaking changes
-- [ ] Update any test imports that need new module paths
-- [ ] Verify backward compatibility aliases work in tests
-
-**Acceptance Criteria**:
-- [ ] All existing tests pass without modification
-- [ ] Generated model aliases work correctly in test contexts
-- [ ] No decrease in test coverage
-
----
-
-## Phase 2: Core Functionality (Hours 1-3) - 10:00 AM-12:00 PM
-
-### Task 2.1: Tracer Experiment Context Support
+### TASK-001: Create Extended Models ✅ **COMPLETE**
 **Priority**: Critical  
 **Estimated Time**: 45 minutes  
-**Dependencies**: Task 1.3  
+**Dependencies**: None  
+**Status**: ✅ Complete (261 lines)
 
-**Description**: Extend HoneyHiveTracer with experiment metadata injection capability.
+**Description**: Create `experiments/models.py` with extended versions of generated models to fix known issues.
 
 **Deliverables**:
-- [ ] Add `set_metadata()` method to `HoneyHiveTracer` 
-- [ ] Support `run_id`, `dataset_id`, `datapoint_id` metadata fields
-- [ ] Implement `ExperimentContext.to_trace_metadata()` helper
-- [ ] Ensure metadata injection on all traced events
+- [x] Create `src/honeyhive/experiments/models.py`
+- [x] Implement `ExperimentRunStatus` enum with all 5 values (pending, completed, running, failed, cancelled)
+- [x] Implement `AggregatedMetrics` model with `ConfigDict(extra="allow")` for dynamic keys
+- [x] Implement `ExperimentResultSummary` model
+- [x] Implement `RunComparisonResult` model
+- [x] Add helper methods to `AggregatedMetrics`: `get_metric()`, `list_metrics()`, `get_all_metrics()`
 
 **Acceptance Criteria**:
-- [ ] Tracer accepts and injects experiment metadata
-- [ ] All traced events include required experiment fields
-- [ ] No performance impact on existing tracing
+- [x] ExperimentRunStatus includes all backend status values
+- [x] AggregatedMetrics model accepts dynamic metric name keys
+- [x] No naming conflict with generated Metrics model or MetricsAPI
+- [x] All models use Pydantic v2 syntax
+- [x] Type hints are comprehensive
+- [x] No linter errors
+
+**Reference**: `GENERATED_MODELS_VALIDATION.md` sections 3-4
 
 ---
 
-### Task 2.2: Main Evaluate Function Implementation
+### TASK-002: Create EXT- Prefix Utilities ✅ **COMPLETE**
+**Priority**: Critical  
+**Estimated Time**: 45 minutes  
+**Dependencies**: None  
+**Status**: ✅ Complete (222 lines)
+
+**Description**: Create `experiments/utils.py` with EXT- prefix generation and transformation logic.
+
+**Deliverables**:
+- [x] Create `src/honeyhive/experiments/utils.py`
+- [x] Implement `generate_external_dataset_id(datapoints, custom_id)`
+- [x] Implement `generate_external_datapoint_id(datapoint, index, custom_id)`
+- [x] Implement `prepare_external_dataset(datapoints, custom_dataset_id)`
+- [x] Implement `prepare_run_request_data()` with EXT- transformation
+- [x] Add comprehensive docstrings
+
+**Acceptance Criteria**:
+- [x] EXT- prefix automatically added to IDs
+- [x] Hash-based ID generation is deterministic
+- [x] Custom IDs are supported (with EXT- prefix added)
+- [x] `prepare_run_request_data()` moves EXT- dataset to `metadata.offline_dataset_id`
+- [x] No linter errors
+
+**Reference**: `BACKEND_VALIDATION_ANALYSIS.md` sections 1-2
+
+---
+
+### TASK-003: Create Result Endpoint Functions ✅ **COMPLETE**
+**Priority**: Critical  
+**Estimated Time**: 30 minutes  
+**Dependencies**: TASK-001  
+**Status**: ✅ Complete (177 lines)
+
+**Description**: Create `experiments/results.py` with functions that call backend result endpoints.
+
+**Deliverables**:
+- [x] Create `src/honeyhive/experiments/results.py`
+- [x] Implement `get_run_result(client, run_id, aggregate_function)`
+- [x] Implement `get_run_metrics(client, run_id)`
+- [x] Implement `compare_runs(client, new_run_id, old_run_id, aggregate_function)`
+- [x] Add comprehensive docstrings explaining backend computation
+
+**Acceptance Criteria**:
+- [x] Functions use HoneyHive API client
+- [x] Returns use extended models (ExperimentResultSummary, RunComparisonResult)
+- [x] Docstrings clearly state "DO NOT compute client-side"
+- [x] Type hints are comprehensive
+- [x] No linter errors
+
+**Reference**: `RESULT_ENDPOINTS_ANALYSIS.md` sections 1-5
+
+---
+
+## Phase 2: Tracer Integration (Day 1, Hours 2-6)
+
+### TASK-004: Create Experiment Context ✅ **COMPLETE**
+**Priority**: High  
+**Estimated Time**: 30 minutes  
+**Dependencies**: TASK-001  
+**Status**: ✅ Complete (part of 318-line core.py)
+
+**Description**: Create `experiments/core.py` with `ExperimentContext` class for organizing experiment metadata.
+
+**Deliverables**:
+- [x] Create `src/honeyhive/experiments/core.py`
+- [x] Implement `ExperimentContext` class
+- [x] Implement `to_tracer_config(datapoint_id)` method
+- [x] Add clear docstring: "NOT a replacement for tracer config, just convenience"
+
+**Acceptance Criteria**:
+- [x] ExperimentContext stores run_id, dataset_id, project, source
+- [x] `to_tracer_config()` returns dict with is_evaluation=True
+- [x] Returns all required metadata fields
+- [x] Docstring clarifies purpose
+- [x] No linter errors
+
+**Reference**: `TRACER_INTEGRATION_ANALYSIS.md` section 3
+
+---
+
+### TASK-005: Implement run_experiment() with Multi-Instance ✅ **COMPLETE**
 **Priority**: Critical  
 **Estimated Time**: 90 minutes  
-**Dependencies**: Task 2.1  
+**Dependencies**: TASK-004  
+**Status**: ✅ Complete (part of 318-line core.py)
 
-**Description**: Implement core `evaluate()` function that executes user functions against datasets.
+**Description**: Implement `run_experiment()` function using tracer multi-instance pattern.
 
 **Deliverables**:
-- [ ] Core `evaluate()` function signature with proper typing
-- [ ] Function execution against dataset with threading support
-- [ ] Integration with existing `evaluate_with_evaluators()`
-- [ ] Return `ExperimentResultResponse` using generated models
-- [ ] Support both external datasets and HoneyHive dataset IDs
+- [x] Implement `run_experiment(function, dataset, experiment_context, api_key, max_workers)`
+- [x] Create `process_datapoint()` helper function
+- [x] Use ThreadPoolExecutor for concurrent execution
+- [x] Create NEW tracer instance per datapoint
+- [x] Add tracer.flush() in finally block
+- [x] Handle exceptions gracefully
+- [x] Use proper logging (module logger + safe_log)
 
 **Acceptance Criteria**:
-- [ ] Function executes user code against datasets
-- [ ] Uses existing multi-threading capabilities
-- [ ] Returns proper `ExperimentResultResponse` structure
-- [ ] All results use generated models only
+- [x] Each datapoint gets isolated tracer instance
+- [x] Tracer initialized with is_evaluation=True
+- [x] All metadata (run_id, dataset_id, datapoint_id, source) passed to tracer
+- [x] Tracer.flush() called in finally block
+- [x] ThreadPoolExecutor used (not multiprocessing)
+- [x] Results include status (success/failed) and error messages
+- [x] No linter errors
+
+**Reference**: `TRACER_INTEGRATION_ANALYSIS.md` sections 5-6
 
 ---
 
-### Task 2.3: API Integration for Experiment Runs
+### TASK-006: Validate Tracer Metadata Propagation
+**Priority**: High  
+**Estimated Time**: 30 minutes  
+**Dependencies**: TASK-005  
+
+**Description**: Write tests to validate tracer automatically propagates experiment metadata to all spans.
+
+**Deliverables**:
+- [ ] Create test in `tests/unit/experiments/test_tracer_integration.py`
+- [ ] Test that tracer adds run_id, dataset_id, datapoint_id, source to spans
+- [ ] Test multi-instance isolation (no metadata contamination)
+- [ ] Test concurrent execution with multiple tracers
+
+**Acceptance Criteria**:
+- [ ] All spans include required metadata fields
+- [ ] Multiple tracers don't interfere with each other
+- [ ] Metadata isolation validated
+- [ ] Tests pass
+
+**Reference**: `TRACER_INTEGRATION_ANALYSIS.md` section 4
+
+---
+
+## Phase 3: Evaluator Framework (Day 1, Hours 6-8)
+
+### TASK-007: Port Evaluator Framework from Main
+**Priority**: High  
+**Estimated Time**: 90 minutes  
+**Dependencies**: TASK-005  
+
+**Description**: Port evaluator framework from main branch to complete-refactor, adapting to new tracer architecture.
+
+**Deliverables**:
+- [ ] Create `src/honeyhive/experiments/evaluators.py`
+- [ ] Port `evaluator` decorator from main
+- [ ] Port `aevaluator` decorator from main
+- [ ] Port `EvalSettings` and `EvaluatorSettings` dataclasses
+- [ ] Adapt `run_evaluators()` to use tracer multi-instance
+- [ ] Remove manual aggregation code (backend handles this)
+
+**Acceptance Criteria**:
+- [ ] Evaluator decorators work with new tracer
+- [ ] Evaluators execute concurrently with ThreadPoolExecutor
+- [ ] Evaluator results sent to backend via tracer events
+- [ ] NO client-side aggregation code
+- [ ] Tests pass
+
+**Reference**: Implementation from `main` branch `src/honeyhive/evaluation/evaluators.py`
+
+---
+
+### TASK-008: Test Evaluator Execution
+**Priority**: Medium  
+**Estimated Time**: 30 minutes  
+**Dependencies**: TASK-007  
+
+**Description**: Write tests for evaluator execution with new tracer.
+
+**Deliverables**:
+- [ ] Create test in `tests/unit/experiments/test_evaluators.py`
+- [ ] Test evaluator decorator registration
+- [ ] Test evaluator execution with tracer
+- [ ] Test async evaluator support
+- [ ] Test evaluator error handling
+
+**Acceptance Criteria**:
+- [ ] Evaluators execute correctly
+- [ ] Async evaluators work
+- [ ] Errors handled gracefully
+- [ ] Tests pass
+
+---
+
+## Phase 4: API Integration (Day 2, Hours 0-2)
+
+### TASK-009: Extend API Client for Result Endpoints ✅ **COMPLETE**
 **Priority**: High  
 **Estimated Time**: 45 minutes  
-**Dependencies**: Task 2.2  
+**Dependencies**: TASK-003  
+**Status**: ✅ Complete (added 125 lines to evaluations.py)
 
-**Description**: Integrate with HoneyHive API for experiment run creation using generated models.
+**Description**: Add result endpoint methods to existing `EvaluationsAPI` client.
 
 **Deliverables**:
-- [ ] Use `CreateRunRequest` for experiment run creation
-- [ ] Return `CreateRunResponse` from API calls
-- [ ] Integration with `client.experiments.create_experiment_run()`
-- [ ] Handle both success and error responses
+- [x] Update `src/honeyhive/api/evaluations.py`
+- [x] Add `get_run_result(run_id, aggregate_function)` method (+ async)
+- [x] Add `get_run_metrics(run_id)` method (+ async)
+- [x] Add `compare_runs(new_run_id, old_run_id, aggregate_function)` method (+ async)
+- [x] Handle response parsing
+- [x] Add Dict[str, Any] import
 
 **Acceptance Criteria**:
-- [ ] Experiment runs created via API using official models
-- [ ] Proper error handling for API failures
-- [ ] Generated models used throughout API integration
+- [x] Methods call correct backend endpoints
+- [x] Responses parsed correctly
+- [x] Errors handled appropriately
+- [x] Type hints comprehensive
+- [x] No linter errors
+- [x] Both sync and async versions implemented
+
+**Reference**: `BACKEND_VALIDATION_ANALYSIS.md` section 9
 
 ---
 
-## Phase 3: Dataset & Results (Hours 3-5) - 1:00-3:00 PM
-
-### Task 3.1: External Dataset Support with EXT- Prefix
+### TASK-010: Implement Complete evaluate() Function
 **Priority**: Critical  
-**Estimated Time**: 60 minutes  
-**Dependencies**: Task 2.3  
+**Estimated Time**: 90 minutes  
+**Dependencies**: TASK-002, TASK-005, TASK-007, TASK-009  
 
-**Description**: Implement client-side dataset creation with EXT- prefix using generated models.
+**Description**: Implement complete `evaluate()` function that orchestrates entire workflow.
 
 **Deliverables**:
-- [ ] `create_external_dataset()` function with hash-based ID generation
-- [ ] Generate dataset IDs with `EXT-` prefix for client-side datasets
-- [ ] Use `Dataset` and `Datapoint` generated models
-- [ ] Support custom dataset IDs and datapoint IDs
-- [ ] Dataset validation using Pydantic model validation
+- [ ] Implement `evaluate()` in `src/honeyhive/experiments/core.py`
+- [ ] Support both external datasets and HoneyHive datasets
+- [ ] Create experiment run via API
+- [ ] Execute function with run_experiment()
+- [ ] Run evaluators (if provided)
+- [ ] Retrieve results from backend via get_run_result()
+- [ ] Handle all error cases
 
 **Acceptance Criteria**:
-- [ ] External datasets use `EXT-` prefixed IDs consistently
-- [ ] Generated models validate dataset structure automatically
-- [ ] Hash-based IDs are consistent across runs
-- [ ] Custom IDs supported with proper validation
+- [ ] Works with external datasets (EXT- prefix)
+- [ ] Works with HoneyHive datasets
+- [ ] Creates run via API
+- [ ] Executes function with tracer multi-instance
+- [ ] Runs evaluators correctly
+- [ ] Returns ExperimentResultSummary from backend
+- [ ] NO client-side aggregation
+- [ ] Comprehensive error handling
+
+**Reference**: `specs.md` section 6
 
 ---
 
-### Task 3.2: Add Client-side Dataset ID Generation
-**Priority**: Medium  
-**Estimated Time**: 1 day  
-**Dependencies**: Task 3.1  
+## Phase 5: Module Organization (Day 2, Hours 2-4)
 
-**Description**: Implement robust ID generation for client-side datasets.
-
-**Deliverables**:
-- [ ] Implement hash-based ID generation algorithm
-- [ ] Ensure ID consistency across experiment runs
-- [ ] Add ID collision detection and handling
-- [ ] Add tests for ID generation
-
-**Acceptance Criteria**:
-- [ ] Generated IDs are unique and consistent
-- [ ] ID generation handles edge cases gracefully
-- [ ] Tests verify ID generation behavior
-
----
-
-### Task 3.3: Support Custom Dataset and Datapoint IDs
-**Priority**: Medium  
-**Estimated Time**: 1 day  
-**Dependencies**: Task 3.1, Task 3.2  
-
-**Description**: Add support for custom dataset and datapoint IDs.
-
-**Deliverables**:
-- [ ] Allow users to specify custom dataset IDs
-- [ ] Allow users to specify custom datapoint IDs
-- [ ] Validate custom ID format and uniqueness
-- [ ] Add tests for custom ID functionality
-
-**Acceptance Criteria**:
-- [ ] Custom dataset IDs are supported
-- [ ] Custom datapoint IDs are supported
-- [ ] Invalid custom IDs are caught and handled
-- [ ] Tests verify custom ID functionality
-
----
-
-### Task 3.4: Add Dataset Validation and Management
-**Priority**: Medium  
-**Estimated Time**: 1 day  
-**Dependencies**: Task 3.1, Task 3.2, Task 3.3  
-
-**Description**: Implement comprehensive dataset validation and management utilities.
-
-**Deliverables**:
-- [ ] Add dataset format validation
-- [ ] Add datapoint validation
-- [ ] Add dataset management utilities
-- [ ] Add tests for validation and management
-
-**Acceptance Criteria**:
-- [ ] Dataset format is validated
-- [ ] Datapoints are validated
-- [ ] Management utilities work correctly
-- [ ] Tests verify validation and management
-
----
-
-## Phase 4: Testing & Validation (Hours 5-7) - 3:00-5:00 PM
-
-### Task 4.1: End-to-End Integration Testing
-**Priority**: Critical  
-**Estimated Time**: 60 minutes  
-**Dependencies**: Task 3.1  
-
-**Description**: Test complete experiment workflow from function execution to results.
-
-**Deliverables**:
-- [ ] End-to-end test: evaluate function with external dataset
-- [ ] End-to-end test: evaluate function with HoneyHive dataset  
-- [ ] Validate all results use `ExperimentResultResponse` model
-- [ ] Test backward compatibility with existing evaluation decorators
-- [ ] Performance validation - no degradation from current
-
-**Acceptance Criteria**:
-- [ ] Complete workflow works with generated models only
-- [ ] All existing evaluation functionality preserved
-- [ ] Performance meets or exceeds current benchmarks
-- [ ] Zero custom dataclasses in final implementation
-
----
-
-### Task 4.2: Comprehensive Test Suite Validation
+### TASK-011: Create experiments/__init__.py
 **Priority**: High  
-**Estimated Time**: 60 minutes  
-**Dependencies**: Task 4.1  
-
-**Description**: Run complete test suite and validate all functionality.
-
-**Deliverables**:
-- [ ] Run `tox -e unit` - all unit tests must pass
-- [ ] Run `tox -e integration` - all integration tests must pass
-- [ ] Run `tox -e lint` - no linting errors
-- [ ] Run `tox -e format` - all formatting correct
-- [ ] Run multi-Python version tests: `tox -e py311 -e py312 -e py313`
-
-**Acceptance Criteria**:
-- [ ] 100% of existing tests pass without modification
-- [ ] New experiment functionality tested and passing
-- [ ] Test coverage maintains >80% project-wide standard
-- [ ] All code quality checks pass
-
----
-
-### Task 4.3: Generated Models Validation  
-**Priority**: Medium  
 **Estimated Time**: 30 minutes  
-**Dependencies**: Task 4.2  
+**Dependencies**: All Phase 1-4 tasks  
 
-**Description**: Validate that all data flows use generated models correctly.
+**Description**: Create main module init file with exports and type aliases.
 
 **Deliverables**:
-- [ ] Verify all functions return `ExperimentResultResponse`
-- [ ] Validate `EvaluationRun` model usage for experiment runs
-- [ ] Check `Dataset` and `Datapoint` model integration
-- [ ] Ensure no custom dataclasses remain in codebase
+- [ ] Create `src/honeyhive/experiments/__init__.py`
+- [ ] Import all functions and classes
+- [ ] Create type aliases: `ExperimentRun = EvaluationRun`
+- [ ] Create type aliases: `ExperimentResult = ExperimentResultResponse`
+- [ ] Export all public API
+- [ ] Add module docstring
 
 **Acceptance Criteria**:
-- [ ] All API responses use official generated models
-- [ ] Type hints reference generated models only
-- [ ] Zero custom model classes in final implementation
-- [ ] Pydantic validation works correctly
+- [ ] All imports work correctly
+- [ ] Type aliases provide experiment terminology
+- [ ] Public API clearly defined in `__all__`
+- [ ] Docstring explains module purpose
 
 ---
 
-### Task 4.4: Performance Benchmark Validation
-**Priority**: Low  
-**Estimated Time**: 30 minutes  
-**Dependencies**: Task 4.3  
-
-**Description**: Quick validation that performance meets existing benchmarks.
-
-**Deliverables**:
-- [ ] Run existing performance benchmarks
-- [ ] Validate multi-threading performance maintained
-- [ ] Check memory usage with new implementation
-- [ ] Compare against baseline metrics
-
-**Acceptance Criteria**:
-- [ ] Performance meets or exceeds current benchmarks
-- [ ] Multi-threading efficiency preserved (5x improvement)
-- [ ] Memory usage within acceptable limits
-- [ ] No performance regressions detected
-
----
-
-### Task 4.5: Add Performance Threshold Management
-**Priority**: Medium  
-**Estimated Time**: 1 day  
-**Dependencies**: Task 4.3  
-
-**Description**: Implement functionality to set and manage performance thresholds for experiment runs.
-
-**Deliverables**:
-- [ ] Implement `set_performance_thresholds` function
-- [ ] Add threshold validation and management
-- [ ] Add threshold checking during experiment runs
-- [ ] Add tests for threshold functionality
-
-**Acceptance Criteria**:
-- [ ] Performance thresholds can be set and managed
-- [ ] Thresholds are validated correctly
-- [ ] Threshold checking works during experiment runs
-- [ ] Tests verify threshold functionality
-
----
-
-### Task 4.5: Multi-threading Integration Validation
-**Priority**: Medium  
-**Estimated Time**: 30 minutes  
-**Dependencies**: Task 4.2  
-
-**Description**: Validate that existing multi-threading capabilities work with experiment framework.
-
-**Deliverables**:
-- [ ] Test main evaluate function with max_workers > 1
-- [ ] Verify thread safety with experiment context
-- [ ] Validate existing two-level threading preserved
-- [ ] Test concurrent experiment execution
-
-**Acceptance Criteria**:
-- [ ] Multi-threading works seamlessly with experiments
-- [ ] Thread safety maintained with experiment context
-- [ ] Existing threading performance preserved
-- [ ] Concurrent experiments execute safely
-
----
-
-## Phase 5: Documentation & Release (Hours 7-9) - 5:00-7:00 PM
-
-### Task 5.1: Basic Example Creation
-**Priority**: Medium  
+### TASK-012: Create Backward Compatibility Layer
+**Priority**: Critical  
 **Estimated Time**: 45 minutes  
-**Dependencies**: Task 4.5  
+**Dependencies**: TASK-011  
 
-**Description**: Create basic examples demonstrating new experiment functionality.
+**Description**: Update `evaluation/__init__.py` to import from experiments with deprecation warnings.
 
 **Deliverables**:
-- [ ] Simple experiment example using new evaluate function
-- [ ] Example showing external dataset usage with EXT- prefix
-- [ ] Backward compatibility example (old evaluation code still works)
-- [ ] Update existing examples to optionally use new terminology
+- [ ] Update `src/honeyhive/evaluation/__init__.py`
+- [ ] Import all functions from experiments module
+- [ ] Wrap functions with deprecation warnings
+- [ ] Create EvaluationContext compatibility alias
+- [ ] Create EvaluationRun, EvaluationResult aliases
+- [ ] Update `__all__` exports
 
 **Acceptance Criteria**:
-- [ ] Examples run successfully and demonstrate key features
-- [ ] External dataset example shows EXT- prefix generation
-- [ ] Backward compatibility clearly demonstrated
-- [ ] Examples use generated models appropriately
+- [ ] All old imports work without changes
+- [ ] Deprecation warnings logged appropriately
+- [ ] Warning messages guide users to new module
+- [ ] No functional changes to behavior
+
+**Reference**: `specs.md` section 7
 
 ---
 
-### Task 5.2: Documentation Updates
+### TASK-013: Update Main Package Exports
 **Priority**: Medium  
-**Estimated Time**: 75 minutes  
-**Dependencies**: Task 5.1  
-
-**Description**: Update key documentation to reflect new experiment functionality.
-
-**Deliverables**:
-- [ ] Update main README.md with experiment examples
-- [ ] Create basic migration guide from evaluation → experiment
-- [ ] Update API reference for new experiment imports
-- [ ] Document the generated models approach
-
-**Acceptance Criteria**:
-- [ ] README.md shows both old and new approaches
-- [ ] Migration guide is clear and actionable
-- [ ] API reference accurately reflects new exports
-- [ ] Generated models approach is documented
-
----
-
-### Task 5.3: Add Performance Regression Detection
-**Priority**: Medium  
-**Estimated Time**: 1 day  
-**Dependencies**: Task 4.4, Task 5.2  
-
-**Description**: Implement functionality to detect performance regressions in automated experiment runs.
-
-**Deliverables**:
-- [ ] Implement regression detection algorithms
-- [ ] Add regression reporting and notifications
-- [ ] Add regression prevention measures
-- [ ] Add tests for regression detection
-
-**Acceptance Criteria**:
-- [ ] Performance regressions are detected correctly
-- [ ] Regression reporting is clear and actionable
-- [ ] Regression prevention measures work
-- [ ] Tests verify regression detection
-
----
-
-### Task 5.4: Create CLI Tools for Experiment Management
-**Priority**: Low  
-**Estimated Time**: 1 day  
-**Dependencies**: Task 4.6, Task 5.3  
-
-**Description**: Create command-line tools for managing experiments and workflows.
-
-**Deliverables**:
-- [ ] Create CLI for experiment management
-- [ ] Add workflow management commands
-- [ ] Add result viewing commands
-- [ ] Add tests for CLI functionality
-
-**Acceptance Criteria**:
-- [ ] CLI tools work correctly
-- [ ] Commands are intuitive and useful
-- [ ] Help and documentation are clear
-- [ ] Tests verify CLI functionality
-
----
-
-## Phase 6: Release Candidate Preparation (Hours 9-10) - 7:00-8:00 PM
-
-### Task 6.1: Release Candidate Preparation
-**Priority**: Critical  
-**Estimated Time**: 60 minutes  
-**Dependencies**: All previous phases  
-
-**Description**: Final validation and release candidate preparation.
-
-**Deliverables**:
-- [ ] Update `src/honeyhive/__init__.py` with new experiment exports
-- [ ] Update CHANGELOG.md with all changes
-- [ ] Create basic migration guide example
-- [ ] Final test run of complete workflow
-- [ ] Version and tag release candidate
-
-**Acceptance Criteria**:
-- [ ] All imports work correctly from main package
-- [ ] CHANGELOG.md accurately reflects changes
-- [ ] Migration path is documented
-- [ ] Ready for release candidate deployment
-
----
-
-### Task 6.2: Final Validation and Cleanup
-**Priority**: High  
-**Estimated Time**: 30 minutes  
-**Dependencies**: Task 6.1  
-
-**Description**: Final validation that everything works together correctly.
-
-**Deliverables**:
-- [ ] Run complete test suite one final time
-- [ ] Validate all imports work from main package
-- [ ] Check no unused imports or dead code
-- [ ] Verify CHANGELOG.md is complete and accurate
-
-**Acceptance Criteria**:
-- [ ] All tests pass completely
-- [ ] Import statements work correctly
-- [ ] No dead code or unused imports remain
-- [ ] CHANGELOG.md accurately reflects all changes
-
----
-
-### Task 6.3: Quick Migration Notes  
-**Priority**: Low  
-**Estimated Time**: 20 minutes  
-**Dependencies**: Task 6.2  
-
-**Description**: Create basic migration notes for release candidate users.
-
-**Deliverables**:
-- [ ] Simple before/after code examples
-- [ ] Key import changes documented
-- [ ] Backward compatibility confirmation
-- [ ] Link to full documentation
-
-**Acceptance Criteria**:
-- [ ] Basic migration examples are clear
-- [ ] Import changes are documented
-- [ ] Backward compatibility is emphasized
-- [ ] Sufficient for RC users
-
----
-
-### Task 6.4: Optional Performance Notes
-**Priority**: Optional  
 **Estimated Time**: 15 minutes  
-**Dependencies**: Task 6.1  
+**Dependencies**: TASK-011, TASK-012  
 
-**Description**: Optional quick performance validation if time permits.
+**Description**: Update `src/honeyhive/__init__.py` to export experiments module.
 
 **Deliverables**:
-- [ ] Quick performance check against baseline
-- [ ] Note any obvious performance issues
-- [ ] Document for future optimization if needed
+- [ ] Add `from .experiments import ...` to main init
+- [ ] Maintain evaluation exports for backward compatibility
+- [ ] Update package docstring
 
 **Acceptance Criteria**:
-- [ ] Basic performance check completed
-- [ ] Any major issues identified
-- [ ] Notes for future improvement documented
+- [ ] experiments module accessible as `honeyhive.experiments`
+- [ ] evaluation module still accessible as `honeyhive.evaluation`
+- [ ] All imports work from package root
 
 ---
 
-### Task 6.5: Optional Multi-threading Check
-**Priority**: Optional  
-**Estimated Time**: 10 minutes  
-**Dependencies**: Task 6.4  
+## Phase 6: Testing (Day 2, Hours 4-6)
 
-**Description**: Optional quick check that multi-threading still works if time permits.
+### TASK-014: Write Unit Tests (Agent OS V3 Framework)
+**Priority**: High  
+**Estimated Time**: 90 minutes (includes V3 framework phases)  
+**Dependencies**: All implementation tasks  
 
-**Deliverables**:
-- [ ] Quick test: run evaluate function with max_workers > 1
-- [ ] Verify no obvious threading issues
-- [ ] Note any problems for future fixing
+**Description**: Write comprehensive unit tests using the **Agent OS V3 Testing Framework** with mandatory acknowledgment contract and quality gates.
+
+**🎯 V3 Framework Requirements**:
+- [ ] **Phase 0**: Framework acknowledgment contract (mandatory verbatim text)
+- [ ] **Phase 1-6**: Comprehensive analysis (method verification, dependency mapping, coverage planning)
+- [ ] **Phase 7-8**: Quality enforcement loop until all targets met
+- [ ] **Progress Table**: Update after EACH phase with evidence
+- [ ] **Quality Targets**: 100% pass rate, 90%+ coverage, 10.0/10 Pylint, 0 MyPy errors
+
+**Test Files** (following V3 unit test path):
+- [ ] `tests/unit/experiments/test_models.py` (extended models)
+  - Mock: All external dependencies
+  - Target: AggregatedMetrics, ExperimentRunStatus, ExperimentResultSummary
+- [ ] `tests/unit/experiments/test_utils.py` (EXT- prefix logic)
+  - Mock: hashlib, json operations
+  - Target: generate_external_dataset_id, prepare_run_request_data
+- [ ] `tests/unit/experiments/test_results.py` (result functions)
+  - Mock: HoneyHive client, API responses
+  - Target: get_run_result, compare_runs, get_run_metrics
+- [ ] `tests/unit/experiments/test_core.py` (run_experiment, evaluate)
+  - Mock: Tracer, API client, ThreadPoolExecutor
+  - Target: run_experiment, evaluate, process_datapoint
+- [ ] `tests/unit/experiments/test_evaluators.py` (evaluator framework)
+  - Mock: Tracer, evaluator functions
+  - Target: evaluate_with_evaluators, evaluator decorators
+
+**V3 Framework Execution**:
+```bash
+# Follow V3 Framework Launcher
+# .agent-os/standards/ai-assistant/code-generation/tests/v3/FRAMEWORK-LAUNCHER.md
+
+1. Provide MANDATORY acknowledgment contract (verbatim)
+2. Initialize progress table
+3. Execute Phases 1-6 systematically with evidence
+4. Generate tests with comprehensive mocks (all external deps)
+5. Execute Phases 7-8: Quality enforcement loop
+6. Validate: 100% pass, 90%+ coverage, 10.0/10 Pylint, 0 MyPy errors
+```
+
+**Mandatory Quality Targets** (V3 Framework):
+- [ ] **Pass Rate**: 100% (all tests pass)
+- [ ] **Coverage**: 90%+ line and branch coverage
+- [ ] **Pylint**: 10.0/10 (with pre-approved disables only)
+- [ ] **MyPy**: 0 errors
+- [ ] **Mock Strategy**: Complete isolation (all external deps mocked)
 
 **Acceptance Criteria**:
-- [ ] Multi-threading basic functionality confirmed
-- [ ] No obvious errors or crashes
-- [ ] Issues documented for future work if found
+- [ ] V3 framework acknowledgment contract provided
+- [ ] Progress table updated after each phase
+- [ ] All quality targets met (mandatory loop until perfect)
+- [ ] Tests use standard fixtures: `mock_tracer_base`, `mock_safe_log`
+- [ ] Comprehensive mocking (no real API calls)
+- [ ] Evidence-based execution (command outputs shown)
+
+**Framework Reference**: 
+- **V3 Framework Launcher**: `.agent-os/standards/ai-assistant/code-generation/tests/v3/FRAMEWORK-LAUNCHER.md`
+- **V3 Unit Path**: `.agent-os/standards/ai-assistant/code-generation/tests/v3/paths/unit-path.md`
+- **V3 Template**: `.agent-os/standards/ai-assistant/code-generation/tests/v3/ai-optimized/templates/unit-test-template.md`
+
+---
+
+### TASK-015: Write Integration Tests (Agent OS V3 Framework)
+**Priority**: High  
+**Estimated Time**: 90 minutes (includes V3 framework phases)  
+**Dependencies**: TASK-014  
+
+**Description**: Write integration tests using the **Agent OS V3 Testing Framework** with real API validation.
+
+**🎯 V3 Framework Requirements**:
+- [ ] **Phase 0**: Framework acknowledgment contract (mandatory verbatim text)
+- [ ] **Phase 1-6**: Comprehensive analysis (end-to-end flow mapping, API validation)
+- [ ] **Phase 7-8**: Quality enforcement loop until all targets met
+- [ ] **Progress Table**: Update after EACH phase with evidence
+- [ ] **Quality Targets**: 100% pass rate, 80%+ functional coverage, 10.0/10 Pylint, 0 MyPy errors
+
+**Test Files** (following V3 integration test path):
+- [ ] `tests/integration/test_experiment_workflow.py`
+  - Real APIs: HoneyHive client, tracer, backend endpoints
+  - Target: Complete evaluate() workflow end-to-end
+- [ ] `tests/integration/test_external_datasets.py`
+  - Real APIs: Dataset creation, EXT- prefix transformation
+  - Target: External dataset handling with backend
+- [ ] `tests/integration/test_backend_results.py`
+  - Real APIs: GET /runs/:run_id/result, comparison endpoints
+  - Target: Backend aggregation and comparison
+- [ ] `tests/integration/test_evaluator_integration.py`
+  - Real APIs: Tracer multi-instance, evaluator execution
+  - Target: Evaluators with real tracer integration
+
+**V3 Framework Execution**:
+```bash
+# Follow V3 Integration Path
+# .agent-os/standards/ai-assistant/code-generation/tests/v3/paths/integration-path.md
+
+1. Provide MANDATORY acknowledgment contract (verbatim)
+2. Initialize progress table
+3. Execute Phases 1-6 systematically with evidence
+4. Generate tests with real APIs (NO MOCKS - forbidden)
+5. Execute Phases 7-8: Quality enforcement loop
+6. Validate: 100% pass, 80%+ coverage, 10.0/10 Pylint, 0 MyPy errors
+```
+
+**Test Scenarios** (real API validation):
+- [ ] End-to-end experiment execution with external dataset
+- [ ] End-to-end experiment execution with HoneyHive dataset
+- [ ] Backend result retrieval and parsing (GET /runs/:run_id/result)
+- [ ] Run comparison (GET /runs/:new_run_id/compare-with/:old_run_id)
+- [ ] Evaluator execution and result submission
+- [ ] Tracer metadata propagation (run_id, dataset_id, datapoint_id, source)
+- [ ] EXT- prefix transformation (metadata.offline_dataset_id)
+
+**Mandatory Quality Targets** (V3 Framework):
+- [ ] **Pass Rate**: 100% (all tests pass)
+- [ ] **Coverage**: 80%+ functional flow coverage
+- [ ] **Pylint**: 10.0/10 (with pre-approved disables only)
+- [ ] **MyPy**: 0 errors
+- [ ] **Mock Strategy**: FORBIDDEN (real APIs only - pre-commit enforced)
+
+**Acceptance Criteria**:
+- [ ] V3 framework acknowledgment contract provided
+- [ ] Progress table updated after each phase
+- [ ] All quality targets met (mandatory loop until perfect)
+- [ ] Tests use standard fixtures: `honeyhive_tracer`, `verify_backend_event`
+- [ ] NO MOCKS (real API calls to test environment)
+- [ ] Backend validation confirmed (testcases key, direct datapoint fields)
+- [ ] EXT- prefix transformation validated
+- [ ] Evidence-based execution (command outputs shown)
+
+**Framework Reference**: 
+- **V3 Framework Launcher**: `.agent-os/standards/ai-assistant/code-generation/tests/v3/FRAMEWORK-LAUNCHER.md`
+- **V3 Integration Path**: `.agent-os/standards/ai-assistant/code-generation/tests/v3/paths/integration-path.md`
+- **V3 Template**: `.agent-os/standards/ai-assistant/code-generation/tests/v3/ai-optimized/templates/integration-template.md`
+
+---
+
+### TASK-016: Write Backward Compatibility Tests (Agent OS V3 Framework)
+**Priority**: Critical  
+**Estimated Time**: 45 minutes (includes V3 framework phases)  
+**Dependencies**: TASK-012  
+
+**Description**: Validate 100% backward compatibility using **Agent OS V3 Testing Framework**.
+
+**🎯 V3 Framework Requirements**:
+- [ ] **Phase 0**: Framework acknowledgment contract (mandatory verbatim text)
+- [ ] **Phase 1-6**: Comprehensive analysis (import patterns, deprecation warnings)
+- [ ] **Phase 7-8**: Quality enforcement loop until all targets met
+- [ ] **Progress Table**: Update after EACH phase with evidence
+- [ ] **Quality Targets**: 100% pass rate, 90%+ coverage, 10.0/10 Pylint, 0 MyPy errors
+
+**Deliverables** (following V3 unit test path):
+- [ ] Create `tests/unit/evaluation/test_backward_compatibility.py`
+  - Mock: experiments module imports
+  - Target: Backward compatibility layer validation
+- [ ] Test all old imports still work
+  - `from honeyhive.evaluation import evaluate`
+  - `from honeyhive.evaluation import EvaluationContext`
+  - `from honeyhive.evaluation import EvaluationRun`
+- [ ] Test deprecation warnings are logged
+  - Verify DeprecationWarning raised
+  - Verify warning message content
+  - Verify stacklevel=2 for proper source attribution
+- [ ] Test no functional changes to behavior
+  - Old interface calls new implementation
+  - Results identical to direct new module calls
+- [ ] Run ALL existing evaluation tests
+  - Verify 100% pass rate on existing tests
+  - No modifications needed to existing tests
+
+**Mandatory Quality Targets** (V3 Framework):
+- [ ] **Pass Rate**: 100% (all tests pass)
+- [ ] **Coverage**: 90%+ coverage of backward compat layer
+- [ ] **Pylint**: 10.0/10 (with pre-approved disables only)
+- [ ] **MyPy**: 0 errors
+- [ ] **Mock Strategy**: Complete isolation (mock experiments module)
+
+**Acceptance Criteria**:
+- [ ] V3 framework acknowledgment contract provided
+- [ ] Progress table updated after each phase
+- [ ] All quality targets met (mandatory loop until perfect)
+- [ ] All old imports work without code changes
+- [ ] Deprecation warnings logged correctly
+- [ ] All existing tests pass without modification
+- [ ] No breaking changes detected
+- [ ] Evidence-based execution (command outputs shown)
+
+**Framework Reference**: 
+- **V3 Framework Launcher**: `.agent-os/standards/ai-assistant/code-generation/tests/v3/FRAMEWORK-LAUNCHER.md`
+- **V3 Unit Path**: `.agent-os/standards/ai-assistant/code-generation/tests/v3/paths/unit-path.md`
+
+---
+
+## Phase 7: Documentation (Day 2, Hours 6-8)
+
+### TASK-017: Update API Documentation
+**Priority**: Medium  
+**Estimated Time**: 45 minutes  
+**Dependencies**: All implementation tasks  
+
+**Description**: Update documentation to reflect new experiments module.
+
+**Deliverables**:
+- [ ] Update `docs/reference/api/experiments.rst` (new file)
+- [ ] Update `docs/tutorials/running-experiments.rst`
+- [ ] Update `docs/how-to/evaluate-models.rst`
+- [ ] Add migration guide: `docs/how-to/migrate-evaluation-to-experiments.rst`
+
+**Acceptance Criteria**:
+- [ ] All new APIs documented
+- [ ] Examples provided for common use cases
+- [ ] Migration guide is comprehensive
+- [ ] Documentation builds without errors
+
+---
+
+### TASK-018: Create Usage Examples
+**Priority**: Medium  
+**Estimated Time**: 30 minutes  
+**Dependencies**: TASK-017  
+
+**Description**: Create example scripts demonstrating new functionality.
+
+**Deliverables**:
+- [ ] Create `examples/experiments/basic_experiment.py`
+- [ ] Create `examples/experiments/external_dataset.py`
+- [ ] Create `examples/experiments/evaluator_example.py`
+- [ ] Create `examples/experiments/comparison_example.py`
+- [ ] Update `examples/README.md`
+
+**Acceptance Criteria**:
+- [ ] All examples run successfully
+- [ ] Examples demonstrate key features
+- [ ] Code is well-commented
+- [ ] README updated
+
+---
+
+### TASK-019: Update Changelog and Release Notes
+**Priority**: Medium  
+**Estimated Time**: 30 minutes  
+**Dependencies**: All tasks  
+
+**Description**: Document changes for release.
+
+**Deliverables**:
+- [ ] Update `CHANGELOG.md` with v2.0 changes
+- [ ] Create release notes document
+- [ ] Document breaking changes (if any)
+- [ ] Document migration path
+
+**Acceptance Criteria**:
+- [ ] Changelog is comprehensive
+- [ ] Release notes highlight key features
+- [ ] Migration path clearly documented
+- [ ] Version number updated
+
+---
+
+## Phase 8: Release Preparation (Day 2, Final Review)
+
+### TASK-020: Final Validation
+**Priority**: Critical  
+**Estimated Time**: 30 minutes  
+**Dependencies**: All tasks  
+
+**Description**: Final validation before release candidate.
+
+**Checklist**:
+- [ ] All tests pass (unit, integration, backward compatibility)
+- [ ] Code coverage >90%
+- [ ] Linter passes (no errors)
+- [ ] Type checking passes (pyright)
+- [ ] Documentation builds successfully
+- [ ] Examples run successfully
+- [ ] No TODOs or FIXMEs in code
+- [ ] Spec requirements met
+
+**Acceptance Criteria**:
+- [ ] All checklist items pass
+- [ ] Release candidate ready
 
 ---
 
 ## Cross-Phase Tasks
 
-### Task X.1: Continuous Integration and Testing
+### TASK-CP-01: Standards Compliance (Agent OS V3 Framework)
 **Priority**: High  
-**Estimated Time**: Ongoing  
-**Dependencies**: All phases  
+**Ongoing**: Throughout implementation  
 
-**Description**: Ensure continuous integration and testing throughout all phases.
+**🎯 Agent OS V3 Testing Framework Requirements**:
+- [ ] **MANDATORY**: Provide acknowledgment contract before ANY test generation
+- [ ] **MANDATORY**: Use V3 framework for ALL test generation (unit, integration, backward compat)
+- [ ] **MANDATORY**: Progress table updates after EACH phase
+- [ ] **MANDATORY**: Quality enforcement loop until 100% pass, 90%+ coverage, 10.0/10 Pylint, 0 MyPy
+- [ ] **MANDATORY**: Evidence-based execution (show command outputs, not claims)
 
-**Deliverables**:
-- [ ] CI/CD pipeline updates for new functionality
-- [ ] Automated testing for all new features
-- [ ] Performance regression detection in CI
-- [ ] Code quality checks and standards enforcement
+**Quality Targets (V3 Framework)**:
+| Test Type | Pass Rate | Coverage | Pylint | MyPy | Mock Strategy |
+|-----------|-----------|----------|--------|------|---------------|
+| **Unit Tests** | 100% | 90%+ | 10.0/10 | 0 errors | Required (all external deps) |
+| **Integration Tests** | 100% | 80%+ | 10.0/10 | 0 errors | Forbidden (real APIs only) |
+| **Backward Compat** | 100% | 90%+ | 10.0/10 | 0 errors | Required (mock experiments) |
 
-**Acceptance Criteria**:
-- [ ] CI/CD pipeline works correctly
-- [ ] All tests are automated
-- [ ] Performance regressions are caught
-- [ ] Code quality standards are maintained
+**Production Code Standards**:
+- [ ] Follow Agent OS production code standards
+- [ ] Use generated models (85% coverage validated)
+- [ ] Maintain backward compatibility
+- [ ] Comprehensive error handling
+- [ ] Extensive logging
+- [ ] Type hints on all functions
+- [ ] Pydantic v2 models only
+
+**Framework Reference**: 
+- **V3 Framework Hub**: `.agent-os/standards/ai-assistant/code-generation/tests/README.md`
+- **V3 Framework Launcher**: `.agent-os/standards/ai-assistant/code-generation/tests/v3/FRAMEWORK-LAUNCHER.md`
+- **Production Standards**: `.agent-os/standards/ai-assistant/code-generation/production/README.md`
 
 ---
 
-### Task X.2: Code Review and Quality Assurance
+### TASK-CP-02: Code Quality
 **Priority**: High  
-**Estimated Time**: Ongoing  
-**Dependencies**: All phases  
+**Ongoing**: Throughout implementation  
 
-**Description**: Ensure code quality and standards throughout all phases.
-
-**Deliverables**:
-- [ ] Code review for all new functionality
-- [ ] Code quality standards enforcement
-- [ ] Documentation quality checks
-- [ ] Security and performance reviews
-
-**Acceptance Criteria**:
-- [ ] All code is reviewed and approved
-- [ ] Code quality standards are met
-- [ ] Documentation is accurate and complete
-- [ ] Security and performance requirements are met
+**Requirements**:
+- [ ] Type hints on all functions
+- [ ] Comprehensive docstrings
+- [ ] PEP 8 compliance
+- [ ] No linter warnings
+- [ ] Consistent code style
+- [ ] Clear variable names
 
 ---
-
-## Task Dependencies and Critical Path - Same Day Implementation
-
-### Critical Path Tasks (10.25 Hours Total):
-1. **Task 1.1** (Module Structure) - 30 min - No dependencies
-2. **Task 1.2** (Backward Compatibility) - 30 min - Depends on Task 1.1
-3. **Task 1.3** (Generated Models Integration) - 15 min - Depends on Task 1.2
-4. **Task 1.4** (Rapid Test Validation) - 15 min - Depends on Task 1.3
-5. **Task 2.1** (Tracer Context) - 45 min - Depends on Task 1.4
-6. **Task 2.2** (Main Evaluate Function) - 90 min - Depends on Task 2.1
-7. **Task 2.3** (API Integration) - 45 min - Depends on Task 2.2
-8. **Task 3.1** (External Datasets) - 60 min - Depends on Task 2.3
-9. **Task 4.1** (Integration Testing) - 60 min - Depends on Task 3.1
-10. **Task 4.2** (Test Suite Validation) - 60 min - Depends on Task 4.1
-11. **Task 5.2** (Documentation) - 75 min - Depends on Task 4.2
-12. **Task 6.1** (Release Candidate) - 60 min - Depends on all previous
-
-### Non-Critical Path Tasks (Optional/Lower Priority):
-
-These tasks are NOT required for the release candidate but could be completed if time permits:
-
-#### Phase 3 - Additional Dataset Tasks (1.75 hours):
-- **Task 3.2** (Client-side Dataset ID Generation) - 30 min - Medium Priority
-- **Task 3.3** (Custom Dataset and Datapoint IDs) - 45 min - Medium Priority  
-- **Task 3.4** (Dataset Validation and Management) - 30 min - Medium Priority
-**Phase 3 Subtotal: 105 minutes (1.75 hours)**
-
-#### Phase 4 - Additional Validation Tasks (1.5 hours):
-- **Task 4.3** (Generated Models Validation) - 30 min - Medium Priority
-- **Task 4.4** (Performance Benchmark Validation) - 30 min - Low Priority
-- **Task 4.5** (Multi-threading Integration Validation) - 30 min - Medium Priority
-**Phase 4 Subtotal: 90 minutes (1.5 hours)**
-
-#### Phase 5 - Additional Documentation Tasks (2 hours):
-- **Task 5.1** (Basic Example Creation) - 45 min - Medium Priority
-- **Task 5.3** (Performance Regression Detection) - 30 min - Medium Priority
-- **Task 5.4** (CLI Tools for Experiment Management) - 45 min - Low Priority
-**Phase 5 Subtotal: 120 minutes (2 hours)**
-
-#### Phase 6 - Optional Polish Tasks (1.25 hours):
-- **Task 6.2** (Final Validation and Cleanup) - 30 min - High Priority*
-- **Task 6.3** (Quick Migration Notes) - 20 min - Low Priority
-- **Task 6.4** (Optional Performance Notes) - 15 min - Optional Priority
-- **Task 6.5** (Optional Multi-threading Check) - 10 min - Optional Priority
-**Phase 6 Subtotal: 75 minutes (1.25 hours)**
-
-#### Cross-Phase Tasks:
-- **Task X.1** (Continuous Integration and Testing) - Ongoing - High Priority
-- **Task X.2** (Code Review and Quality Assurance) - Ongoing - High Priority
-**Cross-Phase: Ongoing throughout implementation**
-
-**Total Non-Critical Tasks Time**: 390 minutes (6.5 hours)
-**Total Project Time**: 10.25 hours (Critical) + 6.5 hours (Optional) = 16.75 hours
-**Recommended**: Focus only on Task 6.2 (Final Validation) if time permits
-
-*Note: Task 6.2 should be considered critical if any issues are discovered during implementation.
-
-### Parallel Tasks Strategy:
-- **Phase 1** tasks can run in parallel after Task 1.1
-- **Phase 2** tasks can run in parallel after Task 2.1
-- **Phase 3** tasks can run in parallel after Task 3.1
-- **Phase 4** tasks can run in parallel after Task 4.1
-- **Phase 5** tasks can run in parallel after Task 5.1
-- **Phase 6** tasks can run in parallel after Task 6.1
 
 ## Risk Mitigation Tasks
 
-### Task R.1: Backward Compatibility Testing
-**Priority**: High  
-**Estimated Time**: Ongoing  
-**Dependencies**: All phases  
+### TASK-RISK-01: Tracer Multi-Instance Validation
+**Priority**: Critical  
+**Timing**: Day 1, Hour 4  
 
-**Description**: Continuously test backward compatibility throughout all phases.
-
-**Deliverables**:
-- [ ] Automated backward compatibility tests
-- [ ] Manual testing of existing functionality
-- [ ] Performance regression detection
-- [ ] User feedback collection and integration
-
-**Acceptance Criteria**:
-- [ ] All existing functionality continues to work
-- [ ] No performance regressions
-- [ ] User feedback is positive
-- [ ] Migration path is smooth
-
----
-
-### Task R.2: Performance Monitoring and Optimization
-**Priority**: High  
-**Estimated Time**: Ongoing  
-**Dependencies**: All phases  
-
-**Description**: Continuously monitor and optimize performance throughout all phases.
+**Description**: Validate tracer multi-instance pattern early to catch issues.
 
 **Deliverables**:
-- [ ] Performance monitoring and alerting
-- [ ] Performance bottleneck identification
-- [ ] Performance optimization implementation
-- [ ] Performance documentation updates
+- [ ] Create stress test with 100 concurrent tracers
+- [ ] Validate no metadata contamination
+- [ ] Validate all tracers flush correctly
+- [ ] Performance benchmark
 
 **Acceptance Criteria**:
-- [ ] Performance is continuously monitored
-- [ ] Bottlenecks are identified and resolved
-- [ ] Performance targets are met or exceeded
-- [ ] Performance documentation is current
+- [ ] No metadata leakage between tracers
+- [ ] All spans correctly tagged
+- [ ] Performance acceptable (<500ms overhead per datapoint)
 
 ---
 
-## Success Metrics and Acceptance Criteria
+### TASK-RISK-02: Backend Endpoint Validation
+**Priority**: High  
+**Timing**: Day 2, Hour 1  
 
-### Overall Project Success Criteria:
-- [ ] All experiment functionality is implemented and working
-- [ ] Backward compatibility is maintained
-- [ ] Performance targets are met (5x improvement)
-- [ ] All tests pass consistently
-- [ ] Documentation is complete and accurate
-- [ ] User migration is smooth and successful
+**Description**: Validate backend result endpoints work as expected.
 
-### Phase Success Criteria:
-- **Phase 1**: New module structure exists and is importable
-- **Phase 2**: Metadata linking works on all traced events
-- **Phase 3**: Client-side dataset support is functional
-- **Phase 4**: Main evaluate function executes user functions against datasets
-- **Phase 5**: GitHub integration is working
-- **Phase 6**: All functionality is tested and documented
+**Deliverables**:
+- [ ] Test GET /runs/:run_id/result with real backend
+- [ ] Test GET /runs/:new_run_id/compare-with/:old_run_id
+- [ ] Validate response structure matches specs
+- [ ] Validate EXT- prefix handling
+
+**Acceptance Criteria**:
+- [ ] All endpoints return expected data
+- [ ] Response parsing works correctly
+- [ ] EXT- datasets handled properly
 
 ---
 
-**Document Version**: 1.0  
-**Last Updated**: 2025-09-04  
-**Next Review**: 2025-09-10
+## Task Summary
+
+**Total Tasks**: 22 (20 main + 2 cross-phase)  
+**Critical Tasks**: 9  
+**High Priority Tasks**: 9  
+**Medium Priority Tasks**: 4  
+
+**Estimated Time**: 
+- Day 1: 8 hours (Phases 1-3)
+- Day 2: 8 hours (Phases 4-8)
+- **Total**: 16 hours over 2 days
+
+**Dependencies**: All tasks have clear dependencies to enable parallel work where possible.
+
+---
+
+## Implementation Checklist
+
+### Day 1 - Core Implementation
+- [ ] TASK-001: Extended models
+- [ ] TASK-002: EXT- prefix utilities
+- [ ] TASK-003: Result endpoint functions
+- [ ] TASK-004: Experiment context
+- [ ] TASK-005: run_experiment() with multi-instance
+- [ ] TASK-006: Validate tracer metadata
+- [ ] TASK-007: Port evaluator framework
+- [ ] TASK-008: Test evaluators
+
+### Day 2 - Integration & Release
+- [ ] TASK-009: Extend API client
+- [ ] TASK-010: Complete evaluate() function
+- [ ] TASK-011: experiments/__init__.py
+- [ ] TASK-012: Backward compatibility layer
+- [ ] TASK-013: Update main package
+- [ ] TASK-014: Unit tests
+- [ ] TASK-015: Integration tests
+- [ ] TASK-016: Backward compatibility tests
+- [ ] TASK-017: Update documentation
+- [ ] TASK-018: Create examples
+- [ ] TASK-019: Update changelog
+- [ ] TASK-020: Final validation
+
+---
+
+**Document Version**: 2.0  
+**Last Updated**: 2025-10-02  
+**Next Review**: After each phase completion  
+**Task Owner**: Development Team  
+
+**Analysis References**:
+- BACKEND_VALIDATION_ANALYSIS.md
+- TRACER_INTEGRATION_ANALYSIS.md
+- RESULT_ENDPOINTS_ANALYSIS.md
+- GENERATED_MODELS_VALIDATION.md
+- specs.md (v2.0)
+- srd.md (v2.0)

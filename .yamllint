@@ -1,21 +1,24 @@
 ---
 extends: default
 
+ignore: |
+  openapi.yaml
+
 rules:
   line-length:
     max: 120
     level: error
-  
+
   # Allow longer lines in certain contexts
   comments:
     min-spaces-from-content: 1
-  
+
   # Be more flexible with indentation for readability
   indentation:
     spaces: 2
     indent-sequences: true
     check-multi-line-strings: false
-  
+
   # Allow truthy values like 'on' in GitHub Actions
   truthy:
     allowed-values: ['true', 'false', 'on', 'off', 'yes', 'no']

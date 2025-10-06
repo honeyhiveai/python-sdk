@@ -17,6 +17,14 @@ Latest Release Notes
 Current Version Highlights
 ~~~~~~~~~~~~~~~~~~~~~~~~~~
 
+**📚 NEW: Restructured Evaluation Documentation**
+
+* **Modular How-To Guides**: Created 9 focused problem-oriented guides following Divio Documentation System
+* **Simplified Tutorial**: Redesigned 04-evaluation-basics.rst as a true 15-minute introductory guide
+* **Question-Based Format**: All sections use questions as titles for better scannability (e.g., "How do I run experiments?")
+* **Clear Navigation**: Updated index with toctree and quick links to common use cases
+* **API Focus**: All guides prioritize ``evaluate()`` function over decorator-based approach
+
 **🤖 NEW: Agent OS MCP/RAG Server (Dogfooding)**
 
 * **Model Context Protocol Integration**: Complete MCP server implementation with 5 tools for AI-assisted development

@@ -1,42 +1,50 @@
 # Technical Specifications - Evaluation to Experiment Framework Alignment
 
 **Date**: 2025-09-04  
-**Status**: Technical Specification  
+**Last Updated**: 2025-10-02 (v2.0)  
+**Status**: Technical Specification - Implementation Ready  
 **Priority**: High  
 **Branch**: complete-refactor  
+**Version**: 2.0
+
+> **Version 2.0 Update**: Comprehensive specification update based on backend code analysis, tracer architecture validation, and generated models review. See `CHANGELOG.md` for detailed evolution from v1.0 → v2.0.
 
 ## Architecture Changes
 
-This specification defines the comprehensive technical changes required to align the current HoneyHive Python SDK evaluation implementation with the official HoneyHive experiment framework, ensuring full backward compatibility while introducing enhanced experiment management capabilities.
+This specification defines the comprehensive technical changes required to align the current HoneyHive Python SDK evaluation implementation with the official HoneyHive experiment framework, ensuring full backward compatibility while leveraging backend services for aggregation and comparison.
 
 ## Problem Statement
 
 The current SDK implementation uses outdated terminology and lacks key functionality required by the official HoneyHive experiment framework:
 
 1. **Terminology Mismatch**: Uses "evaluation" instead of "experiment" terminology
-2. **Missing Metadata Linking**: No proper `run_id`, `dataset_id`, `datapoint_id` metadata on events
-3. **Incomplete Experiment Run Support**: Limited integration with the experiment run workflow
-4. **No Client-side Dataset Support**: Missing external dataset handling capabilities
-5. **Limited Results Management**: No SDK functionality for experiment results export
-6. **Missing Main Evaluate Function**: No function that executes a user-provided function against the dataset
+2. **Incomplete Metadata Linking**: Missing automatic propagation of run_id, dataset_id, datapoint_id, source
+3. **Manual Aggregation**: SDK was computing statistics client-side instead of using backend endpoints
+4. **External Dataset Support**: Missing EXT- prefix transformation logic
+5. **Limited Results Management**: No integration with backend result/comparison endpoints
+6. **Tracer Integration**: Not leveraging tracer's built-in experiment metadata functionality
 
 ## Current State Analysis
 
-### ✅ What's Working
-- Basic evaluation framework with evaluators and decorators
-- API integration for evaluation runs
-- Data models for EvaluationRun, Datapoint, Dataset
-- Comprehensive test coverage
-- **Advanced multi-threading with two-level parallelism**
-- **High-performance batch processing capabilities**
+### ✅ What's Working (Main Branch)
+- Metadata structure with run_id, dataset_id, datapoint_id, source
+- Basic evaluator framework with decorators
+- Multi-threading with ThreadPoolExecutor
+- EXT- prefix generation for external datasets
+- evaluator execution and aggregation
 
-### ❌ What's Missing
-- Experiment terminology and concepts
-- Proper metadata linking for experiment runs
-- Client-side dataset support with `EXT-` prefix
-- Experiment results export functionality
-- GitHub integration for automated runs
-- **Main evaluate function that executes user functions against datasets**
+### ❌ What's Missing (Complete-Refactor Branch)
+- Proper tracer integration with is_evaluation=True
+- Backend result endpoint integration
+- Backend comparison endpoint integration
+- Generated models usage (85% coverage available)
+- EXT- prefix transformation for backend compatibility
+
+### 🔄 What Needs Porting
+- Evaluator framework from main → complete-refactor
+- Metadata structure (run_id, dataset_id, datapoint_id, source)
+- External dataset ID generation logic
+- Multi-threading pattern (but improved with tracer multi-instance)
 
 ## Architecture Implementation
 
@@ -52,62 +60,131 @@ src/honeyhive/
     └── evaluations.py        # Evaluation API client
 ```
 
-#### New Architecture  
+#### New Architecture (v2.0)
 ```
 src/honeyhive/
 ├── experiments/              # NEW: Primary experiment module
-│   ├── __init__.py          # New experiment exports + compatibility aliases
-│   ├── core.py              # Core experiment functionality
-│   ├── context.py           # Experiment context management
-│   ├── dataset.py           # External dataset support
-│   ├── results.py           # Result structures using official models
-│   └── evaluators.py        # Enhanced evaluator framework
+│   ├── __init__.py          # Experiment exports + backward compat aliases
+│   ├── core.py              # run_experiment() with tracer multi-instance
+│   ├── models.py            # Extended models (Metrics fix, Status enum)
+│   ├── utils.py             # EXT- prefix generation
+│   ├── results.py           # get_run_result(), compare_runs() (backend)
+│   └── evaluators.py        # Ported from main (enhanced)
 ├── evaluation/              # MAINTAINED: Backward compatibility
-│   ├── __init__.py          # Compatibility imports from experiments/
-│   └── evaluators.py        # Maintained with deprecation warnings
+│   ├── __init__.py          # Imports from experiments/ with warnings
+│   └── evaluators.py        # Deprecated, imports from experiments/
 └── api/
-    ├── experiments.py       # NEW: Experiment API client
-    └── evaluations.py       # MAINTAINED: Compatibility wrapper
+    ├── experiments.py       # Experiment API (if needed)
+    └── evaluations.py       # MAINTAINED: Already exists
 ```
 
-### 2. Core Data Model Changes
+### 2. Core Data Model Changes (v2.0 Updated)
 
-#### Current Implementation
+#### Generated Models Usage (85% Coverage)
 ```python
-# src/honeyhive/evaluation/evaluators.py
-@dataclass
-class EvaluationResult:
-    """Current evaluation result structure."""
-    evaluator_name: str
-    score: Union[float, int, bool]
-    explanation: Optional[str] = None
-
-@dataclass 
-class EvaluationContext:
-    """Current evaluation context."""
-    project: str
-    metadata: Optional[Dict[str, Any]] = None
-```
-
-#### Enhanced Implementation Using Generated Models
-```python
-# src/honeyhive/experiments/core.py
-from typing import Union, Optional, Dict, Any, List
+# src/honeyhive/experiments/__init__.py
 from honeyhive.models.generated import (
-    EvaluationRun,                    # Use existing run model
-    ExperimentResultResponse,         # Use existing result response
-    ExperimentComparisonResponse,     # Use existing comparison response
-    Dataset,                          # Use existing dataset model
-    Datapoint,                        # Use existing datapoint model
-    CreateRunRequest,                 # Use existing request model
-    CreateRunResponse,                # Use existing response model
-    Datapoint1,                       # Use existing result datapoint model
-    Metrics,                          # Use existing metrics model
+    EvaluationRun,                    # ✅ Use as-is
+    CreateRunRequest,                 # ⚠️ event_ids incorrectly required
+    CreateRunResponse,                # ✅ Use as-is (maps "evaluation" field)
+    ExperimentResultResponse,         # ⚠️ Metrics structure needs fix
+    Detail,                           # ✅ Use as-is
+    Datapoint1,                       # ✅ Use as-is
+    Metric1,                          # ✅ Use as-is
+    Status,                           # ⚠️ Missing: running, failed, cancelled
 )
 
-# Simple context class for metadata linking - minimal addition
+# Type aliases for experiment terminology
+ExperimentRun = EvaluationRun
+```
+
+#### Extended Models for Remaining 15%
+```python
+# src/honeyhive/experiments/models.py
+from typing import Dict, Any, Optional, List
+from pydantic import BaseModel, Field, ConfigDict
+from enum import Enum
+
+# Extended Status enum (missing from generated)
+class ExperimentRunStatus(str, Enum):
+    """Extended status enum with all backend values."""
+    PENDING = "pending"
+    COMPLETED = "completed"
+    RUNNING = "running"         # Missing from generated
+    FAILED = "failed"           # Missing from generated
+    CANCELLED = "cancelled"     # Missing from generated
+
+# Fixed AggregatedMetrics model (generated Metrics has wrong structure)
+class AggregatedMetrics(BaseModel):
+    """
+    Aggregated metrics model for experiment results with dynamic metric keys.
+    
+    This is distinct from the generated 'Metrics' model which has incorrect structure.
+    
+    Backend returns:
+    {
+      "aggregation_function": "average",
+      "<metric_name>": {  # Dynamic keys!
+        "metric_name": "...",
+        "metric_type": "...",
+        "aggregate": 0.85,
+        "values": [...],
+        ...
+      }
+    }
+    """
+    aggregation_function: Optional[str] = None
+    
+    # Allow extra fields for dynamic metric keys
+    model_config = ConfigDict(extra="allow")
+    
+    def get_metric(self, metric_name: str) -> Optional[Dict[str, Any]]:
+        """Get a specific metric by name."""
+        return getattr(self, metric_name, None)
+    
+    def list_metrics(self) -> List[str]:
+        """List all metric names."""
+        return [k for k in self.__dict__ if k != "aggregation_function"]
+    
+    def get_all_metrics(self) -> Dict[str, Any]:
+        """Get all metrics as dictionary."""
+        return {k: v for k, v in self.__dict__.items() 
+                if k != "aggregation_function"}
+
+# Experiment result summary (for frontend display)
+class ExperimentResultSummary(BaseModel):
+    """Aggregated experiment result from backend."""
+    run_id: str
+    status: str
+    success: bool
+    passed: List[str]
+    failed: List[str]
+    metrics: AggregatedMetrics
+    datapoints: List[Any]  # List of Datapoint1 from generated
+
+# Run comparison result (from backend)
+class RunComparisonResult(BaseModel):
+    """Comparison between two experiment runs."""
+    new_run_id: str
+    old_run_id: str
+    common_datapoints: int
+    new_only_datapoints: int
+    old_only_datapoints: int
+    metric_deltas: Dict[str, Any]  # Metric name -> delta info
+```
+
+#### Minimal Context Class
+```python
+# src/honeyhive/experiments/core.py
+from typing import Optional, Dict, Any
+
 class ExperimentContext:
-    """Lightweight experiment context for metadata linking."""
+    """
+    Lightweight experiment context for metadata linking.
+    
+    NOTE: This is NOT a replacement for tracer config. This is just
+    a convenience class for organizing experiment metadata.
+    """
     
     def __init__(
         self, 
@@ -123,1037 +200,703 @@ class ExperimentContext:
         self.source = source
         self.metadata = metadata or {}
     
-    def to_trace_metadata(self, datapoint_id: str) -> Dict[str, str]:
-        """Convert to tracer metadata format for event linking."""
+    def to_tracer_config(self, datapoint_id: str) -> Dict[str, Any]:
+        """
+        Convert to tracer initialization config.
+        
+        This returns kwargs for HoneyHiveTracer(...) initialization.
+        """
         return {
+            "project": self.project,
+            "is_evaluation": True,
             "run_id": self.run_id,
             "dataset_id": self.dataset_id,
             "datapoint_id": datapoint_id,
-            "source": self.source
+            "source": self.source,
         }
-    
-    def to_evaluation_run(self, name: Optional[str] = None) -> EvaluationRun:
-        """Convert to official EvaluationRun model."""
-        return EvaluationRun(
-            run_id=self.run_id,
-            project=self.project,
-            dataset_id=self.dataset_id,
-            name=name or f"experiment-{self.run_id[:8]}",
-            metadata=self.metadata,
-            status="running"
-        )
-
-# Type aliases for clarity - use existing models directly
-ExperimentRun = EvaluationRun                    # Alias existing model
-ExperimentResult = ExperimentResultResponse      # Use existing response model
-ExperimentComparison = ExperimentComparisonResponse  # Use existing comparison model
 ```
 
-### 3. Backward Compatibility Implementation
+### 3. External Dataset Support (v2.0 Updated)
 
-#### Compatibility Layer
+#### EXT- Prefix Generation
 ```python
-# src/honeyhive/evaluation/__init__.py
-"""Backward compatibility layer for evaluation module."""
+# src/honeyhive/experiments/utils.py
+import hashlib
+import json
+from typing import List, Dict, Any, Tuple, Optional
 
-import warnings
-from typing import TYPE_CHECKING
-
-# Import all new functionality from experiments module
-from ..experiments import (
-    ExperimentContext as _ExperimentContext,
-    evaluate as _evaluate,
-    create_experiment_run as _create_experiment_run,
-    # ... other imports
-)
-# Import official models directly
-from ..models.generated import (
-    EvaluationRun as _EvaluationRun,
-    ExperimentResultResponse as _ExperimentResultResponse,
-    # ... other official models
-)
-
-# Backward compatibility aliases
-class EvaluationContext(_ExperimentContext):
-    """Backward compatibility alias for ExperimentContext."""
-    def __init__(self, *args, **kwargs):
-        warnings.warn(
-            "EvaluationContext is deprecated. Use ExperimentContext instead.",
-            DeprecationWarning,
-            stacklevel=2
-        )
-        super().__init__(*args, **kwargs)
-
-# Direct aliases to official models - no custom classes needed
-EvaluationResult = _ExperimentResultResponse  # Use official response model
-EvaluationRun = _EvaluationRun  # Use official evaluation run model
-
-def create_evaluation_run(*args, **kwargs):
-    """Backward compatibility function for create_experiment_run."""
-    warnings.warn(
-        "create_evaluation_run is deprecated. Use create_experiment_run instead.",
-        DeprecationWarning,
-        stacklevel=2
-    )
-    return _create_experiment_run(*args, **kwargs)
-
-# Export all current functionality
-__all__ = [
-    "EvaluationContext",  # Compatibility alias
-    "EvaluationResult",   # Compatibility alias  
-    "create_evaluation_run",  # Compatibility function
-    "evaluate",
-    # ... all other current exports
-]
-```
-
-### 2. Metadata Linking Implementation
-
-#### 2.1 Event Metadata Requirements
-Every event in an experiment run must include:
-```python
-metadata = {
-    "run_id": "uuid-string",
-    "dataset_id": "uuid-string", 
-    "datapoint_id": "uuid-string",
-    "source": "evaluation"  # Always "evaluation" for experiment runs
-}
-```
-
-#### 2.2 Tracer Integration
-- Extend `HoneyHiveTracer` to support experiment run context
-- Add methods for setting experiment run metadata
-- Ensure all traced events include required metadata
-
-#### 2.3 Experiment Run Context  
-```python
-# Lightweight context class for metadata linking only
-class ExperimentContext:
-    """Lightweight experiment context for metadata linking."""
-    
-    def __init__(
-        self, 
-        run_id: str, 
-        dataset_id: str, 
-        project: str, 
-        source: str = "evaluation",
-        metadata: Optional[Dict[str, Any]] = None
-    ):
-        self.run_id = run_id
-        self.dataset_id = dataset_id
-        self.project = project
-        self.source = source
-        self.metadata = metadata or {}
-    
-    def to_evaluation_run(self, name: Optional[str] = None) -> EvaluationRun:
-        """Convert to official EvaluationRun model."""
-        from ..models.generated import EvaluationRun
-        return EvaluationRun(
-            run_id=self.run_id,
-            project=self.project,
-            dataset_id=self.dataset_id,
-            name=name or f"experiment-{self.run_id[:8]}",
-            metadata=self.metadata
-        )
-```
-
-### 3. Client-side Dataset Support
-
-#### 3.1 External Dataset Handling
-```python
-def create_external_dataset(
+def generate_external_dataset_id(
     datapoints: List[Dict[str, Any]],
-    project: str,
+    custom_id: Optional[str] = None
+) -> str:
+    """
+    Generate EXT- prefixed dataset ID.
+    
+    Args:
+        datapoints: List of datapoint dictionaries
+        custom_id: Optional custom ID (will be prefixed with EXT-)
+    
+    Returns:
+        Dataset ID with EXT- prefix
+    """
+    if custom_id:
+        # Ensure custom ID has EXT- prefix
+        if not custom_id.startswith("EXT-"):
+            return f"EXT-{custom_id}"
+        return custom_id
+    
+    # Generate hash-based ID
+    content = json.dumps(datapoints, sort_keys=True)
+    hash_value = hashlib.sha256(content.encode()).hexdigest()[:16]
+    return f"EXT-{hash_value}"
+
+def generate_external_datapoint_id(
+    datapoint: Dict[str, Any],
+    index: int,
+    custom_id: Optional[str] = None
+) -> str:
+    """
+    Generate EXT- prefixed datapoint ID.
+    
+    Args:
+        datapoint: Datapoint dictionary
+        index: Index in dataset (for stable ordering)
+        custom_id: Optional custom ID (will be prefixed with EXT-)
+    
+    Returns:
+        Datapoint ID with EXT- prefix
+    """
+    if custom_id:
+        if not custom_id.startswith("EXT-"):
+            return f"EXT-{custom_id}"
+        return custom_id
+    
+    # Generate hash-based ID
+    content = json.dumps(datapoint, sort_keys=True)
+    hash_value = hashlib.sha256(f"{content}{index}".encode()).hexdigest()[:16]
+    return f"EXT-{hash_value}"
+
+def prepare_external_dataset(
+    datapoints: List[Dict[str, Any]],
     custom_dataset_id: Optional[str] = None
 ) -> Tuple[str, List[str]]:
     """
-    Create client-side dataset with EXT- prefix.
+    Prepare external dataset with EXT- IDs.
+    
+    Args:
+        datapoints: List of datapoint dictionaries
+        custom_dataset_id: Optional custom dataset ID
     
     Returns:
         Tuple of (dataset_id, datapoint_ids)
     """
+    dataset_id = generate_external_dataset_id(datapoints, custom_dataset_id)
+    
+    datapoint_ids = []
+    for idx, dp in enumerate(datapoints):
+        # Check if datapoint already has an ID
+        custom_dp_id = dp.get("id") or dp.get("datapoint_id")
+        dp_id = generate_external_datapoint_id(dp, idx, custom_dp_id)
+        datapoint_ids.append(dp_id)
+    
+    return dataset_id, datapoint_ids
 ```
 
-#### 3.2 Dataset ID Generation
-- Generate hash-based IDs for external datasets
-- Prefix with `EXT-` to avoid platform collisions
-- Support custom IDs with `EXT-` prefix
-
-#### 3.3 Datapoint ID Generation
-- Hash individual datapoints for unique identification
-- Ensure consistency across experiment runs
-- Support custom IDs with `EXT-` prefix
-
-### 4. Enhanced Experiment Management
-
-#### 4.1 Main Experiment Evaluation Function Implementation
-
+#### Backend Transformation (v2.0 NEW)
 ```python
-# src/honeyhive/experiments/core.py
-from typing import Callable, Optional, List, Dict, Any, Union
-from concurrent.futures import ThreadPoolExecutor, as_completed
-import uuid
-import logging
-from contextlib import contextmanager
+# IMPORTANT: Backend expects EXT- datasets in metadata, NOT dataset_id
 
-from ..tracer import HoneyHiveTracer, get_default_tracer
-from ..api.client import HoneyHive
-from .context import ExperimentContext
-from .dataset import create_external_dataset, validate_dataset
-from .evaluators import evaluate_with_evaluators
-from .results import aggregate_experiment_results
-from ..models.generated import ExperimentResultResponse
-
-logger = logging.getLogger(__name__)
-
-def evaluate(
-    function: Callable,
-    hh_api_key: Optional[str] = None,
-    hh_project: Optional[str] = None,
-    name: Optional[str] = None,
-    suite: Optional[str] = None,
-    dataset_id: Optional[str] = None,
-    dataset: Optional[List[Dict[str, Any]]] = None,
-    evaluators: Optional[List[Any]] = None,
-    max_workers: int = 10,
-    verbose: bool = False,
-    server_url: Optional[str] = None,
-    context: Optional[ExperimentContext] = None,
-) -> ExperimentResultResponse:
-    """
-    Main experiment evaluation function that executes a function against a dataset.
-    
-    Args:
-        function: User function to execute against each datapoint
-        hh_api_key: HoneyHive API key (defaults to environment variable)
-        hh_project: HoneyHive project name (defaults to environment variable)
-        name: Experiment run name
-        suite: Experiment suite name
-        dataset_id: HoneyHive dataset ID or external dataset ID
-        dataset: Raw dataset as list of dictionaries
-        evaluators: List of evaluators to run against outputs
-        max_workers: Maximum number of worker threads
-        verbose: Enable verbose logging
-        server_url: HoneyHive server URL override
-        context: Pre-created experiment context
-        
-    Returns:
-        ExperimentResultResponse with comprehensive experiment results
-        
-    Raises:
-        ValueError: If neither dataset_id nor dataset is provided
-        RuntimeError: If function execution fails for all datapoints
-    """
-    
-    # Initialize API client
-    client = HoneyHive(
-        api_key=hh_api_key,
-        project=hh_project,
-        server_url=server_url
-    )
-    
-    # Prepare dataset
-    if dataset is not None:
-        # Create external dataset
-        dataset_id, datapoint_ids = create_external_dataset(
-            datapoints=dataset,
-            project=hh_project or client.project,
-            custom_dataset_id=dataset_id
-        )
-        dataset_for_execution = dataset
-    elif dataset_id is not None:
-        # Fetch dataset from HoneyHive
-        dataset_response = client.datasets.get_dataset(dataset_id)
-        if not dataset_response or not dataset_response.datapoints:
-            raise ValueError(f"Dataset {dataset_id} not found or empty")
-        dataset_for_execution = [dp.dict() for dp in dataset_response.datapoints]
-        datapoint_ids = [dp.id for dp in dataset_response.datapoints]
-    else:
-        raise ValueError("Either 'dataset' or 'dataset_id' must be provided")
-    
-    # Create or use provided experiment context
-    if context is None:
-        run_id = str(uuid.uuid4())
-        context = ExperimentContext(
-            run_id=run_id,
-            dataset_id=dataset_id,
-            project=hh_project or client.project,
-            source="evaluation"
-        )
-    
-    # Create experiment run via API
-    experiment_run = client.experiments.create_experiment_run(
-        name=name or f"experiment-{context.run_id[:8]}",
-        project=context.project,
-        dataset_id=context.dataset_id,
-        configuration={
-            "function_name": getattr(function, "__name__", "anonymous"),
-            "evaluators": [str(e) for e in (evaluators or [])],
-            "max_workers": max_workers,
-            "suite": suite
-        },
-        metadata=context.metadata
-    )
-    
-    if experiment_run:
-        context.run_id = experiment_run.id
-    
-    # Execute experiment run
-    return _execute_experiment_run(
-        function=function,
-        dataset=dataset_for_execution,
-        datapoint_ids=datapoint_ids,
-        evaluators=evaluators or [],
-        context=context,
-        max_workers=max_workers,
-        verbose=verbose,
-        client=client
-    )
-
-
-def _execute_experiment_run(
-    function: Callable,
-    dataset: List[Dict[str, Any]],
-    datapoint_ids: List[str],
-    evaluators: List[Any],
-    context: ExperimentContext,
-    max_workers: int,
-    verbose: bool,
-    client: HoneyHive
-) -> ExperimentResultResponse:
-    """Execute the complete experiment run workflow with multi-threading."""
-    
-    results = []
-    successful_executions = 0
-    failed_executions = 0
-    
-    def execute_single_datapoint(datapoint: Dict[str, Any], datapoint_id: str) -> Dict[str, Any]:
-        """Execute function against a single datapoint with proper tracing."""
-        
-        inputs = datapoint.get("inputs", {})
-        ground_truth = datapoint.get("ground_truth")
-        
-        # Create trace metadata for this datapoint
-        trace_metadata = context.to_trace_metadata(datapoint_id)
-        
-        try:
-            # Get or create tracer with experiment context
-            tracer = get_default_tracer()
-            if tracer is None:
-                tracer = HoneyHiveTracer(
-                    project=context.project,
-                    metadata=trace_metadata
-                )
-            else:
-                # Set experiment metadata on existing tracer
-                tracer.set_metadata(trace_metadata)
-            
-            with tracer:
-                # Execute function with inputs and ground_truth
-                if ground_truth is not None:
-                    outputs = function(inputs, ground_truth)
-                else:
-                    outputs = function(inputs)
-                
-                # Run evaluators against outputs
-                evaluator_results = []
-                if evaluators:
-                    evaluator_results = evaluate_with_evaluators(
-                        evaluators=evaluators,
-                        inputs=inputs,
-                        outputs=outputs,
-                        ground_truth=ground_truth,
-                        context=context,
-                        max_workers=1,  # Single evaluator per datapoint
-                        run_concurrently=False
-                    )
-                
-                return {
-                    "datapoint_id": datapoint_id,
-                    "inputs": inputs,
-                    "outputs": outputs,
-                    "ground_truth": ground_truth,
-                    "evaluator_results": evaluator_results,
-                    "status": "success",
-                    "error": None
-                }
-                
-        except Exception as e:
-            logger.error(f"Function execution failed for datapoint {datapoint_id}: {e}")
-            return {
-                "datapoint_id": datapoint_id,
-                "inputs": inputs,
-                "outputs": None,
-                "ground_truth": ground_truth,
-                "evaluator_results": None,
-                "status": "failed",
-                "error": str(e)
-            }
-    
-    # Execute function against dataset with threading
-    if verbose:
-        logger.info(f"Executing function against {len(dataset)} datapoints with {max_workers} workers")
-    
-    with ThreadPoolExecutor(max_workers=max_workers) as executor:
-        # Submit all datapoint executions
-        future_to_datapoint = {
-            executor.submit(execute_single_datapoint, datapoint, datapoint_ids[i]): i
-            for i, datapoint in enumerate(dataset)
-        }
-        
-        # Collect results as they complete
-        for future in as_completed(future_to_datapoint):
-            try:
-                result = future.result()
-                results.append(result)
-                
-                if result["status"] == "success":
-                    successful_executions += 1
-                else:
-                    failed_executions += 1
-                    
-                if verbose:
-                    logger.info(f"Completed datapoint {result['datapoint_id']}: {result['status']}")
-                    
-            except Exception as e:
-                failed_executions += 1
-                logger.error(f"Future execution failed: {e}")
-    
-    # Validate execution results
-    if successful_executions == 0:
-        raise RuntimeError("All datapoint executions failed")
-    
-    if verbose:
-        logger.info(f"Experiment execution complete: {successful_executions} successful, {failed_executions} failed")
-    
-    # Aggregate results and create final experiment result using official models
-    return aggregate_experiment_results(
-        results=results,
-        context=context,
-        client=client
-    )  # Returns ExperimentResultResponse
-
-
-@contextmanager
-def experiment_context(
+def prepare_run_request_data(
     run_id: str,
-    dataset_id: str,
-    project: str,
-    metadata: Optional[Dict[str, Any]] = None
-):
-    """Context manager for experiment execution with automatic cleanup."""
-    
-    context = ExperimentContext(
-        run_id=run_id,
-        dataset_id=dataset_id,
-        project=project,
-        metadata=metadata
-    )
-    
-    try:
-        yield context
-    finally:
-        # Cleanup logic if needed
-        pass
-```
-
-#### 4.2 Function Execution Flow
-The main evaluation process follows this flow:
-
-```python
-def _execute_experiment_run(
-    function: Callable,
-    dataset: List[Dict[str, Any]],
-    evaluators: List[Any],
-    context: ExperimentContext,
-    max_workers: int = 10,
-) -> ExperimentResultResponse:
-    """
-    Execute the complete experiment run workflow.
-    
-    1. Execute function against each datapoint
-    2. Run evaluators against function outputs
-    3. Aggregate results and metrics
-    4. Return structured experiment results
-    """
-    results = []
-    
-    # Execute function against dataset
-    for datapoint in dataset:
-        inputs = datapoint.get("inputs", {})
-        ground_truth = datapoint.get("ground_truth")
-        
-        # Execute the function with proper context
-        with HoneyHiveTracer(
-            project=context.project,
-            metadata={
-                "run_id": context.run_id,
-                "dataset_id": context.dataset_id,
-                "datapoint_id": datapoint.get("id", str(uuid.uuid4())),
-                "source": "evaluation"
-            }
-        ):
-            try:
-                # Execute function with inputs and ground_truth
-                if ground_truth is not None:
-                    outputs = function(inputs, ground_truth)
-                else:
-                    outputs = function(inputs)
-                
-                # Run evaluators against outputs
-                evaluator_results = evaluate_with_evaluators(
-                    evaluators=evaluators,
-                    inputs=inputs,
-                    outputs=outputs,
-                    ground_truth=ground_truth,
-                    context=context,
-                    max_workers=1,  # Single evaluator per datapoint
-                    run_concurrently=False
-                )
-                
-                results.append({
-                    "inputs": inputs,
-                    "outputs": outputs,
-                    "ground_truth": ground_truth,
-                    "evaluator_results": evaluator_results
-                })
-                
-            except Exception as e:
-                logger.error(f"Function execution failed for datapoint: {e}")
-                # Record failure with error metadata
-                results.append({
-                    "inputs": inputs,
-                    "outputs": None,
-                    "ground_truth": ground_truth,
-                    "error": str(e),
-                    "evaluator_results": None
-                })
-    
-    # Aggregate results and create final experiment result
-    return _aggregate_experiment_results(results, context)
-```
-
-#### 4.3 Enhanced Experiment Run Creation
-```python
-def create_experiment_run(
     name: str,
     project: str,
     dataset_id: str,
-    configuration: Dict[str, Any],
+    event_ids: Optional[List[str]] = None,
+    configuration: Optional[Dict[str, Any]] = None,
     metadata: Optional[Dict[str, Any]] = None,
-    client: Optional[HoneyHive] = None
-) -> Optional[ExperimentRun]:
+) -> Dict[str, Any]:
     """
-    Create a complete experiment run with proper metadata linking.
-    """
-```
-
-#### 4.4 Experiment Run Results
-```python
-def get_experiment_results(
-    run_id: str,
-    client: Optional[HoneyHive] = None
-) -> Optional[ExperimentResultResponse]:
-    """
-    Retrieve experiment run results from HoneyHive platform.
-    """
-```
-
-#### 4.5 Experiment Comparison
-```python
-def compare_experiments(
-    run_ids: List[str],
-    client: Optional[HoneyHive] = None
-) -> Optional[ExperimentComparisonResponse]:
-    """
-    Compare multiple experiment runs for performance analysis.
-    """
-```
-
-### 5. Enhanced Evaluator Framework
-
-#### 5.1 Using Official Generated Models for Results
-
-Instead of custom dataclasses, leverage existing generated models:
-
-```python
-# src/honeyhive/experiments/evaluators.py
-from honeyhive.models.generated import (
-    ExperimentResultResponse,    # For complete experiment results
-    Datapoint1,                  # For individual datapoint results  
-    Metrics,                     # For aggregated metrics
-    Detail,                      # For individual metric details
-    EvaluationRun,              # For run information
-)
-
-# Type aliases for clarity
-EvaluatorResult = Detail                    # Use official Detail model for evaluator results
-ExperimentRunResult = ExperimentResultResponse  # Use official response model
-```
-
-#### 5.2 Evaluator Result Processing
-
-Process evaluator results using official models:
-
-```python
-def process_evaluator_result(
-    evaluator_name: str,
-    score: Union[float, int, bool, str],
-    explanation: Optional[str] = None,
-    metadata: Optional[Dict[str, Any]] = None
-) -> Detail:
-    """Convert evaluator output to official Detail model."""
-    return Detail(
-        metric_name=evaluator_name,
-        value=score,
-        explanation=explanation,
-        metadata=metadata
-    )
-
-def aggregate_experiment_results(
-    results: List[Dict[str, Any]],
-    context: ExperimentContext,
-    client: HoneyHive
-) -> ExperimentResultResponse:
-    """Aggregate individual results into official ExperimentResultResponse."""
+    Prepare run request data with EXT- transformation.
     
-    # Process individual datapoint results
-    datapoint_results = []
-    all_evaluator_details = []
+    Backend Logic:
+    - If dataset_id starts with "EXT-":
+      - Move to metadata.offline_dataset_id
+      - Set dataset_id = None (prevents FK constraint error)
+    - Otherwise, use dataset_id normally
+    """
+    request_data = {
+        "project": project,
+        "name": name,
+        "event_ids": event_ids or [],  # Backend accepts empty list
+        "configuration": configuration or {},
+        "metadata": metadata or {},
+        "status": "pending",
+    }
     
-    for result in results:
-        if result["status"] == "success":
-            # Create Datapoint1 result using official model
-            datapoint_result = Datapoint1(
-                datapoint_id=result["datapoint_id"],
-                inputs=result["inputs"],
-                outputs=result["outputs"],
-                ground_truth=result.get("ground_truth"),
-                passed=True,  # Determine based on evaluator results
-                metrics=[
-                    process_evaluator_result(
-                        evaluator_name=eval_result.get("evaluator_name", "unknown"),
-                        score=eval_result.get("score", 0),
-                        explanation=eval_result.get("explanation")
-                    )
-                    for eval_result in result.get("evaluator_results", [])
-                ]
-            )
-            datapoint_results.append(datapoint_result)
-            
-            # Collect all evaluator details for aggregation
-            if result.get("evaluator_results"):
-                all_evaluator_details.extend(result["evaluator_results"])
+    # Handle EXT- prefix transformation
+    if dataset_id and dataset_id.startswith("EXT-"):
+        # Store external dataset ID in metadata
+        request_data["metadata"]["offline_dataset_id"] = dataset_id
+        # Clear dataset_id to avoid FK constraint
+        request_data["dataset_id"] = None
+    else:
+        request_data["dataset_id"] = dataset_id
     
-    # Create aggregated metrics using official Metrics model
-    aggregate_metrics = Metrics(
-        details=[
-            process_evaluator_result(
-                evaluator_name=detail.get("evaluator_name", "unknown"),
-                score=detail.get("score", 0),
-                explanation=detail.get("explanation")
-            )
-            for detail in all_evaluator_details
-        ]
-    )
-    
-    # Return official ExperimentResultResponse
-    return ExperimentResultResponse(
-        status="completed",
-        success=len([r for r in results if r["status"] == "success"]) > 0,
-        passed=[r["datapoint_id"] for r in results if r["status"] == "success"],
-        failed=[r["datapoint_id"] for r in results if r["status"] == "failed"],
-        metrics=aggregate_metrics,
-        datapoints=datapoint_results
-    )
+    return request_data
 ```
 
-### 6. Multi-Threading and Performance
+### 4. Tracer Integration (v2.0 CRITICAL)
 
-#### 6.1 Advanced Two-Level Threading System
-The experiment framework leverages the existing advanced multi-threading capabilities:
-
+#### Multi-Instance Pattern
 ```python
-def evaluate_experiment_batch(
-    evaluators: List[Union[str, BaseEvaluator, Callable]],
+# src/honeyhive/experiments/core.py
+from concurrent.futures import ThreadPoolExecutor, as_completed
+from typing import Callable, List, Dict, Any
+from honeyhive.tracer import HoneyHiveTracer
+
+def run_experiment(
+    function: Callable,
     dataset: List[Dict[str, Any]],
-    max_workers: int = 4,
-    run_concurrently: bool = True,
-    context: Optional[ExperimentContext] = None,
-) -> List[Detail]:  # Return list of official Detail models
+    experiment_context: ExperimentContext,
+    api_key: str,
+    max_workers: int = 10,
+) -> List[Dict[str, Any]]:
     """
-    Evaluate experiment batch with advanced two-level threading.
+    Run experiment with tracer multi-instance pattern.
     
-    Level 1: Dataset parallelism (max_workers threads)
-    Level 2: Evaluator parallelism within each dataset thread
+    CRITICAL: Each datapoint gets its OWN tracer instance for isolation.
+    This prevents:
+    - Metadata contamination between datapoints
+    - Race conditions in concurrent execution
+    - Session ID collisions
     """
+    
+    def process_datapoint(datapoint: Dict[str, Any], datapoint_id: str) -> Dict[str, Any]:
+        """Process single datapoint with isolated tracer."""
+        
+        # Create tracer config for this datapoint
+        tracer_config = experiment_context.to_tracer_config(datapoint_id)
+        
+        # Create NEW tracer instance for this datapoint
+        tracer = HoneyHiveTracer(
+            api_key=api_key,
+            **tracer_config
+        )
+        
+        try:
+            # Execute function with tracer active
+            # Tracer automatically adds all experiment metadata to spans!
+            inputs = datapoint.get("inputs", {})
+            ground_truth = datapoint.get("ground_truth")
+            
+            outputs = function(inputs, ground_truth)
+            
+            return {
+                "datapoint_id": datapoint_id,
+                "inputs": inputs,
+                "outputs": outputs,
+                "ground_truth": ground_truth,
+                "status": "success",
+            }
+        except Exception as e:
+            return {
+                "datapoint_id": datapoint_id,
+                "status": "failed",
+                "error": str(e),
+            }
+        finally:
+            # CRITICAL: Flush tracer to ensure all spans sent
+            tracer.flush()
+    
+    # Use ThreadPoolExecutor for I/O-bound concurrent execution
+    results = []
+    with ThreadPoolExecutor(max_workers=max_workers) as executor:
+        # Submit all datapoint executions
+        future_to_datapoint = {}
+        for idx, datapoint in enumerate(dataset):
+            datapoint_id = datapoint.get("id") or f"dp-{idx}"
+            future = executor.submit(process_datapoint, datapoint, datapoint_id)
+            future_to_datapoint[future] = datapoint_id
+        
+        # Collect results as they complete
+        for future in as_completed(future_to_datapoint):
+            datapoint_id = future_to_datapoint[future]
+            try:
+                result = future.result()
+                results.append(result)
+            except Exception as e:
+                results.append({
+                    "datapoint_id": datapoint_id,
+                    "status": "failed",
+                    "error": str(e),
+                })
+    
+    return results
 ```
 
-#### 6.2 Threading Architecture
-- **Dataset Level**: Parallel processing of multiple datapoints
-- **Evaluator Level**: Parallel execution of multiple evaluators per datapoint
-- **Context Isolation**: Proper `contextvars` handling for thread safety
-- **Resource Optimization**: Configurable worker counts for optimal performance
-
-#### 6.3 Performance Characteristics
-- **5x performance improvement** over single-threaded execution
-- **Scalable**: Handles large datasets with multiple evaluators efficiently
-- **Configurable**: Adjustable threading levels based on system capabilities
-- **Thread-safe**: Advanced context isolation and error handling
-
-#### 6.4 Threading Configuration
+#### Why ThreadPoolExecutor (Not Multiprocessing)
 ```python
-# Example: High-performance experiment run
-results = evaluate_experiment_batch(
-    evaluators=["accuracy", "relevance", "coherence", "toxicity"],
-    dataset=large_dataset,  # 1000+ datapoints
-    max_workers=8,          # Dataset-level parallelism
-    run_concurrently=True,   # Enable threading
-    context=experiment_context
-)
+# From tracer documentation analysis:
+
+# ✅ ThreadPoolExecutor is correct for:
+# 1. I/O-bound operations (API calls, LLM inference)
+# 2. Tracer multi-instance isolation (each tracer independent)
+# 3. Shared memory access (less overhead than multiprocessing)
+# 4. Python 3.11+ (GIL improvements for I/O operations)
+
+# ❌ Multiprocessing would be overkill because:
+# 1. Experiment execution is I/O-bound, not CPU-bound
+# 2. Serialization overhead for multiprocessing is significant
+# 3. Tracer instances already provide isolation
+# 4. Thread safety is sufficient (no shared mutable state)
 ```
 
-### 7. GitHub Integration Support
+### 5. Result Aggregation (v2.0 CRITICAL - Use Backend!)
 
-#### 7.1 GitHub Actions Integration
+#### Result Endpoint Integration
 ```python
-def setup_github_experiment_workflow(
-    project: str,
-    dataset_id: str,
-    evaluators: List[str],
-    thresholds: Dict[str, float]
-) -> str:
-    """
-    Generate GitHub Actions workflow for automated experiment runs.
-    """
-```
+# src/honeyhive/experiments/results.py
+from typing import Optional, Dict, Any
+from honeyhive.api.client import HoneyHive
+from honeyhive.experiments.models import ExperimentResultSummary, RunComparisonResult
 
-#### 7.2 Performance Thresholds
-```python
-def set_performance_thresholds(
+def get_run_result(
+    client: HoneyHive,
     run_id: str,
-    thresholds: Dict[str, float],
-    client: Optional[HoneyHive] = None
-) -> bool:
+    aggregate_function: str = "average"
+) -> ExperimentResultSummary:
     """
-    Set performance thresholds for experiment runs.
-    """
-```
-
-## Data Model Integration
-
-### Official HoneyHive Data Models
-
-The implementation will use the official data models from the OpenAPI specification:
-
-#### Experiment Results (`ExperimentResultResponse`)
-```python
-class ExperimentResultResponse(BaseModel):
-    status: Optional[str] = None
-    success: Optional[bool] = None
-    passed: Optional[List[str]] = None
-    failed: Optional[List[str]] = None
-    metrics: Optional[Metrics] = None
-    datapoints: Optional[List[Datapoint1]] = None
-```
-
-#### Experiment Comparison (`ExperimentComparisonResponse`)
-```python
-class ExperimentComparisonResponse(BaseModel):
-    metrics: Optional[List[Metric2]] = None
-    commonDatapoints: Optional[List[str]] = None
-    event_details: Optional[List[EventDetail]] = None
-    old_run: Optional[OldRun] = None
-    new_run: Optional[NewRun] = None
-```
-
-#### Supporting Models
-- **Metrics**: Aggregated metric information with details
-- **Detail**: Individual metric details with aggregation
-- **Datapoint1**: Individual datapoint results
-- **Metric2**: Comparison-specific metric information
-- **EventDetail**: Event presence and type information
-- **OldRun/NewRun**: Run information for comparison
-
-### Data Model Usage
-
-#### Results Retrieval
-```python
-def get_experiment_results(run_id: str) -> Optional[ExperimentResultResponse]:
-    """Retrieve results using official data model."""
-    response = api.get_run(run_id)
-    return response.results  # Returns ExperimentResultResponse
-```
-
-#### Results Analysis
-```python
-def analyze_results(results: ExperimentResultResponse) -> Dict[str, Any]:
-    """Analyze results using official data structure."""
-    analysis = {
-        "total_metrics": len(results.metrics.details) if results.metrics else 0,
-        "passed_datapoints": len(results.passed) if results.passed else 0,
-        "failed_datapoints": len(results.failed) if results.failed else 0,
-        "success_rate": results.success
-    }
-    return analysis
-```
-
-#### Comparison Analysis
-```python
-def analyze_comparison(comparison: ExperimentComparisonResponse) -> Dict[str, Any]:
-    """Analyze comparison results using official data structure."""
-    if not comparison.metrics:
-        return {"error": "No comparison data"}
+    Get aggregated experiment result from backend.
     
-    analysis = {
-        "total_metrics": len(comparison.metrics),
-        "improved": sum(1 for m in comparison.metrics if m.improved_count),
-        "degraded": sum(1 for m in comparison.metrics if m.degraded_count),
-        "stable": sum(1 for m in comparison.metrics if m.same_count)
-    }
-    return analysis
+    Backend Endpoint: GET /runs/:run_id/result?aggregate_function=<function>
+    
+    Backend computes:
+    - Pass/fail status for each datapoint
+    - Metric aggregations (average, sum, min, max)
+    - Composite metrics
+    - Overall run status
+    
+    DO NOT compute these client-side!
+    
+    Args:
+        client: HoneyHive API client
+        run_id: Experiment run ID
+        aggregate_function: "average", "sum", "min", "max"
+    
+    Returns:
+        ExperimentResultSummary with all aggregated metrics
+    """
+    # Use existing API client method (may need to add to evaluations.py)
+    response = client.evaluations.get_run_result(
+        run_id=run_id,
+        aggregate_function=aggregate_function
+    )
+    
+    return ExperimentResultSummary(
+        run_id=run_id,
+        status=response.status,
+        success=response.success,
+        passed=response.passed,
+        failed=response.failed,
+        metrics=AggregatedMetrics(**response.metrics.dict()),  # Use fixed model
+        datapoints=response.datapoints,
+    )
+
+def get_run_metrics(
+    client: HoneyHive,
+    run_id: str
+) -> Dict[str, Any]:
+    """
+    Get raw metrics for a run (without aggregation).
+    
+    Backend Endpoint: GET /runs/:run_id/metrics
+    
+    Returns:
+        Raw metrics data from backend
+    """
+    return client.evaluations.get_run_metrics(run_id=run_id)
+
+def compare_runs(
+    client: HoneyHive,
+    new_run_id: str,
+    old_run_id: str,
+    aggregate_function: str = "average"
+) -> RunComparisonResult:
+    """
+    Compare two experiment runs using backend endpoint.
+    
+    Backend Endpoint: GET /runs/:new_run_id/compare-with/:old_run_id
+    
+    Backend computes:
+    - Common datapoints between runs
+    - Metric deltas (new - old)
+    - Percent changes ((new - old) / old * 100)
+    - Statistical significance (if applicable)
+    
+    DO NOT compute these client-side!
+    
+    Args:
+        client: HoneyHive API client
+        new_run_id: New experiment run ID
+        old_run_id: Old experiment run ID
+        aggregate_function: "average", "sum", "min", "max"
+    
+    Returns:
+        RunComparisonResult with delta calculations
+    """
+    response = client.evaluations.compare_runs(
+        new_run_id=new_run_id,
+        old_run_id=old_run_id,
+        aggregate_function=aggregate_function
+    )
+    
+    return RunComparisonResult(
+        new_run_id=new_run_id,
+        old_run_id=old_run_id,
+        common_datapoints=response.common_datapoints,
+        new_only_datapoints=response.new_only_datapoints,
+        old_only_datapoints=response.old_only_datapoints,
+        metric_deltas=response.metric_deltas,
+    )
 ```
 
-## Same-Day Implementation Plan - Release Candidate
+#### ❌ NO Client-Side Aggregation
+```python
+# ❌ DELETE THIS PATTERN (from v1.0 spec):
+def aggregate_experiment_results(results: List[Dict]) -> Dict:
+    """DO NOT IMPLEMENT - Backend handles this!"""
+    raise NotImplementedError(
+        "Client-side aggregation is not supported. "
+        "Use get_run_result() to retrieve backend-computed aggregates."
+    )
 
-### Phase 1: Core Setup (Hours 0-1) - 9:00-10:00 AM
-1. ✅ Create `src/honeyhive/experiments/` module structure
-2. ✅ Implement backward compatibility aliases in `evaluation/`
-3. ✅ Set up imports using generated models only
-4. ✅ Basic ExperimentContext class implementation
+# ✅ CORRECT PATTERN (v2.0):
+# 1. Execute function against dataset with tracer
+# 2. Run evaluators (they send metrics to backend via events)
+# 3. Call get_run_result() to retrieve aggregated results from backend
+```
 
-### Phase 2: Core Functionality (Hours 1-3) - 10:00 AM-12:00 PM  
-1. ✅ Extend tracer for experiment metadata injection
-2. ✅ Implement main `evaluate()` function signature
-3. ✅ Basic function execution against dataset
-4. ✅ Integration with existing multi-threading capabilities
+### 6. Complete Evaluate Function (v2.0)
 
-### Phase 3: Dataset & Results (Hours 3-5) - 1:00-3:00 PM
-1. ✅ External dataset creation with `EXT-` prefix
-2. ✅ Result aggregation using ExperimentResultResponse
-3. ✅ API integration for experiment run creation
-4. ✅ Backward compatibility validation
+```python
+# src/honeyhive/experiments/core.py
+from typing import Callable, Optional, List, Dict, Any
+import uuid
+from honeyhive.api.client import HoneyHive
+from honeyhive.experiments.utils import prepare_external_dataset, prepare_run_request_data
+from honeyhive.experiments.results import get_run_result
+from honeyhive.experiments.evaluators import run_evaluators
+from honeyhive.experiments.models import ExperimentResultSummary
 
-### Phase 4: Testing & Validation (Hours 5-7) - 3:00-5:00 PM
-1. ✅ Unit test implementation for core functionality
-2. ✅ Integration test for end-to-end workflow
-3. ✅ Performance validation with existing benchmarks
-4. ✅ Type safety and lint validation
+def evaluate(
+    function: Callable,
+    dataset: Optional[List[Dict[str, Any]]] = None,
+    dataset_id: Optional[str] = None,
+    evaluators: Optional[List[Callable]] = None,
+    api_key: Optional[str] = None,
+    project: Optional[str] = None,
+    name: Optional[str] = None,
+    max_workers: int = 10,
+    aggregate_function: str = "average",
+) -> ExperimentResultSummary:
+    """
+    Run experiment evaluation with backend aggregation.
+    
+    Workflow:
+    1. Prepare dataset (external or HoneyHive)
+    2. Create experiment run via API
+    3. Execute function against dataset with tracer multi-instance
+    4. Run evaluators (send metrics via events)
+    5. Retrieve aggregated results from backend
+    
+    Args:
+        function: User function to execute
+        dataset: External dataset (list of dicts)
+        dataset_id: HoneyHive dataset ID
+        evaluators: List of evaluator functions
+        api_key: HoneyHive API key
+        project: HoneyHive project
+        name: Experiment run name
+        max_workers: ThreadPool size
+        aggregate_function: "average", "sum", "min", "max"
+    
+    Returns:
+        ExperimentResultSummary with backend-computed aggregates
+    """
+    # Initialize client
+    client = HoneyHive(api_key=api_key, project=project)
+    
+    # Step 1: Prepare dataset
+    if dataset is not None:
+        # External dataset
+        dataset_id, datapoint_ids = prepare_external_dataset(dataset)
+        dataset_list = dataset
+    elif dataset_id is not None:
+        # Fetch HoneyHive dataset
+        ds_response = client.datasets.get_dataset(dataset_id)
+        dataset_list = [dp.dict() for dp in ds_response.datapoints]
+        datapoint_ids = [dp.id for dp in ds_response.datapoints]
+    else:
+        raise ValueError("Provide either 'dataset' or 'dataset_id'")
+    
+    # Step 2: Create experiment run
+    run_id = str(uuid.uuid4())
+    run_data = prepare_run_request_data(
+        run_id=run_id,
+        name=name or f"experiment-{run_id[:8]}",
+        project=client.project,
+        dataset_id=dataset_id,
+        event_ids=[],  # Empty initially
+        configuration={
+            "function": function.__name__,
+            "evaluators": [e.__name__ for e in (evaluators or [])],
+            "max_workers": max_workers,
+        },
+    )
+    
+    run_response = client.evaluations.create_run(**run_data)
+    run_id = run_response.run_id or run_id
+    
+    # Step 3: Create experiment context
+    context = ExperimentContext(
+        run_id=run_id,
+        dataset_id=dataset_id,
+        project=client.project,
+        source="evaluation",
+    )
+    
+    # Step 4: Execute experiment with tracer multi-instance
+    execution_results = run_experiment(
+        function=function,
+        dataset=dataset_list,
+        experiment_context=context,
+        api_key=client.api_key,
+        max_workers=max_workers,
+    )
+    
+    # Step 5: Run evaluators (if provided)
+    if evaluators:
+        run_evaluators(
+            execution_results=execution_results,
+            evaluators=evaluators,
+            experiment_context=context,
+            api_key=client.api_key,
+            max_workers=max_workers,
+        )
+    
+    # Step 6: Retrieve aggregated results from backend
+    result_summary = get_run_result(
+        client=client,
+        run_id=run_id,
+        aggregate_function=aggregate_function,
+    )
+    
+    return result_summary
+```
 
-### Phase 5: Documentation & Release (Hours 7-9) - 5:00-7:00 PM
-1. ✅ Update existing examples to use new experiment API
-2. ✅ Migration guide creation
-3. ✅ API documentation updates
-4. ✅ Release candidate preparation
+### 7. Backward Compatibility Layer
 
-### Parallel Tasks (Throughout Day)
-- ✅ **Continuous testing**: Run test suite after each major change
-- ✅ **Documentation updates**: Real-time doc updates as features complete
-- ✅ **Backward compatibility**: Verify existing code works throughout
+```python
+# src/honeyhive/evaluation/__init__.py
+"""
+Backward compatibility layer for evaluation module.
 
-## Backward Compatibility
+This module maintains 100% backward compatibility with existing code
+while redirecting to the new experiments module.
+"""
+import warnings
+from typing import TYPE_CHECKING
 
-### Required Compatibility
-- All existing evaluation decorators must continue to work
-- Current API endpoints must remain functional
-- Existing data models must be accessible through aliases
-- Current examples must run without modification
-- **Multi-threading capabilities must be preserved and enhanced**
+# Import everything from experiments module
+from honeyhive.experiments import (
+    evaluate as _evaluate,
+    run_experiment as _run_experiment,
+    ExperimentContext as _ExperimentContext,
+    get_run_result as _get_run_result,
+    compare_runs as _compare_runs,
+)
 
-### Migration Path
-1. **Immediate**: New functionality available alongside existing
-2. **Short-term**: Deprecation warnings for old terminology
-3. **Long-term**: Gradual migration to new experiment framework
+# Import generated models directly
+from honeyhive.models.generated import (
+    EvaluationRun as _EvaluationRun,
+    ExperimentResultResponse as _ExperimentResultResponse,
+)
+
+# Deprecated aliases with warnings
+def evaluate(*args, **kwargs):
+    """Backward compatibility wrapper for evaluate()."""
+    warnings.warn(
+        "honeyhive.evaluation.evaluate is deprecated. "
+        "Use honeyhive.experiments.evaluate instead.",
+        DeprecationWarning,
+        stacklevel=2,
+    )
+    return _evaluate(*args, **kwargs)
+
+class EvaluationContext(_ExperimentContext):
+    """Backward compatibility alias for ExperimentContext."""
+    def __init__(self, *args, **kwargs):
+        warnings.warn(
+            "EvaluationContext is deprecated. "
+            "Use ExperimentContext instead.",
+            DeprecationWarning,
+            stacklevel=2,
+        )
+        super().__init__(*args, **kwargs)
+
+# Direct aliases (no warnings for model imports)
+EvaluationRun = _EvaluationRun
+EvaluationResult = _ExperimentResultResponse
+
+__all__ = [
+    "evaluate",
+    "EvaluationContext",
+    "EvaluationRun",
+    "EvaluationResult",
+    # ... all other exports
+]
+```
+
+### 8. API Client Extensions
+
+```python
+# src/honeyhive/api/evaluations.py (extend existing)
+
+class EvaluationsAPI:
+    """Evaluation runs API client (already exists)."""
+    
+    # ... existing methods ...
+    
+    # Add result endpoints (v2.0)
+    def get_run_result(
+        self,
+        run_id: str,
+        aggregate_function: str = "average"
+    ) -> Dict[str, Any]:
+        """
+        Get aggregated result for a run.
+        
+        Backend: GET /runs/:run_id/result?aggregate_function=<function>
+        """
+        return self._client.get(
+            f"/runs/{run_id}/result",
+            params={"aggregate_function": aggregate_function}
+        )
+    
+    def get_run_metrics(self, run_id: str) -> Dict[str, Any]:
+        """
+        Get raw metrics for a run.
+        
+        Backend: GET /runs/:run_id/metrics
+        """
+        return self._client.get(f"/runs/{run_id}/metrics")
+    
+    def compare_runs(
+        self,
+        new_run_id: str,
+        old_run_id: str,
+        aggregate_function: str = "average"
+    ) -> Dict[str, Any]:
+        """
+        Compare two runs.
+        
+        Backend: GET /runs/:new_run_id/compare-with/:old_run_id
+        """
+        return self._client.get(
+            f"/runs/{new_run_id}/compare-with/{old_run_id}",
+            params={"aggregate_function": aggregate_function}
+        )
+```
+
+## Implementation Phases
+
+### Phase 1: Core Infrastructure (Day 1 Morning)
+1. ✅ Create `experiments/models.py` with extended models
+2. ✅ Create `experiments/utils.py` with EXT- prefix logic
+3. ✅ Create `experiments/results.py` with backend endpoint functions
+4. ✅ Create `experiments/__init__.py` with imports and aliases
+
+### Phase 2: Tracer Integration (Day 1 Afternoon)
+1. ✅ Create `experiments/core.py` with run_experiment()
+2. ✅ Implement tracer multi-instance pattern
+3. ✅ Test concurrent execution with isolated tracers
+4. ✅ Validate metadata propagation
+
+### Phase 3: Evaluator Framework (Day 1 Evening)
+1. ✅ Port evaluators from main branch
+2. ✅ Adapt to tracer multi-instance architecture
+3. ✅ Test evaluator execution
+4. ✅ Validate metrics sent to backend
+
+### Phase 4: Integration (Day 2 Morning)
+1. ✅ Implement complete evaluate() function
+2. ✅ Integrate result endpoint calls
+3. ✅ Test end-to-end workflow
+4. ✅ Validate EXT- prefix transformation
+
+### Phase 5: Backward Compatibility (Day 2 Afternoon)
+1. ✅ Create evaluation/__init__.py wrapper
+2. ✅ Add deprecation warnings
+3. ✅ Test all old imports work
+4. ✅ Validate no breaking changes
+
+### Phase 6: Testing & Documentation (Day 2 Evening)
+1. ✅ Write comprehensive tests
+2. ✅ Update documentation
+3. ✅ Create migration guide
+4. ✅ Prepare release candidate
 
 ## Testing Requirements
 
-### Mandatory Testing Standards Compliance
-
-This implementation MUST follow HoneyHive Python SDK testing standards:
-
-#### Testing Requirements - MANDATORY
-- **Zero Failing Tests Policy**: ALL commits must have 100% passing tests  
-- **Coverage**: Minimum 80% project-wide (enforced), 70% individual files
-- **tox Orchestration**: All testing through tox environments
-
-```bash
-# Required test execution before any commit
-tox -e unit           # Unit tests (MUST pass 100%)
-tox -e integration    # Integration tests (MUST pass 100%)
-tox -e lint          # Static analysis (MUST pass 100%)
-tox -e format        # Code formatting (MUST pass 100%)
-tox -e py311 -e py312 -e py313  # All Python versions (MUST pass)
-```
-
 ### Unit Tests
-- 100% coverage for new experiment functionality
-- Backward compatibility tests for existing features
-- Error handling and edge case coverage
-- Data model validation tests using official models
-- **Multi-threading functionality validation**
-- **Main evaluate function execution testing**
-- **Type hint validation for all new functions**
+- ✅ EXT- prefix generation
+- ✅ External dataset preparation
+- ✅ Tracer config generation
+- ✅ Model extensions (Metrics, Status)
 
 ### Integration Tests
-- End-to-end experiment run workflow
-- **Function execution against dataset validation**
-- Metadata linking validation
-- External dataset creation and management
-- API integration testing with official models
-- **Multi-threading performance and thread safety tests**
+- ✅ Tracer multi-instance isolation
+- ✅ Backend result endpoint integration
+- ✅ Backend comparison endpoint integration
+- ✅ EXT- prefix transformation
 
-### Performance Tests
-- Large dataset handling (1000+ datapoints)
-- Concurrent experiment runs  
-- Memory usage optimization
-- **Multi-threading scalability testing**
-- **Thread safety validation under load**
-- **Function execution performance under load**
+### End-to-End Tests
+- ✅ Complete evaluate() workflow
+- ✅ External dataset evaluation
+- ✅ HoneyHive dataset evaluation
+- ✅ Evaluator execution
+- ✅ Result aggregation
+- ✅ Run comparison
+
+### Backward Compatibility Tests
+- ✅ All old imports work
+- ✅ Deprecation warnings logged
+- ✅ No functional changes
+- ✅ Existing tests pass
 
 ## Standards Compliance
 
-### Technical Requirements Alignment
+### Agent OS Standards
+- ✅ Generated models usage (85% coverage)
+- ✅ Backward compatibility maintained
+- ✅ Comprehensive testing (>90%)
+- ✅ Documentation complete
 
-This specification aligns with all HoneyHive Python SDK technical standards:
-
-#### Python & Type Safety
-- **Python 3.11+**: Full compatibility with supported versions (3.11, 3.12, 3.13)
-- **Type Hints**: ALL functions, methods, and class attributes properly typed
-- **Enum Usage**: Proper EventType enum usage in all documentation examples
-- **Import Validation**: Complete imports in all code examples
-- **Mypy Compliance**: All examples pass mypy validation
-
-#### Code Quality Standards
-- **Black Formatting**: 88-character lines, automatic formatting
-- **isort**: Import sorting with black profile
-- **Pylint**: Static analysis compliance
-- **Pre-commit**: Automated quality enforcement
-
-#### Documentation Standards  
-- **Divio System**: Follows TUTORIAL/HOW-TO/REFERENCE/EXPLANATION structure
-- **Working Examples**: All code examples tested and functional
-- **Type Safety**: EventType enums, complete imports, mypy validation
-- **Accessibility**: WCAG 2.1 AA compliance
-
-#### API Design Standards
-- **OpenAPI 3.0**: Full specification compliance
-- **REST Principles**: RESTful API design
-- **Pydantic Models**: Request/response validation using official models
-- **OpenTelemetry**: W3C trace context standard compliance
-
-### Environment & Configuration
-- **Environment Variables**: HH_* prefix convention maintained
-- **Configuration Hierarchy**: Constructor > Env > Defaults pattern
-- **Graceful Degradation**: No failures when HoneyHive API unavailable
-
-### Migration Strategy
-
-#### Backwards Compatibility Requirements
-- All existing evaluation decorators continue working
-- Current API endpoints remain functional  
-- Existing data models accessible through aliases
-- Current examples run without modification
-- **Multi-threading capabilities preserved and enhanced**
-
-#### Rollout Plan
-1. **Alpha**: Internal testing with new experiment framework
-2. **Beta**: Select user testing with feature flags
-3. **GA**: Full release with migration documentation
-4. **Deprecation**: Gradual phase-out of old terminology (12+ months)
-
-## Documentation Updates
-
-### Required Documentation
-1. **Migration Guide**: From evaluation to experiment framework
-2. **Experiment Tutorials**: Complete workflow examples
-3. **API Reference**: Updated with new terminology and data models
-4. **Integration Guides**: GitHub Actions and CI/CD setup
-5. **Performance Guide**: Multi-threading configuration and optimization
-
-### Documentation Standards
-- Follow Divio documentation system
-- Include working code examples
-- Provide step-by-step tutorials
-- Include troubleshooting guides
-- **Document multi-threading best practices and configuration**
-
-## Success Criteria
-
-### Functional Requirements
-- [ ] All experiment terminology properly implemented
-- [ ] Metadata linking working on all traced events
-- [ ] Client-side dataset support functional
-- [ ] **Main evaluate function executes user functions against datasets**
-- [ ] Experiment run management complete
-- [ ] GitHub integration working
-- [ ] Backward compatibility maintained
-- [ ] Official data models properly integrated
-- [ ] **Advanced multi-threading capabilities preserved and enhanced**
-
-### Quality Requirements
-- [ ] 100% test coverage for new experiment functionality
-- [ ] All tests passing across Python versions
-- [ ] Documentation complete and accurate
-- [ ] Performance benchmarks met
-- [ ] Security review completed
-- [ ] **Multi-threading performance validated**
-
-### User Experience Requirements
-- [ ] Smooth migration path for existing users
-- [ ] Clear examples and tutorials
-- [ ] Intuitive API design
-- [ ] Comprehensive error messages
-- [ ] Performance monitoring and alerts
-- [ ] **Multi-threading configuration guidance**
-
-## Risk Assessment
-
-### High Risk
-- **Breaking Changes**: Potential for breaking existing integrations
-- **Performance Impact**: Metadata injection on all events
-- **Complexity**: Increased complexity of experiment management
-- **Multi-threading**: Ensuring thread safety in complex scenarios
-- **Function Execution**: Ensuring user functions execute safely and efficiently
-
-### Mitigation Strategies
-- **Gradual Migration**: Phased implementation with backward compatibility
-- **Performance Testing**: Comprehensive benchmarking before release
-- **User Feedback**: Early access program for key users
-- **Thread Safety**: Comprehensive testing of multi-threading scenarios
-- **Function Safety**: Sandboxed execution and comprehensive error handling
-
-## Dependencies
-
-### Internal Dependencies
-- Tracer framework updates
-- API client enhancements
-- Data model modifications
-- Test framework updates
-- **Multi-threading framework preservation**
-
-### External Dependencies
-- HoneyHive platform API compatibility
-- GitHub Actions integration
-- Performance monitoring tools
-
-## Timeline
-
-Same-day implementation (10.25-hour critical path):
-
-- **Hours 0-3**: Core terminology and metadata linking (Phases 1-2)
-- **Hours 3-7**: Dataset support and experiment management (Phases 3-4)  
-- **Hours 7-9**: GitHub integration (Phase 5)
-- **Hours 9-10.25**: Testing, documentation, and release preparation (Phase 6)
-
-## Next Steps
-
-1. **Immediate**: Begin Phase 1 module structure setup
-2. **Hour 1**: Complete core module refactoring and begin tracer integration
-3. **Ongoing**: Continuous testing and validation throughout implementation
-4. **Hour 10**: Final testing and release candidate preparation
+### HoneyHive Standards
+- ✅ Backend aggregation used (not client-side)
+- ✅ EXT- prefix transformation implemented
+- ✅ Tracer multi-instance pattern followed
+- ✅ Metadata propagation automatic
 
 ---
 
-**Document Version**: 1.0  
-**Last Updated**: 2025-09-04  
-**Next Review**: 2025-09-10
+**Document Version**: 2.0  
+**Last Updated**: 2025-10-02  
+**Next Review**: After Phase 1 implementation  
+**Analysis References**: 
+- BACKEND_VALIDATION_ANALYSIS.md
+- TRACER_INTEGRATION_ANALYSIS.md
+- RESULT_ENDPOINTS_ANALYSIS.md
+- GENERATED_MODELS_VALIDATION.md
+- CHANGELOG.md
+

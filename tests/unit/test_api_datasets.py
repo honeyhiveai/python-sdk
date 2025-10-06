@@ -338,10 +338,14 @@ class TestDatasetsAPIGetDataset:
 
         mock_response = Mock()
         mock_response.json.return_value = {
-            "id": "dataset-123",
-            "project": "test-project",
-            "name": "retrieved-dataset",
-            "description": "Retrieved dataset description",
+            "testcases": [
+                {
+                    "id": "dataset-123",
+                    "project": "test-project",
+                    "name": "retrieved-dataset",
+                    "description": "Retrieved dataset description",
+                }
+            ]
         }
 
         with patch.object(mock_client, "request", return_value=mock_response):
@@ -355,7 +359,7 @@ class TestDatasetsAPIGetDataset:
             assert result.description == "Retrieved dataset description"
 
             mock_client.request.assert_called_once_with(
-                "GET", f"/datasets/{dataset_id}"
+                "GET", "/datasets", params={"dataset_id": dataset_id}
             )
 
     @pytest.mark.asyncio
@@ -367,10 +371,14 @@ class TestDatasetsAPIGetDataset:
 
         mock_response = Mock()
         mock_response.json.return_value = {
-            "id": "async-dataset-456",
-            "project": "async-project",
-            "name": "async-retrieved-dataset",
-            "description": "Async retrieved dataset",
+            "testcases": [
+                {
+                    "id": "async-dataset-456",
+                    "project": "async-project",
+                    "name": "async-retrieved-dataset",
+                    "description": "Async retrieved dataset",
+                }
+            ]
         }
 
         with patch.object(mock_client, "request_async", return_value=mock_response):
@@ -384,7 +392,7 @@ class TestDatasetsAPIGetDataset:
             assert result.description == "Async retrieved dataset"
 
             mock_client.request_async.assert_called_once_with(
-                "GET", f"/datasets/{dataset_id}"
+                "GET", "/datasets", params={"dataset_id": dataset_id}
             )
 
 
@@ -398,7 +406,7 @@ class TestDatasetsAPIListDatasets:
 
         mock_response = Mock()
         mock_response.json.return_value = {
-            "datasets": [
+            "testcases": [
                 {"id": "dataset-1", "name": "Dataset 1", "project": "project-1"},
                 {"id": "dataset-2", "name": "Dataset 2", "project": "project-2"},
             ]
@@ -441,7 +449,7 @@ class TestDatasetsAPIListDatasets:
                         },
                     ],
                     Dataset,
-                    "datasets",
+                    "testcases",
                 )
 
     def test_list_datasets_with_project_filter(self, mock_client: Mock) -> None:
@@ -779,12 +787,12 @@ class TestDatasetsAPIDeleteDataset:
                     mock_create_context.assert_called_once_with(
                         operation="delete_dataset",
                         method="DELETE",
-                        path=f"/datasets/{dataset_id}",
+                        path="/datasets",
                         additional_context={"dataset_id": dataset_id},
                     )
 
                     mock_client.request.assert_called_once_with(
-                        "DELETE", f"/datasets/{dataset_id}"
+                        "DELETE", "/datasets", params={"dataset_id": dataset_id}
                     )
 
     def test_delete_dataset_failure(self, mock_client: Mock) -> None:
@@ -815,7 +823,7 @@ class TestDatasetsAPIDeleteDataset:
                     assert result is False
 
                     mock_client.request.assert_called_once_with(
-                        "DELETE", f"/datasets/{dataset_id}"
+                        "DELETE", "/datasets", params={"dataset_id": dataset_id}
                     )
 
     @pytest.mark.asyncio
@@ -851,12 +859,12 @@ class TestDatasetsAPIDeleteDataset:
                     mock_create_context.assert_called_once_with(
                         operation="delete_dataset_async",
                         method="DELETE",
-                        path=f"/datasets/{dataset_id}",
+                        path="/datasets",
                         additional_context={"dataset_id": dataset_id},
                     )
 
                     mock_client.request_async.assert_called_once_with(
-                        "DELETE", f"/datasets/{dataset_id}"
+                        "DELETE", "/datasets", params={"dataset_id": dataset_id}
                     )
 
     @pytest.mark.asyncio
@@ -890,7 +898,7 @@ class TestDatasetsAPIDeleteDataset:
                     assert result is False
 
                     mock_client.request_async.assert_called_once_with(
-                        "DELETE", f"/datasets/{dataset_id}"
+                        "DELETE", "/datasets", params={"dataset_id": dataset_id}
                     )
 
 
@@ -938,7 +946,7 @@ class TestDatasetsAPIEdgeCases:
         datasets_api = DatasetsAPI(mock_client)
 
         mock_response = Mock()
-        mock_response.json.return_value = {"datasets": []}
+        mock_response.json.return_value = {"testcases": []}
 
         with patch.object(mock_client, "request", return_value=mock_response):
             with patch.object(
@@ -951,10 +959,10 @@ class TestDatasetsAPIEdgeCases:
                 assert isinstance(result, list)
                 assert len(result) == 0
 
-                mock_process.assert_called_once_with([], Dataset, "datasets")
+                mock_process.assert_called_once_with([], Dataset, "testcases")
 
     def test_list_datasets_missing_datasets_key(self, mock_client: Mock) -> None:
-        """Test list_datasets when response missing datasets key."""
+        """Test list_datasets when response missing testcases key."""
         # Arrange
         datasets_api = DatasetsAPI(mock_client)
 
@@ -972,8 +980,8 @@ class TestDatasetsAPIEdgeCases:
                 assert isinstance(result, list)
                 assert len(result) == 0
 
-                # Should pass empty list when datasets key is missing
-                mock_process.assert_called_once_with([], Dataset, "datasets")
+                # Should pass empty list when testcases key is missing
+                mock_process.assert_called_once_with([], Dataset, "testcases")
 
     def test_update_dataset_with_partial_data(self, mock_client: Mock) -> None:
         """Test update_dataset with partial update data."""

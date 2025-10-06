@@ -1,20 +1,41 @@
-"""HoneyHive Python SDK - LLM Observability and Evaluation Platform"""
+"""
+HoneyHive Python SDK - LLM Observability and Evaluation Platform
+"""
 
 from .api.client import HoneyHive
 
-# Global config removed - use per-instance configuration instead
-from .evaluation import evaluate_batch  # New threading function
-from .evaluation import evaluate_decorator  # Main @evaluate decorator
-from .evaluation import evaluate_with_evaluators  # Enhanced with threading
+# Evaluation module (deprecated, for backward compatibility)
 from .evaluation import (
     BaseEvaluator,
     EvaluationContext,
     EvaluationResult,
     aevaluator,
-    create_evaluation_run,
     evaluate,
     evaluator,
-    get_evaluator,
+)
+
+# Experiments module (new, recommended)
+from .experiments import (
+    AggregatedMetrics,
+    EvalResult,
+    EvalSettings,
+    EvaluatorSettings,
+    ExperimentContext,
+    ExperimentResultSummary,
+    ExperimentRun,
+    ExperimentRunStatus,
+    RunComparisonResult,
+)
+from .experiments import aevaluator as exp_aevaluator
+from .experiments import (
+    compare_runs,
+)
+from .experiments import evaluate as exp_evaluate  # Core functionality
+from .experiments import evaluator as exp_evaluator
+from .experiments import (
+    get_run_metrics,
+    get_run_result,
+    run_experiment,
 )
 from .tracer import (
     HoneyHiveTracer,
@@ -39,7 +60,9 @@ __version__ = "0.1.0rc2"
 # Intentional API export duplication between main __init__.py and tracer/__init__.py
 # Both modules need to export the same public API symbols for user convenience
 __all__ = [
+    # Core client
     "HoneyHive",
+    # Tracer
     "HoneyHiveTracer",
     "trace",
     "atrace",
@@ -48,18 +71,28 @@ __all__ = [
     "enrich_span",
     "flush",
     "set_default_tracer",
+    # Experiments (new, recommended)
+    "run_experiment",
+    "ExperimentContext",
+    "ExperimentRunStatus",
+    "ExperimentResultSummary",
+    "AggregatedMetrics",
+    "RunComparisonResult",
+    "ExperimentRun",
+    "get_run_result",
+    "get_run_metrics",
+    "compare_runs",
+    "EvalResult",
+    "EvalSettings",
+    "EvaluatorSettings",
+    # Evaluation (deprecated, for backward compatibility)
     "evaluate",
-    "evaluate_batch",  # New threading function
-    "evaluate_decorator",  # Main @evaluate decorator
-    "evaluate_with_evaluators",  # Enhanced with threading
     "evaluator",
     "aevaluator",
-    "get_evaluator",
     "BaseEvaluator",
     "EvaluationResult",
     "EvaluationContext",
-    "create_evaluation_run",
-    # "config" removed - use per-instance configuration instead
+    # Utilities
     "DotDict",
     "get_logger",
     "HoneyHiveLogger",

@@ -22,15 +22,16 @@ class DatasetsAPI(BaseAPI):
         # Handle new API response format that returns insertion result
         if "result" in data and "insertedId" in data["result"]:
             # New format: {"inserted": true, "result": {"insertedId": "...", ...}}
-            _inserted_id = data["result"][
-                "insertedId"
-            ]  # Not used yet, but available for future use
-            # Create a Dataset object with the inserted ID and original request data
-            return Dataset(
+            inserted_id = data["result"]["insertedId"]
+            # Create a Dataset object with the inserted ID
+            dataset = Dataset(
                 project=request.project,
                 name=request.name,
                 description=request.description,
             )
+            # Attach ID as a dynamic attribute for retrieval
+            setattr(dataset, "_id", inserted_id)
+            return dataset
         # Legacy format: direct dataset object
         return Dataset(**data)
 
@@ -43,15 +44,16 @@ class DatasetsAPI(BaseAPI):
         # Handle new API response format that returns insertion result
         if "result" in data and "insertedId" in data["result"]:
             # New format: {"inserted": true, "result": {"insertedId": "...", ...}}
-            _inserted_id = data["result"][
-                "insertedId"
-            ]  # Not used yet, but available for future use
-            # Create a Dataset object with the inserted ID and original request data
-            return Dataset(
+            inserted_id = data["result"]["insertedId"]
+            # Create a Dataset object with the inserted ID
+            dataset = Dataset(
                 project=dataset_data.get("project"),
                 name=dataset_data.get("name"),
                 description=dataset_data.get("description"),
             )
+            # Attach ID as a dynamic attribute for retrieval
+            setattr(dataset, "_id", inserted_id)
+            return dataset
         # Legacy format: direct dataset object
         return Dataset(**data)
 
@@ -68,15 +70,16 @@ class DatasetsAPI(BaseAPI):
         # Handle new API response format that returns insertion result
         if "result" in data and "insertedId" in data["result"]:
             # New format: {"inserted": true, "result": {"insertedId": "...", ...}}
-            _inserted_id = data["result"][
-                "insertedId"
-            ]  # Not used yet, but available for future use
-            # Create a Dataset object with the inserted ID and original request data
-            return Dataset(
+            inserted_id = data["result"]["insertedId"]
+            # Create a Dataset object with the inserted ID
+            dataset = Dataset(
                 project=request.project,
                 name=request.name,
                 description=request.description,
             )
+            # Attach ID as a dynamic attribute for retrieval
+            setattr(dataset, "_id", inserted_id)
+            return dataset
         # Legacy format: direct dataset object
         return Dataset(**data)
 
@@ -91,29 +94,42 @@ class DatasetsAPI(BaseAPI):
         # Handle new API response format that returns insertion result
         if "result" in data and "insertedId" in data["result"]:
             # New format: {"inserted": true, "result": {"insertedId": "...", ...}}
-            _inserted_id = data["result"][
-                "insertedId"
-            ]  # Not used yet, but available for future use
-            # Create a Dataset object with the inserted ID and original request data
-            return Dataset(
+            inserted_id = data["result"]["insertedId"]
+            # Create a Dataset object with the inserted ID
+            dataset = Dataset(
                 project=dataset_data.get("project"),
                 name=dataset_data.get("name"),
                 description=dataset_data.get("description"),
             )
+            # Attach ID as a dynamic attribute for retrieval
+            setattr(dataset, "_id", inserted_id)
+            return dataset
         # Legacy format: direct dataset object
         return Dataset(**data)
 
     def get_dataset(self, dataset_id: str) -> Dataset:
         """Get a dataset by ID."""
-        response = self.client.request("GET", f"/datasets/{dataset_id}")
+        response = self.client.request(
+            "GET", "/datasets", params={"dataset_id": dataset_id}
+        )
         data = response.json()
-        return Dataset(**data)
+        # Backend returns {"testcases": [dataset]}
+        datasets = data.get("testcases", [])
+        if not datasets:
+            raise ValueError(f"Dataset not found: {dataset_id}")
+        return Dataset(**datasets[0])
 
     async def get_dataset_async(self, dataset_id: str) -> Dataset:
         """Get a dataset by ID asynchronously."""
-        response = await self.client.request_async("GET", f"/datasets/{dataset_id}")
+        response = await self.client.request_async(
+            "GET", "/datasets", params={"dataset_id": dataset_id}
+        )
         data = response.json()
-        return Dataset(**data)
+        # Backend returns {"testcases": [dataset]}
+        datasets = data.get("testcases", [])
+        if not datasets:
+            raise ValueError(f"Dataset not found: {dataset_id}")
+        return Dataset(**datasets[0])
 
     def list_datasets(
         self, project: Optional[str] = None, limit: int = 100
@@ -126,7 +142,7 @@ class DatasetsAPI(BaseAPI):
         response = self.client.request("GET", "/datasets", params=params)
         data = response.json()
         return self._process_data_dynamically(
-            data.get("datasets", []), Dataset, "datasets"
+            data.get("testcases", []), Dataset, "testcases"
         )
 
     async def list_datasets_async(
@@ -140,7 +156,7 @@ class DatasetsAPI(BaseAPI):
         response = await self.client.request_async("GET", "/datasets", params=params)
         data = response.json()
         return self._process_data_dynamically(
-            data.get("datasets", []), Dataset, "datasets"
+            data.get("testcases", []), Dataset, "testcases"
         )
 
     def update_dataset(self, dataset_id: str, request: DatasetUpdate) -> Dataset:
@@ -192,12 +208,14 @@ class DatasetsAPI(BaseAPI):
         context = self._create_error_context(
             operation="delete_dataset",
             method="DELETE",
-            path=f"/datasets/{dataset_id}",
+            path="/datasets",
             additional_context={"dataset_id": dataset_id},
         )
 
         with self.error_handler.handle_operation(context):
-            response = self.client.request("DELETE", f"/datasets/{dataset_id}")
+            response = self.client.request(
+                "DELETE", "/datasets", params={"dataset_id": dataset_id}
+            )
             return response.status_code == 200
 
     async def delete_dataset_async(self, dataset_id: str) -> bool:
@@ -205,12 +223,12 @@ class DatasetsAPI(BaseAPI):
         context = self._create_error_context(
             operation="delete_dataset_async",
             method="DELETE",
-            path=f"/datasets/{dataset_id}",
+            path="/datasets",
             additional_context={"dataset_id": dataset_id},
         )
 
         with self.error_handler.handle_operation(context):
             response = await self.client.request_async(
-                "DELETE", f"/datasets/{dataset_id}"
+                "DELETE", "/datasets", params={"dataset_id": dataset_id}
             )
             return response.status_code == 200
