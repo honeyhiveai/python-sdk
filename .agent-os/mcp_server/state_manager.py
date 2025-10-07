@@ -13,7 +13,7 @@ from pathlib import Path
 from typing import Dict, Optional, List, Any
 import uuid
 
-from models import WorkflowState
+from .models import WorkflowState
 
 logger = logging.getLogger(__name__)
 
@@ -62,12 +62,15 @@ class StateManager:
         """
         session_id = str(uuid.uuid4())
         now = datetime.now()
+        
+        # Detect starting phase dynamically (0 or 1)
+        starting_phase = self._detect_starting_phase(workflow_type)
 
         state = WorkflowState(
             session_id=session_id,
             workflow_type=workflow_type,
             target_file=target_file,
-            current_phase=1,
+            current_phase=starting_phase,  # Use detected starting phase
             completed_phases=[],
             phase_artifacts={},
             checkpoints={},
@@ -80,10 +83,45 @@ class StateManager:
         self.save_state(state)
 
         logger.info(
-            f"Created session {session_id} for {workflow_type} on {target_file}"
+            f"Created session {session_id} for {workflow_type} on {target_file} "
+            f"starting at Phase {starting_phase}"
         )
 
         return state
+    
+    def _detect_starting_phase(self, workflow_type: str) -> int:
+        """
+        Detect the starting phase for a workflow.
+        
+        Checks if Phase 0 exists in the workflow structure.
+        
+        Args:
+            workflow_type: Type of workflow
+        
+        Returns:
+            Starting phase number (0 if Phase 0 exists, 1 otherwise)
+        """
+        from pathlib import Path
+        
+        # Try to find workflows directory
+        # Check multiple possible locations
+        possible_paths = [
+            Path(".agent-os") / "workflows" / workflow_type / "phases" / "0",
+            Path("universal") / "workflows" / workflow_type / "phases" / "0",
+        ]
+        
+        # If workflows_base_path is available in environment
+        if hasattr(self, '_workflows_base_path'):
+            possible_paths.insert(0, self._workflows_base_path / workflow_type / "phases" / "0")
+        
+        for phase_0_path in possible_paths:
+            if phase_0_path.exists():
+                logger.info(f"Workflow {workflow_type} has Phase 0 at {phase_0_path}")
+                return 0
+        
+        # Default to Phase 1 for backwards compatibility
+        logger.info(f"Workflow {workflow_type} starts at Phase 1 (no Phase 0 found)")
+        return 1
 
     def save_state(self, state: WorkflowState) -> None:
         """

@@ -7,6 +7,7 @@ lancedb~=0.25.0
 
 # Model Context Protocol
 mcp>=1.0.0
+fastmcp>=2.0.0  # Required for FastMCP server framework
 
 # Local embeddings (default, free, offline)
 sentence-transformers>=2.0.0

@@ -17,6 +17,21 @@ Latest Release Notes
 Current Version Highlights
 ~~~~~~~~~~~~~~~~~~~~~~~~~~
 
+**🔧 NEW: MCP Server Upgrade (v0.1.0rc3)**
+
+* **Agent OS Enhanced Architecture**: Upgraded from prototype to modular product architecture (+5,823 lines)
+* **Workflow Engine**: Phase gating with evidence validation for controlled AI development
+* **File Watcher**: Automatic incremental RAG index updates on content changes
+* **Framework Generator**: Create new AI-assisted workflows programmatically
+* **FastMCP Integration**: Modern server factory with automatic tool registration
+
+**📦 Version Refactoring: Single Source of Truth (v0.1.0rc3)**
+
+* **Consolidated Version Management**: Reduced from 5 hardcoded locations to 1
+* **Dynamic Imports**: Late binding pattern following Agent OS standards
+* **80% Less Maintenance**: Version updates now require editing only 1 file
+* **MyPy Compliance**: Fixed circular import errors with proper import strategy
+
 **📚 NEW: Restructured Evaluation Documentation**
 
 * **Modular How-To Guides**: Created 9 focused problem-oriented guides following Divio Documentation System

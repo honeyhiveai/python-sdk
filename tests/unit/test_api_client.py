@@ -25,6 +25,7 @@ from unittest.mock import AsyncMock, Mock, call, patch
 import httpx
 import pytest
 
+from honeyhive import __version__
 from honeyhive.api.client import HoneyHive, RateLimiter
 from honeyhive.utils.error_handler import APIError
 
@@ -284,7 +285,7 @@ class TestHoneyHiveClientProperties:
 
         assert kwargs["timeout"] == 30.0
         assert kwargs["headers"]["Authorization"] == "Bearer test-api-key-12345"
-        assert kwargs["headers"]["User-Agent"] == "HoneyHive-Python-SDK/0.1.0rc2"
+        assert kwargs["headers"]["User-Agent"] == f"HoneyHive-Python-SDK/{__version__}"
         assert "limits" in kwargs
 
     @patch("honeyhive.api.client.safe_log")

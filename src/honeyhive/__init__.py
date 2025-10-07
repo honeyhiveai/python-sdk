@@ -2,6 +2,9 @@
 HoneyHive Python SDK - LLM Observability and Evaluation Platform
 """
 
+# Version must be defined BEFORE imports to avoid circular import issues
+__version__ = "0.1.0rc3"
+
 from .api.client import HoneyHive
 
 # Evaluation module (deprecated, for backward compatibility)
@@ -53,8 +56,6 @@ from .tracer import (
 # HoneyHiveTracer(config=TracerConfig(...))
 from .utils.dotdict import DotDict
 from .utils.logger import HoneyHiveLogger, get_logger
-
-__version__ = "0.1.0rc2"
 
 # pylint: disable=duplicate-code
 # Intentional API export duplication between main __init__.py and tracer/__init__.py

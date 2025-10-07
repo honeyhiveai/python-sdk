@@ -7,8 +7,6 @@ from typing import Any, Dict, Optional
 import httpx
 
 from ..config.models.api_client import APIClientConfig
-
-# Removed get_config import - using hardcoded version for User-Agent
 from ..utils.connection_pool import ConnectionPool, PoolConfig
 from ..utils.error_handler import ErrorContext, get_error_handler
 from ..utils.logger import HoneyHiveLogger, get_logger, safe_log
@@ -212,11 +210,14 @@ class HoneyHive:  # pylint: disable=too-many-instance-attributes
     @property
     def client_kwargs(self) -> Dict[str, Any]:
         """Get common client configuration."""
+        # Late import to avoid module initialization order issues
+        from .. import __version__
+
         return {
             "headers": {
                 "Authorization": f"Bearer {self.api_key}",
                 "Content-Type": "application/json",
-                "User-Agent": "HoneyHive-Python-SDK/0.1.0rc2",
+                "User-Agent": f"HoneyHive-Python-SDK/{__version__}",
             },
             "timeout": self.timeout,
             "limits": httpx.Limits(

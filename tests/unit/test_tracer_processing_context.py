@@ -14,6 +14,7 @@ from unittest.mock import Mock, PropertyMock, call, patch
 import pytest
 from opentelemetry.trace import StatusCode
 
+from honeyhive import __version__
 from honeyhive.tracer.processing.context import (
     _add_core_context,
     _add_discovery_context,
@@ -908,7 +909,7 @@ class TestPrepareEnrichedAttributes:
         assert result["honeyhive.session_id"] == "test-session"
         assert result["honeyhive.project"] == "test-project"
         assert result["honeyhive.source"] == "test-source"
-        assert result["honeyhive.tracer_version"] == "0.1.0rc2"
+        assert result["honeyhive.tracer_version"] == __version__
 
         mock_add_exp.assert_called_once_with(result, honeyhive_tracer)
         mock_log.assert_called_once()
@@ -927,7 +928,7 @@ class TestPrepareEnrichedAttributes:
             tracer_instance=honeyhive_tracer,
         )
 
-        assert result["honeyhive.tracer_version"] == "0.1.0rc2"
+        assert result["honeyhive.tracer_version"] == __version__
         assert "honeyhive.session_id" not in result
         assert "honeyhive.project" not in result
         assert "honeyhive.source" not in result
@@ -1347,7 +1348,7 @@ class TestIntegrationScenarios:
         assert span_attributes["user.id"] == "12345"
         assert span_attributes["honeyhive.session_id"] == "test-session"
         assert span_attributes["honeyhive.project"] == "test-project"
-        assert span_attributes["honeyhive.tracer_version"] == "0.1.0rc2"
+        assert span_attributes["honeyhive.tracer_version"] == __version__
 
     @patch("honeyhive.tracer.processing.context.safe_log")
     def test_context_propagation_workflow(

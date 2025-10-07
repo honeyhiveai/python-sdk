@@ -11,7 +11,6 @@ Switched from ChromaDB to LanceDB for:
 """
 
 import argparse
-import hashlib
 import json
 import logging
 import sys
@@ -20,11 +19,10 @@ from pathlib import Path
 from typing import Any, Dict, List
 
 import lancedb
-import pyarrow as pa
 
-# Add parent directory to path for imports
+# Add mcp_server to path for imports
 sys.path.insert(0, str(Path(__file__).parent.parent))
-from mcp_servers.chunker import AgentOSChunker, DocumentChunk
+from mcp_server.chunker import AgentOSChunker
 
 logging.basicConfig(
     level=logging.INFO,
@@ -40,6 +38,8 @@ class IndexBuilder:
         self,
         index_path: Path,
         standards_path: Path,
+        usage_path: Path = None,
+        workflows_path: Path = None,
         embedding_provider: str = "local",
         embedding_model: str = "all-MiniLM-L6-v2",
     ):
@@ -49,11 +49,25 @@ class IndexBuilder:
         Args:
             index_path: Path to store vector index (LanceDB directory)
             standards_path: Path to Agent OS standards directory
+            usage_path: Path to Agent OS usage documentation directory (optional)
+            workflows_path: Path to workflows directory with metadata.json files (optional but recommended)
             embedding_provider: Provider for embeddings ("local" default/free or "openai" costs money)
             embedding_model: Model to use (all-MiniLM-L6-v2 for local, text-embedding-3-small for openai)
         """
         self.index_path = index_path
         self.standards_path = standards_path
+        self.usage_path = usage_path
+        self.workflows_path = workflows_path
+        
+        # Build list of source paths to scan
+        self.source_paths = [standards_path]
+        if usage_path and usage_path.exists():
+            self.source_paths.append(usage_path)
+            logger.info(f"Including usage docs from: {usage_path}")
+        if workflows_path and workflows_path.exists():
+            self.source_paths.append(workflows_path)
+            logger.info(f"Including workflow metadata from: {workflows_path}")
+        
         self.embedding_provider = embedding_provider
         self.embedding_model = embedding_model
         
@@ -160,7 +174,8 @@ class IndexBuilder:
             # Delete old chunks for changed files
             logger.info("🗑️  Removing old chunks for changed files...")
             for md_file in changed_files:
-                rel_path = str(md_file.relative_to(self.standards_path))
+                # Calculate relative path from correct base
+                rel_path = str(md_file.relative_to(self.standards_path.parent))
                 try:
                     table.delete(f"file_path = '{rel_path}'")
                     logger.debug(f"Deleted chunks for {rel_path}")
@@ -171,7 +186,10 @@ class IndexBuilder:
                 logger.info("🔄 Force rebuild requested - processing all files")
             else:
                 logger.info("🔄 Initial build - processing all files")
-            files_to_process = list(self.standards_path.rglob("*.md"))
+            # Scan all source directories
+            files_to_process = []
+            for source_path in self.source_paths:
+                files_to_process.extend(list(source_path.rglob("*.md")))
 
         # Initialize chunker
         chunker = AgentOSChunker()
@@ -203,12 +221,16 @@ class IndexBuilder:
                 # Generate embedding
                 embedding = self.generate_embedding(chunk.content)
                 
+                # Convert absolute file path to relative path
+                abs_path = Path(chunk.file_path)
+                rel_file_path = str(abs_path.relative_to(self.standards_path.parent))
+                
                 # Create record with embedding and metadata
                 record = {
                     "chunk_id": chunk.chunk_id,
                     "content": chunk.content,
                     "vector": embedding,
-                    "file_path": chunk.file_path,
+                    "file_path": rel_file_path,
                     "section_header": chunk.section_header,
                     "parent_headers": json.dumps(chunk.metadata.parent_headers),
                     "token_count": chunk.tokens,
@@ -253,9 +275,10 @@ class IndexBuilder:
         
         # Collect all file mtimes for change detection
         file_mtimes = {}
-        for md_file in self.standards_path.rglob("*.md"):
-            rel_path = str(md_file.relative_to(self.standards_path))
-            file_mtimes[rel_path] = md_file.stat().st_mtime
+        for source_path in self.source_paths:
+            for md_file in source_path.rglob("*.md"):
+                rel_path = str(md_file.relative_to(self.standards_path.parent))
+                file_mtimes[rel_path] = md_file.stat().st_mtime
         
         metadata = {
             "build_time": build_time.isoformat(),
@@ -294,7 +317,10 @@ class IndexBuilder:
         
         # No metadata = all files are "changed"
         if not metadata_file.exists():
-            return list(self.standards_path.rglob("*.md"))
+            all_files = []
+            for source_path in self.source_paths:
+                all_files.extend(list(source_path.rglob("*.md")))
+            return all_files
         
         try:
             metadata = json.loads(metadata_file.read_text())
@@ -303,14 +329,15 @@ class IndexBuilder:
             changed_files = []
             current_files = set()
             
-            for md_file in self.standards_path.rglob("*.md"):
-                rel_path = str(md_file.relative_to(self.standards_path))
-                current_files.add(rel_path)
-                current_mtime = md_file.stat().st_mtime
-                
-                # File is new or modified
-                if rel_path not in file_mtimes or file_mtimes[rel_path] != current_mtime:
-                    changed_files.append(md_file)
+            for source_path in self.source_paths:
+                for md_file in source_path.rglob("*.md"):
+                    rel_path = str(md_file.relative_to(self.standards_path.parent))
+                    current_files.add(rel_path)
+                    current_mtime = md_file.stat().st_mtime
+                    
+                    # File is new or modified
+                    if rel_path not in file_mtimes or file_mtimes[rel_path] != current_mtime:
+                        changed_files.append(md_file)
             
             # Log deleted files (in old metadata but not in current files)
             deleted_files = set(file_mtimes.keys()) - current_files
@@ -322,7 +349,10 @@ class IndexBuilder:
         except Exception as e:
             logger.warning(f"Error detecting changed files: {e}")
             # Fall back to full rebuild
-            return list(self.standards_path.rglob("*.md"))
+            all_files = []
+            for source_path in self.source_paths:
+                all_files.extend(list(source_path.rglob("*.md")))
+            return all_files
 
     def _is_index_fresh(self) -> bool:
         """
@@ -347,11 +377,12 @@ class IndexBuilder:
             build_time = datetime.fromisoformat(metadata["build_time"])
             
             # Check if any source files are newer than build
-            for md_file in self.standards_path.rglob("*.md"):
-                file_mtime = datetime.fromtimestamp(md_file.stat().st_mtime)
-                if file_mtime > build_time:
-                    logger.debug(f"File {md_file.name} modified after build")
-                    return False
+            for source_path in self.source_paths:
+                for md_file in source_path.rglob("*.md"):
+                    file_mtime = datetime.fromtimestamp(md_file.stat().st_mtime)
+                    if file_mtime > build_time:
+                        logger.debug(f"File {md_file.name} modified after build")
+                        return False
             
             return True
             
@@ -419,10 +450,13 @@ def main():
 
     # Determine paths
     script_dir = Path(__file__).parent
-    repo_root = script_dir.parent.parent
+    agent_os_root = script_dir.parent  # .agent-os directory
+    repo_root = agent_os_root.parent
 
-    index_path = args.index_path or (repo_root / ".agent-os" / ".cache" / "vector_index")
-    standards_path = args.standards_path or (repo_root / ".agent-os" / "standards")
+    index_path = args.index_path or (agent_os_root / ".cache" / "rag_index")
+    standards_path = args.standards_path or (agent_os_root / "standards")
+    usage_path = agent_os_root / "usage"  # Agent OS usage docs
+    workflows_path = agent_os_root / "workflows"  # Workflow metadata
 
     # Validate standards path exists
     if not standards_path.exists():
@@ -451,6 +485,8 @@ def main():
         builder = IndexBuilder(
             index_path=index_path,
             standards_path=standards_path,
+            usage_path=usage_path,
+            workflows_path=workflows_path,  # NEW: Include workflows
             embedding_provider=args.provider,
             embedding_model=args.model,
         )

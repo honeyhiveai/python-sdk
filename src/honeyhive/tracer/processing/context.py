@@ -481,8 +481,10 @@ def _prepare_enriched_attributes(
     if source:
         enriched_attributes["honeyhive.source"] = source
 
-    # Add tracer version
-    enriched_attributes["honeyhive.tracer_version"] = "0.1.0rc2"
+    # Add tracer version (late import to avoid module initialization order issues)
+    from ... import __version__
+
+    enriched_attributes["honeyhive.tracer_version"] = __version__
 
     # Add experiment context dynamically
     _add_experiment_attributes(enriched_attributes, tracer_instance)

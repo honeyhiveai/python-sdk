@@ -125,7 +125,7 @@ class TestShutdownTracer:
         mock_cleanup_secondary: Mock,
         mock_acquire_lock: Mock,
         mock_force_flush: Mock,
-        mock_safe_log: Mock,
+        _mock_safe_log: Mock,
         mock_secondary_tracer: Mock,
     ) -> None:
         """Test successful shutdown of secondary provider tracer."""
@@ -701,8 +701,8 @@ class TestCleanupTracerState:
     @patch("honeyhive.tracer.lifecycle.shutdown.registry")
     def test_cleanup_tracer_state_secondary_provider(
         self,
-        mock_registry: Mock,
-        mock_safe_log: Mock,
+        _mock_registry: Mock,
+        _mock_safe_log: Mock,
         mock_tracer: Mock,
     ) -> None:
         """Test tracer state cleanup for secondary provider."""

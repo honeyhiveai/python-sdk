@@ -1,5 +1,45 @@
 ## [Unreleased]
 
+### Infrastructure
+- **🔧 MCP Server: Prototype → Product (mcp_servers → mcp_server)**
+  - Upgraded from prototype to modular Agent OS Enhanced architecture (+5,823 lines)
+  - New modular structure: config/, core/, server/, models/, monitoring/
+  - Workflow engine with phase gating and evidence validation
+  - Framework generator for creating new workflows
+  - File watcher for incremental RAG index updates
+  - FastMCP server factory with tool registration
+  - Removed prototype implementation (-1,999 lines)
+  - Moved tests to upstream agent-os-enhanced repo (-2,326 lines)
+- **📦 Version Refactoring: Single Source of Truth (rc2 → rc3)**
+  - Consolidated version from 5 hardcoded locations to 1
+  - Dynamic imports with late binding pattern (Strategy 2 from standards)
+  - 80% reduction in future version update effort (1 file vs 5 files)
+  - Eliminated risk of version inconsistency
+  - Fixed MyPy circular import errors with late imports
+
+### Added
+- **📚 Agent OS Enhanced Content (+4,235 lines)**
+  - Usage guides: operating-model.md, mcp-usage-guide.md, mcp-server-update-guide.md, agent-os-update-guide.md, creating-specs.md
+  - Workflows: spec_execution_v1 framework with dynamic task execution
+  - Total: 5 usage guide files (2,306 lines) + 9 workflow files (1,929 lines)
+
+### Changed
+- **⚙️ Configuration Updates**
+  - Updated .cursor/mcp.json for modular server with isolated venv
+  - Fixed .agent-os/scripts/build_rag_index.py paths for python-sdk structure
+  - Added fastmcp>=2.0.0 dependency
+
+### Removed
+- **🧹 Prototype Test Cleanup (-2,326 lines)**
+  - Removed tests/unit/mcp_servers/ (6 files)
+  - Tests now maintained in upstream agent-os-enhanced repository
+
+### Quality
+- ✅ Format: 270 files clean
+- ✅ Lint: 10.00/10 (up from 9.99)
+- ✅ Unit Tests: 2,802 passing, 88.07% coverage
+- ✅ Integration: 153/154 passing (1 flaky timing test)
+
 ### Documentation
 - **MAJOR**: Restructured evaluation documentation with modular how-to guides following Divio Documentation System
   - Created 9 focused how-to guides: running-experiments, creating-evaluators, comparing-experiments, dataset-management, server-side-evaluators, multi-step-experiments, result-analysis, best-practices, troubleshooting

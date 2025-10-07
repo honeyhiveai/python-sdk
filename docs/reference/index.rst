@@ -60,6 +60,8 @@ Core Capabilities
 
 **Development & Quality**:
 
+- **🆕 Agent OS Enhanced MCP Server** (v0.1.0rc3): Modular architecture with workflow engine, phase gating, and file watcher for incremental RAG updates
+- **🆕 Single Source of Truth Versioning** (v0.1.0rc3): Consolidated version management from 5 locations to 1 with late-import pattern
 - **Compatibility Testing Infrastructure**: Automated backward compatibility validation and migration analysis
 - **Zero Failing Tests Policy**: Comprehensive test quality enforcement framework with anti-skipping rules
 - **Tox-Based Development**: Unified development environments for consistent formatting, linting, and testing

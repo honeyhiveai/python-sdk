@@ -1,12 +1,15 @@
 {
   "mcpServers": {
     "agent-os-rag": {
-      "command": "/Users/josh/src/github.com/honeyhiveai/python-sdk/python-sdk/bin/python",
+      "command": "${workspaceFolder}/.agent-os/venv/bin/python",
       "args": [
-        "/Users/josh/src/github.com/honeyhiveai/python-sdk/.agent-os/run_mcp_server.py"
+        "-m",
+        "mcp_server"
       ],
       "env": {
-        "HONEYHIVE_ENABLED": "true"
+        "PROJECT_ROOT": "${workspaceFolder}",
+        "PYTHONPATH": "${workspaceFolder}/.agent-os",
+        "PYTHONUNBUFFERED": "1"
       },
       "autoApprove": [
         "search_standards",
@@ -16,4 +19,3 @@
     }
   }
 }
-

@@ -198,7 +198,7 @@ class TestDiscoverTracerDynamically:
     )
     def test_discover_tracer_with_default_tracer(
         self,
-        mock_discover_context: Any,
+        _mock_discover_context: Any,
         mock_get_default: Any,
         honeyhive_tracer,
     ) -> None:
@@ -363,7 +363,7 @@ class TestEnrichSessionDynamically:
     @patch("honeyhive.tracer.integration.compatibility.safe_log")
     def test_enrich_session_fallback_to_baggage(
         self,
-        mock_safe_log: Any,
+        _mock_safe_log: Any,
         mock_baggage_enrich: Any,
         honeyhive_tracer,
     ) -> None:
@@ -389,7 +389,7 @@ class TestEnrichSessionDynamically:
     @patch("honeyhive.tracer.integration.compatibility.safe_log")
     def test_enrich_session_fallback_to_attributes(
         self,
-        mock_safe_log: Any,
+        _mock_safe_log: Any,
         mock_attr_enrich: Any,
         mock_baggage_enrich: Any,
         honeyhive_tracer,
@@ -581,7 +581,7 @@ class TestEnrichViaAttributesDynamically:
     @patch("honeyhive.tracer.integration.compatibility.safe_log")
     def test_enrich_via_attributes_basic(
         self,
-        mock_safe_log: Any,
+        _mock_safe_log: Any,
         mock_trace: Any,
         honeyhive_tracer,
     ) -> None:
