@@ -1,0 +1,96 @@
+{
+  "workflow_type": "spec_creation_v1",
+  "version": "1.0.0",
+  "name": "Specification Creation Workflow",
+  "description": "Systematically create comprehensive specifications with phase-gated validation",
+  "author": "Agent OS Team",
+  "total_phases": 6,
+  "estimated_duration": "1-2 hours (+ supporting docs review time)",
+  "dynamic_phases": false,
+  "start_phase": 0,
+  "phases": [
+    {
+      "phase_number": 0,
+      "phase_name": "Supporting Documents Integration",
+      "phase_file": "phases/0/phase.md",
+      "skippable": true,
+      "skip_condition": "No supporting_docs in options",
+      "checkpoint": {
+        "required_evidence": [
+          "supporting_docs_accessible",
+          "document_index_created",
+          "insights_extracted"
+        ]
+      }
+    },
+    {
+      "phase_number": 1,
+      "phase_name": "Requirements Gathering",
+      "phase_file": "phases/1/phase.md",
+      "checkpoint": {
+        "required_evidence": [
+          "srd_created",
+          "business_goals_defined",
+          "user_stories_documented",
+          "functional_requirements_listed",
+          "nfr_defined",
+          "out_of_scope_clarified"
+        ]
+      }
+    },
+    {
+      "phase_number": 2,
+      "phase_name": "Technical Design",
+      "phase_file": "phases/2/phase.md",
+      "checkpoint": {
+        "required_evidence": [
+          "specs_created",
+          "architecture_documented",
+          "components_defined",
+          "security_addressed",
+          "performance_addressed"
+        ]
+      }
+    },
+    {
+      "phase_number": 3,
+      "phase_name": "Task Breakdown",
+      "phase_file": "phases/3/phase.md",
+      "checkpoint": {
+        "required_evidence": [
+          "tasks_created",
+          "phases_defined",
+          "all_tasks_have_acceptance_criteria",
+          "dependencies_mapped",
+          "validation_gates_specified"
+        ]
+      }
+    },
+    {
+      "phase_number": 4,
+      "phase_name": "Implementation Guidance",
+      "phase_file": "phases/4/phase.md",
+      "checkpoint": {
+        "required_evidence": [
+          "implementation_created",
+          "code_patterns_documented",
+          "testing_strategy_defined",
+          "deployment_guidance_specified"
+        ]
+      }
+    },
+    {
+      "phase_number": 5,
+      "phase_name": "Finalization",
+      "phase_file": "phases/5/phase.md",
+      "checkpoint": {
+        "required_evidence": [
+          "readme_created",
+          "all_files_consistent",
+          "spec_validated",
+          "ready_for_implementation"
+        ]
+      }
+    }
+  ]
+}

@@ -1,46 +1,27 @@
-# HoneyHive Python SDK - AI Assistant Rules
-# Agent OS Compliance Enforcement via MCP RAG
+# Agent OS - AI Assistant Rules
 
 ## 🤖 OPERATING MODEL
-**CRITICAL: You are NOT a helper/copilot - you are the CODE AUTHOR**
-**Human orchestrates** (direction, decisions, approval - 0% implementation)
-**You implement** (100% of all code, tests, docs)
-**Uncertain about workflow?** Query MCP: `"operating model roles paradigm"`
+**You are the CODE AUTHOR** (not helper/copilot)
+Human: direction, decisions, approval | You: 100% implementation
 
-## 🚨 FIRST ACTIONS (Before Responding)
-1. Question about Agent OS/SDK? → Query MCP first, respond second
-2. Uncertain about your role? → Query MCP: `"operating model"`
-3. Tempted to read .agent-os/ directly? → Ask: "Writing standards (authorship) or using standards (consumption)?"
-4. About to write ANY code? → Query MCP: `"production code universal checklist"` (ALL code is production code)
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+⚠️  MANDATORY FIRST ACTION - ENFORCED ON EVERY REQUEST ⚠️
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
-## 🚨 USE MCP FOR ALL AGENT OS GUIDANCE
+WHEN UNCERTAIN ABOUT ANY TOOL, WORKFLOW, OR PATTERN:
 
-**MANDATORY**: Use MCP tools for ALL Agent OS standards, SDK docs, and guidance.
+✋ STOP - Do not guess or experiment
+🔍 QUERY - mcp_agent-os-rag_search_standards("your question")  
+📖 READ - Review the MCP response
+✅ ACT - Execute correctly on first attempt
 
-### Available MCP Tools
-- `mcp_agent-os-rag_search` - Search standards or docs (auto-routing)
-- `mcp_agent-os-rag_search_standards` - Explicit standards search
-- `mcp_agent-os-rag_start_workflow` - Phase-gated workflows (test gen, production code)
-- `mcp_agent-os-rag_get_current_phase` - Current phase requirements
-- `mcp_agent-os-rag_complete_phase` - Submit evidence and advance
-- `mcp_agent-os-rag_get_workflow_state` - Query workflow state
+WHY: Query first = 1 call. Guessing = 3-5 wasted calls.
 
-**Uncertain which tool to use?** Query MCP: `"mcp tool routing guide"`
+EXAMPLES:
+- "Use spec_execution_v1" → Query: "spec_execution_v1 usage instructions"
+- About to write code → Query: "production code checklist"
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
-### Forbidden Operations (Exception: Authorship Mode)
-**NEVER bypass MCP** to read `.agent-os/` directly:
-- ❌ `read_file(".agent-os/...")`, `codebase_search(target_directories=[".agent-os"])`
-- ❌ `grep(path=".agent-os/...")`, `list_dir(".agent-os/standards")`
-- **Why:** Direct access bypasses 90% context reduction (50KB → 5KB)
-- **Exception:** Writing/maintaining standards (authorship mode only)
-
-### Quick Reminders
-- Test/code generation: Use workflow engine (phase gating enforced)
-- Git operations: Query MCP for safety rules (never --no-verify, --force)
-- Credential files: Query MCP for protection rules (never write to .env)
-- Import paths: Query MCP for verification rules (never assume imports)
-
----
-
-**Need detailed guidance?** Query MCP with your specific question.
-**All standards, patterns, and rules are indexed and searchable via MCP.**
+## 🚨 FORBIDDEN: Never Bypass MCP
+❌ Do NOT: `read_file(".agent-os/...")`, `codebase_search(target_directories=[".agent-os"])`
+✅ Instead: Query MCP (90% context reduction: 50KB → 5KB)

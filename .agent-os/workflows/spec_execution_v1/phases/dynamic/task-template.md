@@ -99,6 +99,18 @@ Additional mandatory criteria:
 - Acceptance criteria: [number] met
 - Production checklist: [complete/incomplete]
 
+🛑 EXECUTE-NOW: Mark task complete in tasks.md
+
+Update the spec's tasks.md file to track completion:
+
+1. Open `.agent-os/specs/{SPEC_DIR}/tasks.md`
+2. Find this task: `- [ ] **Task [TASK_ID]**: [TASK_NAME]`
+3. Change to: `- [x] **Task [TASK_ID]**: [TASK_NAME]`
+4. Update all acceptance criteria checkboxes to `[x]`
+5. Note actual line counts or metrics in criteria (if applicable)
+
+**Why:** Maintains visible progress tracking and provides historical record of completed work.
+
 🚨 FRAMEWORK-VIOLATION: Using generated code summaries, not full files
 
 Do NOT re-read large generated files. Use summaries only to preserve context efficiency.
