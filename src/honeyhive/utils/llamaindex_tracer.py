@@ -55,9 +55,6 @@ class HoneyHiveLlamaIndexTracer(BaseCallbackHandler):
         verbose: bool = False,
         base_url: Optional[str] = None,
     ) -> None:
-        if not LLAMAINDEX_INSTALLED:
-            raise ImportError("Please install our llama_index tracer. You can install it with `pip install honeyhive[llama_index]`")
-        
         self.verbose = verbose
         if self._env_api_key:
             api_key = self._env_api_key
