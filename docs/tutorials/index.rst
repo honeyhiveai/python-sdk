@@ -31,11 +31,10 @@ Follow these tutorials in order for the best learning experience:
    :maxdepth: 1
    :numbered:
 
-   01-quick-start
-   02-basic-tracing
-   03-llm-integration
-   04-evaluation-basics
-   05-trace-enrichment
+   01-setup-first-tracer
+   02-add-llm-tracing-5min
+   03-enable-span-enrichment
+   04-configure-multi-instance
 
 Additional Learning
 -------------------

@@ -258,8 +258,8 @@ The ``evaluation`` module is deprecated. Migrate to ``experiments``:
 See Also
 --------
 
-- :doc:`../../tutorials/04-evaluation-basics` - Learn experiments basics
+- :doc:`../../how-to/evaluation/index` - Learn experiments basics
 - :doc:`../../how-to/evaluation/index` - Problem-solving guides
 - :doc:`../evaluation/deprecation-notice` - Deprecation details
-- :doc:`../../how-to/migration-guide` - Full migration guide
+- :doc:`../../how-to/migration-compatibility/migration-guide` - Full migration guide
 

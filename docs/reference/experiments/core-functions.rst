@@ -365,5 +365,5 @@ See Also
 - :doc:`evaluators` - Define custom evaluators
 - :doc:`results` - Retrieve and compare results
 - :doc:`models` - Result data models
-- :doc:`../../../tutorials/04-evaluation-basics` - Experiments tutorial
+- :doc:`../../../how-to/evaluation/index` - Experiments tutorial
 

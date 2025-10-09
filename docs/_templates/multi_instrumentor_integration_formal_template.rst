@@ -8,6 +8,36 @@ Integrate with {{PROVIDER_NAME}}
 
 This guide covers {{PROVIDER_NAME}} integration with HoneyHive's BYOI architecture, supporting both OpenInference and Traceloop instrumentors.
 
+Compatibility
+-------------
+
+**Problem**: I need to know if my Python version and {{PROVIDER_NAME}} SDK version are compatible with HoneyHive.
+
+**Solution**: Check the compatibility information below before installation.
+
+Python Version Support
+^^^^^^^^^^^^^^^^^^^^^^
+
+{{PYTHON_VERSION_SUPPORT}}
+
+Provider SDK Requirements
+^^^^^^^^^^^^^^^^^^^^^^^^^
+
+{{SDK_VERSION_RANGE}}
+
+Instrumentor Compatibility
+^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+{{INSTRUMENTOR_COMPATIBILITY}}
+
+Known Limitations
+^^^^^^^^^^^^^^^^^
+
+{{KNOWN_LIMITATIONS}}
+
+.. note::
+   For the complete compatibility matrix across all providers, see :doc:`/how-to/integrations/multi-provider`.
+
 Choose Your Instrumentor
 ------------------------
 

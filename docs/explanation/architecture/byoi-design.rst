@@ -708,6 +708,6 @@ HoneyHive automatically detects the OpenTelemetry environment and chooses the op
 
 **Next Steps:**
 
-- :doc:`../../tutorials/03-llm-integration` - Try BYOI integration
+- :doc:`../../tutorials/02-add-llm-tracing-5min` - Try BYOI integration
 - :doc:`../../how-to/index` - Integration patterns
 - :doc:`../concepts/llm-observability` - LLM observability concepts

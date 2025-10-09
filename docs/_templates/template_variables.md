@@ -40,6 +40,78 @@ This document defines the template variables used in `multi_instrumentor_integra
 - `{{MULTIPLE_TRACELOOP_INSTRUMENTORS_EXAMPLE}}` - Example of multiple Traceloop instrumentors
 - `{{SEE_ALSO_LINKS}}` - Related documentation links
 
+### Compatibility Variables (FR-002/FR-004)
+
+- `{{PYTHON_VERSION_SUPPORT}}` - Python version support table
+  - **Purpose**: Display which Python versions are fully supported, partially supported, or unsupported
+  - **Data Structure**: Dictionary with keys: `supported` (list), `partial` (list), `unsupported` (list)
+  - **Rendering Format**: RST list-table showing support levels and version ranges
+  - **Example**:
+    ```rst
+    .. list-table::
+       :header-rows: 1
+       :widths: 30 70
+    
+       * - Support Level
+         - Python Versions
+       * - Fully Supported
+         - 3.11+, 3.10 (with workarounds)
+       * - Partial Support
+         - 3.9 (limited features)
+       * - Not Supported
+         - 3.8 and below
+    ```
+
+- `{{SDK_VERSION_RANGE}}` - Provider SDK version requirements
+  - **Purpose**: Document minimum, recommended, and tested SDK versions for the provider
+  - **Data Structure**: Dictionary with keys: `minimum` (str), `recommended` (str), `tested_versions` (list)
+  - **Rendering Format**: RST definition list or bullet list
+  - **Example**:
+    ```rst
+    - **Minimum**: openai >= 1.0.0
+    - **Recommended**: openai >= 1.10.0
+    - **Tested Versions**: 1.10.0, 1.11.0, 1.12.0
+    ```
+
+- `{{INSTRUMENTOR_COMPATIBILITY}}` - Instrumentor compatibility matrix
+  - **Purpose**: Show support status for OpenInference and Traceloop instrumentors with this provider
+  - **Data Structure**: Dictionary with keys: `openinference` (dict), `traceloop` (dict), each containing `status` and `notes`
+  - **Rendering Format**: RST list-table showing instrumentor, status, and notes
+  - **Example**:
+    ```rst
+    .. list-table::
+       :header-rows: 1
+       :widths: 30 20 50
+    
+       * - Instrumentor
+         - Status
+         - Notes
+       * - OpenInference
+         - Fully Supported
+         - All features available
+       * - Traceloop
+         - Fully Supported
+         - Enhanced metrics and cost tracking
+    ```
+
+- `{{KNOWN_LIMITATIONS}}` - Feature limitations list
+  - **Purpose**: Document known limitations or unsupported features for this provider integration
+  - **Data Structure**: List of strings, each describing a limitation
+  - **Rendering Format**: RST bullet list with feature names and limitation details
+  - **Example**:
+    ```rst
+    - **Streaming**: Partial support - requires manual span management
+    - **Batch API**: Not yet supported in instrumentors
+    - **Function Calling**: Fully supported with both instrumentors
+    - **Vision API**: Supported in OpenAI SDK >= 1.11.0
+    ```
+
+**Status Enum Values** (for `INSTRUMENTOR_COMPATIBILITY`):
+- `fully_supported` - All features work as expected
+- `partial` - Some features have limitations
+- `not_supported` - Instrumentor does not support this provider yet
+- `experimental` - Available but not production-ready
+
 ## Provider-Specific Variable Sets
 
 ### OpenAI Variables

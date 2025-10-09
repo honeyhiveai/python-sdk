@@ -20,7 +20,7 @@ What You'll Learn
 Prerequisites
 -------------
 
-- Complete all basic tutorials (:doc:`01-quick-start` through :doc:`05-trace-enrichment`)
+- Complete all basic tutorials (:doc:`01-setup-first-tracer` through :doc:`03-enable-span-enrichment`)
 - Familiarity with OpenTelemetry concepts
 - Production deployment experience
 - Understanding of your application architecture

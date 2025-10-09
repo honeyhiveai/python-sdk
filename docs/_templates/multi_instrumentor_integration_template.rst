@@ -403,7 +403,7 @@ See Also
 
 - :doc:`multi-provider` - Use [Provider] with other providers
 - :doc:`../troubleshooting` - Common integration issues  
-- :doc:`../../tutorials/03-llm-integration` - LLM integration tutorial
+- :doc:`../../tutorials/02-add-llm-tracing-5min` - LLM integration tutorial
 
 .. raw:: html
 

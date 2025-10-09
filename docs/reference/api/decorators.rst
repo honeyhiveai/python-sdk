@@ -1401,7 +1401,7 @@ See Also
 - :doc:`tracer` - HoneyHiveTracer API reference
 - :doc:`client` - HoneyHive client API reference
 - :doc:`../evaluation/evaluators` - Built-in evaluators reference
-- :doc:`../../tutorials/02-basic-tracing` - Basic tracing tutorial
-- :doc:`../../tutorials/04-evaluation-basics` - Evaluation tutorial
+- :doc:`../../tutorials/01-setup-first-tracer` - Basic tracing tutorial
+- :doc:`../../how-to/evaluation/index` - Evaluation tutorial
 - :doc:`../../how-to/advanced-tracing/custom-spans` - Advanced tracing patterns
 - :doc:`../../explanation/concepts/tracing-fundamentals` - Tracing concepts and theory

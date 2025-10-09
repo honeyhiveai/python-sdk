@@ -69,5 +69,5 @@ See Also
 
 - :doc:`running-experiments` - Run multi-step experiments
 - :doc:`../advanced-tracing/custom-spans` - Create custom spans
-- :doc:`../../tutorials/05-trace-enrichment` - Enrich traces with metrics
+- :doc:`../../tutorials/03-enable-span-enrichment` - Enrich traces with metrics
 

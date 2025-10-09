@@ -28,7 +28,7 @@ Architecture & Design
 ---------------------
 
 .. toctree::
-   :maxdepth: 2
+   :maxdepth: 1
 
    architecture/overview
    architecture/byoi-design
@@ -37,7 +37,7 @@ Architecture Diagrams
 ---------------------
 
 .. toctree::
-   :maxdepth: 2
+   :maxdepth: 1
 
    architecture/diagrams
 
@@ -45,7 +45,7 @@ Fundamental Concepts
 --------------------
 
 .. toctree::
-   :maxdepth: 2
+   :maxdepth: 1
 
    concepts/tracing-fundamentals
    concepts/llm-observability
@@ -224,7 +224,7 @@ If using ``opentelemetry-instrumentation-google-generativeai``, you may need to 
 
 **See Also**
 
-- :doc:`../tutorials/03-llm-integration` - LLM integration tutorial
+- :doc:`../tutorials/02-add-llm-tracing-5min` - LLM integration tutorial
 - :doc:`architecture/byoi-design` - BYOI architecture explanation
 - :doc:`../how-to/index` - Integration guides and troubleshooting
 - :doc:`../reference/configuration/environment-vars` - Environment variable reference

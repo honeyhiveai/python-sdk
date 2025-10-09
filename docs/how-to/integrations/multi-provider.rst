@@ -840,5 +840,5 @@ See Also
 --------
 
 - :doc:`../index` - Common integration issues (see Troubleshooting section)
-- :doc:`../../tutorials/03-llm-integration` - LLM integration tutorial
+- :doc:`../../tutorials/02-add-llm-tracing-5min` - LLM integration tutorial
 - :doc:`../../explanation/architecture/byoi-design` - BYOI architecture explanation

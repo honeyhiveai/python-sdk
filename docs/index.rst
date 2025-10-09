@@ -15,11 +15,11 @@ New to HoneyHive? Start here:
 .. raw:: html
 
    <div class="quick-start-grid">
-   <a href="tutorials/01-quick-start.html" class="quick-start-card">
+   <a href="tutorials/01-setup-first-tracer.html" class="quick-start-card">
      <h3>🎯 5-Minute Quickstart</h3>
      <p>Get tracing working in 5 minutes</p>
    </a>
-   <a href="tutorials/03-llm-integration.html" class="quick-start-card">
+   <a href="tutorials/02-add-llm-tracing-5min.html" class="quick-start-card">
      <h3>🤖 LLM Integration</h3>
      <p>Add OpenAI, Anthropic, or Google AI tracing</p>
    </a>
@@ -62,7 +62,7 @@ New to HoneyHive? Start here:
    <div class="doc-card">
      <h3><a href="tutorials/index.html">📖 Tutorials</a></h3>
      <p>Step-by-step guides that take you through building complete examples. Perfect for learning by doing.</p>
-     <a href="tutorials/01-quick-start.html" class="quick-link">→ Quick Start</a>
+     <a href="tutorials/01-setup-first-tracer.html" class="quick-link">→ Quick Start</a>
    </div>
    <div class="doc-card">
      <h3><a href="how-to/index.html">🛠️ How-to Guides</a></h3>
@@ -169,10 +169,10 @@ New to HoneyHive? Start here:
 
 **👋 New to HoneyHive?**
 
-1. :doc:`tutorials/01-quick-start` - Get HoneyHive working in 5 minutes
-2. :doc:`tutorials/02-basic-tracing` - Learn core tracing patterns  
-3. :doc:`tutorials/03-llm-integration` - Add LLM provider integration
-4. :doc:`tutorials/04-evaluation-basics` - Start evaluating your outputs
+1. :doc:`tutorials/01-setup-first-tracer` - Set up your first tracer in minutes
+2. :doc:`tutorials/02-add-llm-tracing-5min` - Add LLM tracing to existing apps
+3. :doc:`tutorials/03-enable-span-enrichment` - Enrich traces with metadata
+4. :doc:`tutorials/04-configure-multi-instance` - Configure multiple tracers
 
 **🔧 Solving Specific Problems?**
 
@@ -198,7 +198,7 @@ New to HoneyHive? Start here:
 🔗 **Main Documentation Sections**
 
 .. toctree::
-   :maxdepth: 2
+   :maxdepth: 1
 
    tutorials/index
    how-to/index

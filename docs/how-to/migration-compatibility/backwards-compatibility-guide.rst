@@ -397,8 +397,8 @@ Need Help?
 
 If you encounter issues during migration:
 
-1. Check the :doc:`index` troubleshooting section
-2. Review the complete API reference: :doc:`../reference/api/tracer`
+1. Check the :doc:`migration-guide` troubleshooting section
+2. Review the complete API reference: :doc:`../../reference/api/tracer`
 3. Test with ``verbose=True`` and ``test_mode=True`` for debugging
 4. Contact HoneyHive support with:
    - Your current tracer configuration

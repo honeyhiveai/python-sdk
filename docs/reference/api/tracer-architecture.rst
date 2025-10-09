@@ -516,5 +516,5 @@ See Also
 
 - :doc:`../configuration/hybrid-config-approach` - Configuration system details
 - :doc:`tracer` - Complete tracer API reference
-- :doc:`../../../how-to/migration-guide` - Migration guide with multi-instance examples
+- :doc:`../../../how-to/migration-compatibility/migration-guide` - Migration guide with multi-instance examples
 - :doc:`../../../explanation/architecture/overview` - Overall SDK architecture

@@ -1053,4 +1053,4 @@ See Also
 - :doc:`commands` - Complete command reference
 - :doc:`../configuration/environment-vars` - Environment variable details
 - :doc:`../../development/testing/ci-cd-integration` - CI/CD usage patterns
-- :doc:`../../tutorials/01-quick-start` - Getting started guide
+- :doc:`../../tutorials/01-setup-first-tracer` - Getting started guide

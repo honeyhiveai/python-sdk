@@ -206,4 +206,4 @@ See Also
 
 - :doc:`core-functions` - Functions that return these models
 - :doc:`results` - Retrieve and compare results
-- :doc:`../../../tutorials/04-evaluation-basics` - Tutorial
+- :doc:`../../../how-to/evaluation/index` - Tutorial

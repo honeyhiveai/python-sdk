@@ -908,6 +908,6 @@ See Also
 - :doc:`unit-testing` - Unit testing strategies
 - :doc:`lambda-testing` - AWS Lambda integration testing
 - :doc:`performance-testing` - Performance testing and benchmarking
-- :doc:`../../tutorials/03-llm-integration` - LLM integration patterns
+- :doc:`../../tutorials/02-add-llm-tracing-5min` - LLM integration patterns
 - :doc:`../../reference/api/client` - API client reference
 - :doc:`../../reference/api/tracer` - Tracer API reference

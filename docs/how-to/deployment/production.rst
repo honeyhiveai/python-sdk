@@ -27,7 +27,7 @@ API Key Management
 
 **Never hardcode API keys in production code.**
 
-**Option 1: Environment Variables (Recommended)**
+**Recommended: Environment Variables**
 
 .. code-block:: bash
 
@@ -46,59 +46,16 @@ API Key Management
        source=os.getenv("HH_SOURCE")
    )
 
-**Option 2: AWS Secrets Manager**
+**Enterprise Secret Management:**
 
-.. code-block:: python
+For production environments, use dedicated secret management services:
 
-   import boto3
-   import json
-   from honeyhive import HoneyHiveTracer
-   
-   def get_honeyhive_config():
-       """Retrieve HoneyHive configuration from AWS Secrets Manager."""
-       client = boto3.client('secretsmanager', region_name='us-east-1')
-       
-       try:
-           response = client.get_secret_value(SecretId='prod/honeyhive/config')
-           config = json.loads(response['SecretString'])
-           
-           return {
-               'api_key': config['api_key'],
-               'project': config['project'],
-               'source': config.get('source', 'production')
-           }
-       except Exception as e:
-           # Handle gracefully - don't crash the application
-           print(f"Warning: Could not retrieve HoneyHive config: {e}")
-           return None
-   
-   # Initialize with secrets
-   config = get_honeyhive_config()
-   if config:
-       tracer = HoneyHiveTracer.init(**config)
-   else:
-       tracer = None  # Graceful degradation
+- **AWS Secrets Manager**: Retrieve from ``secretsmanager`` using boto3
+- **HashiCorp Vault**: Use ``hvac`` client to fetch from ``kv`` store
+- **Azure Key Vault**: Use ``azure-keyvault-secrets`` SDK
+- **Google Secret Manager**: Use ``google-cloud-secret-manager``
 
-**Option 3: HashiCorp Vault**
-
-.. code-block:: python
-
-   import hvac
-   from honeyhive import HoneyHiveTracer
-   
-   def get_vault_config():
-       """Retrieve configuration from HashiCorp Vault."""
-       client = hvac.Client(url=os.getenv('VAULT_URL'))
-       client.token = os.getenv('VAULT_TOKEN')
-       
-       try:
-           response = client.secrets.kv.v2.read_secret_version(
-               path='honeyhive/production'
-           )
-           return response['data']['data']
-       except Exception as e:
-           print(f"Warning: Vault access failed: {e}")
-           return None
+All services follow the same pattern: fetch credentials at startup, handle failures gracefully, and return ``None`` if unavailable to enable graceful degradation.
 
 Network Security
 ~~~~~~~~~~~~~~~~
@@ -285,66 +242,10 @@ Retry Logic
                time.sleep(delay)
                logger.warning(f"Tracer init attempt {attempt + 1} failed, retrying in {delay:.1f}s")
 
-Circuit Breaker Pattern
-~~~~~~~~~~~~~~~~~~~~~~~
-
-**Prevent cascading failures**:
-
-.. code-block:: python
-
-   import time
-   from enum import Enum
+.. note::
+   **Advanced Patterns Available**
    
-   class CircuitState(Enum):
-       CLOSED = "closed"      # Normal operation
-       OPEN = "open"         # Failing, don't try
-       HALF_OPEN = "half_open"  # Testing if recovered
-   
-   class HoneyHiveCircuitBreaker:
-       def __init__(self, failure_threshold=5, recovery_timeout=60):
-           self.failure_threshold = failure_threshold
-           self.recovery_timeout = recovery_timeout
-           self.failure_count = 0
-           self.last_failure_time = None
-           self.state = CircuitState.CLOSED
-           self.tracer = None
-       
-       def get_tracer(self):
-           """Get tracer with circuit breaker protection."""
-           if self.state == CircuitState.OPEN:
-               if time.time() - self.last_failure_time > self.recovery_timeout:
-                   self.state = CircuitState.HALF_OPEN
-               else:
-                   return None  # Circuit is open, don't try
-           
-           if self.state in [CircuitState.CLOSED, CircuitState.HALF_OPEN]:
-               try:
-                   if not self.tracer:
-                       self.tracer = HoneyHiveTracer.init(
-                           api_key=os.getenv("HH_API_KEY")                       )
-                   
-                   # Reset on success
-                   if self.state == CircuitState.HALF_OPEN:
-                       self.state = CircuitState.CLOSED
-                       self.failure_count = 0
-                   
-                   return self.tracer
-               
-               except Exception as e:
-                   self.failure_count += 1
-                   self.last_failure_time = time.time()
-                   
-                   if self.failure_count >= self.failure_threshold:
-                       self.state = CircuitState.OPEN
-                       logger.warning("HoneyHive circuit breaker opened")
-                   
-                   return None
-   
-   # Global circuit breaker
-   honeyhive_cb = HoneyHiveCircuitBreaker()
-   
-   def get_safe_tracer():
-       return honeyhive_cb.get_tracer()
+   For advanced resilience patterns including circuit breakers, see :doc:`advanced-production`.
 
 Monitoring Production Health
 ----------------------------
@@ -352,63 +253,37 @@ Monitoring Production Health
 Application Metrics
 ~~~~~~~~~~~~~~~~~~~
 
-**Monitor your own tracing performance**:
+**Monitor your tracing performance**:
 
 .. code-block:: python
 
    import time
    import logging
-   from collections import defaultdict
-   from honeyhive import HoneyHiveTracer, trace
    
-   class TracingMetrics:
+   logger = logging.getLogger(__name__)
+   
+   class SimpleTracingMetrics:
+       """Basic tracing metrics for production monitoring."""
+       
        def __init__(self):
            self.trace_count = 0
            self.trace_errors = 0
-           self.trace_latency = []
-           self.last_reset = time.time()
        
-       def record_trace(self, duration: float, success: bool):
+       def record_trace(self, success: bool):
            self.trace_count += 1
-           self.trace_latency.append(duration)
            if not success:
                self.trace_errors += 1
        
-       def get_stats(self):
-           if not self.trace_latency:
-               return {"trace_count": 0, "error_rate": 0, "avg_latency": 0}
-           
-           return {
-               "trace_count": self.trace_count,
-               "error_rate": self.trace_errors / self.trace_count,
-               "avg_latency": sum(self.trace_latency) / len(self.trace_latency),
-               "p95_latency": sorted(self.trace_latency)[int(0.95 * len(self.trace_latency))]
-           }
+       def get_error_rate(self) -> float:
+           if self.trace_count == 0:
+               return 0.0
+           return self.trace_errors / self.trace_count
    
    # Global metrics
-   tracing_metrics = TracingMetrics()
-   
-   def monitored_trace(tracer, event_type=None):
-       """Trace decorator with monitoring."""
-       def decorator(func):
-           def wrapper(*args, **kwargs):
-               start_time = time.time()
-               success = True
-               
-               try:
-                   if tracer:
-                       return trace(tracer=tracer, event_type=event_type)(func)(*args, **kwargs)
-                   else:
-                       return func(*args, **kwargs)
-               except Exception as e:
-                   success = False
-                   raise
-               finally:
-                   duration = time.time() - start_time
-                   tracing_metrics.record_trace(duration, success)
-           
-           return wrapper
-       return decorator
+   tracing_metrics = SimpleTracingMetrics()
+
+.. note::
+   For comprehensive monitoring with latency tracking, error type breakdown, and Prometheus integration, see :doc:`advanced-production`.
 
 Health Check Endpoints
 ~~~~~~~~~~~~~~~~~~~~~~
@@ -458,102 +333,45 @@ Health Check Endpoints
 Logging Integration
 ~~~~~~~~~~~~~~~~~~~
 
-**Integrate with your existing logging infrastructure**:
+**Integrate tracing with your logging**:
 
 .. code-block:: python
 
    import logging
-   import json
-   from honeyhive import HoneyHiveTracer, trace, enrich_span
-   
-   # Configure structured logging
-   logging.basicConfig(
-       level=logging.INFO,
-       format='%(asctime)s %(levelname)s %(name)s %(message)s'
-   )
+   from honeyhive import HoneyHiveTracer, enrich_span
    
    logger = logging.getLogger(__name__)
    
-   class HoneyHiveLogHandler(logging.Handler):
-       """Custom log handler that adds trace context."""
-       
-       def __init__(self, tracer):
-           super().__init__()
-           self.tracer = tracer
-       
-       def emit(self, record):
-           # Add log entry to current span if available
-           if hasattr(self.tracer, 'current_span') and self.tracer.current_span:
-               enrich_span({
-                   f"log.{record.levelname.lower()}": record.getMessage(),
-                   "log.timestamp": record.created
-               })
-   
-   # Set up integrated logging
-   tracer = HoneyHiveTracer.init(
-       api_key=os.getenv("HH_API_KEY")
-       
-   )
-   
-   # Add HoneyHive handler to logger
-   honeyhive_handler = HoneyHiveLogHandler(tracer)
-   logger.addHandler(honeyhive_handler)
+   # Log important events and add to trace
+   logger.info("Processing request")
+   enrich_span({
+       "log.message": "Processing request",
+       "log.level": "INFO"
+   })
 
 Deployment Strategies
 ---------------------
 
-Blue-Green Deployment
-~~~~~~~~~~~~~~~~~~~~~
+**Standard Deployment:**
 
-**Safely deploy tracing changes**:
+The simplest approach is a single tracer instance for your production environment:
 
 .. code-block:: python
 
    import os
    from honeyhive import HoneyHiveTracer
    
-   def create_environment_tracer():
-       """Create tracer based on deployment environment."""
-       env = os.getenv("DEPLOYMENT_ENV", "blue")
-       
-       # Different projects for blue/green deployments
-       project_mapping = {
-           "blue": "production-app",
-           "green": "production-app-green",
-           "staging": "staging-app"
-       }
-       
-       return HoneyHiveTracer.init(
-           api_key=os.getenv("HH_API_KEY"), "production-app"),
-           source=f"production-{env}"
-       )
+   # Single production tracer
+   tracer = HoneyHiveTracer.init(
+       api_key=os.getenv("HH_API_KEY"),
+       project="production-app",
+       source="production"
+   )
 
-Canary Deployment
-~~~~~~~~~~~~~~~~~
-
-**Gradual rollout of tracing changes**:
-
-.. code-block:: python
-
-   import random
-   from honeyhive import HoneyHiveTracer
+.. note::
+   **Advanced Deployment Strategies**
    
-   def create_canary_tracer():
-       """Create tracer with canary deployment logic."""
-       canary_percentage = float(os.getenv("CANARY_PERCENTAGE", "0"))
-       
-       if random.random() < canary_percentage / 100:
-           # Canary version
-           return HoneyHiveTracer.init(
-               api_key=os.getenv("HH_API_KEY"),
-               source="production-canary"
-           )
-       else:
-           # Stable version
-           return HoneyHiveTracer.init(
-               api_key=os.getenv("HH_API_KEY"),
-               source="production-stable"
-           )
+   For blue-green deployments, canary rollouts, and traffic-based routing, see :doc:`advanced-production`.
 
 Container Deployment
 --------------------
@@ -561,134 +379,52 @@ Container Deployment
 Docker Configuration
 ~~~~~~~~~~~~~~~~~~~~
 
-**Dockerfile for production deployment**:
+**Key HoneyHive-specific Docker configuration**:
 
 .. code-block:: dockerfile
 
+   # Use Python 3.11+ for HoneyHive SDK
    FROM python:3.11-slim
    
-   # Create non-root user
-   RUN groupadd -r appuser && useradd -r -g appuser appuser
+   # Install HoneyHive SDK
+   RUN pip install honeyhive>=0.1.0
    
-   # Set working directory
-   WORKDIR /app
-   
-   # Install dependencies
-   COPY requirements.txt .
-   RUN pip install --no-cache-dir -r requirements.txt
-   
-   # Copy application code
-   COPY . .
-   
-   # Switch to non-root user
-   USER appuser
-   
-   # Environment variables (will be overridden by orchestrator)
+   # HoneyHive environment variables (overridden at runtime)
    ENV HH_API_KEY=""
    ENV HH_SOURCE="production"
-   
-   # Health check
-   HEALTHCHECK --interval=30s --timeout=10s --start-period=30s --retries=3 \
-     CMD python -c "import requests; requests.get('http://localhost:8000/health/tracing')"
-   
-   # Start application
-   CMD ["python", "app.py"]
 
-**docker-compose.yml for production**:
+**docker-compose.yml** - pass HoneyHive credentials:
 
 .. code-block:: yaml
 
-   version: '3.8'
-   
    services:
      app:
-       build: .
        environment:
          - HH_API_KEY=${HH_API_KEY}
-         - HH_SOURCE=${HH_SOURCE:-production}
-       ports:
-         - "8000:8000"
-       restart: unless-stopped
-       healthcheck:
-         test: ["CMD", "curl", "-f", "http://localhost:8000/health/tracing"]
-         interval: 30s
-         timeout: 10s
-         retries: 3
-       deploy:
-         resources:
-           limits:
-             memory: 512M
-             cpus: '0.5'
+         - HH_SOURCE=production
 
 Kubernetes Deployment
 ~~~~~~~~~~~~~~~~~~~~~
 
-**ConfigMap for configuration**:
+**Store API key in Kubernetes Secret**:
+
+.. code-block:: bash
+
+   kubectl create secret generic honeyhive-secret \
+     --from-literal=api-key=<your-api-key>
+
+**Reference in Deployment**:
 
 .. code-block:: yaml
 
-   apiVersion: v1
-   kind: ConfigMap
-   metadata:
-     name: honeyhive-config
-   data:
-     HH_SOURCE: "production"
-     HH_BASE_URL: "https://api.honeyhive.ai"
-
-**Secret for API key**:
-
-.. code-block:: yaml
-
-   apiVersion: v1
-   kind: Secret
-   metadata:
-     name: honeyhive-secret
-   type: Opaque
-   data:
-     HH_API_KEY: <base64-encoded-api-key>
-
-**Deployment manifest**:
-
-.. code-block:: yaml
-
-   apiVersion: apps/v1
-   kind: Deployment
-   metadata:
-     name: app-with-honeyhive
-   spec:
-     replicas: 3
-     selector:
-       matchLabels:
-         app: myapp
-     template:
-       metadata:
-         labels:
-           app: myapp
-       spec:
-         containers:
-         - name: app
-           image: myapp:latest
-           envFrom:
-           - configMapRef:
-               name: honeyhive-config
-           env:
-           - name: HH_API_KEY
-             valueFrom:
-               secretKeyRef:
-                 name: honeyhive-secret
-                 key: HH_API_KEY
-           livenessProbe:
-             httpGet:
-               path: /health/tracing
-               port: 8000
-             initialDelaySeconds: 30
-             periodSeconds: 30
-           readinessProbe:
-             httpGet:
-               path: /health/tracing
-               port: 8000
-             initialDelaySeconds: 5
-             periodSeconds: 10
+   env:
+   - name: HH_API_KEY
+     valueFrom:
+       secretKeyRef:
+         name: honeyhive-secret
+         key: api-key
+   - name: HH_SOURCE
+     value: "production"
 
 Production Checklist
 --------------------

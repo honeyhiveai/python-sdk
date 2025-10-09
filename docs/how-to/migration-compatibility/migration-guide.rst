@@ -610,9 +610,9 @@ If you encounter issues during migration:
 
 1. **Check the Documentation**:
    
-   - :doc:`../reference/configuration/hybrid-config-approach` - Configuration guide
-   - :doc:`../reference/api/config-models` - Configuration API reference
-   - :doc:`../reference/api/tracer-architecture` - Architecture overview
+   - :doc:`../../reference/configuration/hybrid-config-approach` - Configuration guide
+   - :doc:`../../reference/api/config-models` - Configuration API reference
+   - :doc:`../../reference/api/tracer-architecture` - Architecture overview
 
 2. **Review Examples**:
    
@@ -680,8 +680,8 @@ The modular architecture, hybrid configuration system, and enhanced multi-instan
 
 **Next Steps:**
 
-- Review the :doc:`../tutorials/advanced-configuration` tutorial
-- Explore the :doc:`../reference/api/tracer-architecture` documentation
+- Review the :doc:`../../tutorials/advanced-configuration` tutorial
+- Explore the :doc:`../../reference/api/tracer-architecture` documentation
 - Try the enhanced examples in ``examples/``
 
 Welcome to HoneyHive SDK v0.1.0+! 🚀

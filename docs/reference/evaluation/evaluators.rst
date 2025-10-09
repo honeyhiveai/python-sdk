@@ -1163,6 +1163,6 @@ See Also
 
 - :doc:`../api/decorators` - ``@evaluate`` decorator reference
 - :doc:`../api/tracer` - HoneyHiveTracer integration
-- :doc:`../../tutorials/04-evaluation-basics` - Evaluation tutorial
+- :doc:`../../how-to/evaluation/index` - Evaluation tutorial
 - :doc:`../../how-to/evaluation/index` - Evaluation guides and development
 - :doc:`../../explanation/concepts/llm-observability` - LLM observability concepts

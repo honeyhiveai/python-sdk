@@ -8,6 +8,62 @@ Integrate with Google AI
 
 This guide covers Google AI integration with HoneyHive's BYOI architecture, supporting both OpenInference and Traceloop instrumentors.
 
+Compatibility
+-------------
+
+**Problem**: I need to know if my Python version and Google AI SDK version are compatible with HoneyHive.
+
+**Solution**: Check the compatibility information below before installation.
+
+Python Version Support
+^^^^^^^^^^^^^^^^^^^^^^
+
+.. list-table::
+   :header-rows: 1
+   :widths: 30 70
+
+   * - Support Level
+     - Python Versions
+   * - Fully Supported
+     - 3.11, 3.12, 3.13
+   * - Not Supported
+     - 3.10 and below
+
+Provider SDK Requirements
+^^^^^^^^^^^^^^^^^^^^^^^^^
+
+- **Minimum**: google-generativeai >= 0.3.0
+- **Recommended**: google-generativeai >= 0.4.0
+- **Tested Versions**: 0.4.0, 0.5.0, 0.6.0
+
+Instrumentor Compatibility
+^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+.. list-table::
+   :header-rows: 1
+   :widths: 30 20 50
+
+   * - Instrumentor
+     - Status
+     - Notes
+   * - OpenInference
+     - Fully Supported
+     - Gemini Pro and Pro Vision support with multimodal tracing
+   * - Traceloop
+     - Experimental
+     - Basic support available, some Gemini-specific features in development
+
+Known Limitations
+^^^^^^^^^^^^^^^^^
+
+- **Streaming**: Supported with manual span management required
+- **Multimodal Input**: Vision features traced but media content not captured
+- **Function Calling**: Supported in Gemini Pro models
+- **Safety Settings**: Not captured in traces by default
+
+.. note::
+   For the complete compatibility matrix across all providers, see :doc:`/how-to/integrations/multi-provider`.
+
 Choose Your Instrumentor
 ------------------------
 
@@ -500,8 +556,8 @@ See Also
 --------
 
 - :doc:`multi-provider` - Use Google AI with other providers
-- :doc:`../common-patterns` - Common integration patterns
-- :doc:`../../tutorials/03-llm-integration` - LLM integration tutorial
+- :doc:`../llm-application-patterns` - Common integration patterns
+- :doc:`../../tutorials/02-add-llm-tracing-5min` - LLM integration tutorial
 - :doc:`openai` - Similar integration for OpenAI GPT
 
 .. raw:: html

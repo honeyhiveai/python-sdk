@@ -8,6 +8,62 @@ Integrate with AWS Bedrock
 
 This guide covers AWS Bedrock integration with HoneyHive's BYOI architecture, supporting both OpenInference and Traceloop instrumentors.
 
+Compatibility
+-------------
+
+**Problem**: I need to know if my Python version and AWS Bedrock SDK version are compatible with HoneyHive.
+
+**Solution**: Check the compatibility information below before installation.
+
+Python Version Support
+^^^^^^^^^^^^^^^^^^^^^^
+
+.. list-table::
+   :header-rows: 1
+   :widths: 30 70
+
+   * - Support Level
+     - Python Versions
+   * - Fully Supported
+     - 3.11, 3.12, 3.13
+   * - Not Supported
+     - 3.10 and below
+
+Provider SDK Requirements
+^^^^^^^^^^^^^^^^^^^^^^^^^
+
+- **Minimum**: boto3 >= 1.26.0
+- **Recommended**: boto3 >= 1.28.0
+- **Tested Versions**: 1.28.0, 1.29.0, 1.30.0
+
+Instrumentor Compatibility
+^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+.. list-table::
+   :header-rows: 1
+   :widths: 30 20 50
+
+   * - Instrumentor
+     - Status
+     - Notes
+   * - OpenInference
+     - Fully Supported
+     - Support for Claude, Titan, and Llama models on Bedrock
+   * - Traceloop
+     - Partial Support
+     - Basic support, some Bedrock-specific features require OpenInference
+
+Known Limitations
+^^^^^^^^^^^^^^^^^
+
+- **Model Support**: Claude, Titan, Llama 2 fully supported; other models experimental
+- **Streaming**: Supported with both instrumentors, automatic span management
+- **Cross-Region**: Requires proper AWS credentials and region configuration
+- **Embedding Models**: Traced but may require manual metadata enrichment
+
+.. note::
+   For the complete compatibility matrix across all providers, see :doc:`/how-to/integrations/multi-provider`.
+
 Choose Your Instrumentor
 ------------------------
 
@@ -656,8 +712,8 @@ See Also
 --------
 
 - :doc:`multi-provider` - Use Bedrock with other providers
-- :doc:`../common-patterns` - Common integration patterns
-- :doc:`../../tutorials/03-llm-integration` - LLM integration tutorial
+- :doc:`../llm-application-patterns` - Common integration patterns
+- :doc:`../../tutorials/02-add-llm-tracing-5min` - LLM integration tutorial
 - :doc:`anthropic` - Similar integration for Anthropic Claude
 
 .. raw:: html

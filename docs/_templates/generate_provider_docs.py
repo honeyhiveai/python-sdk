@@ -5,15 +5,19 @@ Template generation script for multi-instrumentor provider integration documenta
 This script generates provider-specific integration documentation using the formal
 template system defined in multi_instrumentor_integration_formal_template.rst.
 
+Compatibility data is loaded from provider_compatibility.yaml to separate data from code.
+
 Usage:
     python generate_provider_docs.py --provider anthropic
     python generate_provider_docs.py --provider google-ai --output custom_output.rst
+    python generate_provider_docs.py --all  # Regenerate all providers
+    python generate_provider_docs.py --validate  # Validate compatibility data
 """
 
 import argparse
 import yaml
 from pathlib import Path
-from typing import Dict, Any
+from typing import Dict, Any, List
 
 
 # Provider-specific variable definitions
@@ -117,7 +121,7 @@ PROVIDER_CONFIGS = {
         "MODELS_USED": '["gpt-3.5-turbo", "gpt-4", "gpt-4-turbo-preview"]',
         "FIRST_PARAM": "prompt",
         "SEE_ALSO_LINKS": """- :doc:`multi-provider` - Use OpenAI with other providers
-- :doc:`../common-patterns` - Common integration patterns
+- :doc:`../llm-application-patterns` - LLM agent architectures and patterns
 - :doc:`../../tutorials/03-llm-integration` - LLM integration tutorial
 - :doc:`anthropic` - Similar integration for Anthropic Claude""",
     },
@@ -198,7 +202,7 @@ PROVIDER_CONFIGS = {
        anthropic_instrumentor.instrument(tracer_provider=tracer.provider)
        openai_instrumentor.instrument(tracer_provider=tracer.provider)""",
         "SEE_ALSO_LINKS": """- :doc:`multi-provider` - Use Anthropic with other providers
-- :doc:`../common-patterns` - Common integration patterns
+- :doc:`../llm-application-patterns` - LLM agent architectures and patterns
 - :doc:`../../tutorials/03-llm-integration` - LLM integration tutorial
 - :doc:`openai` - Similar integration for OpenAI GPT""",
     },
@@ -227,7 +231,7 @@ PROVIDER_CONFIGS = {
         "MODELS_USED": '["gemini-pro", "gemini-pro-vision"]',
         "FIRST_PARAM": "prompt",
         "SEE_ALSO_LINKS": """- :doc:`multi-provider` - Use Google AI with other providers
-- :doc:`../common-patterns` - Common integration patterns
+- :doc:`../llm-application-patterns` - LLM agent architectures and patterns
 - :doc:`../../tutorials/03-llm-integration` - LLM integration tutorial
 - :doc:`openai` - Similar integration for OpenAI GPT""",
     },
@@ -343,7 +347,7 @@ PROVIDER_CONFIGS = {
            ]
        )""",
         "SEE_ALSO_LINKS": """- :doc:`multi-provider` - Use Google ADK with other providers
-- :doc:`../common-patterns` - Common integration patterns
+- :doc:`../llm-application-patterns` - LLM agent architectures and patterns
 - :doc:`../../tutorials/03-llm-integration` - LLM integration tutorial
 - :doc:`google-ai` - Similar integration for Google AI""",
     },
@@ -469,7 +473,7 @@ PROVIDER_CONFIGS = {
         "MODELS_USED": '["claude-3-sonnet", "claude-3-haiku", "titan-text"]',
         "FIRST_PARAM": "prompts",
         "SEE_ALSO_LINKS": """- :doc:`multi-provider` - Use Bedrock with other providers
-- :doc:`../common-patterns` - Common integration patterns
+- :doc:`../llm-application-patterns` - LLM agent architectures and patterns
 - :doc:`../../tutorials/03-llm-integration` - LLM integration tutorial
 - :doc:`anthropic` - Similar integration for Anthropic Claude""",
     },
@@ -584,7 +588,7 @@ PROVIDER_CONFIGS = {
         "MODELS_USED": '["gpt-35-turbo", "gpt-4", "gpt-4-turbo"]',
         "FIRST_PARAM": "prompts",
         "SEE_ALSO_LINKS": """- :doc:`multi-provider` - Use Azure OpenAI with other providers
-- :doc:`../common-patterns` - Common integration patterns
+- :doc:`../llm-application-patterns` - LLM agent architectures and patterns
 - :doc:`../../tutorials/03-llm-integration` - LLM integration tutorial
 - :doc:`openai` - Similar integration for OpenAI""",
     },
@@ -703,11 +707,174 @@ PROVIDER_CONFIGS = {
         "MODELS_USED": '["web_search", "file_processor", "data_analyzer"]',
         "FIRST_PARAM": "tasks",
         "SEE_ALSO_LINKS": """- :doc:`multi-provider` - Use MCP with other providers
-- :doc:`../common-patterns` - Common integration patterns
+- :doc:`../llm-application-patterns` - LLM agent architectures and patterns
 - :doc:`../../tutorials/03-llm-integration` - LLM integration tutorial
 - :doc:`../advanced-tracing/index` - Advanced tracing patterns""",
     },
 }
+
+
+def load_compatibility_data() -> Dict[str, Any]:
+    """Load provider compatibility data from YAML file."""
+    compatibility_file = Path(__file__).parent / "provider_compatibility.yaml"
+    
+    if not compatibility_file.exists():
+        raise FileNotFoundError(
+            f"Compatibility data file not found: {compatibility_file}\n"
+            "Please ensure provider_compatibility.yaml exists in the templates directory."
+        )
+    
+    with open(compatibility_file, 'r') as f:
+        return yaml.safe_load(f)
+
+
+def format_python_version_support(data: Dict[str, List[str]]) -> str:
+    """Format Python version support as RST list-table."""
+    lines = []
+    lines.append(".. list-table::")
+    lines.append("   :header-rows: 1")
+    lines.append("   :widths: 30 70")
+    lines.append("")
+    lines.append("   * - Support Level")
+    lines.append("     - Python Versions")
+    
+    if data.get("supported"):
+        versions_str = ", ".join(data["supported"])
+        lines.append("   * - Fully Supported")
+        lines.append(f"     - {versions_str}")
+    
+    if data.get("partial"):
+        versions_str = ", ".join(data["partial"])
+        lines.append("   * - Partial Support")
+        lines.append(f"     - {versions_str}")
+    
+    if data.get("unsupported"):
+        versions_str = ", ".join(data["unsupported"])
+        lines.append("   * - Not Supported")
+        lines.append(f"     - {versions_str}")
+    
+    return "\n".join(lines)
+
+
+def format_sdk_version_range(data: Dict[str, Any]) -> str:
+    """Format SDK version requirements as RST bullet list."""
+    lines = []
+    
+    if data.get("minimum"):
+        lines.append(f"- **Minimum**: {data['minimum']}")
+    
+    if data.get("recommended"):
+        lines.append(f"- **Recommended**: {data['recommended']}")
+    
+    if data.get("tested_versions"):
+        versions_str = ", ".join(data["tested_versions"])
+        lines.append(f"- **Tested Versions**: {versions_str}")
+    
+    return "\n".join(lines)
+
+
+def format_instrumentor_compatibility(data: Dict[str, Dict[str, str]]) -> str:
+    """Format instrumentor compatibility as RST list-table."""
+    lines = []
+    lines.append(".. list-table::")
+    lines.append("   :header-rows: 1")
+    lines.append("   :widths: 30 20 50")
+    lines.append("")
+    lines.append("   * - Instrumentor")
+    lines.append("     - Status")
+    lines.append("     - Notes")
+    
+    status_labels = {
+        "fully_supported": "Fully Supported",
+        "partial": "Partial Support",
+        "experimental": "Experimental",
+        "not_supported": "Not Supported"
+    }
+    
+    if "openinference" in data:
+        status = data["openinference"].get("status", "unknown")
+        status_label = status_labels.get(status, status.replace("_", " ").title())
+        notes = data["openinference"].get("notes", "")
+        lines.append("   * - OpenInference")
+        lines.append(f"     - {status_label}")
+        lines.append(f"     - {notes}")
+    
+    if "traceloop" in data:
+        status = data["traceloop"].get("status", "unknown")
+        status_label = status_labels.get(status, status.replace("_", " ").title())
+        notes = data["traceloop"].get("notes", "")
+        lines.append("   * - Traceloop")
+        lines.append(f"     - {status_label}")
+        lines.append(f"     - {notes}")
+    
+    return "\n".join(lines)
+
+
+def format_known_limitations(limitations: List[str]) -> str:
+    """Format known limitations as RST bullet list."""
+    if not limitations:
+        return "No known limitations."
+    
+    lines = []
+    for limitation in limitations:
+        lines.append(f"- {limitation}")
+    
+    return "\n".join(lines)
+
+
+def validate_compatibility_data() -> bool:
+    """Validate compatibility data structure and completeness."""
+    try:
+        compat_data = load_compatibility_data()
+        
+        required_fields = [
+            "python_version_support",
+            "sdk_version_range", 
+            "instrumentor_compatibility",
+            "known_limitations"
+        ]
+        
+        all_valid = True
+        for provider_key in PROVIDER_CONFIGS.keys():
+            if provider_key not in compat_data:
+                print(f"❌ Missing compatibility data for provider: {provider_key}")
+                all_valid = False
+                continue
+            
+            provider_compat = compat_data[provider_key]
+            
+            for field in required_fields:
+                if field not in provider_compat:
+                    print(f"❌ {provider_key}: Missing required field '{field}'")
+                    all_valid = False
+            
+            # Validate python_version_support structure
+            if "python_version_support" in provider_compat:
+                pvs = provider_compat["python_version_support"]
+                if not isinstance(pvs, dict):
+                    print(f"❌ {provider_key}: python_version_support must be a dict")
+                    all_valid = False
+                elif not any(k in pvs for k in ["supported", "partial", "unsupported"]):
+                    print(f"❌ {provider_key}: python_version_support missing version categories")
+                    all_valid = False
+            
+            # Validate instrumentor_compatibility has at least 3 limitations
+            if "known_limitations" in provider_compat:
+                limitations = provider_compat["known_limitations"]
+                if not isinstance(limitations, list):
+                    print(f"❌ {provider_key}: known_limitations must be a list")
+                    all_valid = False
+                elif len(limitations) < 3:
+                    print(f"⚠️  {provider_key}: known_limitations has only {len(limitations)} entries (recommended: ≥3)")
+        
+        if all_valid:
+            print(f"✅ All compatibility data validated successfully ({len(compat_data)} providers)")
+        
+        return all_valid
+        
+    except Exception as e:
+        print(f"❌ Validation failed: {e}")
+        return False
 
 
 def generate_provider_docs(provider_key: str, output_path: Path = None) -> None:
@@ -728,7 +895,33 @@ def generate_provider_docs(provider_key: str, output_path: Path = None) -> None:
     template_content = template_path.read_text()
 
     # Get provider configuration
-    variables = PROVIDER_CONFIGS[provider_key]
+    variables = PROVIDER_CONFIGS[provider_key].copy()
+    
+    # Load and merge compatibility data from YAML
+    compatibility_data = load_compatibility_data()
+    if provider_key in compatibility_data:
+        provider_compat = compatibility_data[provider_key]
+        
+        # Format compatibility data as RST and add to variables
+        variables["PYTHON_VERSION_SUPPORT"] = format_python_version_support(
+            provider_compat.get("python_version_support", {})
+        )
+        variables["SDK_VERSION_RANGE"] = format_sdk_version_range(
+            provider_compat.get("sdk_version_range", {})
+        )
+        variables["INSTRUMENTOR_COMPATIBILITY"] = format_instrumentor_compatibility(
+            provider_compat.get("instrumentor_compatibility", {})
+        )
+        variables["KNOWN_LIMITATIONS"] = format_known_limitations(
+            provider_compat.get("known_limitations", [])
+        )
+    else:
+        # Fallback if compatibility data is missing
+        print(f"⚠️  Warning: No compatibility data found for {provider_key}")
+        variables["PYTHON_VERSION_SUPPORT"] = "No compatibility data available."
+        variables["SDK_VERSION_RANGE"] = "No compatibility data available."
+        variables["INSTRUMENTOR_COMPATIBILITY"] = "No compatibility data available."
+        variables["KNOWN_LIMITATIONS"] = "No compatibility data available."
 
     # Handle Traceloop availability
     if variables.get("TRACELOOP_AVAILABLE") == False:
@@ -1017,7 +1210,6 @@ def main():
     )
     parser.add_argument(
         "--provider",
-        required=True,
         choices=list(PROVIDER_CONFIGS.keys()),
         help="Provider to generate documentation for",
     )
@@ -1025,6 +1217,21 @@ def main():
         "--output",
         type=Path,
         help="Output file path (default: docs/how-to/integrations/{provider}.rst)",
+    )
+    parser.add_argument(
+        "--all", 
+        action="store_true", 
+        help="Regenerate documentation for all providers"
+    )
+    parser.add_argument(
+        "--validate", 
+        action="store_true", 
+        help="Validate compatibility data structure and completeness"
+    )
+    parser.add_argument(
+        "--dry-run",
+        action="store_true",
+        help="Preview changes without writing files"
     )
     parser.add_argument("--list", action="store_true", help="List available providers")
 
@@ -1035,6 +1242,30 @@ def main():
         for key, config in PROVIDER_CONFIGS.items():
             print(f"  {key} - {config['PROVIDER_NAME']}")
         return
+
+    if args.validate:
+        success = validate_compatibility_data()
+        return 0 if success else 1
+    
+    if args.all:
+        print(f"Regenerating documentation for all {len(PROVIDER_CONFIGS)} providers...")
+        for provider_key in PROVIDER_CONFIGS.keys():
+            try:
+                if args.dry_run:
+                    print(f"  [DRY RUN] Would generate: {provider_key}.rst")
+                else:
+                    generate_provider_docs(provider_key, None)
+                    print(f"  ✅ Generated: {provider_key}.rst")
+            except Exception as e:
+                print(f"  ❌ Failed {provider_key}: {e}")
+        return 0
+    
+    if not args.provider:
+        parser.error("--provider is required (unless --all, --validate, or --list is specified)")
+
+    if args.dry_run:
+        print(f"[DRY RUN] Would generate documentation for: {args.provider}")
+        return 0
 
     try:
         generate_provider_docs(args.provider, args.output)

@@ -1033,5 +1033,5 @@ See Also
 
 - :doc:`integration-testing` - Integration testing strategies
 - :doc:`mocking-strategies` - Advanced mocking techniques
-- :doc:`../../tutorials/02-basic-tracing` - Basic tracing patterns
+- :doc:`../../tutorials/01-setup-first-tracer` - Basic tracing patterns
 - :doc:`../../reference/api/tracer` - Complete tracer API reference

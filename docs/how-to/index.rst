@@ -24,20 +24,16 @@ How-to guides are organized by problem domain. Each guide provides step-by-step 
 - You want to implement a specific pattern or technique
 - You're troubleshooting an issue
 
-Getting Started
----------------
+Migration & Compatibility
+--------------------------
 
-Essential setup and configuration guides for HoneyHive SDK usage.
-
-.. toctree::
-   :maxdepth: 1
-
-   migration-guide
+Guides for migrating from older versions and ensuring backwards compatibility.
 
 .. toctree::
    :maxdepth: 1
 
-   backwards-compatibility-guide
+   migration-compatibility/migration-guide
+   migration-compatibility/backwards-compatibility-guide
 
 LLM Provider Integration
 -------------------------
@@ -56,7 +52,6 @@ Quick solutions for specific provider integration challenges. HoneyHive supports
    integrations/mcp
    integrations/multi-provider
    integrations/non-instrumentor-frameworks
-   migration-guide
 
 Custom Tracing
 --------------
@@ -71,25 +66,17 @@ Build sophisticated observability:
 Testing Your Application
 -------------------------
 
+Test your LLM application with HoneyHive tracing:
+
+.. toctree::
+   :maxdepth: 1
+
+   testing-applications
+
 .. note::
-   **Testing HoneyHive SDK Usage**
+   **SDK Development Testing**
    
-   For testing applications that use the HoneyHive SDK, use standard Python testing practices with pytest, unittest, or your preferred testing framework. The SDK is designed to be easily mockable and testable.
-   
-   For mocking HoneyHive in tests, simply mock the tracer instance or use dependency injection patterns.
-
-.. code-block:: python
-
-   # Example: Mocking HoneyHive in tests
-   from unittest.mock import Mock, patch
-   import pytest
-   
-   @patch('honeyhive.HoneyHiveTracer')
-   def test_my_traced_function(mock_tracer):
-       # Your test code here
-       pass
-
-**SDK Development Testing**: For testing the HoneyHive SDK itself, see :doc:`../development/index`.
+   For testing the HoneyHive SDK itself (SDK contributors), see :doc:`../development/index`.
 
 
 Evaluate LLM Outputs
@@ -113,6 +100,7 @@ Keep applications running reliably:
    monitoring/index
    deployment/pyproject-integration
    deployment/production
+   deployment/advanced-production
 
 Build Common Patterns
 ----------------------
@@ -122,7 +110,7 @@ Implement proven architectural patterns:
 .. toctree::
    :maxdepth: 1
 
-   common-patterns
+   llm-application-patterns
 
 **Quick Solutions:**
 
@@ -136,9 +124,10 @@ Implement proven architectural patterns:
 
 - :doc:`deployment/pyproject-integration` - Include HoneyHive in your pyproject.toml
 - :doc:`deployment/production` - Deploy HoneyHive to production
+- :doc:`deployment/advanced-production` - Circuit breakers, blue-green deployments, and advanced patterns
 - :doc:`monitoring/index` - Set up monitoring and alerts
 - :doc:`evaluation/index` - Build comprehensive evaluation pipelines
-- :doc:`common-patterns` - Implement resilient agent patterns
+- :doc:`llm-application-patterns` - Agent patterns (ReAct, Plan-Execute, RAG) with tradeoffs and trace hierarchies
 
 Troubleshooting
 ---------------
@@ -205,18 +194,19 @@ Common issues and step-by-step solutions for HoneyHive integration challenges.
 
    .. code-block:: python
 
-      # Enable debug logging
-      import logging
-      logging.basicConfig(level=logging.DEBUG)
-      
-      # Check tracer initialization
+      # Enable tracer debug logging (recommended - shows tracer internals)
       from honeyhive import HoneyHiveTracer
       tracer = HoneyHiveTracer.init(
           api_key="your-key",      # Or set HH_API_KEY environment variable
           project="your-project",  # Or set HH_PROJECT environment variable
-          source="debug"           # Or set HH_SOURCE environment variable
+          source="debug",          # Or set HH_SOURCE environment variable
+          verbose=True             # Enable detailed debug logging for tracer
       )
       print(f"Tracer initialized: {tracer is not None}")
+      
+      # Alternative: Enable Python's standard debug logging (shows all modules)
+      import logging
+      logging.basicConfig(level=logging.DEBUG)
 
 2. **Validate event_type values** - Use proper EventType enum:
 
@@ -252,7 +242,75 @@ Common issues and step-by-step solutions for HoneyHive integration challenges.
    .. warning::
       **Common Issue**: If you see "⚠️ Existing provider doesn't support span processors", this indicates a ProxyTracerProvider issue. The fix above resolves this by ensuring HoneyHive creates a real TracerProvider first.
 
-For additional troubleshooting resources, see the HoneyHive documentation or contact support.
+**Network & SSL Issues?**
+
+1. **SSL Certificate Verification Errors** (`SSLCertVerificationError`, `CERTIFICATE_VERIFY_FAILED`):
+
+   .. code-block:: python
+
+      from honeyhive import HoneyHiveTracer
+      
+      # Option 1: Use custom CA bundle (recommended for corporate environments)
+      import os
+      os.environ['REQUESTS_CA_BUNDLE'] = '/path/to/ca-bundle.crt'
+      
+      tracer = HoneyHiveTracer.init(
+          api_key="your-key",
+          project="your-project"
+      )
+      
+      # Option 2: Disable SSL verification (NOT recommended for production)
+      tracer = HoneyHiveTracer.init(
+          api_key="your-key",
+          project="your-project",
+          verify_ssl=False  # Use only for local development/testing
+      )
+
+2. **Corporate Proxy / Firewall Issues**:
+
+   .. code-block:: bash
+
+      # Set proxy environment variables
+      export HTTPS_PROXY=http://proxy.company.com:8080
+      export HTTP_PROXY=http://proxy.company.com:8080
+      
+      # Test connectivity
+      curl -x $HTTPS_PROXY https://api.honeyhive.ai/health
+
+   .. code-block:: python
+
+      # Configure in Python code
+      import os
+      os.environ['HTTPS_PROXY'] = 'http://proxy.company.com:8080'
+      
+      from honeyhive import HoneyHiveTracer
+      tracer = HoneyHiveTracer.init(api_key="your-key")
+
+3. **Timeout Errors** (`ConnectionTimeout`, `ReadTimeout`):
+
+   .. code-block:: python
+
+      # Increase timeout for slow networks
+      tracer = HoneyHiveTracer.init(
+          api_key="your-key",
+          project="your-project",
+          timeout=60.0  # Increase from default 30s
+      )
+
+4. **DNS Resolution Issues**:
+
+   .. code-block:: bash
+
+      # Verify DNS resolution
+      nslookup api.honeyhive.ai
+      
+      # Test direct connectivity
+      ping api.honeyhive.ai
+      
+      # Check SSL certificate
+      openssl s_client -connect api.honeyhive.ai:443 -showcerts
+
+For additional troubleshooting resources, see :doc:`deployment/production` for production deployment best practices or contact support.
 
 Getting Help
 ------------

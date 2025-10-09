@@ -102,7 +102,7 @@ Client Classes
 ~~~~~~~~~~~~~~
 
 .. toctree::
-   :maxdepth: 2
+   :maxdepth: 1
 
    api/client
    api/tracer
@@ -113,7 +113,7 @@ Decorators & Functions
 ~~~~~~~~~~~~~~~~~~~~~~
 
 .. toctree::
-   :maxdepth: 2
+   :maxdepth: 1
 
    api/decorators
 
@@ -146,7 +146,7 @@ Experiments Module
 **Modern evaluation framework** with decorator-based evaluators and backend-powered aggregation.
 
 .. toctree::
-   :maxdepth: 2
+   :maxdepth: 1
 
    experiments/experiments
    experiments/core-functions

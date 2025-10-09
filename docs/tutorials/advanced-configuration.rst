@@ -18,7 +18,7 @@ This tutorial covers advanced configuration patterns for the HoneyHive SDK, incl
 Prerequisites
 =============
 
-- Completed the :doc:`01-quick-start` tutorial
+- Completed the :doc:`01-setup-first-tracer` tutorial
 - Understanding of Python environment variables
 - Familiarity with configuration management concepts
 
@@ -775,4 +775,4 @@ Now that you understand advanced configuration patterns:
 - :doc:`../reference/configuration/hybrid-config-approach` - Complete configuration reference
 - :doc:`../reference/api/config-models` - Configuration models API
 - :doc:`../reference/api/tracer-architecture` - Tracer architecture details
-- :doc:`../how-to/migration-guide` - Migration guide with multi-instance examples
+- :doc:`../how-to/migration-compatibility/migration-guide` - Migration guide with multi-instance examples

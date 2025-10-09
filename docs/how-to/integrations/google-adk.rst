@@ -8,6 +8,62 @@ Integrate with Google Agent Development Kit (ADK)
 
 This guide covers Google Agent Development Kit (ADK) integration with HoneyHive's BYOI architecture, supporting both OpenInference and Traceloop instrumentors.
 
+Compatibility
+-------------
+
+**Problem**: I need to know if my Python version and Google Agent Development Kit (ADK) SDK version are compatible with HoneyHive.
+
+**Solution**: Check the compatibility information below before installation.
+
+Python Version Support
+^^^^^^^^^^^^^^^^^^^^^^
+
+.. list-table::
+   :header-rows: 1
+   :widths: 30 70
+
+   * - Support Level
+     - Python Versions
+   * - Fully Supported
+     - 3.11, 3.12, 3.13
+   * - Not Supported
+     - 3.10 and below
+
+Provider SDK Requirements
+^^^^^^^^^^^^^^^^^^^^^^^^^
+
+- **Minimum**: google-adk >= 1.0.0
+- **Recommended**: google-adk >= 1.2.0
+- **Tested Versions**: 1.2.0, 1.3.0
+
+Instrumentor Compatibility
+^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+.. list-table::
+   :header-rows: 1
+   :widths: 30 20 50
+
+   * - Instrumentor
+     - Status
+     - Notes
+   * - OpenInference
+     - Fully Supported
+     - Multi-agent workflows and tool calling fully traced
+   * - Traceloop
+     - Not Supported
+     - Traceloop instrumentor not available for Google ADK - use OpenInference
+
+Known Limitations
+^^^^^^^^^^^^^^^^^
+
+- **Traceloop**: Not available for Google ADK, OpenInference only
+- **Multi-Agent Workflows**: Requires nested span management for proper trace hierarchy
+- **Tool Calling**: Fully supported with automatic tool execution tracing
+- **Streaming Responses**: Partial support, manual span finalization needed
+
+.. note::
+   For the complete compatibility matrix across all providers, see :doc:`/how-to/integrations/multi-provider`.
+
 Choose Your Instrumentor
 ------------------------
 

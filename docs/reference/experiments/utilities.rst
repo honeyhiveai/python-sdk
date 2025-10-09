@@ -155,4 +155,4 @@ See Also
 --------
 
 - :doc:`core-functions` - Use these utilities via evaluate()
-- :doc:`../../../tutorials/04-evaluation-basics` - Tutorial
+- :doc:`../../../how-to/evaluation/index` - Tutorial

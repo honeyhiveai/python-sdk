@@ -8,6 +8,62 @@ Integrate with Anthropic
 
 This guide covers Anthropic integration with HoneyHive's BYOI architecture, supporting both OpenInference and Traceloop instrumentors.
 
+Compatibility
+-------------
+
+**Problem**: I need to know if my Python version and Anthropic SDK version are compatible with HoneyHive.
+
+**Solution**: Check the compatibility information below before installation.
+
+Python Version Support
+^^^^^^^^^^^^^^^^^^^^^^
+
+.. list-table::
+   :header-rows: 1
+   :widths: 30 70
+
+   * - Support Level
+     - Python Versions
+   * - Fully Supported
+     - 3.11, 3.12, 3.13
+   * - Not Supported
+     - 3.10 and below
+
+Provider SDK Requirements
+^^^^^^^^^^^^^^^^^^^^^^^^^
+
+- **Minimum**: anthropic >= 0.17.0
+- **Recommended**: anthropic >= 0.21.0
+- **Tested Versions**: 0.21.0, 0.22.0, 0.23.0
+
+Instrumentor Compatibility
+^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+.. list-table::
+   :header-rows: 1
+   :widths: 30 20 50
+
+   * - Instrumentor
+     - Status
+     - Notes
+   * - OpenInference
+     - Fully Supported
+     - Full Claude 3 family support with streaming and vision
+   * - Traceloop
+     - Fully Supported
+     - Enhanced metrics with Claude-specific cost tracking
+
+Known Limitations
+^^^^^^^^^^^^^^^^^
+
+- **Streaming**: Partial support - requires manual context management for proper traces
+- **Vision API**: Supported for Claude 3 models, traced automatically
+- **Tool Use**: Fully supported with both instrumentors
+- **Message Batching**: Not yet supported by instrumentors, use manual tracing
+
+.. note::
+   For the complete compatibility matrix across all providers, see :doc:`/how-to/integrations/multi-provider`.
+
 Choose Your Instrumentor
 ------------------------
 
@@ -566,8 +622,8 @@ See Also
 --------
 
 - :doc:`multi-provider` - Use Anthropic with other providers
-- :doc:`../common-patterns` - Common integration patterns
-- :doc:`../../tutorials/03-llm-integration` - LLM integration tutorial
+- :doc:`../llm-application-patterns` - Common integration patterns
+- :doc:`../../tutorials/02-add-llm-tracing-5min` - LLM integration tutorial
 - :doc:`openai` - Similar integration for OpenAI GPT
 
 .. raw:: html

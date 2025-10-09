@@ -8,6 +8,62 @@ Integrate with Azure OpenAI
 
 This guide covers Azure OpenAI integration with HoneyHive's BYOI architecture, supporting both OpenInference and Traceloop instrumentors.
 
+Compatibility
+-------------
+
+**Problem**: I need to know if my Python version and Azure OpenAI SDK version are compatible with HoneyHive.
+
+**Solution**: Check the compatibility information below before installation.
+
+Python Version Support
+^^^^^^^^^^^^^^^^^^^^^^
+
+.. list-table::
+   :header-rows: 1
+   :widths: 30 70
+
+   * - Support Level
+     - Python Versions
+   * - Fully Supported
+     - 3.11, 3.12, 3.13
+   * - Not Supported
+     - 3.10 and below
+
+Provider SDK Requirements
+^^^^^^^^^^^^^^^^^^^^^^^^^
+
+- **Minimum**: openai >= 1.0.0
+- **Recommended**: openai >= 1.10.0
+- **Tested Versions**: 1.10.0, 1.11.0, 1.12.0
+
+Instrumentor Compatibility
+^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+.. list-table::
+   :header-rows: 1
+   :widths: 30 20 50
+
+   * - Instrumentor
+     - Status
+     - Notes
+   * - OpenInference
+     - Fully Supported
+     - Full Azure OpenAI support with deployment-specific tracing
+   * - Traceloop
+     - Fully Supported
+     - Enhanced metrics with Azure-specific cost tracking and quotas
+
+Known Limitations
+^^^^^^^^^^^^^^^^^
+
+- **Deployment Names**: Must configure Azure deployment names separately from model names
+- **API Versions**: Requires Azure API version in configuration, traced in metadata
+- **Managed Identity**: Supported but requires additional Azure SDK configuration
+- **Streaming**: Fully supported with both instrumentors
+
+.. note::
+   For the complete compatibility matrix across all providers, see :doc:`/how-to/integrations/multi-provider`.
+
 Choose Your Instrumentor
 ------------------------
 
@@ -634,8 +690,8 @@ See Also
 --------
 
 - :doc:`multi-provider` - Use Azure OpenAI with other providers
-- :doc:`../common-patterns` - Common integration patterns
-- :doc:`../../tutorials/03-llm-integration` - LLM integration tutorial
+- :doc:`../llm-application-patterns` - Common integration patterns
+- :doc:`../../tutorials/02-add-llm-tracing-5min` - LLM integration tutorial
 - :doc:`openai` - Similar integration for OpenAI
 
 .. raw:: html

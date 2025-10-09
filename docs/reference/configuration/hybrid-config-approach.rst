@@ -732,5 +732,5 @@ See Also
 
 - :doc:`/reference/configuration/environment-vars` - Environment variable reference
 - :doc:`/reference/api/tracer` - HoneyHiveTracer API reference  
-- :doc:`/how-to/migration-guide` - General migration guidance
+- :doc:`/how-to/migration-compatibility/migration-guide` - General migration guidance
 - :doc:`/explanation/architecture/overview` - SDK architecture overview

@@ -508,6 +508,6 @@ See Also
 
 - :doc:`core-functions` - Run evaluators with evaluate()
 - :doc:`models` - Result data models
-- :doc:`../../../tutorials/04-evaluation-basics` - Evaluator tutorial
+- :doc:`../../../how-to/evaluation/index` - Evaluator tutorial
 - :doc:`../../../how-to/evaluation/index` - Evaluator patterns
 

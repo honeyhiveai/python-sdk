@@ -450,4 +450,4 @@ See Also
 
 - :doc:`llm-observability` - LLM-specific observability concepts
 - :doc:`../architecture/overview` - Overall system architecture
-- :doc:`../../tutorials/02-basic-tracing` - Practical tracing tutorial
+- :doc:`../../tutorials/01-setup-first-tracer` - Practical tracing tutorial
