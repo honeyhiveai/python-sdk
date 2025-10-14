@@ -1,0 +1,91 @@
+# Query Standards
+
+Quick search of Agent OS standards using semantic search (RAG).
+
+## Usage
+
+**Trigger phrases:**
+- "Query standards: [question]"
+- "Search standards for [topic]"
+- "What do our standards say about [topic]?"
+
+## Implementation
+
+### 1. Execute Search
+```
+Use MCP: search_standards(
+    query="[user's question]",
+    n_results=5
+)
+```
+
+### 2. Format Results
+
+Present results clearly:
+
+```
+📚 Standards Results for "[query]"
+
+1. [File Name] - [Section]
+   [Relevant content excerpt]
+   
+2. [File Name] - [Section]
+   [Relevant content excerpt]
+
+...
+```
+
+### 3. Provide Context
+
+- Summarize key points
+- Highlight actionable guidance
+- Point out related standards if relevant
+
+### 4. Offer Follow-ups
+
+Suggest related queries:
+- "Also see: [related topic]"
+- "For implementation details: query-standards '[specific aspect]'"
+
+## Common Queries
+
+**Code Quality:**
+- "production code checklist"
+- "Sphinx docstring format"
+- "error handling patterns"
+- "type annotation requirements"
+
+**Architecture:**
+- "dependency injection patterns"
+- "SOLID principles"
+- "separation of concerns"
+
+**Concurrency:**
+- "thread safety analysis"
+- "shared state patterns"
+- "locking strategies"
+
+**Testing:**
+- "test coverage requirements"
+- "unit testing standards"
+- "integration testing patterns"
+
+**MCP/Workflows:**
+- "MCP tool design best practices"
+- "workflow system overview"
+- "creating specifications"
+
+**Git/Safety:**
+- "git safety rules"
+- "credential file protection"
+- "import verification"
+
+## Output
+
+Concise, actionable guidance from indexed standards with citations.
+
+## Tips
+
+- **Be specific** - "concurrency safety" better than "concurrency"
+- **Ask questions** - "How to handle [X]?" better than single words
+- **Follow up** - Refine query if results not relevant

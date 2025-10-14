@@ -4,8 +4,12 @@ RAG and document chunking models.
 Data structures for RAG search results, document chunks, and metadata.
 """
 
+# pylint: disable=too-many-instance-attributes
+# Justification: SearchResult dataclass requires 9 attributes to provide comprehensive
+# RAG query results including chunks, scores, tokens, timing, and cache info.
+
 from dataclasses import dataclass
-from typing import List, Dict, Any, Optional
+from typing import Any, Dict, List, Optional
 
 
 @dataclass

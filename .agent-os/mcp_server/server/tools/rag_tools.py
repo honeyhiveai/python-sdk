@@ -4,14 +4,19 @@ RAG search tools for MCP server.
 Provides search_standards tool for semantic search over Agent OS documentation.
 """
 
+# pylint: disable=broad-exception-caught
+# Justification: RAG search tool must be robust - catches broad exceptions to
+# provide graceful error responses to AI agents rather than failing queries
+
 import logging
-from typing import Dict, Any, List, Optional
+from typing import Any, Dict, List, Optional
 
 logger = logging.getLogger(__name__)
 
 # HoneyHive integration (optional)
 try:
     from honeyhive.sdk.tracer import enrich_span
+
     HONEYHIVE_ENABLED = True
 except ImportError:
     HONEYHIVE_ENABLED = False
@@ -20,12 +25,12 @@ except ImportError:
 def register_rag_tools(mcp: Any, rag_engine: Any) -> int:
     """
     Register RAG search tools with MCP server.
-    
+
     :param mcp: FastMCP server instance
     :param rag_engine: RAGEngine instance for search
     :return: Number of tools registered
     """
-    
+
     @mcp.tool()
     async def search_standards(
         query: str,
@@ -51,20 +56,24 @@ def register_rag_tools(mcp: Any, rag_engine: Any) -> int:
         try:
             # Enrich HoneyHive span with MCP context
             if HONEYHIVE_ENABLED:
-                enrich_span({
-                    "mcp.tool": "search_standards",
-                    "mcp.query": query,
-                    "mcp.n_results": n_results,
-                    "mcp.filter_phase": filter_phase,
-                    "mcp.filter_tags": filter_tags,
-                })
+                enrich_span(
+                    {
+                        "mcp.tool": "search_standards",
+                        "mcp.query": query,
+                        "mcp.n_results": n_results,
+                        "mcp.filter_phase": filter_phase,
+                        "mcp.filter_tags": filter_tags,
+                    }
+                )
 
             logger.info(
-                f"search_standards: query='{query}', n_results={n_results}, "
-                f"filter_phase={filter_phase}"
+                "search_standards: query='%s', n_results=%s, filter_phase=%s",
+                query,
+                n_results,
+                filter_phase,
             )
 
-            filters = {}
+            filters: Dict[str, Any] = {}
             if filter_phase is not None:
                 filters["phase"] = filter_phase
             if filter_tags:
@@ -86,6 +95,16 @@ def register_rag_tools(mcp: Any, rag_engine: Any) -> int:
                 for chunk, score in zip(result.chunks, result.relevance_scores)
             ]
 
+            # Prepend reminder to FIRST result only, at the very beginning
+            if formatted_results:
+                reminder_text = (
+                    "🔍🔍🔍🔍🔍 QUERIES = KNOWLEDGE = ACCURACY = QUALITY ⭐⭐⭐⭐⭐\n\n"
+                    "---\n\n"
+                )
+                formatted_results[0]["content"] = (
+                    reminder_text + formatted_results[0]["content"]
+                )
+
             response = {
                 "results": formatted_results,
                 "total_tokens": result.total_tokens,
@@ -95,24 +114,28 @@ def register_rag_tools(mcp: Any, rag_engine: Any) -> int:
 
             # Enrich span with results
             if HONEYHIVE_ENABLED:
-                enrich_span({
-                    "result.chunks_returned": len(formatted_results),
-                    "result.total_tokens": result.total_tokens,
-                    "result.retrieval_method": result.retrieval_method,
-                    "result.query_time_ms": result.query_time_ms,
-                })
+                enrich_span(
+                    {
+                        "result.chunks_returned": len(formatted_results),
+                        "result.total_tokens": result.total_tokens,
+                        "result.retrieval_method": result.retrieval_method,
+                        "result.query_time_ms": result.query_time_ms,
+                    }
+                )
 
             logger.info(
-                f"search_standards completed: {len(formatted_results)} results, "
-                f"{result.total_tokens} tokens, {result.query_time_ms:.2f}ms"
+                "search_standards completed: %s results, %s tokens, %.2fms",
+                len(formatted_results),
+                result.total_tokens,
+                result.query_time_ms,
             )
 
             return response
 
         except Exception as e:
-            logger.error(f"search_standards failed: {e}", exc_info=True)
+            logger.error("search_standards failed: %s", e, exc_info=True)
             return {"error": str(e), "results": [], "total_tokens": 0}
-    
+
     return 1  # One tool registered
 
 

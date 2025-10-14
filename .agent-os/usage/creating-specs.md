@@ -2,6 +2,55 @@
 
 **Universal documentation for writing design specifications in any Agent OS project.**
 
+**Keywords for search**: creating specs, how to write specifications, spec structure, design documents, software requirements document, SRD, specification templates, task breakdown, implementation planning
+
+---
+
+## 🚨 Quick Reference (TL;DR)
+
+**5-File Spec Structure:**
+1. **README.md** - Executive summary, status, quick overview (for stakeholders)
+2. **srd.md** - Business requirements, goals, success metrics (Software Requirements Document)
+3. **specs.md** - Technical specifications, architecture, design decisions
+4. **tasks.md** - Implementation task breakdown with phases and dependencies
+5. **implementation.md** - Detailed step-by-step implementation guidance
+
+**All specs live in:** `.agent-os/specs/YYYY-MM-DD-feature-name/`
+
+**Quick Start:**
+1. Create spec directory: `.agent-os/specs/2025-10-11-my-feature/`
+2. Copy 5 templates from this guide
+3. Fill in README.md first (executive summary)
+4. Then srd.md (business requirements)
+5. Then specs.md (technical design)
+6. Then tasks.md (break down into phases/tasks)
+7. Finally implementation.md (detailed guidance)
+
+**When to create a spec:**
+- ✅ Feature affects multiple files/components
+- ✅ Architectural decisions needed
+- ✅ Need to track multi-phase work
+- ✅ Collaboration with team/stakeholders
+- ❌ Simple bug fixes (no spec needed)
+- ❌ Single-file changes (no spec needed)
+
+---
+
+## Questions This Answers
+
+- "How do I create a specification in Agent OS?"
+- "What files should be in a spec directory?"
+- "What's the difference between srd.md and specs.md?"
+- "How do I structure tasks in tasks.md?"
+- "What goes in README.md vs other files?"
+- "When should I create a spec?"
+- "How do I document requirements?"
+- "How do I break down implementation tasks?"
+- "What's a Software Requirements Document (SRD)?"
+- "How do I document technical architecture?"
+- "How do I track spec status?"
+- "What templates should I use?"
+
 ---
 
 ## 🎯 What Is a Spec?
@@ -15,7 +64,7 @@ A **specification (spec)** is a design document that details a feature, enhancem
 
 ---
 
-## 📁 Spec Structure
+## What is the Standard Spec Directory Structure?
 
 All specs follow this standard structure (inspired by python-sdk Agent OS):
 
@@ -39,9 +88,9 @@ All specs follow this standard structure (inspired by python-sdk Agent OS):
 
 ---
 
-## 📝 File Templates
+## What Templates Should I Use for Each File?
 
-### **1. README.md** - Executive Summary
+### How to Write README.md (File 1: Executive Summary)
 
 ```markdown
 # [Feature Name] - Executive Summary
@@ -100,7 +149,7 @@ All specs follow this standard structure (inspired by python-sdk Agent OS):
 
 ---
 
-### **2. srd.md** - Software Requirements Document
+### How to Write srd.md (File 2: Software Requirements Document)
 
 ```markdown
 # [Feature Name] - Software Requirements Document
@@ -193,7 +242,7 @@ All specs follow this standard structure (inspired by python-sdk Agent OS):
 
 ---
 
-### **3. specs.md** - Technical Specifications
+### How to Write specs.md (File 3: Technical Specifications)
 
 ```markdown
 # [Feature Name] - Technical Specifications
@@ -350,7 +399,7 @@ class ModelName:
 
 ---
 
-### **4. tasks.md** - Implementation Task Breakdown
+### How to Write tasks.md (File 4: Implementation Task Breakdown)
 
 ```markdown
 # [Feature Name] - Implementation Tasks
@@ -440,7 +489,7 @@ Task 1.1 → Task 1.2 → Task 2.1
 
 ---
 
-### **5. implementation.md** - Detailed Implementation Guidance
+### How to Write implementation.md (File 5: Detailed Implementation Guidance)
 
 ```markdown
 # [Feature Name] - Implementation Details
@@ -643,7 +692,7 @@ def test_integration_scenario():
 
 ---
 
-## ✅ Spec Creation Checklist
+## How to Validate Spec Completeness (Checklist)
 
 When creating a new spec, ensure:
 
@@ -674,21 +723,21 @@ When creating a new spec, ensure:
 
 ---
 
-## 📋 Spec Review Process
+## How to Review Specs?
 
-### Self-Review
+### How to Self-Review Your Spec
 1. Read spec end-to-end
 2. Verify all sections are complete
 3. Check for consistency across files
 4. Validate technical feasibility
 
-### Peer Review
+### How to Get Peer Review
 1. Share spec with team/AI
 2. Address feedback
 3. Update documentation
 4. Get approval
 
-### Implementation
+### How to Track Implementation Progress
 1. Break into tasks
 2. Assign ownership
 3. Track progress
@@ -696,9 +745,9 @@ When creating a new spec, ensure:
 
 ---
 
-## 💡 Best Practices
+## What are Spec Writing Best Practices?
 
-### DO:
+### What TO DO:
 ✅ Write specs before coding  
 ✅ Use concrete examples  
 ✅ Define success metrics  
@@ -708,7 +757,7 @@ When creating a new spec, ensure:
 ✅ Link to related specs  
 ✅ Keep language clear and precise
 
-### DON'T:
+### What NOT TO DO:
 ❌ Skip business requirements  
 ❌ Assume implementation details  
 ❌ Ignore non-functional requirements  
@@ -716,6 +765,75 @@ When creating a new spec, ensure:
 ❌ Write specs that are too abstract  
 ❌ Neglect security/performance  
 ❌ Skip validation criteria
+
+---
+
+## When to Query This Guide
+
+This guide is most valuable when:
+
+1. **Starting a New Feature**
+   - Situation: Need to document a new feature or architectural change
+   - Query: `search_standards("how to create specs")`
+
+2. **Unsure About Spec Structure**
+   - Situation: Don't know which file to put information in
+   - Query: `search_standards("spec structure README vs srd vs specs")`
+
+3. **Creating Business Requirements**
+   - Situation: Need template for Software Requirements Document
+   - Query: `search_standards("software requirements document template")`
+
+4. **Breaking Down Implementation**
+   - Situation: Need to create tasks.md with phases
+   - Query: `search_standards("how to break down implementation tasks")`
+
+5. **Writing Technical Specs**
+   - Situation: Need template for technical architecture
+   - Query: `search_standards("technical specification template")`
+
+6. **Validating Spec Completeness**
+   - Situation: Want to ensure all required sections are present
+   - Query: `search_standards("spec checklist requirements")`
+
+### Query by Use Case
+
+| Use Case | Example Query |
+|----------|---------------|
+| Starting new spec | `search_standards("how to create specs")` |
+| 5-file structure | `search_standards("spec file structure")` |
+| Business requirements | `search_standards("SRD template")` |
+| Technical design | `search_standards("technical specification template")` |
+| Task breakdown | `search_standards("implementation task breakdown")` |
+| Spec checklist | `search_standards("spec completeness checklist")` |
+
+---
+
+## Cross-References and Related Guides
+
+**Using Specs:**
+- `workflows/spec_execution_v1/` - How to execute a spec systematically
+  → `search_standards("spec execution workflow")`
+
+**AI Guidance:**
+- `usage/ai-agent-quickstart.md` - How AI should implement specs
+  → `search_standards("AI agent quickstart")`
+
+**Standards:**
+- `standards/ai-safety/production-code-checklist.md` - Quality requirements for implementation
+  → `search_standards("production code checklist")`
+- `standards/documentation/rag-content-authoring.md` - How to write discoverable documentation
+  → `search_standards("RAG content authoring")`
+
+**Quality:**
+- `standards/testing/test-pyramid.md` - Testing strategy for spec implementation
+  → `search_standards("test pyramid")`
+
+**Query workflow:**
+1. **Before**: `search_standards("how to create specs")` → Learn structure and templates
+2. **During**: Use templates from this guide to write each file
+3. **Execute**: `search_standards("spec execution workflow")` → Implement systematically
+4. **Validate**: `search_standards("production code checklist")` → Ensure quality
 
 ---
 

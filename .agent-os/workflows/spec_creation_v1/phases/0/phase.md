@@ -3,7 +3,7 @@
 **Phase Number:** 0  
 **Purpose:** Incorporate pre-existing documents into spec structure  
 **Estimated Time:** 10-20 minutes  
-**Total Tasks:** 3
+**Total Tasks:** 4
 
 **Note:** This phase is OPTIONAL and only runs if `supporting_docs` provided in workflow options.
 
@@ -16,6 +16,11 @@ Process existing analysis, research, or design documents to extract insights tha
 ---
 
 ## Tasks in This Phase
+
+### Task 0: Create Spec Directory
+**File:** [task-0-create-directory.md](task-0-create-directory.md)  
+**Purpose:** Create properly-named spec directory following convention  
+**Time:** 1 minute
 
 ### Task 1: Copy or Reference Documents
 **File:** [task-1-copy-documents.md](task-1-copy-documents.md)  
@@ -38,7 +43,7 @@ Process existing analysis, research, or design documents to extract insights tha
 
 🛑 EXECUTE-NOW: Complete tasks sequentially
 
-Tasks must be completed in order: 1 → 2 → 3
+Tasks must be completed in order: 0 → 1 → 2 → 3
 
 Each task builds on the previous one's output.
 
@@ -47,6 +52,7 @@ Each task builds on the previous one's output.
 ## Phase Deliverables
 
 Upon completion, you will have:
+- ✅ Spec directory created with correct naming convention
 - ✅ All supporting docs accessible (copied or referenced)
 - ✅ INDEX.md with document catalog and metadata
 - ✅ Extracted insights categorized by type (requirements/design/implementation)
@@ -58,6 +64,7 @@ Upon completion, you will have:
 🛑 VALIDATE-GATE: Phase 0 Checkpoint
 
 Before advancing to Phase 1:
+- [ ] Spec directory created with `YYYY-MM-DD-descriptive-name` format ✅/❌
 - [ ] `supporting-docs/` directory exists ✅/❌
 - [ ] All documents processed (embedded or referenced) ✅/❌
 - [ ] `INDEX.md` created with all documents listed ✅/❌
@@ -73,6 +80,6 @@ Extracting insights from supporting documents is MANDATORY. These insights infor
 
 ## Start Phase 0
 
-🎯 NEXT-MANDATORY: [task-1-copy-documents.md](task-1-copy-documents.md)
+🎯 NEXT-MANDATORY: [task-0-create-directory.md](task-0-create-directory.md)
 
-Begin with Task 1 to copy or reference supporting documents.
+Begin with Task 0 to create the properly-named spec directory.

@@ -11,30 +11,34 @@ All models importable via: from mcp_server.models import X
 """
 
 # Configuration models
-from .config import (
-    RAGConfig,
-    MCPConfig,
-    ServerConfig,
+from .config import MCPConfig, RAGConfig, ServerConfig
+
+# RAG models
+from .rag import ChunkMetadata, DocumentChunk, QueryMetrics, SearchResult
+
+# Upgrade workflow models
+from .upgrade_models import (
+    BackupManifest,
+    Phase0Evidence,
+    Phase1Evidence,
+    Phase2Evidence,
+    Phase3Evidence,
+    Phase4Evidence,
+    Phase5Evidence,
+    UpgradeReport,
+    UpgradeWorkflowSession,
 )
 
 # Workflow models
 from .workflow import (
+    CheckpointCriteria,
     CheckpointStatus,
     CommandExecution,
     PhaseArtifact,
-    WorkflowState,
-    CheckpointCriteria,
     PhaseMetadata,
-    WorkflowMetadata,
     WorkflowConfig,
-)
-
-# RAG models
-from .rag import (
-    ChunkMetadata,
-    DocumentChunk,
-    SearchResult,
-    QueryMetrics,
+    WorkflowMetadata,
+    WorkflowState,
 )
 
 __all__ = [
@@ -56,4 +60,14 @@ __all__ = [
     "DocumentChunk",
     "SearchResult",
     "QueryMetrics",
+    # Upgrade
+    "Phase0Evidence",
+    "Phase1Evidence",
+    "Phase2Evidence",
+    "Phase3Evidence",
+    "Phase4Evidence",
+    "Phase5Evidence",
+    "BackupManifest",
+    "UpgradeReport",
+    "UpgradeWorkflowSession",
 ]

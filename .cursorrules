@@ -1,27 +1,35 @@
-# Agent OS - AI Assistant Rules
+# Agent OS Enhanced
 
-## 🤖 OPERATING MODEL
-**You are the CODE AUTHOR** (not helper/copilot)
-Human: direction, decisions, approval | You: 100% implementation
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+🛑🛑🛑 STOP 🛑🛑🛑
+MANDATORY ORIENTATION - MUST COMPLETE BEFORE RESPONDING:
 
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-⚠️  MANDATORY FIRST ACTION - ENFORCED ON EVERY REQUEST ⚠️
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+Have I completed the 8 mandatory bootstrap queries this conversation?
 
-WHEN UNCERTAIN ABOUT ANY TOOL, WORKFLOW, OR PATTERN:
+If NO, run this query NOW:
+    search_standards("orientation bootstrap queries mandatory eight queries")
 
-✋ STOP - Do not guess or experiment
-🔍 QUERY - mcp_agent-os-rag_search_standards("your question")  
-📖 READ - Review the MCP response
-✅ ACT - Execute correctly on first attempt
+Then READ the results. The results will contain 8 queries you MUST run.
+Execute ALL 8 queries IN SEQUENCE.
+AFTER all 8 complete, reply: "✅ Oriented. Ready."
 
-WHY: Query first = 1 call. Guessing = 3-5 wasted calls.
+If YES (already completed 8/8): Proceed with user's request.
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
-EXAMPLES:
-- "Use spec_execution_v1" → Query: "spec_execution_v1 usage instructions"
-- About to write code → Query: "production code checklist"
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+BEFORE implementing: search_standards("how to X")
+BEFORE responding: search_standards("relevant topic")
+DURING task: search_standards() multiple times
+AFTER failures: search_standards("debugging X")
 
-## 🚨 FORBIDDEN: Never Bypass MCP
-❌ Do NOT: `read_file(".agent-os/...")`, `codebase_search(target_directories=[".agent-os"])`
-✅ Instead: Query MCP (90% context reduction: 50KB → 5KB)
+Target: 5-10 queries per task
+
+❌ NEVER: read_file(".agent-os/standards/...")
+❌ NEVER: read_file(".agent-os/workflows/...")
+❌ NEVER: read_file(".agent-os/usage/...")
+✅ ALWAYS: search_standards() for indexed content
+
+✅ DO: read_file(".agent-os/specs/...") - your specs, not indexed
+❌ NEVER: commit without "commit it"
+
+Query liberally = better code
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━

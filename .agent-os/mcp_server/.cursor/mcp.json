@@ -1,0 +1,21 @@
+{
+  "mcpServers": {
+    "agent-os-rag": {
+      "command": "${workspaceFolder}/.agent-os/venv/bin/python",
+      "args": [
+        "-m",
+        "mcp_server"
+      ],
+      "env": {
+        "PROJECT_ROOT": "${workspaceFolder}",
+        "PYTHONPATH": "${workspaceFolder}/.agent-os",
+        "PYTHONUNBUFFERED": "1"
+      },
+      "autoApprove": [
+        "search_standards",
+        "get_current_phase",
+        "get_workflow_state"
+      ]
+    }
+  }
+}

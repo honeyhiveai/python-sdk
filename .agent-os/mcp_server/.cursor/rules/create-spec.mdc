@@ -1,0 +1,92 @@
+# Create Specification
+
+Create a comprehensive specification for a feature following Agent OS standards.
+
+## Usage
+
+**Trigger phrases:**
+- "Create spec for [feature]"
+- "I need a spec for [feature]"
+- "Let's spec out [feature]"
+
+## Workflow
+
+### 1. Query Standards First
+```
+Use MCP: search_standards("creating specifications standards")
+Review spec structure and requirements
+```
+
+### 2. Gather Context
+Ask the user:
+- What problem does this solve?
+- Who is this for?
+- What are the success criteria?
+- What's the technical approach?
+
+### 3. Create Spec Directory
+```
+.agent-os/specs/YYYY-MM-DD-feature-name/
+├── README.md         # Executive summary
+├── srd.md           # Requirements (goals, users, criteria)
+├── specs.md         # Technical design
+├── tasks.md         # Implementation breakdown
+└── implementation.md # Detailed guidance
+```
+
+### 4. Write Each Document
+
+**README.md:**
+- Problem statement
+- Solution overview
+- Success metrics
+- Links to detailed docs
+
+**srd.md (Software Requirements Document):**
+- Business goals
+- User stories
+- Functional requirements
+- Non-functional requirements
+- Constraints
+
+**specs.md (Technical Specifications):**
+- Architecture overview
+- API specifications
+- Data models
+- Workflow/process flow
+- Security considerations
+- Performance considerations
+- Testing strategy
+
+**tasks.md (Implementation Tasks):**
+- Phased task breakdown
+- Dependencies between tasks
+- Estimated time per task
+- Acceptance criteria per task
+- Validation gates between phases
+
+**implementation.md (Detailed Guidance):**
+- Code patterns to use
+- Testing approach
+- Deployment steps
+- Troubleshooting guide
+
+### 5. Review with User
+- Walk through each document
+- Refine based on feedback
+- Ensure tasks are clear and actionable
+
+## Output
+
+A complete specification in `.agent-os/specs/YYYY-MM-DD-feature-name/` ready for implementation.
+
+## Next Step
+
+Tell user: "Spec created! Use `execute-tasks` to implement, or review tasks.md and work through them."
+
+## Standards Applied
+
+- Follows `.agent-os/usage/creating-specs.md`
+- Uses Sphinx-style docstrings
+- Includes production code checklist references
+- Phase-gated with validation criteria

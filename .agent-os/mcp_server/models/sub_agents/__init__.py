@@ -9,9 +9,11 @@ Will contain models for sub-agent tools like:
 - etc.
 """
 
+from typing import List
+
 # Future sub-agent models will be defined here
 # Example:
 # from .design_validator import DesignValidationResult
 # from .concurrency_analyzer import ConcurrencyIssue
 
-__all__ = []
+__all__: List[str] = []

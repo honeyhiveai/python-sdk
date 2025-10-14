@@ -1,0 +1,105 @@
+Agent OS Version History
+
+Last Updated: 2025-10-14
+Source Commit: e505669
+Source Repo: agent-os-enhanced (github.com/honeyhiveai/agent-os-enhanced)
+Updated By: AI Assistant (Cursor)
+Current Version: Latest (2025-10-13)
+
+## Retrofit Notes
+
+### Retrofit from Prototype (2025-10-14)
+
+**Objective:**
+Pulled back refined agent-os-enhanced work into python-sdk/.agent-os after prototyping phase.
+
+**What Was Replaced:**
+- /mcp_server/ - Complete replacement with latest upstream (20+ commits)
+  - NEW: backup_manager.py, dependency_installer.py, port_manager.py
+  - NEW: project_info.py, report_generator.py, server_manager.py
+  - NEW: transport_manager.py, validation_module.py, workflow_validator.py
+  - NEW: core/metrics.py, models/upgrade_models.py
+  - NEW: sub_agents/discovery.py, sub_agents/mcp_client_example.py
+  - UPDATED: All core modules with upstream refinements
+
+- /usage/ - Complete replacement with latest documentation
+  - agent-os-update-guide.md (enhanced)
+  - mcp-server-update-guide.md (enhanced)
+  - mcp-usage-guide.md (enhanced)
+  - NEW: ai-agent-quickstart.md (bootstrap guide)
+
+**What Was Added:**
+- /workflows/agent_os_upgrade_v1/ - Systematic Agent OS upgrade workflow (NEW)
+- /workflows/standards_creation_v1/ - Standards creation workflow (NEW)
+- /workflows/workflow_creation_v1/ - Workflow creation workflow (NEW)
+- /workflows/spec_creation_v1/ - Updated with query-based tasks template
+- /workflows/spec_execution_v1/ - Enhanced version
+- /standards/meta-workflow/ - Workflow creation patterns (NEW)
+
+**What Was Preserved:**
+- /specs/ - All 20+ project-specific specifications
+- /standards/ai-assistant/ - All 217 custom test generation framework files
+- /product/ - Product documentation
+- /scripts/ - Validation scripts
+- /workflows/test_generation_v3/ - Custom workflow
+- /config.json - Local configuration
+
+**Backup Location:**
+- .agent-os.backup.retrofit.20251014 (created before retrofit)
+
+**Commits Since Last Sync:**
+From ae37f8c to e505669 (20+ commits including):
+- workflow_creation_v1 system
+- Time estimation standards
+- Query construction patterns
+- RAG orientation improvements
+- Dual-transport MCP server
+- Code quality refactoring (10.0/10.0)
+- Documentation completeness standards
+- Agent bootstrap system
+- And many more refinements
+
+---
+
+## Previous Upgrade: v1.3.0 to v1.4.0
+
+Last Updated: 2025-10-08
+Source Commit: ae37f8c
+Updated By: AI Assistant (Cursor)
+Version: v1.4.0 (2025-10-07)
+
+**Major Changes:**
+- Modular Architecture: Complete refactoring to modular structure
+- Configuration Management: New ConfigLoader with graceful fallback
+- Dependency Injection: All components created via ServerFactory
+- Tool Registration: Modular tool organization
+
+**Preserved Local Customizations:**
+- /specs/ directory (20+ project-specific specifications)
+- /standards/ai-assistant/ (217 custom test generation framework files)
+- /product/ directory (local product documentation)
+- /workflows/ (custom workflows)
+
+**Synced Universal Content:**
+- /standards/ (base standards, excluding ai-assistant)
+- /usage/ (usage guides)
+- /mcp_server/ (server code with v1.4.0 modular architecture)
+
+**Breaking Changes:**
+- None! All 8 MCP tools work identically
+- Existing config.json files work unchanged
+
+**Backup Location:**
+- .agent-os.backup (created 2025-10-08 before upgrade)
+
+---
+
+## Initial Version
+
+Last Updated: 2025-10-08
+Source Commit: ced34ea
+Source Repo: agent-os-enhanced
+Updated By: josh
+Notes: Synced workflows from agent-os-enhanced v1.3.0
+  - Added spec_creation_v1 workflow (NEW)
+  - Updated spec_execution_v1 workflow with latest changes

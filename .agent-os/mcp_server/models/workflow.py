@@ -5,10 +5,15 @@ All workflow-related data structures for phase gating, checkpoints,
 and workflow execution tracking.
 """
 
-from dataclasses import dataclass, field, asdict
+# pylint: disable=too-many-instance-attributes
+# Justification: Data models (dataclasses) require many attributes to represent
+# complete workflow state, metadata, and checkpoint information. This is by design
+# for comprehensive type-safe data structures.
+
+from dataclasses import asdict, dataclass, field, fields
 from datetime import datetime
-from typing import List, Dict, Any, Optional
 from enum import Enum
+from typing import Any, Dict, List, Optional, Union
 
 
 class CheckpointStatus(str, Enum):
@@ -183,11 +188,11 @@ class WorkflowState:
         # Can access current phase
         if phase == self.current_phase:
             return True
-        
+
         # Can review completed phases
         if phase in self.completed_phases:
             return True
-        
+
         # Cannot access future phases
         return False
 
@@ -301,47 +306,64 @@ class CheckpointCriteria:
 class PhaseMetadata:
     """
     Metadata for a single phase in a workflow.
-    
+
     Provides overview information about phase purpose, effort, and validation.
+
+    For hybrid dynamic workflows (e.g., spec_execution_v1), some phases may have
+    static tasks defined in metadata while others are dynamically generated.
     """
-    
+
     phase_number: int
     phase_name: str
     purpose: str
     estimated_effort: str
     key_deliverables: List[str]
     validation_criteria: List[str]
-    
+    tasks: Optional[List[Dict[str, Any]]] = None  # Static tasks for hybrid workflows
+    task_execution: Optional[Dict[str, Any]] = None  # Dynamic task execution config
+
     def to_dict(self) -> Dict[str, Any]:
         """Serialize to dictionary."""
-        return asdict(self)
-    
+        result = asdict(self)
+        # Remove None values for cleaner output
+        return {k: v for k, v in result.items() if v is not None}
+
     @classmethod
     def from_dict(cls, data: Dict[str, Any]) -> "PhaseMetadata":
-        """Deserialize from dictionary."""
-        return cls(**data)
+        """
+        Deserialize from dictionary.
+
+        Filters out unknown fields for forward compatibility.
+        """
+        # Get known fields from dataclass
+        known_fields = {f.name for f in fields(cls)}
+
+        # Filter to only known fields
+        filtered_data = {k: v for k, v in data.items() if k in known_fields}
+
+        return cls(**filtered_data)
 
 
 @dataclass
 class WorkflowMetadata:
     """
     Metadata for complete workflow overview.
-    
+
     Provides upfront information about workflow structure, phases, and expected outputs.
     This allows AI agents to plan effectively without needing separate API calls.
-    
+
     Extended to support dynamic workflows where phase/task content is generated
     from external sources (e.g., spec tasks.md files) rather than static workflow files.
     """
-    
+
     workflow_type: str
     version: str
     description: str
-    total_phases: int
+    total_phases: Union[int, str]  # int or "dynamic" for dynamic workflows
     estimated_duration: str
     primary_outputs: List[str]
     phases: List[PhaseMetadata]
-    
+
     # Dynamic workflow support (optional)
     dynamic_phases: bool = False
     dynamic_config: Optional[Dict[str, Any]] = None
@@ -355,10 +377,10 @@ class WorkflowMetadata:
     #     },
     #     "parser": "spec_tasks_parser"
     # }
-    
+
     def to_dict(self) -> Dict[str, Any]:
         """Serialize to dictionary."""
-        result = {
+        result: Dict[str, Any] = {
             "workflow_type": self.workflow_type,
             "version": self.version,
             "description": self.description,
@@ -367,23 +389,33 @@ class WorkflowMetadata:
             "primary_outputs": self.primary_outputs,
             "phases": [phase.to_dict() for phase in self.phases],
         }
-        
+
         # Add dynamic workflow fields if present
         if self.dynamic_phases:
             result["dynamic_phases"] = self.dynamic_phases
         if self.dynamic_config:
             result["dynamic_config"] = self.dynamic_config
-        
+
         return result
-    
+
     @classmethod
     def from_dict(cls, data: Dict[str, Any]) -> "WorkflowMetadata":
-        """Deserialize from dictionary."""
+        """
+        Deserialize from dictionary.
+
+        Handles dynamic workflows where total_phases may be "dynamic" string.
+        """
+        # Handle total_phases - can be int or "dynamic" string
+        total_phases = data["total_phases"]
+        if isinstance(total_phases, str) and total_phases == "dynamic":
+            # For dynamic workflows, use the actual phase count from phases array
+            total_phases = len(data["phases"])
+
         return cls(
             workflow_type=data["workflow_type"],
             version=data["version"],
             description=data.get("description", ""),
-            total_phases=data["total_phases"],
+            total_phases=total_phases,
             estimated_duration=data["estimated_duration"],
             primary_outputs=data["primary_outputs"],
             phases=[PhaseMetadata.from_dict(p) for p in data["phases"]],
@@ -422,10 +454,10 @@ class WorkflowConfig:
 class DynamicTask:
     """
     Task structure parsed from external source (e.g., spec tasks.md).
-    
+
     Represents a single task within a dynamic workflow phase with all metadata
     needed for template rendering and execution guidance.
-    
+
     Attributes:
         task_id: Unique task identifier (e.g., "1.1", "2.3")
         task_name: Human-readable task name
@@ -434,18 +466,18 @@ class DynamicTask:
         dependencies: List of task IDs this task depends on (e.g., ["1.1", "1.2"])
         acceptance_criteria: List of criteria that must be met for task completion
     """
-    
+
     task_id: str
     task_name: str
     description: str
     estimated_time: str
     dependencies: List[str]
     acceptance_criteria: List[str]
-    
+
     def to_dict(self) -> Dict[str, Any]:
         """Serialize to dictionary for rendering."""
         return asdict(self)
-    
+
     @classmethod
     def from_dict(cls, data: Dict[str, Any]) -> "DynamicTask":
         """Deserialize from dictionary."""
@@ -456,10 +488,10 @@ class DynamicTask:
 class DynamicPhase:
     """
     Phase structure parsed from external source (e.g., spec tasks.md).
-    
+
     Represents a complete phase in a dynamic workflow including all tasks,
     metadata, and validation gates needed for execution.
-    
+
     Attributes:
         phase_number: Sequential phase number (0, 1, 2, ...)
         phase_name: Human-readable phase name
@@ -468,14 +500,14 @@ class DynamicPhase:
         tasks: List of DynamicTask objects for this phase
         validation_gate: List of validation criteria that must pass before advancing
     """
-    
+
     phase_number: int
     phase_name: str
     description: str
     estimated_duration: str
     tasks: List[DynamicTask]
     validation_gate: List[str]
-    
+
     def to_dict(self) -> Dict[str, Any]:
         """Serialize to dictionary for rendering."""
         return {
@@ -486,7 +518,7 @@ class DynamicPhase:
             "tasks": [task.to_dict() for task in self.tasks],
             "validation_gate": self.validation_gate,
         }
-    
+
     @classmethod
     def from_dict(cls, data: Dict[str, Any]) -> "DynamicPhase":
         """Deserialize from dictionary."""
@@ -498,14 +530,14 @@ class DynamicPhase:
             tasks=[DynamicTask.from_dict(t) for t in data["tasks"]],
             validation_gate=data["validation_gate"],
         )
-    
+
     def get_task(self, task_number: int) -> Optional[DynamicTask]:
         """
         Get task by number (1-indexed).
-        
+
         Args:
             task_number: Task number (1-indexed)
-            
+
         Returns:
             DynamicTask if found, None otherwise
         """
@@ -518,11 +550,11 @@ class DynamicPhase:
 class DynamicWorkflowContent:
     """
     Parsed and cached content for a dynamic workflow session.
-    
+
     This class holds all parsed phase/task data from an external source,
     loaded templates, and caches rendered content for performance.
     Lifecycle is tied to workflow session.
-    
+
     Attributes:
         source_path: Path to external source file (e.g., spec's tasks.md)
         workflow_type: Workflow type identifier
@@ -532,7 +564,7 @@ class DynamicWorkflowContent:
         _rendered_phases: Cache of rendered phase content (lazy initialization)
         _rendered_tasks: Cache of rendered task content (lazy initialization)
     """
-    
+
     source_path: str  # Path as string for JSON serialization
     workflow_type: str
     phase_template: str
@@ -540,19 +572,19 @@ class DynamicWorkflowContent:
     phases: List[DynamicPhase]
     _rendered_phases: Dict[int, str] = field(default_factory=dict, repr=False)
     _rendered_tasks: Dict[tuple, str] = field(default_factory=dict, repr=False)
-    
+
     def render_phase(self, phase: int) -> str:
         """
         Render phase template with phase data.
-        
+
         Uses simple placeholder replacement with cached results.
-        
+
         Args:
             phase: Phase number to render (matches phase_number field)
-            
+
         Returns:
             Rendered phase content with command language
-            
+
         Raises:
             IndexError: If phase number not found
         """
@@ -561,25 +593,25 @@ class DynamicWorkflowContent:
             phase_data = next((p for p in self.phases if p.phase_number == phase), None)
             if not phase_data:
                 raise IndexError(f"Phase {phase} not found")
-            
+
             self._rendered_phases[phase] = self._render_template(
                 self.phase_template, phase_data
             )
         return self._rendered_phases[phase]
-    
+
     def render_task(self, phase: int, task_number: int) -> str:
         """
         Render task template with task data.
-        
+
         Uses simple placeholder replacement with cached results.
-        
+
         Args:
             phase: Phase number (matches phase_number field)
             task_number: Task number within phase (1-indexed)
-            
+
         Returns:
             Rendered task content with command language
-            
+
         Raises:
             IndexError: If phase or task number not found
         """
@@ -589,37 +621,37 @@ class DynamicWorkflowContent:
             phase_data = next((p for p in self.phases if p.phase_number == phase), None)
             if not phase_data:
                 raise IndexError(f"Phase {phase} not found")
-            
+
             task_data = phase_data.get_task(task_number)
             if not task_data:
                 raise IndexError(f"Task {task_number} not found in phase {phase}")
-            
+
             self._rendered_tasks[cache_key] = self._render_template(
                 self.task_template, task_data, phase_data
             )
         return self._rendered_tasks[cache_key]
-    
+
     def _render_template(
-        self, 
-        template: str, 
+        self,
+        template: str,
         task_or_phase_data: Any,
-        phase_data: Optional[DynamicPhase] = None
+        phase_data: Optional[DynamicPhase] = None,
     ) -> str:
         """
         Simple placeholder replacement renderer.
-        
+
         Replaces [PLACEHOLDER] markers with values from data objects.
-        
+
         Args:
             template: Template string with [PLACEHOLDER] markers
             task_or_phase_data: DynamicTask or DynamicPhase object
             phase_data: Optional phase data for task rendering
-            
+
         Returns:
             Rendered template string
         """
         result = template
-        
+
         # Handle DynamicPhase rendering
         if isinstance(task_or_phase_data, DynamicPhase):
             phase = task_or_phase_data
@@ -629,11 +661,13 @@ class DynamicWorkflowContent:
             result = result.replace("[ESTIMATED_DURATION]", phase.estimated_duration)
             result = result.replace("[TASK_COUNT]", str(len(phase.tasks)))
             result = result.replace("[NEXT_PHASE_NUMBER]", str(phase.phase_number + 1))
-            
+
             # Format validation gate as list
-            gate_formatted = "\n".join(f"- [ ] {criterion}" for criterion in phase.validation_gate)
+            gate_formatted = "\n".join(
+                f"- [ ] {criterion}" for criterion in phase.validation_gate
+            )
             result = result.replace("[VALIDATION_GATE]", gate_formatted)
-        
+
         # Handle DynamicTask rendering
         elif isinstance(task_or_phase_data, DynamicTask):
             task = task_or_phase_data
@@ -641,29 +675,33 @@ class DynamicWorkflowContent:
             result = result.replace("[TASK_NAME]", task.task_name)
             result = result.replace("[TASK_DESCRIPTION]", task.description)
             result = result.replace("[ESTIMATED_TIME]", task.estimated_time)
-            
+
             # Add phase context if available
             if phase_data:
                 result = result.replace("[PHASE_NUMBER]", str(phase_data.phase_number))
                 result = result.replace("[PHASE_NAME]", phase_data.phase_name)
-            
+
             # Format dependencies
-            deps_formatted = ", ".join(task.dependencies) if task.dependencies else "None"
+            deps_formatted = (
+                ", ".join(task.dependencies) if task.dependencies else "None"
+            )
             result = result.replace("[DEPENDENCIES]", deps_formatted)
-            
+
             # Format acceptance criteria
-            criteria_formatted = "\n".join(f"- [ ] {criterion}" for criterion in task.acceptance_criteria)
+            criteria_formatted = "\n".join(
+                f"- [ ] {criterion}" for criterion in task.acceptance_criteria
+            )
             result = result.replace("[ACCEPTANCE_CRITERIA]", criteria_formatted)
-            
+
             # Calculate next task number (parse from task_id)
             try:
                 task_num = int(task.task_id.split(".")[-1])
                 result = result.replace("[NEXT_TASK_NUMBER]", str(task_num + 1))
             except (ValueError, IndexError):
                 result = result.replace("[NEXT_TASK_NUMBER]", "?")
-        
+
         return result
-    
+
     def to_dict(self) -> Dict[str, Any]:
         """Serialize to dictionary (without render cache)."""
         return {
@@ -673,7 +711,7 @@ class DynamicWorkflowContent:
             "task_template": self.task_template,
             "phases": [phase.to_dict() for phase in self.phases],
         }
-    
+
     @classmethod
     def from_dict(cls, data: Dict[str, Any]) -> "DynamicWorkflowContent":
         """Deserialize from dictionary."""

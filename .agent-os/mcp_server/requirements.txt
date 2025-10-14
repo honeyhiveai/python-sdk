@@ -7,7 +7,7 @@ lancedb~=0.25.0
 
 # Model Context Protocol
 mcp>=1.0.0
-fastmcp>=2.0.0  # Required for FastMCP server framework
+fastmcp>=0.2.0
 
 # Local embeddings (default, free, offline)
 sentence-transformers>=2.0.0
@@ -15,8 +15,11 @@ sentence-transformers>=2.0.0
 # File watching for automatic index rebuild
 watchdog>=3.0.0
 
-# HoneyHive tracing for dogfooding
-honeyhive>=0.1.0
+# Markdown AST parsing for dynamic workflow content
+mistletoe>=1.4.0
+
+# Browser automation (Phase 2 feature)
+playwright>=1.40.0
 
 # Optional: OpenAI embeddings for higher quality (~3-5% better)
 # openai>=1.0.0

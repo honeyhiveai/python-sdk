@@ -27,28 +27,43 @@ If `false`, references will be created instead.
 
 ## Steps
 
-### Step 1: Create Supporting Docs Directory
+### Step 1: Verify Spec Directory Exists
 
-Create the directory structure:
+The spec directory was created in Task 0. Verify it exists:
 
 ```bash
-mkdir -p .agent-os/specs/{SPEC_DIR}/supporting-docs/
+# Load SPEC_DIR from Task 0
+source .agent-os/specs/.current-spec
+ls -ld .agent-os/specs/${SPEC_DIR}
 ```
 
-📊 COUNT-AND-DOCUMENT: Directory created
-- Path: `.agent-os/specs/{SPEC_DIR}/supporting-docs/`
+📊 COUNT-AND-DOCUMENT: Directory verified
+- Path: `.agent-os/specs/${SPEC_DIR}`
+- Status: ✅ exists (created in Task 0)
+
+### Step 2: Create Supporting Docs Subdirectory
+
+```bash
+mkdir -p .agent-os/specs/${SPEC_DIR}/supporting-docs/
+```
+
+📊 COUNT-AND-DOCUMENT: Subdirectory created
+- Path: `.agent-os/specs/${SPEC_DIR}/supporting-docs/`
 - Status: [created/already exists]
 
-### Step 2: Process Documents Based on Mode
+### Step 3: Process Documents Based on Mode
 
 #### If `embed_supporting_docs` is TRUE:
 
 Copy documents to supporting-docs:
 
 ```bash
+# Use SPEC_DIR from Task 0
+source .agent-os/specs/.current-spec
+
 # For each document
-cp {doc_path_1} .agent-os/specs/{SPEC_DIR}/supporting-docs/
-cp {doc_path_2} .agent-os/specs/{SPEC_DIR}/supporting-docs/
+cp {doc_path_1} .agent-os/specs/${SPEC_DIR}/supporting-docs/
+cp {doc_path_2} .agent-os/specs/${SPEC_DIR}/supporting-docs/
 ```
 
 #### If `embed_supporting_docs` is FALSE:
@@ -56,7 +71,8 @@ cp {doc_path_2} .agent-os/specs/{SPEC_DIR}/supporting-docs/
 Create REFERENCES.md with links:
 
 ```bash
-cat > .agent-os/specs/{SPEC_DIR}/supporting-docs/REFERENCES.md << 'EOF'
+source .agent-os/specs/.current-spec
+cat > .agent-os/specs/${SPEC_DIR}/supporting-docs/REFERENCES.md << 'EOF'
 # Document References
 
 ## Referenced Documents
@@ -75,13 +91,15 @@ cat > .agent-os/specs/{SPEC_DIR}/supporting-docs/REFERENCES.md << 'EOF'
 EOF
 ```
 
-### Step 3: Verify Documents Accessible
+### Step 4: Verify Documents Accessible
 
 Verify all documents are accessible:
 
 ```bash
+source .agent-os/specs/.current-spec
+
 # If embedded
-ls -lh .agent-os/specs/{SPEC_DIR}/supporting-docs/
+ls -lh .agent-os/specs/${SPEC_DIR}/supporting-docs/
 
 # If referenced
 # Check each reference path exists
@@ -94,12 +112,13 @@ test -f {doc_path_2} && echo "✅ {doc_2_name}" || echo "❌ {doc_2_name} NOT FO
 - Mode: [embedded/referenced]
 - All accessible: [yes/no]
 
-### Step 4: Document Processing Method
+### Step 5: Document Processing Method
 
 Add a note to track which method was used:
 
 ```bash
-cat > .agent-os/specs/{SPEC_DIR}/supporting-docs/.processing-mode << 'EOF'
+source .agent-os/specs/.current-spec
+cat > .agent-os/specs/${SPEC_DIR}/supporting-docs/.processing-mode << 'EOF'
 PROCESSING_MODE={embedded/referenced}
 PROCESSED_DATE={current_date}
 DOCUMENT_COUNT={number}

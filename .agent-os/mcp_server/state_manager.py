@@ -5,13 +5,21 @@ Manages workflow state persistence, session lifecycle, and artifacts.
 100% AI-authored via human orchestration.
 """
 
+# pylint: disable=broad-exception-caught
+# Justification: State manager catches broad exceptions for robustness,
+# ensuring workflow state operations don't crash the server
+
+# pylint: disable=missing-raises-doc
+# Justification: Exception raising is documented in Returns/Notes sections,
+# avoiding redundant "Raises:" sections for standard exceptions
+
 import fcntl
 import json
 import logging
+import uuid
 from datetime import datetime, timedelta
 from pathlib import Path
-from typing import Dict, Optional, List, Any
-import uuid
+from typing import Any, Dict, List, Optional
 
 from .models import WorkflowState
 
@@ -44,7 +52,7 @@ class StateManager:
         # Ensure state directory exists
         self.state_dir.mkdir(parents=True, exist_ok=True)
 
-        logger.info(f"StateManager initialized: {state_dir}")
+        logger.info("StateManager initialized: %s", state_dir)
 
     def create_session(
         self, workflow_type: str, target_file: str, metadata: Optional[Dict] = None
@@ -62,7 +70,7 @@ class StateManager:
         """
         session_id = str(uuid.uuid4())
         now = datetime.now()
-        
+
         # Detect starting phase dynamically (0 or 1)
         starting_phase = self._detect_starting_phase(workflow_type)
 
@@ -83,44 +91,49 @@ class StateManager:
         self.save_state(state)
 
         logger.info(
-            f"Created session {session_id} for {workflow_type} on {target_file} "
-            f"starting at Phase {starting_phase}"
+            "Created session %s for %s on %s starting at Phase %s",
+            session_id,
+            workflow_type,
+            target_file,
+            starting_phase,
         )
 
         return state
-    
+
     def _detect_starting_phase(self, workflow_type: str) -> int:
         """
         Detect the starting phase for a workflow.
-        
+
         Checks if Phase 0 exists in the workflow structure.
-        
+
         Args:
             workflow_type: Type of workflow
-        
+
         Returns:
             Starting phase number (0 if Phase 0 exists, 1 otherwise)
         """
-        from pathlib import Path
-        
         # Try to find workflows directory
         # Check multiple possible locations
         possible_paths = [
             Path(".agent-os") / "workflows" / workflow_type / "phases" / "0",
             Path("universal") / "workflows" / workflow_type / "phases" / "0",
         ]
-        
+
         # If workflows_base_path is available in environment
-        if hasattr(self, '_workflows_base_path'):
-            possible_paths.insert(0, self._workflows_base_path / workflow_type / "phases" / "0")
-        
+        if hasattr(self, "_workflows_base_path"):
+            possible_paths.insert(
+                0, self._workflows_base_path / workflow_type / "phases" / "0"
+            )
+
         for phase_0_path in possible_paths:
             if phase_0_path.exists():
-                logger.info(f"Workflow {workflow_type} has Phase 0 at {phase_0_path}")
+                logger.info(
+                    "Workflow %s has Phase 0 at %s", workflow_type, phase_0_path
+                )
                 return 0
-        
+
         # Default to Phase 1 for backwards compatibility
-        logger.info(f"Workflow {workflow_type} starts at Phase 1 (no Phase 0 found)")
+        logger.info("Workflow %s starts at Phase 1 (no Phase 0 found)", workflow_type)
         return 1
 
     def save_state(self, state: WorkflowState) -> None:
@@ -143,7 +156,7 @@ class StateManager:
 
         # Write with file locking for concurrent access safety
         try:
-            with open(state_file, "w") as f:
+            with open(state_file, "w", encoding="utf-8") as f:
                 # Acquire exclusive lock
                 fcntl.flock(f.fileno(), fcntl.LOCK_EX)
                 try:
@@ -153,10 +166,10 @@ class StateManager:
                     # Release lock
                     fcntl.flock(f.fileno(), fcntl.LOCK_UN)
 
-            logger.debug(f"Saved state for session {state.session_id}")
+            logger.debug("Saved state for session %s", state.session_id)
 
         except Exception as e:
-            logger.error(f"Failed to save state {state.session_id}: {e}")
+            logger.error("Failed to save state %s: %s", state.session_id, e)
             raise
 
     def load_state(self, session_id: str) -> Optional[WorkflowState]:
@@ -175,11 +188,11 @@ class StateManager:
         state_file = self._get_state_file(session_id)
 
         if not state_file.exists():
-            logger.warning(f"State file not found: {session_id}")
+            logger.warning("State file not found: %s", session_id)
             return None
 
         try:
-            with open(state_file, "r") as f:
+            with open(state_file, "r", encoding="utf-8") as f:
                 # Acquire shared lock for reading
                 fcntl.flock(f.fileno(), fcntl.LOCK_SH)
                 try:
@@ -188,14 +201,14 @@ class StateManager:
                     fcntl.flock(f.fileno(), fcntl.LOCK_UN)
 
             state = WorkflowState.from_dict(data)
-            logger.debug(f"Loaded state for session {session_id}")
+            logger.debug("Loaded state for session %s", session_id)
             return state
 
         except json.JSONDecodeError as e:
-            logger.error(f"Corrupted state file {session_id}: {e}")
-            raise ValueError(f"Corrupted state file: {e}")
+            logger.error("Corrupted state file %s: %s", session_id, e)
+            raise ValueError(f"Corrupted state file: {e}") from e
         except Exception as e:
-            logger.error(f"Failed to load state {session_id}: {e}")
+            logger.error("Failed to load state %s: %s", session_id, e)
             raise
 
     def delete_session(self, session_id: str) -> bool:
@@ -211,15 +224,15 @@ class StateManager:
         state_file = self._get_state_file(session_id)
 
         if not state_file.exists():
-            logger.warning(f"Session not found for deletion: {session_id}")
+            logger.warning("Session not found for deletion: %s", session_id)
             return False
 
         try:
             state_file.unlink()
-            logger.info(f"Deleted session {session_id}")
+            logger.info("Deleted session %s", session_id)
             return True
         except Exception as e:
-            logger.error(f"Failed to delete session {session_id}: {e}")
+            logger.error("Failed to delete session %s: %s", session_id, e)
             return False
 
     def list_sessions(
@@ -256,10 +269,10 @@ class StateManager:
                 sessions.append(state)
 
             except Exception as e:
-                logger.warning(f"Failed to load session from {state_file}: {e}")
+                logger.warning("Failed to load session from %s: %s", state_file, e)
                 continue
 
-        logger.debug(f"Listed {len(sessions)} sessions")
+        logger.debug("Listed %s sessions", len(sessions))
         return sessions
 
     def cleanup_old_sessions(self) -> int:
@@ -272,9 +285,7 @@ class StateManager:
         cutoff_date = datetime.now() - timedelta(days=self.cleanup_days)
         cleaned_count = 0
 
-        logger.info(
-            f"Cleaning up sessions older than {cutoff_date.isoformat()}"
-        )
+        logger.info("Cleaning up sessions older than %s", cutoff_date.isoformat())
 
         for state_file in self.state_dir.glob("*.json"):
             try:
@@ -289,15 +300,16 @@ class StateManager:
                     if self.delete_session(session_id):
                         cleaned_count += 1
                         logger.debug(
-                            f"Cleaned up old session {session_id} "
-                            f"(last updated: {state.updated_at.isoformat()})"
+                            "Cleaned up old session %s (last updated: %s)",
+                            session_id,
+                            state.updated_at.isoformat(),
                         )
 
             except Exception as e:
-                logger.warning(f"Failed to cleanup {state_file}: {e}")
+                logger.warning("Failed to cleanup %s: %s", state_file, e)
                 continue
 
-        logger.info(f"Cleaned up {cleaned_count} old sessions")
+        logger.info("Cleaned up %s old sessions", cleaned_count)
         return cleaned_count
 
     def get_active_session(
@@ -321,11 +333,11 @@ class StateManager:
         for state in sessions:
             if state.target_file == target_file:
                 logger.debug(
-                    f"Found active session {state.session_id} for {target_file}"
+                    "Found active session %s for %s", state.session_id, target_file
                 )
                 return state
 
-        logger.debug(f"No active session found for {target_file}")
+        logger.debug("No active session found for %s", target_file)
         return None
 
     def validate_state(self, state: WorkflowState) -> tuple[bool, List[str]]:
@@ -380,7 +392,7 @@ class StateManager:
 
         if not valid:
             logger.warning(
-                f"State validation failed for {state.session_id}: {issues}"
+                "State validation failed for %s: %s", state.session_id, issues
             )
 
         return valid, issues
@@ -409,17 +421,16 @@ class StateManager:
             valid, issues = self.validate_state(state)
 
             if valid:
-                logger.info(f"State {session_id} is valid, no recovery needed")
+                logger.info("State %s is valid, no recovery needed", session_id)
                 return True
 
-            logger.warning(f"Attempting to recover state {session_id}: {issues}")
+            logger.warning("Attempting to recover state %s: %s", session_id, issues)
 
             # Attempt repairs
             if not state.completed_phases:
                 state.completed_phases = []
 
-            if state.current_phase < 1:
-                state.current_phase = 1
+            state.current_phase = max(state.current_phase, 1)
 
             if state.created_at > state.updated_at:
                 state.updated_at = datetime.now()
@@ -430,14 +441,14 @@ class StateManager:
             if valid:
                 # Save repaired state
                 self.save_state(state)
-                logger.info(f"Successfully recovered state {session_id}")
+                logger.info("Successfully recovered state %s", session_id)
                 return True
-            else:
-                logger.error(f"Could not recover state {session_id}: {issues}")
-                return False
+
+            logger.error("Could not recover state %s: %s", session_id, issues)
+            return False
 
         except Exception as e:
-            logger.error(f"Failed to recover state {session_id}: {e}")
+            logger.error("Failed to recover state %s: %s", session_id, e)
             return False
 
     def _get_state_file(self, session_id: str) -> Path:
@@ -462,7 +473,7 @@ class StateManager:
         all_sessions = self.list_sessions()
         active_sessions = [s for s in all_sessions if not s.is_complete()]
 
-        workflow_counts = {}
+        workflow_counts: Dict[str, int] = {}
         for session in all_sessions:
             workflow_type = session.workflow_type
             workflow_counts[workflow_type] = workflow_counts.get(workflow_type, 0) + 1
@@ -475,4 +486,3 @@ class StateManager:
             "state_directory": str(self.state_dir),
             "cleanup_days": self.cleanup_days,
         }
-

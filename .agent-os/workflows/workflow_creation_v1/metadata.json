@@ -1,0 +1,118 @@
+{
+  "name": "workflow-creation-v1",
+  "version": "1.0.0",
+  "description": "Systematic workflow creation using meta-workflow principles",
+  "workflow_type": "workflow_creation",
+  "target_language": ["any"],
+  "total_phases": 7,
+  "dynamic_phases": false,
+  "phases": [
+    {
+      "phase_number": 0,
+      "phase_name": "Input Conversion & Preprocessing",
+      "tasks": [
+        {"task_number": 1, "name": "determine-input-type", "file": "task-1-determine-input-type.md"},
+        {"task_number": 2, "name": "read-input-document", "file": "task-2-read-input-document.md"},
+        {"task_number": 3, "name": "extract-from-design", "file": "task-3-extract-from-design.md"},
+        {"task_number": 4, "name": "generate-yaml-definition", "file": "task-4-generate-yaml-definition.md"},
+        {"task_number": 5, "name": "validate-generated-definition", "file": "task-5-validate-generated-definition.md"}
+      ]
+    },
+    {
+      "phase_number": 1,
+      "phase_name": "Definition Import & Validation",
+      "tasks": [
+        {"task_number": 1, "name": "locate-definition", "file": "task-1-locate-definition.md"},
+        {"task_number": 2, "name": "parse-definition", "file": "task-2-parse-definition.md"},
+        {"task_number": 3, "name": "validate-structure", "file": "task-3-validate-structure.md"},
+        {"task_number": 4, "name": "validate-completeness", "file": "task-4-validate-completeness.md"},
+        {"task_number": 5, "name": "prepare-workspace", "file": "task-5-prepare-workspace.md"}
+      ]
+    },
+    {
+      "phase_number": 2,
+      "phase_name": "Workflow Scaffolding",
+      "tasks": [
+        {"task_number": 1, "name": "create-workflow-directory", "file": "task-1-create-workflow-directory.md"},
+        {"task_number": 2, "name": "create-phase-directories", "file": "task-2-create-phase-directories.md"},
+        {"task_number": 3, "name": "create-core-directory", "file": "task-3-create-core-directory.md"},
+        {"task_number": 4, "name": "create-supporting-docs", "file": "task-4-create-supporting-docs.md"},
+        {"task_number": 5, "name": "create-dynamic-directories", "file": "task-5-create-dynamic-directories.md"},
+        {"task_number": 6, "name": "generate-metadata-json", "file": "task-6-generate-metadata-json.md"},
+        {"task_number": 7, "name": "validate-metadata", "file": "task-7-validate-metadata.md"},
+        {"task_number": 8, "name": "verify-scaffolding", "file": "task-8-verify-scaffolding.md"}
+      ]
+    },
+    {
+      "phase_number": 3,
+      "phase_name": "Core Files & Documentation",
+      "tasks": [
+        {"task_number": 1, "name": "create-command-glossary", "file": "task-1-create-command-glossary.md"},
+        {"task_number": 2, "name": "create-progress-tracking", "file": "task-2-create-progress-tracking.md"},
+        {"task_number": 3, "name": "archive-definition", "file": "task-3-archive-definition.md"},
+        {"task_number": 4, "name": "generate-design-summary", "file": "task-4-generate-design-summary.md"}
+      ]
+    },
+    {
+      "phase_number": 4,
+      "phase_name": "Phase Content Generation",
+      "tasks": [
+        {"task_number": 1, "name": "load-target-definition", "file": "task-1-load-target-definition.md"},
+        {"task_number": 2, "name": "generate-phase-files", "file": "task-2-generate-phase-files.md"},
+        {"task_number": 3, "name": "generate-task-files", "file": "task-3-generate-task-files.md"},
+        {"task_number": 4, "name": "verify-generation", "file": "task-4-verify-generation.md"}
+      ]
+    },
+    {
+      "phase_number": 5,
+      "phase_name": "Meta-Workflow Compliance",
+      "tasks": [
+        {"task_number": 1, "name": "audit-file-sizes", "file": "task-1-audit-file-sizes.md"},
+        {"task_number": 2, "name": "audit-command-coverage", "file": "task-2-audit-command-coverage.md"},
+        {"task_number": 3, "name": "verify-three-tier", "file": "task-3-verify-three-tier.md"},
+        {"task_number": 4, "name": "verify-validation-gates", "file": "task-4-verify-validation-gates.md"},
+        {"task_number": 5, "name": "verify-binding-contract", "file": "task-5-verify-binding-contract.md"},
+        {"task_number": 6, "name": "verify-horizontal-decomposition", "file": "task-6-verify-horizontal-decomposition.md"},
+        {"task_number": 7, "name": "generate-compliance-report", "file": "task-7-generate-compliance-report.md"},
+        {"task_number": 8, "name": "fix-violations", "file": "task-8-fix-violations.md"},
+        {"task_number": 9, "name": "re-validate", "file": "task-9-re-validate.md"},
+        {"task_number": 10, "name": "final-compliance-check", "file": "task-10-final-compliance-check.md"}
+      ]
+    },
+    {
+      "phase_number": 6,
+      "phase_name": "Testing & Delivery",
+      "tasks": [
+        {"task_number": 1, "name": "dry-run-navigation", "file": "task-1-dry-run-navigation.md"},
+        {"task_number": 2, "name": "validate-commands", "file": "task-2-validate-commands.md"},
+        {"task_number": 3, "name": "validate-gates-parseable", "file": "task-3-validate-gates-parseable.md"},
+        {"task_number": 4, "name": "identify-usability-issues", "file": "task-4-identify-usability-issues.md"},
+        {"task_number": 5, "name": "implement-refinements", "file": "task-5-implement-refinements.md"},
+        {"task_number": 6, "name": "create-usage-guide", "file": "task-6-create-usage-guide.md"},
+        {"task_number": 7, "name": "final-validation", "file": "task-7-final-validation.md"},
+        {"task_number": 8, "name": "human-review", "file": "task-8-human-review.md"}
+      ]
+    }
+  ],
+  "quality_gates": {
+    "file_size_compliance": "95%+ ≤100 lines",
+    "command_coverage": "80%+",
+    "validation_gates": "100%",
+    "meta_workflow_compliance": "100%"
+  },
+  "quality_standards": {
+    "task_file_limits": {
+      "compliant": 100,
+      "acceptable": 150,
+      "compress_needed": 170,
+      "must_split": 171
+    },
+    "task_file_target_lines": 100,
+    "command_coverage_min": 80,
+    "validation_gate_required": true,
+    "examples_per_task_min": 2
+  },
+  "created": "2025-10-13",
+  "updated": "2025-10-13"
+}
+

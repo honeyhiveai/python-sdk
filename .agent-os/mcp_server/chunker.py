@@ -5,34 +5,22 @@ Intelligent chunking preserving semantic boundaries.
 100% AI-authored via human orchestration.
 """
 
+# pylint: disable=unsupported-assignment-operation
+# Justification: False positive - current_section is Dict[str, Any] when assigned
+
+# pylint: disable=broad-exception-caught
+# Justification: Chunker catches broad exceptions for robustness,
+# ensuring document processing doesn't crash on malformed input
+
+# pylint: disable=unused-argument
+# Justification: _infer_framework_type has content parameter for future use in
+# content-based type inference (currently only uses path structure)
+
 import hashlib
 from pathlib import Path
-from typing import List, Dict, Any, Optional
-from dataclasses import dataclass
+from typing import Any, Dict, List, Optional
 
-
-@dataclass
-class ChunkMetadata:
-    """Metadata for better retrieval."""
-
-    framework_type: str  # "test_v3", "production_v2", etc.
-    phase: Optional[int]  # If phase-specific
-    category: str  # "requirement", "example", "reference"
-    tags: List[str]  # ["mocking", "ast", "coverage", ...]
-    is_critical: bool  # Contains MANDATORY/CRITICAL markers
-    parent_headers: List[str]  # Breadcrumb of headers
-
-
-@dataclass
-class DocumentChunk:
-    """Represents a chunk of Agent OS documentation."""
-
-    chunk_id: str  # MD5 hash of content
-    file_path: str  # Source file path
-    section_header: str  # Header this chunk belongs to
-    content: str  # The actual text content
-    tokens: int  # Token count
-    metadata: ChunkMetadata  # Additional metadata
+from .models.rag import ChunkMetadata, DocumentChunk
 
 
 def count_tokens(text: str) -> int:
@@ -62,8 +50,8 @@ def parse_markdown_headers(content: str) -> List[Dict[str, Any]]:
     Returns:
         List of sections with header level, text, and content
     """
-    sections = []
-    current_section = None
+    sections: List[Dict[str, Any]] = []
+    current_section: Optional[Dict[str, Any]] = None
 
     for line in content.split("\n"):
         # Dynamic header detection: analyze line structure
@@ -157,9 +145,9 @@ class AgentOSChunker:
         if tokens <= self.MAX_CHUNK_TOKENS:
             # Small enough, single chunk
             return [self._create_chunk(section, filepath)]
-        else:
-            # Too large, split on paragraphs
-            return self._split_large_section(section, filepath)
+
+        # Too large, split on paragraphs
+        return self._split_large_section(section, filepath)
 
     def _split_large_section(
         self, section: Dict[str, Any], filepath: Path
@@ -209,9 +197,7 @@ class AgentOSChunker:
 
         return chunks
 
-    def _create_chunk(
-        self, section: Dict[str, Any], filepath: Path
-    ) -> DocumentChunk:
+    def _create_chunk(self, section: Dict[str, Any], filepath: Path) -> DocumentChunk:
         """
         Create DocumentChunk from section.
 
@@ -274,7 +260,9 @@ class AgentOSChunker:
             parent_headers=parent_headers,
         )
 
-    def _infer_framework_type(self, path_parts: tuple, content: str) -> str:
+    def _infer_framework_type(
+        self, path_parts: tuple, content: str
+    ) -> str:  # pylint: disable=unused-argument
         """
         Infer framework type from file structure and content.
 
@@ -309,7 +297,7 @@ class AgentOSChunker:
             elif "code-generation" in part:
                 remaining = path_parts[i + 1 :]
                 if remaining:
-                    return remaining[0]
+                    return str(remaining[0])
 
         return "general"
 
@@ -443,11 +431,7 @@ class AgentOSChunker:
             lower_stripped = stripped.lower()
             if any(word in lower_stripped for word in requirement_words):
                 # Verify it's emphasized (bold, caps, or standalone line)
-                if (
-                    "**" in stripped
-                    or stripped.isupper()
-                    or len(stripped.split()) < 10
-                ):
+                if "**" in stripped or stripped.isupper() or len(stripped.split()) < 10:
                     return True
 
         return False
@@ -512,4 +496,3 @@ class AgentOSChunker:
                 continue
 
         return all_chunks
-

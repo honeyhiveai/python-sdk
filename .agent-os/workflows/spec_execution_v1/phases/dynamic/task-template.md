@@ -49,11 +49,34 @@ Production code checklist is MANDATORY. Code without proper docstrings, type hin
 
 ## Execution Steps
 
+🛑 MANDATORY EXECUTION DISCIPLINE: Step-by-Step Validation
+
+**DO NOT rush through all steps then validate at the end. Validate EACH step before proceeding.**
+
+**Correct Execution Pattern:**
+1. Complete ONE acceptance criterion (fully, thoroughly)
+2. 🛑 VALIDATE-GATE: [Criterion name]
+   - [ ] [Specific criterion] ✅/❌
+3. If ❌ → Fix it NOW before proceeding
+4. If ✅ → Proceed to next criterion
+5. Repeat for EACH acceptance criterion
+
+🚨 FRAMEWORK-VIOLATION: Completing multiple steps before validating each one
+
+**Why this matters:** Without step-level gates, you WILL take shortcuts. Validation gates are blocking checkpoints, not post-hoc checklists.
+
+---
+
 Follow specs.md design and implementation.md patterns to complete this task.
 
 ### Key Actions
 
 [TASK_STEPS or general guidance based on task type]
+
+**For each key action above:**
+- Complete the action thoroughly and systematically
+- Validate it meets the acceptance criterion
+- Do NOT proceed to next action until current one passes validation
 
 ### Testing Requirements
 
@@ -68,6 +91,8 @@ Follow specs.md design and implementation.md patterns to complete this task.
 ## Acceptance Criteria
 
 🛑 VALIDATE-GATE: Task Completion
+
+**Execute these criteria ONE AT A TIME with validation between each:**
 
 [ACCEPTANCE_CRITERIA]
 

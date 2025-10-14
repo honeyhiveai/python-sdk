@@ -2,11 +2,43 @@
 
 **How to update the Agent OS MCP server software in consuming projects**
 
+**Keywords for search**: MCP server update, update MCP server, upgrade MCP server, server software update, MCP Python code update, server restart, dependency update
+
+---
+
+## 🚨 Quick Reference (TL;DR)
+
+**Two types of updates:**
+
+1. **Content Updates** (standards/workflows) → Use `agent_os_upgrade_v1` workflow
+   - No server restart needed
+   - RAG index rebuilds automatically
+
+2. **MCP Server Updates** (Python code) → Covered in this guide
+   - ⚠️ **Requires server restart**
+   - May have breaking changes
+   - Use `agent_os_upgrade_v1` workflow (recommended) or manual method
+
+**Recommended: Use the workflow for both types**
+
+---
+
+## Questions This Answers
+
+- "How do I update the MCP server software?"
+- "Do I need to restart the MCP server?"
+- "What's the difference between content and server updates?"
+- "How do I update MCP server dependencies?"
+- "When should I update the MCP server?"
+- "How do I test MCP server updates?"
+- "What if the server update breaks something?"
+- "How do I roll back an MCP server update?"
+
 ---
 
 ## 📋 Two Types of Updates
 
-### 1. Content Updates (Covered in agent-os-update-guide.md)
+### 1. Content Updates (Covered in standards/installation/update-procedures.md)
 
 Updating standards, workflows, and documentation:
 ```bash
@@ -22,12 +54,15 @@ rsync -av agent-os-enhanced/universal/ .agent-os/
 
 Updating the MCP server software itself:
 ```bash
-# Update Python code and dependencies
-pip install --upgrade agent-os-mcp
+# Copy updated Python code from source
+cp -r /path/to/agent-os-enhanced/mcp_server .agent-os/
+
+# Update dependencies
+.agent-os/venv/bin/pip install -r .agent-os/mcp_server/requirements.txt --upgrade
 ```
 
 **Requirements:**
-- ⚠️ **Server restart required**
+- ⚠️ **Server restart required** (`pkill -f "mcp.*agent-os-rag"`)
 - ⚠️ May have breaking API changes
 - ⚠️ Test thoroughly before deploying
 
@@ -78,55 +113,33 @@ git log -1 --oneline
 
 ---
 
-## 📦 Installation Methods
+## 📦 Installation Method
 
-### Method 1: Package Installation (Recommended for Consumers)
+Agent OS uses a **copy-based installation** where `mcp_server/` from the source repository is copied to your project's `.agent-os/mcp_server/` directory.
 
-If you installed the MCP server as a Python package:
-
-```bash
-# Update to latest version
-pip install --upgrade agent-os-mcp
-
-# Or specific version
-pip install agent-os-mcp==1.3.0
-
-# Verify installation
-pip show agent-os-mcp
+**Architecture:**
+```
+agent-os-enhanced/              Your Project/
+├── mcp_server/        ──────►  └── .agent-os/
+    └── ...                         └── mcp_server/  (copied)
 ```
 
-### Method 2: Source Installation (For Development)
+**Why copy instead of pip/symlink?**
+- ✅ No external package dependencies
+- ✅ Explicit version control
+- ✅ Works offline
+- ✅ Simple, predictable installation
 
-If you're running directly from the agent-os-enhanced repo:
+### Getting Latest MCP Server Code
 
 ```bash
 cd /path/to/agent-os-enhanced
 
-# Pull latest changes
+# Pull latest changes from repository
 git pull origin main
 
-# Update dependencies
-pip install -r mcp_server/requirements.txt --upgrade
-
-# Verify
-python -c "from mcp_server import workflow_engine; print('OK')"
-```
-
-### Method 3: Editable Installation (For Contributors)
-
-If you're developing against the MCP server:
-
-```bash
-cd /path/to/agent-os-enhanced
-
-# Pull latest changes
-git pull origin main
-
-# Reinstall in editable mode
-pip install -e ./mcp_server
-
-# Verify
-pip show agent-os-mcp
+# Note the commit hash for tracking
+git log -1 --oneline
 ```
 
 ---
@@ -138,38 +151,47 @@ pip show agent-os-mcp
 **Before updating, check for breaking changes:**
 
 ```bash
-# Read the changelog
+# Read the changelog in the source repo
 cat /path/to/agent-os-enhanced/mcp_server/CHANGELOG.md
 
 # Look for "Breaking Changes" or "Changed" sections
 # Example: v1.3.0 changed get_current_phase response structure
 ```
 
-### Step 2: Backup Current Setup (Recommended)
+### Step 2: Backup Current Installation (Recommended)
 
 ```bash
-# Backup virtual environment
-cp -r venv/ venv.backup/
+# From your project root
+cd /path/to/your-project
 
-# Or just record current versions
-pip freeze > requirements.backup.txt
+# Backup current MCP server
+cp -r .agent-os/mcp_server .agent-os/mcp_server.backup
+
+# Record current version
+echo "Backup created: $(date)" >> .agent-os/UPDATE_LOG.txt
 ```
 
-### Step 3: Update the Server
+### Step 3: Copy Updated MCP Server
 
-**For Package Installation:**
 ```bash
-pip install --upgrade agent-os-mcp
+# Copy from source to your project
+cp -r /path/to/agent-os-enhanced/mcp_server .agent-os/
+
+# Verify copy completed
+ls -la .agent-os/mcp_server/
 ```
 
-**For Source Installation:**
+### Step 4: Update Dependencies
+
 ```bash
-cd /path/to/agent-os-enhanced
-git pull origin main
-pip install -r mcp_server/requirements.txt --upgrade
+# Update Python dependencies in the isolated venv
+.agent-os/venv/bin/pip install -r .agent-os/mcp_server/requirements.txt --upgrade
+
+# Verify no errors
+echo $?  # Should output: 0
 ```
 
-### Step 4: Restart MCP Server
+### Step 5: Restart MCP Server
 
 **Critical:** The MCP server **MUST be restarted** for server code changes to take effect.
 
@@ -192,18 +214,35 @@ pkill -f "mcp.*agent-os-rag" || pkill -f "uvx.*mcp"
 
 **Note:** Content updates (`.md` files) do **NOT** require restart - file watchers handle those automatically.
 
-### Step 5: Verify Update
+### Step 6: Verify Update
 
+**Check server starts without errors:**
 ```bash
-# Test with a simple query
+# Check Cursor MCP logs
+# Cursor → Settings → MCP Servers → agent-os-rag → View Logs
+
+# Should see:
+# ✅ MCP server started successfully
+# ✅ RAG engine initialized
+# ✅ Workflow engine loaded
+# ✅ Tools registered: X tools
+```
+
+**Test with a simple query:**
+```python
+# In Cursor chat
 mcp_agent-os-rag_search_standards(
     query="testing standards",
     n_results=1
 )
 
-# Check for new tools (e.g., get_task in v1.3.0)
-# They should appear in Cursor's MCP tool list
+# Should return results without errors
 ```
+
+**Verify new features (if applicable):**
+- Check for new tools in Cursor's MCP tool list
+- Test that existing workflows still work
+- Confirm no breaking changes affect your project
 
 ---
 
@@ -211,25 +250,37 @@ mcp_agent-os-rag_search_standards(
 
 ### Updating Python Dependencies
 
+**Always use the isolated venv:**
+
 ```bash
-# Check for outdated packages
-pip list --outdated
+# From your project root
+cd /path/to/your-project
 
-# Update specific packages
-pip install --upgrade lancedb sentence-transformers
+# Check for outdated packages in Agent OS venv
+.agent-os/venv/bin/pip list --outdated
 
-# Or update all from requirements.txt
-pip install -r mcp_server/requirements.txt --upgrade
+# Update all from requirements.txt
+.agent-os/venv/bin/pip install -r .agent-os/mcp_server/requirements.txt --upgrade
+
+# Restart MCP server after updates
+pkill -f "mcp.*agent-os-rag"
 ```
 
 ### Security Updates
 
 ```bash
 # Check for security vulnerabilities
-pip-audit  # Or use safety: pip install safety && safety check
+.agent-os/venv/bin/pip-audit
+
+# Or use safety
+.agent-os/venv/bin/pip install safety
+.agent-os/venv/bin/safety check
 
 # Update vulnerable packages immediately
-pip install --upgrade <package-name>
+.agent-os/venv/bin/pip install --upgrade <package-name>
+
+# Restart MCP server
+pkill -f "mcp.*agent-os-rag"
 ```
 
 ---
@@ -333,19 +384,25 @@ After updating, verify:
 - Incompatible dependency versions
 - Python version mismatch
 - Corrupted installation
+- Copy incomplete
 
 **Fix:**
 ```bash
 # 1. Check Python version (requires 3.9+)
-python --version
+.agent-os/venv/bin/python --version
 
-# 2. Reinstall in clean environment
-python -m venv venv.new
-source venv.new/bin/activate
-pip install agent-os-mcp
+# 2. Verify copy completed
+ls -la .agent-os/mcp_server/
+# Should see __init__.py, agent_os_rag.py, etc.
 
-# 3. Verify installation
-python -c "from mcp_server import agent_os_rag; print('OK')"
+# 3. Reinstall dependencies in isolated venv
+.agent-os/venv/bin/pip install -r .agent-os/mcp_server/requirements.txt --force-reinstall
+
+# 4. Check for import errors
+.agent-os/venv/bin/python -c "from mcp_server import workflow_engine; print('OK')"
+
+# 5. Restart MCP server
+pkill -f "mcp.*agent-os-rag"
 ```
 
 ### Issue: Import Errors After Update
@@ -354,49 +411,66 @@ python -c "from mcp_server import agent_os_rag; print('OK')"
 
 **Fix:**
 ```bash
-# Reinstall dependencies
-pip install -r mcp_server/requirements.txt --force-reinstall
+# 1. Verify mcp_server was copied completely
+diff -r /path/to/agent-os-enhanced/mcp_server .agent-os/mcp_server
+# Should show no differences (or only version changes)
 
-# Or specific package
-pip install --force-reinstall lancedb
+# 2. Reinstall dependencies
+.agent-os/venv/bin/pip install -r .agent-os/mcp_server/requirements.txt --force-reinstall
+
+# 3. Check specific package
+.agent-os/venv/bin/pip install --force-reinstall lancedb
+
+# 4. Restart server
+pkill -f "mcp.*agent-os-rag"
 ```
 
 ### Issue: New Tools Not Appearing
 
-**Symptoms:** Updated to v1.3.0 but `get_task` tool not available
+**Symptoms:** Updated server but new tools don't appear
 
 **Fix:**
 ```bash
-# 1. Verify server version
-pip show agent-os-mcp  # Should show 1.3.0+
+# 1. Verify you copied the new version
+ls -la .agent-os/mcp_server/
+grep -r "new_tool_name" .agent-os/mcp_server/
 
 # 2. Hard restart Cursor
 # Quit Cursor completely, then reopen
 
 # 3. Check MCP server logs
 # Cursor > Settings > MCP Servers > agent-os-rag > View Logs
+# Look for tool registration messages
 
-# 4. Reinstall if needed
-pip install --force-reinstall agent-os-mcp==1.3.0
+# 4. Verify PYTHONPATH in .cursor/mcp.json
+cat .cursor/mcp.json | grep PYTHONPATH
+# Should be: "${workspaceFolder}/.agent-os"
 ```
 
-### Issue: Breaking Changes After Update
+### Issue: Changes Not Taking Effect
 
-**Symptoms:** Existing workflows fail after update
+**Symptoms:** Made updates but server behaves the same
+
+**Causes:**
+- Old code still in `.agent-os/mcp_server/`
+- Server not restarted
+- Wrong code copied
 
 **Fix:**
 ```bash
-# 1. Rollback to previous version
-pip install agent-os-mcp==1.2.3  # Or restore from backup
+# 1. Verify what was copied
+diff -r /path/to/agent-os-enhanced/mcp_server .agent-os/mcp_server
 
-# 2. Review migration guide in CHANGELOG
-cat mcp_server/CHANGELOG.md
+# 2. Force re-copy
+rm -rf .agent-os/mcp_server
+cp -r /path/to/agent-os-enhanced/mcp_server .agent-os/
 
-# 3. Update your code to match new API
-# (See Breaking Changes section above)
+# 3. Restart server (CRITICAL)
+pkill -f "mcp.*agent-os-rag"
 
-# 4. Test with updated code
-# 5. Re-update server when ready
+# 4. Verify in logs
+# Cursor > Settings > MCP Servers > agent-os-rag > View Logs
+# Should show server restarted with new code
 ```
 
 ---
@@ -407,16 +481,24 @@ cat mcp_server/CHANGELOG.md
 
 ```bash
 # 1. Development environment
-pip install --upgrade agent-os-mcp
+cd /path/to/agent-os-enhanced
+git pull origin main
+cp -r mcp_server /path/to/dev-project/.agent-os/
 # Test thoroughly
+# Restart MCP server: pkill -f "mcp.*agent-os-rag"
 
 # 2. Staging environment
-pip install agent-os-mcp==1.3.0
+cd /path/to/agent-os-enhanced
+git checkout v1.3.0  # Pin to specific version
+cp -r mcp_server /path/to/staging-project/.agent-os/
 # Run integration tests
+# Restart MCP server
 
-# 3. Production environment
-pip install agent-os-mcp==1.3.0
+# 3. Production environment (same version as staging)
+git checkout v1.3.0
+cp -r mcp_server /path/to/production-project/.agent-os/
 # Monitor for issues
+# Restart MCP server
 ```
 
 ### Docker Deployment
@@ -424,14 +506,26 @@ pip install agent-os-mcp==1.3.0
 ```dockerfile
 FROM python:3.11-slim
 
-# Install MCP server
-RUN pip install agent-os-mcp==1.3.0
+WORKDIR /app
 
-# Copy content
-COPY .agent-os/ /app/.agent-os/
+# Copy MCP server from source
+COPY mcp_server/ /app/.agent-os/mcp_server/
+
+# Install dependencies
+COPY mcp_server/requirements.txt /app/
+RUN python -m venv /app/.agent-os/venv && \
+    /app/.agent-os/venv/bin/pip install -r requirements.txt
+
+# Copy content (standards, workflows, usage)
+COPY .agent-os/standards/ /app/.agent-os/standards/
+COPY .agent-os/usage/ /app/.agent-os/usage/
+COPY .agent-os/workflows/ /app/.agent-os/workflows/
+
+# Set Python path
+ENV PYTHONPATH=/app/.agent-os
 
 # Run server
-CMD ["python", "-m", "mcp_server.agent_os_rag"]
+CMD ["/app/.agent-os/venv/bin/python", "-m", "mcp_server"]
 ```
 
 ### Kubernetes Deployment
@@ -447,8 +541,10 @@ spec:
     spec:
       containers:
       - name: mcp-server
-        image: agent-os-mcp:1.3.0
+        image: your-registry/agent-os-mcp:v1.3.0  # Built from Dockerfile above
         env:
+        - name: PYTHONPATH
+          value: "/app/.agent-os"
         - name: AGENT_OS_BASE_PATH
           value: "/app/.agent-os"
 ```
@@ -518,40 +614,98 @@ cd "$AGENT_OS_REPO"
 git pull origin main
 COMMIT=$(git rev-parse --short HEAD)
 
-# 2. Update server software
+# 2. Update MCP server (copy-based)
 echo "📦 Updating MCP server..."
-pip install -r mcp_server/requirements.txt --upgrade
+rm -rf "$PROJECT_ROOT/.agent-os/mcp_server"
+cp -r "$AGENT_OS_REPO/mcp_server" "$PROJECT_ROOT/.agent-os/"
 
-# 3. Update content
-echo "📦 Updating content..."
-rsync -av --delete "$AGENT_OS_REPO/universal/standards/" "$PROJECT_ROOT/.agent-os/standards/"
-rsync -av --delete "$AGENT_OS_REPO/universal/usage/" "$PROJECT_ROOT/.agent-os/usage/"
-rsync -av --delete "$AGENT_OS_REPO/universal/workflows/" "$PROJECT_ROOT/.agent-os/workflows/"
+# 3. Update dependencies in isolated venv
+echo "📦 Updating dependencies..."
+"$PROJECT_ROOT/.agent-os/venv/bin/pip" install -r "$PROJECT_ROOT/.agent-os/mcp_server/requirements.txt" --upgrade
 
-# 4. Restart server
+# 4. Update content (file watcher will auto-rebuild index)
+echo "📦 Updating content (safe-upgrade protects custom content)..."
+python "$AGENT_OS_REPO/scripts/safe-upgrade.py" \
+  --source "$AGENT_OS_REPO" \
+  --target "$PROJECT_ROOT/.agent-os"
+
+# 5. Restart server
 echo "🔄 Restarting MCP server..."
 pkill -f "mcp.*agent-os-rag" || true
 # Server will auto-restart via Cursor
 
-# 5. Track versions
-cat > "$PROJECT_ROOT/.agent-os/SERVER_VERSION.txt" << EOF
-Server Version: $(pip show agent-os-mcp 2>/dev/null | grep Version | awk '{print $2}' || echo "source")
-Content Commit: $COMMIT
-Updated: $(date +"%Y-%m-%d %H:%M:%S")
+# 6. Track versions
+cat > "$PROJECT_ROOT/.agent-os/UPDATE_LOG.txt" << EOF
+Last Update: $(date +"%Y-%m-%d %H:%M:%S")
+Source Commit: $COMMIT
+MCP Server: Copied from $AGENT_OS_REPO
+Content: Synced from universal/
 EOF
 
 echo "✅ Update complete!"
 echo "💡 Verify by testing: search_standards('test')"
+echo "📋 Check logs: Cursor > Settings > MCP Servers > agent-os-rag > View Logs"
 ```
 
 ---
 
-## 📚 Related Documentation
+## When to Query This Guide
 
-- **Content Updates**: `agent-os-update-guide.md`
-- **Installation**: Agent OS installation guide
-- **MCP Configuration**: Cursor MCP server setup
-- **CHANGELOG**: `mcp_server/CHANGELOG.md`
+This guide is most valuable when:
+
+1. **Updating MCP Server Software**
+   - Situation: Need to update Python server code
+   - Query: `search_standards("how to update MCP server")`
+
+2. **Server Restart Questions**
+   - Situation: Unsure if restart needed after update
+   - Query: `search_standards("MCP server restart required")`
+
+3. **Dependency Updates**
+   - Situation: Need to update server dependencies
+   - Query: `search_standards("update MCP server dependencies")`
+
+4. **Breaking Changes**
+   - Situation: Checking for breaking changes in update
+   - Query: `search_standards("MCP server breaking changes")`
+
+5. **Rollback Scenarios**
+   - Situation: Need to roll back failed server update
+   - Query: `search_standards("rollback MCP server update")`
+
+### Query by Use Case
+
+| Use Case | Example Query |
+|----------|---------------|
+| Server update | `search_standards("update MCP server")` |
+| Restart required | `search_standards("MCP server restart")` |
+| Dependencies | `search_standards("MCP server dependencies")` |
+| Testing updates | `search_standards("test MCP server update")` |
+| Rollback | `search_standards("rollback MCP server")` |
+
+---
+
+## Cross-References and Related Guides
+
+**Update Standards:**
+- `standards/installation/update-procedures.md` - Content update procedures
+  → `search_standards("Agent OS update standards")`
+
+**Workflows:**
+- `workflows/agent_os_upgrade_v1/` - Automated upgrade workflow (handles both content and server)
+  → `search_standards("agent OS upgrade workflow")`
+
+**MCP Documentation:**
+- `usage/mcp-usage-guide.md` - How to use MCP tools
+  → `search_standards("MCP tools guide")`
+- `mcp_server/CHANGELOG.md` - Server version history
+
+**Query workflow:**
+1. **Before Update**: `search_standards("how to update MCP server")` → Learn process
+2. **Check Changes**: Read CHANGELOG.md for breaking changes
+3. **Execute**: Use `agent_os_upgrade_v1` workflow (recommended) or manual method
+4. **Validate**: Test MCP tools after restart
+5. **Troubleshoot**: `search_standards("MCP server update issues")` if needed
 
 ---
 
@@ -570,26 +724,27 @@ echo "💡 Verify by testing: search_standards('test')"
 ## 🔗 Quick Reference
 
 ```bash
-# Check current version
-pip show agent-os-mcp
+# Get latest source
+cd /path/to/agent-os-enhanced && git pull origin main
 
-# Update server
-pip install --upgrade agent-os-mcp
+# Copy to your project
+cp -r /path/to/agent-os-enhanced/mcp_server /path/to/your-project/.agent-os/
 
-# Update from source
-cd agent-os-enhanced && git pull && pip install -r mcp_server/requirements.txt --upgrade
+# Update dependencies
+/path/to/your-project/.agent-os/venv/bin/pip install -r /path/to/your-project/.agent-os/mcp_server/requirements.txt --upgrade
 
 # Restart server
-pkill -f "mcp.*agent-os-rag" && # Cursor will auto-restart
+pkill -f "mcp.*agent-os-rag"  # Cursor will auto-restart
 
 # Verify
-search_standards("test")
+search_standards("test")  # Should work without errors
 ```
 
 ---
 
 **Remember:**
-- **Content updates**: Sync from `universal/` → `.agent-os/`
-- **Server updates**: `pip install --upgrade agent-os-mcp`
-- **Always restart** server after updates
+- **Content updates**: Copy from `universal/` → `.agent-os/`
+- **Server updates**: Copy from `mcp_server/` → `.agent-os/mcp_server/`
+- **Always restart** server after code changes: `pkill -f "mcp.*agent-os-rag"`
+- **Verify in logs** after restart (Cursor → Settings → MCP Servers → View Logs)
 - **Test thoroughly** before production deployment

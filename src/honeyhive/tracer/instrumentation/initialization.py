@@ -1265,12 +1265,31 @@ def _setup_baggage_context(tracer_instance: Any) -> None:
 def _register_tracer_instance(tracer_instance: Any) -> None:
     """Register tracer instance for auto-discovery.
 
+    Automatically sets this tracer as the global default if no default
+    exists yet. This ensures @trace() decorator works in simple single-
+    instance scenarios without requiring manual set_default_tracer() calls.
+
     :param tracer_instance: The tracer instance to register
     :type tracer_instance: HoneyHiveTracer
     """
     try:
 
         tracer_instance._tracer_id = registry.register_tracer(tracer_instance)
+
+        # Auto-set as default if this is the first tracer
+        # Users can override this later with set_default_tracer()
+        if registry.get_default_tracer() is None:
+            registry.set_default_tracer(tracer_instance)
+            safe_log(
+                tracer_instance,
+                "info",
+                "Automatically set as default tracer (first instance)",
+                honeyhive_data={
+                    "auto_default": True,
+                    "tracer_id": tracer_instance._tracer_id,
+                    "decorator_discovery": "enabled",
+                },
+            )
 
         safe_log(
             tracer_instance,

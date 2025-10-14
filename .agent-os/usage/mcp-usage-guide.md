@@ -2,6 +2,44 @@
 
 **Guide for using Model Context Protocol (MCP) tools in Agent OS projects.**
 
+**Keywords for search**: MCP tools, Model Context Protocol, how to use MCP tools, search_standards, start_workflow, workflow tools, MCP usage, semantic search, phase gating, tool discovery
+
+---
+
+## 🚨 Quick Reference (TL;DR)
+
+**What is MCP?** Model Context Protocol - standardized interface for AI assistants to access tools and information.
+
+**8 Core MCP Tools:**
+1. **`search_standards`** - Semantic search over Agent OS docs (use 5-10+ times per task)
+2. **`start_workflow`** - Initialize phase-gated workflows
+3. **`get_current_phase`** - Retrieve current workflow phase
+4. **`get_task`** - Get specific task details (NEW in v1.3.0)
+5. **`complete_phase`** - Submit evidence and advance
+6. **`get_workflow_state`** - Check workflow progress
+7. **`create_workflow`** - Generate new workflow frameworks
+8. **`current_date`** - Get current date/time
+
+**Critical Rules:**
+- ✅ **NEVER bypass MCP** - Always use `search_standards()`, never `read_file()` for standards
+- ✅ **Query liberally** - 5-10+ queries per task, not just once
+- ✅ **Follow phase gating** - Use workflows for structured tasks
+
+---
+
+## Questions This Answers
+
+- "How do I use MCP tools in Agent OS?"
+- "What is the Model Context Protocol?"
+- "How do I search for standards using MCP?"
+- "How do I start a workflow?"
+- "What MCP tools are available?"
+- "Should I use read_file or search_standards?"
+- "How do I get workflow tasks?"
+- "How do I complete a workflow phase?"
+- "What is phase gating?"
+- "How often should I query standards?"
+
 ---
 
 ## 🎯 What Is MCP?
@@ -16,6 +54,8 @@
 ---
 
 ## 🚀 Available MCP Tools
+
+**Tool Discovery:** The MCP protocol provides built-in tool introspection via `tools/list`, which returns all available tools with their parameter schemas. Cursor IDE handles this automatically when you invoke MCP tools.
 
 ### 1. `search_standards`
 
@@ -52,9 +92,17 @@ mcp_agent-os-rag_search_standards(
 
 **Example:**
 ```python
+# Example 1: Test generation workflow
 session = mcp_agent-os-rag_start_workflow(
     workflow_type="test_generation_v3",
-    target_file="auth.py"
+    target_file="auth.py"  # File path for code workflows
+)
+
+# Example 2: Spec execution workflow (different pattern!)
+session = mcp_agent-os-rag_start_workflow(
+    workflow_type="spec_execution_v1",
+    target_file="my-feature-name",  # Simple identifier, NOT a path
+    options={"spec_path": ".agent-os/specs/2025-10-07-my-feature-name"}  # Full path in options
 )
 
 # NEW: Workflow overview included
@@ -68,6 +116,10 @@ for phase in overview["phases"]:
 ```
 
 **Returns:** Session ID, Phase 0 content, and complete workflow overview
+
+**Important:** The `target_file` parameter usage varies by workflow:
+- For code workflows (`test_generation_v3`, `production_code_v2`): Use file path (e.g., `"src/auth.py"`)
+- For spec workflows (`spec_execution_v1`): Use simple identifier (e.g., `"my-feature"`), put full path in `options.spec_path`
 
 **Discovery Tip:** Use `search_standards` to discover available workflows before starting:
 ```python
@@ -122,7 +174,7 @@ for task_meta in phase['phase_content']['tasks']:
 - After seeing task list from `get_current_phase`
 - Ready to work on a specific task
 - Need task execution steps and commands
-- Following meta-framework's "one task at a time" principle
+- Following meta-workflow's "one task at a time" principle
 
 **Why this tool?**
 - ✅ Focused attention (one task in context at a time)
@@ -239,7 +291,7 @@ mcp_agent-os-rag_get_workflow_state(
 
 ### 7. `create_workflow`
 
-**Purpose:** Generate new workflow framework using meta-framework principles
+**Purpose:** Generate new workflow framework using meta-workflow principles
 
 **When to use:**
 - Creating a new structured process
@@ -257,6 +309,49 @@ mcp_agent-os-rag_create_workflow(
 ```
 
 **Returns:** Generated framework files and compliance report
+
+---
+
+### 8. `current_date`
+
+**Purpose:** Get current date/time to prevent AI date errors
+
+**When to use:**
+- Creating specs or documentation with dates
+- Generating timestamped directories or files
+- Any content requiring accurate current date
+
+**Example:**
+```python
+date_info = mcp_agent-os-rag_current_date()
+print(date_info["iso_date"])  # "2025-10-07"
+print(date_info["iso_datetime"])  # "2025-10-07T14:30:00-07:00"
+```
+
+**Returns:** Dictionary with current date/time in multiple formats
+
+---
+
+## 🔍 Tool Discovery
+
+### MCP Protocol Introspection
+
+The MCP protocol includes built-in tool discovery capabilities:
+
+1. **`tools/list`** - Returns all available MCP tools with:
+   - Tool name
+   - Description
+   - Parameter schema (names, types, required/optional)
+   - Return value schema
+
+2. **`resources/list`** - Returns available resources (use `list_mcp_resources` tool)
+
+3. **`prompts/list`** - Returns available prompts (if server exposes any)
+
+**Note:** Cursor IDE automatically handles these protocol-level calls. When you need to know what tools are available or what parameters they take, you can:
+- Check this documentation
+- Rely on Cursor's autocomplete (uses `tools/list` under the hood)
+- Use the MCP inspector in Cursor's dev tools
 
 ---
 
@@ -362,9 +457,71 @@ When in a workflow:
 
 ---
 
-##📞 Questions?
+## When to Query This Guide
 
-- **Tool behavior**: Query MCP: `"mcp tool routing guide"`
+This guide is most valuable when:
+
+1. **Starting to Use MCP Tools**
+   - Situation: First time using Agent OS MCP tools
+   - Query: `search_standards("how to use MCP tools")`
+
+2. **Choosing Between Tools**
+   - Situation: Not sure which MCP tool to use
+   - Query: `search_standards("MCP tools available")`
+
+3. **Workflow Questions**
+   - Situation: Need to understand workflow execution
+   - Query: `search_standards("how to start workflow")`
+
+4. **Search vs Read File**
+   - Situation: Unsure if I should use `search_standards` or `read_file`
+   - Query: `search_standards("search_standards vs read_file")`
+
+5. **Phase Gating Questions**
+   - Situation: Understanding workflow phase progression
+   - Query: `search_standards("workflow phase gating")`
+
+### Query by Use Case
+
+| Use Case | Example Query |
+|----------|---------------|
+| MCP overview | `search_standards("what is MCP")` |
+| Available tools | `search_standards("MCP tools available")` |
+| Search standards | `search_standards("how to use search_standards")` |
+| Start workflow | `search_standards("how to start workflow")` |
+| Complete phase | `search_standards("how to complete workflow phase")` |
+
+---
+
+## Cross-References and Related Guides
+
+**Core Orientation:**
+- `usage/ai-agent-quickstart.md` - Practical examples of using MCP tools
+  → `search_standards("AI agent quickstart")`
+- `standards/universal/ai-assistant/AGENT-OS-ORIENTATION.md` - MCP in context of Agent OS principles
+  → `search_standards("Agent OS orientation")`
+
+**Workflows:**
+- `workflows/spec_execution_v1/` - Example of phase-gated workflow
+  → `search_standards("spec execution workflow")`
+- `workflows/test_generation_v3/` - Test generation workflow
+  → `search_standards("test generation workflow")`
+
+**Standards:**
+- `standards/documentation/rag-content-authoring.md` - How content is optimized for search
+  → `search_standards("RAG content authoring")`
+
+**Query workflow:**
+1. **First Use**: `search_standards("how to use MCP tools")` → Learn tool basics
+2. **During Work**: Use `search_standards()` liberally (5-10+ times per task)
+3. **Workflows**: `search_standards("how to start workflow")` → Execute structured tasks
+4. **Troubleshooting**: `search_standards("MCP tool usage")` → Resolve issues
+
+---
+
+## 📞 Questions?
+
+- **Tool behavior**: Query MCP: `search_standards("mcp tool routing guide")`
 - **Standards access**: Use `search_standards` with your question
 - **Workflow help**: Read workflow entry point (via `get_current_phase`)
 

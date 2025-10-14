@@ -17,9 +17,15 @@ Template for creating tasks.md during Phase 3 (Task Breakdown).
 
 ## Time Estimates
 
+### Human Implementation (Traditional)
 - **Phase 1:** {hours} ({description})
 - **Phase 2:** {hours} ({description})
 - **Total:** {hours} ({days})
+
+### AI Agent + Human Orchestration (Agent OS Enhanced)
+- **Phase 1:** {wall clock hours}h wall, {human minutes} min active ({leverage}x)
+- **Phase 2:** {wall clock hours}h wall, {human minutes} min active ({leverage}x)
+- **Total:** {wall clock hours}h wall, {human hours}h active ({leverage}x leverage)
 
 ---
 
@@ -32,6 +38,9 @@ Template for creating tasks.md during Phase 3 (Task Breakdown).
 ### Phase 1 Tasks
 
 - [ ] **Task 1.1**: {Task name}
+  - **Human Baseline:** {hours} ({S/M/L})
+  - **Agent OS:** {wall hours}h wall, {active min} min active ({leverage}x)
+  
   - {Action item}
   - {Action item}
   - Verify {verification}
@@ -41,6 +50,9 @@ Template for creating tasks.md during Phase 3 (Task Breakdown).
   - [ ] {Criterion 2}
 
 - [ ] **Task 1.2**: {Task name}
+  - **Human Baseline:** {hours} ({S/M/L})
+  - **Agent OS:** {wall hours}h wall, {active min} min active ({leverage}x)
+  
   - {Action item}
   
   **Acceptance Criteria:**
@@ -95,6 +107,9 @@ Template for creating tasks.md during Phase 3 (Task Breakdown).
 
 ```markdown
 - [ ] **Task 1.1**: Create database schema
+  - **Human Baseline:** 4 hours (M)
+  - **Agent OS:** 4h wall clock, 12 min active (20x leverage)
+  
   - Define tables for users, resources, tags
   - Add indexes for foreign keys and frequently queried columns
   - Create migration file with up/down migrations
@@ -109,6 +124,9 @@ Template for creating tasks.md during Phase 3 (Task Breakdown).
 ```
 
 **Why Good:**
+- Dual time estimates (human baseline vs Agent OS)
+- Shows leverage multiplier (20x)
+- Clear wall clock vs active time distinction
 - Specific action items
 - Clear verification step
 - Measurable acceptance criteria
@@ -200,31 +218,87 @@ Phase 1
 
 ## Time Estimation Guidelines
 
-### T-Shirt Sizing
+### Dual Estimation: Human vs AI Agent
+
+Agent OS Enhanced requires **two time estimates** to show the leverage multiplier (20-40x typical).
+
+**For complete dual estimation guidance, query these standards:**
+
+1. **Core Formula & Calculation:**
+   ```
+   search_standards("H W A L variables wall clock duration human active time")
+   ```
+   Returns: Complete 4-step calculation (H → W → A → L) with examples
+
+2. **Task Type Multipliers:**
+   ```
+   search_standards("table boilerplate setup straightforward logic complex algorithm")
+   ```
+   Returns: Complete table with AI multipliers (0.8x-1.5x) and orchestration % (3-10%)
+
+3. **What Counts as Active Time:**
+   ```
+   search_standards("reading task specification giving direction reviewing output")
+   ```
+   Returns: Detailed breakdown of what to include/exclude in orchestration time
+
+4. **Task Format:**
+   ```
+   search_standards("task format example Human Baseline Agent OS")
+   ```
+   Returns: Template format with leverage multiplier shown
+
+5. **Parallel Multiplier Effect:**
+   ```
+   search_standards("parallel multiplier effect")
+   ```
+   Returns: How parallel work creates 100-400x effective leverage
+
+6. **Calibration Guidance:**
+   ```
+   search_standards("start conservative 1.2x multiplier 8-10% orchestration")
+   ```
+   Returns: Conservative starting point, refinement over 5-10 tasks
+
+---
+
+### Quick Formula (One-Liner)
+
+```
+H (baseline) → W = H × M (wall clock) → A = W × O (active time) → L = H ÷ A (leverage)
+
+Typical: H=4h, M=1.0, W=4h, O=0.05, A=12min → L=20x
+```
+
+---
+
+### Task Format Example
+
+```markdown
+- [ ] **Task 1.1**: Create database schema
+  - **Human Baseline:** 4 hours (M)
+  - **Agent OS:** 4h wall clock, 12 min active (20x leverage)
+  
+  - Define tables for users, resources, tags
+  - Add indexes for foreign keys
+  - Create migration file
+  - Verify schema matches specs.md
+  
+  **Acceptance Criteria:**
+  - [ ] All tables created with correct types
+  - [ ] Foreign key constraints defined
+  - [ ] Indexes created for performance
+  - [ ] Migration runs successfully
+```
+
+---
+
+### T-Shirt Sizing (Human Baseline)
 
 - **Small (S):** 1-2 hours
 - **Medium (M):** 2-4 hours
 - **Large (L):** 4-8 hours
 - **Extra Large (XL):** 8-16 hours (consider breaking down)
-
-### Estimation Formula
-
-```
-Estimated Time = Base Time + (Complexity Factor × Risk Factor)
-
-Base Time: How long if everything goes smoothly
-Complexity: 1.0 (simple) to 2.0 (complex)
-Risk: 1.0 (low) to 1.5 (high uncertainty)
-```
-
-### Example
-
-```
-Base: 2 hours (write code)
-Complexity: 1.5 (moderate complexity)
-Risk: 1.2 (some unknowns)
-Total: 2 × 1.5 × 1.2 = 3.6 hours (round to 4)
-```
 
 ---
 
@@ -275,3 +349,4 @@ Before advancing to Phase {N+1}:
 - Monitoring setup
 - Documentation finalization
 - Announcement/handoff
+
