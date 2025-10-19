@@ -48,7 +48,7 @@ Core Capabilities
 - **Multi-Provider Support**: Simultaneous tracing across multiple LLM providers  
 - **Token Tracking**: Automatic token usage monitoring and cost tracking
 - **Rich Metadata**: Detailed span attributes for AI operations
-- **Framework Examples**: Integration examples for OpenAI Agents (SwarmAgent), AWS Strands (TracerProvider pattern), Google ADK (async support), LangGraph (state workflows), and more
+- **Framework Examples**: Integration examples for OpenAI Agents (SwarmAgent), AWS Strands (TracerProvider pattern), Google ADK (async support), LangGraph (state workflows), Pydantic AI (type-safe agents), and more
 
 **Performance & Reliability**:
 

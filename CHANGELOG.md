@@ -18,6 +18,13 @@
   - Added required criteria field to Metric model test data
 
 ### Added
+- **📚 Examples: Pydantic AI Integration**
+  - New Pydantic AI integration with Anthropic instrumentor
+  - Structured outputs with Pydantic models for type safety
+  - Agent tools/functions with @agent.tool decorator
+  - Dynamic system prompts with @agent.system_prompt
+  - Dependency injection with RunContext
+  - Streaming responses with async iteration
 - **📚 Examples: LangGraph Integration**
   - New LangGraph integration example with state graph workflows
   - Sequential node execution with conditional routing

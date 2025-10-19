@@ -17,6 +17,14 @@ Latest Release Notes
 Current Version Highlights
 ~~~~~~~~~~~~~~~~~~~~~~~~~~
 
+**📚 NEW: Pydantic AI Integration Example**
+
+* **Type-Safe Agents**: Complete Pydantic AI integration with structured outputs
+* **Agent Tools**: Demonstrates @agent.tool decorator for function calling
+* **Dynamic Prompts**: System prompt generation with @agent.system_prompt
+* **Dependency Injection**: RunContext for passing dependencies to agents
+* **Streaming Support**: Async iteration for streaming responses
+
 **📚 NEW: LangGraph Integration Example**
 
 * **State Graph Workflows**: Complete LangGraph integration with sequential node execution
