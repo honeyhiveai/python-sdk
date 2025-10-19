@@ -17,6 +17,14 @@ Latest Release Notes
 Current Version Highlights
 ~~~~~~~~~~~~~~~~~~~~~~~~~~
 
+**📚 NEW: LangGraph Integration Example**
+
+* **State Graph Workflows**: Complete LangGraph integration with sequential node execution
+* **Conditional Routing**: Demonstrates dynamic routing based on graph state
+* **Multi-Step Agents**: Agent graphs with state management across nodes
+* **Node Tracing**: Node-level tracing with @trace decorator integration
+* **Automatic Instrumentation**: LangChain call tracing via OpenInference
+
 **🔍 NEW: Raw Span Data Dumping for Debugging**
 
 * **Comprehensive Span Extraction**: New `_dump_raw_span_data()` method captures all OpenTelemetry span properties

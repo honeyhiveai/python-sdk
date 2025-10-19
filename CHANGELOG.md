@@ -18,6 +18,12 @@
   - Added required criteria field to Metric model test data
 
 ### Added
+- **📚 Examples: LangGraph Integration**
+  - New LangGraph integration example with state graph workflows
+  - Sequential node execution with conditional routing
+  - Multi-step agent graphs with state management
+  - Node-level tracing with @trace decorator
+  - Automatic LangChain call tracing via OpenInference instrumentor
 - **🔍 Debugging: Comprehensive Raw Span Data Dumping**
   - Added `_dump_raw_span_data()` method to span processor for detailed debugging
   - Captures all OpenTelemetry span properties: context, parent, status, attributes, events, links
