@@ -25,12 +25,35 @@ Current Version Highlights
 * **100% Test Coverage**: Added 48 unit tests + 3 integration tests with backend verification
 * **Documentation Updated**: Comprehensive updates to tutorials, how-to guides, and API reference with new examples
 
+**📚 NEW: Pydantic AI Integration Example**
+
+* **Type-Safe Agents**: Complete Pydantic AI integration with structured outputs
+* **Agent Tools**: Demonstrates @agent.tool decorator for function calling
+* **Dynamic Prompts**: System prompt generation with @agent.system_prompt
+* **Dependency Injection**: RunContext for passing dependencies to agents
+* **Streaming Support**: Async iteration for streaming responses
+
+**📚 NEW: LangGraph Integration Example**
+
+* **State Graph Workflows**: Complete LangGraph integration with sequential node execution
+* **Conditional Routing**: Demonstrates dynamic routing based on graph state
+* **Multi-Step Agents**: Agent graphs with state management across nodes
+* **Node Tracing**: Node-level tracing with @trace decorator integration
+* **Automatic Instrumentation**: LangChain call tracing via OpenInference
+
 **🔍 NEW: Raw Span Data Dumping for Debugging**
 
 * **Comprehensive Span Extraction**: New `_dump_raw_span_data()` method captures all OpenTelemetry span properties
 * **Full Context Capture**: Includes trace_id, span_id, parent spans, status, attributes, events, links
 * **Resource Information**: Captures resource attributes and instrumentation info for complete observability
 * **JSON Formatting**: Outputs pretty-printed JSON for easy debugging and troubleshooting
+
+**🔄 CHANGED: Updated Google ADK Integration with Async Support**
+
+* **Modern API**: Updated to newer Google ADK API with LlmAgent, Runner, and InMemorySessionService
+* **Async/Await**: Added full async support to all test functions for better performance
+* **Simplified Auth**: Migrated from GOOGLE_ADK_API_KEY to standard GOOGLE_API_KEY environment variable
+* **Session Management**: Improved session handling with explicit session service
 
 **🔄 CHANGED: Refactored Strands Integration Example**
 

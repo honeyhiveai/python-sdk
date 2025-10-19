@@ -31,6 +31,9 @@ Comprehensive examples for popular AI agent frameworks:
 - **[`openai_agents_integration.py`](openai_agents_integration.py)** - OpenAI Agents SDK with OpenInference instrumentor (✅ multi-agent, handoffs, guardrails, tools)
 - **[`semantic_kernel_integration.py`](semantic_kernel_integration.py)** - Microsoft Semantic Kernel with OpenAI instrumentor (✅ agents, plugins, function calling, streaming)
 - **[`strands_integration.py`](strands_integration.py)** - AWS Strands with TracerProvider pattern (✅ Bedrock models, streaming, tools)
+- **[`langgraph_integration.py`](langgraph_integration.py)** - LangGraph workflows with LangChain instrumentor (✅ state graphs, conditional routing, agent graphs)
+- **[`pydantic_ai_integration.py`](pydantic_ai_integration.py)** - Pydantic AI agents with Anthropic instrumentor (✅ structured outputs, tools, dependencies, streaming)
+- **[`openinference_google_adk_example.py`](openinference_google_adk_example.py)** - Google ADK with workflow agents (✅ sequential, parallel, loop workflows)
 
 ## 🚀 **Quick Start**
 
@@ -95,6 +98,57 @@ python integrations/strands_integration.py
 - ✅ Custom trace attributes
 - ✅ Structured outputs
 - ✅ Event loop cycle tracing
+
+#### LangGraph
+```bash
+pip install langgraph langchain-openai openinference-instrumentation-langchain
+export OPENAI_API_KEY=sk-...
+export HH_API_KEY=your-honeyhive-key
+python integrations/langgraph_integration.py
+```
+
+**Features demonstrated:**
+- ✅ Basic state graph workflows
+- ✅ Sequential node execution
+- ✅ Conditional routing based on state
+- ✅ Multi-step agent graphs
+- ✅ Node-level tracing with @trace decorator
+- ✅ Automatic LangChain call tracing
+- ✅ State management across nodes
+
+#### Pydantic AI
+```bash
+pip install pydantic-ai openinference-instrumentation-anthropic
+export ANTHROPIC_API_KEY=your-anthropic-key
+export HH_API_KEY=your-honeyhive-key
+python integrations/pydantic_ai_integration.py
+```
+
+**Features demonstrated:**
+- ✅ Basic agent with instructions
+- ✅ Structured outputs with Pydantic models
+- ✅ Agent tools/functions with @agent.tool
+- ✅ Dynamic system prompts with @agent.system_prompt
+- ✅ Dependency injection with RunContext
+- ✅ Streaming responses with async iteration
+- ✅ Type-safe agent development
+
+#### Google ADK
+```bash
+pip install google-adk openinference-instrumentation-google-adk
+export GOOGLE_API_KEY=your-google-api-key
+export HH_API_KEY=your-honeyhive-key
+python integrations/openinference_google_adk_example.py
+```
+
+**Features demonstrated:**
+- ✅ LlmAgent with tools
+- ✅ Sequential workflow agents (pipeline processing)
+- ✅ Parallel workflow agents (concurrent execution)
+- ✅ Loop workflow agents (iterative refinement)
+- ✅ Runner and session management
+- ✅ State-based agent communication
+- ✅ Async/await patterns
 
 ## 📖 **Documentation**
 

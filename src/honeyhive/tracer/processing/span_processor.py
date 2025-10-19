@@ -1,11 +1,13 @@
 """HoneyHive span processor for OpenTelemetry integration."""
 
-# pylint: disable=duplicate-code,protected-access
+# pylint: disable=duplicate-code,protected-access,too-many-lines
 # Justification: Legitimate shared patterns with utils and decorators.
 # Duplicate code represents common LLM attribute lists and model patterns
 # shared across processing and utility modules for consistent event detection.
 # protected-access: Accessing _config is the established pattern for tracer config
+# too-many-lines: Comprehensive span processor with debugging requires additional code
 
+import json
 from typing import Any, Optional
 
 from opentelemetry import baggage, context
@@ -103,8 +105,6 @@ class HoneyHiveSpanProcessor(SpanProcessor):
         :return: Formatted string with all span properties
         :rtype: str
         """
-        import json
-
         try:
             # Get span context
             span_context = span.context if hasattr(span, "context") else None
@@ -604,7 +604,7 @@ class HoneyHiveSpanProcessor(SpanProcessor):
             raw_span_data = self._dump_raw_span_data(span)
             self._safe_log(
                 "debug",
-                "🚀 SPAN PROCESSOR on_end called - mode: %s, span: %s\n📊 RAW SPAN DATA:\n%s",
+                "🚀 SPAN PROCESSOR on_end - mode: %s, span: %s\n📊 RAW DATA:\n%s",
                 self.mode,
                 span.name,
                 raw_span_data,

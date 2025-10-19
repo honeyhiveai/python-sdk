@@ -12,6 +12,12 @@
   - Updated documentation: tutorials, how-to guides, and API reference with new interfaces and examples
 
 ### Changed
+- **🔄 Examples: Updated Google ADK Integration with Async Support**
+  - Migrated from GOOGLE_ADK_API_KEY to GOOGLE_API_KEY environment variable
+  - Added async/await support to all test functions
+  - Updated to newer Google ADK API (LlmAgent, Runner, InMemorySessionService)
+  - Improved session management with explicit session service
+  - Modernized agent creation and execution patterns
 - **🔄 Examples: Refactored Strands Integration**
   - Updated AWS Strands integration example to use TracerProvider pattern
   - Replaced complex multi-step workflow with focused test suite (6 test cases)
@@ -23,6 +29,19 @@
   - Added required criteria field to Metric model test data
 
 ### Added
+- **📚 Examples: Pydantic AI Integration**
+  - New Pydantic AI integration with Anthropic instrumentor
+  - Structured outputs with Pydantic models for type safety
+  - Agent tools/functions with @agent.tool decorator
+  - Dynamic system prompts with @agent.system_prompt
+  - Dependency injection with RunContext
+  - Streaming responses with async iteration
+- **📚 Examples: LangGraph Integration**
+  - New LangGraph integration example with state graph workflows
+  - Sequential node execution with conditional routing
+  - Multi-step agent graphs with state management
+  - Node-level tracing with @trace decorator
+  - Automatic LangChain call tracing via OpenInference instrumentor
 - **🔍 Debugging: Comprehensive Raw Span Data Dumping**
   - Added `_dump_raw_span_data()` method to span processor for detailed debugging
   - Captures all OpenTelemetry span properties: context, parent, status, attributes, events, links
