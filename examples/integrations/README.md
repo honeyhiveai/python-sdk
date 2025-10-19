@@ -31,6 +31,7 @@ Comprehensive examples for popular AI agent frameworks:
 - **[`openai_agents_integration.py`](openai_agents_integration.py)** - OpenAI Agents SDK with OpenInference instrumentor (✅ multi-agent, handoffs, guardrails, tools)
 - **[`semantic_kernel_integration.py`](semantic_kernel_integration.py)** - Microsoft Semantic Kernel with OpenAI instrumentor (✅ agents, plugins, function calling, streaming)
 - **[`strands_integration.py`](strands_integration.py)** - AWS Strands with TracerProvider pattern (✅ Bedrock models, streaming, tools)
+- **[`bedrock_integration.py`](bedrock_integration.py)** - AWS Bedrock direct with Bedrock instrumentor (✅ Nova, Titan, Claude, Converse API, streaming)
 - **[`langgraph_integration.py`](langgraph_integration.py)** - LangGraph workflows with LangChain instrumentor (✅ state graphs, conditional routing, agent graphs)
 - **[`pydantic_ai_integration.py`](pydantic_ai_integration.py)** - Pydantic AI agents with Anthropic instrumentor (✅ structured outputs, tools, dependencies, streaming)
 - **[`openinference_google_adk_example.py`](openinference_google_adk_example.py)** - Google ADK with workflow agents (✅ sequential, parallel, loop workflows)
@@ -92,12 +93,46 @@ python integrations/strands_integration.py
 ```
 
 **Features demonstrated:**
-- ✅ Bedrock model integration
+- ✅ Bedrock model integration via Strands
 - ✅ Tool execution with agents
 - ✅ Streaming mode support
 - ✅ Custom trace attributes
 - ✅ Structured outputs
 - ✅ Event loop cycle tracing
+
+#### AWS Bedrock Direct
+```bash
+pip install boto3 openinference-instrumentation-bedrock
+export HH_API_KEY=your-honeyhive-key
+export HH_PROJECT=your-project
+
+# Option 1: Long-term credentials
+export AWS_ACCESS_KEY_ID=your-access-key
+export AWS_SECRET_ACCESS_KEY=your-secret-key
+
+# Option 2: Temporary credentials with session token
+export AWS_ACCESS_KEY_ID=your-access-key
+export AWS_SECRET_ACCESS_KEY=your-secret-key
+export AWS_SESSION_TOKEN=your-session-token
+
+# Option 3: Use AWS CLI default profile (no env vars needed)
+# aws configure
+
+export AWS_REGION=us-east-1
+python integrations/bedrock_integration.py
+```
+
+**Features demonstrated:**
+- ✅ Amazon Nova models (nova-lite-v1:0)
+- ✅ Amazon Titan Text models (titan-text-express-v1)
+- ✅ Anthropic Claude models (3-haiku, 3-sonnet)
+- ✅ Converse API (unified interface)
+- ✅ Streaming responses with ConverseStream
+- ✅ Multi-turn conversations with context
+- ✅ Document understanding (PDF, TXT, DOC formats)
+- ✅ Native invoke_model API with streaming
+- ✅ Native Bedrock Runtime client integration
+- ✅ Multiple authentication methods (keys, session tokens, IAM roles)
 
 #### LangGraph
 ```bash

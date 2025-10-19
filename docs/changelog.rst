@@ -24,6 +24,13 @@ Current Version Highlights
 * **Circular Import Resolved**: Extracted `_set_span_attributes()` to new `span_utils.py` module
 * **100% Test Coverage**: Added 48 unit tests + 3 integration tests with backend verification
 * **Documentation Updated**: Comprehensive updates to tutorials, how-to guides, and API reference with new examples
+**📚 NEW: AWS Bedrock Direct Integration Example**
+
+* **Multi-Model Support**: Amazon Nova, Titan Text, and Anthropic Claude models
+* **Converse API**: Unified interface for all Bedrock models
+* **Streaming**: ConverseStream API for real-time responses
+* **Document Understanding**: PDF, TXT, and DOC format support
+* **Flexible Auth**: Multiple authentication methods (keys, session tokens, IAM roles)
 
 **📚 NEW: Pydantic AI Integration Example**
 

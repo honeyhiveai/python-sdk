@@ -29,6 +29,14 @@
   - Added required criteria field to Metric model test data
 
 ### Added
+- **📚 Examples: AWS Bedrock Direct Integration**
+  - New AWS Bedrock direct integration with Bedrock instrumentor
+  - Support for Amazon Nova, Titan, and Claude models
+  - Converse API for unified model interface
+  - Streaming responses with ConverseStream API
+  - Multi-turn conversations with message history
+  - Document understanding (PDF, TXT, DOC formats)
+  - Multiple authentication methods (keys, session tokens, IAM roles)
 - **📚 Examples: Pydantic AI Integration**
   - New Pydantic AI integration with Anthropic instrumentor
   - Structured outputs with Pydantic models for type safety
