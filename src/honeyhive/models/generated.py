@@ -309,76 +309,89 @@ class CreateModelEvent(BaseModel):
 
 
 class Type1(Enum):
-    custom = "custom"
-    model = "model"
-    human = "human"
-    composite = "composite"
+    """Metric type enum matching backend API."""
+    PYTHON = "PYTHON"
+    LLM = "LLM"
+    HUMAN = "HUMAN"
+    COMPOSITE = "COMPOSITE"
 
 
 class ReturnType(Enum):
+    """Return type enum matching backend API."""
     boolean = "boolean"
     float = "float"
     string = "string"
+    categorical = "categorical"
 
 
 class Threshold(BaseModel):
+    """Threshold for metrics - supports different threshold types."""
     min: Optional[float] = None
     max: Optional[float] = None
+    pass_when: Optional[Union[bool, float]] = None
+    passing_categories: Optional[List[str]] = None
 
 
 class Metric(BaseModel):
+    """Metric model matching backend BaseMetricSchema."""
+    # Required fields
     name: str = Field(..., description="Name of the metric")
-    criteria: Optional[str] = Field(
-        None, description="Criteria for human or composite metrics"
-    )
-    code_snippet: Optional[str] = Field(
-        None, description="Associated code block for the metric"
-    )
-    prompt: Optional[str] = Field(None, description="Evaluator prompt for the metric")
-    task: str = Field(..., description="Name of the project associated with metric")
     type: Type1 = Field(
         ...,
-        description='Type of the metric - "custom", "model", "human" or "composite"',
+        description='Type of the metric - "PYTHON", "LLM", "HUMAN" or "COMPOSITE"',
     )
-    description: str = Field(
-        ..., description="Short description of what the metric does"
+    criteria: str = Field(..., description="Criteria, code, or prompt for the metric")
+    
+    # Optional fields with defaults (matching backend defaults)
+    description: Optional[str] = Field(None, description="Short description of what the metric does")
+    return_type: Optional[ReturnType] = Field(
+        None,
+        description='The data type of the metric value - "boolean", "float", "string", "categorical"',
     )
     enabled_in_prod: Optional[bool] = Field(
         None, description="Whether to compute on all production events automatically"
     )
     needs_ground_truth: Optional[bool] = Field(
         None,
-        description="Whether a ground truth (on metadata) is required to compute it",
+        description="Whether a ground truth is required to compute it",
     )
-    return_type: ReturnType = Field(
-        ...,
-        description='The data type of the metric value - "boolean", "float", "string"',
+    sampling_percentage: Optional[int] = Field(
+        None, description="Percentage of events to sample (0-100)"
     )
-    threshold: Optional[Threshold] = Field(
-        None,
-        description="Threshold for numeric metrics to decide passing or failing in tests",
-    )
-    pass_when: Optional[bool] = Field(
-        None,
-        description="Threshold for boolean metrics to decide passing or failing in tests",
-    )
-    field_id: Optional[str] = Field(None, alias="_id", description="Unique idenitifier")
-    event_name: Optional[str] = Field(
-        None, description="Name of event that the metric is set to be computed on"
-    )
-    event_type: Optional[str] = Field(
-        None, description="Type of event that the metric is set to be computed on"
-    )
+    
+    # Type-specific optional fields
     model_provider: Optional[str] = Field(
         None,
-        description="Provider of the model, formatted as a LiteLLM provider prefix",
+        description="Provider of the model (required for LLM metrics)",
     )
     model_name: Optional[str] = Field(
-        None, description="Name of the model, formatted as a LiteLLM model name"
+        None, description="Name of the model (required for LLM metrics)"
     )
+    
+    # Return type specific fields
+    scale: Optional[int] = Field(None, description="Scale for numeric return types")
+    threshold: Optional[Threshold] = Field(
+        None,
+        description="Threshold for deciding passing or failing in tests",
+    )
+    categories: Optional[List[Dict[str, Any]]] = Field(
+        None, description="Categories for categorical return type"
+    )
+    
+    # Composite specific fields
     child_metrics: Optional[List[Dict[str, Any]]] = Field(
-        None, description="Child metrics added under composite events"
+        None, description="Child metrics for composite metrics"
     )
+    
+    # Filters
+    filters: Optional[Dict[str, Any]] = Field(
+        None, description="Event filters for when to apply this metric"
+    )
+    
+    # Read-only fields (returned by backend, not sent in create requests)
+    id: Optional[str] = Field(None, description="Unique identifier")
+    created_at: Optional[str] = Field(None, description="Timestamp when metric was created")
+    updated_at: Optional[str] = Field(None, description="Timestamp when metric was last updated")
 
 
 class EventType2(Enum):

@@ -85,7 +85,8 @@ class TestMetricsAPICreateMetric:
             return_value={
                 "name": "test_metric",
                 "task": "test_project",
-                "type": "custom",
+                "type": "PYTHON",
+                "criteria": "def evaluate(event): return True",
                 "description": "Test metric description",
                 "return_type": "float",
             }
@@ -94,8 +95,8 @@ class TestMetricsAPICreateMetric:
 
         test_metric = Metric(
             name="test_metric",
-            task="test_project",
-            type=Type1.custom,
+            type=Type1.PYTHON,
+            criteria="def evaluate(event): return True",
             description="Test metric description",
             return_type=ReturnType.float,
         )
@@ -109,13 +110,13 @@ class TestMetricsAPICreateMetric:
             # Assert
             assert isinstance(result, Metric)
             assert result.name == "test_metric"
-            assert result.task == "test_project"
+            assert result.type.value == "PYTHON"
 
             # Verify API call
             mock_client.request.assert_called_once_with(
                 "POST",
                 "/metrics",
-                json={"metric": test_metric.model_dump(mode="json", exclude_none=True)},
+                json=test_metric.model_dump(mode="json", exclude_none=True),
             )
             mock_response.json.assert_called_once()
 
@@ -130,18 +131,23 @@ class TestMetricsAPICreateMetric:
         mock_response.json.return_value = {
             "name": "legacy_metric",
             "task": "legacy_project",
-            "type": "model",
+            "type": "LLM",
+            "criteria": "Rate quality",
             "description": "Legacy metric description",
             "return_type": "boolean",
+            "model_provider": "openai",
+            "model_name": "gpt-4",
         }
         mock_client.request.return_value = mock_response
 
         metric_data = {
             "name": "legacy_metric",
-            "task": "legacy_project",
-            "type": "model",
+            "type": "LLM",
+            "criteria": "Rate quality",
             "description": "Legacy metric description",
             "return_type": "boolean",
+            "model_provider": "openai",
+            "model_name": "gpt-4",
         }
 
         with patch("honeyhive.api.base.get_error_handler"):
@@ -153,11 +159,11 @@ class TestMetricsAPICreateMetric:
             # Assert
             assert isinstance(result, Metric)
             assert result.name == "legacy_metric"
-            assert result.type.value == "model"  # pylint: disable=no-member
+            assert result.type.value == "LLM"  # pylint: disable=no-member
 
             # Verify API call
             mock_client.request.assert_called_once_with(
-                "POST", "/metrics", json={"metric": metric_data}
+                "POST", "/metrics", json=metric_data
             )
 
     @pytest.mark.asyncio
@@ -171,7 +177,8 @@ class TestMetricsAPICreateMetric:
         mock_response_data = {
             "name": "async_metric",
             "task": "async_project",
-            "type": "composite",
+            "type": "COMPOSITE",
+            "criteria": "weighted-average",
             "description": "Async metric description",
             "return_type": "string",
         }
@@ -181,8 +188,8 @@ class TestMetricsAPICreateMetric:
 
         test_metric = Metric(
             name="async_metric",
-            task="async_project",
-            type=Type1.composite,
+            type=Type1.COMPOSITE,
+            criteria="weighted-average",
             description="Async metric description",
             return_type=ReturnType.string,
         )
@@ -196,13 +203,13 @@ class TestMetricsAPICreateMetric:
             # Assert
             assert isinstance(result, Metric)
             assert result.name == "async_metric"
-            assert result.type.value == "composite"  # pylint: disable=no-member
+            assert result.type.value == "COMPOSITE"  # pylint: disable=no-member
 
             # Verify async API call
             mock_client.request_async.assert_called_once_with(
                 "POST",
                 "/metrics",
-                json={"metric": test_metric.model_dump(mode="json", exclude_none=True)},
+                json=test_metric.model_dump(mode="json", exclude_none=True),
             )
 
     @pytest.mark.asyncio
@@ -218,7 +225,8 @@ class TestMetricsAPICreateMetric:
         mock_response_data = {
             "name": "async_legacy_metric",
             "task": "async_legacy_project",
-            "type": "human",
+            "type": "HUMAN",
+            "criteria": "Rate the response",
             "description": "Async legacy metric description",
             "return_type": "float",
         }
@@ -228,8 +236,8 @@ class TestMetricsAPICreateMetric:
 
         metric_data = {
             "name": "async_legacy_metric",
-            "task": "async_legacy_project",
-            "type": "human",
+            "type": "HUMAN",
+            "criteria": "Rate the response",
             "description": "Async legacy metric description",
             "return_type": "float",
         }
@@ -243,11 +251,11 @@ class TestMetricsAPICreateMetric:
             # Assert
             assert isinstance(result, Metric)
             assert result.name == "async_legacy_metric"
-            assert result.type.value == "human"  # pylint: disable=no-member
+            assert result.type.value == "HUMAN"  # pylint: disable=no-member
 
             # Verify async API call
             mock_client.request_async.assert_called_once_with(
-                "POST", "/metrics", json={"metric": metric_data}
+                "POST", "/metrics", json=metric_data
             )
 
 
@@ -265,10 +273,11 @@ class TestMetricsAPIGetMetric:
         mock_response = Mock()
         mock_response.json = Mock(
             return_value={
-                "_id": metric_id,
+                "id": metric_id,
                 "name": "retrieved_metric",
                 "task": "retrieved_project",
-                "type": "custom",
+                "type": "PYTHON",
+                "criteria": "def evaluate(event): return True",
                 "description": "Retrieved metric description",
                 "return_type": "boolean",
             }
@@ -283,11 +292,11 @@ class TestMetricsAPIGetMetric:
 
             # Assert
             assert isinstance(result, Metric)
-            assert result.field_id == metric_id
+            assert result.id == metric_id
             assert result.name == "retrieved_metric"
 
             # Verify API call
-            mock_client.request.assert_called_once_with("GET", f"/metrics/{metric_id}")
+            mock_client.request.assert_called_once_with("GET", "/metrics", params={"id": metric_id})
             mock_response.json.assert_called_once()
 
     @pytest.mark.asyncio
@@ -300,12 +309,15 @@ class TestMetricsAPIGetMetric:
         # Arrange
         metric_id = "async-metric-456"
         mock_response_data = {
-            "_id": metric_id,
+            "id": metric_id,
             "name": "async_retrieved_metric",
             "task": "async_retrieved_project",
-            "type": "model",
+            "type": "LLM",
+            "criteria": "Rate quality",
             "description": "Async retrieved metric description",
             "return_type": "string",
+            "model_provider": "openai",
+            "model_name": "gpt-4",
         }
         mock_response = Mock()
         mock_response.json.return_value = mock_response_data
@@ -319,12 +331,12 @@ class TestMetricsAPIGetMetric:
 
             # Assert
             assert isinstance(result, Metric)
-            assert result.field_id == metric_id
+            assert result.id == metric_id
             assert result.name == "async_retrieved_metric"
 
             # Verify async API call
             mock_client.request_async.assert_called_once_with(
-                "GET", f"/metrics/{metric_id}"
+                "GET", "/metrics", params={"id": metric_id}
             )
 
 
@@ -344,16 +356,20 @@ class TestMetricsAPIListMetrics:
                 {
                     "name": "metric1",
                     "task": "project1",
-                    "type": "custom",
+                    "type": "PYTHON",
+                    "criteria": "def evaluate(event): return True",
                     "description": "First metric",
                     "return_type": "float",
                 },
                 {
                     "name": "metric2",
                     "task": "project2",
-                    "type": "model",
+                    "type": "LLM",
+                    "criteria": "Rate quality",
                     "description": "Second metric",
                     "return_type": "boolean",
+                    "model_provider": "openai",
+                    "model_name": "gpt-4",
                 },
             ]
         }
@@ -437,7 +453,8 @@ class TestMetricsAPIListMetrics:
                 {
                     "name": "async_metric1",
                     "task": "async_project1",
-                    "type": "composite",
+                    "type": "COMPOSITE",
+                    "criteria": "weighted-average",
                     "description": "First async metric",
                     "return_type": "string",
                 }
@@ -527,10 +544,11 @@ class TestMetricsAPIUpdateMetric:
         metric_id = "update-metric-123"
         mock_response = Mock()
         mock_response.json.return_value = {
-            "_id": metric_id,
+            "id": metric_id,
             "name": "updated_metric",
             "task": "updated_project",
-            "type": "custom",
+            "type": "PYTHON",
+            "criteria": "def evaluate(event): return True",
             "description": "Updated metric description",
             "return_type": "float",
         }
@@ -550,14 +568,16 @@ class TestMetricsAPIUpdateMetric:
 
             # Assert
             assert isinstance(result, Metric)
-            assert result.field_id == metric_id
+            assert result.id == metric_id
             assert result.name == "updated_metric"
 
             # Verify API call
+            update_data_with_id = metric_edit.model_dump(mode="json", exclude_none=True)
+            update_data_with_id["id"] = metric_id
             mock_client.request.assert_called_once_with(
                 "PUT",
-                f"/metrics/{metric_id}",
-                json=metric_edit.model_dump(mode="json", exclude_none=True),
+                "/metrics",
+                json=update_data_with_id,
             )
 
     def test_update_metric_from_dict_success(self, mock_client: Mock) -> None:
@@ -570,12 +590,15 @@ class TestMetricsAPIUpdateMetric:
         metric_id = "update-dict-metric-456"
         mock_response = Mock()
         mock_response.json.return_value = {
-            "_id": metric_id,
+            "id": metric_id,
             "name": "dict_updated_metric",
             "task": "dict_updated_project",
-            "type": "model",
+            "type": "LLM",
+            "criteria": "Rate quality",
             "description": "Dict updated metric description",
             "return_type": "boolean",
+            "model_provider": "openai",
+            "model_name": "gpt-4",
         }
         mock_client.request.return_value = mock_response
 
@@ -592,12 +615,12 @@ class TestMetricsAPIUpdateMetric:
 
             # Assert
             assert isinstance(result, Metric)
-            assert result.field_id == metric_id
+            assert result.id == metric_id
             assert result.name == "dict_updated_metric"
 
             # Verify API call
             mock_client.request.assert_called_once_with(
-                "PUT", f"/metrics/{metric_id}", json=metric_data
+                "PUT", "/metrics", json={**metric_data, "id": metric_id}
             )
 
     @pytest.mark.asyncio
@@ -610,10 +633,11 @@ class TestMetricsAPIUpdateMetric:
         # Arrange
         metric_id = "async-update-metric-789"
         mock_response_data = {
-            "_id": metric_id,
+            "id": metric_id,
             "name": "async_updated_metric",
             "task": "async_updated_project",
-            "type": "composite",
+            "type": "COMPOSITE",
+            "criteria": "weighted-average",
             "description": "Async updated metric description",
             "return_type": "string",
         }
@@ -635,14 +659,16 @@ class TestMetricsAPIUpdateMetric:
 
             # Assert
             assert isinstance(result, Metric)
-            assert result.field_id == metric_id
+            assert result.id == metric_id
             assert result.name == "async_updated_metric"
 
             # Verify async API call
+            update_data_with_id = metric_edit.model_dump(mode="json", exclude_none=True)
+            update_data_with_id["id"] = metric_id
             mock_client.request_async.assert_called_once_with(
                 "PUT",
-                f"/metrics/{metric_id}",
-                json=metric_edit.model_dump(mode="json", exclude_none=True),
+                "/metrics",
+                json=update_data_with_id,
             )
 
     @pytest.mark.asyncio
@@ -657,10 +683,11 @@ class TestMetricsAPIUpdateMetric:
         # Arrange
         metric_id = "async-dict-update-metric-101"
         mock_response_data = {
-            "_id": metric_id,
+            "id": metric_id,
             "name": "async_dict_updated_metric",
             "task": "async_dict_updated_project",
-            "type": "human",
+            "type": "HUMAN",
+            "criteria": "Rate the response",
             "description": "Async dict updated metric description",
             "return_type": "float",
         }
@@ -683,12 +710,12 @@ class TestMetricsAPIUpdateMetric:
 
             # Assert
             assert isinstance(result, Metric)
-            assert result.field_id == metric_id
+            assert result.id == metric_id
             assert result.name == "async_dict_updated_metric"
 
             # Verify async API call
             mock_client.request_async.assert_called_once_with(
-                "PUT", f"/metrics/{metric_id}", json=metric_data
+                "PUT", "/metrics", json={**metric_data, "id": metric_id}
             )
 
 
@@ -734,7 +761,7 @@ class TestMetricsAPIDeleteMetric:
                 mock_create_context.assert_called_once_with(
                     operation="delete_metric",
                     method="DELETE",
-                    path=f"/metrics/{metric_id}",
+                    path="/metrics",
                     additional_context={"metric_id": metric_id},
                 )
 
@@ -745,7 +772,7 @@ class TestMetricsAPIDeleteMetric:
 
                 # Verify API call within error handler context
                 mock_client.request.assert_called_once_with(
-                    "DELETE", f"/metrics/{metric_id}"
+                    "DELETE", "/metrics", params={"metric_id": metric_id}
                 )
 
     def test_delete_metric_failure(self, mock_client: Mock) -> None:
@@ -827,7 +854,7 @@ class TestMetricsAPIDeleteMetric:
                 mock_create_context.assert_called_once_with(
                     operation="delete_metric_async",
                     method="DELETE",
-                    path=f"/metrics/{metric_id}",
+                    path="/metrics",
                     additional_context={"metric_id": metric_id},
                 )
 
@@ -838,7 +865,7 @@ class TestMetricsAPIDeleteMetric:
 
                 # Verify async API call within error handler context
                 mock_client.request_async.assert_called_once_with(
-                    "DELETE", f"/metrics/{metric_id}"
+                    "DELETE", "/metrics", params={"metric_id": metric_id}
                 )
 
     @pytest.mark.asyncio
@@ -912,8 +939,8 @@ class TestMetricsAPIIntegration:
         mock_response = Mock()
         mock_response.json.return_value = {
             "name": "test_metric",
-            "task": "test_project",
-            "type": "custom",
+            "type": "PYTHON",
+            "criteria": "def evaluate(event): return True",
             "description": "Test description",
             "return_type": "float",
         }
@@ -921,8 +948,8 @@ class TestMetricsAPIIntegration:
 
         test_metric = Metric(
             name="test_metric",
-            task="test_project",
-            type=Type1.custom,
+            type=Type1.PYTHON,
+            criteria="def evaluate(event): return True",
             description="Test description",
             return_type=ReturnType.float,
         )
@@ -946,7 +973,7 @@ class TestMetricsAPIIntegration:
 
             # Assert
             # Both should use model_dump with same parameters
-            create_json = create_call[1]["json"]["metric"]
+            create_json = create_call[1]["json"]
             update_json = update_call[1]["json"]
 
             # Verify both use exclude_none=True serialization
