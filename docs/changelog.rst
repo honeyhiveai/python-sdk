@@ -24,6 +24,13 @@ Current Version Highlights
 * **Resource Information**: Captures resource attributes and instrumentation info for complete observability
 * **JSON Formatting**: Outputs pretty-printed JSON for easy debugging and troubleshooting
 
+**🔄 CHANGED: Updated Google ADK Integration with Async Support**
+
+* **Modern API**: Updated to newer Google ADK API with LlmAgent, Runner, and InMemorySessionService
+* **Async/Await**: Added full async support to all test functions for better performance
+* **Simplified Auth**: Migrated from GOOGLE_ADK_API_KEY to standard GOOGLE_API_KEY environment variable
+* **Session Management**: Improved session handling with explicit session service
+
 **🔄 CHANGED: Refactored Strands Integration Example**
 
 * **TracerProvider Pattern**: Updated AWS Strands integration to use recommended tracing pattern

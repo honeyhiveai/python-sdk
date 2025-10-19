@@ -1,6 +1,12 @@
 ## [Unreleased]
 
 ### Changed
+- **🔄 Examples: Updated Google ADK Integration with Async Support**
+  - Migrated from GOOGLE_ADK_API_KEY to GOOGLE_API_KEY environment variable
+  - Added async/await support to all test functions
+  - Updated to newer Google ADK API (LlmAgent, Runner, InMemorySessionService)
+  - Improved session management with explicit session service
+  - Modernized agent creation and execution patterns
 - **🔄 Examples: Refactored Strands Integration**
   - Updated AWS Strands integration example to use TracerProvider pattern
   - Replaced complex multi-step workflow with focused test suite (6 test cases)
