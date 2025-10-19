@@ -17,6 +17,13 @@ Latest Release Notes
 Current Version Highlights
 ~~~~~~~~~~~~~~~~~~~~~~~~~~
 
+**🔄 CHANGED: Refactored Strands Integration Example**
+
+* **TracerProvider Pattern**: Updated AWS Strands integration to use recommended tracing pattern
+* **6 Focused Test Cases**: Replaced complex workflow with targeted tests (basic invocation, tools, streaming, etc.)
+* **AWS Bedrock Integration**: Switched from OpenAI to AWS Bedrock model implementation
+* **Comprehensive Documentation**: Added detailed tracing expectations and GenAI semantic conventions
+
 **🔧 NEW: MCP Server Upgrade (v0.1.0rc3)**
 
 * **Agent OS Enhanced Architecture**: Upgraded from prototype to modular product architecture (+5,823 lines)

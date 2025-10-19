@@ -296,7 +296,9 @@ class TestMetricsAPIGetMetric:
             assert result.name == "retrieved_metric"
 
             # Verify API call
-            mock_client.request.assert_called_once_with("GET", "/metrics", params={"id": metric_id})
+            mock_client.request.assert_called_once_with(
+                "GET", "/metrics", params={"id": metric_id}
+            )
             mock_response.json.assert_called_once()
 
     @pytest.mark.asyncio

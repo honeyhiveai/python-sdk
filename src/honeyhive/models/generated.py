@@ -310,6 +310,7 @@ class CreateModelEvent(BaseModel):
 
 class Type1(Enum):
     """Metric type enum matching backend API."""
+
     PYTHON = "PYTHON"
     LLM = "LLM"
     HUMAN = "HUMAN"
@@ -318,6 +319,7 @@ class Type1(Enum):
 
 class ReturnType(Enum):
     """Return type enum matching backend API."""
+
     boolean = "boolean"
     float = "float"
     string = "string"
@@ -326,6 +328,7 @@ class ReturnType(Enum):
 
 class Threshold(BaseModel):
     """Threshold for metrics - supports different threshold types."""
+
     min: Optional[float] = None
     max: Optional[float] = None
     pass_when: Optional[Union[bool, float]] = None
@@ -334,6 +337,7 @@ class Threshold(BaseModel):
 
 class Metric(BaseModel):
     """Metric model matching backend BaseMetricSchema."""
+
     # Required fields
     name: str = Field(..., description="Name of the metric")
     type: Type1 = Field(
@@ -341,9 +345,11 @@ class Metric(BaseModel):
         description='Type of the metric - "PYTHON", "LLM", "HUMAN" or "COMPOSITE"',
     )
     criteria: str = Field(..., description="Criteria, code, or prompt for the metric")
-    
+
     # Optional fields with defaults (matching backend defaults)
-    description: Optional[str] = Field(None, description="Short description of what the metric does")
+    description: Optional[str] = Field(
+        None, description="Short description of what the metric does"
+    )
     return_type: Optional[ReturnType] = Field(
         None,
         description='The data type of the metric value - "boolean", "float", "string", "categorical"',
@@ -358,7 +364,7 @@ class Metric(BaseModel):
     sampling_percentage: Optional[int] = Field(
         None, description="Percentage of events to sample (0-100)"
     )
-    
+
     # Type-specific optional fields
     model_provider: Optional[str] = Field(
         None,
@@ -367,7 +373,7 @@ class Metric(BaseModel):
     model_name: Optional[str] = Field(
         None, description="Name of the model (required for LLM metrics)"
     )
-    
+
     # Return type specific fields
     scale: Optional[int] = Field(None, description="Scale for numeric return types")
     threshold: Optional[Threshold] = Field(
@@ -377,21 +383,25 @@ class Metric(BaseModel):
     categories: Optional[List[Dict[str, Any]]] = Field(
         None, description="Categories for categorical return type"
     )
-    
+
     # Composite specific fields
     child_metrics: Optional[List[Dict[str, Any]]] = Field(
         None, description="Child metrics for composite metrics"
     )
-    
+
     # Filters
     filters: Optional[Dict[str, Any]] = Field(
         None, description="Event filters for when to apply this metric"
     )
-    
+
     # Read-only fields (returned by backend, not sent in create requests)
     id: Optional[str] = Field(None, description="Unique identifier")
-    created_at: Optional[str] = Field(None, description="Timestamp when metric was created")
-    updated_at: Optional[str] = Field(None, description="Timestamp when metric was last updated")
+    created_at: Optional[str] = Field(
+        None, description="Timestamp when metric was created"
+    )
+    updated_at: Optional[str] = Field(
+        None, description="Timestamp when metric was last updated"
+    )
 
 
 class EventType2(Enum):

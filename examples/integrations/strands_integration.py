@@ -1,280 +1,290 @@
 """
 AWS Strands Integration Example
 
-This example demonstrates how to integrate HoneyHive with AWS Strands,
-a framework that uses OpenTelemetry directly for tracing.
+This example demonstrates HoneyHive integration with AWS Strands using
+the recommended TracerProvider pattern.
 
-AWS Strands is a non-instrumentor framework, meaning it doesn't rely on
-auto-instrumentation libraries and sets up its own OpenTelemetry configuration.
+Setup:
+This example uses the .env file in the repo root. Make sure it contains:
+- HH_API_KEY (already configured)
+- AWS_ACCESS_KEY_ID (add your AWS access key)
+- AWS_SECRET_ACCESS_KEY (add your AWS secret key)
+- AWS_REGION (e.g., us-west-2)
+- BEDROCK_MODEL_ID (e.g., "anthropic.claude-3-haiku-20240307-v1:0")
+
+Note: Strands uses AWS Bedrock, so use Bedrock model IDs, not OpenAI model names.
+
+What Gets Traced:
+- Agent invocations with full span hierarchy
+- Token usage (input/output/cached)
+- Tool executions with inputs/outputs
+- Latency metrics (TTFT, total duration)
+- Complete message history via span events
 """
 
 import os
-import asyncio
+from pathlib import Path
+
+from dotenv import load_dotenv
+from opentelemetry import trace as trace_api
+from pydantic import BaseModel
+from strands import Agent, tool
+from strands.models import BedrockModel
+
 from honeyhive import HoneyHiveTracer
+from honeyhive.tracer.instrumentation.decorators import trace
 
-# Optional: Only import if strands is available
-try:
-    from strands import Agent
+# Load environment variables from repo root .env
+root_dir = Path(__file__).parent.parent.parent
+load_dotenv(root_dir / ".env")
 
-    STRANDS_AVAILABLE = True
-except ImportError:
-    STRANDS_AVAILABLE = False
-    print("⚠️  AWS Strands not available. Install with: pip install strands-agents")
+# Initialize HoneyHive tracer
+tracer = HoneyHiveTracer.init(
+    api_key=os.getenv("HH_API_KEY"),
+    project=os.getenv("HH_PROJECT", "strands-integration-demo"),
+    session_name=Path(__file__).stem,  # Use filename as session name
+    test_mode=False,
+)
 
-
-def main():
-    """Main integration example."""
-    print("🚀 AWS Strands + HoneyHive Integration Example")
-    print("=" * 50)
-
-    if not STRANDS_AVAILABLE:
-        print("❌ AWS Strands is not installed. Exiting.")
-        return
-
-    # Step 1: Initialize HoneyHive tracer first
-    # This ensures HoneyHive becomes the main TracerProvider
-    print("1. Initializing HoneyHive tracer...")
-
-    tracer = HoneyHiveTracer.init(
-        api_key=os.getenv("HH_API_KEY", "demo-api-key"),
-        project=os.getenv("HH_PROJECT", "strands-integration-demo"),
-        source="strands-example",
-        test_mode=True,  # Set to False for production
-        verbose=True,  # Enable debug logging
-    )
-
-    print(f"✅ HoneyHive tracer initialized")
-    print(f"   Session ID: {tracer.session_id}")
-    print(f"   Project: {tracer.project}")
-    print()
-
-    # Step 2: Initialize AWS Strands
-    # Strands will use HoneyHive's TracerProvider
-    print("2. Initializing AWS Strands agent...")
-
-    agent = Agent(
-        system_prompt="You are a helpful AI assistant that provides clear, concise answers.",
-        model="gpt-4o-mini",  # Use a cost-effective model for demo
-        temperature=0.7,
-    )
-
-    print("✅ AWS Strands agent initialized")
-    print()
-
-    # Step 3: Execute traced operations
-    print("3. Executing traced operations...")
-
-    # Example 1: Simple query
-    print("   Example 1: Simple math query")
-    try:
-        result1 = asyncio.run(agent.invoke_async("What is 15 * 23?"))
-        print(f"   Result: {result1}")
-    except Exception as e:
-        print(f"   Error: {e}")
-
-    print()
-
-    # Example 2: Complex reasoning
-    print("   Example 2: Complex reasoning task")
-    try:
-        result2 = asyncio.run(
-            agent.invoke_async(
-                "Explain the concept of machine learning in simple terms, "
-                "including its main types and applications."
-            )
-        )
-        print(f"   Result: {result2[:100]}...")  # Truncate for display
-    except Exception as e:
-        print(f"   Error: {e}")
-
-    print()
-
-    # Step 4: Demonstrate context propagation
-    print("4. Demonstrating context propagation...")
-
-    from opentelemetry import trace
-
-    # Get the tracer (should be HoneyHive's tracer)
-    otel_tracer = trace.get_tracer("strands-example")
-
-    with otel_tracer.start_as_current_span("multi-step-workflow") as parent_span:
-        parent_span.set_attribute("workflow.type", "multi-step")
-        parent_span.set_attribute("workflow.steps", 3)
-
-        # Step 1: Information gathering
-        with otel_tracer.start_as_current_span("step-1-gather-info") as step1_span:
-            step1_span.set_attribute("step.name", "gather_info")
-            try:
-                info_result = asyncio.run(
-                    agent.invoke_async(
-                        "What are the key components of a neural network?"
-                    )
-                )
-                step1_span.set_attribute("step.result", "success")
-                print(f"   Step 1 result: {info_result[:50]}...")
-            except Exception as e:
-                step1_span.set_attribute("step.result", "error")
-                step1_span.set_attribute("step.error", str(e))
-                print(f"   Step 1 error: {e}")
-
-        # Step 2: Analysis
-        with otel_tracer.start_as_current_span("step-2-analyze") as step2_span:
-            step2_span.set_attribute("step.name", "analyze")
-            try:
-                analysis_result = asyncio.run(
-                    agent.invoke_async("How do neural networks learn from data?")
-                )
-                step2_span.set_attribute("step.result", "success")
-                print(f"   Step 2 result: {analysis_result[:50]}...")
-            except Exception as e:
-                step2_span.set_attribute("step.result", "error")
-                step2_span.set_attribute("step.error", str(e))
-                print(f"   Step 2 error: {e}")
-
-        # Step 3: Summary
-        with otel_tracer.start_as_current_span("step-3-summarize") as step3_span:
-            step3_span.set_attribute("step.name", "summarize")
-            try:
-                summary_result = asyncio.run(
-                    agent.invoke_async(
-                        "Summarize the key points about neural networks in 2 sentences."
-                    )
-                )
-                step3_span.set_attribute("step.result", "success")
-                print(f"   Step 3 result: {summary_result}")
-            except Exception as e:
-                step3_span.set_attribute("step.result", "error")
-                step3_span.set_attribute("step.error", str(e))
-                print(f"   Step 3 error: {e}")
-
-        parent_span.set_attribute("workflow.status", "completed")
-
-    print()
-    print("✅ Integration example completed!")
-    print()
-    print("📊 Check your HoneyHive dashboard to see the traced operations:")
-    print(f"   Session ID: {tracer.session_id}")
-    print(f"   Project: {tracer.project}")
+# CRITICAL: Set as global TracerProvider before creating agents
+# This allows Strands to automatically use HoneyHive's tracing
+if tracer.provider:
+    trace_api.set_tracer_provider(tracer.provider)
 
 
-def demonstrate_error_handling():
-    """Demonstrate error handling in integration."""
-    print("🔧 Error Handling Example")
-    print("=" * 30)
+class SummarizerResponse(BaseModel):
+    """Response model for structured output."""
 
-    # Example 1: Missing API key
-    print("1. Testing missing API key...")
-    try:
-        tracer = HoneyHiveTracer.init(
-            api_key=None, project="error-demo", test_mode=False  # Missing API key
-        )
-        print("   Unexpected: No error raised")
-    except Exception as e:
-        print(f"   Expected error: {e}")
-
-    print()
-
-    # Example 2: Invalid configuration
-    print("2. Testing invalid configuration...")
-    try:
-        tracer = HoneyHiveTracer.init(
-            api_key="invalid-key",
-            project="",  # Empty project
-            test_mode=True,  # Use test mode to avoid API calls
-        )
-        print("   ✅ Tracer initialized with test mode")
-    except Exception as e:
-        print(f"   Error: {e}")
-
-    print()
+    text: str
 
 
-def demonstrate_performance_monitoring():
-    """Demonstrate performance monitoring."""
-    print("⚡ Performance Monitoring Example")
-    print("=" * 35)
+def get_bedrock_model():
+    """Helper to create BedrockModel with proper error handling."""
+    model_id = os.getenv("BEDROCK_MODEL_ID")
+    if not model_id:
+        raise ValueError("BEDROCK_MODEL_ID environment variable not set")
+    return BedrockModel(model_id=model_id)
 
-    if not STRANDS_AVAILABLE:
-        print("❌ AWS Strands not available for performance demo")
-        return
 
-    import time
+# Define tools for testing
+@tool
+def calculator(operation: str, a: float, b: float) -> float:
+    """Perform basic math operations: add, subtract, multiply, divide."""
+    if operation == "add":
+        return a + b
+    elif operation == "subtract":
+        return a - b
+    elif operation == "multiply":
+        return a * b
+    elif operation == "divide":
+        return a / b if b != 0 else 0
+    return 0
 
-    # Initialize with performance monitoring
-    tracer = HoneyHiveTracer.init(
-        api_key=os.getenv("HH_API_KEY", "demo-key"),
-        project="performance-demo",
-        source="performance-test",
-        test_mode=True,
-        verbose=False,  # Reduce noise for performance testing
-    )
+
+@trace(event_type="chain", event_name="test_basic_invocation", tracer=tracer)
+def test_basic_invocation():
+    """Test 1: Basic agent invocation."""
+    print("\n" + "=" * 60)
+    print("Test 1: Basic Invocation")
+    print("=" * 60)
 
     agent = Agent(
-        system_prompt="Provide very brief answers.",
-        model="gpt-4o-mini",
-        temperature=0.1,
+        name="BasicAgent",
+        model=get_bedrock_model(),
+        system_prompt="You are a helpful assistant that gives brief answers.",
     )
 
-    # Measure performance
-    operations = [
-        "What is 2+2?",
-        "Name a color.",
-        "What day is it?",
-        "Count to 3.",
-        "Say hello.",
-    ]
+    result = agent("What is 2+2?")
+    print(f"✅ Result: {result}")
+    print("\n📊 Expected in HoneyHive:")
+    print("   - Span: invoke_agent BasicAgent")
+    print("   - Span: execute_event_loop_cycle")
+    print("   - Span: chat (Bedrock call)")
+    print("   - Attributes: gen_ai.agent.name, model, tokens, latency")
 
-    print(f"Running {len(operations)} operations...")
-    start_time = time.perf_counter()
 
-    for i, operation in enumerate(operations, 1):
-        op_start = time.perf_counter()
-        try:
-            result = asyncio.run(agent.invoke_async(operation))
-            op_end = time.perf_counter()
-            op_time = op_end - op_start
-            print(f"   Operation {i}: {op_time:.3f}s - {operation}")
-        except Exception as e:
-            op_end = time.perf_counter()
-            op_time = op_end - op_start
-            print(f"   Operation {i}: {op_time:.3f}s - ERROR: {e}")
+@trace(event_type="chain", event_name="test_tool_execution", tracer=tracer)
+def test_tool_execution():
+    """Test 2: Agent with tool execution (creates multi-cycle spans)."""
+    print("\n" + "=" * 60)
+    print("Test 2: Tool Execution")
+    print("=" * 60)
 
-    end_time = time.perf_counter()
-    total_time = end_time - start_time
-    avg_time = total_time / len(operations)
+    agent = Agent(
+        name="MathAgent",
+        model=get_bedrock_model(),
+        tools=[calculator],
+        system_prompt="You are a math assistant. Use the calculator tool to solve problems.",
+    )
 
-    print()
-    print(f"📊 Performance Results:")
-    print(f"   Total time: {total_time:.3f}s")
-    print(f"   Average per operation: {avg_time:.3f}s")
-    print(f"   Operations per second: {len(operations) / total_time:.1f}")
+    result = agent("What is 15 times 23?")
+    print(f"✅ Result: {result}")
+    print("\n📊 Expected in HoneyHive:")
+    print("   - Span: invoke_agent MathAgent")
+    print("   - Span: execute_event_loop_cycle (cycle 1)")
+    print("   - Span: chat (requests tool)")
+    print("   - Span: execute_tool calculator")
+    print("   - Span: execute_event_loop_cycle (cycle 2)")
+    print("   - Span: chat (uses tool result)")
+
+
+@trace(event_type="chain", event_name="test_streaming", tracer=tracer)
+async def test_streaming():
+    """Test 3: Streaming mode (token-by-token output)."""
+    print("\n" + "=" * 60)
+    print("Test 3: Streaming Mode")
+    print("=" * 60)
+
+    model_id = os.getenv("BEDROCK_MODEL_ID", "")
+    agent = Agent(
+        name="StreamingAgent",
+        model=(
+            BedrockModel(model_id=model_id, streaming=True)
+            if model_id
+            else get_bedrock_model()
+        ),
+        system_prompt="You are a storyteller.",
+    )
+
+    print("📖 Streaming output: ", end="", flush=True)
+    async for chunk in agent.stream_async(
+        prompt="Tell me a very short 2-sentence story about a robot"
+    ):
+        print(chunk, end="", flush=True)
+    print("\n✅ Streaming complete")
+    print("\n📊 Expected in HoneyHive:")
+    print("   - Same span structure as basic invocation")
+    print("   - Spans captured even with streaming responses")
+
+
+@trace(event_type="chain", event_name="test_custom_attributes", tracer=tracer)
+def test_custom_attributes():
+    """Test 4: Custom trace attributes for filtering/analysis."""
+    print("\n" + "=" * 60)
+    print("Test 4: Custom Trace Attributes")
+    print("=" * 60)
+
+    agent = Agent(
+        name="CustomAgent",
+        model=get_bedrock_model(),
+        trace_attributes={
+            "user_id": "test_user_123",
+            "environment": "integration_test",
+            "test_suite": "strands_demo",
+        },
+        system_prompt="You are a helpful assistant.",
+    )
+
+    result = agent("Say hello")
+    print(f"✅ Result: {result}")
+    print("\n📊 Expected in HoneyHive:")
+    print("   - Custom attributes on agent span:")
+    print("     • user_id: test_user_123")
+    print("     • environment: integration_test")
+    print("     • test_suite: strands_demo")
+
+
+@trace(event_type="chain", event_name="test_structured_output", tracer=tracer)
+def test_structured_output():
+    """Test 5: Structured output with Pydantic model."""
+    print("\n" + "=" * 60)
+    print("Test 5: Structured Output")
+    print("=" * 60)
+
+    agent = Agent(
+        name="SummarizerAgent",
+        model=get_bedrock_model(),
+        system_prompt="You are a helpful assistant that summarizes text. Produce a single sentence summary.",
+    )
+
+    input_text = """
+    Machine learning is a subset of artificial intelligence that enables systems to learn 
+    and improve from experience without being explicitly programmed. It focuses on the 
+    development of computer programs that can access data and use it to learn for themselves.
+    """
+
+    prompt = f"Summarize the following text: {input_text.strip()}"
+
+    # Using structured_output for type-safe responses
+    result = agent.structured_output(SummarizerResponse, prompt)
+    print(f"✅ Summary: {result}")
+    print("\n📊 Expected in HoneyHive:")
+    print("   - Same tracing as basic invocation")
+    print("   - Structured output validation handled by Strands")
+
+
+@trace(event_type="chain", event_name="test_summarization_simple", tracer=tracer)
+def test_summarization_simple():
+    """Test 6: Simple summarization without structured output."""
+    print("\n" + "=" * 60)
+    print("Test 6: Simple Summarization")
+    print("=" * 60)
+
+    agent = Agent(
+        name="SimpleSummarizer",
+        model=get_bedrock_model(),
+        system_prompt="You are a helpful assistant that summarizes text in one sentence.",
+    )
+
+    input_text = """
+    The process of learning begins with observations or data, such as examples, direct experience, 
+    or instruction, in order to look for patterns in data and make better decisions in the future.
+    """
+
+    result = agent(f"Summarize this in one sentence: {input_text.strip()}")
+    print(f"✅ Summary: {result}")
 
 
 if __name__ == "__main__":
-    """Run the integration examples."""
+    print("🚀 AWS Strands + HoneyHive Integration Test Suite")
+    print(f"   Session ID: {tracer.session_id}")
+    print(f"   Project: {tracer.project}")
 
-    # Check for required environment variables
-    if not os.getenv("HH_API_KEY") and not os.getenv("OPENAI_API_KEY"):
-        print("⚠️  Environment Setup:")
-        print("   Set HH_API_KEY for HoneyHive integration")
-        print("   Set OPENAI_API_KEY for AWS Strands (if using real API)")
-        print("   Or run in test mode (demo will use test mode)")
-        print()
+    print(f"\n🔧 Using model: {os.getenv('BEDROCK_MODEL_ID')}")
+    print(
+        f"🔧 AWS Region: {os.getenv('AWS_REGION') or os.getenv('AWS_DEFAULT_REGION')}"
+    )
 
-    # Run examples
+    # Run all tests
     try:
-        main()
-        print()
-        demonstrate_error_handling()
-        print()
-        demonstrate_performance_monitoring()
+        test_basic_invocation()
+        test_tool_execution()
+        import asyncio
 
-    except KeyboardInterrupt:
-        print("\n👋 Example interrupted by user")
+        asyncio.run(test_streaming())
+        test_custom_attributes()
+        test_structured_output()
+        test_summarization_simple()
+
+        print("\n" + "=" * 60)
+        print("🎉 All tests completed successfully!")
+        print("=" * 60)
+        print("\n📊 Check your HoneyHive dashboard:")
+        print(f"   Session ID: {tracer.session_id}")
+        print(f"   Project: {tracer.project}")
+        print("\nYou should see:")
+        print("   ✓ 6 root spans (one per agent)")
+        print("   ✓ Agent names: BasicAgent, MathAgent, StreamingAgent, etc.")
+        print("   ✓ Tool execution spans with calculator inputs/outputs")
+        print("   ✓ Token usage (prompt/completion/total)")
+        print("   ✓ Latency metrics (TTFT, total duration)")
+        print("   ✓ Custom attributes on CustomAgent span")
+        print("   ✓ Complete message history in span events")
+        print("\n💡 Key GenAI Attributes to look for:")
+        print("   • gen_ai.agent.name")
+        print("   • gen_ai.request.model")
+        print("   • gen_ai.usage.prompt_tokens")
+        print("   • gen_ai.usage.completion_tokens")
+        print("   • gen_ai.tool.name (for tool calls)")
+        print("   • gen_ai.server.time_to_first_token")
+
     except Exception as e:
-        print(f"\n❌ Unexpected error: {e}")
+        print(f"\n❌ Test failed: {e}")
+        print("\nCommon issues:")
+        print("   • Verify AWS credentials are valid")
+        print("   • Ensure BEDROCK_MODEL_ID is accessible in your AWS account")
+        print("   • Check that you have access to the specified model")
+        print(f"\n📊 Traces may still be in HoneyHive: Session {tracer.session_id}")
         import traceback
 
         traceback.print_exc()
-
-    print("\n🎉 AWS Strands integration examples completed!")

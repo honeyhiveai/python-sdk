@@ -1,5 +1,16 @@
 ## [Unreleased]
 
+### Changed
+- **🔄 Examples: Refactored Strands Integration**
+  - Updated AWS Strands integration example to use TracerProvider pattern
+  - Replaced complex multi-step workflow with focused test suite (6 test cases)
+  - Switched from OpenAI to AWS Bedrock model integration
+  - Added comprehensive tracing documentation for expected spans and attributes
+  - Improved error handling and AWS credential validation
+- **🧪 Tests: Fixed Metric Model Test**
+  - Corrected enum values in test_metric_model_creation test
+  - Added required criteria field to Metric model test data
+
 ### Added
 - **📋 Specs: HoneyHive SDK Documentation MCP Server v2.1 (+14,300 lines)**
   - Complete production-grade spec following agent-os-enhanced modular patterns

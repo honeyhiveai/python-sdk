@@ -504,15 +504,15 @@ class TestModelValidation:
 
         metric_data: Dict[str, Any] = {
             "name": "test-metric",
-            "task": "test-task",
-            "type": Type1.custom,
+            "type": Type1.PYTHON,
+            "criteria": "def evaluate(output): return 1.0",
             "description": "A test metric",
             "return_type": ReturnType.float,
         }
 
         metric = Metric(**metric_data)
         assert metric.name == "test-metric"
-        assert metric.task == "test-task"
+        assert metric.type == Type1.PYTHON
         assert metric.description == "A test metric"
 
     def test_event_filter_model_creation(self) -> None:

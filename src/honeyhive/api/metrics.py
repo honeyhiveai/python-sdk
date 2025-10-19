@@ -52,9 +52,7 @@ class MetricsAPI(BaseAPI):
 
     async def create_metric_from_dict_async(self, metric_data: dict) -> Metric:
         """Create a new metric asynchronously from dictionary (legacy method)."""
-        response = await self.client.request_async(
-            "POST", "/metrics", json=metric_data
-        )
+        response = await self.client.request_async("POST", "/metrics", json=metric_data)
 
         data = response.json()
         # Backend returns {inserted: true, metric_id: "..."}
@@ -68,7 +66,7 @@ class MetricsAPI(BaseAPI):
         # Use GET /metrics?id=... to filter by ID
         response = self.client.request("GET", "/metrics", params={"id": metric_id})
         data = response.json()
-        
+
         # Backend returns array of metrics
         if isinstance(data, list) and len(data) > 0:
             return Metric(**data[0])
@@ -79,9 +77,11 @@ class MetricsAPI(BaseAPI):
     async def get_metric_async(self, metric_id: str) -> Metric:
         """Get a metric by ID asynchronously."""
         # Use GET /metrics?id=... to filter by ID
-        response = await self.client.request_async("GET", "/metrics", params={"id": metric_id})
+        response = await self.client.request_async(
+            "GET", "/metrics", params={"id": metric_id}
+        )
         data = response.json()
-        
+
         # Backend returns array of metrics
         if isinstance(data, list) and len(data) > 0:
             return Metric(**data[0])
@@ -99,7 +99,7 @@ class MetricsAPI(BaseAPI):
 
         response = self.client.request("GET", "/metrics", params=params)
         data = response.json()
-        
+
         # Backend returns array directly
         if isinstance(data, list):
             return self._process_data_dynamically(data, Metric, "metrics")
@@ -117,7 +117,7 @@ class MetricsAPI(BaseAPI):
 
         response = await self.client.request_async("GET", "/metrics", params=params)
         data = response.json()
-        
+
         # Backend returns array directly
         if isinstance(data, list):
             return self._process_data_dynamically(data, Metric, "metrics")
@@ -130,7 +130,7 @@ class MetricsAPI(BaseAPI):
         # Backend expects PUT /metrics with id in body
         update_data = request.model_dump(mode="json", exclude_none=True)
         update_data["id"] = metric_id
-        
+
         response = self.client.request(
             "PUT",
             "/metrics",
@@ -147,7 +147,7 @@ class MetricsAPI(BaseAPI):
         """Update a metric from dictionary (legacy method)."""
         # Backend expects PUT /metrics with id in body
         update_data = {**metric_data, "id": metric_id}
-        
+
         response = self.client.request("PUT", "/metrics", json=update_data)
 
         data = response.json()
@@ -161,7 +161,7 @@ class MetricsAPI(BaseAPI):
         # Backend expects PUT /metrics with id in body
         update_data = request.model_dump(mode="json", exclude_none=True)
         update_data["id"] = metric_id
-        
+
         response = await self.client.request_async(
             "PUT",
             "/metrics",
@@ -180,10 +180,8 @@ class MetricsAPI(BaseAPI):
         """Update a metric asynchronously from dictionary (legacy method)."""
         # Backend expects PUT /metrics with id in body
         update_data = {**metric_data, "id": metric_id}
-        
-        response = await self.client.request_async(
-            "PUT", "/metrics", json=update_data
-        )
+
+        response = await self.client.request_async("PUT", "/metrics", json=update_data)
 
         data = response.json()
         # Backend returns {updated: true}
@@ -202,7 +200,9 @@ class MetricsAPI(BaseAPI):
 
         with self.error_handler.handle_operation(context):
             # Backend expects DELETE /metrics?metric_id=...
-            response = self.client.request("DELETE", "/metrics", params={"metric_id": metric_id})
+            response = self.client.request(
+                "DELETE", "/metrics", params={"metric_id": metric_id}
+            )
             return response.status_code == 200
 
     async def delete_metric_async(self, metric_id: str) -> bool:
