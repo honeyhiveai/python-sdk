@@ -12,6 +12,12 @@
   - Added required criteria field to Metric model test data
 
 ### Added
+- **🔍 Debugging: Comprehensive Raw Span Data Dumping**
+  - Added `_dump_raw_span_data()` method to span processor for detailed debugging
+  - Captures all OpenTelemetry span properties: context, parent, status, attributes, events, links
+  - Includes resource attributes and instrumentation info
+  - Outputs formatted JSON with proper indentation for easy reading
+  - Logged at debug level in `on_end()` for troubleshooting span processing
 - **📋 Specs: HoneyHive SDK Documentation MCP Server v2.1 (+14,300 lines)**
   - Complete production-grade spec following agent-os-enhanced modular patterns
   - Spec documents: README, SRD, technical specs, 32 implementation tasks, implementation guide

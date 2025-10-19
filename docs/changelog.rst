@@ -17,6 +17,13 @@ Latest Release Notes
 Current Version Highlights
 ~~~~~~~~~~~~~~~~~~~~~~~~~~
 
+**🔍 NEW: Raw Span Data Dumping for Debugging**
+
+* **Comprehensive Span Extraction**: New `_dump_raw_span_data()` method captures all OpenTelemetry span properties
+* **Full Context Capture**: Includes trace_id, span_id, parent spans, status, attributes, events, links
+* **Resource Information**: Captures resource attributes and instrumentation info for complete observability
+* **JSON Formatting**: Outputs pretty-printed JSON for easy debugging and troubleshooting
+
 **🔄 CHANGED: Refactored Strands Integration Example**
 
 * **TracerProvider Pattern**: Updated AWS Strands integration to use recommended tracing pattern

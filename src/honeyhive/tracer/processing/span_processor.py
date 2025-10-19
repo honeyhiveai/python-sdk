@@ -95,6 +95,170 @@ class HoneyHiveSpanProcessor(SpanProcessor):
             formatted_message = message
         safe_log(self.tracer_instance, level, formatted_message, **kwargs)
 
+    def _dump_raw_span_data(self, span: ReadableSpan) -> str:
+        """Dump all raw span data for debugging.
+
+        :param span: The span to dump
+        :type span: ReadableSpan
+        :return: Formatted string with all span properties
+        :rtype: str
+        """
+        import json
+
+        try:
+            # Get span context
+            span_context = span.context if hasattr(span, "context") else None
+
+            # Build comprehensive span data dictionary
+            span_data = {
+                "name": span.name if hasattr(span, "name") else None,
+                "context": (
+                    {
+                        "trace_id": (
+                            f"{span_context.trace_id:032x}" if span_context else None
+                        ),
+                        "span_id": (
+                            f"{span_context.span_id:016x}" if span_context else None
+                        ),
+                        "trace_flags": (
+                            str(span_context.trace_flags) if span_context else None
+                        ),
+                        "trace_state": (
+                            str(span_context.trace_state) if span_context else None
+                        ),
+                        "is_remote": span_context.is_remote if span_context else None,
+                    }
+                    if span_context
+                    else None
+                ),
+                "parent": (
+                    {
+                        "trace_id": (
+                            f"{span.parent.trace_id:032x}" if span.parent else None
+                        ),
+                        "span_id": (
+                            f"{span.parent.span_id:016x}" if span.parent else None
+                        ),
+                    }
+                    if hasattr(span, "parent") and span.parent
+                    else None
+                ),
+                "kind": str(span.kind) if hasattr(span, "kind") else None,
+                "start_time": span.start_time if hasattr(span, "start_time") else None,
+                "end_time": span.end_time if hasattr(span, "end_time") else None,
+                "status": (
+                    {
+                        "status_code": (
+                            str(span.status.status_code)
+                            if hasattr(span, "status") and span.status
+                            else None
+                        ),
+                        "description": (
+                            span.status.description
+                            if hasattr(span, "status") and span.status
+                            else None
+                        ),
+                    }
+                    if hasattr(span, "status")
+                    else None
+                ),
+                "attributes": (
+                    dict(span.attributes)
+                    if hasattr(span, "attributes") and span.attributes
+                    else {}
+                ),
+                "events": [
+                    {
+                        "name": event.name if hasattr(event, "name") else None,
+                        "timestamp": (
+                            event.timestamp if hasattr(event, "timestamp") else None
+                        ),
+                        "attributes": (
+                            dict(event.attributes)
+                            if hasattr(event, "attributes") and event.attributes
+                            else {}
+                        ),
+                    }
+                    for event in (
+                        span.events if hasattr(span, "events") and span.events else []
+                    )
+                ],
+                "links": [
+                    {
+                        "context": {
+                            "trace_id": (
+                                f"{link.context.trace_id:032x}"
+                                if hasattr(link, "context") and link.context
+                                else None
+                            ),
+                            "span_id": (
+                                f"{link.context.span_id:016x}"
+                                if hasattr(link, "context") and link.context
+                                else None
+                            ),
+                        },
+                        "attributes": (
+                            dict(link.attributes)
+                            if hasattr(link, "attributes") and link.attributes
+                            else {}
+                        ),
+                    }
+                    for link in (
+                        span.links if hasattr(span, "links") and span.links else []
+                    )
+                ],
+                "resource": (
+                    {
+                        "attributes": (
+                            dict(span.resource.attributes)
+                            if hasattr(span, "resource")
+                            and hasattr(span.resource, "attributes")
+                            and span.resource.attributes
+                            else {}
+                        ),
+                        "schema_url": (
+                            span.resource.schema_url
+                            if hasattr(span, "resource")
+                            and hasattr(span.resource, "schema_url")
+                            else None
+                        ),
+                    }
+                    if hasattr(span, "resource") and span.resource
+                    else None
+                ),
+                "instrumentation_info": (
+                    {
+                        "name": (
+                            span.instrumentation_info.name
+                            if hasattr(span, "instrumentation_info")
+                            and hasattr(span.instrumentation_info, "name")
+                            else None
+                        ),
+                        "version": (
+                            span.instrumentation_info.version
+                            if hasattr(span, "instrumentation_info")
+                            and hasattr(span.instrumentation_info, "version")
+                            else None
+                        ),
+                        "schema_url": (
+                            span.instrumentation_info.schema_url
+                            if hasattr(span, "instrumentation_info")
+                            and hasattr(span.instrumentation_info, "schema_url")
+                            else None
+                        ),
+                    }
+                    if hasattr(span, "instrumentation_info")
+                    and span.instrumentation_info
+                    else None
+                ),
+            }
+
+            # Return formatted JSON with proper indentation
+            return json.dumps(span_data, indent=2, default=str)
+
+        except Exception as e:
+            return f"Error dumping span data: {e}"
+
     def _get_context(self, parent_context: Optional[Context]) -> Optional[Context]:
         """Get the appropriate context for baggage operations.
 
@@ -436,11 +600,14 @@ class HoneyHiveSpanProcessor(SpanProcessor):
             # Convert session_id to string
             session_id = str(session_id_raw)
 
+            # Dump raw span data for debugging
+            raw_span_data = self._dump_raw_span_data(span)
             self._safe_log(
                 "debug",
-                "🚀 SPAN PROCESSOR on_end called - mode: %s, span: %s",
+                "🚀 SPAN PROCESSOR on_end called - mode: %s, span: %s\n📊 RAW SPAN DATA:\n%s",
                 self.mode,
                 span.name,
+                raw_span_data,
             )
 
             # Process span based on mode
