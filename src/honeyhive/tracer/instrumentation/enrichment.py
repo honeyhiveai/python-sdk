@@ -3,16 +3,23 @@
 This module implements the unified enrichment architecture that supports
 multiple invocation patterns while maintaining a single core logic implementation.
 Follows Agent OS dynamic logic standards for configuration-driven, extensible systems.
+
+**Backwards Compatibility:**
+This module maintains full backwards compatibility with the main branch interface
+while adding new functionality. All main branch usage patterns are supported.
 """
 
+# Standard library imports
 from contextlib import _GeneratorContextManager, contextmanager
 from typing import Any, Dict, Iterator, Optional, Union
 
 # Third-party imports
 from opentelemetry import trace
 
-# Local imports
 from ...utils.logger import safe_log
+
+# Local imports
+from .span_utils import _set_span_attributes
 
 
 # Create a minimal NoOpSpan for graceful degradation
@@ -33,31 +40,87 @@ class NoOpSpan:
 
 def enrich_span_core(
     attributes: Optional[Dict[str, Any]] = None,
+    metadata: Optional[Dict[str, Any]] = None,
+    metrics: Optional[Dict[str, Any]] = None,
+    feedback: Optional[Dict[str, Any]] = None,
+    inputs: Optional[Dict[str, Any]] = None,
+    outputs: Optional[Dict[str, Any]] = None,
+    config: Optional[Dict[str, Any]] = None,
+    error: Optional[str] = None,
+    event_id: Optional[str] = None,
     tracer_instance: Optional[Any] = None,
     verbose: bool = False,
     **kwargs: Any,
 ) -> Dict[str, Any]:
-    """Core span enrichment logic - unified implementation for all patterns.
+    """Core enrichment logic with namespace support and backwards compatibility.
 
-    This function implements the core span enrichment logic that is shared
-    across all invocation patterns. It follows Agent OS dynamic logic standards
-    by providing a single, extensible implementation.
+    This function implements the unified enrichment architecture that supports
+    multiple invocation patterns while maintaining backwards compatibility with
+    the main branch interface. It routes parameters to proper attribute
+    namespaces and handles arbitrary kwargs.
 
-    :param attributes: Attributes to add to the current span
+    **Backwards Compatibility:**
+    Supports the main branch reserved parameter interface (metadata, metrics,
+    feedback, inputs, outputs, config, error, event_id).
+
+    **New Features:**
+    - Simple dict via attributes parameter routes to metadata namespace
+    - Arbitrary kwargs route to metadata namespace for convenience
+
+    **Parameter Precedence:**
+    When the same key appears in multiple places, merge/override with this order:
+    1. Reserved parameters (metadata, metrics, etc.) - Applied first
+    2. attributes dict - Applied second
+    3. **kwargs - Applied last (wins conflicts)
+
+    :param attributes: Simple dict that routes to metadata namespace
     :type attributes: Optional[Dict[str, Any]]
-    :param tracer_instance: Optional tracer instance for logging context
+    :param metadata: Metadata namespace (honeyhive_metadata.*)
+    :type metadata: Optional[Dict[str, Any]]
+    :param metrics: Metrics namespace (honeyhive_metrics.*)
+    :type metrics: Optional[Dict[str, Any]]
+    :param feedback: Feedback namespace (honeyhive_feedback.*)
+    :type feedback: Optional[Dict[str, Any]]
+    :param inputs: Inputs namespace (honeyhive_inputs.*)
+    :type inputs: Optional[Dict[str, Any]]
+    :param outputs: Outputs namespace (honeyhive_outputs.*)
+    :type outputs: Optional[Dict[str, Any]]
+    :param config: Config namespace (honeyhive_config.*)
+    :type config: Optional[Dict[str, Any]]
+    :param error: Error string (honeyhive_error, non-namespaced)
+    :type error: Optional[str]
+    :param event_id: Event ID (honeyhive_event_id, non-namespaced)
+    :type event_id: Optional[str]
+    :param tracer_instance: Optional tracer instance for logging
     :type tracer_instance: Optional[Any]
     :param verbose: Whether to log debug information
     :type verbose: bool
-    :param kwargs: Additional attributes as keyword arguments
+    :param kwargs: Arbitrary kwargs that route to metadata namespace
     :type kwargs: Any
     :return: Enrichment result with success status and span reference
     :rtype: Dict[str, Any]
-    """
-    # Combine attributes and kwargs dynamically
-    all_attributes = attributes.copy() if attributes else {}
-    all_attributes.update(kwargs)
 
+    **Example:**
+
+    .. code-block:: python
+
+        # Main branch backwards compatible usage
+        result = enrich_span_core(
+            metadata={"user_id": "123"},
+            metrics={"score": 0.95}
+        )
+
+        # New simplified usage
+        result = enrich_span_core(
+            user_id="123",  # Routes to metadata
+            feature="chat"  # Routes to metadata
+        )
+
+    **Note:**
+
+    This function is thread-safe and uses OpenTelemetry's context
+    propagation to access the current span automatically.
+    """
     try:
         # Get current span from OpenTelemetry context
         current_span = trace.get_current_span()
@@ -70,18 +133,52 @@ def enrich_span_core(
             )
             return {"success": False, "span": NoOpSpan(), "error": "No active span"}
 
-        # Apply attributes to the span
-        attribute_count = 0
-        for key, value in all_attributes.items():
-            try:
-                current_span.set_attribute(key, value)
-                attribute_count += 1
-            except Exception as attr_error:
-                safe_log(
-                    tracer_instance,
-                    "warning",
-                    f"Failed to set attribute {key}: {attr_error}",
-                )
+        attribute_count: int = 0
+
+        # STEP 1: Apply reserved namespaces first (highest priority)
+        # These use _set_span_attributes for recursive dict/list handling
+        if metadata:
+            _set_span_attributes(current_span, "honeyhive_metadata", metadata)
+            attribute_count += len(metadata)
+
+        if metrics:
+            _set_span_attributes(current_span, "honeyhive_metrics", metrics)
+            attribute_count += len(metrics)
+
+        if feedback:
+            _set_span_attributes(current_span, "honeyhive_feedback", feedback)
+            attribute_count += len(feedback)
+
+        if inputs:
+            _set_span_attributes(current_span, "honeyhive_inputs", inputs)
+            attribute_count += len(inputs)
+
+        if outputs:
+            _set_span_attributes(current_span, "honeyhive_outputs", outputs)
+            attribute_count += len(outputs)
+
+        if config:
+            _set_span_attributes(current_span, "honeyhive_config", config)
+            attribute_count += len(config)
+
+        # STEP 2: Apply simple attributes dict → metadata (overwrites conflicts)
+        if attributes:
+            _set_span_attributes(current_span, "honeyhive_metadata", attributes)
+            attribute_count += len(attributes)
+
+        # STEP 3: Apply arbitrary kwargs → metadata (lowest priority, wins conflicts)
+        if kwargs:
+            _set_span_attributes(current_span, "honeyhive_metadata", kwargs)
+            attribute_count += len(kwargs)
+
+        # Handle special non-namespaced attributes
+        if error:
+            current_span.set_attribute("honeyhive_error", error)
+            attribute_count += 1
+
+        if event_id:
+            current_span.set_attribute("honeyhive_event_id", event_id)
+            attribute_count += 1
 
         # Log success if verbose mode is enabled
         if verbose:
@@ -91,7 +188,6 @@ def enrich_span_core(
                 "Span enriched with attributes",
                 honeyhive_data={
                     "attribute_count": attribute_count,
-                    "attributes": list(all_attributes.keys()),
                     "span_name": getattr(current_span, "name", "unknown"),
                 },
             )
@@ -105,9 +201,10 @@ def enrich_span_core(
     except Exception as e:
         safe_log(
             tracer_instance,
-            "warning",
+            "error",
             f"Failed to enrich span: {e}",
             honeyhive_data={"error_type": type(e).__name__, "caller": "enrich_span"},
+            exc_info=True,
         )
         return {"success": False, "span": NoOpSpan(), "error": str(e)}
 
@@ -119,31 +216,85 @@ class UnifiedEnrichSpan:
     detects whether it's being used as a context manager (with statement) or as a
     direct call, eliminating the need for multiple entry points.
 
-    Usage patterns:
-    - Context manager: `with enrich_span({'key': 'value'}) as span:`
-    - Direct call: `success = enrich_span({'key': 'value'})`
-    - Boolean evaluation: `if enrich_span({'key': 'value'}):`
+    **Backwards Compatibility:**
+    Supports all main branch reserved parameters (metadata, metrics, feedback, etc.)
+
+    **Usage patterns:**
+    - Context manager: `with enrich_span(metadata={'key': 'value'}) as span:`
+    - Direct call: `success = enrich_span(metadata={'key': 'value'})`
+    - Boolean evaluation: `if enrich_span(user_id="123"):`
     """
 
     def __init__(self) -> None:
+        """Initialize unified enrich_span instance."""
         self._context_manager: Optional[Any] = None
         self._direct_result: Optional[Any] = None
         self._attributes: Optional[Dict[str, Any]] = None
+        self._metadata: Optional[Dict[str, Any]] = None
+        self._metrics: Optional[Dict[str, Any]] = None
+        self._feedback: Optional[Dict[str, Any]] = None
+        self._inputs: Optional[Dict[str, Any]] = None
+        self._outputs: Optional[Dict[str, Any]] = None
+        self._config: Optional[Dict[str, Any]] = None
+        self._error: Optional[str] = None
+        self._event_id: Optional[str] = None
         self._tracer: Optional[Any] = None
         self._kwargs: Optional[Dict[str, Any]] = None
 
     def __call__(
         self,
         attributes: Optional[Dict[str, Any]] = None,
+        metadata: Optional[Dict[str, Any]] = None,
+        metrics: Optional[Dict[str, Any]] = None,
+        feedback: Optional[Dict[str, Any]] = None,
+        inputs: Optional[Dict[str, Any]] = None,
+        outputs: Optional[Dict[str, Any]] = None,
+        config: Optional[Dict[str, Any]] = None,
+        error: Optional[str] = None,
+        event_id: Optional[str] = None,
         tracer: Optional[Any] = None,
         **kwargs: Any,
     ) -> "UnifiedEnrichSpan":
         """Called when enrich_span() is invoked.
 
+        Accepts all backwards-compatible parameters and new convenience parameters.
         Returns self to enable both context manager and direct call patterns.
+
+        :param attributes: Simple dict that routes to metadata namespace
+        :type attributes: Optional[Dict[str, Any]]
+        :param metadata: Metadata namespace
+        :type metadata: Optional[Dict[str, Any]]
+        :param metrics: Metrics namespace
+        :type metrics: Optional[Dict[str, Any]]
+        :param feedback: Feedback namespace
+        :type feedback: Optional[Dict[str, Any]]
+        :param inputs: Inputs namespace
+        :type inputs: Optional[Dict[str, Any]]
+        :param outputs: Outputs namespace
+        :type outputs: Optional[Dict[str, Any]]
+        :param config: Config namespace
+        :type config: Optional[Dict[str, Any]]
+        :param error: Error string
+        :type error: Optional[str]
+        :param event_id: Event ID
+        :type event_id: Optional[str]
+        :param tracer: Optional tracer instance
+        :type tracer: Optional[Any]
+        :param kwargs: Arbitrary kwargs routing to metadata
+        :type kwargs: Any
+        :return: Self for chaining
+        :rtype: UnifiedEnrichSpan
         """
-        # Store arguments for later use
+        # Store all arguments for later use
         self._attributes = attributes
+        self._metadata = metadata
+        self._metrics = metrics
+        self._feedback = feedback
+        self._inputs = inputs
+        self._outputs = outputs
+        self._config = config
+        self._error = error
+        self._event_id = event_id
         self._tracer = tracer
         self._kwargs = kwargs
         self._context_manager = None
@@ -152,9 +303,21 @@ class UnifiedEnrichSpan:
         return self
 
     def __enter__(self) -> Any:
-        """Context manager entry - delegates to unified function."""
+        """Context manager entry - delegates to unified function.
+
+        :return: The span from the context manager
+        :rtype: Any
+        """
         self._context_manager = enrich_span_unified(
             attributes=self._attributes,
+            metadata=self._metadata,
+            metrics=self._metrics,
+            feedback=self._feedback,
+            inputs=self._inputs,
+            outputs=self._outputs,
+            config=self._config,
+            error=self._error,
+            event_id=self._event_id,
             tracer_instance=self._tracer,
             caller="context_manager",
             **(self._kwargs or {}),
@@ -164,15 +327,35 @@ class UnifiedEnrichSpan:
         return self._context_manager
 
     def __exit__(self, exc_type: Any, exc_val: Any, exc_tb: Any) -> None:
-        """Context manager exit."""
+        """Context manager exit.
+
+        :param exc_type: Exception type if raised
+        :type exc_type: Optional[type]
+        :param exc_val: Exception value if raised
+        :type exc_val: Optional[BaseException]
+        :param exc_tb: Exception traceback if raised
+        :type exc_tb: Optional[Any]
+        """
         if self._context_manager and hasattr(self._context_manager, "__exit__"):
             self._context_manager.__exit__(exc_type, exc_val, exc_tb)
 
     def __bool__(self) -> bool:
-        """Direct call evaluation - delegates to unified function."""
+        """Direct call evaluation - delegates to unified function.
+
+        :return: True if enrichment succeeded
+        :rtype: bool
+        """
         if self._direct_result is None:
             self._direct_result = enrich_span_unified(
                 attributes=self._attributes,
+                metadata=self._metadata,
+                metrics=self._metrics,
+                feedback=self._feedback,
+                inputs=self._inputs,
+                outputs=self._outputs,
+                config=self._config,
+                error=self._error,
+                event_id=self._event_id,
                 tracer_instance=self._tracer,
                 caller="direct_call",
                 **(self._kwargs or {}),
@@ -182,23 +365,50 @@ class UnifiedEnrichSpan:
 
 def enrich_span_unified(
     attributes: Optional[Dict[str, Any]] = None,
+    metadata: Optional[Dict[str, Any]] = None,
+    metrics: Optional[Dict[str, Any]] = None,
+    feedback: Optional[Dict[str, Any]] = None,
+    inputs: Optional[Dict[str, Any]] = None,
+    outputs: Optional[Dict[str, Any]] = None,
+    config: Optional[Dict[str, Any]] = None,
+    error: Optional[str] = None,
+    event_id: Optional[str] = None,
     tracer_instance: Optional[Any] = None,
     caller: str = "direct_call",
     **kwargs: Any,
 ) -> Union[bool, _GeneratorContextManager[Any, None, None]]:  # type: ignore[type-arg]
-    """Unified enrich_span implementation with simple caller identification.
+    """Unified enrich_span implementation with backwards compatibility.
 
     This function implements the unified enrichment architecture with a simple
     caller parameter approach. Each caller explicitly identifies itself, making
     the behavior predictable and following Agent OS dynamic logic standards.
 
-    :param attributes: Attributes to add to the current span
+    **Backwards Compatibility:**
+    Supports all main branch reserved parameters (metadata, metrics, etc.)
+
+    :param attributes: Simple dict that routes to metadata namespace
     :type attributes: Optional[Dict[str, Any]]
+    :param metadata: Metadata namespace
+    :type metadata: Optional[Dict[str, Any]]
+    :param metrics: Metrics namespace
+    :type metrics: Optional[Dict[str, Any]]
+    :param feedback: Feedback namespace
+    :type feedback: Optional[Dict[str, Any]]
+    :param inputs: Inputs namespace
+    :type inputs: Optional[Dict[str, Any]]
+    :param outputs: Outputs namespace
+    :type outputs: Optional[Dict[str, Any]]
+    :param config: Config namespace
+    :type config: Optional[Dict[str, Any]]
+    :param error: Error string
+    :type error: Optional[str]
+    :param event_id: Event ID
+    :type event_id: Optional[str]
     :param tracer_instance: Optional tracer instance for context
     :type tracer_instance: Optional[Any]
     :param caller: Caller identification ('context_manager' or 'direct_call')
     :type caller: str
-    :param kwargs: Additional attributes as keyword arguments
+    :param kwargs: Arbitrary kwargs routing to metadata
     :type kwargs: Any
     :return: Context manager (Iterator) or boolean based on caller
     :rtype: Union[bool, Iterator[Any]]
@@ -222,24 +432,72 @@ def enrich_span_unified(
 
     if caller == "context_manager":
         # Return context manager for 'with' statement usage
-        return _enrich_span_context_manager(attributes, tracer_instance, **kwargs)
+        return _enrich_span_context_manager(
+            attributes=attributes,
+            metadata=metadata,
+            metrics=metrics,
+            feedback=feedback,
+            inputs=inputs,
+            outputs=outputs,
+            config=config,
+            error=error,
+            event_id=event_id,
+            tracer_instance=tracer_instance,
+            **kwargs,
+        )
     # Return boolean for direct call and other patterns
-    return _enrich_span_direct_call(attributes, tracer_instance, **kwargs)
+    return _enrich_span_direct_call(
+        attributes=attributes,
+        metadata=metadata,
+        metrics=metrics,
+        feedback=feedback,
+        inputs=inputs,
+        outputs=outputs,
+        config=config,
+        error=error,
+        event_id=event_id,
+        tracer_instance=tracer_instance,
+        **kwargs,
+    )
 
 
 @contextmanager
 def _enrich_span_context_manager(
     attributes: Optional[Dict[str, Any]] = None,
+    metadata: Optional[Dict[str, Any]] = None,
+    metrics: Optional[Dict[str, Any]] = None,
+    feedback: Optional[Dict[str, Any]] = None,
+    inputs: Optional[Dict[str, Any]] = None,
+    outputs: Optional[Dict[str, Any]] = None,
+    config: Optional[Dict[str, Any]] = None,
+    error: Optional[str] = None,
+    event_id: Optional[str] = None,
     tracer_instance: Optional[Any] = None,
     **kwargs: Any,
 ) -> Iterator[Any]:
-    """Context manager implementation for enrich_span.
+    """Context manager implementation for enrich_span with backwards compatibility.
 
-    :param attributes: Attributes to add to the current span
+    :param attributes: Simple dict that routes to metadata namespace
     :type attributes: Optional[Dict[str, Any]]
+    :param metadata: Metadata namespace
+    :type metadata: Optional[Dict[str, Any]]
+    :param metrics: Metrics namespace
+    :type metrics: Optional[Dict[str, Any]]
+    :param feedback: Feedback namespace
+    :type feedback: Optional[Dict[str, Any]]
+    :param inputs: Inputs namespace
+    :type inputs: Optional[Dict[str, Any]]
+    :param outputs: Outputs namespace
+    :type outputs: Optional[Dict[str, Any]]
+    :param config: Config namespace
+    :type config: Optional[Dict[str, Any]]
+    :param error: Error string
+    :type error: Optional[str]
+    :param event_id: Event ID
+    :type event_id: Optional[str]
     :param tracer_instance: Optional tracer instance for context
     :type tracer_instance: Optional[Any]
-    :param kwargs: Additional attributes as keyword arguments
+    :param kwargs: Arbitrary kwargs routing to metadata
     :type kwargs: Any
     :yield: The current span or NoOpSpan
     :rtype: Iterator[Any]
@@ -247,8 +505,21 @@ def _enrich_span_context_manager(
     # Remove verbose from kwargs if it exists (it's not relevant to span enrichment)
     kwargs_clean = {k: v for k, v in kwargs.items() if k != "verbose"}
 
-    # Execute core enrichment logic (verbose=False since it's not used in enrichment)
-    result = enrich_span_core(attributes, tracer_instance, False, **kwargs_clean)
+    # Execute core enrichment logic with all parameters
+    result = enrich_span_core(
+        attributes=attributes,
+        metadata=metadata,
+        metrics=metrics,
+        feedback=feedback,
+        inputs=inputs,
+        outputs=outputs,
+        config=config,
+        error=error,
+        event_id=event_id,
+        tracer_instance=tracer_instance,
+        verbose=False,
+        **kwargs_clean,
+    )
 
     try:
         # Yield the span for context manager usage
@@ -266,16 +537,40 @@ def _enrich_span_context_manager(
 
 def _enrich_span_direct_call(
     attributes: Optional[Dict[str, Any]] = None,
+    metadata: Optional[Dict[str, Any]] = None,
+    metrics: Optional[Dict[str, Any]] = None,
+    feedback: Optional[Dict[str, Any]] = None,
+    inputs: Optional[Dict[str, Any]] = None,
+    outputs: Optional[Dict[str, Any]] = None,
+    config: Optional[Dict[str, Any]] = None,
+    error: Optional[str] = None,
+    event_id: Optional[str] = None,
     tracer_instance: Optional[Any] = None,
     **kwargs: Any,
 ) -> bool:
-    """Direct call implementation for enrich_span.
+    """Direct call implementation for enrich_span with backwards compatibility.
 
-    :param attributes: Attributes to add to the current span
+    :param attributes: Simple dict that routes to metadata namespace
     :type attributes: Optional[Dict[str, Any]]
+    :param metadata: Metadata namespace
+    :type metadata: Optional[Dict[str, Any]]
+    :param metrics: Metrics namespace
+    :type metrics: Optional[Dict[str, Any]]
+    :param feedback: Feedback namespace
+    :type feedback: Optional[Dict[str, Any]]
+    :param inputs: Inputs namespace
+    :type inputs: Optional[Dict[str, Any]]
+    :param outputs: Outputs namespace
+    :type outputs: Optional[Dict[str, Any]]
+    :param config: Config namespace
+    :type config: Optional[Dict[str, Any]]
+    :param error: Error string
+    :type error: Optional[str]
+    :param event_id: Event ID
+    :type event_id: Optional[str]
     :param tracer_instance: Optional tracer instance for context
     :type tracer_instance: Optional[Any]
-    :param kwargs: Additional attributes as keyword arguments
+    :param kwargs: Arbitrary kwargs routing to metadata
     :type kwargs: Any
     :return: True if enrichment succeeded, False otherwise
     :rtype: bool
@@ -283,8 +578,21 @@ def _enrich_span_direct_call(
     # Remove verbose from kwargs if it exists (it's not relevant to span enrichment)
     kwargs_clean = {k: v for k, v in kwargs.items() if k != "verbose"}
 
-    # Execute core enrichment logic (verbose=False since it's not used in enrichment)
-    result = enrich_span_core(attributes, tracer_instance, False, **kwargs_clean)
+    # Execute core enrichment logic with all parameters
+    result = enrich_span_core(
+        attributes=attributes,
+        metadata=metadata,
+        metrics=metrics,
+        feedback=feedback,
+        inputs=inputs,
+        outputs=outputs,
+        config=config,
+        error=error,
+        event_id=event_id,
+        tracer_instance=tracer_instance,
+        verbose=False,
+        **kwargs_clean,
+    )
 
     # Return boolean success status
     return bool(result["success"])

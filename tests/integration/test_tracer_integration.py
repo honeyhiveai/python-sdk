@@ -421,6 +421,159 @@ class TestUnifiedEnrichSpanIntegration:
         # Verify that error scenarios don't crash the application
         assert True
 
+    def test_enrich_span_backwards_compatible(
+        self, integration_tracer: Any, integration_client: Any, real_project: Any
+    ) -> None:
+        """Test enrich_span works with main branch interface end-to-end.
+
+        This test verifies that the original main branch interface for enrich_span
+        still works correctly with proper namespace routing and backend verification.
+        """
+        # Generate unique identifier for backend verification
+        _, unique_id = generate_test_id("enrich_span_compat", "integration")
+
+        # Create a traced operation with main branch interface
+        with integration_tracer.start_span("test_enrichment_backwards_compat") as span:
+            assert span.is_recording()
+
+            # Use main branch interface - reserved namespace parameters
+            enrich_span(
+                metadata={"user_id": "123", "test_id": unique_id, "feature": "chat"},
+                metrics={"score": 0.95, "latency_ms": 150},
+                feedback={"rating": 5, "helpful": True},
+            )
+
+        # Flush to ensure data reaches backend
+        integration_tracer.force_flush()
+        time.sleep(2)  # Allow backend processing time
+
+        # Use centralized validation helper for backend verification
+        verified_event = verify_tracer_span(
+            tracer=integration_tracer,
+            client=integration_client,
+            project=real_project,
+            span_name="test_enrichment_backwards_compat",
+            unique_identifier=unique_id,
+            span_attributes={
+                "honeyhive_metadata.user_id": "123",
+                "honeyhive_metadata.test_id": unique_id,
+                "honeyhive_metadata.feature": "chat",
+                "honeyhive_metrics.score": 0.95,
+                "honeyhive_metrics.latency_ms": 150,
+                "honeyhive_feedback.rating": 5,
+                "honeyhive_feedback.helpful": True,
+            },
+        )
+
+        # Assert backend verification succeeded
+        assert verified_event is not None
+        assert verified_event.event_name == "test_enrichment_backwards_compat"
+
+    def test_enrich_span_arbitrary_kwargs_integration(
+        self, integration_tracer: Any, integration_client: Any, real_project: Any
+    ) -> None:
+        """Test arbitrary kwargs work end-to-end with backend verification.
+
+        This test verifies that the new feature of passing arbitrary kwargs
+        correctly routes them to the metadata namespace and they appear in the backend.
+        """
+        # Generate unique identifier for backend verification
+        _, unique_id = generate_test_id("enrich_kwargs", "integration")
+
+        # Create a traced operation with arbitrary kwargs
+        with integration_tracer.start_span("test_kwargs_enrichment") as span:
+            assert span.is_recording()
+
+            # New feature: arbitrary kwargs route to metadata namespace
+            enrich_span(
+                user_id="456",
+                feature="search",
+                test_id=unique_id,
+                score=0.88,
+                session="abc123",
+            )
+
+        # Flush to ensure data reaches backend
+        integration_tracer.force_flush()
+        time.sleep(2)  # Allow backend processing time
+
+        # Verify all kwargs appear in honeyhive_metadata namespace
+        verified_event = verify_tracer_span(
+            tracer=integration_tracer,
+            client=integration_client,
+            project=real_project,
+            span_name="test_kwargs_enrichment",
+            unique_identifier=unique_id,
+            span_attributes={
+                "honeyhive_metadata.user_id": "456",
+                "honeyhive_metadata.feature": "search",
+                "honeyhive_metadata.test_id": unique_id,
+                "honeyhive_metadata.score": 0.88,
+                "honeyhive_metadata.session": "abc123",
+            },
+        )
+
+        # Assert backend verification succeeded
+        assert verified_event is not None
+        assert verified_event.event_name == "test_kwargs_enrichment"
+
+    def test_enrich_span_nested_structures_integration(
+        self, integration_tracer: Any, integration_client: Any, real_project: Any
+    ) -> None:
+        """Test nested structures are properly handled end-to-end.
+
+        This test verifies that nested dictionaries and lists are correctly
+        flattened with proper namespacing and appear in the backend.
+        """
+        # Generate unique identifier for backend verification
+        _, unique_id = generate_test_id("enrich_nested", "integration")
+
+        # Create a traced operation with nested structures
+        with integration_tracer.start_span("test_nested_enrichment") as span:
+            assert span.is_recording()
+
+            # Test nested dict and list structures
+            enrich_span(
+                config={
+                    "model": "gpt-4",
+                    "params": {"temperature": 0.7, "max_tokens": 150},
+                    "options": ["streaming", "json_mode"],
+                },
+                metadata={
+                    "test_id": unique_id,
+                    "nested": {"level1": {"level2": "deep"}},
+                },
+                inputs={"messages": [{"role": "user", "content": "hello"}]},
+            )
+
+        # Flush to ensure data reaches backend
+        integration_tracer.force_flush()
+        time.sleep(2)  # Allow backend processing time
+
+        # Verify nested structures are properly flattened in backend
+        verified_event = verify_tracer_span(
+            tracer=integration_tracer,
+            client=integration_client,
+            project=real_project,
+            span_name="test_nested_enrichment",
+            unique_identifier=unique_id,
+            span_attributes={
+                "honeyhive_metadata.test_id": unique_id,
+                "honeyhive_metadata.nested.level1.level2": "deep",
+                "honeyhive_config.model": "gpt-4",
+                "honeyhive_config.params.temperature": 0.7,
+                "honeyhive_config.params.max_tokens": 150,
+                "honeyhive_config.options.0": "streaming",
+                "honeyhive_config.options.1": "json_mode",
+                "honeyhive_inputs.messages.0.role": "user",
+                "honeyhive_inputs.messages.0.content": "hello",
+            },
+        )
+
+        # Assert backend verification succeeded
+        assert verified_event is not None
+        assert verified_event.event_name == "test_nested_enrichment"
+
     def test_force_flush_integration(self, integration_tracer: Any) -> None:
         """Test force_flush functionality in integration environment."""
         # Create some spans to flush

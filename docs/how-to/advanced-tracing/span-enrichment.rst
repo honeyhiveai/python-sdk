@@ -7,6 +7,140 @@ Span Enrichment Patterns
 
 This guide covers advanced enrichment techniques beyond the basics. For an introduction, see :doc:`/tutorials/03-enable-span-enrichment`.
 
+Understanding Enrichment Interfaces
+------------------------------------
+
+``enrich_span()`` supports multiple invocation patterns. Choose the one that fits your use case:
+
+Quick Reference Table
+^^^^^^^^^^^^^^^^^^^^^
+
++----------------------------+----------------------------------+----------------------------------------------+
+| Pattern                    | When to Use                      | Backend Namespace                            |
++============================+==================================+==============================================+
+| Simple Dict                | Quick metadata                   | ``honeyhive_metadata.*``                     |
++----------------------------+----------------------------------+----------------------------------------------+
+| Keyword Arguments          | Concise inline enrichment        | ``honeyhive_metadata.*``                     |
++----------------------------+----------------------------------+----------------------------------------------+
+| Reserved Namespaces        | Structured organization          | ``honeyhive_<namespace>.*``                  |
++----------------------------+----------------------------------+----------------------------------------------+
+| Mixed Usage                | Combine multiple patterns        | Multiple namespaces                          |
++----------------------------+----------------------------------+----------------------------------------------+
+
+Simple Dict Pattern (New)
+^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+.. code-block:: python
+
+   from honeyhive import enrich_span
+   
+   # Pass a dictionary - routes to metadata
+   enrich_span({
+       "user_id": "user_123",
+       "feature": "chat",
+       "session": "abc"
+   })
+   
+   # Backend storage:
+   # honeyhive_metadata.user_id = "user_123"
+   # honeyhive_metadata.feature = "chat"
+   # honeyhive_metadata.session = "abc"
+
+Keyword Arguments Pattern (New)
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+.. code-block:: python
+
+   from honeyhive import enrich_span
+   
+   # Pass keyword arguments - also routes to metadata
+   enrich_span(
+       user_id="user_123",
+       feature="chat",
+       session="abc"
+   )
+   
+   # Same backend storage as simple dict
+
+Reserved Namespaces Pattern (Backwards Compatible)
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+Use explicit namespace parameters for organized data:
+
+.. code-block:: python
+
+   from honeyhive import enrich_span
+   
+   # Explicit namespaces for structured organization
+   enrich_span(
+       metadata={"user_id": "user_123", "session": "abc"},
+       metrics={"latency_ms": 150, "score": 0.95},
+       feedback={"rating": 5, "helpful": True},
+       inputs={"query": "What is AI?"},
+       outputs={"answer": "AI is artificial intelligence..."},
+       config={"model": "gpt-4", "temperature": 0.7},
+       error="Optional error message",
+       event_id="evt_unique_identifier"
+   )
+   
+   # Backend storage:
+   # honeyhive_metadata.user_id = "user_123"
+   # honeyhive_metadata.session = "abc"
+   # honeyhive_metrics.latency_ms = 150
+   # honeyhive_metrics.score = 0.95
+   # honeyhive_feedback.rating = 5
+   # honeyhive_feedback.helpful = True
+   # honeyhive_inputs.query = "What is AI?"
+   # honeyhive_outputs.answer = "AI is artificial intelligence..."
+   # honeyhive_config.model = "gpt-4"
+   # honeyhive_config.temperature = 0.7
+   # honeyhive_error = "Optional error message"
+   # honeyhive_event_id = "evt_unique_identifier"
+
+**Available Namespaces:**
+
+- ``metadata``: Business context (user IDs, features, session info)
+- ``metrics``: Numeric measurements (latencies, scores, counts)
+- ``feedback``: User or system feedback (ratings, thumbs up/down)
+- ``inputs``: Input data to the operation
+- ``outputs``: Output data from the operation
+- ``config``: Configuration parameters (model settings, hyperparams)
+- ``error``: Error messages or exceptions (stored as direct attribute)
+- ``event_id``: Unique event identifier (stored as direct attribute)
+
+**Why use namespaces?**
+
+- Organize different data types separately
+- Easier to query specific categories in the backend
+- Maintain backwards compatibility with existing code
+- Clear semantic meaning for different attribute types
+
+Mixed Usage Pattern
+^^^^^^^^^^^^^^^^^^^
+
+Combine multiple patterns - later values override earlier ones:
+
+.. code-block:: python
+
+   from honeyhive import enrich_span
+   
+   # Combine namespaces with kwargs
+   enrich_span(
+       metadata={"user_id": "user_123"},
+       metrics={"score": 0.95, "latency_ms": 150},
+       feature="chat",     # Adds to metadata
+       priority="high",    # Also adds to metadata
+       retries=3           # Also adds to metadata
+   )
+   
+   # Backend storage:
+   # honeyhive_metadata.user_id = "user_123"
+   # honeyhive_metadata.feature = "chat"
+   # honeyhive_metadata.priority = "high"
+   # honeyhive_metadata.retries = 3
+   # honeyhive_metrics.score = 0.95
+   # honeyhive_metrics.latency_ms = 150
+
 Pattern 1: Basic Enrichment with ``enrich_span()``
 ---------------------------------------------------
 

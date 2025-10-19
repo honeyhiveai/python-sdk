@@ -69,6 +69,118 @@ The simplest way to enrich spans is with ``enrich_span()``:
 
 **Result:** The trace includes your custom metadata.
 
+.. note::
+   The simple dict pattern shown above automatically routes your metadata to the ``honeyhive_metadata`` namespace in the backend.
+
+Enrichment Interfaces
+---------------------
+
+``enrich_span()`` supports multiple invocation patterns to fit your needs:
+
+Pattern 1: Simple Dictionary (New)
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+Pass a single dictionary for quick metadata enrichment:
+
+.. code-block:: python
+
+   from honeyhive import enrich_span
+   
+   # Simple dict - routes to metadata namespace
+   enrich_span({
+       "user_id": "user_12345",
+       "feature": "chat",
+       "session": "abc123"
+   })
+
+Pattern 2: Keyword Arguments (New)
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+Pass arbitrary keyword arguments - perfect for concise enrichment:
+
+.. code-block:: python
+
+   from honeyhive import enrich_span
+   
+   # Arbitrary kwargs - also route to metadata namespace
+   enrich_span(
+       user_id="user_12345",
+       feature="chat",
+       session="abc123"
+   )
+
+Pattern 3: Reserved Namespaces (Backwards Compatible)
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+Use explicit namespace parameters for structured data organization:
+
+.. code-block:: python
+
+   from honeyhive import enrich_span
+   
+   # Reserved namespaces provide structured organization
+   enrich_span(
+       metadata={"user_id": "user_12345", "session": "abc123"},
+       metrics={"latency_ms": 150, "tokens": 50, "score": 0.95},
+       feedback={"rating": 5, "helpful": True},
+       inputs={"query": "What is AI?"},
+       outputs={"answer": "AI is..."},
+       config={"model": "gpt-4", "temperature": 0.7},
+       error="Rate limit exceeded",  # Optional error string
+       event_id="evt_unique_123"     # Optional event identifier
+   )
+
+**Available namespaces:**
+
+- ``metadata``: Custom business context (user IDs, features, etc.)
+- ``metrics``: Numeric measurements (scores, latencies, counts)
+- ``feedback``: User or system feedback (ratings, flags)
+- ``inputs``: Input data to the operation
+- ``outputs``: Output data from the operation  
+- ``config``: Configuration parameters (model settings, etc.)
+- ``error``: Error messages or exceptions (string)
+- ``event_id``: Unique event identifier (string)
+
+Each namespace (except ``error`` and ``event_id``) creates nested attributes in the backend:
+
+- ``metadata`` → ``honeyhive_metadata.*``
+- ``metrics`` → ``honeyhive_metrics.*``
+- ``feedback`` → ``honeyhive_feedback.*``
+- ``inputs`` → ``honeyhive_inputs.*``
+- ``outputs`` → ``honeyhive_outputs.*``
+- ``config`` → ``honeyhive_config.*``
+- ``error`` → ``honeyhive_error`` (direct attribute)
+- ``event_id`` → ``honeyhive_event_id`` (direct attribute)
+
+**When to use namespaces:**
+
+- Organize different types of data separately
+- Make it easier to query specific data categories in the backend
+- Maintain backwards compatibility with existing code
+
+Pattern 4: Mixed Usage
+^^^^^^^^^^^^^^^^^^^^^^^
+
+You can combine patterns - later values override earlier ones:
+
+.. code-block:: python
+
+   from honeyhive import enrich_span
+   
+   # Combine namespaces with kwargs
+   enrich_span(
+       metadata={"user_id": "user_12345"},
+       metrics={"score": 0.95},
+       feature="chat",        # Adds to metadata
+       priority="high"        # Also adds to metadata
+   )
+   
+   # Result in backend:
+   # honeyhive_metadata.user_id = "user_12345"
+   # honeyhive_metadata.feature = "chat"  
+   # honeyhive_metadata.priority = "high"
+   # honeyhive_metrics.score = 0.95
+
 Enrichment in Functions
 -----------------------
 

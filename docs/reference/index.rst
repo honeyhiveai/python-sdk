@@ -30,7 +30,7 @@ Core Capabilities
 - **Session Management**: Automatic session creation with dynamic naming based on initialization file
 - **ProxyTracerProvider Compatibility**: Automatic detection and handling of OpenTelemetry's default provider states
 - **Real API Testing**: Comprehensive testing framework with conditional mocking for production-grade validation
-- **Span Enrichment**: Rich context manager pattern for automatic span enrichment with OpenTelemetry native integration
+- **Span Enrichment**: Multiple invocation patterns (reserved namespaces, simple dict, kwargs, context manager) with full backwards compatibility and namespace routing
 - **HTTP Instrumentation**: Automatic HTTP request tracing with configurable enable/disable
 - **Full Backwards Compatibility**: Complete parameter compatibility with main branch for seamless upgrades
 

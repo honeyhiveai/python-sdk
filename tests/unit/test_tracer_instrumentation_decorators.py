@@ -1106,7 +1106,7 @@ class TestComplexObjectSerialization:
 
         # Mock json.dumps to raise TypeError
         with patch(
-            "honeyhive.tracer.instrumentation.decorators.json.dumps"
+            "honeyhive.tracer.instrumentation.span_utils.json.dumps"
         ) as mock_dumps:
             mock_dumps.side_effect = TypeError("JSON TypeError")
 
@@ -1128,7 +1128,7 @@ class TestComplexObjectSerialization:
 
         # Mock json.dumps to raise ValueError
         with patch(
-            "honeyhive.tracer.instrumentation.decorators.json.dumps"
+            "honeyhive.tracer.instrumentation.span_utils.json.dumps"
         ) as mock_dumps:
             mock_dumps.side_effect = ValueError("JSON ValueError")
 
@@ -1150,7 +1150,7 @@ class TestComplexObjectSerialization:
 
         # Mock json.dumps to raise exception
         with patch(
-            "honeyhive.tracer.instrumentation.decorators.json.dumps"
+            "honeyhive.tracer.instrumentation.span_utils.json.dumps"
         ) as mock_dumps:
             mock_dumps.side_effect = Exception("JSON failed")
 

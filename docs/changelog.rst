@@ -17,6 +17,14 @@ Latest Release Notes
 Current Version Highlights
 ~~~~~~~~~~~~~~~~~~~~~~~~~~
 
+**🔧 FIXED: enrich_span() Backwards Compatibility Restored**
+
+* **Original Interface Restored**: Fixed `enrich_span()` to support main branch's reserved namespaces (`metadata`, `metrics`, `feedback`, `inputs`, `outputs`, `config`, `error`, `event_id`)
+* **New Patterns Added**: Simple dictionary (routes to metadata), arbitrary kwargs (routes to metadata), and context manager support
+* **Circular Import Resolved**: Extracted `_set_span_attributes()` to new `span_utils.py` module
+* **100% Test Coverage**: Added 48 unit tests + 3 integration tests with backend verification
+* **Documentation Updated**: Comprehensive updates to tutorials, how-to guides, and API reference with new examples
+
 **🔍 NEW: Raw Span Data Dumping for Debugging**
 
 * **Comprehensive Span Extraction**: New `_dump_raw_span_data()` method captures all OpenTelemetry span properties

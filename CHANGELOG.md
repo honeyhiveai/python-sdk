@@ -1,5 +1,16 @@
 ## [Unreleased]
 
+### Fixed
+- **🔧 Tracing: Restored enrich_span() Backwards Compatibility**
+  - Fixed `enrich_span()` to support original main branch interface with reserved namespaces (`metadata`, `metrics`, `feedback`, `inputs`, `outputs`, `config`, `error`, `event_id`)
+  - Added support for new invocation patterns: simple dictionary (routes to metadata), arbitrary kwargs (routes to metadata), and context manager pattern
+  - Resolved circular import by extracting `_set_span_attributes()` to new `span_utils.py` module
+  - Implemented namespace routing with parameter precedence: reserved parameters → `attributes` dict → `**kwargs` (last wins)
+  - Updated type signatures to fix MyPy compatibility issues
+  - Added 48 comprehensive unit tests with 100% coverage of `enrichment.py`
+  - Added 3 integration tests with backend verification for backwards compatibility, kwargs, and nested structures
+  - Updated documentation: tutorials, how-to guides, and API reference with new interfaces and examples
+
 ### Changed
 - **🔄 Examples: Refactored Strands Integration**
   - Updated AWS Strands integration example to use TracerProvider pattern

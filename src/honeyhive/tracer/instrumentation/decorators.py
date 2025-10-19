@@ -54,7 +54,6 @@ See Also:
 
 import functools
 import inspect
-import json
 import time
 from typing import TYPE_CHECKING, Any, Callable, Dict, Optional, TypeVar, Union
 
@@ -66,51 +65,13 @@ from .. import registry
 from ..processing.context import _add_experiment_attributes
 from ..utils import convert_enum_to_string
 from .enrichment import enrich_span_unified as otel_enrich_span
+from .span_utils import _set_span_attributes
 
 if TYPE_CHECKING:
     from ..core import HoneyHiveTracer
 
 T = TypeVar("T")
 P = TypeVar("P")
-
-
-def _set_span_attributes(span: Any, prefix: str, value: Any) -> None:
-    """Set span attributes with proper type handling and JSON serialization.
-
-    Recursively sets span attributes for complex data structures, handling
-    different data types appropriately for OpenTelemetry compatibility.
-
-    Args:
-        span: OpenTelemetry span object
-        prefix: Attribute name prefix
-        value: Value to set as attribute
-    """
-    if isinstance(value, dict):
-        for k, v in value.items():
-            _set_span_attributes(span, f"{prefix}.{k}", v)
-    elif isinstance(value, list):
-        for i, v in enumerate(value):
-            _set_span_attributes(span, f"{prefix}.{i}", v)
-    elif isinstance(value, (bool, float, int, str)):
-        try:
-            span.set_attribute(prefix, value)
-        except Exception:
-            # Silently handle any exceptions when setting span attributes
-            pass
-    else:
-        # Convert complex types to JSON strings for OpenTelemetry compatibility
-        try:
-            span.set_attribute(prefix, json.dumps(value, default=str))
-        except (TypeError, ValueError):
-            # Fallback to string representation if JSON serialization fails
-            try:
-                span.set_attribute(prefix, str(value))
-            except Exception:
-                # Silently handle any exceptions when setting span attributes
-                pass
-        except Exception:
-            # Silently handle any exceptions when setting span attributes
-            pass
 
 
 # Dynamic attribute mappings - easily extensible
@@ -335,7 +296,7 @@ def _execute_with_tracing_sync(
                         outputs=params.outputs,
                         metrics=params.metrics,
                         feedback=params.feedback,
-                        error=params.error,
+                        error=str(params.error) if params.error else None,
                     )
                 except Exception:
                     pass
@@ -452,7 +413,7 @@ async def _execute_with_tracing(
                         outputs=params.outputs,
                         metrics=params.metrics,
                         feedback=params.feedback,
-                        error=params.error,
+                        error=str(params.error) if params.error else None,
                     )
                 except Exception:
                     pass

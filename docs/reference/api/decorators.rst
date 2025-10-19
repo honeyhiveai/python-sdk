@@ -654,19 +654,151 @@ enrich_span()
 
 .. autofunction:: enrich_span
 
-Add attributes to the currently active span without needing direct span reference.
+Add attributes to the currently active span without needing direct span reference. Supports multiple invocation patterns for flexibility: simple dictionary, keyword arguments, and reserved namespaces for structured data organization.
 
 **Function Signature:**
 
-.. py:function:: enrich_span(attributes: Dict[str, Any]) -> None
+.. py:function:: enrich_span(attributes=None, *, metadata=None, metrics=None, feedback=None, inputs=None, outputs=None, config=None, error=None, event_id=None, tracer=None, **kwargs)
    :no-index:
 
-   Add attributes to the currently active span.
+   Add attributes to the currently active span with namespace support.
    
    **Parameters:**
    
-   :param attributes: Dictionary of attributes to add to the current span
-   :type attributes: Dict[str, Any]
+   :param attributes: Simple dictionary that routes to metadata namespace. Use for quick metadata enrichment.
+   :type attributes: Optional[Dict[str, Any]]
+   
+   :param metadata: Business context data (user IDs, features, session info). Routes to ``honeyhive_metadata.*`` namespace.
+   :type metadata: Optional[Dict[str, Any]]
+   
+   :param metrics: Numeric measurements (latencies, scores, counts). Routes to ``honeyhive_metrics.*`` namespace.
+   :type metrics: Optional[Dict[str, Any]]
+   
+   :param feedback: User or system feedback (ratings, thumbs up/down). Routes to ``honeyhive_feedback.*`` namespace.
+   :type feedback: Optional[Dict[str, Any]]
+   
+   :param inputs: Input data to the operation. Routes to ``honeyhive_inputs.*`` namespace.
+   :type inputs: Optional[Dict[str, Any]]
+   
+   :param outputs: Output data from the operation. Routes to ``honeyhive_outputs.*`` namespace.
+   :type outputs: Optional[Dict[str, Any]]
+   
+   :param config: Configuration parameters (model settings, hyperparameters). Routes to ``honeyhive_config.*`` namespace.
+   :type config: Optional[Dict[str, Any]]
+   
+   :param error: Error message or exception string. Stored as direct ``honeyhive_error`` attribute (not namespaced).
+   :type error: Optional[str]
+   
+   :param event_id: Unique event identifier. Stored as direct ``honeyhive_event_id`` attribute (not namespaced).
+   :type event_id: Optional[str]
+   
+   :param tracer: Optional tracer instance for advanced usage. Usually auto-detected from context.
+   :type tracer: Optional[Any]
+   
+   :param kwargs: Arbitrary keyword arguments that route to metadata namespace. Use for concise inline enrichment.
+   :type kwargs: Any
+   
+   **Returns:**
+   
+   :rtype: UnifiedEnrichSpan
+   :returns: Enrichment object that can be used as context manager or directly
+
+**Multiple Invocation Patterns:**
+
+The function supports four different invocation patterns that can be mixed:
+
+**Pattern 1: Simple Dictionary (Quick Metadata)**
+
+.. code-block:: python
+
+   # Pass a single dict - routes to metadata namespace
+   enrich_span({
+       "user_id": "user_123",
+       "feature": "chat",
+       "session": "abc"
+   })
+   
+   # Backend storage:
+   # honeyhive_metadata.user_id = "user_123"
+   # honeyhive_metadata.feature = "chat"
+   # honeyhive_metadata.session = "abc"
+
+**Pattern 2: Keyword Arguments (Concise Enrichment)**
+
+.. code-block:: python
+
+   # Pass keyword arguments - also route to metadata
+   enrich_span(
+       user_id="user_123",
+       feature="chat",
+       score=0.95
+   )
+   
+   # Backend storage: same as simple dict pattern
+
+**Pattern 3: Reserved Namespaces (Structured Organization)**
+
+.. code-block:: python
+
+   # Use explicit namespaces for organized data
+   enrich_span(
+       metadata={"user_id": "user_123", "session": "abc"},
+       metrics={"latency_ms": 150, "score": 0.95},
+       feedback={"rating": 5, "helpful": True},
+       inputs={"query": "What is AI?"},
+       outputs={"answer": "AI is..."},
+       config={"model": "gpt-4", "temperature": 0.7},
+       error="Optional error message",
+       event_id="evt_unique_id"
+   )
+   
+   # Each namespace creates nested attributes in backend:
+   # honeyhive_metadata.* for metadata
+   # honeyhive_metrics.* for metrics
+   # honeyhive_feedback.* for feedback
+   # honeyhive_inputs.* for inputs
+   # honeyhive_outputs.* for outputs
+   # honeyhive_config.* for config
+   # honeyhive_error (direct attribute, no nesting)
+   # honeyhive_event_id (direct attribute, no nesting)
+
+**Pattern 4: Mixed Usage (Combine Patterns)**
+
+.. code-block:: python
+
+   # Combine multiple patterns - later values override
+   enrich_span(
+       metadata={"user_id": "user_123"},
+       metrics={"score": 0.95},
+       feature="chat",      # Adds to metadata
+       priority="high"      # Also adds to metadata
+   )
+   
+   # Backend storage:
+   # honeyhive_metadata.user_id = "user_123"
+   # honeyhive_metadata.feature = "chat"
+   # honeyhive_metadata.priority = "high"
+   # honeyhive_metrics.score = 0.95
+
+**Namespace Routing Rules:**
+
+1. **Reserved Parameters** (metadata, metrics, etc.) → Applied first
+2. **attributes Dict** → Applied second, routes to metadata namespace
+3. **kwargs** → Applied last (wins conflicts), routes to metadata namespace
+
+**Context Manager Pattern:**
+
+.. code-block:: python
+
+   # Use as context manager for scoped enrichment
+   with enrich_span(metadata={"operation": "batch_processing"}):
+       # Enrichment is active within this block
+       process_batch_items()
+   
+   # Use with boolean check
+   if enrich_span(user_tier="premium"):
+       # Process for premium users
+       pass
 
 **Usage in Decorated Functions:**
 
