@@ -29,6 +29,14 @@
   - Added required criteria field to Metric model test data
 
 ### Added
+- **📚 Examples: DSPy Integration**
+  - New DSPy integration with OpenAI instrumentor
+  - Basic question answering with signatures
+  - Chain of Thought (CoT) reasoning with assertions
+  - ReAct agent pattern with tools
+  - Optimization with BootstrapFewShot
+  - Multi-hop reasoning with retrieve-then-read pattern
+  - Program inspection and metric-based evaluation
 - **📚 Examples: AWS Bedrock Direct Integration**
   - New AWS Bedrock direct integration with Bedrock instrumentor
   - Support for Amazon Nova, Titan, and Claude models

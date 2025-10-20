@@ -24,6 +24,15 @@ Current Version Highlights
 * **Circular Import Resolved**: Extracted `_set_span_attributes()` to new `span_utils.py` module
 * **100% Test Coverage**: Added 48 unit tests + 3 integration tests with backend verification
 * **Documentation Updated**: Comprehensive updates to tutorials, how-to guides, and API reference with new examples
+
+**📚 NEW: DSPy Integration Example**
+
+* **Signatures**: Declarative task definitions with input/output specifications
+* **Chain of Thought**: CoT reasoning with assertions and validation
+* **ReAct Pattern**: Agent-based reasoning with tool use
+* **Optimization**: BootstrapFewShot for program optimization
+* **Multi-Hop Reasoning**: Retrieve-then-read patterns for complex queries
+
 **📚 NEW: AWS Bedrock Direct Integration Example**
 
 * **Multi-Model Support**: Amazon Nova, Titan Text, and Anthropic Claude models

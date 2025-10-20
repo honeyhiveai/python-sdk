@@ -29,6 +29,7 @@ Enhanced instrumentors with production optimizations and extended metrics:
 Comprehensive examples for popular AI agent frameworks:
 
 - **[`openai_agents_integration.py`](openai_agents_integration.py)** - OpenAI Agents SDK with OpenInference instrumentor (✅ multi-agent, handoffs, guardrails, tools)
+- **[`dspy_integration.py`](dspy_integration.py)** - DSPy framework with OpenAI instrumentor (✅ signatures, modules, ChainOfThought, ReAct, RAG, classification)
 - **[`semantic_kernel_integration.py`](semantic_kernel_integration.py)** - Microsoft Semantic Kernel with OpenAI instrumentor (✅ agents, plugins, function calling, streaming)
 - **[`strands_integration.py`](strands_integration.py)** - AWS Strands with TracerProvider pattern (✅ Bedrock models, streaming, tools)
 - **[`bedrock_integration.py`](bedrock_integration.py)** - AWS Bedrock direct with Bedrock instrumentor (✅ Nova, Titan, Claude, Converse API, streaming)
@@ -46,9 +47,31 @@ Comprehensive examples for popular AI agent frameworks:
 
 ### For Agent Framework Integrations
 
+#### DSPy Framework
+```bash
+pip install dspy openinference-instrumentation-dspy openinference-instrumentation-openai
+export OPENAI_API_KEY=sk-...
+export HH_API_KEY=your-honeyhive-key
+export HH_PROJECT=your-project
+python integrations/dspy_integration.py
+```
+
+**Features demonstrated:**
+- ✅ Basic Predict module for simple completions
+- ✅ ChainOfThought for reasoning with intermediate steps
+- ✅ Custom signatures with typed input/output fields
+- ✅ ReAct agents with tool usage
+- ✅ Multi-step reasoning for complex problems
+- ✅ Custom DSPy modules (QuestionAnswerModule)
+- ✅ Text classification with sentiment analysis
+- ✅ Retrieval-augmented generation (RAG) simulation
+- ✅ BootstrapFewShot optimizer for program optimization
+- ✅ GEPA optimizer (facility support analyzer)
+- ✅ Evaluation with custom metrics
+
 #### OpenAI Agents SDK
 ```bash
-pip install openai-agents openinference-instrumentation-openai-agents
+pip install openai-agents openinference-instrumentation-openai-agents openinference-instrumentation-openai
 export OPENAI_API_KEY=sk-...
 export HH_API_KEY=your-honeyhive-key
 python integrations/openai_agents_integration.py

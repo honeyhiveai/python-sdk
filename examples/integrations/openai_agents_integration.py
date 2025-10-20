@@ -10,7 +10,7 @@ This example uses the .env file in the repo root. Make sure it contains:
 - OPENAI_API_KEY (your OpenAI API key)
 
 Installation:
-pip install openai-agents openinference-instrumentation-openai-agents
+pip install openai-agents openinference-instrumentation-openai-agents openinference-instrumentation-openai
 
 What Gets Traced:
 - Agent invocations with full span hierarchy
@@ -29,6 +29,7 @@ from honeyhive import HoneyHiveTracer
 from honeyhive.tracer.instrumentation.decorators import trace
 from dotenv import load_dotenv
 from openinference.instrumentation.openai_agents import OpenAIAgentsInstrumentor
+from openinference.instrumentation.openai import OpenAIInstrumentor
 from agents import Agent, Runner, InputGuardrail, GuardrailFunctionOutput, function_tool
 from agents.exceptions import InputGuardrailTripwireTriggered
 from pydantic import BaseModel
@@ -46,10 +47,14 @@ tracer = HoneyHiveTracer.init(
     #verbose=True
 )
 
-# Initialize OpenInference instrumentor for OpenAI Agents SDK
-instrumentor = OpenAIAgentsInstrumentor()
-instrumentor.instrument(tracer_provider=tracer.provider)
+# Initialize OpenInference instrumentors for OpenAI Agents SDK and OpenAI
+agents_instrumentor = OpenAIAgentsInstrumentor()
+agents_instrumentor.instrument(tracer_provider=tracer.provider)
 print("✓ OpenAI Agents instrumentor initialized with HoneyHive tracer")
+
+openai_instrumentor = OpenAIInstrumentor()
+openai_instrumentor.instrument(tracer_provider=tracer.provider)
+print("✓ OpenAI instrumentor initialized with HoneyHive tracer")
 
 
 # ============================================================================
@@ -484,7 +489,8 @@ async def main():
     finally:
         # Cleanup
         print("\n📤 Cleaning up...")
-        instrumentor.uninstrument()
+        agents_instrumentor.uninstrument()
+        openai_instrumentor.uninstrument()
         print("✓ Cleanup completed")
 
 
