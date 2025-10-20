@@ -25,6 +25,15 @@ Current Version Highlights
 * **100% Test Coverage**: Added 48 unit tests + 3 integration tests with backend verification
 * **Documentation Updated**: Comprehensive updates to tutorials, how-to guides, and API reference with new examples
 
+**📚 NEW: AutoGen Integration Example**
+
+* **Two-Agent Conversations**: User proxy and assistant agent collaboration
+* **Group Chat**: Multiple specialized agents (writer, critic, planner)
+* **Sequential Chat**: State-based transitions between agents
+* **Nested Chat**: Complex task decomposition with agent hierarchies
+* **Code Execution**: Automatic Docker-based code execution
+* **Tool Registration**: Function calling with custom tools
+
 **📚 NEW: DSPy Integration Example**
 
 * **Signatures**: Declarative task definitions with input/output specifications

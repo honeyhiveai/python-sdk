@@ -29,6 +29,14 @@
   - Added required criteria field to Metric model test data
 
 ### Added
+- **📚 Examples: AutoGen Integration**
+  - New AutoGen (AG2) integration with OpenAI instrumentor
+  - Two-agent conversations with code execution
+  - Group chat with multiple specialized agents
+  - Sequential chat with state transitions
+  - Nested chat for complex task decomposition
+  - Tool/function registration and execution
+  - Automatic code execution in Docker containers
 - **📚 Examples: DSPy Integration**
   - New DSPy integration with OpenAI instrumentor
   - Basic question answering with signatures
