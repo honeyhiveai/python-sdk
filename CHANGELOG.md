@@ -12,6 +12,11 @@
   - Updated documentation: tutorials, how-to guides, and API reference with new interfaces and examples
 
 ### Changed
+- **🔧 API: Enhanced evaluate() Function Environment Variable Support**
+  - Made api_key parameter optional (reads from HONEYHIVE_API_KEY or HH_API_KEY env vars)
+  - Added server_url parameter with environment variable support (HONEYHIVE_SERVER_URL, HH_SERVER_URL, or HH_API_URL)
+  - Improved UX by supporting both HONEYHIVE_* and HH_* prefix variations
+  - Updated run_experiment() to accept optional api_key
 - **🔄 Examples: Updated Google ADK Integration with Async Support**
   - Migrated from GOOGLE_ADK_API_KEY to GOOGLE_API_KEY environment variable
   - Added async/await support to all test functions

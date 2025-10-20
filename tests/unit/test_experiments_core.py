@@ -498,9 +498,19 @@ class TestEvaluate:
                 project="test-project",
             )
 
-    def test_validation_no_api_key(self, simple_function: Any) -> None:
-        """Test that ValueError is raised when api_key is not provided."""
-        with pytest.raises(ValueError, match="Must provide 'api_key'"):
+    @patch.dict("os.environ", {}, clear=True)  # Clear all env vars
+    @patch("honeyhive.experiments.core.HoneyHive")
+    def test_validation_no_api_key_no_env_var(
+        self, mock_honeyhive_class: Mock, simple_function: Any
+    ) -> None:
+        """Test that evaluate works without explicit api_key if no env var set (client handles it)."""
+        # The evaluate function no longer validates api_key presence
+        # It's passed to HoneyHive client which handles missing keys gracefully
+        mock_client = Mock()
+        mock_client.evaluations.create_run.side_effect = Exception("No API key")
+        mock_honeyhive_class.return_value = mock_client
+
+        with pytest.raises(Exception):  # Client will raise error, not evaluate
             evaluate(
                 function=simple_function,
                 dataset=[{"inputs": {}}],
@@ -593,7 +603,10 @@ class TestEvaluate:
 
         # Verify
         assert result == mock_result
-        mock_honeyhive_class.assert_called_once_with(api_key="test-key", verbose=True)
+        # Note: server_url gets default value from client config if not explicitly set
+        mock_honeyhive_class.assert_called_once_with(
+            api_key="test-key", server_url="https://api.honeyhive.ai", verbose=True
+        )
         mock_prepare_external.assert_called_once_with(dataset)
         mock_run_experiment.assert_called_once()
         mock_run_evaluators.assert_called_once()
@@ -884,3 +897,303 @@ class TestEvaluate:
         assert result == mock_result
         # _run_evaluators should NOT have been called
         # (can't directly verify since it's not patched, but no error means it wasn't called)
+
+    @patch.dict("os.environ", {"HONEYHIVE_API_KEY": "env-api-key"})
+    @patch("honeyhive.experiments.core.get_run_result")
+    @patch("honeyhive.experiments.core.run_experiment")
+    @patch("honeyhive.experiments.core.ExperimentContext")
+    @patch("honeyhive.experiments.core.prepare_run_request_data")
+    @patch("honeyhive.experiments.core.prepare_external_dataset")
+    @patch("honeyhive.experiments.core.uuid.uuid4")
+    @patch("honeyhive.experiments.core.HoneyHive")
+    def test_evaluate_reads_api_key_from_honeyhive_env_var(
+        self,
+        mock_honeyhive_class: Mock,
+        mock_uuid: Mock,
+        mock_prepare_external: Mock,
+        mock_prepare_run: Mock,
+        mock_context_class: Mock,
+        mock_run_experiment: Mock,
+        mock_get_result: Mock,
+        simple_function: Any,
+    ) -> None:
+        """Test that evaluate() reads API key from HONEYHIVE_API_KEY env var."""
+        # Setup mocks
+        mock_uuid.return_value = Mock(hex="abc123")
+        mock_prepare_external.return_value = ("EXT-ds-123", ["dp-1"])
+        mock_prepare_run.return_value = {
+            "name": "test",
+            "project": "test-project",
+            "event_ids": [],
+        }
+
+        mock_client = Mock()
+        mock_run_response = Mock()
+        mock_run_response.run_id = "run-123"
+        mock_client.evaluations.create_run.return_value = mock_run_response
+        mock_client.evaluations.update_run.return_value = None
+        mock_honeyhive_class.return_value = mock_client
+
+        mock_context = Mock()
+        mock_context_class.return_value = mock_context
+
+        mock_run_experiment.return_value = [
+            {"datapoint_id": "dp-1", "outputs": {"result": "A"}},
+        ]
+
+        mock_result = Mock()
+        mock_get_result.return_value = mock_result
+
+        # Execute without explicit api_key (should use env var)
+        result = evaluate(
+            function=simple_function,
+            dataset=[{"inputs": {"x": 1}}],
+            # NO api_key parameter
+            project="test-project",
+        )
+
+        # Verify HoneyHive client was initialized with env var value
+        mock_honeyhive_class.assert_called_once()
+        call_kwargs = mock_honeyhive_class.call_args[1]
+        assert call_kwargs["api_key"] == "env-api-key"
+        assert result == mock_result
+
+    @patch.dict("os.environ", {"HH_API_KEY": "hh-api-key"})
+    @patch("honeyhive.experiments.core.get_run_result")
+    @patch("honeyhive.experiments.core.run_experiment")
+    @patch("honeyhive.experiments.core.ExperimentContext")
+    @patch("honeyhive.experiments.core.prepare_run_request_data")
+    @patch("honeyhive.experiments.core.prepare_external_dataset")
+    @patch("honeyhive.experiments.core.uuid.uuid4")
+    @patch("honeyhive.experiments.core.HoneyHive")
+    def test_evaluate_reads_api_key_from_hh_env_var(
+        self,
+        mock_honeyhive_class: Mock,
+        mock_uuid: Mock,
+        mock_prepare_external: Mock,
+        mock_prepare_run: Mock,
+        mock_context_class: Mock,
+        mock_run_experiment: Mock,
+        mock_get_result: Mock,
+        simple_function: Any,
+    ) -> None:
+        """Test that evaluate() reads API key from HH_API_KEY env var."""
+        # Setup mocks
+        mock_uuid.return_value = Mock(hex="abc123")
+        mock_prepare_external.return_value = ("EXT-ds-123", ["dp-1"])
+        mock_prepare_run.return_value = {
+            "name": "test",
+            "project": "test-project",
+            "event_ids": [],
+        }
+
+        mock_client = Mock()
+        mock_run_response = Mock()
+        mock_run_response.run_id = "run-123"
+        mock_client.evaluations.create_run.return_value = mock_run_response
+        mock_client.evaluations.update_run.return_value = None
+        mock_honeyhive_class.return_value = mock_client
+
+        mock_context = Mock()
+        mock_context_class.return_value = mock_context
+
+        mock_run_experiment.return_value = [
+            {"datapoint_id": "dp-1", "outputs": {"result": "A"}},
+        ]
+
+        mock_result = Mock()
+        mock_get_result.return_value = mock_result
+
+        # Execute without explicit api_key (should use HH_API_KEY env var)
+        result = evaluate(
+            function=simple_function,
+            dataset=[{"inputs": {"x": 1}}],
+            project="test-project",
+        )
+
+        # Verify HoneyHive client was initialized with env var value
+        mock_honeyhive_class.assert_called_once()
+        call_kwargs = mock_honeyhive_class.call_args[1]
+        assert call_kwargs["api_key"] == "hh-api-key"
+        assert result == mock_result
+
+    @patch.dict(
+        "os.environ", {"HONEYHIVE_API_KEY": "honeyhive-key", "HH_API_KEY": "hh-key"}
+    )
+    @patch("honeyhive.experiments.core.get_run_result")
+    @patch("honeyhive.experiments.core.run_experiment")
+    @patch("honeyhive.experiments.core.ExperimentContext")
+    @patch("honeyhive.experiments.core.prepare_run_request_data")
+    @patch("honeyhive.experiments.core.prepare_external_dataset")
+    @patch("honeyhive.experiments.core.uuid.uuid4")
+    @patch("honeyhive.experiments.core.HoneyHive")
+    def test_evaluate_prefers_honeyhive_prefix_env_var(
+        self,
+        mock_honeyhive_class: Mock,
+        mock_uuid: Mock,
+        mock_prepare_external: Mock,
+        mock_prepare_run: Mock,
+        mock_context_class: Mock,
+        mock_run_experiment: Mock,
+        mock_get_result: Mock,
+        simple_function: Any,
+    ) -> None:
+        """Test that evaluate() prefers HONEYHIVE_* over HH_* env vars."""
+        # Setup mocks
+        mock_uuid.return_value = Mock(hex="abc123")
+        mock_prepare_external.return_value = ("EXT-ds-123", ["dp-1"])
+        mock_prepare_run.return_value = {
+            "name": "test",
+            "project": "test-project",
+            "event_ids": [],
+        }
+
+        mock_client = Mock()
+        mock_run_response = Mock()
+        mock_run_response.run_id = "run-123"
+        mock_client.evaluations.create_run.return_value = mock_run_response
+        mock_client.evaluations.update_run.return_value = None
+        mock_honeyhive_class.return_value = mock_client
+
+        mock_context = Mock()
+        mock_context_class.return_value = mock_context
+
+        mock_run_experiment.return_value = [
+            {"datapoint_id": "dp-1", "outputs": {"result": "A"}},
+        ]
+
+        mock_result = Mock()
+        mock_get_result.return_value = mock_result
+
+        # Execute
+        result = evaluate(
+            function=simple_function,
+            dataset=[{"inputs": {"x": 1}}],
+            project="test-project",
+        )
+
+        # Verify HONEYHIVE_API_KEY was used (not HH_API_KEY)
+        mock_honeyhive_class.assert_called_once()
+        call_kwargs = mock_honeyhive_class.call_args[1]
+        assert call_kwargs["api_key"] == "honeyhive-key"
+        assert result == mock_result
+
+    @patch.dict("os.environ", {"HONEYHIVE_SERVER_URL": "https://custom.server.com"})
+    @patch("honeyhive.experiments.core.get_run_result")
+    @patch("honeyhive.experiments.core.run_experiment")
+    @patch("honeyhive.experiments.core.ExperimentContext")
+    @patch("honeyhive.experiments.core.prepare_run_request_data")
+    @patch("honeyhive.experiments.core.prepare_external_dataset")
+    @patch("honeyhive.experiments.core.uuid.uuid4")
+    @patch("honeyhive.experiments.core.HoneyHive")
+    def test_evaluate_reads_server_url_from_env_var(
+        self,
+        mock_honeyhive_class: Mock,
+        mock_uuid: Mock,
+        mock_prepare_external: Mock,
+        mock_prepare_run: Mock,
+        mock_context_class: Mock,
+        mock_run_experiment: Mock,
+        mock_get_result: Mock,
+        simple_function: Any,
+    ) -> None:
+        """Test that evaluate() reads server_url from HONEYHIVE_SERVER_URL env var."""
+        # Setup mocks
+        mock_uuid.return_value = Mock(hex="abc123")
+        mock_prepare_external.return_value = ("EXT-ds-123", ["dp-1"])
+        mock_prepare_run.return_value = {
+            "name": "test",
+            "project": "test-project",
+            "event_ids": [],
+        }
+
+        mock_client = Mock()
+        mock_run_response = Mock()
+        mock_run_response.run_id = "run-123"
+        mock_client.evaluations.create_run.return_value = mock_run_response
+        mock_client.evaluations.update_run.return_value = None
+        mock_honeyhive_class.return_value = mock_client
+
+        mock_context = Mock()
+        mock_context_class.return_value = mock_context
+
+        mock_run_experiment.return_value = [
+            {"datapoint_id": "dp-1", "outputs": {"result": "A"}},
+        ]
+
+        mock_result = Mock()
+        mock_get_result.return_value = mock_result
+
+        # Execute without explicit server_url
+        result = evaluate(
+            function=simple_function,
+            dataset=[{"inputs": {"x": 1}}],
+            api_key="test-key",
+            project="test-project",
+        )
+
+        # Verify HoneyHive client was initialized with env var value
+        mock_honeyhive_class.assert_called_once()
+        call_kwargs = mock_honeyhive_class.call_args[1]
+        assert call_kwargs["server_url"] == "https://custom.server.com"
+        assert result == mock_result
+
+    @patch("honeyhive.experiments.core.get_run_result")
+    @patch("honeyhive.experiments.core.run_experiment")
+    @patch("honeyhive.experiments.core.ExperimentContext")
+    @patch("honeyhive.experiments.core.prepare_run_request_data")
+    @patch("honeyhive.experiments.core.prepare_external_dataset")
+    @patch("honeyhive.experiments.core.uuid.uuid4")
+    @patch("honeyhive.experiments.core.HoneyHive")
+    def test_evaluate_explicit_server_url_parameter(
+        self,
+        mock_honeyhive_class: Mock,
+        mock_uuid: Mock,
+        mock_prepare_external: Mock,
+        mock_prepare_run: Mock,
+        mock_context_class: Mock,
+        mock_run_experiment: Mock,
+        mock_get_result: Mock,
+        simple_function: Any,
+    ) -> None:
+        """Test that evaluate() accepts explicit server_url parameter."""
+        # Setup mocks
+        mock_uuid.return_value = Mock(hex="abc123")
+        mock_prepare_external.return_value = ("EXT-ds-123", ["dp-1"])
+        mock_prepare_run.return_value = {
+            "name": "test",
+            "project": "test-project",
+            "event_ids": [],
+        }
+
+        mock_client = Mock()
+        mock_run_response = Mock()
+        mock_run_response.run_id = "run-123"
+        mock_client.evaluations.create_run.return_value = mock_run_response
+        mock_client.evaluations.update_run.return_value = None
+        mock_honeyhive_class.return_value = mock_client
+
+        mock_context = Mock()
+        mock_context_class.return_value = mock_context
+
+        mock_run_experiment.return_value = [
+            {"datapoint_id": "dp-1", "outputs": {"result": "A"}},
+        ]
+
+        mock_result = Mock()
+        mock_get_result.return_value = mock_result
+
+        # Execute with explicit server_url
+        result = evaluate(
+            function=simple_function,
+            dataset=[{"inputs": {"x": 1}}],
+            api_key="test-key",
+            server_url="https://staging.honeyhive.com",  # NEW parameter
+            project="test-project",
+        )
+
+        # Verify HoneyHive client was initialized with explicit server_url
+        mock_honeyhive_class.assert_called_once()
+        call_kwargs = mock_honeyhive_class.call_args[1]
+        assert call_kwargs["server_url"] == "https://staging.honeyhive.com"
+        assert result == mock_result

@@ -7,6 +7,7 @@ This module provides the core experiment execution functionality including:
 """
 
 import asyncio
+import os
 import uuid
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from typing import Any, Callable, Dict, List, Optional
@@ -124,7 +125,7 @@ def run_experiment(
     datapoint_ids: List[str],
     *,
     experiment_context: ExperimentContext,
-    api_key: str,
+    api_key: Optional[str] = None,
     max_workers: int = 10,
     verbose: bool = False,
 ) -> List[Dict[str, Any]]:
@@ -148,7 +149,7 @@ def run_experiment(
         dataset: List of datapoint dictionaries
         datapoint_ids: List of datapoint IDs (parallel to dataset)
         experiment_context: ExperimentContext with run metadata
-        api_key: HoneyHive API key for tracer
+        api_key: HoneyHive API key for tracer (or set HONEYHIVE_API_KEY env var)
         max_workers: ThreadPool size (default: 10)
         verbose: Enable verbose logging
 
@@ -578,6 +579,7 @@ def evaluate(  # pylint: disable=too-many-locals,too-many-branches
     dataset_id: Optional[str] = None,
     evaluators: Optional[List[Callable]] = None,
     api_key: Optional[str] = None,
+    server_url: Optional[str] = None,
     project: str = "default",
     name: Optional[str] = None,
     max_workers: int = 10,
@@ -599,7 +601,8 @@ def evaluate(  # pylint: disable=too-many-locals,too-many-branches
             dataset: External dataset (list of dicts with 'inputs' and 'ground_truth')
             dataset_id: HoneyHive dataset ID (alternative to external dataset)
             evaluators: List of evaluator functions (optional)
-            api_key: HoneyHive API key (or set HONEYHIVE_API_KEY env var)
+            api_key: HoneyHive API key (or set HONEYHIVE_API_KEY/HH_API_KEY env var)
+            server_url: HoneyHive server URL (or set HONEYHIVE_SERVER_URL/HH_SERVER_URL/HH_API_URL env var)
             project: HoneyHive project (or set HONEYHIVE_PROJECT env var)
             name: Experiment run name (auto-generated if not provided)
             max_workers: ThreadPool size for concurrent execution (default: 10)
@@ -653,13 +656,27 @@ def evaluate(  # pylint: disable=too-many-locals,too-many-branches
         raise ValueError("Must provide either 'dataset' or 'dataset_id'")
     if dataset is not None and dataset_id is not None:
         raise ValueError("Cannot provide both 'dataset' and 'dataset_id'")
-    if api_key is None:
-        raise ValueError("Must provide 'api_key' or set HONEYHIVE_API_KEY env var")
     if project is None:
         raise ValueError("Must provide 'project' or set HONEYHIVE_PROJECT env var")
 
-    # Initialize client
-    client = HoneyHive(api_key=api_key, verbose=verbose)
+    # Load from environment variables if not provided
+    # Support both HONEYHIVE_* and HH_* prefixes for convenience
+    # Note: HoneyHive client's config only reads HH_* prefix, so we check
+    # HONEYHIVE_* first for better UX, then pass explicitly to client
+    if api_key is None:
+        api_key = os.getenv("HONEYHIVE_API_KEY") or os.getenv("HH_API_KEY")
+
+    if server_url is None:
+        # Check multiple variations for maximum compatibility
+        server_url = (
+            os.getenv("HONEYHIVE_SERVER_URL")  # Most intuitive
+            or os.getenv("HH_SERVER_URL")  # Alternative shorthand
+            or os.getenv("HH_API_URL")  # Client config uses this
+        )
+
+    # Initialize client - passing explicit values ensures both HONEYHIVE_* and HH_*
+    # environment variables work (client's config only checks HH_* prefix)
+    client = HoneyHive(api_key=api_key, server_url=server_url, verbose=verbose)
 
     # Step 1: Prepare dataset
     if dataset is not None:

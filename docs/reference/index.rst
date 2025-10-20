@@ -37,6 +37,7 @@ Core Capabilities
 **Evaluation Framework**:
 
 - **@evaluate Decorator**: Automatic evaluation of function outputs with built-in and custom evaluators
+- **Environment Variable Support**: Optional ``api_key`` and ``server_url`` parameters with automatic fallback to environment variables (``HONEYHIVE_API_KEY``/``HH_API_KEY`` and ``HONEYHIVE_SERVER_URL``/``HH_SERVER_URL``/``HH_API_URL``)
 - **Batch Evaluation**: Evaluate multiple outputs simultaneously with threading support
 - **Async Evaluations**: Full async support for evaluation workflows
 - **Built-in Evaluators**: Accuracy, F1-score, length, quality score, and custom evaluators

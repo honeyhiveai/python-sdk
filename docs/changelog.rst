@@ -81,6 +81,13 @@ Current Version Highlights
 * **Resource Information**: Captures resource attributes and instrumentation info for complete observability
 * **JSON Formatting**: Outputs pretty-printed JSON for easy debugging and troubleshooting
 
+**🔧 CHANGED: Enhanced evaluate() Environment Variable Support**
+
+* **Optional API Key**: api_key parameter now optional, reads from environment variables
+* **Server URL Support**: Added server_url parameter with env var support
+* **Dual Prefix Support**: Accepts both HONEYHIVE_* and HH_* environment variable prefixes
+* **Better UX**: More flexible configuration without hardcoding credentials
+
 **🔄 CHANGED: Updated Google ADK Integration with Async Support**
 
 * **Modern API**: Updated to newer Google ADK API with LlmAgent, Runner, and InMemorySessionService
