@@ -29,6 +29,12 @@
   - Added required criteria field to Metric model test data
 
 ### Added
+- **🧪 Testing: Span Capture and Test Case Generation Utilities**
+  - New span capture utility for recording OpenTelemetry spans during integration runs
+  - Test case generator to convert captured spans into unit tests
+  - Guide for generating test cases for missing provider integrations
+  - Integrated span capture into AutoGen, Google ADK, and Semantic Kernel examples
+  - CAPTURE_SPANS environment variable to enable span recording
 - **📚 Examples: AutoGen Integration**
   - New AutoGen (AG2) integration with OpenAI instrumentor
   - Two-agent conversations with code execution

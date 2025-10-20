@@ -61,6 +61,7 @@ Core Capabilities
 
 **Development & Quality**:
 
+- **🆕 Span Capture Utilities**: Test case generation tools for capturing OpenTelemetry spans and converting them to unit tests
 - **🆕 Raw Span Data Dumping**: Comprehensive debugging with `_dump_raw_span_data()` method that captures all OpenTelemetry span properties (context, attributes, events, links, resource info) as formatted JSON
 - **🆕 Agent OS Enhanced MCP Server** (v0.1.0rc3): Modular architecture with workflow engine, phase gating, and file watcher for incremental RAG updates
 - **🆕 Single Source of Truth Versioning** (v0.1.0rc3): Consolidated version management from 5 locations to 1 with late-import pattern

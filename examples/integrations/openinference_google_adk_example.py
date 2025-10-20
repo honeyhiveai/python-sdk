@@ -48,6 +48,7 @@ async def main():
         from honeyhive import HoneyHiveTracer
         from honeyhive.tracer.instrumentation.decorators import trace
         from honeyhive.models import EventType
+        from capture_spans import setup_span_capture
 
         print("🚀 Google ADK + HoneyHive Integration Example")
         print("=" * 50)
@@ -66,6 +67,9 @@ async def main():
             source="google_adk_example"
         )
         print("✓ HoneyHive tracer initialized")
+        
+        # Setup span capture
+        span_processor = setup_span_capture("google_adk", tracer)
 
         # Initialize instrumentor separately with tracer_provider
         adk_instrumentor.instrument(tracer_provider=tracer.provider)
@@ -111,6 +115,8 @@ async def main():
 
         # 11. Clean up instrumentor
         print("\n🧹 Cleaning up...")
+        if span_processor:
+            span_processor.force_flush()
         adk_instrumentor.uninstrument()
         print("✓ Instrumentor cleaned up")
 

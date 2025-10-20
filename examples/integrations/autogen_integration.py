@@ -47,6 +47,7 @@ async def main():
         from openinference.instrumentation.openai import OpenAIInstrumentor
         from honeyhive import HoneyHiveTracer
         from honeyhive.tracer.instrumentation.decorators import trace
+        from capture_spans import setup_span_capture
 
         print("🚀 AutoGen + HoneyHive Integration Example")
         print("=" * 50)
@@ -66,6 +67,9 @@ async def main():
             verbose=True,
         )
         print("✓ HoneyHive tracer initialized")
+        
+        # Setup span capture
+        span_processor = setup_span_capture("autogen", tracer)
 
         # 3. Instrument OpenAI with HoneyHive tracer
         openai_instrumentor.instrument(tracer_provider=tracer.provider)
@@ -128,6 +132,10 @@ async def main():
         print("\n🧹 Cleaning up...")
         await model_client.close()
         openai_instrumentor.uninstrument()
+        # Cleanup span capture
+        if span_processor:
+            span_processor.force_flush()
+        
         tracer.force_flush()
         print("✓ Cleanup completed")
 

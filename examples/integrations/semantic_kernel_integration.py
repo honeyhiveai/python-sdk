@@ -28,6 +28,7 @@ from pathlib import Path
 from honeyhive import HoneyHiveTracer, trace
 from dotenv import load_dotenv
 from openinference.instrumentation.openai import OpenAIInstrumentor
+from capture_spans import setup_span_capture
 
 # Semantic Kernel imports
 from semantic_kernel.agents import ChatCompletionAgent, GroupChatOrchestration, RoundRobinGroupChatManager
@@ -49,6 +50,9 @@ tracer = HoneyHiveTracer.init(
     session_name=Path(__file__).stem,  # Use filename as session name
     test_mode=False,
 )
+
+# Setup span capture
+span_processor = setup_span_capture("semantic_kernel", tracer)
 
 # Initialize OpenAI instrumentor to capture OpenAI API calls
 # (Semantic Kernel uses OpenAI under the hood)
@@ -590,6 +594,8 @@ async def main():
     finally:
         # Cleanup
         print("\n📤 Cleaning up...")
+        if span_processor:
+            span_processor.force_flush()
         openai_instrumentor.uninstrument()
         print("✓ Cleanup completed")
 
