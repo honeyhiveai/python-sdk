@@ -211,7 +211,26 @@ python integrations/openinference_google_adk_example.py
 ## 📖 **Documentation**
 
 For detailed integration guides, see:
-- **[How-To Guides](../../docs/how-to/integrations/)** - Step-by-step integration instructions
+
+**LLM Provider Integrations:**
+- [OpenAI Integration](../../docs/how-to/integrations/openai.rst)
+- [Anthropic Integration](../../docs/how-to/integrations/anthropic.rst)
+- [Google AI Integration](../../docs/how-to/integrations/google-ai.rst)
+- [Google ADK Integration](../../docs/how-to/integrations/google-adk.rst)
+- [AWS Bedrock Integration](../../docs/how-to/integrations/bedrock.rst)
+- [Azure OpenAI Integration](../../docs/how-to/integrations/azure-openai.rst)
+- [MCP Integration](../../docs/how-to/integrations/mcp.rst)
+- [Multi-Provider Guide](../../docs/how-to/integrations/multi-provider.rst)
+
+**Agent Framework Integrations:**
+- [LangGraph Integration](../../docs/how-to/integrations/langgraph.rst) - State graphs, conditional routing
+- [DSPy Integration](../../docs/how-to/integrations/dspy.rst) - Signatures, modules, optimizers
+- [AutoGen Integration](../../docs/how-to/integrations/autogen.rst) - Multi-agent conversations
+- [Semantic Kernel Integration](../../docs/how-to/integrations/semantic-kernel.rst) - Plugins, agents, planning
+- [Pydantic AI Integration](../../docs/how-to/integrations/pydantic-ai.rst) - Type-safe agents
+
+**Other Resources:**
+- **[How-To Guides](../../docs/how-to/integrations/)** - All integration guides
 - **[Compatibility Matrix](../../docs/explanation/)** - Full compatibility and version support
 - **[BYOI Architecture](../../docs/explanation/architecture/)** - Technical architecture details
 

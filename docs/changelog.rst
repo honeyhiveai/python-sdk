@@ -17,6 +17,19 @@ Latest Release Notes
 Current Version Highlights
 ~~~~~~~~~~~~~~~~~~~~~~~~~~
 
+**📋 ADDED: Integration Examples Requirements File**
+
+* **Comprehensive Dependencies**: Added requirements.txt with all packages for integration examples
+* **Organized by Category**: Core, LLM providers, OpenInference instrumentors, Traceloop instrumentors, and agent frameworks
+* **Installation Commands**: Per-integration pip install commands for easy setup
+* **Environment Variables**: Documentation of required credentials for each provider
+
+**🔧 FIXED: Integration Examples Bug Fixes**
+
+* **Google ADK**: Fixed LoopAgent parameter name (sub_agent → agent), disabled parallel workflow test
+* **Strands**: Removed redundant global TracerProvider setting
+* **Documentation**: Enhanced README with expanded links to all integration guides organized by category
+
 **🔧 FIXED: enrich_span() Backwards Compatibility Restored**
 
 * **Original Interface Restored**: Fixed `enrich_span()` to support main branch's reserved namespaces (`metadata`, `metrics`, `feedback`, `inputs`, `outputs`, `config`, `error`, `event_id`)

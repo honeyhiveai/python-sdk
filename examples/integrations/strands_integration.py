@@ -46,12 +46,6 @@ tracer = HoneyHiveTracer.init(
     test_mode=False,
 )
 
-# CRITICAL: Set as global TracerProvider before creating agents
-# This allows Strands to automatically use HoneyHive's tracing
-if tracer.provider:
-    trace_api.set_tracer_provider(tracer.provider)
-
-
 class SummarizerResponse(BaseModel):
     """Response model for structured output."""
 

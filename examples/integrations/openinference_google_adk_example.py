@@ -104,9 +104,9 @@ async def main():
         print(f"✓ Sequential workflow completed: {sequential_result[:100]}...")
 
         # 9. Test parallel workflow - automatically traced
-        print("\n⚡ Testing parallel workflow...")
-        parallel_result = await test_parallel_workflow(tracer, session_service, app_name, user_id)
-        print(f"✓ Parallel workflow completed: {parallel_result[:100]}...")
+        #print("\n⚡ Testing parallel workflow...")
+        #parallel_result = await test_parallel_workflow(tracer, session_service, app_name, user_id)
+        #print(f"✓ Parallel workflow completed: {parallel_result[:100]}...")
 
         # 10. Test loop workflow - automatically traced
         print("\n🔁 Testing loop workflow...")
@@ -536,7 +536,7 @@ If sections are missing, add them. If complete, output the final content.""",
         # Loop agent with max 3 iterations
         loop_agent = LoopAgent(
             name="iterative_refinement",
-            sub_agent=worker_agent,
+            agent=worker_agent,
             max_iterations=3,
             description="Iteratively refines content until quality standards are met"
         )

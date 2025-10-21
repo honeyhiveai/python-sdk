@@ -1,6 +1,18 @@
 ## [Unreleased]
 
+### Added
+- **📋 Examples: Integration Examples Requirements File**
+  - Added comprehensive requirements.txt for all integration examples
+  - Organized dependencies by category: core, LLM providers, instrumentors, agent frameworks
+  - Included installation commands for each specific integration
+  - Documentation of required environment variables per provider
+
 ### Fixed
+- **🔧 Examples: Google ADK Integration Bug Fixes**
+  - Fixed LoopAgent parameter name from `sub_agent` to `agent`
+  - Temporarily disabled parallel workflow test pending API updates
+- **🔧 Examples: Strands Integration Cleanup**
+  - Removed redundant global TracerProvider setting (already handled by HoneyHiveTracer.init)
 - **🔧 Tracing: Restored enrich_span() Backwards Compatibility**
   - Fixed `enrich_span()` to support original main branch interface with reserved namespaces (`metadata`, `metrics`, `feedback`, `inputs`, `outputs`, `config`, `error`, `event_id`)
   - Added support for new invocation patterns: simple dictionary (routes to metadata), arbitrary kwargs (routes to metadata), and context manager pattern
@@ -12,6 +24,11 @@
   - Updated documentation: tutorials, how-to guides, and API reference with new interfaces and examples
 
 ### Changed
+- **📚 Documentation: Enhanced Integration Examples README**
+  - Expanded documentation section with direct links to all integration guides
+  - Organized links by category: LLM providers and agent frameworks
+  - Added quick-reference links for OpenAI, Anthropic, Google AI, AWS Bedrock, Azure OpenAI, MCP
+  - Added framework links for LangGraph, DSPy, AutoGen, Semantic Kernel, Pydantic AI
 - **🔧 API: Enhanced evaluate() Function Environment Variable Support**
   - Made api_key parameter optional (reads from HONEYHIVE_API_KEY or HH_API_KEY env vars)
   - Added server_url parameter with environment variable support (HONEYHIVE_SERVER_URL, HH_SERVER_URL, or HH_API_URL)
