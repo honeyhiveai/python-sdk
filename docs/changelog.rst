@@ -24,6 +24,21 @@ Current Version Highlights
 * **Installation Commands**: Per-integration pip install commands for easy setup
 * **Environment Variables**: Documentation of required credentials for each provider
 
+**🔧 FIXED: enrich_session() Backwards Compatibility Restored**
+
+* **Legacy Parameters**: Restored `session_id` as optional positional parameter and `user_properties` support
+* **Automatic Conversion**: User properties automatically merged into metadata with `user_properties.` prefix
+* **Comprehensive Documentation**: Added 685-line documentation guide with 15+ examples and 5 common patterns
+* **API Reference**: Complete function signature documentation with backwards compatibility examples
+* **Regression Tests**: Added tests for legacy positional arguments and user_properties handling
+
+**🔧 FIXED: enrich_span() Dynamic Tracer Discovery**
+
+* **Automatic Resolution**: Added tracer discovery when not explicitly provided via `tracer_instance`
+* **Priority-Based**: Explicit parameter → baggage context → global default tracer
+* **Multi-Instance Safe**: Ensures correct tracer in multi-tracer applications
+* **Regression Tests**: Added tests for auto-discovery, explicit tracer priority, and graceful degradation
+
 **🔧 FIXED: Integration Examples Bug Fixes**
 
 * **Google ADK**: Fixed LoopAgent parameter name (sub_agent → agent), disabled parallel workflow test

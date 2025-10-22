@@ -357,7 +357,10 @@ class TestEnrichSessionDynamically:
             mock_tracer, "session-456", metadata, honeyhive_tracer
         )
 
-        mock_tracer.enrich_session.assert_called_once_with("session-456", metadata)
+        # Check that it was called with keyword arguments for backwards compatibility
+        mock_tracer.enrich_session.assert_called_once_with(
+            session_id="session-456", metadata=metadata
+        )
 
     @patch("honeyhive.tracer.integration.compatibility._enrich_via_baggage_dynamically")
     @patch("honeyhive.tracer.integration.compatibility.safe_log")
@@ -458,7 +461,10 @@ class TestEnrichSessionDynamically:
 
         _enrich_session_dynamically(mock_tracer, "session-456", None, honeyhive_tracer)
 
-        mock_tracer.enrich_session.assert_called_once_with("session-456", {})
+        # Check that it was called with keyword arguments for backwards compatibility
+        mock_tracer.enrich_session.assert_called_once_with(
+            session_id="session-456", metadata={}
+        )
 
     @patch("honeyhive.tracer.integration.compatibility.safe_log")
     def test_enrich_session_direct_method_exception(

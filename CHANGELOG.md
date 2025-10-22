@@ -8,6 +8,18 @@
   - Documentation of required environment variables per provider
 
 ### Fixed
+- **🔧 Tracing: Restored enrich_session() Backwards Compatibility**
+  - Fixed breaking signature changes in `enrich_session()` that removed `session_id` and `user_properties` parameters
+  - Restored `session_id` as optional positional parameter for backwards compatibility
+  - Added automatic `user_properties` to metadata conversion with `user_properties.` prefix
+  - Fixed tracer instance method to use keyword arguments for compatibility layer
+  - Added comprehensive 685-line documentation guide for session enrichment
+  - Added regression tests for legacy parameter patterns
+- **🔧 Tracing: Enhanced enrich_span() with Dynamic Tracer Discovery**
+  - Implemented automatic tracer discovery in `enrich_span()` using registry when tracer not explicitly provided
+  - Added priority-based tracer resolution: explicit parameter → baggage context → global default
+  - Ensures multi-instance safety and context awareness for span enrichment
+  - Added regression tests for tracer discovery mechanism
 - **🔧 Examples: Google ADK Integration Bug Fixes**
   - Fixed LoopAgent parameter name from `sub_agent` to `agent`
   - Temporarily disabled parallel workflow test pending API updates

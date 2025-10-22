@@ -228,7 +228,7 @@ Tracing Features
    * - Multi-session support
      - Multiple concurrent sessions per tracer instance
    * - Session enrichment
-     - Backend persistence via ``enrich_session()``
+     - Backend persistence via ``enrich_session()`` with full backwards compatibility. Supports legacy ``session_id`` positional parameter and ``user_properties`` auto-conversion. See :doc:`/how-to/advanced-tracing/session-enrichment`
 
 **Multi-Instance Architecture**:
 

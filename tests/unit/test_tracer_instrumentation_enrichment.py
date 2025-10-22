@@ -1094,3 +1094,92 @@ class TestContextManagerPatterns:  # pylint: disable=too-few-public-methods
         call_kwargs = mock_core.call_args[1]
         assert call_kwargs["metadata"] == metadata
         assert call_kwargs["metrics"] == metrics
+
+
+class TestTracerDiscovery:
+    """Test automatic tracer discovery for enrich_span."""
+
+    @patch("honeyhive.tracer.instrumentation.enrichment.discover_tracer")
+    @patch("honeyhive.tracer.instrumentation.enrichment.trace.get_current_span")
+    def test_enrich_span_discovers_default_tracer(
+        self, mock_get_span: Any, mock_discover: Any
+    ) -> None:
+        """Test that enrich_span discovers default tracer when not provided."""
+        # Setup mocks
+        mock_span = Mock()
+        mock_span.set_attribute = Mock()
+        mock_span.is_recording = Mock(return_value=True)
+        mock_get_span.return_value = mock_span
+
+        mock_tracer = Mock()
+        mock_discover.return_value = mock_tracer
+
+        # Call enrich_span WITHOUT tracer parameter
+        result = enrich_span_unified(
+            metadata={"test_key": "test_value"},
+            caller="direct_call",
+        )
+
+        # Verify tracer discovery was called
+        mock_discover.assert_called_once()
+        call_kwargs = mock_discover.call_args[1]
+        assert call_kwargs["explicit_tracer"] is None
+        assert call_kwargs["ctx"] is not None
+
+        # Verify enrichment succeeded
+        assert result is True
+
+    @patch("honeyhive.tracer.instrumentation.enrichment.discover_tracer")
+    @patch("honeyhive.tracer.instrumentation.enrichment.trace.get_current_span")
+    def test_enrich_span_uses_explicit_tracer_over_discovery(
+        self, mock_get_span: Any, mock_discover: Any, honeyhive_tracer: Any
+    ) -> None:
+        """Test that explicit tracer parameter takes priority over discovery."""
+        # Setup mocks
+        mock_span = Mock()
+        mock_span.set_attribute = Mock()
+        mock_span.is_recording = Mock(return_value=True)
+        mock_get_span.return_value = mock_span
+
+        # Call enrich_span WITH explicit tracer parameter
+        result = enrich_span_unified(
+            metadata={"test_key": "test_value"},
+            tracer_instance=honeyhive_tracer,
+            caller="direct_call",
+        )
+
+        # Verify tracer discovery was NOT called (explicit tracer used)
+        mock_discover.assert_not_called()
+
+        # Verify enrichment succeeded
+        assert result is True
+
+    @patch("honeyhive.tracer.instrumentation.enrichment.discover_tracer")
+    @patch("honeyhive.tracer.instrumentation.enrichment.trace.get_current_span")
+    @patch("honeyhive.tracer.instrumentation.enrichment.safe_log")
+    def test_enrich_span_graceful_degradation_on_discovery_failure(
+        self, mock_log: Any, mock_get_span: Any, mock_discover: Any
+    ) -> None:
+        """Test graceful degradation when tracer discovery fails."""
+        # Setup mocks
+        mock_span = Mock()
+        mock_span.set_attribute = Mock()
+        mock_span.is_recording = Mock(return_value=True)
+        mock_get_span.return_value = mock_span
+
+        # Make discovery raise an exception
+        mock_discover.side_effect = Exception("Discovery failed")
+
+        # Call should not raise exception
+        result = enrich_span_unified(
+            metadata={"test_key": "test_value"},
+            caller="direct_call",
+        )
+
+        # Verify error was logged
+        assert any(
+            "Failed to discover tracer" in str(call) for call in mock_log.call_args_list
+        )
+
+        # Verify enrichment still succeeded (graceful degradation)
+        assert result is True

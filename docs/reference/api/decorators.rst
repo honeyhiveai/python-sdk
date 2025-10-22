@@ -896,6 +896,211 @@ The function supports four different invocation patterns that can be mixed:
        # Process the item
        return {"success": True, "processed_item": item}
 
+enrich_session()
+~~~~~~~~~~~~~~~~
+
+.. autofunction:: enrich_session
+
+Add metadata, metrics, and context to entire sessions (collections of related spans) with backend persistence.
+
+**Function Signature:**
+
+.. py:function:: enrich_session(session_id=None, *, metadata=None, inputs=None, outputs=None, config=None, feedback=None, metrics=None, user_properties=None, **kwargs)
+   :no-index:
+
+   Add metadata and metrics to a session with backend persistence.
+   
+   **Parameters:**
+   
+   :param session_id: Explicit session ID to enrich. If not provided, uses the active session from context.
+   :type session_id: Optional[str]
+   
+   :param metadata: Business context data (user IDs, features, session info).
+   :type metadata: Optional[Dict[str, Any]]
+   
+   :param inputs: Input data for the session (e.g., initial query, configuration).
+   :type inputs: Optional[Dict[str, Any]]
+   
+   :param outputs: Output data from the session (e.g., final response, results).
+   :type outputs: Optional[Dict[str, Any]]
+   
+   :param config: Configuration parameters for the session (model settings, hyperparameters).
+   :type config: Optional[Dict[str, Any]]
+   
+   :param feedback: User or system feedback for the session (ratings, quality scores).
+   :type feedback: Optional[Dict[str, Any]]
+   
+   :param metrics: Numeric measurements for the session (latency, cost, token counts).
+   :type metrics: Optional[Dict[str, Any]]
+   
+   :param user_properties: Legacy parameter for user-specific properties. Automatically merged into metadata with ``user_properties.`` prefix for backwards compatibility.
+   :type user_properties: Optional[Dict[str, Any]]
+   
+   :param kwargs: Additional keyword arguments (passed through for extensibility).
+   :type kwargs: Any
+   
+   **Returns:**
+   
+   :rtype: None
+   :returns: None (updates session in backend via API call)
+
+**Key Differences from enrich_span:**
+
+1. **Backend Persistence**: Makes API calls to persist data (expect ~50-200ms per call)
+2. **Session Scope**: Affects the entire session, not just the current span
+3. **Complex Data**: Supports nested dictionaries and lists
+4. **Explicit Session ID**: Can target any session by ID, not just the active one
+
+**Basic Usage:**
+
+.. code-block:: python
+
+   from honeyhive import HoneyHiveTracer, enrich_session
+   import openai
+   
+   # Initialize tracer (creates a session automatically)
+   tracer = HoneyHiveTracer.init(
+       project="my-app",
+       session_name="user-123-chat"
+   )
+   
+   # Enrich the active session
+   enrich_session(
+       metadata={
+           "user_id": "user_123",
+           "subscription_tier": "premium",
+           "feature": "chat_assistant"
+       },
+       metrics={
+           "total_tokens": 1500,
+           "total_cost": 0.045
+       }
+   )
+   
+   # All subsequent traces in this session will be associated with this metadata
+   client = openai.OpenAI()
+   response = client.chat.completions.create(
+       model="gpt-3.5-turbo",
+       messages=[{"role": "user", "content": "Hello!"}]
+   )
+
+**Enrich Specific Session:**
+
+.. code-block:: python
+
+   from honeyhive import enrich_session
+   
+   # Target a specific session by ID
+   enrich_session(
+       session_id="sess_abc123xyz",
+       metadata={
+           "experiment": "variant_b",
+           "completed": True
+       },
+       feedback={
+           "user_rating": 5,
+           "helpful": True
+       }
+   )
+
+**Backwards Compatible Signatures:**
+
+.. code-block:: python
+
+   # Legacy: positional session_id (still supported)
+   enrich_session(
+       "sess_abc123",  # session_id as first positional arg
+       metadata={"user_id": "user_456"}
+   )
+   
+   # Legacy: user_properties parameter (still supported)
+   enrich_session(
+       session_id="sess_abc123",
+       user_properties={
+           "tier": "premium",
+           "region": "us-east"
+       }
+   )
+   # Result: user_properties automatically merged into metadata with prefix:
+   # {"metadata": {"user_properties.tier": "premium", "user_properties.region": "us-east"}}
+
+**Session Lifecycle Management:**
+
+.. code-block:: python
+
+   from honeyhive import HoneyHiveTracer, enrich_session
+   import openai
+   from datetime import datetime
+   
+   def managed_workflow(user_id: str, task: str):
+       """Enrich session across lifecycle stages."""
+       
+       tracer = HoneyHiveTracer.init(
+           project="workflows",
+           session_name=f"{task}-{user_id}"
+       )
+       
+       # Start: Add initial metadata
+       enrich_session(
+           metadata={
+               "user_id": user_id,
+               "task": task,
+               "status": "started",
+               "started_at": datetime.now().isoformat()
+           }
+       )
+       
+       try:
+           # In Progress: Update status
+           enrich_session(
+               metadata={"status": "in_progress"}
+           )
+           
+           # Do work
+           client = openai.OpenAI()
+           response = client.chat.completions.create(
+               model="gpt-3.5-turbo",
+               messages=[{"role": "user", "content": f"Help with: {task}"}]
+           )
+           
+           # Success: Add final metadata
+           enrich_session(
+               metadata={
+                   "status": "completed",
+                   "completed_at": datetime.now().isoformat()
+               },
+               outputs={
+                   "result": response.choices[0].message.content
+               }
+           )
+           
+           return response.choices[0].message.content
+           
+       except Exception as e:
+           # Error: Add error metadata
+           enrich_session(
+               metadata={
+                   "status": "failed",
+                   "error_type": type(e).__name__
+               }
+           )
+           raise
+
+**Best Practices:**
+
+- Enrich at key lifecycle points (start, progress, completion)
+- Use consistent naming conventions for metadata keys
+- Add business-relevant context (user IDs, feature flags, experiments)
+- Include performance metrics (cost, latency, token counts)
+- Don't include sensitive data (passwords, API keys, PII)
+- Don't call excessively (it makes API calls)
+
+**See Also:**
+
+- :doc:`/how-to/advanced-tracing/session-enrichment` - Comprehensive session enrichment guide
+- :doc:`/how-to/advanced-tracing/span-enrichment` - Span enrichment patterns
+- :doc:`/how-to/advanced-tracing/advanced-patterns` - Advanced session and tracing patterns
+
 get_logger()
 ~~~~~~~~~~~~
 

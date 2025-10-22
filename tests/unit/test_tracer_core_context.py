@@ -386,6 +386,50 @@ class TestEnrichSession:
         assert call_args[1]["custom_field"] == "custom_value"
         assert call_args[1]["another_field"] == 42
 
+    def test_enrich_session_backwards_compatible_with_explicit_session_id(
+        self, context_mixin: MockTracerContextMixin, mock_session_api: Mock
+    ) -> None:
+        """Test enrich_session with explicit session_id (backwards compat)."""
+        # Arrange
+        context_mixin.session_api = mock_session_api
+        context_mixin._session_id = "default-session-123"
+
+        with patch("honeyhive.tracer.core.context.safe_log"):
+            # Act - Old pattern: pass explicit session_id
+            context_mixin.enrich_session(
+                session_id="explicit-session-456",
+                metadata={"meta_key": "meta_value"},
+            )
+
+        # Assert - Should use explicit session_id, not default
+        mock_session_api.update_session.assert_called_once()
+        call_args = mock_session_api.update_session.call_args
+        assert call_args[1]["session_id"] == "explicit-session-456"
+        assert call_args[1]["metadata"] == {"meta_key": "meta_value"}
+
+    def test_enrich_session_backwards_compatible_with_user_properties(
+        self, context_mixin: MockTracerContextMixin, mock_session_api: Mock
+    ) -> None:
+        """Test session enrichment with user_properties for backwards compatibility."""
+        # Arrange
+        context_mixin.session_api = mock_session_api
+        context_mixin._session_id = "test-session-123"
+
+        with patch("honeyhive.tracer.core.context.safe_log"):
+            # Act - Old pattern: pass user_properties
+            context_mixin.enrich_session(
+                user_properties={"user_id": "123", "role": "admin"},
+            )
+
+        # Assert - user_properties should be merged into metadata
+        mock_session_api.update_session.assert_called_once()
+        call_args = mock_session_api.update_session.call_args
+        assert call_args[1]["session_id"] == "test-session-123"
+        # user_properties should be merged into metadata with prefix
+        assert "metadata" in call_args[1]
+        assert call_args[1]["metadata"]["user_properties.user_id"] == "123"
+        assert call_args[1]["metadata"]["user_properties.role"] == "admin"
+
 
 class TestSessionStart:
     """Test suite for session_start method."""

@@ -113,13 +113,14 @@ class TracerContextMixin(TracerContextInterface):
     # for comprehensive session data (inputs, outputs, metadata, config, etc.).
     def enrich_session(
         self,
-        *,
+        session_id: Optional[str] = None,
+        metadata: Optional[Dict[str, Any]] = None,
         inputs: Optional[Dict[str, Any]] = None,
         outputs: Optional[Dict[str, Any]] = None,
-        metadata: Optional[Dict[str, Any]] = None,
         config: Optional[Dict[str, Any]] = None,
         feedback: Optional[Dict[str, Any]] = None,
         metrics: Optional[Dict[str, Any]] = None,
+        user_properties: Optional[Dict[str, Any]] = None,
         **kwargs: Any,
     ) -> None:
         """Enrich current session with dynamic metadata management.
@@ -127,19 +128,37 @@ class TracerContextMixin(TracerContextInterface):
         This method uses dynamic logic to update session metadata with
         flexible parameter handling and automatic session detection.
 
+        **Backwards Compatibility:**
+        This method maintains backwards compatibility with the old signature:
+        - Old: `enrich_session(session_id, metadata, feedback, metrics, ...)`
+        - New: `enrich_session(session_id=None, metadata=None, inputs=None, ...)`
+
         Args:
+            session_id: Optional explicit session ID to enrich
+                        (for backwards compatibility).
+                        If not provided, uses tracer's current session ID.
+            metadata: Additional metadata
             inputs: Session input data
             outputs: Session output data
-            metadata: Additional metadata
             config: Configuration data
             feedback: Feedback data
             metrics: Metrics data
+            user_properties: User properties (backwards compatibility,
+                             merged into metadata)
             **kwargs: Additional dynamic parameters
         """
         if not self._can_enrich_session_dynamically():
             return
 
         try:
+            # Handle user_properties for backwards compatibility (merge into metadata)
+            if user_properties:
+                if metadata is None:
+                    metadata = {}
+                # Merge user_properties into metadata with user_properties prefix
+                for key, value in user_properties.items():
+                    metadata[f"user_properties.{key}"] = value
+
             # Build session update parameters dynamically
             update_params = self._build_session_update_params_dynamically(
                 inputs=inputs,
@@ -151,8 +170,13 @@ class TracerContextMixin(TracerContextInterface):
                 **kwargs,
             )
 
-            # Get target session ID dynamically
-            target_session_id = self._get_session_id_for_enrichment_dynamically()
+            # Get target session ID - use explicit session_id if provided
+            # (backwards compat). Otherwise fall back to dynamic detection
+            target_session_id: Optional[str]
+            if session_id:
+                target_session_id = session_id
+            else:
+                target_session_id = self._get_session_id_for_enrichment_dynamically()
 
             if target_session_id and update_params:
                 # Update session via API

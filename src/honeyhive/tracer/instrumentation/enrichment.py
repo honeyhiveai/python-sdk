@@ -14,9 +14,10 @@ from contextlib import _GeneratorContextManager, contextmanager
 from typing import Any, Dict, Iterator, Optional, Union
 
 # Third-party imports
-from opentelemetry import trace
+from opentelemetry import context, trace
 
 from ...utils.logger import safe_log
+from ..registry import discover_tracer
 
 # Local imports
 from .span_utils import _set_span_attributes
@@ -386,6 +387,11 @@ def enrich_span_unified(
     **Backwards Compatibility:**
     Supports all main branch reserved parameters (metadata, metrics, etc.)
 
+    **Tracer Discovery:**
+    If no tracer_instance is provided, automatically discovers tracer using:
+    1. Baggage-discovered tracer (context-aware)
+    2. Global default tracer (fallback)
+
     :param attributes: Simple dict that routes to metadata namespace
     :type attributes: Optional[Dict[str, Any]]
     :param metadata: Metadata namespace
@@ -423,6 +429,20 @@ def enrich_span_unified(
         # Direct call pattern - returns bool
         enrich_span_unified(attrs, tracer, caller="direct_call")
     """
+    # Discover tracer if not provided (same pattern as trace decorator)
+    if tracer_instance is None:
+        try:
+            current_ctx = context.get_current()
+            tracer_instance = discover_tracer(explicit_tracer=None, ctx=current_ctx)
+        except Exception as e:
+            # Graceful degradation - log but continue
+            safe_log(
+                None,
+                "debug",
+                f"Failed to discover tracer: {e}",
+                honeyhive_data={"error_type": type(e).__name__},
+            )
+
     safe_log(
         tracer_instance,
         "debug",

@@ -180,17 +180,19 @@ def _enrich_session_dynamically(
     """Dynamically enrich session using available tracer methods.
 
     Args:
-        tracer: Tracer instance to use
+        _tracer: Tracer instance to use
         session_id: Session ID to enrich
         metadata: Metadata to add
+        tracer_instance: Optional tracer instance for logging
     """
     if metadata is None:
         metadata = {}
 
-    # Try direct method first
+    # Try direct method first with backwards compatible signature
     try:
         if hasattr(_tracer, "enrich_session"):
-            _tracer.enrich_session(session_id, metadata)
+            # Call with session_id and metadata parameters for backwards compatibility
+            _tracer.enrich_session(session_id=session_id, metadata=metadata)
             return
     except Exception as e:
         safe_log(
