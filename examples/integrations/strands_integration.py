@@ -30,6 +30,7 @@ from opentelemetry import trace as trace_api
 from pydantic import BaseModel
 from strands import Agent, tool
 from strands.models import BedrockModel
+from strands.multiagent import GraphBuilder, Swarm
 
 from honeyhive import HoneyHiveTracer
 from honeyhive.tracer.instrumentation.decorators import trace
@@ -229,6 +230,212 @@ def test_summarization_simple():
     print(f"✅ Summary: {result}")
 
 
+@trace(event_type="chain", event_name="test_swarm_collaboration", tracer=tracer)
+def test_swarm_collaboration():
+    """Test 7: Swarm multi-agent collaboration."""
+    print("\n" + "=" * 60)
+    print("Test 7: Swarm Multi-Agent Collaboration")
+    print("=" * 60)
+
+    # Create specialized agents with distinct roles
+    researcher = Agent(
+        name="researcher",
+        model=get_bedrock_model(),
+        system_prompt=(
+            "You are a research specialist. Your job is to gather information "
+            "and analyze requirements. When you've completed your research, "
+            "hand off to the coder to implement the solution."
+        ),
+    )
+
+    coder = Agent(
+        name="coder",
+        model=get_bedrock_model(),
+        tools=[calculator],
+        system_prompt=(
+            "You are a coding specialist. You implement solutions based on "
+            "requirements. Use the calculator tool when needed for math operations. "
+            "When done coding, hand off to the reviewer for code review."
+        ),
+    )
+
+    reviewer = Agent(
+        name="reviewer",
+        model=get_bedrock_model(),
+        system_prompt=(
+            "You are a code review specialist. Review the implementation for "
+            "correctness, efficiency, and best practices. Provide a final summary "
+            "of the solution and its quality."
+        ),
+    )
+
+    # Create a swarm with these agents
+    swarm = Swarm(
+        [researcher, coder, reviewer],
+        entry_point=researcher,  # Start with the researcher
+        max_handoffs=10,
+        max_iterations=7,
+        execution_timeout=60.0,  # 5 minutes
+        node_timeout=30.0,  # 2 minutes per agent
+    )
+
+    # Execute the swarm on a task
+    task = "Calculate the compound interest for $1000 principal, 5% annual rate, over 3 years, compounded annually. Use the formula: A = P(1 + r)^t"
+    
+    print(f"\n📋 Task: {task}")
+    print("\n🤝 Swarm executing...")
+    
+    result = swarm(task)
+
+    # Display results
+    print(f"\n✅ Swarm Status: {result.status}")
+    print(f"📊 Total Iterations: {result.execution_count}")
+    print(f"⏱️  Execution Time: {result.execution_time}ms")
+    
+    # Show agent collaboration flow
+    print(f"\n👥 Agent Collaboration Flow:")
+    for i, node in enumerate(result.node_history, 1):
+        print(f"   {i}. {node.node_id}")
+    
+    # Display final result
+    if result.node_history:
+        final_agent = result.node_history[-1].node_id
+        print(f"\n💬 Final Result from {final_agent}:")
+        final_result = result.results.get(final_agent)
+        if final_result and hasattr(final_result, 'result'):
+            print(f"   {final_result.result}")
+    
+    print("\n📊 Expected in HoneyHive:")
+    print("   - Span: swarm invocation")
+    print("   - Span: invoke_agent researcher (initial agent)")
+    print("   - Span: invoke_agent coder (after handoff)")
+    print("   - Span: execute_tool calculator (during coding)")
+    print("   - Span: invoke_agent reviewer (final review)")
+    print("   - Attributes: agent names, handoff messages, execution flow")
+    print("   - Token usage and latency metrics for each agent")
+
+
+@trace(event_type="chain", event_name="test_graph_workflow", tracer=tracer)
+def test_graph_workflow():
+    """Test 8: Graph-based multi-agent workflow with parallel processing."""
+    print("\n" + "=" * 60)
+    print("Test 8: Graph Multi-Agent Workflow")
+    print("=" * 60)
+
+    # Create specialized agents for a content creation workflow
+    researcher = Agent(
+        name="researcher",
+        model=get_bedrock_model(),
+        system_prompt=(
+            "You are a research specialist. Gather information and key facts "
+            "about the given topic. Provide concise, factual information."
+        ),
+    )
+
+    analyst = Agent(
+        name="analyst",
+        model=get_bedrock_model(),
+        system_prompt=(
+            "You are a data analysis specialist. Analyze the research findings "
+            "and identify trends, patterns, and insights."
+        ),
+    )
+
+    fact_checker = Agent(
+        name="fact_checker",
+        model=get_bedrock_model(),
+        system_prompt=(
+            "You are a fact-checking specialist. Verify the accuracy of the "
+            "research and ensure all claims are well-founded."
+        ),
+    )
+
+    report_writer = Agent(
+        name="report_writer",
+        model=get_bedrock_model(),
+        system_prompt=(
+            "You are a report writing specialist. Synthesize all inputs from "
+            "research, analysis, and fact-checking into a cohesive, well-structured "
+            "final report."
+        ),
+    )
+
+    # Build the graph with parallel processing topology
+    print("\n🔨 Building graph topology:")
+    print("   Research → Analysis ↘")
+    print("   Research → Fact Check → Report")
+    print("   Analysis → Report ↗")
+    
+    builder = GraphBuilder()
+
+    # Add nodes
+    builder.add_node(researcher, "research")
+    builder.add_node(analyst, "analysis")
+    builder.add_node(fact_checker, "fact_check")
+    builder.add_node(report_writer, "report")
+
+    # Add edges (dependencies) - parallel processing with aggregation
+    builder.add_edge("research", "analysis")
+    builder.add_edge("research", "fact_check")
+    builder.add_edge("analysis", "report")
+    builder.add_edge("fact_check", "report")
+
+    # Set entry point
+    builder.set_entry_point("research")
+
+    # Set timeouts
+    builder.set_execution_timeout(300.0)  # 5 minutes total
+    builder.set_node_timeout(120.0)  # 2 minutes per node
+
+    # Build the graph
+    graph = builder.build()
+
+    # Execute the graph on a task
+    task = "Research the benefits of renewable energy sources, focusing on solar and wind power. Analyze cost trends and verify environmental impact claims."
+    
+    print(f"\n📋 Task: {task}")
+    print("\n⚙️  Graph executing...")
+    
+    result = graph(task)
+
+    # Display results
+    print(f"\n✅ Graph Status: {result.status}")
+    print(f"📊 Total Nodes: {result.total_nodes}")
+    print(f"✓  Completed: {result.completed_nodes}")
+    print(f"✗  Failed: {result.failed_nodes}")
+    print(f"⏱️  Execution Time: {result.execution_time}ms")
+    
+    # Show execution order
+    print(f"\n🔄 Execution Order:")
+    for i, node in enumerate(result.execution_order, 1):
+        print(f"   {i}. {node.node_id} - {node.execution_status}")
+    
+    # Display results from each node
+    print(f"\n📄 Node Results:")
+    for node_id in ["research", "analysis", "fact_check", "report"]:
+        if node_id in result.results:
+            node_result = result.results[node_id]
+            print(f"\n   {node_id}:")
+            result_text = str(node_result.result)[:150]  # First 150 chars
+            print(f"      {result_text}...")
+    
+    # Display final report (from report_writer)
+    if "report" in result.results:
+        final_report = result.results["report"].result
+        print(f"\n📋 Final Report:")
+        print(f"   {final_report}")
+    
+    print("\n📊 Expected in HoneyHive:")
+    print("   - Span: graph invocation")
+    print("   - Span: invoke_agent research (entry point)")
+    print("   - Span: invoke_agent analysis (parallel execution)")
+    print("   - Span: invoke_agent fact_check (parallel execution)")
+    print("   - Span: invoke_agent report (aggregation node)")
+    print("   - Attributes: node IDs, dependencies, execution order")
+    print("   - Token usage and latency metrics for each node")
+    print("   - Clear dependency chain visualization")
+
+
 if __name__ == "__main__":
     print("🚀 AWS Strands + HoneyHive Integration Test Suite")
     print(f"   Session ID: {tracer.session_id}")
@@ -249,6 +456,8 @@ if __name__ == "__main__":
         test_custom_attributes()
         test_structured_output()
         test_summarization_simple()
+        test_swarm_collaboration()
+        test_graph_workflow()
 
         print("\n" + "=" * 60)
         print("🎉 All tests completed successfully!")
@@ -257,8 +466,10 @@ if __name__ == "__main__":
         print(f"   Session ID: {tracer.session_id}")
         print(f"   Project: {tracer.project}")
         print("\nYou should see:")
-        print("   ✓ 6 root spans (one per agent)")
+        print("   ✓ 8 root spans (one per test)")
         print("   ✓ Agent names: BasicAgent, MathAgent, StreamingAgent, etc.")
+        print("   ✓ Swarm collaboration with researcher → coder → reviewer flow")
+        print("   ✓ Graph workflow with parallel processing: research → analysis/fact_check → report")
         print("   ✓ Tool execution spans with calculator inputs/outputs")
         print("   ✓ Token usage (prompt/completion/total)")
         print("   ✓ Latency metrics (TTFT, total duration)")

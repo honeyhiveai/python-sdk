@@ -1,6 +1,14 @@
 ## [Unreleased]
 
 ### Added
+- **📚 Examples: Strands Multi-Agent Integration**
+  - Added comprehensive Swarm collaboration example demonstrating multi-agent handoffs
+  - Added Graph-based workflow example with parallel processing and aggregation patterns
+  - Test 7: Swarm multi-agent collaboration (researcher → coder → reviewer flow)
+  - Test 8: Graph workflow with parallel processing (research → analysis/fact_check → report)
+  - Demonstrates entry points, max handoffs/iterations, execution timeouts, and node timeouts
+  - Shows agent collaboration flow, execution order, and dependency chains
+  - Enhanced tracing documentation with expected spans and agent-level metrics
 - **📋 Examples: Integration Examples Requirements File**
   - Added comprehensive requirements.txt for all integration examples
   - Organized dependencies by category: core, LLM providers, instrumentors, agent frameworks
