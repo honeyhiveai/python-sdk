@@ -6,8 +6,20 @@
   - Organized dependencies by category: core, LLM providers, instrumentors, agent frameworks
   - Included installation commands for each specific integration
   - Documentation of required environment variables per provider
+- **📚 Examples: Evaluation Example**
+  - Added simple evaluation example demonstrating the `evaluate()` function
+  - Shows basic dataset evaluation with span enrichment
+  - Includes ground truth comparisons
+- **📚 Examples: Legacy SDK Example**
+  - Added old SDK integration example for reference
+  - Demonstrates basic tracer initialization and OpenAI integration
 
 ### Fixed
+- **🔧 Experiments: Session Enrichment Always Runs**
+  - Fixed `evaluate()` function to enrich sessions even when no evaluators are provided
+  - Sessions now get outputs enriched regardless of evaluator presence
+  - Changed session enrichment log level from debug to info for better visibility
+  - Ensures session data is always persisted to backend
 - **🔧 Tracing: Restored enrich_session() Backwards Compatibility**
   - Fixed breaking signature changes in `enrich_session()` that removed `session_id` and `user_properties` parameters
   - Restored `session_id` as optional positional parameter for backwards compatibility

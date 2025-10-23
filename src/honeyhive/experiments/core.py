@@ -426,9 +426,7 @@ def _enrich_session_with_results(
 
             if verbose:
                 enriched_fields = list(update_data.keys())
-                logger.debug(
-                    "Enriched session %s with: %s", session_id, enriched_fields
-                )
+                logger.info("Enriched session %s with: %s", session_id, enriched_fields)
     except Exception as e:
         logger.warning("Failed to enrich session %s: %s", session_id, str(e))
 
@@ -818,21 +816,21 @@ def evaluate(  # pylint: disable=too-many-locals,too-many-branches
                 "Evaluators complete: %d metrics collected", len(evaluator_metrics)
             )
 
-        # Enrich sessions with outputs and evaluator metrics
-        if verbose:
-            logger.info("Enriching sessions with outputs and evaluator metrics")
+    # Enrich sessions with outputs and evaluator metrics (always, not just when evaluators exist)
+    if verbose:
+        logger.info("Enriching sessions with outputs and evaluator metrics")
 
-        for result in execution_results:
-            session_id = result.get("session_id")
-            if session_id:
-                _enrich_session_with_results(
-                    session_id=session_id,
-                    datapoint_id=result.get("datapoint_id"),
-                    outputs=result.get("outputs"),
-                    evaluator_metrics=evaluator_metrics,
-                    client=client,
-                    verbose=verbose,
-                )
+    for result in execution_results:
+        session_id = result.get("session_id")
+        if session_id:
+            _enrich_session_with_results(
+                session_id=session_id,
+                datapoint_id=result.get("datapoint_id"),
+                outputs=result.get("outputs"),
+                evaluator_metrics=evaluator_metrics or {},
+                client=client,
+                verbose=verbose,
+            )
 
     # Step 6: Update run with results
     _update_run_with_results(

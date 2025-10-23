@@ -150,6 +150,9 @@ Experiments Module
 
 **Modern evaluation framework** with decorator-based evaluators and backend-powered aggregation.
 
+.. note::
+   **Session Enrichment**: The ``evaluate()`` function always enriches sessions with outputs, regardless of whether evaluators are provided. This ensures all execution results are persisted to the backend for later analysis.
+
 .. toctree::
    :maxdepth: 1
 
@@ -415,6 +418,14 @@ Package Information
 .. code-block:: bash
 
    pip install honeyhive
+
+**Example Files**:
+
+The SDK includes example files in the ``examples/`` directory:
+
+- ``eval_example.py`` - Demonstrates the ``evaluate()`` function with dataset evaluation and span enrichment
+- ``integrations/old_sdk.py`` - Legacy SDK example showing basic tracer initialization and OpenAI integration
+- ``integrations/`` - Full integration examples for various LLM providers and frameworks
 
 **See Also:**
 
