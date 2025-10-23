@@ -34,6 +34,30 @@ def get_commit_message() -> str:
     return ""
 
 
+def parse_semantic_commit_type(commit_msg: str) -> str:
+    """
+    Parse semantic commit type from commit message.
+    
+    Returns commit type (feat, fix, refactor, chore, etc.) or empty string.
+    Supports conventional commits format: type(scope): message
+    """
+    if not commit_msg:
+        return ""
+    
+    # Extract first line (commit title)
+    first_line = commit_msg.split("\n")[0].strip()
+    
+    # Check for conventional commits format: type(scope): message or type: message
+    if ":" in first_line:
+        prefix = first_line.split(":", 1)[0].strip()
+        # Remove scope if present: feat(api) -> feat
+        if "(" in prefix:
+            return prefix.split("(")[0].strip().lower()
+        return prefix.lower()
+    
+    return ""
+
+
 def has_significant_changes(staged_files: list) -> bool:
     """Check if there are staged changes that require CHANGELOG updates."""
     significant_patterns = [
@@ -65,8 +89,40 @@ def has_significant_changes(staged_files: list) -> bool:
     return len(significant_files) > 0
 
 
-def has_new_features(staged_files: list) -> bool:
-    """Check if new features are being added that require reference docs."""
+def has_new_features(staged_files: list, commit_type: str) -> bool:
+    """
+    Check if new features are being added that require reference docs.
+    
+    Uses semantic commit type to distinguish:
+    - feat: New features -> requires reference docs
+    - refactor/chore/perf/style: Internal changes -> no reference docs required
+    - fix: Bug fixes -> changelog only, no reference docs
+    - docs: Documentation -> no reference docs update needed
+    """
+    # Internal change types that don't require reference docs
+    internal_types = {
+        "refactor",  # Code restructuring with no API changes
+        "chore",     # Maintenance tasks, tooling, dependencies
+        "perf",      # Performance improvements (internal)
+        "style",     # Code style changes
+        "test",      # Test-only changes
+        "ci",        # CI/CD changes
+        "build",     # Build system changes
+    }
+    
+    # If commit type indicates internal change, no reference docs needed
+    if commit_type in internal_types:
+        return False
+    
+    # For docs commits, no reference docs update needed
+    if commit_type == "docs":
+        return False
+    
+    # For fix commits, changelog required but not reference docs
+    if commit_type == "fix":
+        return False
+    
+    # For feat commits or untyped commits affecting core SDK, check for actual changes
     feature_indicators = [
         "src/honeyhive/",  # Core SDK changes
         "examples/",  # New examples
@@ -148,12 +204,19 @@ def main() -> NoReturn:
     3. TERTIARY: Reference docs updates for new features (after changelog)
 
     This order ensures changelog entries are complete before derived documentation.
+    
+    Semantic commit type awareness:
+    - feat: New features -> full docs required
+    - fix: Bug fixes -> changelog only
+    - refactor/chore/perf: Internal changes -> changelog only
+    - docs: Documentation changes -> minimal requirements
     """
     print("📚 Documentation Compliance Check")
     print("=" * 40)
 
     staged_files = get_staged_files()
     commit_msg = get_commit_message()
+    commit_type = parse_semantic_commit_type(commit_msg)
 
     if not staged_files:
         print("✅ No staged files to check")
@@ -161,7 +224,7 @@ def main() -> NoReturn:
 
     # Analyze the commit
     has_significant = has_significant_changes(staged_files)
-    has_features = has_new_features(staged_files)
+    has_features = has_new_features(staged_files, commit_type)
     changelog_updated = is_changelog_updated(staged_files)
     docs_changelog_updated = is_docs_changelog_updated(staged_files)
     reference_updated = is_reference_docs_updated(staged_files)
@@ -169,6 +232,7 @@ def main() -> NoReturn:
     is_emergency = is_emergency_commit(commit_msg)
 
     print(f"📁 Staged files: {len(staged_files)}")
+    print(f"🏷️  Commit type: {commit_type if commit_type else 'untyped'}")
     print(f"🔧 Significant changes: {'Yes' if has_significant else 'No'}")
     print(f"✨ New features: {'Yes' if has_features else 'No'}")
     print(f"📝 CHANGELOG.md updated: {'Yes' if changelog_updated else 'No'}")
@@ -258,6 +322,10 @@ def main() -> NoReturn:
         print("2. Update .agent-os/product/features.md if applicable")
         print("3. Stage updated docs: git add docs/reference/index.rst")
         print("4. Re-run your commit")
+        print("\n💡 TIP: For internal changes, use semantic commit types:")
+        print("   refactor: for code restructuring")
+        print("   chore: for maintenance tasks")
+        print("   perf: for performance improvements")
         sys.exit(1)
 
     # All checks passed

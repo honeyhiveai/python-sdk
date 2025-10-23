@@ -36,6 +36,11 @@
   - Updated documentation: tutorials, how-to guides, and API reference with new interfaces and examples
 
 ### Changed
+- **🔧 Tracing: Removed Redundant Experiment Baggage Code**
+  - Removed unused `_add_experiment_context()` function that was setting experiment data in baggage but never read
+  - Experiment attributes are already added to spans directly via `_get_experiment_attributes()` in span processor
+  - Simplified baggage discovery by removing redundant experiment baggage setup
+  - No functionality lost - experiment data flow unchanged: `tracer.config.experiment` → `span_processor` → `span attributes`
 - **📚 Documentation: Enhanced Integration Examples README**
   - Expanded documentation section with direct links to all integration guides
   - Organized links by category: LLM providers and agent frameworks

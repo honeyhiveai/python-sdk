@@ -20,7 +20,6 @@ from honeyhive.tracer.processing.context import (
     _add_discovery_context,
     _add_evaluation_context,
     _add_experiment_attributes,
-    _add_experiment_context,
     _apply_baggage_context,
     _discover_baggage_items,
     _get_dynamic_experiment_patterns,
@@ -205,14 +204,12 @@ class TestDiscoverBaggageItems:
 
     @patch("honeyhive.tracer.processing.context._add_core_context")
     @patch("honeyhive.tracer.processing.context._add_evaluation_context")
-    @patch("honeyhive.tracer.processing.context._add_experiment_context")
     @patch("honeyhive.tracer.processing.context._add_discovery_context")
     @patch("honeyhive.tracer.processing.context.safe_log")
     def test_discover_baggage_items_success(
         self,
         mock_log: Mock,
         mock_discovery: Mock,
-        mock_experiment: Mock,
         mock_evaluation: Mock,
         mock_core: Mock,
         *,
@@ -227,15 +224,11 @@ class TestDiscoverBaggageItems:
         def mock_add_evaluation(items: Dict[str, str], _tracer: Mock) -> None:
             items["run_id"] = "test-run"
 
-        def mock_add_experiment(items: Dict[str, str], _tracer: Mock) -> None:
-            items["experiment_id"] = "test-experiment"
-
         def mock_add_discovery(items: Dict[str, str], _tracer: Mock) -> None:
             items["honeyhive_tracer_id"] = "test-tracer"
 
         mock_core.side_effect = mock_add_core
         mock_evaluation.side_effect = mock_add_evaluation
-        mock_experiment.side_effect = mock_add_experiment
         mock_discovery.side_effect = mock_add_discovery
 
         result = _discover_baggage_items(honeyhive_tracer)
@@ -243,12 +236,10 @@ class TestDiscoverBaggageItems:
         assert result["project"] == "test-project"
         assert result["session_id"] == "test-session"
         assert result["run_id"] == "test-run"
-        assert result["experiment_id"] == "test-experiment"
         assert result["honeyhive_tracer_id"] == "test-tracer"
 
         mock_core.assert_called_once()
         mock_evaluation.assert_called_once()
-        mock_experiment.assert_called_once()
         mock_discovery.assert_called_once()
 
         mock_log.assert_called_with(
@@ -256,11 +247,10 @@ class TestDiscoverBaggageItems:
             "debug",
             "Baggage items discovered",
             honeyhive_data={
-                "total_items": 5,
+                "total_items": 4,
                 "categories": {
                     "core": True,
                     "evaluation": True,
-                    "experiment": True,
                     "discovery": True,
                 },
             },
@@ -268,14 +258,12 @@ class TestDiscoverBaggageItems:
 
     @patch("honeyhive.tracer.processing.context._add_core_context")
     @patch("honeyhive.tracer.processing.context._add_evaluation_context")
-    @patch("honeyhive.tracer.processing.context._add_experiment_context")
     @patch("honeyhive.tracer.processing.context._add_discovery_context")
     @patch("honeyhive.tracer.processing.context.safe_log")
     def test_discover_baggage_items_empty(
         self,
         mock_log: Mock,
         _mock_discovery: Mock,
-        _mock_experiment: Mock,
         _mock_evaluation: Mock,
         _mock_core: Mock,
         *,
@@ -296,7 +284,6 @@ class TestDiscoverBaggageItems:
                 "categories": {
                     "core": False,
                     "evaluation": False,
-                    "experiment": False,
                     "discovery": False,
                 },
             },
@@ -479,115 +466,6 @@ class TestAddEvaluationContext:
         baggage_items: Dict[str, str] = {}
 
         _add_evaluation_context(baggage_items, honeyhive_tracer)
-
-        assert len(baggage_items) == 0
-        mock_log.assert_not_called()
-
-
-class TestAddExperimentContext:
-    """Test experiment context addition to baggage."""
-
-    # Removed patch for deleted _get_config_value_dynamically_from_tracer function
-    @patch("honeyhive.tracer.processing.context.safe_log")
-    def test_add_experiment_context_basic_attributes(
-        self, mock_log: Mock, honeyhive_tracer: Mock
-    ) -> None:
-        """Test adding basic experiment attributes."""
-
-        # Set experiment values in tracer config
-        honeyhive_tracer.config.update(
-            {
-                "experiment_id": "test-exp-id",
-                "experiment_name": "test-exp-name",
-                "experiment_variant": "variant-a",
-                "experiment_group": "control",
-                "experiment_metadata": None,
-            }
-        )
-        baggage_items: Dict[str, str] = {}
-
-        _add_experiment_context(baggage_items, honeyhive_tracer)
-
-        assert baggage_items["experiment_id"] == "test-exp-id"
-        assert baggage_items["experiment_name"] == "test-exp-name"
-        assert baggage_items["experiment_variant"] == "variant-a"
-        assert baggage_items["experiment_group"] == "control"
-
-        mock_log.assert_called_once_with(
-            honeyhive_tracer,
-            "debug",
-            "Experiment context added to baggage",
-            honeyhive_data={
-                "experiment_id": "test-exp-id",
-                "experiment_name": "test-exp-name",
-                "experiment_variant": "variant-a",
-                "experiment_group": "control",
-            },
-        )
-
-    # Removed patch for deleted _get_config_value_dynamically_from_tracer function
-    @patch("honeyhive.tracer.processing.context.safe_log")
-    def test_add_experiment_context_with_metadata_dict(
-        self, _mock_log: Mock, honeyhive_tracer: Mock
-    ) -> None:
-        """Test adding experiment context with metadata dictionary."""
-
-        # Set experiment metadata in tracer config using nested structure
-        honeyhive_tracer.config.experiment.experiment_metadata = {
-            "version": "1.0",
-            "author": "test",
-        }
-        baggage_items: Dict[str, str] = {}
-
-        _add_experiment_context(baggage_items, honeyhive_tracer)
-
-        assert baggage_items["experiment_metadata_version"] == "1.0"
-        assert baggage_items["experiment_metadata_author"] == "test"
-        assert "experiment_metadata" in baggage_items
-
-        # Check that metadata was JSON serialized
-        metadata_json = json.loads(baggage_items["experiment_metadata"])
-        assert metadata_json == {"version": "1.0", "author": "test"}
-
-    # Removed patch for deleted _get_config_value_dynamically_from_tracer function
-    @patch("honeyhive.tracer.processing.context.safe_log")
-    def test_add_experiment_context_metadata_json_error(
-        self, _mock_log: Mock, honeyhive_tracer: Mock
-    ) -> None:
-        """Test adding experiment context with JSON serialization error."""
-
-        # Set experiment metadata in tracer config using nested structure
-        honeyhive_tracer.config.experiment.experiment_metadata = {"circular": None}
-        baggage_items: Dict[str, str] = {}
-
-        # Mock json.dumps to raise an exception
-        with patch("json.dumps", side_effect=TypeError("Not JSON serializable")):
-            _add_experiment_context(baggage_items, honeyhive_tracer)
-
-        # Should fallback to string representation
-        assert "experiment_metadata" in baggage_items
-        assert baggage_items["experiment_metadata"] == "{'circular': None}"
-
-    # Removed patch for deleted _get_config_value_dynamically_from_tracer function
-    @patch("honeyhive.tracer.processing.context.safe_log")
-    def test_add_experiment_context_no_items(
-        self, mock_log: Mock, honeyhive_tracer: Mock
-    ) -> None:
-        """Test adding experiment context with no items."""
-        baggage_items: Dict[str, str] = {}
-
-        _add_experiment_context(baggage_items, honeyhive_tracer)
-
-        assert len(baggage_items) == 0
-        mock_log.assert_not_called()
-
-    # Removed patch for deleted _get_config_value_dynamically_from_tracer function
-    @patch("honeyhive.tracer.processing.context.safe_log")
-    def test_add_experiment_context_none_tracer(self, mock_log: Mock) -> None:
-        """Test adding experiment context with None tracer."""
-        baggage_items: Dict[str, str] = {}
-
-        _add_experiment_context(baggage_items, None)
 
         assert len(baggage_items) == 0
         mock_log.assert_not_called()
@@ -1412,36 +1290,6 @@ class TestEdgeCasesAndErrorHandling:
 
         # Test with empty attribute name
         assert _matches_experiment_pattern("", ["exp_"]) is False
-
-    # Removed patch for deleted _get_config_value_dynamically_from_tracer function
-    @patch("honeyhive.tracer.processing.context.safe_log")
-    def test_experiment_context_with_complex_metadata(
-        self, _mock_log: Mock, honeyhive_tracer: Mock
-    ) -> None:
-        """Test experiment context with complex metadata structures."""
-
-        # Set complex experiment metadata in tracer config using nested structure
-        honeyhive_tracer.config.experiment.experiment_metadata = {
-            "nested": {"key": "value"},
-            "list": [1, 2, 3],
-            "number": 42,
-            "boolean": True,
-        }
-        baggage_items: Dict[str, str] = {}
-
-        _add_experiment_context(baggage_items, honeyhive_tracer)
-
-        # Check individual metadata items
-        assert baggage_items["experiment_metadata_nested"] == "{'key': 'value'}"
-        assert baggage_items["experiment_metadata_list"] == "[1, 2, 3]"
-        assert baggage_items["experiment_metadata_number"] == "42"
-        assert baggage_items["experiment_metadata_boolean"] == "True"
-
-        # Check JSON serialization
-        assert "experiment_metadata" in baggage_items
-        metadata_json = json.loads(baggage_items["experiment_metadata"])
-        assert metadata_json["nested"]["key"] == "value"
-        assert metadata_json["list"] == [1, 2, 3]
 
     def test_config_value_extraction_type_errors(self) -> None:
         """Test config value extraction with various type errors."""

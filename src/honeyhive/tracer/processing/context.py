@@ -124,9 +124,6 @@ def _discover_baggage_items(tracer_instance: "HoneyHiveTracer") -> Dict[str, str
     # Evaluation context (backward compatibility)
     _add_evaluation_context(baggage_items, tracer_instance)
 
-    # Experiment harness context
-    _add_experiment_context(baggage_items, tracer_instance)
-
     # Auto-discovery context
     _add_discovery_context(baggage_items, tracer_instance)
 
@@ -139,7 +136,6 @@ def _discover_baggage_items(tracer_instance: "HoneyHiveTracer") -> Dict[str, str
             "categories": {
                 "core": bool(baggage_items.get("project")),
                 "evaluation": bool(baggage_items.get("run_id")),
-                "experiment": bool(baggage_items.get("experiment_id")),
                 "discovery": bool(baggage_items.get("honeyhive_tracer_id")),
             },
         },
@@ -220,68 +216,6 @@ def _add_evaluation_context(
             "debug",
             "Evaluation context added to baggage",
             honeyhive_data=evaluation_items,
-        )
-
-
-def _add_experiment_context(
-    baggage_items: Dict[str, str], tracer_instance: Any = None
-) -> None:
-    """Add experiment harness context to baggage items using dynamic logic.
-
-    :param baggage_items: Dictionary to add items to
-    :type baggage_items: Dict[str, str]
-    :param tracer_instance: The tracer instance (for per-instance configuration)
-    :type tracer_instance: Optional[HoneyHiveTracer]
-    """
-    experiment_items = {}
-
-    # Use dynamic configuration extraction for experiment attributes
-    experiment_attrs = [
-        "experiment_id",
-        "experiment_name",
-        "experiment_variant",
-        "experiment_group",
-    ]
-
-    # Handle None tracer instance gracefully
-    if not tracer_instance:
-        return
-
-    for attr_name in experiment_attrs:
-        # Use unified config - direct access to flattened config
-        value = tracer_instance.config.get(attr_name)
-        if value is not None:
-            baggage_items[attr_name] = str(value)
-            experiment_items[attr_name] = value
-
-    # Handle experiment metadata using unified config
-    experiment_metadata = getattr(
-        tracer_instance.config.experiment, "experiment_metadata", None
-    )
-    if experiment_metadata and isinstance(experiment_metadata, dict):
-        for key, value in experiment_metadata.items():
-            attr_name = f"experiment_metadata_{key}"
-            baggage_items[attr_name] = str(value)
-            experiment_items[attr_name] = value
-
-    # Handle experiment metadata JSON serialization using dynamic logic
-    if experiment_metadata and isinstance(experiment_metadata, dict):
-        try:
-            baggage_items["experiment_metadata"] = json.dumps(experiment_metadata)
-            experiment_items["experiment_metadata"] = (
-                f"JSON({len(experiment_metadata)} items)"
-            )
-        except Exception:
-            # Fallback to string representation
-            baggage_items["experiment_metadata"] = str(experiment_metadata)
-            experiment_items["experiment_metadata"] = "string format"
-
-    if experiment_items:
-        safe_log(
-            tracer_instance,
-            "debug",
-            "Experiment context added to baggage",
-            honeyhive_data=experiment_items,
         )
 
 

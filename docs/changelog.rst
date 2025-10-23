@@ -24,6 +24,12 @@ Current Version Highlights
 * **Installation Commands**: Per-integration pip install commands for easy setup
 * **Environment Variables**: Documentation of required credentials for each provider
 
+**🔧 IMPROVED: Tracer Internal Cleanup**
+
+* **Code Simplification**: Removed redundant experiment baggage code path
+* **No User Impact**: Experiment tracking continues to work exactly as before
+* **Performance**: Simplified baggage discovery logic
+
 **🔧 FIXED: enrich_session() Backwards Compatibility Restored**
 
 * **Legacy Parameters**: Restored `session_id` as optional positional parameter and `user_properties` support
