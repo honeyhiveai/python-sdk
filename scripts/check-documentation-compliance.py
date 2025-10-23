@@ -34,28 +34,55 @@ def get_commit_message() -> str:
     return ""
 
 
-def parse_semantic_commit_type(commit_msg: str) -> str:
+def get_change_statistics(staged_files: list) -> dict:
     """
-    Parse semantic commit type from commit message.
+    Analyze git diff statistics to understand the nature of changes.
     
-    Returns commit type (feat, fix, refactor, chore, etc.) or empty string.
-    Supports conventional commits format: type(scope): message
+    Returns dictionary with:
+    - total_additions: Total lines added
+    - total_deletions: Total lines deleted  
+    - net_change: additions - deletions (positive = growth, negative = reduction)
+    - is_mostly_deletions: True if >70% of changes are deletions
     """
-    if not commit_msg:
-        return ""
-    
-    # Extract first line (commit title)
-    first_line = commit_msg.split("\n")[0].strip()
-    
-    # Check for conventional commits format: type(scope): message or type: message
-    if ":" in first_line:
-        prefix = first_line.split(":", 1)[0].strip()
-        # Remove scope if present: feat(api) -> feat
-        if "(" in prefix:
-            return prefix.split("(")[0].strip().lower()
-        return prefix.lower()
-    
-    return ""
+    try:
+        result = subprocess.run(
+            ["git", "diff", "--cached", "--numstat"],
+            capture_output=True,
+            text=True,
+            check=True,
+        )
+        
+        total_additions = 0
+        total_deletions = 0
+        
+        for line in result.stdout.strip().split("\n"):
+            if not line:
+                continue
+            parts = line.split("\t")
+            if len(parts) >= 2:
+                added = parts[0]
+                deleted = parts[1]
+                # Skip binary files (marked with '-')
+                if added != "-" and deleted != "-":
+                    total_additions += int(added)
+                    total_deletions += int(deleted)
+        
+        total_changes = total_additions + total_deletions
+        deletion_ratio = total_deletions / total_changes if total_changes > 0 else 0
+        
+        return {
+            "total_additions": total_additions,
+            "total_deletions": total_deletions,
+            "net_change": total_additions - total_deletions,
+            "is_mostly_deletions": deletion_ratio > 0.7,
+        }
+    except subprocess.CalledProcessError:
+        return {
+            "total_additions": 0,
+            "total_deletions": 0,
+            "net_change": 0,
+            "is_mostly_deletions": False,
+        }
 
 
 def has_significant_changes(staged_files: list) -> bool:
@@ -89,50 +116,71 @@ def has_significant_changes(staged_files: list) -> bool:
     return len(significant_files) > 0
 
 
-def has_new_features(staged_files: list, commit_type: str) -> bool:
+def detect_change_type(staged_files: list, change_stats: dict) -> str:
+    """
+    Detect the type of change based on files modified and change statistics.
+    
+    Returns:
+    - "feature": New functionality being added (requires reference docs)
+    - "refactor": Code cleanup/restructuring (changelog only)
+    - "fix": Bug fix (changelog only)
+    - "test": Test-only changes (minimal docs)
+    - "docs": Documentation changes (minimal requirements)
+    - "other": Other changes (full requirements)
+    """
+    # Pure test changes
+    if all(f.startswith("tests/") for f in staged_files):
+        return "test"
+    
+    # Pure documentation changes
+    doc_patterns = ["docs/", "README.md", ".agent-os/"]
+    if all(any(f.startswith(p) for p in doc_patterns) for f in staged_files):
+        return "docs"
+    
+    # Mostly deletions with minimal additions suggests refactoring/cleanup
+    if change_stats["is_mostly_deletions"] and change_stats["net_change"] < -100:
+        return "refactor"
+    
+    # Check for new public API additions
+    api_files = [
+        "src/honeyhive/__init__.py",
+        "src/honeyhive/api/",
+        "src/honeyhive/tracer/__init__.py",
+    ]
+    has_api_changes = any(f.startswith(tuple(api_files)) for f in staged_files)
+    
+    # Check for new examples (usually indicates new features)
+    has_new_examples = any(f.startswith("examples/") for f in staged_files)
+    
+    # If adding new public APIs or examples with significant additions, likely a feature
+    if (has_api_changes or has_new_examples) and change_stats["net_change"] > 100:
+        return "feature"
+    
+    # Internal processing/utility changes (not public API)
+    internal_patterns = [
+        "src/honeyhive/tracer/processing/",
+        "src/honeyhive/tracer/utils/",
+        "src/honeyhive/utils/",
+        "scripts/",
+    ]
+    if any(f.startswith(tuple(internal_patterns)) for f in staged_files):
+        # If mostly internal changes without API changes, treat as refactor
+        if not has_api_changes:
+            return "refactor"
+    
+    # Default: treat as potentially user-facing change
+    return "other"
+
+
+def has_new_features(staged_files: list, change_type: str) -> bool:
     """
     Check if new features are being added that require reference docs.
     
-    Uses semantic commit type to distinguish:
-    - feat: New features -> requires reference docs
-    - refactor/chore/perf/style: Internal changes -> no reference docs required
-    - fix: Bug fixes -> changelog only, no reference docs
-    - docs: Documentation -> no reference docs update needed
+    Based on detected change type:
+    - feature: Requires reference docs
+    - refactor/fix/test/docs: No reference docs needed
     """
-    # Internal change types that don't require reference docs
-    internal_types = {
-        "refactor",  # Code restructuring with no API changes
-        "chore",     # Maintenance tasks, tooling, dependencies
-        "perf",      # Performance improvements (internal)
-        "style",     # Code style changes
-        "test",      # Test-only changes
-        "ci",        # CI/CD changes
-        "build",     # Build system changes
-    }
-    
-    # If commit type indicates internal change, no reference docs needed
-    if commit_type in internal_types:
-        return False
-    
-    # For docs commits, no reference docs update needed
-    if commit_type == "docs":
-        return False
-    
-    # For fix commits, changelog required but not reference docs
-    if commit_type == "fix":
-        return False
-    
-    # For feat commits or untyped commits affecting core SDK, check for actual changes
-    feature_indicators = [
-        "src/honeyhive/",  # Core SDK changes
-        "examples/",  # New examples
-    ]
-
-    return any(
-        file_path.startswith(pattern)
-        for file_path in staged_files
-        for pattern in feature_indicators
-    )
+    return change_type == "feature"
 
 
 def is_changelog_updated(staged_files: list) -> bool:
@@ -205,26 +253,27 @@ def main() -> NoReturn:
 
     This order ensures changelog entries are complete before derived documentation.
     
-    Semantic commit type awareness:
-    - feat: New features -> full docs required
+    Change type detection (file and diff-based):
+    - feature: New public APIs/examples -> full docs required
+    - refactor: Code cleanup, mostly deletions -> changelog only
     - fix: Bug fixes -> changelog only
-    - refactor/chore/perf: Internal changes -> changelog only
-    - docs: Documentation changes -> minimal requirements
+    - test/docs: Minimal requirements
     """
     print("📚 Documentation Compliance Check")
     print("=" * 40)
 
     staged_files = get_staged_files()
     commit_msg = get_commit_message()
-    commit_type = parse_semantic_commit_type(commit_msg)
 
     if not staged_files:
         print("✅ No staged files to check")
         sys.exit(0)
 
-    # Analyze the commit
+    # Analyze the changes
+    change_stats = get_change_statistics(staged_files)
+    change_type = detect_change_type(staged_files, change_stats)
     has_significant = has_significant_changes(staged_files)
-    has_features = has_new_features(staged_files, commit_type)
+    has_features = has_new_features(staged_files, change_type)
     changelog_updated = is_changelog_updated(staged_files)
     docs_changelog_updated = is_docs_changelog_updated(staged_files)
     reference_updated = is_reference_docs_updated(staged_files)
@@ -232,7 +281,8 @@ def main() -> NoReturn:
     is_emergency = is_emergency_commit(commit_msg)
 
     print(f"📁 Staged files: {len(staged_files)}")
-    print(f"🏷️  Commit type: {commit_type if commit_type else 'untyped'}")
+    print(f"📊 Change statistics: +{change_stats['total_additions']} -{change_stats['total_deletions']} (net: {change_stats['net_change']:+d})")
+    print(f"🔍 Detected change type: {change_type}")
     print(f"🔧 Significant changes: {'Yes' if has_significant else 'No'}")
     print(f"✨ New features: {'Yes' if has_features else 'No'}")
     print(f"📝 CHANGELOG.md updated: {'Yes' if changelog_updated else 'No'}")
@@ -313,7 +363,7 @@ def main() -> NoReturn:
     # TERTIARY CHECK: New features require reference documentation (after CHANGELOG)
     if has_features and not reference_updated:
         print("\n❌ Reference documentation update required!")
-        print("\nNew features detected but reference docs not updated.")
+        print("\nNew features detected (new public APIs or examples) but reference docs not updated.")
         print(
             "\nReference docs should be updated AFTER changelog entries are complete."
         )
@@ -322,10 +372,8 @@ def main() -> NoReturn:
         print("2. Update .agent-os/product/features.md if applicable")
         print("3. Stage updated docs: git add docs/reference/index.rst")
         print("4. Re-run your commit")
-        print("\n💡 TIP: For internal changes, use semantic commit types:")
-        print("   refactor: for code restructuring")
-        print("   chore: for maintenance tasks")
-        print("   perf: for performance improvements")
+        print(f"\n💡 NOTE: Detected change type is '{change_type}'")
+        print("   If this is internal refactoring, the detection may need adjustment.")
         sys.exit(1)
 
     # All checks passed
