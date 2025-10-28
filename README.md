@@ -220,6 +220,70 @@ response = openai.ChatCompletion.create(
 )
 ```
 
+### Enriching Spans and Sessions
+
+**v1.0+ Recommended Pattern: Instance Methods**
+
+```python
+from honeyhive import HoneyHiveTracer
+
+# Initialize tracer
+tracer = HoneyHiveTracer.init(
+    api_key="your-api-key",
+    project="your-project"
+)
+
+# Use instance methods for enrichment (PRIMARY - Recommended)
+@tracer.trace(event_type="tool")
+def my_function(input_data):
+    result = process_data(input_data)
+    
+    # ✅ Instance method (PRIMARY pattern in v1.0+)
+    tracer.enrich_span(
+        metadata={"input": input_data, "result": result},
+        metrics={"processing_time_ms": 150}
+    )
+    
+    return result
+
+# Enrich session with user properties
+tracer.enrich_session(
+    user_properties={"user_id": "user-123", "plan": "premium"}
+)
+```
+
+**Legacy Pattern: Free Functions (Backward Compatibility)**
+
+For backward compatibility, the free function pattern from v0.2.x still works:
+
+```python
+from honeyhive import trace, enrich_span, enrich_session
+
+# Free functions with automatic tracer discovery (LEGACY)
+@trace(event_type="tool")
+def my_function(input_data):
+    result = process_data(input_data)
+    
+    # Free function with auto-discovery (backward compatible)
+    enrich_span(
+        metadata={"input": input_data, "result": result},
+        metrics={"processing_time_ms": 150}
+    )
+    
+    return result
+
+# Enrich session via free function
+enrich_session(user_properties={"user_id": "user-123"})
+```
+
+**⚠️ Deprecation Notice:** Free functions will be deprecated in v2.0. We recommend migrating to instance methods for new code.
+
+**Why Instance Methods?**
+- ✅ Explicit tracer reference (no auto-discovery overhead)
+- ✅ Better multi-instance support (multiple tracers in same process)
+- ✅ Clearer code (explicit is better than implicit)
+- ✅ Future-proof (primary pattern going forward)
+
 ## 🏗️ Architecture
 
 ### Core Components

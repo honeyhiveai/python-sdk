@@ -17,6 +17,20 @@ Latest Release Notes
 Current Version Highlights
 ~~~~~~~~~~~~~~~~~~~~~~~~~~
 
+**✨ NEW: Instance Method Pattern for Span/Session Enrichment (v1.0)**
+
+* **Primary API**: `tracer.enrich_span()` and `tracer.enrich_session()` instance methods
+* **Backward Compatible**: Free functions still work but deprecated
+* **Multi-Instance Safe**: Proper tracer discovery via baggage propagation
+* **Comprehensive Examples**: Updated all examples with new patterns
+
+**🐛 CRITICAL FIX: evaluate() + enrich_span() Pattern**
+
+* **Issue**: Span enrichment failed in evaluation workflows
+* **Root Cause**: Baggage propagation was disabled to avoid session conflicts
+* **Solution**: Selective baggage with safe keys only
+* **Result**: Tracer discovery works while preventing multi-instance conflicts
+
 **📋 ADDED: Integration Examples Requirements File**
 
 * **Comprehensive Dependencies**: Added requirements.txt with all packages for integration examples

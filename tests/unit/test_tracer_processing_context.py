@@ -7,7 +7,6 @@ including OpenTelemetry context propagation, baggage management, and span enrich
 # pylint: disable=too-many-lines,protected-access,R0917
 # Comprehensive test coverage requires extensive testing and protected member access
 
-import json
 from typing import Any, Dict, List, Optional
 from unittest.mock import Mock, PropertyMock, call, patch
 
@@ -534,30 +533,29 @@ class TestApplyBaggageContext:
         mock_context: Mock,
         honeyhive_tracer: Mock,
     ) -> None:
-        """Test successful baggage context application."""
+        """Test successful baggage context application with safe keys."""
         mock_ctx = Mock()
         mock_context.get_current.return_value = mock_ctx
         mock_baggage.set_baggage.return_value = mock_ctx
 
-        baggage_items = {"session_id": "test-session", "project": "test-project"}
+        # Use safe keys only (v1.0 selective propagation)
+        baggage_items = {"run_id": "run-123", "project": "test-project"}
 
         _apply_baggage_context(baggage_items, honeyhive_tracer)
 
         mock_context.get_current.assert_called_once()
         assert mock_baggage.set_baggage.call_count == 2
-        mock_baggage.set_baggage.assert_any_call("session_id", "test-session", mock_ctx)
+        mock_baggage.set_baggage.assert_any_call("run_id", "run-123", mock_ctx)
         mock_baggage.set_baggage.assert_any_call("project", "test-project", mock_ctx)
 
-        # Check debug logging
-        mock_log.assert_any_call(
-            honeyhive_tracer,
-            "debug",
-            "🔍 DEBUG: Applying baggage context",
-            honeyhive_data={
-                "baggage_items": baggage_items,
-                "current_context_id": id(mock_ctx),
-                "baggage_count": 2,
-            },
+        # Context should be attached (v1.0 fix)
+        mock_context.attach.assert_called_once_with(mock_ctx)
+
+        # Check debug logging for selective propagation
+        log_calls_str = str(mock_log.call_args_list)
+        assert (
+            "selective baggage" in log_calls_str.lower()
+            or "safe" in log_calls_str.lower()
         )
 
     @patch("honeyhive.tracer.processing.context.safe_log")
@@ -580,7 +578,7 @@ class TestApplyBaggageContext:
     ) -> None:
         """Test baggage context application with exception."""
         mock_context.get_current.side_effect = Exception("Context error")
-        baggage_items: Dict[str, str] = {"session_id": "test-session"}
+        baggage_items: Dict[str, str] = {"run_id": "run-123"}  # Use safe key
 
         _apply_baggage_context(baggage_items, honeyhive_tracer)
 
@@ -589,7 +587,7 @@ class TestApplyBaggageContext:
             "warning",
             "Failed to apply baggage context: %s. Continuing without baggage.",
             mock_context.get_current.side_effect,
-            honeyhive_data={"baggage_items": ["session_id"]},
+            honeyhive_data={"baggage_items": ["run_id"]},
         )
 
     @patch("honeyhive.tracer.processing.context.context")
@@ -602,15 +600,15 @@ class TestApplyBaggageContext:
         mock_context: Mock,
         honeyhive_tracer: Mock,
     ) -> None:
-        """Test baggage context application skips empty values."""
+        """Test baggage context application skips empty values and filters to safe keys."""
         mock_ctx = Mock()
         mock_context.get_current.return_value = mock_ctx
         mock_baggage.set_baggage.return_value = mock_ctx
 
         baggage_items_with_none: Dict[str, Optional[str]] = {
-            "session_id": "test-session",
-            "empty_key": "",
-            "none_key": None,
+            "project": "test-project",  # Safe key with value
+            "source": "",  # Safe key but empty - should be skipped
+            "none_key": None,  # Should be filtered out
         }
         # Filter out None values for the function call
         baggage_items: Dict[str, str] = {
@@ -619,9 +617,9 @@ class TestApplyBaggageContext:
 
         _apply_baggage_context(baggage_items, honeyhive_tracer)
 
-        # Should only set non-empty values
+        # Should only set non-empty safe values (project has value, source is empty)
         mock_baggage.set_baggage.assert_called_once_with(
-            "session_id", "test-session", mock_ctx
+            "project", "test-project", mock_ctx
         )
 
     @patch("honeyhive.tracer.processing.context.safe_log")
@@ -633,6 +631,163 @@ class TestApplyBaggageContext:
 
         # Should not crash and should log appropriately
         mock_log.assert_called()
+
+    @patch("honeyhive.tracer.processing.context.context")
+    @patch("honeyhive.tracer.processing.context.baggage")
+    @patch("honeyhive.tracer.processing.context.safe_log")
+    def test_selective_baggage_safe_keys_propagated(
+        self,
+        _mock_log: Mock,
+        mock_baggage: Mock,
+        mock_context: Mock,
+        honeyhive_tracer: Mock,
+    ) -> None:
+        """Test that safe keys are propagated (v1.0 selective propagation)."""
+        mock_ctx = Mock()
+        mock_context.get_current.return_value = mock_ctx
+        mock_baggage.set_baggage.return_value = mock_ctx
+
+        # Safe keys that should be propagated
+        baggage_items = {
+            "run_id": "run-123",
+            "dataset_id": "ds-456",
+            "datapoint_id": "dp-789",
+            "honeyhive_tracer_id": "tracer-abc",
+            "project": "test-project",
+            "source": "test-source",
+        }
+
+        _apply_baggage_context(baggage_items, honeyhive_tracer)
+
+        # All safe keys should be set
+        assert mock_baggage.set_baggage.call_count == 6
+        mock_baggage.set_baggage.assert_any_call("run_id", "run-123", mock_ctx)
+        mock_baggage.set_baggage.assert_any_call("dataset_id", "ds-456", mock_ctx)
+        mock_baggage.set_baggage.assert_any_call("datapoint_id", "dp-789", mock_ctx)
+        mock_baggage.set_baggage.assert_any_call(
+            "honeyhive_tracer_id", "tracer-abc", mock_ctx
+        )
+        mock_baggage.set_baggage.assert_any_call("project", "test-project", mock_ctx)
+        mock_baggage.set_baggage.assert_any_call("source", "test-source", mock_ctx)
+
+        # Context should be attached (v1.0 fix - re-enabled)
+        mock_context.attach.assert_called_once_with(mock_ctx)
+
+    @patch("honeyhive.tracer.processing.context.context")
+    @patch("honeyhive.tracer.processing.context.baggage")
+    @patch("honeyhive.tracer.processing.context.safe_log")
+    def test_selective_baggage_unsafe_keys_filtered(
+        self,
+        mock_log: Mock,
+        mock_baggage: Mock,
+        mock_context: Mock,
+        honeyhive_tracer: Mock,
+    ) -> None:
+        """Test that unsafe keys are filtered out (v1.0 fix)."""
+        mock_ctx = Mock()
+        mock_context.get_current.return_value = mock_ctx
+        mock_baggage.set_baggage.return_value = mock_ctx
+
+        # Mix of safe and unsafe keys
+        baggage_items = {
+            "run_id": "run-123",  # Safe - should propagate
+            "session_id": "session-456",  # Unsafe - should be filtered
+            "session_name": "my-session",  # Unsafe - should be filtered
+            "random_key": "value",  # Unsafe - should be filtered
+        }
+
+        _apply_baggage_context(baggage_items, honeyhive_tracer)
+
+        # Only safe key should be set
+        mock_baggage.set_baggage.assert_called_once_with("run_id", "run-123", mock_ctx)
+
+        # Verify filtered keys were logged
+        log_calls = [str(call) for call in mock_log.call_args_list]
+        assert any("Filtered unsafe baggage keys" in str(call) for call in log_calls)
+
+        # Context should still be attached (even with some keys filtered)
+        mock_context.attach.assert_called_once_with(mock_ctx)
+
+    @patch("honeyhive.tracer.processing.context.context")
+    @patch("honeyhive.tracer.processing.context.baggage")
+    @patch("honeyhive.tracer.processing.context.safe_log")
+    def test_selective_baggage_empty_after_filtering(
+        self,
+        mock_log: Mock,
+        mock_baggage: Mock,
+        mock_context: Mock,
+        honeyhive_tracer: Mock,
+    ) -> None:
+        """Test behavior when all keys are filtered out."""
+        mock_ctx = Mock()
+        mock_context.get_current.return_value = mock_ctx
+
+        # Only unsafe keys
+        baggage_items = {
+            "session_id": "session-123",
+            "session_name": "my-session",
+            "unsafe_key": "value",
+        }
+
+        _apply_baggage_context(baggage_items, honeyhive_tracer)
+
+        # No keys should be set
+        mock_baggage.set_baggage.assert_not_called()
+
+        # Context attach should NOT be called (nothing to propagate)
+        mock_context.attach.assert_not_called()
+
+        # Should log that no safe items to propagate
+        mock_log.assert_any_call(
+            honeyhive_tracer,
+            "debug",
+            "No safe baggage items to propagate (all filtered)",
+        )
+
+    @patch("honeyhive.tracer.processing.context.context")
+    @patch("honeyhive.tracer.processing.context.baggage")
+    @patch("honeyhive.tracer.processing.context.safe_log")
+    def test_selective_baggage_context_attach_called(
+        self,
+        _mock_log: Mock,
+        mock_baggage: Mock,
+        mock_context: Mock,
+        honeyhive_tracer: Mock,
+    ) -> None:
+        """Test that context.attach() is called (v1.0 fix - re-enabled)."""
+        mock_ctx = Mock()
+        mock_context.get_current.return_value = mock_ctx
+        mock_baggage.set_baggage.return_value = mock_ctx
+
+        baggage_items = {"honeyhive_tracer_id": "tracer-123"}
+
+        _apply_baggage_context(baggage_items, honeyhive_tracer)
+
+        # CRITICAL: context.attach() must be called for tracer discovery to work
+        mock_context.attach.assert_called_once_with(mock_ctx)
+
+    @patch("honeyhive.tracer.processing.context.context")
+    @patch("honeyhive.tracer.processing.context.baggage")
+    @patch("honeyhive.tracer.processing.context.safe_log")
+    def test_selective_baggage_thread_isolation(
+        self,
+        _mock_log: Mock,
+        mock_baggage: Mock,
+        mock_context: Mock,
+        honeyhive_tracer: Mock,
+    ) -> None:
+        """Test that baggage propagation respects thread-local context."""
+        mock_ctx = Mock()
+        mock_context.get_current.return_value = mock_ctx
+        mock_baggage.set_baggage.return_value = mock_ctx
+
+        baggage_items = {"run_id": "run-123"}
+
+        _apply_baggage_context(baggage_items, honeyhive_tracer)
+
+        # Context operations should use thread-local context
+        mock_context.get_current.assert_called_once()
+        mock_context.attach.assert_called_once_with(mock_ctx)
 
 
 class TestEnrichSpanContext:
@@ -1178,9 +1333,8 @@ class TestIntegrationScenarios:
         # Setup baggage context
         setup_baggage_context(honeyhive_tracer)
 
-        # Verify baggage was set
+        # Verify only safe keys were set (session_id excluded for multi-instance isolation)
         expected_calls = [
-            call("session_id", "test-session", mock_ctx),
             call("project", "test-project", mock_ctx),
             call("source", "test", mock_ctx),
             call("run_id", "test-run", mock_ctx),
@@ -1189,6 +1343,10 @@ class TestIntegrationScenarios:
 
         for expected_call in expected_calls:
             assert expected_call in mock_baggage.set_baggage.call_args_list
+
+        # Verify session_id was NOT set (filtered out for multi-instance safety)
+        session_id_call = call("session_id", "test-session", mock_ctx)
+        assert session_id_call not in mock_baggage.set_baggage.call_args_list
 
     # Removed patch for deleted _get_config_value_dynamically_from_tracer function
     @patch("honeyhive.tracer.processing.context.safe_log")

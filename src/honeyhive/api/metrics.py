@@ -70,7 +70,7 @@ class MetricsAPI(BaseAPI):
         # Backend returns array of metrics
         if isinstance(data, list) and len(data) > 0:
             return Metric(**data[0])
-        elif isinstance(data, list):
+        if isinstance(data, list):
             raise ValueError(f"Metric with id {metric_id} not found")
         return Metric(**data)
 
@@ -85,7 +85,7 @@ class MetricsAPI(BaseAPI):
         # Backend returns array of metrics
         if isinstance(data, list) and len(data) > 0:
             return Metric(**data[0])
-        elif isinstance(data, list):
+        if isinstance(data, list):
             raise ValueError(f"Metric with id {metric_id} not found")
         return Metric(**data)
 

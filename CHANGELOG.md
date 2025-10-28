@@ -1,6 +1,21 @@
 ## [Unreleased]
 
 ### Added
+- **✨ Tracing: Instance Method Pattern as Primary API (v1.0)**
+  - `HoneyHiveTracer.enrich_span()` instance method is now the PRIMARY pattern for span enrichment
+  - `HoneyHiveTracer.enrich_session()` instance method is now the PRIMARY pattern for session enrichment
+  - Comprehensive Sphinx docstrings with examples for both instance methods
+  - Migration guide: `docs/development/migrating-to-v1.0.rst` with patterns and troubleshooting
+  - Examples updated: `basic_usage.py`, `advanced_usage.py`, and new `evaluate_with_enrichment.py`
+  - Free functions (`enrich_span()`, `enrich_session()`) remain for backward compatibility but deprecated
+
+- **🧪 Testing: Comprehensive Multi-Instance Test Suite**
+  - 5 multi-instance safety tests validating concurrent tracer isolation (`test_multi_instance.py`)
+  - 7 baggage isolation tests validating selective propagation (`test_baggage_isolation.py`)
+  - 8 end-to-end integration tests for real-world patterns (`test_e2e_patterns.py`)
+  - 11 performance benchmarks ensuring no regression (`test_benchmarks.py`)
+  - Total: 31 new tests validating v1.0 multi-instance architecture
+
 - **📋 Examples: Integration Examples Requirements File**
   - Added comprehensive requirements.txt for all integration examples
   - Organized dependencies by category: core, LLM providers, instrumentors, agent frameworks
@@ -8,6 +23,17 @@
   - Documentation of required environment variables per provider
 
 ### Fixed
+- **🐛 CRITICAL: Fixed evaluate() + enrich_span() Pattern (v1.0 Baggage Fix)**
+  - **Problem**: `enrich_span()` and `enrich_session()` failed in `evaluate()` pattern due to disabled baggage propagation
+  - **Root Cause**: `context.attach()` was commented out to avoid "session ID conflicts" in multi-instance architecture
+  - **Solution**: Implemented selective baggage propagation with `SAFE_PROPAGATION_KEYS` constant
+  - **Safe Keys**: `run_id`, `dataset_id`, `datapoint_id`, `honeyhive_tracer_id`, `project`, `source`
+  - **Result**: Tracer discovery now works via baggage while preventing conflicts
+  - **Impact**: `evaluate()` + `@trace` + `tracer.enrich_span()` pattern now fully functional
+  - Added debug logging for tracer discovery success/failure
+  - Added 5 unit tests for selective propagation
+  - Added integration test for `evaluate()` + enrichment pattern
+
 - **🔧 Tracing: Restored enrich_session() Backwards Compatibility**
   - Fixed breaking signature changes in `enrich_session()` that removed `session_id` and `user_properties` parameters
   - Restored `session_id` as optional positional parameter for backwards compatibility
@@ -34,6 +60,15 @@
   - Added 48 comprehensive unit tests with 100% coverage of `enrichment.py`
   - Added 3 integration tests with backend verification for backwards compatibility, kwargs, and nested structures
   - Updated documentation: tutorials, how-to guides, and API reference with new interfaces and examples
+
+### Deprecated
+- **⚠️ Free Functions: enrich_span() and enrich_session() Deprecated (v1.0)**
+  - Free functions `enrich_span()` and `enrich_session()` are now DEPRECATED
+  - **Reason**: Multi-instance architecture requires explicit tracer reference
+  - **Migration Path**: Use instance methods (`tracer.enrich_span()`, `tracer.enrich_session()`)
+  - **Timeline**: Free functions will be REMOVED in v2.0
+  - **Backward Compatibility**: Free functions still work in v1.0 via tracer discovery
+  - See migration guide: `docs/development/migrating-to-v1.0.rst`
 
 ### Changed
 - **🔧 Tracing: Removed Redundant Experiment Baggage Code**

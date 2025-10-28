@@ -39,6 +39,9 @@ class NoOpSpan:
 # Using simple caller parameter approach instead
 
 
+# pylint: disable=too-many-arguments,too-many-positional-arguments
+# Justification: Enrichment requires multiple optional parameters for comprehensive
+# span metadata (metadata, metrics, feedback, inputs, outputs, config, etc.).
 def enrich_span_core(
     attributes: Optional[Dict[str, Any]] = None,
     metadata: Optional[Dict[str, Any]] = None,
@@ -211,19 +214,35 @@ def enrich_span_core(
 
 
 class UnifiedEnrichSpan:
-    """Unified enrich_span that auto-detects invocation pattern.
+    """**LEGACY (v1.0+):** Unified enrich_span that auto-detects invocation pattern.
+
+    .. deprecated:: 1.0
+       This free function pattern is provided for backward compatibility only.
+       **Use instance methods instead:** ``tracer.enrich_span()``
+       This pattern will be removed in v2.0.
+
+    **Recommended Pattern (v1.0+):**
+    Use the tracer instance method for explicit tracer reference::
+
+        tracer = HoneyHiveTracer.init(api_key="...", project="...")
+        tracer.enrich_span(metadata={'key': 'value'}, metrics={'time_ms': 100})
 
     This class provides a single entry point for span enrichment that automatically
     detects whether it's being used as a context manager (with statement) or as a
-    direct call, eliminating the need for multiple entry points.
+    direct call. It dynamically discovers the active tracer via baggage propagation.
 
     **Backwards Compatibility:**
     Supports all main branch reserved parameters (metadata, metrics, feedback, etc.)
+    Works with evaluate() pattern via baggage-based tracer discovery (v1.0 fix).
 
-    **Usage patterns:**
+    **Legacy Usage Patterns:**
     - Context manager: `with enrich_span(metadata={'key': 'value'}) as span:`
     - Direct call: `success = enrich_span(metadata={'key': 'value'})`
     - Boolean evaluation: `if enrich_span(user_id="123"):`
+
+    See Also:
+        - :meth:`HoneyHiveTracer.enrich_span` - Primary pattern (v1.0+)
+        - :meth:`HoneyHiveTracer.enrich_session` - Session enrichment
     """
 
     def __init__(self) -> None:
@@ -242,6 +261,9 @@ class UnifiedEnrichSpan:
         self._tracer: Optional[Any] = None
         self._kwargs: Optional[Dict[str, Any]] = None
 
+    # pylint: disable=too-many-arguments,too-many-positional-arguments
+    # Justification: Enrichment requires multiple optional parameters for comprehensive
+    # span metadata (metadata, metrics, feedback, inputs, outputs, config, etc.).
     def __call__(
         self,
         attributes: Optional[Dict[str, Any]] = None,
@@ -364,6 +386,9 @@ class UnifiedEnrichSpan:
         return bool(self._direct_result)
 
 
+# pylint: disable=too-many-arguments,too-many-positional-arguments
+# Justification: Enrichment requires multiple optional parameters for comprehensive
+# span metadata (metadata, metrics, feedback, inputs, outputs, config, etc.).
 def enrich_span_unified(
     attributes: Optional[Dict[str, Any]] = None,
     metadata: Optional[Dict[str, Any]] = None,
@@ -481,6 +506,9 @@ def enrich_span_unified(
     )
 
 
+# pylint: disable=too-many-arguments,too-many-positional-arguments
+# Justification: Enrichment requires multiple optional parameters for comprehensive
+# span metadata (metadata, metrics, feedback, inputs, outputs, config, etc.).
 @contextmanager
 def _enrich_span_context_manager(
     attributes: Optional[Dict[str, Any]] = None,
@@ -555,6 +583,9 @@ def _enrich_span_context_manager(
         raise
 
 
+# pylint: disable=too-many-arguments,too-many-positional-arguments
+# Justification: Enrichment requires multiple optional parameters for comprehensive
+# span metadata (metadata, metrics, feedback, inputs, outputs, config, etc.).
 def _enrich_span_direct_call(
     attributes: Optional[Dict[str, Any]] = None,
     metadata: Optional[Dict[str, Any]] = None,

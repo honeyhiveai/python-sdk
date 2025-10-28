@@ -20,7 +20,21 @@ def enrich_session(
     tracer: Optional[Any] = None,
     tracer_instance: Optional[Any] = None,
 ) -> None:
-    """Dynamically enrich session with metadata (backward compatibility function).
+    """**LEGACY (v1.0+):** Dynamically enrich session with metadata.
+
+    .. deprecated:: 1.0
+       This free function pattern is provided for backward compatibility only.
+       **Use instance methods instead:** ``tracer.enrich_session()``
+       This pattern will be removed in v2.0.
+
+    **Recommended Pattern (v1.0+):**
+    Use the tracer instance method for explicit tracer reference::
+
+        tracer = HoneyHiveTracer.init(api_key="...", project="...")
+        tracer.enrich_session(
+            metadata={"user_id": "user-456"},
+            user_properties={"plan": "premium"}
+        )
 
     This function provides backward compatibility for the global enrich_session
     function using dynamic tracer discovery and flexible metadata handling.
@@ -31,16 +45,16 @@ def enrich_session(
         tracer: Optional tracer instance to use
         tracer_instance: Optional tracer instance for logging context
 
-    Example:
-        >>> # Using default tracer
+    Legacy Example:
+        >>> # Using default tracer (backward compatibility)
         >>> enrich_session("session-123", {"user_id": "user-456"})
         >>>
-        >>> # Using specific tracer
+        >>> # Using specific tracer (backward compatibility)
         >>> enrich_session("session-123", {"user_id": "user-456"}, tracer=my_tracer)
 
-    Note:
-        This function is provided for backward compatibility. New code should
-        use the tracer instance methods directly for better control and clarity.
+    See Also:
+        - :meth:`HoneyHiveTracer.enrich_session` - Primary pattern (v1.0+)
+        - :meth:`HoneyHiveTracer.enrich_span` - Span enrichment
     """
     # Dynamic tracer discovery
     active_tracer = _discover_tracer_dynamically(tracer, tracer_instance)

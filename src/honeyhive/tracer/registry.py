@@ -8,21 +8,22 @@ The registry uses weak references to prevent memory leaks and automatically
 cleans up when tracer instances are garbage collected.
 """
 
-# pylint: disable=global-statement
+# pylint: disable=global-statement,not-callable
 # Justification: This module implements a global tracer registry for multi-instance
 # support. Global statements are necessary to manage registry state (_TRACER_REGISTRY,
 # _DEFAULT_TRACER) and ensure thread-safe operations across the application lifecycle.
+# _DEFAULT_TRACER is a weakref.ref object which is callable, but pylint doesn't
+# recognize this. Calling _DEFAULT_TRACER() either returns the original tracer object
+# or None if it was garbage collected.
 
-# pylint: disable=not-callable
-# Note: _DEFAULT_TRACER is a weakref.ref object which is callable, but pylint
-# doesn't recognize this. Calling _DEFAULT_TRACER() either returns the original
-# tracer object or None if it was garbage collected.
-
+import logging
 import weakref
 from typing import TYPE_CHECKING, Dict, List, Optional
 
 from opentelemetry import baggage, context
 from opentelemetry.context import Context
+
+from ..utils.logger import safe_log
 
 if TYPE_CHECKING:
     from .core import HoneyHiveTracer
@@ -105,12 +106,27 @@ def get_tracer_from_baggage(
         ctx = ctx or context.get_current()
         tracer_id = baggage.get_baggage("honeyhive_tracer_id", ctx)
 
-        if tracer_id and isinstance(tracer_id, str) and tracer_id in _TRACER_REGISTRY:
-            return _TRACER_REGISTRY[tracer_id]
+        if tracer_id:
+            if isinstance(tracer_id, str) and tracer_id in _TRACER_REGISTRY:
+                tracer = _TRACER_REGISTRY[tracer_id]
+                # Debug logging for successful baggage discovery
+                if hasattr(tracer, "logger"):
+                    safe_log(
+                        tracer,
+                        "debug",
+                        "Tracer discovered from baggage: tracer_id=%s, project=%s",
+                        tracer_id,
+                        getattr(tracer, "project", "unknown"),
+                        honeyhive_data={
+                            "tracer_id": tracer_id,
+                            "discovery_method": "baggage",
+                        },
+                    )
+                return tracer
 
-    except Exception:
-        # Silently handle any baggage access errors
-        pass
+    except Exception as e:
+        # Log error for debugging but don't crash
+        logging.debug("Baggage tracer discovery failed: %s", e)
 
     return None
 

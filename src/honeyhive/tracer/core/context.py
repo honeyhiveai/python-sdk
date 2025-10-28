@@ -108,7 +108,7 @@ class TracerContextMixin(TracerContextInterface):
         # Proceed with standard tracer shutdown
         shutdown_tracer(self)
 
-    # pylint: disable=too-many-arguments
+    # pylint: disable=too-many-arguments,too-many-positional-arguments
     # Justification: Session enrichment requires multiple optional parameters
     # for comprehensive session data (inputs, outputs, metadata, config, etc.).
     def enrich_session(
@@ -125,27 +125,80 @@ class TracerContextMixin(TracerContextInterface):
     ) -> None:
         """Enrich current session with dynamic metadata management.
 
-        This method uses dynamic logic to update session metadata with
-        flexible parameter handling and automatic session detection.
+        **PRIMARY PATTERN (v1.0+):** This instance method is the recommended way
+        to enrich sessions. It provides explicit tracer reference and works seamlessly
+        in multi-instance environments.
 
-        **Backwards Compatibility:**
-        This method maintains backwards compatibility with the old signature:
-        - Old: `enrich_session(session_id, metadata, feedback, metrics, ...)`
-        - New: `enrich_session(session_id=None, metadata=None, inputs=None, ...)`
+        This method uses dynamic logic to update session metadata with
+        flexible parameter handling and automatic session detection. Use it to
+        add user properties, feedback, metrics, or custom metadata to sessions.
 
         Args:
-            session_id: Optional explicit session ID to enrich
-                        (for backwards compatibility).
+            session_id: Optional explicit session ID to enrich.
                         If not provided, uses tracer's current session ID.
-            metadata: Additional metadata
-            inputs: Session input data
-            outputs: Session output data
-            config: Configuration data
-            feedback: Feedback data
-            metrics: Metrics data
-            user_properties: User properties (backwards compatibility,
-                             merged into metadata)
+                        (Provided for backwards compatibility)
+            metadata: Additional metadata for the session
+            inputs: Session input data (captured at session start)
+            outputs: Session output data (captured at session end)
+            config: Configuration data used during session
+            feedback: User feedback or evaluation results
+            metrics: Performance metrics (latency, token count, etc.)
+            user_properties: User-specific properties (user_id, plan, etc.)
+                             Automatically prefixed with 'user_properties.'
             **kwargs: Additional dynamic parameters
+
+        Examples:
+            Basic session enrichment::
+
+                tracer = HoneyHiveTracer.init(api_key="...", project="...")
+
+                # Enrich with user properties
+                tracer.enrich_session(
+                    user_properties={"user_id": "user-123", "plan": "premium"}
+                )
+
+            Enrichment with feedback and metrics::
+
+                # After processing user request
+                tracer.enrich_session(
+                    inputs={"query": "What is AI?"},
+                    outputs={"response": "AI is..."},
+                    feedback={"rating": 5, "helpful": True},
+                    metrics={"latency_ms": 250, "tokens": 150}
+                )
+
+            Multiple enrichments throughout session::
+
+                # At session start
+                tracer.enrich_session(
+                    metadata={"source": "web-app"},
+                    user_properties={"user_id": "user-456"}
+                )
+
+                # During processing
+                tracer.enrich_session(
+                    metrics={"api_calls": 3}
+                )
+
+                # At session end
+                tracer.enrich_session(
+                    outputs={"final_result": "success"},
+                    feedback={"satisfaction": "high"}
+                )
+
+        Note:
+            **Backwards Compatibility:** This method maintains compatibility
+            with v0.2.x signature. The free function ``enrich_session()``
+            is also available but will be deprecated in v2.0.
+            See :func:`honeyhive.tracer.integration.compatibility.enrich_session`
+
+        See Also:
+            - :meth:`enrich_span` - Enrich individual spans with metadata
+            - :meth:`session_start` - Start a new session
+            - :meth:`session_end` - End current session
+
+        .. versionadded:: 1.0
+            Instance method pattern introduced as primary API.
         """
         if not self._can_enrich_session_dynamically():
             return
@@ -324,16 +377,65 @@ class TracerContextMixin(TracerContextInterface):
     ) -> bool:
         """Enrich current span with dynamic attribute management.
 
+        **PRIMARY PATTERN (v1.0+):** This instance method is the recommended way
+        to enrich spans. It provides explicit tracer reference and works seamlessly
+        in multi-instance environments.
+
         This method uses dynamic logic to add attributes to the current span
-        with flexible parameter handling and automatic span detection.
+        with flexible parameter handling and automatic span detection. It enriches
+        the currently active span with metadata, metrics, or custom attributes.
 
         Args:
-            attributes: Span attributes to add
-            metadata: Metadata to add as attributes
-            **kwargs: Additional dynamic attributes
+            attributes: Span attributes to add directly (dict of key-value pairs)
+            metadata: Metadata to add (automatically prefixed with
+                'honeyhive.metadata.')
+            **kwargs: Additional dynamic attributes (e.g., metrics, config)
 
         Returns:
             True if enrichment succeeded, False otherwise
+
+        Examples:
+            Basic enrichment with metadata::
+
+                from honeyhive import trace
+                tracer = HoneyHiveTracer.init(api_key="...", project="...")
+
+                @trace(tracer=tracer, event_type="tool")
+                def process_data(input_text):
+                    result = transform(input_text)
+
+                    # Enrich with metadata and metrics
+                    tracer.enrich_span(
+                        metadata={"input": input_text, "result": result},
+                        metrics={"processing_time_ms": 150}
+                    )
+
+                    return result
+
+            Multiple enrichments in same span::
+
+                with tracer.start_span("complex-operation"):
+                    # Initial enrichment
+                    tracer.enrich_span(metadata={"stage": "validation"})
+
+                    # Additional enrichment after processing
+                    tracer.enrich_span(
+                        metadata={"validated": True},
+                        metrics={"items_processed": 100}
+                    )
+
+        Note:
+            For backward compatibility, the free function ``enrich_span()``
+            is also available but will be deprecated in v2.0.
+            See :func:`honeyhive.tracer.integration.compatibility.enrich_span`
+
+        See Also:
+            - :meth:`enrich_session` - Enrich session with metadata
+            - :meth:`start_span` - Create and manage spans manually
+            - :meth:`trace` - Decorator for automatic span creation
+
+        .. versionadded:: 1.0
+            Instance method pattern introduced as primary API.
         """
         try:
             # Get current span dynamically

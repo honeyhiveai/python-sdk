@@ -1,1 +1,1 @@
-"""Performance benchmarks for HoneyHive non-instrumentor integration."""
+"""Performance tests for the HoneyHive SDK."""
