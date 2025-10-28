@@ -38,6 +38,17 @@ Current Version Highlights
 * **Installation Commands**: Per-integration pip install commands for easy setup
 * **Environment Variables**: Documentation of required credentials for each provider
 
+**📚 ADDED: New Example Files**
+
+* **Evaluation Example**: Simple demonstration of the ``evaluate()`` function with dataset evaluation and span enrichment
+* **Legacy SDK Example**: Reference example showing basic tracer initialization and OpenAI integration
+
+**🔧 FIXED: Session Enrichment in evaluate() Function**
+
+* **Always Enriches Sessions**: Fixed bug where sessions weren't enriched when no evaluators were provided
+* **Output Persistence**: Ensures outputs are always saved to backend regardless of evaluator presence
+* **Better Logging**: Upgraded log level from debug to info for session enrichment visibility
+
 **🔧 IMPROVED: Tracer Internal Cleanup**
 
 * **Code Simplification**: Removed redundant experiment baggage code path
