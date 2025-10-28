@@ -31,6 +31,13 @@ Current Version Highlights
 * **Solution**: Selective baggage with safe keys only
 * **Result**: Tracer discovery works while preventing multi-instance conflicts
 
+**📚 ADDED: Strands Multi-Agent Integration Examples**
+
+* **Swarm Collaboration**: Comprehensive example with researcher → coder → reviewer flow
+* **Graph Workflow**: Parallel processing pattern with research → analysis/fact_check → report
+* **Advanced Patterns**: Entry points, max handoffs/iterations, execution timeouts, node timeouts
+* **Tracing Support**: Expected spans, agent collaboration flow, and agent-level metrics documented
+
 **📋 ADDED: Integration Examples Requirements File**
 
 * **Comprehensive Dependencies**: Added requirements.txt with all packages for integration examples
