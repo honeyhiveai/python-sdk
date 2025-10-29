@@ -201,6 +201,35 @@ tracer = HoneyHiveTracer.init(
 )
 ```
 
+#### Agent Framework Integration Examples
+```python
+# AWS Strands Multi-Agent Examples
+from strands.multiagent import Swarm, GraphBuilder
+
+# Swarm collaboration (researcher → coder → reviewer)
+swarm = Swarm(
+    [researcher, coder, reviewer],
+    entry_point=researcher,
+    max_handoffs=10
+)
+result = swarm(task)
+
+# Graph workflows with parallel processing
+builder = GraphBuilder()
+builder.add_node(researcher, "research")
+builder.add_node(analyst, "analysis")
+builder.add_edge("research", "analysis")
+graph = builder.build()
+result = graph(task)
+
+# Automatic tracing of:
+# - Agent invocations with token usage
+# - Handoffs between agents
+# - Tool executions
+# - Parallel processing flows
+# - Execution order and dependencies
+```
+
 ### 🎯 Span Enrichment
 
 #### Enrich Current Span

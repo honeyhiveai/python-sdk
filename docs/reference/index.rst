@@ -50,7 +50,7 @@ Core Capabilities
 - **Multi-Provider Support**: Simultaneous tracing across multiple LLM providers  
 - **Token Tracking**: Automatic token usage monitoring and cost tracking
 - **Rich Metadata**: Detailed span attributes for AI operations
-- **Framework Examples**: Integration examples for OpenAI Agents (SwarmAgent), AutoGen (AG2 multi-agent), DSPy (signatures and optimization), AWS Bedrock (Nova/Titan/Claude models), AWS Strands (TracerProvider pattern), Google ADK (async support), LangGraph (state workflows), Pydantic AI (type-safe agents), and more
+- **Framework Examples**: Integration examples for OpenAI Agents (SwarmAgent), AutoGen (AG2 multi-agent), DSPy (signatures and optimization), AWS Bedrock (Nova/Titan/Claude models), AWS Strands (TracerProvider pattern with Swarm collaboration and Graph workflows), Google ADK (async support), LangGraph (state workflows), Pydantic AI (type-safe agents), and more
 - **🆕 Example Requirements**: Comprehensive ``requirements.txt`` for integration examples with organized dependencies by category (core, LLM providers, instrumentors, frameworks) and per-integration installation commands
 
 **Performance & Reliability**:
