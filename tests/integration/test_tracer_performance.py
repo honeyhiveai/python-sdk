@@ -145,13 +145,14 @@ class TestTracerPerformance:
         # Define thresholds based on execution mode
         if is_parallel_execution:
             # Parallel execution: more lenient thresholds due to system contention
+            # Under 8-way parallel execution, overhead can spike significantly
             thresholds = {
-                "tracer_overhead_ms": 150.0,  # < 150ms tracer overhead
-                "tracer_overhead_percent": 3000.0,  # < 3000% overhead
-                "network_overhead_ms": 10.0,  # < 10ms per span network overhead
-                "flush_time_ms": 2000.0,  # < 2000ms total flush time
-                "decorator_cv_percent": 200.0,  # < 200% coefficient of variation
-                "overall_ratio": 30.0,  # < 30x total overhead
+                "tracer_overhead_ms": 250.0,  # < 250ms (parallel contention)
+                "tracer_overhead_percent": 5000.0,  # < 5000% overhead
+                "network_overhead_ms": 15.0,  # < 15ms per span network overhead
+                "flush_time_ms": 3000.0,  # < 3000ms total flush time
+                "decorator_cv_percent": 300.0,  # < 300% coefficient of variation
+                "overall_ratio": 50.0,  # < 50x total overhead
                 "min_tracer_overhead_ms": 0.5,  # > 0.5ms tracer overhead
             }
         else:

@@ -110,7 +110,7 @@ class TestMetricsAPICreateMetric:
             # Assert
             assert isinstance(result, Metric)
             assert result.name == "test_metric"
-            assert result.type.value == "PYTHON"
+            assert result.type.value == "PYTHON"  # pylint: disable=no-member
 
             # Verify API call
             mock_client.request.assert_called_once_with(

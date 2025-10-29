@@ -229,13 +229,15 @@ class TestHoneyHiveSpanProcessorBaggageHandling:
         """Test baggage with tracer session ID taking priority."""
         mock_tracer = Mock(spec=HoneyHiveTracer)
         mock_tracer.session_id = "tracer-session-456"
+        mock_tracer.project_name = "test-project"
+        mock_tracer.source_environment = "test-source"
         processor = HoneyHiveSpanProcessor(tracer_instance=mock_tracer)
         mock_context = Mock(spec=Context)
 
         def mock_baggage_side_effect(key: str, ctx: Context) -> Optional[str]:
             baggage_data = {
                 "session_id": "baggage-session-123",
-                "project": "test-project",
+                # NOTE: project/source removed from baggage per multi-instance fix
             }
             return baggage_data.get(key)
 
@@ -246,8 +248,11 @@ class TestHoneyHiveSpanProcessorBaggageHandling:
         expected = {
             "honeyhive.session_id": "tracer-session-456",
             "traceloop.association.properties.session_id": "tracer-session-456",
+            # Multi-instance fix: project/source come from tracer instance, not baggage
             "honeyhive.project": "test-project",
             "traceloop.association.properties.project": "test-project",
+            "honeyhive.source": "test-source",
+            "traceloop.association.properties.source": "test-source",
         }
         assert result == expected
 
@@ -288,7 +293,10 @@ class TestHoneyHiveSpanProcessorBaggageHandling:
     ) -> None:
         """Test baggage extraction with tracer that has no session_id attribute."""
         mock_tracer = Mock(spec=HoneyHiveTracer)
-        # Don't set session_id attribute
+        # Delete attributes to simulate tracer without these fields
+        del mock_tracer.session_id
+        del mock_tracer.project_name
+        del mock_tracer.source_environment
         processor = HoneyHiveSpanProcessor(tracer_instance=mock_tracer)
         mock_context = Mock(spec=Context)
 

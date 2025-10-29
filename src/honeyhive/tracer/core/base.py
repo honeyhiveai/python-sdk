@@ -117,6 +117,9 @@ class HoneyHiveTracerBase:  # pylint: disable=too-many-instance-attributes
     config: DotDict
     client: Optional["HoneyHive"]
     session_api: Optional["SessionAPI"]
+    _baggage_lock: "threading.Lock"
+    _session_id: Optional[str]
+    tracer: Any  # OpenTelemetry Tracer instance
 
     # Sentinel object moved to module level with proper typing
 

@@ -120,7 +120,41 @@ def main():
             span.set_attribute("operation.result", result)
         print(f"  ✓ Operation completed: {result}")
     # ========================================================================
-    print("\n4. API Client Usage")
+    # 4. SPAN AND SESSION ENRICHMENT (v1.0+ PRIMARY PATTERN)
+    # ========================================================================
+    print("\n4. Span and Session Enrichment (v1.0+ Primary Pattern)")
+    print("-" * 56)
+
+    # Enrich spans with metadata and metrics using instance methods
+    @trace(tracer=tracer, event_type="tool")
+    def process_data(input_data):
+        """Process data and enrich span with metadata."""
+        print(f"  📝 Processing: {input_data}")
+        result = input_data.upper()
+        
+        # ✅ PRIMARY PATTERN (v1.0+): Use instance method
+        tracer.enrich_span(
+            metadata={"input": input_data, "result": result},
+            metrics={"processing_time_ms": 100}
+        )
+        print("  ✓ Span enriched with metadata and metrics")
+        
+        return result
+
+    # Test enrichment
+    processed_result = process_data("hello world")
+    print(f"✓ Result: {processed_result}")
+
+    # Enrich session with user properties
+    print("\n  📝 Enriching session with user properties...")
+    tracer.enrich_session(
+        user_properties={"user_id": "user-123", "plan": "premium"},
+        metadata={"source": "basic_usage_example"}
+    )
+    print("  ✓ Session enriched")
+
+    # ========================================================================
+    print("\n5. API Client Usage")
     print("-" * 20)
 
     # Initialize API client
@@ -137,6 +171,8 @@ def main():
     print("✅ @trace decorator with tracer parameter")
     print("✅ Dynamic sync/async function detection")
     print("✅ Manual span management")
+    print("✅ Span enrichment with instance methods (v1.0+ primary pattern)")
+    print("✅ Session enrichment with user properties")
     print("✅ API client initialization")
     print("\nThese examples match the documentation code snippets!")
 

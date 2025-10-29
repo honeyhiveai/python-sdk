@@ -8,9 +8,12 @@ This module tests performance under concurrent load with:
 - Scalability testing
 """
 
-# pylint: disable=duplicate-code
+# pylint: disable=duplicate-code,cyclic-import
 # pylint: disable=too-many-lines,protected-access,redefined-outer-name,too-many-public-methods,line-too-long
-# Justification: Performance benchmark file with comprehensive concurrent testing requiring extensive test coverage
+# Justification:
+# - duplicate-code: Legitimate shared patterns with enrichment implementations
+# - cyclic-import: Test imports trigger circular dependencies in main codebase (acceptable for tests)
+# - Other: Performance benchmark file with comprehensive concurrent testing requiring extensive test coverage
 
 import queue
 import statistics

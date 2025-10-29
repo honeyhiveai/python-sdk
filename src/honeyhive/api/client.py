@@ -210,7 +210,8 @@ class HoneyHive:  # pylint: disable=too-many-instance-attributes
     @property
     def client_kwargs(self) -> Dict[str, Any]:
         """Get common client configuration."""
-        # Late import to avoid module initialization order issues
+        # pylint: disable=import-outside-toplevel
+        # Justification: Avoids circular import (__init__.py imports this module)
         from .. import __version__
 
         return {

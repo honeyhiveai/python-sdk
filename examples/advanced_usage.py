@@ -20,7 +20,8 @@ import os
 import time
 from typing import Any, Dict, Optional
 
-from honeyhive import HoneyHiveTracer, enrich_span, trace, trace_class
+from honeyhive import HoneyHiveTracer, trace, trace_class
+from honeyhive import enrich_span  # Legacy pattern for context manager demo
 from honeyhive.config.models import TracerConfig, SessionConfig
 from honeyhive.models import EventType
 
@@ -195,11 +196,38 @@ def main():
     print("\n5. Advanced Span Enrichment")
     print("-" * 28)
 
-    # Demonstrate span enrichment with enrich_span
-    with prod_tracer.start_span("enriched_operation") as span:
-        print("✓ Base span created: enriched_operation")
+    # PRIMARY PATTERN (v1.0+): Instance method enrichment
+    print("  📝 Instance Method Pattern (v1.0+ Primary)...")
+    
+    @trace(tracer=prod_tracer, event_type=EventType.tool)
+    def complex_operation(data):
+        """Operation with comprehensive span enrichment."""
+        result = f"Processed: {data}"
+        
+        # ✅ PRIMARY PATTERN: Use instance method
+        prod_tracer.enrich_span(
+            metadata={
+                "operation": "complex_processing",
+                "data_type": type(data).__name__,
+                "result": result
+            },
+            metrics={
+                "processing_time_ms": 150,
+                "performance_score": 0.95
+            }
+        )
+        
+        return result
+    
+    result = complex_operation({"key": "value"})
+    print(f"  ✓ Instance method enrichment completed: {result}")
 
-        # Enrich the span with additional context
+    # LEGACY PATTERN: Context manager (still works but deprecated)
+    print("\n  📝 Context Manager Pattern (Legacy)...")
+    with prod_tracer.start_span("enriched_operation") as span:
+        print("  ✓ Base span created: enriched_operation")
+
+        # ⚠️ LEGACY: Free function with context manager (backward compatibility)
         with enrich_span(
             event_type=EventType.tool,
             event_name="context_enrichment",
@@ -208,11 +236,11 @@ def main():
             metrics={"enrichment_count": 10, "performance_score": 0.95},
             feedback={"quality": "excellent", "completeness": "full"},
         ):
-            print("  ✓ Span enriched with comprehensive attributes")
+            print("  ✓ Span enriched with comprehensive attributes (legacy pattern)")
             time.sleep(0.1)
             print("  ✓ Enrichment context manager completed")
 
-    print("✓ Advanced span enrichment completed")
+    print("✓ Advanced span enrichment patterns demonstrated")
 
     # ========================================================================
     # 6. ERROR HANDLING IN SPANS
@@ -273,7 +301,8 @@ def main():
     print("✅ Multiple tracer instances for different environments")
     print("✅ @trace_class decorator for automatic method tracing")
     print("✅ Parent-child span relationships")
-    print("✅ Advanced span enrichment with enrich_span")
+    print("✅ Span enrichment with instance methods (v1.0+ primary pattern)")
+    print("✅ Legacy context manager enrichment pattern (backward compatibility)")
     print("✅ Proper error handling in traced functions")
     print("✅ Performance monitoring patterns")
     print("✅ Complex multi-step workflows")

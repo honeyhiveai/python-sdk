@@ -346,7 +346,10 @@ class TestSimpleIntegration:
     def test_environment_configuration(self, integration_client):
         """Test that environment configuration is properly set."""
         assert integration_client.test_mode is False  # Integration tests use real API
-        assert integration_client.server_url == "https://api.honeyhive.ai"
+        # Assert server_url is configured (respects HH_API_URL env var
+        # - could be staging or production)
+        assert integration_client.server_url is not None
+        assert integration_client.server_url.startswith("https://api.")
 
     def test_fixture_availability(self, integration_client):
         """Test that required integration fixtures are available."""

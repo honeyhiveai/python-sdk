@@ -5,7 +5,6 @@ and span enrichment functionality. It provides dynamic baggage discovery
 and context-aware operations following the multi-instance architecture.
 """
 
-import json
 from contextlib import contextmanager
 from typing import TYPE_CHECKING, Any, Dict, Iterator, List, Optional
 
@@ -13,6 +12,7 @@ from opentelemetry import baggage, context, trace
 from opentelemetry.context import Context
 from opentelemetry.trace import Status, StatusCode
 
+from ... import __version__
 from ...utils.logger import safe_log
 
 if TYPE_CHECKING:
@@ -23,6 +23,25 @@ if TYPE_CHECKING:
 
 
 # Config values accessed directly from tracer.config DotDict
+
+# Safe keys for selective baggage propagation (v1.0 multi-instance fix)
+# Only these keys are propagated via context.attach() to enable tracer discovery
+# while preventing session ID conflicts between tracer instances
+#
+# CRITICAL: Only include keys that are SHARED across tracer instances
+# (evaluation context) or required for tracer discovery. Do NOT include
+# per-tracer-instance values like project/source, as they will leak between
+# tracer instances via global context.
+SAFE_PROPAGATION_KEYS = frozenset(
+    {
+        "run_id",  # Evaluation run ID (shared across tracers in evaluate())
+        "dataset_id",  # Dataset ID (shared across tracers in evaluate())
+        "datapoint_id",  # Current datapoint ID (shared across tracers in evaluate())
+        "honeyhive_tracer_id",  # Tracer instance ID (for discovery)
+        # REMOVED: "project" - per-tracer-instance value, must come from tracer directly
+        # REMOVED: "source" - per-tracer-instance value, must come from tracer directly
+    }
+)
 
 
 def _get_dynamic_experiment_patterns() -> List[str]:
@@ -255,27 +274,57 @@ def _apply_baggage_context(
         return
 
     try:
-        # Get current context and apply baggage
+        # Filter to safe keys only (v1.0 fix for multi-instance tracer discovery)
+        # Only propagate evaluation context and tracer ID, exclude session-specific keys
+        safe_items = {
+            key: value
+            for key, value in baggage_items.items()
+            if key in SAFE_PROPAGATION_KEYS
+        }
+
+        if not safe_items:
+            safe_log(
+                tracer_instance,
+                "debug",
+                "No safe baggage items to propagate (all filtered)",
+            )
+            return
+
+        # Log filtered keys for debugging
+        filtered_keys = set(baggage_items.keys()) - set(safe_items.keys())
+        if filtered_keys:
+            safe_log(
+                tracer_instance,
+                "debug",
+                "Filtered unsafe baggage keys: %s",
+                list(filtered_keys),
+                honeyhive_data={
+                    "filtered_keys": list(filtered_keys),
+                    "safe_keys": list(safe_items.keys()),
+                },
+            )
+
+        # Get current context and apply safe baggage only
         ctx = context.get_current()
 
         safe_log(
             tracer_instance,
             "debug",
-            "🔍 DEBUG: Applying baggage context",
+            "🔍 DEBUG: Applying selective baggage context",
             honeyhive_data={
-                "baggage_items": baggage_items,
+                "safe_items": safe_items,
                 "current_context_id": id(ctx),
-                "baggage_count": len(baggage_items),
+                "safe_count": len(safe_items),
             },
         )
 
-        for key, value in baggage_items.items():
+        for key, value in safe_items.items():
             if value:  # Only set non-empty values
                 ctx = baggage.set_baggage(key, str(value), ctx)
                 safe_log(
                     tracer_instance,
                     "debug",
-                    "🔍 DEBUG: Set baggage %s=%s",
+                    "🔍 DEBUG: Set safe baggage %s=%s",
                     key,
                     value,
                     honeyhive_data={
@@ -285,16 +334,19 @@ def _apply_baggage_context(
                     },
                 )
 
-        # Activate the context (disabled for multi-instance architecture)
-        # Multi-instance tracers should not set global baggage context
-        # as it causes session ID conflicts between tracer instances
-        # context.attach(ctx)  # DISABLED: Use tracer-specific session IDs instead
+        # Attach context to enable tracer discovery
+        # (v1.0 fix - re-enabled with safe keys)
+        # Safe keys only (evaluation context, tracer ID) prevent conflicts
+        context.attach(ctx)
 
         safe_log(
             tracer_instance,
             "debug",
-            "Baggage context applied successfully",
-            honeyhive_data={"applied_items": len(baggage_items)},
+            "Selective baggage context attached successfully",
+            honeyhive_data={
+                "propagated_keys": list(safe_items.keys()),
+                "filtered_count": len(filtered_keys),
+            },
         )
 
     except Exception as e:
@@ -415,9 +467,7 @@ def _prepare_enriched_attributes(
     if source:
         enriched_attributes["honeyhive.source"] = source
 
-    # Add tracer version (late import to avoid module initialization order issues)
-    from ... import __version__
-
+    # Add tracer version
     enriched_attributes["honeyhive.tracer_version"] = __version__
 
     # Add experiment context dynamically

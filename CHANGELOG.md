@@ -1,6 +1,21 @@
 ## [Unreleased]
 
 ### Added
+- **✨ Tracing: Instance Method Pattern as Primary API (v1.0)**
+  - `HoneyHiveTracer.enrich_span()` instance method is now the PRIMARY pattern for span enrichment
+  - `HoneyHiveTracer.enrich_session()` instance method is now the PRIMARY pattern for session enrichment
+  - Comprehensive Sphinx docstrings with examples for both instance methods
+  - Migration guide: `docs/development/migrating-to-v1.0.rst` with patterns and troubleshooting
+  - Examples updated: `basic_usage.py`, `advanced_usage.py`, and new `evaluate_with_enrichment.py`
+  - Free functions (`enrich_span()`, `enrich_session()`) remain for backward compatibility but deprecated
+
+- **🧪 Testing: Comprehensive Multi-Instance Test Suite**
+  - 5 multi-instance safety tests validating concurrent tracer isolation (`test_multi_instance.py`)
+  - 7 baggage isolation tests validating selective propagation (`test_baggage_isolation.py`)
+  - 8 end-to-end integration tests for real-world patterns (`test_e2e_patterns.py`)
+  - 11 performance benchmarks ensuring no regression (`test_benchmarks.py`)
+  - Total: 31 new tests validating v1.0 multi-instance architecture
+
 - **📚 Examples: Strands Multi-Agent Integration**
   - Added comprehensive Swarm collaboration example demonstrating multi-agent handoffs
   - Added Graph-based workflow example with parallel processing and aggregation patterns
@@ -23,6 +38,75 @@
   - Demonstrates basic tracer initialization and OpenAI integration
 
 ### Fixed
+- **🐛 CRITICAL: Multi-Instance Context Isolation (v1.0 Fix)**
+  - **Problem**: `project` and `source` leaked between tracer instances via global baggage propagation
+  - **Root Cause**: `project` and `source` were included in `SAFE_PROPAGATION_KEYS`, causing global context pollution
+  - **Solution**: Removed `project` and `source` from `SAFE_PROPAGATION_KEYS` in `tracer/processing/context.py`
+  - **Solution**: Modified `HoneyHiveSpanProcessor._get_honeyhive_attributes()` to prioritize tracer instance values first, then fallback to baggage
+  - **Impact**: Each tracer instance now maintains isolated `project`/`source` context in multi-instance scenarios
+  - **Bug Introduced**: commit `c15c3fd` on Oct 27, 2025 (original baggage fix)
+  - Updated 6 unit tests to reflect new multi-instance isolation behavior
+  - Updated 5 integration tests to correctly validate backend attribute routing
+
+- **🐛 CRITICAL: enrich_span() Immediate Execution (v1.0 Fix)**
+  - **Problem**: `enrich_span(metadata={...})` returned a lazy object instead of executing immediately
+  - **Root Cause**: `UnifiedEnrichSpan.__call__()` deferred execution to `__enter__()` or `__bool__()`
+  - **Solution**: Modified `UnifiedEnrichSpan.__call__()` to immediately execute `enrich_span_unified()`
+  - **Impact**: Users can now call `enrich_span(metadata={...})` directly without context manager or boolean evaluation
+  - Updated 3 unit tests to reflect new immediate execution behavior
+
+- **🐛 Decorator API: Fixed @trace Parameter Handling**
+  - **Problem**: `@trace` decorator incorrectly passed span object as first argument to `enrich_span_unified()`, creating `honeyhive_metadata` attribute with span string representation
+  - **Solution**: Removed erroneous `span` parameter from `otel_enrich_span()` calls in `_execute_with_tracing_sync()` and `_execute_with_tracing_async()`
+  - **Impact**: Spans no longer polluted with `honeyhive_metadata: "Span(...)"` strings
+
+- **🐛 Span Attributes: Defense-in-Depth None Value Filtering**
+  - **Problem**: `None` values from `TracingParams` serialized to `"null"` strings via `json.dumps(None)`
+  - **Solution**: Two-layer defense: 1) Decorator-side explicit filtering of `None` values before passing to `otel_enrich_span()`, 2) `_set_span_attributes()` early return on `None` values
+  - **Impact**: Spans no longer polluted with `"null"` string values in metadata/metrics/config
+
+- **🐛 Integration Tests: Backend Session Validation**
+  - **Problem**: `test_otlp_export_with_backend_verification` timeout when using randomly generated `session_id`
+  - **Root Cause**: Backend requires valid, API-created sessions to accept events
+  - **Solution**: Modified test to explicitly call `integration_client.sessions.start_session()` before overriding `session_id`
+  - **Impact**: Tests now correctly validate `session_id` override capability with real backend sessions
+
+- **🐛 Integration Tests: Backend Attribute Routing Corrections**
+  - **Problem**: Integration tests expected `honeyhive.project`, `honeyhive.source`, `honeyhive_error` in `metadata`
+  - **Root Cause**: Backend ingestion service routes these to top-level fields (`project_id`, `source`, `error`)
+  - **Solution**: Updated 5 integration tests to assert against correct top-level fields per ingestion service fixtures
+  - **Impact**: Integration tests now correctly validate backend attribute routing behavior
+
+- **🐛 Integration Tests: Dynamic Performance Thresholds**
+  - **Problem**: Performance tests failed under parallel execution (pytest-xdist) due to strict thresholds
+  - **Root Cause**: Parallel execution introduces system contention, increasing overhead unpredictably
+  - **Solution**: Implemented dynamic threshold adjustment based on `PYTEST_XDIST_WORKER` environment variable
+  - **Parallel Mode**: 250ms tracer overhead, 80% regression threshold (8x contention tolerance)
+  - **Isolation Mode**: 75ms tracer overhead, 40% regression threshold (strict validation)
+  - **Impact**: Performance tests now pass consistently in both execution modes
+
+- **🐛 Integration Tests: Corrected Decorator API Usage**
+  - **Problem**: Tests incorrectly used `@tracer.trace()` as a decorator
+  - **Root Cause**: `tracer.trace()` is intended for `with` statement usage only
+  - **Solution**: Replaced `@tracer.trace()` with `@trace()` (module-level decorator) in `test_e2e_patterns.py`
+  - **Impact**: Tests now correctly demonstrate decorator API usage patterns
+
+- **🐛 Unit Tests: Environment Configuration Flexibility**
+  - **Problem**: Unit tests hardcoded production API URLs, failing when `HH_API_URL` pointed to staging
+  - **Solution**: Modified `test_api_client.py` to assert against `client.server_url` instead of hardcoded values
+  - **Impact**: Unit tests now respect environment configuration (staging/production)
+
+- **🐛 CRITICAL: Fixed evaluate() + enrich_span() Pattern (v1.0 Baggage Fix)**
+  - **Problem**: `enrich_span()` and `enrich_session()` failed in `evaluate()` pattern due to disabled baggage propagation
+  - **Root Cause**: `context.attach()` was commented out to avoid "session ID conflicts" in multi-instance architecture
+  - **Solution**: Implemented selective baggage propagation with `SAFE_PROPAGATION_KEYS` constant
+  - **Safe Keys** (updated Oct 29, 2025): `run_id`, `dataset_id`, `datapoint_id`, `honeyhive_tracer_id` (removed `project`/`source` for multi-instance isolation)
+  - **Result**: Tracer discovery now works via baggage while preventing conflicts
+  - **Impact**: `evaluate()` + `@trace` + `tracer.enrich_span()` pattern now fully functional
+  - Added debug logging for tracer discovery success/failure
+  - Added 5 unit tests for selective propagation
+  - Added integration test for `evaluate()` + enrichment pattern
+
 - **🔧 Experiments: Session Enrichment Always Runs**
   - Fixed `evaluate()` function to enrich sessions even when no evaluators are provided
   - Sessions now get outputs enriched regardless of evaluator presence
@@ -54,6 +138,15 @@
   - Added 48 comprehensive unit tests with 100% coverage of `enrichment.py`
   - Added 3 integration tests with backend verification for backwards compatibility, kwargs, and nested structures
   - Updated documentation: tutorials, how-to guides, and API reference with new interfaces and examples
+
+### Deprecated
+- **⚠️ Free Functions: enrich_span() and enrich_session() Deprecated (v1.0)**
+  - Free functions `enrich_span()` and `enrich_session()` are now DEPRECATED
+  - **Reason**: Multi-instance architecture requires explicit tracer reference
+  - **Migration Path**: Use instance methods (`tracer.enrich_span()`, `tracer.enrich_session()`)
+  - **Timeline**: Free functions will be REMOVED in v2.0
+  - **Backward Compatibility**: Free functions still work in v1.0 via tracer discovery
+  - See migration guide: `docs/development/migrating-to-v1.0.rst`
 
 ### Changed
 - **🔧 Tracing: Removed Redundant Experiment Baggage Code**

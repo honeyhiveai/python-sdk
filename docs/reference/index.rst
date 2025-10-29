@@ -30,6 +30,7 @@ Core Capabilities
 - **Session Management**: Automatic session creation with dynamic naming based on initialization file
 - **ProxyTracerProvider Compatibility**: Automatic detection and handling of OpenTelemetry's default provider states
 - **Real API Testing**: Comprehensive testing framework with conditional mocking for production-grade validation
+- **🆕 Instance Method Enrichment (v1.0)**: ``tracer.enrich_span()`` and ``tracer.enrich_session()`` instance methods are now the primary API with proper multi-instance support and tracer discovery via selective baggage propagation
 - **Span Enrichment**: Multiple invocation patterns (reserved namespaces, simple dict, kwargs, context manager) with full backwards compatibility and namespace routing
 - **HTTP Instrumentation**: Automatic HTTP request tracing with configurable enable/disable
 - **Full Backwards Compatibility**: Complete parameter compatibility with main branch for seamless upgrades

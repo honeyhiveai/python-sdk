@@ -238,10 +238,19 @@ class TestOTELOTLPExportIntegration:
             "otlp_backend_verification__"
             + generate_test_id("otlp_backend_verification_", "")[1]
         )
-        test_session_id = "test_session__" + generate_test_id("test_session_", "")[1]
+
+        # Create a test session via API (required for backend to accept events)
+        test_session = integration_client.sessions.start_session(
+            project=real_project,
+            session_name="otlp_backend_verification_test",
+            source=real_source,
+        )
+        test_session_id = test_session.session_id
 
         # ✅ STANDARD PATTERN: Use verify_tracer_span for span creation
         # + backend verification
+        # Override session_id with API-created session to test attribute
+        # override capability
         target_event = verify_tracer_span(
             tracer=integration_tracer,
             client=integration_client,
@@ -251,7 +260,7 @@ class TestOTELOTLPExportIntegration:
             span_attributes={
                 "test.verification_type": "backend_verification",
                 "test.unique_id": unique_id,
-                "honeyhive.session_id": test_session_id,
+                "honeyhive.session_id": test_session_id,  # API-created session
                 "honeyhive.project": real_project,
                 "honeyhive.source": real_source,
                 "verification.type": "otlp_export",
@@ -267,9 +276,14 @@ class TestOTELOTLPExportIntegration:
             == "backend_verification"
         )
         assert target_event.metadata.get("test.unique_id") == unique_id
-        assert target_event.metadata.get("honeyhive.session_id") == test_session_id
-        assert target_event.metadata.get("honeyhive.project") == real_project
-        assert target_event.metadata.get("honeyhive.source") == real_source
+
+        # NOTE: Context fields are routed to top-level fields, not metadata
+        # (backend routing per attribute_router.ts as of Oct 20, 2025)
+        assert (
+            target_event.session_id == test_session_id
+        )  # honeyhive.session_id → session_id
+        assert target_event.project_id is not None  # honeyhive.project → project_id
+        assert target_event.source == real_source  # honeyhive.source → source
 
         print(
             f"✅ Backend verification successful: Found event {target_event.event_id}"

@@ -600,7 +600,8 @@ def evaluate(  # pylint: disable=too-many-locals,too-many-branches
             dataset_id: HoneyHive dataset ID (alternative to external dataset)
             evaluators: List of evaluator functions (optional)
             api_key: HoneyHive API key (or set HONEYHIVE_API_KEY/HH_API_KEY env var)
-            server_url: HoneyHive server URL (or set HONEYHIVE_SERVER_URL/HH_SERVER_URL/HH_API_URL env var)
+            server_url: HoneyHive server URL (or set HONEYHIVE_SERVER_URL/
+                HH_SERVER_URL/HH_API_URL env var)
             project: HoneyHive project (or set HONEYHIVE_PROJECT env var)
             name: Experiment run name (auto-generated if not provided)
             max_workers: ThreadPool size for concurrent execution (default: 10)

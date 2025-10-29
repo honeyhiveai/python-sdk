@@ -281,23 +281,43 @@ def _execute_with_tracing_sync(
 
                 # Use existing enrichment functionality
                 try:
-                    otel_enrich_span(
-                        span,
-                        event_type=params.event_type,
-                        event_name=params.event_name,
-                        source=params.source,
-                        project=params.project,
-                        session_id=params.session_id,
-                        user_id=params.user_id,
-                        session_name=params.session_name,
-                        config=params.config,
-                        metadata=params.metadata,
-                        inputs=params.inputs,
-                        outputs=params.outputs,
-                        metrics=params.metrics,
-                        feedback=params.feedback,
-                        error=str(params.error) if params.error else None,
-                    )
+                    # NOTE: enrich_span_unified uses trace.get_current_span()
+                    # internally. Do NOT pass span as first argument (would
+                    # set honeyhive_metadata to span object)
+
+                    # Build enrichment kwargs, filtering None (defense in depth)
+                    # Prevents polluting spans with "null" from json.dumps(None)
+                    enrich_kwargs: Dict[str, Any] = {}
+                    if params.event_type is not None:
+                        enrich_kwargs["event_type"] = params.event_type
+                    if params.event_name is not None:
+                        enrich_kwargs["event_name"] = params.event_name
+                    if params.source is not None:
+                        enrich_kwargs["source"] = params.source
+                    if params.project is not None:
+                        enrich_kwargs["project"] = params.project
+                    if params.session_id is not None:
+                        enrich_kwargs["session_id"] = params.session_id
+                    if params.user_id is not None:
+                        enrich_kwargs["user_id"] = params.user_id
+                    if params.session_name is not None:
+                        enrich_kwargs["session_name"] = params.session_name
+                    if params.config is not None:
+                        enrich_kwargs["config"] = params.config
+                    if params.metadata is not None:
+                        enrich_kwargs["metadata"] = params.metadata
+                    if params.inputs is not None:
+                        enrich_kwargs["inputs"] = params.inputs
+                    if params.outputs is not None:
+                        enrich_kwargs["outputs"] = params.outputs
+                    if params.metrics is not None:
+                        enrich_kwargs["metrics"] = params.metrics
+                    if params.feedback is not None:
+                        enrich_kwargs["feedback"] = params.feedback
+                    if params.error is not None:
+                        enrich_kwargs["error"] = str(params.error)
+
+                    otel_enrich_span(**enrich_kwargs)
                 except Exception:
                     pass
 
@@ -398,23 +418,43 @@ async def _execute_with_tracing(
 
                 # Use existing enrichment functionality
                 try:
-                    otel_enrich_span(
-                        span,
-                        event_type=params.event_type,
-                        event_name=params.event_name,
-                        source=params.source,
-                        project=params.project,
-                        session_id=params.session_id,
-                        user_id=params.user_id,
-                        session_name=params.session_name,
-                        config=params.config,
-                        metadata=params.metadata,
-                        inputs=params.inputs,
-                        outputs=params.outputs,
-                        metrics=params.metrics,
-                        feedback=params.feedback,
-                        error=str(params.error) if params.error else None,
-                    )
+                    # NOTE: enrich_span_unified uses trace.get_current_span()
+                    # internally. Do NOT pass span as first argument (would
+                    # set honeyhive_metadata to span object)
+
+                    # Build enrichment kwargs, filtering None (defense in depth)
+                    # Prevents polluting spans with "null" from json.dumps(None)
+                    enrich_kwargs: Dict[str, Any] = {}
+                    if params.event_type is not None:
+                        enrich_kwargs["event_type"] = params.event_type
+                    if params.event_name is not None:
+                        enrich_kwargs["event_name"] = params.event_name
+                    if params.source is not None:
+                        enrich_kwargs["source"] = params.source
+                    if params.project is not None:
+                        enrich_kwargs["project"] = params.project
+                    if params.session_id is not None:
+                        enrich_kwargs["session_id"] = params.session_id
+                    if params.user_id is not None:
+                        enrich_kwargs["user_id"] = params.user_id
+                    if params.session_name is not None:
+                        enrich_kwargs["session_name"] = params.session_name
+                    if params.config is not None:
+                        enrich_kwargs["config"] = params.config
+                    if params.metadata is not None:
+                        enrich_kwargs["metadata"] = params.metadata
+                    if params.inputs is not None:
+                        enrich_kwargs["inputs"] = params.inputs
+                    if params.outputs is not None:
+                        enrich_kwargs["outputs"] = params.outputs
+                    if params.metrics is not None:
+                        enrich_kwargs["metrics"] = params.metrics
+                    if params.feedback is not None:
+                        enrich_kwargs["feedback"] = params.feedback
+                    if params.error is not None:
+                        enrich_kwargs["error"] = str(params.error)
+
+                    otel_enrich_span(**enrich_kwargs)
                 except Exception:
                     pass
 
