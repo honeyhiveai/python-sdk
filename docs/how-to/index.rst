@@ -49,6 +49,7 @@ Quick solutions for specific provider integration challenges. HoneyHive supports
    integrations/google-adk
    integrations/bedrock
    integrations/azure-openai
+   integrations/strands
    integrations/mcp
    integrations/multi-provider
    integrations/non-instrumentor-frameworks

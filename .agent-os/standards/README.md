@@ -46,6 +46,7 @@ This directory contains the comprehensive Agent OS standards that enable consist
 ## 📚 **Documentation Standards**
 
 ### **Documentation System**
+- **[RST Documentation Workflow](documentation/rst-documentation-workflow.md)** - **MANDATORY** pre-writing workflow and validation
 - **[Documentation Generation](documentation/documentation-generation.md)** - Template automation and generation
 - **[Documentation Templates](documentation/documentation-templates.md)** - Reusable patterns and templates
 - **[Mermaid Diagrams](documentation/mermaid-diagrams.md)** - Dual-theme diagram standards
@@ -110,10 +111,11 @@ The following core files remain in the main standards directory:
 
 ### **📚 Documentation Tasks**
 **Documentation system and standards**
-1. **[Documentation Generation](documentation/documentation-generation.md)** - Template automation
-2. **[Documentation Templates](documentation/documentation-templates.md)** - Reusable patterns
-3. **[Requirements](documentation/requirements.md)** - Documentation standards
-4. **[HoneyHive Docs Access](documentation/honeyhive-docs-access.md)** - Access docs via llms.txt and markdown
+1. **[RST Documentation Workflow](documentation/rst-documentation-workflow.md)** - **START HERE** for manual RST writing
+2. **[Documentation Generation](documentation/documentation-generation.md)** - Template automation
+3. **[Documentation Templates](documentation/documentation-templates.md)** - Reusable patterns
+4. **[Requirements](documentation/requirements.md)** - Documentation standards
+5. **[HoneyHive Docs Access](documentation/honeyhive-docs-access.md)** - Access docs via llms.txt and markdown
 
 ### **🔧 Development Setup Tasks**
 **Environment and process setup**
@@ -162,11 +164,12 @@ The following core files remain in the main standards directory:
 
 ### **📝 Documentation Writers**
 **DOCUMENTATION PATH:**
-1. **[Documentation Generation](documentation/documentation-generation.md)** - Template system
-2. **[Documentation Templates](documentation/documentation-templates.md)** - Reusable patterns
-3. **[Requirements](documentation/requirements.md)** - Documentation standards
-4. **[Mermaid Diagrams](documentation/mermaid-diagrams.md)** - Diagram standards
-5. **[HoneyHive Docs Access](documentation/honeyhive-docs-access.md)** - Access docs via llms.txt
+1. **[RST Documentation Workflow](documentation/rst-documentation-workflow.md)** - **MANDATORY** pre-writing workflow
+2. **[Documentation Generation](documentation/documentation-generation.md)** - Template system
+3. **[Documentation Templates](documentation/documentation-templates.md)** - Reusable patterns
+4. **[Requirements](documentation/requirements.md)** - Documentation standards
+5. **[Mermaid Diagrams](documentation/mermaid-diagrams.md)** - Diagram standards
+6. **[HoneyHive Docs Access](documentation/honeyhive-docs-access.md)** - Access docs via llms.txt
 
 ---
 
