@@ -544,9 +544,10 @@ class TestApplyBaggageContext:
         _apply_baggage_context(baggage_items, honeyhive_tracer)
 
         mock_context.get_current.assert_called_once()
-        assert mock_baggage.set_baggage.call_count == 2
+        # Multi-instance fix: project/source no longer propagated via baggage
+        assert mock_baggage.set_baggage.call_count == 1
         mock_baggage.set_baggage.assert_any_call("run_id", "run-123", mock_ctx)
-        mock_baggage.set_baggage.assert_any_call("project", "test-project", mock_ctx)
+        # project is NOT propagated (removed from SAFE_PROPAGATION_KEYS)
 
         # Context should be attached (v1.0 fix)
         mock_context.attach.assert_called_once_with(mock_ctx)
@@ -617,10 +618,9 @@ class TestApplyBaggageContext:
 
         _apply_baggage_context(baggage_items, honeyhive_tracer)
 
-        # Should only set non-empty safe values (project has value, source is empty)
-        mock_baggage.set_baggage.assert_called_once_with(
-            "project", "test-project", mock_ctx
-        )
+        # Multi-instance fix: project/source no longer in SAFE_PROPAGATION_KEYS
+        # No baggage should be set (session_id is not in SAFE_PROPAGATION_KEYS)
+        mock_baggage.set_baggage.assert_not_called()
 
     @patch("honeyhive.tracer.processing.context.safe_log")
     def test_apply_baggage_context_none_tracer(self, mock_log: Mock) -> None:
@@ -659,16 +659,15 @@ class TestApplyBaggageContext:
 
         _apply_baggage_context(baggage_items, honeyhive_tracer)
 
-        # All safe keys should be set
-        assert mock_baggage.set_baggage.call_count == 6
+        # Multi-instance fix: only safe keys are propagated (project/source removed)
+        assert mock_baggage.set_baggage.call_count == 4
         mock_baggage.set_baggage.assert_any_call("run_id", "run-123", mock_ctx)
         mock_baggage.set_baggage.assert_any_call("dataset_id", "ds-456", mock_ctx)
         mock_baggage.set_baggage.assert_any_call("datapoint_id", "dp-789", mock_ctx)
         mock_baggage.set_baggage.assert_any_call(
             "honeyhive_tracer_id", "tracer-abc", mock_ctx
         )
-        mock_baggage.set_baggage.assert_any_call("project", "test-project", mock_ctx)
-        mock_baggage.set_baggage.assert_any_call("source", "test-source", mock_ctx)
+        # project and source are NOT propagated (removed from SAFE_PROPAGATION_KEYS)
 
         # Context should be attached (v1.0 fix - re-enabled)
         mock_context.attach.assert_called_once_with(mock_ctx)
@@ -1333,10 +1332,9 @@ class TestIntegrationScenarios:
         # Setup baggage context
         setup_baggage_context(honeyhive_tracer)
 
-        # Verify only safe keys were set (session_id excluded for multi-instance isolation)
+        # Multi-instance fix: Verify only safe keys were set
+        # (project/source/session_id excluded for multi-instance isolation)
         expected_calls = [
-            call("project", "test-project", mock_ctx),
-            call("source", "test", mock_ctx),
             call("run_id", "test-run", mock_ctx),
             call("honeyhive_tracer_id", "test-tracer", mock_ctx),
         ]
@@ -1344,8 +1342,12 @@ class TestIntegrationScenarios:
         for expected_call in expected_calls:
             assert expected_call in mock_baggage.set_baggage.call_args_list
 
-        # Verify session_id was NOT set (filtered out for multi-instance safety)
+        # Verify project/source/session_id were NOT set (removed from SAFE_PROPAGATION_KEYS)
+        project_call = call("project", "test-project", mock_ctx)
+        source_call = call("source", "test", mock_ctx)
         session_id_call = call("session_id", "test-session", mock_ctx)
+        assert project_call not in mock_baggage.set_baggage.call_args_list
+        assert source_call not in mock_baggage.set_baggage.call_args_list
         assert session_id_call not in mock_baggage.set_baggage.call_args_list
 
     # Removed patch for deleted _get_config_value_dynamically_from_tracer function

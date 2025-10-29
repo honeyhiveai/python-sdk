@@ -24,11 +24,37 @@ Current Version Highlights
 * **Multi-Instance Safe**: Proper tracer discovery via baggage propagation
 * **Comprehensive Examples**: Updated all examples with new patterns
 
+**🐛 CRITICAL FIX: Multi-Instance Context Isolation (Oct 29, 2025)**
+
+* **Issue**: `project` and `source` leaked between tracer instances via global baggage
+* **Root Cause**: `project`/`source` were in `SAFE_PROPAGATION_KEYS`, causing context pollution
+* **Solution**: Removed from safe keys, prioritize tracer instance values in span processor
+* **Result**: Each tracer instance maintains isolated context in multi-instance scenarios
+
+**🐛 CRITICAL FIX: enrich_span() Immediate Execution (Oct 29, 2025)**
+
+* **Issue**: `enrich_span(metadata={...})` returned lazy object instead of executing
+* **Root Cause**: `UnifiedEnrichSpan.__call__()` deferred execution
+* **Solution**: Modified to immediately execute `enrich_span_unified()`
+* **Result**: Direct calls now work without context manager or boolean evaluation
+
+**🐛 FIX: Decorator API Parameter Handling (Oct 29, 2025)**
+
+* **Issue**: `@trace` decorator passed span object to `enrich_span_unified()`, polluting spans
+* **Solution**: Removed erroneous span parameter from decorator enrichment calls
+* **Result**: Spans no longer contain `honeyhive_metadata: "Span(...)"` pollution
+
+**🐛 FIX: None Value Defense-in-Depth Filtering (Oct 29, 2025)**
+
+* **Issue**: `None` values serialized to `"null"` strings in span attributes
+* **Solution**: Two-layer filtering at decorator and attribute-setting levels
+* **Result**: Spans no longer polluted with `"null"` string values
+
 **🐛 CRITICAL FIX: evaluate() + enrich_span() Pattern**
 
 * **Issue**: Span enrichment failed in evaluation workflows
 * **Root Cause**: Baggage propagation was disabled to avoid session conflicts
-* **Solution**: Selective baggage with safe keys only
+* **Solution**: Selective baggage with safe keys (updated Oct 29: removed project/source)
 * **Result**: Tracer discovery works while preventing multi-instance conflicts
 
 **📋 ADDED: Integration Examples Requirements File**

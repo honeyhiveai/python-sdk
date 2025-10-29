@@ -20,12 +20,19 @@ def _set_span_attributes(span: Any, prefix: str, value: Any) -> None:
         prefix: Attribute name prefix
         value: Value to set as attribute
     """
+    # Defense in depth: Skip None values entirely to prevent "null" strings
+    if value is None:
+        return
+
     if isinstance(value, dict):
+        # Filter out None values from dict before recursing (defense in depth)
         for k, v in value.items():
-            _set_span_attributes(span, f"{prefix}.{k}", v)
+            if v is not None:  # Skip None values
+                _set_span_attributes(span, f"{prefix}.{k}", v)
     elif isinstance(value, list):
         for i, v in enumerate(value):
-            _set_span_attributes(span, f"{prefix}.{i}", v)
+            if v is not None:  # Skip None values
+                _set_span_attributes(span, f"{prefix}.{i}", v)
     elif isinstance(value, (bool, float, int, str)):
         try:
             span.set_attribute(prefix, value)

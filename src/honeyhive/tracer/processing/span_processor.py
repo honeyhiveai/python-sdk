@@ -292,13 +292,27 @@ class HoneyHiveSpanProcessor(SpanProcessor):
             # Backend compatibility: also set Traceloop-style attribute
             attributes["traceloop.association.properties.session_id"] = session_id
 
-        project = baggage.get_baggage("project", ctx)
+        # Priority: tracer instance (multi-instance isolation), then baggage
+        project = None
+        if self.tracer_instance and hasattr(self.tracer_instance, "project_name"):
+            project = self.tracer_instance.project_name
+
+        if not project:
+            project = baggage.get_baggage("project", ctx)
+
         if project:
             attributes["honeyhive.project"] = project
             # Backend compatibility: also set Traceloop-style attribute
             attributes["traceloop.association.properties.project"] = project
 
-        source = baggage.get_baggage("source", ctx)
+        # Priority: tracer instance (multi-instance isolation), then baggage
+        source = None
+        if self.tracer_instance and hasattr(self.tracer_instance, "source_environment"):
+            source = self.tracer_instance.source_environment
+
+        if not source:
+            source = baggage.get_baggage("source", ctx)
+
         if source:
             attributes["honeyhive.source"] = source
             # Backend compatibility: also set Traceloop-style attribute

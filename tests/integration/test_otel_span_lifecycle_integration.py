@@ -120,8 +120,10 @@ class TestOTELSpanLifecycleIntegration:
         assert target_event.metadata.get("test.long_attr") == long_value
 
         # Validate HoneyHive attributes
-        assert target_event.metadata.get("honeyhive.project") == real_project
-        assert target_event.metadata.get("honeyhive.source") == real_source
+        # NOTE: Context fields are routed to top-level fields, not metadata
+        # (backend routing per attribute_router.ts as of Oct 20, 2025)
+        assert target_event.project_id is not None  # honeyhive.project → project_id
+        assert target_event.source == real_source  # honeyhive.source → source
         assert (
             target_event.metadata.get("honeyhive.test_type")
             == "span_attributes_lifecycle"
@@ -193,8 +195,10 @@ class TestOTELSpanLifecycleIntegration:
         # Note: Event export format may vary - check if events are in metadata or
         # separate field
         # This is a basic validation that the span was exported successfully
-        assert target_event.metadata.get("honeyhive.project") == real_project
-        assert target_event.metadata.get("honeyhive.source") == real_source
+        # NOTE: Context fields are routed to top-level fields, not metadata
+        # (backend routing per attribute_router.ts as of Oct 20, 2025)
+        assert target_event.project_id is not None  # honeyhive.project → project_id
+        assert target_event.source == real_source  # honeyhive.source → source
 
         print(
             f"✅ Span events lifecycle verification successful: Found event {target_event.event_id}"

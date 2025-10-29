@@ -5,21 +5,16 @@ with enrich_span() calls, validating that tracer discovery works correctly
 via baggage propagation after the v1.0 selective propagation fix.
 """
 
-# pylint: disable=import-error,no-name-in-module,unused-argument
-# Justification: Pre-existing test file with incorrect imports
-# - honeyhive.sdk.evals doesn't exist (should be honeyhive.experiments)
-# - enrich_span not in compatibility.py (in honeyhive.tracer.instrumentation.enrichment)
+# pylint: disable=unused-argument
+# Justification:
 # - Unused datapoint arg in test fixture
-# TODO: Fix imports when refactoring test suite
 
 import os
 from typing import Any, Dict
 
 import pytest
 
-from honeyhive import HoneyHiveTracer
-from honeyhive.sdk.evals import evaluate
-from honeyhive.tracer.integration.compatibility import enrich_span
+from honeyhive import HoneyHiveTracer, enrich_span, evaluate
 
 
 @pytest.mark.integration
@@ -57,12 +52,12 @@ class TestEvaluateEnrichIntegration:
             dataset=[{"inputs": {"text": "test1"}}, {"inputs": {"text": "test2"}}],
             api_key=os.environ["HH_API_KEY"],
             project="test-evaluate-enrich-integration",
-            run_name="v1.0-baggage-fix-validation",
+            name="v1.0-baggage-fix-validation",
         )
 
         # Verify evaluation completed
         assert result is not None
-        assert "status" in result
+        assert hasattr(result, "status")
 
         # Verify both datapoints were processed
         assert len(calls) >= 4  # 2 function calls + 2 enrich calls
@@ -94,11 +89,11 @@ class TestEvaluateEnrichIntegration:
             dataset=[{"inputs": {"text": "test"}}],
             api_key=os.environ["HH_API_KEY"],
             project="test-evaluate-explicit-tracer",
-            run_name="explicit-tracer-pattern",
+            name="explicit-tracer-pattern",
         )
 
         assert result is not None
-        assert "status" in result
+        assert hasattr(result, "status")
 
     def test_evaluate_enrich_span_with_evaluation_context(self) -> None:
         """Test that evaluation context (run_id, datapoint_id) propagates correctly.
@@ -131,7 +126,7 @@ class TestEvaluateEnrichIntegration:
             ],
             api_key=os.environ["HH_API_KEY"],
             project="test-evaluation-context-propagation",
-            run_name="context-propagation-validation",
+            name="context-propagation-validation",
         )
 
         # Verify all datapoints processed
@@ -164,7 +159,7 @@ class TestEvaluateEnrichIntegration:
             dataset=[{"inputs": {"test": i}} for i in range(5)],
             api_key=os.environ["HH_API_KEY"],
             project="test-enrich-error-handling",
-            run_name="error-handling-validation",
+            name="error-handling-validation",
         )
 
         # Should complete despite any enrichment issues

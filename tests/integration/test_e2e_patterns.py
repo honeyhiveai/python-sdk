@@ -6,12 +6,9 @@ the v1.0 baggage fix and instance method patterns work in production.
 Tests require valid HH_API_KEY environment variable.
 """
 
-# pylint: disable=protected-access,no-value-for-parameter,too-few-public-methods
+# pylint: disable=protected-access,too-few-public-methods
 # Justification:
 # - protected-access: Tests need to access _tracer_id for tracer identification
-# - no-value-for-parameter: Pylint incorrectly flags @tracer.trace() decorator
-#   The trace method has dual usage: context manager (needs name) and
-#   decorator (doesn't need name)
 # - too-few-public-methods: Test classes don't need multiple public methods
 
 import os
@@ -19,7 +16,7 @@ from typing import Any, Dict
 
 import pytest
 
-from honeyhive import HoneyHiveTracer, enrich_span
+from honeyhive import HoneyHiveTracer, enrich_span, trace
 from honeyhive.tracer.registry import set_default_tracer
 
 # Skip all tests if no API key
@@ -42,7 +39,7 @@ class TestRealWorldPatterns:
         )
 
         # Create and enrich span
-        @tracer.trace(event_type="tool")
+        @trace(event_type="tool")
         def process_data(text: str) -> str:
             """Process data and enrich span."""
             result = text.upper()
@@ -71,17 +68,17 @@ class TestRealWorldPatterns:
             session_name="e2e-test-nested",
         )
 
-        @tracer.trace(event_type="tool")
+        @trace(event_type="tool")
         def parent_operation(data: str) -> Dict[str, Any]:
             """Parent operation with child operations."""
 
-            @tracer.trace(event_type="tool", event_name="child-1")
+            @trace(event_type="tool", event_name="child-1")
             def child_1(text: str) -> str:
                 result = text.lower()
                 tracer.enrich_span(metadata={"step": "lowercase"})
                 return result
 
-            @tracer.trace(event_type="tool", event_name="child-2")
+            @trace(event_type="tool", event_name="child-2")
             def child_2(text: str) -> str:
                 result = text.strip()
                 tracer.enrich_span(metadata={"step": "strip"})
@@ -176,7 +173,7 @@ class TestOpenAIIntegration:
         # Initialize OpenAI client
         client = OpenAI(api_key=os.environ.get("OPENAI_API_KEY", "sk-test"))
 
-        @tracer.trace(event_type="model")
+        @trace(event_type="model")
         def call_openai(prompt: str) -> str:
             """Call OpenAI and enrich span."""
             try:
@@ -218,9 +215,8 @@ class TestEvaluateIntegration:
 
     def test_evaluate_with_instance_method(self) -> None:
         """Test evaluate() with instance method enrichment."""
-        # pylint: disable=import-outside-toplevel,import-error,no-name-in-module,unused-import
-        # Optional dependency - doesn't exist yet, test demonstrates pattern
-        from honeyhive.sdk.evals import evaluate
+        # pylint: disable=import-outside-toplevel,unused-import
+        from honeyhive import evaluate
 
         # Initialize tracer
         tracer = HoneyHiveTracer.init(
@@ -230,7 +226,7 @@ class TestEvaluateIntegration:
         )
 
         # Define task with enrichment
-        @tracer.trace(event_type="model")
+        @trace(event_type="model")
         def task_function(datapoint: Dict[str, Any]) -> Dict[str, Any]:
             """Task function that enriches span."""
             inputs = datapoint.get("inputs", {})
@@ -281,7 +277,7 @@ class TestEvaluateIntegration:
         set_default_tracer(tracer)
 
         # Define task with free function (legacy)
-        @tracer.trace(event_type="model")
+        @trace(event_type="model")
         def legacy_task(datapoint: Dict[str, Any]) -> Dict[str, Any]:
             """Task using legacy free function pattern."""
             inputs = datapoint.get("inputs", {})
@@ -318,7 +314,7 @@ class TestErrorHandling:
             session_name="e2e-test-errors",
         )
 
-        @tracer.trace(event_type="tool")
+        @trace(event_type="tool")
         def operation_that_fails() -> None:
             """Operation that raises an error."""
             try:

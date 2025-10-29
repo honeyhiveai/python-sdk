@@ -310,7 +310,8 @@ class TestHoneyHiveClientProperties:
         client = HoneyHive()
         url = client._make_url("/api/v1/events")
 
-        assert url == "https://api.honeyhive.ai/api/v1/events"
+        # Assert against actual configured server_url (respects environment)
+        assert url == f"{client.server_url}/api/v1/events"
 
     @patch("honeyhive.api.client.safe_log")
     @patch("honeyhive.api.client.get_logger")
@@ -541,9 +542,10 @@ class TestHoneyHiveRequestHandling:
 
             assert result == mock_response
             mock_wait.assert_called_once()
+            # Assert against actual configured server_url (respects environment)
             mock_sync_client.request.assert_called_once_with(
                 "GET",
-                "https://api.honeyhive.ai/api/v1/test",
+                f"{client.server_url}/api/v1/test",
                 params=None,
                 json=None,
             )
@@ -1049,8 +1051,9 @@ class TestHoneyHiveAsyncMethods:
             result = await client.request_async("GET", "/api/v1/test")
 
             assert result == mock_response
+            # Assert against actual configured server_url (respects environment)
             mock_async_client.request.assert_called_once_with(
-                "GET", "https://api.honeyhive.ai/api/v1/test", params=None, json=None
+                "GET", f"{client.server_url}/api/v1/test", params=None, json=None
             )
 
     @pytest.mark.asyncio

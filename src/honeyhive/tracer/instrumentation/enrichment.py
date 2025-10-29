@@ -283,6 +283,10 @@ class UnifiedEnrichSpan:
         Accepts all backwards-compatible parameters and new convenience parameters.
         Returns self to enable both context manager and direct call patterns.
 
+        **IMMEDIATE EXECUTION (v1.0+ fix):**
+        The enrichment executes immediately on call to match user expectations:
+        ``enrich_span(metadata={'key': 'value'})`` works without explicit evaluation.
+
         :param attributes: Simple dict that routes to metadata namespace
         :type attributes: Optional[Dict[str, Any]]
         :param metadata: Metadata namespace
@@ -322,6 +326,25 @@ class UnifiedEnrichSpan:
         self._kwargs = kwargs
         self._context_manager = None
         self._direct_result = None
+
+        # IMMEDIATE EXECUTION (v1.0+ fix):
+        # Execute enrichment immediately to match user expectations
+        # Users expect: enrich_span(metadata={...}) to work immediately
+        # Not: bool(enrich_span(metadata={...})) or with enrich_span(...):
+        self._direct_result = enrich_span_unified(
+            attributes=self._attributes,
+            metadata=self._metadata,
+            metrics=self._metrics,
+            feedback=self._feedback,
+            inputs=self._inputs,
+            outputs=self._outputs,
+            config=self._config,
+            error=self._error,
+            event_id=self._event_id,
+            tracer_instance=self._tracer,
+            caller="direct_call",
+            **(self._kwargs or {}),
+        )
 
         return self
 

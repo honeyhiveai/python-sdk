@@ -27,14 +27,19 @@ if TYPE_CHECKING:
 # Safe keys for selective baggage propagation (v1.0 multi-instance fix)
 # Only these keys are propagated via context.attach() to enable tracer discovery
 # while preventing session ID conflicts between tracer instances
+#
+# CRITICAL: Only include keys that are SHARED across tracer instances
+# (evaluation context) or required for tracer discovery. Do NOT include
+# per-tracer-instance values like project/source, as they will leak between
+# tracer instances via global context.
 SAFE_PROPAGATION_KEYS = frozenset(
     {
-        "run_id",  # Evaluation run ID
-        "dataset_id",  # Dataset ID
-        "datapoint_id",  # Current datapoint ID
+        "run_id",  # Evaluation run ID (shared across tracers in evaluate())
+        "dataset_id",  # Dataset ID (shared across tracers in evaluate())
+        "datapoint_id",  # Current datapoint ID (shared across tracers in evaluate())
         "honeyhive_tracer_id",  # Tracer instance ID (for discovery)
-        "project",  # Project name
-        "source",  # Source identifier
+        # REMOVED: "project" - per-tracer-instance value, must come from tracer directly
+        # REMOVED: "source" - per-tracer-instance value, must come from tracer directly
     }
 )
 

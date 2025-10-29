@@ -258,11 +258,15 @@ class TestUnifiedEnrichSpan:
         assert enricher._tracer is None  # pylint: disable=protected-access
         assert enricher._kwargs is None  # pylint: disable=protected-access
 
-    def test_call(self, honeyhive_tracer: Any) -> None:
-        """Test UnifiedEnrichSpan __call__ method."""
+    @patch("honeyhive.tracer.instrumentation.enrichment.enrich_span_unified")
+    def test_call(self, mock_unified: Any, honeyhive_tracer: Any) -> None:
+        """Test UnifiedEnrichSpan __call__ method with immediate execution."""
         enricher = UnifiedEnrichSpan()
         attributes = {"key": "value"}
         kwargs = {"extra": "data"}
+
+        # Mock the unified enrichment to return True
+        mock_unified.return_value = True
 
         result = enricher(attributes=attributes, tracer=honeyhive_tracer, **kwargs)
 
@@ -271,13 +275,30 @@ class TestUnifiedEnrichSpan:
         assert enricher._tracer == honeyhive_tracer  # pylint: disable=protected-access
         assert enricher._kwargs == kwargs  # pylint: disable=protected-access
         assert enricher._context_manager is None  # pylint: disable=protected-access
-        assert enricher._direct_result is None  # pylint: disable=protected-access
+        # After immediate execution fix, _direct_result is set during __call__
+        assert enricher._direct_result is True  # pylint: disable=protected-access
+
+        # Verify immediate execution happened
+        mock_unified.assert_called_once_with(
+            attributes=attributes,
+            metadata=None,
+            metrics=None,
+            feedback=None,
+            inputs=None,
+            outputs=None,
+            config=None,
+            error=None,
+            event_id=None,
+            tracer_instance=honeyhive_tracer,
+            caller="direct_call",
+            extra="data",
+        )
 
     @patch("honeyhive.tracer.instrumentation.enrichment.enrich_span_unified")
     def test_enter_context_manager(
         self, mock_unified: Any, honeyhive_tracer: Any
     ) -> None:
-        """Test UnifiedEnrichSpan __enter__ method."""
+        """Test UnifiedEnrichSpan __enter__ method with immediate execution."""
         enricher = UnifiedEnrichSpan()
         attributes = {"key": "value"}
         kwargs = {"extra": "data"}
@@ -292,21 +313,21 @@ class TestUnifiedEnrichSpan:
             pass
 
         assert result == "span_result"
-        # Now expects all new parameters
-        mock_unified.assert_called_once_with(
-            attributes=attributes,
-            metadata=None,
-            metrics=None,
-            feedback=None,
-            inputs=None,
-            outputs=None,
-            config=None,
-            error=None,
-            event_id=None,
-            tracer_instance=honeyhive_tracer,
-            caller="context_manager",
-            extra="data",
-        )
+        # After immediate execution fix, enrich_span_unified is called TWICE:
+        # 1. During __call__ (immediate execution with caller="direct_call")
+        # 2. During __enter__ (context manager with caller="context_manager")
+        assert mock_unified.call_count == 2
+
+        # Verify first call (immediate execution during __call__)
+        first_call = mock_unified.call_args_list[0]
+        assert first_call[1]["caller"] == "direct_call"
+        assert first_call[1]["attributes"] == attributes
+
+        # Verify second call (context manager during __enter__)
+        second_call = mock_unified.call_args_list[1]
+        assert second_call[1]["caller"] == "context_manager"
+        assert second_call[1]["attributes"] == attributes
+
         mock_cm.__enter__.assert_called_once()
 
     @patch("honeyhive.tracer.instrumentation.enrichment.enrich_span_unified")
@@ -707,7 +728,7 @@ class TestEnrichSpanInstance:
     def test_enrich_span_context_manager_usage(
         self, mock_unified: Any, honeyhive_tracer: Any
     ) -> None:
-        """Test enrich_span used as context manager."""
+        """Test enrich_span used as context manager with immediate execution."""
         mock_cm = Mock()
         mock_cm.__enter__ = Mock(return_value="span_result")
         mock_cm.__exit__ = Mock()
@@ -716,20 +737,20 @@ class TestEnrichSpanInstance:
         with enrich_span({"key": "value"}, tracer=honeyhive_tracer) as span:
             assert span == "span_result"
 
-        # Now expects all new parameters
-        mock_unified.assert_called_once_with(
-            attributes={"key": "value"},
-            metadata=None,
-            metrics=None,
-            feedback=None,
-            inputs=None,
-            outputs=None,
-            config=None,
-            error=None,
-            event_id=None,
-            tracer_instance=honeyhive_tracer,
-            caller="context_manager",
-        )
+        # After immediate execution fix, enrich_span_unified is called TWICE:
+        # 1. During __call__ (immediate execution with caller="direct_call")
+        # 2. During __enter__ (context manager with caller="context_manager")
+        assert mock_unified.call_count == 2
+
+        # Verify first call (immediate execution)
+        first_call = mock_unified.call_args_list[0]
+        assert first_call[1]["caller"] == "direct_call"
+        assert first_call[1]["attributes"] == {"key": "value"}
+
+        # Verify second call (context manager)
+        second_call = mock_unified.call_args_list[1]
+        assert second_call[1]["caller"] == "context_manager"
+        assert second_call[1]["attributes"] == {"key": "value"}
 
     @patch("honeyhive.tracer.instrumentation.enrichment.enrich_span_unified")
     def test_enrich_span_boolean_usage(
