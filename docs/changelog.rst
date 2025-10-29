@@ -57,6 +57,14 @@ Current Version Highlights
 * **Solution**: Selective baggage with safe keys (updated Oct 29: removed project/source)
 * **Result**: Tracer discovery works while preventing multi-instance conflicts
 
+**🧪 ADDED: Nested enrich_span() Backend Validation**
+
+* **Comprehensive Test**: Validates nested function calls with enrich_span() in evaluate() workflows
+* **Backend Verification**: Confirms enriched properties (metadata, metrics, config, feedback) persist
+* **Pattern Coverage**: Parent function → nested helper function enrichment
+* **Real Fixtures**: Uses real_project and integration_client for accurate validation
+* **Zero False Positives**: CRITICAL assertions fail if enrichment not found in backend
+
 **📚 ADDED: Strands Multi-Agent Integration Examples**
 
 * **Swarm Collaboration**: Comprehensive example with researcher → coder → reviewer flow

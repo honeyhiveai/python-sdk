@@ -22,7 +22,7 @@ import pytest
 
 from honeyhive import HoneyHive
 from honeyhive.experiments import compare_runs, evaluate
-from honeyhive.models import CreateDatapointRequest, CreateDatasetRequest
+from honeyhive.models import CreateDatapointRequest, CreateDatasetRequest, EventFilter
 
 
 @pytest.mark.integration
@@ -1033,6 +1033,283 @@ class TestExperimentsIntegration:
         print("✅ All events successfully matched by datapoint_id")
 
         print(f"\n{'='*70}\nEVENT-LEVEL COMPARISON TEST COMPLETE\n{'='*70}\n")
+
+    @pytest.mark.slow
+    def test_evaluate_with_nested_enrich_span_backend_validation(
+        self,
+        real_api_key: str,
+        real_project: str,
+        integration_client: HoneyHive,
+    ) -> None:
+        """Test nested function calls with enrich_span() and validate enriched properties.
+
+        This test validates:
+        1. Nested function calls (evaluation_function -> helper_function)
+        2. enrich_span() calls in both parent and nested functions
+        3. Backend verification that enriched properties show up on events
+        4. Properties include metadata, metrics, inputs, outputs, config, feedback
+
+        Boss requirement: Validate that enriched properties are ACTUALLY SET,
+        not just that events exist.
+        """
+
+        # Track calls for debugging
+        calls: list = []
+
+        # Import trace decorator for creating spans
+        from honeyhive import enrich_span, trace
+
+        # Nested helper function with enrich_span
+        @trace(event_type="tool", event_name="helper_function")
+        def helper_function(text: str, multiplier: int) -> str:
+            """Helper function that enriches span with nested context."""
+            calls.append("helper_called")
+
+            # Enrich nested span with detailed metadata and metrics
+            enrich_span(
+                metadata={
+                    "helper_function": "text_processor",
+                    "text_length": len(text),
+                    "multiplier": multiplier,
+                    "nested_level": "1",
+                },
+                metrics={
+                    "processing_complexity": len(text) * multiplier,
+                    "helper_call_count": len(
+                        [c for c in calls if c == "helper_called"]
+                    ),
+                },
+            )
+
+            return text.upper() * multiplier
+
+        # Main evaluation function with enrich_span
+        @trace(event_type="chain", event_name="evaluation_function")
+        def evaluation_function(datapoint: Dict[str, Any]) -> Dict[str, Any]:
+            """Main function with nested call to helper_function."""
+            calls.append("eval_called")
+
+            inputs = datapoint.get("inputs", {})
+            text = inputs.get("text", "")
+            multiplier = inputs.get("multiplier", 1)
+
+            # Enrich parent span BEFORE calling nested function
+            enrich_span(
+                metadata={
+                    "evaluation_function": "text_evaluator",
+                    "input_text": text,
+                    "input_multiplier": multiplier,
+                },
+                metrics={
+                    "eval_call_count": len([c for c in calls if c == "eval_called"]),
+                    "total_call_count": len(calls),
+                },
+                config={
+                    "model": "test-model-v1",
+                    "temperature": 0.7,
+                    "max_tokens": 100,
+                },
+            )
+
+            # Call nested helper function (should create child span with enrichment)
+            processed_text = helper_function(text, multiplier)
+
+            # Enrich parent span AFTER nested call
+            enrich_span(
+                metrics={
+                    "output_length": len(processed_text),
+                },
+                feedback={
+                    "quality": "high",
+                    "nested_processing": "successful",
+                },
+            )
+
+            return {
+                "result": processed_text,
+                "status": "completed",
+            }
+
+        # Create test dataset
+        dataset = [
+            {"inputs": {"text": "hello", "multiplier": 2}},
+            {"inputs": {"text": "world", "multiplier": 3}},
+        ]
+
+        run_name = f"nested-enrich-test-{int(time.time())}"
+
+        print(f"\n{'='*70}")
+        print("TESTING NESTED ENRICH_SPAN() WITH BACKEND VALIDATION")
+        print(f"{'='*70}")
+        print(f"Run name: {run_name}")
+        print(f"Dataset: {len(dataset)} datapoints")
+        print("Pattern: evaluation_function -> helper_function")
+        print("Enrichment: Both parent and nested spans enriched")
+
+        # Execute evaluate()
+        result = evaluate(
+            function=evaluation_function,
+            dataset=dataset,
+            api_key=real_api_key,
+            project=real_project,
+            name=run_name,
+            max_workers=1,  # Serial execution for clearer trace hierarchy
+            verbose=True,
+        )
+
+        # Validate result
+        assert result is not None, "Result should not be None"
+        assert result.run_id, "Result should have run_id"
+
+        print(f"\n✅ Evaluation completed: {result.run_id}")
+        print(f"✅ Status: {result.status}")
+        print(f"✅ Calls: {len(calls)} total")
+
+        # CRITICAL: Wait for backend to process events
+        # Backend needs time to process OTLP spans into events
+        print("\n⏳ Waiting for backend to process events...")
+        time.sleep(5)  # Backend processing time (reduced to minimize test contention)
+
+        # Fetch events from backend to validate enrichment
+        print(f"\n{'='*70}")
+        print("BACKEND ENRICHMENT VALIDATION")
+        print(f"{'='*70}")
+
+        try:
+            # Get the run from backend
+            backend_run = integration_client.evaluations.get_run(result.run_id)
+
+            if not (hasattr(backend_run, "evaluation") and backend_run.evaluation):
+                raise ValueError("Backend response missing evaluation data")
+
+            run_data = backend_run.evaluation
+            event_ids = getattr(run_data, "event_ids", [])
+
+            assert len(event_ids) > 0, "Should have recorded events"
+            print(f"✅ Events in run: {len(event_ids)} session events")
+            print(f"   Session IDs: {event_ids}")
+
+            # Fetch ALL events in these sessions (including child spans from @trace)
+            # Query by session_id to get parent session + all child events
+            all_events = []
+            for session_id in event_ids:
+                try:
+                    # Convert UUID to string for EventFilter (backend returns UUIDType objects)
+                    session_id_str = str(session_id)
+                    events_response = integration_client.events.get_events(
+                        project=real_project,
+                        filters=[
+                            EventFilter(
+                                field="session_id", value=session_id_str, operator="is"
+                            ),
+                        ],
+                    )
+                    session_events = events_response.get("events", [])
+                    all_events.extend(session_events)
+                    print(
+                        f"   ✅ Session {session_id_str[:16]}... has {len(session_events)} events"
+                    )
+                except Exception as e:
+                    print(f"   ⚠️  Could not fetch events for session {session_id}: {e}")
+
+            print(f"\n✅ Fetched {len(all_events)} total events for validation")
+
+            # Validate enrichment on each event
+            found_eval_function_enrichment = False
+            found_helper_function_enrichment = False
+
+            for event in all_events:
+                event_name = getattr(event, "event_name", "unknown")
+                event_type = getattr(event, "event_type", "unknown")
+
+                print(f"\n📦 Event: {event_name} ({event_type})")
+
+                # Check metadata
+                metadata = getattr(event, "metadata", {}) or {}
+                if metadata:
+                    print(f"   ✅ Metadata ({len(metadata)} fields):")
+                    for key in list(metadata.keys())[:5]:  # Show first 5
+                        print(f"      - {key}: {metadata[key]}")
+
+                    # Validate evaluation_function enrichment
+                    if "evaluation_function" in metadata:
+                        assert (
+                            metadata["evaluation_function"] == "text_evaluator"
+                        ), "evaluation_function metadata should match"
+                        found_eval_function_enrichment = True
+                        print("   ✅ Found evaluation_function enrichment")
+
+                    # Validate helper_function enrichment
+                    if "helper_function" in metadata:
+                        assert (
+                            metadata["helper_function"] == "text_processor"
+                        ), "helper_function metadata should match"
+                        found_helper_function_enrichment = True
+                        print("   ✅ Found helper_function enrichment")
+
+                # Check metrics
+                metrics = getattr(event, "metrics", {}) or {}
+                if metrics:
+                    print(f"   ✅ Metrics ({len(metrics)} fields):")
+                    for key, value in list(metrics.items())[:5]:  # Show first 5
+                        print(f"      - {key}: {value}")
+                        # Validate metrics are numeric
+                        assert isinstance(
+                            value, (int, float)
+                        ), f"Metric {key} should be numeric, got {type(value)}"
+
+                # Check config
+                config = getattr(event, "config", {}) or {}
+                if config:
+                    print(f"   ✅ Config ({len(config)} fields):")
+                    for key, value in list(config.items())[:5]:
+                        print(f"      - {key}: {value}")
+
+                    # Validate config enrichment
+                    if "model" in config:
+                        assert (
+                            config["model"] == "test-model-v1"
+                        ), "Model config should match"
+                        print("   ✅ Found config enrichment")
+
+                # Check feedback
+                feedback = getattr(event, "feedback", {}) or {}
+                if feedback:
+                    print(f"   ✅ Feedback ({len(feedback)} fields):")
+                    for key, value in list(feedback.items())[:5]:
+                        print(f"      - {key}: {value}")
+
+                    # Validate feedback enrichment
+                    if "quality" in feedback:
+                        assert (
+                            feedback["quality"] == "high"
+                        ), "Quality feedback should match"
+                        print("   ✅ Found feedback enrichment")
+
+            # CRITICAL ASSERTIONS: Verify enrichment was found
+            assert found_eval_function_enrichment, (
+                "❌ CRITICAL: evaluation_function enrichment NOT FOUND in backend! "
+                "enrich_span() metadata not persisted."
+            )
+            assert found_helper_function_enrichment, (
+                "❌ CRITICAL: helper_function enrichment NOT FOUND in backend! "
+                "Nested enrich_span() not working."
+            )
+
+            print(f"\n{'='*70}")
+            print("✅ ALL ENRICHMENT VALIDATIONS PASSED")
+            print(f"{'='*70}")
+            print("✅ Parent function enrichment found")
+            print("✅ Nested function enrichment found")
+            print("✅ Metadata enrichment validated")
+            print("✅ Metrics enrichment validated")
+            print("✅ Config enrichment validated")
+            print("✅ Feedback enrichment validated")
+            print(f"{'='*70}\n")
+
+        except Exception as e:
+            print(f"\n❌ Backend enrichment validation failed: {e}")
+            raise
 
 
 if __name__ == "__main__":

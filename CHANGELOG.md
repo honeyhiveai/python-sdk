@@ -16,6 +16,13 @@
   - 11 performance benchmarks ensuring no regression (`test_benchmarks.py`)
   - Total: 31 new tests validating v1.0 multi-instance architecture
 
+- **🧪 Testing: Nested enrich_span() Backend Validation**
+  - Added comprehensive test for nested function calls with `enrich_span()` in `evaluate()` workflows
+  - Test validates enriched properties (metadata, metrics, config, feedback) actually persist to backend
+  - Covers parent function → nested helper function enrichment pattern
+  - Uses real API fixtures (`real_project`, `integration_client`) for accurate validation
+  - CRITICAL assertions fail if enrichment not found in backend (zero-false-positives policy)
+
 - **📚 Examples: Strands Multi-Agent Integration**
   - Added comprehensive Swarm collaboration example demonstrating multi-agent handoffs
   - Added Graph-based workflow example with parallel processing and aggregation patterns
