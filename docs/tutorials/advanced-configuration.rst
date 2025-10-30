@@ -269,51 +269,59 @@ Advanced Configuration Patterns
        def __init__(self, base_config: TracerConfig):
            self.base_tracer = HoneyHiveTracer(config=base_config)
        
-       def create_user_session(
-           self,
-           user_id: str,
-           session_type: str = "chat",
-           metadata: Optional[Dict[str, Any]] = None
-       ) -> HoneyHiveTracer:
-           """Create tracer with user-specific session."""
-           
-           session_config = SessionConfig(
-               session_name=f"{session_type}-{user_id}",
-               inputs={"user_id": user_id, "session_type": session_type},
-               metadata={
-                   "user_id": user_id,
-                   "session_type": session_type,
-                   "timestamp": datetime.now().isoformat(),
-                   **(metadata or {})
-               }
-           )
-           
-           return HoneyHiveTracer(
-               config=self.base_tracer.config,
-               session_config=session_config
-           )
+      def create_user_session(
+          self,
+          user_id: str,
+          session_type: str = "chat",
+          user_metadata: Optional[Dict[str, Any]] = None
+      ) -> HoneyHiveTracer:
+          """Create tracer with user-specific session."""
+          
+          # session_name goes in TracerConfig, not SessionConfig
+          tracer_config = self.base_tracer.config.model_copy(update={
+              "session_name": f"{session_type}-{user_id}"
+          })
+          
+          # SessionConfig only has: session_id, inputs, link_carrier
+          session_config = SessionConfig(
+              inputs={
+                  "user_id": user_id,
+                  "session_type": session_type,
+                  "timestamp": datetime.now().isoformat(),
+                  **(user_metadata or {})
+              }
+          )
+          
+          return HoneyHiveTracer(
+              config=tracer_config,
+              session_config=session_config
+          )
        
-       def create_batch_session(
-           self,
-           batch_id: str,
-           batch_size: int
-       ) -> HoneyHiveTracer:
-           """Create tracer for batch processing."""
-           
-           session_config = SessionConfig(
-               session_name=f"batch-{batch_id}",
-               inputs={"batch_id": batch_id, "batch_size": batch_size},
-               metadata={
-                   "processing_type": "batch",
-                   "batch_id": batch_id,
-                   "batch_size": batch_size
-               }
-           )
-           
-           return HoneyHiveTracer(
-               config=self.base_tracer.config,
-               session_config=session_config
-           )
+      def create_batch_session(
+          self,
+          batch_id: str,
+          batch_size: int
+      ) -> HoneyHiveTracer:
+          """Create tracer for batch processing."""
+          
+          # Update tracer config with session_name
+          tracer_config = self.base_tracer.config.model_copy(update={
+              "session_name": f"batch-{batch_id}"
+          })
+          
+          # SessionConfig only has: session_id, inputs, link_carrier  
+          session_config = SessionConfig(
+              inputs={
+                  "batch_id": batch_id,
+                  "batch_size": batch_size,
+                  "processing_type": "batch"
+              }
+          )
+          
+          return HoneyHiveTracer(
+              config=tracer_config,
+              session_config=session_config
+          )
    
    # Usage
    base_config = TracerConfig(

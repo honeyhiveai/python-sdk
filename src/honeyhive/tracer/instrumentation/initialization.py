@@ -652,7 +652,7 @@ def _get_optimal_session_config(tracer_instance: Any) -> OTLPSessionConfig:
             scenario_reasons.append("test_mode_optimizations")
 
         # Check for high-frequency usage patterns
-        session_name = getattr(tracer_instance, "session_name", "")
+        session_name = getattr(tracer_instance, "session_name", "") or ""
         if "benchmark" in session_name.lower() or "load" in session_name.lower():
             scenario = "high_volume"
             scenario_reasons.append("performance_testing_detected")
@@ -1120,6 +1120,8 @@ def _validate_session_id(tracer_instance: Any) -> None:
         # Validate that session_id is a valid UUID (backwards compatibility)
         uuid.UUID(tracer_instance.session_id)
         tracer_instance.session_id = tracer_instance.session_id.lower()
+        # Update private attribute to match public attribute
+        tracer_instance._session_id = tracer_instance.session_id
 
         safe_log(
             tracer_instance,
@@ -1129,7 +1131,9 @@ def _validate_session_id(tracer_instance: Any) -> None:
         )
     except Exception as e:
         # Graceful degradation following Agent OS standards - never crash host
-        tracer_instance.session_id = str(uuid.uuid4())
+        fallback_id = str(uuid.uuid4())
+        tracer_instance.session_id = fallback_id
+        tracer_instance._session_id = fallback_id  # Update private attribute
         tracer_instance._degraded_mode = True
         if not hasattr(tracer_instance, "_degradation_reasons"):
             tracer_instance._degradation_reasons = []
@@ -1155,7 +1159,9 @@ def _create_new_session(tracer_instance: Any) -> None:
     """
     if tracer_instance.test_mode:
         # In test mode, just generate a UUID without backend call
-        tracer_instance.session_id = str(uuid.uuid4())
+        test_id = str(uuid.uuid4())
+        tracer_instance.session_id = test_id
+        tracer_instance._session_id = test_id  # Update private attribute
         safe_log(
             tracer_instance,
             "debug",
@@ -1216,6 +1222,9 @@ def _create_new_session(tracer_instance: Any) -> None:
 
         if session_response and hasattr(session_response, "session_id"):
             tracer_instance.session_id = session_response.session_id
+            tracer_instance._session_id = (
+                session_response.session_id
+            )  # Update private attribute
             tracer_instance.session_name = session_name
 
             safe_log(
@@ -1229,7 +1238,9 @@ def _create_new_session(tracer_instance: Any) -> None:
             )
         else:
             # Fallback to UUID if session creation fails
-            tracer_instance.session_id = str(uuid.uuid4())
+            fallback_id = str(uuid.uuid4())
+            tracer_instance.session_id = fallback_id
+            tracer_instance._session_id = fallback_id  # Update private attribute
             safe_log(
                 tracer_instance,
                 "warning",
@@ -1240,7 +1251,9 @@ def _create_new_session(tracer_instance: Any) -> None:
     except Exception as e:
         # Graceful degradation following Agent OS standards - never crash host
         # Fallback to UUID if session creation fails
-        tracer_instance.session_id = str(uuid.uuid4())
+        fallback_id = str(uuid.uuid4())
+        tracer_instance.session_id = fallback_id
+        tracer_instance._session_id = fallback_id  # Update private attribute
         safe_log(
             tracer_instance,
             "warning",

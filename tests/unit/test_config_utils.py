@@ -408,7 +408,11 @@ class TestCreateUnifiedConfig:
         assert isinstance(unified.evaluation, DotDict)
 
     def test_create_unified_config_with_session_config(self) -> None:
-        """Test creating unified config with session config."""
+        """Test creating unified config with session config.
+
+        SessionConfig values should override TracerConfig at root level for colliding fields.
+        This is the correct behavior after the field collision fix.
+        """
         tracer_config = TracerConfig(api_key="tracer_key", project="tracer_project")
         session_config = SessionConfig(
             api_key="session_key",
@@ -421,17 +425,20 @@ class TestCreateUnifiedConfig:
         )
 
         assert isinstance(unified, DotDict)
-        # Root level should have tracer config
-        assert unified.api_key == "tracer_key"
-        assert unified.project == "tracer_project"
+        # Root level should have SESSION config values (more specific wins)
+        assert unified.api_key == "session_key"
+        assert unified.project == "session_project"
 
-        # Session config should be nested
+        # Session config should also be in nested location
         assert unified.session.api_key == "session_key"
         assert unified.session.project == "session_project"
         assert unified.session.inputs == {"user": "test_user"}
 
     def test_create_unified_config_with_evaluation_config(self) -> None:
-        """Test creating unified config with evaluation config."""
+        """Test creating unified config with evaluation config.
+
+        EvaluationConfig values should override TracerConfig at root level for colliding fields.
+        """
         tracer_config = TracerConfig(api_key="tracer_key", project="tracer_project")
         eval_config = EvaluationConfig(api_key="eval_key", project="eval_project")
 
@@ -440,16 +447,19 @@ class TestCreateUnifiedConfig:
         )
 
         assert isinstance(unified, DotDict)
-        # Root level should have tracer config
-        assert unified.api_key == "tracer_key"
-        assert unified.project == "tracer_project"
+        # Root level should have EVALUATION config values (more specific wins)
+        assert unified.api_key == "eval_key"
+        assert unified.project == "eval_project"
 
-        # Evaluation config should be nested
+        # Evaluation config should also be in nested location
         assert unified.evaluation.api_key == "eval_key"
         assert unified.evaluation.project == "eval_project"
 
     def test_create_unified_config_with_all_configs(self) -> None:
-        """Test creating unified config with all config types."""
+        """Test creating unified config with all config types.
+
+        Priority order: SessionConfig > EvaluationConfig > TracerConfig for colliding fields.
+        """
         tracer_config = TracerConfig(api_key="tracer_key", project="tracer_project")
         session_config = SessionConfig(api_key="session_key", inputs={"user": "test"})
         eval_config = EvaluationConfig(api_key="eval_key")
@@ -461,8 +471,9 @@ class TestCreateUnifiedConfig:
         )
 
         assert isinstance(unified, DotDict)
-        # Verify all nested structures exist
-        assert unified.api_key == "tracer_key"
+        # Root level should have SESSION config api_key (highest priority for shared fields)
+        assert unified.api_key == "session_key"
+        # Values should also exist in nested locations
         assert unified.session.api_key == "session_key"
         assert unified.session.inputs == {"user": "test"}
         assert unified.evaluation.api_key == "eval_key"

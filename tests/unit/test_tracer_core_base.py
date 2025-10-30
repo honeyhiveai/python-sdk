@@ -376,6 +376,81 @@ class TestHoneyHiveTracerBaseCoreAttributes:
         assert isinstance(tracer._evaluation_context, dict)
 
     @patch("honeyhive.tracer.core.base.create_unified_config")
+    def test_session_id_from_session_config(self, mock_create: Mock) -> None:
+        """Test session_id from SessionConfig is properly extracted.
+
+        This verifies the bugfix where session_id passed via SessionConfig
+        was not being used because it was nested in config.session.session_id
+        but the code was reading from config.session_id (root level).
+        """
+        # Import config classes
+        from honeyhive.config.models.tracer import SessionConfig, TracerConfig
+
+        # Create a SessionConfig with a session_id
+        test_session_id = "550e8400-e29b-41d4-a716-446655440000"
+        session_config = SessionConfig(session_id=test_session_id)
+        tracer_config = TracerConfig(api_key="test-key", project="test-project")
+
+        # Mock create_unified_config to return the actual merged config structure
+        # After fix: SessionConfig values should be promoted to root level
+        from honeyhive.utils.dotdict import DotDict
+
+        mock_unified = DotDict()
+        mock_unified.update(tracer_config.model_dump())
+        mock_unified.session = DotDict(session_config.model_dump())
+        # Promote SessionConfig session_id to root (what create_unified_config does now)
+        mock_unified.session_id = test_session_id
+        mock_create.return_value = mock_unified
+
+        # Initialize tracer with both configs
+        tracer = HoneyHiveTracerBase(
+            config=tracer_config, session_config=session_config
+        )
+
+        # Verify session_id is properly extracted from nested config
+        assert tracer.session_id == test_session_id
+        assert tracer._session_id == test_session_id
+
+    @patch("honeyhive.tracer.core.base.create_unified_config")
+    def test_session_id_priority_session_config_over_root(
+        self, mock_create: Mock
+    ) -> None:
+        """Test SessionConfig session_id takes priority over root-level session_id.
+
+        When both SessionConfig.session_id and TracerConfig.session_id are provided,
+        the SessionConfig value should take precedence.
+        """
+        from honeyhive.config.models.tracer import SessionConfig, TracerConfig
+        from honeyhive.utils.dotdict import DotDict
+
+        # Create configs with different session IDs
+        session_config_id = "550e8400-e29b-41d4-a716-446655440000"
+        tracer_config_id = "660f9511-f39c-52e5-b827-557766551111"
+
+        session_config = SessionConfig(session_id=session_config_id)
+        tracer_config = TracerConfig(
+            api_key="test-key", project="test-project", session_id=tracer_config_id
+        )
+
+        # Mock unified config structure with both IDs
+        # After fix: SessionConfig values should be promoted to root
+        mock_unified = DotDict()
+        mock_unified.update(tracer_config.model_dump())
+        mock_unified.session = DotDict(session_config.model_dump())
+        # Promote SessionConfig session_id to root (what create_unified_config does now)
+        mock_unified.session_id = session_config_id
+        mock_create.return_value = mock_unified
+
+        # Initialize tracer
+        tracer = HoneyHiveTracerBase(
+            config=tracer_config, session_config=session_config
+        )
+
+        # SessionConfig session_id should take priority
+        assert tracer.session_id == session_config_id
+        assert tracer._session_id == session_config_id
+
+    @patch("honeyhive.tracer.core.base.create_unified_config")
     def test_threading_locks_initialization(
         self, mock_create: Mock, mock_unified_config: Mock
     ) -> None:

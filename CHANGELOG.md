@@ -1,5 +1,13 @@
 ## [Unreleased]
 
+### Fixed
+- **🐛 Config: Session/Evaluation Config Priority Bug**
+  - Fixed config collision where `SessionConfig` and `EvaluationConfig` values weren't promoted to root
+  - Fixed session ID synchronization between `session_id` and `_session_id` attributes
+  - Fixed `session_name` None handling in session initialization
+  - Priority order now correctly enforced: individual params > SessionConfig > EvaluationConfig > TracerConfig
+  - Affects 15 colliding fields: `session_id`, `project`, `api_key`, `server_url`, `source`, `is_evaluation`, `run_id`, `dataset_id`, `datapoint_id`, `session_name`, `inputs`, `link_carrier`, `dataset_name`, `test_mode`, `verbose`
+
 ### Added
 - **✨ Tracing: Instance Method Pattern as Primary API (v1.0)**
   - `HoneyHiveTracer.enrich_span()` instance method is now the PRIMARY pattern for span enrichment

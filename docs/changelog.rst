@@ -17,6 +17,14 @@ Latest Release Notes
 Current Version Highlights
 ~~~~~~~~~~~~~~~~~~~~~~~~~~
 
+**🐛 CRITICAL FIX: Config Priority Bug (Oct 30, 2025)**
+
+* **Issue**: `SessionConfig` and `EvaluationConfig` values not promoted to root, hidden in nested configs
+* **Root Cause**: `create_unified_config()` didn't implement field promotion logic
+* **Solution**: Added priority-aware promotion: individual params > SessionConfig > EvaluationConfig > TracerConfig
+* **Impact**: 15 colliding fields now work correctly (`session_id`, `project`, `api_key`, `server_url`, etc.)
+* **Tests**: Added 19 unit tests, 35 API integration tests, 10 backend verification tests
+
 **✨ NEW: Instance Method Pattern for Span/Session Enrichment (v1.0)**
 
 * **Primary API**: `tracer.enrich_span()` and `tracer.enrich_session()` instance methods

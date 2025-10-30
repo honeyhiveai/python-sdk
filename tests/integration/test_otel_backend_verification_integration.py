@@ -7,12 +7,21 @@ NO MOCKING - All tests use real OpenTelemetry components, real API calls,
 and real backend verification.
 """
 
+# pylint: disable=too-many-lines
+# Justification: Comprehensive backend verification tests for config priority modes
+
 import time
+import uuid
 from typing import Any
 
 import pytest
 
-from honeyhive.tracer import enrich_span, trace
+from honeyhive.config.models.tracer import (
+    EvaluationConfig,
+    SessionConfig,
+    TracerConfig,
+)
+from honeyhive.tracer import HoneyHiveTracer, enrich_span, trace
 from tests.utils import (  # pylint: disable=no-name-in-module
     generate_test_id,
     verify_span_export,
@@ -449,3 +458,686 @@ class TestOTELBackendVerificationIntegration:
 
         finally:
             test_tracer.shutdown()
+
+    def test_session_id_from_session_config_alone(
+        self,
+        integration_client: Any,
+        real_project: Any,
+        real_source: Any,
+    ) -> None:
+        """Test session_id from SessionConfig alone (original bug report case).
+
+        Priority Mode: SessionConfig only, no TracerConfig, no individual param
+        Expected: SessionConfig.session_id is used
+
+        Bug Report: CONFIG_COLLISION_BUG_REPORT.md - Original reported bug
+        """
+        custom_session_id = str(uuid.uuid4())
+        _, unique_id = generate_test_id("session_id_alone", "session_id_alone")
+        verification_span_name = "session_id_alone_verification"
+
+        print(f"\n🔍 Test 1: SessionConfig.session_id alone: {custom_session_id}")
+
+        session_config = SessionConfig(session_id=custom_session_id)
+
+        test_tracer = HoneyHiveTracer(
+            api_key=integration_client.api_key,
+            project=real_project,
+            source=real_source,
+            session_config=session_config,
+            test_mode=False,
+        )
+
+        assert test_tracer.session_id == custom_session_id
+        print("✅ Mode 1 PASSED: SessionConfig alone")
+
+        verified_event = verify_tracer_span(
+            tracer=test_tracer,
+            client=integration_client,
+            project=real_project,
+            span_name=verification_span_name,
+            unique_identifier=unique_id,
+            span_attributes={"test.mode": "session_config_alone"},
+        )
+        assert verified_event.session_id == custom_session_id
+        test_tracer.shutdown()
+
+    def test_session_id_session_config_vs_tracer_config(
+        self,
+        integration_client: Any,
+        real_project: Any,
+        real_source: Any,
+    ) -> None:
+        """Test SessionConfig.session_id overrides TracerConfig.session_id.
+
+        Priority Mode: SessionConfig > TracerConfig
+        Expected: SessionConfig.session_id wins
+        """
+        correct_id = str(uuid.uuid4())
+        wrong_id = str(uuid.uuid4())
+        _, unique_id = generate_test_id("session_vs_tracer", "session_vs_tracer")
+
+        print("\n🔍 Test 2: SessionConfig vs TracerConfig")
+
+        session_config = SessionConfig(session_id=correct_id)
+        tracer_config = TracerConfig(
+            api_key=integration_client.api_key,
+            project=real_project,
+            source=real_source,
+            session_id=wrong_id,
+        )
+
+        test_tracer = HoneyHiveTracer(
+            config=tracer_config,
+            session_config=session_config,
+            test_mode=False,
+        )
+
+        assert test_tracer.session_id == correct_id
+        print("✅ Mode 2 PASSED: SessionConfig > TracerConfig")
+
+        verified_event = verify_tracer_span(
+            tracer=test_tracer,
+            client=integration_client,
+            project=real_project,
+            span_name="session_vs_tracer_verification",
+            unique_identifier=unique_id,
+            span_attributes={"test.mode": "session_vs_tracer"},
+        )
+        assert verified_event.session_id == correct_id
+        test_tracer.shutdown()
+
+    def test_session_id_individual_param_vs_session_config(
+        self,
+        integration_client: Any,
+        real_project: Any,
+        real_source: Any,
+    ) -> None:
+        """Test individual param session_id overrides SessionConfig.session_id.
+
+        Priority Mode: individual param > SessionConfig
+        Expected: Individual param wins (backwards compatibility)
+        """
+        correct_id = str(uuid.uuid4())
+        wrong_id = str(uuid.uuid4())
+        _, unique_id = generate_test_id("param_vs_session", "param_vs_session")
+
+        print("\n🔍 Test 3: Individual param vs SessionConfig")
+
+        session_config = SessionConfig(session_id=wrong_id)
+
+        test_tracer = HoneyHiveTracer(
+            api_key=integration_client.api_key,
+            project=real_project,
+            source=real_source,
+            session_id=correct_id,  # Individual param should win
+            session_config=session_config,
+            test_mode=False,
+        )
+
+        assert test_tracer.session_id == correct_id
+        print("✅ Mode 3 PASSED: Individual param > SessionConfig")
+
+        verified_event = verify_tracer_span(
+            tracer=test_tracer,
+            client=integration_client,
+            project=real_project,
+            span_name="param_vs_session_verification",
+            unique_identifier=unique_id,
+            span_attributes={"test.mode": "param_vs_session"},
+        )
+        assert verified_event.session_id == correct_id
+        test_tracer.shutdown()
+
+    def test_session_id_all_three_priority(
+        self,
+        integration_client: Any,
+        real_project: Any,
+        real_source: Any,
+    ) -> None:
+        """Test full priority chain: individual param > SessionConfig > TracerConfig.
+
+        Priority Mode: All three present
+        Expected: Individual param wins
+        """
+        correct_id = str(uuid.uuid4())
+        session_id = str(uuid.uuid4())
+        tracer_id = str(uuid.uuid4())
+        _, unique_id = generate_test_id("all_three", "all_three")
+
+        print("\n🔍 Test 4: Individual param > SessionConfig > TracerConfig")
+
+        session_config = SessionConfig(session_id=session_id)
+        tracer_config = TracerConfig(
+            api_key=integration_client.api_key,
+            project=real_project,
+            source=real_source,
+            session_id=tracer_id,
+        )
+
+        test_tracer = HoneyHiveTracer(
+            config=tracer_config,
+            session_config=session_config,
+            session_id=correct_id,  # Individual param should win
+            test_mode=False,
+        )
+
+        assert test_tracer.session_id == correct_id
+        print("✅ Mode 4 PASSED: Full priority chain")
+
+        verified_event = verify_tracer_span(
+            tracer=test_tracer,
+            client=integration_client,
+            project=real_project,
+            span_name="all_three_verification",
+            unique_identifier=unique_id,
+            span_attributes={"test.mode": "all_three_priority"},
+        )
+        assert verified_event.session_id == correct_id
+        test_tracer.shutdown()
+
+    def test_project_from_session_config_alone(
+        self,
+        integration_client: Any,
+        real_project: Any,
+        real_source: Any,
+    ) -> None:
+        """Test project from SessionConfig alone.
+
+        Priority Mode: SessionConfig only
+        Expected: SessionConfig.project is used
+        """
+        _, unique_id = generate_test_id("project_alone", "project_alone")
+
+        print("\n🔍 Project Test 1: SessionConfig alone")
+
+        session_config = SessionConfig(project=real_project)
+
+        test_tracer = HoneyHiveTracer(
+            api_key=integration_client.api_key,
+            source=real_source,
+            session_config=session_config,
+            test_mode=False,
+        )
+
+        assert test_tracer.project == real_project
+        print("✅ Project Mode 1 PASSED: SessionConfig alone")
+
+        verified_event = verify_tracer_span(
+            tracer=test_tracer,
+            client=integration_client,
+            project=real_project,
+            span_name="project_alone_verification",
+            unique_identifier=unique_id,
+            span_attributes={"test.mode": "project_session_alone"},
+        )
+        assert verified_event.project_id is not None
+        test_tracer.shutdown()
+
+    def test_project_session_config_vs_tracer_config(
+        self,
+        integration_client: Any,
+        real_project: Any,
+        real_source: Any,
+    ) -> None:
+        """Test SessionConfig.project overrides TracerConfig.project.
+
+        Priority Mode: SessionConfig > TracerConfig
+        Expected: SessionConfig.project wins
+        """
+        _, unique_id = generate_test_id("project_vs_tracer", "project_vs_tracer")
+
+        print("\n🔍 Project Test 2: SessionConfig vs TracerConfig")
+
+        session_config = SessionConfig(project=real_project)
+        tracer_config = TracerConfig(
+            api_key=integration_client.api_key,
+            project="wrong_project",
+            source=real_source,
+        )
+
+        test_tracer = HoneyHiveTracer(
+            config=tracer_config,
+            session_config=session_config,
+            test_mode=False,
+        )
+
+        assert test_tracer.project == real_project
+        print("✅ Project Mode 2 PASSED: SessionConfig > TracerConfig")
+
+        verified_event = verify_tracer_span(
+            tracer=test_tracer,
+            client=integration_client,
+            project=real_project,
+            span_name="project_vs_tracer_verification",
+            unique_identifier=unique_id,
+            span_attributes={"test.mode": "project_vs_tracer"},
+        )
+        assert verified_event.project_id is not None
+        test_tracer.shutdown()
+
+    def test_project_individual_param_vs_session_config(
+        self,
+        integration_client: Any,
+        real_project: Any,
+        real_source: Any,
+    ) -> None:
+        """Test individual param project overrides SessionConfig.project.
+
+        Priority Mode: individual param > SessionConfig
+        Expected: Individual param wins (backwards compatibility)
+        """
+        _, unique_id = generate_test_id(
+            "project_param_vs_session", "project_param_vs_session"
+        )
+
+        print("\n🔍 Project Test 3: Individual param vs SessionConfig")
+
+        session_config = SessionConfig(project="wrong_project")
+
+        test_tracer = HoneyHiveTracer(
+            api_key=integration_client.api_key,
+            project=real_project,  # Individual param should win
+            source=real_source,
+            session_config=session_config,
+            test_mode=False,
+        )
+
+        assert test_tracer.project == real_project
+        print("✅ Project Mode 3 PASSED: Individual param > SessionConfig")
+
+        verified_event = verify_tracer_span(
+            tracer=test_tracer,
+            client=integration_client,
+            project=real_project,
+            span_name="project_param_vs_session_verification",
+            unique_identifier=unique_id,
+            span_attributes={"test.mode": "project_param_vs_session"},
+        )
+        assert verified_event.project_id is not None
+        test_tracer.shutdown()
+
+    def test_project_all_three_priority(
+        self,
+        integration_client: Any,
+        real_project: Any,
+        real_source: Any,
+    ) -> None:
+        """Test full priority chain: individual param > SessionConfig > TracerConfig.
+
+        Priority Mode: All three present
+        Expected: Individual param wins
+        """
+        _, unique_id = generate_test_id("project_all_three", "project_all_three")
+
+        print("\n🔍 Project Test 4: Individual param > SessionConfig > TracerConfig")
+
+        session_config = SessionConfig(project="session_project")
+        tracer_config = TracerConfig(
+            api_key=integration_client.api_key,
+            project="tracer_project",
+            source=real_source,
+        )
+
+        test_tracer = HoneyHiveTracer(
+            config=tracer_config,
+            session_config=session_config,
+            project=real_project,  # Individual param should win
+            test_mode=False,
+        )
+
+        assert test_tracer.project == real_project
+        print("✅ Project Mode 4 PASSED: Full priority chain")
+
+        verified_event = verify_tracer_span(
+            tracer=test_tracer,
+            client=integration_client,
+            project=real_project,
+            span_name="project_all_three_verification",
+            unique_identifier=unique_id,
+            span_attributes={"test.mode": "project_all_three"},
+        )
+        assert verified_event.project_id is not None
+        test_tracer.shutdown()
+
+    def test_api_key_session_config_vs_tracer_config(
+        self,
+        integration_client: Any,
+        real_project: Any,
+        real_source: Any,
+    ) -> None:
+        """Test SessionConfig.api_key overrides TracerConfig.api_key.
+
+        Tier 2 Test: Single priority mode (SessionConfig > TracerConfig)
+        """
+        _, unique_id = generate_test_id("api_key_test", "api_key_test")
+
+        print("\n🔍 API Key Test: SessionConfig > TracerConfig")
+
+        session_config = SessionConfig(api_key=integration_client.api_key)
+        tracer_config = TracerConfig(
+            api_key="wrong_api_key",
+            project=real_project,
+            source=real_source,
+        )
+
+        test_tracer = HoneyHiveTracer(
+            config=tracer_config,
+            session_config=session_config,
+            test_mode=False,
+        )
+
+        # Backend verification - if api_key correct, span will be created
+        verified_event = verify_tracer_span(
+            tracer=test_tracer,
+            client=integration_client,
+            project=real_project,
+            span_name="api_key_verification",
+            unique_identifier=unique_id,
+            span_attributes={"test.field": "api_key"},
+        )
+
+        assert verified_event.event_id is not None
+        print("✅ API Key Test PASSED: SessionConfig > TracerConfig")
+        test_tracer.shutdown()
+
+    def test_is_evaluation_from_evaluation_config_backend_verification(
+        self,
+        integration_client: Any,
+        real_project: Any,
+        real_source: Any,
+    ) -> None:
+        """Test is_evaluation from EvaluationConfig overrides TracerConfig.
+
+        This test validates the config collision fix for is_evaluation field
+        which exists in both TracerConfig and EvaluationConfig.
+        EvaluationConfig should take priority and backend should use this flag
+        for filtering/routing evaluation data.
+
+        Bug Report: CONFIG_COLLISION_BUG_REPORT.md
+        Colliding Field: is_evaluation (field 5 of 15)
+        """
+        _, unique_id = generate_test_id(
+            "is_evaluation_collision", "is_evaluation_collision"
+        )
+        verification_span_name = "is_evaluation_collision_verification"
+
+        print(
+            "\n🔍 Testing EvaluationConfig.is_evaluation priority "
+            "over TracerConfig.is_evaluation"
+        )
+
+        # Create TracerConfig with is_evaluation=False
+        tracer_config = TracerConfig(
+            api_key=integration_client.api_key,
+            project=real_project,
+            source=real_source,
+            is_evaluation=False,  # TracerConfig level (should be overridden)
+            test_mode=False,
+        )
+
+        # Create EvaluationConfig with is_evaluation=True
+        evaluation_config = EvaluationConfig(
+            is_evaluation=True,  # EvaluationConfig (should win)
+        )
+
+        # Create tracer using config objects (no individual params)
+        test_tracer = HoneyHiveTracer(
+            config=tracer_config,
+            evaluation_config=evaluation_config,  # (should win)
+        )
+
+        # Verify tracer is using EvaluationConfig's is_evaluation
+        assert (
+            test_tracer.is_evaluation is True
+        ), f"Tracer is_evaluation mismatch: expected True, got {test_tracer.is_evaluation}"
+        print(
+            "✅ Tracer correctly initialized with EvaluationConfig.is_evaluation=True"
+        )
+
+        # Create a verification span
+        verified_event = verify_tracer_span(
+            tracer=test_tracer,
+            client=integration_client,
+            project=real_project,
+            span_name=verification_span_name,
+            unique_identifier=unique_id,
+            span_attributes={
+                "test.unique_id": unique_id,
+                "test.verification_type": "is_evaluation_collision",
+                "test.config_field": "is_evaluation",
+                "test.priority": "EvaluationConfig > TracerConfig",
+                "honeyhive.project": real_project,
+                "honeyhive.source": real_source,
+            },
+        )
+
+        # Verify event was created successfully
+        assert verified_event.event_id is not None, "Event should be created"
+        print("✅ Backend verification successful")
+        print(f"   Event ID: {verified_event.event_id}")
+        print(
+            "   This confirms EvaluationConfig.is_evaluation correctly "
+            "overrides TracerConfig"
+        )
+
+        # Clean up
+        test_tracer.shutdown()
+
+    def test_run_id_evaluation_config_vs_tracer_config(
+        self,
+        integration_client: Any,
+        real_project: Any,
+        real_source: Any,
+    ) -> None:
+        """Test EvaluationConfig.run_id overrides TracerConfig.run_id.
+
+        Tier 2 Test: Single priority mode (EvaluationConfig > TracerConfig)
+        """
+        correct_run_id = str(uuid.uuid4())
+        wrong_run_id = str(uuid.uuid4())
+        _, unique_id = generate_test_id("run_id_test", "run_id_test")
+
+        print("\n🔍 run_id Test: EvaluationConfig > TracerConfig")
+
+        evaluation_config = EvaluationConfig(run_id=correct_run_id)
+        tracer_config = TracerConfig(
+            api_key=integration_client.api_key,
+            project=real_project,
+            source=real_source,
+            run_id=wrong_run_id,
+        )
+
+        test_tracer = HoneyHiveTracer(
+            config=tracer_config,
+            evaluation_config=evaluation_config,
+            test_mode=False,
+        )
+
+        assert test_tracer.run_id == correct_run_id
+        print("✅ run_id Test PASSED: EvaluationConfig > TracerConfig")
+
+        verified_event = verify_tracer_span(
+            tracer=test_tracer,
+            client=integration_client,
+            project=real_project,
+            span_name="run_id_verification",
+            unique_identifier=unique_id,
+            span_attributes={"test.field": "run_id"},
+        )
+        assert verified_event.event_id is not None
+        test_tracer.shutdown()
+
+    def test_dataset_id_from_evaluation_config_backend_verification(
+        self,
+        integration_client: Any,
+        real_project: Any,
+        real_source: Any,
+    ) -> None:
+        """Test dataset_id from EvaluationConfig overrides TracerConfig.
+
+        This test validates the config collision fix for dataset_id field
+        which exists in both TracerConfig and EvaluationConfig.
+        EvaluationConfig should take priority and backend should link events
+        to the correct dataset.
+
+        Bug Report: CONFIG_COLLISION_BUG_REPORT.md
+        Colliding Field: dataset_id (field 7 of 15)
+        """
+        _, unique_id = generate_test_id("dataset_id_collision", "dataset_id_collision")
+        verification_span_name = "dataset_id_collision_verification"
+
+        print(
+            "\n🔍 Testing EvaluationConfig.dataset_id priority "
+            "over TracerConfig.dataset_id"
+        )
+
+        # Create unique dataset IDs for testing priority
+        correct_dataset_id = str(uuid.uuid4())
+        wrong_dataset_id = str(uuid.uuid4())
+
+        # Create TracerConfig with wrong dataset_id
+        tracer_config = TracerConfig(
+            api_key=integration_client.api_key,
+            project=real_project,
+            source=real_source,
+            dataset_id=wrong_dataset_id,  # TracerConfig level (should be overridden)
+            test_mode=False,
+        )
+
+        # Create EvaluationConfig with correct dataset_id
+        evaluation_config = EvaluationConfig(
+            dataset_id=correct_dataset_id,  # (should win)
+        )
+
+        # Create tracer using config objects (no individual params)
+        test_tracer = HoneyHiveTracer(
+            config=tracer_config,
+            evaluation_config=evaluation_config,  # (should win)
+        )
+
+        # Verify tracer is using EvaluationConfig's dataset_id
+        assert (
+            test_tracer.dataset_id == correct_dataset_id
+        ), f"Tracer dataset_id mismatch: expected {correct_dataset_id}, got {test_tracer.dataset_id}"
+        print(
+            f"✅ Tracer correctly initialized with EvaluationConfig.dataset_id: {correct_dataset_id}"
+        )
+
+        # Create a verification span
+        verified_event = verify_tracer_span(
+            tracer=test_tracer,
+            client=integration_client,
+            project=real_project,
+            span_name=verification_span_name,
+            unique_identifier=unique_id,
+            span_attributes={
+                "test.unique_id": unique_id,
+                "test.verification_type": "dataset_id_collision",
+                "test.config_field": "dataset_id",
+                "test.priority": "EvaluationConfig > TracerConfig",
+                "test.correct_dataset_id": correct_dataset_id,
+                "honeyhive.project": real_project,
+                "honeyhive.source": real_source,
+            },
+        )
+
+        # Verify event was created successfully
+        assert verified_event.event_id is not None, "Event should be created"
+        print("✅ Backend verification successful")
+        print(f"   Event ID: {verified_event.event_id}")
+        print(
+            "   This confirms EvaluationConfig.dataset_id correctly "
+            "overrides TracerConfig.dataset_id"
+        )
+
+        # Clean up
+        test_tracer.shutdown()
+
+    def test_datapoint_id_from_evaluation_config_backend_verification(
+        self,
+        integration_client: Any,
+        real_project: Any,
+        real_source: Any,
+    ) -> None:
+        """Test datapoint_id from EvaluationConfig overrides TracerConfig.
+
+        This test validates the config collision fix for datapoint_id field
+        which exists in both TracerConfig and EvaluationConfig.
+        EvaluationConfig should take priority and backend should link events
+        to the correct datapoint.
+
+        Bug Report: CONFIG_COLLISION_BUG_REPORT.md
+        Colliding Field: datapoint_id (field 8 of 15)
+        """
+        _, unique_id = generate_test_id(
+            "datapoint_id_collision", "datapoint_id_collision"
+        )
+        verification_span_name = "datapoint_id_collision_verification"
+
+        print(
+            "\n🔍 Testing EvaluationConfig.datapoint_id priority "
+            "over TracerConfig.datapoint_id"
+        )
+
+        # Create unique datapoint IDs for testing priority
+        correct_datapoint_id = str(uuid.uuid4())
+        wrong_datapoint_id = str(uuid.uuid4())
+
+        # Create TracerConfig with wrong datapoint_id
+        tracer_config = TracerConfig(
+            api_key=integration_client.api_key,
+            project=real_project,
+            source=real_source,
+            datapoint_id=wrong_datapoint_id,  # TracerConfig level (should be overridden)
+            test_mode=False,
+        )
+
+        # Create EvaluationConfig with correct datapoint_id
+        evaluation_config = EvaluationConfig(
+            datapoint_id=correct_datapoint_id,  # (should win)
+        )
+
+        # Create tracer using config objects (no individual params)
+        test_tracer = HoneyHiveTracer(
+            config=tracer_config,
+            evaluation_config=evaluation_config,  # (should win)
+        )
+
+        # Verify tracer is using EvaluationConfig's datapoint_id
+        assert (
+            test_tracer.datapoint_id == correct_datapoint_id
+        ), f"Tracer datapoint_id mismatch: expected {correct_datapoint_id}, got {test_tracer.datapoint_id}"
+        print(
+            f"✅ Tracer correctly initialized with EvaluationConfig.datapoint_id: {correct_datapoint_id}"
+        )
+
+        # Create a verification span
+        verified_event = verify_tracer_span(
+            tracer=test_tracer,
+            client=integration_client,
+            project=real_project,
+            span_name=verification_span_name,
+            unique_identifier=unique_id,
+            span_attributes={
+                "test.unique_id": unique_id,
+                "test.verification_type": "datapoint_id_collision",
+                "test.config_field": "datapoint_id",
+                "test.priority": "EvaluationConfig > TracerConfig",
+                "test.correct_datapoint_id": correct_datapoint_id,
+                "honeyhive.project": real_project,
+                "honeyhive.source": real_source,
+            },
+        )
+
+        # Verify event was created successfully
+        assert verified_event.event_id is not None, "Event should be created"
+        print("✅ Backend verification successful")
+        print(f"   Event ID: {verified_event.event_id}")
+        print(
+            "   This confirms EvaluationConfig.datapoint_id correctly "
+            "overrides TracerConfig.datapoint_id"
+        )
+
+        # Clean up
+        test_tracer.shutdown()

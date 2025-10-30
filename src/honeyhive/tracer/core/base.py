@@ -243,7 +243,14 @@ class HoneyHiveTracerBase:  # pylint: disable=too-many-instance-attributes
 
         # Session management attributes (both public and private for compatibility)
         self.session_name = config.get("session_name")
-        self.session_id = config.get("session_id")
+        # session_id is now properly promoted to root by create_unified_config()
+        # Fallback to nested location for extra safety
+        self.session_id = config.get("session_id") or (
+            config.get("session", {}).get("session_id")
+            if isinstance(config.get("session"), dict)
+            else None
+        )
+
         self._session_name = self.session_name  # Private version for internal use
         self._session_id = self.session_id  # Private version for internal use
 

@@ -603,7 +603,7 @@ class TestEvaluate:
 
         # Verify
         assert result == mock_result
-        # Note: server_url gets default value from client config if not explicitly set
+        # Note: server_url comes from HH_API_URL environment variable set in tox.ini
         mock_honeyhive_class.assert_called_once_with(
             api_key="test-key", server_url="https://api.honeyhive.ai", verbose=True
         )

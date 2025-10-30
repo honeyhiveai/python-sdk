@@ -112,7 +112,14 @@ def create_unified_config(
 
     Structure:
         - TracerConfig fields at root level (most commonly accessed)
-        - Other configs nested: config.session.*, config.otlp.*, config.http.*, etc.
+        - Specialized configs nested: config.session.*, config.evaluation.*, etc.
+        - For colliding fields: More specific configs override base configs at root
+
+    Priority Order (for fields that exist in multiple configs):
+        1. individual_params (highest - backwards compatibility)
+        2. SessionConfig (session-specific overrides)
+        3. EvaluationConfig (evaluation-specific overrides)
+        4. TracerConfig (base defaults)
 
     Args:
         config: Core tracer configuration object
@@ -125,12 +132,20 @@ def create_unified_config(
         via both config.field_name and config['field_name'] patterns.
 
     Example:
+        >>> # Basic usage
         >>> config = TracerConfig(api_key="key", project="proj")
         >>> unified = create_unified_config(config=config)
         >>> unified.api_key  # "key" (TracerConfig at root)
         >>> unified.http.timeout  # 30.0 (HTTPClientConfig nested)
-        >>> unified.otlp.batch_size  # 100 (OTLPConfig nested)
-        >>> unified.session.inputs  # {"user": "123"} (SessionConfig nested)
+
+        >>> # Field collision handling (SessionConfig overrides TracerConfig)
+        >>> tracer_cfg = TracerConfig(api_key="key1", session_id=None)
+        >>> session_cfg = SessionConfig(session_id="550e8400-...")
+        >>> unified = create_unified_config(
+        ...     config=tracer_cfg, session_config=session_cfg
+        ... )
+        >>> unified.session_id  # "550e8400-..." (from SessionConfig)
+        >>> unified.session.session_id  # Also "550e8400-..."
     """
     # First merge the main configs with individual params
     tracer_config, session_config_merged, evaluation_config_merged = (
@@ -178,7 +193,52 @@ def create_unified_config(
     else:
         unified.evaluation = DotDict()
 
+    # 2.5. Promote specialized config values to root level for colliding fields
+    # Priority: SessionConfig/EvaluationConfig > TracerConfig (more specific wins)
+    # This fixes the field collision bug where SessionConfig.session_id was hidden
+    # Only promote when specialized configs were explicitly provided (not defaults)
+
+    # Helper to determine if a field was explicitly set vs using default
+    def was_field_explicitly_set(config_obj: Any, field_name: str) -> bool:
+        """Check if a field was explicitly set by user or is just a default."""
+        if config_obj is None:
+            return False
+        # Check if the field exists in the original config object's __dict__
+        # or __pydantic_fields_set__ (Pydantic v2 tracks explicitly set fields)
+        if hasattr(config_obj, "__pydantic_fields_set__"):
+            return field_name in config_obj.__pydantic_fields_set__
+        # Fallback: assume explicitly set if value differs from field default
+        if hasattr(type(config_obj), "model_fields"):
+            field_info = type(config_obj).model_fields.get(field_name)
+            if field_info and hasattr(field_info, "default"):
+                return bool(getattr(config_obj, field_name, None) != field_info.default)
+        return True  # Conservative: promote if we can't determine
+
+    # Promote EvaluationConfig values to root (lower priority)
+    # Only if evaluation_config was actually provided by user
+    if evaluation_config is not None and evaluation_config_merged:
+        for field in EvaluationConfig.model_fields.keys():
+            nested_value = unified.evaluation.get(field)
+            # Only promote if field was explicitly set and value is not None
+            if nested_value is not None and was_field_explicitly_set(
+                evaluation_config, field
+            ):
+                unified[field] = nested_value
+
+    # Promote SessionConfig values to root (higher priority - overrides evaluation)
+    # Only if session_config was actually provided by user
+    if session_config is not None and session_config_merged:
+        for field in SessionConfig.model_fields.keys():
+            nested_value = unified.session.get(field)
+            # Only promote if field was explicitly set and value is not None
+            if nested_value is not None and was_field_explicitly_set(
+                session_config, field
+            ):
+                unified[field] = nested_value
+
     # 3. Handle individual params - route to appropriate nested config or root
+    # AND promote SessionConfig/EvaluationConfig params to root
+    # (for field collision handling)
     for param, value in individual_params.items():
         # Route params to appropriate nested config based on known field sets
         # Use try/except for safe field checking
@@ -187,6 +247,9 @@ def create_unified_config(
                 SessionConfig.model_fields
             ):
                 unified.session[param] = value
+                # Also promote to root
+                # (SessionConfig has highest priority for colliding fields)
+                unified[param] = value
                 continue
         except (AttributeError, TypeError):
             pass
@@ -196,6 +259,9 @@ def create_unified_config(
                 EvaluationConfig.model_fields
             ):
                 unified.evaluation[param] = value
+                # Also promote to root
+                # (EvaluationConfig overrides TracerConfig for colliding fields)
+                unified[param] = value
                 continue
         except (AttributeError, TypeError):
             pass
