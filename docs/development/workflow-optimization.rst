@@ -25,7 +25,7 @@ Solution Implementation
 -----------------------
 
 Path-Based Exclusions
-~~~~~~~~~~~~~~~~~~~~~~
+~~~~~~~~~~~~~~~~~~~~~
 
 All major workflows now include ``paths-ignore`` filters to exclude:
 

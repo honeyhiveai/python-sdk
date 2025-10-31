@@ -2,12 +2,12 @@ Best Practices
 ==============
 
 How do I design an effective evaluation strategy?
---------------------------------------------------
+-------------------------------------------------
 
 Follow these proven patterns for experiment design and execution.
 
 Start Simple, Scale Up
------------------------
+----------------------
 
 **Phase 1: Proof of Concept (10-20 datapoints)**
 
@@ -52,7 +52,7 @@ Start Simple, Scale Up
    )
 
 How do I balance cost and thoroughness?
-----------------------------------------
+---------------------------------------
 
 **Tiered Evaluation Strategy**
 
@@ -81,7 +81,7 @@ How do I balance cost and thoroughness?
        )
 
 Ensure Reproducibility
------------------------
+----------------------
 
 **Use Deterministic Settings**
 

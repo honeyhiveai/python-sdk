@@ -1,23 +1,33 @@
 Running Experiments
 ===================
 
+
 How do I run experiments to test my LLM application?
-------------------------------------------------------
+----------------------------------------------------
+
 
 Use the ``evaluate()`` function to run your application across a dataset and track results.
 
+
 What's the simplest way to run an experiment?
-----------------------------------------------
+---------------------------------------------
+
 
 **Three-Step Pattern**
 
+
 .. versionchanged:: 1.0
+
+
    Function signature changed from ``(inputs, ground_truths)`` to ``(datapoint: Dict[str, Any])``.
+
 
 .. code-block:: python
 
+
    from typing import Any, Dict
    from honeyhive.experiments import evaluate
+   
    
    # Step 1: Define your function
    def my_llm_app(datapoint: Dict[str, Any]) -> Dict[str, Any]:
@@ -33,6 +43,7 @@ What's the simplest way to run an experiment?
        result = call_llm(inputs["prompt"])
        return {"answer": result}
    
+   
    # Step 2: Create dataset
    dataset = [
        {
@@ -40,6 +51,7 @@ What's the simplest way to run an experiment?
            "ground_truths": {"answer": "Artificial Intelligence..."}
        }
    ]
+   
    
    # Step 3: Run experiment
    result = evaluate(
@@ -50,17 +62,23 @@ What's the simplest way to run an experiment?
        name="My Experiment v1"
    )
    
+   
    print(f"✅ Run ID: {result.run_id}")
    print(f"✅ Status: {result.status}")
 
+
 How should I structure my test data?
--------------------------------------
+------------------------------------
+
 
 **Use inputs + ground_truths Pattern**
 
+
 Each datapoint in your dataset should have:
 
+
 .. code-block:: python
+
 
    {
        "inputs": {
@@ -77,9 +95,12 @@ Each datapoint in your dataset should have:
        }
    }
 
+
 **Complete Example:**
 
+
 .. code-block:: python
+
 
    dataset = [
        {
@@ -104,19 +125,28 @@ Each datapoint in your dataset should have:
        }
    ]
 
+
 What signature must my function have?
---------------------------------------
+-------------------------------------
+
 
 **Accept datapoint Parameter (v1.0)**
 
+
 .. versionchanged:: 1.0
+
+
    Function signature changed from ``(inputs, ground_truths)`` to ``(datapoint: Dict[str, Any])``.
+
 
 Your function MUST accept a ``datapoint`` parameter:
 
+
 .. code-block:: python
 
+
    from typing import Any, Dict
+   
    
    def my_function(datapoint: Dict[str, Any]) -> Dict[str, Any]:
        """Your evaluation function.
@@ -131,18 +161,23 @@ Your function MUST accept a ``datapoint`` parameter:
        inputs = datapoint.get("inputs", {})
        ground_truths = datapoint.get("ground_truths", {})
        
+       
        # Access input parameters
        user_query = inputs.get("question")
        language = inputs.get("language", "English")
        
+       
        # ground_truths available but typically not used in function
        # (used by evaluators for scoring)
+       
        
        # Your logic
        result = process_query(user_query, language)
        
+       
        # Return dict
        return {"answer": result, "metadata": {...}}
+
 
 .. important::
    - Accept **one parameter**: ``datapoint: Dict[str, Any]``
@@ -151,41 +186,57 @@ Your function MUST accept a ``datapoint`` parameter:
    - Return value should be a **dictionary**
    - **Type hints are strongly recommended**
 
+
 **Backward Compatibility (Deprecated):**
 
+
 .. deprecated:: 1.0
+
+
    The old ``(inputs, ground_truths)`` signature is deprecated but still supported
    for backward compatibility. It will be removed in v2.0.
 
+
 .. code-block:: python
+
 
    # ⚠️ Deprecated: Old signature (still works in v1.0)
    def old_style_function(inputs, ground_truths):
        # This still works but will be removed in v2.0
        return {"output": inputs["query"]}
    
+   
    # ✅ Recommended: New signature (v1.0+)
    def new_style_function(datapoint: Dict[str, Any]) -> Dict[str, Any]:
        inputs = datapoint.get("inputs", {})
        return {"output": inputs["query"]}
 
+
 How do I enrich sessions or spans during evaluation?
------------------------------------------------------
+----------------------------------------------------
+
 
 .. versionadded:: 1.0
+
+
    You can now receive a ``tracer`` parameter in your evaluation function.
 
+
 **Use the tracer Parameter for Advanced Tracing**
+
 
 If your function needs to enrich sessions or use the tracer instance,
 add a ``tracer`` parameter to your function signature:
 
+
 .. code-block:: python
+
 
    from typing import Any, Dict
    from honeyhive import HoneyHiveTracer
    from honeyhive.experiments import evaluate
    from honeyhive.sdk.utils import enrich_span, enrich_session
+   
    
    def my_function(
        datapoint: Dict[str, Any],
@@ -202,14 +253,17 @@ add a ``tracer`` parameter to your function signature:
        """
        inputs = datapoint.get("inputs", {})
        
+       
        # Enrich the session with metadata
        enrich_session(
            tracer=tracer,
            metadata={"experiment_version": "v2", "user_id": "test-123"}
        )
        
+       
        # Your logic
        result = process_query(inputs["query"])
+       
        
        # Enrich spans with metrics
        enrich_span(
@@ -217,7 +271,9 @@ add a ``tracer`` parameter to your function signature:
            metadata={"model": "gpt-4"}
        )
        
+       
        return {"answer": result}
+   
    
    # The tracer is automatically provided by evaluate()
    result = evaluate(
@@ -226,27 +282,35 @@ add a ``tracer`` parameter to your function signature:
        name="experiment-v1"
    )
 
+
 .. important::
    - The ``tracer`` parameter is **optional** - only add it if needed
    - The tracer is **automatically injected** by ``evaluate()``
    - Use it to call ``enrich_session()`` or access the tracer instance
    - Each datapoint gets its own tracer instance (multi-instance architecture)
 
+
 **Without tracer parameter (simpler):**
 
+
 .. code-block:: python
+
 
    def simple_function(datapoint: Dict[str, Any]) -> Dict[str, Any]:
        """Function without tracer access."""
        inputs = datapoint.get("inputs", {})
        return {"answer": process_query(inputs["query"])}
 
+
 My experiments are too slow on large datasets
-----------------------------------------------
+---------------------------------------------
+
 
 **Use max_workers for Parallel Processing**
 
+
 .. code-block:: python
+
 
    # Slow: Sequential processing (default)
    result = evaluate(
@@ -256,6 +320,7 @@ My experiments are too slow on large datasets
        project="your-project"
    )
    # Takes: ~1000 seconds if each item takes 1 second
+   
    
    # Fast: Parallel processing
    result = evaluate(
@@ -267,31 +332,42 @@ My experiments are too slow on large datasets
    )
    # Takes: ~50 seconds (20x faster)
 
+
 **Choosing max_workers:**
 
+
 .. code-block:: python
+
 
    # Conservative (good for API rate limits)
    max_workers=5
    
+   
    # Balanced (good for most cases)
    max_workers=10
+   
    
    # Aggressive (fast but watch rate limits)
    max_workers=20
 
+
 How do I avoid hardcoding credentials?
----------------------------------------
+--------------------------------------
+
 
 **Use Environment Variables**
 
+
 .. code-block:: python
 
+
    import os
+   
    
    # Set environment variables
    os.environ["HH_API_KEY"] = "your-api-key"
    os.environ["HH_PROJECT"] = "your-project"
+   
    
    # Now you can omit api_key and project
    result = evaluate(
@@ -300,19 +376,25 @@ How do I avoid hardcoding credentials?
        name="Experiment v1"
    )
 
+
 **Or use a .env file:**
 
+
 .. code-block:: bash
+
 
    # .env file
    HH_API_KEY=your-api-key
    HH_PROJECT=your-project
    HH_SOURCE=dev  # Optional: environment identifier
 
+
 .. code-block:: python
+
 
    from dotenv import load_dotenv
    load_dotenv()
+   
    
    # Credentials loaded automatically
    result = evaluate(
@@ -321,17 +403,22 @@ How do I avoid hardcoding credentials?
        name="Experiment v1"
    )
 
+
 How should I name my experiments?
-----------------------------------
+---------------------------------
+
 
 **Use Descriptive, Versioned Names**
 
+
 .. code-block:: python
+
 
    # ❌ Bad: Generic names
    name="test"
    name="experiment"
    name="run1"
+   
    
    # ✅ Good: Descriptive names
    name="gpt-3.5-baseline-v1"
@@ -339,9 +426,12 @@ How should I name my experiments?
    name="rag-with-reranking-v1"
    name="production-candidate-2024-01-15"
 
+
 **Naming Convention:**
 
+
 .. code-block:: python
+
 
    # Format: {change-description}-{version}
    evaluate(
@@ -352,6 +442,7 @@ How should I name my experiments?
        project="your-project"
    )
    
+   
    evaluate(
        function=improved_function,
        dataset=dataset,
@@ -360,12 +451,16 @@ How should I name my experiments?
        project="your-project"
    )
 
+
 How do I access experiment results in code?
---------------------------------------------
+-------------------------------------------
+
 
 **Use the Returned EvaluationResult Object**
 
+
 .. code-block:: python
+
 
    result = evaluate(
        function=my_function,
@@ -374,26 +469,34 @@ How do I access experiment results in code?
        project="your-project"
    )
    
+   
    # Access run information
    print(f"Run ID: {result.run_id}")
    print(f"Status: {result.status}")
    print(f"Dataset ID: {result.dataset_id}")
    
+   
    # Access session IDs (one per datapoint)
    print(f"Session IDs: {result.session_ids}")
+   
    
    # Access evaluation data
    print(f"Results: {result.data}")
    
+   
    # Export to JSON
    result.to_json()  # Saves to {suite_name}.json
 
+
 I want to see what's happening during evaluation
--------------------------------------------------
+------------------------------------------------
+
 
 **Enable Verbose Output**
 
+
 .. code-block:: python
+
 
    result = evaluate(
        function=my_function,
@@ -403,27 +506,34 @@ I want to see what's happening during evaluation
        project="your-project"
    )
    
+   
    # Output:
    # Processing datapoint 1/10...
    # Processing datapoint 2/10...
    # ...
 
+
 Show me a complete real-world example
---------------------------------------
+-------------------------------------
+
 
 **Question Answering Pipeline (v1.0)**
 
+
 .. code-block:: python
+
 
    from typing import Any, Dict
    from honeyhive.experiments import evaluate
    import openai
    import os
    
+   
    # Setup
    os.environ["HH_API_KEY"] = "your-honeyhive-key"
    os.environ["HH_PROJECT"] = "qa-system"
    openai.api_key = "your-openai-key"
+   
    
    # Define function to test
    def qa_pipeline(datapoint: Dict[str, Any]) -> Dict[str, Any]:
@@ -437,11 +547,14 @@ Show me a complete real-world example
        """
        client = openai.OpenAI()
        
+       
        inputs = datapoint.get("inputs", {})
        question = inputs["question"]
        context = inputs.get("context", "")
        
+       
        prompt = f"Context: {context}\n\nQuestion: {question}\n\nAnswer:"
+       
        
        response = client.chat.completions.create(
            model="gpt-4",
@@ -449,11 +562,13 @@ Show me a complete real-world example
            temperature=0.0
        )
        
+       
        return {
            "answer": response.choices[0].message.content,
            "model": "gpt-4",
            "tokens": response.usage.total_tokens
        }
+   
    
    # Create test dataset
    dataset = [
@@ -477,6 +592,7 @@ Show me a complete real-world example
        }
    ]
    
+   
    # Run experiment
    result = evaluate(
        function=qa_pipeline,
@@ -486,14 +602,18 @@ Show me a complete real-world example
        verbose=True
    )
    
+   
    print(f"✅ Experiment complete!")
    print(f"📊 Run ID: {result.run_id}")
    print(f"🔗 View in dashboard: https://app.honeyhive.ai/projects/qa-system")
 
+
 See Also
 --------
+
 
 - :doc:`creating-evaluators` - Add metrics to your experiments
 - :doc:`dataset-management` - Use datasets from HoneyHive UI
 - :doc:`comparing-experiments` - Compare multiple experiment runs
 - :doc:`../../reference/experiments/core-functions` - Complete evaluate() API reference
+

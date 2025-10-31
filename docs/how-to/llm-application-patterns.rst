@@ -1,5 +1,5 @@
 LLM Application Patterns
-=========================
+========================
 
 **Problem:** You need proven architectural patterns and tracing strategies for building complex LLM applications like agents, RAG systems, and multi-step reasoning workflows.
 
@@ -12,10 +12,10 @@ This guide focuses on LLM-specific architectures and patterns, not generic softw
    :depth: 2
 
 Agent Architecture Patterns
-----------------------------
+---------------------------
 
 Pattern 1: ReAct (Reasoning + Acting)
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 **Use Case:** Agents that alternate between reasoning about the problem and taking actions with tools.
 
@@ -105,7 +105,7 @@ Pattern 1: ReAct (Reasoning + Acting)
 - 🚫 **When to Avoid**: High-latency sensitivity, token budget constraints, predictable workflows
 
 Pattern 2: Plan-and-Execute
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 **Use Case:** Complex queries requiring upfront planning before execution.
 
@@ -159,7 +159,7 @@ Pattern 2: Plan-and-Execute
 - 🚫 **When to Avoid**: Rapidly changing conditions, simple single-step tasks
 
 Pattern 3: Reflexion (Self-Reflection)
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 **Use Case:** Agents that critique and improve their own outputs.
 
@@ -214,7 +214,7 @@ Pattern 3: Reflexion (Self-Reflection)
 - 🚫 **When to Avoid**: Real-time applications, simple factual queries, tight budgets
 
 Pattern 4: Multi-Agent Collaboration
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 **Use Case:** Multiple specialized agents working together.
 
@@ -254,7 +254,7 @@ Pattern 4: Multi-Agent Collaboration
 - 🚫 **When to Avoid**: Simple tasks, tight latency requirements, limited resources
 
 Pattern 5: Tool-Using Agents
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 **Use Case:** Agents that can discover and use external tools dynamically.
 
@@ -301,7 +301,7 @@ Pattern 5: Tool-Using Agents
        return selected
 
 Pattern 6: Memory-Augmented Agents
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 **Use Case:** Agents that maintain and query long-term memory.
 
@@ -351,10 +351,10 @@ Pattern 6: Memory-Augmented Agents
 - 🚫 **When to Avoid**: Stateless services, privacy-sensitive domains, simple one-shot tasks
 
 LLM Workflow Patterns
-----------------------
+---------------------
 
 Pattern 1: RAG (Retrieval-Augmented Generation)
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 **Implementation:**
 
@@ -417,7 +417,7 @@ Pattern 1: RAG (Retrieval-Augmented Generation)
 - 🚫 **When to Avoid**: Creative generation, general reasoning, low-latency needs
 
 Pattern 2: Chain-of-Thought
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 **Implementation:**
 
@@ -454,7 +454,7 @@ Pattern 2: Chain-of-Thought
        return reasoning
 
 Pattern 3: Self-Correction Loops
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 **Implementation:**
 
@@ -480,7 +480,7 @@ Pattern 3: Self-Correction Loops
        return output  # Return best attempt
 
 Pattern 4: Prompt Chaining
-^^^^^^^^^^^^^^^^^^^^^^^^^^^
+^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 **Implementation:**
 
@@ -507,7 +507,7 @@ Pattern 4: Prompt Chaining
        return final_output
 
 Pattern 5: Dynamic Few-Shot Learning
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 **Implementation:**
 
@@ -538,7 +538,7 @@ Pattern 5: Dynamic Few-Shot Learning
        return response.choices[0].message.content
 
 Best Practices for LLM Applications
-------------------------------------
+-----------------------------------
 
 1. **Always Enrich with Agent Context**
 

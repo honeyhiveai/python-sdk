@@ -1,6 +1,6 @@
-========================================
+=========================================
 Migration Guide: v0.1.0+ Architecture
-========================================
+=========================================
 
 .. meta::
    :description: Complete migration guide for upgrading to HoneyHive SDK v0.1.0+ with new modular architecture and hybrid configuration
@@ -36,7 +36,7 @@ Migration Strategies
 ====================
 
 Strategy 1: No Migration Required (Recommended)
-------------------------------------------------
+-----------------------------------------------
 
 **Best for**: Existing applications that work well with current patterns.
 
@@ -90,7 +90,7 @@ Strategy 2: Gradual Migration (Recommended for New Features)
    modern_tracer = HoneyHiveTracer(config=config)
 
 Strategy 3: Full Migration (For Maximum Benefits)
---------------------------------------------------
+-------------------------------------------------
 
 **Best for**: Applications wanting all new features and enhanced type safety.
 
@@ -154,7 +154,7 @@ Identify your current usage patterns:
    dev_tracer = HoneyHiveTracer.init(api_key="dev_key", project="dev")
 
 Step 3: Choose Migration Approach (Optional)
----------------------------------------------
+--------------------------------------------
 
 If you want to adopt the new patterns, choose based on your needs:
 
@@ -204,7 +204,7 @@ If you want to adopt the new patterns, choose based on your needs:
    quiet_tracer = HoneyHiveTracer(config=base_config, verbose=False)
 
 Step 4: Update Advanced Usage (Optional)
------------------------------------------
+----------------------------------------
 
 If you use advanced patterns, consider these enhancements:
 
@@ -277,7 +277,7 @@ If you use advanced patterns, consider these enhancements:
    tracer = create_tracer_for_environment()
 
 Step 5: Test Your Migration
-----------------------------
+---------------------------
 
 Verify everything works correctly:
 
@@ -300,7 +300,7 @@ Common Migration Scenarios
 ==========================
 
 Scenario 1: Simple Application
--------------------------------
+------------------------------
 
 **Before (works unchanged):**
 
@@ -345,7 +345,7 @@ Scenario 1: Simple Application
        return data.upper()
 
 Scenario 2: Multi-Environment Application
-------------------------------------------
+-----------------------------------------
 
 **Before (works unchanged):**
 
@@ -385,7 +385,7 @@ Scenario 2: Multi-Environment Application
    tracer = HoneyHiveTracer(config=config)
 
 Scenario 3: LLM Integration Application
-----------------------------------------
+---------------------------------------
 
 **Before (works unchanged):**
 
@@ -438,7 +438,7 @@ New Features Available
 ======================
 
 Enhanced Configuration Options
--------------------------------
+------------------------------
 
 New configuration options available in v0.1.0+:
 
@@ -498,7 +498,7 @@ Enhanced support for multiple independent tracers:
        pass
 
 Type Safety and Validation
----------------------------
+--------------------------
 
 With modern config objects, get enhanced type safety:
 
@@ -546,7 +546,7 @@ Common Issues and Solutions
    from honeyhive.config.models import TracerConfig  # New import
    
    # Solution: Make sure you're on v0.1.0+
-   pip install --upgrade honeyhive>=0.1.0
+   # pip install --upgrade honeyhive>=0.1.0
 
 **Issue 2: Configuration Validation Errors**
 
@@ -632,7 +632,7 @@ If you encounter issues during migration:
    - Create an issue on GitHub
 
 Migration Checklist
-====================
+===================
 
 Use this checklist to track your migration progress:
 

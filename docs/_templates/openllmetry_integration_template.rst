@@ -1,5 +1,5 @@
 Integration with [Provider Name] (OpenLLMetry)
-=============================================
+==============================================
 
 .. note::
    **OpenLLMetry alternative for [Provider] integration**
@@ -135,7 +135,7 @@ Quick Setup
    </div>
 
 Key Differences from OpenInference
------------------------------------
+----------------------------------
 
 **OpenLLMetry Advantages**:
 
@@ -160,7 +160,7 @@ Key Differences from OpenInference
    # 3. Use your [Provider] client normally - automatically traced!
 
 Environment Configuration
---------------------------
+-------------------------
 
 **Required Environment Variables**:
 

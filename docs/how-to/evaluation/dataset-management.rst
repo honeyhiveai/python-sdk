@@ -2,12 +2,12 @@ Dataset Management
 ==================
 
 How do I manage test datasets for experiments?
------------------------------------------------
+----------------------------------------------
 
 Use datasets created in HoneyHive UI or define them in code.
 
 How do I use a dataset I created in the HoneyHive UI?
-------------------------------------------------------
+-----------------------------------------------------
 
 **Pass dataset_id Instead of dataset List**
 
@@ -32,7 +32,7 @@ How do I use a dataset I created in the HoneyHive UI?
 4. Copy the dataset ID from the URL or details page
 
 When should I define datasets in code vs UI?
----------------------------------------------
+--------------------------------------------
 
 **Choose Based on Use Case**
 
@@ -47,10 +47,10 @@ When should I define datasets in code vs UI?
    # Code-defined dataset
    dataset = [
        {"inputs": {...}, "ground_truths": {...}},
-       {"inputs": {...}, "ground_truths": {...}}
-   ]
-   
-   result = evaluate(function=my_function, dataset=dataset, ...)
+      {"inputs": {...}, "ground_truths": {...}}
+  ]
+  
+  result = evaluate(function=my_function, dataset=dataset)  # ...more args
 
 **Use UI-Managed** when:
 - Dataset is large (>100 items)
@@ -60,11 +60,11 @@ When should I define datasets in code vs UI?
 
 .. code-block:: python
 
-   # UI-managed dataset
-   result = evaluate(function=my_function, dataset_id="dataset_123", ...)
+  # UI-managed dataset
+  result = evaluate(function=my_function, dataset_id="dataset_123")  # ...more args
 
 What are EXT- prefixed IDs?
-----------------------------
+---------------------------
 
 **Automatically Generated for Code Datasets**
 
@@ -72,18 +72,18 @@ When you pass a ``dataset`` list (not ``dataset_id``), HoneyHive generates an ex
 
 .. code-block:: python
 
-   dataset = [{"inputs": {...}, "ground_truths": {...}}]
-   
-   result = evaluate(function=my_function, dataset=dataset, ...)
-   
-   print(result.dataset_id)  # "EXT-abc123def456..."
+  dataset = [{"inputs": {...}, "ground_truths": {...}}]
+  
+  result = evaluate(function=my_function, dataset=dataset)  # ...more args
+  
+  print(result.dataset_id)  # "EXT-abc123def456..."
 
 The EXT- ID is deterministic - same dataset content = same ID.
 
 This allows comparing runs on the same code-defined dataset.
 
 How do I create a dataset in the HoneyHive UI?
------------------------------------------------
+----------------------------------------------
 
 **Use the Datasets Interface**
 
@@ -120,7 +120,7 @@ How do I create a dataset in the HoneyHive UI?
    ]
 
 How do I create a dataset from production traces?
---------------------------------------------------
+-------------------------------------------------
 
 **Use Trace Curation in UI**
 
@@ -137,7 +137,7 @@ This is great for:
 - Finding edge cases
 
 How do I version my datasets?
-------------------------------
+-----------------------------
 
 **Use Naming Conventions**
 

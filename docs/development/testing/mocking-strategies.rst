@@ -1,5 +1,5 @@
 Mocking Strategies & Test Doubles
-==================================
+=================================
 
 .. note::
    **Problem-solving guide for mocking HoneyHive SDK components**

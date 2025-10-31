@@ -1,5 +1,5 @@
 Class-Level Decorator Patterns
-================================
+==============================
 
 **Problem:** You need to trace entire classes systematically, apply tracing to all methods automatically, or create reusable tracing patterns for object-oriented code.
 
@@ -10,12 +10,12 @@ Class-Level Decorator Patterns
    :depth: 2
 
 Basic Class Decoration
------------------------
+----------------------
 
 **When to Use:** Trace all public methods of a class automatically.
 
 Simple Class Decorator
-~~~~~~~~~~~~~~~~~~~~~~~
+~~~~~~~~~~~~~~~~~~~~~~
 
 .. code-block:: python
 
@@ -65,12 +65,12 @@ Simple Class Decorator
 - ✅ Easy to apply to existing classes
 
 Selective Method Tracing
--------------------------
+------------------------
 
 **When to Use:** Trace only specific methods based on custom criteria.
 
 Attribute-Based Selection
-~~~~~~~~~~~~~~~~~~~~~~~~~~
+~~~~~~~~~~~~~~~~~~~~~~~~~
 
 .. code-block:: python
 
@@ -116,7 +116,7 @@ Advanced Patterns
 -----------------
 
 Enrichment at Class Level
-~~~~~~~~~~~~~~~~~~~~~~~~~~
+~~~~~~~~~~~~~~~~~~~~~~~~~
 
 **Problem:** Automatically add class-level context to all method traces.
 
@@ -181,7 +181,7 @@ Every method call automatically includes:
    }
 
 Metaclass-Based Tracing
-~~~~~~~~~~~~~~~~~~~~~~~~
+~~~~~~~~~~~~~~~~~~~~~~~
 
 **Problem:** Apply tracing at class definition time with full control.
 
@@ -226,12 +226,12 @@ Metaclass-Based Tracing
 - ✅ No explicit decorator syntax needed
 
 Hierarchical Tracing
----------------------
+--------------------
 
 **Problem:** Trace class hierarchies while preserving inheritance.
 
 Parent-Child Trace Hierarchy
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 .. code-block:: python
 
@@ -290,7 +290,7 @@ Real-World Patterns
 -------------------
 
 Pattern 1: Repository Pattern with Tracing
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 .. code-block:: python
 
@@ -358,7 +358,7 @@ Pattern 1: Repository Pattern with Tracing
    }
 
 Pattern 2: Service Layer with Error Handling
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 .. code-block:: python
 
@@ -468,7 +468,7 @@ Always wrap decorated methods with try-except to capture errors in spans:
        raise
 
 Comparison with Method Decorators
-----------------------------------
+---------------------------------
 
 **Class Decorators:**
 

@@ -137,7 +137,7 @@ Configuration
    configuration/authentication
 
 Data Models
-~~~~~~~~~~~~
+~~~~~~~~~~~
 
 .. toctree::
    :maxdepth: 1
@@ -165,7 +165,7 @@ Experiments Module
    experiments/utilities
 
 Evaluation Framework (Deprecated)
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 .. warning::
    The ``evaluation`` module is deprecated. Use ``experiments`` module instead.

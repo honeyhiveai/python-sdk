@@ -47,7 +47,7 @@ Single Provider Integration
    ]
 
 Multiple Provider Integration  
------------------------------
+-------------------------------
 
 **Production Apps with Multiple Providers:**
 
@@ -109,7 +109,7 @@ Framework-Specific Integration
    ]
 
 Optional Dependencies Pattern (Recommended)
---------------------------------------------
+-------------------------------------------
 
 **Flexible User Choice - Let users pick providers:**
 
@@ -162,7 +162,7 @@ Optional Dependencies Pattern (Recommended)
    pip install my-flexible-library[all-providers]
 
 All Integrations (Kitchen Sink)
---------------------------------
+-------------------------------
 
 **Enterprise Apps with Comprehensive Provider Support:**
 

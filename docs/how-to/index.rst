@@ -25,7 +25,7 @@ How-to guides are organized by problem domain. Each guide provides step-by-step 
 - You're troubleshooting an issue
 
 Migration & Compatibility
---------------------------
+-------------------------
 
 Guides for migrating from older versions and ensuring backwards compatibility.
 
@@ -36,7 +36,7 @@ Guides for migrating from older versions and ensuring backwards compatibility.
    migration-compatibility/backwards-compatibility-guide
 
 LLM Provider Integration
--------------------------
+------------------------
 
 Quick solutions for specific provider integration challenges. HoneyHive supports both OpenInference and OpenLLMetry instrumentors to automatically trace LLM calls from any provider with zero code changes.
 
@@ -65,7 +65,7 @@ Build sophisticated observability:
    advanced-tracing/index
 
 Testing Your Application
--------------------------
+------------------------
 
 Test your LLM application with HoneyHive tracing:
 
@@ -81,7 +81,7 @@ Test your LLM application with HoneyHive tracing:
 
 
 Evaluate LLM Outputs
----------------------
+--------------------
 
 Set up quality monitoring and evaluation:
 
@@ -104,7 +104,7 @@ Keep applications running reliably:
    deployment/advanced-production
 
 Build Common Patterns
-----------------------
+---------------------
 
 Implement proven architectural patterns:
 

@@ -2,12 +2,12 @@ Result Analysis
 ===============
 
 How do I access and analyze experiment results programmatically?
------------------------------------------------------------------
+----------------------------------------------------------------
 
 Use ``get_run_result()`` and ``get_run_metrics()`` functions.
 
 How do I retrieve results for a specific run?
-----------------------------------------------
+---------------------------------------------
 
 **Use get_run_result()**
 
@@ -38,7 +38,7 @@ How do I retrieve results for a specific run?
    print(detailed_result.metrics)
 
 How do I get aggregated metrics for a run?
--------------------------------------------
+------------------------------------------
 
 **Use get_run_metrics()**
 
@@ -59,7 +59,7 @@ How do I get aggregated metrics for a run?
    print(f"Average quality: {metrics.get('quality')}")
 
 How do I export results to a file?
------------------------------------
+----------------------------------
 
 **Use to_json() Method**
 

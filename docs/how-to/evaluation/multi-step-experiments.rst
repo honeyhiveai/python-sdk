@@ -1,13 +1,13 @@
 Multi-Step Experiments
-=======================
+======================
 
 How do I evaluate a pipeline with multiple steps (e.g., RAG)?
---------------------------------------------------------------
+-------------------------------------------------------------
 
 Use component-level tracing and metrics within your evaluation function.
 
 How do I evaluate each component separately?
----------------------------------------------
+--------------------------------------------
 
 **Add Metrics to Each Step**
 

@@ -1,7 +1,7 @@
 .. _tracer-auto-discovery:
 
 Automatic Tracer Discovery
-===========================
+==========================
 
 The HoneyHive Python SDK now supports automatic tracer discovery, which enables backward compatibility with existing ``@trace`` decorator usage while unlocking powerful multi-instance capabilities.
 
@@ -57,10 +57,10 @@ The tracer discovery system uses a priority-based fallback chain:
           pass
 
 Basic Usage Patterns
----------------------
+--------------------
 
 Explicit Tracer (Original Pattern)
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 The original explicit tracer pattern continues to work exactly as before:
 
@@ -80,7 +80,7 @@ The original explicit tracer pattern continues to work exactly as before:
        return f"async_processed: {data}"
 
 Context-Based Auto-Discovery (Enhanced)
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 Decorators now automatically discover tracers from context when needed:
 
@@ -108,7 +108,7 @@ Decorators now automatically discover tracers from context when needed:
            return analysis
 
 Global Default Tracer (New Convenience)
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 Set a global default tracer for application-wide convenience:
 
@@ -129,10 +129,10 @@ Set a global default tracer for application-wide convenience:
    result = compute_metrics({"sample": "data"})
 
 Multi-Instance Patterns
-------------------------
+-----------------------
 
 Multiple Service Tracers
-~~~~~~~~~~~~~~~~~~~~~~~~~
+~~~~~~~~~~~~~~~~~~~~~~~~
 
 Create independent tracers for different services using decorators as the primary pattern:
 
@@ -186,7 +186,7 @@ Create independent tracers for different services using decorators as the primar
                    send_notification("Registration complete!")
 
 Cross-Service Nested Calls
-~~~~~~~~~~~~~~~~~~~~~~~~~~~
+~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 Handle nested calls across different service boundaries with decorators:
 
@@ -248,7 +248,7 @@ Async Patterns
 --------------
 
 Async Function Auto-Discovery
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 Async functions work seamlessly with decorator-based tracing:
 
@@ -291,7 +291,7 @@ Async functions work seamlessly with decorator-based tracing:
        return "explicitly traced"
 
 Mixed Sync/Async Workflows
-~~~~~~~~~~~~~~~~~~~~~~~~~~~
+~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 Combine synchronous and asynchronous functions with decorator-based tracing:
 
@@ -439,7 +439,7 @@ Decorator-First Philosophy
                return fetch_user_data(user_id)
 
 When to Use Context Managers
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 Reserve context managers for specific scenarios where decorators aren't sufficient:
 
@@ -482,7 +482,7 @@ Reserve context managers for specific scenarios where decorators aren't sufficie
            return simple_process(data)
 
 Recommended Patterns by Use Case
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 **1. Simple Applications: Default Tracer + Decorators**
 
@@ -635,7 +635,7 @@ Branch Information
    3. The changes will be merged to main and released in version 0.2.0
 
 Migrating from Previous Versions
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 **No Changes Required**: All existing code continues to work exactly as before.
 

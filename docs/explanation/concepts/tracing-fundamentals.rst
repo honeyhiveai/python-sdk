@@ -172,7 +172,7 @@ The HoneyHive SDK provides a unified approach to span and session enrichment thr
 5. **Full Backwards Compatibility** - All existing code continues to work unchanged
 
 LLM-Specific Tracing Considerations
-------------------------------------
+-----------------------------------
 
 **Token-Level Observability**
 
@@ -357,7 +357,7 @@ Trace Analysis Patterns
    )
 
 Integration with Monitoring Systems
-------------------------------------
+-----------------------------------
 
 **Metrics from Traces**
 

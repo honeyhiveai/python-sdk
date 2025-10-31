@@ -22,7 +22,7 @@ The ProxyTracerProvider Bug: Lessons Learned
 A critical bug existed where HoneyHive failed to handle OpenTelemetry's default ``ProxyTracerProvider``, causing instrumentor integration to fail silently.
 
 **Why It Wasn't Caught**
-~~~~~~~~~~~~~~~~~~~~~~~~~
+~~~~~~~~~~~~~~~~~~~~~~~~
 
 1. **Over-Mocking**: Our test suite completely mocked OpenTelemetry components
 2. **Missing Real Scenarios**: No tests covered "fresh Python environment + instrumentor" scenarios  
@@ -47,7 +47,7 @@ Testing Strategy Updates
 ------------------------
 
 Real Environment Testing
-~~~~~~~~~~~~~~~~~~~~~~~~~
+~~~~~~~~~~~~~~~~~~~~~~~~
 
 We now use subprocess-based tests to validate real-world scenarios:
 
@@ -69,7 +69,7 @@ We now use subprocess-based tests to validate real-world scenarios:
        # Should now have real TracerProvider
        final_provider = trace.get_tracer_provider()
        assert "Proxy" not in type(final_provider).__name__
-       '''
+
        
        # Run in subprocess for fresh environment
        result = subprocess.run([sys.executable, script_path], ...)
@@ -107,7 +107,7 @@ Test Categories and When to Use
 -------------------------------
 
 Unit Tests (Fast, Isolated)
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 **Use for:**
 - Individual function logic
@@ -192,7 +192,7 @@ CI/CD Pipeline
 4. End-to-end tests (user workflows)
 
 Preventing Future Bugs
------------------------
+----------------------
 
 Mandatory Test Coverage
 ~~~~~~~~~~~~~~~~~~~~~~~
@@ -212,7 +212,7 @@ Mandatory Test Coverage
 - Documentation examples must be tested
 
 Test Review Checklist
-~~~~~~~~~~~~~~~~~~~~~~
+~~~~~~~~~~~~~~~~~~~~~
 
 **For New Tests:**
 
@@ -233,7 +233,7 @@ Monitoring and Metrics
 ----------------------
 
 Test Health Metrics
-~~~~~~~~~~~~~~~~~~~~
+~~~~~~~~~~~~~~~~~~~
 
 **Track:**
 - Test execution time trends

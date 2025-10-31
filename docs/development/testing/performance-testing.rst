@@ -1,5 +1,5 @@
 Performance Testing & Benchmarking
-===================================
+==================================
 
 .. note::
    **Problem-solving guide for performance testing HoneyHive SDK**

@@ -2,12 +2,12 @@ Comparing Experiments
 =====================
 
 How do I compare two experiment runs to see if I improved?
------------------------------------------------------------
+----------------------------------------------------------
 
 Use the ``compare_runs()`` function to analyze differences between runs.
 
 What's the simplest way to compare two runs?
----------------------------------------------
+--------------------------------------------
 
 **Run Twice, Then Compare**
 
@@ -50,7 +50,7 @@ What's the simplest way to compare two runs?
    print(f"Degraded metrics: {comparison.list_degraded_metrics()}")
 
 What does the comparison object contain?
------------------------------------------
+----------------------------------------
 
 **Key Fields Explained**
 
@@ -95,7 +95,7 @@ What does the comparison object contain?
    }
 
 What's the difference between aggregate and event-level comparison?
---------------------------------------------------------------------
+-------------------------------------------------------------------
 
 **Two Comparison Modes**
 
@@ -131,7 +131,7 @@ What's the difference between aggregate and event-level comparison?
        print(f"{datapoint_id}: {event_2_metrics} → {event_1_metrics}")
 
 Best Practices for Comparison
-------------------------------
+-----------------------------
 
 **Use the SAME Dataset**
 
@@ -140,14 +140,14 @@ Best Practices for Comparison
    # ✅ Good: Same dataset for both runs
    dataset = load_dataset()  # Load once
    
-   baseline = evaluate(function=v1, dataset=dataset, ...)
-   improved = evaluate(function=v2, dataset=dataset, ...)
+   baseline = evaluate(function=v1, dataset=dataset)  # ...more args
+   improved = evaluate(function=v2, dataset=dataset)  # ...more args
    
    # Now comparison is meaningful
    
-   # ❌ Bad: Different datasets
-   baseline = evaluate(function=v1, dataset=dataset1, ...)
-   improved = evaluate(function=v2, dataset2, ...)  # Different!
+  # ❌ Bad: Different datasets
+  baseline = evaluate(function=v1, dataset=dataset1)  # ...more args
+  improved = evaluate(function=v2, dataset=dataset2)  # ...more args (Different!)
    
    # Comparison is meaningless - comparing apples to oranges
 
@@ -158,24 +158,24 @@ Best Practices for Comparison
    # Define evaluators once
    evaluators = [accuracy, length_check, quality_score]
    
-   # Use for both runs
-   baseline = evaluate(function=v1, dataset=dataset, evaluators=evaluators, ...)
-   improved = evaluate(function=v2, dataset=dataset, evaluators=evaluators, ...)
+  # Use for both runs
+  baseline = evaluate(function=v1, dataset=dataset, evaluators=evaluators)  # ...more args
+  improved = evaluate(function=v2, dataset=dataset, evaluators=evaluators)  # ...more args
 
 **Use Descriptive Names for Easy Identification**
 
 .. code-block:: python
 
-   # ✅ Good: Easy to identify in dashboard
-   baseline = evaluate(..., name="gpt-3.5-baseline-2024-01-15")
-   improved = evaluate(..., name="gpt-4-with-rag-2024-01-15")
-   
-   # ❌ Bad: Hard to remember which is which
-   baseline = evaluate(..., name="run1")
-   improved = evaluate(..., name="run2")
+  # ✅ Good: Easy to identify in dashboard
+  baseline = evaluate(function=v1, dataset=dataset, name="gpt-3.5-baseline-2024-01-15")  # ...more args
+  improved = evaluate(function=v2, dataset=dataset, name="gpt-4-with-rag-2024-01-15")  # ...more args
+  
+  # ❌ Bad: Hard to remember which is which
+  baseline = evaluate(function=v1, dataset=dataset, name="run1")  # ...more args
+  improved = evaluate(function=v2, dataset=dataset, name="run2")  # ...more args
 
 How do I know if my changes actually improved things?
-------------------------------------------------------
+-----------------------------------------------------
 
 **Check Multiple Signals**
 
@@ -202,7 +202,7 @@ How do I know if my changes actually improved things?
        print("⚠️ Trade-off: More accurate but slower")
 
 Show me a complete comparison workflow
----------------------------------------
+--------------------------------------
 
 **Iterative Testing Pattern**
 
@@ -269,7 +269,7 @@ Show me a complete comparison workflow
        )
 
 Common Comparison Scenarios
-----------------------------
+---------------------------
 
 **Prompt Engineering**
 

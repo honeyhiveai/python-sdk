@@ -1,5 +1,5 @@
 Advanced Tracing Patterns
-===========================
+=========================
 
 **Problem:** You need sophisticated tracing patterns for complex scenarios: context propagation across service boundaries, conditional tracing, dynamic sampling, trace correlation, and distributed system tracing.
 
@@ -65,7 +65,7 @@ Cross-Service Tracing
        return response.json()
 
 Async Context Propagation
-~~~~~~~~~~~~~~~~~~~~~~~~~~
+~~~~~~~~~~~~~~~~~~~~~~~~~
 
 .. code-block:: python
 
@@ -413,7 +413,7 @@ Performance Monitoring
 **When to Use:** Track detailed performance metrics within traces.
 
 Resource Usage Tracing
-~~~~~~~~~~~~~~~~~~~~~~~
+~~~~~~~~~~~~~~~~~~~~~~
 
 .. code-block:: python
 

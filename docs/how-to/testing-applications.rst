@@ -1,5 +1,5 @@
 Testing Applications with HoneyHive
-====================================
+===================================
 
 **Problem:** You need to test your LLM application with HoneyHive tracing enabled, write unit tests for traced functions, and verify that traces are captured correctly without relying on mocks.
 
@@ -30,7 +30,7 @@ Setup for Testing
 -----------------
 
 Test Environment Configuration
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 .. code-block:: bash
 
@@ -84,7 +84,7 @@ Pytest Configuration
        # Test-specific cleanup if needed
 
 Unit Testing Traced Functions
-------------------------------
+-----------------------------
 
 Basic Function Testing
 ~~~~~~~~~~~~~~~~~~~~~~
@@ -127,7 +127,7 @@ Basic Function Testing
        # Trace is captured automatically in test project
 
 Testing with Span Validation
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 .. code-block:: python
 
@@ -165,7 +165,7 @@ Testing with Span Validation
        assert attributes.get("output.size") == 2
 
 Testing Error Handling
-~~~~~~~~~~~~~~~~~~~~~~~
+~~~~~~~~~~~~~~~~~~~~~~
 
 .. code-block:: python
 
@@ -267,7 +267,7 @@ Testing LLM Workflows
        # Trace automatically captured with 3 spans (chain + tool + model)
 
 Testing Multi-Provider Scenarios
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 .. code-block:: python
 
@@ -317,7 +317,7 @@ Evaluation Testing
 ------------------
 
 Testing with Evaluation Metrics
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 .. code-block:: python
 
@@ -433,7 +433,7 @@ Common Testing Patterns
 -----------------------
 
 Pattern 1: Test Helper with Tracing
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 .. code-block:: python
 
@@ -461,7 +461,7 @@ Pattern 1: Test Helper with Tracing
            result = process_data({"key": "value"})
 
 Pattern 2: Trace Assertion Helper
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 .. code-block:: python
 

@@ -1,5 +1,5 @@
 Testing Setup and Commands
-===========================
+==========================
 
 This guide covers the essential setup and commands for SDK testing.
 

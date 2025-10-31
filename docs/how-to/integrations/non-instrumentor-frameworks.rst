@@ -188,7 +188,7 @@ Common Integration Patterns
 ---------------------------
 
 Pattern 1: Framework with Delayed Provider Setup
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 Some frameworks delay TracerProvider setup:
 
@@ -309,7 +309,7 @@ Advanced Topics
 ---------------
 
 Custom Attributes
-~~~~~~~~~~~~~~~~~~
+~~~~~~~~~~~~~~~~~
 
 Add custom attributes to all spans:
 

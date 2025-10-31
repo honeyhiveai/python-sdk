@@ -1,6 +1,6 @@
-===============================
+================================
 Hybrid Configuration Approach
-===============================
+================================
 
 .. meta::
    :description: Comprehensive reference for HoneyHive SDK's hybrid configuration system with Pydantic models and backwards compatibility
@@ -531,7 +531,7 @@ All configuration models support automatic environment variable loading using Py
    print(config.verbose)  # True
 
 Error Handling and Validation
-==============================
+=============================
 
 All configuration models use Pydantic v2 validation with clear error messages.
 
@@ -594,7 +594,7 @@ UUID Validation
        # ValidationError: session_id must be a valid UUID string
 
 Backwards Compatibility Guarantees
-===================================
+==================================
 
 The hybrid configuration approach provides **100% backwards compatibility** with the following guarantees:
 

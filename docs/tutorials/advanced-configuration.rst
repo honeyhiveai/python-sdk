@@ -1,6 +1,6 @@
-=======================================
+====================================
 Advanced Configuration Guide
-=======================================
+====================================
 
 .. meta::
    :description: Comprehensive guide to advanced HoneyHive SDK configuration patterns using Pydantic models
@@ -23,7 +23,7 @@ Prerequisites
 - Familiarity with configuration management concepts
 
 What You'll Learn
-==================
+=================
 
 By the end of this tutorial, you'll understand:
 
@@ -34,10 +34,10 @@ By the end of this tutorial, you'll understand:
 5. **Configuration Validation**: Type safety and error handling
 
 Configuration Patterns
-=======================
+======================
 
 Basic Configuration Review
----------------------------
+--------------------------
 
 The HoneyHive SDK supports three configuration approaches:
 
@@ -79,10 +79,10 @@ The HoneyHive SDK supports three configuration approaches:
          tracer = HoneyHiveTracer(config=config, verbose=True)
 
 Advanced Configuration Patterns
-================================
+===============================
 
 1. Environment-Based Configuration
------------------------------------
+----------------------------------
 
 **Scenario**: Different configurations for development, staging, and production environments.
 
@@ -346,7 +346,7 @@ Advanced Configuration Patterns
        return response
 
 4. Configuration Validation and Error Handling
------------------------------------------------
+----------------------------------------------
 
 **Scenario**: Robust configuration with validation and graceful error handling.
 
@@ -578,10 +578,10 @@ Production Configuration Strategies
        return {"processed": True}
 
 Configuration Best Practices
-=============================
+============================
 
 1. Security Best Practices
----------------------------
+--------------------------
 
 **✅ DO:**
 
@@ -627,7 +627,7 @@ Configuration Best Practices
        return config
 
 2. Performance Best Practices
-------------------------------
+-----------------------------
 
 **Production Configuration**:
 

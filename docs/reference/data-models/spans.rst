@@ -1,5 +1,5 @@
 Span Data Models
-=================
+================
 
 .. note::
    **Technical specification for HoneyHive span data structures**
@@ -522,7 +522,7 @@ Complete Span Example
    }
 
 Trace Hierarchy Example
-------------------------
+-----------------------
 
 **Parent-Child Span Relationship**:
 

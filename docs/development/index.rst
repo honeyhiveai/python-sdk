@@ -16,7 +16,7 @@ This section covers internal development practices, testing strategies, and cont
 - Anyone making changes to the SDK codebase
 
 Testing
---------
+-------
 
 .. note::
    **For HoneyHive SDK Developers and Contributors**
@@ -55,8 +55,18 @@ The HoneyHive SDK employs a **three-tier testing strategy**:
    testing/troubleshooting-tests
    workflow-optimization
 
+Release Process
+---------------
+
+This section covers the automated release and PyPI publishing workflow for SDK maintainers.
+
+.. toctree::
+   :maxdepth: 1
+
+   release-process
+
 AI-Assisted Development Infrastructure
----------------------------------------
+--------------------------------------
 
 This section covers the Agent OS MCP/RAG server—our evolution of the Builder Methods Agent OS system into an intelligent Model Context Protocol server with semantic search and phase-gated workflows.
 
@@ -66,7 +76,7 @@ This section covers the Agent OS MCP/RAG server—our evolution of the Builder M
    agent-os-mcp-server
 
 Post-Mortems & Lessons Learned
--------------------------------
+------------------------------
 
 This section contains detailed post-mortems of significant issues and bugs discovered during SDK development. These documents provide valuable insights into our development processes, testing strategies, and lessons learned.
 
@@ -160,13 +170,7 @@ Getting Help
 
 **Release Process:**
 
-The SDK follows semantic versioning and automated releases:
-
-1. **Version Bumps**: Update ``pyproject.toml`` version
-2. **Changelog**: Move unreleased items to version section
-3. **Testing**: Full test suite must pass
-4. **Documentation**: Docs must build without warnings
-5. **Release**: GitHub releases trigger PyPI publishing
+The SDK uses automated PyPI publishing triggered by version updates in ``src/honeyhive/__init__.py``. The workflow validates versions against PyPI, builds packages, runs integrity checks, and publishes automatically on merge to ``main``. See :doc:`release-process` for complete release procedures and troubleshooting.
 
 Contributing Guidelines
 -----------------------

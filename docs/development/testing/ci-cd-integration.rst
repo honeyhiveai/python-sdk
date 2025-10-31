@@ -221,7 +221,7 @@ This workflow tests AWS Lambda compatibility with a **three-tier testing strateg
    - Execution time benchmarking
 
 Documentation Workflows
-------------------------
+-----------------------
 
 **Documentation Pipeline** (Added 2025-09-05):
 
@@ -268,7 +268,7 @@ Manages multiple documentation versions using mike:
 - **Purpose**: Maintain documentation for different release versions
 
 Release Candidate Workflow
----------------------------
+--------------------------
 
 **`release-candidate.yml` - Comprehensive Release Validation**:
 

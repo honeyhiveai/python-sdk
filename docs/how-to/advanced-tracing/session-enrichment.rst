@@ -8,7 +8,7 @@ Session Enrichment
 This guide covers session enrichment patterns. For span-level enrichment, see :doc:`span-enrichment`.
 
 Understanding Session Enrichment
----------------------------------
+--------------------------------
 
 Session enrichment differs from span enrichment:
 
@@ -95,7 +95,7 @@ Basic Usage
 -----------
 
 Enrich Active Session
-~~~~~~~~~~~~~~~~~~~~~~
+~~~~~~~~~~~~~~~~~~~~~
 
 The simplest usage enriches the currently active session:
 
@@ -127,7 +127,7 @@ The simplest usage enriches the currently active session:
    )
 
 Enrich Specific Session
-~~~~~~~~~~~~~~~~~~~~~~~~
+~~~~~~~~~~~~~~~~~~~~~~~
 
 Target a specific session by providing its ID:
 
@@ -150,12 +150,12 @@ Target a specific session by providing its ID:
    )
 
 Backwards Compatible Signatures
---------------------------------
+-------------------------------
 
 The ``enrich_session()`` function maintains full backwards compatibility with previous versions:
 
 Legacy Signature (Still Supported)
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 .. code-block:: python
 
@@ -184,7 +184,7 @@ Legacy Signature (Still Supported)
    # }
 
 Modern Signature (Recommended)
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 .. code-block:: python
 
@@ -205,13 +205,14 @@ Common Patterns
 ---------------
 
 Pattern 1: User Workflow Tracking
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 Track user journeys across multiple interactions:
 
 .. code-block:: python
 
    from honeyhive import HoneyHiveTracer, enrich_session
+   from datetime import datetime
    import openai
    
    def handle_user_workflow(user_id: str, workflow_name: str):
@@ -271,7 +272,7 @@ Track user journeys across multiple interactions:
        return response2.choices[0].message.content
 
 Pattern 2: Experiment Tracking
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 Add experiment parameters and results to sessions:
 
@@ -280,6 +281,7 @@ Add experiment parameters and results to sessions:
    from honeyhive import HoneyHiveTracer, enrich_session
    import openai
    import random
+   import time
    
    def run_ab_test_experiment(query: str, user_id: str):
        """Run A/B test with different model configurations."""
@@ -331,13 +333,14 @@ Add experiment parameters and results to sessions:
        return response.choices[0].message.content
 
 Pattern 3: Session Feedback Collection
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 Add user feedback to sessions after completion:
 
 .. code-block:: python
 
    from honeyhive import enrich_session
+   from datetime import datetime
    
    def collect_session_feedback(session_id: str, rating: int, comments: str):
        """Add user feedback to a completed session."""
@@ -357,7 +360,7 @@ Add user feedback to sessions after completion:
        )
 
 Pattern 4: Cost and Performance Tracking
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 Track session-level costs and performance metrics:
 
@@ -419,7 +422,7 @@ Track session-level costs and performance metrics:
    tracker.make_llm_call([{"role": "user", "content": "Tell me more"}])
 
 Pattern 5: Multi-Instance Session Enrichment
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 Enrich sessions across multiple tracer instances:
 
@@ -462,13 +465,14 @@ Advanced Usage
 --------------
 
 Session Lifecycle Management
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 Enrich sessions at different lifecycle stages:
 
 .. code-block:: python
 
    from honeyhive import HoneyHiveTracer, enrich_session
+   from datetime import datetime
    import openai
    
    def managed_session_workflow(user_id: str, task: str):
@@ -537,7 +541,7 @@ Enrich sessions at different lifecycle stages:
            raise
 
 Complex Data Structures
-~~~~~~~~~~~~~~~~~~~~~~~~
+~~~~~~~~~~~~~~~~~~~~~~~
 
 ``enrich_session()`` supports nested dictionaries and lists:
 
@@ -616,7 +620,7 @@ Troubleshooting
 - All enrichment data is gracefully merged
 
 Comparison with enrich_span
-----------------------------
+---------------------------
 
 .. list-table::
    :header-rows: 1

@@ -1,5 +1,5 @@
 Configuration Options Reference
-=================================
+===============================
 
 .. note::
    **Complete reference for HoneyHive SDK configuration options**
@@ -109,7 +109,7 @@ Configuration Methods
       **Benefits**: Flexible configuration with selective overrides
 
 Configuration Precedence
--------------------------
+------------------------
 
 The SDK follows this precedence order (highest to lowest):
 
@@ -127,7 +127,7 @@ The SDK follows this precedence order (highest to lowest):
    For detailed examples, advanced patterns, and comprehensive usage scenarios, see :doc:`hybrid-config-approach`.
 
 Configuration Classes
------------------------
+---------------------
 
 .. py:class:: honeyhive.config.models.TracerConfig
    :no-index:

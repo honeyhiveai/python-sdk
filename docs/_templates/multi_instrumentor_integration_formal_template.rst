@@ -401,7 +401,7 @@ Choose Your Instrumentor
    </div>
 
 Comparison: OpenInference vs Traceloop for {{PROVIDER_NAME}}
------------------------------------------------------------------------
+------------------------------------------------------------
 
 .. list-table:: Feature Comparison
    :header-rows: 1

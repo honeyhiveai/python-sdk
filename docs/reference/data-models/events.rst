@@ -1,5 +1,5 @@
 Event Data Models
-==================
+=================
 
 .. note::
    **Technical specification for HoneyHive event data structures**

@@ -1,5 +1,5 @@
 Integrate with [Provider Name]
-===============================
+==============================
 
 .. note::
    **Problem-solving guide for [Provider] integration**
@@ -149,7 +149,7 @@ OpenInference Integration
    <div id="openllmetry-section" class="instrumentor-content">
 
 Traceloop Integration
------------------------
+---------------------
 
 **Best for**: Production deployments, cost tracking, enhanced LLM observability
 
@@ -278,7 +278,7 @@ Traceloop Integration
    </div>
 
 Comparison: OpenInference vs Traceloop
------------------------------------------
+--------------------------------------
 
 .. list-table:: Feature Comparison
    :header-rows: 1
@@ -313,7 +313,7 @@ Comparison: OpenInference vs Traceloop
      - Production, cost analysis
 
 Environment Configuration
---------------------------
+-------------------------
 
 **Required Environment Variables** (both instrumentors):
 

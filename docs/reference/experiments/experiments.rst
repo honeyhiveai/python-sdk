@@ -137,7 +137,7 @@ They work together:
    )
 
 External vs Managed Datasets
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 **External Datasets** - Your own test data:
 
@@ -183,7 +183,7 @@ Modern decorator-based approach (not class inheritance):
        return {"score": result.score}
 
 Aggregation & Comparison
-~~~~~~~~~~~~~~~~~~~~~~~~~
+~~~~~~~~~~~~~~~~~~~~~~~~
 
 Backend handles aggregation automatically:
 
@@ -207,7 +207,7 @@ Backend handles aggregation automatically:
    print(f"Degraded metrics: {comparison.list_degraded_metrics()}")
 
 Migration from evaluation Module
----------------------------------
+--------------------------------
 
 The ``evaluation`` module is deprecated. Migrate to ``experiments``:
 

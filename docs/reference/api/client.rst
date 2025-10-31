@@ -190,14 +190,14 @@ list_sessions()
    .. code-block:: python
    
       # List all sessions for a project
-      sessions = client.list_sessions(, limit=50)
+      sessions = client.list_sessions(limit=50)
       
       for session in sessions['sessions']:
           print(f"Session {session['session_id']}: {session['session_name']}")
       
       # List with filters
       recent_sessions = client.list_sessions(
-          source="development"
+          source="development",
           created_after="2024-01-01T00:00:00Z",
           limit=20
       )
@@ -439,7 +439,7 @@ list_projects()
           print(f"Project: {project['name']} - {project['description']}")
 
 Configuration Management
-~~~~~~~~~~~~~~~~~~~~~~~~~
+~~~~~~~~~~~~~~~~~~~~~~~~
 
 get_configuration()
 ^^^^^^^^^^^^^^^^^^^
@@ -600,7 +600,7 @@ Initialization
       asyncio.run(main())
 
 Async Session Management
-~~~~~~~~~~~~~~~~~~~~~~~~~
+~~~~~~~~~~~~~~~~~~~~~~~~
 
 All session management methods have async equivalents:
 
@@ -622,7 +622,7 @@ All session management methods have async equivalents:
            )
 
 Async Event Management
-~~~~~~~~~~~~~~~~~~~~~~~
+~~~~~~~~~~~~~~~~~~~~~~
 
 All event management methods have async equivalents:
 

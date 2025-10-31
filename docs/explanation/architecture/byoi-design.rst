@@ -1,5 +1,5 @@
 Bring Your Own Instrumentor (BYOI) Design
-==========================================
+=========================================
 
 .. note::
    This document explains why HoneyHive uses a "Bring Your Own Instrumentor" architecture and how it solves common problems in LLM observability.
@@ -166,7 +166,7 @@ Benefits of BYOI
 - **Community instrumentors** = distributed maintenance
 
 Supported Instrumentor Providers
----------------------------------
+--------------------------------
 
 HoneyHive supports multiple instrumentor providers through its BYOI architecture:
 
@@ -558,7 +558,7 @@ This design philosophy aligns with modern software engineering practices:
 - Composable architectures
 
 Troubleshooting BYOI Integration
-----------------------------------
+--------------------------------
 
 **Common Issue: "Existing provider doesn't support span processors"**
 

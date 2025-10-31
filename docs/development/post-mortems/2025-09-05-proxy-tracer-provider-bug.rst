@@ -1,5 +1,5 @@
 Post-Mortem: ProxyTracerProvider Bug (2025-09-05)
-====================================================
+=================================================
 
 .. note::
    **Incident Classification**: Pre-Release Bug - Critical Integration Failure
@@ -144,7 +144,7 @@ Impact Assessment
 -----------------
 
 **Potential User Impact (Avoided)**
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 - **Severity**: Would have been Critical - Complete loss of LLM call tracing functionality
 - **Scope**: Would have affected all new SDK users in fresh Python environments
@@ -316,7 +316,7 @@ Action Items
    - Create health check endpoints for integration validation
 
 **Long-Term Actions (Strategic)**
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 📋 **Agent OS Integration**:
    - Implement Agent OS guard rails for large PR management

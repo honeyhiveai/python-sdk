@@ -597,7 +597,7 @@ Choose Your Instrumentor
    </div>
 
 Comparison: OpenInference vs Traceloop for Azure OpenAI
------------------------------------------------------------------------
+-------------------------------------------------------
 
 .. list-table:: Feature Comparison
    :header-rows: 1

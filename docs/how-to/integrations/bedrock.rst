@@ -619,7 +619,7 @@ Choose Your Instrumentor
    </div>
 
 Comparison: OpenInference vs Traceloop for AWS Bedrock
------------------------------------------------------------------------
+------------------------------------------------------
 
 .. list-table:: Feature Comparison
    :header-rows: 1

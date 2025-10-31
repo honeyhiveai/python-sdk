@@ -4,7 +4,7 @@ Utility Functions
 Helper functions for dataset preparation and ID generation.
 
 generate_external_dataset_id()
--------------------------------
+------------------------------
 
 .. py:function:: generate_external_dataset_id(datapoints, custom_id=None)
 
@@ -41,7 +41,7 @@ generate_external_dataset_id()
       print(dataset_id)  # e.g., "EXT-my-test-a1b2c3d4"
 
 generate_external_datapoint_id()
----------------------------------
+--------------------------------
 
 .. py:function:: generate_external_datapoint_id(datapoint, index, custom_id=None)
 
@@ -71,7 +71,7 @@ generate_external_datapoint_id()
       print(dp_id)  # e.g., "EXT-d1e2f3a4b5c6"
 
 prepare_external_dataset()
----------------------------
+--------------------------
 
 .. py:function:: prepare_external_dataset(datapoints, custom_dataset_id=None)
 
@@ -110,7 +110,7 @@ prepare_external_dataset()
       # Datapoint IDs: ['EXT-dp1hash', 'EXT-dp2hash']
 
 prepare_run_request_data()
----------------------------
+--------------------------
 
 .. py:function:: prepare_run_request_data(run_data, datapoint_ids=None)
 

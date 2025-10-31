@@ -1,5 +1,5 @@
 Integrate with OpenAI
-====================
+=====================
 
 .. note::
    **Problem-solving guide for OpenAI integration**
@@ -326,7 +326,7 @@ OpenLLMetry Integration
    </div>
 
 Comparison: OpenInference vs OpenLLMetry for OpenAI
-----------------------------------------------------
+---------------------------------------------------
 
 .. list-table:: Feature Comparison
    :header-rows: 1
@@ -397,7 +397,7 @@ Real-World Usage Examples
        return final.choices[0].message.content
 
 Environment Configuration
---------------------------
+-------------------------
 
 **Required Environment Variables** (both instrumentors):
 

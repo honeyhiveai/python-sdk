@@ -20,7 +20,7 @@ Custom spans allow you to trace your specific business logic, workflow steps, an
 - Resource utilization monitoring
 
 Basic Custom Spans with Decorator-First Approach
---------------------------------------------------
+------------------------------------------------
 
 **Problem**: Track custom business logic with detailed context.
 
@@ -143,7 +143,7 @@ Basic Custom Spans with Decorator-First Approach
 - **Error Handling**: Automatic exception capture with custom context
 
 When to Use Context Managers
------------------------------
+----------------------------
 
 **Problem**: Some scenarios require fine-grained span control that decorators can't provide.
 
@@ -240,10 +240,12 @@ Performance Monitoring
 ----------------------
 
 Complex RAG Pipeline Example
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 .. code-block:: python
 
+   from datetime import datetime
+   
    # Complete multi-phase RAG pipeline with nested spans
    @trace(event_type=EventType.session)
    def advanced_rag_pipeline(user_query: str) -> str:

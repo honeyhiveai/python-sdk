@@ -494,7 +494,7 @@ GitLab CI
 Jenkins
 ~~~~~~~
 
-.. code-block:: groovy
+.. code-block:: text
 
    // Jenkinsfile
    pipeline {

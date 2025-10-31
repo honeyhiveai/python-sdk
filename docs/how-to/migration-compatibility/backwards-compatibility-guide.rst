@@ -1,5 +1,5 @@
 Backwards Compatibility Guide: Main Branch → Complete Refactor
-================================================================
+==============================================================
 
 This guide helps you migrate from the main branch to the complete-refactor branch while maintaining full compatibility with your existing code.
 
@@ -19,7 +19,7 @@ The complete-refactor branch provides **100% backwards compatibility** with the 
 - **Zero code changes required** for existing applications
 
 Migration is Safe and Seamless
--------------------------------
+------------------------------
 
 **Key Points:**
 - All existing code continues to work without changes
@@ -29,7 +29,7 @@ Migration is Safe and Seamless
 - Can rollback at any time if needed
 
 Supported Parameters (All 16 Original)
----------------------------------------
+--------------------------------------
 
 The complete-refactor branch supports **every parameter** from the original main branch:
 
@@ -136,7 +136,7 @@ Migration Examples
        tracer.unlink(token)
 
 Enhanced Features in Complete-Refactor
----------------------------------------
+--------------------------------------
 
 **1. Git Metadata Collection**
 
@@ -353,7 +353,7 @@ A: You can always rollback to main branch. The migration is completely reversibl
 A: Evaluation workflows are enhanced but backwards compatible. Set ``is_evaluation=True`` to get automatic baggage context.
 
 Best Practices for Migration
------------------------------
+----------------------------
 
 **1. Test in Development First**
 

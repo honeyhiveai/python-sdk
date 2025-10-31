@@ -135,7 +135,7 @@ BYOI Architecture
        class YourOpenAI,YourOpenAI2,YourInst conflictClass
 
 Multi-Instance Architecture
-----------------------------
+---------------------------
 
 **Multiple Tracer Instances**
 
@@ -387,7 +387,7 @@ Evaluation Architecture
        class Decision decisionClass
 
 Performance Optimization
--------------------------
+------------------------
 
 **Sampling Strategies**
 

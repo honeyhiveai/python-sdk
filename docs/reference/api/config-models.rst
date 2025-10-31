@@ -1,6 +1,6 @@
-===========================
+============================
 Configuration Models API
-===========================
+============================
 
 .. meta::
    :description: Complete API reference for HoneyHive SDK's Pydantic configuration models
@@ -581,7 +581,7 @@ All configuration models support **automatic environment variable loading** usin
    config = TracerConfig(verbose=False)  # Overrides HH_VERBOSE
 
 Error Handling and Validation
-==============================
+=============================
 
 All configuration models use **Pydantic v2 validation** with graceful degradation:
 

@@ -204,3 +204,4 @@ quality-data/*.log
 .docs-quality-*.md
 
 # Tox artifacts that shouldn't be packaged
+*.bak*

@@ -529,7 +529,7 @@ Choose Your Instrumentor
    </div>
 
 Comparison: OpenInference vs Traceloop for Anthropic
------------------------------------------------------------------------
+----------------------------------------------------
 
 .. list-table:: Feature Comparison
    :header-rows: 1

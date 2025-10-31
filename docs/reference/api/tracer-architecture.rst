@@ -1,6 +1,6 @@
-===============================
+================================
 Tracer Architecture Overview
-===============================
+================================
 
 .. meta::
    :description: Comprehensive overview of HoneyHive SDK's modular tracer architecture with mixin-based composition
@@ -65,7 +65,7 @@ Module Structure
 The tracer architecture is organized into **6 core modules** with **35 total files**:
 
 Core Module (``tracer/core/``)
--------------------------------
+------------------------------
 
 **Purpose**: Foundation classes and core tracer functionality
 
@@ -87,7 +87,7 @@ Core Module (``tracer/core/``)
      - Configuration interface abstractions
 
 Infrastructure Module (``tracer/infra/``)
-------------------------------------------
+-----------------------------------------
 
 **Purpose**: Environment detection and resource management
 
@@ -121,7 +121,7 @@ Instrumentation Module (``tracer/instrumentation/``)
      - Instrumentation initialization
 
 Integration Module (``tracer/integration/``)
----------------------------------------------
+--------------------------------------------
 
 **Purpose**: Compatibility and provider integration
 
@@ -143,7 +143,7 @@ Integration Module (``tracer/integration/``)
      - Span processor integration
 
 Lifecycle Module (``tracer/lifecycle/``)
------------------------------------------
+----------------------------------------
 
 **Purpose**: Tracer lifecycle management
 
@@ -161,7 +161,7 @@ Lifecycle Module (``tracer/lifecycle/``)
      - Shutdown and cleanup
 
 Processing Module (``tracer/processing/``)
--------------------------------------------
+------------------------------------------
 
 **Purpose**: Span and context processing
 
@@ -183,7 +183,7 @@ Processing Module (``tracer/processing/``)
      - Custom span processor
 
 Utilities Module (``tracer/utils/``)
--------------------------------------
+------------------------------------
 
 **Purpose**: Shared utility functions
 
@@ -220,7 +220,7 @@ The ``HoneyHiveTracer`` class uses **dynamic mixin composition** to combine func
        # - TracerContextMixin: Context and baggage management
 
 Benefits of Mixin Composition
-------------------------------
+-----------------------------
 
 1. **Single Responsibility**: Each mixin handles one aspect of functionality
 2. **Easy Testing**: Individual mixins can be tested in isolation
@@ -269,7 +269,7 @@ Key Features
 - **Resource Management**: Independent lifecycle management
 
 Advanced Multi-Instance Scenarios
-----------------------------------
+---------------------------------
 
 **Scenario 1: Environment-Based Routing**
 
@@ -373,7 +373,7 @@ Error Handling Strategy
 The architecture implements **graceful degradation** throughout:
 
 Graceful Degradation Principles
---------------------------------
+-------------------------------
 
 1. **Never Crash Host Application**: SDK errors never propagate to user code
 2. **Continue Operation**: Failures in one component don't stop others
@@ -399,7 +399,7 @@ Migration from Old Architecture
 The modular architecture replaces the previous monolithic design:
 
 Old Architecture (Replaced)
-----------------------------
+---------------------------
 
 - ``tracer/decorators.py`` → ``instrumentation/decorators.py``
 - ``tracer/error_handler.py`` → ``integration/error_handling.py``
@@ -481,7 +481,7 @@ Extension Points
 4. **Provider Integrations**: Add support for new OpenTelemetry providers
 
 Backwards Compatibility Guarantee
-==================================
+=================================
 
 Despite the complete architectural rewrite, **100% backwards compatibility** is maintained:
 

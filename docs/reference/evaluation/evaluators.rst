@@ -1,5 +1,5 @@
 Evaluation Framework API Reference
-===================================
+==================================
 
 .. note::
    **Complete API documentation for HoneyHive's evaluation framework**
@@ -510,7 +510,7 @@ Evaluates how relevant the output is to the input query.
    print(f"Key topics covered: {result['metrics']['topics_covered']}")
 
 Multi-Evaluator Support
-------------------------
+-----------------------
 
 MultiEvaluator
 ~~~~~~~~~~~~~~
@@ -675,7 +675,7 @@ Orchestrates multiple evaluators for comprehensive assessment.
    )
 
 Async Evaluation Support
--------------------------
+------------------------
 
 AsyncEvaluator
 ~~~~~~~~~~~~~~
@@ -941,7 +941,7 @@ Batch Evaluation
        }
 
 Configuration and Customization
----------------------------------
+-------------------------------
 
 Evaluator Configuration
 ~~~~~~~~~~~~~~~~~~~~~~~
@@ -989,7 +989,7 @@ Custom Scoring Functions
            return QualityScoreEvaluator()  # Default configuration
 
 Performance Optimization
--------------------------
+------------------------
 
 Caching Evaluations
 ~~~~~~~~~~~~~~~~~~~
@@ -1079,7 +1079,7 @@ Parallel Evaluation
        return grouped_results
 
 Error Handling and Resilience
-------------------------------
+-----------------------------
 
 Robust Evaluation Pipeline
 ~~~~~~~~~~~~~~~~~~~~~~~~~~

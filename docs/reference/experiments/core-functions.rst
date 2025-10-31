@@ -282,13 +282,15 @@ Your function should accept a datapoint dict and return outputs dict:
 .. code-block:: python
 
    def my_function(datapoint: Dict[str, Any]) -> Dict[str, Any]:
-       """
+
+
        Args:
            datapoint: Contains 'inputs' and optionally 'ground_truth'
        
        Returns:
            Dict with your outputs (e.g., {"answer": "...", "confidence": 0.9})
-       """
+
+
        inputs = datapoint["inputs"]
        # Process inputs
        return {"answer": process(inputs)}

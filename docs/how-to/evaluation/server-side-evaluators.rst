@@ -2,12 +2,12 @@ Server-Side Evaluators
 ======================
 
 When should I use server-side evaluators vs client-side evaluators?
---------------------------------------------------------------------
+-------------------------------------------------------------------
 
 Use server-side for evaluators configured in HoneyHive UI that run automatically.
 
 Client-Side vs Server-Side
----------------------------
+--------------------------
 
 **Client-Side Evaluators** (``@evaluator``):
 - Defined in your code
@@ -22,7 +22,7 @@ Client-Side vs Server-Side
 - Good for: Standardized metrics, async evaluation
 
 How do I use evaluators configured in the UI?
-----------------------------------------------
+---------------------------------------------
 
 **They Run Automatically**
 
@@ -42,7 +42,7 @@ You don't need to pass them to ``evaluate()`` - they're configured in your proje
 5. Evaluators run automatically
 
 Can I use both client-side and server-side evaluators?
--------------------------------------------------------
+------------------------------------------------------
 
 **Yes! They Complement Each Other**
 

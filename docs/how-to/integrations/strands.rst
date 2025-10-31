@@ -1,5 +1,5 @@
 AWS Strands Integration
-========================
+=======================
 
 AWS Strands is Amazon's model-driven AI agent framework for building conversational assistants and autonomous workflows. This guide shows how to integrate HoneyHive with AWS Strands to capture comprehensive traces of your agent executions.
 
@@ -134,7 +134,7 @@ Basic Integration
 -----------------
 
 Minimal Setup (3 Lines of Code)
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 .. code-block:: python
 

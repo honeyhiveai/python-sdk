@@ -1,5 +1,5 @@
 Add LLM Tracing in 5 Minutes
-=============================
+============================
 
 **Problem:** You have an existing LLM application and want to add HoneyHive tracing with minimal code changes.
 
@@ -22,10 +22,10 @@ Before You Start
 - Your LLM provider's SDK already installed
 
 Quick Integration (3 Steps)
-----------------------------
+---------------------------
 
 Step 1: Install HoneyHive
-^^^^^^^^^^^^^^^^^^^^^^^^^^
+^^^^^^^^^^^^^^^^^^^^^^^^^
 
 Add HoneyHive with your provider's instrumentor:
 
@@ -38,7 +38,7 @@ Add HoneyHive with your provider's instrumentor:
    pip install honeyhive[openinference-anthropic]
 
 Step 2: Add 5 Lines of Code
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 At the top of your main application file, add the tracer initialization:
 
@@ -55,7 +55,7 @@ At the top of your main application file, add the tracer initialization:
    # Your existing code continues unchanged below...
 
 Step 3: Run Your Application
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 That's it! Your existing LLM calls are now automatically traced.
 
@@ -69,7 +69,7 @@ Before & After Examples
 -----------------------
 
 Example 1: Simple Chatbot
-^^^^^^^^^^^^^^^^^^^^^^^^^^
+^^^^^^^^^^^^^^^^^^^^^^^^^
 
 **Before** (no tracing):
 
@@ -180,7 +180,7 @@ Example 2: RAG Pipeline
 **Changes made:** 5 lines added. RAG logic unchanged.
 
 Using Environment Variables (Production)
------------------------------------------
+----------------------------------------
 
 For production deployments, use environment variables instead of hardcoded keys:
 
@@ -219,7 +219,7 @@ For production deployments, use environment variables instead of hardcoded keys:
    pip install python-dotenv
 
 What Gets Traced Automatically?
---------------------------------
+-------------------------------
 
 Once the instrumentor is initialized, these are traced automatically:
 
@@ -247,7 +247,7 @@ Once the instrumentor is initialized, these are traced automatically:
 See :doc:`/how-to/integrations/openai` for provider-specific details.
 
 Multiple Providers in One Application
---------------------------------------
+-------------------------------------
 
 If you use multiple LLM providers, initialize multiple instrumentors:
 
@@ -273,7 +273,7 @@ If you use multiple LLM providers, initialize multiple instrumentors:
    # Now both OpenAI and Anthropic calls are traced!
 
 Verifying Traces
------------------
+----------------
 
 After adding tracing, verify it's working:
 
@@ -299,7 +299,7 @@ Each trace should show:
 - Output responses
 - Token counts
 - Latency
-- Cost (if using Traceloop instrumentors)
+- Cost (if using instrumentors that support cost tracking)
 
 Performance Impact
 ------------------
@@ -338,14 +338,39 @@ Route different parts of your app to different projects:
 
 .. code-block:: python
 
+   from honeyhive import HoneyHiveTracer, trace
+   from openinference.instrumentation.openai import OpenAIInstrumentor
+   import openai
+   
    # Main app tracer
    main_tracer = HoneyHiveTracer.init(project="main-app")
    
    # Experimental features tracer  
    experimental_tracer = HoneyHiveTracer.init(project="experiments")
    
-   # Initialize instrumentors with appropriate tracers
-   # (Use @trace decorator to specify which tracer to use per function)
+   # Initialize instrumentor (will capture all OpenAI calls)
+   instrumentor = OpenAIInstrumentor()
+   instrumentor.instrument(tracer_provider=main_tracer.provider)
+   
+   # Use @trace decorator to route to specific projects
+   @trace(tracer=main_tracer)
+   def main_feature(prompt: str):
+       client = openai.OpenAI()
+       return client.chat.completions.create(
+           model="gpt-3.5-turbo",
+           messages=[{"role": "user", "content": prompt}]
+       )
+   
+   @trace(tracer=experimental_tracer)
+   def experimental_feature(prompt: str):
+       client = openai.OpenAI()
+       return client.chat.completions.create(
+           model="gpt-4",
+           messages=[{"role": "user", "content": prompt}]
+       )
+
+.. note::
+   For more details on multi-instance patterns, see :doc:`04-configure-multi-instance`.
 
 Troubleshooting
 ---------------

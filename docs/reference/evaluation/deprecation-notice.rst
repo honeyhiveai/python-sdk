@@ -19,7 +19,7 @@ The ``honeyhive.evaluation`` module has been superseded by ``honeyhive.experimen
 - **Cleaner API**: Simpler, more intuitive function signatures
 
 Deprecation Timeline
----------------------
+--------------------
 
 .. list-table::
    :header-rows: 1
@@ -38,7 +38,7 @@ Migration Guide
 ---------------
 
 Quick Migration Checklist
-~~~~~~~~~~~~~~~~~~~~~~~~~~
+~~~~~~~~~~~~~~~~~~~~~~~~~
 
 1. Update imports: ``honeyhive.evaluation`` → ``honeyhive.experiments``
 2. Replace class-based evaluators with ``@evaluator`` decorator
@@ -46,7 +46,7 @@ Quick Migration Checklist
 4. Update result handling to use new models
 
 Detailed Migration Steps
-~~~~~~~~~~~~~~~~~~~~~~~~~
+~~~~~~~~~~~~~~~~~~~~~~~~
 
 **Step 1: Update Imports**
 
@@ -274,7 +274,7 @@ Common Patterns
    )
 
 Backward Compatibility Layer
------------------------------
+----------------------------
 
 The old ``evaluation`` module still works through a compatibility layer:
 

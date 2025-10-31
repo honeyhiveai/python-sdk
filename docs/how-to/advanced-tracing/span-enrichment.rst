@@ -1,5 +1,5 @@
 Span Enrichment Patterns
-=========================
+========================
 
 **Problem:** You need to add rich context, business metadata, and performance metrics to your traces to make them useful for debugging, analysis, and business intelligence.
 
@@ -8,7 +8,7 @@ Span Enrichment Patterns
 This guide covers advanced enrichment techniques beyond the basics. For an introduction, see :doc:`/tutorials/03-enable-span-enrichment`.
 
 Understanding Enrichment Interfaces
-------------------------------------
+-----------------------------------
 
 ``enrich_span()`` supports multiple invocation patterns. Choose the one that fits your use case:
 
@@ -28,7 +28,7 @@ Quick Reference Table
 +----------------------------+----------------------------------+----------------------------------------------+
 
 Simple Dict Pattern (New)
-^^^^^^^^^^^^^^^^^^^^^^^^^^
+^^^^^^^^^^^^^^^^^^^^^^^^^
 
 .. code-block:: python
 
@@ -47,7 +47,7 @@ Simple Dict Pattern (New)
    # honeyhive_metadata.session = "abc"
 
 Keyword Arguments Pattern (New)
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 .. code-block:: python
 
@@ -63,7 +63,7 @@ Keyword Arguments Pattern (New)
    # Same backend storage as simple dict
 
 Reserved Namespaces Pattern (Backwards Compatible)
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 Use explicit namespace parameters for organized data:
 
@@ -142,7 +142,7 @@ Combine multiple patterns - later values override earlier ones:
    # honeyhive_metrics.latency_ms = 150
 
 Pattern 1: Basic Enrichment with ``enrich_span()``
----------------------------------------------------
+--------------------------------------------------
 
 **When to use:** Add simple key-value metadata to any span.
 
@@ -185,7 +185,7 @@ Pattern 1: Basic Enrichment with ``enrich_span()``
 - Use consistent key names across your application for filtering
 
 Pattern 2: Automatic Enrichment in Decorators
-----------------------------------------------
+---------------------------------------------
 
 **When to use:** Automatically enrich all calls to a decorated function with consistent metadata.
 
@@ -256,7 +256,7 @@ Pattern 2: Automatic Enrichment in Decorators
 - Can be composed with other decorators
 
 Pattern 3: Context-Aware Enrichment
-------------------------------------
+-----------------------------------
 
 **When to use:** Enrich spans with data from application context (web requests, user sessions, etc.).
 
@@ -268,6 +268,8 @@ Pattern 3: Context-Aware Enrichment
    from honeyhive import enrich_span, trace
    from honeyhive.models import EventType
    import openai
+   import time
+   import uuid
    
    app = Flask(__name__)
    
@@ -328,7 +330,7 @@ Pattern 3: Context-Aware Enrichment
 - Useful for debugging production issues
 
 Pattern 4: Performance Metadata Enrichment
--------------------------------------------
+------------------------------------------
 
 **When to use:** Track detailed timing breakdowns and performance metrics.
 
@@ -420,7 +422,7 @@ Pattern 4: Performance Metadata Enrichment
 - Identify performance bottlenecks easily
 
 Pattern 5: Error Context Enrichment
-------------------------------------
+-----------------------------------
 
 **When to use:** Add comprehensive error context for debugging failures.
 

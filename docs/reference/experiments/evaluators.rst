@@ -42,7 +42,8 @@ Evaluators assess the quality of LLM outputs. HoneyHive uses a modern **decorato
    .. code-block:: python
 
       def my_evaluator(outputs, inputs, ground_truth):
-          """
+
+
           Args:
               outputs: Dict returned by your function
               inputs: Dict from datapoint["inputs"]
@@ -52,7 +53,8 @@ Evaluators assess the quality of LLM outputs. HoneyHive uses a modern **decorato
               Dict with "score" and optional metrics,
               or float (interpreted as score),
               or bool (1.0 if True, 0.0 if False)
-          """
+
+
           return {"score": 0.9, "passed": True}
 
    **Basic Usage (No Arguments)**
@@ -416,7 +418,7 @@ Evaluator Patterns
        Actual Answer: {outputs['answer']}
        
        Provide a score from 0.0 to 1.0 and explain your reasoning.
-       """
+
        
        response = client.chat.completions.create(
            model="gpt-4",

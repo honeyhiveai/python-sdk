@@ -706,7 +706,7 @@ close()
       atexit.register(cleanup_tracer)
 
 Context Propagation Methods (Backwards Compatibility)
-------------------------------------------------------
+-----------------------------------------------------
 
 link()
 ~~~~~~

@@ -1,5 +1,5 @@
 Agent OS MCP/RAG Server
-========================
+=======================
 
 .. note::
    **🤖 AI-Assisted Development Infrastructure**
@@ -50,10 +50,10 @@ AI coding assistants (like Cursor, Claude Code) directly read these markdown fil
 **Learn More**: https://buildermethods.com/agent-os
 
 Our Evolution: From Builder Methods to MCP/RAG
------------------------------------------------
+----------------------------------------------
 
 Phase 1: Builder Methods Agent OS (Markdown Foundation)
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 We started with `Agent OS <https://buildermethods.com/agent-os>`_ as created by Brian Casel, implementing the traditional approach:
 
@@ -79,7 +79,7 @@ AI coding assistants directly read markdown files:
 **This foundation was excellent**, providing structure and consistency. However, as our codebase and standards grew, we discovered scaling challenges.
 
 Phase 2: HoneyHive LLM Workflow Engineering
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 We extended Agent OS with our own **LLM Workflow Engineering methodology** (documented in ``.agent-os/standards/ai-assistant/LLM-WORKFLOW-ENGINEERING-METHODOLOGY.md``):
 
@@ -137,7 +137,7 @@ We extended Agent OS with our own **LLM Workflow Engineering methodology** (docu
    AI must search for relevant standards each time.
 
 Phase 3: MCP/RAG Innovation (This Implementation)
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 We evolved our LLM Workflow Engineering approach by building an **MCP server with RAG**, transforming standards access from file-based to API-based:
 
@@ -234,7 +234,7 @@ Architecture
 The MCP server consists of four core components:
 
 RAG Engine (``rag_engine.py``)
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 **Purpose**: Semantic search over Agent OS standards with metadata filtering.
 
@@ -268,7 +268,7 @@ RAG Engine (``rag_engine.py``)
    )
 
 Workflow Engine (``workflow_engine.py``)
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 **Purpose**: Phase-gated workflow execution with checkpoint validation.
 
@@ -314,7 +314,7 @@ Each phase defines required evidence (e.g., "test file must exist", "coverage mu
    )
 
 State Manager (``state_manager.py``)
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 **Purpose**: Workflow state persistence and session lifecycle management.
 
@@ -326,7 +326,7 @@ State Manager (``state_manager.py``)
 - State validation and integrity checking
 
 Chunker (``chunker.py``)
-~~~~~~~~~~~~~~~~~~~~~~~~~
+~~~~~~~~~~~~~~~~~~~~~~~~
 
 **Purpose**: Markdown document chunking for RAG indexing.
 
@@ -348,7 +348,7 @@ Prerequisites
 3. **Agent OS standards** in ``.agent-os/standards/``
 
 Building the RAG Index
-~~~~~~~~~~~~~~~~~~~~~~~
+~~~~~~~~~~~~~~~~~~~~~~
 
 Before using the MCP server, build the vector index:
 
@@ -493,7 +493,7 @@ Development
 -----------
 
 Running MCP Server Tests
-~~~~~~~~~~~~~~~~~~~~~~~~~
+~~~~~~~~~~~~~~~~~~~~~~~~
 
 MCP server tests have **separate dependencies** from the main SDK and are excluded from the main test suite:
 
@@ -514,7 +514,7 @@ MCP server tests have **separate dependencies** from the main SDK and are exclud
 - Tests for all 4 core components
 
 Why Separate Tests?
-~~~~~~~~~~~~~~~~~~~~
+~~~~~~~~~~~~~~~~~~~
 
 The MCP server is an **independent component** with its own dependency tree:
 
@@ -648,7 +648,7 @@ Viewing Traces
 - ``phase``: Current phase number
 
 Span Enrichment Examples
-~~~~~~~~~~~~~~~~~~~~~~~~~
+~~~~~~~~~~~~~~~~~~~~~~~~
 
 **Search Tool**:
 

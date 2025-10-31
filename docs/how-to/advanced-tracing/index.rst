@@ -1,5 +1,5 @@
 Build Custom Tracing
-=====================
+====================
 
 Sophisticated observability patterns for complex LLM applications and production environments.
 
@@ -14,7 +14,7 @@ Sophisticated observability patterns for complex LLM applications and production
    tracer-auto-discovery
 
 When to Use These Guides
--------------------------
+------------------------
 
 Use these advanced tracing techniques when you need:
 
