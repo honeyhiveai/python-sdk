@@ -50,6 +50,7 @@ class MockTracerContextMixin(TracerContextMixin):
 
     def __init__(self) -> None:
         self.session_api: Optional[Any] = None
+        self.client: Optional[Any] = None  # Added for EventsAPI access
         self._session_id: Optional[str] = None
         self._baggage_lock = MagicMock()
         self._cache_manager = None
@@ -73,13 +74,6 @@ class TestTracerContextMixin:
     def context_mixin(self) -> MockTracerContextMixin:
         """Create a mock TracerContextMixin instance for testing."""
         return MockTracerContextMixin()
-
-    @pytest.fixture
-    def mock_session_api(self) -> Mock:
-        """Create a mock session API."""
-        mock_api = Mock()
-        mock_api.update_session = Mock()
-        return mock_api
 
 
 class TestForceFlush:
@@ -225,38 +219,47 @@ class TestEnrichSession:
         return MockTracerContextMixin()
 
     @pytest.fixture
-    def mock_session_api(self) -> Mock:
-        """Create a mock session API."""
-        mock_api = Mock()
-        mock_api.update_session = Mock()
-        return mock_api
+    def mock_client(self) -> Mock:
+        """Create a mock client with events API for session updates."""
+        mock_client = Mock()
+        mock_events_api = Mock()
+        mock_events_api.update_event = Mock()
+        mock_client.events = mock_events_api
+        return mock_client
 
     @patch("honeyhive.tracer.core.context.safe_log")
+    @patch("honeyhive.api.events.UpdateEventRequest")
     def test_enrich_session_success(
         self,
+        mock_update_event_request: Mock,
         mock_safe_log: Mock,
         context_mixin: MockTracerContextMixin,
-        mock_session_api: Mock,
+        mock_client: Mock,
     ) -> None:
         """Test successful session enrichment."""
         # Arrange
-        context_mixin.session_api = mock_session_api
+        context_mixin.client = mock_client
         context_mixin._session_id = "test-session-123"
 
         inputs = {"input_key": "input_value"}
         outputs = {"output_key": "output_value"}
         metadata = {"meta_key": "meta_value"}
 
+        # Mock UpdateEventRequest constructor
+        mock_request_instance = Mock()
+        mock_update_event_request.return_value = mock_request_instance
+
         # Act
         context_mixin.enrich_session(inputs=inputs, outputs=outputs, metadata=metadata)
 
         # Assert
-        mock_session_api.update_session.assert_called_once_with(
-            session_id="test-session-123",
+        mock_update_event_request.assert_called_once_with(
+            event_id="test-session-123",
             inputs=inputs,
             outputs=outputs,
             metadata=metadata,
         )
+        mock_client.events.update_event.assert_called_once_with(mock_request_instance)
         mock_safe_log.assert_called_once_with(
             context_mixin,
             "debug",
@@ -268,19 +271,33 @@ class TestEnrichSession:
         )
 
     @patch("honeyhive.tracer.core.context.safe_log")
-    def test_enrich_session_no_session_api(
+    def test_enrich_session_no_client(
         self, mock_safe_log: Mock, context_mixin: MockTracerContextMixin
     ) -> None:
-        """Test session enrichment without session API."""
+        """Test session enrichment without client API."""
         # Arrange
-        context_mixin.session_api = None
+        context_mixin.client = None
+        context_mixin._session_id = "test-session-123"
 
-        # Act
-        context_mixin.enrich_session(inputs={"key": "value"})
+        with patch.object(
+            context_mixin, "_can_enrich_session_dynamically", return_value=True
+        ):
+            with patch.object(
+                context_mixin,
+                "_get_session_id_for_enrichment_dynamically",
+                return_value="test-session-123",
+            ):
+                with patch.object(
+                    context_mixin,
+                    "_build_session_update_params_dynamically",
+                    return_value={"inputs": {"key": "value"}},
+                ):
+                    # Act
+                    context_mixin.enrich_session(inputs={"key": "value"})
 
-        # Assert
-        mock_safe_log.assert_called_once_with(
-            context_mixin, "debug", "No session API available for enrichment"
+        # Assert - Check that warning was called
+        mock_safe_log.assert_any_call(
+            context_mixin, "warning", "Events API not available for update"
         )
 
     @patch("honeyhive.tracer.core.context.safe_log")
@@ -288,11 +305,11 @@ class TestEnrichSession:
         self,
         mock_safe_log: Mock,
         context_mixin: MockTracerContextMixin,
-        mock_session_api: Mock,
+        mock_client: Mock,
     ) -> None:
         """Test session enrichment without session ID."""
         # Arrange
-        context_mixin.session_api = mock_session_api
+        context_mixin.client = mock_client
         context_mixin._session_id = None
 
         with patch.object(
@@ -307,7 +324,7 @@ class TestEnrichSession:
         mock_safe_log.assert_called_once_with(
             context_mixin, "debug", "No session ID available for enrichment"
         )
-        mock_session_api.update_session.assert_not_called()
+        mock_client.events.update_event.assert_not_called()
 
     @patch("honeyhive.tracer.core.context.safe_log")
     def test_enrich_session_api_unavailable_warning(
@@ -315,7 +332,7 @@ class TestEnrichSession:
     ) -> None:
         """Test session enrichment with API unavailable warning."""
         # Arrange
-        context_mixin.session_api = None
+        context_mixin.client = None
         context_mixin._session_id = "test-session-123"
 
         with patch.object(
@@ -336,22 +353,30 @@ class TestEnrichSession:
 
         # Assert - Check that warning was called (may be called multiple times)
         mock_safe_log.assert_any_call(
-            context_mixin, "warning", "Session API not available for update"
+            context_mixin, "warning", "Events API not available for update"
         )
 
     @patch("honeyhive.tracer.core.context.safe_log")
+    @patch("honeyhive.api.events.UpdateEventRequest")
     def test_enrich_session_exception_handling(
         self,
+        mock_update_event_request: Mock,
         mock_safe_log: Mock,
         context_mixin: MockTracerContextMixin,
-        mock_session_api: Mock,
+        mock_client: Mock,
     ) -> None:
         """Test session enrichment exception handling."""
         # Arrange
-        context_mixin.session_api = mock_session_api
+        context_mixin.client = mock_client
         context_mixin._session_id = "test-session-123"
         test_error = ValueError("Update failed")
-        mock_session_api.update_session.side_effect = test_error
+
+        # Make update_event raise an error
+        mock_client.events.update_event.side_effect = test_error
+
+        # Mock UpdateEventRequest constructor
+        mock_request_instance = Mock()
+        mock_update_event_request.return_value = mock_request_instance
 
         # Act
         context_mixin.enrich_session(inputs={"key": "value"})
@@ -364,13 +389,21 @@ class TestEnrichSession:
             honeyhive_data={"error_type": "ValueError"},
         )
 
+    @patch("honeyhive.api.events.UpdateEventRequest")
     def test_enrich_session_with_kwargs(
-        self, context_mixin: MockTracerContextMixin, mock_session_api: Mock
+        self,
+        mock_update_event_request: Mock,
+        context_mixin: MockTracerContextMixin,
+        mock_client: Mock,
     ) -> None:
         """Test session enrichment with additional kwargs."""
         # Arrange
-        context_mixin.session_api = mock_session_api
+        context_mixin.client = mock_client
         context_mixin._session_id = "test-session-123"
+
+        # Mock UpdateEventRequest constructor
+        mock_request_instance = Mock()
+        mock_update_event_request.return_value = mock_request_instance
 
         with patch("honeyhive.tracer.core.context.safe_log"):
             # Act
@@ -379,20 +412,29 @@ class TestEnrichSession:
             )
 
         # Assert
-        mock_session_api.update_session.assert_called_once()
-        call_args = mock_session_api.update_session.call_args
-        assert call_args[1]["session_id"] == "test-session-123"
+        mock_update_event_request.assert_called_once()
+        call_args = mock_update_event_request.call_args
+        assert call_args[1]["event_id"] == "test-session-123"
         assert call_args[1]["inputs"] == {"input": "value"}
         assert call_args[1]["custom_field"] == "custom_value"
         assert call_args[1]["another_field"] == 42
+        mock_client.events.update_event.assert_called_once_with(mock_request_instance)
 
+    @patch("honeyhive.api.events.UpdateEventRequest")
     def test_enrich_session_backwards_compatible_with_explicit_session_id(
-        self, context_mixin: MockTracerContextMixin, mock_session_api: Mock
+        self,
+        mock_update_event_request: Mock,
+        context_mixin: MockTracerContextMixin,
+        mock_client: Mock,
     ) -> None:
         """Test enrich_session with explicit session_id (backwards compat)."""
         # Arrange
-        context_mixin.session_api = mock_session_api
+        context_mixin.client = mock_client
         context_mixin._session_id = "default-session-123"
+
+        # Mock UpdateEventRequest constructor
+        mock_request_instance = Mock()
+        mock_update_event_request.return_value = mock_request_instance
 
         with patch("honeyhive.tracer.core.context.safe_log"):
             # Act - Old pattern: pass explicit session_id
@@ -402,18 +444,27 @@ class TestEnrichSession:
             )
 
         # Assert - Should use explicit session_id, not default
-        mock_session_api.update_session.assert_called_once()
-        call_args = mock_session_api.update_session.call_args
-        assert call_args[1]["session_id"] == "explicit-session-456"
+        mock_update_event_request.assert_called_once()
+        call_args = mock_update_event_request.call_args
+        assert call_args[1]["event_id"] == "explicit-session-456"
         assert call_args[1]["metadata"] == {"meta_key": "meta_value"}
+        mock_client.events.update_event.assert_called_once_with(mock_request_instance)
 
+    @patch("honeyhive.api.events.UpdateEventRequest")
     def test_enrich_session_backwards_compatible_with_user_properties(
-        self, context_mixin: MockTracerContextMixin, mock_session_api: Mock
+        self,
+        mock_update_event_request: Mock,
+        context_mixin: MockTracerContextMixin,
+        mock_client: Mock,
     ) -> None:
         """Test session enrichment with user_properties for backwards compatibility."""
         # Arrange
-        context_mixin.session_api = mock_session_api
+        context_mixin.client = mock_client
         context_mixin._session_id = "test-session-123"
+
+        # Mock UpdateEventRequest constructor
+        mock_request_instance = Mock()
+        mock_update_event_request.return_value = mock_request_instance
 
         with patch("honeyhive.tracer.core.context.safe_log"):
             # Act - Old pattern: pass user_properties
@@ -422,13 +473,14 @@ class TestEnrichSession:
             )
 
         # Assert - user_properties should be merged into metadata
-        mock_session_api.update_session.assert_called_once()
-        call_args = mock_session_api.update_session.call_args
-        assert call_args[1]["session_id"] == "test-session-123"
+        mock_update_event_request.assert_called_once()
+        call_args = mock_update_event_request.call_args
+        assert call_args[1]["event_id"] == "test-session-123"
         # user_properties should be merged into metadata with prefix
         assert "metadata" in call_args[1]
         assert call_args[1]["metadata"]["user_properties.user_id"] == "123"
         assert call_args[1]["metadata"]["user_properties.role"] == "admin"
+        mock_client.events.update_event.assert_called_once_with(mock_request_instance)
 
 
 class TestSessionStart:
@@ -532,7 +584,10 @@ class TestPrivateHelperMethods:
     ) -> None:
         """Test successful session enrichment capability check."""
         # Arrange
-        context_mixin.session_api = Mock()
+        mock_client = Mock()
+        mock_events = Mock()
+        mock_client.events = mock_events
+        context_mixin.client = mock_client
         context_mixin._session_id = "test-session"
 
         # Act
@@ -564,7 +619,10 @@ class TestPrivateHelperMethods:
     ) -> None:
         """Test session enrichment capability check without session ID."""
         # Arrange
-        context_mixin.session_api = Mock()
+        mock_client = Mock()
+        mock_events = Mock()
+        mock_client.events = mock_events
+        context_mixin.client = mock_client
         context_mixin._session_id = None
 
         with patch.object(

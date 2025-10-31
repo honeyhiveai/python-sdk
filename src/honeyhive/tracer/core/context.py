@@ -77,6 +77,7 @@ class TracerContextMixin(TracerContextInterface):
 
     # Type hint for mypy - these attributes will be provided by the composed class
     if TYPE_CHECKING:
+        client: Optional[Any]
         session_api: Optional[Any]
         _session_id: Optional[str]
         _baggage_lock: Any
@@ -232,13 +233,19 @@ class TracerContextMixin(TracerContextInterface):
                 target_session_id = self._get_session_id_for_enrichment_dynamically()
 
             if target_session_id and update_params:
-                # Update session via API
-                if self.session_api is not None:
-                    self.session_api.update_session(
-                        session_id=target_session_id, **update_params
+                # Update session via EventsAPI (sessions are events in the backend)
+                # Import here to avoid circular dependency
+                from ...api.events import (  # pylint: disable=import-outside-toplevel
+                    UpdateEventRequest,
+                )
+
+                if self.client is not None and hasattr(self.client, "events"):
+                    update_request = UpdateEventRequest(
+                        event_id=target_session_id, **update_params
                     )
+                    self.client.events.update_event(update_request)
                 else:
-                    safe_log(self, "warning", "Session API not available for update")
+                    safe_log(self, "warning", "Events API not available for update")
 
                 safe_log(
                     self,
@@ -297,7 +304,8 @@ class TracerContextMixin(TracerContextInterface):
 
     def _can_enrich_session_dynamically(self) -> bool:
         """Dynamically check if session enrichment is possible."""
-        if not self.session_api:
+        # Check if client with events API is available (for session updates)
+        if not self.client or not hasattr(self.client, "events"):
             safe_log(self, "debug", "No session API available for enrichment")
             return False
 
