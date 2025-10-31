@@ -45,9 +45,11 @@ See Also:
     :mod:`honeyhive.tracer.enrichment_core`: Span enrichment functionality
 """
 
-# pylint: disable=duplicate-code,R0801
+# pylint: disable=duplicate-code,R0801,import-outside-toplevel,too-many-branches
 # Duplicate code patterns here are acceptable architectural patterns:
 # 1. Agent OS graceful degradation error handling - consistent across modules
+# import-outside-toplevel: Conditional imports avoid circular dependencies
+# too-many-branches: Complex decorator logic requires comprehensive branching
 # 2. Pydantic field validators for OTLP configs - domain-specific but identical logic
 # 3. Standard exception logging patterns - architectural consistency for error handling
 # 4. Dynamic attribute normalization patterns - shared across decorator and core mixins
@@ -170,6 +172,66 @@ def _set_kwargs_attributes(span: Any, **kwargs: Any) -> None:
                 pass
 
 
+def _capture_function_inputs(
+    span: Any, func: Callable, args: tuple, kwargs: Dict[str, Any]
+) -> None:
+    """Capture function arguments as honeyhive_inputs.* attributes.
+
+    Automatically captures function arguments and sets them as span attributes.
+    Skips 'self' and 'cls' parameters.
+    Handles serialization errors gracefully.
+
+    Args:
+        span: OpenTelemetry span object
+        func: Function being traced
+        args: Positional arguments
+        kwargs: Keyword arguments
+    """
+    try:
+        import json
+
+        # Get function signature
+        sig = inspect.signature(func)
+        bound_args = sig.bind(*args, **kwargs)
+        bound_args.apply_defaults()
+
+        # Capture each argument
+        for param_name, param_value in bound_args.arguments.items():
+            # Skip self/cls parameters
+            if param_name in ("self", "cls"):
+                continue
+
+            # Skip tracer parameter (to avoid recursion)
+            if param_name == "tracer":
+                continue
+
+            try:
+                # Serialize value safely
+                if isinstance(param_value, (str, int, float, bool, type(None))):
+                    # Simple types: set directly
+                    span.set_attribute(f"honeyhive_inputs.{param_name}", param_value)
+                elif isinstance(param_value, (dict, list)):
+                    # Complex types: JSON serialize
+                    serialized = json.dumps(param_value)
+                    # Truncate if too long (prevent huge spans)
+                    if len(serialized) > 1000:
+                        serialized = serialized[:1000] + "... (truncated)"
+                    span.set_attribute(f"honeyhive_inputs.{param_name}", serialized)
+                else:
+                    # Other types: use str() representation
+                    str_value = str(param_value)
+                    if len(str_value) > 500:
+                        str_value = str_value[:500] + "... (truncated)"
+                    span.set_attribute(f"honeyhive_inputs.{param_name}", str_value)
+            except Exception:
+                # Skip non-serializable values silently
+                pass
+
+    except Exception as e:
+        # Graceful degradation - don't fail tracing if input capture fails
+        safe_log(None, "debug", f"Failed to capture function inputs: {e}")
+
+
 def _discover_tracer_safely(kwargs: Dict[str, Any], func: Callable) -> Optional[Any]:
     """Discover tracer using priority-based fallback with graceful degradation.
 
@@ -275,6 +337,9 @@ def _execute_with_tracing_sync(
                 _set_params_attributes(span, params)
                 _set_experiment_attributes(span)
                 _set_kwargs_attributes(span, **decorator_kwargs)
+
+                # ✅ TASK 4: Auto-capture function inputs
+                _capture_function_inputs(span, func, args, func_kwargs)
 
                 # Set up baggage context for multi-instance tracer isolation
                 _setup_decorator_baggage_context(tracer, span)
@@ -412,6 +477,9 @@ async def _execute_with_tracing(
                 _set_params_attributes(span, params)
                 _set_experiment_attributes(span)
                 _set_kwargs_attributes(span, **decorator_kwargs)
+
+                # ✅ TASK 4: Auto-capture function inputs
+                _capture_function_inputs(span, func, args, func_kwargs)
 
                 # Set up baggage context for multi-instance tracer isolation
                 _setup_decorator_baggage_context(tracer, span)

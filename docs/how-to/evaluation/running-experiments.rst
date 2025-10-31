@@ -11,13 +11,25 @@ What's the simplest way to run an experiment?
 
 **Three-Step Pattern**
 
+.. versionchanged:: 1.0
+   Function signature changed from ``(inputs, ground_truths)`` to ``(datapoint: Dict[str, Any])``.
+
 .. code-block:: python
 
+   from typing import Any, Dict
    from honeyhive.experiments import evaluate
    
    # Step 1: Define your function
-   def my_llm_app(inputs, ground_truths):
-       # Your application logic
+   def my_llm_app(datapoint: Dict[str, Any]) -> Dict[str, Any]:
+       """Your application logic.
+       
+       Args:
+           datapoint: Contains 'inputs' and 'ground_truths'
+       
+       Returns:
+           Dictionary with your function's outputs
+       """
+       inputs = datapoint.get("inputs", {})
        result = call_llm(inputs["prompt"])
        return {"answer": result}
    
@@ -95,21 +107,30 @@ Each datapoint in your dataset should have:
 What signature must my function have?
 --------------------------------------
 
-**Accept (inputs, ground_truths) Parameters**
+**Accept datapoint Parameter (v1.0)**
 
-Your function MUST accept these parameters in this order:
+.. versionchanged:: 1.0
+   Function signature changed from ``(inputs, ground_truths)`` to ``(datapoint: Dict[str, Any])``.
+
+Your function MUST accept a ``datapoint`` parameter:
 
 .. code-block:: python
 
-   def my_function(inputs, ground_truths):
-       """
+   from typing import Any, Dict
+   
+   def my_function(datapoint: Dict[str, Any]) -> Dict[str, Any]:
+       """Your evaluation function.
+       
        Args:
-           inputs (dict): From datapoint["inputs"]
-           ground_truths (dict): From datapoint["ground_truths"]
+           datapoint: Dictionary with 'inputs' and 'ground_truths' keys
        
        Returns:
            dict: Your function's output
        """
+       # Extract inputs and ground_truths
+       inputs = datapoint.get("inputs", {})
+       ground_truths = datapoint.get("ground_truths", {})
+       
        # Access input parameters
        user_query = inputs.get("question")
        language = inputs.get("language", "English")
@@ -124,10 +145,101 @@ Your function MUST accept these parameters in this order:
        return {"answer": result, "metadata": {...}}
 
 .. important::
-   - Parameters are **positional** - order matters!
-   - ``inputs`` is required
-   - ``ground_truths`` is optional (can ignore if not needed)
+   - Accept **one parameter**: ``datapoint: Dict[str, Any]``
+   - Extract ``inputs`` with ``datapoint.get("inputs", {})``
+   - Extract ``ground_truths`` with ``datapoint.get("ground_truths", {})``
    - Return value should be a **dictionary**
+   - **Type hints are strongly recommended**
+
+**Backward Compatibility (Deprecated):**
+
+.. deprecated:: 1.0
+   The old ``(inputs, ground_truths)`` signature is deprecated but still supported
+   for backward compatibility. It will be removed in v2.0.
+
+.. code-block:: python
+
+   # ⚠️ Deprecated: Old signature (still works in v1.0)
+   def old_style_function(inputs, ground_truths):
+       # This still works but will be removed in v2.0
+       return {"output": inputs["query"]}
+   
+   # ✅ Recommended: New signature (v1.0+)
+   def new_style_function(datapoint: Dict[str, Any]) -> Dict[str, Any]:
+       inputs = datapoint.get("inputs", {})
+       return {"output": inputs["query"]}
+
+How do I enrich sessions or spans during evaluation?
+-----------------------------------------------------
+
+.. versionadded:: 1.0
+   You can now receive a ``tracer`` parameter in your evaluation function.
+
+**Use the tracer Parameter for Advanced Tracing**
+
+If your function needs to enrich sessions or use the tracer instance,
+add a ``tracer`` parameter to your function signature:
+
+.. code-block:: python
+
+   from typing import Any, Dict
+   from honeyhive import HoneyHiveTracer
+   from honeyhive.experiments import evaluate
+   from honeyhive.sdk.utils import enrich_span, enrich_session
+   
+   def my_function(
+       datapoint: Dict[str, Any],
+       tracer: HoneyHiveTracer  # Optional tracer parameter
+   ) -> Dict[str, Any]:
+       """Function with tracer access.
+       
+       Args:
+           datapoint: Test data with 'inputs' and 'ground_truths'
+           tracer: HoneyHiveTracer instance (auto-injected)
+       
+       Returns:
+           Function outputs
+       """
+       inputs = datapoint.get("inputs", {})
+       
+       # Enrich the session with metadata
+       enrich_session(
+           tracer=tracer,
+           metadata={"experiment_version": "v2", "user_id": "test-123"}
+       )
+       
+       # Your logic
+       result = process_query(inputs["query"])
+       
+       # Enrich spans with metrics
+       enrich_span(
+           metrics={"processing_time": 0.5},
+           metadata={"model": "gpt-4"}
+       )
+       
+       return {"answer": result}
+   
+   # The tracer is automatically provided by evaluate()
+   result = evaluate(
+       function=my_function,
+       dataset=dataset,
+       name="experiment-v1"
+   )
+
+.. important::
+   - The ``tracer`` parameter is **optional** - only add it if needed
+   - The tracer is **automatically injected** by ``evaluate()``
+   - Use it to call ``enrich_session()`` or access the tracer instance
+   - Each datapoint gets its own tracer instance (multi-instance architecture)
+
+**Without tracer parameter (simpler):**
+
+.. code-block:: python
+
+   def simple_function(datapoint: Dict[str, Any]) -> Dict[str, Any]:
+       """Function without tracer access."""
+       inputs = datapoint.get("inputs", {})
+       return {"answer": process_query(inputs["query"])}
 
 My experiments are too slow on large datasets
 ----------------------------------------------
@@ -299,10 +411,11 @@ I want to see what's happening during evaluation
 Show me a complete real-world example
 --------------------------------------
 
-**Question Answering Pipeline**
+**Question Answering Pipeline (v1.0)**
 
 .. code-block:: python
 
+   from typing import Any, Dict
    from honeyhive.experiments import evaluate
    import openai
    import os
@@ -313,10 +426,18 @@ Show me a complete real-world example
    openai.api_key = "your-openai-key"
    
    # Define function to test
-   def qa_pipeline(inputs, ground_truths):
-       """Answer questions using GPT-4."""
+   def qa_pipeline(datapoint: Dict[str, Any]) -> Dict[str, Any]:
+       """Answer questions using GPT-4.
+       
+       Args:
+           datapoint: Contains 'inputs' and 'ground_truths'
+       
+       Returns:
+           Dictionary with answer, model, and token count
+       """
        client = openai.OpenAI()
        
+       inputs = datapoint.get("inputs", {})
        question = inputs["question"]
        context = inputs.get("context", "")
        

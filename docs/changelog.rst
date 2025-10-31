@@ -17,6 +17,17 @@ Latest Release Notes
 Current Version Highlights
 ~~~~~~~~~~~~~~~~~~~~~~~~~~
 
+**✨ NEW: v1.0 Evaluation Enhancements (Oct 31, 2025)**
+
+* **Smart Session Naming**: Experiments now use experiment name as default session name
+* **Tracer Injection**: Auto-inject `tracer` parameter into evaluation functions for `enrich_session()` support
+* **Ground Truth Tracking**: Automatic ground truth capture in session feedback
+* **Auto-Input Tracking**: `@trace` decorator automatically captures function inputs (no manual enrichment needed)
+* **Session Linking**: Propagate `run_id` through OpenTelemetry baggage for correct span association
+* **Backward Compatible**: Functions without `tracer` parameter continue to work
+* **New Tutorial**: "Run Your First Experiment" with evaluators and result comparison
+* **Test Coverage**: 14 new tests with end-to-end backend verification
+
 **🐛 CRITICAL FIX: Config Priority Bug (Oct 30, 2025)**
 
 * **Issue**: `SessionConfig` and `EvaluationConfig` values not promoted to root, hidden in nested configs

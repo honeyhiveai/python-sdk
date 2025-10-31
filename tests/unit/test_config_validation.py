@@ -14,7 +14,7 @@ Standards: .agent-os/standards/testing/integration-testing.md
 HARD RULE: NO MOCKS for SDK code - only mock external environment variables.
 """
 
-# pylint: disable=duplicate-code,too-many-statements,too-many-locals
+# pylint: disable=duplicate-code,too-many-statements,too-many-locals,too-few-public-methods
 
 import uuid
 from pathlib import Path

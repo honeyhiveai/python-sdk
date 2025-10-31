@@ -601,7 +601,9 @@ class TestApplyBaggageContext:
         mock_context: Mock,
         honeyhive_tracer: Mock,
     ) -> None:
-        """Test baggage context application skips empty values and filters to safe keys."""
+        """
+        Test baggage context application skips empty values and filters.
+        """
         mock_ctx = Mock()
         mock_context.get_current.return_value = mock_ctx
         mock_baggage.set_baggage.return_value = mock_ctx
@@ -1342,7 +1344,8 @@ class TestIntegrationScenarios:
         for expected_call in expected_calls:
             assert expected_call in mock_baggage.set_baggage.call_args_list
 
-        # Verify project/source/session_id were NOT set (removed from SAFE_PROPAGATION_KEYS)
+        # Verify project/source/session_id were NOT set
+        # (removed from SAFE_PROPAGATION_KEYS)
         project_call = call("project", "test-project", mock_ctx)
         source_call = call("source", "test", mock_ctx)
         session_id_call = call("session_id", "test-session", mock_ctx)

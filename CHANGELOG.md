@@ -1,5 +1,22 @@
 ## [Unreleased]
 
+### Added
+- **✨ Experiments: v1.0 Evaluation Enhancements**
+  - `evaluate()` now uses experiment name as default session name for better organization
+  - Auto-injection of `tracer` parameter into evaluation functions for `enrich_session()` support
+  - Ground truths automatically set in session feedback for experiment tracking
+  - Automatic input tracking for all `@trace` decorated functions (no manual `enrich_span` needed)
+  - Session linking via `run_id` propagation through OpenTelemetry baggage
+  - Backward compatibility: Functions without `tracer` parameter continue to work
+  - **12 new unit tests** covering all evaluation enhancements
+  - **2 new integration tests** with end-to-end backend verification
+- **📚 Documentation: Experiments Tutorial**
+  - New comprehensive tutorial: "Run Your First Experiment"
+  - Covers dataset creation, evaluation functions, evaluators, and result comparison
+  - Updated `evaluate()` function signatures with v1.0 API changes
+  - Added migration notes for `tracer` parameter pattern
+  - Includes both programmatic and UI-based result comparison workflows
+
 ### Fixed
 - **🐛 Config: Session/Evaluation Config Priority Bug**
   - Fixed config collision where `SessionConfig` and `EvaluationConfig` values weren't promoted to root

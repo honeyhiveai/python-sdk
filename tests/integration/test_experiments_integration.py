@@ -20,7 +20,7 @@ from typing import Any, Dict, Optional
 
 import pytest
 
-from honeyhive import HoneyHive
+from honeyhive import HoneyHive, enrich_span, trace
 from honeyhive.experiments import compare_runs, evaluate
 from honeyhive.models import CreateDatapointRequest, CreateDatasetRequest, EventFilter
 
@@ -73,15 +73,15 @@ class TestExperimentsIntegration:
         dataset = [
             {
                 "inputs": {"question": "What is 2+2?"},
-                "ground_truth": {"expected_answer": "4"},
+                "ground_truths": {"expected_answer": "4"},
             },
             {
                 "inputs": {"question": "What is the capital of France?"},
-                "ground_truth": {"expected_answer": "Paris"},
+                "ground_truths": {"expected_answer": "Paris"},
             },
             {
                 "inputs": {"question": "What color is the sky?"},
-                "ground_truth": {"expected_answer": "blue"},
+                "ground_truths": {"expected_answer": "blue"},
             },
         ]
 
@@ -284,15 +284,15 @@ class TestExperimentsIntegration:
         dataset = [
             {
                 "inputs": {"value": 5, "label": "small"},
-                "ground_truth": {"expected": 10},
+                "ground_truths": {"expected": 10},
             },
             {
                 "inputs": {"value": 10, "label": "medium"},
-                "ground_truth": {"expected": 20},
+                "ground_truths": {"expected": 20},
             },
             {
                 "inputs": {"value": 15, "label": "large"},
-                "ground_truth": {"expected": 30},
+                "ground_truths": {"expected": 30},
             },
         ]
 
@@ -414,15 +414,15 @@ class TestExperimentsIntegration:
         dataset = [
             {
                 "inputs": {"value": 10, "task": "double"},
-                "ground_truth": {"expected": 20},
+                "ground_truths": {"expected": 20},
             },
             {
                 "inputs": {"value": 15, "task": "triple"},
-                "ground_truth": {"expected": 45},
+                "ground_truths": {"expected": 45},
             },
             {
                 "inputs": {"value": 8, "task": "quadruple"},
-                "ground_truth": {"expected": 32},
+                "ground_truths": {"expected": 32},
             },
         ]
 
@@ -718,18 +718,21 @@ class TestExperimentsIntegration:
         test_datapoints = [
             {
                 "inputs": {"question": "What is 5 + 3?", "category": "math"},
-                "ground_truth": {"answer": "8", "explanation": "Simple addition"},
+                "ground_truths": {"answer": "8", "explanation": "Simple addition"},
             },
             {
                 "inputs": {
                     "question": "What is the capital of Japan?",
                     "category": "geography",
                 },
-                "ground_truth": {"answer": "Tokyo", "explanation": "Capital city"},
+                "ground_truths": {"answer": "Tokyo", "explanation": "Capital city"},
             },
             {
                 "inputs": {"question": "What color is the sun?", "category": "science"},
-                "ground_truth": {"answer": "yellow", "explanation": "Visible spectrum"},
+                "ground_truths": {
+                    "answer": "yellow",
+                    "explanation": "Visible spectrum",
+                },
             },
         ]
 
@@ -902,9 +905,9 @@ class TestExperimentsIntegration:
 
         # Shared dataset for both runs
         dataset = [
-            {"inputs": {"value": 10}, "ground_truth": {"expected": 20}},
-            {"inputs": {"value": 15}, "ground_truth": {"expected": 30}},
-            {"inputs": {"value": 8}, "ground_truth": {"expected": 16}},
+            {"inputs": {"value": 10}, "ground_truths": {"expected": 20}},
+            {"inputs": {"value": 15}, "ground_truths": {"expected": 30}},
+            {"inputs": {"value": 8}, "ground_truths": {"expected": 16}},
         ]
 
         # Run 1: Baseline function
@@ -1034,6 +1037,105 @@ class TestExperimentsIntegration:
 
         print(f"\n{'='*70}\nEVENT-LEVEL COMPARISON TEST COMPLETE\n{'='*70}\n")
 
+    @staticmethod
+    def _fetch_all_session_events(
+        integration_client: HoneyHive, event_ids: list, real_project: str
+    ) -> list:
+        """Fetch all events for given session IDs."""
+        all_events = []
+        for session_id in event_ids:
+            try:
+                # Convert UUID to string for EventFilter
+                # (backend returns UUIDType objects)
+                session_id_str = str(session_id)
+                events_response = integration_client.events.get_events(
+                    project=real_project,
+                    filters=[
+                        EventFilter(
+                            field="session_id", value=session_id_str, operator="is"
+                        ),
+                    ],
+                )
+                session_events = events_response.get("events", [])
+                all_events.extend(session_events)
+                print(
+                    f"   ✅ Session {session_id_str[:16]}... "
+                    f"has {len(session_events)} events"
+                )
+            except Exception as e:
+                print(f"   ⚠️  Could not fetch events for session {session_id}: {e}")
+        return all_events
+
+    @staticmethod
+    def _validate_event_enrichments(all_events: list) -> tuple:
+        """Validate enrichment on events and return flags."""
+        found_eval = False
+        found_helper = False
+
+        for event in all_events:
+            event_name = getattr(event, "event_name", "unknown")
+            event_type = getattr(event, "event_type", "unknown")
+            print(f"\n📦 Event: {event_name} ({event_type})")
+
+            # Check metadata
+            metadata = getattr(event, "metadata", {}) or {}
+            if metadata:
+                print(f"   ✅ Metadata ({len(metadata)} fields):")
+                for key in list(metadata.keys())[:5]:
+                    print(f"      - {key}: {metadata[key]}")
+
+                if "evaluation_function" in metadata:
+                    assert (
+                        metadata["evaluation_function"] == "text_evaluator"
+                    ), "evaluation_function metadata should match"
+                    found_eval = True
+                    print("   ✅ Found evaluation_function enrichment")
+
+                if "helper_function" in metadata:
+                    assert (
+                        metadata["helper_function"] == "text_processor"
+                    ), "helper_function metadata should match"
+                    found_helper = True
+                    print("   ✅ Found helper_function enrichment")
+
+            # Check metrics
+            metrics = getattr(event, "metrics", {}) or {}
+            if metrics:
+                print(f"   ✅ Metrics ({len(metrics)} fields):")
+                for key, value in list(metrics.items())[:5]:
+                    print(f"      - {key}: {value}")
+                    assert isinstance(
+                        value, (int, float)
+                    ), f"Metric {key} should be numeric, got {type(value)}"
+
+            # Check config
+            config = getattr(event, "config", {}) or {}
+            if config:
+                print(f"   ✅ Config ({len(config)} fields):")
+                for key, value in list(config.items())[:5]:
+                    print(f"      - {key}: {value}")
+
+                if "model" in config:
+                    assert (
+                        config["model"] == "test-model-v1"
+                    ), "Model config should match"
+                    print("   ✅ Found config enrichment")
+
+            # Check feedback
+            feedback = getattr(event, "feedback", {}) or {}
+            if feedback:
+                print(f"   ✅ Feedback ({len(feedback)} fields):")
+                for key, value in list(feedback.items())[:5]:
+                    print(f"      - {key}: {value}")
+
+                if "quality" in feedback:
+                    assert (
+                        feedback["quality"] == "high"
+                    ), "Quality feedback should match"
+                    print("   ✅ Found feedback enrichment")
+
+        return found_eval, found_helper
+
     @pytest.mark.slow
     def test_evaluate_with_nested_enrich_span_backend_validation(
         self,
@@ -1041,7 +1143,9 @@ class TestExperimentsIntegration:
         real_project: str,
         integration_client: HoneyHive,
     ) -> None:
-        """Test nested function calls with enrich_span() and validate enriched properties.
+        """Test nested function calls with enrich_span().
+
+        Validates enriched properties in backend.
 
         This test validates:
         1. Nested function calls (evaluation_function -> helper_function)
@@ -1055,9 +1159,6 @@ class TestExperimentsIntegration:
 
         # Track calls for debugging
         calls: list = []
-
-        # Import trace decorator for creating spans
-        from honeyhive import enrich_span, trace
 
         # Nested helper function with enrich_span
         @trace(event_type="tool", event_name="helper_function")
@@ -1190,108 +1291,21 @@ class TestExperimentsIntegration:
             print(f"   Session IDs: {event_ids}")
 
             # Fetch ALL events in these sessions (including child spans from @trace)
-            # Query by session_id to get parent session + all child events
-            all_events = []
-            for session_id in event_ids:
-                try:
-                    # Convert UUID to string for EventFilter (backend returns UUIDType objects)
-                    session_id_str = str(session_id)
-                    events_response = integration_client.events.get_events(
-                        project=real_project,
-                        filters=[
-                            EventFilter(
-                                field="session_id", value=session_id_str, operator="is"
-                            ),
-                        ],
-                    )
-                    session_events = events_response.get("events", [])
-                    all_events.extend(session_events)
-                    print(
-                        f"   ✅ Session {session_id_str[:16]}... has {len(session_events)} events"
-                    )
-                except Exception as e:
-                    print(f"   ⚠️  Could not fetch events for session {session_id}: {e}")
+            all_events = self._fetch_all_session_events(
+                integration_client, event_ids, real_project
+            )
 
             print(f"\n✅ Fetched {len(all_events)} total events for validation")
 
             # Validate enrichment on each event
-            found_eval_function_enrichment = False
-            found_helper_function_enrichment = False
-
-            for event in all_events:
-                event_name = getattr(event, "event_name", "unknown")
-                event_type = getattr(event, "event_type", "unknown")
-
-                print(f"\n📦 Event: {event_name} ({event_type})")
-
-                # Check metadata
-                metadata = getattr(event, "metadata", {}) or {}
-                if metadata:
-                    print(f"   ✅ Metadata ({len(metadata)} fields):")
-                    for key in list(metadata.keys())[:5]:  # Show first 5
-                        print(f"      - {key}: {metadata[key]}")
-
-                    # Validate evaluation_function enrichment
-                    if "evaluation_function" in metadata:
-                        assert (
-                            metadata["evaluation_function"] == "text_evaluator"
-                        ), "evaluation_function metadata should match"
-                        found_eval_function_enrichment = True
-                        print("   ✅ Found evaluation_function enrichment")
-
-                    # Validate helper_function enrichment
-                    if "helper_function" in metadata:
-                        assert (
-                            metadata["helper_function"] == "text_processor"
-                        ), "helper_function metadata should match"
-                        found_helper_function_enrichment = True
-                        print("   ✅ Found helper_function enrichment")
-
-                # Check metrics
-                metrics = getattr(event, "metrics", {}) or {}
-                if metrics:
-                    print(f"   ✅ Metrics ({len(metrics)} fields):")
-                    for key, value in list(metrics.items())[:5]:  # Show first 5
-                        print(f"      - {key}: {value}")
-                        # Validate metrics are numeric
-                        assert isinstance(
-                            value, (int, float)
-                        ), f"Metric {key} should be numeric, got {type(value)}"
-
-                # Check config
-                config = getattr(event, "config", {}) or {}
-                if config:
-                    print(f"   ✅ Config ({len(config)} fields):")
-                    for key, value in list(config.items())[:5]:
-                        print(f"      - {key}: {value}")
-
-                    # Validate config enrichment
-                    if "model" in config:
-                        assert (
-                            config["model"] == "test-model-v1"
-                        ), "Model config should match"
-                        print("   ✅ Found config enrichment")
-
-                # Check feedback
-                feedback = getattr(event, "feedback", {}) or {}
-                if feedback:
-                    print(f"   ✅ Feedback ({len(feedback)} fields):")
-                    for key, value in list(feedback.items())[:5]:
-                        print(f"      - {key}: {value}")
-
-                    # Validate feedback enrichment
-                    if "quality" in feedback:
-                        assert (
-                            feedback["quality"] == "high"
-                        ), "Quality feedback should match"
-                        print("   ✅ Found feedback enrichment")
+            found_eval, found_helper = self._validate_event_enrichments(all_events)
 
             # CRITICAL ASSERTIONS: Verify enrichment was found
-            assert found_eval_function_enrichment, (
+            assert found_eval, (
                 "❌ CRITICAL: evaluation_function enrichment NOT FOUND in backend! "
                 "enrich_span() metadata not persisted."
             )
-            assert found_helper_function_enrichment, (
+            assert found_helper, (
                 "❌ CRITICAL: helper_function enrichment NOT FOUND in backend! "
                 "Nested enrich_span() not working."
             )

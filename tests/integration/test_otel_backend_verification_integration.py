@@ -7,21 +7,16 @@ NO MOCKING - All tests use real OpenTelemetry components, real API calls,
 and real backend verification.
 """
 
-# pylint: disable=too-many-lines
-# Justification: Comprehensive backend verification tests for config priority modes
+# pylint: disable=too-many-lines,import-outside-toplevel
+# Justification: Comprehensive backend verification tests require extensive test cases
+# and local imports to avoid circular dependencies in test fixtures
 
 import time
-import uuid
 from typing import Any
 
 import pytest
 
-from honeyhive.config.models.tracer import (
-    EvaluationConfig,
-    SessionConfig,
-    TracerConfig,
-)
-from honeyhive.tracer import HoneyHiveTracer, enrich_span, trace
+from honeyhive.tracer import enrich_span, trace
 from tests.utils import (  # pylint: disable=no-name-in-module
     generate_test_id,
     verify_span_export,
@@ -83,8 +78,8 @@ class TestOTELBackendVerificationIntegration:
             f"✅ OTLP span export backend verification successful: "
             f"{verified_event.event_id}"
         )
-        print(f"   Session: {test_tracer.session_id}")
-        print(f"   Project: {real_project}")
+        print("   Session: {test_tracer.session_id}")
+        print("   Project: {real_project}")
 
         # Clean up
         test_tracer.shutdown()
@@ -127,7 +122,7 @@ class TestOTELBackendVerificationIntegration:
             f"{verified_event.event_id}"
         )
         print("   Standardized pattern: verify_tracer_span")
-        print(f"   Session: {integration_tracer.session_id}")
+        print("   Session: {integration_tracer.session_id}")
 
     def test_session_backend_verification(
         self,
@@ -149,7 +144,7 @@ class TestOTELBackendVerificationIntegration:
 
         # ✅ STANDARD PATTERN: Use verify_tracer_span for span creation +
         # backend verification
-        verified_event = verify_tracer_span(
+        _ = verify_tracer_span(
             tracer=test_tracer,
             client=integration_client,
             project=real_project,
@@ -166,8 +161,8 @@ class TestOTELBackendVerificationIntegration:
             },
         )
 
-        print(f"✅ Session backend verification successful: {verified_event.event_id}")
-        print(f"   Session ID: {session_id}")
+        print("✅ Session backend verification successful: {verified_event.event_id}")
+        print("   Session ID: {session_id}")
         print("   Spans created: 3 + 1 verification span")
 
         # Clean up
@@ -472,11 +467,16 @@ class TestOTELBackendVerificationIntegration:
 
         Bug Report: CONFIG_COLLISION_BUG_REPORT.md - Original reported bug
         """
+        import uuid
+
+        from honeyhive.config.models.tracer import SessionConfig
+        from honeyhive.tracer import HoneyHiveTracer
+
         custom_session_id = str(uuid.uuid4())
         _, unique_id = generate_test_id("session_id_alone", "session_id_alone")
         verification_span_name = "session_id_alone_verification"
 
-        print(f"\n🔍 Test 1: SessionConfig.session_id alone: {custom_session_id}")
+        print("\n🔍 Test 1: SessionConfig.session_id alone: {custom_session_id}")
 
         session_config = SessionConfig(session_id=custom_session_id)
 
@@ -513,6 +513,11 @@ class TestOTELBackendVerificationIntegration:
         Priority Mode: SessionConfig > TracerConfig
         Expected: SessionConfig.session_id wins
         """
+        import uuid
+
+        from honeyhive.config.models.tracer import SessionConfig, TracerConfig
+        from honeyhive.tracer import HoneyHiveTracer
+
         correct_id = str(uuid.uuid4())
         wrong_id = str(uuid.uuid4())
         _, unique_id = generate_test_id("session_vs_tracer", "session_vs_tracer")
@@ -558,6 +563,11 @@ class TestOTELBackendVerificationIntegration:
         Priority Mode: individual param > SessionConfig
         Expected: Individual param wins (backwards compatibility)
         """
+        import uuid
+
+        from honeyhive.config.models.tracer import SessionConfig
+        from honeyhive.tracer import HoneyHiveTracer
+
         correct_id = str(uuid.uuid4())
         wrong_id = str(uuid.uuid4())
         _, unique_id = generate_test_id("param_vs_session", "param_vs_session")
@@ -600,6 +610,11 @@ class TestOTELBackendVerificationIntegration:
         Priority Mode: All three present
         Expected: Individual param wins
         """
+        import uuid
+
+        from honeyhive.config.models.tracer import SessionConfig, TracerConfig
+        from honeyhive.tracer import HoneyHiveTracer
+
         correct_id = str(uuid.uuid4())
         session_id = str(uuid.uuid4())
         tracer_id = str(uuid.uuid4())
@@ -647,6 +662,9 @@ class TestOTELBackendVerificationIntegration:
         Priority Mode: SessionConfig only
         Expected: SessionConfig.project is used
         """
+        from honeyhive.config.models.tracer import SessionConfig
+        from honeyhive.tracer import HoneyHiveTracer
+
         _, unique_id = generate_test_id("project_alone", "project_alone")
 
         print("\n🔍 Project Test 1: SessionConfig alone")
@@ -685,6 +703,9 @@ class TestOTELBackendVerificationIntegration:
         Priority Mode: SessionConfig > TracerConfig
         Expected: SessionConfig.project wins
         """
+        from honeyhive.config.models.tracer import SessionConfig, TracerConfig
+        from honeyhive.tracer import HoneyHiveTracer
+
         _, unique_id = generate_test_id("project_vs_tracer", "project_vs_tracer")
 
         print("\n🔍 Project Test 2: SessionConfig vs TracerConfig")
@@ -727,6 +748,9 @@ class TestOTELBackendVerificationIntegration:
         Priority Mode: individual param > SessionConfig
         Expected: Individual param wins (backwards compatibility)
         """
+        from honeyhive.config.models.tracer import SessionConfig
+        from honeyhive.tracer import HoneyHiveTracer
+
         _, unique_id = generate_test_id(
             "project_param_vs_session", "project_param_vs_session"
         )
@@ -768,6 +792,9 @@ class TestOTELBackendVerificationIntegration:
         Priority Mode: All three present
         Expected: Individual param wins
         """
+        from honeyhive.config.models.tracer import SessionConfig, TracerConfig
+        from honeyhive.tracer import HoneyHiveTracer
+
         _, unique_id = generate_test_id("project_all_three", "project_all_three")
 
         print("\n🔍 Project Test 4: Individual param > SessionConfig > TracerConfig")
@@ -810,6 +837,9 @@ class TestOTELBackendVerificationIntegration:
 
         Tier 2 Test: Single priority mode (SessionConfig > TracerConfig)
         """
+        from honeyhive.config.models.tracer import SessionConfig, TracerConfig
+        from honeyhive.tracer import HoneyHiveTracer
+
         _, unique_id = generate_test_id("api_key_test", "api_key_test")
 
         print("\n🔍 API Key Test: SessionConfig > TracerConfig")
@@ -847,16 +877,19 @@ class TestOTELBackendVerificationIntegration:
         real_project: Any,
         real_source: Any,
     ) -> None:
-        """Test is_evaluation from EvaluationConfig overrides TracerConfig.
+        """Test EvaluationConfig.is_evaluation overrides TracerConfig.
 
         This test validates the config collision fix for is_evaluation field
-        which exists in both TracerConfig and EvaluationConfig.
-        EvaluationConfig should take priority and backend should use this flag
-        for filtering/routing evaluation data.
+        which exists in both TracerConfig and EvaluationConfig. EvaluationConfig
+        should take priority and backend should use this flag for
+        filtering/routing evaluation data.
 
         Bug Report: CONFIG_COLLISION_BUG_REPORT.md
         Colliding Field: is_evaluation (field 5 of 15)
         """
+        from honeyhive.config.models.tracer import EvaluationConfig, TracerConfig
+        from honeyhive.tracer import HoneyHiveTracer
+
         _, unique_id = generate_test_id(
             "is_evaluation_collision", "is_evaluation_collision"
         )
@@ -878,19 +911,21 @@ class TestOTELBackendVerificationIntegration:
 
         # Create EvaluationConfig with is_evaluation=True
         evaluation_config = EvaluationConfig(
-            is_evaluation=True,  # EvaluationConfig (should win)
+            is_evaluation=True,  # EvaluationConfig provides is_evaluation (should win)
         )
 
         # Create tracer using config objects (no individual params)
         test_tracer = HoneyHiveTracer(
             config=tracer_config,
-            evaluation_config=evaluation_config,  # (should win)
+            # EvaluationConfig with is_evaluation=True (should win)
+            evaluation_config=evaluation_config,
         )
 
         # Verify tracer is using EvaluationConfig's is_evaluation
-        assert (
-            test_tracer.is_evaluation is True
-        ), f"Tracer is_evaluation mismatch: expected True, got {test_tracer.is_evaluation}"
+        assert test_tracer.is_evaluation is True, (
+            f"Tracer is_evaluation mismatch: expected True, "
+            f"got {test_tracer.is_evaluation}"
+        )
         print(
             "✅ Tracer correctly initialized with EvaluationConfig.is_evaluation=True"
         )
@@ -915,10 +950,10 @@ class TestOTELBackendVerificationIntegration:
         # Verify event was created successfully
         assert verified_event.event_id is not None, "Event should be created"
         print("✅ Backend verification successful")
-        print(f"   Event ID: {verified_event.event_id}")
+        print("   Event ID: {verified_event.event_id}")
         print(
-            "   This confirms EvaluationConfig.is_evaluation correctly "
-            "overrides TracerConfig"
+            "   This confirms EvaluationConfig.is_evaluation "
+            "correctly overrides TracerConfig"
         )
 
         # Clean up
@@ -934,6 +969,11 @@ class TestOTELBackendVerificationIntegration:
 
         Tier 2 Test: Single priority mode (EvaluationConfig > TracerConfig)
         """
+        import uuid
+
+        from honeyhive.config.models.tracer import EvaluationConfig, TracerConfig
+        from honeyhive.tracer import HoneyHiveTracer
+
         correct_run_id = str(uuid.uuid4())
         wrong_run_id = str(uuid.uuid4())
         _, unique_id = generate_test_id("run_id_test", "run_id_test")
@@ -974,16 +1014,20 @@ class TestOTELBackendVerificationIntegration:
         real_project: Any,
         real_source: Any,
     ) -> None:
-        """Test dataset_id from EvaluationConfig overrides TracerConfig.
+        """Test that dataset_id from EvaluationConfig correctly overrides TracerConfig.
 
-        This test validates the config collision fix for dataset_id field
-        which exists in both TracerConfig and EvaluationConfig.
-        EvaluationConfig should take priority and backend should link events
-        to the correct dataset.
+        This test validates the config collision fix for dataset_id field which exists
+        in both TracerConfig and EvaluationConfig. EvaluationConfig should take priority
+        and backend should link events to the correct dataset.
 
         Bug Report: CONFIG_COLLISION_BUG_REPORT.md
         Colliding Field: dataset_id (field 7 of 15)
         """
+        import uuid
+
+        from honeyhive.config.models.tracer import EvaluationConfig, TracerConfig
+        from honeyhive.tracer import HoneyHiveTracer
+
         _, unique_id = generate_test_id("dataset_id_collision", "dataset_id_collision")
         verification_span_name = "dataset_id_collision_verification"
 
@@ -1006,22 +1050,26 @@ class TestOTELBackendVerificationIntegration:
         )
 
         # Create EvaluationConfig with correct dataset_id
+        # EvaluationConfig provides dataset_id (should win)
         evaluation_config = EvaluationConfig(
-            dataset_id=correct_dataset_id,  # (should win)
+            dataset_id=correct_dataset_id,
         )
 
         # Create tracer using config objects (no individual params)
+        # EvaluationConfig with correct dataset_id (should win)
         test_tracer = HoneyHiveTracer(
             config=tracer_config,
-            evaluation_config=evaluation_config,  # (should win)
+            evaluation_config=evaluation_config,
         )
 
         # Verify tracer is using EvaluationConfig's dataset_id
-        assert (
-            test_tracer.dataset_id == correct_dataset_id
-        ), f"Tracer dataset_id mismatch: expected {correct_dataset_id}, got {test_tracer.dataset_id}"
+        assert test_tracer.dataset_id == correct_dataset_id, (
+            f"Tracer dataset_id mismatch: expected {correct_dataset_id}, "
+            f"got {test_tracer.dataset_id}"
+        )
         print(
-            f"✅ Tracer correctly initialized with EvaluationConfig.dataset_id: {correct_dataset_id}"
+            f"✅ Tracer correctly initialized with "
+            f"EvaluationConfig.dataset_id: {correct_dataset_id}"
         )
 
         # Create a verification span
@@ -1045,10 +1093,10 @@ class TestOTELBackendVerificationIntegration:
         # Verify event was created successfully
         assert verified_event.event_id is not None, "Event should be created"
         print("✅ Backend verification successful")
-        print(f"   Event ID: {verified_event.event_id}")
+        print("   Event ID: {verified_event.event_id}")
         print(
-            "   This confirms EvaluationConfig.dataset_id correctly "
-            "overrides TracerConfig.dataset_id"
+            "   This confirms EvaluationConfig.dataset_id "
+            "correctly overrides TracerConfig.dataset_id"
         )
 
         # Clean up
@@ -1060,16 +1108,21 @@ class TestOTELBackendVerificationIntegration:
         real_project: Any,
         real_source: Any,
     ) -> None:
-        """Test datapoint_id from EvaluationConfig overrides TracerConfig.
+        """Test EvaluationConfig.datapoint_id overrides TracerConfig.
 
         This test validates the config collision fix for datapoint_id field
-        which exists in both TracerConfig and EvaluationConfig.
-        EvaluationConfig should take priority and backend should link events
-        to the correct datapoint.
+        which exists in both TracerConfig and EvaluationConfig. EvaluationConfig
+        should take priority and backend should link events to the correct
+        datapoint.
 
         Bug Report: CONFIG_COLLISION_BUG_REPORT.md
         Colliding Field: datapoint_id (field 8 of 15)
         """
+        import uuid
+
+        from honeyhive.config.models.tracer import EvaluationConfig, TracerConfig
+        from honeyhive.tracer import HoneyHiveTracer
+
         _, unique_id = generate_test_id(
             "datapoint_id_collision", "datapoint_id_collision"
         )
@@ -1085,31 +1138,36 @@ class TestOTELBackendVerificationIntegration:
         wrong_datapoint_id = str(uuid.uuid4())
 
         # Create TracerConfig with wrong datapoint_id
+        # TracerConfig level (should be overridden)
         tracer_config = TracerConfig(
             api_key=integration_client.api_key,
             project=real_project,
             source=real_source,
-            datapoint_id=wrong_datapoint_id,  # TracerConfig level (should be overridden)
+            datapoint_id=wrong_datapoint_id,
             test_mode=False,
         )
 
         # Create EvaluationConfig with correct datapoint_id
+        # EvaluationConfig provides datapoint_id (should win)
         evaluation_config = EvaluationConfig(
-            datapoint_id=correct_datapoint_id,  # (should win)
+            datapoint_id=correct_datapoint_id,
         )
 
         # Create tracer using config objects (no individual params)
+        # EvaluationConfig with correct datapoint_id (should win)
         test_tracer = HoneyHiveTracer(
             config=tracer_config,
-            evaluation_config=evaluation_config,  # (should win)
+            evaluation_config=evaluation_config,
         )
 
         # Verify tracer is using EvaluationConfig's datapoint_id
-        assert (
-            test_tracer.datapoint_id == correct_datapoint_id
-        ), f"Tracer datapoint_id mismatch: expected {correct_datapoint_id}, got {test_tracer.datapoint_id}"
+        assert test_tracer.datapoint_id == correct_datapoint_id, (
+            f"Tracer datapoint_id mismatch: expected {correct_datapoint_id}, "
+            f"got {test_tracer.datapoint_id}"
+        )
         print(
-            f"✅ Tracer correctly initialized with EvaluationConfig.datapoint_id: {correct_datapoint_id}"
+            f"✅ Tracer correctly initialized with "
+            f"EvaluationConfig.datapoint_id: {correct_datapoint_id}"
         )
 
         # Create a verification span
@@ -1133,10 +1191,10 @@ class TestOTELBackendVerificationIntegration:
         # Verify event was created successfully
         assert verified_event.event_id is not None, "Event should be created"
         print("✅ Backend verification successful")
-        print(f"   Event ID: {verified_event.event_id}")
+        print("   Event ID: {verified_event.event_id}")
         print(
-            "   This confirms EvaluationConfig.datapoint_id correctly "
-            "overrides TracerConfig.datapoint_id"
+            "   This confirms EvaluationConfig.datapoint_id "
+            "correctly overrides TracerConfig.datapoint_id"
         )
 
         # Clean up

@@ -1,0 +1,499 @@
+# OpenAI Instrumentation Schema (Complete Example)
+# This is a reference implementation showing all DSL features
+
+library:
+  name: "openai"
+  import_path: "openai"
+  version_constraint: ">=1.0.0"
+  description: "OpenAI Python SDK instrumentation with full feature coverage"
+  documentation: "https://docs.honeyhive.ai/instrumentation/openai"
+
+# Metadata for AI-assisted maintenance
+metadata:
+  maintainer: "agent-os"
+  last_updated: "2025-10-15"
+  api_version: "v1"
+  semantic_conventions:
+    - "gen_ai"  # Primary
+    - "http"    # Secondary (for underlying HTTP calls)
+
+targets:
+  # ============================================================================
+  # Target 1: Chat Completions (Non-Streaming)
+  # ============================================================================
+  - target_id: "chat_completions_create"
+    description: "Instrument synchronous chat completions API calls"
+
+    location:
+      module: "openai.resources.chat.completions"
+      class: "Completions"
+      method: "create"
+      # Only instrument when NOT streaming
+      condition:
+        path: "kwargs.stream"
+        equals: false
+
+    span_config:
+      name: "openai.chat.completions.create"
+      kind: "CLIENT"  # OTEL SpanKind
+      semantic_convention: "gen_ai"
+
+    # ============================================================================
+    # EXTRACT BEFORE: Capture inputs before API call
+    # ============================================================================
+    extract_before:
+      # Static attributes (always same value)
+      - attribute: "gen_ai.system"
+        value: "openai"
+        type: "string"
+
+      - attribute: "gen_ai.operation.name"
+        value: "chat.completions"
+        type: "string"
+
+      # Required parameters
+      - attribute: "gen_ai.request.model"
+        path: "kwargs.model"
+        type: "string"
+        required: true
+        description: "The model used for completion"
+
+      # Optional parameters with defaults
+      - attribute: "gen_ai.request.temperature"
+        path: "kwargs.temperature"
+        type: "float"
+        default: 1.0
+        description: "Sampling temperature (0-2)"
+
+      - attribute: "gen_ai.request.max_tokens"
+        path: "kwargs.max_tokens"
+        type: "int"
+        required: false
+        description: "Maximum tokens to generate"
+
+      - attribute: "gen_ai.request.top_p"
+        path: "kwargs.top_p"
+        type: "float"
+        default: 1.0
+
+      - attribute: "gen_ai.request.frequency_penalty"
+        path: "kwargs.frequency_penalty"
+        type: "float"
+        default: 0.0
+
+      - attribute: "gen_ai.request.presence_penalty"
+        path: "kwargs.presence_penalty"
+        type: "float"
+        default: 0.0
+
+      # Boolean flags
+      - attribute: "gen_ai.request.stream"
+        path: "kwargs.stream"
+        type: "boolean"
+        default: false
+
+      # Array flattening: messages
+      - attribute: "gen_ai.request.messages"
+        path: "kwargs.messages"
+        type: "array"
+        required: true
+        flatten_to:
+          - attribute: "gen_ai.request.messages.{index}.role"
+            path: "role"
+            type: "string"
+
+          - attribute: "gen_ai.request.messages.{index}.content"
+            path: "content"
+            type: "string"
+            max_length: 10000
+            truncate_indicator: "... [truncated]"
+
+          - attribute: "gen_ai.request.messages.{index}.name"
+            path: "name"
+            type: "string"
+            required: false
+
+          # Function calls (if present)
+          - attribute: "gen_ai.request.messages.{index}.function_call.name"
+            path: "function_call.name"
+            type: "string"
+            required: false
+
+          - attribute: "gen_ai.request.messages.{index}.function_call.arguments"
+            path: "function_call.arguments"
+            type: "string"
+            required: false
+            max_length: 5000
+
+      # Tools (function definitions)
+      - attribute: "gen_ai.request.tools"
+        path: "kwargs.tools"
+        type: "array"
+        required: false
+        flatten_to:
+          - attribute: "gen_ai.request.tools.{index}.type"
+            path: "type"
+
+          - attribute: "gen_ai.request.tools.{index}.function.name"
+            path: "function.name"
+
+          - attribute: "gen_ai.request.tools.{index}.function.description"
+            path: "function.description"
+            max_length: 1000
+
+          - attribute: "gen_ai.request.tools.{index}.function.parameters"
+            path: "function.parameters"
+            type: "json"  # Serialize as JSON string
+            max_length: 5000
+
+      # Response format
+      - attribute: "gen_ai.request.response_format.type"
+        path: "kwargs.response_format.type"
+        type: "string"
+        required: false
+
+      # User identifier (for rate limiting/tracking)
+      - attribute: "gen_ai.request.user"
+        path: "kwargs.user"
+        type: "string"
+        required: false
+
+    # ============================================================================
+    # EXTRACT AFTER: Capture outputs after API call
+    # ============================================================================
+    extract_after:
+      # Response metadata
+      - attribute: "gen_ai.response.id"
+        path: "result.id"
+        type: "string"
+
+      - attribute: "gen_ai.response.model"
+        path: "result.model"
+        type: "string"
+
+      - attribute: "gen_ai.response.created"
+        path: "result.created"
+        type: "int"
+
+      - attribute: "gen_ai.response.system_fingerprint"
+        path: "result.system_fingerprint"
+        type: "string"
+        required: false
+
+      # First choice (most common case)
+      - attribute: "gen_ai.response.finish_reason"
+        path: "result.choices[0].finish_reason"
+        type: "string"
+
+      - attribute: "gen_ai.response.message.role"
+        path: "result.choices[0].message.role"
+        type: "string"
+
+      - attribute: "gen_ai.response.message.content"
+        path: "result.choices[0].message.content"
+        type: "string"
+        max_length: 10000
+
+      # Function call response
+      - attribute: "gen_ai.response.message.function_call.name"
+        path: "result.choices[0].message.function_call.name"
+        type: "string"
+        required: false
+
+      - attribute: "gen_ai.response.message.function_call.arguments"
+        path: "result.choices[0].message.function_call.arguments"
+        type: "string"
+        required: false
+        max_length: 5000
+
+      # Tool calls (multiple)
+      - attribute: "gen_ai.response.message.tool_calls"
+        path: "result.choices[0].message.tool_calls"
+        type: "array"
+        required: false
+        flatten_to:
+          - attribute: "gen_ai.response.message.tool_calls.{index}.id"
+            path: "id"
+
+          - attribute: "gen_ai.response.message.tool_calls.{index}.type"
+            path: "type"
+
+          - attribute: "gen_ai.response.message.tool_calls.{index}.function.name"
+            path: "function.name"
+
+          - attribute: "gen_ai.response.message.tool_calls.{index}.function.arguments"
+            path: "function.arguments"
+            max_length: 5000
+
+      # Token usage
+      - attribute: "gen_ai.usage.prompt_tokens"
+        path: "result.usage.prompt_tokens"
+        type: "int"
+
+      - attribute: "gen_ai.usage.completion_tokens"
+        path: "result.usage.completion_tokens"
+        type: "int"
+
+      - attribute: "gen_ai.usage.total_tokens"
+        path: "result.usage.total_tokens"
+        type: "int"
+
+      # Latency (calculated by interceptor)
+      - attribute: "gen_ai.response.latency_ms"
+        path: "latency_ms"
+        type: "float"
+
+    # ============================================================================
+    # EXTRACT ON ERROR: Capture error details
+    # ============================================================================
+    extract_on_error:
+      - attribute: "error.type"
+        path: "exception.__class__.__name__"
+        type: "string"
+
+      - attribute: "error.message"
+        path: "exception.message"
+        type: "string"
+
+      - attribute: "error.stack_trace"
+        path: "exception.__traceback__"
+        type: "string"
+        transform: "format_traceback"
+
+      # OpenAI-specific error attributes
+      - attribute: "error.openai.code"
+        path: "exception.code"
+        type: "string"
+        required: false
+
+      - attribute: "error.openai.type"
+        path: "exception.type"
+        type: "string"
+        required: false
+
+      - attribute: "error.openai.param"
+        path: "exception.param"
+        type: "string"
+        required: false
+
+  # ============================================================================
+  # Target 2: Chat Completions (Streaming)
+  # ============================================================================
+  - target_id: "chat_completions_create_stream"
+    description: "Instrument streaming chat completions API calls"
+
+    location:
+      module: "openai.resources.chat.completions"
+      class: "Completions"
+      method: "create"
+      # Only instrument when streaming
+      condition:
+        path: "kwargs.stream"
+        equals: true
+
+    span_config:
+      name: "openai.chat.completions.create.stream"
+      kind: "CLIENT"
+      semantic_convention: "gen_ai"
+
+    # Streaming-specific configuration
+    streaming:
+      enabled: true
+      capture_chunks: true
+      max_chunks: 100  # Limit memory usage
+      aggregate_on_complete: true
+
+    # Extract before (same as non-streaming)
+    extract_before:
+      - attribute: "gen_ai.system"
+        value: "openai"
+
+      - attribute: "gen_ai.request.model"
+        path: "kwargs.model"
+        type: "string"
+        required: true
+
+      - attribute: "gen_ai.request.stream"
+        value: true
+        type: "boolean"
+
+      # ... (same as non-streaming, abbreviated for brevity)
+
+    # Extract per chunk (during streaming)
+    extract_per_chunk:
+      - attribute: "gen_ai.response.chunk.{index}.id"
+        path: "chunk.id"
+        type: "string"
+
+      - attribute: "gen_ai.response.chunk.{index}.delta.role"
+        path: "chunk.choices[0].delta.role"
+        type: "string"
+        required: false
+
+      - attribute: "gen_ai.response.chunk.{index}.delta.content"
+        path: "chunk.choices[0].delta.content"
+        type: "string"
+        required: false
+
+      - attribute: "gen_ai.response.chunk.{index}.finish_reason"
+        path: "chunk.choices[0].finish_reason"
+        type: "string"
+        required: false
+
+    # Extract after stream completes
+    extract_after_stream:
+      - attribute: "gen_ai.response.message.content"
+        aggregate: "chunks"  # Combine all chunk deltas
+        transform: "aggregate_stream_content"
+
+      - attribute: "gen_ai.response.finish_reason"
+        aggregate: "last_chunk"
+        path: "choices[0].finish_reason"
+
+      - attribute: "gen_ai.response.stream.chunks_count"
+        aggregate: "count"
+
+      - attribute: "gen_ai.response.latency_ms"
+        path: "latency_ms"
+        type: "float"
+
+      # Note: Token usage not available in streaming mode
+      - attribute: "gen_ai.usage.total_tokens"
+        value: null
+        description: "Token usage not available in streaming"
+
+    extract_on_error:
+      # Same as non-streaming
+      - attribute: "error.type"
+        path: "exception.__class__.__name__"
+        type: "string"
+
+  # ============================================================================
+  # Target 3: Embeddings
+  # ============================================================================
+  - target_id: "embeddings_create"
+    description: "Instrument embeddings API calls"
+
+    location:
+      module: "openai.resources.embeddings"
+      class: "Embeddings"
+      method: "create"
+
+    span_config:
+      name: "openai.embeddings.create"
+      kind: "CLIENT"
+      semantic_convention: "gen_ai"
+
+    extract_before:
+      - attribute: "gen_ai.system"
+        value: "openai"
+
+      - attribute: "gen_ai.operation.name"
+        value: "embeddings"
+
+      - attribute: "gen_ai.request.model"
+        path: "kwargs.model"
+        type: "string"
+        required: true
+
+      # Input can be string or array
+      - attribute: "gen_ai.request.input"
+        path: "kwargs.input"
+        type: "auto"  # Auto-detect string vs array
+        max_length: 5000
+
+      - attribute: "gen_ai.request.encoding_format"
+        path: "kwargs.encoding_format"
+        type: "string"
+        default: "float"
+
+      - attribute: "gen_ai.request.user"
+        path: "kwargs.user"
+        type: "string"
+        required: false
+
+    extract_after:
+      - attribute: "gen_ai.response.model"
+        path: "result.model"
+        type: "string"
+
+      - attribute: "gen_ai.response.embeddings.count"
+        path: "result.data"
+        transform: "count_array"
+
+      - attribute: "gen_ai.response.embeddings.dimensions"
+        path: "result.data[0].embedding"
+        transform: "count_array"
+
+      - attribute: "gen_ai.usage.prompt_tokens"
+        path: "result.usage.prompt_tokens"
+        type: "int"
+
+      - attribute: "gen_ai.usage.total_tokens"
+        path: "result.usage.total_tokens"
+        type: "int"
+
+      - attribute: "gen_ai.response.latency_ms"
+        path: "latency_ms"
+        type: "float"
+
+# ============================================================================
+# Custom Transformations
+# ============================================================================
+transforms:
+  # Format Python traceback
+  format_traceback:
+    type: "python"
+    code: |
+      import traceback
+      if value and hasattr(value, 'tb_frame'):
+        return ''.join(traceback.format_tb(value))
+      return str(value)
+
+  # Aggregate streaming content
+  aggregate_stream_content:
+    type: "python"
+    code: |
+      # Combine all chunk deltas into final content
+      chunks = context.get('chunks', [])
+      content_parts = []
+      for chunk in chunks:
+        delta_content = chunk.get('choices', [{}])[0].get('delta', {}).get('content')
+        if delta_content:
+          content_parts.append(delta_content)
+      return ''.join(content_parts)
+
+  # Count array elements
+  count_array:
+    type: "python"
+    code: |
+      if isinstance(value, list):
+        return len(value)
+      return 0
+
+# ============================================================================
+# Validation Rules (for CI/CD)
+# ============================================================================
+validation:
+  required_attributes:
+    - "gen_ai.system"
+    - "gen_ai.request.model"
+
+  attribute_constraints:
+    "gen_ai.request.temperature":
+      min: 0.0
+      max: 2.0
+
+    "gen_ai.request.top_p":
+      min: 0.0
+      max: 1.0
+
+  # Ensure consistency with translation DSL
+  translation_consistency:
+    provider: "openai"
+    convention: "gen_ai"
+    required_for_translation:
+      - "gen_ai.system"
+      - "gen_ai.request.model"
+      - "gen_ai.request.messages"
+      - "gen_ai.response.message.content"

@@ -5,6 +5,9 @@ including merging config objects with individual parameters for backwards
 compatibility and creating unified flattened configurations.
 """
 
+# pylint: disable=too-many-branches
+# Justification: Config merging logic requires comprehensive validation branches
+
 from typing import Any, Optional, Tuple
 
 from ..utils.dotdict import DotDict

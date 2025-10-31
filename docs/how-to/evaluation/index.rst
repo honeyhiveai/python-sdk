@@ -4,7 +4,8 @@ Evaluation & Analysis Guides
 **Problem-solving guides** for running experiments and evaluating LLM outputs in HoneyHive.
 
 .. tip::
-   **New to experiments?** Start with the :doc:`../../how-to/evaluation/index` tutorial first.
+   **New to experiments?** Start with the :doc:`../../tutorials/05-run-first-experiment` tutorial first.
+   It walks you through running your first experiment with evaluators in 15 minutes!
 
 .. toctree::
    :maxdepth: 1
