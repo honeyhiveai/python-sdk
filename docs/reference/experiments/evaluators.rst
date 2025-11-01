@@ -43,7 +43,6 @@ Evaluators assess the quality of LLM outputs. HoneyHive uses a modern **decorato
 
       def my_evaluator(outputs, inputs, ground_truth):
 
-
           Args:
               outputs: Dict returned by your function
               inputs: Dict from datapoint["inputs"]
@@ -53,7 +52,6 @@ Evaluators assess the quality of LLM outputs. HoneyHive uses a modern **decorato
               Dict with "score" and optional metrics,
               or float (interpreted as score),
               or bool (1.0 if True, 0.0 if False)
-
 
           return {"score": 0.9, "passed": True}
 

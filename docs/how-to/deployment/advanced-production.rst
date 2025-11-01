@@ -1,65 +1,49 @@
 Advanced Production Patterns
 ============================
 
-
 **Problem:** You need advanced resilience patterns, custom monitoring implementations, and sophisticated deployment strategies for mission-critical production environments.
 
-
 **Solution:** Implement these advanced patterns for production-grade reliability and observability.
-
 
 .. note::
    **Prerequisites**
    
-   
    Before implementing these advanced patterns, ensure you have:
-   
    
    - Basic production deployment working (see :doc:`production`)
    - Understanding of circuit breakers and resilience patterns
    - Monitoring infrastructure in place
    - Staging environment for testing
 
-
 This guide covers advanced patterns beyond basic production deployment.
-
 
 Circuit Breaker Pattern
 -----------------------
 
-
 **When to Use:**
-
 
 - High-volume applications where HoneyHive failures shouldn't impact your service
 - Mission-critical systems requiring graceful degradation
 - Applications with strict uptime SLAs
 
-
 **Implementation:**
 
-
 .. code-block:: python
-
 
    import time
    from enum import Enum
    from honeyhive import HoneyHiveTracer
    import logging
    
-   
    logger = logging.getLogger(__name__)
-   
    
    class CircuitState(Enum):
        CLOSED = "closed"      # Normal operation - requests allowed
        OPEN = "open"          # Failing - requests blocked  
        HALF_OPEN = "half_open"  # Testing recovery - limited requests
    
-   
    class HoneyHiveCircuitBreaker:
        """Circuit breaker for HoneyHive tracer initialization."""
-       
        
        def __init__(
            self,
@@ -71,7 +55,6 @@ Circuit Breaker Pattern
            self.recovery_timeout = recovery_timeout
            self.half_open_max_calls = half_open_max_calls
            
-           
            self.failure_count = 0
            self.success_count = 0
            self.half_open_calls = 0
@@ -79,10 +62,8 @@ Circuit Breaker Pattern
            self.state = CircuitState.CLOSED
            self.tracer = None
        
-       
        def get_tracer(self):
            """Get tracer with circuit breaker protection."""
-           
            
            # Circuit is OPEN - block requests
            if self.state == CircuitState.OPEN:
@@ -94,13 +75,11 @@ Circuit Breaker Pattern
                    # Still in cooldown period
                    return None
            
-           
            # Circuit is HALF_OPEN - limited testing
            if self.state == CircuitState.HALF_OPEN:
                if self.half_open_calls >= self.half_open_max_calls:
                    return None  # Max test calls reached
                self.half_open_calls += 1
-           
            
            # Try to get/create tracer
            if self.state in [CircuitState.CLOSED, CircuitState.HALF_OPEN]:
@@ -111,7 +90,6 @@ Circuit Breaker Pattern
                            project=os.getenv("HH_PROJECT")
                        )
                    
-                   
                    # Success - update state
                    if self.state == CircuitState.HALF_OPEN:
                        self.success_count += 1
@@ -121,15 +99,12 @@ Circuit Breaker Pattern
                            self.failure_count = 0
                            self.success_count = 0
                    
-                   
                    return self.tracer
-               
                
                except Exception as e:
                    self.failure_count += 1
                    self.last_failure_time = time.time()
                    logger.warning(f"HoneyHive tracer failure #{self.failure_count}: {e}")
-                   
                    
                    if self.failure_count >= self.failure_threshold:
                        self.state = CircuitState.OPEN
@@ -137,9 +112,7 @@ Circuit Breaker Pattern
                            f"Circuit breaker OPENED after {self.failure_count} failures"
                        )
                    
-                   
                    return None
-   
    
    # Global circuit breaker instance
    honeyhive_circuit_breaker = HoneyHiveCircuitBreaker(
@@ -147,18 +120,15 @@ Circuit Breaker Pattern
        recovery_timeout=60
    )
    
-   
    def get_safe_tracer():
        """Get tracer with circuit breaker protection."""
        tracer = honeyhive_circuit_breaker.get_tracer()
-       
        
        if not tracer:
            logger.warning("HoneyHive tracer unavailable (circuit breaker active)")
        
        
        return tracer
-   
    
    # Usage in application
    tracer = get_safe_tracer()
@@ -168,21 +138,16 @@ Circuit Breaker Pattern
        instrumentor = OpenAIInstrumentor()
        instrumentor.instrument(tracer_provider=tracer.provider)
 
-
 **Benefits:**
-
 
 - Prevents cascading failures
 - Automatic recovery testing
 - Graceful degradation
 - Reduced error noise in logs
 
-
 **Monitoring Circuit Breaker:**
 
-
 .. code-block:: python
-
 
    def get_circuit_breaker_metrics():
        """Get current circuit breaker state for monitoring."""
@@ -193,24 +158,18 @@ Circuit Breaker Pattern
            "is_available": honeyhive_circuit_breaker.state != CircuitState.OPEN
        }
 
-
 Custom Monitoring Implementation
 --------------------------------
 
-
 **When to Use:**
-
 
 - Need detailed metrics about tracing performance
 - Custom alerting requirements
 - Integration with existing monitoring systems (Prometheus, DataDog, etc.)
 
-
 **Comprehensive Monitoring Class:**
 
-
 .. code-block:: python
-
 
    import time
    import logging
@@ -219,11 +178,9 @@ Custom Monitoring Implementation
    from dataclasses import dataclass, field
    from datetime import datetime
    
-   
    @dataclass
    class TracingMetrics:
        """Comprehensive tracing metrics collector."""
-       
        
        trace_count: int = 0
        trace_errors: int = 0
@@ -231,7 +188,6 @@ Custom Monitoring Implementation
        error_types: Dict[str, int] = field(default_factory=lambda: defaultdict(int))
        traces_by_endpoint: Dict[str, int] = field(default_factory=lambda: defaultdict(int))
        last_reset: float = field(default_factory=time.time)
-       
        
        def record_trace(
            self,
@@ -333,15 +289,11 @@ Custom Monitoring Implementation
            return wrapper
        return decorator
 
-
 **Prometheus Integration:**
-
 
 .. code-block:: python
 
-
    from prometheus_client import Counter, Histogram, Gauge
-   
    
    # Define Prometheus metrics
    trace_counter = Counter(
@@ -391,36 +343,28 @@ Custom Monitoring Implementation
            CircuitState.HALF_OPEN: 1,
            CircuitState.OPEN: 2
        }
-       circuit_breaker_state.set(
-           state_mapping.get(honeyhive_circuit_breaker.state, 0)
-       )
-
+      circuit_breaker_state.set(
+          state_mapping.get(honeyhive_circuit_breaker.state, 0)
+      )
 
 Blue-Green Deployment Strategy
 ------------------------------
 
-
 **When to Use:**
-
 
 - Zero-downtime tracing configuration changes
 - Safe rollout of new HoneyHive features
 - A/B testing tracing strategies
 
-
 **Implementation:**
 
-
 .. code-block:: python
-
 
    import os
    from honeyhive import HoneyHiveTracer
    
-   
    class DeploymentManager:
        """Manage blue-green deployments for tracing."""
-       
        
        def __init__(self):
            self.current_environment = os.getenv("DEPLOYMENT_ENV", "blue")
@@ -474,16 +418,13 @@ Blue-Green Deployment Strategy
    deployment_manager = DeploymentManager()
    tracer = deployment_manager.create_environment_tracer()
 
-
 **Canary Deployment with Gradual Rollout:**
-
 
 .. code-block:: python
 
-
    import random
    
-   
+
    class CanaryDeploymentManager:
        """Gradual rollout with canary deployment."""
        
@@ -522,15 +463,11 @@ Blue-Green Deployment Strategy
    
    canary_manager = CanaryDeploymentManager()
 
-
 **Traffic-Based Routing:**
-
 
 .. code-block:: python
 
-
    from flask import request
-   
    
    def get_deployment_tracer():
        """Route to different tracers based on request headers."""
@@ -544,57 +481,44 @@ Blue-Green Deployment Strategy
            return canary_manager.canary_tracer
        elif deployment_tier == "experimental":
            return create_experimental_tracer()
-       else:
-           return canary_manager.stable_tracer
-
+      else:
+          return canary_manager.stable_tracer
 
 Best Practices
 --------------
 
-
 **1. Circuit Breaker Configuration:**
-
 
 - Set `failure_threshold` based on your error budget (typically 3-5 failures)
 - Set `recovery_timeout` to allow time for issues to resolve (60-120 seconds)
 - Monitor circuit breaker state changes
 
-
 **2. Monitoring Strategy:**
-
 
 - Export metrics every 60 seconds
 - Alert on error rate > 5%
 - Alert on circuit breaker state changes
 - Dashboard all key metrics
 
-
 **3. Deployment Safety:**
-
 
 - Start with 5% canary traffic
 - Increase to 25%, then 50%, then 100% over 24-48 hours
 - Monitor error rates at each stage
 - Have rollback procedure ready
 
-
 **4. Performance Tuning:**
-
 
 - Use connection pooling for high-volume applications
 - Batch trace exports (handled automatically by SDK)
 - Monitor trace latency - should be <10ms
 
-
 Integration Examples
 --------------------
 
-
 **Complete Production Setup:**
 
-
 .. code-block:: python
-
 
    """
    production_tracing.py - Complete production tracing setup
@@ -605,13 +529,10 @@ Integration Examples
    import logging
    import time
    
-   
    logger = logging.getLogger(__name__)
-   
    
    # Initialize with all advanced patterns
    tracer = None
-   
    
    try:
        # Circuit breaker protected initialization
@@ -652,18 +573,11 @@ Integration Examples
    metrics_thread = threading.Thread(target=export_metrics_loop, daemon=True)
    metrics_thread.start()
 
-
 Next Steps
 ----------
-
 
 - :doc:`production` - Basic production deployment guide
 - :doc:`/how-to/monitoring/index` - Monitoring and alerting
 - :doc:`/how-to/llm-application-patterns` - Application architecture patterns
 
-
 **Key Takeaway:** Advanced production patterns provide resilience, comprehensive monitoring, and safe deployment strategies for mission-critical applications. Implement these patterns when basic deployment isn't enough for your reliability requirements. ✨
-
-
-
-

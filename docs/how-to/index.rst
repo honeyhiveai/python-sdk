@@ -79,7 +79,6 @@ Test your LLM application with HoneyHive tracing:
    
    For testing the HoneyHive SDK itself (SDK contributors), see :doc:`../development/index`.
 
-
 Evaluate LLM Outputs
 --------------------
 

@@ -309,10 +309,9 @@ Choose Your Instrumentor
        # Step 2: Initialize instrumentors separately with tracer_provider
        # REPLACE_WITH_INSTRUMENTOR_SETUP
                BedrockInstrumentor(),
-               OpenAIInstrumentor()
-           ]
-       )
-
+              OpenAIInstrumentor()
+          ]
+      )
 
 4. **Environment Configuration**
    
@@ -589,7 +588,6 @@ Choose Your Instrumentor
    
       # Traceloop instrumentors handle batching automatically
       # No additional configuration needed for performance
-
 
 5. **Environment Configuration**
    

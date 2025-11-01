@@ -267,9 +267,8 @@ Choose Your Instrumentor
        anthropic_instrumentor = AnthropicInstrumentor()
        openai_instrumentor = OpenAIInstrumentor()
        
-       anthropic_instrumentor.instrument(tracer_provider=tracer.provider)
-       openai_instrumentor.instrument(tracer_provider=tracer.provider)
-
+      anthropic_instrumentor.instrument(tracer_provider=tracer.provider)
+      openai_instrumentor.instrument(tracer_provider=tracer.provider)
 
 4. **Environment Configuration**
    
@@ -501,7 +500,6 @@ Choose Your Instrumentor
    
       # Traceloop instrumentors handle batching automatically
       # No additional configuration needed for performance
-
 
 5. **Environment Configuration**
    

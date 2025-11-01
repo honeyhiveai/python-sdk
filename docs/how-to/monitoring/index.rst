@@ -18,6 +18,4 @@ Production LLM applications require comprehensive monitoring to ensure reliabili
 - User experience indicators
 - System reliability patterns
 
-
-
 See the monitoring guide above for detailed information.

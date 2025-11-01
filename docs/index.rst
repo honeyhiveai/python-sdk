@@ -207,8 +207,6 @@ New to HoneyHive? Start here:
    changelog
    development/index
 
-
-
 📦 **Installation**
 
 .. code-block:: bash

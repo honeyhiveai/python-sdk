@@ -1,20 +1,13 @@
 Advanced Setup and Configuration
 ================================
 
-
 .. note::
    **Tutorial Goal**: Master advanced HoneyHive configurations for complex production scenarios including multi-environment setups, custom instrumentors, and enterprise features.
 
-
-
-
-
 This tutorial covers advanced setup scenarios that go beyond basic installation, designed for production deployments and complex architectures.
-
 
 What You'll Learn
 -----------------
-
 
 - Multi-environment configuration strategies
 - Multi-instance architecture for complex applications
@@ -24,32 +17,24 @@ What You'll Learn
 - Enterprise security configurations
 - Custom evaluation pipelines
 
-
 Prerequisites
 -------------
-
 
 - Complete all basic tutorials (:doc:`01-setup-first-tracer` through :doc:`03-enable-span-enrichment`)
 - Familiarity with OpenTelemetry concepts
 - Production deployment experience
 - Understanding of your application architecture
 
-
 Multi-Environment Configuration
 -------------------------------
 
-
 **Problem**: You need different HoneyHive configurations for development, staging, and production environments.
-
 
 **Solution**: Environment-based configuration with inheritance and overrides.
 
-
 **Step 1: Create Configuration Classes**
 
-
 .. code-block:: python
-
 
    # config/honeyhive_config.py
    from dataclasses import dataclass
@@ -139,15 +124,9 @@ Multi-Environment Configuration
        flush_interval: float = 10.0  # Less frequent flushing
        timeout: float = 60.0  # Longer timeout for stability
 
-
-
-
-
 **Step 2: Initialize with Environment Configuration**
 
-
 .. code-block:: python
-
 
    # main.py
    from honeyhive import HoneyHiveTracer
@@ -210,15 +189,9 @@ Multi-Environment Configuration
    # Global tracer instance
    tracer = initialize_tracing()
 
-
-
-
-
 **Step 3: Environment-Specific Docker Configuration**
 
-
 .. code-block:: dockerfile
-
 
    # Dockerfile
    FROM python:3.11-slim
@@ -252,12 +225,7 @@ Multi-Environment Configuration
    
    CMD ["python", "main.py"]
 
-
-
-
-
 .. code-block:: yaml
-
 
    # docker-compose.yml
    version: '3.8'
@@ -290,22 +258,14 @@ Multi-Environment Configuration
          - ENVIRONMENT=production
          - HH_API_KEY_PROD=${HH_API_KEY_PROD}
 
-
-
-
-
 Multi-Instance Architecture
 ---------------------------
 
-
 **Problem**: You need multiple independent HoneyHive tracers in the same application for different services, teams, or workflows.
-
 
 **Solution**: Use HoneyHive's multi-instance architecture with intelligent provider strategy selection.
 
-
 **Use Cases for Multi-Instance Architecture:**
-
 
 - **Microservices**: Each service has its own tracer with different projects
 - **Multi-tenant applications**: Separate tracing per tenant or customer
@@ -313,12 +273,9 @@ Multi-Instance Architecture
 - **Environment separation**: Dev/staging/prod tracers in the same codebase
 - **Workflow separation**: Different AI workflows tracked separately
 
-
 **Step 1: Create Multiple Tracer Instances**
 
-
 .. code-block:: python
-
 
    from honeyhive import HoneyHiveTracer
    from openinference.instrumentation.openai import OpenAIInstrumentor
@@ -357,15 +314,9 @@ Multi-Instance Architecture
        source="analytics-service"        # Different source
    )
 
-
-
-
-
 **Step 2: Configure Instrumentors Per Tracer**
 
-
 .. code-block:: python
-
 
    # Each tracer gets its own instrumentor configuration
    
@@ -397,15 +348,9 @@ Multi-Instance Architecture
    anthropic_analytics = AnthropicInstrumentor()
    anthropic_analytics.instrument(tracer_provider=analytics_tracer.provider)
 
-
-
-
-
 **Step 3: Use Tracers in Application Code**
 
-
 .. code-block:: python
-
 
    from honeyhive import trace
    
@@ -434,18 +379,11 @@ Multi-Instance Architecture
        )
        return response.content[0].text
 
-
-
-
-
 **Provider Strategy Intelligence in Multi-Instance Setups**
-
 
 HoneyHive automatically handles complex provider scenarios:
 
-
 .. code-block:: python
-
 
    # Scenario 1: First tracer becomes main provider
    tracer1 = HoneyHiveTracer.init(
@@ -473,12 +411,7 @@ HoneyHive automatically handles complex provider scenarios:
    # - OpenAI spans → tracer1 (main provider) → project-1
    # - HoneyHive spans from tracer2 → tracer2 (independent) → project-2
 
-
-
-
-
 **Best Practices for Multi-Instance Architecture:**
-
 
 1. **Use descriptive project names**: ``customer-support-ai``, ``content-generation``
 2. **Set different sources**: ``support-service``, ``content-service``
@@ -486,12 +419,9 @@ HoneyHive automatically handles complex provider scenarios:
 4. **Store tracer references**: Use dependency injection or global variables
 5. **Monitor provider strategy**: Check ``is_main_provider`` flag in logs
 
-
 **Verification Commands:**
 
-
 .. code-block:: python
-
 
    # Check tracer configuration
    for tracer in [support_tracer, content_tracer, analytics_tracer]:
@@ -501,25 +431,16 @@ HoneyHive automatically handles complex provider scenarios:
        print(f"Provider: {type(tracer.provider).__name__}")
        print("---")
 
-
-
-
-
 Custom Instrumentor Development
 -------------------------------
 
-
 **Problem**: You're using an LLM provider that doesn't have an existing instrumentor.
-
 
 **Solution**: Build a custom instrumentor following OpenTelemetry patterns.
 
-
 **Step 1: Create Base Instrumentor Structure**
 
-
 .. code-block:: python
-
 
    # instrumentors/custom_llm_instrumentor.py
    from opentelemetry.instrumentation.instrumentor import BaseInstrumentor
@@ -675,15 +596,9 @@ Custom Instrumentor Development
        
        sdk_module.Completion.create = wrapped_create
 
-
-
-
-
 **Step 2: Advanced Instrumentor with Context Extraction**
 
-
 .. code-block:: python
-
 
    # instrumentors/advanced_custom_instrumentor.py
    from opentelemetry.instrumentation.instrumentor import BaseInstrumentor
@@ -863,15 +778,9 @@ Custom Instrumentor Development
            
            sdk_module.Chat.create = wrapped_create
 
-
-
-
-
 **Step 3: Use Custom Instrumentor with HoneyHive**
 
-
 .. code-block:: python
-
 
    # main.py
    from honeyhive import HoneyHiveTracer
@@ -921,25 +830,16 @@ Custom Instrumentor Development
        messages=[{"role": "user", "content": "Hello!"}]
    )
 
-
-
-
-
 Microservices Tracing Architecture
 ----------------------------------
 
-
 **Problem**: You have a microservices architecture and need distributed tracing across services.
-
 
 **Solution**: Context propagation and service-specific tracing configuration.
 
-
 **Step 1: Service Base Class with Tracing**
 
-
 .. code-block:: python
-
 
    # services/base_service.py
    from honeyhive import HoneyHiveTracer, trace
@@ -1049,15 +949,9 @@ Microservices Tracing Architecture
            # This should be called at the beginning of request handlers
            extract(headers)
 
-
-
-
-
 **Step 2: Service-Specific Implementation**
 
-
 .. code-block:: python
-
 
    # services/llm_service.py
    from services.base_service import BaseService
@@ -1128,12 +1022,6 @@ Microservices Tracing Architecture
                User Context: {user_context.get('preferences', {})}
                Request: {prompt}
 
-
-
-
-
-
-
            else:
                enhanced_prompt = prompt
 
@@ -1188,15 +1076,9 @@ Microservices Tracing Architecture
                return "translation"
            return "general"
 
-
-
-
-
 **Step 3: API Gateway with Distributed Tracing**
 
-
 .. code-block:: python
-
 
    # services/api_gateway.py
    from flask import Flask, request, jsonify
@@ -1318,25 +1200,16 @@ Microservices Tracing Architecture
        except Exception as e:
            return jsonify({"error": str(e)}), 500
 
-
-
-
-
 Performance Optimization Techniques
 -----------------------------------
 
-
 **Problem**: You need to optimize HoneyHive performance for high-throughput applications.
-
 
 **Solution**: Advanced configuration and sampling strategies.
 
-
 **Step 1: Intelligent Sampling**
 
-
 .. code-block:: python
-
 
    # performance/sampling.py
    from honeyhive import HoneyHiveTracer, trace
@@ -1495,15 +1368,9 @@ Performance Optimization Techniques
            return wrapper
        return decorator
 
-
-
-
-
 **Step 2: Batch Processing Optimization**
 
-
 .. code-block:: python
-
 
    # performance/batch_processing.py
    from honeyhive import HoneyHiveTracer, trace, enrich_span
@@ -1686,25 +1553,16 @@ Performance Optimization Techniques
            # Actual processing logic here
            return {"processed": True, "original": item}
 
-
-
-
-
 Custom Evaluation Pipelines
 ---------------------------
 
-
 **Problem**: You need sophisticated evaluation pipelines for your specific use case.
-
 
 **Solution**: Build custom evaluation architecture with HoneyHive integration.
 
-
 **Step 1: Advanced Evaluation Framework**
 
-
 .. code-block:: python
-
 
    # evaluation/advanced_framework.py
    from honeyhive import HoneyHiveTracer, trace, enrich_span
@@ -1966,25 +1824,16 @@ Custom Evaluation Pipelines
                "sample_count": len(samples)
            }
 
-
-
-
-
 Enterprise Security Configuration
 ---------------------------------
 
-
 **Problem**: You need enterprise-grade security for HoneyHive in a corporate environment.
-
 
 **Solution**: Implement comprehensive security measures and audit logging.
 
-
 **Step 1: Secure Configuration Management**
 
-
 .. code-block:: python
-
 
    # security/secure_config.py
    import os
@@ -2231,12 +2080,7 @@ Enterprise Security Configuration
            audit_logger = self._get_audit_logger()
            audit_logger.warning(f"SECURITY WARNING: {message}")
 
-
-
-
-
 This advanced setup tutorial provides comprehensive guidance for complex production scenarios. The content covers real-world challenges that enterprise users face when implementing LLM observability at scale.
-
 
 <function_calls>
 <invoke name="todo_write">

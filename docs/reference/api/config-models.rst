@@ -95,7 +95,6 @@ BaseHoneyHiveConfig
    
    config = BaseHoneyHiveConfig()  # Loads from environment
 
-
 Domain-Specific Configuration Classes
 =====================================
 
@@ -539,7 +538,6 @@ ExperimentConfig
        experiment_group="control",
        experiment_metadata={"model": "gpt-4", "temperature": 0.7}
    )
-
 
 Environment Variable Integration
 ================================

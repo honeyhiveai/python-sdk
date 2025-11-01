@@ -1,29 +1,21 @@
 Running Experiments
 ===================
 
-
 How do I run experiments to test my LLM application?
 ----------------------------------------------------
 
-
 Use the ``evaluate()`` function to run your application across a dataset and track results.
-
 
 What's the simplest way to run an experiment?
 ---------------------------------------------
 
-
 **Three-Step Pattern**
-
 
 .. versionchanged:: 1.0
 
-
    Function signature changed from ``(inputs, ground_truths)`` to ``(datapoint: Dict[str, Any])``.
 
-
 .. code-block:: python
-
 
    from typing import Any, Dict
    from honeyhive.experiments import evaluate
@@ -66,19 +58,14 @@ What's the simplest way to run an experiment?
    print(f"✅ Run ID: {result.run_id}")
    print(f"✅ Status: {result.status}")
 
-
 How should I structure my test data?
 ------------------------------------
 
-
 **Use inputs + ground_truths Pattern**
-
 
 Each datapoint in your dataset should have:
 
-
 .. code-block:: python
-
 
    {
        "inputs": {
@@ -95,12 +82,9 @@ Each datapoint in your dataset should have:
        }
    }
 
-
 **Complete Example:**
 
-
 .. code-block:: python
-
 
    dataset = [
        {
@@ -125,25 +109,18 @@ Each datapoint in your dataset should have:
        }
    ]
 
-
 What signature must my function have?
 -------------------------------------
 
-
 **Accept datapoint Parameter (v1.0)**
-
 
 .. versionchanged:: 1.0
 
-
    Function signature changed from ``(inputs, ground_truths)`` to ``(datapoint: Dict[str, Any])``.
-
 
 Your function MUST accept a ``datapoint`` parameter:
 
-
 .. code-block:: python
-
 
    from typing import Any, Dict
    
@@ -178,7 +155,6 @@ Your function MUST accept a ``datapoint`` parameter:
        # Return dict
        return {"answer": result, "metadata": {...}}
 
-
 .. important::
    - Accept **one parameter**: ``datapoint: Dict[str, Any]``
    - Extract ``inputs`` with ``datapoint.get("inputs", {})``
@@ -186,19 +162,14 @@ Your function MUST accept a ``datapoint`` parameter:
    - Return value should be a **dictionary**
    - **Type hints are strongly recommended**
 
-
 **Backward Compatibility (Deprecated):**
 
-
 .. deprecated:: 1.0
-
 
    The old ``(inputs, ground_truths)`` signature is deprecated but still supported
    for backward compatibility. It will be removed in v2.0.
 
-
 .. code-block:: python
-
 
    # ⚠️ Deprecated: Old signature (still works in v1.0)
    def old_style_function(inputs, ground_truths):
@@ -211,26 +182,19 @@ Your function MUST accept a ``datapoint`` parameter:
        inputs = datapoint.get("inputs", {})
        return {"output": inputs["query"]}
 
-
 How do I enrich sessions or spans during evaluation?
 ----------------------------------------------------
 
-
 .. versionadded:: 1.0
-
 
    You can now receive a ``tracer`` parameter in your evaluation function.
 
-
 **Use the tracer Parameter for Advanced Tracing**
-
 
 If your function needs to enrich sessions or use the tracer instance,
 add a ``tracer`` parameter to your function signature:
 
-
 .. code-block:: python
-
 
    from typing import Any, Dict
    from honeyhive import HoneyHiveTracer
@@ -282,35 +246,27 @@ add a ``tracer`` parameter to your function signature:
        name="experiment-v1"
    )
 
-
 .. important::
    - The ``tracer`` parameter is **optional** - only add it if needed
    - The tracer is **automatically injected** by ``evaluate()``
    - Use it to call ``enrich_session()`` or access the tracer instance
    - Each datapoint gets its own tracer instance (multi-instance architecture)
 
-
 **Without tracer parameter (simpler):**
 
-
 .. code-block:: python
-
 
    def simple_function(datapoint: Dict[str, Any]) -> Dict[str, Any]:
        """Function without tracer access."""
        inputs = datapoint.get("inputs", {})
        return {"answer": process_query(inputs["query"])}
 
-
 My experiments are too slow on large datasets
 ---------------------------------------------
 
-
 **Use max_workers for Parallel Processing**
 
-
 .. code-block:: python
-
 
    # Slow: Sequential processing (default)
    result = evaluate(
@@ -332,12 +288,9 @@ My experiments are too slow on large datasets
    )
    # Takes: ~50 seconds (20x faster)
 
-
 **Choosing max_workers:**
 
-
 .. code-block:: python
-
 
    # Conservative (good for API rate limits)
    max_workers=5
@@ -350,16 +303,12 @@ My experiments are too slow on large datasets
    # Aggressive (fast but watch rate limits)
    max_workers=20
 
-
 How do I avoid hardcoding credentials?
 --------------------------------------
 
-
 **Use Environment Variables**
 
-
 .. code-block:: python
-
 
    import os
    
@@ -376,21 +325,16 @@ How do I avoid hardcoding credentials?
        name="Experiment v1"
    )
 
-
 **Or use a .env file:**
 
-
 .. code-block:: bash
-
 
    # .env file
    HH_API_KEY=your-api-key
    HH_PROJECT=your-project
    HH_SOURCE=dev  # Optional: environment identifier
 
-
 .. code-block:: python
-
 
    from dotenv import load_dotenv
    load_dotenv()
@@ -403,16 +347,12 @@ How do I avoid hardcoding credentials?
        name="Experiment v1"
    )
 
-
 How should I name my experiments?
 ---------------------------------
 
-
 **Use Descriptive, Versioned Names**
 
-
 .. code-block:: python
-
 
    # ❌ Bad: Generic names
    name="test"
@@ -426,12 +366,9 @@ How should I name my experiments?
    name="rag-with-reranking-v1"
    name="production-candidate-2024-01-15"
 
-
 **Naming Convention:**
 
-
 .. code-block:: python
-
 
    # Format: {change-description}-{version}
    evaluate(
@@ -451,16 +388,12 @@ How should I name my experiments?
        project="your-project"
    )
 
-
 How do I access experiment results in code?
 -------------------------------------------
 
-
 **Use the Returned EvaluationResult Object**
 
-
 .. code-block:: python
-
 
    result = evaluate(
        function=my_function,
@@ -487,16 +420,12 @@ How do I access experiment results in code?
    # Export to JSON
    result.to_json()  # Saves to {suite_name}.json
 
-
 I want to see what's happening during evaluation
 ------------------------------------------------
 
-
 **Enable Verbose Output**
 
-
 .. code-block:: python
-
 
    result = evaluate(
        function=my_function,
@@ -512,16 +441,12 @@ I want to see what's happening during evaluation
    # Processing datapoint 2/10...
    # ...
 
-
 Show me a complete real-world example
 -------------------------------------
 
-
 **Question Answering Pipeline (v1.0)**
 
-
 .. code-block:: python
-
 
    from typing import Any, Dict
    from honeyhive.experiments import evaluate
@@ -607,10 +532,8 @@ Show me a complete real-world example
    print(f"📊 Run ID: {result.run_id}")
    print(f"🔗 View in dashboard: https://app.honeyhive.ai/projects/qa-system")
 
-
 See Also
 --------
-
 
 - :doc:`creating-evaluators` - Add metrics to your experiments
 - :doc:`dataset-management` - Use datasets from HoneyHive UI

@@ -1,33 +1,24 @@
 Enable Span Enrichment
 ======================
 
-
 **Problem:** You have traces in HoneyHive but want to add custom business context, user IDs, or metadata to make them more useful for debugging and analysis.
-
 
 **Solution:** Use ``enrich_span()`` to add custom key-value metadata to any trace, giving you rich context for every LLM call.
 
-
 This guide shows you the basics of span enrichment. For advanced patterns, see :doc:`/how-to/advanced-tracing/span-enrichment`.
-
 
 What is Span Enrichment?
 ------------------------
 
-
 Span enrichment lets you add custom metadata to traces:
 
-
 **Without enrichment:**
-
 
 - Model: ``gpt-3.5-turbo``
 - Latency: 1.2s
 - Tokens: 150
 
-
 **With enrichment:**
-
 
 - Model: ``gpt-3.5-turbo``
 - Latency: 1.2s
@@ -37,47 +28,31 @@ Span enrichment lets you add custom metadata to traces:
 - **intent**: ``question_answering``
 - **priority**: ``high``
 
-
 This context makes it easy to:
-
 
 - Filter traces by user, feature, or intent
 - Debug issues for specific customers
 - Analyze performance by use case
 - Track business metrics alongside technical metrics
 
-
 Prerequisites
 -------------
-
 
 - HoneyHive tracer initialized (see :doc:`01-setup-first-tracer`)
 - Basic understanding of Python decorators
 - An instrumented LLM application
 
-
 Basic Enrichment
 ----------------
 
-
 The simplest way to enrich spans is with ``enrich_span()``:
-
 
 .. code-block:: python
 
-
    from honeyhive import enrich_span
    import openai
-
-   
-
-   
    
    client = openai.OpenAI()
-
-   
-
-   
    
    # Add metadata to the current span
    enrich_span({
@@ -85,10 +60,6 @@ The simplest way to enrich spans is with ``enrich_span()``:
        "feature": "chat_support",
        "environment": "production"
    })
-
-   
-
-   
    
    # Make LLM call (metadata is automatically attached)
    response = client.chat.completions.create(
@@ -96,39 +67,24 @@ The simplest way to enrich spans is with ``enrich_span()``:
        messages=[{"role": "user", "content": "Hello!"}]
    )
 
-
-
-
-
 **Result:** The trace includes your custom metadata.
-
 
 .. note::
    The simple dict pattern shown above automatically routes your metadata to the ``honeyhive_metadata`` namespace in the backend.
 
-
-
-
-
 Enrichment Interfaces
 ---------------------
 
-
 ``enrich_span()`` supports multiple invocation patterns to fit your needs:
-
 
 Pattern 1: Simple Dictionary (New)
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-
 Pass a single dictionary for quick metadata enrichment:
-
 
 .. code-block:: python
 
-
    from honeyhive import enrich_span
-   
    
    # Simple dict - routes to metadata namespace
    enrich_span({
@@ -137,22 +93,14 @@ Pass a single dictionary for quick metadata enrichment:
        "session": "abc123"
    })
 
-
-
-
-
 Pattern 2: Keyword Arguments (New)
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-
 Pass arbitrary keyword arguments - perfect for concise enrichment:
-
 
 .. code-block:: python
 
-
    from honeyhive import enrich_span
-   
    
    # Arbitrary kwargs - also route to metadata namespace
    enrich_span(
@@ -161,22 +109,14 @@ Pass arbitrary keyword arguments - perfect for concise enrichment:
        session="abc123"
    )
 
-
-
-
-
 Pattern 3: Reserved Namespaces (Backwards Compatible)
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-
 Use explicit namespace parameters for structured data organization:
-
 
 .. code-block:: python
 
-
    from honeyhive import enrich_span
-   
    
    # Reserved namespaces provide structured organization
    enrich_span(
@@ -196,7 +136,6 @@ Use explicit namespace parameters for structured data organization:
 
 **Available namespaces:**
 
-
 - ``metadata``: Custom business context (user IDs, features, etc.)
 - ``metrics``: Numeric measurements (scores, latencies, counts)
 - ``feedback``: User or system feedback (ratings, flags)
@@ -206,9 +145,7 @@ Use explicit namespace parameters for structured data organization:
 - ``error``: Error messages or exceptions (string)
 - ``event_id``: Unique event identifier (string)
 
-
 Each namespace (except ``error`` and ``event_id``) creates nested attributes in the backend:
-
 
 - ``metadata`` → ``honeyhive_metadata.*``
 - ``metrics`` → ``honeyhive_metrics.*``
@@ -222,24 +159,18 @@ Each namespace (except ``error`` and ``event_id``) creates nested attributes in 
 
 **When to use namespaces:**
 
-
 - Organize different types of data separately
 - Make it easier to query specific data categories in the backend
 - Maintain backwards compatibility with existing code
 
-
 Pattern 4: Mixed Usage
 ^^^^^^^^^^^^^^^^^^^^^^
 
-
 You can combine patterns - later values override earlier ones:
-
 
 .. code-block:: python
 
-
    from honeyhive import enrich_span
-   
    
    # Combine namespaces with kwargs
    enrich_span(
@@ -248,10 +179,6 @@ You can combine patterns - later values override earlier ones:
        feature="chat",        # Adds to metadata
        priority="high"        # Also adds to metadata
    )
-
-   
-
-   
    
    # Result in backend:
    # honeyhive_metadata.user_id = "user_12345"
@@ -259,43 +186,24 @@ You can combine patterns - later values override earlier ones:
    # honeyhive_metadata.priority = "high"
    # honeyhive_metrics.score = 0.95
 
-
-
-
-
 Enrichment in Functions
 -----------------------
 
-
 Add enrichment inside your application functions:
 
-
 .. code-block:: python
-
 
    from honeyhive import HoneyHiveTracer, enrich_span
    from openinference.instrumentation.openai import OpenAIInstrumentor
    import openai
-
-   
-
-   
    
    # Initialize tracer
    tracer = HoneyHiveTracer.init(project="my-app")
    instrumentor = OpenAIInstrumentor()
    instrumentor.instrument(tracer_provider=tracer.provider)
-
-   
-
-   
    
    def process_customer_query(user_id: str, query: str, priority: str):
        """Process a customer support query."""
-
-       
-
-       
        
        # Enrich with business context
        enrich_span({
@@ -304,10 +212,6 @@ Add enrichment inside your application functions:
            "priority": priority,
            "query_length": len(query)
        })
-
-       
-
-       
        
        # Make LLM call
        client = openai.OpenAI()
@@ -318,16 +222,8 @@ Add enrichment inside your application functions:
                {"role": "user", "content": query}
            ]
        )
-
-       
-
-       
        
        return response.choices[0].message.content
-
-   
-
-   
    
    # Usage
    answer = process_customer_query(
@@ -336,20 +232,13 @@ Add enrichment inside your application functions:
        priority="high"
    )
 
-
-
-
-
 Common Enrichment Patterns
 --------------------------
-
 
 Pattern 1: User Context
 ^^^^^^^^^^^^^^^^^^^^^^^
 
-
 Track which users are making which calls:
-
 
 .. code-block:: python
 

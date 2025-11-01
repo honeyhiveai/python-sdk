@@ -301,7 +301,6 @@ Choose Your Instrumentor
            ]
        )
 
-
 4. **Environment Configuration**
    
    .. code-block:: bash

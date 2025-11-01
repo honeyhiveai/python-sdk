@@ -237,7 +237,6 @@ Choose Your Instrumentor
       # You can combine OpenInference with other instrumentors
       {{MULTIPLE_INSTRUMENTORS_EXAMPLE}}
 
-
 4. **Environment Configuration**
    
    .. code-block:: bash
@@ -435,7 +434,6 @@ Choose Your Instrumentor
    
       # Traceloop instrumentors handle batching automatically
       # No additional configuration needed for performance
-
 
 5. **Environment Configuration**
    

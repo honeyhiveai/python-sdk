@@ -50,7 +50,6 @@ Fundamental Concepts
    concepts/tracing-fundamentals
    concepts/llm-observability
 
-
 Compatibility Matrix
 --------------------
 

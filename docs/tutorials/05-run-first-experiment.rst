@@ -1,7 +1,6 @@
 Tutorial 5: Run Your First Experiment
 =====================================
 
-
 .. note::
    **Tutorial** (15-20 minutes)
    
@@ -21,9 +20,7 @@ Tutorial 5: Run Your First Experiment
 What You'll Learn
 -----------------
 
-
 By the end of this tutorial, you'll know how to:
-
 
 - Run an experiment with ``evaluate()``
 - Structure test data with inputs and ground truths
@@ -31,13 +28,10 @@ By the end of this tutorial, you'll know how to:
 - **View metrics and scores in HoneyHive dashboard**
 - Compare different versions of your function
 
-
 What You'll Build
 -----------------
 
-
 A complete question-answering experiment with automated evaluation. You'll:
-
 
 1. Create a baseline QA function
 2. Test it against a dataset
@@ -45,113 +39,65 @@ A complete question-answering experiment with automated evaluation. You'll:
 4. **Compare baseline vs improved version using metrics**
 5. View results and metrics in HoneyHive dashboard
 
-
 Prerequisites
 -------------
 
-
 Before starting this tutorial, you should:
-
 
 - Complete :doc:`01-setup-first-tracer`
 - Have Python 3.11 or higher installed
 - Have a HoneyHive API key
 - Basic familiarity with Python dictionaries
 
-
 If you haven't set up the SDK yet, go back to Tutorial 1.
-
 
 Step 1: Install and Setup
 -------------------------
 
-
 First, create a new Python file for this tutorial:
-
 
 .. code-block:: bash
 
-
    touch my_first_experiment.py
-
 
 Add the necessary imports and setup:
 
-
 .. code-block:: python
-
 
    # my_first_experiment.py
    import os
    from typing import Any, Dict
    from honeyhive.experiments import evaluate
-
-   
-
-   
    
    # Set your API key
    os.environ["HH_API_KEY"] = "your-api-key-here"
    os.environ["HH_PROJECT"] = "experiments-tutorial"
 
-
-
-
-
 .. tip::
    Store your API key in a ``.env`` file instead of hardcoding it.
    See :doc:`../how-to/deployment/production` for production best practices.
 
-
-
-
-
 Step 2: Define Your Function
 ----------------------------
-
 
 Create a simple function that answers questions. This will be the function
 we test in our experiment:
 
-
 .. code-block:: python
-
 
    def answer_question(datapoint: Dict[str, Any]) -> Dict[str, Any]:
        """Answer a trivia question.
-
-       
-
-       
        
        This is the function we'll test in our experiment.
-
-       
-
-       
        
        Args:
            datapoint: Contains 'inputs' with the question
-
-       
-
-       
        
        Returns:
            Dictionary with the answer
-
-
-
-
-
-
-
+       """
        inputs = datapoint.get("inputs", {})
        question = inputs.get("question", "")
-
-       
-
-       
        
        # Simple logic: check for keywords
        # (In real use, you'd call an LLM here)
@@ -163,19 +109,11 @@ we test in our experiment:
            answer = "blue"
        else:
            answer = "I don't know"
-
-       
-
-       
        
        return {
            "answer": answer,
            "confidence": "high" if answer != "I don't know" else "low"
        }
-
-
-
-
 
 .. note::
    This example uses simple logic for demonstration. In a real experiment,
@@ -192,12 +130,9 @@ we test in our experiment:
 Step 3: Create Your Test Dataset
 --------------------------------
 
-
 Define a dataset with questions and expected answers:
 
-
 .. code-block:: python
-
 
    dataset = [
        {
@@ -239,16 +174,12 @@ Define a dataset with questions and expected answers:
 - ``inputs``: What your function receives
 - ``ground_truths``: The expected correct answers (used for evaluation)
 
-
 Step 4: Run Your Experiment
 ---------------------------
 
-
 Now run the experiment:
 
-
 .. code-block:: python
-
 
    result = evaluate(
        function=answer_question,
@@ -287,10 +218,6 @@ Now run the experiment:
    Processing datapoint 1/3...
    Processing datapoint 2/3...
    Processing datapoint 3/3...
-
-   
-
-   
    
    ✅ Experiment complete!
    📊 Run ID: run_abc123...
@@ -322,23 +249,18 @@ Step 5: View Results in Dashboard
 
 **What You'll See:**
 
-
 - 3 sessions (one per datapoint)
 - Each session shows inputs and outputs
 - Ground truths displayed for comparison
 - Session names include your experiment name
 
-
 Step 6: Add Evaluators for Automated Scoring
 --------------------------------------------
-
 
 Viewing results manually is helpful, but let's add **evaluators** to automatically
 score our function's outputs:
 
-
 .. code-block:: python
-
 
    def exact_match_evaluator(
        outputs: Dict[str, Any],
@@ -346,19 +268,11 @@ score our function's outputs:
        ground_truths: Dict[str, Any]
    ) -> float:
        """Check if answer exactly matches ground truth.
-
-       
-
-       
        
        Args:
            outputs: Function's output (from answer_question)
            inputs: Original inputs (not used here)
            ground_truths: Expected outputs
-
-       
-
-       
        
        Returns:
            1.0 if exact match, 0.0 otherwise
@@ -388,10 +302,6 @@ score our function's outputs:
        ground_truths: Dict[str, Any]
    ) -> float:
        """Check if confidence is appropriate.
-
-       
-
-       
        
        Returns:
            1.0 if high confidence, 0.5 if low confidence
@@ -797,7 +707,4 @@ Here's the complete code from this tutorial:
        extra_fields = getattr(result.metrics, "model_extra", {})
        for metric_name, metric_value in extra_fields.items():
            print(f"   {metric_name}: {metric_value:.2f}")
-
-
-
 
