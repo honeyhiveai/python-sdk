@@ -952,7 +952,7 @@ class TestSpanHelperMethods:
         # Assert
         expected = {
             "direct_attr": "direct_value",
-            "honeyhive.metadata.meta_key": "meta_value",
+            "honeyhive_metadata.meta_key": "meta_value",
             "custom_attr": "custom_value",
         }
         assert result == expected

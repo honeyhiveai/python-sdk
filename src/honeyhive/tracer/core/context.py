@@ -396,7 +396,7 @@ class TracerContextMixin(TracerContextInterface):
         Args:
             attributes: Span attributes to add directly (dict of key-value pairs)
             metadata: Metadata to add (automatically prefixed with
-                'honeyhive.metadata.')
+                'honeyhive_metadata.')
             **kwargs: Additional dynamic attributes (e.g., metrics, config)
 
         Returns:
@@ -508,7 +508,7 @@ class TracerContextMixin(TracerContextInterface):
         # Add metadata with prefix
         if metadata:
             for key, value in metadata.items():
-                prefixed_key = f"honeyhive.metadata.{key}"
+                prefixed_key = f"honeyhive_metadata.{key}"
                 enrichment_attrs[prefixed_key] = value
 
         # Add kwargs dynamically
