@@ -17,6 +17,13 @@ Latest Release Notes
 Current Version Highlights
 ~~~~~~~~~~~~~~~~~~~~~~~~~~
 
+**✨ NEW: Automatic Span Capture for Evaluation Functions (Nov 3, 2025)**
+
+* **Auto-Decoration**: User functions in `evaluate()` are now automatically wrapped with `@trace` decorator
+* **Zero-Config Observability**: Automatic span capture with inputs/outputs without manual decorator application
+* **Event Type**: Functions traced as "chain" type events for proper categorization
+* **Transparent**: Works seamlessly with both functions that accept `tracer` parameter and those that don't
+
 **✨ NEW: v1.0 Evaluation Enhancements (Oct 31, 2025)**
 
 * **Smart Session Naming**: Experiments now use experiment name as default session name

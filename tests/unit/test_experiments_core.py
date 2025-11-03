@@ -120,6 +120,10 @@ class TestRunExperiment:
         """Create a mock HoneyHiveTracer."""
         tracer = Mock()
         tracer.project = "test-project"
+        # Set up start_span as a context manager for @trace decorator support
+        mock_span = Mock()
+        tracer.start_span.return_value.__enter__ = Mock(return_value=mock_span)
+        tracer.start_span.return_value.__exit__ = Mock(return_value=False)
         return tracer
 
     @pytest.fixture
