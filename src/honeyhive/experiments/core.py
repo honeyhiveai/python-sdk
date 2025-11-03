@@ -161,7 +161,7 @@ def run_experiment(
         List of execution results (one per datapoint)
 
     Examples:
-        >>> def my_function(inputs, ground_truths):
+        >>> def my_function(inputs, ground_truth):
         ...     return {"output": "test"}
         >>>
         >>> context = ExperimentContext(
@@ -172,7 +172,7 @@ def run_experiment(
         >>>
         >>> results = run_experiment(
         ...     function=my_function,
-        ...     dataset=[{"inputs": {}, "ground_truths": {}}],
+        ...     dataset=[{"inputs": {}, "ground_truth": {}}],
         ...     datapoint_ids=["dp-1"],
         ...     experiment_context=context,
         ...     api_key="hh_...",
@@ -194,7 +194,7 @@ def run_experiment(
         """
         # Extract inputs and ground truths from datapoint
         inputs = datapoint.get("inputs", {})
-        ground_truths = datapoint.get("ground_truths")
+        ground_truth = datapoint.get("ground_truth")
 
         # Create tracer config for this datapoint with inputs
         tracer_config = experiment_context.to_tracer_config(datapoint_id)
@@ -252,7 +252,7 @@ def run_experiment(
                 "datapoint_id": datapoint_id,
                 "inputs": inputs,
                 "outputs": outputs,
-                "ground_truths": ground_truths,
+                "ground_truth": ground_truth,
                 "status": "success",
                 "error": None,
                 "session_id": session_id,  # Include session ID for run linkage
@@ -275,7 +275,7 @@ def run_experiment(
                 "datapoint_id": datapoint_id,
                 "inputs": datapoint.get("inputs", {}),
                 "outputs": None,
-                "ground_truths": datapoint.get("ground_truths"),
+                "ground_truth": datapoint.get("ground_truth"),
                 "status": "failed",
                 "error": str(e),
                 "session_id": session_id,  # Include session ID for run linkage
@@ -433,21 +433,21 @@ def _enrich_session_with_results(
     *,
     datapoint_id: Optional[str],
     outputs: Any,
-    ground_truths: Any,  # ✅ TASK 3: Add ground_truths parameter
+    ground_truth: Any,  # ✅ TASK 3: Add ground_truth parameter
     evaluator_metrics: Dict[str, Dict[str, Any]],
     client: Any,
     verbose: bool,
 ) -> None:
-    """Enrich a session with outputs, ground_truths, and evaluator metrics."""
+    """Enrich a session with outputs, ground_truth, and evaluator metrics."""
     try:
         update_data = {}
 
         if outputs is not None:
             update_data["outputs"] = outputs
 
-        # ✅ TASK 3: Add ground_truths to feedback field
-        if ground_truths is not None:
-            update_data["feedback"] = {"ground_truths": ground_truths}
+        # ✅ TASK 3: Add ground_truth to feedback field
+        if ground_truth is not None:
+            update_data["feedback"] = {"ground_truth": ground_truth}
 
         if datapoint_id and datapoint_id in evaluator_metrics:
             update_data["metrics"] = evaluator_metrics[datapoint_id]
@@ -476,11 +476,11 @@ def _run_evaluators(
     execution result, collecting metrics from each evaluator.
 
     Evaluator Function Signature:
-        evaluator(outputs, inputs, ground_truths) -> float
+        evaluator(outputs, inputs, ground_truth) -> float
 
         - outputs: The result from running the function on the datapoint
         - inputs: The original datapoint inputs
-        - ground_truths: The expected output (optional)
+        - ground_truth: The expected output (optional)
 
     Args:
         evaluators: List of evaluator callables
@@ -492,8 +492,8 @@ def _run_evaluators(
         Dictionary mapping datapoint_id to evaluator metrics
 
     Example:
-        >>> def accuracy(outputs, inputs, ground_truths):
-        ...     return 1.0 if outputs == ground_truths else 0.0
+        >>> def accuracy(outputs, inputs, ground_truth):
+        ...     return 1.0 if outputs == ground_truth else 0.0
         >>>
         >>> evaluators = [accuracy, relevance]
         >>> results = [{"datapoint_id": "dp-1", "outputs": {...}, ...}]
@@ -512,7 +512,7 @@ def _run_evaluators(
         datapoint_id: str,
         inputs: Dict[str, Any],
         outputs: Any,
-        ground_truths: Optional[Any],
+        ground_truth: Optional[Any],
     ) -> tuple[str, str, Any]:
         """Run a single evaluator and return (datapoint_id, eval_name, score)."""
         # Get evaluator name (before try block to avoid unbound variable)
@@ -523,16 +523,16 @@ def _run_evaluators(
 
         try:
             # Execute evaluator
-            # Standard signature: evaluator(outputs, inputs, ground_truths)
+            # Standard signature: evaluator(outputs, inputs, ground_truth)
             # Outputs come first as they are the primary evaluation target
             if asyncio.iscoroutinefunction(eval_func):
                 # Async evaluator
                 loop = asyncio.new_event_loop()
                 asyncio.set_event_loop(loop)
                 try:
-                    if ground_truths is not None:
+                    if ground_truth is not None:
                         score = loop.run_until_complete(
-                            eval_func(outputs, inputs, ground_truths)
+                            eval_func(outputs, inputs, ground_truth)
                         )
                     else:
                         score = loop.run_until_complete(eval_func(outputs, inputs))
@@ -540,8 +540,8 @@ def _run_evaluators(
                     loop.close()
             else:
                 # Sync evaluator
-                if ground_truths is not None:
-                    score = eval_func(outputs, inputs, ground_truths)
+                if ground_truth is not None:
+                    score = eval_func(outputs, inputs, ground_truth)
                 else:
                     score = eval_func(outputs, inputs)
 
@@ -572,7 +572,7 @@ def _run_evaluators(
             datapoint_id = result["datapoint_id"]
             inputs = result.get("inputs", {})
             outputs = result.get("outputs")
-            ground_truths = result.get("ground_truths")
+            ground_truth = result.get("ground_truth")
 
             # Initialize metrics dict for this datapoint
             if datapoint_id not in all_metrics:
@@ -586,7 +586,7 @@ def _run_evaluators(
                     datapoint_id,
                     inputs,
                     outputs,
-                    ground_truths,
+                    ground_truth,
                 )
                 futures.append(future)
 
@@ -628,7 +628,7 @@ def evaluate(  # pylint: disable=too-many-locals,too-many-branches
 
         Args:
             function: User function to execute against each datapoint
-            dataset: External dataset (list of dicts with 'inputs' and 'ground_truths')
+            dataset: External dataset (list of dicts with 'inputs' and 'ground_truth')
             dataset_id: HoneyHive dataset ID (alternative to external dataset)
             evaluators: List of evaluator functions (optional)
             api_key: HoneyHive API key (or set HONEYHIVE_API_KEY/HH_API_KEY env var)
@@ -652,14 +652,14 @@ def evaluate(  # pylint: disable=too-many-locals,too-many-branches
             >>> from honeyhive.experiments import evaluate
             >>>
             >>> # Define function to test
-            >>> def my_function(inputs, ground_truths):
+            >>> def my_function(inputs, ground_truth):
             ...     # Your LLM call or function logic
             ...     return {"output": "result"}
             >>>
             >>> # External dataset
             >>> dataset = [
-            ...     {"inputs": {"query": "test1"}, "ground_truths": {"answer": "a1"}},
-            ...     {"inputs": {"query": "test2"}, "ground_truths": {"answer": "a2"}}
+            ...     {"inputs": {"query": "test1"}, "ground_truth": {"answer": "a1"}},
+            ...     {"inputs": {"query": "test2"}, "ground_truth": {"answer": "a2"}}
             ... ]
             >>>
             >>> result = evaluate(
@@ -743,7 +743,7 @@ def evaluate(  # pylint: disable=too-many-locals,too-many-branches
                     dataset_list.append(
                         {
                             "inputs": dp.inputs or {},
-                            "ground_truths": dp.ground_truth,
+                            "ground_truth": dp.ground_truth,
                             "id": dp.field_id or dp_id,
                         }
                     )
@@ -862,9 +862,7 @@ def evaluate(  # pylint: disable=too-many-locals,too-many-branches
                 session_id=session_id,
                 datapoint_id=result.get("datapoint_id"),
                 outputs=result.get("outputs"),
-                ground_truths=result.get(
-                    "ground_truths"
-                ),  # ✅ TASK 3: Pass ground_truths
+                ground_truth=result.get("ground_truth"),  # ✅ TASK 3: Pass ground_truth
                 evaluator_metrics=evaluator_metrics or {},
                 client=client,
                 verbose=verbose,

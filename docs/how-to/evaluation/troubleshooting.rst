@@ -48,9 +48,9 @@ Evaluator Errors
 .. code-block:: python
 
    @evaluator()
-   def robust_evaluator(outputs, inputs, ground_truths):
+   def robust_evaluator(outputs, inputs, ground_truth):
        try:
-           score = calculate_score(outputs, ground_truths)
+           score = calculate_score(outputs, ground_truth)
            return {"score": score}
        except Exception as e:
            return {"score": 0.0, "error": str(e)}
@@ -65,7 +65,7 @@ Inconsistent Results
 .. code-block:: python
 
    @evaluator()
-   def consistent_judge(outputs, inputs, ground_truths):
+   def consistent_judge(outputs, inputs, ground_truth):
        response = client.chat.completions.create(
            model="gpt-4",
            messages=[...],

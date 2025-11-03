@@ -73,15 +73,15 @@ class TestExperimentsIntegration:
         dataset = [
             {
                 "inputs": {"question": "What is 2+2?"},
-                "ground_truths": {"expected_answer": "4"},
+                "ground_truth": {"expected_answer": "4"},
             },
             {
                 "inputs": {"question": "What is the capital of France?"},
-                "ground_truths": {"expected_answer": "Paris"},
+                "ground_truth": {"expected_answer": "Paris"},
             },
             {
                 "inputs": {"question": "What color is the sky?"},
-                "ground_truths": {"expected_answer": "blue"},
+                "ground_truth": {"expected_answer": "blue"},
             },
         ]
 
@@ -284,15 +284,15 @@ class TestExperimentsIntegration:
         dataset = [
             {
                 "inputs": {"value": 5, "label": "small"},
-                "ground_truths": {"expected": 10},
+                "ground_truth": {"expected": 10},
             },
             {
                 "inputs": {"value": 10, "label": "medium"},
-                "ground_truths": {"expected": 20},
+                "ground_truth": {"expected": 20},
             },
             {
                 "inputs": {"value": 15, "label": "large"},
-                "ground_truths": {"expected": 30},
+                "ground_truth": {"expected": 30},
             },
         ]
 
@@ -414,15 +414,15 @@ class TestExperimentsIntegration:
         dataset = [
             {
                 "inputs": {"value": 10, "task": "double"},
-                "ground_truths": {"expected": 20},
+                "ground_truth": {"expected": 20},
             },
             {
                 "inputs": {"value": 15, "task": "triple"},
-                "ground_truths": {"expected": 45},
+                "ground_truth": {"expected": 45},
             },
             {
                 "inputs": {"value": 8, "task": "quadruple"},
-                "ground_truths": {"expected": 32},
+                "ground_truth": {"expected": 32},
             },
         ]
 
@@ -718,18 +718,18 @@ class TestExperimentsIntegration:
         test_datapoints = [
             {
                 "inputs": {"question": "What is 5 + 3?", "category": "math"},
-                "ground_truths": {"answer": "8", "explanation": "Simple addition"},
+                "ground_truth": {"answer": "8", "explanation": "Simple addition"},
             },
             {
                 "inputs": {
                     "question": "What is the capital of Japan?",
                     "category": "geography",
                 },
-                "ground_truths": {"answer": "Tokyo", "explanation": "Capital city"},
+                "ground_truth": {"answer": "Tokyo", "explanation": "Capital city"},
             },
             {
                 "inputs": {"question": "What color is the sun?", "category": "science"},
-                "ground_truths": {
+                "ground_truth": {
                     "answer": "yellow",
                     "explanation": "Visible spectrum",
                 },
@@ -905,9 +905,9 @@ class TestExperimentsIntegration:
 
         # Shared dataset for both runs
         dataset = [
-            {"inputs": {"value": 10}, "ground_truths": {"expected": 20}},
-            {"inputs": {"value": 15}, "ground_truths": {"expected": 30}},
-            {"inputs": {"value": 8}, "ground_truths": {"expected": 16}},
+            {"inputs": {"value": 10}, "ground_truth": {"expected": 20}},
+            {"inputs": {"value": 15}, "ground_truth": {"expected": 30}},
+            {"inputs": {"value": 8}, "ground_truth": {"expected": 16}},
         ]
 
         # Run 1: Baseline function

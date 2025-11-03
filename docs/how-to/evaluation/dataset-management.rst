@@ -46,8 +46,8 @@ When should I define datasets in code vs UI?
 
    # Code-defined dataset
    dataset = [
-       {"inputs": {...}, "ground_truths": {...}},
-      {"inputs": {...}, "ground_truths": {...}}
+       {"inputs": {...}, "ground_truth": {...}},
+      {"inputs": {...}, "ground_truth": {...}}
   ]
   
   result = evaluate(function=my_function, dataset=dataset)  # ...more args
@@ -72,7 +72,7 @@ When you pass a ``dataset`` list (not ``dataset_id``), HoneyHive generates an ex
 
 .. code-block:: python
 
-  dataset = [{"inputs": {...}, "ground_truths": {...}}]
+  dataset = [{"inputs": {...}, "ground_truth": {...}}]
   
   result = evaluate(function=my_function, dataset=dataset)  # ...more args
   
@@ -100,7 +100,7 @@ How do I create a dataset in the HoneyHive UI?
 
 .. code-block:: text
 
-   inputs.question,inputs.context,ground_truths.answer
+   inputs.question,inputs.context,ground_truth.answer
    "What is AI?","AI is...", "Artificial Intelligence..."
    "What is ML?","ML is...", "Machine Learning..."
 
@@ -111,11 +111,11 @@ How do I create a dataset in the HoneyHive UI?
    [
        {
            "inputs": {"question": "What is AI?", "context": "..."},
-           "ground_truths": {"answer": "Artificial Intelligence..."}
+           "ground_truth": {"answer": "Artificial Intelligence..."}
        },
        {
            "inputs": {"question": "What is ML?", "context": "..."},
-           "ground_truths": {"answer": "Machine Learning..."}
+           "ground_truth": {"answer": "Machine Learning..."}
        }
    ]
 

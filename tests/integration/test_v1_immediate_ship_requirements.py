@@ -40,11 +40,11 @@ class TestV1ImmediateShipRequirements:
         return [
             {
                 "inputs": {"text": "hello", "category": "greeting"},
-                "ground_truths": {"expected": "HELLO", "category": "greeting"},
+                "ground_truth": {"expected": "HELLO", "category": "greeting"},
             },
             {
                 "inputs": {"text": "world", "category": "noun"},
-                "ground_truths": {"expected": "WORLD", "category": "noun"},
+                "ground_truth": {"expected": "WORLD", "category": "noun"},
             },
         ]
 
@@ -83,10 +83,10 @@ class TestV1ImmediateShipRequirements:
         # TASK 3: Ground truths in feedback
         feedback = getattr(session_event, "feedback", {}) or {}
         assert (
-            "ground_truths" in feedback
-        ), "TASK 3 FAILED: feedback should contain 'ground_truths'"
+            "ground_truth" in feedback
+        ), "TASK 3 FAILED: feedback should contain 'ground_truth'"
         print("✅ TASK 3: Ground truths in feedback")
-        print(f"   ground_truths keys: {list(feedback['ground_truths'].keys())}")
+        print(f"   ground_truth keys: {list(feedback['ground_truth'].keys())}")
 
         # TASK 5: Session linking (run_id in metadata)
         metadata = getattr(session_event, "metadata", {}) or {}
@@ -224,7 +224,7 @@ class TestV1ImmediateShipRequirements:
             calls_made.append("process_input")
             return f"Processed: {text.upper()}"
 
-        # Dataset with ground_truths (TASK 3)
+        # Dataset with ground_truth (TASK 3)
         dataset = self._create_test_dataset()
 
         # TASK 1: Use experiment name as session name
@@ -308,8 +308,8 @@ class TestV1ImmediateShipRequirements:
             return {"result": inputs.get("value", 0) * 2}
 
         dataset = [
-            {"inputs": {"value": 5}, "ground_truths": {"expected": 10}},
-            {"inputs": {"value": 10}, "ground_truths": {"expected": 20}},
+            {"inputs": {"value": 5}, "ground_truth": {"expected": 10}},
+            {"inputs": {"value": 10}, "ground_truth": {"expected": 20}},
         ]
 
         run_name = f"backward-compat-{int(time.time())}"

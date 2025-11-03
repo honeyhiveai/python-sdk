@@ -52,7 +52,7 @@ Can I use both client-side and server-side evaluators?
    
    # Client-side evaluator (runs immediately)
    @evaluator()
-   def custom_metric(outputs, inputs, ground_truths):
+   def custom_metric(outputs, inputs, ground_truth):
        return calculate_custom_score(outputs)
    
    # Run experiment with client-side evaluator

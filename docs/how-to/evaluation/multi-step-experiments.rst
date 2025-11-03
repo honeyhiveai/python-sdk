@@ -21,7 +21,7 @@ How do I evaluate each component separately?
        project="your-project"
    )
    
-   def rag_pipeline(inputs, ground_truths):
+   def rag_pipeline(inputs, ground_truth):
        """Multi-step RAG pipeline."""
        query = inputs["question"]
        

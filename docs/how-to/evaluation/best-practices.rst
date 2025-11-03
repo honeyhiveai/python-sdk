@@ -97,7 +97,7 @@ Ensure Reproducibility
    
    # For LLM-as-judge evaluators
    @evaluator()
-   def llm_judge(outputs, inputs, ground_truths):
+   def llm_judge(outputs, inputs, ground_truth):
        response = client.chat.completions.create(
            model="gpt-4",
            messages=[...],

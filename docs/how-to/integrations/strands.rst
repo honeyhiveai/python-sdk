@@ -473,7 +473,7 @@ Basic Evaluation
            "inputs": {
                "context": "Machine learning is a subset of AI..."
            },
-           "ground_truths": {
+           "ground_truth": {
                "result": "Expected summary here"
            }
        },
@@ -506,10 +506,10 @@ With Custom Evaluators
    from honeyhive.experiments import evaluator
    
    @evaluator
-   def summary_quality(outputs, inputs, ground_truths):
+   def summary_quality(outputs, inputs, ground_truth):
        """Evaluate summary quality."""
        answer = outputs.get("answer", "")
-       expected = ground_truths.get("result", "")
+       expected = ground_truth.get("result", "")
        
        # Simple length-based quality check
        length_ratio = len(answer) / len(expected) if expected else 0
@@ -573,7 +573,7 @@ Evaluate agents across multiple conversation turns:
                    "Is it good for beginners?"
                ]
            },
-           "ground_truths": {
+           "ground_truth": {
                "answer_count": 3,
                "covers_basics": True
            }

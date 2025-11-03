@@ -47,6 +47,22 @@
   - Added 3 unit tests covering all baggage scenarios (all present, partial, empty)
   - Added integration test validating end-to-end evaluation metadata propagation
   - **Impact**: All spans created during `evaluate()` datapoint processing now correctly inherit evaluation context metadata
+- **🚨 BREAKING: Evaluation: Ground Truth Field Name Migration**
+  - **Breaking Change**: Migrated from `ground_truths` (plural) to `ground_truth` (singular) throughout SDK
+  - **Critical Bug Fixed**: Ground truth data was inaccessible to metrics, UI, and LLM evaluators
+    - SDK was sending `feedback: {"ground_truths": {...}}` but backend expects `feedback: {"ground_truth": {...}}`
+    - Metrics with `needs_ground_truth=true` couldn't find data
+    - UI didn't display ground truth
+    - LLM evaluators couldn't access `{{feedback.ground_truth}}` template variable
+  - **Changes Required**:
+    - Dataset format: `"ground_truths"` → `"ground_truth"` in all dataset definitions
+    - Evaluator signatures: `ground_truths` parameter → `ground_truth` parameter
+  - **Before**: `dataset = [{"inputs": {...}, "ground_truths": {...}}]`
+  - **After**: `dataset = [{"inputs": {...}, "ground_truth": {...}}]`
+  - **Migration**: Simple find-replace (15 minutes to 2 hours depending on project size)
+  - **Aligns with**: Backend API conventions, industry standards (Hugging Face, LangChain)
+  - **Files Updated**: 1 source file (60 changes), 4 test files (88 changes), 9 documentation files (85 changes)
+  - **Impact**: Fixes broken metrics, enables UI ground truth display, enables LLM evaluator ground truth access
 
 ### Added
 - **✨ Tracing: Instance Method Pattern as Primary API (v1.0)**

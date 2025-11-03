@@ -139,7 +139,7 @@ Define a dataset with questions and expected answers:
            "inputs": {
                "question": "What is the capital of France?"
            },
-           "ground_truths": {
+           "ground_truth": {
                "answer": "Paris",
                "category": "geography"
            }
@@ -148,7 +148,7 @@ Define a dataset with questions and expected answers:
            "inputs": {
                "question": "What is 2+2?"
            },
-           "ground_truths": {
+           "ground_truth": {
                "answer": "4",
                "category": "math"
            }
@@ -157,7 +157,7 @@ Define a dataset with questions and expected answers:
            "inputs": {
                "question": "What color is the sky?"
            },
-           "ground_truths": {
+           "ground_truth": {
                "answer": "blue",
                "category": "science"
            }
@@ -172,7 +172,7 @@ Define a dataset with questions and expected answers:
 
 
 - ``inputs``: What your function receives
-- ``ground_truths``: The expected correct answers (used for evaluation)
+- ``ground_truth``: The expected correct answers (used for evaluation)
 
 Step 4: Run Your Experiment
 ---------------------------
@@ -265,14 +265,14 @@ score our function's outputs:
    def exact_match_evaluator(
        outputs: Dict[str, Any],
        inputs: Dict[str, Any],
-       ground_truths: Dict[str, Any]
+       ground_truth: Dict[str, Any]
    ) -> float:
        """Check if answer exactly matches ground truth.
        
        Args:
            outputs: Function's output (from answer_question)
            inputs: Original inputs (not used here)
-           ground_truths: Expected outputs
+           ground_truth: Expected outputs
        
        Returns:
            1.0 if exact match, 0.0 otherwise
@@ -284,7 +284,7 @@ score our function's outputs:
 
 
        actual_answer = outputs.get("answer", "").lower().strip()
-       expected_answer = ground_truths.get("answer", "").lower().strip()
+       expected_answer = ground_truth.get("answer", "").lower().strip()
 
        
 
@@ -299,7 +299,7 @@ score our function's outputs:
    def confidence_evaluator(
        outputs: Dict[str, Any],
        inputs: Dict[str, Any],
-       ground_truths: Dict[str, Any]
+       ground_truth: Dict[str, Any]
    ) -> float:
        """Check if confidence is appropriate.
        
@@ -322,7 +322,7 @@ score our function's outputs:
 **Understanding Evaluators:**
 
 
-- **Input**: Receives ``(outputs, inputs, ground_truths)``
+- **Input**: Receives ``(outputs, inputs, ground_truth)``
 - **Output**: Returns a score (typically 0.0 to 1.0)
 - **Purpose**: Automated quality assessment
 - **Runs**: After function executes, for each datapoint
@@ -653,15 +653,15 @@ Here's the complete code from this tutorial:
    dataset = [
        {
            "inputs": {"question": "What is the capital of France?"},
-           "ground_truths": {"answer": "Paris"}
+           "ground_truth": {"answer": "Paris"}
        },
        {
            "inputs": {"question": "What is 2+2?"},
-           "ground_truths": {"answer": "4"}
+           "ground_truth": {"answer": "4"}
        },
        {
            "inputs": {"question": "What color is the sky?"},
-           "ground_truths": {"answer": "blue"}
+           "ground_truth": {"answer": "blue"}
        }
    ]
    
@@ -670,18 +670,18 @@ Here's the complete code from this tutorial:
    def exact_match_evaluator(
        outputs: Dict[str, Any],
        inputs: Dict[str, Any],
-       ground_truths: Dict[str, Any]
+       ground_truth: Dict[str, Any]
    ) -> float:
        """Check if answer exactly matches ground truth."""
        actual = outputs.get("answer", "").lower().strip()
-       expected = ground_truths.get("answer", "").lower().strip()
+       expected = ground_truth.get("answer", "").lower().strip()
        return 1.0 if actual == expected else 0.0
    
    
    def confidence_evaluator(
        outputs: Dict[str, Any],
        inputs: Dict[str, Any],
-       ground_truths: Dict[str, Any]
+       ground_truth: Dict[str, Any]
    ) -> float:
        """Check if confidence is appropriate."""
        confidence = outputs.get("confidence", "low")

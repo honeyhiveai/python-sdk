@@ -13,7 +13,7 @@ What's the simplest way to run an experiment?
 
 .. versionchanged:: 1.0
 
-   Function signature changed from ``(inputs, ground_truths)`` to ``(datapoint: Dict[str, Any])``.
+   Function signature changed from ``(inputs, ground_truth)`` to ``(datapoint: Dict[str, Any])``.
 
 .. code-block:: python
 
@@ -26,7 +26,7 @@ What's the simplest way to run an experiment?
        """Your application logic.
        
        Args:
-           datapoint: Contains 'inputs' and 'ground_truths'
+           datapoint: Contains 'inputs' and 'ground_truth'
        
        Returns:
            Dictionary with your function's outputs
@@ -40,7 +40,7 @@ What's the simplest way to run an experiment?
    dataset = [
        {
            "inputs": {"prompt": "What is AI?"},
-           "ground_truths": {"answer": "Artificial Intelligence..."}
+           "ground_truth": {"answer": "Artificial Intelligence..."}
        }
    ]
    
@@ -61,7 +61,7 @@ What's the simplest way to run an experiment?
 How should I structure my test data?
 ------------------------------------
 
-**Use inputs + ground_truths Pattern**
+**Use inputs + ground_truth Pattern**
 
 Each datapoint in your dataset should have:
 
@@ -74,7 +74,7 @@ Each datapoint in your dataset should have:
            "context": "additional info",
            "model": "gpt-4"
        },
-       "ground_truths": {
+       "ground_truth": {
            # Expected outputs (optional but recommended)
            "answer": "expected response",
            "category": "classification",
@@ -92,7 +92,7 @@ Each datapoint in your dataset should have:
                "question": "What is the capital of France?",
                "language": "English"
            },
-           "ground_truths": {
+           "ground_truth": {
                "answer": "Paris",
                "confidence": "high"
            }
@@ -102,7 +102,7 @@ Each datapoint in your dataset should have:
                "question": "What is 2+2?",
                "language": "English"
            },
-           "ground_truths": {
+           "ground_truth": {
                "answer": "4",
                "confidence": "absolute"
            }
@@ -116,7 +116,7 @@ What signature must my function have?
 
 .. versionchanged:: 1.0
 
-   Function signature changed from ``(inputs, ground_truths)`` to ``(datapoint: Dict[str, Any])``.
+   Function signature changed from ``(inputs, ground_truth)`` to ``(datapoint: Dict[str, Any])``.
 
 Your function MUST accept a ``datapoint`` parameter:
 
@@ -129,14 +129,14 @@ Your function MUST accept a ``datapoint`` parameter:
        """Your evaluation function.
        
        Args:
-           datapoint: Dictionary with 'inputs' and 'ground_truths' keys
+           datapoint: Dictionary with 'inputs' and 'ground_truth' keys
        
        Returns:
            dict: Your function's output
        """
-       # Extract inputs and ground_truths
+       # Extract inputs and ground_truth
        inputs = datapoint.get("inputs", {})
-       ground_truths = datapoint.get("ground_truths", {})
+       ground_truth = datapoint.get("ground_truth", {})
        
        
        # Access input parameters
@@ -144,7 +144,7 @@ Your function MUST accept a ``datapoint`` parameter:
        language = inputs.get("language", "English")
        
        
-       # ground_truths available but typically not used in function
+       # ground_truth available but typically not used in function
        # (used by evaluators for scoring)
        
        
@@ -158,7 +158,7 @@ Your function MUST accept a ``datapoint`` parameter:
 .. important::
    - Accept **one parameter**: ``datapoint: Dict[str, Any]``
    - Extract ``inputs`` with ``datapoint.get("inputs", {})``
-   - Extract ``ground_truths`` with ``datapoint.get("ground_truths", {})``
+   - Extract ``ground_truth`` with ``datapoint.get("ground_truth", {})``
    - Return value should be a **dictionary**
    - **Type hints are strongly recommended**
 
@@ -166,13 +166,13 @@ Your function MUST accept a ``datapoint`` parameter:
 
 .. deprecated:: 1.0
 
-   The old ``(inputs, ground_truths)`` signature is deprecated but still supported
+   The old ``(inputs, ground_truth)`` signature is deprecated but still supported
    for backward compatibility. It will be removed in v2.0.
 
 .. code-block:: python
 
    # ⚠️ Deprecated: Old signature (still works in v1.0)
-   def old_style_function(inputs, ground_truths):
+   def old_style_function(inputs, ground_truth):
        # This still works but will be removed in v2.0
        return {"output": inputs["query"]}
    
@@ -209,7 +209,7 @@ add a ``tracer`` parameter to your function signature:
        """Function with tracer access.
        
        Args:
-           datapoint: Test data with 'inputs' and 'ground_truths'
+           datapoint: Test data with 'inputs' and 'ground_truth'
            tracer: HoneyHiveTracer instance (auto-injected)
        
        Returns:
@@ -465,7 +465,7 @@ Show me a complete real-world example
        """Answer questions using GPT-4.
        
        Args:
-           datapoint: Contains 'inputs' and 'ground_truths'
+           datapoint: Contains 'inputs' and 'ground_truth'
        
        Returns:
            Dictionary with answer, model, and token count
@@ -502,7 +502,7 @@ Show me a complete real-world example
                "question": "What is machine learning?",
                "context": "ML is a subset of AI"
            },
-           "ground_truths": {
+           "ground_truth": {
                "answer": "Machine learning is a subset of artificial intelligence..."
            }
        },
@@ -511,7 +511,7 @@ Show me a complete real-world example
                "question": "What is deep learning?",
                "context": "DL uses neural networks"
            },
-           "ground_truths": {
+           "ground_truth": {
                "answer": "Deep learning uses neural networks..."
            }
        }

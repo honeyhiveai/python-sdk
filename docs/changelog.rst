@@ -44,6 +44,21 @@ Current Version Highlights
 * **Impact**: All spans created during `evaluate()` datapoint processing now inherit evaluation context
 * **Tests**: Added 3 unit tests (all baggage scenarios) + 1 integration test for end-to-end validation
 
+**🚨 BREAKING CHANGE: Ground Truth Field Name Migration (Nov 3, 2025)**
+
+* **Breaking Change**: Migrated from `ground_truths` (plural) to `ground_truth` (singular) throughout SDK
+* **Critical Bug Fixed**: Ground truth data was inaccessible to metrics, UI, and LLM evaluators
+* **Root Cause**: SDK sent `feedback: {"ground_truths": {...}}` but backend expects `feedback: {"ground_truth": {...}}`
+* **Impact Before Fix**: Metrics with `needs_ground_truth=true` failed, UI couldn't display ground truth, LLM evaluators couldn't access data
+* **Migration Required**:
+   - Dataset format: Change `"ground_truths"` → `"ground_truth"` in all datasets
+   - Evaluator signatures: Change `ground_truths` parameter → `ground_truth` parameter
+* **Before**: `dataset = [{"inputs": {...}, "ground_truths": {...}}]`
+* **After**: `dataset = [{"inputs": {...}, "ground_truth": {...}}]`
+* **Migration Time**: 15 minutes to 2 hours (simple find-replace operation)
+* **Benefits**: Fixes broken metrics, enables UI display, enables LLM evaluator access, aligns with backend API and industry standards
+* **Files Updated**: 15 files (1 source, 4 tests, 9 docs, 1 example) with 322 total line changes
+
 **✨ NEW: Instance Method Pattern for Span/Session Enrichment (v1.0)**
 
 * **Primary API**: `tracer.enrich_span()` and `tracer.enrich_session()` instance methods

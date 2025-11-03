@@ -154,7 +154,7 @@ class TestRunExperiment:
         """Test successful execution with single datapoint."""
         mock_tracer_class.return_value = mock_tracer
 
-        dataset = [{"inputs": {"query": "test"}, "ground_truths": {"answer": "a1"}}]
+        dataset = [{"inputs": {"query": "test"}, "ground_truth": {"answer": "a1"}}]
         datapoint_ids = ["dp-1"]
 
         results = run_experiment(
@@ -191,9 +191,9 @@ class TestRunExperiment:
         mock_tracer_class.return_value = mock_tracer
 
         dataset = [
-            {"inputs": {"query": "test1"}, "ground_truths": {"answer": "a1"}},
-            {"inputs": {"query": "test2"}, "ground_truths": {"answer": "a2"}},
-            {"inputs": {"query": "test3"}, "ground_truths": {"answer": "a3"}},
+            {"inputs": {"query": "test1"}, "ground_truth": {"answer": "a1"}},
+            {"inputs": {"query": "test2"}, "ground_truth": {"answer": "a2"}},
+            {"inputs": {"query": "test3"}, "ground_truth": {"answer": "a3"}},
         ]
         datapoint_ids = ["dp-1", "dp-2", "dp-3"]
 
@@ -241,7 +241,7 @@ class TestRunExperiment:
 
         assert len(results) == 1
         assert results[0]["status"] == "success"
-        assert results[0]["ground_truths"] is None
+        assert results[0]["ground_truth"] is None
 
     @patch("honeyhive.experiments.core.force_flush_tracer")
     @patch("honeyhive.experiments.core.HoneyHiveTracer")
@@ -369,7 +369,7 @@ class TestRunEvaluators:
                 "datapoint_id": "dp-1",
                 "inputs": {"query": "test"},
                 "outputs": {"answer": "a1"},
-                "ground_truths": {"answer": "a1"},
+                "ground_truth": {"answer": "a1"},
             }
         ]
 
@@ -397,7 +397,7 @@ class TestRunEvaluators:
                 "datapoint_id": "dp-1",
                 "inputs": {},
                 "outputs": {},
-                "ground_truths": {},
+                "ground_truth": {},
             }
         ]
 
@@ -422,7 +422,7 @@ class TestRunEvaluators:
                 "datapoint_id": "dp-1",
                 "inputs": {},
                 "outputs": {},
-                "ground_truths": None,  # No ground truth
+                "ground_truth": None,  # No ground truth
             }
         ]
 
@@ -446,7 +446,7 @@ class TestRunEvaluators:
                 "datapoint_id": "dp-1",
                 "inputs": {},
                 "outputs": {},
-                "ground_truths": None,
+                "ground_truth": None,
             }
         ]
 

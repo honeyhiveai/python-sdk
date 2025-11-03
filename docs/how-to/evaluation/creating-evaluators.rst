@@ -16,9 +16,9 @@ What's the simplest evaluator I can create?
    from honeyhive.experiments import evaluator
    
    @evaluator()
-   def exact_match(outputs, inputs, ground_truths):
+   def exact_match(outputs, inputs, ground_truth):
        """Check if output matches expected result."""
-       expected = ground_truths.get("answer", "")
+       expected = ground_truth.get("answer", "")
        actual = outputs.get("answer", "")
        
        # Return a score (0.0 to 1.0)
@@ -41,24 +41,24 @@ What's the simplest evaluator I can create?
 What parameters must my evaluator accept?
 -----------------------------------------
 
-**(outputs, inputs, ground_truths) in That Order**
+**(outputs, inputs, ground_truth) in That Order**
 
 .. code-block:: python
 
    @evaluator()
-   def my_evaluator(outputs, inputs, ground_truths):
+   def my_evaluator(outputs, inputs, ground_truth):
        """Evaluator function.
        
        Args:
            outputs (dict): Return value from your function
            inputs (dict): Inputs from the datapoint
-           ground_truths (dict): Expected outputs from datapoint
+           ground_truth (dict): Expected outputs from datapoint
        
        Returns:
            float or dict: Score or detailed results
        """
        # Your scoring logic
-       score = calculate_score(outputs, ground_truths)
+       score = calculate_score(outputs, ground_truth)
        return score
 
 .. important::
@@ -66,7 +66,7 @@ What parameters must my evaluator accept?
    
    1. ``outputs`` (required) - What your function returned
    2. ``inputs`` (optional) - Original inputs
-   3. ``ground_truths`` (optional) - Expected outputs
+   3. ``ground_truth`` (optional) - Expected outputs
 
 What can my evaluator return?
 -----------------------------
@@ -77,17 +77,17 @@ What can my evaluator return?
 
    # Option 1: Return float (score only)
    @evaluator()
-   def simple_score(outputs, inputs, ground_truths):
+   def simple_score(outputs, inputs, ground_truth):
        return 0.85  # Score between 0.0 and 1.0
    
    # Option 2: Return bool (pass/fail)
    @evaluator()
-   def pass_fail(outputs, inputs, ground_truths):
+   def pass_fail(outputs, inputs, ground_truth):
        return len(outputs["answer"]) > 10  # Converts to 1.0 or 0.0
    
    # Option 3: Return dict (RECOMMENDED - most informative)
    @evaluator()
-   def detailed_score(outputs, inputs, ground_truths):
+   def detailed_score(outputs, inputs, ground_truth):
        score = calculate_score(outputs)
        return {
            "score": score,  # Required: 0.0 to 1.0
@@ -104,9 +104,9 @@ Common Evaluator Patterns
 .. code-block:: python
 
    @evaluator()
-   def exact_match(outputs, inputs, ground_truths):
+   def exact_match(outputs, inputs, ground_truth):
        """Check for exact string match."""
-       expected = ground_truths.get("answer", "").lower().strip()
+       expected = ground_truth.get("answer", "").lower().strip()
        actual = outputs.get("answer", "").lower().strip()
        
        return {
@@ -121,7 +121,7 @@ Common Evaluator Patterns
 .. code-block:: python
 
    @evaluator()
-   def length_check(outputs, inputs, ground_truths):
+   def length_check(outputs, inputs, ground_truth):
        """Validate output length."""
        text = outputs.get("answer", "")
        word_count = len(text.split())
@@ -142,7 +142,7 @@ Common Evaluator Patterns
 .. code-block:: python
 
    @evaluator()
-   def keyword_check(outputs, inputs, ground_truths):
+   def keyword_check(outputs, inputs, ground_truth):
        """Check if output contains required keywords."""
        answer = outputs.get("answer", "").lower()
        required_keywords = inputs.get("keywords", [])
@@ -167,7 +167,7 @@ How do I create evaluators with custom parameters?
        """Factory for length evaluators with custom thresholds."""
        
        @evaluator(name=f"length_{min_words}_{max_words}")
-       def length_validator(outputs, inputs, ground_truths):
+       def length_validator(outputs, inputs, ground_truth):
            text = outputs.get("answer", "")
            word_count = len(text.split())
            
@@ -205,7 +205,7 @@ How do I use an LLM to evaluate quality?
    import openai
    
    @evaluator()
-   def llm_judge(outputs, inputs, ground_truths):
+   def llm_judge(outputs, inputs, ground_truth):
        """Use GPT-4 to judge answer quality."""
        client = openai.OpenAI()
        
@@ -213,7 +213,7 @@ How do I use an LLM to evaluate quality?
        Rate this answer on a scale of 0.0 to 1.0.
        
        Question: {inputs['question']}
-       Expected: {ground_truths['answer']}
+       Expected: {ground_truth['answer']}
        Actual: {outputs['answer']}
        
        Consider: accuracy, completeness, clarity.
@@ -248,7 +248,7 @@ How do I check multiple quality dimensions?
 .. code-block:: python
 
    @evaluator()
-   def comprehensive_quality(outputs, inputs, ground_truths):
+   def comprehensive_quality(outputs, inputs, ground_truth):
        """Evaluate multiple quality dimensions."""
        answer = outputs.get("answer", "")
        
@@ -256,7 +256,7 @@ How do I check multiple quality dimensions?
        has_answer = len(answer) > 0
        correct_length = 50 <= len(answer) <= 200
        no_profanity = not contains_profanity(answer)  # Your function
-       factually_correct = check_facts(answer, ground_truths)  # Your function
+       factually_correct = check_facts(answer, ground_truth)  # Your function
        
        # Individual scores
        criteria_scores = {
@@ -299,9 +299,9 @@ How do I check if answers are semantically similar?
    
    
    @evaluator()
-   def semantic_similarity(outputs, inputs, ground_truths):
+   def semantic_similarity(outputs, inputs, ground_truth):
        """Calculate semantic similarity using embeddings."""
-       expected = ground_truths.get("answer", "")
+       expected = ground_truth.get("answer", "")
        actual = outputs.get("answer", "")
        
        # Generate embeddings
@@ -334,15 +334,15 @@ How do I run multiple evaluators on the same outputs?
    from honeyhive.experiments import evaluate, evaluator
    
    @evaluator()
-   def accuracy(outputs, inputs, ground_truths):
-       return 1.0 if outputs["answer"] == ground_truths["answer"] else 0.0
+   def accuracy(outputs, inputs, ground_truth):
+       return 1.0 if outputs["answer"] == ground_truth["answer"] else 0.0
    
    @evaluator()
-   def length_check(outputs, inputs, ground_truths):
+   def length_check(outputs, inputs, ground_truth):
        return 1.0 if 10 <= len(outputs["answer"]) <= 200 else 0.5
    
    @evaluator()
-   def has_sources(outputs, inputs, ground_truths):
+   def has_sources(outputs, inputs, ground_truth):
        return 1.0 if "sources" in outputs else 0.0
    
    # Run all evaluators
@@ -364,11 +364,11 @@ What if my evaluator encounters errors?
 .. code-block:: python
 
    @evaluator()
-   def robust_evaluator(outputs, inputs, ground_truths):
+   def robust_evaluator(outputs, inputs, ground_truth):
        """Evaluator with error handling."""
        try:
            # Your evaluation logic
-           score = calculate_score(outputs, ground_truths)
+           score = calculate_score(outputs, ground_truth)
            return {"score": score}
        
        except KeyError as e:
@@ -404,15 +404,15 @@ Best Practices
 
    # ✅ Good: Pure function, no side effects
    @evaluator()
-   def good_evaluator(outputs, inputs, ground_truths):
-       score = calculate_score(outputs, ground_truths)
+   def good_evaluator(outputs, inputs, ground_truth):
+       score = calculate_score(outputs, ground_truth)
        return {"score": score}
    
    # ❌ Bad: Has side effects
    @evaluator()
-   def bad_evaluator(outputs, inputs, ground_truths):
+   def bad_evaluator(outputs, inputs, ground_truth):
        database.save(outputs)  # Side effect!
-       score = calculate_score(outputs, ground_truths)
+       score = calculate_score(outputs, ground_truth)
        return {"score": score}
 
 **Handle Missing Data**
@@ -420,10 +420,10 @@ Best Practices
 .. code-block:: python
 
    @evaluator()
-   def safe_evaluator(outputs, inputs, ground_truths):
+   def safe_evaluator(outputs, inputs, ground_truth):
        # Use .get() with defaults
        answer = outputs.get("answer", "")
-       expected = ground_truths.get("answer", "") if ground_truths else ""
+       expected = ground_truth.get("answer", "") if ground_truth else ""
        
        if not answer:
            return {"score": 0.0, "reason": "No answer provided"}
@@ -441,12 +441,12 @@ Best Practices
 
    # ❌ Bad: Unclear name
    @evaluator(name="eval1")
-   def e1(outputs, inputs, ground_truths):
+   def e1(outputs, inputs, ground_truth):
        return 0.5
    
    # ✅ Good: Clear name
    @evaluator(name="answer_length_50_200_words")
-   def check_answer_length(outputs, inputs, ground_truths):
+   def check_answer_length(outputs, inputs, ground_truth):
        word_count = len(outputs.get("answer", "").split())
        return 1.0 if 50 <= word_count <= 200 else 0.5
 
