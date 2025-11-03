@@ -1,6 +1,11 @@
 ## [Unreleased]
 
 ### Added
+- **✨ Experiments: Automatic Span Capture for Evaluation Functions**
+  - User functions in `evaluate()` are now automatically decorated with `@trace` for span capture
+  - Captures function execution as spans with event_type="chain" and automatic input/output tracking
+  - Eliminates need for manual decorator application on evaluation functions
+  - Provides automatic observability for experiment tasks without code changes
 - **✨ Experiments: v1.0 Evaluation Enhancements**
   - `evaluate()` now uses experiment name as default session name for better organization
   - Auto-injection of `tracer` parameter into evaluation functions for `enrich_session()` support

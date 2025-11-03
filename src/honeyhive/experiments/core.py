@@ -24,6 +24,7 @@ from honeyhive.experiments.utils import (
 )
 from honeyhive.models import CreateRunRequest
 from honeyhive.tracer import HoneyHiveTracer
+from honeyhive.tracer.instrumentation.decorators import trace
 from honeyhive.tracer.lifecycle.flush import force_flush_tracer
 from honeyhive.utils.logger import get_logger, safe_log
 
@@ -225,6 +226,14 @@ def run_experiment(
             sig = inspect.signature(function)
             params = sig.parameters
 
+            # ✅ Automatically wrap the function with @trace decorator
+            # This creates a span for the user's function execution and captures inputs/outputs
+            traced_function = trace(
+                event_type="chain",
+                event_name=function.__name__,
+                tracer=tracer,
+            )(function)
+
             if "tracer" in params:
                 # NEW v1.0 pattern: pass tracer for enrich_span/enrich_session support
                 if verbose:
@@ -233,7 +242,7 @@ def run_experiment(
                         "info",
                         "Calling function with tracer parameter (v1.0 feature)",
                     )
-                outputs = function(datapoint, tracer=tracer)
+                outputs = traced_function(datapoint, tracer=tracer)
             else:
                 # MAIN BRANCH pattern: backward compatible
                 if verbose:
@@ -242,7 +251,7 @@ def run_experiment(
                         "info",
                         "Calling function without tracer (main branch compatible)",
                     )
-                outputs = function(datapoint)
+                outputs = traced_function(datapoint)
 
             # Capture session ID from tracer for linking to run
             # Outputs will be enriched later via UpdateEventRequest after tracer flush

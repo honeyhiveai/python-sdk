@@ -115,6 +115,10 @@ class TestTracerParameter:
         mock_tracer = Mock()
         mock_tracer_class.return_value = mock_tracer
         mock_tracer.session_id = "test-session-123"
+        # Set up start_span as a context manager for @trace decorator support
+        mock_span = Mock()
+        mock_tracer.start_span.return_value.__enter__ = Mock(return_value=mock_span)
+        mock_tracer.start_span.return_value.__exit__ = Mock(return_value=False)
 
         # Track if tracer was passed
         tracer_received = []
@@ -156,6 +160,10 @@ class TestTracerParameter:
         mock_tracer = Mock()
         mock_tracer_class.return_value = mock_tracer
         mock_tracer.session_id = "test-session-123"
+        # Set up start_span as a context manager for @trace decorator support
+        mock_span = Mock()
+        mock_tracer.start_span.return_value.__enter__ = Mock(return_value=mock_span)
+        mock_tracer.start_span.return_value.__exit__ = Mock(return_value=False)
 
         def function_without_tracer(_datapoint: Dict[str, Any]) -> Dict[str, Any]:
             return {"output": "test"}
