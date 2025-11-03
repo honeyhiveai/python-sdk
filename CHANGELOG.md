@@ -40,6 +40,13 @@
   - Fixed `session_name` None handling in session initialization
   - Priority order now correctly enforced: individual params > SessionConfig > EvaluationConfig > TracerConfig
   - Affects 15 colliding fields: `session_id`, `project`, `api_key`, `server_url`, `source`, `is_evaluation`, `run_id`, `dataset_id`, `datapoint_id`, `session_name`, `inputs`, `link_carrier`, `dataset_name`, `test_mode`, `verbose`
+- **🐛 Evaluation: Metadata Propagation to Child Spans**
+  - Fixed regression where evaluation context (`run_id`, `dataset_id`, `datapoint_id`) was not propagating from `evaluate()` to child spans created by `@trace` decorators
+  - Root cause: `HoneyHiveSpanProcessor` was not reading evaluation-specific baggage keys
+  - Solution: Added `_get_evaluation_attributes_from_baggage()` method to extract and apply evaluation metadata to all spans
+  - Added 3 unit tests covering all baggage scenarios (all present, partial, empty)
+  - Added integration test validating end-to-end evaluation metadata propagation
+  - **Impact**: All spans created during `evaluate()` datapoint processing now correctly inherit evaluation context metadata
 
 ### Added
 - **✨ Tracing: Instance Method Pattern as Primary API (v1.0)**

@@ -430,6 +430,45 @@ class HoneyHiveSpanProcessor(SpanProcessor):
 
         return attributes
 
+    def _get_evaluation_attributes_from_baggage(self, ctx: Context) -> dict:
+        """Get evaluation metadata from baggage (run_id, dataset_id, datapoint_id).
+
+        This method reads evaluation context that was set during evaluate() execution
+        and ensures it propagates to all child spans created during datapoint processing.
+
+        :param ctx: OpenTelemetry context to extract baggage from
+        :type ctx: Context
+        :return: Dictionary of evaluation attributes
+        :rtype: dict
+        """
+        attributes = {}
+
+        # Read evaluation metadata from baggage
+        run_id = baggage.get_baggage("run_id", ctx)
+        if run_id:
+            attributes["honeyhive_metadata.run_id"] = run_id
+
+        dataset_id = baggage.get_baggage("dataset_id", ctx)
+        if dataset_id:
+            attributes["honeyhive_metadata.dataset_id"] = dataset_id
+
+        datapoint_id = baggage.get_baggage("datapoint_id", ctx)
+        if datapoint_id:
+            attributes["honeyhive_metadata.datapoint_id"] = datapoint_id
+
+        # Log if evaluation attributes were found
+        if attributes:
+            self._safe_log(
+                "debug",
+                "📊 Evaluation metadata from baggage",
+                honeyhive_data={
+                    "attributes": attributes,
+                    "span_name": "will_be_set_on_span",
+                },
+            )
+
+        return attributes
+
     def on_start(self, span: Span, parent_context: Optional[Context] = None) -> None:
         """Called when a span starts - enriches spans with HoneyHive attributes.
 
@@ -544,6 +583,11 @@ class HoneyHiveSpanProcessor(SpanProcessor):
                 # Add traceloop compatibility attributes for backend
                 attributes_to_set.update(
                     self._get_traceloop_compatibility_attributes(ctx)
+                )
+
+                # Add evaluation metadata from baggage (run_id, dataset_id, datapoint_id)
+                attributes_to_set.update(
+                    self._get_evaluation_attributes_from_baggage(ctx)
                 )
 
             # Apply all attributes to the span

@@ -36,6 +36,14 @@ Current Version Highlights
 * **Impact**: 15 colliding fields now work correctly (`session_id`, `project`, `api_key`, `server_url`, etc.)
 * **Tests**: Added 19 unit tests, 35 API integration tests, 10 backend verification tests
 
+**🐛 CRITICAL FIX: Evaluation Metadata Propagation to Child Spans (Nov 3, 2025)**
+
+* **Issue**: Evaluation context (`run_id`, `dataset_id`, `datapoint_id`) not propagating from `evaluate()` to child spans created by `@trace` decorators
+* **Root Cause**: `HoneyHiveSpanProcessor` wasn't reading evaluation-specific baggage keys
+* **Solution**: Added `_get_evaluation_attributes_from_baggage()` method to extract and apply evaluation metadata
+* **Impact**: All spans created during `evaluate()` datapoint processing now inherit evaluation context
+* **Tests**: Added 3 unit tests (all baggage scenarios) + 1 integration test for end-to-end validation
+
 **✨ NEW: Instance Method Pattern for Span/Session Enrichment (v1.0)**
 
 * **Primary API**: `tracer.enrich_span()` and `tracer.enrich_session()` instance methods

@@ -269,6 +269,71 @@ class TestHoneyHiveSpanProcessorBaggageHandling:
         assert not result
 
     @patch("honeyhive.tracer.processing.span_processor.baggage.get_baggage")
+    def test_get_evaluation_attributes_from_baggage_all_present(
+        self, mock_get_baggage: Mock
+    ) -> None:
+        """Test evaluation attribute extraction when all attributes present."""
+        processor = HoneyHiveSpanProcessor()
+        mock_context = Mock(spec=Context)
+
+        def mock_baggage_side_effect(key: str, ctx: Context) -> Optional[str]:
+            baggage_data = {
+                "run_id": "run-123",
+                "dataset_id": "dataset-456",
+                "datapoint_id": "datapoint-789",
+            }
+            return baggage_data.get(key)
+
+        mock_get_baggage.side_effect = mock_baggage_side_effect
+
+        result = processor._get_evaluation_attributes_from_baggage(mock_context)
+
+        expected = {
+            "honeyhive_metadata.run_id": "run-123",
+            "honeyhive_metadata.dataset_id": "dataset-456",
+            "honeyhive_metadata.datapoint_id": "datapoint-789",
+        }
+        assert result == expected
+
+    @patch("honeyhive.tracer.processing.span_processor.baggage.get_baggage")
+    def test_get_evaluation_attributes_from_baggage_partial(
+        self, mock_get_baggage: Mock
+    ) -> None:
+        """Test evaluation attribute extraction with some attributes missing."""
+        processor = HoneyHiveSpanProcessor()
+        mock_context = Mock(spec=Context)
+
+        def mock_baggage_side_effect(key: str, ctx: Context) -> Optional[str]:
+            baggage_data = {
+                "run_id": "run-123",
+                # dataset_id and datapoint_id missing
+            }
+            return baggage_data.get(key)
+
+        mock_get_baggage.side_effect = mock_baggage_side_effect
+
+        result = processor._get_evaluation_attributes_from_baggage(mock_context)
+
+        expected = {
+            "honeyhive_metadata.run_id": "run-123",
+        }
+        assert result == expected
+
+    @patch("honeyhive.tracer.processing.span_processor.baggage.get_baggage")
+    def test_get_evaluation_attributes_from_baggage_empty(
+        self, mock_get_baggage: Mock
+    ) -> None:
+        """Test evaluation attribute extraction with no evaluation metadata."""
+        processor = HoneyHiveSpanProcessor()
+        mock_context = Mock(spec=Context)
+
+        mock_get_baggage.return_value = None
+
+        result = processor._get_evaluation_attributes_from_baggage(mock_context)
+
+        assert result == {}
+
+    @patch("honeyhive.tracer.processing.span_processor.baggage.get_baggage")
     def test_get_basic_baggage_no_tracer_instance(self, mock_get_baggage: Mock) -> None:
         """Test baggage extraction without tracer instance."""
         processor = HoneyHiveSpanProcessor()  # No tracer_instance
