@@ -49,6 +49,7 @@ Fundamental Concepts
 
    concepts/tracing-fundamentals
    concepts/llm-observability
+   concepts/experiments-architecture
 
 Compatibility Matrix
 --------------------

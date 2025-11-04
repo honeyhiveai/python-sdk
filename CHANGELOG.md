@@ -21,6 +21,17 @@
   - Updated `evaluate()` function signatures with v1.0 API changes
   - Added migration notes for `tracer` parameter pattern
   - Includes both programmatic and UI-based result comparison workflows
+- **📚 Documentation: Experiments Architecture Explanation**
+  - New conceptual documentation: "How Experiments Work" (`docs/explanation/concepts/experiments-architecture.rst`)
+  - Complete experiment lifecycle with 4 phases (Setup → Execution → Evaluation → Aggregation)
+  - Visual Mermaid diagram showing data flow through all components
+  - Multi-instance architecture explanation with isolated tracer per datapoint
+  - Component relationships (dataset, function, evaluators, tracer)
+  - Experiments vs Traces comparison and when to use each
+  - Backend aggregation architecture and benefits
+  - Best practices and common patterns (A/B testing, progressive improvement, regression testing)
+  - Fills key documentation gap identified in docs audit
+  - All examples use v1.0+ instance method patterns (`tracer.enrich_session()`)
 
 ### Fixed
 - **📚 Documentation: Comprehensive Validation and Quality Fixes**

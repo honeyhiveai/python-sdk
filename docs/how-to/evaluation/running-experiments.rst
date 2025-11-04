@@ -199,7 +199,6 @@ add a ``tracer`` parameter to your function signature:
    from typing import Any, Dict
    from honeyhive import HoneyHiveTracer
    from honeyhive.experiments import evaluate
-   from honeyhive.sdk.utils import enrich_span, enrich_session
    
    
    def my_function(
@@ -219,8 +218,7 @@ add a ``tracer`` parameter to your function signature:
        
        
        # Enrich the session with metadata
-       enrich_session(
-           tracer=tracer,
+       tracer.enrich_session(
            metadata={"experiment_version": "v2", "user_id": "test-123"}
        )
        
@@ -230,7 +228,7 @@ add a ``tracer`` parameter to your function signature:
        
        
        # Enrich spans with metrics
-       enrich_span(
+       tracer.enrich_span(
            metrics={"processing_time": 0.5},
            metadata={"model": "gpt-4"}
        )
