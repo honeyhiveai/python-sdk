@@ -15,6 +15,7 @@ Evaluation & Analysis Guides
    creating-evaluators
    comparing-experiments
    dataset-management
+   dataset-crud
    server-side-evaluators
    multi-step-experiments
    result-analysis

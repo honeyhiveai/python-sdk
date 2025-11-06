@@ -4,6 +4,11 @@ Tracing Fundamentals
 .. note::
    This document explains the fundamental concepts of distributed tracing and how they apply to LLM applications.
 
+.. seealso::
+   **HoneyHive Tracer Architecture**
+   
+   For a deep dive into how the HoneyHive SDK implements these concepts with a modular, mixin-based architecture, see :doc:`/reference/api/tracer-architecture`.
+
 What is Distributed Tracing?
 ----------------------------
 

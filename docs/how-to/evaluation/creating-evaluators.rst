@@ -28,15 +28,100 @@ What's the simplest evaluator I can create?
 
 .. code-block:: python
 
-   from honeyhive.experiments import evaluate
+   from typing import Any, Dict
+   from honeyhive.experiments import evaluate, evaluator
    
+   # Your evaluation function
+   def my_llm_app(datapoint: Dict[str, Any]) -> Dict[str, Any]:
+       """Processes datapoint and returns outputs."""
+       inputs = datapoint.get("inputs", {})
+       result = call_llm(inputs["prompt"])
+       return {"answer": result}  # This becomes 'outputs' in evaluator
+   
+   # Your evaluator
+   @evaluator()
+   def exact_match(outputs, inputs, ground_truth):
+       """Evaluator receives output from my_llm_app + datapoint context."""
+       # outputs = {"answer": result} from my_llm_app
+       # inputs = datapoint["inputs"]
+       # ground_truth = datapoint["ground_truth"]
+       expected = ground_truth.get("answer", "")
+       actual = outputs.get("answer", "")
+       return 1.0 if actual == expected else 0.0
+   
+   # Run evaluation
    result = evaluate(
-       function=my_function,
-       dataset=dataset,
-       evaluators=[exact_match],  # Add your evaluator
+       function=my_llm_app,       # Produces 'outputs'
+       dataset=dataset,            # Contains 'inputs' and 'ground_truth'
+       evaluators=[exact_match],   # Receives all three
        api_key="your-api-key",
        project="your-project"
    )
+
+.. important::
+   **How Evaluators Are Invoked**
+   
+   For each datapoint in your dataset, ``evaluate()`` does the following:
+   
+   1. **Calls your evaluation function** with the datapoint
+   2. **Gets the output** (return value from your function)
+   3. **Invokes each evaluator** with:
+   
+      - ``outputs`` = return value from your evaluation function
+      - ``inputs`` = ``datapoint["inputs"]`` from the dataset
+      - ``ground_truth`` = ``datapoint["ground_truth"]`` from the dataset
+   
+   This allows evaluators to compare what your function produced (``outputs``) against what was expected (``ground_truth``), with access to the original inputs for context.
+
+**Visual Flow Diagram**
+
+.. mermaid::
+
+   flowchart TD
+       Start([Dataset with Datapoints]) --> Loop{For Each Datapoint}
+       
+       Loop --> Extract[Extract Components:<br/>inputs = datapoint['inputs']<br/>ground_truth = datapoint['ground_truth']]
+       
+       Extract --> EvalFunc[Call Evaluation Function<br/>my_llm_app\(datapoint\)]
+       
+       EvalFunc --> Output[Function Returns:<br/>outputs = \{'answer': result\}]
+       
+       Output --> Evaluator[Call Each Evaluator<br/>evaluator\(outputs, inputs, ground_truth\)]
+       
+       Evaluator --> Score[Evaluator Returns:<br/>score or \{score, metadata\}]
+       
+       Score --> Store[Store Results in HoneyHive]
+       
+       Store --> Loop
+       
+       Loop -->|Done| End([Experiment Complete])
+       
+       style Start fill:#e1f5ff
+       style EvalFunc fill:#fff4e1
+       style Evaluator fill:#e8f5e9
+       style End fill:#f3e5f5
+
+**Example Mapping:**
+
+.. code-block:: python
+
+   # Dataset datapoint
+   datapoint = {
+       "inputs": {"prompt": "What is AI?"},
+       "ground_truth": {"answer": "Artificial Intelligence"}
+   }
+   
+   # Step 1: evaluate() calls your function
+   outputs = my_llm_app(datapoint)
+   # outputs = {"answer": "AI is Artificial Intelligence"}
+   
+   # Step 2: evaluate() calls your evaluator
+   score = exact_match(
+       outputs=outputs,                          # From function
+       inputs=datapoint["inputs"],               # From dataset
+       ground_truth=datapoint["ground_truth"]    # From dataset
+   )
+   # score = 1.0 (match found)
 
 What parameters must my evaluator accept?
 -----------------------------------------

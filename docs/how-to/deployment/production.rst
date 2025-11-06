@@ -93,6 +93,20 @@ Network Security
 Performance Optimization
 ------------------------
 
+.. seealso::
+   **Tracer Performance Benchmarks**
+   
+   For detailed performance metrics and overhead analysis, see the `comprehensive benchmarking suite <https://github.com/honeyhiveai/python-sdk/tree/main/scripts/benchmark>`_ which measures:
+   
+   - **Overhead Latency**: < 10ms tracer overhead per operation
+   - **Memory Usage**: < 50MB memory overhead
+   - **Network I/O**: Tracer traffic < 10% of LLM traffic
+   - **Export Latency**: < 100ms average export time
+   - **Trace Coverage**: 100% of requests traced
+   - **Attribute Completeness**: All required span attributes captured
+   
+   Run benchmarks locally: ``python scripts/tracer-performance-benchmark.py``
+
 Minimize Overhead
 ~~~~~~~~~~~~~~~~~
 
@@ -175,7 +189,9 @@ Error Handling & Reliability
 Graceful Degradation
 ~~~~~~~~~~~~~~~~~~~~
 
-**Never let tracing crash your application**:
+**The SDK provides built-in graceful degradation** - tracing failures will never crash your application.
+
+HoneyHive automatically handles errors in tracing operations, ensuring your business logic continues uninterrupted even if the tracing infrastructure is unavailable.
 
 .. code-block:: python
 
@@ -184,194 +200,50 @@ Graceful Degradation
    
    logger = logging.getLogger(__name__)
    
-   def create_safe_tracer():
-       """Create tracer with error handling."""
-       try:
-           tracer = HoneyHiveTracer.init(
-               api_key=os.getenv("HH_API_KEY"),               source=os.getenv("HH_SOURCE", "production"),
-               timeout=10.0  # Don't wait too long
-           )
-           logger.info("HoneyHive tracer initialized successfully")
-           return tracer
-       except Exception as e:
-           logger.warning(f"HoneyHive initialization failed: {e}")
-           return None
-   
-   # Global tracer with safe initialization
-   TRACER = create_safe_tracer()
-   
-   def safe_trace(func):
-       """Decorator that only traces if tracer is available."""
-       if TRACER:
-           return trace(tracer=TRACER)(func)
-       else:
-           return func  # No tracing, but function still works
-   
-   @safe_trace
-   def critical_business_function():
-       """This function works whether tracing is available or not."""
-       # Your business logic here
-       return "success"
-
-Retry Logic
-~~~~~~~~~~~
-
-**Handle transient network issues**:
-
-.. code-block:: python
-
-   import time
-   import random
-   from honeyhive import HoneyHiveTracer
-   
-   def create_resilient_tracer(max_retries=3):
-       """Create tracer with retry logic."""
-       for attempt in range(max_retries):
-           try:
-               tracer = HoneyHiveTracer.init(
-                   api_key=os.getenv("HH_API_KEY"),                   timeout=5.0 + attempt * 2  # Increasing timeout
-               )
-               return tracer
-           except Exception as e:
-               if attempt == max_retries - 1:
-                   logger.error(f"Failed to initialize tracer after {max_retries} attempts")
-                   return None
-               
-               # Exponential backoff
-               delay = (2 ** attempt) + random.uniform(0, 1)
-               time.sleep(delay)
-               logger.warning(f"Tracer init attempt {attempt + 1} failed, retrying in {delay:.1f}s")
-
-.. note::
-   **Advanced Patterns Available**
-   
-   For advanced resilience patterns including circuit breakers, see :doc:`advanced-production`.
-
-Monitoring Production Health
-----------------------------
-
-Application Metrics
-~~~~~~~~~~~~~~~~~~~
-
-**Monitor your tracing performance**:
-
-.. code-block:: python
-
-   import time
-   import logging
-   
-   logger = logging.getLogger(__name__)
-   
-   class SimpleTracingMetrics:
-       """Basic tracing metrics for production monitoring."""
-       
-       def __init__(self):
-           self.trace_count = 0
-           self.trace_errors = 0
-       
-       def record_trace(self, success: bool):
-           self.trace_count += 1
-           if not success:
-               self.trace_errors += 1
-       
-       def get_error_rate(self) -> float:
-           if self.trace_count == 0:
-               return 0.0
-           return self.trace_errors / self.trace_count
-   
-   # Global metrics
-   tracing_metrics = SimpleTracingMetrics()
-
-.. note::
-   For comprehensive monitoring with latency tracking, error type breakdown, and Prometheus integration, see :doc:`advanced-production`.
-
-Health Check Endpoints
-~~~~~~~~~~~~~~~~~~~~~~
-
-**Add health checks for your tracing infrastructure**:
-
-.. code-block:: python
-
-   from flask import Flask, jsonify
-   from honeyhive import HoneyHiveTracer
-   
-   app = Flask(__name__)
-   
-   @app.route('/health/tracing')
-   def tracing_health():
-       """Health check for tracing infrastructure."""
-       try:
-           # Test tracer connectivity
-           test_tracer = HoneyHiveTracer.init(
-               api_key=os.getenv("HH_API_KEY"),
-               timeout=5.0
-           )
-           
-           # Quick connectivity test
-           with test_tracer.trace("health_check_test") as span:
-               span.set_attribute("test.timestamp", time.time())
-           
-           stats = tracing_metrics.get_stats()
-           
-           return jsonify({
-               "status": "healthy",
-               "tracing": {
-                   "connected": True,
-                   "metrics": stats
-               }
-           }), 200
-           
-       except Exception as e:
-           return jsonify({
-               "status": "unhealthy",
-               "tracing": {
-                   "connected": False,
-                   "error": str(e)
-               }
-           }), 503
-
-Logging Integration
-~~~~~~~~~~~~~~~~~~~
-
-**Integrate tracing with your logging**:
-
-.. code-block:: python
-
-   import logging
-   from honeyhive import HoneyHiveTracer, enrich_span
-   
-   logger = logging.getLogger(__name__)
-   
-   # Log important events and add to trace
-   logger.info("Processing request")
-   enrich_span({
-       "log.message": "Processing request",
-       "log.level": "INFO"
-   })
-
-Deployment Strategies
----------------------
-
-**Standard Deployment:**
-
-The simplest approach is a single tracer instance for your production environment:
-
-.. code-block:: python
-
-   import os
-   from honeyhive import HoneyHiveTracer
-   
-   # Single production tracer
+   # Initialize tracer - failures are handled gracefully
    tracer = HoneyHiveTracer.init(
        api_key=os.getenv("HH_API_KEY"),
-       project="production-app",
-       source="production"
+       source=os.getenv("HH_SOURCE", "production"),
+       timeout=10.0  # Configure timeout for slow networks (default: 30s)
    )
+   
+   @trace(tracer=tracer)
+   def critical_business_function():
+       """This function works whether tracing succeeds or fails."""
+       # Your business logic here - never interrupted by tracing errors
+       return "success"
 
 .. note::
-   **Advanced Deployment Strategies**
+   **Timeout Configuration**
    
-   For blue-green deployments, canary rollouts, and traffic-based routing, see :doc:`advanced-production`.
+   The ``timeout`` parameter controls how long the SDK waits for API responses before gracefully degrading. Lower timeouts (5-10s) ensure faster degradation in network issues, while higher timeouts (30-60s) accommodate slow networks. Default is 30 seconds.
+
+Network Retries
+~~~~~~~~~~~~~~~
+
+**The SDK provides built-in network retry logic** for transient failures.
+
+HoneyHive automatically retries failed API requests with exponential backoff, handling temporary network issues without requiring manual retry implementation.
+
+.. code-block:: python
+
+   from honeyhive import HoneyHiveTracer
+   
+   # Simple initialization - retries are automatic
+   tracer = HoneyHiveTracer.init(
+       api_key=os.getenv("HH_API_KEY"),
+       source=os.getenv("HH_SOURCE", "production")
+   )
+   
+   # The SDK handles:
+   # - Network timeouts → automatic retry with backoff
+   # - Transient API errors → automatic retry with backoff
+   # - Connection failures → graceful degradation after retries
+
+.. note::
+   **Built-in Retry Behavior**
+   
+   The SDK automatically retries failed requests up to 3 times with exponential backoff. This handles most transient network issues without requiring custom retry logic.
 
 Container Deployment
 --------------------

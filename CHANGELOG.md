@@ -2,6 +2,29 @@
 
 ### Added
 
+- **📚 Documentation: Comprehensive Documentation Improvements (Dhruv Feedback)**
+  - **Navigation**: Moved tracer-initialization-patterns to be FIRST how-to guide (#1 user question)
+  - **Production Docs**: Added tracer benchmarking metrics link (< 10ms overhead, < 50MB memory, < 10% network traffic)
+  - **Production Docs**: Fixed graceful degradation docs (SDK has built-in, added timeout callout)
+  - **Production Docs**: Fixed retry logic docs (SDK has built-in network retries with exponential backoff)
+  - **Pyproject Integration**: Added pip requirements.txt and uv package manager examples with full workflows
+  - **Running Experiments**: Added comprehensive ground_truth section with client-side vs server-side evaluators
+  - **Running Experiments**: Added decision matrix for evaluator architecture choices
+  - **Running Experiments**: Fixed enrich_span to call from another function (not inline in evaluation function)
+  - **Running Experiments**: Added tracer parameter documentation for evaluation function signatures
+  - **Running Experiments**: Added "evaluation function as scaffold" callout
+  - **Running Experiments**: Added S3 external dataset usage guide (no upload required)
+  - **Creating Evaluators**: Added visual Mermaid diagram for evaluate() flow (datapoint → function → evaluator)
+  - **Creating Evaluators**: Explained evaluator invocation with outputs/inputs/ground_truth mapping
+  - **Creating Evaluators**: Added complete example showing data flow through evaluate()
+  - **New Guide**: Created "How to Export Traces" (CLI/API methods, multiple formats, pagination, automation patterns)
+  - **New Guide**: Created "Dataset CRUD" (create/update/delete via SDK, validation, versioning, external sync)
+  - **Tracing Fundamentals**: Added early link to tracer architecture documentation
+  - **Removed**: Deleted pointless monitoring/index.html page
+  - **Removed**: Deleted pointless advanced-production.html page
+  - **Removed**: Removed redundant "monitoring production health" section
+  - Files modified: 11 | Files added: 2 | Files deleted: 2
+
 - **📚 Documentation: Comprehensive Tutorial & Integration Improvements**
   - **Strands Integration**: Removed incorrect `set_tracer_provider()` requirement - SDK auto-handles provider setup
   - **Strands Integration**: Added clear integration/user code distinction with comment separators

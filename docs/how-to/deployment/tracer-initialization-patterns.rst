@@ -670,5 +670,4 @@ Next Steps
 
 - :doc:`/how-to/evaluation/running-experiments` - Using ``evaluate()``
 - :doc:`/how-to/deployment/production` - Production deployment patterns
-- :doc:`/how-to/deployment/advanced-production` - Advanced production scenarios
 

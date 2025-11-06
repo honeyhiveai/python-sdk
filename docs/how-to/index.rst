@@ -24,6 +24,21 @@ How-to guides are organized by problem domain. Each guide provides step-by-step 
 - You want to implement a specific pattern or technique
 - You're troubleshooting an issue
 
+Getting Started
+---------------
+
+**Start here** - Essential setup patterns for successful HoneyHive integration:
+
+.. toctree::
+   :maxdepth: 1
+
+   deployment/tracer-initialization-patterns
+
+.. note::
+   **Most Common Question: "Where should I initialize the tracer?"**
+   
+   This guide covers 5 scenarios: local development, evaluate(), serverless (Lambda), long-running servers, and testing. Read this first to avoid common initialization pitfalls.
+
 Migration & Compatibility
 -------------------------
 
@@ -89,19 +104,17 @@ Set up quality monitoring and evaluation:
 
    evaluation/index
 
-Monitor in Production
----------------------
+Deploy to Production
+--------------------
 
 Keep applications running reliably:
 
 .. toctree::
    :maxdepth: 1
 
-   monitoring/index
-   deployment/tracer-initialization-patterns
    deployment/pyproject-integration
    deployment/production
-   deployment/advanced-production
+   monitoring/export-traces
 
 Build Common Patterns
 ---------------------
@@ -126,8 +139,6 @@ Implement proven architectural patterns:
 - :doc:`deployment/tracer-initialization-patterns` - **Where should I initialize the tracer?** (local, serverless, server, evaluate)
 - :doc:`deployment/pyproject-integration` - Include HoneyHive in your pyproject.toml
 - :doc:`deployment/production` - Deploy HoneyHive to production
-- :doc:`deployment/advanced-production` - Circuit breakers, blue-green deployments, and advanced patterns
-- :doc:`monitoring/index` - Set up monitoring and alerts
 - :doc:`evaluation/index` - Build comprehensive evaluation pipelines
 - :doc:`llm-application-patterns` - Agent patterns (ReAct, Plan-Execute, RAG) with tradeoffs and trace hierarchies
 

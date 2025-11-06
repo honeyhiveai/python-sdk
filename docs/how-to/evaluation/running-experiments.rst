@@ -58,6 +58,17 @@ What's the simplest way to run an experiment?
    print(f"✅ Run ID: {result.run_id}")
    print(f"✅ Status: {result.status}")
 
+.. important::
+   **Think of Your Evaluation Function as a Scaffold**
+   
+   The evaluation function's job is to take datapoints from your dataset and convert them into the right format to invoke your main AI processing functions. It's a thin adapter layer that:
+   
+   - Extracts ``inputs`` from the datapoint
+   - Calls your actual application logic (``call_llm``, ``process_query``, ``rag_pipeline``, etc.)
+   - Returns the results in a format that evaluators can use
+   
+   Keep the evaluation function simple - the real logic lives in your application functions.
+
 How should I structure my test data?
 ------------------------------------
 
@@ -118,13 +129,15 @@ What signature must my function have?
 
    Function signature changed from ``(inputs, ground_truth)`` to ``(datapoint: Dict[str, Any])``.
 
-Your function MUST accept a ``datapoint`` parameter:
+Your function MUST accept a ``datapoint`` parameter, and can optionally accept a ``tracer`` parameter:
 
 .. code-block:: python
 
    from typing import Any, Dict
+   from honeyhive import HoneyHiveTracer
    
    
+   # Option 1: Basic signature (datapoint only)
    def my_function(datapoint: Dict[str, Any]) -> Dict[str, Any]:
        """Your evaluation function.
        
@@ -154,9 +167,42 @@ Your function MUST accept a ``datapoint`` parameter:
        
        # Return dict
        return {"answer": result, "metadata": {...}}
+   
+   
+   # Option 2: With tracer parameter (for advanced tracing)
+   def my_function_with_tracer(
+       datapoint: Dict[str, Any],
+       tracer: HoneyHiveTracer  # Optional - auto-injected by evaluate()
+   ) -> Dict[str, Any]:
+       """Evaluation function with tracer access.
+       
+       Args:
+           datapoint: Dictionary with 'inputs' and 'ground_truth' keys
+           tracer: HoneyHiveTracer instance (optional, auto-provided)
+       
+       Returns:
+           dict: Your function's output
+       """
+       inputs = datapoint.get("inputs", {})
+       
+       # Use tracer for enrichment
+       tracer.enrich_session(metadata={"user_id": inputs.get("user_id")})
+       
+       result = process_query(inputs["question"])
+       
+       return {"answer": result}
 
 .. important::
-   - Accept **one parameter**: ``datapoint: Dict[str, Any]``
+   **Required Parameters:**
+   
+   - Accept ``datapoint: Dict[str, Any]`` as first parameter (required)
+   
+   **Optional Parameters:**
+   
+   - Accept ``tracer: HoneyHiveTracer`` as second parameter (optional - auto-injected by evaluate())
+   
+   **Requirements:**
+   
    - Extract ``inputs`` with ``datapoint.get("inputs", {})``
    - Extract ``ground_truth`` with ``datapoint.get("ground_truth", {})``
    - Return value should be a **dictionary**
@@ -181,6 +227,143 @@ Your function MUST accept a ``datapoint`` parameter:
    def new_style_function(datapoint: Dict[str, Any]) -> Dict[str, Any]:
        inputs = datapoint.get("inputs", {})
        return {"output": inputs["query"]}
+
+How do I use ground_truth from datapoints in my experiments?
+-------------------------------------------------------------
+
+**Client-Side vs Server-Side Evaluators**
+
+The ``ground_truth`` from your datapoints can be used by evaluators to measure quality. Choose between client-side or server-side evaluation based on your architecture.
+
+**Client-Side Evaluators (Recommended)**
+
+Pass data down to the evaluation function so it's available for client-side evaluators:
+
+.. code-block:: python
+
+   from typing import Any, Dict
+   from honeyhive.experiments import evaluate
+   
+   def my_llm_app(datapoint: Dict[str, Any]) -> Dict[str, Any]:
+       """Evaluation function that passes through data for evaluators."""
+       inputs = datapoint.get("inputs", {})
+       ground_truth = datapoint.get("ground_truth", {})
+       
+       # Call your LLM
+       result = call_llm(inputs["prompt"])
+       
+       # Return outputs AND pass through ground_truth for evaluators
+       return {
+           "answer": result,
+           "ground_truth": ground_truth,  # Make available to evaluators
+           "intermediate_steps": [...]    # Any other data for evaluation
+       }
+   
+   # Your evaluator receives both the output and datapoint context
+   def accuracy_evaluator(output: Dict[str, Any], datapoint: Dict[str, Any]) -> Dict[str, Any]:
+       """Client-side evaluator with access to ground truth."""
+       predicted = output["answer"]
+       expected = output["ground_truth"]["answer"]  # From evaluation function output
+       
+       is_correct = predicted.lower() == expected.lower()
+       return {
+           "score": 1.0 if is_correct else 0.0,
+           "metadata": {"predicted": predicted, "expected": expected}
+       }
+   
+   # Run evaluation with client-side evaluator
+   result = evaluate(
+       function=my_llm_app,
+       dataset=dataset,
+       evaluators=[accuracy_evaluator],
+       name="Accuracy Test"
+   )
+
+.. note::
+   **When to Use Client-Side Evaluators**
+   
+   - Simple, self-contained evaluation logic
+   - Evaluators that need access to intermediate steps
+   - When you can easily pass data through the evaluation function
+   - Faster feedback (no roundtrip to HoneyHive)
+
+**Server-Side Evaluators**
+
+For complex applications where it's hard to pass intermediate steps, use ``enrich_session()`` to bring data up to the session level:
+
+.. code-block:: python
+
+   from typing import Any, Dict
+   from honeyhive import HoneyHiveTracer
+   from honeyhive.experiments import evaluate
+   
+   def complex_app(datapoint: Dict[str, Any], tracer: HoneyHiveTracer) -> Dict[str, Any]:
+       """Complex app with hard-to-pass intermediate steps."""
+       inputs = datapoint.get("inputs", {})
+       
+       # Step 1: Document retrieval (deep in call stack)
+       docs = retrieve_documents(inputs["query"])
+       
+       # Step 2: LLM call (deep in another function)
+       result = generate_answer(inputs["query"], docs)
+       
+       # Instead of threading data through complex call stacks,
+       # use enrich_session to make it available at session level
+       tracer.enrich_session(
+           outputs={
+               "answer": result,
+               "retrieved_docs": docs,
+               "doc_count": len(docs)
+           },
+           metadata={
+               "ground_truth": datapoint.get("ground_truth", {}),
+               "experiment_version": "v2"
+           }
+       )
+       
+       return {"answer": result}
+   
+   # Run evaluation - use server-side evaluators in HoneyHive dashboard
+   result = evaluate(
+       function=complex_app,
+       dataset=dataset,
+       name="Complex App Evaluation"
+   )
+   # Then configure server-side evaluators in HoneyHive to compare
+   # session.outputs.answer against session.metadata.ground_truth.answer
+
+.. note::
+   **When to Use Server-Side Evaluators**
+   
+   - Complex, nested application architectures
+   - Intermediate steps are hard to pass through function calls
+   - Need to evaluate data from multiple spans/sessions together
+   - Want centralized evaluation logic in HoneyHive dashboard
+
+**Decision Matrix:**
+
+.. list-table::
+   :header-rows: 1
+   :widths: 30 35 35
+
+   * - Scenario
+     - Use Client-Side
+     - Use Server-Side
+   * - Simple function
+     - ✅ Easy to pass data
+     - ❌ Overkill
+   * - Complex nested calls
+     - ❌ Hard to thread data
+     - ✅ Use enrich_session
+   * - Evaluation speed
+     - ✅ Faster (local)
+     - ⚠️ Slower (API roundtrip)
+   * - Centralized logic
+     - ❌ In code
+     - ✅ In dashboard
+   * - Team collaboration
+     - ⚠️ Requires code changes
+     - ✅ No code changes needed
 
 How do I enrich sessions or spans during evaluation?
 ----------------------------------------------------
@@ -223,18 +406,29 @@ add a ``tracer`` parameter to your function signature:
        )
        
        
-       # Your logic
-       result = process_query(inputs["query"])
-       
-       
-       # Enrich spans with metrics
-       tracer.enrich_span(
-           metrics={"processing_time": 0.5},
-           metadata={"model": "gpt-4"}
-       )
+       # Call your application logic - enrich_span happens inside
+       result = process_query(inputs["query"], tracer)
        
        
        return {"answer": result}
+   
+   
+   def process_query(query: str, tracer: HoneyHiveTracer) -> str:
+       """Application logic that enriches spans.
+       
+       Call enrich_span from within your actual processing functions,
+       not directly in the evaluation function.
+       """
+       # Do some processing
+       result = call_llm(query)
+       
+       # Enrich the span with metrics from within this function
+       tracer.enrich_span(
+           metrics={"processing_time": 0.5, "token_count": 150},
+           metadata={"model": "gpt-4", "temperature": 0.7}
+       )
+       
+       return result
    
    
    # The tracer is automatically provided by evaluate()

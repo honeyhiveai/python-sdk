@@ -579,4 +579,4 @@ The goal is not just to know that your LLM application is running, but to unders
 
 - :doc:`../architecture/byoi-design` - Understand the technical architecture
 - :doc:`../../how-to/evaluation/index` - Learn practical evaluation
-- :doc:`../../how-to/monitoring/index` - Set up monitoring and performance tracking
+- :doc:`../../how-to/deployment/production` - Production deployment and monitoring
