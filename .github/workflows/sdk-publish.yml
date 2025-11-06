@@ -49,15 +49,15 @@ jobs:
       - name: Extract version from __init__.py
         id: get_version
         run: |
-          # Extract version from source
-          version=$(python -c "exec(open('src/honeyhive/__init__.py').read()); print(__version__)")
+          # Extract version from source using sed (avoids import issues)
+          version=$(sed -n 's/^__version__[[:space:]]*=[[:space:]]*"\([^"]*\)".*/\1/p' src/honeyhive/__init__.py)
           echo "version=$version" >> $GITHUB_OUTPUT
           echo "📦 Detected version: $version"
 
-          # Validate version format (basic check)
-          if ! echo "$version" | grep -E '^[0-9]+\.[0-9]+\.[0-9]+(rc[0-9]+|alpha[0-9]+|beta[0-9]+)?$'; then
+          # Validate version format
+          if ! echo "$version" | grep -E '^[0-9]+\.[0-9]+\.[0-9]+(-rc[0-9]+|rc[0-9]+|alpha[0-9]+|beta[0-9]+)?$'; then
             echo "❌ Invalid version format: $version"
-            echo "Expected format: X.Y.Z or X.Y.Zrc# or X.Y.Zalpha# or X.Y.Zbeta#"
+            echo "Expected format: X.Y.Z or X.Y.Z-rc# or X.Y.Zrc#"
             exit 1
           fi
 
