@@ -1409,7 +1409,7 @@ See Also
 - :doc:`decorators` - ``@trace`` and ``@evaluate`` decorator reference
 - :doc:`client` - HoneyHive client API reference
 - :doc:`../../tutorials/01-setup-first-tracer` - Basic tracing tutorial
-- :doc:`../../tutorials/advanced-setup` - Advanced configuration patterns
+- :doc:`../../tutorials/advanced-configuration` - Advanced configuration patterns
 - :doc:`../../how-to/index` - Troubleshooting tracing issues (see Troubleshooting section)
 - :doc:`../../explanation/concepts/tracing-fundamentals` - Tracing concepts and theory
 - :doc:`../../explanation/architecture/overview` - Architecture overview and patterns

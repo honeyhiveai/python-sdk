@@ -608,4 +608,4 @@ See Also
 - :doc:`overview` - Architecture overview
 - :doc:`byoi-design` - BYOI design explanation
 - :doc:`overview` - Architecture overview
-- :doc:`../../tutorials/advanced-setup` - Advanced setup tutorial
+- :doc:`../../tutorials/advanced-configuration` - Advanced setup tutorial

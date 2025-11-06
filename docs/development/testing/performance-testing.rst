@@ -1258,5 +1258,5 @@ See Also
 - :doc:`lambda-testing` - AWS Lambda performance testing
 - :doc:`integration-testing` - Integration performance testing
 - :doc:`ci-cd-integration` - Automated performance testing
-- :doc:`../../tutorials/advanced-setup` - Performance optimization configuration
+- :doc:`../../tutorials/advanced-configuration` - Performance optimization configuration
 - :doc:`../../reference/configuration/environment-vars` - Performance-related settings

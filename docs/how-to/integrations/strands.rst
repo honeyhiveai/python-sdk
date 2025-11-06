@@ -24,13 +24,14 @@ AWS Strands is an AI agent framework that:
 Integration Approach
 ~~~~~~~~~~~~~~~~~~~~
 
-HoneyHive integrates with AWS Strands using the **OpenTelemetry TracerProvider pattern**.
+HoneyHive integrates with AWS Strands using **automatic OpenTelemetry provider setup**.
 
 **Key Difference from Other Integrations:**
 
 Unlike OpenAI or Anthropic (which require instrumentors like OpenInference or Traceloop), **AWS Strands has built-in OpenTelemetry tracing**. This means:
 
 - ✅ **NO instrumentor needed** - Strands instruments its own LLM calls
+- ✅ **NO manual provider setup** - ``HoneyHiveTracer.init()`` handles it automatically
 - ✅ **Built-in GenAI conventions** - All model calls automatically traced
 - ✅ **Don't use OpenInference/Traceloop** - Would create duplicate spans
 - ✅ **Zero modifications to Strands code** - Works with Strands as-is
@@ -41,10 +42,22 @@ Unlike OpenAI or Anthropic (which require instrumentors like OpenInference or Tr
 
 **How It Works:**
 
-1. HoneyHive provides a TracerProvider
-2. Set it as the global OpenTelemetry provider
-3. Strands automatically uses it for all its built-in tracing
-4. All LLM calls, agent actions, and tool executions are traced
+1. Call ``HoneyHiveTracer.init()`` - automatically sets up global TracerProvider
+2. Strands automatically uses it for all its built-in tracing
+3. All LLM calls, agent actions, and tool executions are traced
+
+Complete Example
+~~~~~~~~~~~~~~~~
+
+**See the full code:** `strands_integration.py <https://github.com/honeyhiveai/python-sdk/blob/main/examples/integrations/strands_integration.py>`_
+
+A comprehensive working example is available in the repository at ``examples/integrations/strands_integration.py``:
+
+- ✅ All 8 integration patterns shown below
+- ✅ Basic agent invocation, tool execution, streaming responses
+- ✅ Custom trace attributes, structured outputs with Pydantic
+- ✅ Swarm multi-agent collaboration, graph workflows with parallel processing
+- ✅ Copy-paste ready code for quick start
 
 What Gets Traced
 ~~~~~~~~~~~~~~~~
@@ -138,22 +151,22 @@ Minimal Setup (3 Lines of Code)
 
 .. code-block:: python
 
+   # ============= HONEYHIVE INTEGRATION =============
    from honeyhive import HoneyHiveTracer
-   from strands import Agent
-   from strands.models import BedrockModel
-   from opentelemetry import trace as trace_api
    import os
    
-   # 1. Initialize HoneyHive tracer
+   # Initialize HoneyHive tracer - automatic global provider setup
    tracer = HoneyHiveTracer.init(
        api_key=os.getenv("HH_API_KEY"),
        project="strands-demo",
    )
+   # ==================================================
    
-   # 2. Set as global TracerProvider (BEFORE creating agents)
-   trace_api.set_tracer_provider(tracer.provider)
+   # ============= YOUR STRANDS CODE ==================
+   from strands import Agent
+   from strands.models import BedrockModel
    
-   # 3. Use Strands normally - tracing is automatic!
+   # Use Strands normally - tracing is automatic!
    agent = Agent(
        name="BasicAgent",
        model=BedrockModel(model_id="anthropic.claude-haiku-4-5-20251001-v1:0"),
@@ -162,29 +175,37 @@ Minimal Setup (3 Lines of Code)
    
    result = agent("What is 2+2?")
    print(result)  # "2+2 equals 4"
+   # ==================================================
 
 **That's it!** All agent activity is now automatically traced to HoneyHive.
+
+.. note::
+   **No Manual Provider Setup Required**
+   
+   Unlike some integrations, you don't need to manually call ``trace_api.set_tracer_provider()``. 
+   The SDK automatically handles OpenTelemetry provider setup during ``HoneyHiveTracer.init()``.
+   
+   AWS Strands has built-in OpenTelemetry support that works seamlessly with HoneyHive's automatic configuration.
 
 Basic Agent Example
 ~~~~~~~~~~~~~~~~~~~
 
 .. code-block:: python
 
+   # ============= HONEYHIVE INTEGRATION =============
    from honeyhive import HoneyHiveTracer
-   from strands import Agent
-   from strands.models import BedrockModel
-   from opentelemetry import trace as trace_api
    import os
    
-   # Initialize HoneyHive
    tracer = HoneyHiveTracer.init(
        api_key=os.getenv("HH_API_KEY"),
        project="strands-agents",
        session_name="basic-agent-demo"
    )
+   # ==================================================
    
-   # Set as global provider
-   trace_api.set_tracer_provider(tracer.provider)
+   # ============= YOUR STRANDS CODE ==================
+   from strands import Agent
+   from strands.models import BedrockModel
    
    # Create agent
    agent = Agent(
@@ -724,13 +745,11 @@ This happens if you accidentally enable LLM instrumentors (OpenInference/Tracelo
    from openinference.instrumentation.openai import OpenAIInstrumentor
    OpenAIInstrumentor().instrument()  # Will create duplicate spans!
    
-   # ✅ DO THIS - Just use TracerProvider pattern
+   # ✅ DO THIS - Just initialize HoneyHive
    from honeyhive import HoneyHiveTracer
-   from opentelemetry import trace as trace_api
    
    tracer = HoneyHiveTracer.init(...)
-   trace_api.set_tracer_provider(tracer.provider)
-   # That's it - Strands handles the rest!
+   # That's it - automatic provider setup, Strands handles the rest!
 
 **Issue: "Unable to locate credentials"**
 
@@ -764,7 +783,7 @@ Use correct Bedrock model IDs (not OpenAI model names):
 
 1. Verify ``HH_API_KEY`` is set correctly
 2. Check project name matches your HoneyHive project
-3. Ensure ``trace_api.set_tracer_provider()`` is called BEFORE creating agents
+3. Ensure ``HoneyHiveTracer.init()`` is called BEFORE creating agents
 4. Look for error messages in console output
 
 Debugging Traces
@@ -804,20 +823,19 @@ Print session ID for manual verification:
 Best Practices
 --------------
 
-1. **Set TracerProvider Early**
+1. **Initialize Tracer Early**
 
-   Always call ``trace_api.set_tracer_provider()`` before creating agents:
+   Always call ``HoneyHiveTracer.init()`` before creating agents (automatic provider setup):
 
    .. code-block:: python
 
       # ✅ Correct order
-      tracer = HoneyHiveTracer.init(...)
-      trace_api.set_tracer_provider(tracer.provider)
+      tracer = HoneyHiveTracer.init(...)  # Automatic global provider setup
       agent = Agent(...)  # Now traced
       
       # ❌ Wrong order
       agent = Agent(...)  # Not traced
-      tracer = HoneyHiveTracer.init(...)
+      tracer = HoneyHiveTracer.init(...)  # Too late!
 
 2. **Don't Use LLM Instrumentors**
 
@@ -831,8 +849,7 @@ Best Practices
       
       # ✅ DO THIS - Strands instruments itself
       tracer = HoneyHiveTracer.init(...)
-      trace_api.set_tracer_provider(tracer.provider)
-      # Strands' built-in tracing handles everything
+      # Strands' built-in tracing handles everything (no manual provider setup needed)
 
 3. **Use Meaningful Agent Names**
 
@@ -894,21 +911,4 @@ Next Steps
 - :doc:`/reference/api/tracer` - Full tracer API reference
 - `AWS Strands Documentation <https://github.com/strands-agents/sdk-python>`_ - Learn more about Strands
 
-Complete Example
-----------------
-
-A comprehensive example is available in the repository:
-
-**`examples/integrations/strands_integration.py`** - Full integration demo with 8 test cases:
-
-- Basic agent invocation
-- Tool execution with calculator
-- Streaming responses
-- Custom trace attributes
-- Structured outputs with Pydantic
-- Swarm multi-agent collaboration
-- Graph workflows with parallel processing
-- All patterns shown in this guide
-
-View it on GitHub: `strands_integration.py <https://github.com/honeyhiveai/python-sdk/blob/main/examples/integrations/strands_integration.py>`_
 

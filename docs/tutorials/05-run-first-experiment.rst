@@ -95,6 +95,14 @@ we test in our experiment:
        
        Returns:
            Dictionary with the answer
+       
+       Note:
+           The evaluation function can also accept a 'tracer' parameter if you need
+           to access the tracer instance within your function for manual tracing:
+           
+           def answer_question(datapoint: Dict[str, Any], tracer: HoneyHiveTracer) -> Dict[str, Any]:
+               # Use tracer for custom spans, enrichment, etc.
+               pass
        """
        inputs = datapoint.get("inputs", {})
        question = inputs.get("question", "")
@@ -231,10 +239,9 @@ Step 5: View Results in Dashboard
 ---------------------------------
 
 
-1. Go to `HoneyHive Dashboard <https://app.honeyhive.ai>`_
+1. Go to `HoneyHive Experiments Dashboard <https://app.honeyhive.ai/evaluate>`_
 2. Navigate to your project: ``experiments-tutorial``
-3. Click on "Experiments" tab
-4. Find your run: ``qa-baseline-v1``
+3. Find your run: ``qa-baseline-v1``
 
 
 5. Click to view:
@@ -276,11 +283,7 @@ score our function's outputs:
        
        Returns:
            1.0 if exact match, 0.0 otherwise
-
-
-
-
-
+       """
 
 
        actual_answer = outputs.get("answer", "").lower().strip()
@@ -444,10 +447,6 @@ Let's test an improved version WITH evaluators:
        """Improved version with better logic."""
        inputs = datapoint.get("inputs", {})
        question = inputs.get("question", "").lower()
-
-       
-
-       
        
        # More sophisticated keyword matching
        answers = {
@@ -517,7 +516,7 @@ Now you have TWO runs to compare!
 
 
    # Option 1: View comparison in HoneyHive dashboard (visual)
-   # Go to: https://app.honeyhive.ai → Select runs → Click Compare
+   # Go to: https://app.honeyhive.ai/evaluate → Select runs → Click Compare
 
    
 

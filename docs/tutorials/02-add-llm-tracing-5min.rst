@@ -54,6 +54,26 @@ At the top of your main application file, add the tracer initialization:
    
    # Your existing code continues unchanged below...
 
+.. important::
+   **Order Matters!** 
+   
+   The tracer **must** be initialized **before** calling ``instrumentor.instrument()``.
+   The instrumentor needs the tracer provider to route traces correctly.
+   
+   ✅ **Correct:**
+   
+   .. code-block:: python
+   
+      tracer = HoneyHiveTracer.init(...)       # 1. Initialize tracer first
+      instrumentor.instrument(tracer_provider=tracer.provider)  # 2. Then instrument
+   
+   ❌ **Wrong:**
+   
+   .. code-block:: python
+   
+      instrumentor.instrument()  # This won't work - no tracer provider!
+      tracer = HoneyHiveTracer.init(...)  # Too late
+
 Step 3: Run Your Application
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
@@ -245,6 +265,55 @@ Once the instrumentor is initialized, these are traced automatically:
 - Streaming
 
 See :doc:`/how-to/integrations/openai` for provider-specific details.
+
+Alternative: Using @trace Decorator (Non-Instrumentor Pattern)
+---------------------------------------------------------------
+
+If you prefer more control or your framework isn't supported by instrumentors, use the ``@trace`` decorator instead:
+
+.. code-block:: python
+
+   from honeyhive import HoneyHiveTracer, trace
+   import openai
+   
+   # Initialize tracer (no instrumentor needed)
+   tracer = HoneyHiveTracer.init(
+       api_key="your-key",
+       project="your-project"
+   )
+   
+   # Manually trace specific functions with @trace decorator
+   @trace(event_type="tool", event_name="chat_completion", tracer=tracer)
+   def chat_with_llm(message: str) -> str:
+       """Manually traced LLM call."""
+       client = openai.OpenAI()
+       response = client.chat.completions.create(
+           model="gpt-3.5-turbo",
+           messages=[{"role": "user", "content": message}]
+       )
+       return response.choices[0].message.content
+   
+   # Use it normally
+   result = chat_with_llm("Hello!")
+   print(result)
+
+**When to use @trace decorator:**
+
+- ✅ You want fine-grained control over what gets traced
+- ✅ Your framework/library doesn't have an instrumentor
+- ✅ You're building custom integrations
+- ✅ You need to trace non-LLM functions (business logic, tool calls, etc.)
+
+**When to use instrumentors:**
+
+- ✅ You want automatic tracing with zero code changes to LLM calls
+- ✅ Your provider has an instrumentor (OpenAI, Anthropic, Google, Bedrock, etc.)
+- ✅ You want to trace all LLM calls without manually decorating functions
+
+.. note::
+   **You can use both together!** Instrumentors for automatic LLM tracing + ``@trace`` for custom logic.
+   
+   See :doc:`/reference/api/decorators` for more details on the ``@trace`` decorator.
 
 Multiple Providers in One Application
 -------------------------------------

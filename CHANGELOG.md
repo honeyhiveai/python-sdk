@@ -1,6 +1,17 @@
 ## [Unreleased]
 
 ### Added
+
+- **📚 Documentation: Comprehensive Tutorial & Integration Improvements**
+  - **Strands Integration**: Removed incorrect `set_tracer_provider()` requirement - SDK auto-handles provider setup
+  - **Strands Integration**: Added clear integration/user code distinction with comment separators
+  - **Tutorial 02**: Added explicit tracer→instrumentor initialization order callout
+  - **Tutorial 02**: Added non-instrumentor pattern section (using `@trace` decorator directly)
+  - **Tutorial 03**: Added comprehensive `enrich_session()` vs `enrich_span()` guide with decision matrix
+  - **Tutorial 03**: Added global vs instance method callout for `enrich_span()` patterns
+  - **Tutorial 06**: Added middleware alternative pattern for distributed tracing (without `context.attach()`)
+  - **Advanced Tracing**: Added session-level vs span-level enrichment documentation with complete examples
+
 - **📚 Documentation: Tracer Initialization Patterns Guide**
   - New comprehensive guide: "Where Should I Initialize the Tracer?"
   - Covers 5 scenarios: local dev, evaluate(), serverless, long-running server, testing
@@ -11,6 +22,13 @@
   - Location: `docs/how-to/deployment/tracer-initialization-patterns.rst`
 
 ### Fixed
+
+- **📚 Documentation: Fixed Docstring Formatting Issues**
+  - Fixed numerous extra newlines in tutorial docstrings (Tutorials 01, 03, 05)
+  - Corrected dashboard URL to `https://app.honeyhive.ai/evaluate` (Tutorial 05)
+  - Fixed broken cross-references after removing redundant advanced-setup tutorial
+  - Updated reference docs link in Tutorial 02 to point to correct API decorator documentation
+
 - **📚 README: Corrected Import Path for PyPI Display**
   - Fixed incorrect import `from honeyhive.tracer.decorators import trace` → `from honeyhive import trace`
   - Fixed documentation URL from `docs.honeyhive.ai` to `honeyhiveai.github.io/python-sdk`
@@ -18,6 +36,12 @@
   - Ensures PyPI package page shows correct usage examples
 
 ### Changed
+
+- **📚 Documentation: Content Improvements**
+  - Documented tracer instance parameter for evaluation functions (Tutorial 05)
+  - Removed redundant Timing and Error Enrichment sections from Tutorial 03 (now shown in Complete Example)
+  - Deleted 2,088-line advanced-setup.rst tutorial (content was redundant with advanced-configuration.rst)
+
 - **Version 1.0.0-rc3**: Bumped from 0.1.0-rc3 to reflect stable API
 - **📚 Documentation: Strands Integration - Instance Method Pattern**
   - Updated all `enrich_span()` usage to use instance method pattern (`tracer.enrich_span()`)

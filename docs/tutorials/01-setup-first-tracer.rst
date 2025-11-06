@@ -153,19 +153,9 @@ Here's the complete working script:
 
    """
    first_tracer.py - Your first HoneyHive traced application
-
-   
-
-   
    
    Run: python first_tracer.py
-
-
-
-
-
-
-
+   """
    from honeyhive import HoneyHiveTracer
    from openinference.instrumentation.openai import OpenAIInstrumentor
    import openai

@@ -405,6 +405,142 @@ What You Learned
 - Finding performance bottlenecks across services
 - Understanding request journeys end-to-end
 
+Alternative Pattern: Middleware with Session ID
+------------------------------------------------
+
+If you prefer not to use ``context.attach()``, you can explicitly set the session ID in middleware instead:
+
+**Advantages:**
+
+- ✅ More explicit control over session management
+- ✅ Simpler mental model (no context manipulation)
+- ✅ Works well with existing middleware patterns
+- ✅ Easier to debug (explicit session IDs in logs)
+
+**How it works:**
+
+Instead of attaching context, extract the session ID from headers and initialize the tracer with it.
+
+**Example: FastAPI Middleware**
+
+.. code-block:: python
+
+   from fastapi import FastAPI, Request
+   from honeyhive import HoneyHiveTracer, trace
+   import os
+   
+   app = FastAPI()
+   
+   @app.middleware("http")
+   async def tracing_middleware(request: Request, call_next):
+       # Extract session ID from headers (sent by upstream service)
+       session_id = request.headers.get("X-HoneyHive-Session-ID")
+       
+       if session_id:
+           # Initialize tracer with the propagated session ID
+           tracer = HoneyHiveTracer.init(
+               api_key=os.getenv("HH_API_KEY"),
+               project="distributed-app",
+               session_id=session_id  # Explicit session ID
+           )
+           
+           # Store tracer for use in request handlers
+           request.state.tracer = tracer
+       
+       response = await call_next(request)
+       return response
+   
+   @app.post("/process")
+   @trace(event_type="chain", event_name="user_process")
+   async def process(request: Request, data: dict):
+       # Access tracer from request state
+       tracer = request.state.tracer
+       
+       tracer.enrich_span({
+           "service": "user-service",
+           "user_id": data.get("user_id")
+       })
+       
+       # Call downstream service, passing session ID
+       import httpx
+       async with httpx.AsyncClient() as client:
+           response = await client.post(
+               "http://llm-service:5002/generate",
+               json=data,
+               headers={
+                   "X-HoneyHive-Session-ID": tracer.session_id
+               }
+           )
+       
+       return response.json()
+
+**Example: Flask Middleware**
+
+.. code-block:: python
+
+   from flask import Flask, request, g
+   from honeyhive import HoneyHiveTracer, trace
+   import os
+   
+   app = Flask(__name__)
+   
+   @app.before_request
+   def before_request():
+       # Extract session ID from headers
+       session_id = request.headers.get("X-HoneyHive-Session-ID")
+       
+       if session_id:
+           # Initialize tracer with propagated session ID
+           g.tracer = HoneyHiveTracer.init(
+               api_key=os.getenv("HH_API_KEY"),
+               project="distributed-app",
+               session_id=session_id
+           )
+   
+   @app.route("/process", methods=["POST"])
+   @trace(event_type="chain", event_name="process_request")
+   def process():
+       tracer = g.tracer
+       
+       tracer.enrich_span({
+           "service": "gateway",
+           "endpoint": "/process"
+       })
+       
+       # Process and return
+       return {"status": "success"}
+
+**Key differences from context.attach():**
+
++----------------------------+----------------------------------+----------------------------------+
+| **Aspect**                 | **context.attach() Pattern**     | **Session ID Middleware Pattern**|
++============================+==================================+==================================+
+| **Complexity**             | Uses OpenTelemetry context API   | Simple session ID passing        |
++----------------------------+----------------------------------+----------------------------------+
+| **Explicitness**           | Implicit context inheritance     | Explicit session ID management   |
++----------------------------+----------------------------------+----------------------------------+
+| **Debugging**              | Harder (context in thread-local) | Easier (session ID in headers)   |
++----------------------------+----------------------------------+----------------------------------+
+| **Flexibility**            | Standard OpenTelemetry approach  | Framework-specific middleware    |
++----------------------------+----------------------------------+----------------------------------+
+| **Best for**               | Complex distributed systems      | Simpler multi-service apps       |
++----------------------------+----------------------------------+----------------------------------+
+
+.. tip::
+   **When to use Session ID middleware:**
+   
+   - You find ``context.attach()`` confusing
+   - You want explicit control over session boundaries
+   - You already have middleware for other purposes
+   - You're building a simpler multi-service app (2-3 services)
+   
+   **When to use context.attach():**
+   
+   - You're using standard OpenTelemetry patterns
+   - You have many services (5+) with complex call graphs
+   - You want automatic span hierarchy management
+   - You're integrating with other OpenTelemetry tools
+
 Troubleshooting
 ---------------
 

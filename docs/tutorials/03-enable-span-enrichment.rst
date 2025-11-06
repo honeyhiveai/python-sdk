@@ -72,6 +72,130 @@ The simplest way to enrich spans is with ``enrich_span()``:
 .. note::
    The simple dict pattern shown above automatically routes your metadata to the ``honeyhive_metadata`` namespace in the backend.
 
+.. important::
+   **Global vs Instance Method Approach**
+   
+   There are two ways to call ``enrich_span()``:
+   
+   **1. Global function (shown above):**
+   
+   .. code-block:: python
+   
+      from honeyhive import enrich_span
+      
+      enrich_span({"user_id": "user_123"})  # Works on current active span
+   
+   **2. Instance method (recommended for multi-instance architectures):**
+   
+   .. code-block:: python
+   
+      from honeyhive import HoneyHiveTracer
+      
+      tracer = HoneyHiveTracer.init(project="my-project")
+      tracer.enrich_span({"user_id": "user_123"})  # Explicit tracer reference
+   
+   **When to use each:**
+   
+   - ✅ **Use global function** when you have a single tracer instance
+   - ✅ **Use instance method** when you have multiple tracer instances (safer, more explicit)
+   - ✅ **Use instance method** in production code (future-proof, global function may be deprecated in v2.0)
+   
+   See :doc:`04-configure-multi-instance` for multi-instance patterns.
+
+``enrich_session()`` vs ``enrich_span()``
+------------------------------------------
+
+HoneyHive provides two enrichment functions with different scopes:
+
+**``enrich_span()`` - Enrich a single span:**
+
+.. code-block:: python
+
+   from honeyhive import enrich_span
+   
+   def process_query(query: str):
+       # Enrich THIS specific LLM call
+       enrich_span({"query_length": len(query)})
+       
+       response = client.chat.completions.create(...)
+       return response
+
+- Adds metadata to the **current active span only**
+- Perfect for per-call metrics (input length, model choice, cache status)
+- Most common use case
+
+**``enrich_session()`` - Enrich the entire session:**
+
+.. code-block:: python
+
+   from honeyhive import HoneyHiveTracer
+   
+   tracer = HoneyHiveTracer.init(
+       project="my-app",
+       session_name="user-session-123"
+   )
+   
+   # Enrich ALL spans in this session
+   tracer.enrich_session({
+       "user_id": "user_123",
+       "user_tier": "premium",
+       "session_type": "support_chat"
+   })
+   
+   # These calls all inherit the session metadata
+   response1 = client.chat.completions.create(...)
+   response2 = client.chat.completions.create(...)
+
+- Adds metadata to **all spans in the current session**
+- Perfect for user/session-level context (user ID, session type, environment)
+- Sets context once, applies to all subsequent traces
+
+**When to use which:**
+
++------------------------+-------------------------+---------------------------+
+| **Scenario**           | **Use**                 | **Why**                   |
++========================+=========================+===========================+
+| User ID, session info  | ``enrich_session()``    | Applies to entire session |
++------------------------+-------------------------+---------------------------+
+| Per-call metrics       | ``enrich_span()``       | Specific to that span     |
++------------------------+-------------------------+---------------------------+
+| Model/temperature      | ``enrich_span()``       | May vary per call         |
++------------------------+-------------------------+---------------------------+
+| Environment (prod/dev) | ``enrich_session()``    | Constant for session      |
++------------------------+-------------------------+---------------------------+
+| Cache hit/miss         | ``enrich_span()``       | Per-call result           |
++------------------------+-------------------------+---------------------------+
+
+**Example combining both:**
+
+.. code-block:: python
+
+   from honeyhive import HoneyHiveTracer
+   
+   # Initialize and enrich session with user context
+   tracer = HoneyHiveTracer.init(project="chat-app")
+   tracer.enrich_session({
+       "user_id": "user_789",
+       "user_tier": "premium",
+       "environment": "production"
+   })
+   
+   # Enrich individual spans with call-specific data
+   def chat(message: str):
+       tracer.enrich_span({
+           "message_length": len(message),
+           "intent": classify_intent(message),
+           "cache_hit": False
+       })
+       
+       response = client.chat.completions.create(
+           model="gpt-4",
+           messages=[{"role": "user", "content": message}]
+       )
+       return response
+
+For more details on ``enrich_session()``, see :doc:`/how-to/advanced-tracing/span-enrichment`.
+
 Enrichment Interfaces
 ---------------------
 
@@ -408,145 +532,12 @@ You can enrich with various data types:
 
 
 
-Timing Enrichment
------------------
 
-
-Add timing information to understand performance:
-
-
-.. code-block:: python
-
-
-   import time
-   from honeyhive import enrich_span
-
+.. note::
+   **Timing and Error Enrichment:**
    
-
-   
-   
-   def process_with_timing(data: str):
-       start_time = time.time()
-
-       
-
-       
-       
-       # Preprocessing
-       preprocessed = preprocess(data)
-       preprocess_time = time.time() - start_time
-
-       
-
-       
-       
-       # LLM call
-       llm_start = time.time()
-       result = make_llm_call(preprocessed)
-       llm_time = time.time() - llm_start
-
-       
-
-       
-       
-       # Postprocessing
-       postprocess_start = time.time()
-       final_result = postprocess(result)
-       postprocess_time = time.time() - postprocess_start
-
-       
-
-       
-       
-       # Enrich with timing breakdown
-       enrich_span({
-           "preprocess_time_ms": round(preprocess_time * 1000, 2),
-           "llm_time_ms": round(llm_time * 1000, 2),
-           "postprocess_time_ms": round(postprocess_time * 1000, 2),
-           "total_time_ms": round((time.time() - start_time) * 1000, 2)
-       })
-
-       
-
-       
-       
-       return final_result
-
-
-
-
-
-Error Context Enrichment
-------------------------
-
-
-Add error context when things go wrong:
-
-
-.. code-block:: python
-
-
-   from honeyhive import enrich_span
-   import openai
-
-   
-
-   
-   
-   def make_llm_call_with_error_handling(prompt: str):
-       try:
-           client = openai.OpenAI()
-           response = client.chat.completions.create(
-               model="gpt-3.5-turbo",
-               messages=[{"role": "user", "content": prompt}]
-           )
-
-           
-
-           
-           
-           # Success enrichment
-           enrich_span({
-               "status": "success",
-               "response_length": len(response.choices[0].message.content)
-           })
-
-           
-
-           
-           
-           return response.choices[0].message.content
-
-           
-
-           
-           
-       except openai.RateLimitError as e:
-           # Error enrichment
-           enrich_span({
-               "status": "error",
-               "error_type": "rate_limit",
-               "error_message": str(e),
-               "retry_after": e.response.headers.get("Retry-After")
-           })
-           raise
-
-           
-
-           
-           
-       except openai.APIError as e:
-           enrich_span({
-               "status": "error",
-               "error_type": "api_error",
-               "error_message": str(e),
-               "status_code": e.status_code
-           })
-           raise
-
-
-
-
+   For timing breakdowns and error context enrichment patterns, see the "Complete Example" section below,
+   which demonstrates both in a real application context.
 
 Best Practices
 --------------
@@ -601,24 +592,13 @@ Here's a complete application with enrichment:
 
 .. code-block:: python
 
-
    """
    enriched_app.py - Application with span enrichment
-
-
-
-
-
-
-
+   """
    from honeyhive import HoneyHiveTracer, enrich_span
    from openinference.instrumentation.openai import OpenAIInstrumentor
    import openai
    import time
-
-   
-
-   
    
    # Initialize tracer
    tracer = HoneyHiveTracer.init(
@@ -627,18 +607,10 @@ Here's a complete application with enrichment:
    )
    instrumentor = OpenAIInstrumentor()
    instrumentor.instrument(tracer_provider=tracer.provider)
-
-   
-
-   
    
    def analyze_sentiment(text: str, user_id: str, feature: str):
        """Analyze sentiment with rich tracing context."""
        start_time = time.time()
-
-       
-
-       
        
        # Enrich with business context
        enrich_span({
@@ -680,17 +652,9 @@ Here's a complete application with enrichment:
                "sentiment": result.lower(),
                "processing_time_ms": round((time.time() - start_time) * 1000, 2)
            })
-
-           
-
-           
            
            return result
-
-           
-
-           
-           
+       
        except Exception as e:
            # Enrich with error context
            enrich_span({
@@ -699,10 +663,6 @@ Here's a complete application with enrichment:
                "error_message": str(e)
            })
            raise
-
-   
-
-   
    
    if __name__ == "__main__":
        result = analyze_sentiment(
@@ -711,10 +671,6 @@ Here's a complete application with enrichment:
            feature="product_reviews"
        )
        print(f"Sentiment: {result}")
-
-
-
-
 
 Next Steps
 ----------

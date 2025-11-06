@@ -7,6 +7,129 @@ Span Enrichment Patterns
 
 This guide covers advanced enrichment techniques beyond the basics. For an introduction, see :doc:`/tutorials/03-enable-span-enrichment`.
 
+Session-Level vs Span-Level Enrichment
+---------------------------------------
+
+HoneyHive provides two enrichment scopes: **session-level** and **span-level**.
+
+**``enrich_session()`` - Apply metadata to all spans in a session:**
+
+.. code-block:: python
+
+   from honeyhive import HoneyHiveTracer
+   
+   tracer = HoneyHiveTracer.init(project="my-app")
+   
+   # Apply to ALL spans in this session
+   tracer.enrich_session({
+       "user_id": "user_456",
+       "user_tier": "enterprise",
+       "environment": "production",
+       "deployment_region": "us-east-1"
+   })
+   
+   # All subsequent operations inherit this metadata
+   response1 = call_llm(...)
+   response2 = call_llm(...)
+   response3 = call_llm(...)
+   # All 3 traces will have user_id, user_tier, environment, deployment_region
+
+**Use ``enrich_session()`` for:**
+
+- ✅ User identification (user_id, email, tier)
+- ✅ Session context (session_type, workflow_name)
+- ✅ Environment info (environment, region, version)
+- ✅ Business context (customer_id, account_type, plan)
+- ✅ Any metadata that applies to the entire user session
+
+**``enrich_span()`` - Apply metadata to a single span:**
+
+.. code-block:: python
+
+   from honeyhive import enrich_span
+   
+   def process_query(query: str, use_cache: bool):
+       # Apply to THIS specific span only
+       enrich_span({
+           "query_length": len(query),
+           "cache_enabled": use_cache,
+           "model": "gpt-4",
+           "temperature": 0.7
+       })
+       
+       return call_llm(query)
+
+**Use ``enrich_span()`` for:**
+
+- ✅ Per-call parameters (model, temperature, max_tokens)
+- ✅ Call-specific metrics (input_length, cache_hit, latency)
+- ✅ Dynamic metadata (intent_classification, confidence_score)
+- ✅ Error details (error_type, retry_count)
+- ✅ Any metadata that varies per LLM call
+
+**Example combining both:**
+
+.. code-block:: python
+
+   from honeyhive import HoneyHiveTracer
+   
+   # Session-level: Set once for the entire user session
+   tracer = HoneyHiveTracer.init(
+       project="customer-support",
+       session_name="support-session-789"
+   )
+   
+   tracer.enrich_session({
+       "user_id": "user_456",
+       "support_tier": "premium",
+       "issue_category": "billing"
+   })
+   
+   # Span-level: Varies per call
+   def handle_query(query: str):
+       intent = classify_intent(query)
+       
+       tracer.enrich_span({
+           "query_intent": intent,
+           "query_length": len(query),
+           "model": "gpt-4" if intent == "complex" else "gpt-3.5-turbo"
+       })
+       
+       return generate_response(query)
+   
+   # Each call has both session + span metadata
+   handle_query("How do I change my billing address?")
+   handle_query("What's my current balance?")
+   handle_query("Can I upgrade my plan?")
+
+**Decision Matrix:**
+
++------------------------------+-------------------------+-------------------------+
+| **Metadata Type**            | **Scope**               | **Method**              |
++==============================+=========================+=========================+
+| User ID, email               | Session (constant)      | ``enrich_session()``    |
++------------------------------+-------------------------+-------------------------+
+| Model name, temperature      | Span (varies)           | ``enrich_span()``       |
++------------------------------+-------------------------+-------------------------+
+| Environment (prod/dev)       | Session (constant)      | ``enrich_session()``    |
++------------------------------+-------------------------+-------------------------+
+| Cache hit/miss               | Span (per-call)         | ``enrich_span()``       |
++------------------------------+-------------------------+-------------------------+
+| Customer tier                | Session (constant)      | ``enrich_session()``    |
++------------------------------+-------------------------+-------------------------+
+| Prompt token count           | Span (per-call)         | ``enrich_span()``       |
++------------------------------+-------------------------+-------------------------+
+| Deployment region            | Session (constant)      | ``enrich_session()``    |
++------------------------------+-------------------------+-------------------------+
+| Error type/message           | Span (when it occurs)   | ``enrich_span()``       |
++------------------------------+-------------------------+-------------------------+
+
+.. tip::
+   **Rule of Thumb:**
+   
+   If the metadata is the same for all LLM calls in a user session, use ``enrich_session()``.
+   If it changes per call, use ``enrich_span()``.
+
 Understanding Enrichment Interfaces
 -----------------------------------
 

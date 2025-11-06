@@ -1313,6 +1313,6 @@ See Also
 
 - :doc:`performance-testing` - Performance testing strategies
 - :doc:`ci-cd-integration` - CI/CD integration patterns  
-- :doc:`../../tutorials/advanced-setup` - Advanced Lambda configuration
+- :doc:`../../tutorials/advanced-configuration` - Advanced Lambda configuration
 - :doc:`../../how-to/deployment/production` - Production deployment guide
 - :doc:`../../reference/configuration/environment-vars` - Environment configuration

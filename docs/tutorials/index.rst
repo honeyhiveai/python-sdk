@@ -48,7 +48,6 @@ Once you've completed the core tutorials, explore these additional topics:
    :maxdepth: 1
 
    advanced-configuration
-   advanced-setup
 
 **Next Steps**
 
