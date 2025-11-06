@@ -73,7 +73,7 @@ pip install honeyhive
 
 **📋 Including in Your Project**
 
-For detailed guidance on including HoneyHive in your `pyproject.toml`, see our [pyproject.toml Integration Guide](https://docs.honeyhive.ai/how-to/deployment/pyproject-integration.html).
+For detailed guidance on including HoneyHive in your `pyproject.toml`, see our [pyproject.toml Integration Guide](https://honeyhiveai.github.io/python-sdk/how-to/deployment/pyproject-integration.html).
 
 ### Development Installation
 
@@ -124,17 +124,14 @@ tox -e format && tox -e lint
 ### Basic Usage
 
 ```python
-from honeyhive import HoneyHiveTracer
-from honeyhive.tracer.decorators import trace
+from honeyhive import HoneyHiveTracer, trace
 
-# Initialize tracer using the recommended init method (simplified API)
+# Initialize tracer
 tracer = HoneyHiveTracer.init(
     api_key="your-api-key",
-    source="production"  # project derived from API key automatically
+    project="your-project",
+    source="production"
 )
-
-# Backward compatibility: project parameter still accepted but optional
-# tracer = HoneyHiveTracer.init(api_key="your-api-key", project="your-project", source="production")
 
 # Use unified decorator for automatic tracing (works with both sync and async)
 @trace(event_type="demo", event_name="my_function")

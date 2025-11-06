@@ -1,5 +1,12 @@
 ## [Unreleased]
 
+### Fixed
+- **📚 README: Corrected Import Path for PyPI Display**
+  - Fixed incorrect import `from honeyhive.tracer.decorators import trace` → `from honeyhive import trace`
+  - Fixed documentation URL from `docs.honeyhive.ai` to `honeyhiveai.github.io/python-sdk`
+  - Simplified Quick Start example (removed redundant comments)
+  - Ensures PyPI package page shows correct usage examples
+
 ### Changed
 - **Version 1.0.0-rc3**: Bumped from 0.1.0-rc3 to reflect stable API
 - **📚 Documentation: Strands Integration - Instance Method Pattern**
