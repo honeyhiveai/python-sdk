@@ -209,6 +209,57 @@ Pattern 3: Serverless (AWS Lambda / Cloud Functions)
        tracer.enrich_span(metadata={"event_type": event.get("type")})
        return {"status": "success"}
 
+**Persisting Session IDs Across Invocations:**
+
+If you need to link multiple Lambda invocations together (e.g., request/response cycles), explicitly set the session_id:
+
+.. code-block:: python
+
+   import os
+   import uuid
+   from honeyhive import HoneyHiveTracer, trace
+   
+   def lambda_handler(event, context):
+       # Extract or generate session ID
+       session_id = event.get("session_id") or str(uuid.uuid4())
+       
+       # Initialize tracer with explicit session_id
+       tracer = HoneyHiveTracer.init(
+           api_key=os.getenv("HH_API_KEY"),
+           project=os.getenv("HH_PROJECT"),
+           session_id=session_id,  # Override to link invocations
+           session_name=f"lambda-{context.function_name}-{session_id[:8]}"
+       )
+       
+       # Process event...
+       result = process_event(event)
+       
+       # Return session_id so caller can link subsequent calls
+       return {
+           "session_id": session_id,
+           "result": result
+       }
+
+.. important::
+   **Session ID Best Practices:**
+   
+   - Use UUID v4 format for session IDs: ``str(uuid.uuid4())``
+   - If receiving session_id from external source, validate it's UUID v4
+   - For non-UUID identifiers, convert deterministically:
+   
+   .. code-block:: python
+   
+      import uuid
+      
+      def to_session_id(identifier: str) -> str:
+          """Convert any identifier to deterministic UUID v4."""
+          # Create deterministic UUID from namespace + identifier
+          namespace = uuid.UUID("6ba7b810-9dad-11d1-80b4-00c04fd430c8")  # DNS namespace
+          return str(uuid.uuid5(namespace, identifier))
+      
+      # Usage
+      session_id = to_session_id(request_id)  # Deterministic conversion
+
 **Optimization for Warm Starts:**
 
 .. code-block:: python
@@ -263,8 +314,15 @@ Pattern 4: Long-Running Server (FastAPI / Flask / Django)
    @app.middleware("http")
    async def tracing_middleware(request: Request, call_next):
        """Create new session for each request."""
-       # Generate unique session ID
-       session_id = str(uuid.uuid4())
+       # Check if session ID exists in request (e.g., from upstream service)
+       incoming_session_id = request.headers.get("X-Session-ID")
+       
+       if incoming_session_id:
+           # Validate and use existing session ID
+           session_id = validate_session_id(incoming_session_id)
+       else:
+           # Generate new UUID v4 session ID
+           session_id = str(uuid.uuid4())
        
        # Create session for this request
        tracer.create_session(
@@ -285,7 +343,21 @@ Pattern 4: Long-Running Server (FastAPI / Flask / Django)
            metadata={"session_id": session_id}
        )
        
+       # Add session ID to response headers for downstream services
+       response.headers["X-Session-ID"] = session_id
+       
        return response
+   
+   def validate_session_id(session_id: str) -> str:
+       """Validate and convert session ID to UUID v4 format."""
+       try:
+           # Check if it's already a valid UUID
+           uuid.UUID(session_id, version=4)
+           return session_id
+       except (ValueError, AttributeError):
+           # Convert non-UUID identifier deterministically
+           namespace = uuid.UUID("6ba7b810-9dad-11d1-80b4-00c04fd430c8")
+           return str(uuid.uuid5(namespace, session_id))
 
    @app.post("/api/chat")
    @trace(event_type="chain", tracer=tracer)
@@ -339,9 +411,29 @@ Pattern 4: Long-Running Server (FastAPI / Flask / Django)
 
 ✅ **Efficient** - Single tracer instance shared across requests
 ✅ **Isolated** - Each request gets own session
-✅ **Concurrent** - Handles multiple requests safely
+✅ **Concurrent** - Handles multiple requests safely (OpenTelemetry context is thread-safe)
 ✅ **Distributed** - Traces span multiple services
 ⚠️ **Session management** - Must manage session lifecycle per request
+
+.. note::
+   **Thread & Process Safety:**
+   
+   The global tracer pattern is safe for multi-threaded servers (FastAPI, Flask with threads) because:
+   
+   - OpenTelemetry Context is **thread-local** by design
+   - Each thread/request has isolated context
+   - Session creation uses thread-safe operations
+   
+   For **multi-process** deployments (Gunicorn with workers, uWSGI):
+   
+   - ✅ **Safe** - Each process gets its own tracer instance
+   - ✅ **Safe** - Processes don't share state
+   - ⚠️ **Note** - Tracer initialization happens per-process (acceptable overhead)
+   
+   **Not recommended for:**
+   
+   - High-concurrency async workloads where tracer init overhead is critical (use singleton pattern)
+   - Edge functions with aggressive cold start constraints (use lazy init pattern)
 
 Pattern 5: Testing / Multi-Session Scenarios
 ---------------------------------------------

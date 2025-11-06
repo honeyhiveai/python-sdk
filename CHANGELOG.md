@@ -19,6 +19,10 @@
   - Complete examples for FastAPI, AWS Lambda, distributed tracing
   - Troubleshooting section for common initialization issues
   - Addresses #1 user confusion point about global vs per-request initialization
+  - **Lambda Pattern**: Added session_id override for linking invocations across Lambda calls
+  - **Long-Running Server Pattern**: Added session_id validation (UUID v4 requirement + deterministic conversion)
+  - **Long-Running Server Pattern**: Added comprehensive thread/process safety notes for multi-process deployments
+  - **Session ID Best Practices**: UUID v4 format enforcement with deterministic conversion for non-UUID identifiers
   - Location: `docs/how-to/deployment/tracer-initialization-patterns.rst`
 
 ### Fixed
