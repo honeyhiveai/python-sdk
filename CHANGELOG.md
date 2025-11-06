@@ -1,5 +1,15 @@
 ## [Unreleased]
 
+### Added
+- **📚 Documentation: Tracer Initialization Patterns Guide**
+  - New comprehensive guide: "Where Should I Initialize the Tracer?"
+  - Covers 5 scenarios: local dev, evaluate(), serverless, long-running server, testing
+  - Decision matrix for choosing the right pattern
+  - Complete examples for FastAPI, AWS Lambda, distributed tracing
+  - Troubleshooting section for common initialization issues
+  - Addresses #1 user confusion point about global vs per-request initialization
+  - Location: `docs/how-to/deployment/tracer-initialization-patterns.rst`
+
 ### Fixed
 - **📚 README: Corrected Import Path for PyPI Display**
   - Fixed incorrect import `from honeyhive.tracer.decorators import trace` → `from honeyhive import trace`

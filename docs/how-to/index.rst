@@ -98,6 +98,7 @@ Keep applications running reliably:
    :maxdepth: 1
 
    monitoring/index
+   deployment/tracer-initialization-patterns
    deployment/pyproject-integration
    deployment/production
    deployment/advanced-production
@@ -122,6 +123,7 @@ Implement proven architectural patterns:
 
 **Production Workflows:**
 
+- :doc:`deployment/tracer-initialization-patterns` - **Where should I initialize the tracer?** (local, serverless, server, evaluate)
 - :doc:`deployment/pyproject-integration` - Include HoneyHive in your pyproject.toml
 - :doc:`deployment/production` - Deploy HoneyHive to production
 - :doc:`deployment/advanced-production` - Circuit breakers, blue-green deployments, and advanced patterns
