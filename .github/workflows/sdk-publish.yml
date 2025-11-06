@@ -1,0 +1,271 @@
+---
+name: Publish to PyPI
+
+# Trigger on push to main when version file changes OR manual trigger
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - 'src/honeyhive/__init__.py'
+  workflow_dispatch:
+    inputs:
+      branch:
+        description: 'Branch to publish from (e.g., complete-refactor for RC testing)'
+        required: false
+        default: 'main'
+
+permissions:
+  contents: write  # For creating GitHub releases
+  id-token: write  # For trusted publishing to PyPI
+
+env:
+  PYTHON_VERSION: "3.11"
+
+jobs:
+  publish:
+    name: 📦 Build and Publish to PyPI
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.inputs.branch || github.ref }}
+          fetch-depth: 0  # Full history for proper release notes
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+
+      - name: Install build dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install build twine hatchling jq
+
+      # === VERSION VALIDATION ===
+
+      - name: Extract version from __init__.py
+        id: get_version
+        run: |
+          # Extract version from source
+          version=$(python -c "exec(open('src/honeyhive/__init__.py').read()); print(__version__)")
+          echo "version=$version" >> $GITHUB_OUTPUT
+          echo "📦 Detected version: $version"
+
+          # Validate version format (basic check)
+          if ! echo "$version" | grep -E '^[0-9]+\.[0-9]+\.[0-9]+(rc[0-9]+|alpha[0-9]+|beta[0-9]+)?$'; then
+            echo "❌ Invalid version format: $version"
+            echo "Expected format: X.Y.Z or X.Y.Zrc# or X.Y.Zalpha# or X.Y.Zbeta#"
+            exit 1
+          fi
+
+          echo "✅ Version format is valid"
+
+      - name: Check if version already published to PyPI
+        id: check_pypi
+        run: |
+          VERSION="${{ steps.get_version.outputs.version }}"
+          echo "🔍 Checking if version $VERSION exists on PyPI..."
+
+          # Query PyPI API for package versions
+          response=$(curl -s https://pypi.org/pypi/honeyhive/json || echo '{}')
+
+          # Check if version exists in releases
+          if echo "$response" | python -c \
+            "import sys, json; \
+            data = json.load(sys.stdin); \
+            sys.exit(0 if '$VERSION' in data.get('releases', {}) else 1)"; then
+            echo "exists=true" >> $GITHUB_OUTPUT
+            echo "✅ Version $VERSION already published to PyPI"
+            echo "SKIP_REASON=Version $VERSION already exists on PyPI" >> $GITHUB_OUTPUT
+          else
+            echo "exists=false" >> $GITHUB_OUTPUT
+            echo "🆕 Version $VERSION is new - will publish to PyPI"
+          fi
+
+      - name: Skip publishing (version already exists)
+        if: steps.check_pypi.outputs.exists == 'true'
+        run: |
+          echo "## ✅ Version Already Published" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "**Version:** \`${{ steps.get_version.outputs.version }}\`" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "This version is already available on PyPI." >> $GITHUB_STEP_SUMMARY
+          echo "No action needed." >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          VERSION="${{ steps.get_version.outputs.version }}"
+          echo "🔗 [View on PyPI](https://pypi.org/project/honeyhive/$VERSION/)" \
+            >> $GITHUB_STEP_SUMMARY
+
+          echo "✅ Workflow complete - version already published"
+          exit 0
+
+      # === BUILD AND PUBLISH (only if version is new) ===
+
+      - name: Verify CHANGELOG updated
+        if: steps.check_pypi.outputs.exists == 'false'
+        run: |
+          VERSION="${{ steps.get_version.outputs.version }}"
+
+          if ! grep -q "$VERSION" CHANGELOG.md; then
+            echo "⚠️ Warning: Version $VERSION not found in CHANGELOG.md"
+            echo "Please update CHANGELOG.md before releasing"
+            echo ""
+            echo "This is a warning only - publishing will continue"
+          else
+            echo "✅ CHANGELOG.md contains entry for version $VERSION"
+          fi
+
+      - name: Build distribution packages
+        if: steps.check_pypi.outputs.exists == 'false'
+        run: |
+          echo "📦 Building source distribution and wheel..."
+          python -m build
+
+          echo "📋 Package contents:"
+          ls -lh dist/
+
+      - name: Verify package integrity
+        if: steps.check_pypi.outputs.exists == 'false'
+        run: |
+          echo "🔍 Checking package integrity..."
+          python -m twine check dist/*
+          echo "✅ Package integrity verified"
+
+      - name: Test package installation
+        if: steps.check_pypi.outputs.exists == 'false'
+        run: |
+          echo "🧪 Testing package installation..."
+
+          # Create clean test environment
+          python -m venv test-install
+          source test-install/bin/activate
+
+          # Install the wheel
+          pip install dist/*.whl
+
+          # Test imports
+          python -c "
+          import honeyhive
+          from honeyhive import HoneyHive, HoneyHiveTracer
+          from honeyhive import trace, evaluate
+
+          print(f'✅ Package installation successful')
+          print(f'HoneyHive version: {honeyhive.__version__}')
+
+          # Verify version matches
+          expected_version = '${{ steps.get_version.outputs.version }}'
+          if honeyhive.__version__ != expected_version:
+              print(f'❌ Version mismatch: {honeyhive.__version__} != {expected_version}')
+              exit(1)
+
+          print(f'✅ Version verified: {honeyhive.__version__}')
+          "
+
+          deactivate
+          echo "✅ Installation test passed"
+
+      - name: Publish to PyPI
+        if: steps.check_pypi.outputs.exists == 'false'
+        env:
+          TWINE_USERNAME: __token__
+          TWINE_PASSWORD: ${{ secrets.PYPI_TOKEN }}
+        run: |
+          echo "🚀 Publishing version ${{ steps.get_version.outputs.version }} to PyPI..."
+          python -m twine upload dist/*
+          echo "✅ Published to PyPI successfully!"
+
+      - name: Verify publication
+        if: steps.check_pypi.outputs.exists == 'false'
+        run: |
+          VERSION="${{ steps.get_version.outputs.version }}"
+
+          echo "⏳ Waiting 30 seconds for PyPI to update..."
+          sleep 30
+
+          echo "🔍 Verifying package is available on PyPI..."
+          max_attempts=5
+          attempt=1
+
+          while [ $attempt -le $max_attempts ]; do
+            if pip index versions honeyhive | grep -q "$VERSION"; then
+              echo "✅ Package verified on PyPI!"
+              echo "🔗 https://pypi.org/project/honeyhive/$VERSION/"
+              exit 0
+            fi
+
+            echo "Attempt $attempt/$max_attempts: Not yet available, waiting..."
+            sleep 10
+            attempt=$((attempt + 1))
+          done
+
+          echo "⚠️ Could not verify package on PyPI within timeout"
+          echo "This may be a PyPI indexing delay - check manually"
+          echo "🔗 https://pypi.org/project/honeyhive/$VERSION/"
+
+      # === GITHUB RELEASE ===
+
+      - name: Create GitHub Release
+        if: steps.check_pypi.outputs.exists == 'false'
+        uses: actions/create-release@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          tag_name: v${{ steps.get_version.outputs.version }}
+          release_name: v${{ steps.get_version.outputs.version }}
+          body: |
+            # HoneyHive Python SDK v${{ steps.get_version.outputs.version }}
+
+            ## 📦 Installation
+
+            ```bash
+            pip install honeyhive==${{ steps.get_version.outputs.version }}
+            ```
+
+            ## 🔗 Links
+
+            - [PyPI Package](https://pypi.org/project/honeyhive/${{ steps.get_version.outputs.version }}/)
+            - [Documentation](https://honeyhiveai.github.io/python-sdk/)
+            - [Changelog](https://github.com/honeyhiveai/python-sdk/blob/main/CHANGELOG.md)
+
+            ## 📝 Release Notes
+
+            See [CHANGELOG.md](https://github.com/honeyhiveai/python-sdk/blob/main/CHANGELOG.md) for detailed changes.
+          draft: false
+          prerelease: >-
+            ${{ contains(steps.get_version.outputs.version, 'rc') ||
+            contains(steps.get_version.outputs.version, 'alpha') ||
+            contains(steps.get_version.outputs.version, 'beta') }}
+
+      # === SUMMARY ===
+
+      - name: Generate release summary
+        if: steps.check_pypi.outputs.exists == 'false'
+        run: |
+          echo "# 🚀 Release Published Successfully" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "**Version:** \`${{ steps.get_version.outputs.version }}\`" >> $GITHUB_STEP_SUMMARY
+          echo "**Published:** $(date -u)" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          VERSION="${{ steps.get_version.outputs.version }}"
+          echo "## 📦 Installation" >> $GITHUB_STEP_SUMMARY
+          echo "\`\`\`bash" >> $GITHUB_STEP_SUMMARY
+          echo "pip install honeyhive==$VERSION" >> $GITHUB_STEP_SUMMARY
+          echo "\`\`\`" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "## 🔗 Links" >> $GITHUB_STEP_SUMMARY
+          echo "- [PyPI Package](https://pypi.org/project/honeyhive/$VERSION/)" \
+            >> $GITHUB_STEP_SUMMARY
+          echo "- [GitHub Release]\
+          (https://github.com/honeyhiveai/python-sdk/releases/tag/v$VERSION)" \
+            >> $GITHUB_STEP_SUMMARY
+          echo "- [Documentation](https://honeyhiveai.github.io/python-sdk/)" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "## ✅ Verification" >> $GITHUB_STEP_SUMMARY
+          echo "- ✅ Package built successfully" >> $GITHUB_STEP_SUMMARY
+          echo "- ✅ Package integrity verified" >> $GITHUB_STEP_SUMMARY
+          echo "- ✅ Installation test passed" >> $GITHUB_STEP_SUMMARY
+          echo "- ✅ Published to PyPI" >> $GITHUB_STEP_SUMMARY
+          echo "- ✅ GitHub release created" >> $GITHUB_STEP_SUMMARY
