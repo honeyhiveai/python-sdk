@@ -17,6 +17,13 @@ Latest Release Notes
 Current Version Highlights
 ~~~~~~~~~~~~~~~~~~~~~~~~~~
 
+**🔧 NEW: Manual PyPI Publishing for Release Candidates (Nov 6, 2025)**
+
+* **Manual Trigger**: Added workflow_dispatch to PyPI publishing workflow
+* **RC Testing**: Can now publish release candidates (e.g., 1.0.0-rc3) from any branch
+* **Pre-Merge Testing**: Enables user testing of RCs before merging to main
+* **Automated**: Still performs all validation, integrity checks, and creates GitHub releases
+
 **📚 UPDATED: AWS Strands Documentation with Current Model IDs (Nov 6, 2025)**
 
 * **Version Bump**: Updated to 1.0.0-rc3 to reflect stable API

@@ -2,6 +2,11 @@
 
 ### Changed
 - **Version 1.0.0-rc3**: Bumped from 0.1.0-rc3 to reflect stable API
+- **🔧 Infrastructure: PyPI Publishing Workflow Enhancement**
+  - Added manual trigger (`workflow_dispatch`) to PyPI publish workflow
+  - Enables publishing release candidates from any branch without merging to main
+  - Supports testing RC versions (e.g., 1.0.0-rc3) before final release
+  - Workflow validates version, checks PyPI for duplicates, and creates GitHub releases
 - **📚 Documentation: AWS Strands Integration Updates**
   - Updated model access documentation to reflect current AWS Bedrock policies (automatic access, no manual request)
   - Replaced deprecated Claude 3 model IDs with current Claude 4.5 series
