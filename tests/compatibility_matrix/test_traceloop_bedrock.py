@@ -85,8 +85,8 @@ def test_traceloop_bedrock_integration():
         # Test basic Bedrock model invocation
         print("🤖 Testing basic Bedrock model invocation...")
         try:
-            # Test with Claude 3 Haiku (smaller, faster model)
-            model_id = "anthropic.claude-3-haiku-20240307-v1:0"
+            # Test with Claude Haiku 4.5 (latest fast model)
+            model_id = "anthropic.claude-haiku-4-5-20251001-v1:0"
 
             request_body = {
                 "anthropic_version": "bedrock-2023-05-31",
@@ -171,7 +171,7 @@ def test_traceloop_bedrock_integration():
         print("📊 Test Summary:")
         print(f"   • Instrumentor Available: {'✓' if instrumentor_available else '❌'}")
         print(f"   • AWS Region: {aws_region}")
-        print(f"   • Models Tested: Claude 3 Haiku, Titan Text Express")
+        print(f"   • Models Tested: Claude Haiku 4.5, Titan Text Express")
         print("📝 Check your HoneyHive project dashboard for traces")
 
         return True

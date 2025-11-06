@@ -117,18 +117,18 @@ If running on AWS infrastructure, use IAM roles - no credentials needed!
 Model Access
 ~~~~~~~~~~~~
 
-Ensure you have access to Bedrock models in your AWS account:
+AWS Bedrock models are available by default in your AWS account. For Anthropic Claude models, first-time customers must submit use case details (done automatically in the AWS Console when you first select a model) and agree to the EULA when first invoking the model.
 
-1. Open AWS Console → Amazon Bedrock
-2. Navigate to "Model access"
-3. Request access to models you want to use (e.g., Claude 3, Nova, Titan)
+**No manual access request needed** - simply start using the models!
 
 Common model IDs:
 
-- ``anthropic.claude-3-haiku-20240307-v1:0`` - Claude 3 Haiku
-- ``anthropic.claude-3-sonnet-20240229-v1:0`` - Claude 3 Sonnet
+- ``anthropic.claude-haiku-4-5-20251001-v1:0`` - Claude Haiku 4.5 (latest, fastest)
+- ``anthropic.claude-sonnet-4-5-20250929-v1:0`` - Claude Sonnet 4.5 (latest, balanced)
 - ``us.amazon.nova-pro-v1:0`` - Amazon Nova Pro
 - ``us.amazon.nova-lite-v1:0`` - Amazon Nova Lite
+
+**Note:** Older Claude 3 models from early 2024 are being deprecated. Use Claude 4.5 series for the latest features and long-term support.
 
 Basic Integration
 -----------------
@@ -156,7 +156,7 @@ Minimal Setup (3 Lines of Code)
    # 3. Use Strands normally - tracing is automatic!
    agent = Agent(
        name="BasicAgent",
-       model=BedrockModel(model_id="anthropic.claude-3-haiku-20240307-v1:0"),
+       model=BedrockModel(model_id="anthropic.claude-haiku-4-5-20251001-v1:0"),
        system_prompt="You are a helpful assistant."
    )
    
@@ -189,7 +189,7 @@ Basic Agent Example
    # Create agent
    agent = Agent(
        name="ResearchAgent",
-       model=BedrockModel(model_id="anthropic.claude-3-haiku-20240307-v1:0"),
+       model=BedrockModel(model_id="anthropic.claude-haiku-4-5-20251001-v1:0"),
        system_prompt="You are a research assistant that provides concise, factual answers."
    )
    
@@ -225,7 +225,7 @@ AWS Strands automatically traces tool execution:
    # Create agent with tool
    agent = Agent(
        name="MathAgent",
-       model=BedrockModel(model_id="anthropic.claude-3-haiku-20240307-v1:0"),
+       model=BedrockModel(model_id="anthropic.claude-haiku-4-5-20251001-v1:0"),
        tools=[calculator],
        system_prompt="You are a math assistant. Use the calculator tool."
    )
@@ -258,7 +258,7 @@ Stream agent responses token-by-token:
        agent = Agent(
            name="StreamingAgent",
            model=BedrockModel(
-               model_id="anthropic.claude-3-haiku-20240307-v1:0",
+               model_id="anthropic.claude-haiku-4-5-20251001-v1:0",
                streaming=True
            ),
            system_prompt="You are a storyteller."
@@ -293,7 +293,7 @@ Get type-safe responses with Pydantic:
    
    agent = Agent(
        name="SummarizerAgent",
-       model=BedrockModel(model_id="anthropic.claude-3-haiku-20240307-v1:0"),
+       model=BedrockModel(model_id="anthropic.claude-haiku-4-5-20251001-v1:0"),
        system_prompt="You are a summarization assistant."
    )
    
@@ -315,7 +315,7 @@ Add custom attributes to agent spans:
 
    agent = Agent(
        name="CustomAgent",
-       model=BedrockModel(model_id="anthropic.claude-3-haiku-20240307-v1:0"),
+       model=BedrockModel(model_id="anthropic.claude-haiku-4-5-20251001-v1:0"),
        trace_attributes={
            "user_id": "user_123",
            "environment": "production",
@@ -342,20 +342,20 @@ Multiple agents working together with handoffs:
    # Create specialized agents
    researcher = Agent(
        name="researcher",
-       model=BedrockModel(model_id="anthropic.claude-3-haiku-20240307-v1:0"),
+       model=BedrockModel(model_id="anthropic.claude-haiku-4-5-20251001-v1:0"),
        system_prompt="You are a research specialist. Gather info and hand off to coder."
    )
    
    coder = Agent(
        name="coder",
-       model=BedrockModel(model_id="anthropic.claude-3-haiku-20240307-v1:0"),
+       model=BedrockModel(model_id="anthropic.claude-haiku-4-5-20251001-v1:0"),
        tools=[calculator],
        system_prompt="You are a coding specialist. Implement solutions."
    )
    
    reviewer = Agent(
        name="reviewer",
-       model=BedrockModel(model_id="anthropic.claude-3-haiku-20240307-v1:0"),
+       model=BedrockModel(model_id="anthropic.claude-haiku-4-5-20251001-v1:0"),
        system_prompt="You are a review specialist. Review and provide feedback."
    )
    
@@ -451,7 +451,7 @@ Basic Evaluation
        agent = Agent(
            name="SummarizerAgent",
            model=BedrockModel(
-               model_id="anthropic.claude-3-haiku-20240307-v1:0"
+               model_id="anthropic.claude-haiku-4-5-20251001-v1:0"
            ),
            system_prompt="You are a summarization assistant."
        )
@@ -543,7 +543,7 @@ Evaluate agents across multiple conversation turns:
        agent = Agent(
            name="ConversationAgent",
            model=BedrockModel(
-               model_id="anthropic.claude-3-haiku-20240307-v1:0"
+               model_id="anthropic.claude-haiku-4-5-20251001-v1:0"
            ),
            system_prompt="You are a helpful conversational assistant."
        )
@@ -597,7 +597,7 @@ Enrich spans with additional context:
        agent = Agent(
            name="EnrichedAgent",
            model=BedrockModel(
-               model_id="anthropic.claude-3-haiku-20240307-v1:0"
+               model_id="anthropic.claude-haiku-4-5-20251001-v1:0"
            )
        )
        
@@ -742,7 +742,7 @@ Use correct Bedrock model IDs (not OpenAI model names):
 .. code-block:: python
 
    # ✅ Correct - Bedrock model ID
-   model = BedrockModel(model_id="anthropic.claude-3-haiku-20240307-v1:0")
+   model = BedrockModel(model_id="anthropic.claude-haiku-4-5-20251001-v1:0")
    
    # ❌ Wrong - OpenAI model name
    model = BedrockModel(model_id="gpt-4")

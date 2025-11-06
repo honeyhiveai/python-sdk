@@ -17,6 +17,14 @@ Latest Release Notes
 Current Version Highlights
 ~~~~~~~~~~~~~~~~~~~~~~~~~~
 
+**📚 UPDATED: AWS Strands Documentation with Current Model IDs (Nov 6, 2025)**
+
+* **Version Bump**: Updated to 1.0.0-rc3 to reflect stable API
+* **Model Access**: Clarified that AWS Bedrock models are now automatically available (no manual request)
+* **Current Models**: Replaced deprecated Claude 3 models with Claude 4.5 series (Haiku 4.5, Sonnet 4.5)
+* **EULA Info**: Added documentation about Anthropic EULA acceptance on first invocation
+* **Verification**: All updates verified against official AWS Bedrock documentation
+
 **✨ NEW: Automatic Span Capture for Evaluation Functions (Nov 3, 2025)**
 
 * **Auto-Decoration**: User functions in `evaluate()` are now automatically wrapped with `@trace` decorator

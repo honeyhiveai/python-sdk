@@ -1,5 +1,15 @@
 ## [Unreleased]
 
+### Changed
+- **Version 1.0.0-rc3**: Bumped from 0.1.0-rc3 to reflect stable API
+- **📚 Documentation: AWS Strands Integration Updates**
+  - Updated model access documentation to reflect current AWS Bedrock policies (automatic access, no manual request)
+  - Replaced deprecated Claude 3 model IDs with current Claude 4.5 series
+  - Updated all code examples to use `anthropic.claude-haiku-4-5-20251001-v1:0` (replaces March 2024 Claude 3 Haiku)
+  - Updated integration tests to use current non-deprecated models
+  - Added notes about Anthropic EULA acceptance on first invocation
+  - Verified against official AWS Bedrock documentation (models-supported.html, model-lifecycle.html, model-access.html)
+
 ### Added
 - **✨ Experiments: Automatic Span Capture for Evaluation Functions**
   - User functions in `evaluate()` are now automatically decorated with `@trace` for span capture

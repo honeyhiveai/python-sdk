@@ -3,7 +3,7 @@ HoneyHive Python SDK - LLM Observability and Evaluation Platform
 """
 
 # Version must be defined BEFORE imports to avoid circular import issues
-__version__ = "0.1.0rc3"
+__version__ = "1.0.0-rc3"
 
 from .api.client import HoneyHive
 

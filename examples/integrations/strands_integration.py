@@ -10,7 +10,7 @@ This example uses the .env file in the repo root. Make sure it contains:
 - AWS_ACCESS_KEY_ID (add your AWS access key)
 - AWS_SECRET_ACCESS_KEY (add your AWS secret key)
 - AWS_REGION (e.g., us-west-2)
-- BEDROCK_MODEL_ID (e.g., "anthropic.claude-3-haiku-20240307-v1:0")
+- BEDROCK_MODEL_ID (e.g., "anthropic.claude-haiku-4-5-20251001-v1:0")
 
 Note: Strands uses AWS Bedrock, so use Bedrock model IDs, not OpenAI model names.
 
