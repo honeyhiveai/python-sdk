@@ -23,6 +23,7 @@ Current Version Highlights
 * **RC Testing**: Can now publish release candidates (e.g., 1.0.0-rc3) from any branch
 * **Pre-Merge Testing**: Enables user testing of RCs before merging to main
 * **Automated**: Still performs all validation, integrity checks, and creates GitHub releases
+* **Fixed**: Version extraction now uses sed to avoid Python import errors
 
 **📚 UPDATED: AWS Strands Documentation with Current Model IDs (Nov 6, 2025)**
 
