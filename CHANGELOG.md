@@ -2,6 +2,12 @@
 
 ### Changed
 - **Version 1.0.0-rc3**: Bumped from 0.1.0-rc3 to reflect stable API
+- **📚 Documentation: Strands Integration - Instance Method Pattern**
+  - Updated all `enrich_span()` usage to use instance method pattern (`tracer.enrich_span()`)
+  - Replaced deprecated global function with recommended v1.0+ pattern
+  - Added explicit `tracer` parameter to `@trace` decorators for multi-instance safety
+  - Improved reliability in multi-instance environments
+  - Follows SDK best practices and future-proofs against v2.0 deprecation
 - **🔧 Infrastructure: PyPI Publishing Workflow Enhancement**
   - Added manual trigger (`workflow_dispatch`) to PyPI publish workflow
   - Enables publishing release candidates from any branch without merging to main

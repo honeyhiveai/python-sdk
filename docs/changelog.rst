@@ -17,6 +17,14 @@ Latest Release Notes
 Current Version Highlights
 ~~~~~~~~~~~~~~~~~~~~~~~~~~
 
+**📚 IMPROVED: Strands Integration - Best Practices Pattern (Nov 6, 2025)**
+
+* **Instance Method Pattern**: All examples now use ``tracer.enrich_span()`` instead of global ``enrich_span()``
+* **Multi-Instance Safety**: Explicit tracer references work reliably in all environments
+* **Future-Proof**: Avoids global function that will be deprecated in v2.0
+* **Best Practices**: Documentation showcases recommended v1.0+ patterns
+* **Explicit Context**: All ``@trace`` decorators include explicit ``tracer=tracer`` parameter
+
 **🔧 NEW: Manual PyPI Publishing for Release Candidates (Nov 6, 2025)**
 
 * **Manual Trigger**: Added workflow_dispatch to PyPI publishing workflow

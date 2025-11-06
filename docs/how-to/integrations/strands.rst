@@ -438,14 +438,20 @@ Basic Evaluation
 
 .. code-block:: python
 
-   from honeyhive import trace, enrich_span
+   from honeyhive import HoneyHiveTracer, trace
    from honeyhive.experiments import evaluate
    from strands import Agent
    from strands.models import BedrockModel
    import os
    
+   # Initialize tracer
+   tracer = HoneyHiveTracer.init(
+       api_key=os.getenv("HH_API_KEY"),
+       project=os.getenv("HH_PROJECT")
+   )
+   
    # Define your agent function
-   @trace(event_name="summary_agent", event_type="tool")
+   @trace(event_name="summary_agent", event_type="tool", tracer=tracer)
    def invoke_summary_agent(**kwargs):
        """Agent function for evaluation."""
        agent = Agent(
@@ -458,9 +464,9 @@ Basic Evaluation
        
        context = kwargs.get("context", "")
        
-       # Enrich span with metadata
-       enrich_span(metadata={
-           "model": "claude-3-haiku",
+       # Enrich span with metadata using instance method
+       tracer.enrich_span(metadata={
+           "model": "claude-haiku-4.5",
            "context_length": len(context)
        })
        
@@ -481,7 +487,7 @@ Basic Evaluation
    ]
    
    # Run evaluation
-   @trace(event_name="evaluation_function", event_type="chain")
+   @trace(event_name="evaluation_function", event_type="chain", tracer=tracer)
    def evaluation_function(datapoint):
        inputs = datapoint.get("inputs", {})
        return invoke_summary_agent(**inputs)
@@ -489,8 +495,8 @@ Basic Evaluation
    result = evaluate(
        function=evaluation_function,
        dataset=dataset,
-       api_key=os.environ["HH_API_KEY"],
-       project=os.environ["HH_PROJECT"],
+       api_key=os.getenv("HH_API_KEY"),
+       project=os.getenv("HH_PROJECT"),
        name="strands-evaluation-run",
        verbose=True
    )
@@ -537,7 +543,9 @@ Evaluate agents across multiple conversation turns:
 
 .. code-block:: python
 
-   @trace(event_name="multi_turn_agent", event_type="tool")
+   tracer = HoneyHiveTracer.init(api_key=os.getenv("HH_API_KEY"), project="my-project")
+   
+   @trace(event_name="multi_turn_agent", event_type="tool", tracer=tracer)
    def multi_turn_conversation(**kwargs):
        """Agent that maintains conversation context."""
        agent = Agent(
@@ -555,8 +563,8 @@ Evaluate agents across multiple conversation turns:
            result = agent(msg)
            results.append(result)
            
-           # Enrich with per-turn metrics
-           enrich_span(metrics={
+           # Enrich with per-turn metrics using instance method
+           tracer.enrich_span(metrics={
                "turn_number": len(results),
                "response_length": len(result)
            })
@@ -590,9 +598,11 @@ Enrich spans with additional context:
 
 .. code-block:: python
 
-   from honeyhive import enrich_span
+   from honeyhive import HoneyHiveTracer, trace
    
-   @trace(event_name="enriched_agent", event_type="tool")
+   tracer = HoneyHiveTracer.init(api_key=os.getenv("HH_API_KEY"), project="my-project")
+   
+   @trace(event_name="enriched_agent", event_type="tool", tracer=tracer)
    def enriched_agent_call(**kwargs):
        agent = Agent(
            name="EnrichedAgent",
@@ -603,8 +613,8 @@ Enrich spans with additional context:
        
        query = kwargs.get("query", "")
        
-       # Add metadata before execution
-       enrich_span(metadata={
+       # Add metadata before execution (instance method pattern)
+       tracer.enrich_span(metadata={
            "query_type": "factual",
            "user_id": kwargs.get("user_id"),
            "priority": "high"
@@ -612,8 +622,8 @@ Enrich spans with additional context:
        
        result = agent(query)
        
-       # Add metrics after execution
-       enrich_span(metrics={
+       # Add metrics after execution (instance method pattern)
+       tracer.enrich_span(metrics={
            "response_length": len(result),
            "query_length": len(query)
        })
@@ -628,8 +638,11 @@ Track custom performance metrics:
 .. code-block:: python
 
    import time
+   from honeyhive import HoneyHiveTracer, trace
    
-   @trace(event_name="timed_agent", event_type="tool")
+   tracer = HoneyHiveTracer.init(api_key=os.getenv("HH_API_KEY"), project="my-project")
+   
+   @trace(event_name="timed_agent", event_type="tool", tracer=tracer)
    def timed_agent_call(**kwargs):
        agent = Agent(...)
        
@@ -637,8 +650,8 @@ Track custom performance metrics:
        result = agent(kwargs["query"])
        duration = time.time() - start_time
        
-       # Add custom timing metrics
-       enrich_span(metrics={
+       # Add custom timing metrics (instance method pattern)
+       tracer.enrich_span(metrics={
            "custom_duration_ms": duration * 1000,
            "tokens_per_second": len(result.split()) / duration
        })
@@ -841,7 +854,7 @@ Best Practices
 
    .. code-block:: python
 
-      enrich_span(metadata={
+      tracer.enrich_span(metadata={
           "user_id": user_id,
           "conversation_id": conv_id,
           "intent": detected_intent
