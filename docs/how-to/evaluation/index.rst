@@ -15,6 +15,12 @@ Experiments in HoneyHive help you systematically test and improve AI application
 **What You Can Do:**
 
 - Run experiments with the ``evaluate()`` function
+- Create custom evaluators to measure quality
+- Compare experiments to track improvements
+- Manage datasets for systematic testing
+- Evaluate multi-step pipelines and agents
+- Analyze results to identify patterns
+- Apply best practices for reliable evaluation
 
 See the guides below for specific evaluation scenarios.
 
