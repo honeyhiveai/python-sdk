@@ -59,13 +59,6 @@ Create a ``.env`` file in your project root:
 
 
 
-.. note::
-   If the project doesn't exist, HoneyHive will create it automatically on first trace.
-
-
-
-
-
 Step 2: Initialize Your First Tracer
 ------------------------------------
 

@@ -114,6 +114,15 @@ Keep applications running reliably:
 
    deployment/pyproject-integration
    deployment/production
+
+Monitor & Export
+----------------
+
+Track and export your observability data:
+
+.. toctree::
+   :maxdepth: 1
+
    monitoring/export-traces
 
 Build Common Patterns

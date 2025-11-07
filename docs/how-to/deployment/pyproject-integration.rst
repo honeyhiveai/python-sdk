@@ -1,5 +1,5 @@
-Include HoneyHive in Your pyproject.toml
-========================================
+Setting up HoneyHive in your Python Package Manager
+====================================================
 
 Learn how to properly include HoneyHive in your project's ``pyproject.toml`` file using optional dependency groups for clean, targeted installations.
 

@@ -179,13 +179,6 @@ Minimal Setup (3 Lines of Code)
 
 **That's it!** All agent activity is now automatically traced to HoneyHive.
 
-.. note::
-   **No Manual Provider Setup Required**
-   
-   Unlike some integrations, you don't need to manually call ``trace_api.set_tracer_provider()``. 
-   The SDK automatically handles OpenTelemetry provider setup during ``HoneyHiveTracer.init()``.
-   
-   AWS Strands has built-in OpenTelemetry support that works seamlessly with HoneyHive's automatic configuration.
 
 Basic Agent Example
 ~~~~~~~~~~~~~~~~~~~

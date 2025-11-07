@@ -2,6 +2,19 @@
 
 ### Added
 
+- **📚 Documentation: Boss Feedback Fixes - Mermaid, Tutorials, Strands**
+  - **Mermaid Diagram**: Fixed broken diagram in creating-evaluators.rst with HoneyHive dual-theme standards
+  - **Mermaid Standards**: Applied proper init block, classDef with white text, professional color palette
+  - **Dataset Management**: Renamed to "Using Datasets in Experiments" for better differentiation
+  - **Multi-Step Experiments**: Added @trace decorator example alongside context manager pattern
+  - **Multi-Step Experiments**: Fixed evaluation function signatures to v1.0+ (datapoint: Dict[str, Any], tracer: HoneyHiveTracer)
+  - **Evaluation Index**: Moved Overview to top position before toctree
+  - **Pyproject Integration**: Renamed to "Setting up HoneyHive in your Python Package Manager"
+  - **Monitor & Export**: Created separate section, moved export-traces from Deploy section
+  - **Setup Tracer Tutorial**: Removed incorrect auto project creation note
+  - **Strands Integration**: Removed confusing manual provider setup note
+  - Files modified: 8
+
 - **📚 Documentation: Comprehensive Documentation Improvements (Dhruv Feedback)**
   - **Navigation**: Moved tracer-initialization-patterns to be FIRST how-to guide (#1 user question)
   - **Production Docs**: Added tracer benchmarking metrics link (< 10ms overhead, < 50MB memory, < 10% network traffic)

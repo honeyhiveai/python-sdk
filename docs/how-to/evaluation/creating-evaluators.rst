@@ -77,18 +77,19 @@ What's the simplest evaluator I can create?
 
 .. mermaid::
 
+   %%{init: {'theme':'base', 'themeVariables': {'primaryColor': '#4F81BD', 'primaryTextColor': '#ffffff', 'primaryBorderColor': '#333333', 'lineColor': '#333333', 'mainBkg': 'transparent', 'secondBkg': 'transparent', 'tertiaryColor': 'transparent', 'clusterBkg': 'transparent', 'clusterBorder': '#333333', 'edgeLabelBackground': 'transparent', 'background': 'transparent'}, 'flowchart': {'linkColor': '#333333', 'linkWidth': 2}}}%%
    flowchart TD
        Start([Dataset with Datapoints]) --> Loop{For Each Datapoint}
        
-       Loop --> Extract[Extract Components:<br/>inputs = datapoint['inputs']<br/>ground_truth = datapoint['ground_truth']]
+       Loop --> Extract[Extract Components:<br/>inputs = datapoint-inputs<br/>ground_truth = datapoint-ground_truth]
        
-       Extract --> EvalFunc[Call Evaluation Function<br/>my_llm_app\(datapoint\)]
+       Extract --> EvalFunc[Call Evaluation Function<br/>my_llm_app-datapoint]
        
-       EvalFunc --> Output[Function Returns:<br/>outputs = \{'answer': result\}]
+       EvalFunc --> Output[Function Returns:<br/>outputs = answer-result]
        
-       Output --> Evaluator[Call Each Evaluator<br/>evaluator\(outputs, inputs, ground_truth\)]
+       Output --> Evaluator[Call Each Evaluator<br/>evaluator-outputs-inputs-ground_truth]
        
-       Evaluator --> Score[Evaluator Returns:<br/>score or \{score, metadata\}]
+       Evaluator --> Score[Evaluator Returns:<br/>score or score-metadata]
        
        Score --> Store[Store Results in HoneyHive]
        
@@ -96,10 +97,15 @@ What's the simplest evaluator I can create?
        
        Loop -->|Done| End([Experiment Complete])
        
-       style Start fill:#e1f5ff
-       style EvalFunc fill:#fff4e1
-       style Evaluator fill:#e8f5e9
-       style End fill:#f3e5f5
+       classDef startEnd fill:#1565c0,stroke:#333333,stroke-width:2px,color:#ffffff
+       classDef process fill:#42a5f5,stroke:#333333,stroke-width:2px,color:#ffffff
+       classDef action fill:#7b1fa2,stroke:#333333,stroke-width:2px,color:#ffffff
+       classDef success fill:#2e7d32,stroke:#333333,stroke-width:2px,color:#ffffff
+       
+       class Start,End startEnd
+       class Extract,Output,Store process
+       class EvalFunc action
+       class Evaluator success
 
 **Example Mapping:**
 
