@@ -28,6 +28,7 @@ class DatasetsAPI(BaseAPI):
                 project=request.project,
                 name=request.name,
                 description=request.description,
+                metadata=request.metadata,
             )
             # Attach ID as a dynamic attribute for retrieval
             setattr(dataset, "_id", inserted_id)
@@ -50,6 +51,7 @@ class DatasetsAPI(BaseAPI):
                 project=dataset_data.get("project"),
                 name=dataset_data.get("name"),
                 description=dataset_data.get("description"),
+                metadata=dataset_data.get("metadata"),
             )
             # Attach ID as a dynamic attribute for retrieval
             setattr(dataset, "_id", inserted_id)
@@ -76,6 +78,7 @@ class DatasetsAPI(BaseAPI):
                 project=request.project,
                 name=request.name,
                 description=request.description,
+                metadata=request.metadata,
             )
             # Attach ID as a dynamic attribute for retrieval
             setattr(dataset, "_id", inserted_id)
@@ -100,6 +103,7 @@ class DatasetsAPI(BaseAPI):
                 project=dataset_data.get("project"),
                 name=dataset_data.get("name"),
                 description=dataset_data.get("description"),
+                metadata=dataset_data.get("metadata"),
             )
             # Attach ID as a dynamic attribute for retrieval
             setattr(dataset, "_id", inserted_id)

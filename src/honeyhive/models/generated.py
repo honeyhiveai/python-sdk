@@ -657,6 +657,9 @@ class Dataset(BaseModel):
     updated_at: Optional[str] = Field(
         None, description="Timestamp of when the dataset was last updated"
     )
+    metadata: Optional[Dict[str, Any]] = Field(
+        None, description="Any helpful metadata to track for the dataset"
+    )
 
 
 class DatasetUpdate(BaseModel):
