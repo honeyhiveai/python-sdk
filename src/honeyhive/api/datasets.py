@@ -1,6 +1,6 @@
 """Datasets API module for HoneyHive."""
 
-from typing import List, Optional
+from typing import List, Literal, Optional
 
 from ..models import CreateDatasetRequest, Dataset, DatasetUpdate
 from .base import BaseAPI
@@ -132,12 +132,30 @@ class DatasetsAPI(BaseAPI):
         return Dataset(**datasets[0])
 
     def list_datasets(
-        self, project: Optional[str] = None, limit: int = 100
+        self,
+        project: Optional[str] = None,
+        dataset_type: Optional[Literal["evaluation", "fine-tuning"]] = None,
+        dataset_id: Optional[str] = None,
+        limit: int = 100,
     ) -> List[Dataset]:
-        """List datasets with optional filtering."""
+        """List datasets with optional filtering.
+
+        Args:
+            project: Project name to filter by
+            dataset_type: Type of dataset - "evaluation" or "fine-tuning"
+            dataset_id: Specific dataset ID to filter by
+            limit: Maximum number of datasets to return (default: 100)
+
+        Returns:
+            List of Dataset objects matching the filters
+        """
         params = {"limit": str(limit)}
         if project:
             params["project"] = project
+        if dataset_type:
+            params["type"] = dataset_type
+        if dataset_id:
+            params["dataset_id"] = dataset_id
 
         response = self.client.request("GET", "/datasets", params=params)
         data = response.json()
@@ -146,12 +164,30 @@ class DatasetsAPI(BaseAPI):
         )
 
     async def list_datasets_async(
-        self, project: Optional[str] = None, limit: int = 100
+        self,
+        project: Optional[str] = None,
+        dataset_type: Optional[Literal["evaluation", "fine-tuning"]] = None,
+        dataset_id: Optional[str] = None,
+        limit: int = 100,
     ) -> List[Dataset]:
-        """List datasets asynchronously with optional filtering."""
+        """List datasets asynchronously with optional filtering.
+
+        Args:
+            project: Project name to filter by
+            dataset_type: Type of dataset - "evaluation" or "fine-tuning"
+            dataset_id: Specific dataset ID to filter by
+            limit: Maximum number of datasets to return (default: 100)
+
+        Returns:
+            List of Dataset objects matching the filters
+        """
         params = {"limit": str(limit)}
         if project:
             params["project"] = project
+        if dataset_type:
+            params["type"] = dataset_type
+        if dataset_id:
+            params["dataset_id"] = dataset_id
 
         response = await self.client.request_async("GET", "/datasets", params=params)
         data = response.json()
