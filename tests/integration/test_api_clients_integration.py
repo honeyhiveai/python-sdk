@@ -517,6 +517,85 @@ class TestDatasetsAPI:
         for dataset_id in created_ids:
             integration_client.datasets.delete_dataset(dataset_id)
 
+    def test_list_datasets_filter_by_name(
+        self, integration_client: Any, integration_project_name: str
+    ) -> None:
+        """Test dataset listing with name filter."""
+        test_id = str(uuid.uuid4())[:8]
+        unique_name = f"test_name_filter_{test_id}"
+
+        # Create dataset with unique name
+        dataset_request = CreateDatasetRequest(
+            project=integration_project_name,
+            name=unique_name,
+            description="Test name filtering",
+        )
+        response = integration_client.datasets.create_dataset(dataset_request)
+        dataset_id = getattr(response, "_id", response.name)
+
+        time.sleep(2)
+
+        # Test filtering by name
+        datasets = integration_client.datasets.list_datasets(
+            project=integration_project_name,
+            name=unique_name,
+        )
+
+        assert datasets is not None
+        assert isinstance(datasets, list)
+        assert len(datasets) >= 1
+        # Verify we got the correct dataset
+        found = any(d.name == unique_name for d in datasets)
+        assert found, f"Dataset with name {unique_name} not found in results"
+
+        # Cleanup
+        integration_client.datasets.delete_dataset(dataset_id)
+
+    def test_list_datasets_include_datapoints(
+        self, integration_client: Any, integration_project_name: str
+    ) -> None:
+        """Test dataset listing with include_datapoints parameter."""
+        test_id = str(uuid.uuid4())[:8]
+        dataset_name = f"test_include_datapoints_{test_id}"
+
+        # Create dataset
+        dataset_request = CreateDatasetRequest(
+            project=integration_project_name,
+            name=dataset_name,
+            description="Test include_datapoints parameter",
+        )
+        create_response = integration_client.datasets.create_dataset(dataset_request)
+        dataset_id = getattr(create_response, "_id", create_response.name)
+
+        time.sleep(2)
+
+        # Add a datapoint to the dataset
+        datapoint_request = CreateDatapointRequest(
+            project=integration_project_name,
+            dataset_id=dataset_id,
+            inputs={"test_input": "value"},
+            target={"expected": "output"},
+        )
+        integration_client.datapoints.create_datapoint(datapoint_request)
+
+        time.sleep(2)
+
+        # Test with include_datapoints=True
+        datasets_with_datapoints = integration_client.datasets.list_datasets(
+            dataset_id=dataset_id,
+            include_datapoints=True,
+        )
+
+        assert datasets_with_datapoints is not None
+        assert isinstance(datasets_with_datapoints, list)
+        assert len(datasets_with_datapoints) >= 1
+
+        # Note: The response structure for datapoints may vary by backend version
+        # This test primarily verifies the parameter is accepted and doesn't error
+
+        # Cleanup
+        integration_client.datasets.delete_dataset(dataset_id)
+
     def test_delete_dataset(
         self, integration_client: Any, integration_project_name: str
     ) -> None:

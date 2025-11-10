@@ -339,8 +339,10 @@ Get Specific Dataset
        print(f"  Inputs: {dp.get('inputs')}")
        print(f"  Ground Truth: {dp.get('ground_truth')}")
 
-Find Datasets by Name Pattern
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+Find Datasets by Name
+~~~~~~~~~~~~~~~~~~~~~~
+
+**Server-side filtering (recommended for large projects):**
 
 .. code-block:: python
 
@@ -348,15 +350,45 @@ Find Datasets by Name Pattern
    
    client = HoneyHive(api_key="your-api-key")
    
-   # Get all datasets
-   datasets = client.datasets.list_datasets(project="your-project")
+   # Filter by exact name (server-side - fast and efficient!)
+   dataset = client.datasets.list_datasets(
+       project="your-project",
+       name="qa-dataset-v1"
+   )
    
-   # Filter by name pattern
-   qa_datasets = [ds for ds in datasets if "qa-" in ds.name.lower()]
+   # Filter by dataset type
+   eval_datasets = client.datasets.list_datasets(
+       project="your-project",
+       dataset_type="evaluation"
+   )
+   
+   # Get specific dataset by ID
+   dataset = client.datasets.list_datasets(
+       dataset_id="663876ec4611c47f4970f0c3"
+   )
+   
+   # Include datapoints in response (single query)
+   dataset_with_data = client.datasets.list_datasets(
+       dataset_id="663876ec4611c47f4970f0c3",
+       include_datapoints=True
+   )[0]
+
+**Client-side filtering (for pattern matching):**
+
+.. code-block:: python
+
+   # For partial matches, fetch and filter client-side
+   all_datasets = client.datasets.list_datasets(project="your-project")
+   qa_datasets = [ds for ds in all_datasets if "qa-" in ds.name.lower()]
    
    print(f"Found {len(qa_datasets)} Q&A datasets:")
    for dataset in qa_datasets:
        print(f"  - {dataset.name}")
+
+.. note::
+   Server-side filtering is more efficient for large projects with 100+ datasets.
+   Use ``name`` for exact matches and ``dataset_type`` or ``dataset_id`` for 
+   targeted queries.
 
 Advanced Patterns
 -----------------

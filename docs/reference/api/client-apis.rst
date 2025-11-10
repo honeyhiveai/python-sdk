@@ -83,6 +83,8 @@ DatasetsAPI
 
 API client for dataset operations.
 
+**Recent Updates**: Enhanced filtering capabilities for ``list_datasets()`` including name and include_datapoints parameters. See method documentation below for details.
+
 .. autoclass:: honeyhive.api.datasets.DatasetsAPI
    :members:
    :undoc-members:
