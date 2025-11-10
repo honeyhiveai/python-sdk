@@ -135,9 +135,10 @@ def main():
         # ✅ PRIMARY PATTERN (v1.0+): Use instance method
         tracer.enrich_span(
             metadata={"input": input_data, "result": result},
-            metrics={"processing_time_ms": 100}
+            metrics={"processing_time_ms": 100},
+            user_properties={"user_id": "user-123", "plan": "premium"}
         )
-        print("  ✓ Span enriched with metadata and metrics")
+        print("  ✓ Span enriched with metadata, metrics, and user properties")
         
         return result
 

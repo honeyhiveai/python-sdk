@@ -198,6 +198,7 @@ Use explicit namespace parameters for organized data:
    enrich_span(
        metadata={"user_id": "user_123", "session": "abc"},
        metrics={"latency_ms": 150, "score": 0.95},
+       user_properties={"user_id": "user_123", "plan": "premium"},
        feedback={"rating": 5, "helpful": True},
        inputs={"query": "What is AI?"},
        outputs={"answer": "AI is artificial intelligence..."},
@@ -211,6 +212,8 @@ Use explicit namespace parameters for organized data:
    # honeyhive_metadata.session = "abc"
    # honeyhive_metrics.latency_ms = 150
    # honeyhive_metrics.score = 0.95
+   # honeyhive_user_properties.user_id = "user_123"
+   # honeyhive_user_properties.plan = "premium"
    # honeyhive_feedback.rating = 5
    # honeyhive_feedback.helpful = True
    # honeyhive_inputs.query = "What is AI?"
@@ -224,6 +227,7 @@ Use explicit namespace parameters for organized data:
 
 - ``metadata``: Business context (user IDs, features, session info)
 - ``metrics``: Numeric measurements (latencies, scores, counts)
+- ``user_properties``: User-specific properties (user_id, plan, tier, etc.) - stored in dedicated namespace
 - ``feedback``: User or system feedback (ratings, thumbs up/down)
 - ``inputs``: Input data to the operation
 - ``outputs``: Output data from the operation

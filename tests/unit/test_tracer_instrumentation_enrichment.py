@@ -962,6 +962,67 @@ class TestNewFeatures:
 
     @patch("honeyhive.tracer.instrumentation.enrichment.trace.get_current_span")
     @patch("honeyhive.tracer.instrumentation.enrichment._set_span_attributes")
+    def test_enrich_span_core_with_user_properties(
+        self, mock_set_attrs: Any, mock_get_span: Any, honeyhive_tracer: Any
+    ) -> None:
+        """Test enrich_span_core with user_properties parameter."""
+        mock_span = Mock()
+        mock_span.set_attribute = Mock()
+        mock_get_span.return_value = mock_span
+
+        user_properties = {"user_id": "test-123", "plan": "premium"}
+        metrics = {"score": 0.95, "latency_ms": 150}
+
+        result = enrich_span_core(
+            user_properties=user_properties,
+            metrics=metrics,
+            metadata={"feature": "test"},
+            tracer_instance=honeyhive_tracer,
+        )
+
+        assert result["success"] is True
+        assert (
+            result["attribute_count"] >= 4
+        )  # At least 2 user_properties + 2 metrics + 1 metadata
+
+        # Verify user_properties went to correct namespace
+        mock_set_attrs.assert_any_call(
+            mock_span, "honeyhive_user_properties", user_properties
+        )
+        # Verify metrics went to correct namespace
+        mock_set_attrs.assert_any_call(mock_span, "honeyhive_metrics", metrics)
+        # Verify metadata went to correct namespace
+        mock_set_attrs.assert_any_call(
+            mock_span, "honeyhive_metadata", {"feature": "test"}
+        )
+
+    @patch("honeyhive.tracer.instrumentation.enrichment.trace.get_current_span")
+    @patch("honeyhive.tracer.instrumentation.enrichment._set_span_attributes")
+    def test_enrich_span_core_extracts_reserved_params_from_kwargs(
+        self, mock_set_attrs: Any, mock_get_span: Any, honeyhive_tracer: Any
+    ) -> None:
+        """Test that enrich_span_core extracts reserved parameters from kwargs."""
+        mock_span = Mock()
+        mock_span.set_attribute = Mock()
+        mock_get_span.return_value = mock_span
+
+        # Pass user_properties and metrics as kwargs (not explicit params)
+        result = enrich_span_core(
+            user_properties={"user_id": "test-456"},
+            metrics={"score": 0.98},
+            tracer_instance=honeyhive_tracer,
+        )
+
+        assert result["success"] is True
+
+        # Verify reserved params were extracted and routed correctly
+        mock_set_attrs.assert_any_call(
+            mock_span, "honeyhive_user_properties", {"user_id": "test-456"}
+        )
+        mock_set_attrs.assert_any_call(mock_span, "honeyhive_metrics", {"score": 0.98})
+
+    @patch("honeyhive.tracer.instrumentation.enrichment.trace.get_current_span")
+    @patch("honeyhive.tracer.instrumentation.enrichment._set_span_attributes")
     def test_simple_dict_to_metadata(
         self, mock_set_attrs: Any, mock_get_span: Any, honeyhive_tracer: Any
     ) -> None:

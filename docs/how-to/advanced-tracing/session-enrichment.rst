@@ -69,7 +69,7 @@ Function Signature
    :param metrics: Numeric measurements for the session (latency, cost, token counts).
    :type metrics: Optional[Dict[str, Any]]
    
-   :param user_properties: Legacy parameter for user-specific properties. Automatically merged into metadata with ``user_properties.`` prefix.
+   :param user_properties: User-specific properties (user_id, plan, etc.). Stored as a separate field in the backend, not merged into metadata.
    :type user_properties: Optional[Dict[str, Any]]
    
    :param kwargs: Additional keyword arguments (passed through for extensibility).
@@ -165,23 +165,23 @@ Legacy Signature (Still Supported)
        metadata={"user_id": "user_456"}
    )
    
-   # Old style: user_properties parameter
-   enrich_session(
-       session_id="sess_abc123",
-       user_properties={
-           "tier": "premium",
-           "region": "us-east"
-       }
-   )
-   
-   # Result: user_properties are automatically merged into metadata with prefix
-   # Backend receives:
-   # {
-   #   "metadata": {
-   #     "user_properties.tier": "premium",
-   #     "user_properties.region": "us-east"
-   #   }
-   # }
+  # Old style: user_properties parameter
+  enrich_session(
+      session_id="sess_abc123",
+      user_properties={
+          "tier": "premium",
+          "region": "us-east"
+      }
+  )
+  
+  # Result: user_properties stored as a separate field in the backend
+  # Backend receives:
+  # {
+  #   "user_properties": {
+  #     "tier": "premium",
+  #     "region": "us-east"
+  #   }
+  # }
 
 Modern Signature (Recommended)
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -615,7 +615,7 @@ Troubleshooting
 **Backwards compatibility issues:**
 
 - The function accepts both old and new signatures
-- ``user_properties`` is automatically converted to metadata
+- ``user_properties`` is stored as a separate field (not merged into metadata)
 - ``session_id`` can be positional or keyword argument
 - All enrichment data is gracefully merged
 

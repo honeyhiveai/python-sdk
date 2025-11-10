@@ -17,6 +17,14 @@ Latest Release Notes
 Current Version Highlights
 ~~~~~~~~~~~~~~~~~~~~~~~~~~
 
+**✨ NEW: DatasetsAPI Filtering - Find Datasets Efficiently (Nov 10, 2025)**
+
+* **Server-Side Filtering**: Find datasets by name, type, or ID without fetching all datasets
+* **Performance**: Much faster for large projects with 100+ datasets
+* **New Parameters**: ``name``, ``dataset_type``, ``dataset_id``, ``include_datapoints``
+* **Backward Compatible**: All parameters optional, existing code works unchanged
+* **Customer Request**: Addresses scalability concerns as projects grow
+
 **📚 IMPROVED: Strands Integration - Best Practices Pattern (Nov 6, 2025)**
 
 * **Instance Method Pattern**: All examples now use ``tracer.enrich_span()`` instead of global ``enrich_span()``

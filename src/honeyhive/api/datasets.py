@@ -138,8 +138,11 @@ class DatasetsAPI(BaseAPI):
     def list_datasets(
         self,
         project: Optional[str] = None,
+        *,
         dataset_type: Optional[Literal["evaluation", "fine-tuning"]] = None,
         dataset_id: Optional[str] = None,
+        name: Optional[str] = None,
+        include_datapoints: bool = False,
         limit: int = 100,
     ) -> List[Dataset]:
         """List datasets with optional filtering.
@@ -148,10 +151,34 @@ class DatasetsAPI(BaseAPI):
             project: Project name to filter by
             dataset_type: Type of dataset - "evaluation" or "fine-tuning"
             dataset_id: Specific dataset ID to filter by
+            name: Dataset name to filter by (exact match)
+            include_datapoints: Include datapoints in response (may impact performance)
             limit: Maximum number of datasets to return (default: 100)
 
         Returns:
             List of Dataset objects matching the filters
+
+        Examples:
+            Find dataset by name::
+
+                datasets = client.datasets.list_datasets(
+                    project="My Project",
+                    name="Training Data Q4"
+                )
+
+            Get specific dataset with datapoints::
+
+                dataset = client.datasets.list_datasets(
+                    dataset_id="663876ec4611c47f4970f0c3",
+                    include_datapoints=True
+                )[0]
+
+            Filter by type and name::
+
+                eval_datasets = client.datasets.list_datasets(
+                    dataset_type="evaluation",
+                    name="Regression Tests"
+                )
         """
         params = {"limit": str(limit)}
         if project:
@@ -160,6 +187,10 @@ class DatasetsAPI(BaseAPI):
             params["type"] = dataset_type
         if dataset_id:
             params["dataset_id"] = dataset_id
+        if name:
+            params["name"] = name
+        if include_datapoints:
+            params["include_datapoints"] = str(include_datapoints).lower()
 
         response = self.client.request("GET", "/datasets", params=params)
         data = response.json()
@@ -170,8 +201,11 @@ class DatasetsAPI(BaseAPI):
     async def list_datasets_async(
         self,
         project: Optional[str] = None,
+        *,
         dataset_type: Optional[Literal["evaluation", "fine-tuning"]] = None,
         dataset_id: Optional[str] = None,
+        name: Optional[str] = None,
+        include_datapoints: bool = False,
         limit: int = 100,
     ) -> List[Dataset]:
         """List datasets asynchronously with optional filtering.
@@ -180,10 +214,34 @@ class DatasetsAPI(BaseAPI):
             project: Project name to filter by
             dataset_type: Type of dataset - "evaluation" or "fine-tuning"
             dataset_id: Specific dataset ID to filter by
+            name: Dataset name to filter by (exact match)
+            include_datapoints: Include datapoints in response (may impact performance)
             limit: Maximum number of datasets to return (default: 100)
 
         Returns:
             List of Dataset objects matching the filters
+
+        Examples:
+            Find dataset by name::
+
+                datasets = await client.datasets.list_datasets_async(
+                    project="My Project",
+                    name="Training Data Q4"
+                )
+
+            Get specific dataset with datapoints::
+
+                dataset = await client.datasets.list_datasets_async(
+                    dataset_id="663876ec4611c47f4970f0c3",
+                    include_datapoints=True
+                )
+
+            Filter by type and name::
+
+                eval_datasets = await client.datasets.list_datasets_async(
+                    dataset_type="evaluation",
+                    name="Regression Tests"
+                )
         """
         params = {"limit": str(limit)}
         if project:
@@ -192,6 +250,10 @@ class DatasetsAPI(BaseAPI):
             params["type"] = dataset_type
         if dataset_id:
             params["dataset_id"] = dataset_id
+        if name:
+            params["name"] = name
+        if include_datapoints:
+            params["include_datapoints"] = str(include_datapoints).lower()
 
         response = await self.client.request_async("GET", "/datasets", params=params)
         data = response.json()

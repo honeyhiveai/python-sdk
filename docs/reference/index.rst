@@ -20,6 +20,10 @@ Overview
 
 The HoneyHive Python SDK provides a comprehensive API for LLM observability and evaluation. This reference documents all available features, APIs, and configurations.
 
+**Latest Updates** (November 2025):
+
+- **DatasetsAPI Filtering**: Enhanced ``list_datasets()`` with server-side filtering (``name`` and ``include_datapoints`` parameters) for efficient large-scale dataset management
+
 Core Capabilities
 ~~~~~~~~~~~~~~~~~
 

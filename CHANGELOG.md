@@ -2,6 +2,18 @@
 
 ### Added
 
+- **✨ API Enhancement: DatasetsAPI Filtering - Complete Backend Parity**
+  - **Name Filtering**: Added `name` parameter to `list_datasets()` and `list_datasets_async()` for exact name matching
+  - **Datapoint Inclusion**: Added `include_datapoints` parameter to optionally include datapoints in response
+  - **Weekend Implementation**: Team added `dataset_type` and `dataset_id` filtering over weekend
+  - **Full Coverage**: SDK now exposes all backend filtering capabilities (`project`, `dataset_type`, `dataset_id`, `name`, `include_datapoints`, `limit`)
+  - **Tests**: Added comprehensive unit tests for all new parameters
+  - **Tests**: Added integration tests for real API validation
+  - **Documentation**: Updated method docstrings with usage examples for all filtering options
+  - **Backward Compatible**: All new parameters are optional with sensible defaults
+  - Customer Request: Addresses performance concerns for large projects with 100+ datasets
+  - Files modified: 3 | Tests added: 6
+
 - **📚 Documentation: Boss Feedback Round 2 - Performance, Evaluation, Graceful Degradation**
   - **Performance Benchmarks**: Removed broken GitHub link to uncommitted scripts/benchmark directory
   - **Performance Benchmarks**: Updated to reference available metrics and team contact for detailed reports

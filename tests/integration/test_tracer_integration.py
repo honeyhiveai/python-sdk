@@ -469,6 +469,49 @@ class TestUnifiedEnrichSpanIntegration:
         assert verified_event is not None
         assert verified_event.event_name == "test_enrichment_backwards_compat"
 
+    def test_enrich_span_with_user_properties_and_metrics_integration(
+        self, integration_tracer: Any, integration_client: Any, real_project: Any
+    ) -> None:
+        """Test enrich_span with user_properties and metrics - verify correct namespaces."""
+        # Generate unique identifier for backend verification
+        _, unique_id = generate_test_id("enrich_span_user_props", "integration")
+
+        # Create a traced operation with user_properties and metrics
+        with integration_tracer.start_span("test_enrichment_user_props") as span:
+            assert span.is_recording()
+
+            # Use instance method with user_properties and metrics
+            integration_tracer.enrich_span(
+                user_properties={"user_id": "test-user-123", "plan": "premium"},
+                metrics={"score": 0.95, "latency_ms": 150},
+                metadata={"test_id": unique_id, "feature": "enrichment_test"},
+            )
+
+        # Flush to ensure data reaches backend
+        integration_tracer.force_flush()
+        time.sleep(2)  # Allow backend processing time
+
+        # Verify span attributes in backend
+        verified_event = verify_tracer_span(
+            tracer=integration_tracer,
+            client=integration_client,
+            project=real_project,
+            span_name="test_enrichment_user_props",
+            unique_identifier=unique_id,
+            span_attributes={
+                "honeyhive_metadata.test_id": unique_id,
+                "honeyhive_metadata.feature": "enrichment_test",
+                "honeyhive_metrics.score": 0.95,
+                "honeyhive_metrics.latency_ms": 150,
+                "honeyhive_user_properties.user_id": "test-user-123",
+                "honeyhive_user_properties.plan": "premium",
+            },
+        )
+
+        # Assert backend verification succeeded
+        assert verified_event is not None
+        assert verified_event.event_name == "test_enrichment_user_props"
+
     def test_enrich_span_arbitrary_kwargs_integration(
         self, integration_tracer: Any, integration_client: Any, real_project: Any
     ) -> None:
