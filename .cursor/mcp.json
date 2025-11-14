@@ -1,25 +1,23 @@
 {
   "mcpServers": {
-    "agent-os-rag": {
-      "command": "${workspaceFolder}/.agent-os/venv/bin/python",
+    "python-sdk": {
+      "command": "/Users/dhruvsingh/honeyhive/python-sdk/.praxis-os/venv/bin/python",
       "args": [
         "-m",
-        "mcp_server",
+        "ouroboros",
         "--transport",
-        "dual",
-        "--log-level",
-        "INFO"
+        "dual"
       ],
       "env": {
-        "PROJECT_ROOT": "${workspaceFolder}",
-        "PYTHONPATH": "${workspaceFolder}/.agent-os",
-        "PYTHONUNBUFFERED": "1"
+        "PYTHONPATH": "/Users/dhruvsingh/honeyhive/python-sdk/.praxis-os"
       },
       "autoApprove": [
-        "search_standards",
-        "get_current_phase",
-        "get_workflow_state",
-        "get_server_info"
+        "pos_search_project",
+        "pos_workflow",
+        "pos_browser",
+        "pos_filesystem",
+        "get_server_info",
+        "current_date"
       ]
     }
   }

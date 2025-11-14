@@ -1,0 +1,55 @@
+# Gate Definition - Phase 2: Technical Design
+# Created: 2025-10-20
+# Purpose: Validate technical architecture and design documented in specs.md
+
+checkpoint:
+  strict: true
+  allow_override: true
+
+evidence_schema:
+  supporting_docs_reviewed:
+    type: boolean
+    required: true
+    description: "Re-read supporting docs sections relevant to technical design"
+
+  specs_created:
+    type: boolean
+    required: true
+    description: "specs.md file exists"
+
+  architecture_documented:
+    type: boolean
+    required: true
+    description: "Architecture documented with diagrams"
+
+  components_defined:
+    type: boolean
+    required: true
+    description: "All components defined with responsibilities"
+
+  apis_specified:
+    type: boolean
+    required: true
+    description: "APIs/interfaces specified"
+
+  data_models_complete:
+    type: boolean
+    required: true
+    description: "Data models complete"
+
+  security_addressed:
+    type: boolean
+    required: true
+    description: "Security addressed"
+
+  performance_documented:
+    type: boolean
+    required: true
+    description: "Performance considerations documented"
+
+  requirements_traceability:
+    type: boolean
+    required: true
+    description: "Design traceable to requirements (srd.md)"
+
+validators: {}

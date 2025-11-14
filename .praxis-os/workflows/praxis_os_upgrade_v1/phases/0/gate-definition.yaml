@@ -1,0 +1,30 @@
+# Gate Definition - Phase 0: Pre-Flight Checks
+# Created: 2025-10-20
+# Purpose: Validate source and target before modifications
+
+checkpoint:
+  strict: false
+  allow_override: true
+
+evidence_schema:
+  source_validation_passed:
+    type: boolean
+    required: true
+    description: "Source validation passed"
+
+  target_structure_valid:
+    type: boolean
+    required: true
+    description: "Target structure valid"
+
+  disk_space_sufficient:
+    type: boolean
+    required: true
+    description: "Disk space sufficient"
+
+  no_concurrent_workflows:
+    type: boolean
+    required: true
+    description: "No concurrent workflows"
+
+validators: {}

@@ -1,0 +1,393 @@
+{
+  "workflow_type": "spec_creation_v1",
+  "version": "1.0.0",
+  "name": "Specification Creation Workflow",
+  "description": "Systematically create comprehensive specifications with phase-gated validation",
+  "author": "Agent OS Team",
+  "strict_mode": true,
+  "total_phases": 6,
+  "estimated_duration": "1-2 hours (+ supporting docs review time)",
+  "primary_outputs": [
+    "README.md (executive summary)",
+    "srd.md (business requirements)",
+    "specs.md (technical specifications)",
+    "tasks.md (implementation task breakdown)",
+    "implementation.md (detailed guidance)"
+  ],
+  "dynamic_phases": false,
+  "start_phase": 0,
+  "phases": [
+    {
+      "phase_number": 0,
+      "phase_name": "Supporting Documents Integration",
+      "phase_file": "phases/0/phase.md",
+      "skippable": true,
+      "skip_condition": "No supporting_docs in options",
+      "checkpoint": {
+        "required_evidence": [
+          "spec_directory_created",
+          "spec_dir",
+          "supporting_docs_accessible",
+          "document_index_created",
+          "insights_extracted"
+        ]
+      },
+      "tasks": [
+        {
+          "task_number": 0,
+          "name": "create-directory",
+          "file": "task-0-create-directory.md"
+        },
+        {
+          "task_number": 1,
+          "name": "copy-documents",
+          "file": "task-1-copy-documents.md"
+        },
+        {
+          "task_number": 2,
+          "name": "create-index",
+          "file": "task-2-create-index.md"
+        },
+        {
+          "task_number": 3,
+          "name": "extract-insights",
+          "file": "task-3-extract-insights.md"
+        }
+      ],
+      "purpose": "Incorporate pre-existing documents into spec structure",
+      "estimated_effort": "10-20 minutes",
+      "key_deliverables": [
+        "Spec directory created with YYYY-MM-DD-descriptive-name format",
+        "Supporting documents copied/referenced",
+        "Document index created",
+        "Key insights extracted and categorized"
+      ],
+      "validation_criteria": [
+        "Spec directory follows YYYY-MM-DD-descriptive-name convention",
+        "All documents accessible in spec directory",
+        "index.md contains structured metadata for each document",
+        "insights.md contains categorized findings"
+      ]
+    },
+    {
+      "phase_number": 1,
+      "phase_name": "Requirements Gathering",
+      "phase_file": "phases/1/phase.md",
+      "checkpoint": {
+        "required_evidence": [
+          "srd_created",
+          "business_goals_defined",
+          "user_stories_documented",
+          "functional_requirements_listed",
+          "nfr_defined",
+          "out_of_scope_clarified"
+        ]
+      },
+      "tasks": [
+        {
+          "task_number": 1,
+          "name": "review-supporting-docs",
+          "file": "task-1-review-supporting-docs.md"
+        },
+        {
+          "task_number": 2,
+          "name": "business-goals",
+          "file": "task-2-business-goals.md"
+        },
+        {
+          "task_number": 3,
+          "name": "user-stories",
+          "file": "task-3-user-stories.md"
+        },
+        {
+          "task_number": 4,
+          "name": "functional-requirements",
+          "file": "task-4-functional-requirements.md"
+        },
+        {
+          "task_number": 5,
+          "name": "nonfunctional-requirements",
+          "file": "task-5-nonfunctional-requirements.md"
+        },
+        {
+          "task_number": 6,
+          "name": "out-of-scope",
+          "file": "task-6-out-of-scope.md"
+        }
+      ],
+      "purpose": "Define business goals, user stories, functional and non-functional requirements",
+      "estimated_effort": "35-50 minutes",
+      "key_deliverables": [
+        "Business goals documented",
+        "User stories defined",
+        "Functional requirements listed",
+        "Non-functional requirements specified",
+        "Out-of-scope items clarified"
+      ],
+      "validation_criteria": [
+        "srd.md contains complete business context",
+        "At least 3 user stories documented",
+        "All functional requirements have clear acceptance criteria",
+        "NFRs include performance, security, and maintainability"
+      ]
+    },
+    {
+      "phase_number": 2,
+      "phase_name": "Technical Design",
+      "phase_file": "phases/2/phase.md",
+      "checkpoint": {
+        "required_evidence": [
+          "specs_created",
+          "architecture_documented",
+          "components_defined",
+          "security_addressed",
+          "performance_addressed"
+        ]
+      },
+      "tasks": [
+        {
+          "task_number": 1,
+          "name": "review-supporting-docs",
+          "file": "task-1-review-supporting-docs.md"
+        },
+        {
+          "task_number": 2,
+          "name": "architecture",
+          "file": "task-2-architecture.md"
+        },
+        {
+          "task_number": 3,
+          "name": "components",
+          "file": "task-3-components.md"
+        },
+        {
+          "task_number": 4,
+          "name": "apis",
+          "file": "task-4-apis.md"
+        },
+        {
+          "task_number": 5,
+          "name": "data-models",
+          "file": "task-5-data-models.md"
+        },
+        {
+          "task_number": 6,
+          "name": "security",
+          "file": "task-6-security.md"
+        },
+        {
+          "task_number": 7,
+          "name": "performance",
+          "file": "task-7-performance.md"
+        }
+      ],
+      "purpose": "Create detailed technical architecture and component design",
+      "estimated_effort": "50-65 minutes",
+      "key_deliverables": [
+        "Architecture diagram and description",
+        "Component definitions with responsibilities",
+        "API contracts defined",
+        "Data models specified",
+        "Security design documented",
+        "Performance considerations addressed"
+      ],
+      "validation_criteria": [
+        "specs.md contains complete architecture",
+        "All components have clear interfaces",
+        "Security threats identified and mitigated",
+        "Performance requirements met by design"
+      ]
+    },
+    {
+      "phase_number": 3,
+      "phase_name": "Task Breakdown",
+      "phase_file": "phases/3/phase.md",
+      "checkpoint": {
+        "required_evidence": [
+          "tasks_created",
+          "phases_defined",
+          "all_tasks_have_acceptance_criteria",
+          "dependencies_mapped",
+          "validation_gates_specified"
+        ]
+      },
+      "tasks": [
+        {
+          "task_number": 1,
+          "name": "review-supporting-docs",
+          "file": "task-1-review-supporting-docs.md"
+        },
+        {
+          "task_number": 2,
+          "name": "identify-phases",
+          "file": "task-2-identify-phases.md"
+        },
+        {
+          "task_number": 3,
+          "name": "break-down-tasks",
+          "file": "task-3-break-down-tasks.md"
+        },
+        {
+          "task_number": 4,
+          "name": "acceptance-criteria",
+          "file": "task-4-acceptance-criteria.md"
+        },
+        {
+          "task_number": 5,
+          "name": "map-dependencies",
+          "file": "task-5-map-dependencies.md"
+        },
+        {
+          "task_number": 6,
+          "name": "validation-gates",
+          "file": "task-6-validation-gates.md"
+        }
+      ],
+      "purpose": "Break implementation into phases and tasks with dependencies",
+      "estimated_effort": "35-45 minutes",
+      "key_deliverables": [
+        "Implementation phases identified",
+        "Tasks broken down with estimates",
+        "Acceptance criteria defined",
+        "Dependencies mapped",
+        "Validation gates specified"
+      ],
+      "validation_criteria": [
+        "tasks.md contains all phases",
+        "Each task has clear acceptance criteria",
+        "Dependencies are explicit",
+        "No circular dependencies"
+      ]
+    },
+    {
+      "phase_number": 4,
+      "phase_name": "Implementation Guidance",
+      "phase_file": "phases/4/phase.md",
+      "checkpoint": {
+        "required_evidence": [
+          "implementation_created",
+          "code_patterns_documented",
+          "testing_strategy_defined",
+          "deployment_guidance_specified"
+        ]
+      },
+      "tasks": [
+        {
+          "task_number": 1,
+          "name": "review-supporting-docs",
+          "file": "task-1-review-supporting-docs.md"
+        },
+        {
+          "task_number": 2,
+          "name": "code-patterns",
+          "file": "task-2-code-patterns.md"
+        },
+        {
+          "task_number": 3,
+          "name": "discover-requirements-for-testing",
+          "file": "task-3-discover-requirements-for-testing.md"
+        },
+        {
+          "task_number": 4,
+          "name": "requirements-traceability-matrix",
+          "file": "task-4-requirements-traceability-matrix.md"
+        },
+        {
+          "task_number": 5,
+          "name": "functional-tests-plan",
+          "file": "task-5-functional-tests-plan.md"
+        },
+        {
+          "task_number": 6,
+          "name": "nonfunctional-tests-plan",
+          "file": "task-6-nonfunctional-tests-plan.md"
+        },
+        {
+          "task_number": 7,
+          "name": "unit-integration-strategy",
+          "file": "task-7-unit-integration-strategy.md"
+        },
+        {
+          "task_number": 8,
+          "name": "consolidate-test-plan",
+          "file": "task-8-consolidate-test-plan.md"
+        },
+        {
+          "task_number": 9,
+          "name": "deployment",
+          "file": "task-9-deployment.md"
+        },
+        {
+          "task_number": 10,
+          "name": "troubleshooting",
+          "file": "task-10-troubleshooting.md"
+        }
+      ],
+      "purpose": "Provide detailed implementation patterns, comprehensive testing plans, and deployment guidance",
+      "estimated_effort": "60-80 minutes",
+      "key_deliverables": [
+        "Code patterns documented with examples",
+        "Testing requirements extracted (requirements-list.md)",
+        "Functional tests plan created (functional-tests.md)",
+        "Non-functional tests plan created (nonfunctional-tests.md)",
+        "Unit/integration strategy defined (test-strategy.md)",
+        "Test plan consolidated in implementation.md",
+        "Deployment process specified",
+        "Troubleshooting guide created"
+      ],
+      "validation_criteria": [
+        "implementation.md contains concrete code examples",
+        "All requirements have traceability to tests",
+        "Functional tests cover all FRs with specific test cases",
+        "NFR tests have measurable pass/fail criteria",
+        "Testing strategy covers unit, integration, and e2e",
+        "Deployment steps are actionable",
+        "Common issues documented with solutions"
+      ]
+    },
+    {
+      "phase_number": 5,
+      "phase_name": "Finalization",
+      "phase_file": "phases/5/phase.md",
+      "checkpoint": {
+        "required_evidence": [
+          "readme_created",
+          "all_files_consistent",
+          "spec_validated",
+          "ready_for_implementation"
+        ]
+      },
+      "tasks": [
+        {
+          "task_number": 1,
+          "name": "completeness-review",
+          "file": "task-1-completeness-review.md"
+        },
+        {
+          "task_number": 2,
+          "name": "consistency-review",
+          "file": "task-2-consistency-review.md"
+        },
+        {
+          "task_number": 3,
+          "name": "final-package",
+          "file": "task-3-final-package.md"
+        }
+      ],
+      "purpose": "Review, validate, and package complete specification",
+      "estimated_effort": "15-20 minutes",
+      "key_deliverables": [
+        "README.md created",
+        "All files reviewed for consistency",
+        "Spec validated against checklist",
+        "Ready for implementation"
+      ],
+      "validation_criteria": [
+        "README.md provides clear overview",
+        "No contradictions between documents",
+        "All required sections complete",
+        "Spec approved for implementation"
+      ]
+    }
+  ]
+}

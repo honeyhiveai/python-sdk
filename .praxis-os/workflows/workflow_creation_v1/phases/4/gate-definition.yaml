@@ -1,0 +1,30 @@
+# Gate Definition - Phase 4: Phase Content Generation
+# Created: 2025-10-20
+# Purpose: Validate all phase and task files generated
+
+checkpoint:
+  strict: false
+  allow_override: true
+
+evidence_schema:
+  phase_files_created:
+    type: integer
+    required: true
+    description: "Number of phase.md files created"
+
+  task_files_created:
+    type: integer
+    required: true
+    description: "Number of task files created"
+
+  total_files_expected:
+    type: integer
+    required: true
+    description: "Total files expected from definition"
+
+  all_phases_populated:
+    type: boolean
+    required: true
+    description: "All target phases have complete files"
+
+validators: {}

@@ -26,7 +26,11 @@ problem:
     from structured YAML definitions, ensuring quality enforcement, consistency,
     efficiency, knowledge integration, and scalability.
 
-  why_workflow: "Multi-phase process requiring validation gates, domain expertise integration, human review points, and systematic quality enforcement. Too complex for a tool (needs phases with checkpoints), requires systematic execution not just guidance (not a standard)."
+  why_workflow: |
+    Multi-phase process requiring validation gates, domain expertise integration,
+    human review points, and systematic quality enforcement. Too complex for a tool
+    (needs phases with checkpoints), requires systematic execution not just guidance
+    (not a standard).
 
   success_criteria:
     - "All target workflow phases fully populated (phase.md + all task files)"

@@ -1,0 +1,45 @@
+# Gate Definition - Phase 4: Implementation Guidance
+# Created: 2025-10-20
+# Purpose: Validate implementation guidance documented in implementation.md
+
+checkpoint:
+  strict: true
+  allow_override: true
+
+evidence_schema:
+  supporting_docs_reviewed:
+    type: boolean
+    required: true
+    description: "Re-read supporting docs code examples and patterns (CRITICAL - must copy actual syntax)"
+
+  implementation_created:
+    type: boolean
+    required: true
+    description: "implementation.md file exists"
+
+  code_patterns_documented:
+    type: boolean
+    required: true
+    description: "Code patterns documented"
+
+  testing_strategy_defined:
+    type: boolean
+    required: true
+    description: "Testing strategy defined"
+
+  deployment_guidance_specified:
+    type: boolean
+    required: true
+    description: "Deployment guidance specified"
+
+  troubleshooting_tips_provided:
+    type: boolean
+    required: true
+    description: "Troubleshooting tips provided"
+
+  examples_concrete_actionable:
+    type: boolean
+    required: true
+    description: "Examples are concrete and actionable"
+
+validators: {}

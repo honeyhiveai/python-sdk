@@ -1,0 +1,244 @@
+{
+  "workflow_type": "praxis_os_upgrade_v1",
+  "version": "1.0.0",
+  "name": "Agent OS Upgrade Workflow",
+  "description": "AI-guided Agent OS upgrade with validation and rollback",
+  "author": "Agent OS Team",
+  "strict_mode": true,
+  "created_date": "2025-10-08",
+  "total_phases": 6,
+  "estimated_duration": "3-5 minutes",
+  "primary_outputs": [
+    "Upgraded .praxis-os content (standards, usage, workflows)",
+    "Upgraded MCP server with dependencies",
+    "Validated post-upgrade functionality",
+    "Complete backup with rollback capability",
+    "Upgrade summary and documentation"
+  ],
+  "phases": [
+    {
+      "phase_number": 0,
+      "phase_name": "Pre-Flight Checks",
+      "file": "phases/0/phase.md",
+      "purpose": "Validate source repository, target structure, disk space, and prevent concurrent upgrades",
+      "estimated_effort": "30 seconds",
+      "key_deliverables": [
+        "Source validation complete",
+        "Target structure validated",
+        "Disk space confirmed",
+        "No concurrent workflows"
+      ],
+      "validation_criteria": [
+        "Source repo is clean (no uncommitted changes)",
+        "Source has required directories (mcp_server, universal)",
+        "Target has valid structure",
+        "Sufficient disk space (2x current size)",
+        "No other upgrade workflows in progress"
+      ],
+      "tasks": [
+        {"task_number": 1, "name": "validate-source", "file": "task-1-validate-source.md"},
+        {"task_number": 2, "name": "validate-target", "file": "task-2-validate-target.md"},
+        {"task_number": 3, "name": "check-disk-space", "file": "task-3-check-disk-space.md"},
+        {"task_number": 4, "name": "check-concurrent", "file": "task-4-check-concurrent.md"}
+      ]
+    },
+    {
+      "phase_number": 1,
+      "phase_name": "Backup & Preparation",
+      "file": "phases/1/phase.md",
+      "purpose": "Create timestamped backup of current installation and acquire upgrade lock",
+      "estimated_effort": "20 seconds",
+      "key_deliverables": [
+        "Complete backup with manifest",
+        "Backup integrity verified",
+        "Upgrade lock acquired"
+      ],
+      "validation_criteria": [
+        "Backup created successfully",
+        "All files backed up (mcp_server, standards, usage, workflows, config.json)",
+        "Checksum manifest generated",
+        "Backup integrity verified",
+        "Lock file created"
+      ],
+      "tasks": [
+        {"task_number": 1, "name": "create-backup", "file": "task-1-create-backup.md"},
+        {"task_number": 2, "name": "verify-backup", "file": "task-2-verify-backup.md"},
+        {"task_number": 3, "name": "acquire-lock", "file": "task-3-acquire-lock.md"}
+      ]
+    },
+    {
+      "phase_number": 2,
+      "phase_name": "Content Upgrade",
+      "file": "phases/2/phase.md",
+      "purpose": "Upgrade .praxis-os content (standards, usage, workflows) using safe-upgrade script",
+      "estimated_effort": "45 seconds",
+      "key_deliverables": [
+        "Content upgraded (dry-run preview available)",
+        "Conflicts handled",
+        "Checksums verified",
+        "Version updated"
+      ],
+      "validation_criteria": [
+        "safe-upgrade.py executed successfully",
+        "File counts match (or conflicts handled)",
+        "Checksums verified for copied files",
+        "Version updated in config or VERSION file",
+        "Update log appended"
+      ],
+      "tasks": [
+        {"task_number": 1, "name": "dry-run", "file": "task-1-dry-run.md"},
+        {"task_number": 2, "name": "actual-upgrade", "file": "task-2-actual-upgrade.md"},
+        {"task_number": 3, "name": "update-gitignore", "file": "task-3-update-gitignore.md"},
+        {"task_number": 4, "name": "verify-checksums", "file": "task-4-verify-checksums.md"}
+      ]
+    },
+    {
+      "phase_number": 3,
+      "phase_name": "MCP Server Upgrade",
+      "file": "phases/3/phase.md",
+      "purpose": "Upgrade MCP server, install dependencies, restart server, and validate health",
+      "estimated_effort": "60 seconds",
+      "key_deliverables": [
+        "MCP server files copied",
+        "Dependencies installed",
+        "Server restarted successfully",
+        "Server health check passed"
+      ],
+      "validation_criteria": [
+        "mcp_server directory copied and verified",
+        "requirements.txt dependencies installed",
+        "Post-install steps completed (e.g., playwright install)",
+        "Server restart successful",
+        "Server health check returns 200 OK",
+        "All expected tools registered"
+      ],
+      "requires_restart": true,
+      "tasks": [
+        {"task_number": 1, "name": "copy-server", "file": "task-1-copy-server.md"},
+        {"task_number": 2, "name": "install-deps", "file": "task-2-install-deps.md"},
+        {"task_number": 3, "name": "restart-server", "file": "task-3-restart-server.md"}
+      ]
+    },
+    {
+      "phase_number": 4,
+      "phase_name": "Post-Upgrade Validation",
+      "file": "phases/4/phase.md",
+      "purpose": "Validate upgraded installation with smoke tests and comprehensive checks",
+      "estimated_effort": "30 seconds",
+      "key_deliverables": [
+        "All MCP tools registered and working",
+        "Browser tools functional",
+        "RAG search operational",
+        "File watcher active",
+        "Unit tests passing"
+      ],
+      "validation_criteria": [
+        "query_tools returns expected tool list",
+        "Browser automation smoke test passes",
+        "RAG search returns results",
+        "File watcher detects changes",
+        "RAG index is current",
+        "Unit tests pass (pytest)",
+        "Validation report generated"
+      ],
+      "tasks": [
+        {"task_number": 1, "name": "validate-tools", "file": "task-1-validate-tools.md"},
+        {"task_number": 2, "name": "smoke-tests", "file": "task-2-smoke-tests.md"},
+        {"task_number": 3, "name": "generate-report", "file": "task-3-generate-report.md"}
+      ]
+    },
+    {
+      "phase_number": 5,
+      "phase_name": "Cleanup & Documentation",
+      "file": "phases/5/phase.md",
+      "purpose": "Release lock, archive old backups, generate reports, and update documentation",
+      "estimated_effort": "15 seconds",
+      "key_deliverables": [
+        "Upgrade lock released",
+        "Old backups archived (keep last 3)",
+        "Upgrade summary report",
+        "Installation summary updated",
+        "Update log appended"
+      ],
+      "validation_criteria": [
+        "Lock file removed",
+        "Backup archiving complete (kept 3 most recent)",
+        "Upgrade summary generated",
+        "INSTALLATION_SUMMARY.md updated",
+        "UPDATE_LOG.txt appended",
+        "Git changes committed (if applicable)"
+      ],
+      "tasks": [
+        {"task_number": 1, "name": "release-lock", "file": "task-1-release-lock.md"},
+        {"task_number": 2, "name": "archive-backups", "file": "task-2-archive-backups.md"},
+        {"task_number": 3, "name": "generate-summary", "file": "task-3-generate-summary.md"}
+      ]
+    }
+  ],
+  "supports_dry_run": true,
+  "supports_rollback": true,
+  "requires_user_interaction": "optional",
+  "usage": {
+    "when_to_use": [
+      "Upgrading Agent OS content (standards, usage, workflows)",
+      "Upgrading MCP server to new version",
+      "Need safe upgrade with rollback capability",
+      "Want automatic validation and health checks",
+      "Prefer structured upgrade over manual file copying"
+    ],
+    "prerequisites": [
+      "Source praxis-os repository (clean, no uncommitted changes)",
+      "Existing .praxis-os installation to upgrade",
+      "Python environment with pip",
+      "Sufficient disk space (2x current installation size)",
+      "No other concurrent upgrade workflows"
+    ],
+    "example_invocation": {
+      "workflow_type": "praxis_os_upgrade_v1",
+      "target_file": ".praxis-os",
+      "options": {
+        "source_path": "/path/to/praxis-os",
+        "dry_run": false,
+        "skip_backup": false
+      }
+    }
+  },
+  "rollback_strategy": {
+    "trigger": "Automatic on Phase 3-4 failure, manual via restore_from_backup",
+    "mechanism": "Restore from timestamped backup with integrity verification",
+    "phases": [
+      "Stop MCP server",
+      "Verify backup integrity",
+      "Clear current .praxis-os (except .backups/.cache)",
+      "Restore from backup",
+      "Reinstall dependencies from backup",
+      "Restart server"
+    ]
+  },
+  "state_persistence": {
+    "enabled": true,
+    "storage": ".praxis-os/.cache/state/{session-id}.json",
+    "survives_restart": true,
+    "note": "Critical for Phase 3 which requires MCP server restart"
+  },
+  "workflow_features": {
+    "state_tracking": "Full workflow state persisted to disk",
+    "checkpoint_gates": "Enforced validation between phases",
+    "resumability": "Resume after MCP server restart (Phase 3)",
+    "rollback_capability": "Automatic rollback on failure, manual restore available",
+    "atomic_operations": "File operations use atomic writes",
+    "integrity_checks": "SHA256 checksums for all file operations",
+    "dry_run_preview": "Preview changes before actual upgrade",
+    "upgrade_lock": "Prevent concurrent upgrades"
+  },
+  "notes": [
+    "Phase 3 requires MCP server restart - state persists to disk",
+    "Automatic rollback on Phase 3-4 failures",
+    "Keeps last 3 backups, archives older ones",
+    "Supports dry-run for preview",
+    "All file operations use checksums for integrity",
+    "Lock file prevents concurrent upgrades",
+    "Comprehensive validation in Phase 4"
+  ]
+}
+

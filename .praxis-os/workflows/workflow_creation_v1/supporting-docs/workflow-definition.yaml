@@ -1,0 +1,420 @@
+---
+# Workflow Definition Specification v1.0
+# Generated: 2025-10-13
+# Source: working-docs/workflow-creation-v1-design.md
+
+# ============================================================================
+# REQUIRED: Basic Identification
+# ============================================================================
+
+name: "workflow-creation-v1"
+version: "1.0.0"
+workflow_type: "workflow_creation"
+
+# ============================================================================
+# REQUIRED: Problem Definition
+# ============================================================================
+
+problem:
+  statement: |
+    Creating high-quality workflows manually is time-consuming (50-100+ task files),
+    inconsistent (easy to miss meta-workflow principles), error-prone (validation
+    gates might not be parseable), tedious (repetitive command application), and
+    incomplete (domain expertise not systematically integrated).
+
+    This workflow systematically creates complete, meta-workflow-compliant workflows
+    from structured YAML definitions, ensuring quality enforcement, consistency,
+    efficiency, knowledge integration, and scalability.
+
+  why_workflow: "Multi-phase process requiring validation gates, domain expertise integration, human review points, and systematic quality enforcement. Too complex for a tool (needs phases with checkpoints), requires systematic execution not just guidance (not a standard)."
+
+  success_criteria:
+    - "All target workflow phases fully populated (phase.md + all task files)"
+    - "95%+ task files ≤100 lines (horizontal decomposition)"
+    - "80%+ command language coverage (binding contract)"
+    - "100% phases have validation gates"
+    - "100% meta-workflow compliance"
+    - "Human approval obtained for final workflow"
+
+# ============================================================================
+# REQUIRED: Phase Definitions
+# ============================================================================
+
+phases:
+  # --------------------------------------------------------------------------
+  # Phase 0: Definition Import & Validation (STATIC)
+  # --------------------------------------------------------------------------
+  - number: 0
+    name: "Definition Import & Validation"
+    purpose: "Load workflow definition, validate structure, prepare for creation"
+    deliverable: "Validated definition, parsed metadata, readiness confirmed"
+
+    tasks:
+      - number: 1
+        name: "locate-definition"
+        purpose: "Find the workflow definition file via options.definition_path"
+        commands_needed: ["read_file"]
+
+      - number: 2
+        name: "parse-definition"
+        purpose: "Read YAML and parse structure"
+        commands_needed: ["read_file"]
+
+      - number: 3
+        name: "validate-structure"
+        purpose: "Check all required sections present"
+
+      - number: 4
+        name: "validate-completeness"
+        purpose: "Verify all phases have tasks and gates"
+
+      - number: 5
+        name: "prepare-workspace"
+        purpose: "Extract metadata, set up iteration variables"
+
+    validation_gate:
+      evidence_required:
+        definition_path:
+          type: "string"
+          description: "Path to workflow definition file"
+          validator: "file_exists"
+        definition_valid:
+          type: "boolean"
+          description: "All validation checks passed"
+          validator: "is_true"
+        total_target_phases:
+          type: "integer"
+          description: "Number of phases in target workflow"
+          validator: "greater_than_0"
+        total_target_tasks:
+          type: "integer"
+          description: "Total tasks across all target phases"
+          validator: "greater_than_0"
+      human_approval_required: false
+
+  # --------------------------------------------------------------------------
+  # Phase 1: Workflow Scaffolding (STATIC)
+  # --------------------------------------------------------------------------
+  - number: 1
+    name: "Workflow Scaffolding"
+    purpose: "Create directory structure and metadata.json"
+    deliverable: "Complete workflow directory with all phase folders"
+
+    tasks:
+      - number: 1
+        name: "create-workflow-directory"
+        purpose: "Create .praxis-os/workflows/{workflow_type}/"
+        commands_needed: ["run_terminal_cmd"]
+
+      - number: 2
+        name: "create-phase-directories"
+        purpose: "Create phases/0/, phases/1/, etc."
+        commands_needed: ["run_terminal_cmd"]
+
+      - number: 3
+        name: "create-core-directory"
+        purpose: "Create core/ for supporting files"
+        commands_needed: ["run_terminal_cmd"]
+
+      - number: 4
+        name: "create-supporting-docs"
+        purpose: "Create supporting-docs/ for definition archive"
+        commands_needed: ["run_terminal_cmd"]
+
+      - number: 5
+        name: "create-dynamic-directories"
+        purpose: "If dynamic, create phases/dynamic/"
+        commands_needed: ["run_terminal_cmd"]
+
+      - number: 6
+        name: "generate-metadata-json"
+        purpose: "Generate metadata.json from definition"
+        commands_needed: ["write"]
+
+      - number: 7
+        name: "verify-scaffolding"
+        purpose: "Confirm all directories created correctly"
+        commands_needed: ["list_dir"]
+
+    validation_gate:
+      evidence_required:
+        workflow_directory_path:
+          type: "string"
+          description: "Path to created workflow directory"
+          validator: "directory_exists"
+        phase_directories_count:
+          type: "integer"
+          description: "Number of phase directories created"
+          validator: "greater_than_0"
+        metadata_json_created:
+          type: "boolean"
+          description: "metadata.json file created and valid"
+          validator: "is_true"
+        scaffolding_verified:
+          type: "boolean"
+          description: "All directory structure verified"
+          validator: "is_true"
+      human_approval_required: false
+
+  # --------------------------------------------------------------------------
+  # Phase 2: Core Files & Documentation (STATIC)
+  # --------------------------------------------------------------------------
+  - number: 2
+    name: "Core Files & Documentation"
+    purpose: "Create core supporting files, documentation, and archive definition"
+    deliverable: "Core files, supporting docs, and workflow documentation"
+
+    tasks:
+      - number: 1
+        name: "create-command-glossary"
+        purpose: "Document all command symbols in core/command-language-glossary.md"
+        domain_focus: "Command Language"
+        commands_needed: ["search_standards", "write"]
+
+      - number: 2
+        name: "create-progress-tracking"
+        purpose: "Create progress table template in core/progress-tracking.md"
+        commands_needed: ["write"]
+
+      - number: 3
+        name: "archive-definition"
+        purpose: "Copy definition YAML to supporting-docs/workflow-definition.yaml"
+        commands_needed: ["read_file", "write"]
+
+      - number: 4
+        name: "generate-design-summary"
+        purpose: "Create human-readable supporting-docs/design-summary.md"
+        commands_needed: ["read_file", "write"]
+
+    validation_gate:
+      evidence_required:
+        command_glossary_created:
+          type: "boolean"
+          description: "Command glossary file created in core/"
+          validator: "is_true"
+        progress_tracking_created:
+          type: "boolean"
+          description: "Progress tracking file created in core/"
+          validator: "is_true"
+        definition_archived:
+          type: "boolean"
+          description: "Definition YAML archived in supporting-docs/"
+          validator: "is_true"
+        design_summary_created:
+          type: "boolean"
+          description: "Design summary markdown generated"
+          validator: "is_true"
+      human_approval_required: false
+
+  # Note: Dynamic phases (3 to N+2) are NOT listed here - they are generated
+  # from the dynamic_config below. The template will iterate once per target
+  # workflow phase.
+  #
+  # After dynamic phases complete, workflow continues with static phases:
+
+  # --------------------------------------------------------------------------
+  # Phase N+4: Meta-Workflow Compliance (STATIC)
+  # --------------------------------------------------------------------------
+  # Note: Actual phase number will be 4 + N where N = total_target_phases
+  - number: "N+4"
+    name: "Meta-Workflow Compliance"
+    purpose: "Validate entire workflow against all 5 meta-workflow principles"
+    deliverable: "Compliance report, all violations fixed"
+
+    tasks:
+      - number: 1
+        name: "audit-file-sizes"
+        purpose: "Check all task files across all phases"
+        commands_needed: ["run_terminal_cmd", "grep"]
+
+      - number: 2
+        name: "audit-command-coverage"
+        purpose: "Count command vs natural language usage"
+        commands_needed: ["grep", "run_terminal_cmd"]
+
+      - number: 3
+        name: "verify-three-tier"
+        purpose: "Validate tier separation (task ≤100, entry 200-500, outputs unrestricted)"
+        domain_focus: "Three-Tier Architecture"
+        commands_needed: ["search_standards", "run_terminal_cmd"]
+
+      - number: 4
+        name: "verify-validation-gates"
+        purpose: "Check every phase has gate with parseable evidence"
+        domain_focus: "Validation Gates"
+        commands_needed: ["search_standards", "grep", "read_file"]
+
+      - number: 5
+        name: "verify-binding-contract"
+        purpose: "Confirm contract in entry point with acknowledgment"
+        commands_needed: ["grep"]
+
+      - number: 6
+        name: "verify-horizontal-decomposition"
+        purpose: "Check single responsibility per task"
+        domain_focus: "Horizontal Decomposition"
+        commands_needed: ["search_standards", "read_file"]
+
+      - number: 7
+        name: "generate-compliance-report"
+        purpose: "Document all metrics and findings"
+        commands_needed: ["write"]
+
+      - number: 8
+        name: "fix-violations"
+        purpose: "Address any compliance failures (split files, add commands, etc.)"
+        commands_needed: ["write", "search_replace"]
+
+      - number: 9
+        name: "re-validate"
+        purpose: "Re-run all checks after fixes"
+        commands_needed: ["run_terminal_cmd", "grep"]
+
+      - number: 10
+        name: "final-compliance-check"
+        purpose: "Confirm 100% compliance achieved"
+
+    validation_gate:
+      evidence_required:
+        file_size_compliance_percent:
+          type: "integer"
+          description: "Percentage of task files ≤100 lines"
+          validator: "percent_gte_95"
+        command_coverage_percent:
+          type: "integer"
+          description: "Average command coverage across workflow"
+          validator: "percent_gte_80"
+        three_tier_validated:
+          type: "boolean"
+          description: "Three-tier architecture verified"
+          validator: "is_true"
+        gate_coverage_percent:
+          type: "integer"
+          description: "Percentage of phases with validation gates"
+          validator: "percent_gte_100"
+        binding_contract_present:
+          type: "boolean"
+          description: "Binding contract verified in entry point"
+          validator: "is_true"
+        violations_fixed:
+          type: "boolean"
+          description: "All violations resolved"
+          validator: "is_true"
+      human_approval_required: false
+
+  # --------------------------------------------------------------------------
+  # Phase N+5: Testing & Delivery (STATIC - HUMAN APPROVAL)
+  # --------------------------------------------------------------------------
+  - number: "N+5"
+    name: "Testing & Delivery"
+    purpose: "Test workflow end-to-end, refine, obtain human approval"
+    deliverable: "Tested, refined, production-ready workflow"
+
+    tasks:
+      - number: 1
+        name: "dry-run-navigation"
+        purpose: "Test workflow navigation works (🎯 NEXT-MANDATORY links)"
+        commands_needed: ["read_file", "grep"]
+
+      - number: 2
+        name: "validate-commands"
+        purpose: "Ensure all commands are clear and properly formatted"
+        commands_needed: ["grep"]
+
+      - number: 3
+        name: "validate-gates-parseable"
+        purpose: "Confirm gates use indicator keywords CheckpointLoader can parse"
+        domain_focus: "Validation Gates"
+        commands_needed: ["search_standards", "grep"]
+
+      - number: 4
+        name: "identify-usability-issues"
+        purpose: "Document friction points, unclear instructions"
+        commands_needed: ["read_file"]
+
+      - number: 5
+        name: "implement-refinements"
+        purpose: "Fix all identified issues"
+        commands_needed: ["write", "search_replace"]
+
+      - number: 6
+        name: "create-usage-guide"
+        purpose: "Write documentation on when/how to use workflow"
+        commands_needed: ["write"]
+
+      - number: 7
+        name: "final-validation"
+        purpose: "Re-run Phase N+4 compliance checks"
+        commands_needed: ["run_terminal_cmd"]
+
+      - number: 8
+        name: "human-review"
+        purpose: "Present to human for final approval"
+
+    validation_gate:
+      evidence_required:
+        dry_run_successful:
+          type: "boolean"
+          description: "Dry run completed without errors"
+          validator: "is_true"
+        usability_issues_count:
+          type: "integer"
+          description: "Number of usability issues found"
+          validator: "greater_than_0"
+        refinements_applied:
+          type: "boolean"
+          description: "All identified issues addressed"
+          validator: "is_true"
+        usage_guide_created:
+          type: "boolean"
+          description: "Usage guide written"
+          validator: "is_true"
+        final_compliance_passed:
+          type: "boolean"
+          description: "Final compliance check passed"
+          validator: "is_true"
+        human_approved:
+          type: "boolean"
+          description: "Human reviewed and approved for production"
+          validator: "is_true"
+      human_approval_required: true
+
+
+dynamic: true
+dynamic_config:
+  source_type: "workflow_definition"
+  source_path_key: "definition_path"
+  iteration_logic: "per_target_phase"
+
+  templates:
+    phase: "phases/dynamic/phase-template.md"
+    task: "phases/dynamic/task-template.md"
+
+  variables:
+    target_phase_number: "from definition.phases[i].number"
+    target_phase_name: "from definition.phases[i].name"
+    target_phase_purpose: "from definition.phases[i].purpose"
+    target_phase_deliverable: "from definition.phases[i].deliverable"
+    target_phase_tasks: "from definition.phases[i].tasks (array)"
+    iteration_number: "1 to N (current iteration)"
+    total_iterations: "N (total number of iterations)"
+
+
+# ============================================================================
+# OPTIONAL: Additional Metadata
+# ============================================================================
+
+target_language: "any"
+created: "2025-10-13"
+tags: ["meta-workflow", "workflow-creation", "bootstrap", "core"]
+
+# ============================================================================
+# OPTIONAL: Quality Standards
+# ============================================================================
+
+quality_standards:
+  task_file_max_lines: 100
+  task_file_target_lines: 100
+  command_coverage_min: 80
+  validation_gate_required: true
+  examples_per_task_min: 2

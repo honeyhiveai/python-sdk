@@ -1,0 +1,40 @@
+# Gate Definition - Phase 0: Spec Analysis & Planning
+# Created: 2025-10-20
+# Purpose: Validate specification analysis and execution plan complete
+
+checkpoint:
+  strict: true
+  allow_override: false
+
+evidence_schema:
+  spec_structure_validated:
+    type: boolean
+    required: true
+    description: "Spec structure validated"
+
+  phases_extracted:
+    type: boolean
+    required: true
+    description: "All phases extracted from tasks.md"
+
+  tasks_parsed:
+    type: boolean
+    required: true
+    description: "All tasks parsed with criteria"
+
+  dependencies_mapped:
+    type: boolean
+    required: true
+    description: "Dependencies mapped and valid"
+
+  standards_queried:
+    type: boolean
+    required: true
+    description: "Standards queried via MCP"
+
+  execution_plan_complete:
+    type: boolean
+    required: true
+    description: "Execution plan complete"
+
+validators: {}

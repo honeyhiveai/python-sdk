@@ -1,0 +1,55 @@
+# Gate Definition - Phase 1: Requirements Gathering
+# Created: 2025-10-20
+# Purpose: Validate comprehensive requirements documented in srd.md
+
+checkpoint:
+  strict: true
+  allow_override: true
+
+evidence_schema:
+  supporting_docs_reviewed:
+    type: boolean
+    required: true
+    description: "Re-read supporting docs sections relevant to requirements"
+
+  srd_created:
+    type: boolean
+    required: true
+    description: "srd.md file exists"
+
+  business_goals_defined:
+    type: boolean
+    required: true
+    description: "At least 1 business goal defined"
+
+  user_stories_documented:
+    type: boolean
+    required: true
+    description: "At least 1 user story documented"
+
+  functional_requirements_listed:
+    type: boolean
+    required: true
+    description: "At least 3 functional requirements listed"
+
+  nonfunctional_requirements_addressed:
+    type: boolean
+    required: true
+    description: "Non-functional requirements addressed"
+
+  out_of_scope_stated:
+    type: boolean
+    required: true
+    description: "Out-of-scope explicitly stated"
+
+  requirements_specific_measurable:
+    type: boolean
+    required: true
+    description: "All requirements are specific and measurable"
+
+  supporting_docs_referenced:
+    type: boolean
+    required: false
+    description: "Supporting docs referenced (if Phase 0 completed)"
+
+validators: {}

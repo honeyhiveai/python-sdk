@@ -1,0 +1,245 @@
+{
+  "workflow_type": "workflow_creation_v1",
+  "version": "1.0.0",
+  "name": "Workflow Creation v1",
+  "description": "Systematic workflow creation using meta-workflow principles. Converts design documents or YAML definitions into complete, compliant workflows with phase-gated validation, command language enforcement, and quality auditing for Python, TypeScript, JavaScript, and multi-language projects.",
+  "strict_mode": true,
+  "total_phases": 6,
+  "estimated_duration": "3-5 hours",
+  "primary_outputs": [
+    "Complete workflow directory structure",
+    "Generated metadata.json with all phases",
+    "Phase.md overview files for all phases",
+    "Task markdown files (100-170 lines each)",
+    "Core supporting files (command glossary, progress tracking)",
+    "Compliance validation report",
+    "Usage guide and documentation"
+  ],
+  "target_language": ["any"],
+  "dynamic_phases": false,
+  "phases": [
+    {
+      "phase_number": 0,
+      "phase_name": "Input Conversion & Preprocessing",
+      "purpose": "Accept multiple input formats (design documents or YAML definitions), normalize to validated YAML definition ready for Phase 1 processing",
+      "estimated_effort": "15-20 minutes",
+      "key_deliverables": [
+        "Input type determined (design_document or yaml_definition)",
+        "Input document read and parsed",
+        "Design document converted to YAML (if applicable)",
+        "Validated YAML definition file",
+        "Definition path for Phase 1 consumption"
+      ],
+      "validation_criteria": [
+        "Input type identified",
+        "Input document successfully read",
+        "YAML syntax valid",
+        "Definition file exists and accessible",
+        "All required definition fields present"
+      ],
+      "tasks": [
+        {"task_number": 1, "name": "determine-input-type", "file": "task-1-determine-input-type.md"},
+        {"task_number": 2, "name": "read-input-document", "file": "task-2-read-input-document.md"},
+        {"task_number": 3, "name": "extract-from-design", "file": "task-3-extract-from-design.md"},
+        {"task_number": 4, "name": "generate-yaml-definition", "file": "task-4-generate-yaml-definition.md"},
+        {"task_number": 5, "name": "validate-generated-definition", "file": "task-5-validate-generated-definition.md"}
+      ]
+    },
+    {
+      "phase_number": 1,
+      "phase_name": "Definition Import & Validation",
+      "purpose": "Load workflow definition YAML, validate structure and completeness, prepare metadata and iteration variables for workflow creation",
+      "estimated_effort": "10-15 minutes",
+      "key_deliverables": [
+        "Definition file located and loaded",
+        "YAML structure parsed into memory",
+        "All required sections validated",
+        "Phase and task counts determined",
+        "Workspace variables prepared"
+      ],
+      "validation_criteria": [
+        "Definition path exists and accessible",
+        "All validation checks passed",
+        "total_target_phases > 0",
+        "total_target_tasks > 0",
+        "No structural errors found"
+      ],
+      "tasks": [
+        {"task_number": 1, "name": "locate-definition", "file": "task-1-locate-definition.md"},
+        {"task_number": 2, "name": "parse-definition", "file": "task-2-parse-definition.md"},
+        {"task_number": 3, "name": "validate-structure", "file": "task-3-validate-structure.md"},
+        {"task_number": 4, "name": "validate-completeness", "file": "task-4-validate-completeness.md"},
+        {"task_number": 5, "name": "prepare-workspace", "file": "task-5-prepare-workspace.md"}
+      ]
+    },
+    {
+      "phase_number": 2,
+      "phase_name": "Workflow Scaffolding",
+      "purpose": "Create complete directory structure and metadata.json foundation for target workflow with all phase directories and core files",
+      "estimated_effort": "15-20 minutes",
+      "key_deliverables": [
+        "Root workflow directory created",
+        "All phase directories (0, 1, 2, ...) created",
+        "Core directory for supporting files",
+        "Supporting-docs directory for archives",
+        "Dynamic directory (if applicable)",
+        "Complete metadata.json file",
+        "Verified directory structure"
+      ],
+      "validation_criteria": [
+        "Workflow directory exists at expected path",
+        "Phase directories count matches definition",
+        "metadata.json created and syntactically valid",
+        "Scaffolding verified (all directories present)",
+        "No file creation errors"
+      ],
+      "tasks": [
+        {"task_number": 1, "name": "create-workflow-directory", "file": "task-1-create-workflow-directory.md"},
+        {"task_number": 2, "name": "create-phase-directories", "file": "task-2-create-phase-directories.md"},
+        {"task_number": 3, "name": "create-core-directory", "file": "task-3-create-core-directory.md"},
+        {"task_number": 4, "name": "create-supporting-docs", "file": "task-4-create-supporting-docs.md"},
+        {"task_number": 5, "name": "create-dynamic-directories", "file": "task-5-create-dynamic-directories.md"},
+        {"task_number": 6, "name": "generate-metadata-json", "file": "task-6-generate-metadata-json.md"},
+        {"task_number": 7, "name": "validate-metadata", "file": "task-7-validate-metadata.md"},
+        {"task_number": 8, "name": "verify-scaffolding", "file": "task-8-verify-scaffolding.md"}
+      ]
+    },
+    {
+      "phase_number": 3,
+      "phase_name": "Core Files & Documentation",
+      "purpose": "Create core supporting files, documentation, and archive original definition for workflow maintainability and discoverability",
+      "estimated_effort": "10-15 minutes",
+      "key_deliverables": [
+        "Command language glossary (core/command-glossary.md)",
+        "Progress tracking template (core/progress-tracking.md)",
+        "Archived definition YAML (supporting-docs/)",
+        "Human-readable design summary (supporting-docs/design-summary.md)"
+      ],
+      "validation_criteria": [
+        "Command glossary created in core/",
+        "Progress tracking created in core/",
+        "Definition archived in supporting-docs/",
+        "Design summary created and populated",
+        "All core files accessible"
+      ],
+      "tasks": [
+        {"task_number": 1, "name": "create-command-glossary", "file": "task-1-create-command-glossary.md"},
+        {"task_number": 2, "name": "create-progress-tracking", "file": "task-2-create-progress-tracking.md"},
+        {"task_number": 3, "name": "archive-definition", "file": "task-3-archive-definition.md"},
+        {"task_number": 4, "name": "generate-design-summary", "file": "task-4-generate-design-summary.md"}
+      ]
+    },
+    {
+      "phase_number": 4,
+      "phase_name": "Phase Content Generation & Meta-Workflow Compliance",
+      "purpose": "Generate all phase.md and task.md files for target workflow, then validate compliance with meta-workflow standards including file sizes, command coverage, three-tier architecture, and content quality",
+      "estimated_effort": "60-90 minutes",
+      "key_deliverables": [
+        "All phase.md files generated",
+        "All task.md files generated (100-170 lines target)",
+        "File size compliance audit report",
+        "Command coverage audit report",
+        "Three-tier architecture verification",
+        "Validation gates verification",
+        "Binding contract verification",
+        "Horizontal decomposition verification",
+        "Compliance report with scores",
+        "Fixed violations (if any)",
+        "Re-validation results",
+        "Final compliance check passed"
+      ],
+      "validation_criteria": [
+        "phase_files_created > 0",
+        "task_files_created > 0",
+        "All target phases populated with files",
+        "File size compliance ≥95% (≤100 lines)",
+        "Command coverage ≥80%",
+        "Three-tier architecture verified",
+        "Validation gates present in all phases",
+        "Binding contract sections present",
+        "Horizontal decomposition verified",
+        "Compliance score ≥90%",
+        "All violations fixed or documented"
+      ],
+      "tasks": [
+        {"task_number": 1, "name": "load-target-definition", "file": "task-1-load-target-definition.md"},
+        {"task_number": 2, "name": "generate-phase-files", "file": "task-2-generate-phase-files.md"},
+        {"task_number": 3, "name": "generate-task-files", "file": "task-3-generate-task-files.md"},
+        {"task_number": 4, "name": "verify-generation", "file": "task-4-verify-generation.md"},
+        {"task_number": 5, "name": "audit-file-sizes", "file": "task-1-audit-file-sizes.md"},
+        {"task_number": 6, "name": "audit-command-coverage", "file": "task-2-audit-command-coverage.md"},
+        {"task_number": 7, "name": "verify-three-tier", "file": "task-3-verify-three-tier.md"},
+        {"task_number": 8, "name": "verify-validation-gates", "file": "task-4-verify-validation-gates.md"},
+        {"task_number": 9, "name": "verify-binding-contract", "file": "task-5-verify-binding-contract.md"},
+        {"task_number": 10, "name": "verify-horizontal-decomposition", "file": "task-6-verify-horizontal-decomposition.md"},
+        {"task_number": 11, "name": "generate-compliance-report", "file": "task-7-generate-compliance-report.md"},
+        {"task_number": 12, "name": "fix-violations", "file": "task-8-fix-violations.md"},
+        {"task_number": 13, "name": "re-validate", "file": "task-9-re-validate.md"},
+        {"task_number": 14, "name": "final-compliance-check", "file": "task-10-final-compliance-check.md"}
+      ]
+    },
+    {
+      "phase_number": 5,
+      "phase_name": "Testing & Delivery",
+      "purpose": "Test workflow end-to-end, validate commands and gates, audit content quality for generic stubs, refine usability, create usage guide, and obtain human approval for production release",
+      "estimated_effort": "30-45 minutes",
+      "key_deliverables": [
+        "Dry-run navigation test results",
+        "Command validation results",
+        "Gates parseability validation",
+        "Content quality audit report (no generic stubs)",
+        "Usability issues identified and documented",
+        "Refinements implemented",
+        "Usage guide created (README.md)",
+        "Final validation passed",
+        "Human approval obtained"
+      ],
+      "validation_criteria": [
+        "Dry run completed without errors",
+        "All commands properly formatted",
+        "All gates parseable by CheckpointLoader",
+        "Content quality passed (no generic stubs detected)",
+        "content_quality_compliance_percent ≥95%",
+        "generic_content_detected = false",
+        "Usability issues count identified",
+        "All refinements applied",
+        "Usage guide created and comprehensive",
+        "Final compliance check passed",
+        "Human reviewed and approved"
+      ],
+      "tasks": [
+        {"task_number": 1, "name": "dry-run-navigation", "file": "task-1-dry-run-navigation.md"},
+        {"task_number": 2, "name": "validate-commands", "file": "task-2-validate-commands.md"},
+        {"task_number": 3, "name": "validate-gates-parseable", "file": "task-3-validate-gates-parseable.md"},
+        {"task_number": 4, "name": "identify-usability-issues", "file": "task-4-identify-usability-issues.md"},
+        {"task_number": 5, "name": "implement-refinements", "file": "task-5-implement-refinements.md"},
+        {"task_number": 6, "name": "create-usage-guide", "file": "task-6-create-usage-guide.md"},
+        {"task_number": 7, "name": "final-validation", "file": "task-7-final-validation.md"},
+        {"task_number": 8, "name": "human-review", "file": "task-8-human-review.md"},
+        {"task_number": 9, "name": "audit-content-quality", "file": "task-9-audit-content-quality.md"}
+      ]
+    }
+  ],
+  "quality_gates": {
+    "file_size_compliance": "95%+ ≤100 lines",
+    "command_coverage": "80%+",
+    "validation_gates": "100%",
+    "meta_workflow_compliance": "100%",
+    "content_quality": "95%+ actionable (no generic stubs)"
+  },
+  "quality_standards": {
+    "task_file_limits": {
+      "compliant": 100,
+      "acceptable": 150,
+      "compress_needed": 170,
+      "must_split": 171
+    },
+    "task_file_target_lines": 100,
+    "command_coverage_min": 80,
+    "validation_gate_required": true,
+    "examples_per_task_min": 2,
+    "content_quality_min_percent": 95
+  },
+  "created": "2025-10-13",
+  "updated": "2025-10-13"
+}

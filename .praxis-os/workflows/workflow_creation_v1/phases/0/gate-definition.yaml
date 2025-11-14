@@ -1,0 +1,35 @@
+# Gate Definition - Phase 0: Input Conversion & Preprocessing
+# Created: 2025-10-20
+# Purpose: Validate input conversion to YAML definition
+
+checkpoint:
+  strict: false
+  allow_override: true
+
+evidence_schema:
+  input_type:
+    type: string
+    required: true
+    description: "Type of input provided (design_document or yaml_definition)"
+
+  input_document_read:
+    type: boolean
+    required: true
+    description: "Input document successfully read"
+
+  design_document_converted:
+    type: boolean
+    required: true
+    description: "Design document converted to YAML (if applicable)"
+
+  standard_definition_path:
+    type: string
+    required: true
+    description: "Path to YAML definition file for Phase 1"
+
+  yaml_syntax_valid:
+    type: boolean
+    required: true
+    description: "YAML syntax validated successfully"
+
+validators: {}

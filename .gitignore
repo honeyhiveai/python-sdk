@@ -205,3 +205,8 @@ quality-data/*.log
 
 # Tox artifacts that shouldn't be packaged
 *.bak*
+
+# prAxIs OS - Ephemeral Files
+.praxis-os/.cache/
+.praxis-os/venv/
+.praxis-os/.mcp_server_state.json

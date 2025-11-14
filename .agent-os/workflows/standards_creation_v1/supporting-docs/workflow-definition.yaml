@@ -20,16 +20,16 @@ problem:
     - No measurable validation (subjective "looks good" reviews)
     - Manual testing is time-consuming and incomplete
     - Standards may not be discoverable via natural queries
-    
+
     This leads to standards that work for point-in-time creation but don't scale
     to system-wide consistency and don't guarantee discoverability.
-  
+
   why_workflow: |
     A workflow enforces quality gates programmatically, ensuring every standard
     meets RAG optimization criteria, structure requirements, and discoverability
     thresholds before commit. This creates a self-reinforcing loop where standards
     teach creation and creation validates standards.
-  
+
   success_criteria:
     - "95%+ standards pass validation on first attempt (after AI learns patterns)"
     - "85%+ discoverability rate (queries find standard in top 3)"
@@ -45,7 +45,7 @@ phases:
     name: "Discovery & Context"
     purpose: "Gather context and understand domain before creating standard"
     deliverable: "Domain keywords, related standards, key concepts, and audience understanding"
-    
+
     tasks:
       - number: 1
         name: "query-existing-standards"
@@ -65,8 +65,11 @@ phases:
           - "At least 2 related standards identified"
           - "Search queries executed successfully"
           - "Common patterns documented"
-        task_context: "Understanding existing standards helps ensure consistency with established patterns and avoids duplication. RAG queries reveal how similar topics are structured and what terminology is already in use."
-      
+        task_context: |
+          Understanding existing standards helps ensure consistency with established
+          patterns and avoids duplication. RAG queries reveal how similar topics are
+          structured and what terminology is already in use.
+
       - number: 2
         name: "identify-domain-keywords"
         purpose: "Identify domain keywords and concepts for RAG optimization"
@@ -86,8 +89,10 @@ phases:
           - "At least 10 keywords identified"
           - "Mix of nouns, verbs, and domain terms"
           - "Keywords match natural query patterns"
-        task_context: "Keywords drive RAG discoverability. Identifying them early ensures they're woven throughout the standard naturally, not stuffed artificially."
-      
+        task_context: |
+          Keywords drive RAG discoverability. Identifying them early ensures they're
+          woven throughout the standard naturally, not stuffed artificially.
+
       - number: 3
         name: "review-related-patterns"
         purpose: "Review related standards for structural and content patterns"
@@ -105,8 +110,10 @@ phases:
           - "At least 3 patterns documented"
           - "Structure patterns noted"
           - "Content patterns noted"
-        task_context: "Consistency across standards improves system usability. Agents learn to expect certain sections and formats."
-      
+        task_context: |
+          Consistency across standards improves system usability. Agents learn to
+          expect certain sections and formats.
+
       - number: 4
         name: "extract-key-concepts"
         purpose: "Extract key concepts and terminology for standard"
@@ -121,8 +128,10 @@ phases:
           - "At least 5 key concepts extracted"
           - "Concepts ordered logically"
           - "Prerequisites identified"
-        task_context: "Clear concept identification ensures comprehensive coverage and logical flow in the final standard."
-      
+        task_context: |
+          Clear concept identification ensures comprehensive coverage and logical
+          flow in the final standard.
+
       - number: 5
         name: "understand-target-audience"
         purpose: "Understand target audience (AI agents querying naturally)"
@@ -137,8 +146,10 @@ phases:
           - "At least 5 query patterns identified"
           - "Use cases documented"
           - "Audience needs understood"
-        task_context: "Standards must be written for AI agent consumption via RAG. Understanding how agents query ensures content matches search patterns."
-    
+        task_context: |
+          Standards must be written for AI agent consumption via RAG. Understanding
+          how agents query ensures content matches search patterns.
+
     validation_gate:
       evidence_required:
         domain_keywords_identified:
@@ -158,12 +169,12 @@ phases:
           description: "Audience needs and query patterns documented"
           validator: "is_true"
       human_approval_required: false
-  
+
   - number: 1
     name: "Content Creation"
     purpose: "Author standard with all required sections"
     deliverable: "Complete standard with Quick Reference, Questions, Purpose, Content, Examples, and Related Standards"
-    
+
     tasks:
       - number: 1
         name: "write-quick-reference"
@@ -186,8 +197,13 @@ phases:
           - "Core keyword appears 3-5 times"
           - "Critical information in first 2 sentences"
           - "Natural language phrasing (not keyword stuffing)"
-        task_context: "Quick Reference / TL;DR is the most important section for RAG semantic search discovery. Must be optimized with high keyword density while maintaining natural language. The 200-400 token limit forces conciseness. Front-loading critical information maximizes value even when truncated by semantic chunking."
-      
+        task_context: |
+          Quick Reference / TL;DR is the most important section for RAG semantic
+          search discovery. Must be optimized with high keyword density while
+          maintaining natural language. The 200-400 token limit forces conciseness.
+          Front-loading critical information maximizes value even when truncated by
+          semantic chunking.
+
       - number: 2
         name: "write-questions-section"
         purpose: "Write Questions This Answers (>= 5 queries agents will use)"
@@ -208,8 +224,11 @@ phases:
           - "Questions cover multiple angles"
           - "Natural language phrasing"
           - "Questions are specific to topic"
-        task_context: "Questions This Answers section provides direct query hooks for RAG. Each question becomes a potential search path to this standard. Natural language questions match how agents actually query the system."
-      
+        task_context: |
+          Questions This Answers section provides direct query hooks for RAG. Each
+          question becomes a potential search path to this standard. Natural language
+          questions match how agents actually query the system.
+
       - number: 3
         name: "write-purpose-section"
         purpose: "Write Purpose section (problem + solution)"
@@ -227,8 +246,10 @@ phases:
           - "Problem clearly stated"
           - "Solution explained"
           - "Concise (not rambling)"
-        task_context: "Purpose provides context for why this standard matters. Helps agents understand when to use vs when to skip."
-      
+        task_context: |
+          Purpose provides context for why this standard matters. Helps agents
+          understand when to use vs when to skip.
+
       - number: 4
         name: "write-detailed-content"
         purpose: "Write detailed content sections with guidance, examples, and patterns"
@@ -247,8 +268,10 @@ phases:
           - "Headers are descriptive"
           - "Content is comprehensive"
           - "Sections are semantically complete"
-        task_context: "Detailed content is where agents learn the actual implementation. Must be thorough yet concise, with clear structure for semantic chunking."
-      
+        task_context: |
+          Detailed content is where agents learn the actual implementation. Must be
+          thorough yet concise, with clear structure for semantic chunking.
+
       - number: 5
         name: "add-concrete-examples"
         purpose: "Add concrete examples (working code/scenarios)"
@@ -268,8 +291,10 @@ phases:
           - "Examples are complete"
           - "Examples are diverse (success + failure/edge)"
           - "Examples include explanations"
-        task_context: "Concrete examples make abstract concepts tangible. Working code or complete scenarios help agents understand practical application."
-      
+        task_context: |
+          Concrete examples make abstract concepts tangible. Working code or complete
+          scenarios help agents understand practical application.
+
       - number: 6
         name: "link-related-standards"
         purpose: "Link to related standards (no duplication)"
@@ -288,8 +313,10 @@ phases:
           - "At least 1 link included"
           - "Links have context"
           - "No content duplication"
-        task_context: "Linking to related standards prevents duplication and establishes the knowledge graph. Agents can navigate related topics without redundancy."
-    
+        task_context: |
+          Linking to related standards prevents duplication and establishes the
+          knowledge graph. Agents can navigate related topics without redundancy.
+
     validation_gate:
       evidence_required:
         has_quick_ref:
@@ -321,12 +348,12 @@ phases:
           description: "Valid markdown syntax"
           validator: "is_true"
       human_approval_required: false
-  
+
   - number: 2
     name: "RAG Optimization"
     purpose: "Optimize content for RAG semantic search discovery"
     deliverable: "RAG-optimized standard with keyword density, query hooks, descriptive headers, and semantic chunking"
-    
+
     tasks:
       - number: 1
         name: "optimize-keyword-density"
@@ -348,8 +375,10 @@ phases:
           - "Body keyword density is natural"
           - "Keywords distributed throughout content"
           - "No keyword stuffing detected"
-        task_context: "Keyword density drives RAG retrieval. TL;DR needs high density for discovery; body needs natural distribution for context."
-      
+        task_context: |
+          Keyword density drives RAG retrieval. TL;DR needs high density for
+          discovery; body needs natural distribution for context.
+
       - number: 2
         name: "add-query-hooks"
         purpose: "Add query hooks throughout content (natural language phrasing)"
@@ -368,8 +397,10 @@ phases:
           - "At least 5 query hooks present"
           - "Hooks use natural language"
           - "Hooks match common query patterns"
-        task_context: "Query hooks are phrases in content that match natural language queries, improving semantic search matching beyond just keywords."
-      
+        task_context: |
+          Query hooks are phrases in content that match natural language queries,
+          improving semantic search matching beyond just keywords.
+
       - number: 3
         name: "optimize-headers"
         purpose: "Optimize headers for keywords (descriptive, not generic)"
@@ -389,8 +420,10 @@ phases:
           - "Headers are descriptive, not generic"
           - "Headers include domain keywords"
           - "Headers specific to content"
-        task_context: "Headers are weighted heavily in semantic search. Descriptive, keyword-rich headers improve discoverability dramatically."
-      
+        task_context: |
+          Headers are weighted heavily in semantic search. Descriptive, keyword-rich
+          headers improve discoverability dramatically.
+
       - number: 4
         name: "ensure-semantic-chunking"
         purpose: "Ensure semantic chunking (100-500 tokens per chunk, complete)"
@@ -411,8 +444,10 @@ phases:
           - "Chunk sizes 100-500 tokens"
           - "Each chunk semantically complete"
           - "Parent headers tracked for context"
-        task_context: "Semantic chunking determines how RAG retrieves content. Properly sized, complete chunks improve both retrieval accuracy and context quality."
-    
+        task_context: |
+          Semantic chunking determines how RAG retrieves content. Properly sized,
+          complete chunks improve both retrieval accuracy and context quality.
+
     validation_gate:
       evidence_required:
         keyword_density_tldr:
@@ -441,7 +476,7 @@ phases:
     name: "Discoverability Testing"
     purpose: "Validate standard is discoverable via natural queries from multiple angles"
     deliverable: "Discoverability test results showing >= 80% queries found in top 3"
-    
+
     tasks:
       - number: 1
         name: "generate-test-queries"
@@ -463,8 +498,11 @@ phases:
           - "Queries are natural language"
           - "Queries match expected agent patterns"
           - "Queries are specific to topic"
-        task_context: "Multi-angle testing ensures the standard is discoverable from different query perspectives. Agents approach topics from various angles depending on their current need."
-      
+        task_context: |
+          Multi-angle testing ensures the standard is discoverable from different
+          query perspectives. Agents approach topics from various angles depending
+          on their current need.
+
       - number: 2
         name: "execute-rag-queries"
         purpose: "Execute queries against RAG engine (with new standard)"
@@ -483,8 +521,10 @@ phases:
           - "Results recorded for each query"
           - "Rankings documented"
           - "Relevance scores captured"
-        task_context: "Actual RAG execution is the only true test of discoverability. Simulation cannot replace testing against the real search system."
-      
+        task_context: |
+          Actual RAG execution is the only true test of discoverability. Simulation
+          cannot replace testing against the real search system.
+
       - number: 3
         name: "measure-relevance-ranking"
         purpose: "Measure relevance scores and ranking"
@@ -503,8 +543,10 @@ phases:
           - "Average relevance >= 0.85"
           - "Average rank <= 2.0"
           - "No angle completely missing"
-        task_context: "Quantitative metrics ensure discoverability meets thresholds. 80% found rate means agents can discover this standard from most query angles."
-      
+        task_context: |
+          Quantitative metrics ensure discoverability meets thresholds. 80% found
+          rate means agents can discover this standard from most query angles.
+
       - number: 4
         name: "analyze-results"
         purpose: "Analyze results (found in top 3?) and determine pass/fail"
@@ -522,8 +564,10 @@ phases:
           - "Found rate >= 80%"
           - "Failed angles identified"
           - "Clear pass/fail determination"
-        task_context: "Clear pass/fail criteria prevent subjective judgment. If standard fails, iteration is required."
-      
+        task_context: |
+          Clear pass/fail criteria prevent subjective judgment. If standard fails,
+          iteration is required.
+
       - number: 5
         name: "iterate-if-needed"
         purpose: "Iterate if discoverability < 80%"
@@ -541,8 +585,10 @@ phases:
           - "Iteration performed if needed"
           - "Final found rate >= 80%"
           - "Improvements documented"
-        task_context: "Iteration ensures quality standards are met before proceeding. Failed discovery must be fixed, not accepted."
-    
+        task_context: |
+          Iteration ensures quality standards are met before proceeding. Failed
+          discovery must be fixed, not accepted.
+
     validation_gate:
       evidence_required:
         queries_tested:
@@ -571,7 +617,7 @@ phases:
     name: "Semantic Validation"
     purpose: "Ensure semantic quality and completeness"
     deliverable: "Validated chunks, links, and content quality"
-    
+
     tasks:
       - number: 1
         name: "analyze-chunk-sizes"
@@ -590,8 +636,10 @@ phases:
           - "All chunks 100-500 tokens"
           - "Average chunk size 200-400 tokens"
           - "No chunks too small or too large"
-        task_context: "Chunk size impacts RAG retrieval quality. Too small = insufficient context. Too large = imprecise matching."
-      
+        task_context: |
+          Chunk size impacts RAG retrieval quality. Too small = insufficient context.
+          Too large = imprecise matching.
+
       - number: 2
         name: "verify-semantic-completeness"
         purpose: "Verify semantic completeness (chunks standalone)"
@@ -611,8 +659,10 @@ phases:
           - "No orphaned references"
           - "Context preserved via parent headers"
           - "Chunks understandable standalone"
-        task_context: "Chunks must be semantically complete because agents only see individual chunks during retrieval, not full documents."
-      
+        task_context: |
+          Chunks must be semantically complete because agents only see individual
+          chunks during retrieval, not full documents.
+
       - number: 3
         name: "validate-all-links"
         purpose: "Validate all links (references resolve)"
@@ -632,8 +682,10 @@ phases:
           - "Internal file links resolve"
           - "External URLs have valid DNS"
           - "No broken links found"
-        task_context: "Broken links degrade standard quality and agent trust. Link validation ensures all references are accessible."
-      
+        task_context: |
+          Broken links degrade standard quality and agent trust. Link validation
+          ensures all references are accessible.
+
       - number: 4
         name: "check-no-duplication"
         purpose: "Check no duplication (links to source of truth instead)"
@@ -652,8 +704,10 @@ phases:
           - "No content duplicated from related standards"
           - "Links used instead of copying"
           - "No internal duplication"
-        task_context: "Duplication creates maintenance burden and version conflicts. Single source of truth via links is critical."
-      
+        task_context: |
+          Duplication creates maintenance burden and version conflicts. Single source
+          of truth via links is critical.
+
       - number: 5
         name: "verify-code-examples"
         purpose: "Verify code examples (if any) are complete"
@@ -672,8 +726,10 @@ phases:
           - "Syntax valid"
           - "Examples include context"
           - "Examples are runnable"
-        task_context: "Incomplete code examples frustrate agents. Examples must be complete enough to understand and use."
-    
+        task_context: |
+          Incomplete code examples frustrate agents. Examples must be complete enough
+          to understand and use.
+
     validation_gate:
       evidence_required:
         chunk_sizes_valid:
@@ -702,7 +758,7 @@ phases:
     name: "Integration & Commit"
     purpose: "Commit standard and validate immediate discoverability"
     deliverable: "Committed standard, indexed in RAG, and immediately discoverable"
-    
+
     tasks:
       - number: 1
         name: "generate-validation-report"
@@ -721,8 +777,10 @@ phases:
           - "Report includes all phase results"
           - "Overall score calculated"
           - "Human-readable format"
-        task_context: "Validation report provides audit trail and quality documentation for the standard."
-      
+        task_context: |
+          Validation report provides audit trail and quality documentation for the
+          standard.
+
       - number: 2
         name: "commit-to-repository"
         purpose: "Commit standard to repository"
@@ -739,8 +797,10 @@ phases:
           - "Standard file committed"
           - "Commit hash recorded"
           - "No git errors"
-        task_context: "Committing to git provides version control and audit trail for standards evolution."
-      
+        task_context: |
+          Committing to git provides version control and audit trail for standards
+          evolution.
+
       - number: 3
         name: "trigger-index-rebuild"
         purpose: "Trigger RAG index rebuild (incremental)"
@@ -758,8 +818,10 @@ phases:
           - "Index rebuild triggered"
           - "Rebuild completed successfully"
           - "Rebuild time < 10 seconds (incremental)"
-        task_context: "RAG index must be updated before standard is discoverable. Incremental rebuild ensures fast updates."
-      
+        task_context: |
+          RAG index must be updated before standard is discoverable. Incremental
+          rebuild ensures fast updates.
+
       - number: 4
         name: "validate-immediate-discoverability"
         purpose: "Validate standard immediately discoverable (re-test primary query)"
@@ -776,8 +838,10 @@ phases:
           - "Primary query executed"
           - "Standard found in top 3"
           - "Immediate discoverability confirmed"
-        task_context: "Final confirmation that the standard is live and discoverable in the RAG system."
-      
+        task_context: |
+          Final confirmation that the standard is live and discoverable in the RAG
+          system.
+
       - number: 5
         name: "update-related-standards"
         purpose: "Update related standards if needed (backlinks)"
@@ -795,8 +859,10 @@ phases:
           - "Related standards reviewed"
           - "Backlinks added if needed"
           - "Updates committed"
-        task_context: "Bidirectional linking creates knowledge graph navigation. Related standards should link back to new standard."
-      
+        task_context: |
+          Bidirectional linking creates knowledge graph navigation. Related standards
+          should link back to new standard.
+
       - number: 6
         name: "record-metrics"
         purpose: "Record validation metrics for system evolution tracking"
@@ -813,8 +879,10 @@ phases:
           - "All metrics recorded"
           - "Metrics stored persistently"
           - "Ready for trend analysis"
-        task_context: "Metrics tracking enables system evolution monitoring and continuous improvement of standards creation process."
-    
+        task_context: |
+          Metrics tracking enables system evolution monitoring and continuous
+          improvement of standards creation process.
+
     validation_gate:
       evidence_required:
         validation_report_created:
