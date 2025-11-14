@@ -535,38 +535,38 @@ This standard is most valuable when:
 
 1. **Choosing Lock Type for New Code**
    - Situation: Writing concurrent code, unsure which lock to use
-   - Query: `search_standards("how to choose locking strategy")`
+   - Query: `pos_search_project(content_type="standards", query="how to choose locking strategy")`
 
 2. **Optimizing Read-Heavy Workload**
    - Situation: Cache or config with 90% reads, mutex too slow
-   - Query: `search_standards("read-write lock performance")`
+   - Query: `pos_search_project(content_type="standards", query="read-write lock performance")`
 
 3. **Implementing Resource Pool**
    - Situation: Need to limit concurrent access (DB connections, threads)
-   - Query: `search_standards("semaphore resource pool")`
+   - Query: `pos_search_project(content_type="standards", query="semaphore resource pool")`
 
 4. **Nested Function Lock Issues**
    - Situation: Deadlock when function calls itself with same lock
-   - Query: `search_standards("reentrant lock nested calls")`
+   - Query: `pos_search_project(content_type="standards", query="reentrant lock nested calls")`
 
 5. **High-Contention Performance**
    - Situation: Lock contention causing slowdowns
-   - Query: `search_standards("lock-free algorithms CAS")`
+   - Query: `pos_search_project(content_type="standards", query="lock-free algorithms CAS")`
 
 6. **Code Review for Lock Safety**
    - Situation: Reviewing code with locks
-   - Query: `search_standards("locking anti-patterns")`
+   - Query: `pos_search_project(content_type="standards", query="locking anti-patterns")`
 
 ### Query by Use Case
 
 | Use Case | Example Query |
 |----------|---------------|
-| Choose lock type | `search_standards("mutex vs read-write lock")` |
-| Read-heavy optimization | `search_standards("read-write lock performance")` |
-| Resource pooling | `search_standards("semaphore use case")` |
-| Nested locking | `search_standards("reentrant lock")` |
-| Lock-free | `search_standards("compare-and-swap lock-free")` |
-| Performance | `search_standards("locking performance guidelines")` |
+| Choose lock type | `pos_search_project(content_type="standards", query="mutex vs read-write lock")` |
+| Read-heavy optimization | `pos_search_project(content_type="standards", query="read-write lock performance")` |
+| Resource pooling | `pos_search_project(content_type="standards", query="semaphore use case")` |
+| Nested locking | `pos_search_project(content_type="standards", query="reentrant lock")` |
+| Lock-free | `pos_search_project(content_type="standards", query="compare-and-swap lock-free")` |
+| Performance | `pos_search_project(content_type="standards", query="locking performance guidelines")` |
 
 ---
 
@@ -574,22 +574,22 @@ This standard is most valuable when:
 
 **Concurrency Standards:**
 - `standards/concurrency/race-conditions.md` - Preventing data races with locks
-  → `search_standards("race condition prevention")`
+  → `pos_search_project(content_type="standards", query="race condition prevention")`
 - `standards/concurrency/deadlocks.md` - Lock ordering to prevent deadlocks
-  → `search_standards("deadlock prevention lock ordering")`
+  → `pos_search_project(content_type="standards", query="deadlock prevention lock ordering")`
 - `standards/concurrency/shared-state-analysis.md` - Identifying what needs locks
-  → `search_standards("shared state analysis")`
+  → `pos_search_project(content_type="standards", query="shared state analysis")`
 
 **Testing Standards:**
 - `standards/testing/integration-testing.md` - Stress testing locked code
-  → `search_standards("stress testing concurrency")`
+  → `pos_search_project(content_type="standards", query="stress testing concurrency")`
 
 **Query workflow for choosing locking strategy:**
-1. **Identify Need**: `search_standards("shared state analysis")` → Find what needs protection
+1. **Identify Need**: `pos_search_project(content_type="standards", query="shared state analysis")` → Find what needs protection
 2. **Analyze Access**: Determine read/write ratio, contention level
-3. **Choose Strategy**: `search_standards("how to choose locking strategy")` → Use decision tree
+3. **Choose Strategy**: `pos_search_project(content_type="standards", query="how to choose locking strategy")` → Use decision tree
 4. **Implement**: Apply chosen lock type with proper error handling
-5. **Validate**: `search_standards("locking anti-patterns")` → Check for common mistakes
+5. **Validate**: `pos_search_project(content_type="standards", query="locking anti-patterns")` → Check for common mistakes
 6. **Test**: Stress test with high concurrency
 
 ---

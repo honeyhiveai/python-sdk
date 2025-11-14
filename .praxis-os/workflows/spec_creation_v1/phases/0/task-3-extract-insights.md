@@ -145,6 +145,8 @@ complete_phase(
     session_id=session_id,
     phase=0,
     evidence={
+        "spec_directory_created": True,
+        "spec_dir": "review/YYYY-MM-DD-descriptive-name",  # From Task 0
         "supporting_docs_accessible": True,
         "document_index_created": True,
         "insights_extracted": {

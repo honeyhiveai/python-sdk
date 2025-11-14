@@ -977,15 +977,15 @@ These tools automate documentation generation, validation, and hosting.
 
 | Situation | Example Query |
 |-----------|---------------|
-| **Building an API** | `search_standards("API documentation")` |
-| **Writing API reference** | `search_standards("API reference documentation")` |
-| **Getting started guide** | `search_standards("getting started guide")` |
-| **Documenting authentication** | `search_standards("authentication documentation")` |
-| **Error code documentation** | `search_standards("error codes documentation")` |
-| **API examples** | `search_standards("API examples")` |
-| **Interactive documentation** | `search_standards("interactive API docs")` |
-| **API versioning** | `search_standards("API versioning")` |
-| **OpenAPI/Swagger** | `search_standards("OpenAPI Swagger")` |
+| **Building an API** | `pos_search_project(content_type="standards", query="API documentation")` |
+| **Writing API reference** | `pos_search_project(content_type="standards", query="API reference documentation")` |
+| **Getting started guide** | `pos_search_project(content_type="standards", query="getting started guide")` |
+| **Documenting authentication** | `pos_search_project(content_type="standards", query="authentication documentation")` |
+| **Error code documentation** | `pos_search_project(content_type="standards", query="error codes documentation")` |
+| **API examples** | `pos_search_project(content_type="standards", query="API examples")` |
+| **Interactive documentation** | `pos_search_project(content_type="standards", query="interactive API docs")` |
+| **API versioning** | `pos_search_project(content_type="standards", query="API versioning")` |
+| **OpenAPI/Swagger** | `pos_search_project(content_type="standards", query="OpenAPI Swagger")` |
 
 ---
 
@@ -993,28 +993,28 @@ These tools automate documentation generation, validation, and hosting.
 
 **Query workflow for complete API documentation:**
 
-1. **Start here** → `search_standards("API documentation")` (this document)
-2. **Code comments** → `search_standards("code comments")` → `standards/documentation/code-comments.md`
-3. **README** → `search_standards("README templates")` → `standards/documentation/readme-templates.md`
-4. **Security** → `search_standards("security patterns")` → `standards/security/security-patterns.md`
+1. **Start here** → `pos_search_project(content_type="standards", query="API documentation")` (this document)
+2. **Code comments** → `pos_search_project(content_type="standards", query="code comments")` → `standards/documentation/code-comments.md`
+3. **README** → `pos_search_project(content_type="standards", query="README templates")` → `standards/documentation/readme-templates.md`
+4. **Security** → `pos_search_project(content_type="standards", query="security patterns")` → `standards/security/security-patterns.md`
 
 **By Category:**
 
 **Documentation:**
-- `standards/documentation/code-comments.md` - Inline code documentation → `search_standards("code comments")`
-- `standards/documentation/readme-templates.md` - Project README structure → `search_standards("README templates")`
+- `standards/documentation/code-comments.md` - Inline code documentation → `pos_search_project(content_type="standards", query="code comments")`
+- `standards/documentation/readme-templates.md` - Project README structure → `pos_search_project(content_type="standards", query="README templates")`
 
 **Architecture:**
-- `standards/architecture/api-design-principles.md` - API design best practices → `search_standards("API design")`
+- `standards/architecture/api-design-principles.md` - API design best practices → `pos_search_project(content_type="standards", query="API design")`
 
 **Security:**
-- `standards/security/security-patterns.md` - Securing APIs → `search_standards("security patterns")`
+- `standards/security/security-patterns.md` - Securing APIs → `pos_search_project(content_type="standards", query="security patterns")`
 
 **Testing:**
-- `standards/testing/integration-testing.md` - Testing API endpoints → `search_standards("integration testing")`
+- `standards/testing/integration-testing.md` - Testing API endpoints → `pos_search_project(content_type="standards", query="integration testing")`
 
 **AI Safety:**
-- `standards/ai-safety/production-code-checklist.md` - Documentation requirements for production → `search_standards("production code checklist")`
+- `standards/ai-safety/production-code-checklist.md` - Documentation requirements for production → `pos_search_project(content_type="standards", query="production code checklist")`
 
 ---
 

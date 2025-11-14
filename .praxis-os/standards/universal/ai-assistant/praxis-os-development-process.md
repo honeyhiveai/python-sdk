@@ -21,14 +21,14 @@
 
 **Phase 2: CREATE SPEC** (User must trigger this)
 - User says "create the spec" → Now you make formal spec
-- Query: `search_standards("how to create specification")` to find workflow
+- Query: `pos_search_project(content_type="standards", query="how to create specification")` to find workflow
 - Use workflow to create detailed spec
 - User reviews spec before you do anything else
 - Output: `.praxis-os/specs/YYYY-MM-DD-name/` (formal plan)
 
 **Phase 3: BUILD IT** (User must approve first)
 - User says "implement the spec" → Now you write code
-- Query: `search_standards("how to execute specification")` to find workflow
+- Query: `pos_search_project(content_type="standards", query="how to execute specification")` to find workflow
 - Use workflow to implement systematically
 - Build code + tests + docs
 - Output: Production code (ready to ship)
@@ -120,8 +120,8 @@ You: [Create spec, get approval, then build it right the first time]
 
 1. **Query for domain knowledge to inform design discussion:**
    ```python
-   search_standards("how to [domain] best practices")
-   search_standards("[technology] patterns")
+   pos_search_project(content_type="standards", query="how to [domain] best practices")
+   pos_search_project(content_type="standards", query="[technology] patterns")
    ```
 
 2. **Ask clarifying questions in conversational design discussion:**
@@ -136,7 +136,7 @@ You: [Create spec, get approval, then build it right the first time]
    - "What's your preference?"
 
 4. **Document the design discussion:**
-   - Create `design-doc.md` capturing the conversational exploration
+   - Create `.praxis-os/workspace/design/YYYY-MM-DD-feature-name.md` capturing the conversational exploration
    - Capture architecture decisions from discussion
    - Note trade-offs discussed
    - Include diagrams/examples
@@ -164,7 +164,7 @@ You: [Create spec, get approval, then build it right the first time]
 
 1. **Query to discover how to create specification:**
    ```python
-   search_standards("how to create specification")
+   pos_search_project(content_type="standards", query="how to create specification")
    ```
    
    **Critical:** Do NOT hardcode workflow names in your development process - always query to discover current workflows
@@ -210,7 +210,7 @@ You: [Create spec, get approval, then build it right the first time]
 
 1. **Query to discover how to implement from spec:**
    ```python
-   search_standards("how to execute specification")
+   pos_search_project(content_type="standards", query="how to execute specification")
    ```
    
    **Critical:** Always query for implementation workflow in your development process - don't hardcode workflow names
@@ -295,7 +295,7 @@ Phase 3 ends when:
 
 **Phase 2: Structured Spec**
 - [ ] User explicitly triggered with "create the spec"
-- [ ] Queried: `search_standards("how to create specification")`
+- [ ] Queried: `pos_search_project(content_type="standards", query="how to create specification")`
 - [ ] Discovered current spec creation workflow
 - [ ] Executed workflow systematically
 - [ ] Created all required spec files
@@ -304,7 +304,7 @@ Phase 3 ends when:
 
 **Phase 3: Structured Implementation**
 - [ ] User explicitly triggered with "implement the spec"
-- [ ] Queried: `search_standards("how to execute specification")`
+- [ ] Queried: `pos_search_project(content_type="standards", query="how to execute specification")`
 - [ ] Discovered current implementation workflow
 - [ ] Executed workflow systematically
 - [ ] Implemented with tests and docs
@@ -324,7 +324,7 @@ Phase 3 ends when:
 User: "Build authentication"
 
 Agent: [Queries for patterns]
-search_standards("authentication patterns best practices")
+pos_search_project(content_type="standards", query="authentication patterns best practices")
 
 Agent: "I found JWT and OAuth patterns. Questions:
        - Web only or mobile too?
@@ -351,7 +351,7 @@ User: "Looks good"
 User: "Create the spec"
 
 Agent: [Discovery]
-search_standards("how to create specification")
+pos_search_project(content_type="standards", query="how to create specification")
 
 Agent: [Finds current workflow, executes it]
 "Starting spec creation workflow...
@@ -380,7 +380,7 @@ User: "Approved"
 User: "Implement it"
 
 Agent: [Discovery]
-search_standards("how to execute specification")
+pos_search_project(content_type="standards", query="how to execute specification")
 
 Agent: [Finds current workflow, executes it]
 "Starting implementation workflow...
@@ -487,7 +487,7 @@ if user_says_create_spec:
 **Right:**
 ```python
 # Discover current workflow
-search_standards("how to create specification")
+pos_search_project(content_type="standards", query="how to create specification")
 # Returns current best practice (might be v2, v3, different workflow)
 # Use whatever is discovered
 ```
@@ -540,14 +540,14 @@ Agent: [Pure conversation with queries for patterns]
 
 | Situation | Example Query |
 |-----------|---------------|
-| **User says "build X"** | `search_standards("user wants me to build something what do I do")` |
-| **Not sure where to start** | `search_standards("user says build authentication where do I start")` |
-| **Wondering if you should code now** | `search_standards("should I start coding immediately")` |
-| **Need to know the approach** | `search_standards("what's the development approach")` |
-| **Confused about discuss vs spec** | `search_standards("do I start with spec or discussion")` |
-| **Don't know when to use workflow** | `search_standards("am I supposed to use workflow or talk")` |
-| **User gave requirements** | `search_standards("user gave requirements should I write code now")` |
-| **Starting new feature** | `search_standards("what do I do first when user wants feature")` |
+| **User says "build X"** | `pos_search_project(content_type="standards", query="user wants me to build something what do I do")` |
+| **Not sure where to start** | `pos_search_project(content_type="standards", query="user says build authentication where do I start")` |
+| **Wondering if you should code now** | `pos_search_project(content_type="standards", query="should I start coding immediately")` |
+| **Need to know the approach** | `pos_search_project(content_type="standards", query="what's the development approach")` |
+| **Confused about discuss vs spec** | `pos_search_project(content_type="standards", query="do I start with spec or discussion")` |
+| **Don't know when to use workflow** | `pos_search_project(content_type="standards", query="am I supposed to use workflow or talk")` |
+| **User gave requirements** | `pos_search_project(content_type="standards", query="user gave requirements should I write code now")` |
+| **Starting new feature** | `pos_search_project(content_type="standards", query="what do I do first when user wants feature")` |
 
 ---
 
@@ -555,26 +555,25 @@ Agent: [Pure conversation with queries for patterns]
 
 **Query workflow for building features:**
 
-1. **Start with development process** → `search_standards("prAxIs OS development process")` (this document)
-2. **Learn about spec creation** → `search_standards("how to create specification")`
-3. **Learn about spec execution** → `search_standards("how to execute specification")`
-4. **Understand operating model** → `search_standards("prAxIs OS operating model human AI partnership")`
+1. **Start with development process** → `pos_search_project(content_type="standards", query="prAxIs OS development process")` (this document)
+2. **Learn about spec creation** → `pos_search_project(content_type="standards", query="how to create specification")`
+3. **Learn about spec execution** → `pos_search_project(content_type="standards", query="how to execute specification")`
+4. **Understand operating model** → `pos_search_project(content_type="standards", query="prAxIs OS operating model human AI partnership")`
 
 **By Phase:**
 
 **Phase 1 (Design):**
-- Query: `search_standards("[domain] architecture patterns")`
-- Query: `search_standards("[technology] best practices")`
+- Query: `pos_search_project(content_type="standards", query="[domain] architecture patterns")`
+- Query: `pos_search_project(content_type="standards", query="[technology] best practices")`
 
 **Phase 2 (Spec):**
-- Query: `search_standards("how to create specification")`
-- Query: `search_standards("spec structure requirements")`
+- Query: `pos_search_project(content_type="standards", query="how to create specification")`
+- Query: `pos_search_project(content_type="standards", query="spec structure requirements")`
 
 **Phase 3 (Implementation):**
-- Query: `search_standards("how to execute specification")`
-- Query: `search_standards("production code quality standards")`
+- Query: `pos_search_project(content_type="standards", query="how to execute specification")`
+- Query: `pos_search_project(content_type="standards", query="production code quality standards")`
 
 ---
 
 **Remember**: Three distinct phases with explicit transitions. Query to discover workflows, don't hardcode. Human approval required between phases. This process ensures quality through systematic execution while maintaining conversational flexibility where needed.
-

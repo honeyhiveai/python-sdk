@@ -933,7 +933,7 @@ Add metadata, metrics, and context to entire sessions (collections of related sp
    :param metrics: Numeric measurements for the session (latency, cost, token counts).
    :type metrics: Optional[Dict[str, Any]]
    
-   :param user_properties: Legacy parameter for user-specific properties. Automatically merged into metadata with ``user_properties.`` prefix for backwards compatibility.
+   :param user_properties: User-specific properties (user_id, plan, etc.). Stored as a separate field in the backend, not merged into metadata.
    :type user_properties: Optional[Dict[str, Any]]
    
    :param kwargs: Additional keyword arguments (passed through for extensibility).
@@ -1013,16 +1013,16 @@ Add metadata, metrics, and context to entire sessions (collections of related sp
        metadata={"user_id": "user_456"}
    )
    
-   # Legacy: user_properties parameter (still supported)
-   enrich_session(
-       session_id="sess_abc123",
-       user_properties={
-           "tier": "premium",
-           "region": "us-east"
-       }
-   )
-   # Result: user_properties automatically merged into metadata with prefix:
-   # {"metadata": {"user_properties.tier": "premium", "user_properties.region": "us-east"}}
+  # Legacy: user_properties parameter (still supported)
+  enrich_session(
+      session_id="sess_abc123",
+      user_properties={
+          "tier": "premium",
+          "region": "us-east"
+      }
+  )
+  # Result: user_properties stored as a separate field in the backend:
+  # {"user_properties": {"tier": "premium", "region": "us-east"}}
 
 **Session Lifecycle Management:**
 

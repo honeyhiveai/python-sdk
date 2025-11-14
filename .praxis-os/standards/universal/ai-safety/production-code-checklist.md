@@ -22,11 +22,11 @@
 5. **Tests?** → Unit + integration coverage (happy path + failure modes)
 
 **When to query this standard:**
-- Before starting new feature → `search_standards("production code checklist")`
-- During code review → `search_standards("code quality requirements")`
-- When adding dependencies → `search_standards("dependency version management")`
-- When handling failures → `search_standards("graceful degradation patterns")`
-- When managing state → `search_standards("concurrency thread safety")`
+- Before starting new feature → `pos_search_project(content_type="standards", query="production code checklist")`
+- During code review → `pos_search_project(content_type="standards", query="code quality requirements")`
+- When adding dependencies → `pos_search_project(content_type="standards", query="dependency version management")`
+- When handling failures → `pos_search_project(content_type="standards", query="graceful degradation patterns")`
+- When managing state → `pos_search_project(content_type="standards", query="concurrency thread safety")`
 
 **Remember: We teach quality standards - we must exemplify them.**
 
@@ -564,16 +564,16 @@ Query when implementing production code:
 
 ```python
 # For concurrency patterns
-search_standards("thread safety concurrency patterns")
+pos_search_project(content_type="standards", query="thread safety concurrency patterns")
 
 # For graceful degradation  
-search_standards("failure modes graceful degradation")
+pos_search_project(content_type="standards", query="failure modes graceful degradation")
 
 # For system architecture
-search_standards("dependency injection architecture patterns")
+pos_search_project(content_type="standards", query="dependency injection architecture patterns")
 
 # For testing strategy
-search_standards("test pyramid unit integration")
+pos_search_project(content_type="standards", query="test pyramid unit integration")
 ```
 
 **Related Standards:**
@@ -587,16 +587,16 @@ search_standards("test pyramid unit integration")
 
 ```python
 # Before starting implementation
-search_standards("production code checklist")
+pos_search_project(content_type="standards", query="production code checklist")
 
 # During code review
-search_standards("code quality standards AI")
+pos_search_project(content_type="standards", query="code quality standards AI")
 
 # When debugging quality issues
-search_standards("common code quality mistakes")
+pos_search_project(content_type="standards", query="common code quality mistakes")
 
 # When onboarding to prAxIs OS
-search_standards("prAxIs OS code standards")
+pos_search_project(content_type="standards", query="prAxIs OS code standards")
 ```
 
 ---

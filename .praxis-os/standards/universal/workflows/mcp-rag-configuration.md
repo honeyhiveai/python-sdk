@@ -8,7 +8,7 @@
 
 **Keywords for search**: MCP RAG configuration, RAG indexing, vector index, workflow metadata indexing, search_standards configuration, embedding configuration, file watcher, RAG performance
 
-**Core Principle:** Configure MCP RAG to index standards (all AI-facing content) for AI agent discovery via `search_standards()`.
+**Core Principle:** Configure MCP RAG to index standards (all AI-facing content) for AI agent discovery via `pos_search_project()`.
 
 **One Directory Indexed:**
 - **.praxis-os/standards/** - All AI-facing content (behavioral guidance, processes, examples)
@@ -54,7 +54,7 @@ builder = IndexBuilder(
 - **Memory usage:** <500MB with index loaded
 
 **Common Errors:**
-- ❌ Querying for workflow metadata via `search_standards()` (use `pos_workflow` tool instead)
+- ❌ Querying for workflow metadata via `pos_search_project()` (use `pos_workflow` tool instead)
 - ❌ Wrong embedding model (index incompatible with queries)
 - ❌ Not restarting MCP server after config changes
 
@@ -118,16 +118,17 @@ IndexBuilder is the core component that creates and maintains the vector index f
 ### Initialization Parameters
 
 ```python
-# Ouroboros automatically builds indexes on server start
-# No manual build needed - indexes are in .praxis-os/cache/indexes/
+from pathlib import Path
+from scripts.build_rag_index import IndexBuilder
 
-# If you need to rebuild programmatically:
-from ouroboros.subsystems.rag.index_manager import IndexManager
-from ouroboros.config.loader import load_config
-
-config = load_config()
-index_manager = IndexManager(config.indexes, base_path=Path(".praxis-os"))
-index_manager.rebuild_index("standards", force=True)
+builder = IndexBuilder(
+    index_path=Path(".praxis-os/.cache/vector_index"),
+    standards_path=Path("universal/standards"),
+    usage_path=Path("universal/usage"),          # Optional
+    workflows_path=Path("universal/workflows"),  # NEW: Required for workflow discovery
+    embedding_provider="local",  # or "openai"
+    embedding_model="all-MiniLM-L6-v2"  # Free, offline
+)
 ```
 
 ### Parameter Descriptions
@@ -253,7 +254,7 @@ def chunk_workflow_metadata(metadata_path: Path) -> List[DocumentChunk]:
 
 ## How to Optimize Search Performance?
 
-Search optimization ensures fast, relevant results for AI agent queries via `search_standards()`.
+Search optimization ensures fast, relevant results for AI agent queries via `pos_search_project()`.
 
 ### Metadata for Better Search
 
@@ -278,10 +279,10 @@ DocumentChunk(
 
 ```python
 # Discovery queries that SHOULD work:
-await search_standards("What workflows are available?")
-await search_standards("How do I generate tests for Python code?")
-await search_standards("What phases does test generation have?")
-await search_standards("What are the deliverables of Phase 2?")
+await pos_search_project(content_type="standards", query="What workflows are available?")
+await pos_search_project(content_type="standards", query="How do I generate tests for Python code?")
+await pos_search_project(content_type="standards", query="What phases does test generation have?")
+await pos_search_project(content_type="standards", query="What are the deliverables of Phase 2?")
 
 # Should return relevant workflow metadata chunks
 ```
@@ -346,7 +347,7 @@ After configuring MCP RAG with workflows:
 
 # 2. Verify workflows are indexed
 ✅ Query returns workflow metadata:
-   await search_standards("test generation workflow")
+   await pos_search_project(content_type="standards", query="test generation workflow")
 
 # 3. Verify workflow loading works
 ✅ start_workflow returns workflow_overview
@@ -373,7 +374,7 @@ async def test_workflow_indexing():
     """Test that workflows are properly indexed."""
     
     # Test 1: Discovery
-    result = await search_standards(
+    result = await pos_search_project(
         query="What workflows are available for testing?",
         n_results=5
     )
@@ -382,7 +383,7 @@ async def test_workflow_indexing():
                for r in result["results"])
     
     # Test 2: Phase discovery
-    result = await search_standards(
+    result = await pos_search_project(
         query="What phases does test_generation_v3 have?",
         n_results=5
     )
@@ -410,7 +411,7 @@ These common mistakes break RAG functionality or prevent content from being disc
 
 ### Error 1: Workflows Not Indexed
 
-**Symptom:** `search_standards` doesn't return workflow information
+**Symptom:** `pos_search` doesn't return workflow information
 
 **Cause:** `workflows_path` not passed to IndexBuilder
 
@@ -480,7 +481,7 @@ When upgrading existing repos to support workflow indexing:
 - [ ] Add workflows directory to file watcher
 - [ ] Update `_ensure_index_exists` to pass workflows_path
 - [ ] Update `create_server` to pass workflows_path
-- [ ] Force rebuild index: Restart MCP server (auto-builds) or use `IndexManager.rebuild_index(force=True)`
+- [ ] Force rebuild index: `python scripts/build_rag_index.py --force`
 - [ ] Test workflow discovery via search
 - [ ] Verify `start_workflow` includes overview
 
@@ -529,14 +530,14 @@ class WorkflowEngine:
 
 | Situation | Example Query |
 |-----------|---------------|
-| **Configuring RAG** | `search_standards("MCP RAG configuration")` |
-| **Workflow indexing** | `search_standards("workflow metadata indexing")` |
-| **File watcher setup** | `search_standards("file watcher RAG")` |
-| **Vector index** | `search_standards("configure vector index")` |
-| **Embedding models** | `search_standards("embedding configuration")` |
-| **RAG performance** | `search_standards("RAG performance")` |
-| **Testing RAG** | `search_standards("test RAG configuration")` |
-| **Migration** | `search_standards("migrate RAG configuration")` |
+| **Configuring RAG** | `pos_search_project(content_type="standards", query="MCP RAG configuration")` |
+| **Workflow indexing** | `pos_search_project(content_type="standards", query="workflow metadata indexing")` |
+| **File watcher setup** | `pos_search_project(content_type="standards", query="file watcher RAG")` |
+| **Vector index** | `pos_search_project(content_type="standards", query="configure vector index")` |
+| **Embedding models** | `pos_search_project(content_type="standards", query="embedding configuration")` |
+| **RAG performance** | `pos_search_project(content_type="standards", query="RAG performance")` |
+| **Testing RAG** | `pos_search_project(content_type="standards", query="test RAG configuration")` |
+| **Migration** | `pos_search_project(content_type="standards", query="migrate RAG configuration")` |
 
 ---
 
@@ -544,24 +545,24 @@ class WorkflowEngine:
 
 **Query workflow for complete RAG configuration:**
 
-1. **Start with RAG config** → `search_standards("MCP RAG configuration")` (this document)
-2. **Understand workflow system** → `search_standards("workflow system overview")` → `standards/workflows/workflow-system-overview.md`
-3. **Learn workflow metadata** → `search_standards("workflow metadata")` → `standards/workflows/workflow-metadata-standards.md`
-4. **Use MCP tools** → `search_standards("MCP usage guide")` → `usage/mcp-usage-guide.md`
+1. **Start with RAG config** → `pos_search_project(content_type="standards", query="MCP RAG configuration")` (this document)
+2. **Understand workflow system** → `pos_search_project(content_type="standards", query="workflow system overview")` → `standards/workflows/workflow-system-overview.md`
+3. **Learn workflow metadata** → `pos_search_project(content_type="standards", query="workflow metadata")` → `standards/workflows/workflow-metadata-standards.md`
+4. **Use MCP tools** → `pos_search_project(content_type="standards", query="MCP usage guide")` → `usage/mcp-usage-guide.md`
 
 **By Category:**
 
 **Workflows:**
-- `standards/workflows/workflow-system-overview.md` - Complete workflow system → `search_standards("workflow system overview")`
-- `standards/workflows/workflow-metadata-standards.md` - metadata.json structure → `search_standards("workflow metadata")`
-- `standards/workflows/workflow-construction-standards.md` - Building workflows → `search_standards("workflow construction")`
+- `standards/workflows/workflow-system-overview.md` - Complete workflow system → `pos_search_project(content_type="standards", query="workflow system overview")`
+- `standards/workflows/workflow-metadata-standards.md` - metadata.json structure → `pos_search_project(content_type="standards", query="workflow metadata")`
+- `standards/workflows/workflow-construction-standards.md` - Building workflows → `pos_search_project(content_type="standards", query="workflow construction")`
 
 **Usage:**
-- `usage/mcp-usage-guide.md` - Using MCP tools → `search_standards("MCP usage guide")`
-- `usage/operating-model.md` - prAxIs OS operating model → `search_standards("prAxIs OS operating model")`
+- `usage/mcp-usage-guide.md` - Using MCP tools → `pos_search_project(content_type="standards", query="MCP usage guide")`
+- `usage/operating-model.md` - prAxIs OS operating model → `pos_search_project(content_type="standards", query="prAxIs OS operating model")`
 
 **AI Assistant:**
-- `standards/ai-assistant/rag-content-authoring.md` - Writing discoverable content → `search_standards("RAG content authoring")`
+- `standards/ai-assistant/rag-content-authoring.md` - Writing discoverable content → `pos_search_project(content_type="standards", query="RAG content authoring")`
 
 ---
 

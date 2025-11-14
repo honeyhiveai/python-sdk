@@ -581,13 +581,13 @@ Timeouts are service degradation signals. Track and alert on them.
 
 | Situation | Example Query |
 |-----------|---------------|
-| **Network operations** | `search_standards("timeout patterns")` |
-| **API integration** | `search_standards("request timeout")` |
-| **Slow operations** | `search_standards("connection timeout")` |
-| **Timeout configuration** | `search_standards("timeout configuration")` |
-| **Hanging operations** | `search_standards("timeout strategies")` |
-| **Retry timeouts** | `search_standards("timeout with retry")` |
-| **Cascading failures** | `search_standards("cascading timeouts")` |
+| **Network operations** | `pos_search_project(content_type="standards", query="timeout patterns")` |
+| **API integration** | `pos_search_project(content_type="standards", query="request timeout")` |
+| **Slow operations** | `pos_search_project(content_type="standards", query="connection timeout")` |
+| **Timeout configuration** | `pos_search_project(content_type="standards", query="timeout configuration")` |
+| **Hanging operations** | `pos_search_project(content_type="standards", query="timeout strategies")` |
+| **Retry timeouts** | `pos_search_project(content_type="standards", query="timeout with retry")` |
+| **Cascading failures** | `pos_search_project(content_type="standards", query="cascading timeouts")` |
 
 ---
 
@@ -595,26 +595,26 @@ Timeouts are service degradation signals. Track and alert on them.
 
 **Query workflow for resilient failure handling:**
 
-1. **Set timeouts** → `search_standards("timeout patterns")` (this document)
-2. **Add retries** → `search_standards("retry strategies")` → `standards/failure-modes/retry-strategies.md`
-3. **Add circuit breaker** → `search_standards("circuit breaker")` → `standards/failure-modes/circuit-breakers.md`
-4. **Plan degradation** → `search_standards("graceful degradation")` → `standards/failure-modes/graceful-degradation.md`
+1. **Set timeouts** → `pos_search_project(content_type="standards", query="timeout patterns")` (this document)
+2. **Add retries** → `pos_search_project(content_type="standards", query="retry strategies")` → `standards/failure-modes/retry-strategies.md`
+3. **Add circuit breaker** → `pos_search_project(content_type="standards", query="circuit breaker")` → `standards/failure-modes/circuit-breakers.md`
+4. **Plan degradation** → `pos_search_project(content_type="standards", query="graceful degradation")` → `standards/failure-modes/graceful-degradation.md`
 
 **By Category:**
 
 **Failure Modes:**
-- `standards/failure-modes/retry-strategies.md` - Retry logic (total timeout must account for retries) → `search_standards("retry strategies")`
-- `standards/failure-modes/circuit-breakers.md` - Fail fast when dependency is down → `search_standards("circuit breaker")`
-- `standards/failure-modes/graceful-degradation.md` - Fallback strategies for timeouts → `search_standards("graceful degradation")`
+- `standards/failure-modes/retry-strategies.md` - Retry logic (total timeout must account for retries) → `pos_search_project(content_type="standards", query="retry strategies")`
+- `standards/failure-modes/circuit-breakers.md` - Fail fast when dependency is down → `pos_search_project(content_type="standards", query="circuit breaker")`
+- `standards/failure-modes/graceful-degradation.md` - Fallback strategies for timeouts → `pos_search_project(content_type="standards", query="graceful degradation")`
 
 **Testing:**
-- `standards/testing/integration-testing.md` - Testing timeout behavior → `search_standards("integration testing")`
+- `standards/testing/integration-testing.md` - Testing timeout behavior → `pos_search_project(content_type="standards", query="integration testing")`
 
 **Database:**
-- `standards/database/database-patterns.md` - Database timeout configuration → `search_standards("database patterns")`
+- `standards/database/database-patterns.md` - Database timeout configuration → `pos_search_project(content_type="standards", query="database patterns")`
 
 **AI Safety:**
-- `standards/ai-safety/production-code-checklist.md` - Production code checklist (includes timeout validation) → `search_standards("production code checklist")`
+- `standards/ai-safety/production-code-checklist.md` - Production code checklist (includes timeout validation) → `pos_search_project(content_type="standards", query="production code checklist")`
 
 ---
 

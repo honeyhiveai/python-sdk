@@ -19,6 +19,7 @@
 .praxis-os/scripts/__pycache__/     # ~1MB - Python bytecode
 .praxis-os.backup.*         # ~1.3GB - Upgrade backups
 .praxis-os/.upgrade_lock    # <1KB - Upgrade lock file
+.praxis-os/workspace/       # Temporary design docs, analysis, experiments
 ```
 
 **Why These Are Required:**
@@ -100,6 +101,7 @@ Understanding the purpose and impact of each pattern.
 | `.praxis-os/scripts/__pycache__/` | ~1MB | Python bytecode | Platform/Python version specific |
 | `.praxis-os.backup.*` | ~1.3GB | Upgrade backups (temporary) | Massive repo bloat, only needed locally for rollback |
 | `.praxis-os/.upgrade_lock` | <1KB | Upgrade lock file (temporary) | Meaningless outside upgrade process |
+| `.praxis-os/workspace/` | Varies | Temporary design docs, analysis, experiments (Phase 1 artifacts) | Mixes ephemeral with permanent content, confuses specs with drafts |
 
 **Total potential bloat**: ~2.7GB of ephemeral files
 
@@ -232,13 +234,13 @@ To add a new required entry:
 
 | Situation | Example Query |
 |-----------|---------------|
-| **prAxIs OS installation** | `search_standards("gitignore requirements")` |
-| **Large repo after install** | `search_standards("why is repo large after prAxIs OS")` |
-| **What to commit** | `search_standards("what prAxIs OS files to commit")` |
-| **Cache in git status** | `search_standards("ignore praxis-os cache")` |
-| **Setup .gitignore** | `search_standards("prAxIs OS gitignore")` |
-| **Accidentally committed cache** | `search_standards("remove praxis-os cache from git")` |
-| **Writing workflows** | `search_standards("gitignore for workflows")` |
+| **prAxIs OS installation** | `pos_search_project(content_type="standards", query="gitignore requirements")` |
+| **Large repo after install** | `pos_search_project(content_type="standards", query="why is repo large after prAxIs OS")` |
+| **What to commit** | `pos_search_project(content_type="standards", query="what prAxIs OS files to commit")` |
+| **Cache in git status** | `pos_search_project(content_type="standards", query="ignore agent-os cache")` |
+| **Setup .gitignore** | `pos_search_project(content_type="standards", query="prAxIs OS gitignore")` |
+| **Accidentally committed cache** | `pos_search_project(content_type="standards", query="remove agent-os cache from git")` |
+| **Writing workflows** | `pos_search_project(content_type="standards", query="gitignore for workflows")` |
 
 ---
 
@@ -246,24 +248,23 @@ To add a new required entry:
 
 **Query workflow for .gitignore setup:**
 
-1. **Start with requirements** → `search_standards("gitignore requirements")` (this document)
-2. **Learn update procedures** → `search_standards("prAxIs OS update")` → `standards/installation/update-procedures.md`
-3. **Understand git safety** → `search_standards("git safety rules")` → `standards/ai-safety/git-safety-rules.md`
+1. **Start with requirements** → `pos_search_project(content_type="standards", query="gitignore requirements")` (this document)
+2. **Learn update procedures** → `pos_search_project(content_type="standards", query="prAxIs OS update")` → `standards/installation/update-procedures.md`
+3. **Understand git safety** → `pos_search_project(content_type="standards", query="git safety rules")` → `standards/ai-safety/git-safety-rules.md`
 
 **By Category:**
 
 **Installation:**
-- `standards/installation/update-procedures.md` - Update process → `search_standards("prAxIs OS update")`
+- `standards/installation/update-procedures.md` - Update process → `pos_search_project(content_type="standards", query="prAxIs OS update")`
 
 **AI Safety:**
-- `standards/ai-safety/git-safety-rules.md` - Git operations → `search_standards("git safety rules")`
-- `standards/ai-safety/credential-file-protection.md` - File protection → `search_standards("credential file protection")`
+- `standards/ai-safety/git-safety-rules.md` - Git operations → `pos_search_project(content_type="standards", query="git safety rules")`
+- `standards/ai-safety/credential-file-protection.md` - File protection → `pos_search_project(content_type="standards", query="credential file protection")`
 
 **Workflows:**
-- `workflows/praxis_os_upgrade_v1/` - Automated upgrade → `search_standards("upgrade workflow")`
+- `workflows/praxis_os_upgrade_v1/` - Automated upgrade → `pos_search_project(content_type="standards", query="upgrade workflow")`
 
 ---
 
 **Last Updated**: October 8, 2025  
 **Canonical Source**: `universal/standards/installation/gitignore-requirements.md`
-

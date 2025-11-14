@@ -393,14 +393,14 @@ fi
 
 | Situation | Example Query |
 |-----------|---------------|
-| **Git operations** | `search_standards("git safety rules")` |
-| **Revert changes** | `search_standards("how to revert file changes")` |
-| **Forbidden commands** | `search_standards("forbidden git commands")` |
-| **git reset** | `search_standards("can AI use git reset")` |
-| **git push force** | `search_standards("git push force")` |
-| **Safe git operations** | `search_standards("safe git operations")` |
-| **Data loss** | `search_standards("git data loss")` |
-| **Branch operations** | `search_standards("AI delete git branch")` |
+| **Git operations** | `pos_search_project(content_type="standards", query="git safety rules")` |
+| **Revert changes** | `pos_search_project(content_type="standards", query="how to revert file changes")` |
+| **Forbidden commands** | `pos_search_project(content_type="standards", query="forbidden git commands")` |
+| **git reset** | `pos_search_project(content_type="standards", query="can AI use git reset")` |
+| **git push force** | `pos_search_project(content_type="standards", query="git push force")` |
+| **Safe git operations** | `pos_search_project(content_type="standards", query="safe git operations")` |
+| **Data loss** | `pos_search_project(content_type="standards", query="git data loss")` |
+| **Branch operations** | `pos_search_project(content_type="standards", query="AI delete git branch")` |
 
 ---
 
@@ -408,21 +408,21 @@ fi
 
 **Query workflow for git safety:**
 
-1. **Start with git rules** → `search_standards("git safety rules")` (this document)
-2. **Learn production checklist** → `search_standards("production code checklist")` → `standards/ai-safety/production-code-checklist.md`
-3. **Learn credential protection** → `search_standards("credential file protection")` → `standards/ai-safety/credential-file-protection.md`
-4. **Understand security** → `search_standards("security patterns")` → `standards/security/security-patterns.md`
+1. **Start with git rules** → `pos_search_project(content_type="standards", query="git safety rules")` (this document)
+2. **Learn production checklist** → `pos_search_project(content_type="standards", query="production code checklist")` → `standards/ai-safety/production-code-checklist.md`
+3. **Learn credential protection** → `pos_search_project(content_type="standards", query="credential file protection")` → `standards/ai-safety/credential-file-protection.md`
+4. **Understand security** → `pos_search_project(content_type="standards", query="security patterns")` → `standards/security/security-patterns.md`
 
 **By Category:**
 
 **AI Safety:**
-- `standards/ai-safety/credential-file-protection.md` - File protection rules → `search_standards("credential file protection")`
-- `standards/ai-safety/production-code-checklist.md` - Production requirements → `search_standards("production code checklist")`
-- `standards/ai-safety/date-usage-policy.md` - Date handling → `search_standards("date usage policy")`
-- `standards/ai-safety/import-verification-rules.md` - Import safety → `search_standards("import verification")`
+- `standards/ai-safety/credential-file-protection.md` - File protection rules → `pos_search_project(content_type="standards", query="credential file protection")`
+- `standards/ai-safety/production-code-checklist.md` - Production requirements → `pos_search_project(content_type="standards", query="production code checklist")`
+- `standards/ai-safety/date-usage-policy.md` - Date handling → `pos_search_project(content_type="standards", query="date usage policy")`
+- `standards/ai-safety/import-verification-rules.md` - Import safety → `pos_search_project(content_type="standards", query="import verification")`
 
 **Installation:**
-- `standards/installation/gitignore-requirements.md` - Gitignore patterns → `search_standards("gitignore requirements")`
+- `standards/installation/gitignore-requirements.md` - Gitignore patterns → `pos_search_project(content_type="standards", query="gitignore requirements")`
 
 ---
 

@@ -359,37 +359,37 @@ This standard is most valuable when:
 
 1. **System Hangs Indefinitely**
    - Situation: Application freezes, no progress
-   - Query: `search_standards("deadlock system hangs")`
+   - Query: `pos_search_project(content_type="standards", query="deadlock system hangs")`
 
 2. **Implementing Multi-Lock Code**
    - Situation: Need to acquire multiple locks
-   - Query: `search_standards("how to prevent deadlocks")`
+   - Query: `pos_search_project(content_type="standards", query="how to prevent deadlocks")`
 
 3. **Code Review for Lock Safety**
    - Situation: Reviewing code with multiple locks
-   - Query: `search_standards("deadlock prevention lock ordering")`
+   - Query: `pos_search_project(content_type="standards", query="deadlock prevention lock ordering")`
 
 4. **Choosing Deadlock Prevention Strategy**
    - Situation: Deciding between lock ordering, timeout, lock-free
-   - Query: `search_standards("deadlock prevention strategies")`
+   - Query: `pos_search_project(content_type="standards", query="deadlock prevention strategies")`
 
 5. **Debugging Concurrent System Freeze**
    - Situation: Production system hangs under load
-   - Query: `search_standards("how to detect deadlocks")`
+   - Query: `pos_search_project(content_type="standards", query="how to detect deadlocks")`
 
 6. **Understanding Coffman Conditions**
    - Situation: Learning deadlock theory
-   - Query: `search_standards("Coffman conditions deadlock")`
+   - Query: `pos_search_project(content_type="standards", query="Coffman conditions deadlock")`
 
 ### Query by Use Case
 
 | Use Case | Example Query |
 |----------|---------------|
-| Prevent deadlocks | `search_standards("deadlock prevention")` |
-| Lock ordering | `search_standards("lock ordering prevent deadlock")` |
-| Detect deadlocks | `search_standards("how to detect deadlocks")` |
-| Timeout strategy | `search_standards("timeout deadlock prevention")` |
-| Dining philosophers | `search_standards("dining philosophers deadlock")` |
+| Prevent deadlocks | `pos_search_project(content_type="standards", query="deadlock prevention")` |
+| Lock ordering | `pos_search_project(content_type="standards", query="lock ordering prevent deadlock")` |
+| Detect deadlocks | `pos_search_project(content_type="standards", query="how to detect deadlocks")` |
+| Timeout strategy | `pos_search_project(content_type="standards", query="timeout deadlock prevention")` |
+| Dining philosophers | `pos_search_project(content_type="standards", query="dining philosophers deadlock")` |
 
 ---
 
@@ -397,22 +397,22 @@ This standard is most valuable when:
 
 **Concurrency Standards:**
 - `standards/concurrency/race-conditions.md` - Preventing data races (complementary to deadlock prevention)
-  → `search_standards("race condition prevention")`
+  → `pos_search_project(content_type="standards", query="race condition prevention")`
 - `standards/concurrency/locking-strategies.md` - Choosing lock types (reentrant locks help with nested calls)
-  → `search_standards("locking strategies")`
+  → `pos_search_project(content_type="standards", query="locking strategies")`
 - `standards/concurrency/shared-state-analysis.md` - Identifying shared resources that need locks
-  → `search_standards("shared state analysis")`
+  → `pos_search_project(content_type="standards", query="shared state analysis")`
 
 **Testing Standards:**
 - `standards/testing/integration-testing.md` - Stress testing for deadlocks
-  → `search_standards("stress testing concurrency")`
+  → `pos_search_project(content_type="standards", query="stress testing concurrency")`
 
 **Query workflow for preventing deadlocks:**
-1. **Learn Theory**: `search_standards("Coffman conditions")` → Understand 4 conditions
-2. **Identify Resources**: `search_standards("shared state analysis")` → Find what needs locking
-3. **Choose Strategy**: `search_standards("deadlock prevention strategies")` → Select lock ordering (best)
+1. **Learn Theory**: `pos_search_project(content_type="standards", query="Coffman conditions")` → Understand 4 conditions
+2. **Identify Resources**: `pos_search_project(content_type="standards", query="shared state analysis")` → Find what needs locking
+3. **Choose Strategy**: `pos_search_project(content_type="standards", query="deadlock prevention strategies")` → Select lock ordering (best)
 4. **Implement**: Define global lock order, apply consistently
-5. **Test**: `search_standards("how to test for deadlocks")` → Stress test with many threads
+5. **Test**: `pos_search_project(content_type="standards", query="how to test for deadlocks")` → Stress test with many threads
 6. **Review**: Check all lock acquisitions follow order
 
 ---

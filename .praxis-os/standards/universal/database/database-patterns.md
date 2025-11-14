@@ -627,14 +627,14 @@ test_unique_constraint():
 
 | Situation | Example Query |
 |-----------|---------------|
-| **Slow queries** | `search_standards("how to optimize slow database queries")` |
-| **Designing schema** | `search_standards("database schema design patterns")` |
-| **Writing loops** | `search_standards("N+1 query problem")` |
-| **Adding indexes** | `search_standards("when to add database indexes")` |
-| **Multi-step operations** | `search_standards("database transactions")` |
-| **Database tests** | `search_standards("how to test database code")` |
-| **Migrations** | `search_standards("database migrations")` |
-| **Performance issues** | `search_standards("database performance")` |
+| **Slow queries** | `pos_search_project(content_type="standards", query="how to optimize slow database queries")` |
+| **Designing schema** | `pos_search_project(content_type="standards", query="database schema design patterns")` |
+| **Writing loops** | `pos_search_project(content_type="standards", query="N+1 query problem")` |
+| **Adding indexes** | `pos_search_project(content_type="standards", query="when to add database indexes")` |
+| **Multi-step operations** | `pos_search_project(content_type="standards", query="database transactions")` |
+| **Database tests** | `pos_search_project(content_type="standards", query="how to test database code")` |
+| **Migrations** | `pos_search_project(content_type="standards", query="database migrations")` |
+| **Performance issues** | `pos_search_project(content_type="standards", query="database performance")` |
 
 ---
 
@@ -642,27 +642,27 @@ test_unique_constraint():
 
 **Query workflow for database implementation:**
 
-1. **Start here** → `search_standards("database patterns")`
-2. **Then design** → `search_standards("database schema design")`
-3. **Then test** → `search_standards("integration testing database")` → `standards/testing/integration-testing.md`
-4. **Then optimize** → `search_standards("database performance")` (this document)
+1. **Start here** → `pos_search_project(content_type="standards", query="database patterns")`
+2. **Then design** → `pos_search_project(content_type="standards", query="database schema design")`
+3. **Then test** → `pos_search_project(content_type="standards", query="integration testing database")` → `standards/testing/integration-testing.md`
+4. **Then optimize** → `pos_search_project(content_type="standards", query="database performance")` (this document)
 
 **By Category:**
 
 **Testing:**
-- `standards/testing/integration-testing.md` - How to test database integration → `search_standards("integration testing database")`
-- `standards/testing/test-pyramid.md` - Test ratios (integration tests 20-30%) → `search_standards("test pyramid")`
+- `standards/testing/integration-testing.md` - How to test database integration → `pos_search_project(content_type="standards", query="integration testing database")`
+- `standards/testing/test-pyramid.md` - Test ratios (integration tests 20-30%) → `pos_search_project(content_type="standards", query="test pyramid")`
 
 **Architecture:**
-- `standards/architecture/api-design-principles.md` - API design for database-backed services → `search_standards("API design patterns")`
-- `standards/architecture/dependency-injection.md` - Injecting database connections → `search_standards("dependency injection")`
+- `standards/architecture/api-design-principles.md` - API design for database-backed services → `pos_search_project(content_type="standards", query="API design patterns")`
+- `standards/architecture/dependency-injection.md` - Injecting database connections → `pos_search_project(content_type="standards", query="dependency injection")`
 
 **Failure Modes:**
-- `standards/failure-modes/retry-strategies.md` - Retrying failed database operations → `search_standards("retry strategies")`
-- `standards/failure-modes/timeout-patterns.md` - Database query timeouts → `search_standards("timeout patterns")`
+- `standards/failure-modes/retry-strategies.md` - Retrying failed database operations → `pos_search_project(content_type="standards", query="retry strategies")`
+- `standards/failure-modes/timeout-patterns.md` - Database query timeouts → `pos_search_project(content_type="standards", query="timeout patterns")`
 
 **AI Safety:**
-- `standards/ai-safety/production-code-checklist.md` - Production code checklist (includes database validation) → `search_standards("production code checklist")`
+- `standards/ai-safety/production-code-checklist.md` - Production code checklist (includes database validation) → `pos_search_project(content_type="standards", query="production code checklist")`
 
 ---
 

@@ -140,9 +140,9 @@ All standards must follow this RAG-optimized template structure for consistency 
 - ❌ [Anti-pattern 3]
 
 **When to Query This Standard:**
-- [Scenario 1] → `search_standards("[query phrase 1]")`
-- [Scenario 2] → `search_standards("[query phrase 2]")`
-- [Scenario 3] → `search_standards("[query phrase 3]")`
+- [Scenario 1] → `pos_search_project(content_type="standards", query="[query phrase 1]")`
+- [Scenario 2] → `pos_search_project(content_type="standards", query="[query phrase 2]")`
+- [Scenario 3] → `pos_search_project(content_type="standards", query="[query phrase 3]")`
 
 ---
 
@@ -272,9 +272,9 @@ When [doing the thing this standard covers]:
 
 | Situation | Example Query |
 |-----------|---------------|
-| **[Scenario 1]** | `search_standards("[natural query 1]")` |
-| **[Scenario 2]** | `search_standards("[natural query 2]")` |
-| **[Scenario 3]** | `search_standards("[natural query 3]")` |
+| **[Scenario 1]** | `pos_search_project(content_type="standards", query="[natural query 1]")` |
+| **[Scenario 2]** | `pos_search_project(content_type="standards", query="[natural query 2]")` |
+| **[Scenario 3]** | `pos_search_project(content_type="standards", query="[natural query 3]")` |
 
 ---
 
@@ -282,17 +282,17 @@ When [doing the thing this standard covers]:
 
 **Query workflow for [topic] mastery:**
 
-1. **Start with [this standard]** → `search_standards("[topic]")` (this document)
-2. **Learn [related topic 1]** → `search_standards("[related topic 1]")` → `standards/[path]/[file].md`
-3. **Understand [related topic 2]** → `search_standards("[related topic 2]")` → `standards/[path]/[file].md`
+1. **Start with [this standard]** → `pos_search_project(content_type="standards", query="[topic]")` (this document)
+2. **Learn [related topic 1]** → `pos_search_project(content_type="standards", query="[related topic 1]")` → `standards/[path]/[file].md`
+3. **Understand [related topic 2]** → `pos_search_project(content_type="standards", query="[related topic 2]")` → `standards/[path]/[file].md`
 
 **By Category:**
 
 **[Category 1]:**
-- `standards/[path]/[file].md` - [Description] → `search_standards("[query]")`
+- `standards/[path]/[file].md` - [Description] → `pos_search_project(content_type="standards", query="[query]")`
 
 **[Category 2]:**
-- `standards/[path]/[file].md` - [Description] → `search_standards("[query]")`
+- `standards/[path]/[file].md` - [Description] → `pos_search_project(content_type="standards", query="[query]")`
 
 ---
 
@@ -302,7 +302,7 @@ When [doing the thing this standard covers]:
 
 **Query anytime:**
 ```python
-search_standards("[natural language query]")
+pos_search_project(content_type="standards", query="[natural language query]")
 ```
 
 ---
@@ -335,9 +335,9 @@ Complete workflow from identifying a gap through validation and publication.
 **Before creating**, query to see if standard already exists:
 
 ```python
-search_standards("[topic] standards")
-search_standards("how to [do the thing]")
-search_standards("[related concept] guidelines")
+pos_search_project(content_type="standards", query="[topic] standards")
+pos_search_project(content_type="standards", query="how to [do the thing]")
+pos_search_project(content_type="standards", query="[related concept] guidelines")
 ```
 
 **If exists**: Update existing standard, don't create duplicate.
@@ -365,17 +365,17 @@ This step ensures your standard has practical demonstrations that agents can lea
 
 **Query for content optimization (how to write):**
 ```python
-search_standards("how to make content discoverable for agents")
-search_standards("RAG content authoring keywords query hooks")
-search_standards("avoid generic terms keyword pollution")
-search_standards("front-load critical information TL;DR")
+pos_search_project(content_type="standards", query="how to make content discoverable for agents")
+pos_search_project(content_type="standards", query="RAG content authoring keywords query hooks")
+pos_search_project(content_type="standards", query="avoid generic terms keyword pollution")
+pos_search_project(content_type="standards", query="front-load critical information TL;DR")
 ```
 
 **Query for query patterns (how agents search):**
 ```python
-search_standards("query construction content-specific phrases")
-search_standards("semantic search patterns effectiveness")
-search_standards("avoid generic questions use unique values")
+pos_search_project(content_type="standards", query="query construction content-specific phrases")
+pos_search_project(content_type="standards", query="semantic search patterns effectiveness")
+pos_search_project(content_type="standards", query="avoid generic questions use unique values")
 ```
 
 **Why query BOTH perspectives:**
@@ -415,19 +415,19 @@ search_standards("avoid generic questions use unique values")
 **Should return your standard (top 3 results):**
 ```python
 # Test 5+ natural queries agents would use for YOUR content
-search_standards("[your content-specific phrase 1]")
-search_standards("[your content-specific phrase 2]")
-search_standards("[natural question from your query hooks]")
-search_standards("[domain-specific term unique to your topic]")
-search_standards("[problem your standard solves]")
+pos_search_project(content_type="standards", query="[your content-specific phrase 1]")
+pos_search_project(content_type="standards", query="[your content-specific phrase 2]")
+pos_search_project(content_type="standards", query="[natural question from your query hooks]")
+pos_search_project(content_type="standards", query="[domain-specific term unique to your topic]")
+pos_search_project(content_type="standards", query="[problem your standard solves]")
 ```
 
 **Should NOT return your standard:**
 ```python
 # Test that generic terms don't cause pollution
-search_standards("workflow")  # Should return workflow standards, not yours
-search_standards("testing")   # Should return test standards, not yours
-search_standards("process")   # Should return process standards, not yours
+pos_search_project(content_type="standards", query="workflow")  # Should return workflow standards, not yours
+pos_search_project(content_type="standards", query="testing")   # Should return test standards, not yours
+pos_search_project(content_type="standards", query="process")   # Should return process standards, not yours
 ```
 
 **If your standard returns for generic queries it shouldn't:**
@@ -442,19 +442,19 @@ search_standards("process")   # Should return process standards, not yours
 # Test multi-angle discovery (thorough, systematic approach)
 
 # Angle 1: Direct "how to" query
-search_standards("how to [do what standard covers]")
+pos_search_project(content_type="standards", query="how to [do what standard covers]")
 
 # Angle 2: "What is" conceptual query  
-search_standards("what is [main concept]")
+pos_search_project(content_type="standards", query="what is [main concept]")
 
 # Angle 3: Best practices query
-search_standards("[topic] best practices")
+pos_search_project(content_type="standards", query="[topic] best practices")
 
 # Angle 4: Problem-solving query
-search_standards("when should I [use this]")
+pos_search_project(content_type="standards", query="when should I [use this]")
 
 # Angle 5: Anti-pattern query
-search_standards("[topic] anti-patterns")
+pos_search_project(content_type="standards", query="[topic] anti-patterns")
 
 # Should return your new standard in top 3 results for ALL angles
 ```
@@ -508,7 +508,7 @@ File watcher will detect and reindex within 30 seconds.
 
 Verify it's indexed:
 ```python
-search_standards("[your standard topic]")
+pos_search_project(content_type="standards", query="[your standard topic]")
 ```
 
 ---
@@ -583,7 +583,7 @@ Code must:
 
 **Always query first**:
 ```python
-search_standards("[topic you're covering]")
+pos_search_project(content_type="standards", query="[topic you're covering]")
 ```
 
 ---
@@ -651,7 +651,7 @@ search_standards("[topic you're covering]")
 - [ ] **"Questions This Answers" section** - 10+ natural language questions
 - [ ] **Query-oriented headers** - "How to X?" not "Usage", "What is Y?" not "Overview"
 - [ ] **"When to Query This Standard" table** - Scenarios with example queries
-- [ ] **Cross-references with queries** - `search_standards("[topic]")` not just file links
+- [ ] **Cross-references with queries** - `pos_search_project(content_type="standards", query="[topic]")` not just file links
 - [ ] **Keywords for search line** - Explicit list of search terms
 - [ ] **Multi-angle tested** - Verified discoverable from 5+ different query phrasings
 
@@ -660,11 +660,11 @@ search_standards("[topic you're covering]")
 **Test with:**
 ```python
 # Test 5+ different angles
-search_standards("how to [primary approach]")
-search_standards("what is [main concept]")
-search_standards("[action] best practices")
-search_standards("when should I [scenario]")
-search_standards("[topic] anti-patterns")
+pos_search_project(content_type="standards", query="how to [primary approach]")
+pos_search_project(content_type="standards", query="what is [main concept]")
+pos_search_project(content_type="standards", query="[action] best practices")
+pos_search_project(content_type="standards", query="when should I [scenario]")
+pos_search_project(content_type="standards", query="[topic] anti-patterns")
 ```
 
 **If content doesn't return in top 3 for ALL test queries → Not properly optimized**
@@ -700,7 +700,7 @@ Update when:
 
 1. **Test current discoverability**:
    ```python
-   search_standards("[topic]")
+   pos_search_project(content_type="standards", query="[topic]")
    ```
 
 2. **Make updates**:
@@ -725,7 +725,7 @@ If standard is obsolete:
   
   This standard is superseded by [new-standard.md].
   
-  Use search_standards("[new topic]") for current guidance.
+  Use pos_search_project(content_type="standards", query="[new topic]") for current guidance.
   ```
 - **Keep for 3+ months** to allow transition
 - **Then archive** to `deprecated/` directory
@@ -760,7 +760,7 @@ Track effectiveness:
 → Yes! prAxIs OS is dogfooded. Experience a need → Create standard → Test it → Ship it.
 
 **What if my standard conflicts with an existing standard?**
-→ Query to find existing: `search_standards("[topic]")`. Update existing or document why new one is needed.
+→ Query to find existing: `pos_search_project(content_type="standards", query="[topic]")`. Update existing or document why new one is needed.
 
 **How do I test if my standard is being followed?**
 → Review code/work for compliance. Add linter rules or automated checks if possible.
@@ -774,14 +774,14 @@ Track effectiveness:
 
 | Situation | Example Query |
 |-----------|---------------|
-| **Creating standard** | `search_standards("how to create standard")` |
-| **Standard structure** | `search_standards("standard structure template")` |
-| **Quality criteria** | `search_standards("what makes good standard")` |
-| **When to create** | `search_standards("when to write standard")` |
-| **Standards vs specs** | `search_standards("standard vs spec")` |
-| **Maintenance** | `search_standards("maintain standards")` |
-| **Anti-patterns** | `search_standards("standards creation mistakes")` |
-| **Examples** | `search_standards("good standard examples")` |
+| **Creating standard** | `pos_search_project(content_type="standards", query="how to create standard")` |
+| **Standard structure** | `pos_search_project(content_type="standards", query="standard structure template")` |
+| **Quality criteria** | `pos_search_project(content_type="standards", query="what makes good standard")` |
+| **When to create** | `pos_search_project(content_type="standards", query="when to write standard")` |
+| **Standards vs specs** | `pos_search_project(content_type="standards", query="standard vs spec")` |
+| **Maintenance** | `pos_search_project(content_type="standards", query="maintain standards")` |
+| **Anti-patterns** | `pos_search_project(content_type="standards", query="standards creation mistakes")` |
+| **Examples** | `pos_search_project(content_type="standards", query="good standard examples")` |
 
 ---
 
@@ -789,26 +789,26 @@ Track effectiveness:
 
 **Query workflow for creating standards:**
 
-1. **Start with creation process** → `search_standards("how to create standard")` (this document)
-2. **Learn RAG optimization** → `search_standards("RAG content authoring")` → `standards/documentation/rag-content-authoring.md`
-3. **Understand specs** → `search_standards("creating specs")` → `usage/creating-specs.md`
-4. **Learn command language** → `search_standards("command language")` → `standards/meta-workflow/command-language.md`
+1. **Start with creation process** → `pos_search_project(content_type="standards", query="how to create standard")` (this document)
+2. **Learn RAG optimization** → `pos_search_project(content_type="standards", query="RAG content authoring")` → `standards/documentation/rag-content-authoring.md`
+3. **Understand specs** → `pos_search_project(content_type="standards", query="creating specs")` → `usage/creating-specs.md`
+4. **Learn command language** → `pos_search_project(content_type="standards", query="command language")` → `standards/meta-workflow/command-language.md`
 
 **By Category:**
 
 **Documentation:**
-- `standards/documentation/rag-content-authoring.md` - RAG optimization → `search_standards("RAG content authoring")`
-- `standards/documentation/readme-templates.md` - README patterns → `search_standards("README templates")`
-- `standards/documentation/code-comments.md` - Comment guidelines → `search_standards("code comments")`
+- `standards/documentation/rag-content-authoring.md` - RAG optimization → `pos_search_project(content_type="standards", query="RAG content authoring")`
+- `standards/documentation/readme-templates.md` - README patterns → `pos_search_project(content_type="standards", query="README templates")`
+- `standards/documentation/code-comments.md` - Comment guidelines → `pos_search_project(content_type="standards", query="code comments")`
 
 **Meta-Framework:**
-- `standards/meta-workflow/command-language.md` - Command symbols → `search_standards("command language")`
-- `standards/meta-workflow/three-tier-architecture.md` - Content organization → `search_standards("three tier architecture")`
-- `standards/meta-workflow/validation-gates.md` - Quality gates → `search_standards("validation gates")`
+- `standards/meta-workflow/command-language.md` - Command symbols → `pos_search_project(content_type="standards", query="command language")`
+- `standards/meta-workflow/three-tier-architecture.md` - Content organization → `pos_search_project(content_type="standards", query="three tier architecture")`
+- `standards/meta-workflow/validation-gates.md` - Quality gates → `pos_search_project(content_type="standards", query="validation gates")`
 
 **Usage:**
-- `usage/creating-specs.md` - Spec creation guide → `search_standards("creating specs")`
-- `usage/operating-model.md` - prAxIs OS principles → `search_standards("operating model")`
+- `usage/creating-specs.md` - Spec creation guide → `pos_search_project(content_type="standards", query="creating specs")`
+- `usage/operating-model.md` - prAxIs OS principles → `pos_search_project(content_type="standards", query="operating model")`
 
 ---
 

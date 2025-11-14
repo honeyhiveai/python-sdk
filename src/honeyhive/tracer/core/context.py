@@ -205,15 +205,8 @@ class TracerContextMixin(TracerContextInterface):
             return
 
         try:
-            # Handle user_properties for backwards compatibility (merge into metadata)
-            if user_properties:
-                if metadata is None:
-                    metadata = {}
-                # Merge user_properties into metadata with user_properties prefix
-                for key, value in user_properties.items():
-                    metadata[f"user_properties.{key}"] = value
-
             # Build session update parameters dynamically
+            # user_properties should be passed directly to API, not merged into metadata
             update_params = self._build_session_update_params_dynamically(
                 inputs=inputs,
                 outputs=outputs,
@@ -221,6 +214,7 @@ class TracerContextMixin(TracerContextInterface):
                 config=config,
                 feedback=feedback,
                 metrics=metrics,
+                user_properties=user_properties,
                 **kwargs,
             )
 
@@ -351,6 +345,7 @@ class TracerContextMixin(TracerContextInterface):
         config: Optional[Dict[str, Any]] = None,
         feedback: Optional[Dict[str, Any]] = None,
         metrics: Optional[Dict[str, Any]] = None,
+        user_properties: Optional[Dict[str, Any]] = None,
         **kwargs: Any,
     ) -> Dict[str, Any]:
         """Dynamically build session update parameters."""
@@ -364,6 +359,7 @@ class TracerContextMixin(TracerContextInterface):
             "config": config,
             "feedback": feedback,
             "metrics": metrics,
+            "user_properties": user_properties,
         }
 
         for param_name, param_value in param_mapping.items():
@@ -381,6 +377,14 @@ class TracerContextMixin(TracerContextInterface):
         self,
         attributes: Optional[Dict[str, Any]] = None,
         metadata: Optional[Dict[str, Any]] = None,
+        metrics: Optional[Dict[str, Any]] = None,
+        feedback: Optional[Dict[str, Any]] = None,
+        inputs: Optional[Dict[str, Any]] = None,
+        outputs: Optional[Dict[str, Any]] = None,
+        config: Optional[Dict[str, Any]] = None,
+        user_properties: Optional[Dict[str, Any]] = None,
+        error: Optional[str] = None,
+        event_id: Optional[str] = None,
         **kwargs: Any,
     ) -> bool:
         """Enrich current span with dynamic attribute management.
@@ -397,7 +401,17 @@ class TracerContextMixin(TracerContextInterface):
             attributes: Span attributes to add directly (dict of key-value pairs)
             metadata: Metadata to add (automatically prefixed with
                 'honeyhive_metadata.')
-            **kwargs: Additional dynamic attributes (e.g., metrics, config)
+            metrics: Metrics to add (automatically prefixed with 'honeyhive_metrics.')
+            feedback: Feedback to add (automatically prefixed with
+                'honeyhive_feedback.')
+            inputs: Inputs to add (automatically prefixed with 'honeyhive_inputs.')
+            outputs: Outputs to add (automatically prefixed with 'honeyhive_outputs.')
+            config: Config to add (automatically prefixed with 'honeyhive_config.')
+            user_properties: User properties to add (automatically prefixed with
+                'honeyhive_user_properties.' for spans)
+            error: Error message (stored as 'honeyhive_error')
+            event_id: Event ID (stored as 'honeyhive_event_id')
+            **kwargs: Additional dynamic attributes (routed to metadata namespace)
 
         Returns:
             True if enrichment succeeded, False otherwise
@@ -420,17 +434,12 @@ class TracerContextMixin(TracerContextInterface):
 
                     return result
 
-            Multiple enrichments in same span::
+            Enrichment with user_properties and metrics::
 
-                with tracer.start_span("complex-operation"):
-                    # Initial enrichment
-                    tracer.enrich_span(metadata={"stage": "validation"})
-
-                    # Additional enrichment after processing
-                    tracer.enrich_span(
-                        metadata={"validated": True},
-                        metrics={"items_processed": 100}
-                    )
+                tracer.enrich_span(
+                    user_properties={"user_id": "user-123", "plan": "premium"},
+                    metrics={"score": 0.95, "latency_ms": 150}
+                )
 
         Note:
             For backward compatibility, the free function ``enrich_span()``
@@ -452,22 +461,40 @@ class TracerContextMixin(TracerContextInterface):
                 safe_log(self, "debug", "No active recording span for enrichment")
                 return False
 
-            # Build enrichment attributes dynamically
-            enrichment_attrs = self._build_enrichment_attributes_dynamically(
-                attributes=attributes, metadata=metadata, **kwargs
+            # Use the enrichment core logic which handles reserved parameters correctly
+            # Import here to avoid circular dependency
+            from ..instrumentation.enrichment import (  # pylint: disable=import-outside-toplevel
+                enrich_span_core,
             )
 
-            # Apply attributes to span
-            self._apply_attributes_to_span_dynamically(current_span, enrichment_attrs)
-
-            safe_log(
-                self,
-                "debug",
-                "Span enriched successfully",
-                honeyhive_data={"attribute_count": len(enrichment_attrs)},
+            result = enrich_span_core(
+                attributes=attributes,
+                metadata=metadata,
+                metrics=metrics,
+                feedback=feedback,
+                inputs=inputs,
+                outputs=outputs,
+                config=config,
+                error=error,
+                event_id=event_id,
+                tracer_instance=self,
+                verbose=False,
+                # Handle user_properties specially - for spans, it goes to a namespace
+                user_properties=user_properties,
+                **kwargs,
             )
 
-            return True
+            if result.get("success"):
+                safe_log(
+                    self,
+                    "debug",
+                    "Span enriched successfully",
+                    honeyhive_data={
+                        "attribute_count": result.get("attribute_count", 0)
+                    },
+                )
+
+            return bool(result.get("success", False))
 
         except Exception as e:
             safe_log(

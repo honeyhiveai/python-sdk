@@ -631,16 +631,16 @@ Use this checklist to verify security requirements are met before deploying code
 
 | Situation | Example Query |
 |-----------|---------------|
-| **User input handling** | `search_standards("input validation")` |
-| **SQL queries** | `search_standards("prevent SQL injection")` |
-| **Password storage** | `search_standards("hash passwords")` |
-| **Authentication** | `search_standards("secure authentication")` |
-| **Authorization** | `search_standards("authorization patterns")` |
-| **Sensitive data** | `search_standards("encryption")` |
-| **XSS prevention** | `search_standards("prevent XSS")` |
-| **API security** | `search_standards("secure API")` |
-| **Security vulnerabilities** | `search_standards("OWASP Top 10")` |
-| **Security testing** | `search_standards("security testing")` |
+| **User input handling** | `pos_search_project(content_type="standards", query="input validation")` |
+| **SQL queries** | `pos_search_project(content_type="standards", query="prevent SQL injection")` |
+| **Password storage** | `pos_search_project(content_type="standards", query="hash passwords")` |
+| **Authentication** | `pos_search_project(content_type="standards", query="secure authentication")` |
+| **Authorization** | `pos_search_project(content_type="standards", query="authorization patterns")` |
+| **Sensitive data** | `pos_search_project(content_type="standards", query="encryption")` |
+| **XSS prevention** | `pos_search_project(content_type="standards", query="prevent XSS")` |
+| **API security** | `pos_search_project(content_type="standards", query="secure API")` |
+| **Security vulnerabilities** | `pos_search_project(content_type="standards", query="OWASP Top 10")` |
+| **Security testing** | `pos_search_project(content_type="standards", query="security testing")` |
 
 ---
 
@@ -648,29 +648,29 @@ Use this checklist to verify security requirements are met before deploying code
 
 **Query workflow for secure application development:**
 
-1. **Start here** → `search_standards("security patterns")` (this document)
-2. **Then validate inputs** → `search_standards("input validation")`
-3. **Then test** → `search_standards("security testing")` (this document)
-4. **Then review** → `search_standards("production code checklist")` → `standards/ai-safety/production-code-checklist.md`
+1. **Start here** → `pos_search_project(content_type="standards", query="security patterns")` (this document)
+2. **Then validate inputs** → `pos_search_project(content_type="standards", query="input validation")`
+3. **Then test** → `pos_search_project(content_type="standards", query="security testing")` (this document)
+4. **Then review** → `pos_search_project(content_type="standards", query="production code checklist")` → `standards/ai-safety/production-code-checklist.md`
 
 **By Category:**
 
 **Testing:**
-- `standards/testing/integration-testing.md` - Testing authentication and authorization → `search_standards("integration testing")`
-- `standards/testing/test-pyramid.md` - Security test coverage ratios → `search_standards("test pyramid")`
+- `standards/testing/integration-testing.md` - Testing authentication and authorization → `pos_search_project(content_type="standards", query="integration testing")`
+- `standards/testing/test-pyramid.md` - Security test coverage ratios → `pos_search_project(content_type="standards", query="test pyramid")`
 
 **Architecture:**
-- `standards/architecture/api-design-principles.md` - Secure API design → `search_standards("API design")`
-- `standards/architecture/dependency-injection.md` - Injecting security services → `search_standards("dependency injection")`
+- `standards/architecture/api-design-principles.md` - Secure API design → `pos_search_project(content_type="standards", query="API design")`
+- `standards/architecture/dependency-injection.md` - Injecting security services → `pos_search_project(content_type="standards", query="dependency injection")`
 
 **Database:**
-- `standards/database/database-patterns.md` - Preventing SQL injection → `search_standards("database patterns")`
+- `standards/database/database-patterns.md` - Preventing SQL injection → `pos_search_project(content_type="standards", query="database patterns")`
 
 **AI Safety:**
-- `standards/ai-safety/production-code-checklist.md` - Production security checklist → `search_standards("production code checklist")`
+- `standards/ai-safety/production-code-checklist.md` - Production security checklist → `pos_search_project(content_type="standards", query="production code checklist")`
 
 **Documentation:**
-- `standards/documentation/api-documentation.md` - Documenting security requirements → `search_standards("API documentation")`
+- `standards/documentation/api-documentation.md` - Documenting security requirements → `pos_search_project(content_type="standards", query="API documentation")`
 
 ---
 

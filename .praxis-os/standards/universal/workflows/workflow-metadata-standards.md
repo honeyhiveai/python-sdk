@@ -334,9 +334,9 @@ Metadata should be written to match common queries:
 
 ```python
 # Queries that SHOULD find your workflow:
-await search_standards("How do I generate tests for Python?")
-await search_standards("What workflows create unit tests?")
-await search_standards("Automated test generation with validation")
+await pos_search_project(content_type="standards", query="How do I generate tests for Python?")
+await pos_search_project(content_type="standards", query="What workflows create unit tests?")
+await pos_search_project(content_type="standards", query="Automated test generation with validation")
 
 # If these don't return your workflow, improve keywords in description and purposes
 ```
@@ -525,14 +525,14 @@ def validate_workflow_metadata(metadata_path: Path) -> bool:
 
 | Situation | Example Query |
 |-----------|---------------|
-| **Creating workflow** | `search_standards("workflow metadata")` |
-| **Required fields** | `search_standards("workflow metadata schema")` |
-| **File location** | `search_standards("where workflow metadata")` |
-| **Making discoverable** | `search_standards("workflow discovery")` |
-| **Quality standards** | `search_standards("workflow metadata quality")` |
-| **Validation** | `search_standards("validate workflow metadata")` |
-| **Naming conventions** | `search_standards("workflow naming")` |
-| **Searchability** | `search_standards("searchable workflow descriptions")` |
+| **Creating workflow** | `pos_search_project(content_type="standards", query="workflow metadata")` |
+| **Required fields** | `pos_search_project(content_type="standards", query="workflow metadata schema")` |
+| **File location** | `pos_search_project(content_type="standards", query="where workflow metadata")` |
+| **Making discoverable** | `pos_search_project(content_type="standards", query="workflow discovery")` |
+| **Quality standards** | `pos_search_project(content_type="standards", query="workflow metadata quality")` |
+| **Validation** | `pos_search_project(content_type="standards", query="validate workflow metadata")` |
+| **Naming conventions** | `pos_search_project(content_type="standards", query="workflow naming")` |
+| **Searchability** | `pos_search_project(content_type="standards", query="searchable workflow descriptions")` |
 
 ---
 
@@ -540,21 +540,21 @@ def validate_workflow_metadata(metadata_path: Path) -> bool:
 
 **Query workflow for creating workflow metadata:**
 
-1. **Start with metadata standards** → `search_standards("workflow metadata")` (this document)
-2. **Understand workflow system** → `search_standards("workflow system overview")` → `standards/workflows/workflow-system-overview.md`
-3. **Learn RAG indexing** → `search_standards("MCP RAG configuration")` → `standards/workflows/mcp-rag-configuration.md`
-4. **Learn construction standards** → `search_standards("workflow construction")` → `standards/workflows/workflow-construction-standards.md`
+1. **Start with metadata standards** → `pos_search_project(content_type="standards", query="workflow metadata")` (this document)
+2. **Understand workflow system** → `pos_search_project(content_type="standards", query="workflow system overview")` → `standards/workflows/workflow-system-overview.md`
+3. **Learn RAG indexing** → `pos_search_project(content_type="standards", query="MCP RAG configuration")` → `standards/workflows/mcp-rag-configuration.md`
+4. **Learn construction standards** → `pos_search_project(content_type="standards", query="workflow construction")` → `standards/workflows/workflow-construction-standards.md`
 
 **By Category:**
 
 **Workflows:**
-- `standards/workflows/workflow-system-overview.md` - Complete workflow system → `search_standards("workflow system overview")`
-- `standards/workflows/workflow-construction-standards.md` - Building workflows → `search_standards("workflow construction")`
-- `standards/workflows/mcp-rag-configuration.md` - RAG indexing → `search_standards("MCP RAG configuration")`
+- `standards/workflows/workflow-system-overview.md` - Complete workflow system → `pos_search_project(content_type="standards", query="workflow system overview")`
+- `standards/workflows/workflow-construction-standards.md` - Building workflows → `pos_search_project(content_type="standards", query="workflow construction")`
+- `standards/workflows/mcp-rag-configuration.md` - RAG indexing → `pos_search_project(content_type="standards", query="MCP RAG configuration")`
 
 **Meta-Framework:**
-- `standards/meta-workflow/validation-gates.md` - Checkpoint criteria → `search_standards("validation gates")`
-- `standards/meta-workflow/command-language.md` - Command symbols → `search_standards("command language")`
+- `standards/meta-workflow/validation-gates.md` - Checkpoint criteria → `pos_search_project(content_type="standards", query="validation gates")`
+- `standards/meta-workflow/command-language.md` - Command symbols → `pos_search_project(content_type="standards", query="command language")`
 
 ---
 

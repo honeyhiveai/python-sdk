@@ -246,6 +246,7 @@ Use explicit namespace parameters for structured data organization:
    enrich_span(
        metadata={"user_id": "user_12345", "session": "abc123"},
        metrics={"latency_ms": 150, "tokens": 50, "score": 0.95},
+       user_properties={"user_id": "user_12345", "plan": "premium"},
        feedback={"rating": 5, "helpful": True},
        inputs={"query": "What is AI?"},
        outputs={"answer": "AI is..."},
@@ -262,6 +263,7 @@ Use explicit namespace parameters for structured data organization:
 
 - ``metadata``: Custom business context (user IDs, features, etc.)
 - ``metrics``: Numeric measurements (scores, latencies, counts)
+- ``user_properties``: User-specific properties (user_id, plan, tier, etc.) - stored in dedicated namespace
 - ``feedback``: User or system feedback (ratings, flags)
 - ``inputs``: Input data to the operation
 - ``outputs``: Output data from the operation  
@@ -273,6 +275,7 @@ Each namespace (except ``error`` and ``event_id``) creates nested attributes in 
 
 - ``metadata`` → ``honeyhive_metadata.*``
 - ``metrics`` → ``honeyhive_metrics.*``
+- ``user_properties`` → ``honeyhive_user_properties.*``
 - ``feedback`` → ``honeyhive_feedback.*``
 - ``inputs`` → ``honeyhive_inputs.*``
 - ``outputs`` → ``honeyhive_outputs.*``
@@ -368,11 +371,17 @@ Track which users are making which calls:
 
 
    def generate_response(user_id: str, message: str):
-       enrich_span({
-           "user_id": user_id,
-           "user_type": get_user_type(user_id),  # e.g., "free", "pro", "enterprise"
-           "session_id": get_current_session()
-       })
+       # Use user_properties for user-specific attributes
+       enrich_span(
+           user_properties={
+               "user_id": user_id,
+               "user_type": get_user_type(user_id),  # e.g., "free", "pro", "enterprise"
+           },
+           metadata={
+               "session_id": get_current_session(),
+               "message_length": len(message)
+           }
+       )
 
        
 
@@ -454,12 +463,20 @@ Track business-relevant information:
 
 
    def generate_recommendation(product_id: str, user_id: str):
-       enrich_span({
-           "product_id": product_id,
-           "recommendation_type": "ai_powered",
-           "user_segment": get_user_segment(user_id),
-           "ab_test_variant": "variant_b"
-       })
+       enrich_span(
+           user_properties={
+               "user_id": user_id,
+               "user_segment": get_user_segment(user_id)
+           },
+           metadata={
+               "product_id": product_id,
+               "recommendation_type": "ai_powered",
+               "ab_test_variant": "variant_b"
+           },
+           metrics={
+               "recommendation_score": 0.92
+           }
+       )
 
        
 

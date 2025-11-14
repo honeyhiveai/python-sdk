@@ -2,7 +2,7 @@
 
 **Keywords for search**: query construction, search_standards patterns, how to query effectively, semantic search best practices, RAG query optimization, finding standards content, query anti-patterns, effective queries, query strategy, search patterns
 
-**This standard defines how AI assistants should construct effective `search_standards()` queries to discover prAxIs OS content reliably.**
+**This standard defines how AI assistants should construct effective `pos_search_project()` queries to discover prAxIs OS content reliably.**
 
 ---
 
@@ -12,8 +12,8 @@
 
 **Winning Pattern:**
 ```python
-✅ search_standards("specific phrase from target section unique values")
-❌ search_standards("what is concept name")
+✅ pos_search_project(content_type="standards", query="specific phrase from target section unique values")
+❌ pos_search_project(content_type="standards", query="what is concept name")
 ```
 
 **Why:**
@@ -31,7 +31,7 @@
 
 ## ❓ Questions This Answers
 
-1. "How do I construct effective search_standards queries?"
+1. "How do I construct effective pos_search queries?"
 2. "Why aren't my queries finding the right content?"
 3. "What makes a query generic vs specific?"
 4. "Should I use questions or keywords in queries?"
@@ -54,13 +54,13 @@
 **✅ Good Pattern:**
 ```python
 # Use keywords from ROWS, not column headers
-search_standards("widget sprocket gadget doohickey thingamajig")
+pos_search_project(content_type="standards", query="widget sprocket gadget doohickey thingamajig")
 ```
 
 **❌ Bad Pattern:**
 ```python
 # Generic table structure terms
-search_standards("table rows columns")
+pos_search_project(content_type="standards", query="table rows columns")
 ```
 
 **Why Good Works:**
@@ -84,13 +84,13 @@ search_standards("table rows columns")
 **✅ Good Pattern:**
 ```python
 # Use verbs + nouns from actual steps
-search_standards("initialize connection validate schema transform payload")
+pos_search_project(content_type="standards", query="initialize connection validate schema transform payload")
 ```
 
 **❌ Bad Pattern:**
 ```python
 # Generic process question
-search_standards("how to process data")
+pos_search_project(content_type="standards", query="how to process data")
 ```
 
 **Why Good Works:**
@@ -113,13 +113,13 @@ search_standards("how to process data")
 **✅ Good Pattern:**
 ```python
 # Use items from list, not list structure
-search_standards("reviewing output approving changes fixing edge cases")
+pos_search_project(content_type="standards", query="reviewing output approving changes fixing edge cases")
 ```
 
 **❌ Bad Pattern:**
 ```python
 # Structural keywords
-search_standards("INCLUDES EXCLUDES list items")
+pos_search_project(content_type="standards", query="INCLUDES EXCLUDES list items")
 ```
 
 **Why Good Works:**
@@ -142,13 +142,13 @@ Activities included:
 **✅ Good Pattern:**
 ```python
 # Use variables + operation terms
-search_standards("P Q R variables multiply divide result")
+pos_search_project(content_type="standards", query="P Q R variables multiply divide result")
 ```
 
 **❌ Bad Pattern:**
 ```python
 # Generic math question
-search_standards("calculation formula")
+pos_search_project(content_type="standards", query="calculation formula")
 ```
 
 **Why Good Works:**
@@ -173,13 +173,13 @@ Formula: R = P × Q ÷ Factor
 **✅ Good Pattern:**
 ```python
 # Use exact numbers/percentages from target
-search_standards("start conservative 2.5x factor 12-15% threshold")
+pos_search_project(content_type="standards", query="start conservative 2.5x factor 12-15% threshold")
 ```
 
 **❌ Bad Pattern:**
 ```python
 # Generic concept
-search_standards("calibration guidelines recommendations")
+pos_search_project(content_type="standards", query="calibration guidelines recommendations")
 ```
 
 **Why Good Works:**
@@ -202,13 +202,13 @@ Start conservative:
 **✅ Good Pattern:**
 ```python
 # Use template structure keywords + domain
-search_standards("template format example Baseline Enhanced Comparison")
+pos_search_project(content_type="standards", query="template format example Baseline Enhanced Comparison")
 ```
 
 **❌ Bad Pattern:**
 ```python
 # Too generic
-search_standards("example template")
+pos_search_project(content_type="standards", query="example template")
 ```
 
 **Why Good Works:**
@@ -233,9 +233,9 @@ search_standards("example template")
 
 **❌ Fails:**
 ```python
-search_standards("what is dependency injection")
-search_standards("how to handle errors")
-search_standards("best practices for testing")
+pos_search_project(content_type="standards", query="what is dependency injection")
+pos_search_project(content_type="standards", query="how to handle errors")
+pos_search_project(content_type="standards", query="best practices for testing")
 ```
 
 **Why It Fails:**
@@ -245,9 +245,9 @@ search_standards("best practices for testing")
 
 **✅ Fix:**
 ```python
-search_standards("constructor injection setter injection field injection")
-search_standards("exception wrapping context preservation stack trace")
-search_standards("arrange act assert given when then")
+pos_search_project(content_type="standards", query="constructor injection setter injection field injection")
+pos_search_project(content_type="standards", query="exception wrapping context preservation stack trace")
+pos_search_project(content_type="standards", query="arrange act assert given when then")
 ```
 
 ---
@@ -256,9 +256,9 @@ search_standards("arrange act assert given when then")
 
 **❌ Fails:**
 ```python
-search_standards("INCLUDES EXCLUDES")
-search_standards("Step 1 Step 2 Step 3")
-search_standards("Section Header Subsection")
+pos_search_project(content_type="standards", query="INCLUDES EXCLUDES")
+pos_search_project(content_type="standards", query="Step 1 Step 2 Step 3")
+pos_search_project(content_type="standards", query="Section Header Subsection")
 ```
 
 **Why It Fails:**
@@ -268,9 +268,9 @@ search_standards("Section Header Subsection")
 
 **✅ Fix:**
 ```python
-search_standards("actual activity phrases from content")
-search_standards("initialize validate transform send")
-search_standards("specific topic domain terminology")
+pos_search_project(content_type="standards", query="actual activity phrases from content")
+pos_search_project(content_type="standards", query="initialize validate transform send")
+pos_search_project(content_type="standards", query="specific topic domain terminology")
 ```
 
 ---
@@ -279,9 +279,9 @@ search_standards("specific topic domain terminology")
 
 **❌ Fails:**
 ```python
-search_standards("testing")
-search_standards("database")
-search_standards("performance")
+pos_search_project(content_type="standards", query="testing")
+pos_search_project(content_type="standards", query="database")
+pos_search_project(content_type="standards", query="performance")
 ```
 
 **Why It Fails:**
@@ -291,9 +291,9 @@ search_standards("performance")
 
 **✅ Fix:**
 ```python
-search_standards("mock patch stub fake test double")
-search_standards("transaction isolation rollback deadlock")
-search_standards("memory cpu latency throughput bottleneck")
+pos_search_project(content_type="standards", query="mock patch stub fake test double")
+pos_search_project(content_type="standards", query="transaction isolation rollback deadlock")
+pos_search_project(content_type="standards", query="memory cpu latency throughput bottleneck")
 ```
 
 ---
@@ -302,9 +302,9 @@ search_standards("memory cpu latency throughput bottleneck")
 
 **❌ Fails:**
 ```python
-search_standards("explain concept name")
-search_standards("definition of term")
-search_standards("what does X mean")
+pos_search_project(content_type="standards", query="explain concept name")
+pos_search_project(content_type="standards", query="definition of term")
+pos_search_project(content_type="standards", query="what does X mean")
 ```
 
 **Why It Fails:**
@@ -314,9 +314,9 @@ search_standards("what does X mean")
 
 **✅ Fix:**
 ```python
-search_standards("definition terminology example usage pattern")
-search_standards("key phrase from definition unique to concept")
-search_standards("symptoms causes solutions prevention")
+pos_search_project(content_type="standards", query="definition terminology example usage pattern")
+pos_search_project(content_type="standards", query="key phrase from definition unique to concept")
+pos_search_project(content_type="standards", query="symptoms causes solutions prevention")
 ```
 
 ---
@@ -329,13 +329,13 @@ search_standards("symptoms causes solutions prevention")
 
 ```python
 # Target: Finding list of orchestration activities
-search_standards("reviewing output approving changes fixing edge cases")
+pos_search_project(content_type="standards", query="reviewing output approving changes fixing edge cases")
 
 # Target: Finding specific formula calculation
-search_standards("P Q R variables multiply divide result")
+pos_search_project(content_type="standards", query="P Q R variables multiply divide result")
 
 # Target: Finding task type comparison
-search_standards("widget sprocket gadget complexity comparison")
+pos_search_project(content_type="standards", query="widget sprocket gadget complexity comparison")
 ```
 
 **Success Rate:** 95%+ when phrases match target content
@@ -348,13 +348,13 @@ search_standards("widget sprocket gadget complexity comparison")
 
 ```python
 # Target: Calibration section with specific values
-search_standards("start conservative 2.5x factor 12-15% threshold")
+pos_search_project(content_type="standards", query="start conservative 2.5x factor 12-15% threshold")
 
 # Target: Performance benchmarks
-search_standards("latency 50ms 95th percentile 200ms 99th")
+pos_search_project(content_type="standards", query="latency 50ms 95th percentile 200ms 99th")
 
 # Target: Version-specific guidance
-search_standards("Python 3.11 3.12 match case structural pattern")
+pos_search_project(content_type="standards", query="Python 3.11 3.12 match case structural pattern")
 ```
 
 **Success Rate:** 98%+ when values are unique to section
@@ -367,13 +367,13 @@ search_standards("Python 3.11 3.12 match case structural pattern")
 
 ```python
 # Target: Race condition prevention
-search_standards("mutex lock atomic compare-and-swap memory order")
+pos_search_project(content_type="standards", query="mutex lock atomic compare-and-swap memory order")
 
 # Target: Dependency injection patterns
-search_standards("constructor injection container autowire lifecycle")
+pos_search_project(content_type="standards", query="constructor injection container autowire lifecycle")
 
 # Target: Testing strategies
-search_standards("unit integration end-to-end pyramid trophy")
+pos_search_project(content_type="standards", query="unit integration end-to-end pyramid trophy")
 ```
 
 **Success Rate:** 90%+ when keywords have strong semantic relationship
@@ -386,13 +386,13 @@ search_standards("unit integration end-to-end pyramid trophy")
 
 ```python
 # Target: Spec validation process
-search_standards("parse validate check conflicts verify completeness")
+pos_search_project(content_type="standards", query="parse validate check conflicts verify completeness")
 
 # Target: Error handling flow
-search_standards("catch wrap log rethrow context preserve")
+pos_search_project(content_type="standards", query="catch wrap log rethrow context preserve")
 
 # Target: Review checklist
-search_standards("verify test document approve merge deploy")
+pos_search_project(content_type="standards", query="verify test document approve merge deploy")
 ```
 
 **Success Rate:** 92%+ for procedural content
@@ -415,7 +415,7 @@ query = "widget sprocket gadget complexity multiplier"
 ### Step 2: Run and Inspect Results
 
 ```python
-results = search_standards(query, n_results=3)
+results = pos_search_project(query, n_results=3)
 
 # Check:
 # 1. Is target content in top 3 results?
@@ -445,7 +445,7 @@ Once you find pattern that works, document it:
 
 ```markdown
 **Working Query:**
-search_standards("widget sprocket gadget complexity multiplier")
+pos_search_project(content_type="standards", query="widget sprocket gadget complexity multiplier")
 
 **Returns:** Complete task type comparison table
 **Relevance:** 1.08-1.12
@@ -474,7 +474,7 @@ Activities included:
 ### Attempt 1: Structural Keywords ❌
 
 ```python
-search_standards("INCLUDES EXCLUDES list")
+pos_search_project(content_type="standards", query="INCLUDES EXCLUDES list")
 ```
 
 **Result:** Returns generic list structure content, not target
@@ -486,7 +486,7 @@ search_standards("INCLUDES EXCLUDES list")
 ### Attempt 2: Generic Question ❌
 
 ```python
-search_standards("what counts as active time")
+pos_search_project(content_type="standards", query="what counts as active time")
 ```
 
 **Result:** Returns TL;DR and overview, not specific activities
@@ -498,7 +498,7 @@ search_standards("what counts as active time")
 ### Attempt 3: Content-Specific Phrases ✅
 
 ```python
-search_standards("reviewing output approving changes fixing edge cases")
+pos_search_project(content_type="standards", query="reviewing output approving changes fixing edge cases")
 ```
 
 **Result:** Returns exact target section with 6-item activity list
@@ -522,7 +522,7 @@ search_standards("reviewing output approving changes fixing edge cases")
 
 ## 🔧 Query Construction Checklist
 
-Before running `search_standards()`, verify:
+Before running `pos_search_project()`, verify:
 
 **Content Matching:**
 - [ ] Query uses phrases from target content (not headers)
@@ -589,12 +589,12 @@ Then:
 
 | Situation | Example Query |
 |-----------|---------------|
-| **Constructing new query** | `search_standards("query construction patterns best practices")` |
-| **Query not finding content** | `search_standards("why query fails content-specific phrases")` |
-| **Choosing query strategy** | `search_standards("table procedure list formula query patterns")` |
-| **Debugging low relevance** | `search_standards("query anti-patterns structural keywords")` |
-| **Learning from examples** | `search_standards("case study query optimization")` |
-| **Testing query effectiveness** | `search_standards("test query relevance score refine")` |
+| **Constructing new query** | `pos_search_project(content_type="standards", query="query construction patterns best practices")` |
+| **Query not finding content** | `pos_search_project(content_type="standards", query="why query fails content-specific phrases")` |
+| **Choosing query strategy** | `pos_search_project(content_type="standards", query="table procedure list formula query patterns")` |
+| **Debugging low relevance** | `pos_search_project(content_type="standards", query="query anti-patterns structural keywords")` |
+| **Learning from examples** | `pos_search_project(content_type="standards", query="case study query optimization")` |
+| **Testing query effectiveness** | `pos_search_project(content_type="standards", query="test query relevance score refine")` |
 
 ---
 
@@ -619,14 +619,14 @@ Then:
 
 **Related Standards:**
 - `standards/ai-assistant/rag-content-authoring.md` - How to WRITE content for RAG (authoring side)
-- `standards/ai-assistant/AGENT-OS-ORIENTATION.md` - Overall prAxIs OS usage
+- `standards/ai-assistant/PRAXIS-OS-ORIENTATION.md` - Overall prAxIs OS usage
 - `standards/ai-assistant/standards-creation-process.md` - Creating new standards
 
 **Query anytime:**
 ```python
-search_standards("query construction patterns")
-search_standards("content-specific phrases semantic search")
-search_standards("query anti-patterns fails")
+pos_search_project(content_type="standards", query="query construction patterns")
+pos_search_project(content_type="standards", query="content-specific phrases semantic search")
+pos_search_project(content_type="standards", query="query anti-patterns fails")
 ```
 
 ---

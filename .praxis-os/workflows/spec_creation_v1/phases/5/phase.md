@@ -45,10 +45,11 @@ Tasks proceed in order: 1 → 2 → 3
 ## Phase Deliverables
 
 Upon completion, you will have:
-- ✅ All documents reviewed for completeness
+- ✅ All documents reviewed for completeness (srd.md, specs.md, tasks.md, implementation.md)
+- ✅ README.md created as entry point
 - ✅ Cross-references validated
 - ✅ Terminology consistent across documents
-- ✅ Final package ready for handoff
+- ✅ Final package ready for handoff (5 required files)
 
 ---
 
@@ -61,13 +62,14 @@ Before marking complete:
 - [ ] All sections in srd.md complete ✅/❌
 - [ ] All sections in tasks.md complete ✅/❌
 - [ ] All sections in implementation.md complete ✅/❌
+- [ ] README.md created and complete ✅/❌
 - [ ] Cross-references valid ✅/❌
 - [ ] Terminology consistent ✅/❌
 - [ ] Documents ready for implementation ✅/❌
 
 🚨 FRAMEWORK-VIOLATION: Incomplete specifications
 
-Specifications cannot be finalized with missing sections or unresolved TODOs.
+Specifications cannot be finalized with missing sections, unresolved TODOs, or missing README.md.
 
 ---
 

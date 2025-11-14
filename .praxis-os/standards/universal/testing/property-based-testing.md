@@ -700,38 +700,38 @@ This standard is most valuable when:
 
 1. **Testing Complex Algorithms**
    - Situation: Writing tests for sorting, parsing, compression
-   - Query: `search_standards("property-based testing algorithms")`
+   - Query: `pos_search_project(content_type="standards", query="property-based testing algorithms")`
 
 2. **Finding Edge Cases**
    - Situation: Want to find bugs example-based tests miss
-   - Query: `search_standards("property-based testing edge cases")`
+   - Query: `pos_search_project(content_type="standards", query="property-based testing edge cases")`
 
 3. **Testing API Invariants**
    - Situation: API has properties that should always hold
-   - Query: `search_standards("what properties to test")`
+   - Query: `pos_search_project(content_type="standards", query="what properties to test")`
 
 4. **Learning Property-Based Testing**
    - Situation: Never used PBT before, want to understand
-   - Query: `search_standards("what is property-based testing")`
+   - Query: `pos_search_project(content_type="standards", query="what is property-based testing")`
 
 5. **Debugging Shrinking Issues**
    - Situation: Property test failing, need to understand shrinking
-   - Query: `search_standards("shrinking property testing")`
+   - Query: `pos_search_project(content_type="standards", query="shrinking property testing")`
 
 6. **Choosing Test Framework**
    - Situation: Want to add PBT to project
-   - Query: `search_standards("property-based testing frameworks")`
+   - Query: `pos_search_project(content_type="standards", query="property-based testing frameworks")`
 
 ### Query by Use Case
 
 | Use Case | Example Query |
 |----------|---------------|
-| Learn PBT | `search_standards("what is property-based testing")` |
-| Write properties | `search_standards("types of properties PBT")` |
-| Generate test data | `search_standards("generators property testing")` |
-| Debug failures | `search_standards("shrinking property testing")` |
-| Common patterns | `search_standards("round-trip property testing")` |
-| Choose framework | `search_standards("Hypothesis vs QuickCheck")` |
+| Learn PBT | `pos_search_project(content_type="standards", query="what is property-based testing")` |
+| Write properties | `pos_search_project(content_type="standards", query="types of properties PBT")` |
+| Generate test data | `pos_search_project(content_type="standards", query="generators property testing")` |
+| Debug failures | `pos_search_project(content_type="standards", query="shrinking property testing")` |
+| Common patterns | `pos_search_project(content_type="standards", query="round-trip property testing")` |
+| Choose framework | `pos_search_project(content_type="standards", query="Hypothesis vs QuickCheck")` |
 
 ---
 
@@ -739,23 +739,23 @@ This standard is most valuable when:
 
 **Testing Standards:**
 - `standards/testing/test-pyramid.md` - Where PBT fits in test strategy
-  → `search_standards("test pyramid structure")`
+  → `pos_search_project(content_type="standards", query="test pyramid structure")`
 - `standards/testing/test-doubles.md` - May need mocks for property tests
-  → `search_standards("how to use test doubles")`
+  → `pos_search_project(content_type="standards", query="how to use test doubles")`
 - `standards/testing/integration-testing.md` - PBT complements integration tests
-  → `search_standards("integration testing patterns")`
+  → `pos_search_project(content_type="standards", query="integration testing patterns")`
 
 **AI Safety:**
 - `standards/ai-safety/production-code-checklist.md` - Test coverage requirements
-  → `search_standards("production code checklist")`
+  → `pos_search_project(content_type="standards", query="production code checklist")`
 
 **Query workflow for adding property-based testing:**
-1. **Learn Concept**: `search_standards("what is property-based testing")` → Understand approach
-2. **Identify Properties**: `search_standards("types of properties")` → Find invariants, round-trips
-3. **Choose Framework**: `search_standards("property testing frameworks")` → Select Hypothesis/fast-check/jqwik
-4. **Write Tests**: `search_standards("generators property testing")` → Generate test data
-5. **Debug**: `search_standards("shrinking property testing")` → Understand minimal failures
-6. **Refine**: `search_standards("property testing best practices")` → Improve properties
+1. **Learn Concept**: `pos_search_project(content_type="standards", query="what is property-based testing")` → Understand approach
+2. **Identify Properties**: `pos_search_project(content_type="standards", query="types of properties")` → Find invariants, round-trips
+3. **Choose Framework**: `pos_search_project(content_type="standards", query="property testing frameworks")` → Select Hypothesis/fast-check/jqwik
+4. **Write Tests**: `pos_search_project(content_type="standards", query="generators property testing")` → Generate test data
+5. **Debug**: `pos_search_project(content_type="standards", query="shrinking property testing")` → Understand minimal failures
+6. **Refine**: `pos_search_project(content_type="standards", query="property testing best practices")` → Improve properties
 
 ---
 

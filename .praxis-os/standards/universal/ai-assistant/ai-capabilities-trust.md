@@ -119,11 +119,11 @@ Query 100 times:
 # AI reality: "5 queries = 250ms, comprehensive understanding gained"
 
 # Query liberally:
-search_standards("how to handle race conditions")  # Query 1: Definition
-search_standards("where are race conditions handled in this project")  # Query 2: Location  
-search_standards("race condition testing best practices")  # Query 3: Testing
-search_standards("common race condition mistakes")  # Query 4: Error prevention
-search_standards("race condition debugging workflow")  # Query 5: Practical
+pos_search_project(content_type="standards", query="how to handle race conditions")  # Query 1: Definition
+pos_search_project(content_type="standards", query="where are race conditions handled in this project")  # Query 2: Location  
+pos_search_project(content_type="standards", query="race condition testing best practices")  # Query 3: Testing
+pos_search_project(content_type="standards", query="common race condition mistakes")  # Query 4: Error prevention
+pos_search_project(content_type="standards", query="race condition debugging workflow")  # Query 5: Practical
 
 # Result: Comprehensive understanding, correct implementation, no rework
 # Time cost: 250ms
@@ -313,12 +313,12 @@ Time wasted: 2 hours from insufficient querying
 **✅ Right (AI capability):**
 ```
 Implementing authentication feature:
-  1. search_standards("authentication patterns")  # General
-  2. search_standards("JWT handling this project")  # Project-specific
-  3. search_standards("token refresh best practices")  # Best practice
-  4. search_standards("auth testing strategies")  # Testing
-  5. search_standards("common auth mistakes")  # Error prevention
-  6. search_standards("session management")  # Related area
+  1. pos_search_project(content_type="standards", query="authentication patterns")  # General
+  2. pos_search_project(content_type="standards", query="JWT handling this project")  # Project-specific
+  3. pos_search_project(content_type="standards", query="token refresh best practices")  # Best practice
+  4. pos_search_project(content_type="standards", query="auth testing strategies")  # Testing
+  5. pos_search_project(content_type="standards", query="common auth mistakes")  # Error prevention
+  6. pos_search_project(content_type="standards", query="session management")  # Related area
   
   → 6 queries = 300ms
   → Comprehensive understanding
@@ -600,7 +600,7 @@ Higher quality, less rework, unlimited scalability
 
 ## 🔗 Related Standards
 
-- **[prAxIs OS Orientation](./AGENT-OS-ORIENTATION.md)** - Query: "orientation bootstrap mandatory queries"
+- **[prAxIs OS Orientation](./PRAXIS-OS-ORIENTATION.md)** - Query: "orientation bootstrap mandatory queries"
 - **[Agent Decision Protocol](./agent-decision-protocol.md)** - Query: "decision protocol behavioral patterns"
 - **[RAG Content Authoring](./rag-content-authoring.md)** - Query: "RAG optimization query liberally"
 

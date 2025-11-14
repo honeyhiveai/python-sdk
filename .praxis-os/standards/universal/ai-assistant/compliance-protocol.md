@@ -35,9 +35,9 @@
 - <60% = Poor (stop, review, restart)
 
 **When to Query This Standard:**
-- Starting any task → `search_standards("compliance checking")`
-- Before code generation → `search_standards("pre-task compliance")`
-- Checking patterns → `search_standards("how to find existing patterns")`
+- Starting any task → `pos_search_project(content_type="standards", query="compliance checking")`
+- Before code generation → `pos_search_project(content_type="standards", query="pre-task compliance")`
+- Checking patterns → `pos_search_project(content_type="standards", query="how to find existing patterns")`
 
 ---
 
@@ -635,12 +635,12 @@ Result: Fix consistent with existing concurrency approach, follows project patte
 
 | Situation | Example Query |
 |-----------|---------------|
-| **Starting any task** | `search_standards("compliance checking protocol")` |
-| **Before code generation** | `search_standards("pre-task compliance checklist")` |
-| **Finding patterns** | `search_standards("how to find existing patterns")` |
-| **Avoiding duplication** | `search_standards("check for existing solutions")` |
-| **Measuring compliance** | `search_standards("compliance scoring")` |
-| **Compliance failures** | `search_standards("common compliance mistakes")` |
+| **Starting any task** | `pos_search_project(content_type="standards", query="compliance checking protocol")` |
+| **Before code generation** | `pos_search_project(content_type="standards", query="pre-task compliance checklist")` |
+| **Finding patterns** | `pos_search_project(content_type="standards", query="how to find existing patterns")` |
+| **Avoiding duplication** | `pos_search_project(content_type="standards", query="check for existing solutions")` |
+| **Measuring compliance** | `pos_search_project(content_type="standards", query="compliance scoring")` |
+| **Compliance failures** | `pos_search_project(content_type="standards", query="common compliance mistakes")` |
 
 ---
 
@@ -648,26 +648,26 @@ Result: Fix consistent with existing concurrency approach, follows project patte
 
 **Query workflow for compliance mastery:**
 
-1. **Start with compliance protocol** → `search_standards("compliance checking")` (this document)
-2. **Learn pre-generation validation** → `search_standards("pre-generation validation")` → `standards/ai-assistant/pre-generation-validation.md`
-3. **Understand commit protocol** → `search_standards("commit protocol")` → `standards/ai-assistant/commit-protocol.md`
-4. **Master analysis methodology** → `search_standards("analysis methodology")` → `standards/ai-assistant/analysis-methodology.md`
+1. **Start with compliance protocol** → `pos_search_project(content_type="standards", query="compliance checking")` (this document)
+2. **Learn pre-generation validation** → `pos_search_project(content_type="standards", query="pre-generation validation")` → `standards/ai-assistant/pre-generation-validation.md`
+3. **Understand commit protocol** → `pos_search_project(content_type="standards", query="commit protocol")` → `standards/ai-assistant/commit-protocol.md`
+4. **Master analysis methodology** → `pos_search_project(content_type="standards", query="analysis methodology")` → `standards/ai-assistant/analysis-methodology.md`
 
 **By Category:**
 
 **AI Assistant:**
-- `standards/ai-assistant/pre-generation-validation.md` - What to validate before code → `search_standards("pre-generation validation")`
-- `standards/ai-assistant/commit-protocol.md` - Review and commit changes → `search_standards("commit protocol")`
-- `standards/ai-assistant/analysis-methodology.md` - Comprehensive analysis → `search_standards("analysis methodology")`
-- `standards/ai-assistant/AGENT-OS-ORIENTATION.md` - Core principles → `search_standards("prAxIs OS orientation")`
+- `standards/ai-assistant/pre-generation-validation.md` - What to validate before code → `pos_search_project(content_type="standards", query="pre-generation validation")`
+- `standards/ai-assistant/commit-protocol.md` - Review and commit changes → `pos_search_project(content_type="standards", query="commit protocol")`
+- `standards/ai-assistant/analysis-methodology.md` - Comprehensive analysis → `pos_search_project(content_type="standards", query="analysis methodology")`
+- `standards/ai-assistant/PRAXIS-OS-ORIENTATION.md` - Core principles → `pos_search_project(content_type="standards", query="prAxIs OS orientation")`
 
 **AI Safety:**
-- `standards/ai-safety/production-code-checklist.md` - Code quality requirements → `search_standards("production code checklist")`
-- `standards/ai-safety/git-safety-rules.md` - Git safety → `search_standards("git safety rules")`
-- `standards/ai-safety/import-verification-rules.md` - Import verification → `search_standards("import verification")`
+- `standards/ai-safety/production-code-checklist.md` - Code quality requirements → `pos_search_project(content_type="standards", query="production code checklist")`
+- `standards/ai-safety/git-safety-rules.md` - Git safety → `pos_search_project(content_type="standards", query="git safety rules")`
+- `standards/ai-safety/import-verification-rules.md` - Import verification → `pos_search_project(content_type="standards", query="import verification")`
 
 **Meta-Framework:**
-- `standards/meta-workflow/standards-creation-process.md` - Creating standards → `search_standards("standards creation")`
+- `standards/meta-workflow/standards-creation-process.md` - Creating standards → `pos_search_project(content_type="standards", query="standards creation")`
 
 ---
 

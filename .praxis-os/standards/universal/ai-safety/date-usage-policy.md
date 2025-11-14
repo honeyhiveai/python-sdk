@@ -293,14 +293,14 @@ Following this policy:
 
 | Situation | Example Query |
 |-----------|---------------|
-| **Getting date** | `search_standards("how to get current date")` |
-| **Date format** | `search_standards("what date format to use")` |
-| **Creating specs** | `search_standards("date format for specs")` |
-| **current_date tool** | `search_standards("current_date tool")` |
-| **Date consistency** | `search_standards("date consistency AI")` |
-| **Hardcoding dates** | `search_standards("can I hardcode dates")` |
-| **ISO format** | `search_standards("ISO date format")` |
-| **Date errors** | `search_standards("AI date errors")` |
+| **Getting date** | `pos_search_project(content_type="standards", query="how to get current date")` |
+| **Date format** | `pos_search_project(content_type="standards", query="what date format to use")` |
+| **Creating specs** | `pos_search_project(content_type="standards", query="date format for specs")` |
+| **current_date tool** | `pos_search_project(content_type="standards", query="current_date tool")` |
+| **Date consistency** | `pos_search_project(content_type="standards", query="date consistency AI")` |
+| **Hardcoding dates** | `pos_search_project(content_type="standards", query="can I hardcode dates")` |
+| **ISO format** | `pos_search_project(content_type="standards", query="ISO date format")` |
+| **Date errors** | `pos_search_project(content_type="standards", query="AI date errors")` |
 
 ---
 
@@ -308,24 +308,24 @@ Following this policy:
 
 **Query workflow for date usage:**
 
-1. **Start with date policy** → `search_standards("date usage policy")` (this document)
-2. **Learn MCP tools** → `search_standards("MCP usage guide")` → `usage/mcp-usage-guide.md`
-3. **Understand specs** → `search_standards("creating specs")` → `usage/creating-specs.md`
-4. **Learn production rules** → `search_standards("production code checklist")` → `standards/ai-safety/production-code-checklist.md`
+1. **Start with date policy** → `pos_search_project(content_type="standards", query="date usage policy")` (this document)
+2. **Learn MCP tools** → `pos_search_project(content_type="standards", query="MCP usage guide")` → `usage/mcp-usage-guide.md`
+3. **Understand specs** → `pos_search_project(content_type="standards", query="creating specs")` → `usage/creating-specs.md`
+4. **Learn production rules** → `pos_search_project(content_type="standards", query="production code checklist")` → `standards/ai-safety/production-code-checklist.md`
 
 **By Category:**
 
 **AI Safety:**
-- `standards/ai-safety/credential-file-protection.md` - File protection rules → `search_standards("credential file protection")`
-- `standards/ai-safety/production-code-checklist.md` - Production requirements → `search_standards("production code checklist")`
-- `standards/ai-safety/git-safety-rules.md` - Git operation safety → `search_standards("git safety rules")`
+- `standards/ai-safety/credential-file-protection.md` - File protection rules → `pos_search_project(content_type="standards", query="credential file protection")`
+- `standards/ai-safety/production-code-checklist.md` - Production requirements → `pos_search_project(content_type="standards", query="production code checklist")`
+- `standards/ai-safety/git-safety-rules.md` - Git operation safety → `pos_search_project(content_type="standards", query="git safety rules")`
 
 **Usage:**
-- `usage/creating-specs.md` - Specification creation → `search_standards("creating specs")`
-- `usage/mcp-usage-guide.md` - MCP tools usage → `search_standards("MCP usage guide")`
+- `usage/creating-specs.md` - Specification creation → `pos_search_project(content_type="standards", query="creating specs")`
+- `standards/tools/pos-search-project-usage-guide.md` - Tool-specific usage → `pos_search_project(content_type="standards", query="how to use pos_search_project")`
 
 **AI Assistant:**
-- `standards/ai-assistant/MCP-TOOLS-GUIDE.md` - Complete MCP tools reference → `search_standards("MCP tools guide")`
+- `standards/ai-assistant/mcp-tool-discovery-pattern.md` - Query-first tool discovery → `pos_search_project(content_type="standards", query="tool discovery pattern")`
 
 ---
 

@@ -622,37 +622,37 @@ This standard is most valuable when:
 
 1. **Designing New Classes**
    - Situation: Creating classes with external dependencies
-   - Query: `search_standards("how to inject dependencies")`
+   - Query: `pos_search_project(content_type="standards", query="how to inject dependencies")`
 
 2. **Making Code Testable**
    - Situation: Need to mock dependencies for unit tests
-   - Query: `search_standards("how to make code testable")`
+   - Query: `pos_search_project(content_type="standards", query="how to make code testable")`
 
 3. **Refactoring Hard-Coded Dependencies**
    - Situation: Code has hard-coded database/API/service instantiation
-   - Query: `search_standards("how to remove hard-coded dependencies")`
+   - Query: `pos_search_project(content_type="standards", query="how to remove hard-coded dependencies")`
 
 4. **Choosing DI Implementation Pattern**
    - Situation: Deciding between manual DI, container, or factory
-   - Query: `search_standards("when to use DI container")`
+   - Query: `pos_search_project(content_type="standards", query="when to use DI container")`
 
 5. **Resolving Circular Dependencies**
    - Situation: Two classes depend on each other
-   - Query: `search_standards("how to resolve circular dependencies")`
+   - Query: `pos_search_project(content_type="standards", query="how to resolve circular dependencies")`
 
 6. **Code Review Feedback**
    - Situation: Reviewer says "this should use dependency injection"
-   - Query: `search_standards("dependency injection pattern")`
+   - Query: `pos_search_project(content_type="standards", query="dependency injection pattern")`
 
 ### Query by Use Case
 
 | Use Case | Example Query |
 |----------|---------------|
-| Make code testable | `search_standards("how to make code testable")` |
-| Remove hard-coding | `search_standards("avoid hard-coded dependencies")` |
-| Choose DI type | `search_standards("constructor vs setter injection")` |
-| Handle circular deps | `search_standards("circular dependencies solution")` |
-| DI container | `search_standards("when to use DI container")` |
+| Make code testable | `pos_search_project(content_type="standards", query="how to make code testable")` |
+| Remove hard-coding | `pos_search_project(content_type="standards", query="avoid hard-coded dependencies")` |
+| Choose DI type | `pos_search_project(content_type="standards", query="constructor vs setter injection")` |
+| Handle circular deps | `pos_search_project(content_type="standards", query="circular dependencies solution")` |
+| DI container | `pos_search_project(content_type="standards", query="when to use DI container")` |
 
 ---
 
@@ -660,27 +660,27 @@ This standard is most valuable when:
 
 **Architecture Standards:**
 - `standards/architecture/solid-principles.md` - SOLID principles (DI supports Dependency Inversion)
-  → `search_standards("how to apply SOLID principles")`
+  → `pos_search_project(content_type="standards", query="how to apply SOLID principles")`
 - `standards/architecture/separation-of-concerns.md` - Separating concerns makes DI easier
-  → `search_standards("separation of concerns")`
+  → `pos_search_project(content_type="standards", query="separation of concerns")`
 
 **Testing Standards:**
 - `standards/testing/test-doubles.md` - Mocks, stubs, fakes for DI testing
-  → `search_standards("how to use test doubles")`
+  → `pos_search_project(content_type="standards", query="how to use test doubles")`
 - `standards/testing/test-pyramid.md` - Unit tests require DI for mocking
-  → `search_standards("test pyramid structure")`
+  → `pos_search_project(content_type="standards", query="test pyramid structure")`
 
 **Production Code:**
 - `standards/ai-safety/production-code-checklist.md` - Dependency management checklist
-  → `search_standards("production code checklist")`
+  → `pos_search_project(content_type="standards", query="production code checklist")`
 
 **Query workflow for implementing DI:**
-1. **Learn Pattern**: `search_standards("dependency injection pattern")` → Read this standard
-2. **Learn Testing**: `search_standards("how to use test doubles")` → Understand mocking
-3. **Choose Type**: `search_standards("constructor vs setter injection")` → Select DI type
+1. **Learn Pattern**: `pos_search_project(content_type="standards", query="dependency injection pattern")` → Read this standard
+2. **Learn Testing**: `pos_search_project(content_type="standards", query="how to use test doubles")` → Understand mocking
+3. **Choose Type**: `pos_search_project(content_type="standards", query="constructor vs setter injection")` → Select DI type
 4. **Implement**: Apply constructor injection to your classes
-5. **Test**: `search_standards("how to unit test with mocks")` → Write tests with mocked dependencies
-6. **Review**: `search_standards("dependency injection anti-patterns")` → Validate approach
+5. **Test**: `pos_search_project(content_type="standards", query="how to unit test with mocks")` → Write tests with mocked dependencies
+6. **Review**: `pos_search_project(content_type="standards", query="dependency injection anti-patterns")` → Validate approach
 
 ---
 

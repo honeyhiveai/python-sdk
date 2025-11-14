@@ -29,13 +29,15 @@ If `false`, references will be created instead.
 
 ### Step 1: Verify Spec Directory Exists
 
-The spec directory was created in Task 0. Verify it exists:
+The spec directory was created in Task 0. Use the SPEC_DIR value from Task 0:
 
 ```bash
-# Load SPEC_DIR from Task 0
-source .praxis-os/specs/.current-spec
+# SPEC_DIR was determined in Task 0 (e.g., review/2025-10-21-query-gamification-system)
+# Verify it exists:
 ls -ld .praxis-os/specs/${SPEC_DIR}
 ```
+
+⚠️ **NOTE:** SPEC_DIR is available from Task 0 context or workflow artifacts. Do not use `.current-spec` file (deprecated ad-hoc workaround).
 
 📊 COUNT-AND-DOCUMENT: Directory verified
 - Path: `.praxis-os/specs/${SPEC_DIR}`
@@ -58,8 +60,7 @@ mkdir -p .praxis-os/specs/${SPEC_DIR}/supporting-docs/
 Copy documents to supporting-docs:
 
 ```bash
-# Use SPEC_DIR from Task 0
-source .praxis-os/specs/.current-spec
+# Use SPEC_DIR from Task 0 (e.g., review/2025-10-21-query-gamification-system)
 
 # For each document
 cp {doc_path_1} .praxis-os/specs/${SPEC_DIR}/supporting-docs/
@@ -71,7 +72,7 @@ cp {doc_path_2} .praxis-os/specs/${SPEC_DIR}/supporting-docs/
 Create REFERENCES.md with links:
 
 ```bash
-source .praxis-os/specs/.current-spec
+# Use SPEC_DIR from Task 0
 cat > .praxis-os/specs/${SPEC_DIR}/supporting-docs/REFERENCES.md << 'EOF'
 # Document References
 
@@ -96,7 +97,7 @@ EOF
 Verify all documents are accessible:
 
 ```bash
-source .praxis-os/specs/.current-spec
+# Use SPEC_DIR from Task 0
 
 # If embedded
 ls -lh .praxis-os/specs/${SPEC_DIR}/supporting-docs/
@@ -117,7 +118,7 @@ test -f {doc_path_2} && echo "✅ {doc_2_name}" || echo "❌ {doc_2_name} NOT FO
 Add a note to track which method was used:
 
 ```bash
-source .praxis-os/specs/.current-spec
+# Use SPEC_DIR from Task 0
 cat > .praxis-os/specs/${SPEC_DIR}/supporting-docs/.processing-mode << 'EOF'
 PROCESSING_MODE={embedded/referenced}
 PROCESSED_DATE={current_date}

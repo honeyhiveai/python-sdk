@@ -774,38 +774,38 @@ This guide is most valuable when:
 
 1. **Starting a New Feature**
    - Situation: Need to document a new feature or architectural change
-   - Query: `search_standards("how to create specs")`
+   - Query: `pos_search_project(content_type="standards", query="how to create specs")`
 
 2. **Unsure About Spec Structure**
    - Situation: Don't know which file to put information in
-   - Query: `search_standards("spec structure README vs srd vs specs")`
+   - Query: `pos_search_project(content_type="standards", query="spec structure README vs srd vs specs")`
 
 3. **Creating Business Requirements**
    - Situation: Need template for Software Requirements Document
-   - Query: `search_standards("software requirements document template")`
+   - Query: `pos_search_project(content_type="standards", query="software requirements document template")`
 
 4. **Breaking Down Implementation**
    - Situation: Need to create tasks.md with phases
-   - Query: `search_standards("how to break down implementation tasks")`
+   - Query: `pos_search_project(content_type="standards", query="how to break down implementation tasks")`
 
 5. **Writing Technical Specs**
    - Situation: Need template for technical architecture
-   - Query: `search_standards("technical specification template")`
+   - Query: `pos_search_project(content_type="standards", query="technical specification template")`
 
 6. **Validating Spec Completeness**
    - Situation: Want to ensure all required sections are present
-   - Query: `search_standards("spec checklist requirements")`
+   - Query: `pos_search_project(content_type="standards", query="spec checklist requirements")`
 
 ### Query by Use Case
 
 | Use Case | Example Query |
 |----------|---------------|
-| Starting new spec | `search_standards("how to create specs")` |
-| 5-file structure | `search_standards("spec file structure")` |
-| Business requirements | `search_standards("SRD template")` |
-| Technical design | `search_standards("technical specification template")` |
-| Task breakdown | `search_standards("implementation task breakdown")` |
-| Spec checklist | `search_standards("spec completeness checklist")` |
+| Starting new spec | `pos_search_project(content_type="standards", query="how to create specs")` |
+| 5-file structure | `pos_search_project(content_type="standards", query="spec file structure")` |
+| Business requirements | `pos_search_project(content_type="standards", query="SRD template")` |
+| Technical design | `pos_search_project(content_type="standards", query="technical specification template")` |
+| Task breakdown | `pos_search_project(content_type="standards", query="implementation task breakdown")` |
+| Spec checklist | `pos_search_project(content_type="standards", query="spec completeness checklist")` |
 
 ---
 
@@ -813,27 +813,27 @@ This guide is most valuable when:
 
 **Using Specs:**
 - `workflows/spec_execution_v1/` - How to execute a spec systematically
-  → `search_standards("spec execution workflow")`
+  → `pos_search_project(content_type="standards", query="spec execution workflow")`
 
 **AI Guidance:**
 - `usage/ai-agent-quickstart.md` - How AI should implement specs
-  → `search_standards("AI agent quickstart")`
+  → `pos_search_project(content_type="standards", query="AI agent quickstart")`
 
 **Standards:**
 - `standards/ai-safety/production-code-checklist.md` - Quality requirements for implementation
-  → `search_standards("production code checklist")`
+  → `pos_search_project(content_type="standards", query="production code checklist")`
 - `standards/documentation/rag-content-authoring.md` - How to write discoverable documentation
-  → `search_standards("RAG content authoring")`
+  → `pos_search_project(content_type="standards", query="RAG content authoring")`
 
 **Quality:**
 - `standards/testing/test-pyramid.md` - Testing strategy for spec implementation
-  → `search_standards("test pyramid")`
+  → `pos_search_project(content_type="standards", query="test pyramid")`
 
 **Query workflow:**
-1. **Before**: `search_standards("how to create specs")` → Learn structure and templates
+1. **Before**: `pos_search_project(content_type="standards", query="how to create specs")` → Learn structure and templates
 2. **During**: Use templates from this guide to write each file
-3. **Execute**: `search_standards("spec execution workflow")` → Implement systematically
-4. **Validate**: `search_standards("production code checklist")` → Ensure quality
+3. **Execute**: `pos_search_project(content_type="standards", query="spec execution workflow")` → Implement systematically
+4. **Validate**: `pos_search_project(content_type="standards", query="production code checklist")` → Ensure quality
 
 ---
 

@@ -27,11 +27,11 @@
 - ❌ Saving temporary screenshots to `docs/static/img/` instead of `workspace/scratch/`
 
 **When to Query This Standard:**
-- Creating design document → `search_standards("where to put design documents")`
-- Starting Phase 1 → `search_standards("workspace organization Phase 1")`
-- Taking screenshots → `search_standards("where do temporary screenshots go")`
-- Cleaning up files → `search_standards("workspace lifecycle ephemeral")`
-- Checking git safety → `search_standards("temporary files gitignore workspace")`
+- Creating design document → `pos_search_project(content_type="standards", query="where to put design documents")`
+- Starting Phase 1 → `pos_search_project(content_type="standards", query="workspace organization Phase 1")`
+- Taking screenshots → `pos_search_project(content_type="standards", query="where do temporary screenshots go")`
+- Cleaning up files → `pos_search_project(content_type="standards", query="workspace lifecycle ephemeral")`
+- Checking git safety → `pos_search_project(content_type="standards", query="temporary files gitignore workspace")`
 
 ---
 
@@ -227,8 +227,8 @@ Creating temporary design docs, analysis, or WIP files anywhere except `.praxis-
 **Correct Approach:**
 ```bash
 # Step 1: Query for guidance
-search_standards("where to put design documents")
-search_standards("Phase 1 conversational design")
+pos_search_project(content_type="standards", query="where to put design documents")
+pos_search_project(content_type="standards", query="Phase 1 conversational design")
 
 # Step 2: Create workspace design doc
 .praxis-os/workspace/design/2025-10-21-authentication-system.md
@@ -496,8 +496,8 @@ git commit -m "Add authentication system spec"
 
 1. **Query for existing context:**
 ```
-search_standards("where to put design documents")
-search_standards("workspace organization")
+pos_search_project(content_type="standards", query="where to put design documents")
+pos_search_project(content_type="standards", query="workspace organization")
 ```
 
 2. **Check if formal spec exists:**

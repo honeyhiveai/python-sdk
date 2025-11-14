@@ -21,11 +21,11 @@
 **Target suite runtime:** <10 minutes total
 
 **When to query this standard:**
-- Planning test strategy → `search_standards("test pyramid ratios")`
-- Too many slow tests → `search_standards("e2e testing best practices")`
-- Deciding what to test → `search_standards("unit vs integration testing")`
-- Test suite too slow → `search_standards("fast test suite")`
-- Code coverage targets → `search_standards("test coverage strategy")`
+- Planning test strategy → `pos_search_project(content_type="standards", query="test pyramid ratios")`
+- Too many slow tests → `pos_search_project(content_type="standards", query="e2e testing best practices")`
+- Deciding what to test → `pos_search_project(content_type="standards", query="unit vs integration testing")`
+- Test suite too slow → `pos_search_project(content_type="standards", query="fast test suite")`
+- Code coverage targets → `pos_search_project(content_type="standards", query="test coverage strategy")`
 
 **For complete guide with examples, continue reading below.**
 
@@ -408,35 +408,35 @@ def test_invalid_credit_card_format():  # This should be unit test
 
 ```python
 # Planning test strategy for new feature
-search_standards("test pyramid ratios")
-search_standards("what to test with unit tests")
-search_standards("test coverage targets")
+pos_search_project(content_type="standards", query="test pyramid ratios")
+pos_search_project(content_type="standards", query="what to test with unit tests")
+pos_search_project(content_type="standards", query="test coverage targets")
 ```
 
 ### When Tests Are Too Slow
 
 ```python
 # Test suite taking too long
-search_standards("fast test suite optimization")
-search_standards("test speed targets")
-search_standards("unit vs integration testing")
+pos_search_project(content_type="standards", query="fast test suite optimization")
+pos_search_project(content_type="standards", query="test speed targets")
+pos_search_project(content_type="standards", query="unit vs integration testing")
 ```
 
 ### When Deciding Test Type
 
 ```python
 # Deciding where to test specific functionality
-search_standards("when to write integration tests")
-search_standards("e2e testing best practices")
-search_standards("test doubles mocking")
+pos_search_project(content_type="standards", query="when to write integration tests")
+pos_search_project(content_type="standards", query="e2e testing best practices")
+pos_search_project(content_type="standards", query="test doubles mocking")
 ```
 
 ### During Code Review
 
 ```python
 # Reviewing test quality
-search_standards("test pyramid anti-patterns")
-search_standards("testing best practices")
+pos_search_project(content_type="standards", query="test pyramid anti-patterns")
+pos_search_project(content_type="standards", query="testing best practices")
 ```
 
 ---
@@ -449,16 +449,16 @@ Query for comprehensive testing strategy:
 
 ```python
 # For test implementation details
-search_standards("test doubles mocking stubs fakes")
+pos_search_project(content_type="standards", query="test doubles mocking stubs fakes")
 
 # For integration testing patterns
-search_standards("integration testing database")
+pos_search_project(content_type="standards", query="integration testing database")
 
 # For E2E testing guidance
-search_standards("end to end testing selenium")
+pos_search_project(content_type="standards", query="end to end testing selenium")
 
 # For test quality checks
-search_standards("production code checklist testing")
+pos_search_project(content_type="standards", query="production code checklist testing")
 ```
 
 **Related Standards:**
@@ -473,16 +473,16 @@ This document covers universal strategy. For language-specific tools and pattern
 
 ```python
 # Python testing
-search_standards("pytest unittest python testing")
+pos_search_project(content_type="standards", query="pytest unittest python testing")
 
 # Go testing
-search_standards("go test table tests benchmarks")
+pos_search_project(content_type="standards", query="go test table tests benchmarks")
 
 # JavaScript testing
-search_standards("jest mocha cypress javascript testing")
+pos_search_project(content_type="standards", query="jest mocha cypress javascript testing")
 
 # Java testing
-search_standards("junit mockito java testing")
+pos_search_project(content_type="standards", query="junit mockito java testing")
 ```
 
 **Language-Specific Guides:**

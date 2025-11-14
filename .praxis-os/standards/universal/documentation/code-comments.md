@@ -641,14 +641,14 @@ Before committing, ask:
 
 | Situation | Example Query |
 |-----------|---------------|
-| **Writing comments** | `search_standards("code comments")` |
-| **Comment best practices** | `search_standards("comment best practices")` |
-| **Deciding to comment** | `search_standards("when to comment")` |
-| **Documentation comments** | `search_standards("docstrings JSDoc")` |
-| **TODO vs FIXME** | `search_standards("TODO FIXME")` |
-| **Commented-out code** | `search_standards("commented out code")` |
-| **Maintaining comments** | `search_standards("maintain comments")` |
-| **Comment anti-patterns** | `search_standards("comment anti-patterns")` |
+| **Writing comments** | `pos_search_project(content_type="standards", query="code comments")` |
+| **Comment best practices** | `pos_search_project(content_type="standards", query="comment best practices")` |
+| **Deciding to comment** | `pos_search_project(content_type="standards", query="when to comment")` |
+| **Documentation comments** | `pos_search_project(content_type="standards", query="docstrings JSDoc")` |
+| **TODO vs FIXME** | `pos_search_project(content_type="standards", query="TODO FIXME")` |
+| **Commented-out code** | `pos_search_project(content_type="standards", query="commented out code")` |
+| **Maintaining comments** | `pos_search_project(content_type="standards", query="maintain comments")` |
+| **Comment anti-patterns** | `pos_search_project(content_type="standards", query="comment anti-patterns")` |
 
 ---
 
@@ -656,21 +656,21 @@ Before committing, ask:
 
 **Query workflow for complete documentation:**
 
-1. **Start with comments** → `search_standards("code comments")` (this document)
-2. **API docs** → `search_standards("API documentation")` → `standards/documentation/api-documentation.md`
-3. **README** → `search_standards("README templates")` → `standards/documentation/readme-templates.md`
+1. **Start with comments** → `pos_search_project(content_type="standards", query="code comments")` (this document)
+2. **API docs** → `pos_search_project(content_type="standards", query="API documentation")` → `standards/documentation/api-documentation.md`
+3. **README** → `pos_search_project(content_type="standards", query="README templates")` → `standards/documentation/readme-templates.md`
 
 **By Category:**
 
 **Documentation:**
-- `standards/documentation/api-documentation.md` - Documenting APIs → `search_standards("API documentation")`
-- `standards/documentation/readme-templates.md` - Project README structure → `search_standards("README templates")`
+- `standards/documentation/api-documentation.md` - Documenting APIs → `pos_search_project(content_type="standards", query="API documentation")`
+- `standards/documentation/readme-templates.md` - Project README structure → `pos_search_project(content_type="standards", query="README templates")`
 
 **AI Safety:**
-- `standards/ai-safety/production-code-checklist.md` - Documentation requirements for production → `search_standards("production code checklist")`
+- `standards/ai-safety/production-code-checklist.md` - Documentation requirements for production → `pos_search_project(content_type="standards", query="production code checklist")`
 
 **Architecture:**
-- `standards/architecture/solid-principles.md` - Single Responsibility (helps code clarity) → `search_standards("SOLID principles")`
+- `standards/architecture/solid-principles.md` - Single Responsibility (helps code clarity) → `pos_search_project(content_type="standards", query="SOLID principles")`
 
 ---
 

@@ -180,7 +180,7 @@ The workflow produces:
    └─> Phase N+5: Test & deliver (human approval)
 
 4. Output
-   └─> universal/workflows/workflow-name-v1/ (complete workflow)
+   └─> .praxis-os/workflows/workflow_name_v1/ (complete workflow)
 ```
 
 ## Meta-Workflow Compliance

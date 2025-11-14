@@ -13,13 +13,15 @@
 
 Process existing analysis, research, or design documents to extract insights that will inform requirements, design, and implementation phases. This phase bridges the gap between existing documentation and structured specification creation.
 
+**Spec Lifecycle:** New specs are created in `specs/review/` (awaiting approval status) and later moved to `approved/` or `completed/` as they progress through the lifecycle.
+
 ---
 
 ## Tasks in This Phase
 
 ### Task 0: Create Spec Directory
 **File:** [task-0-create-directory.md](task-0-create-directory.md)  
-**Purpose:** Create properly-named spec directory following convention  
+**Purpose:** Create properly-named spec directory in `specs/review/` location  
 **Time:** 1 minute
 
 ### Task 1: Copy or Reference Documents
@@ -52,7 +54,7 @@ Each task builds on the previous one's output.
 ## Phase Deliverables
 
 Upon completion, you will have:
-- ✅ Spec directory created with correct naming convention
+- ✅ Spec directory created in `specs/review/` with correct naming convention
 - ✅ All supporting docs accessible (copied or referenced)
 - ✅ INDEX.md with document catalog and metadata
 - ✅ Extracted insights categorized by type (requirements/design/implementation)
@@ -64,7 +66,8 @@ Upon completion, you will have:
 🛑 VALIDATE-GATE: Phase 0 Checkpoint
 
 Before advancing to Phase 1:
-- [ ] Spec directory created with `YYYY-MM-DD-descriptive-name` format ✅/❌
+- [ ] Spec directory created in `specs/review/` location ✅/❌
+- [ ] Directory follows `YYYY-MM-DD-descriptive-name` format ✅/❌
 - [ ] `supporting-docs/` directory exists ✅/❌
 - [ ] All documents processed (embedded or referenced) ✅/❌
 - [ ] `INDEX.md` created with all documents listed ✅/❌

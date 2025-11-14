@@ -287,6 +287,7 @@ class TestEvaluationsAPI:  # pylint: disable=attribute-defined-outside-init
     def test_update_run_from_dict(self) -> None:
         """Test run update from dictionary."""
         mock_response = Mock()
+        mock_response.status_code = 200
         mock_response.json.return_value = {
             "run_id": str(uuid.uuid4()),
             "name": "updated-run",

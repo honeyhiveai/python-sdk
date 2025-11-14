@@ -1,8 +1,8 @@
 # Task 1: Create Workflow Directory
 
 **Phase**: 2 - Workflow Scaffolding  
-**Purpose**: Create universal/workflows/{name}/  
-**Depends On**: Phase 0 (target_workflow_name, workflow_root_path)  
+**Purpose**: Create .praxis-os/workflows/{workflow_type}/  
+**Depends On**: Phase 0 (target_workflow_type, workflow_root_path)  
 **Feeds Into**: Task 2 (Create Phase Directories)
 
 ---
@@ -15,7 +15,7 @@ Create the root directory for the target workflow in the correct location within
 
 ## Context
 
-📊 **CONTEXT**: All workflows are stored in `universal/workflows/` following the prAxIs OS directory structure. The workflow name comes from Phase 0 Task 5 preparation.
+📊 **CONTEXT**: Workflows are stored in `.praxis-os/workflows/`. The workflow type comes from Phase 0 Task 5 preparation.
 
 ---
 
@@ -23,18 +23,18 @@ Create the root directory for the target workflow in the correct location within
 
 ### Step 1: Construct Directory Path
 
-Use the `target_workflow_name` from Phase 0 to construct the full path:
+Use the `target_workflow_type` from Phase 0 to construct the full path:
 
 ```
-universal/workflows/{target_workflow_name}/
+.praxis-os/workflows/{target_workflow_type}/
 ```
 
-Example: If `target_workflow_name` is `payment-processing-v1`, the path would be:
+Example: If `target_workflow_type` is `payment_processing_v1`:
 ```
-universal/workflows/payment-processing-v1/
+.praxis-os/workflows/payment_processing_v1/
 ```
 
-⚠️ **CONSTRAINT**: The directory name MUST exactly match the `name` field from the workflow definition.
+⚠️ **CONSTRAINT**: The directory name MUST exactly match the `workflow_type` field from the workflow definition (which uses underscores, not dashes).
 
 ### Step 2: Check if Directory Already Exists
 

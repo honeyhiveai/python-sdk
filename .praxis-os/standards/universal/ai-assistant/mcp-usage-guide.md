@@ -11,7 +11,7 @@
 **What is MCP?** Model Context Protocol - standardized interface for AI assistants to access tools and information.
 
 **8 Core MCP Tools:**
-1. **`search_standards`** - Semantic search over prAxIs OS docs (use 5-10+ times per task)
+1. **`pos_search`** - Semantic search over prAxIs OS docs (use 5-10+ times per task)
 2. **`start_workflow`** - Initialize phase-gated workflows
 3. **`get_current_phase`** - Retrieve current workflow phase
 4. **`get_task`** - Get specific task details (NEW in v1.3.0)
@@ -21,7 +21,7 @@
 8. **`current_date`** - Get current date/time
 
 **Critical Rules:**
-- ✅ **NEVER bypass MCP** - Always use `search_standards()`, never `read_file()` for standards
+- ✅ **NEVER bypass MCP** - Always use `pos_search()`, never `read_file()` for standards
 - ✅ **Query liberally** - 5-10+ queries per task, not just once
 - ✅ **Follow phase gating** - Use workflows for structured tasks
 
@@ -34,7 +34,7 @@
 - "How do I search for standards using MCP?"
 - "How do I start a workflow?"
 - "What MCP tools are available?"
-- "Should I use read_file or search_standards?"
+- "Should I use read_file or pos_search?"
 - "How do I get workflow tasks?"
 - "How do I complete a workflow phase?"
 - "What is phase gating?"
@@ -57,7 +57,7 @@
 
 **Tool Discovery:** The MCP protocol provides built-in tool introspection via `tools/list`, which returns all available tools with their parameter schemas. Cursor IDE handles this automatically when you invoke MCP tools.
 
-### 1. `search_standards`
+### 1. `pos_search`
 
 **Purpose:** Semantic search over all prAxIs OS standards and documentation
 
@@ -69,7 +69,7 @@
 
 **Example:**
 ```python
-mcp_praxis-os-rag_search_standards(
+mcp_agent-os-rag_search_standards(
     query="How should I handle race conditions in concurrent code?",
     n_results=5
 )
@@ -93,13 +93,13 @@ mcp_praxis-os-rag_search_standards(
 **Example:**
 ```python
 # Example 1: Test generation workflow
-session = mcp_praxis-os-rag_start_workflow(
+session = mcp_agent-os-rag_start_workflow(
     workflow_type="test_generation_v3",
     target_file="auth.py"  # File path for code workflows
 )
 
 # Example 2: Spec execution workflow (different pattern!)
-session = mcp_praxis-os-rag_start_workflow(
+session = mcp_agent-os-rag_start_workflow(
     workflow_type="spec_execution_v1",
     target_file="my-feature-name",  # Simple identifier, NOT a path
     options={"spec_path": ".praxis-os/specs/2025-10-07-my-feature-name"}  # Full path in options
@@ -121,10 +121,10 @@ for phase in overview["phases"]:
 - For code workflows (`test_generation_v3`, `production_code_v2`): Use file path (e.g., `"src/auth.py"`)
 - For spec workflows (`spec_execution_v1`): Use simple identifier (e.g., `"my-feature"`), put full path in `options.spec_path`
 
-**Discovery Tip:** Use `search_standards` to discover available workflows before starting:
+**Discovery Tip:** Use `pos_search` to discover available workflows before starting:
 ```python
 # Find workflows for your task
-result = mcp_praxis-os-rag_search_standards(
+result = mcp_agent-os-rag_search_standards(
     query="What workflows are available for testing Python code?",
     n_results=5
 )
@@ -146,7 +146,7 @@ result = mcp_praxis-os-rag_search_standards(
 
 **Example:**
 ```python
-phase = mcp_praxis-os-rag_get_current_phase(
+phase = mcp_agent-os-rag_get_current_phase(
     session_id="workflow_session_123"
 )
 
@@ -185,10 +185,10 @@ for task_meta in phase['phase_content']['tasks']:
 **Example:**
 ```python
 # Step 1: See what tasks exist
-phase = mcp_praxis-os-rag_get_current_phase(session_id="workflow_123")
+phase = mcp_agent-os-rag_get_current_phase(session_id="workflow_123")
 
 # Step 2: Get first task's full content
-task = mcp_praxis-os-rag_get_task(
+task = mcp_agent-os-rag_get_task(
     session_id="workflow_123",
     phase=1,
     task_number=1
@@ -258,7 +258,7 @@ complete_phase(session_id, phase['current_phase'], evidence)
 
 **Example:**
 ```python
-mcp_praxis-os-rag_complete_phase(
+mcp_agent-os-rag_complete_phase(
     session_id="workflow_session_123",
     phase=0,
     evidence={"functions_identified": 5, "classes_identified": 2}
@@ -280,7 +280,7 @@ mcp_praxis-os-rag_complete_phase(
 
 **Example:**
 ```python
-mcp_praxis-os-rag_get_workflow_state(
+mcp_agent-os-rag_get_workflow_state(
     session_id="workflow_session_123"
 )
 ```
@@ -300,7 +300,7 @@ mcp_praxis-os-rag_get_workflow_state(
 
 **Example:**
 ```python
-mcp_praxis-os-rag_create_workflow(
+mcp_agent-os-rag_create_workflow(
     name="api-documentation",
     workflow_type="documentation",
     phases=["Analysis", "Generation", "Validation"],
@@ -323,7 +323,7 @@ mcp_praxis-os-rag_create_workflow(
 
 **Example:**
 ```python
-date_info = mcp_praxis-os-rag_current_date()
+date_info = mcp_agent-os-rag_current_date()
 print(date_info["iso_date"])  # "2025-10-07"
 print(date_info["iso_datetime"])  # "2025-10-07T14:30:00-07:00"
 ```
@@ -369,7 +369,7 @@ with open(".praxis-os/standards/testing/test-pyramid.md") as f:
 ✅ **DO:**
 ```python
 # Use MCP tool
-mcp_praxis-os-rag_search_standards(
+mcp_agent-os-rag_search_standards(
     query="test pyramid principles"
 )
 ```
@@ -428,7 +428,7 @@ When in a workflow:
 
 | Task | MCP Tool | Example Query |
 |------|----------|---------------|
-| Find pattern | `search_standards` | "concurrency race conditions" |
+| Find pattern | `pos_search` | "concurrency race conditions" |
 | Generate tests | `start_workflow` | type="test_generation_v3" |
 | Check phase | `get_current_phase` | session_id="..." |
 | Submit evidence | `complete_phase` | phase=1, evidence={...} |
@@ -463,33 +463,33 @@ This guide is most valuable when:
 
 1. **Starting to Use MCP Tools**
    - Situation: First time using prAxIs OS MCP tools
-   - Query: `search_standards("how to use MCP tools")`
+   - Query: `pos_search(content_type="standards", query="how to use MCP tools")`
 
 2. **Choosing Between Tools**
    - Situation: Not sure which MCP tool to use
-   - Query: `search_standards("MCP tools available")`
+   - Query: `pos_search(content_type="standards", query="MCP tools available")`
 
 3. **Workflow Questions**
    - Situation: Need to understand workflow execution
-   - Query: `search_standards("how to start workflow")`
+   - Query: `pos_search(content_type="standards", query="how to start workflow")`
 
 4. **Search vs Read File**
-   - Situation: Unsure if I should use `search_standards` or `read_file`
-   - Query: `search_standards("search_standards vs read_file")`
+   - Situation: Unsure if I should use `pos_search` or `read_file`
+   - Query: `pos_search(content_type="standards", query="pos_search vs read_file")`
 
 5. **Phase Gating Questions**
    - Situation: Understanding workflow phase progression
-   - Query: `search_standards("workflow phase gating")`
+   - Query: `pos_search(content_type="standards", query="workflow phase gating")`
 
 ### Query by Use Case
 
 | Use Case | Example Query |
 |----------|---------------|
-| MCP overview | `search_standards("what is MCP")` |
-| Available tools | `search_standards("MCP tools available")` |
-| Search standards | `search_standards("how to use search_standards")` |
-| Start workflow | `search_standards("how to start workflow")` |
-| Complete phase | `search_standards("how to complete workflow phase")` |
+| MCP overview | `pos_search(content_type="standards", query="what is MCP")` |
+| Available tools | `pos_search(content_type="standards", query="MCP tools available")` |
+| Search standards | `pos_search(content_type="standards", query="how to use pos_search")` |
+| Start workflow | `pos_search(content_type="standards", query="how to start workflow")` |
+| Complete phase | `pos_search(content_type="standards", query="how to complete workflow phase")` |
 
 ---
 
@@ -497,32 +497,32 @@ This guide is most valuable when:
 
 **Core Orientation:**
 - `usage/ai-agent-quickstart.md` - Practical examples of using MCP tools
-  → `search_standards("AI agent quickstart")`
-- `standards/universal/ai-assistant/AGENT-OS-ORIENTATION.md` - MCP in context of prAxIs OS principles
-  → `search_standards("prAxIs OS orientation")`
+  → `pos_search(content_type="standards", query="AI agent quickstart")`
+- `standards/universal/ai-assistant/PRAXIS-OS-ORIENTATION.md` - MCP in context of prAxIs OS principles
+  → `pos_search(content_type="standards", query="prAxIs OS orientation")`
 
 **Workflows:**
 - `workflows/spec_execution_v1/` - Example of phase-gated workflow
-  → `search_standards("spec execution workflow")`
+  → `pos_search(content_type="standards", query="spec execution workflow")`
 - `workflows/test_generation_v3/` - Test generation workflow
-  → `search_standards("test generation workflow")`
+  → `pos_search(content_type="standards", query="test generation workflow")`
 
 **Standards:**
 - `standards/documentation/rag-content-authoring.md` - How content is optimized for search
-  → `search_standards("RAG content authoring")`
+  → `pos_search(content_type="standards", query="RAG content authoring")`
 
 **Query workflow:**
-1. **First Use**: `search_standards("how to use MCP tools")` → Learn tool basics
-2. **During Work**: Use `search_standards()` liberally (5-10+ times per task)
-3. **Workflows**: `search_standards("how to start workflow")` → Execute structured tasks
-4. **Troubleshooting**: `search_standards("MCP tool usage")` → Resolve issues
+1. **First Use**: `pos_search(content_type="standards", query="how to use MCP tools")` → Learn tool basics
+2. **During Work**: Use `pos_search()` liberally (5-10+ times per task)
+3. **Workflows**: `pos_search(content_type="standards", query="how to start workflow")` → Execute structured tasks
+4. **Troubleshooting**: `pos_search(content_type="standards", query="MCP tool usage")` → Resolve issues
 
 ---
 
 ## 📞 Questions?
 
-- **Tool behavior**: Query MCP: `search_standards("mcp tool routing guide")`
-- **Standards access**: Use `search_standards` with your question
+- **Tool behavior**: Query MCP: `pos_search(content_type="standards", query="mcp tool routing guide")`
+- **Standards access**: Use `pos_search` with your question
 - **Workflow help**: Read workflow entry point (via `get_current_phase`)
 
 ---

@@ -35,9 +35,9 @@
 ```
 
 **When to Query This Standard:**
-- Before any commit → `search_standards("commit protocol")`
-- Quality gates unclear → `search_standards("pre-commit checklist")`
-- CHANGELOG updates → `search_standards("CHANGELOG format")`
+- Before any commit → `pos_search_project(content_type="standards", query="commit protocol")`
+- Quality gates unclear → `pos_search_project(content_type="standards", query="pre-commit checklist")`
+- CHANGELOG updates → `pos_search_project(content_type="standards", query="CHANGELOG format")`
 
 ---
 
@@ -802,11 +802,11 @@ wip
 
 | Situation | Example Query |
 |-----------|---------------|
-| **Before commit** | `search_standards("commit protocol")` |
-| **Quality gates** | `search_standards("pre-commit checklist")` |
-| **Commit messages** | `search_standards("commit message format")` |
-| **CHANGELOG updates** | `search_standards("CHANGELOG format")` |
-| **User approval** | `search_standards("when to get commit approval")` |
+| **Before commit** | `pos_search_project(content_type="standards", query="commit protocol")` |
+| **Quality gates** | `pos_search_project(content_type="standards", query="pre-commit checklist")` |
+| **Commit messages** | `pos_search_project(content_type="standards", query="commit message format")` |
+| **CHANGELOG updates** | `pos_search_project(content_type="standards", query="CHANGELOG format")` |
+| **User approval** | `pos_search_project(content_type="standards", query="when to get commit approval")` |
 
 ---
 
@@ -814,23 +814,23 @@ wip
 
 **Query workflow for commit mastery:**
 
-1. **Start with commit protocol** → `search_standards("commit protocol")` (this document)
-2. **Learn production checklist** → `search_standards("production code checklist")` → `standards/ai-safety/production-code-checklist.md`
-3. **Understand git safety** → `search_standards("git safety rules")` → `standards/ai-safety/git-safety-rules.md`
-4. **Learn pre-commit checklist** → `search_standards("pre-commit checklist")` → `standards/documentation/pre-commit-checklist.md`
+1. **Start with commit protocol** → `pos_search_project(content_type="standards", query="commit protocol")` (this document)
+2. **Learn production checklist** → `pos_search_project(content_type="standards", query="production code checklist")` → `standards/ai-safety/production-code-checklist.md`
+3. **Understand git safety** → `pos_search_project(content_type="standards", query="git safety rules")` → `standards/ai-safety/git-safety-rules.md`
+4. **Learn pre-commit checklist** → `pos_search_project(content_type="standards", query="pre-commit checklist")` → `standards/documentation/pre-commit-checklist.md`
 
 **By Category:**
 
 **AI Safety:**
-- `standards/ai-safety/production-code-checklist.md` - Code quality requirements → `search_standards("production code checklist")`
-- `standards/ai-safety/git-safety-rules.md` - Git safety → `search_standards("git safety rules")`
+- `standards/ai-safety/production-code-checklist.md` - Code quality requirements → `pos_search_project(content_type="standards", query="production code checklist")`
+- `standards/ai-safety/git-safety-rules.md` - Git safety → `pos_search_project(content_type="standards", query="git safety rules")`
 
 **Documentation:**
-- `standards/documentation/pre-commit-checklist.md` - Quick checklist → `search_standards("pre-commit checklist")`
-- `standards/documentation/change-impact-analysis.md` - Impact analysis → `search_standards("change impact analysis")`
+- `standards/documentation/pre-commit-checklist.md` - Quick checklist → `pos_search_project(content_type="standards", query="pre-commit checklist")`
+- `standards/documentation/change-impact-analysis.md` - Impact analysis → `pos_search_project(content_type="standards", query="change impact analysis")`
 
 **AI Assistant:**
-- `standards/ai-assistant/compliance-protocol.md` - Compliance checking → `search_standards("compliance protocol")`
+- `standards/ai-assistant/compliance-protocol.md` - Compliance checking → `pos_search_project(content_type="standards", query="compliance protocol")`
 
 ---
 

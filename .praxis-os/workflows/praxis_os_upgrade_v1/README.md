@@ -13,7 +13,7 @@ The prAxIs OS Upgrade Workflow automates the process of upgrading prAxIs OS inst
 - **State persistence** - Survives MCP server restarts
 - **Comprehensive validation** - Post-upgrade health checks
 
-**Total Time:** ~3 minutes 35 seconds
+**Total Time:** ~3 minutes 20 seconds
 
 ---
 
@@ -57,12 +57,10 @@ get_current_phase(session_id)
 - Generates checksum manifest
 - Acquires upgrade lock
 
-### Phase 2: Content Upgrade (60s)
+### Phase 2: Content Upgrade (45s)
 - Runs safe-upgrade.py with conflict detection
 - Updates standards, usage, workflows
-- Updates .gitignore from standards
 - Updates version tracking
-- **4 tasks** (dry-run, upgrade, gitignore, checksums)
 
 ### Phase 3: MCP Server Upgrade (60s) ⚠️ **Critical Phase**
 - Copies MCP server code

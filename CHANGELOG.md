@@ -15,9 +15,28 @@
   - **Specs Archive**: Migrated all completed specs to `.praxis-os/specs/completed/` (40+ specifications)
   - **Workspace Organization**: Added `.praxis-os/workspace/` for analysis, design, and scratch work
   - **YAML Config**: Updated `.yamllint` to praxis OS standards (200 char line-length, permissive rules)
+  - **praxis OS Upstream Sync**: Merged latest praxis OS improvements from upstream repository
+  - **Tool API Updates**: Updated from `search_standards()` to `pos_search_project(content_type="standards")` API
+  - **Workflow Improvements**: Consolidated workflow phases (7→6), added content quality auditing (95%+ actionable content)
+  - **Enhanced Metadata**: Added estimated_effort, key_deliverables, validation_criteria to all workflow phases
+  - **New Standards**: Added mcp-tool-discovery-pattern, training-data-versus-project-knowledge, credential-file-protection
   - **Breaking Change**: AI development workflows now require praxis OS installation and MCP server
   - Files changed: 1167 | Net additions: +53,256 lines
   - Note: This is foundational infrastructure for AI-assisted development - extracted from python-sdk learnings
+
+### Fixed
+
+- **🐛 API: Enhanced error logging for 400 errors in update_run_with_results**
+  - Added detailed error logging when backend returns 400 status code during experiment run updates
+  - Logs full request payload and response details for debugging failing evaluators
+  - Files modified: 1 (src/honeyhive/api/evaluations.py)
+
+- **🐛 Tracer: Fixed enrich_span and enrich_session user_properties and metrics handling**
+  - Corrected user_properties parameter handling in span enrichment
+  - Fixed metrics parameter passing in session enrichment
+  - Updated documentation examples to match corrected API
+  - Added verification examples for enrichment functionality
+  - Files modified: 4 | Tests updated: 3 | Docs updated: 3
 
 - **✨ API Enhancement: DatasetsAPI Filtering - Complete Backend Parity**
   - **Name Filtering**: Added `name` parameter to `list_datasets()` and `list_datasets_async()` for exact name matching

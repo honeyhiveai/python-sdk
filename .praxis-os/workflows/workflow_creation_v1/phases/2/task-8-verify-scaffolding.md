@@ -26,7 +26,7 @@ Systematically verify that all directories and the metadata.json file were creat
 Confirm the workflow root directory exists and is accessible:
 
 ```
-universal/workflows/{target_workflow_name}/
+.praxis-os/workflows/{target_workflow_type}/
 ```
 
 📖 **DISCOVER-TOOL**: List directory contents
@@ -135,7 +135,7 @@ Submit the following evidence to complete Phase 1:
 
 ```yaml
 evidence:
-  workflow_directory_path: "universal/workflows/{name}/"
+  workflow_directory_path: ".praxis-os/workflows/{workflow_type}/"
   phase_directories_count: {N}
   metadata_json_created: true
   scaffolding_verified: true

@@ -38,9 +38,9 @@ User Request → Pre-Task Validation (once, clean state preferred)
 ```
 
 **When to Query This Standard:**
-- Before generating code → `search_standards("pre-generation validation")`
-- Import verification → `search_standards("import verification")`
-- Date handling → `search_standards("date usage policy")`
+- Before generating code → `pos_search_project(content_type="standards", query="pre-generation validation")`
+- Import verification → `pos_search_project(content_type="standards", query="import verification")`
+- Date handling → `pos_search_project(content_type="standards", query="date usage policy")`
 
 ---
 
@@ -802,12 +802,12 @@ tox -e unit
 
 | Situation | Example Query |
 |-----------|---------------|
-| **Before generating code** | `search_standards("pre-generation validation")` |
-| **Multi-file tasks** | `search_standards("validation checkpoints")` |
-| **Import verification** | `search_standards("import verification rules")` |
-| **Date handling** | `search_standards("date usage policy")` |
-| **Clean state questions** | `search_standards("when is clean state required")` |
-| **Validation mistakes** | `search_standards("common validation mistakes")` |
+| **Before generating code** | `pos_search_project(content_type="standards", query="pre-generation validation")` |
+| **Multi-file tasks** | `pos_search_project(content_type="standards", query="validation checkpoints")` |
+| **Import verification** | `pos_search_project(content_type="standards", query="import verification rules")` |
+| **Date handling** | `pos_search_project(content_type="standards", query="date usage policy")` |
+| **Clean state questions** | `pos_search_project(content_type="standards", query="when is clean state required")` |
+| **Validation mistakes** | `pos_search_project(content_type="standards", query="common validation mistakes")` |
 
 ---
 
@@ -815,22 +815,22 @@ tox -e unit
 
 **Query workflow for validation mastery:**
 
-1. **Start with pre-generation validation** → `search_standards("pre-generation validation")` (this document)
-2. **Learn compliance protocol** → `search_standards("compliance checking")` → `standards/ai-assistant/compliance-protocol.md`
-3. **Understand commit protocol** → `search_standards("commit protocol")` → `standards/ai-assistant/commit-protocol.md`
-4. **Master import verification** → `search_standards("import verification")` → `standards/ai-safety/import-verification-rules.md`
+1. **Start with pre-generation validation** → `pos_search_project(content_type="standards", query="pre-generation validation")` (this document)
+2. **Learn compliance protocol** → `pos_search_project(content_type="standards", query="compliance checking")` → `standards/ai-assistant/compliance-protocol.md`
+3. **Understand commit protocol** → `pos_search_project(content_type="standards", query="commit protocol")` → `standards/ai-assistant/commit-protocol.md`
+4. **Master import verification** → `pos_search_project(content_type="standards", query="import verification")` → `standards/ai-safety/import-verification-rules.md`
 
 **By Category:**
 
 **AI Safety:**
-- `standards/ai-safety/import-verification-rules.md` - Verify imports before use → `search_standards("import verification rules")`
-- `standards/ai-safety/date-usage-policy.md` - Date handling → `search_standards("date usage policy")`
-- `standards/ai-safety/git-safety-rules.md` - Git safety → `search_standards("git safety rules")`
+- `standards/ai-safety/import-verification-rules.md` - Verify imports before use → `pos_search_project(content_type="standards", query="import verification rules")`
+- `standards/ai-safety/date-usage-policy.md` - Date handling → `pos_search_project(content_type="standards", query="date usage policy")`
+- `standards/ai-safety/git-safety-rules.md` - Git safety → `pos_search_project(content_type="standards", query="git safety rules")`
 
 **AI Assistant:**
-- `standards/ai-assistant/compliance-protocol.md` - Check standards before code → `search_standards("compliance checking")`
-- `standards/ai-assistant/commit-protocol.md` - Review and commit → `search_standards("commit protocol")`
-- `standards/ai-assistant/analysis-methodology.md` - Comprehensive analysis → `search_standards("analysis methodology")`
+- `standards/ai-assistant/compliance-protocol.md` - Check standards before code → `pos_search_project(content_type="standards", query="compliance checking")`
+- `standards/ai-assistant/commit-protocol.md` - Review and commit → `pos_search_project(content_type="standards", query="commit protocol")`
+- `standards/ai-assistant/analysis-methodology.md` - Comprehensive analysis → `pos_search_project(content_type="standards", query="analysis methodology")`
 
 ---
 

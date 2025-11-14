@@ -26,11 +26,11 @@
 4. **Docker containers** - Fresh database each run, exact match to production
 
 **When to query this standard:**
-- Planning integration tests → `search_standards("integration testing patterns")`
-- Database testing strategy → `search_standards("test database strategies")`
-- Testing external APIs → `search_standards("external service testing")`
-- Test data management → `search_standards("test fixtures factories")`
-- Slow integration tests → `search_standards("fast integration tests")`
+- Planning integration tests → `pos_search_project(content_type="standards", query="integration testing patterns")`
+- Database testing strategy → `pos_search_project(content_type="standards", query="test database strategies")`
+- Testing external APIs → `pos_search_project(content_type="standards", query="external service testing")`
+- Test data management → `pos_search_project(content_type="standards", query="test fixtures factories")`
+- Slow integration tests → `pos_search_project(content_type="standards", query="fast integration tests")`
 
 **For complete guide with examples, continue reading below.**
 
@@ -708,16 +708,16 @@ Query for comprehensive testing strategy:
 
 ```python
 # For test strategy overview
-search_standards("test pyramid unit integration e2e")
+pos_search_project(content_type="standards", query="test pyramid unit integration e2e")
 
 # For test doubles and mocking
-search_standards("test doubles mocks stubs spies")
+pos_search_project(content_type="standards", query="test doubles mocks stubs spies")
 
 # For database patterns
-search_standards("database patterns repository")
+pos_search_project(content_type="standards", query="database patterns repository")
 
 # For API design and testing
-search_standards("API design principles testing")
+pos_search_project(content_type="standards", query="API design principles testing")
 ```
 
 **Related Standards:**
@@ -730,16 +730,16 @@ search_standards("API design principles testing")
 
 ```python
 # When planning integration tests
-search_standards("integration testing patterns")
+pos_search_project(content_type="standards", query="integration testing patterns")
 
 # When tests are too slow
-search_standards("fast integration tests database")
+pos_search_project(content_type="standards", query="fast integration tests database")
 
 # When managing test data
-search_standards("test fixtures factories builders")
+pos_search_project(content_type="standards", query="test fixtures factories builders")
 
 # When testing external services
-search_standards("external service testing mocking")
+pos_search_project(content_type="standards", query="external service testing mocking")
 ```
 
 ### Language-Specific Implementation
@@ -748,13 +748,13 @@ This document covers universal concepts. For language-specific tools and pattern
 
 ```python
 # Python integration testing
-search_standards("pytest fixtures test client python")
+pos_search_project(content_type="standards", query="pytest fixtures test client python")
 
 # Java integration testing  
-search_standards("spring boot test testcontainers")
+pos_search_project(content_type="standards", query="spring boot test testcontainers")
 
 # JavaScript integration testing
-search_standards("supertest jest integration tests")
+pos_search_project(content_type="standards", query="supertest jest integration tests")
 ```
 
 **Language-Specific Guides:**

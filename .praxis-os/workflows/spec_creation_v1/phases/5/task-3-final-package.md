@@ -24,24 +24,28 @@ Create a final summary document (README.md) that provides an overview of all spe
 
 ### Step 1: Create README.md from Template
 
-⚠️ MUST-READ: Use template from `core/readme-template.md`
+⚠️ MUST-READ: Query README template structure
 
-Create README.md with full template structure (document index, quick start by role, metrics, next steps). Customize with project-specific details from specs.md, srd.md, and tasks.md.
+Query: `pos_search_project(action="search_standards", query="README spec template structure quick start")`
 
-```bash
-# Copy template and customize
-cat core/readme-template.md > .praxis-os/specs/{SPEC_DIR}/README.md
-# Then edit with project specifics
-```
+Create README.md with structure from standards (document index, quick start by role, metrics, next steps). Customize with project-specific details from specs.md, srd.md, and tasks.md.
+
+🚨 FRAMEWORK-VIOLATION: Creating README from training data instead of project template
 
 ### Step 2: Validate Package Completeness
 
+🛑 CRITICAL: All 5 required spec files MUST be present
+
 Check all documents present:
-- [ ] srd.md (requirements)
-- [ ] specs.md (technical design)
-- [ ] tasks.md (implementation plan)
-- [ ] implementation.md (code guidance)
-- [ ] README.md (package overview)
+- [ ] srd.md (requirements) ✅/❌
+- [ ] specs.md (technical design) ✅/❌
+- [ ] tasks.md (implementation plan) ✅/❌
+- [ ] implementation.md (code guidance) ✅/❌
+- [ ] README.md (package overview - JUST CREATED) ✅/❌
+
+🚨 FRAMEWORK-VIOLATION: Missing README.md
+
+README.md is one of the 5 REQUIRED spec files. It must be created in this task before the spec package is considered complete. See `core/readme-template.md` for structure.
 
 📊 COUNT-AND-DOCUMENT: Package metrics from each document
 
@@ -52,11 +56,14 @@ Check all documents present:
 🛑 VALIDATE-GATE: Task Completion
 
 Before proceeding:
-- [ ] README.md created ✅/❌
-- [ ] Document index complete ✅/❌
+- [ ] README.md created and exists in spec directory ✅/❌
+- [ ] README.md has all required sections from template ✅/❌
+- [ ] Document index complete (links to all 4 other docs) ✅/❌
 - [ ] Quick start guide included ✅/❌
 - [ ] Key metrics documented ✅/❌
 - [ ] Next steps clear ✅/❌
+
+🚨 CRITICAL: README.md is MANDATORY - cannot complete Phase 5 without it
 
 ---
 

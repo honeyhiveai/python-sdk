@@ -516,13 +516,13 @@ def test_circuit_closes_after_successes():
 
 | Situation | Example Query |
 |-----------|---------------|
-| **External API integration** | `search_standards("circuit breaker")` |
-| **Cascade failure prevention** | `search_standards("prevent cascade failure")` |
-| **Microservices communication** | `search_standards("circuit breaker pattern")` |
-| **Service degradation** | `search_standards("fallback strategy")` |
-| **Half-open state confusion** | `search_standards("circuit breaker states")` |
-| **Parameter tuning** | `search_standards("circuit breaker configuration")` |
-| **Resilience patterns** | `search_standards("fail fast")` |
+| **External API integration** | `pos_search_project(content_type="standards", query="circuit breaker")` |
+| **Cascade failure prevention** | `pos_search_project(content_type="standards", query="prevent cascade failure")` |
+| **Microservices communication** | `pos_search_project(content_type="standards", query="circuit breaker pattern")` |
+| **Service degradation** | `pos_search_project(content_type="standards", query="fallback strategy")` |
+| **Half-open state confusion** | `pos_search_project(content_type="standards", query="circuit breaker states")` |
+| **Parameter tuning** | `pos_search_project(content_type="standards", query="circuit breaker configuration")` |
+| **Resilience patterns** | `pos_search_project(content_type="standards", query="fail fast")` |
 
 ---
 
@@ -530,26 +530,26 @@ def test_circuit_closes_after_successes():
 
 **Query workflow for resilient systems:**
 
-1. **Start with retries** → `search_standards("retry strategies")` → `standards/failure-modes/retry-strategies.md`
-2. **Add circuit breaker** → `search_standards("circuit breaker")` (this document)
-3. **Add graceful degradation** → `search_standards("graceful degradation")` → `standards/failure-modes/graceful-degradation.md`
-4. **Add timeouts** → `search_standards("timeout patterns")` → `standards/failure-modes/timeout-patterns.md`
+1. **Start with retries** → `pos_search_project(content_type="standards", query="retry strategies")` → `standards/failure-modes/retry-strategies.md`
+2. **Add circuit breaker** → `pos_search_project(content_type="standards", query="circuit breaker")` (this document)
+3. **Add graceful degradation** → `pos_search_project(content_type="standards", query="graceful degradation")` → `standards/failure-modes/graceful-degradation.md`
+4. **Add timeouts** → `pos_search_project(content_type="standards", query="timeout patterns")` → `standards/failure-modes/timeout-patterns.md`
 
 **By Category:**
 
 **Failure Modes:**
-- `standards/failure-modes/retry-strategies.md` - Retry logic (use inside circuit breaker) → `search_standards("retry strategies")`
-- `standards/failure-modes/graceful-degradation.md` - Degrading functionality → `search_standards("graceful degradation")`
-- `standards/failure-modes/timeout-patterns.md` - Timeout configuration → `search_standards("timeout patterns")`
+- `standards/failure-modes/retry-strategies.md` - Retry logic (use inside circuit breaker) → `pos_search_project(content_type="standards", query="retry strategies")`
+- `standards/failure-modes/graceful-degradation.md` - Degrading functionality → `pos_search_project(content_type="standards", query="graceful degradation")`
+- `standards/failure-modes/timeout-patterns.md` - Timeout configuration → `pos_search_project(content_type="standards", query="timeout patterns")`
 
 **Testing:**
-- `standards/testing/integration-testing.md` - Testing circuit breaker behavior → `search_standards("integration testing")`
+- `standards/testing/integration-testing.md` - Testing circuit breaker behavior → `pos_search_project(content_type="standards", query="integration testing")`
 
 **Architecture:**
-- `standards/architecture/dependency-injection.md` - Injecting circuit breakers → `search_standards("dependency injection")`
+- `standards/architecture/dependency-injection.md` - Injecting circuit breakers → `pos_search_project(content_type="standards", query="dependency injection")`
 
 **AI Safety:**
-- `standards/ai-safety/production-code-checklist.md` - Production code checklist (includes failure handling) → `search_standards("production code checklist")`
+- `standards/ai-safety/production-code-checklist.md` - Production code checklist (includes failure handling) → `pos_search_project(content_type="standards", query="production code checklist")`
 
 ---
 

@@ -457,7 +457,8 @@ class TestEnrichSession:
         context_mixin: MockTracerContextMixin,
         mock_client: Mock,
     ) -> None:
-        """Test session enrichment with user_properties for backwards compatibility."""
+        """Test session enrichment with user_properties -
+        should pass directly to API."""
         # Arrange
         context_mixin.client = mock_client
         context_mixin._session_id = "test-session-123"
@@ -467,19 +468,20 @@ class TestEnrichSession:
         mock_update_event_request.return_value = mock_request_instance
 
         with patch("honeyhive.tracer.core.context.safe_log"):
-            # Act - Old pattern: pass user_properties
+            # Act - Pass user_properties
             context_mixin.enrich_session(
                 user_properties={"user_id": "123", "role": "admin"},
             )
 
-        # Assert - user_properties should be merged into metadata
+        # Assert - user_properties should be passed directly to API,
+        # not merged into metadata
         mock_update_event_request.assert_called_once()
         call_args = mock_update_event_request.call_args
         assert call_args[1]["event_id"] == "test-session-123"
-        # user_properties should be merged into metadata with prefix
-        assert "metadata" in call_args[1]
-        assert call_args[1]["metadata"]["user_properties.user_id"] == "123"
-        assert call_args[1]["metadata"]["user_properties.role"] == "admin"
+        # user_properties should be a separate field, not in metadata
+        assert "user_properties" in call_args[1]
+        assert call_args[1]["user_properties"]["user_id"] == "123"
+        assert call_args[1]["user_properties"]["role"] == "admin"
         mock_client.events.update_event.assert_called_once_with(mock_request_instance)
 
 
@@ -745,6 +747,31 @@ class TestPrivateHelperMethods:
         # Assert
         assert result == {}
 
+    def test_build_session_update_params_dynamically_with_user_properties(
+        self, context_mixin: MockTracerContextMixin
+    ) -> None:
+        """Test building session update params with user_properties
+        as separate field."""
+        # Arrange
+        user_properties = {"user_id": "test-123", "plan": "premium"}
+        metadata = {"source": "test"}
+        metrics = {"score": 0.95}
+
+        # Act
+        result = context_mixin._build_session_update_params_dynamically(
+            user_properties=user_properties,
+            metadata=metadata,
+            metrics=metrics,
+        )
+
+        # Assert - user_properties should be a separate field, not merged into metadata
+        assert "user_properties" in result
+        assert result["user_properties"] == user_properties
+        assert result["metadata"] == metadata
+        assert result["metrics"] == metrics
+        # Verify user_properties is NOT merged into metadata
+        assert "user_properties.user_id" not in result.get("metadata", {})
+
     def test_build_session_update_params_dynamically_partial_params(
         self, context_mixin: MockTracerContextMixin
     ) -> None:
@@ -793,32 +820,30 @@ class TestEnrichSpan:
         with patch.object(
             context_mixin, "_get_current_span_dynamically", return_value=mock_span
         ):
-            with patch.object(
-                context_mixin,
-                "_build_enrichment_attributes_dynamically",
-                return_value={"normalized_attr": "value"},
-            ) as mock_build:
-                with patch.object(
-                    context_mixin, "_apply_attributes_to_span_dynamically"
-                ) as mock_apply:
-                    # Act
-                    result = context_mixin.enrich_span(
-                        attributes=attributes,
-                        metadata=metadata,
-                        custom_attr="custom_value",
-                    )
+            with patch(
+                "honeyhive.tracer.instrumentation.enrichment.enrich_span_core"
+            ) as mock_enrich_core:
+                mock_enrich_core.return_value = {"success": True, "attribute_count": 2}
+
+                # Act
+                result = context_mixin.enrich_span(
+                    attributes=attributes,
+                    metadata=metadata,
+                    custom_attr="custom_value",
+                )
 
         # Assert
         assert result is True
-        mock_build.assert_called_once_with(
-            attributes=attributes, metadata=metadata, custom_attr="custom_value"
-        )
-        mock_apply.assert_called_once_with(mock_span, {"normalized_attr": "value"})
+        mock_enrich_core.assert_called_once()
+        call_kwargs = mock_enrich_core.call_args[1]
+        assert call_kwargs["attributes"] == attributes
+        assert call_kwargs["metadata"] == metadata
+        assert "custom_attr" in call_kwargs
         mock_safe_log.assert_called_once_with(
             context_mixin,
             "debug",
             "Span enriched successfully",
-            honeyhive_data={"attribute_count": 1},
+            honeyhive_data={"attribute_count": 2},
         )
 
     @patch("honeyhive.tracer.core.context.safe_log")
@@ -859,6 +884,41 @@ class TestEnrichSpan:
         mock_safe_log.assert_called_once_with(
             context_mixin, "debug", "No active recording span for enrichment"
         )
+
+    @patch("honeyhive.tracer.core.context.safe_log")
+    def test_enrich_span_with_user_properties_and_metrics(
+        self, _mock_safe_log: Mock, context_mixin: MockTracerContextMixin
+    ) -> None:
+        """Test span enrichment with user_properties and metrics parameters."""
+        # Arrange
+        mock_span = Mock()
+        mock_span.is_recording.return_value = True
+
+        with patch.object(
+            context_mixin, "_get_current_span_dynamically", return_value=mock_span
+        ):
+            with patch(
+                "honeyhive.tracer.instrumentation.enrichment.enrich_span_core"
+            ) as mock_enrich_core:
+                mock_enrich_core.return_value = {"success": True, "attribute_count": 6}
+
+                # Act
+                result = context_mixin.enrich_span(
+                    user_properties={"user_id": "test-123", "plan": "premium"},
+                    metrics={"score": 0.95, "latency_ms": 150},
+                    metadata={"feature": "test"},
+                )
+
+        # Assert
+        assert result is True
+        mock_enrich_core.assert_called_once()
+        call_kwargs = mock_enrich_core.call_args[1]
+        assert call_kwargs["user_properties"] == {
+            "user_id": "test-123",
+            "plan": "premium",
+        }
+        assert call_kwargs["metrics"] == {"score": 0.95, "latency_ms": 150}
+        assert call_kwargs["metadata"] == {"feature": "test"}
 
     @patch("honeyhive.tracer.core.context.safe_log")
     def test_enrich_span_exception_handling(

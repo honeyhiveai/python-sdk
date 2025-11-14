@@ -426,13 +426,13 @@ logger.warning(
 
 | Situation | Example Query |
 |-----------|---------------|
-| **Network call failures** | `search_standards("retry strategies")` |
-| **API integration** | `search_standards("exponential backoff")` |
-| **Transient errors** | `search_standards("when to retry failures")` |
-| **Distributed systems** | `search_standards("retry with jitter")` |
-| **Duplicate operations concern** | `search_standards("idempotency retries")` |
-| **Retry tuning** | `search_standards("retry decision matrix")` |
-| **Thundering herd** | `search_standards("jitter retry")` |
+| **Network call failures** | `pos_search_project(content_type="standards", query="retry strategies")` |
+| **API integration** | `pos_search_project(content_type="standards", query="exponential backoff")` |
+| **Transient errors** | `pos_search_project(content_type="standards", query="when to retry failures")` |
+| **Distributed systems** | `pos_search_project(content_type="standards", query="retry with jitter")` |
+| **Duplicate operations concern** | `pos_search_project(content_type="standards", query="idempotency retries")` |
+| **Retry tuning** | `pos_search_project(content_type="standards", query="retry decision matrix")` |
+| **Thundering herd** | `pos_search_project(content_type="standards", query="jitter retry")` |
 
 ---
 
@@ -440,26 +440,26 @@ logger.warning(
 
 **Query workflow for resilient failure handling:**
 
-1. **Start here** → `search_standards("retry strategies")`
-2. **Then protect** → `search_standards("circuit breaker")` → `standards/failure-modes/circuit-breakers.md`
-3. **Then degrade** → `search_standards("graceful degradation")` → `standards/failure-modes/graceful-degradation.md`
-4. **Then timeout** → `search_standards("timeout patterns")` → `standards/failure-modes/timeout-patterns.md`
+1. **Start here** → `pos_search_project(content_type="standards", query="retry strategies")`
+2. **Then protect** → `pos_search_project(content_type="standards", query="circuit breaker")` → `standards/failure-modes/circuit-breakers.md`
+3. **Then degrade** → `pos_search_project(content_type="standards", query="graceful degradation")` → `standards/failure-modes/graceful-degradation.md`
+4. **Then timeout** → `pos_search_project(content_type="standards", query="timeout patterns")` → `standards/failure-modes/timeout-patterns.md`
 
 **By Category:**
 
 **Failure Modes:**
-- `standards/failure-modes/circuit-breakers.md` - System-wide failure protection → `search_standards("circuit breaker")`
-- `standards/failure-modes/graceful-degradation.md` - Degrade functionality when services fail → `search_standards("graceful degradation")`
-- `standards/failure-modes/timeout-patterns.md` - Timeout configuration → `search_standards("timeout patterns")`
+- `standards/failure-modes/circuit-breakers.md` - System-wide failure protection → `pos_search_project(content_type="standards", query="circuit breaker")`
+- `standards/failure-modes/graceful-degradation.md` - Degrade functionality when services fail → `pos_search_project(content_type="standards", query="graceful degradation")`
+- `standards/failure-modes/timeout-patterns.md` - Timeout configuration → `pos_search_project(content_type="standards", query="timeout patterns")`
 
 **Testing:**
-- `standards/testing/integration-testing.md` - Testing retry logic → `search_standards("integration testing")`
+- `standards/testing/integration-testing.md` - Testing retry logic → `pos_search_project(content_type="standards", query="integration testing")`
 
 **Database:**
-- `standards/database/database-patterns.md` - Database retry strategies → `search_standards("database retry")` 
+- `standards/database/database-patterns.md` - Database retry strategies → `pos_search_project(content_type="standards", query="database retry")` 
 
 **AI Safety:**
-- `standards/ai-safety/production-code-checklist.md` - Production code checklist (includes failure handling) → `search_standards("production code checklist")`
+- `standards/ai-safety/production-code-checklist.md` - Production code checklist (includes failure handling) → `pos_search_project(content_type="standards", query="production code checklist")`
 
 ---
 

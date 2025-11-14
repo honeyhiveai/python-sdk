@@ -1,26 +1,20 @@
-# Phase 4: Meta-Workflow Compliance
+# Phase 4: Phase Content Generation
 
-**Purpose**: Validate entire workflow against all 5 meta-workflow principles  
-**Deliverable**: Compliance report, all violations fixed
-
-**Note**: This is Phase "N+4" in the workflow definition, where N = number of target workflow phases.
+**Purpose**: Generate all phase.md and task files for target workflow  
+**Deliverable**: Complete target workflow with all phase and task files populated
 
 ---
 
 ## Overview
 
-This critical phase audits the created workflow for compliance with all meta-workflow principles. We systematically:
+This phase generates ALL content files for the target workflow by iterating through the workflow definition. We systematically:
 
-1. **Audit** file sizes across all tasks
-2. **Audit** command coverage percentages
-3. **Verify** three-tier architecture adherence
-4. **Verify** validation gates are complete and parseable
-5. **Verify** binding contract exists
-6. **Verify** horizontal decomposition applied
-7. **Generate** comprehensive compliance report
-8. **Fix** any violations discovered
-9. **Re-validate** after fixes
-10. **Confirm** 100% compliance achieved
+1. **Load** the target workflow definition from Phase 1
+2. **Loop** through all target phases and generate phase.md files
+3. **Loop** through all tasks and generate task-N-name.md files
+4. **Verify** all files created successfully
+
+**This is a loop-based generation phase - all files created in one pass.**
 
 **Status**: ⬜ Not Started | 🟡 In Progress | ✅ Complete
 
@@ -30,16 +24,10 @@ This critical phase audits the created workflow for compliance with all meta-wor
 
 | # | Task | File | Status |
 |---|------|------|--------|
-| 1 | Audit File Sizes | task-1-audit-file-sizes.md | ⬜ |
-| 2 | Audit Command Coverage | task-2-audit-command-coverage.md | ⬜ |
-| 3 | Verify Three-Tier | task-3-verify-three-tier.md | ⬜ |
-| 4 | Verify Validation Gates | task-4-verify-validation-gates.md | ⬜ |
-| 5 | Verify Binding Contract | task-5-verify-binding-contract.md | ⬜ |
-| 6 | Verify Horizontal Decomposition | task-6-verify-horizontal-decomposition.md | ⬜ |
-| 7 | Generate Compliance Report | task-7-generate-compliance-report.md | ⬜ |
-| 8 | Fix Violations | task-8-fix-violations.md | ⬜ |
-| 9 | Re-validate | task-9-re-validate.md | ⬜ |
-| 10 | Final Compliance Check | task-10-final-compliance-check.md | ⬜ |
+| 1 | Load Target Definition | task-1-load-target-definition.md | ⬜ |
+| 2 | Generate Phase Files | task-2-generate-phase-files.md | ⬜ |
+| 3 | Generate Task Files | task-3-generate-task-files.md | ⬜ |
+| 4 | Verify Generation | task-4-verify-generation.md | ⬜ |
 
 ---
 
@@ -51,12 +39,10 @@ This critical phase audits the created workflow for compliance with all meta-wor
 
 | Evidence | Type | Validator | Description |
 |----------|------|-----------|-------------|
-| `file_size_compliance_percent` | integer | percent_gte_95 | Percentage of task files ≤100 lines |
-| `command_coverage_percent` | integer | percent_gte_80 | Average command coverage across workflow |
-| `three_tier_validated` | boolean | is_true | Three-tier architecture verified |
-| `gate_coverage_percent` | integer | percent_gte_100 | Percentage of phases with validation gates |
-| `binding_contract_present` | boolean | is_true | Binding contract verified in entry point |
-| `violations_fixed` | boolean | is_true | All violations resolved |
+| `phase_files_created` | integer | greater_than_0 | Number of phase.md files created |
+| `task_files_created` | integer | greater_than_0 | Number of task files created |
+| `total_files_expected` | integer | greater_than_0 | Total files expected from definition |
+| `all_phases_populated` | boolean | is_true | All target phases have complete files |
 
 **Human Approval**: Not required
 
@@ -64,7 +50,7 @@ This critical phase audits the created workflow for compliance with all meta-wor
 
 ## Navigation
 
-**Start Here**: 🎯 NEXT-MANDATORY: task-1-audit-file-sizes.md
+**Start Here**: 🎯 NEXT-MANDATORY: task-1-load-target-definition.md
 
 **After Phase 4 Complete**: 🎯 NEXT-MANDATORY: ../5/phase.md
 

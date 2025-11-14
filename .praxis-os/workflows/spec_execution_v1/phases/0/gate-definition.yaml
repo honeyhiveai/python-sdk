@@ -3,8 +3,8 @@
 # Purpose: Validate specification analysis and execution plan complete
 
 checkpoint:
-  strict: false
-  allow_override: true
+  strict: true
+  allow_override: false
 
 evidence_schema:
   spec_structure_validated:

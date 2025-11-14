@@ -31,10 +31,10 @@
 - Reveals parallel work multiplication (100-400x)
 
 **Query for details:**
-- `search_standards("how to calculate wall clock duration")`
-- `search_standards("what counts as human active time")`
-- `search_standards("parallel multiplier effect")`
-- `search_standards("task estimation calibration")`
+- `pos_search_project(content_type="standards", query="how to calculate wall clock duration")`
+- `pos_search_project(content_type="standards", query="what counts as human active time")`
+- `pos_search_project(content_type="standards", query="parallel multiplier effect")`
+- `pos_search_project(content_type="standards", query="task estimation calibration")`
 
 ---
 
@@ -579,7 +579,7 @@ Can orchestrate: 20 similar tasks in parallel
 
 - `workflow-construction-standards.md` - Workflow structure and file size
 - `workflow-metadata-standards.md` - Metadata and discoverability
-- `../ai-assistant/AGENT-OS-ORIENTATION.md` - AI agent behavior and leverage
+- `../ai-assistant/PRAXIS-OS-ORIENTATION.md` - AI agent behavior and leverage
 - `../meta-workflow/horizontal-decomposition.md` - File size constraints
 
 ---
@@ -605,10 +605,10 @@ Can orchestrate: 20 similar tasks in parallel
 
 **Query anytime:**
 ```python
-search_standards("how to estimate AI agent tasks")
-search_standards("dual estimation formula")
-search_standards("what is leverage multiplier")
-search_standards("parallel work multiplication")
+pos_search_project(content_type="standards", query="how to estimate AI agent tasks")
+pos_search_project(content_type="standards", query="dual estimation formula")
+pos_search_project(content_type="standards", query="what is leverage multiplier")
+pos_search_project(content_type="standards", query="parallel work multiplication")
 ```
 
 ---

@@ -42,19 +42,19 @@ This protocol works through dynamic querying, not upfront memorization:
 🎯 At Decision Moments → Query for Specific Guidance
 
 Feel efficiency pressure?
-→ search_standards("efficiency pressure AI agents")
+→ pos_search_project(content_type="standards", query="efficiency pressure AI agents")
 
 About to grep for a file?
-→ search_standards("grep first reflex finding files")
+→ pos_search_project(content_type="standards", query="grep first reflex finding files")
 
 Tempted to skip specs/tests?
-→ search_standards("structure resistance skip tests")
+→ pos_search_project(content_type="standards", query="structure resistance skip tests")
 
 Making assumptions about project?
-→ search_standards("generic vs project-specific knowledge")
+→ pos_search_project(content_type="standards", query="generic vs project-specific knowledge")
 
 One query feels like enough?
-→ search_standards("single query syndrome multi-angle")
+→ pos_search_project(content_type="standards", query="single query syndrome multi-angle")
 ```
 
 **The Self-Reinforcing Pattern:**
@@ -338,7 +338,7 @@ Training data is a **frozen point in time** - you don't know when it was frozen.
 
 > **Training data should NEVER be your first source. It's a last resort, and even then, verify with current sources.**
 
-**Query for more:** `search_standards("information discovery hierarchy training data frozen")`
+**Query for more:** `pos_search_project(content_type="standards", query="information discovery hierarchy training data frozen")`
 
 ### Principle 10: Speed Awareness - Recognize When You're Outpacing Human Feedback
 
@@ -384,7 +384,7 @@ Faster models need **MORE aggressive reinforcement**, not less:
 
 > **Speed doesn't excuse shortcuts. Faster models need MORE reinforcement, not less. Speed amplifies the need for systematic discovery, not reduces it.**
 
-**Query for more:** `search_standards("model speed variations reinforcement needs")`
+**Query for more:** `pos_search_project(content_type="standards", query="model speed variations reinforcement needs")`
 
 ## ✅ Decision Protocol Checklist
 
@@ -429,7 +429,7 @@ Use this at decision moments:
 - [ ] Did I query for correct usage before trying this?
 - [ ] Do I understand the parameters/requirements fully?
 - [ ] Is this a mature, dogfooded system? (If yes: assume my misunderstanding)
-- [ ] Have I queried: `search_standards("how to use [tool/feature]")`?
+- [ ] Have I queried: `pos_search_project(content_type="standards", query="how to use [tool/feature]")`?
 - [ ] Am I attributing to external failure vs my lack of knowledge?
 
 **Attribution Heuristic for Errors:**
@@ -459,8 +459,8 @@ Result: Thrashes, wastes time, finds nothing
 ```
 User: "Find the persona spec from October 6th"
 Agent: *pauses, recognizes this is a search task*
-Agent: search_standards("what are persona specs in this project")
-Agent: search_standards("where are specs located in project structure")
+Agent: pos_search_project(content_type="standards", query="what are persona specs in this project")
+Agent: pos_search_project(content_type="standards", query="where are specs located in project structure")
 Agent: *now knows: specs in .praxis-os/specs/, dated folders*
 Agent: *uses informed search, finds quickly*
 Result: Fast, correct, learned project structure
@@ -479,10 +479,10 @@ Result: Missing requirements, wrong patterns, needs rework
 **✅ AI Strength Pattern:**
 ```
 User: "Add password reset feature"
-Agent: search_standards("how to implement password reset")
-Agent: search_standards("authentication best practices")
-Agent: search_standards("email security patterns")
-Agent: search_standards("testing for auth features")
+Agent: pos_search_project(content_type="standards", query="how to implement password reset")
+Agent: pos_search_project(content_type="standards", query="authentication best practices")
+Agent: pos_search_project(content_type="standards", query="email security patterns")
+Agent: pos_search_project(content_type="standards", query="testing for auth features")
 Agent: *creates spec first*
 Agent: *implements with full context*
 Result: Complete, correct, follows standards
@@ -543,8 +543,8 @@ Result: Doesn't match project's specific patterns, inconsistent
 ```
 Agent: "I know React generally"
 Agent: *pauses: "But do I know THIS project's React patterns?"*
-Agent: search_standards("React patterns in this project")
-Agent: search_standards("component structure conventions")
+Agent: pos_search_project(content_type="standards", query="React patterns in this project")
+Agent: pos_search_project(content_type="standards", query="component structure conventions")
 Agent: *learns project-specific approach*
 Agent: *implements consistently*
 Result: Matches project patterns, maintainable code
@@ -558,7 +558,7 @@ Result: Matches project patterns, maintainable code
 
 **What It Looks Like:**
 ```
-Agent: search_standards("password reset")
+Agent: pos_search_project(content_type="standards", query="password reset")
 Agent: *gets one result*
 Agent: *immediately implements*
 ```
@@ -677,13 +677,13 @@ System: "Internal server error"
 Agent: "Tool is broken, let's do manual spec creation instead"
 
 Should have been:
-Agent: pos_workflow(...) → Error → search_standards("how to use pos_workflow") 
+Agent: pos_workflow(...) → Error → pos_search_project(content_type="standards", query="how to use pos_workflow") 
 → Learn correct parameters → Try again with action="start", workflow_type="spec_creation_v1"
 ```
 
 **The Fix:**
 1. Tool/API fails → **Don't assume it's broken**
-2. Query: `search_standards("how to use [thing]")`
+2. Query: `pos_search_project(content_type="standards", query="how to use [thing]")`
 3. Learn correct usage (parameters, requirements, patterns)
 4. Try again with proper approach
 5. Only if still fails after correct usage → consider external issue
@@ -699,19 +699,19 @@ Agent: pos_workflow(...) → Error → search_standards("how to use pos_workflow
 
 | Situation | Example Query |
 |-----------|---------------|
-| **Session start** | `search_standards("AI agent decision protocol")` |
-| **Feeling rushed** | `search_standards("efficiency pressure AI agents")` |
-| **Before file operations** | `search_standards("should I grep or query first")` |
-| **Making assumptions** | `search_standards("AI inherited patterns")` |
-| **Skipping steps** | `search_standards("why structure matters for AI")` |
-| **One query feels enough** | `search_standards("multi-angle querying benefits")` |
-| **Uncertain about approach** | `search_standards("AI strengths vs human patterns")` |
-| **Mid-task guidance** | `search_standards("decision moment awareness")` |
-| **After tool/API errors** | `search_standards("external failure attribution")` |
-| **Using training data first** | `search_standards("information discovery hierarchy training data frozen")` |
-| **About to implement from training** | `search_standards("training data last resort discovery order")` |
-| **Moving too fast** | `search_standards("model speed variations reinforcement faster models")` |
-| **Feeling speedy/confident** | `search_standards("speed awareness outpacing human feedback")` |
+| **Session start** | `pos_search_project(content_type="standards", query="AI agent decision protocol")` |
+| **Feeling rushed** | `pos_search_project(content_type="standards", query="efficiency pressure AI agents")` |
+| **Before file operations** | `pos_search_project(content_type="standards", query="should I grep or query first")` |
+| **Making assumptions** | `pos_search_project(content_type="standards", query="AI inherited patterns")` |
+| **Skipping steps** | `pos_search_project(content_type="standards", query="why structure matters for AI")` |
+| **One query feels enough** | `pos_search_project(content_type="standards", query="multi-angle querying benefits")` |
+| **Uncertain about approach** | `pos_search_project(content_type="standards", query="AI strengths vs human patterns")` |
+| **Mid-task guidance** | `pos_search_project(content_type="standards", query="decision moment awareness")` |
+| **After tool/API errors** | `pos_search_project(content_type="standards", query="external failure attribution")` |
+| **Using training data first** | `pos_search_project(content_type="standards", query="information discovery hierarchy training data frozen")` |
+| **About to implement from training** | `pos_search_project(content_type="standards", query="training data last resort discovery order")` |
+| **Moving too fast** | `pos_search_project(content_type="standards", query="model speed variations reinforcement faster models")` |
+| **Feeling speedy/confident** | `pos_search_project(content_type="standards", query="speed awareness outpacing human feedback")` |
 
 ---
 
@@ -732,7 +732,7 @@ Agent: pos_workflow(...) → Error → search_standards("how to use pos_workflow
 
 ## 📚 Related Standards
 
-- `standards/ai-assistant/AGENT-OS-ORIENTATION.md` - Core prAxIs OS principles
+- `standards/ai-assistant/PRAXIS-OS-ORIENTATION.md` - Core prAxIs OS principles
 - `standards/ai-assistant/rag-content-authoring.md` - Why multi-angle querying works
 - `usage/ai-agent-quickstart.md` - Practical behavior examples
 - `usage/operating-model.md` - Human vs AI roles

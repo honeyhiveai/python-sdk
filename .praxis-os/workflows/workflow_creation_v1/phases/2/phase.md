@@ -31,7 +31,10 @@ This phase creates the foundational directory structure for the target workflow.
 | 4 | Create Supporting Docs | task-4-create-supporting-docs.md | ⬜ |
 | 5 | Create Dynamic Directories | task-5-create-dynamic-directories.md | ⬜ |
 | 6 | Generate Metadata JSON | task-6-generate-metadata-json.md | ⬜ |
-| 7 | Verify Scaffolding | task-7-verify-scaffolding.md | ⬜ |
+| 7 | Validate Metadata | task-7-validate-metadata.md | ⬜ |
+| 8 | Verify Scaffolding | task-8-verify-scaffolding.md | ⬜ |
+| 9 | Generate Gate Definitions | task-9-generate-gate-definitions.md | ⬜ |
+| 10 | Validate Gate Consistency | task-10-validate-gate-consistency.md | ⬜ |
 
 ---
 
@@ -57,4 +60,3 @@ This phase creates the foundational directory structure for the target workflow.
 **Start Here**: 🎯 NEXT-MANDATORY: task-1-create-workflow-directory.md
 
 **After Phase 2 Complete**: 🎯 NEXT-MANDATORY: ../3/phase.md
-

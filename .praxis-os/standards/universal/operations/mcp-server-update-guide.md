@@ -62,7 +62,7 @@ cp -r /path/to/praxis-os/mcp_server .praxis-os/
 ```
 
 **Requirements:**
-- ⚠️ **Server restart required** (`pkill -f "mcp.*praxis-os-rag"`)
+- ⚠️ **Server restart required** (`pkill -f "mcp.*agent-os-rag"`)
 - ⚠️ May have breaking API changes
 - ⚠️ Test thoroughly before deploying
 
@@ -104,7 +104,7 @@ Update the MCP server when:
 
 ```bash
 # If installed as package
-pip show praxis-os-mcp
+pip show agent-os-mcp
 
 # If running from source
 cd /path/to/praxis-os/mcp_server
@@ -197,11 +197,11 @@ echo $?  # Should output: 0
 
 ```bash
 # Find and stop the running server
-pkill -f "mcp.*praxis-os-rag" || pkill -f "uvx.*mcp"
+pkill -f "mcp.*agent-os-rag" || pkill -f "uvx.*mcp"
 
 # Restart via Cursor IDE
 # 1. Cursor > Settings > MCP Servers
-# 2. Find "praxis-os-rag"
+# 2. Find "agent-os-rag"
 # 3. Click "Restart"
 
 # Or restart Cursor completely
@@ -219,7 +219,7 @@ pkill -f "mcp.*praxis-os-rag" || pkill -f "uvx.*mcp"
 **Check server starts without errors:**
 ```bash
 # Check Cursor MCP logs
-# Cursor → Settings → MCP Servers → praxis-os-rag → View Logs
+# Cursor → Settings → MCP Servers → agent-os-rag → View Logs
 
 # Should see:
 # ✅ MCP server started successfully
@@ -231,7 +231,7 @@ pkill -f "mcp.*praxis-os-rag" || pkill -f "uvx.*mcp"
 **Test with a simple query:**
 ```python
 # In Cursor chat
-mcp_praxis-os-rag_search_standards(
+mcp_agent-os-rag_search_standards(
     query="testing standards",
     n_results=1
 )
@@ -263,7 +263,7 @@ cd /path/to/your-project
 .praxis-os/venv/bin/pip install -r .praxis-os/mcp_server/requirements.txt --upgrade
 
 # Restart MCP server after updates
-pkill -f "mcp.*praxis-os-rag"
+pkill -f "mcp.*agent-os-rag"
 ```
 
 ### Security Updates
@@ -280,7 +280,7 @@ pkill -f "mcp.*praxis-os-rag"
 .praxis-os/venv/bin/pip install --upgrade <package-name>
 
 # Restart MCP server
-pkill -f "mcp.*praxis-os-rag"
+pkill -f "mcp.*agent-os-rag"
 ```
 
 ---
@@ -366,7 +366,7 @@ After updating, verify:
 
 - [ ] Server restarts successfully
 - [ ] No import errors in logs
-- [ ] Can query standards: `search_standards("test")`
+- [ ] Can query standards: `pos_search_project(content_type="standards", query="test")`
 - [ ] Can start workflows: `start_workflow(...)`
 - [ ] New tools appear (if applicable)
 - [ ] Existing workflows still work
@@ -402,7 +402,7 @@ ls -la .praxis-os/mcp_server/
 .praxis-os/venv/bin/python -c "from mcp_server import workflow_engine; print('OK')"
 
 # 5. Restart MCP server
-pkill -f "mcp.*praxis-os-rag"
+pkill -f "mcp.*agent-os-rag"
 ```
 
 ### Issue: Import Errors After Update
@@ -422,7 +422,7 @@ diff -r /path/to/praxis-os/mcp_server .praxis-os/mcp_server
 .praxis-os/venv/bin/pip install --force-reinstall lancedb
 
 # 4. Restart server
-pkill -f "mcp.*praxis-os-rag"
+pkill -f "mcp.*agent-os-rag"
 ```
 
 ### Issue: New Tools Not Appearing
@@ -439,7 +439,7 @@ grep -r "new_tool_name" .praxis-os/mcp_server/
 # Quit Cursor completely, then reopen
 
 # 3. Check MCP server logs
-# Cursor > Settings > MCP Servers > praxis-os-rag > View Logs
+# Cursor > Settings > MCP Servers > agent-os-rag > View Logs
 # Look for tool registration messages
 
 # 4. Verify PYTHONPATH in .cursor/mcp.json
@@ -466,10 +466,10 @@ rm -rf .praxis-os/mcp_server
 cp -r /path/to/praxis-os/mcp_server .praxis-os/
 
 # 3. Restart server (CRITICAL)
-pkill -f "mcp.*praxis-os-rag"
+pkill -f "mcp.*agent-os-rag"
 
 # 4. Verify in logs
-# Cursor > Settings > MCP Servers > praxis-os-rag > View Logs
+# Cursor > Settings > MCP Servers > agent-os-rag > View Logs
 # Should show server restarted with new code
 ```
 
@@ -485,7 +485,7 @@ cd /path/to/praxis-os
 git pull origin main
 cp -r mcp_server /path/to/dev-project/.praxis-os/
 # Test thoroughly
-# Restart MCP server: pkill -f "mcp.*praxis-os-rag"
+# Restart MCP server: pkill -f "mcp.*agent-os-rag"
 
 # 2. Staging environment
 cd /path/to/praxis-os
@@ -541,7 +541,7 @@ spec:
     spec:
       containers:
       - name: mcp-server
-        image: your-registry/praxis-os-mcp:v1.3.0  # Built from Dockerfile above
+        image: your-registry/agent-os-mcp:v1.3.0  # Built from Dockerfile above
         env:
         - name: PYTHONPATH
           value: "/app/.praxis-os"
@@ -581,7 +581,7 @@ Notes: Updated for horizontal scaling support
 cat > .praxis-os/SERVER_VERSION.txt << EOF
 MCP Server Version Tracking
 
-Server Version: $(pip show praxis-os-mcp | grep Version | awk '{print $2}')
+Server Version: $(pip show agent-os-mcp | grep Version | awk '{print $2}')
 Installation Method: pip package
 Python Version: $(python --version | awk '{print $2}')
 Last Updated: $(date +"%Y-%m-%d %H:%M:%S")
@@ -631,7 +631,7 @@ python "$AGENT_OS_REPO/scripts/safe-upgrade.py" \
 
 # 5. Restart server
 echo "🔄 Restarting MCP server..."
-pkill -f "mcp.*praxis-os-rag" || true
+pkill -f "mcp.*agent-os-rag" || true
 # Server will auto-restart via Cursor
 
 # 6. Track versions
@@ -643,8 +643,8 @@ Content: Synced from universal/
 EOF
 
 echo "✅ Update complete!"
-echo "💡 Verify by testing: search_standards('test')"
-echo "📋 Check logs: Cursor > Settings > MCP Servers > praxis-os-rag > View Logs"
+echo "💡 Verify by testing: pos_search_project('test')"
+echo "📋 Check logs: Cursor > Settings > MCP Servers > agent-os-rag > View Logs"
 ```
 
 ---
@@ -655,33 +655,33 @@ This guide is most valuable when:
 
 1. **Updating MCP Server Software**
    - Situation: Need to update Python server code
-   - Query: `search_standards("how to update MCP server")`
+   - Query: `pos_search_project(content_type="standards", query="how to update MCP server")`
 
 2. **Server Restart Questions**
    - Situation: Unsure if restart needed after update
-   - Query: `search_standards("MCP server restart required")`
+   - Query: `pos_search_project(content_type="standards", query="MCP server restart required")`
 
 3. **Dependency Updates**
    - Situation: Need to update server dependencies
-   - Query: `search_standards("update MCP server dependencies")`
+   - Query: `pos_search_project(content_type="standards", query="update MCP server dependencies")`
 
 4. **Breaking Changes**
    - Situation: Checking for breaking changes in update
-   - Query: `search_standards("MCP server breaking changes")`
+   - Query: `pos_search_project(content_type="standards", query="MCP server breaking changes")`
 
 5. **Rollback Scenarios**
    - Situation: Need to roll back failed server update
-   - Query: `search_standards("rollback MCP server update")`
+   - Query: `pos_search_project(content_type="standards", query="rollback MCP server update")`
 
 ### Query by Use Case
 
 | Use Case | Example Query |
 |----------|---------------|
-| Server update | `search_standards("update MCP server")` |
-| Restart required | `search_standards("MCP server restart")` |
-| Dependencies | `search_standards("MCP server dependencies")` |
-| Testing updates | `search_standards("test MCP server update")` |
-| Rollback | `search_standards("rollback MCP server")` |
+| Server update | `pos_search_project(content_type="standards", query="update MCP server")` |
+| Restart required | `pos_search_project(content_type="standards", query="MCP server restart")` |
+| Dependencies | `pos_search_project(content_type="standards", query="MCP server dependencies")` |
+| Testing updates | `pos_search_project(content_type="standards", query="test MCP server update")` |
+| Rollback | `pos_search_project(content_type="standards", query="rollback MCP server")` |
 
 ---
 
@@ -689,23 +689,23 @@ This guide is most valuable when:
 
 **Update Standards:**
 - `standards/installation/update-procedures.md` - Content update procedures
-  → `search_standards("prAxIs OS update standards")`
+  → `pos_search_project(content_type="standards", query="prAxIs OS update standards")`
 
 **Workflows:**
 - `workflows/praxis_os_upgrade_v1/` - Automated upgrade workflow (handles both content and server)
-  → `search_standards("agent OS upgrade workflow")`
+  → `pos_search_project(content_type="standards", query="praxis os upgrade workflow")`
 
 **MCP Documentation:**
 - `usage/mcp-usage-guide.md` - How to use MCP tools
-  → `search_standards("MCP tools guide")`
+  → `pos_search_project(content_type="standards", query="MCP tools guide")`
 - `mcp_server/CHANGELOG.md` - Server version history
 
 **Query workflow:**
-1. **Before Update**: `search_standards("how to update MCP server")` → Learn process
+1. **Before Update**: `pos_search_project(content_type="standards", query="how to update MCP server")` → Learn process
 2. **Check Changes**: Read CHANGELOG.md for breaking changes
 3. **Execute**: Use `praxis_os_upgrade_v1` workflow (recommended) or manual method
 4. **Validate**: Test MCP tools after restart
-5. **Troubleshoot**: `search_standards("MCP server update issues")` if needed
+5. **Troubleshoot**: `pos_search_project(content_type="standards", query="MCP server update issues")` if needed
 
 ---
 
@@ -734,10 +734,10 @@ cp -r /path/to/praxis-os/mcp_server /path/to/your-project/.praxis-os/
 /path/to/your-project/.praxis-os/venv/bin/pip install -r /path/to/your-project/.praxis-os/mcp_server/requirements.txt --upgrade
 
 # Restart server
-pkill -f "mcp.*praxis-os-rag"  # Cursor will auto-restart
+pkill -f "mcp.*agent-os-rag"  # Cursor will auto-restart
 
 # Verify
-search_standards("test")  # Should work without errors
+pos_search_project(content_type="standards", query="test")  # Should work without errors
 ```
 
 ---
@@ -745,6 +745,6 @@ search_standards("test")  # Should work without errors
 **Remember:**
 - **Content updates**: Copy from `universal/` → `.praxis-os/`
 - **Server updates**: Copy from `mcp_server/` → `.praxis-os/mcp_server/`
-- **Always restart** server after code changes: `pkill -f "mcp.*praxis-os-rag"`
+- **Always restart** server after code changes: `pkill -f "mcp.*agent-os-rag"`
 - **Verify in logs** after restart (Cursor → Settings → MCP Servers → View Logs)
 - **Test thoroughly** before production deployment

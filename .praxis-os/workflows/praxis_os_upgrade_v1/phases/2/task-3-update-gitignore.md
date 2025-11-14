@@ -47,7 +47,7 @@ header_line = None
 for line in lines:
     stripped = line.strip()
     if stripped.startswith("#"):
-        if "prAxIs OS" in stripped:
+        if "Agent OS" in stripped:
             header_line = stripped
     elif stripped:  # Non-empty, non-comment
         required_patterns.append(stripped)
@@ -103,7 +103,7 @@ if missing:
             f.write("\n")
         
         # Add header if this is first prAxIs OS section
-        if "# prAxIs OS" not in target_content and header_line:
+        if "# Agent OS" not in target_content and header_line:
             f.write(f"{header_line}\n")
         
         # Add missing entries

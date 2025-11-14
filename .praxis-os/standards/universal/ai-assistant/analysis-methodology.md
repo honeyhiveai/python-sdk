@@ -309,7 +309,7 @@ AI: "Um..."
 
 **Problem**: Can't verify completeness
 
-**Fix**: "After examining 23 files in python-sdk and querying praxis-os MCP 8 times, I found..."
+**Fix**: "After examining 23 files in python-sdk and querying agent-os MCP 8 times, I found..."
 
 ### ❌ Anti-Pattern 5: No Prioritization
 ```
@@ -340,7 +340,7 @@ NOT appropriate: Full correlation matrix of all safety standards
 
 ### Example 2: Comprehensive Analysis (15-30 minutes)
 ```markdown
-User: "Comprehensive analysis: python-sdk vs praxis-os standards"
+User: "Comprehensive analysis: python-sdk vs agent-os standards"
 
 Appropriate Response:
 1. List ALL files in both locations
@@ -517,12 +517,12 @@ Action: Build comprehensive correlation matrices
 
 | Situation | Example Query |
 |-----------|---------------|
-| **User requests analysis** | `search_standards("AI analysis methodology")` |
-| **Need comprehensive review** | `search_standards("how to do comprehensive analysis")` |
-| **Systematic approach needed** | `search_standards("analysis methodology")` |
-| **Avoiding superficial work** | `search_standards("analysis anti-patterns")` |
-| **Analysis depth unclear** | `search_standards("analysis depth levels")` |
-| **Leveraging AI capabilities** | `search_standards("AI analysis capabilities")` |
+| **User requests analysis** | `pos_search_project(content_type="standards", query="AI analysis methodology")` |
+| **Need comprehensive review** | `pos_search_project(content_type="standards", query="how to do comprehensive analysis")` |
+| **Systematic approach needed** | `pos_search_project(content_type="standards", query="analysis methodology")` |
+| **Avoiding superficial work** | `pos_search_project(content_type="standards", query="analysis anti-patterns")` |
+| **Analysis depth unclear** | `pos_search_project(content_type="standards", query="analysis depth levels")` |
+| **Leveraging AI capabilities** | `pos_search_project(content_type="standards", query="AI analysis capabilities")` |
 
 ---
 
@@ -530,25 +530,25 @@ Action: Build comprehensive correlation matrices
 
 **Query workflow for analysis mastery:**
 
-1. **Start with methodology** → `search_standards("AI analysis methodology")` (this document)
-2. **Check compliance** → `search_standards("compliance protocol")` → `standards/ai-assistant/compliance-protocol.md`
-3. **Learn production standards** → `search_standards("production code checklist")` → `standards/ai-safety/production-code-checklist.md`
-4. **Understand pre-generation validation** → `search_standards("pre-generation validation")` → `standards/ai-assistant/pre-generation-validation.md`
+1. **Start with methodology** → `pos_search_project(content_type="standards", query="AI analysis methodology")` (this document)
+2. **Check compliance** → `pos_search_project(content_type="standards", query="compliance protocol")` → `standards/ai-assistant/compliance-protocol.md`
+3. **Learn production standards** → `pos_search_project(content_type="standards", query="production code checklist")` → `standards/ai-safety/production-code-checklist.md`
+4. **Understand pre-generation validation** → `pos_search_project(content_type="standards", query="pre-generation validation")` → `standards/ai-assistant/pre-generation-validation.md`
 
 **By Category:**
 
 **AI Assistant:**
-- `standards/ai-assistant/compliance-protocol.md` - Check standards before analysis → `search_standards("compliance protocol")`
-- `standards/ai-assistant/standards-creation-process.md` - Creating standards → `search_standards("standards creation")`
-- `standards/ai-assistant/AGENT-OS-ORIENTATION.md` - Core principles → `search_standards("prAxIs OS orientation")`
+- `standards/ai-assistant/compliance-protocol.md` - Check standards before analysis → `pos_search_project(content_type="standards", query="compliance protocol")`
+- `standards/ai-assistant/standards-creation-process.md` - Creating standards → `pos_search_project(content_type="standards", query="standards creation")`
+- `standards/ai-assistant/PRAXIS-OS-ORIENTATION.md` - Core principles → `pos_search_project(content_type="standards", query="prAxIs OS orientation")`
 
 **AI Safety:**
-- `standards/ai-safety/production-code-checklist.md` - Analysis is step 1 → `search_standards("production code checklist")`
-- `standards/ai-assistant/pre-generation-validation.md` - Pre-code analysis → `search_standards("pre-generation validation")`
+- `standards/ai-safety/production-code-checklist.md` - Analysis is step 1 → `pos_search_project(content_type="standards", query="production code checklist")`
+- `standards/ai-assistant/pre-generation-validation.md` - Pre-code analysis → `pos_search_project(content_type="standards", query="pre-generation validation")`
 
 **Usage:**
-- `usage/mcp-usage-guide.md` - How to query knowledge bases → `search_standards("MCP usage guide")`
-- `usage/ai-agent-quickstart.md` - Practical examples → `search_standards("AI agent behavior examples")`
+- `usage/mcp-usage-guide.md` - How to query knowledge bases → `pos_search_project(content_type="standards", query="MCP usage guide")`
+- `usage/ai-agent-quickstart.md` - Practical examples → `pos_search_project(content_type="standards", query="AI agent behavior examples")`
 
 ---
 

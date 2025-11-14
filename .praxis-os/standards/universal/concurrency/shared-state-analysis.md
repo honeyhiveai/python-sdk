@@ -709,38 +709,38 @@ This standard is most valuable when:
 
 1. **Starting Concurrent Code Design**
    - Situation: Planning multi-threaded architecture
-   - Query: `search_standards("how to identify shared state")`
+   - Query: `pos_search_project(content_type="standards", query="how to identify shared state")`
 
 2. **Code Review for Concurrency**
    - Situation: Reviewing code that uses threads/async
-   - Query: `search_standards("shared state analysis checklist")`
+   - Query: `pos_search_project(content_type="standards", query="shared state analysis checklist")`
 
 3. **Debugging Concurrency Bugs**
    - Situation: Intermittent failures, race conditions suspected
-   - Query: `search_standards("shared mutable state patterns")`
+   - Query: `pos_search_project(content_type="standards", query="shared mutable state patterns")`
 
 4. **Refactoring to Improve Thread Safety**
    - Situation: Have shared state, want to eliminate or protect it
-   - Query: `search_standards("how to refactor shared state")`
+   - Query: `pos_search_project(content_type="standards", query="how to refactor shared state")`
 
 5. **Choosing Synchronization Approach**
    - Situation: Deciding between locks, immutability, message passing
-   - Query: `search_standards("shared state refactoring strategies")`
+   - Query: `pos_search_project(content_type="standards", query="shared state refactoring strategies")`
 
 6. **Understanding Concurrency Failures**
    - Situation: "Why is my concurrent code breaking?"
-   - Query: `search_standards("shared mutable state root cause")`
+   - Query: `pos_search_project(content_type="standards", query="shared mutable state root cause")`
 
 ### Query by Use Case
 
 | Use Case | Example Query |
 |----------|---------------|
-| Identify shared state | `search_standards("how to identify shared state")` |
-| Classify state safety | `search_standards("local vs shared state")` |
-| Refactor away sharing | `search_standards("eliminate shared state")` |
-| Add synchronization | `search_standards("synchronize shared state")` |
-| Test concurrency | `search_standards("test shared state issues")` |
-| Code review checklist | `search_standards("shared state code review")` |
+| Identify shared state | `pos_search_project(content_type="standards", query="how to identify shared state")` |
+| Classify state safety | `pos_search_project(content_type="standards", query="local vs shared state")` |
+| Refactor away sharing | `pos_search_project(content_type="standards", query="eliminate shared state")` |
+| Add synchronization | `pos_search_project(content_type="standards", query="synchronize shared state")` |
+| Test concurrency | `pos_search_project(content_type="standards", query="test shared state issues")` |
+| Code review checklist | `pos_search_project(content_type="standards", query="shared state code review")` |
 
 ---
 
@@ -748,24 +748,24 @@ This standard is most valuable when:
 
 **Concurrency Standards:**
 - `standards/concurrency/race-conditions.md` - Race conditions from unsynchronized shared state
-  → `search_standards("race condition prevention")`
+  → `pos_search_project(content_type="standards", query="race condition prevention")`
 - `standards/concurrency/deadlocks.md` - Deadlocks from improper lock ordering
-  → `search_standards("deadlock prevention")`
+  → `pos_search_project(content_type="standards", query="deadlock prevention")`
 - `standards/concurrency/locking-strategies.md` - Choosing locks to protect shared state
-  → `search_standards("locking strategies")`
+  → `pos_search_project(content_type="standards", query="locking strategies")`
 
 **Testing Standards:**
 - `standards/testing/integration-testing.md` - Testing concurrent code with shared state
-  → `search_standards("integration testing concurrency")`
+  → `pos_search_project(content_type="standards", query="integration testing concurrency")`
 
 **Query workflow for managing shared state:**
-1. **Identify**: `search_standards("how to identify shared state")` → Find all shared data
+1. **Identify**: `pos_search_project(content_type="standards", query="how to identify shared state")` → Find all shared data
 2. **Classify**: Determine if local, shared immutable, or shared mutable
-3. **Analyze**: `search_standards("escape analysis")` → Check if local data escapes
-4. **Choose Strategy**: `search_standards("how to refactor shared state")` → Eliminate, immutabilize, or synchronize
+3. **Analyze**: `pos_search_project(content_type="standards", query="escape analysis")` → Check if local data escapes
+4. **Choose Strategy**: `pos_search_project(content_type="standards", query="how to refactor shared state")` → Eliminate, immutabilize, or synchronize
 5. **Implement**: Apply chosen strategy (locks, atomics, immutable structures)
-6. **Test**: `search_standards("test shared state issues")` → Stress test with concurrency
-7. **Review**: `search_standards("shared state code review")` → Validate with checklist
+6. **Test**: `pos_search_project(content_type="standards", query="test shared state issues")` → Stress test with concurrency
+7. **Review**: `pos_search_project(content_type="standards", query="shared state code review")` → Validate with checklist
 
 ---
 

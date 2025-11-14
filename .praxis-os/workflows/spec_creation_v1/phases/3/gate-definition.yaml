@@ -3,10 +3,15 @@
 # Purpose: Validate implementation tasks documented in tasks.md
 
 checkpoint:
-  strict: false
+  strict: true
   allow_override: true
 
 evidence_schema:
+  supporting_docs_reviewed:
+    type: boolean
+    required: true
+    description: "Re-read supporting docs sections relevant to task breakdown"
+
   tasks_created:
     type: boolean
     required: true

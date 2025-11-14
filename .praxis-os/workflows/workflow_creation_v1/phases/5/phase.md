@@ -18,7 +18,8 @@ This final phase ensures the workflow is ready for production use. We systematic
 5. **Implement** refinements based on findings
 6. **Create** usage guide for workflow consumers
 7. **Re-validate** compliance after refinements
-8. **Obtain** human approval for production release
+8. **Audit** content quality (detect generic stubs)
+9. **Obtain** human approval for production release
 
 **Status**: ⬜ Not Started | 🟡 In Progress | ✅ Complete
 
@@ -35,6 +36,7 @@ This final phase ensures the workflow is ready for production use. We systematic
 | 5 | Implement Refinements | task-5-implement-refinements.md | ⬜ |
 | 6 | Create Usage Guide | task-6-create-usage-guide.md | ⬜ |
 | 7 | Final Validation | task-7-final-validation.md | ⬜ |
+| 9 | Audit Content Quality | task-9-audit-content-quality.md | ⬜ |
 | 8 | Human Review | task-8-human-review.md | ⬜ |
 
 ---
@@ -52,6 +54,9 @@ This final phase ensures the workflow is ready for production use. We systematic
 | `refinements_applied` | boolean | is_true | All identified issues addressed |
 | `usage_guide_created` | boolean | is_true | Usage guide written |
 | `final_compliance_passed` | boolean | is_true | Final compliance check passed |
+| `content_quality_passed` | boolean | is_true | No generic stubs detected |
+| `content_quality_compliance_percent` | integer | percent_gte_95 | Percentage of compliant task files |
+| `generic_content_detected` | boolean | is_false | No generic placeholder content found |
 | `human_approved` | boolean | is_true | Human reviewed and approved for production |
 
 **Human Approval**: **REQUIRED**

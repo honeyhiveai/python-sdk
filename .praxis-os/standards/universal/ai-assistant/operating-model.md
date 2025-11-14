@@ -32,7 +32,7 @@
 1. ✅ YOU ARE CODE AUTHOR (100% of code) - But understand completely first
 2. ✅ QUERY LIBERALLY (5-10+ times per task) - Understand before implementing
 3. ✅ USE WORKFLOWS FOR SPECS (don't manually implement)
-4. ✅ NEVER READ .praxis-os/standards FILES DIRECTLY (use RAG)
+4. ✅ NEVER READ .praxis-os/ FILES DIRECTLY (use RAG)
 5. ✅ ITERATE UNTIL DONE (tests pass, linter clean) - But get it right the first time
 
 ---
@@ -65,8 +65,8 @@
    - Iterate until tests pass and linter clean
    - Present completed work, not partial solutions
 
-2. **✅ QUERY LIBERALLY** (search_standards is your primary tool)
-   - Use search_standards() 5-10 times per task minimum
+2. **✅ QUERY LIBERALLY** (pos_search is your primary tool)
+   - Use pos_search_project() 5-10 times per task minimum
    - NEVER read_file(".praxis-os/standards/..." or "universal/...")
    - Query before implementing, during work, when uncertain
 
@@ -84,12 +84,12 @@
    - Run linter → fix errors → clean
    - Only then present work to human
 
-**For complete 750-line prAxIs OS orientation guide**: Query `search_standards("prAxIs OS orientation guide")` or see `standards/universal/ai-assistant/AGENT-OS-ORIENTATION.md`
+**For complete 750-line prAxIs OS orientation guide**: Query `pos_search_project(content_type="standards", query="prAxIs OS orientation guide")` or see `standards/universal/ai-assistant/PRAXIS-OS-ORIENTATION.md`
 
 **After internalizing these principles**, read the detailed operating model below.
 
 **Related guides**:
-- `standards/universal/ai-assistant/MCP-TOOLS-GUIDE.md` - Tool usage patterns
+- `standards/universal/ai-assistant/mcp-tool-discovery-pattern.md` - Query-first tool discovery pattern
 - `usage/ai-agent-quickstart.md` - Practical scenario examples
 
 ---
@@ -156,7 +156,7 @@ Ownership means responsibility to understand completely before acting. Rushing t
 **Responsibilities:**
 
 #### Understanding First (Foundation)
-- 🔍 **Query liberally**: Use search_standards() 5-10+ times per task
+- 🔍 **Query liberally**: Use pos_search_project() 5-10+ times per task
 - 🌐 **External discovery**: Use web_search() for current information when standards don't cover it
 - 📖 **Code reading**: Study existing implementations to understand patterns
 - 🎯 **Align details**: Verify function signatures, parameters, patterns match before implementing
@@ -246,33 +246,33 @@ This guide is most valuable when:
 
 1. **Starting a New Session**
    - Situation: Need to understand my role as an AI agent
-   - Query: `search_standards("prAxIs OS operating model")`
+   - Query: `pos_search_project(content_type="standards", query="prAxIs OS operating model")`
 
 2. **Unclear About Responsibilities**
    - Situation: Not sure if I should implement or suggest
-   - Query: `search_standards("AI role in prAxIs OS")`
+   - Query: `pos_search_project(content_type="standards", query="AI role in prAxIs OS")`
 
 3. **Human-AI Boundary Questions**
    - Situation: Unsure what human vs AI should do
-   - Query: `search_standards("human AI partnership prAxIs OS")`
+   - Query: `pos_search_project(content_type="standards", query="human AI partnership prAxIs OS")`
 
 4. **Design to Implementation Flow**
    - Situation: Need to understand the spec creation and execution process
-   - Query: `search_standards("design to implementation flow")`
+   - Query: `pos_search_project(content_type="standards", query="design to implementation flow")`
 
 5. **Velocity and Correctness Clarification**
    - Situation: Understanding what "velocity and correctness partner" means
-   - Query: `search_standards("velocity correctness AI partner")`
+   - Query: `pos_search_project(content_type="standards", query="velocity correctness AI partner")`
 
 ### Query by Use Case
 
 | Use Case | Example Query |
 |----------|---------------|
-| Understanding my role | `search_standards("prAxIs OS operating model")` |
-| Human vs AI responsibilities | `search_standards("human AI partnership")` |
-| Should I implement or suggest | `search_standards("AI role implementation")`|
-| Design flow | `search_standards("design to implementation flow")` |
-| Spec creation process | `search_standards("how to create specs")` |
+| Understanding my role | `pos_search_project(content_type="standards", query="prAxIs OS operating model")` |
+| Human vs AI responsibilities | `pos_search_project(content_type="standards", query="human AI partnership")` |
+| Should I implement or suggest | `pos_search_project(content_type="standards", query="AI role implementation")`|
+| Design flow | `pos_search_project(content_type="standards", query="design to implementation flow")` |
+| Spec creation process | `pos_search_project(content_type="standards", query="how to create specs")` |
 
 ---
 
@@ -280,22 +280,22 @@ This guide is most valuable when:
 
 **Core Orientation:**
 - `usage/ai-agent-quickstart.md` - Practical examples of correct behavior
-  → `search_standards("AI agent quickstart")`
-- `standards/universal/ai-assistant/AGENT-OS-ORIENTATION.md` - Complete orientation guide
-  → `search_standards("prAxIs OS orientation guide")`
+  → `pos_search_project(content_type="standards", query="AI agent quickstart")`
+- `standards/universal/ai-assistant/PRAXIS-OS-ORIENTATION.md` - Complete orientation guide
+  → `pos_search_project(content_type="standards", query="prAxIs OS orientation guide")`
 
 **Tool Usage:**
 - `usage/mcp-usage-guide.md` - How to use MCP tools
-  → `search_standards("MCP tools guide")`
+  → `pos_search_project(content_type="standards", query="MCP tools guide")`
 
 **Spec Creation:**
 - `usage/creating-specs.md` - How to create specification documents
-  → `search_standards("how to create specs")`
+  → `pos_search_project(content_type="standards", query="how to create specs")`
 
 **Query workflow:**
-1. **Session Start**: `search_standards("prAxIs OS operating model")` → Understand roles
-2. **Get Examples**: `search_standards("AI agent quickstart")` → See practical patterns
-3. **Create Specs**: `search_standards("how to create specs")` → Document designs
+1. **Session Start**: `pos_search_project(content_type="standards", query="prAxIs OS operating model")` → Understand roles
+2. **Get Examples**: `pos_search_project(content_type="standards", query="AI agent quickstart")` → See practical patterns
+3. **Create Specs**: `pos_search_project(content_type="standards", query="how to create specs")` → Document designs
 4. **Implement**: Use workflows and query standards as needed
 
 ---

@@ -40,7 +40,7 @@ if not source_result["valid"]:
 🛑 VALIDATE-GATE: Source Validated
 
 - [ ] Source path exists ✅/❌
-- [ ] Is praxis-os repository ✅/❌
+- [ ] Is agent-os repository ✅/❌
 - [ ] Git is clean ✅/❌
 - [ ] Version extracted ✅/❌
 - [ ] Commit hash extracted ✅/❌

@@ -124,7 +124,7 @@ Template for creating tasks.md during Phase 3 (Task Breakdown).
 ```
 
 **Why Good:**
-- Dual time estimates (human baseline vs prAxIs OS)
+- Dual time estimates (human baseline vs Agent OS)
 - Shows leverage multiplier (20x)
 - Clear wall clock vs active time distinction
 - Specific action items
@@ -244,7 +244,7 @@ prAxIs OS requires **two time estimates** to show the leverage multiplier (20-40
 
 4. **Task Format:**
    ```
-   search_standards("task format example Human Baseline prAxIs OS")
+   search_standards("task format example Human Baseline Agent OS")
    ```
    Returns: Template format with leverage multiplier shown
 

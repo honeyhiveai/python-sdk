@@ -213,33 +213,33 @@ This standard is most valuable when:
 
 1. **Debugging Intermittent Failures**
    - Situation: Tests pass sometimes, fail other times
-   - Query: `search_standards("race condition intermittent failures")`
+   - Query: `pos_search_project(content_type="standards", query="race condition intermittent failures")`
 
 2. **Implementing Concurrent Code**
    - Situation: Writing multi-threaded or async code
-   - Query: `search_standards("how to prevent race conditions")`
+   - Query: `pos_search_project(content_type="standards", query="how to prevent race conditions")`
 
 3. **Code Review for Thread Safety**
    - Situation: Reviewing code that uses shared state
-   - Query: `search_standards("how to detect race conditions")`
+   - Query: `pos_search_project(content_type="standards", query="how to detect race conditions")`
 
 4. **Production Bugs Under Load**
    - Situation: "Works on my machine, fails in production"
-   - Query: `search_standards("race condition symptoms")`
+   - Query: `pos_search_project(content_type="standards", query="race condition symptoms")`
 
 5. **Choosing Synchronization Strategy**
    - Situation: Deciding between locks, atomics, immutability
-   - Query: `search_standards("race condition prevention strategies")`
+   - Query: `pos_search_project(content_type="standards", query="race condition prevention strategies")`
 
 ### Query by Use Case
 
 | Use Case | Example Query |
 |----------|---------------|
-| Detect races | `search_standards("how to detect race conditions")` |
-| Prevent races | `search_standards("race condition prevention")` |
-| Test for races | `search_standards("test for race conditions")` |
-| Fix check-then-act | `search_standards("check-then-act race condition")` |
-| Thread safety | `search_standards("thread safety patterns")` |
+| Detect races | `pos_search_project(content_type="standards", query="how to detect race conditions")` |
+| Prevent races | `pos_search_project(content_type="standards", query="race condition prevention")` |
+| Test for races | `pos_search_project(content_type="standards", query="test for race conditions")` |
+| Fix check-then-act | `pos_search_project(content_type="standards", query="check-then-act race condition")` |
+| Thread safety | `pos_search_project(content_type="standards", query="thread safety patterns")` |
 
 ---
 
@@ -247,23 +247,23 @@ This standard is most valuable when:
 
 **Concurrency Standards:**
 - `standards/concurrency/deadlocks.md` - Deadlock prevention (lock ordering prevents both)
-  → `search_standards("deadlock prevention")`
+  → `pos_search_project(content_type="standards", query="deadlock prevention")`
 - `standards/concurrency/locking-strategies.md` - Choosing the right lock type
-  → `search_standards("locking strategies")`
+  → `pos_search_project(content_type="standards", query="locking strategies")`
 - `standards/concurrency/shared-state-analysis.md` - Identifying shared state
-  → `search_standards("shared state analysis")`
+  → `pos_search_project(content_type="standards", query="shared state analysis")`
 
 **Testing Standards:**
 - `standards/testing/integration-testing.md` - Stress testing concurrent code
-  → `search_standards("integration testing concurrency")`
+  → `pos_search_project(content_type="standards", query="integration testing concurrency")`
 
 **Query workflow for fixing race conditions:**
-1. **Detect**: `search_standards("how to detect race conditions")` → Identify shared state
-2. **Analyze**: `search_standards("shared state analysis")` → Determine access patterns
-3. **Choose Strategy**: `search_standards("race condition prevention")` → Select locks/atomics/immutability
-4. **Implement**: `search_standards("locking strategies")` → Apply synchronization
-5. **Test**: `search_standards("test for race conditions")` → Validate with stress tests
-6. **Review**: `search_standards("deadlock prevention")` → Ensure no new deadlocks
+1. **Detect**: `pos_search_project(content_type="standards", query="how to detect race conditions")` → Identify shared state
+2. **Analyze**: `pos_search_project(content_type="standards", query="shared state analysis")` → Determine access patterns
+3. **Choose Strategy**: `pos_search_project(content_type="standards", query="race condition prevention")` → Select locks/atomics/immutability
+4. **Implement**: `pos_search_project(content_type="standards", query="locking strategies")` → Apply synchronization
+5. **Test**: `pos_search_project(content_type="standards", query="test for race conditions")` → Validate with stress tests
+6. **Review**: `pos_search_project(content_type="standards", query="deadlock prevention")` → Ensure no new deadlocks
 
 ---
 

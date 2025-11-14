@@ -939,15 +939,15 @@ Different languages have ecosystem-specific README conventions. Follow your comm
 
 | Situation | Example Query |
 |-----------|---------------|
-| **Creating new README** | `search_standards("README template")` |
-| **Improving README** | `search_standards("README best practices")` |
-| **Quick Start section** | `search_standards("Quick Start guide")` |
-| **Project documentation** | `search_standards("project documentation")` |
-| **Installation instructions** | `search_standards("installation instructions")` |
-| **Usage examples** | `search_standards("usage examples README")` |
-| **README structure** | `search_standards("README structure")` |
-| **README by project type** | `search_standards("README template library")` or similar |
-| **README anti-patterns** | `search_standards("README anti-patterns")` |
+| **Creating new README** | `pos_search_project(content_type="standards", query="README template")` |
+| **Improving README** | `pos_search_project(content_type="standards", query="README best practices")` |
+| **Quick Start section** | `pos_search_project(content_type="standards", query="Quick Start guide")` |
+| **Project documentation** | `pos_search_project(content_type="standards", query="project documentation")` |
+| **Installation instructions** | `pos_search_project(content_type="standards", query="installation instructions")` |
+| **Usage examples** | `pos_search_project(content_type="standards", query="usage examples README")` |
+| **README structure** | `pos_search_project(content_type="standards", query="README structure")` |
+| **README by project type** | `pos_search_project(content_type="standards", query="README template library")` or similar |
+| **README anti-patterns** | `pos_search_project(content_type="standards", query="README anti-patterns")` |
 
 ---
 
@@ -955,21 +955,21 @@ Different languages have ecosystem-specific README conventions. Follow your comm
 
 **Query workflow for complete documentation:**
 
-1. **Start with README** → `search_standards("README template")` (this document)
-2. **Code comments** → `search_standards("code comments")` → `standards/documentation/code-comments.md`
-3. **API docs** → `search_standards("API documentation")` → `standards/documentation/api-documentation.md`
+1. **Start with README** → `pos_search_project(content_type="standards", query="README template")` (this document)
+2. **Code comments** → `pos_search_project(content_type="standards", query="code comments")` → `standards/documentation/code-comments.md`
+3. **API docs** → `pos_search_project(content_type="standards", query="API documentation")` → `standards/documentation/api-documentation.md`
 
 **By Category:**
 
 **Documentation:**
-- `standards/documentation/code-comments.md` - Commenting practices → `search_standards("code comments")`
-- `standards/documentation/api-documentation.md` - API documentation → `search_standards("API documentation")`
+- `standards/documentation/code-comments.md` - Commenting practices → `pos_search_project(content_type="standards", query="code comments")`
+- `standards/documentation/api-documentation.md` - API documentation → `pos_search_project(content_type="standards", query="API documentation")`
 
 **Usage Guides:**
-- `usage/creating-specs.md` - Creating specifications → `search_standards("how to create specs")`
+- `usage/creating-specs.md` - Creating specifications → `pos_search_project(content_type="standards", query="how to create specs")`
 
 **AI Safety:**
-- `standards/ai-safety/production-code-checklist.md` - Documentation requirements → `search_standards("production code checklist")`
+- `standards/ai-safety/production-code-checklist.md` - Documentation requirements → `pos_search_project(content_type="standards", query="production code checklist")`
 
 ---
 

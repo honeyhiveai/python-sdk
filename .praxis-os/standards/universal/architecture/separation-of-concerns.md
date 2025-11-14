@@ -689,37 +689,37 @@ This standard is most valuable when:
 
 1. **Designing New Features**
    - Situation: Planning how to organize code for new functionality
-   - Query: `search_standards("how to organize code by concern")`
+   - Query: `pos_search_project(content_type="standards", query="how to organize code by concern")`
 
 2. **Refactoring Tangled Code**
    - Situation: Code has multiple responsibilities mixed together
-   - Query: `search_standards("separation of concerns pattern")`
+   - Query: `pos_search_project(content_type="standards", query="separation of concerns pattern")`
 
 3. **Choosing Architecture Pattern**
    - Situation: Deciding on MVC vs Repository vs Service Layer vs Hexagonal
-   - Query: `search_standards("what separation pattern to use")`
+   - Query: `pos_search_project(content_type="standards", query="what separation pattern to use")`
 
 4. **Improving Testability**
    - Situation: Hard to test because concerns are mixed
-   - Query: `search_standards("how to make code testable")`
+   - Query: `pos_search_project(content_type="standards", query="how to make code testable")`
 
 5. **Code Review Feedback**
    - Situation: Reviewer says "this violates separation of concerns"
-   - Query: `search_standards("separation of concerns violations")`
+   - Query: `pos_search_project(content_type="standards", query="separation of concerns violations")`
 
 6. **Identifying God Objects**
    - Situation: Class doing too many things
-   - Query: `search_standards("God Object anti-pattern")`
+   - Query: `pos_search_project(content_type="standards", query="God Object anti-pattern")`
 
 ### Query by Use Case
 
 | Use Case | Example Query |
 |----------|---------------|
-| Organize code | `search_standards("how to organize code by concern")` |
-| Refactor tangled code | `search_standards("separation of concerns refactoring")` |
-| Choose pattern | `search_standards("MVC vs repository pattern")` |
-| Improve testability | `search_standards("make code testable")` |
-| Fix God Object | `search_standards("God Object anti-pattern")` |
+| Organize code | `pos_search_project(content_type="standards", query="how to organize code by concern")` |
+| Refactor tangled code | `pos_search_project(content_type="standards", query="separation of concerns refactoring")` |
+| Choose pattern | `pos_search_project(content_type="standards", query="MVC vs repository pattern")` |
+| Improve testability | `pos_search_project(content_type="standards", query="make code testable")` |
+| Fix God Object | `pos_search_project(content_type="standards", query="God Object anti-pattern")` |
 
 ---
 
@@ -727,27 +727,27 @@ This standard is most valuable when:
 
 **Architecture Standards:**
 - `standards/architecture/solid-principles.md` - SRP (Single Responsibility) is core to SoC
-  → `search_standards("single responsibility principle")`
+  → `pos_search_project(content_type="standards", query="single responsibility principle")`
 - `standards/architecture/dependency-injection.md` - DI enables separation
-  → `search_standards("dependency injection pattern")`
+  → `pos_search_project(content_type="standards", query="dependency injection pattern")`
 
 **Testing Standards:**
 - `standards/testing/test-doubles.md` - Separated concerns are easier to mock
-  → `search_standards("how to use test doubles")`
+  → `pos_search_project(content_type="standards", query="how to use test doubles")`
 - `standards/testing/integration-testing.md` - Testing separated layers
-  → `search_standards("integration testing patterns")`
+  → `pos_search_project(content_type="standards", query="integration testing patterns")`
 
 **Production Code:**
 - `standards/ai-safety/production-code-checklist.md` - Validates separation
-  → `search_standards("production code checklist")`
+  → `pos_search_project(content_type="standards", query="production code checklist")`
 
 **Query workflow for applying SoC:**
-1. **Learn Principle**: `search_standards("separation of concerns")` → Read this standard
-2. **Learn SOLID**: `search_standards("single responsibility principle")` → Understand SRP
-3. **Choose Pattern**: `search_standards("MVC vs repository pattern")` → Select approach
+1. **Learn Principle**: `pos_search_project(content_type="standards", query="separation of concerns")` → Read this standard
+2. **Learn SOLID**: `pos_search_project(content_type="standards", query="single responsibility principle")` → Understand SRP
+3. **Choose Pattern**: `pos_search_project(content_type="standards", query="MVC vs repository pattern")` → Select approach
 4. **Implement**: Apply chosen pattern to your code
-5. **Test**: `search_standards("how to test with mocks")` → Write tests for each concern
-6. **Review**: `search_standards("separation of concerns violations")` → Validate approach
+5. **Test**: `pos_search_project(content_type="standards", query="how to test with mocks")` → Write tests for each concern
+6. **Review**: `pos_search_project(content_type="standards", query="separation of concerns violations")` → Validate approach
 
 ---
 

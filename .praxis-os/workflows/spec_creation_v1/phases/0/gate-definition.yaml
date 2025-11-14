@@ -3,7 +3,7 @@
 # Purpose: Validate supporting documents have been properly processed
 
 checkpoint:
-  strict: false
+  strict: true
   allow_override: true
 
 evidence_schema:

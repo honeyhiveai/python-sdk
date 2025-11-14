@@ -1,9 +1,10 @@
 {
   "workflow_type": "praxis_os_upgrade_v1",
   "version": "1.0.0",
-  "name": "prAxIs OS Upgrade Workflow",
-  "description": "AI-guided prAxIs OS upgrade with validation and rollback",
-  "author": "prAxIs OS Team",
+  "name": "Agent OS Upgrade Workflow",
+  "description": "AI-guided Agent OS upgrade with validation and rollback",
+  "author": "Agent OS Team",
+  "strict_mode": true,
   "created_date": "2025-10-08",
   "total_phases": 6,
   "estimated_duration": "3-5 minutes",
@@ -179,7 +180,7 @@
   "requires_user_interaction": "optional",
   "usage": {
     "when_to_use": [
-      "Upgrading prAxIs OS content (standards, usage, workflows)",
+      "Upgrading Agent OS content (standards, usage, workflows)",
       "Upgrading MCP server to new version",
       "Need safe upgrade with rollback capability",
       "Want automatic validation and health checks",

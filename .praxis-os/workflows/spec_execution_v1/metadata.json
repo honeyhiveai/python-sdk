@@ -3,7 +3,8 @@
   "version": "1.0.0",
   "name": "Specification Execution Workflow",
   "description": "Execute tasks from a specification systematically with phase-gating and validation. Parses tasks.md from a spec directory, extracts phases dynamically, and guides systematic implementation with checkpoint validation at each phase.",
-  "author": "prAxIs OS Team",
+  "author": "Agent OS Team",
+  "strict_mode": true,
   "created_date": "2025-10-07",
   "total_phases": "dynamic",
   "estimated_duration": "Based on spec estimates (typically 1-4 weeks)",
@@ -169,6 +170,7 @@
       "task": "phases/dynamic/task-template.md"
     },
     "parser": "spec_tasks_parser"
-  }
+  },
+  "required_options": ["spec_path"]
 }
 

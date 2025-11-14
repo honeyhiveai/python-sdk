@@ -8,7 +8,14 @@
 
 ## 🎯 Objective
 
-Create the spec directory with the correct naming convention: `YYYY-MM-DD-descriptive-name`. This ensures specs are chronologically sorted and discoverable.
+Create the spec directory in the correct lifecycle location (`specs/review/`) with the correct naming convention: `YYYY-MM-DD-descriptive-name`. This ensures specs are chronologically sorted, discoverable, and follow the spec lifecycle organization pattern.
+
+**Spec Lifecycle Pattern:**
+- New specs start in `specs/review/` (awaiting approval)
+- After approval, moved to `specs/approved/` (ready for implementation)
+- After implementation, moved to `specs/completed/` (archived)
+
+🔍 **MUST-SEARCH:** Query `spec-lifecycle-organization` standard before creating specs
 
 ---
 
@@ -56,7 +63,7 @@ From the workflow options and project context, determine the descriptive name:
 Use the `current_date` tool to ensure correct date:
 
 ```python
-# AI should call: mcp_praxis-os-rag_current_date()
+# AI should call: mcp_agent-os-rag_current_date()
 # Returns: {"date": "YYYY-MM-DD", ...}
 ```
 
@@ -86,43 +93,46 @@ else
 fi
 ```
 
-### Step 5: Create Directory
+### Step 5: Create Directory in Review Location
+
+🚨 **CRITICAL:** New specs MUST be created in `specs/review/` subdirectory
 
 ```bash
-mkdir -p .praxis-os/specs/${SPEC_DIR}
+mkdir -p .praxis-os/specs/review/${SPEC_DIR}
 ```
 
 📊 **COUNT-AND-DOCUMENT:** Directory created
-- **Directory:** `.praxis-os/specs/${SPEC_DIR}`
+- **Directory:** `.praxis-os/specs/review/${SPEC_DIR}`
+- **Lifecycle Status:** review (awaiting approval)
 - **Format:** YYYY-MM-DD-descriptive-name ✅
 - **Date:** {current_date}
 - **Descriptor:** {descriptive-name}
 
-### Step 6: Store SPEC_DIR for Later Tasks
+### Step 6: Record SPEC_DIR for Phase Completion
 
-This SPEC_DIR value will be used in ALL subsequent tasks:
+The SPEC_DIR value will be passed to subsequent phases through workflow artifacts:
 
-```bash
-echo "SPEC_DIR=${SPEC_DIR}" > .praxis-os/specs/.current-spec
-echo "Created: $(date)" >> .praxis-os/specs/.current-spec
-```
+📊 **COUNT-AND-DOCUMENT:** SPEC_DIR determined
+- **Value:** `review/${SPEC_DIR}`
+- **Full Path:** `.praxis-os/specs/review/${SPEC_DIR}`
+- **Storage:** Will be passed in Phase 0 checkpoint evidence
 
-📊 **COUNT-AND-DOCUMENT:** SPEC_DIR exported
-- **Value:** `${SPEC_DIR}`
-- **Stored:** `.praxis-os/specs/.current-spec`
+⚠️ **IMPORTANT:** SPEC_DIR includes `review/` prefix indicating spec lifecycle status (awaiting approval)
 
 ---
 
 ## Validation
 
-🛑 VALIDATE: Directory naming
+🛑 VALIDATE: Directory naming and location
 
 - [ ] Directory name starts with `YYYY-MM-DD-` format ✅/❌
 - [ ] Date matches current date ✅/❌
 - [ ] Descriptive name is kebab-case (lowercase, hyphens) ✅/❌
 - [ ] Descriptive name is 2-5 words ✅/❌
-- [ ] Directory exists at `.praxis-os/specs/${SPEC_DIR}` ✅/❌
-- [ ] SPEC_DIR exported to `.current-spec` ✅/❌
+- [ ] Directory exists at `.praxis-os/specs/review/${SPEC_DIR}` ✅/❌
+- [ ] SPEC_DIR value includes `review/` prefix ✅/❌
+- [ ] Spec is in correct lifecycle location (review/) ✅/❌
+- [ ] SPEC_DIR recorded for phase completion evidence ✅/❌
 
 ---
 

@@ -39,9 +39,10 @@ class NoOpSpan:
 # Using simple caller parameter approach instead
 
 
-# pylint: disable=too-many-arguments,too-many-positional-arguments
+# pylint: disable=too-many-arguments,too-many-positional-arguments,too-many-branches
 # Justification: Enrichment requires multiple optional parameters for comprehensive
 # span metadata (metadata, metrics, feedback, inputs, outputs, config, etc.).
+# Many branches are needed to handle reserved parameters correctly.
 def enrich_span_core(
     attributes: Optional[Dict[str, Any]] = None,
     metadata: Optional[Dict[str, Any]] = None,
@@ -50,6 +51,7 @@ def enrich_span_core(
     inputs: Optional[Dict[str, Any]] = None,
     outputs: Optional[Dict[str, Any]] = None,
     config: Optional[Dict[str, Any]] = None,
+    user_properties: Optional[Dict[str, Any]] = None,
     error: Optional[str] = None,
     event_id: Optional[str] = None,
     tracer_instance: Optional[Any] = None,
@@ -70,6 +72,7 @@ def enrich_span_core(
     **New Features:**
     - Simple dict via attributes parameter routes to metadata namespace
     - Arbitrary kwargs route to metadata namespace for convenience
+    - user_properties routes to honeyhive_user_properties.* namespace
 
     **Parameter Precedence:**
     When the same key appears in multiple places, merge/override with this order:
@@ -91,6 +94,8 @@ def enrich_span_core(
     :type outputs: Optional[Dict[str, Any]]
     :param config: Config namespace (honeyhive_config.*)
     :type config: Optional[Dict[str, Any]]
+    :param user_properties: User properties namespace (honeyhive_user_properties.*)
+    :type user_properties: Optional[Dict[str, Any]]
     :param error: Error string (honeyhive_error, non-namespaced)
     :type error: Optional[str]
     :param event_id: Event ID (honeyhive_event_id, non-namespaced)
@@ -118,6 +123,12 @@ def enrich_span_core(
         result = enrich_span_core(
             user_id="123",  # Routes to metadata
             feature="chat"  # Routes to metadata
+        )
+
+        # User properties usage
+        result = enrich_span_core(
+            user_properties={"user_id": "user-123", "plan": "premium"},
+            metrics={"score": 0.95}
         )
 
     **Note:**
@@ -165,15 +176,90 @@ def enrich_span_core(
             _set_span_attributes(current_span, "honeyhive_config", config)
             attribute_count += len(config)
 
+        if user_properties:
+            _set_span_attributes(
+                current_span, "honeyhive_user_properties", user_properties
+            )
+            attribute_count += len(user_properties)
+
         # STEP 2: Apply simple attributes dict → metadata (overwrites conflicts)
         if attributes:
             _set_span_attributes(current_span, "honeyhive_metadata", attributes)
             attribute_count += len(attributes)
 
         # STEP 3: Apply arbitrary kwargs → metadata (lowest priority, wins conflicts)
-        if kwargs:
-            _set_span_attributes(current_span, "honeyhive_metadata", kwargs)
-            attribute_count += len(kwargs)
+        # But exclude reserved parameter names from kwargs
+        # Also extract reserved parameters from kwargs if not passed explicitly
+        reserved_params = {
+            "metadata",
+            "metrics",
+            "feedback",
+            "inputs",
+            "outputs",
+            "config",
+            "user_properties",
+            "error",
+            "event_id",
+            "tracer_instance",
+            "verbose",
+        }
+
+        # Extract reserved parameters from kwargs if present and not already handled
+        # This handles cases where they're passed as kwargs (e.g., from instance method)
+        if not metrics and "metrics" in kwargs:
+            metrics_from_kwargs = kwargs.pop("metrics")
+            if metrics_from_kwargs:
+                _set_span_attributes(
+                    current_span, "honeyhive_metrics", metrics_from_kwargs
+                )
+                attribute_count += len(metrics_from_kwargs)
+
+        if not user_properties and "user_properties" in kwargs:
+            user_properties_from_kwargs = kwargs.pop("user_properties")
+            if user_properties_from_kwargs:
+                _set_span_attributes(
+                    current_span,
+                    "honeyhive_user_properties",
+                    user_properties_from_kwargs,
+                )
+                attribute_count += len(user_properties_from_kwargs)
+
+        if not feedback and "feedback" in kwargs:
+            feedback_from_kwargs = kwargs.pop("feedback")
+            if feedback_from_kwargs:
+                _set_span_attributes(
+                    current_span, "honeyhive_feedback", feedback_from_kwargs
+                )
+                attribute_count += len(feedback_from_kwargs)
+
+        if not inputs and "inputs" in kwargs:
+            inputs_from_kwargs = kwargs.pop("inputs")
+            if inputs_from_kwargs:
+                _set_span_attributes(
+                    current_span, "honeyhive_inputs", inputs_from_kwargs
+                )
+                attribute_count += len(inputs_from_kwargs)
+
+        if not outputs and "outputs" in kwargs:
+            outputs_from_kwargs = kwargs.pop("outputs")
+            if outputs_from_kwargs:
+                _set_span_attributes(
+                    current_span, "honeyhive_outputs", outputs_from_kwargs
+                )
+                attribute_count += len(outputs_from_kwargs)
+
+        if not config and "config" in kwargs:
+            config_from_kwargs = kwargs.pop("config")
+            if config_from_kwargs:
+                _set_span_attributes(
+                    current_span, "honeyhive_config", config_from_kwargs
+                )
+                attribute_count += len(config_from_kwargs)
+
+        kwargs_filtered = {k: v for k, v in kwargs.items() if k not in reserved_params}
+        if kwargs_filtered:
+            _set_span_attributes(current_span, "honeyhive_metadata", kwargs_filtered)
+            attribute_count += len(kwargs_filtered)
 
         # Handle special non-namespaced attributes
         if error:

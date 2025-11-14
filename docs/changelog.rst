@@ -17,6 +17,14 @@ Latest Release Notes
 Current Version Highlights
 ~~~~~~~~~~~~~~~~~~~~~~~~~~
 
+**🚀 INFRA: praxis OS Migration & Bug Fixes (Nov 14, 2025)**
+
+* **AI Development Framework**: Migrated from Agent OS to praxis OS with MCP (Model Context Protocol) integration
+* **Enhanced Tooling**: Added multi-repo code intelligence, advanced RAG search, and phase-gated workflows
+* **Bug Fix**: Enhanced error logging for 400 errors in experiment runs for better debugging
+* **Bug Fix**: Corrected user_properties and metrics handling in enrich_span/enrich_session methods
+* **Breaking Change (Dev Only)**: AI development workflows now require praxis OS installation
+
 **✨ NEW: DatasetsAPI Filtering - Find Datasets Efficiently (Nov 10, 2025)**
 
 * **Server-Side Filtering**: Find datasets by name, type, or ID without fetching all datasets

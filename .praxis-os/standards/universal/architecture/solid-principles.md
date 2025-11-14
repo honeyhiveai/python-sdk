@@ -17,13 +17,13 @@
 5. **Dependency Inversion (DIP)** - Depend on abstractions, not concretions. High-level modules shouldn't depend on low-level details.
 
 **When to query this standard:**
-- Designing new classes → `search_standards("how to design maintainable classes")`
-- Code review feedback about coupling → `search_standards("reducing code coupling")`
-- Making code testable → `search_standards("dependency injection pattern")`
-- Class doing too many things → `search_standards("single responsibility principle")`
-- Adding features breaks existing code → `search_standards("open closed principle")`
-- Inheritance causing bugs → `search_standards("liskov substitution")`
-- Interface has unused methods → `search_standards("interface segregation")`
+- Designing new classes → `pos_search_project(content_type="standards", query="how to design maintainable classes")`
+- Code review feedback about coupling → `pos_search_project(content_type="standards", query="reducing code coupling")`
+- Making code testable → `pos_search_project(content_type="standards", query="dependency injection pattern")`
+- Class doing too many things → `pos_search_project(content_type="standards", query="single responsibility principle")`
+- Adding features breaks existing code → `pos_search_project(content_type="standards", query="open closed principle")`
+- Inheritance causing bugs → `pos_search_project(content_type="standards", query="liskov substitution")`
+- Interface has unused methods → `pos_search_project(content_type="standards", query="interface segregation")`
 
 **For complete guide with examples, continue reading below.**
 
@@ -709,35 +709,35 @@ test_service = NotificationService(
 
 ```python
 # Designing new features
-search_standards("how to design maintainable classes")
-search_standards("class design best practices")
-search_standards("dependency injection pattern")
+pos_search_project(content_type="standards", query="how to design maintainable classes")
+pos_search_project(content_type="standards", query="class design best practices")
+pos_search_project(content_type="standards", query="dependency injection pattern")
 ```
 
 ### During Code Review
 
 ```python
 # Reviewing code quality
-search_standards("reducing code coupling")
-search_standards("single responsibility principle")
-search_standards("interface segregation")
+pos_search_project(content_type="standards", query="reducing code coupling")
+pos_search_project(content_type="standards", query="single responsibility principle")
+pos_search_project(content_type="standards", query="interface segregation")
 ```
 
 ### During Refactoring
 
 ```python
 # Improving existing code
-search_standards("open closed principle")
-search_standards("liskov substitution")
-search_standards("making code testable")
+pos_search_project(content_type="standards", query="open closed principle")
+pos_search_project(content_type="standards", query="liskov substitution")
+pos_search_project(content_type="standards", query="making code testable")
 ```
 
 ### During Testing
 
 ```python
 # Making code testable
-search_standards("dependency inversion")
-search_standards("how to mock dependencies")
+pos_search_project(content_type="standards", query="dependency inversion")
+pos_search_project(content_type="standards", query="how to mock dependencies")
 ```
 
 ---
@@ -750,16 +750,16 @@ Query when designing systems:
 
 ```python
 # For layered architecture
-search_standards("clean architecture hexagonal")
+pos_search_project(content_type="standards", query="clean architecture hexagonal")
 
 # For API design
-search_standards("API design best practices")
+pos_search_project(content_type="standards", query="API design best practices")
 
 # For dependency management
-search_standards("dependency injection containers")
+pos_search_project(content_type="standards", query="dependency injection containers")
 
 # For testing strategy
-search_standards("test pyramid testing levels")
+pos_search_project(content_type="standards", query="test pyramid testing levels")
 ```
 
 **Related Standards:**
@@ -774,14 +774,14 @@ This document covers universal concepts. For language-specific implementations:
 
 ```python
 # Python-specific SOLID
-search_standards("python dependency injection decorators")
-search_standards("python abstract base classes protocols")
+pos_search_project(content_type="standards", query="python dependency injection decorators")
+pos_search_project(content_type="standards", query="python abstract base classes protocols")
 
 # Go-specific SOLID
-search_standards("go interfaces composition")
+pos_search_project(content_type="standards", query="go interfaces composition")
 
 # Rust-specific SOLID  
-search_standards("rust traits generics")
+pos_search_project(content_type="standards", query="rust traits generics")
 ```
 
 **Language-Specific Standards:**

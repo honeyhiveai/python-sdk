@@ -93,13 +93,13 @@ This guide shows you **exactly** how to behave in common scenarios. Each example
 **Then AI does (without asking)**:
 ```python
 # 1. Query standards (multiple times for complete guidance)
-search_standards("How should I implement JWT authentication in Python?")
-search_standards("What security considerations for API authentication?")
-search_standards("How do I structure auth middleware?")
-search_standards("Best practices for password hashing in Python?")
-search_standards("JWT token refresh patterns?")
-search_standards("Rate limiting for authentication endpoints?")
-search_standards("How should I test authentication flows?")
+pos_search_project(content_type="standards", query="How should I implement JWT authentication in Python?")
+pos_search_project(content_type="standards", query="What security considerations for API authentication?")
+pos_search_project(content_type="standards", query="How do I structure auth middleware?")
+pos_search_project(content_type="standards", query="Best practices for password hashing in Python?")
+pos_search_project(content_type="standards", query="JWT token refresh patterns?")
+pos_search_project(content_type="standards", query="Rate limiting for authentication endpoints?")
+pos_search_project(content_type="standards", query="How should I test authentication flows?")
 
 # 2. Implement completely (using all guidance from 7 queries)
 # - Creates auth/routes.py
@@ -175,7 +175,7 @@ search_standards("How should I test authentication flows?")
 **AI implementing caching, unsure about approach**:
 ```python
 # AI queries standards
-search_standards("When should I use Redis vs in-memory caching?")
+pos_search_project(content_type="standards", query="When should I use Redis vs in-memory caching?")
 
 # Gets guidance:
 # "Redis: Distributed, persistent, shared across instances"
@@ -284,7 +284,7 @@ pytest tests/
 **Key Differences**:
 - ✅ Iterate until tests pass
 - ✅ Debug autonomously
-- ✅ Query standards if needed: `search_standards("How do I debug pytest failures?")`
+- ✅ Query standards if needed: `pos_search_project(content_type="standards", query="How do I debug pytest failures?")`
 - ✅ Only present when all tests passing
 
 ---
@@ -312,8 +312,8 @@ pytest tests/
 
 ```python
 # AI queries standards
-search_standards("What makes robust error handling in authentication?")
-search_standards("How should I structure exception handling in Python?")
+pos_search_project(content_type="standards", query="What makes robust error handling in authentication?")
+pos_search_project(content_type="standards", query="How should I structure exception handling in Python?")
 
 # AI reads auth.py
 # AI identifies issues:
@@ -452,8 +452,8 @@ state = get_workflow_state()  # Check if active workflow exists
 
 ```python
 # AI queries standards
-search_standards("How should I document API authentication?")
-search_standards("What documentation format for Python API?")
+pos_search_project(content_type="standards", query="How should I document API authentication?")
+pos_search_project(content_type="standards", query="What documentation format for Python API?")
 
 # Gets guidance:
 # - API reference with endpoint specs
@@ -534,10 +534,10 @@ search_standards("What documentation format for Python API?")
 # AI queries standards (multiple times throughout investigation)
 
 # Query 1: How to start
-search_standards("How do I profile Python API performance?")
+pos_search_project(content_type="standards", query="How do I profile Python API performance?")
 
 # Query 2: What to look for
-search_standards("What are common API performance bottlenecks?")
+pos_search_project(content_type="standards", query="What are common API performance bottlenecks?")
 
 # AI investigates systematically
 # 1. Add profiling
@@ -547,13 +547,13 @@ search_standards("What are common API performance bottlenecks?")
 #    - Primary bottleneck: Database queries (N+1 problem)
 
 # Query 3: Specific issue found
-search_standards("How do I fix N+1 query problems in Python?")
+pos_search_project(content_type="standards", query="How do I fix N+1 query problems in Python?")
 
 # Query 4: Database optimization
-search_standards("Database indexing best practices?")
+pos_search_project(content_type="standards", query="Database indexing best practices?")
 
 # Query 5: Caching patterns
-search_standards("How should I implement API response caching?")
+pos_search_project(content_type="standards", query="How should I implement API response caching?")
 
 # AI fixes issues
 # - Fix N+1 queries (use select_related)
@@ -562,7 +562,7 @@ search_standards("How should I implement API response caching?")
 # - Add query result pagination
 
 # Query 6: Validation
-search_standards("How do I measure API performance improvements?")
+pos_search_project(content_type="standards", query="How do I measure API performance improvements?")
 
 # AI measures improvement
 # - Auth endpoint: 45ms avg (44x faster ✅)
@@ -634,9 +634,9 @@ search_standards("How do I measure API performance improvements?")
 
 ```python
 # AI queries standards
-search_standards("How should I structure authentication code?")
-search_standards("What are code organization best practices?")
-search_standards("When should I split files vs keep together?")
+pos_search_project(content_type="standards", query="How should I structure authentication code?")
+pos_search_project(content_type="standards", query="What are code organization best practices?")
+pos_search_project(content_type="standards", query="When should I split files vs keep together?")
 
 # AI analyzes current code
 # Issues found:
@@ -725,7 +725,7 @@ search_standards("When should I split files vs keep together?")
    - Identify what's being asked
 
 2. **Query Standards** (If Uncertain)
-   - `search_standards("How do I X?")`
+   - `pos_search_project(content_type="standards", query="How do I X?")`
    - Get targeted guidance
    - Multiple queries if needed
 
@@ -769,70 +769,70 @@ This guide is most valuable when:
 
 1. **Starting a New Session**
    - Situation: First message in a chat, need behavioral orientation
-   - Query: `search_standards("AI agent quickstart")`
+   - Query: `pos_search_project(content_type="standards", query="AI agent quickstart")`
 
 2. **Unsure How to Respond**
    - Situation: User makes request, unclear if I should implement or suggest
-   - Query: `search_standards("how should I respond to feature request")`
+   - Query: `pos_search_project(content_type="standards", query="how should I respond to feature request")`
 
 3. **Catching Wrong Behavior**
    - Situation: Noticed I'm suggesting instead of implementing
-   - Query: `search_standards("AI agent correct behavior patterns")`
+   - Query: `pos_search_project(content_type="standards", query="AI agent correct behavior patterns")`
 
 4. **Handling Specific Scenarios**
    - Situation: Test failures, code review, documentation request, etc.
-   - Query: `search_standards("how to handle test failures autonomously")`
+   - Query: `pos_search_project(content_type="standards", query="how to handle test failures autonomously")`
 
 5. **Reinforcing Patterns Mid-Session**
    - Situation: Long session, want to maintain correct patterns
-   - Query: `search_standards("AI agent practical examples")`
+   - Query: `pos_search_project(content_type="standards", query="AI agent practical examples")`
 
 6. **Teaching Others**
    - Situation: Onboarding new AI agents or documenting behavior
-   - Query: `search_standards("prAxIs OS correct AI behavior")`
+   - Query: `pos_search_project(content_type="standards", query="prAxIs OS correct AI behavior")`
 
 ### Query by Use Case
 
 | Use Case | Example Query |
 |----------|---------------|
-| Session start | `search_standards("AI agent quickstart")` |
-| Feature request | `search_standards("how to handle feature requests")` |
-| Test failures | `search_standards("handling test failures autonomously")` |
-| Code review | `search_standards("how to handle code review feedback")` |
-| Documentation | `search_standards("how to handle documentation requests")` |
-| Performance issues | `search_standards("handling performance issues")` |
-| Refactoring | `search_standards("how to handle refactoring")` |
-| Behavior check | `search_standards("correct AI agent behavior")` |
+| Session start | `pos_search_project(content_type="standards", query="AI agent quickstart")` |
+| Feature request | `pos_search_project(content_type="standards", query="how to handle feature requests")` |
+| Test failures | `pos_search_project(content_type="standards", query="handling test failures autonomously")` |
+| Code review | `pos_search_project(content_type="standards", query="how to handle code review feedback")` |
+| Documentation | `pos_search_project(content_type="standards", query="how to handle documentation requests")` |
+| Performance issues | `pos_search_project(content_type="standards", query="handling performance issues")` |
+| Refactoring | `pos_search_project(content_type="standards", query="how to handle refactoring")` |
+| Behavior check | `pos_search_project(content_type="standards", query="correct AI agent behavior")` |
 
 ---
 
 ## Cross-References and Related Guides
 
 **Core Orientation:**
-- `usage/ai-assistant/AGENT-OS-ORIENTATION.md` - Foundational principles and philosophy
-  → `search_standards("prAxIs OS orientation guide")`
+- `usage/ai-assistant/PRAXIS-OS-ORIENTATION.md` - Foundational principles and philosophy
+  → `pos_search_project(content_type="standards", query="prAxIs OS orientation guide")`
 - `usage/operating-model.md` - Detailed role definition and boundaries
-  → `search_standards("prAxIs OS operating model")`
+  → `pos_search_project(content_type="standards", query="prAxIs OS operating model")`
 
 **Tool Usage:**
 - `usage/mcp-usage-guide.md` - How to use MCP tools effectively
-  → `search_standards("MCP tools guide")`
+  → `pos_search_project(content_type="standards", query="MCP tools guide")`
 
 **Standards for Implementation:**
 - `standards/ai-safety/production-code-checklist.md` - Quality requirements for all code
-  → `search_standards("production code quality checklist")`
+  → `pos_search_project(content_type="standards", query="production code quality checklist")`
 - `standards/testing/test-pyramid.md` - How to structure tests
-  → `search_standards("test pyramid")`
+  → `pos_search_project(content_type="standards", query="test pyramid")`
 
 **Creating Work:**
 - `usage/creating-specs.md` - How to create specifications
-  → `search_standards("how to create specs")`
+  → `pos_search_project(content_type="standards", query="how to create specs")`
 
 **Query workflow:**
-1. **Session Start**: `search_standards("prAxIs OS orientation")` → Understand philosophy
-2. **Get Examples**: `search_standards("AI agent quickstart")` → See practical patterns
+1. **Session Start**: `pos_search_project(content_type="standards", query="prAxIs OS orientation")` → Understand philosophy
+2. **Get Examples**: `pos_search_project(content_type="standards", query="AI agent quickstart")` → See practical patterns
 3. **Implement**: Use patterns from quickstart + query specific standards as needed
-4. **Validate**: `search_standards("production code checklist")` → Ensure quality
+4. **Validate**: `pos_search_project(content_type="standards", query="production code checklist")` → Ensure quality
 
 ---
 
@@ -846,17 +846,17 @@ Throughout your session, query liberally to maintain these correct behavior patt
 
 ```python
 # Refresh these examples frequently
-search_standards("AI agent quickstart")
-search_standards("practical AI agent examples")
+pos_search_project(content_type="standards", query="AI agent quickstart")
+pos_search_project(content_type="standards", query="practical AI agent examples")
 
 # Get orientation when starting
-search_standards("prAxIs OS orientation")
+pos_search_project(content_type="standards", query="prAxIs OS orientation")
 
 # Get tool guidance when using tools
-search_standards("MCP tools guide")
+pos_search_project(content_type="standards", query="MCP tools guide")
 
 # For specific technical guidance
-search_standards("how to X")  # Your actual question
+pos_search_project(content_type="standards", query="how to X")  # Your actual question
 ```
 
 **Remember**: Each query you make reinforces correct behavior. Target 5-10 queries per significant task to maintain prAxIs OS awareness throughout long sessions.

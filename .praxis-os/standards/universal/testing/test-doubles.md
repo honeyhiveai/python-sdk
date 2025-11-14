@@ -524,38 +524,38 @@ This standard is most valuable when:
 
 1. **Writing Unit Tests**
    - Situation: Need to isolate code from dependencies
-   - Query: `search_standards("how to use test doubles")`
+   - Query: `pos_search_project(content_type="standards", query="how to use test doubles")`
 
 2. **Choosing Test Double Type**
    - Situation: Unsure whether to use mock, stub, or spy
-   - Query: `search_standards("mock vs stub vs spy")`
+   - Query: `pos_search_project(content_type="standards", query="mock vs stub vs spy")`
 
 3. **Learning Mocking**
    - Situation: New to test doubles, want to understand
-   - Query: `search_standards("what are test doubles")`
+   - Query: `pos_search_project(content_type="standards", query="what are test doubles")`
 
 4. **Code Review for Tests**
    - Situation: Reviewing test code with mocks
-   - Query: `search_standards("test double anti-patterns")`
+   - Query: `pos_search_project(content_type="standards", query="test double anti-patterns")`
 
 5. **Testing Code with Dependencies**
    - Situation: How to test code that calls databases, APIs
-   - Query: `search_standards("test isolation with doubles")`
+   - Query: `pos_search_project(content_type="standards", query="test isolation with doubles")`
 
 6. **Choosing Mocking Framework**
    - Situation: Want to add mocking to project
-   - Query: `search_standards("test double frameworks")`
+   - Query: `pos_search_project(content_type="standards", query="test double frameworks")`
 
 ### Query by Use Case
 
 | Use Case | Example Query |
 |----------|---------------|
-| Learn test doubles | `search_standards("what are test doubles")` |
-| Choose type | `search_standards("mock vs stub vs spy")` |
-| Isolate tests | `search_standards("test isolation doubles")` |
-| Verify calls | `search_standards("spy vs mock verification")` |
-| Avoid anti-patterns | `search_standards("test double anti-patterns")` |
-| Choose framework | `search_standards("mocking frameworks")` |
+| Learn test doubles | `pos_search_project(content_type="standards", query="what are test doubles")` |
+| Choose type | `pos_search_project(content_type="standards", query="mock vs stub vs spy")` |
+| Isolate tests | `pos_search_project(content_type="standards", query="test isolation doubles")` |
+| Verify calls | `pos_search_project(content_type="standards", query="spy vs mock verification")` |
+| Avoid anti-patterns | `pos_search_project(content_type="standards", query="test double anti-patterns")` |
+| Choose framework | `pos_search_project(content_type="standards", query="mocking frameworks")` |
 
 ---
 
@@ -563,26 +563,26 @@ This standard is most valuable when:
 
 **Testing Standards:**
 - `standards/testing/test-pyramid.md` - Test doubles primary used in unit tests (bottom layer)
-  → `search_standards("test pyramid structure")`
+  → `pos_search_project(content_type="standards", query="test pyramid structure")`
 - `standards/testing/integration-testing.md` - When to use real dependencies vs test doubles
-  → `search_standards("integration testing patterns")`
+  → `pos_search_project(content_type="standards", query="integration testing patterns")`
 - `standards/testing/property-based-testing.md` - Can combine with test doubles
-  → `search_standards("property-based testing")`
+  → `pos_search_project(content_type="standards", query="property-based testing")`
 
 **Architecture Standards:**
 - `standards/architecture/dependency-injection.md` - DI enables easy test double injection
-  → `search_standards("dependency injection pattern")`
+  → `pos_search_project(content_type="standards", query="dependency injection pattern")`
 
 **AI Safety:**
 - `standards/ai-safety/production-code-checklist.md` - Test coverage requirements
-  → `search_standards("production code checklist")`
+  → `pos_search_project(content_type="standards", query="production code checklist")`
 
 **Query workflow for using test doubles:**
-1. **Learn Types**: `search_standards("five types of test doubles")` → Understand dummy, stub, spy, mock, fake
-2. **Choose Type**: `search_standards("mock vs stub")` → Select appropriate double for your use case
-3. **Learn Framework**: `search_standards("test double frameworks")` → Pick language-specific framework
+1. **Learn Types**: `pos_search_project(content_type="standards", query="five types of test doubles")` → Understand dummy, stub, spy, mock, fake
+2. **Choose Type**: `pos_search_project(content_type="standards", query="mock vs stub")` → Select appropriate double for your use case
+3. **Learn Framework**: `pos_search_project(content_type="standards", query="test double frameworks")` → Pick language-specific framework
 4. **Implement**: Write tests with chosen test doubles
-5. **Validate**: `search_standards("test double anti-patterns")` → Check for common mistakes
+5. **Validate**: `pos_search_project(content_type="standards", query="test double anti-patterns")` → Check for common mistakes
 6. **Refine**: Ensure tests verify behavior, not implementation details
 
 ---

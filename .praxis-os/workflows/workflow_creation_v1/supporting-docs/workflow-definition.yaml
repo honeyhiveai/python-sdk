@@ -103,7 +103,7 @@ phases:
     tasks:
       - number: 1
         name: "create-workflow-directory"
-        purpose: "Create universal/workflows/{name}/"
+        purpose: "Create .praxis-os/workflows/{workflow_type}/"
         commands_needed: ["run_terminal_cmd"]
 
       - number: 2

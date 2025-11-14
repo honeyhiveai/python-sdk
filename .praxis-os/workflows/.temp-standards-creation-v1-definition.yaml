@@ -1,0 +1,411 @@
+name: "Standards Creation Workflow"
+workflow_type: "standards_creation_v1"
+version: "1.0.0"
+language: "python"
+description: "Automated workflow for creating RAG-optimized standards with programmatic validation, discoverability testing, and quality metrics enforcement."
+
+problem_statement: |
+  Manual standards creation leads to inconsistent quality, context degradation during creation, no measurable validation, and discovery failures. This workflow automates standards creation with programmatic RAG optimization validation, multi-angle discoverability testing, and evidence-based quality gates to ensure standards are consistent, discoverable, and self-reinforcing.
+
+success_criteria:
+  - "95%+ standards pass validation on first attempt (after AI learns patterns)"
+  - "85%+ discoverability rate (queries find standard in top 3)"
+  - "0 standards committed without validation passing"
+  - "Validation completes in < 60 seconds"
+
+phases:
+  - phase_number: 0
+    phase_name: "Discovery & Context"
+    purpose: "Gather context and understand domain before creating standard"
+    estimated_effort: "2-3 minutes"
+    tasks:
+      - task_number: 1
+        task_name: "query-existing-standards"
+        task_purpose: "Query existing standards for similar topics"
+        depends_on: []
+        commands_needed: ["DISCOVER-TOOL", "MUST-SEARCH"]
+
+      - task_number: 2
+        task_name: "identify-domain-keywords"
+        task_purpose: "Identify domain keywords and concepts"
+        depends_on: [1]
+        commands_needed: ["DISCOVER-TOOL"]
+
+      - task_number: 3
+        task_name: "review-related-patterns"
+        task_purpose: "Review related standards for patterns"
+        depends_on: [1]
+        commands_needed: ["MUST-SEARCH", "DISCOVER-TOOL"]
+
+      - task_number: 4
+        task_name: "extract-key-concepts"
+        task_purpose: "Extract key concepts and terminology"
+        depends_on: [2, 3]
+        commands_needed: ["DISCOVER-TOOL"]
+
+      - task_number: 5
+        task_name: "understand-audience"
+        task_purpose: "Understand target audience (AI agents querying naturally)"
+        depends_on: [4]
+        commands_needed: ["CONTEXT"]
+    validation_gate:
+      evidence_fields:
+        - field_name: "domain_keywords_identified"
+          field_type: "array"
+          validator: "min_length_10"
+          description: "List of >= 10 domain keywords"
+        - field_name: "related_standards_found"
+          field_type: "array"
+          validator: "min_length_2"
+          description: "List of >= 2 related standards"
+        - field_name: "key_concepts_extracted"
+          field_type: "array"
+          validator: "min_length_5"
+          description: "List of >= 5 key concepts"
+        - field_name: "audience_understood"
+          field_type: "boolean"
+          validator: "is_true"
+          description: "Target audience understood"
+
+  - phase_number: 1
+    phase_name: "Content Creation"
+    purpose: "Author standard with all required sections"
+    estimated_effort: "5-7 minutes"
+    tasks:
+      - task_number: 1
+        task_name: "write-quick-reference"
+        task_purpose: "Write Quick Reference/TL;DR section (200-400 tokens, high keyword density)"
+        depends_on: []
+        commands_needed: ["CONTEXT", "CONSTRAINT"]
+
+      - task_number: 2
+        task_name: "write-questions-section"
+        task_purpose: "Write Questions This Answers (>= 5 queries agents will use)"
+        depends_on: [1]
+        commands_needed: ["CONSTRAINT"]
+
+      - task_number: 3
+        task_name: "write-purpose-section"
+        task_purpose: "Write Purpose section (problem + solution)"
+        depends_on: [1]
+        commands_needed: ["CONTEXT"]
+
+      - task_number: 4
+        task_name: "write-detailed-content"
+        task_purpose: "Write detailed content sections with guidance and patterns"
+        depends_on: [3]
+        commands_needed: ["MUST-SEARCH", "DISCOVER-TOOL"]
+
+      - task_number: 5
+        task_name: "add-concrete-examples"
+        task_purpose: "Add concrete examples (working code/scenarios, >= 2 examples)"
+        depends_on: [4]
+        commands_needed: ["CONSTRAINT"]
+
+      - task_number: 6
+        task_name: "link-related-standards"
+        task_purpose: "Link to related standards (no duplication)"
+        depends_on: [4]
+        commands_needed: ["MUST-SEARCH", "CONSTRAINT"]
+    validation_gate:
+      evidence_fields:
+        - field_name: "has_quick_ref"
+          field_type: "boolean"
+          validator: "is_true"
+          description: "Quick Reference section present"
+        - field_name: "has_questions"
+          field_type: "boolean"
+          validator: "is_true"
+          description: "Questions This Answers present (>= 5)"
+        - field_name: "has_purpose"
+          field_type: "boolean"
+          validator: "is_true"
+          description: "Purpose section present"
+        - field_name: "has_examples"
+          field_type: "boolean"
+          validator: "is_true"
+          description: "Examples present (>= 2)"
+        - field_name: "has_related_standards"
+          field_type: "boolean"
+          validator: "is_true"
+          description: "Related standards linked (>= 1)"
+        - field_name: "sections_complete"
+          field_type: "boolean"
+          validator: "is_true"
+          description: "All sections have content"
+        - field_name: "markdown_valid"
+          field_type: "boolean"
+          validator: "is_true"
+          description: "Valid markdown syntax"
+
+  - phase_number: 2
+    phase_name: "RAG Optimization"
+    purpose: "Optimize content for RAG semantic search discovery"
+    estimated_effort: "3-5 minutes"
+    tasks:
+      - task_number: 1
+        task_name: "optimize-keyword-density"
+        task_purpose: "Optimize keyword density (TL;DR: high, body: natural)"
+        depends_on: []
+        commands_needed: ["CONSTRAINT", "DISCOVER-TOOL"]
+
+      - task_number: 2
+        task_name: "add-query-hooks"
+        task_purpose: "Add query hooks throughout content with natural language phrasing"
+        depends_on: [1]
+        commands_needed: ["CONSTRAINT"]
+
+      - task_number: 3
+        task_name: "optimize-headers"
+        task_purpose: "Optimize headers for keywords (descriptive, domain-specific)"
+        depends_on: [1]
+        commands_needed: ["CONSTRAINT"]
+
+      - task_number: 4
+        task_name: "ensure-semantic-chunking"
+        task_purpose: "Ensure semantic chunking (100-500 tokens, complete chunks)"
+        depends_on: [1, 2, 3]
+        commands_needed: ["DISCOVER-TOOL", "CONSTRAINT"]
+
+      - task_number: 5
+        task_name: "add-explicit-keywords"
+        task_purpose: "Add explicit keywords section in TL;DR"
+        depends_on: [1]
+        commands_needed: ["CONSTRAINT"]
+    validation_gate:
+      evidence_fields:
+        - field_name: "keyword_density_tldr"
+          field_type: "string"
+          validator: "equals_high"
+          description: "TL;DR keyword density is high"
+        - field_name: "keyword_density_body"
+          field_type: "string"
+          validator: "equals_natural"
+          description: "Body keyword density is natural"
+        - field_name: "query_hooks_count"
+          field_type: "integer"
+          validator: "greater_than_equal_5"
+          description: "Query hooks count >= 5"
+        - field_name: "query_hooks_natural"
+          field_type: "boolean"
+          validator: "is_true"
+          description: "Query hooks use natural language"
+        - field_name: "headers_descriptive"
+          field_type: "boolean"
+          validator: "is_true"
+          description: "Headers are descriptive"
+        - field_name: "headers_keyword_rich"
+          field_type: "boolean"
+          validator: "is_true"
+          description: "Headers include domain keywords"
+        - field_name: "headers_count"
+          field_type: "integer"
+          validator: "greater_than_equal_3"
+          description: "Major headers count >= 3"
+        - field_name: "keywords_explicit"
+          field_type: "boolean"
+          validator: "is_true"
+          description: "Explicit keywords section in TL;DR"
+        - field_name: "semantic_chunks_valid"
+          field_type: "boolean"
+          validator: "is_true"
+          description: "Semantic chunks 100-500 tokens"
+
+  - phase_number: 3
+    phase_name: "Discoverability Testing"
+    purpose: "Validate standard is discoverable via natural queries from multiple angles"
+    estimated_effort: "2-3 minutes"
+    tasks:
+      - task_number: 1
+        task_name: "generate-test-queries"
+        task_purpose: "Generate 5 test queries (one per angle: how-to, when-to, problem-solving, decision-making, tool-discovery)"
+        depends_on: []
+        commands_needed: ["DISCOVER-TOOL", "MUST-SEARCH"]
+
+      - task_number: 2
+        task_name: "execute-queries"
+        task_purpose: "Execute queries against RAG engine with new standard"
+        depends_on: [1]
+        commands_needed: ["DISCOVER-TOOL", "MUST-SEARCH"]
+
+      - task_number: 3
+        task_name: "measure-relevance"
+        task_purpose: "Measure relevance scores and ranking"
+        depends_on: [2]
+        commands_needed: ["DISCOVER-TOOL"]
+
+      - task_number: 4
+        task_name: "analyze-results"
+        task_purpose: "Analyze results (found in top 3?)"
+        depends_on: [3]
+        commands_needed: ["DISCOVER-TOOL", "CONSTRAINT"]
+
+      - task_number: 5
+        task_name: "iterate-if-needed"
+        task_purpose: "Iterate if discoverability < 80%"
+        depends_on: [4]
+        commands_needed: ["CONSTRAINT", "CONTEXT"]
+    validation_gate:
+      evidence_fields:
+        - field_name: "queries_tested"
+          field_type: "integer"
+          validator: "equals_5"
+          description: "5 queries tested"
+        - field_name: "queries_found_top3"
+          field_type: "integer"
+          validator: "greater_than_equal_4"
+          description: ">= 4 queries found in top 3 (80%)"
+        - field_name: "average_relevance"
+          field_type: "float"
+          validator: "greater_than_equal_0.85"
+          description: "Average relevance >= 0.85"
+        - field_name: "average_rank"
+          field_type: "float"
+          validator: "less_than_equal_2.0"
+          description: "Average rank <= 2.0"
+
+  - phase_number: 4
+    phase_name: "Semantic Validation"
+    purpose: "Ensure semantic quality and completeness"
+    estimated_effort: "1-2 minutes"
+    tasks:
+      - task_number: 1
+        task_name: "analyze-chunk-sizes"
+        task_purpose: "Analyze chunk sizes after semantic chunking"
+        depends_on: []
+        commands_needed: ["DISCOVER-TOOL"]
+
+      - task_number: 2
+        task_name: "verify-completeness"
+        task_purpose: "Verify semantic completeness (chunks standalone, no orphaned refs)"
+        depends_on: [1]
+        commands_needed: ["DISCOVER-TOOL", "CONSTRAINT"]
+
+      - task_number: 3
+        task_name: "validate-links"
+        task_purpose: "Validate all links (references resolve)"
+        depends_on: []
+        commands_needed: ["DISCOVER-TOOL"]
+
+      - task_number: 4
+        task_name: "check-duplication"
+        task_purpose: "Check no duplication (links to source of truth)"
+        depends_on: [3]
+        commands_needed: ["DISCOVER-TOOL", "CONSTRAINT"]
+
+      - task_number: 5
+        task_name: "verify-code-examples"
+        task_purpose: "Verify code examples (if any) are complete"
+        depends_on: []
+        commands_needed: ["DISCOVER-TOOL"]
+    validation_gate:
+      evidence_fields:
+        - field_name: "chunk_sizes_min"
+          field_type: "integer"
+          validator: "greater_than_equal_100"
+          description: "Min chunk size >= 100 tokens"
+        - field_name: "chunk_sizes_max"
+          field_type: "integer"
+          validator: "less_than_equal_500"
+          description: "Max chunk size <= 500 tokens"
+        - field_name: "chunk_sizes_avg"
+          field_type: "integer"
+          validator: "range_200_400"
+          description: "Avg chunk size 200-400 tokens"
+        - field_name: "chunks_standalone"
+          field_type: "boolean"
+          validator: "is_true"
+          description: "Chunks are standalone"
+        - field_name: "no_orphaned_refs"
+          field_type: "boolean"
+          validator: "is_true"
+          description: "No orphaned references"
+        - field_name: "context_preserved"
+          field_type: "boolean"
+          validator: "is_true"
+          description: "Context preserved via headers"
+        - field_name: "links_valid"
+          field_type: "boolean"
+          validator: "is_true"
+          description: "All links valid"
+        - field_name: "no_duplication"
+          field_type: "boolean"
+          validator: "is_true"
+          description: "No content duplication"
+        - field_name: "code_examples_complete"
+          field_type: "boolean"
+          validator: "is_true"
+          description: "Code examples complete"
+
+  - phase_number: 5
+    phase_name: "Integration & Commit"
+    purpose: "Commit standard and validate immediate discoverability"
+    estimated_effort: "1-2 minutes"
+    tasks:
+      - task_number: 1
+        task_name: "generate-validation-report"
+        task_purpose: "Generate final validation report"
+        depends_on: []
+        commands_needed: ["DISCOVER-TOOL"]
+
+      - task_number: 2
+        task_name: "commit-standard"
+        task_purpose: "Commit standard to repository"
+        depends_on: [1]
+        commands_needed: ["DISCOVER-TOOL", "CRITICAL"]
+
+      - task_number: 3
+        task_name: "trigger-index-rebuild"
+        task_purpose: "Trigger RAG index rebuild (incremental)"
+        depends_on: [2]
+        commands_needed: ["DISCOVER-TOOL", "CRITICAL"]
+
+      - task_number: 4
+        task_name: "validate-immediate-discoverability"
+        task_purpose: "Validate standard immediately discoverable"
+        depends_on: [3]
+        commands_needed: ["MUST-SEARCH", "CONSTRAINT"]
+
+      - task_number: 5
+        task_name: "update-related-standards"
+        task_purpose: "Update related standards if needed (backlinks)"
+        depends_on: [4]
+        commands_needed: ["DISCOVER-TOOL"]
+
+      - task_number: 6
+        task_name: "record-metrics"
+        task_purpose: "Record validation metrics"
+        depends_on: [4]
+        commands_needed: ["DISCOVER-TOOL"]
+    validation_gate:
+      evidence_fields:
+        - field_name: "file_committed"
+          field_type: "boolean"
+          validator: "is_true"
+          description: "Git commit successful"
+        - field_name: "index_rebuilt"
+          field_type: "boolean"
+          validator: "is_true"
+          description: "RAG index updated"
+        - field_name: "immediately_discoverable"
+          field_type: "boolean"
+          validator: "is_true"
+          description: "Re-test primary query passed"
+        - field_name: "related_standards_updated"
+          field_type: "boolean"
+          validator: "is_true"
+          description: "Backlinks added if needed"
+        - field_name: "metrics_recorded"
+          field_type: "boolean"
+          validator: "is_true"
+          description: "Validation metrics saved"
+
+quality_standards:
+  file_size_target: 100
+  file_size_max: 170
+  file_size_compliance_percent: 95
+  command_coverage_target: 80
+  validation_gates_required: true
+
+is_dynamic: false
+

@@ -444,7 +444,7 @@ Query this standard when you need workflow patterns:
 ## 🔗 Related Standards
 
 - **[Agent Decision Protocol](./agent-decision-protocol.md)** - Query: "decision protocol error attribution"
-- **[prAxIs OS Orientation](./AGENT-OS-ORIENTATION.md)** - Query: "orientation bootstrap queries"
+- **[prAxIs OS Orientation](./PRAXIS-OS-ORIENTATION.md)** - Query: "orientation bootstrap queries"
 - **[RAG Content Authoring](./rag-content-authoring.md)** - Query: "RAG optimization query hooks"
 - **[Adversarial Design](../../explanation/adversarial-design.md)** - Query: "adversarial design information asymmetry"
 

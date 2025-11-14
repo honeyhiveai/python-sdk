@@ -651,42 +651,42 @@ This standard is most valuable when:
 
 1. **Starting New API Design**
    - Situation: Beginning design of REST API, GraphQL API, or library API
-   - Query: `search_standards("how to design APIs")`
+   - Query: `pos_search_project(content_type="standards", query="how to design APIs")`
 
 2. **During API Review**
    - Situation: Reviewing proposed API changes
-   - Query: `search_standards("API design best practices")`
+   - Query: `pos_search_project(content_type="standards", query="API design best practices")`
 
 3. **Debugging API Usability Issues**
    - Situation: Users find your API confusing or error-prone
-   - Query: `search_standards("API usability principles")`
+   - Query: `pos_search_project(content_type="standards", query="API usability principles")`
 
 4. **Choosing HTTP Status Codes**
    - Situation: Not sure which HTTP status code to return
-   - Query: `search_standards("HTTP status codes")`
+   - Query: `pos_search_project(content_type="standards", query="HTTP status codes")`
 
 5. **Implementing Versioning**
    - Situation: Need to evolve API without breaking clients
-   - Query: `search_standards("API versioning compatibility")`
+   - Query: `pos_search_project(content_type="standards", query="API versioning compatibility")`
 
 6. **Handling Errors in APIs**
    - Situation: Designing error response format
-   - Query: `search_standards("API error handling")`
+   - Query: `pos_search_project(content_type="standards", query="API error handling")`
 
 7. **Pagination/Filtering Design**
    - Situation: Need to implement pagination for collections
-   - Query: `search_standards("REST API pagination")`
+   - Query: `pos_search_project(content_type="standards", query="REST API pagination")`
 
 ### Query by Use Case
 
 | Use Case | Example Query |
 |----------|---------------|
-| Starting API design | `search_standards("how to design APIs")` |
-| REST endpoint design | `search_standards("REST API design")` |
-| HTTP status codes | `search_standards("HTTP status codes")` |
-| API error messages | `search_standards("API error handling")` |
-| API versioning | `search_standards("API versioning compatibility")` |
-| Library API design | `search_standards("library SDK API design")` |
+| Starting API design | `pos_search_project(content_type="standards", query="how to design APIs")` |
+| REST endpoint design | `pos_search_project(content_type="standards", query="REST API design")` |
+| HTTP status codes | `pos_search_project(content_type="standards", query="HTTP status codes")` |
+| API error messages | `pos_search_project(content_type="standards", query="API error handling")` |
+| API versioning | `pos_search_project(content_type="standards", query="API versioning compatibility")` |
+| Library API design | `pos_search_project(content_type="standards", query="library SDK API design")` |
 
 ---
 
@@ -694,27 +694,27 @@ This standard is most valuable when:
 
 **Architecture & Design:**
 - `standards/architecture/solid-principles.md` - Class design principles for API implementations
-  → `search_standards("how to design maintainable classes")`
+  → `pos_search_project(content_type="standards", query="how to design maintainable classes")`
 
 **Testing:**
 - `standards/testing/integration-testing.md` - How to test APIs effectively
-  → `search_standards("integration testing")`
+  → `pos_search_project(content_type="standards", query="integration testing")`
 - `standards/testing/test-pyramid.md` - Testing strategy for API layers
-  → `search_standards("test pyramid API testing")`
+  → `pos_search_project(content_type="standards", query="test pyramid API testing")`
 
 **Quality:**
 - `standards/ai-safety/production-code-checklist.md` - Production code requirements
-  → `search_standards("production code quality checklist")`
+  → `pos_search_project(content_type="standards", query="production code quality checklist")`
 
 **Documentation:**
 - `standards/documentation/rag-content-authoring.md` - How to document for discoverability
-  → `search_standards("documentation standards")`
+  → `pos_search_project(content_type="standards", query="documentation standards")`
 
 **Query workflow:**
-1. **Before**: `search_standards("API design principles")` → Learn universal principles
-2. **During**: `search_standards("REST API design")` → Apply to specific API type
-3. **Testing**: `search_standards("how to test APIs")` → Validate with tests
-4. **After**: `search_standards("production code checklist")` → Final quality check
+1. **Before**: `pos_search_project(content_type="standards", query="API design principles")` → Learn universal principles
+2. **During**: `pos_search_project(content_type="standards", query="REST API design")` → Apply to specific API type
+3. **Testing**: `pos_search_project(content_type="standards", query="how to test APIs")` → Validate with tests
+4. **After**: `pos_search_project(content_type="standards", query="production code checklist")` → Final quality check
 
 ---
 

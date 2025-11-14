@@ -13,7 +13,7 @@
 **The prAxIs OS Way:**
 1. ✅ **Start typing in IDE** → Autocomplete shows all available tools + schemas
 2. ✅ **Use tools/list** → Always-current source of truth
-3. ✅ **Query for patterns** → `search_standards("how to use X tool")`
+3. ✅ **Query for patterns** → `pos_search(content_type="standards", query="how to use X tool")`
 4. ❌ **Don't memorize** → Tools evolve, parameters change
 5. ❌ **Don't read static docs** → Will drift from actual implementation
 
@@ -33,15 +33,15 @@ Solution: Create self-reinforcing habits through tools
 ```
 
 **Tool Categories (High-Level):**
-- **Discovery:** `search_standards` (most important)
+- **Discovery:** `pos_search` (most important)
 - **Workflows:** Phase-gated execution tools
 - **Browser:** `pos_browser` (browse web like a human - extract themes, compare UIs, research, test)
 - **System:** Date, validation, framework tools
 
 **When to Query This Guide:**
-- Need to understand dynamic discovery → `search_standards("MCP dynamic discovery")`
-- Why tools/list matters → `search_standards("why dynamic tools")`
-- Understanding context degradation → `search_standards("probabilistic reality AI")`
+- Need to understand dynamic discovery → `pos_search(content_type="standards", query="MCP dynamic discovery")`
+- Why tools/list matters → `pos_search(content_type="standards", query="why dynamic tools")`
+- Understanding context degradation → `pos_search(content_type="standards", query="probabilistic reality AI")`
 
 ---
 
@@ -97,7 +97,7 @@ Your IDE → calls tools/list → receives:
 **When You Need Tool Information:**
 - "What tools exist?" → **Start typing in IDE, autocomplete shows all**
 - "What params does X take?" → **IDE shows inline parameter documentation**
-- "How do I use X effectively?" → **Query for patterns: `search_standards("how to use X tool")`**
+- "How do I use X effectively?" → **Query for patterns: `pos_search(content_type="standards", query="how to use X tool")`**
 
 ---
 
@@ -178,13 +178,13 @@ Dynamic discovery becomes automatic
 
 ```python
 # Don't know what tools exist for X
-search_standards("what tools for browser testing")
+pos_search(content_type="standards", query="what tools for browser testing")
 
 # Know tool name, need usage pattern
-search_standards("how to use pos_browser")
+pos_search(content_type="standards", query="how to use pos_browser")
 
 # Know category, need specific capability
-search_standards("workflow tools")
+pos_search(content_type="standards", query="workflow tools")
 ```
 
 **Queries return patterns and best practices**, not parameter lists (IDE provides those).
@@ -238,7 +238,7 @@ tools = mcp.list_tools()
 **To find tools for your task:**
 1. Start typing in IDE (category or verb)
 2. Explore autocomplete suggestions
-3. Query for usage patterns: `search_standards("how to use [discovered tool]")`
+3. Query for usage patterns: `pos_search(content_type="standards", query="how to use [discovered tool]")`
 
 ---
 
@@ -255,7 +255,7 @@ mcp_search_documents(query="...", limit=5, ...)  # Guessing
 **Right:**
 ```python
 # Start typing, let IDE show options
-mcp_[autocomplete shows: search_standards, search_workflow, etc.]
+mcp_[autocomplete shows: pos_search, search_workflow, etc.]
 # Select correct tool, IDE shows exact parameter schema
 ```
 
@@ -263,12 +263,12 @@ mcp_[autocomplete shows: search_standards, search_workflow, etc.]
 
 **Wrong:**
 ```python
-search_standards("pos_browser parameters")  # IDE already shows this
+pos_search(content_type="standards", query="pos_browser parameters")  # IDE already shows this
 ```
 
 **Right:**
 ```python
-search_standards("how to test web UI with pos_browser")  # Patterns
+pos_search(content_type="standards", query="how to test web UI with pos_browser")  # Patterns
 ```
 
 ### 3. Embrace Evolution
@@ -311,12 +311,12 @@ search_standards("how to test web UI with pos_browser")  # Patterns
 
 | Situation | Example Query |
 |-----------|---------------|
-| **Understanding dynamic discovery** | `search_standards("MCP dynamic discovery")` |
-| **Why tools/list matters** | `search_standards("why dynamic tools")` |
-| **Context degradation** | `search_standards("probabilistic reality AI")` |
-| **Tool discovery best practices** | `search_standards("how to discover MCP tools")` |
-| **Why not static docs** | `search_standards("why MCP tools not documented")` |
-| **Tool selection** | `search_standards("how to choose right tool")` |
+| **Understanding dynamic discovery** | `pos_search(content_type="standards", query="MCP dynamic discovery")` |
+| **Why tools/list matters** | `pos_search(content_type="standards", query="why dynamic tools")` |
+| **Context degradation** | `pos_search(content_type="standards", query="probabilistic reality AI")` |
+| **Tool discovery best practices** | `pos_search(content_type="standards", query="how to discover MCP tools")` |
+| **Why not static docs** | `pos_search(content_type="standards", query="why MCP tools not documented")` |
+| **Tool selection** | `pos_search(content_type="standards", query="how to choose right tool")` |
 
 ---
 
@@ -324,23 +324,23 @@ search_standards("how to test web UI with pos_browser")  # Patterns
 
 **Query workflow for tool mastery:**
 
-1. **Start with dynamic discovery** → `search_standards("MCP dynamic discovery")` (this document)
-2. **Learn orientation** → `search_standards("prAxIs OS orientation")` → `standards/ai-assistant/AGENT-OS-ORIENTATION.md`
-3. **See practical examples** → `search_standards("AI agent examples")` → `usage/ai-agent-quickstart.md`
-4. **Understand workflows** → `search_standards("workflow system")` → `standards/workflows/workflow-system-overview.md`
+1. **Start with dynamic discovery** → `pos_search(content_type="standards", query="MCP dynamic discovery")` (this document)
+2. **Learn orientation** → `pos_search(content_type="standards", query="prAxIs OS orientation")` → `standards/ai-assistant/PRAXIS-OS-ORIENTATION.md`
+3. **See practical examples** → `pos_search(content_type="standards", query="AI agent examples")` → `usage/ai-agent-quickstart.md`
+4. **Understand workflows** → `pos_search(content_type="standards", query="workflow system")` → `standards/workflows/workflow-system-overview.md`
 
 **By Category:**
 
 **AI Assistant:**
-- `standards/ai-assistant/AGENT-OS-ORIENTATION.md` - Core prAxIs OS concepts → `search_standards("prAxIs OS orientation")`
-- `usage/mcp-usage-guide.md` - MCP protocol usage → `search_standards("MCP usage guide")`
+- `standards/ai-assistant/PRAXIS-OS-ORIENTATION.md` - Core prAxIs OS concepts → `pos_search(content_type="standards", query="prAxIs OS orientation")`
+- `usage/mcp-usage-guide.md` - MCP protocol usage → `pos_search(content_type="standards", query="MCP usage guide")`
 
 **Usage:**
-- `usage/ai-agent-quickstart.md` - Practical examples → `search_standards("AI agent behavior examples")`
-- `usage/operating-model.md` - Partnership roles → `search_standards("operating model")`
+- `usage/ai-agent-quickstart.md` - Practical examples → `pos_search(content_type="standards", query="AI agent behavior examples")`
+- `usage/operating-model.md` - Partnership roles → `pos_search(content_type="standards", query="operating model")`
 
 **Development:**
-- `standards/development/mcp-tool-design-best-practices.md` - Creating tools → `search_standards("MCP tool design")`
+- `standards/development/mcp-tool-design-best-practices.md` - Creating tools → `pos_search(content_type="standards", query="MCP tool design")`
 
 ---
 

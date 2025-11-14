@@ -538,14 +538,14 @@ Import verification is not optional. It's a **CRITICAL** safety rule.
 
 | Situation | Example Query |
 |-----------|---------------|
-| **New integration** | `search_standards("import verification")` |
-| **Third-party package** | `search_standards("how to verify imports")` |
-| **Module not found error** | `search_standards("how to find correct import paths")` |
-| **SDK integration** | `search_standards("verify package imports")` |
-| **Import errors** | `search_standards("import errors")` |
-| **Package structure** | `search_standards("discover package structure")` |
-| **Hallucinated imports** | `search_standards("AI import errors")` |
-| **Before coding** | `search_standards("2 minute rule imports")` |
+| **New integration** | `pos_search_project(content_type="standards", query="import verification")` |
+| **Third-party package** | `pos_search_project(content_type="standards", query="how to verify imports")` |
+| **Module not found error** | `pos_search_project(content_type="standards", query="how to find correct import paths")` |
+| **SDK integration** | `pos_search_project(content_type="standards", query="verify package imports")` |
+| **Import errors** | `pos_search_project(content_type="standards", query="import errors")` |
+| **Package structure** | `pos_search_project(content_type="standards", query="discover package structure")` |
+| **Hallucinated imports** | `pos_search_project(content_type="standards", query="AI import errors")` |
+| **Before coding** | `pos_search_project(content_type="standards", query="2 minute rule imports")` |
 
 ---
 
@@ -553,26 +553,26 @@ Import verification is not optional. It's a **CRITICAL** safety rule.
 
 **Query workflow for import verification:**
 
-1. **Start with verification** → `search_standards("import verification")` (this document)
-2. **Learn production checklist** → `search_standards("production code checklist")` → `standards/ai-safety/production-code-checklist.md`
-3. **Understand testing** → `search_standards("integration testing")` → `standards/testing/integration-testing.md`
-4. **Learn code documentation** → `search_standards("code comments")` → `standards/documentation/code-comments.md`
+1. **Start with verification** → `pos_search_project(content_type="standards", query="import verification")` (this document)
+2. **Learn production checklist** → `pos_search_project(content_type="standards", query="production code checklist")` → `standards/ai-safety/production-code-checklist.md`
+3. **Understand testing** → `pos_search_project(content_type="standards", query="integration testing")` → `standards/testing/integration-testing.md`
+4. **Learn code documentation** → `pos_search_project(content_type="standards", query="code comments")` → `standards/documentation/code-comments.md`
 
 **By Category:**
 
 **AI Safety:**
-- `standards/ai-safety/production-code-checklist.md` - Production requirements → `search_standards("production code checklist")`
-- `standards/ai-safety/credential-file-protection.md` - File protection rules → `search_standards("credential file protection")`
-- `standards/ai-safety/date-usage-policy.md` - Date handling → `search_standards("date usage policy")`
-- `standards/ai-safety/git-safety-rules.md` - Git operations → `search_standards("git safety rules")`
+- `standards/ai-safety/production-code-checklist.md` - Production requirements → `pos_search_project(content_type="standards", query="production code checklist")`
+- `standards/ai-safety/credential-file-protection.md` - File protection rules → `pos_search_project(content_type="standards", query="credential file protection")`
+- `standards/ai-safety/date-usage-policy.md` - Date handling → `pos_search_project(content_type="standards", query="date usage policy")`
+- `standards/ai-safety/git-safety-rules.md` - Git operations → `pos_search_project(content_type="standards", query="git safety rules")`
 
 **Testing:**
-- `standards/testing/integration-testing.md` - Integration test patterns → `search_standards("integration testing")`
-- `standards/testing/test-doubles.md` - Test isolation → `search_standards("test doubles")`
+- `standards/testing/integration-testing.md` - Integration test patterns → `pos_search_project(content_type="standards", query="integration testing")`
+- `standards/testing/test-doubles.md` - Test isolation → `pos_search_project(content_type="standards", query="test doubles")`
 
 **Documentation:**
-- `standards/documentation/code-comments.md` - Code documentation → `search_standards("code comments")`
-- `standards/documentation/api-documentation.md` - API docs → `search_standards("API documentation")`
+- `standards/documentation/code-comments.md` - Code documentation → `pos_search_project(content_type="standards", query="code comments")`
+- `standards/documentation/api-documentation.md` - API docs → `pos_search_project(content_type="standards", query="API documentation")`
 
 ---
 

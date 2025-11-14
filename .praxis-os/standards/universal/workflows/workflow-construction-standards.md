@@ -430,14 +430,14 @@ Follow this systematic process to create a workflow from scratch or from specifi
 
 | Situation | Example Query |
 |-----------|---------------|
-| **Creating workflow** | `search_standards("workflow construction")` |
-| **Workflow structure** | `search_standards("workflow structure")` |
-| **Phase files** | `search_standards("phase.md")` |
-| **Task files** | `search_standards("task file structure")` |
-| **File sizes** | `search_standards("workflow file sizes")` |
-| **Validation gates** | `search_standards("workflow validation gates")` |
-| **Command language** | `search_standards("workflow commands")` |
-| **Building workflows** | `search_standards("building workflows")` |
+| **Creating workflow** | `pos_search_project(content_type="standards", query="workflow construction")` |
+| **Workflow structure** | `pos_search_project(content_type="standards", query="workflow structure")` |
+| **Phase files** | `pos_search_project(content_type="standards", query="phase.md")` |
+| **Task files** | `pos_search_project(content_type="standards", query="task file structure")` |
+| **File sizes** | `pos_search_project(content_type="standards", query="workflow file sizes")` |
+| **Validation gates** | `pos_search_project(content_type="standards", query="workflow validation gates")` |
+| **Command language** | `pos_search_project(content_type="standards", query="workflow commands")` |
+| **Building workflows** | `pos_search_project(content_type="standards", query="building workflows")` |
 
 ---
 
@@ -445,28 +445,28 @@ Follow this systematic process to create a workflow from scratch or from specifi
 
 **Query workflow for complete workflow creation:**
 
-1. **Start with construction** → `search_standards("workflow construction")` (this document)
-2. **Add metadata** → `search_standards("workflow metadata")` → `standards/workflows/workflow-metadata-standards.md`
-3. **Understand system** → `search_standards("workflow system overview")` → `standards/workflows/workflow-system-overview.md`
-4. **Learn principles** → `search_standards("framework creation principles")` → `standards/meta-workflow/framework-creation-principles.md`
-5. **Apply architecture** → `search_standards("three-tier architecture")` → `standards/meta-workflow/three-tier-architecture.md`
+1. **Start with construction** → `pos_search_project(content_type="standards", query="workflow construction")` (this document)
+2. **Add metadata** → `pos_search_project(content_type="standards", query="workflow metadata")` → `standards/workflows/workflow-metadata-standards.md`
+3. **Understand system** → `pos_search_project(content_type="standards", query="workflow system overview")` → `standards/workflows/workflow-system-overview.md`
+4. **Learn principles** → `pos_search_project(content_type="standards", query="framework creation principles")` → `standards/meta-workflow/framework-creation-principles.md`
+5. **Apply architecture** → `pos_search_project(content_type="standards", query="three-tier architecture")` → `standards/meta-workflow/three-tier-architecture.md`
 
 **By Category:**
 
 **Workflows:**
-- `standards/workflows/workflow-metadata-standards.md` - metadata.json structure → `search_standards("workflow metadata")`
-- `standards/workflows/workflow-system-overview.md` - Workflow engine → `search_standards("workflow system overview")`
-- `standards/workflows/mcp-rag-configuration.md` - RAG configuration → `search_standards("MCP RAG configuration")`
+- `standards/workflows/workflow-metadata-standards.md` - metadata.json structure → `pos_search_project(content_type="standards", query="workflow metadata")`
+- `standards/workflows/workflow-system-overview.md` - Workflow engine → `pos_search_project(content_type="standards", query="workflow system overview")`
+- `standards/workflows/mcp-rag-configuration.md` - RAG configuration → `pos_search_project(content_type="standards", query="MCP RAG configuration")`
 
 **Meta-Framework (Foundation):**
-- `standards/meta-workflow/framework-creation-principles.md` - Core principles → `search_standards("framework creation principles")`
-- `standards/meta-workflow/three-tier-architecture.md` - Content organization → `search_standards("three-tier architecture")`
-- `standards/meta-workflow/horizontal-decomposition.md` - File size guidelines → `search_standards("horizontal decomposition")`
-- `standards/meta-workflow/command-language.md` - Command symbols → `search_standards("command language")`
-- `standards/meta-workflow/validation-gates.md` - Quality checkpoints → `search_standards("validation gates")`
+- `standards/meta-workflow/framework-creation-principles.md` - Core principles → `pos_search_project(content_type="standards", query="framework creation principles")`
+- `standards/meta-workflow/three-tier-architecture.md` - Content organization → `pos_search_project(content_type="standards", query="three-tier architecture")`
+- `standards/meta-workflow/horizontal-decomposition.md` - File size guidelines → `pos_search_project(content_type="standards", query="horizontal decomposition")`
+- `standards/meta-workflow/command-language.md` - Command symbols → `pos_search_project(content_type="standards", query="command language")`
+- `standards/meta-workflow/validation-gates.md` - Quality checkpoints → `pos_search_project(content_type="standards", query="validation gates")`
 
 **Usage:**
-- `usage/creating-specs.md` - Specification structure → `search_standards("how to create specs")`
+- `usage/creating-specs.md` - Specification structure → `pos_search_project(content_type="standards", query="how to create specs")`
 
 ---
 

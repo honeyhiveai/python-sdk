@@ -23,34 +23,34 @@ Running 10 bootstrap queries = 90% of orientation
 # Run these NOW in sequence (450ms total):
 
 # 1. Behavioral foundation + decision protocol
-search_standards("grep-first reflex before file operations decision moment pause query")
+pos_search_project(content_type="standards", query="grep-first reflex before file operations decision moment pause query")
 
 # 2. Three-phase development  
-search_standards("user asks build something what do first discuss spec implement")
+pos_search_project(content_type="standards", query="user asks build something what do first discuss spec implement")
 
 # 3. Code author role
-search_standards("code author role behavior implement query test lint complete")
+pos_search_project(content_type="standards", query="code author role behavior implement query test lint complete")
 
 # 4. Query construction
-search_standards("content-specific phrases unique values avoid generic structural")
+pos_search_project(content_type="standards", query="content-specific phrases unique values avoid generic structural")
 
 # 5. Multi-angle querying (5-10 times)
-search_standards("single query syndrome 5-10 times multi-angle comprehensive discovery")
+pos_search_project(content_type="standards", query="single query syndrome 5-10 times multi-angle comprehensive discovery")
 
 # 6. Workflow discovery
-search_standards("workflow discovery dynamic don't memorize workflow names query for task")
+pos_search_project(content_type="standards", query="workflow discovery dynamic don't memorize workflow names query for task")
 
 # 7. Indexed files explicit list
-search_standards(".praxis-os/standards indexed query not read universal workflows usage")
+pos_search_project(content_type="standards", query=".praxis-os/standards indexed query not read universal workflows usage")
 
 # 8. Practical examples (8 scenarios)
-search_standards("AI agent quickstart wrong right examples helper mode implementer concrete scenarios")
+pos_search_project(content_type="standards", query="AI agent quickstart wrong right examples helper mode implementer concrete scenarios")
 
 # 9. Workspace organization (where files go)
-search_standards("workspace organization ephemeral files design analysis scratch temporary git pollution")
+pos_search_project(content_type="standards", query="workspace organization ephemeral files design analysis scratch temporary git pollution")
 
 # 10. AI capabilities and trust (fight inherited constraints)
-search_standards("AI capabilities versus human limitations trust systematic unlimited sessions")
+pos_search_project(content_type="standards", query="AI capabilities versus human limitations trust systematic unlimited sessions")
 ```
 
 **After running all 10: Orientation status = COMPLETE ✅**
@@ -77,10 +77,10 @@ search_standards("AI capabilities versus human limitations trust systematic unli
 **Common failure:** Running 0-2 queries, reverting to default AI helper behavior
 
 **When to query this standard:**
-- Starting new session → `search_standards("prAxIs OS orientation")`
-- User gives request → `search_standards("prAxIs OS orientation")`  
-- After 20+ messages → `search_standards("prAxIs OS orientation")` (refresh pattern)
-- Catching yourself in helper mode → `search_standards("prAxIs OS orientation")`
+- Starting new session → `pos_search_project(content_type="standards", query="prAxIs OS orientation")`
+- User gives request → `pos_search_project(content_type="standards", query="prAxIs OS orientation")`  
+- After 20+ messages → `pos_search_project(content_type="standards", query="prAxIs OS orientation")` (refresh pattern)
+- Catching yourself in helper mode → `pos_search_project(content_type="standards", query="prAxIs OS orientation")`
 
 ---
 
@@ -160,7 +160,7 @@ These queries load the knowledge needed to work correctly in prAxIs OS.
 
 ### Query 1: Behavioral Foundation + Decision Protocol
 ```python
-search_standards("grep-first reflex before file operations decision moment pause query")
+pos_search_project(content_type="standards", query="grep-first reflex before file operations decision moment pause query")
 ```
 
 **Loads:**
@@ -173,7 +173,7 @@ search_standards("grep-first reflex before file operations decision moment pause
 
 ### Query 2: Three-Phase Development
 ```python
-search_standards("user asks build something what do first discuss spec implement")
+pos_search_project(content_type="standards", query="user asks build something what do first discuss spec implement")
 ```
 
 **Loads:**
@@ -186,7 +186,7 @@ search_standards("user asks build something what do first discuss spec implement
 
 ### Query 3: Code Author Role
 ```python
-search_standards("code author role behavior implement query test lint complete")
+pos_search_project(content_type="standards", query="code author role behavior implement query test lint complete")
 ```
 
 **Loads:**
@@ -199,7 +199,7 @@ search_standards("code author role behavior implement query test lint complete")
 
 ### Query 4: Query Construction
 ```python
-search_standards("content-specific phrases unique values avoid generic structural")
+pos_search_project(content_type="standards", query="content-specific phrases unique values avoid generic structural")
 ```
 
 **Loads:**
@@ -212,7 +212,7 @@ search_standards("content-specific phrases unique values avoid generic structura
 
 ### Query 5: Multi-Angle Querying (5-10 Times)
 ```python
-search_standards("single query syndrome 5-10 times multi-angle comprehensive discovery")
+pos_search_project(content_type="standards", query="single query syndrome 5-10 times multi-angle comprehensive discovery")
 ```
 
 **Loads:**
@@ -225,7 +225,7 @@ search_standards("single query syndrome 5-10 times multi-angle comprehensive dis
 
 ### Query 6: Workflow Discovery
 ```python
-search_standards("workflow discovery dynamic don't memorize workflow names query for task")
+pos_search_project(content_type="standards", query="workflow discovery dynamic don't memorize workflow names query for task")
 ```
 
 **Loads:**
@@ -238,7 +238,7 @@ search_standards("workflow discovery dynamic don't memorize workflow names query
 
 ### Query 7: Indexed Files Explicit List
 ```python
-search_standards("indexed query don't read .praxis-os/standards .praxis-os/workflows .praxis-os/usage specs")
+pos_search_project(content_type="standards", query="indexed query don't read .praxis-os/standards .praxis-os/workflows .praxis-os/usage specs")
 ```
 
 **Loads:**
@@ -252,7 +252,7 @@ search_standards("indexed query don't read .praxis-os/standards .praxis-os/workf
 
 ### Query 8: Practical Examples (8 Scenarios)
 ```python
-search_standards("AI agent quickstart wrong right examples helper mode implementer concrete scenarios")
+pos_search_project(content_type="standards", query="AI agent quickstart wrong right examples helper mode implementer concrete scenarios")
 ```
 
 **Loads:**
@@ -265,7 +265,7 @@ search_standards("AI agent quickstart wrong right examples helper mode implement
 
 ### Query 9: Workspace Organization (Where Files Go)
 ```python
-search_standards("workspace organization ephemeral files design analysis scratch temporary git pollution")
+pos_search_project(content_type="standards", query="workspace organization ephemeral files design analysis scratch temporary git pollution")
 ```
 
 **Loads:**
@@ -323,11 +323,11 @@ Human: "Approved, commit it"
 **Multi-angle querying example:**
 ```python
 # Task: Implement authentication
-search_standards("how to implement authentication")
-search_standards("authentication security patterns")
-search_standards("JWT token management")
-search_standards("authentication testing strategies")
-search_standards("when to use workflows for auth")
+pos_search_project(content_type="standards", query="how to implement authentication")
+pos_search_project(content_type="standards", query="authentication security patterns")
+pos_search_project(content_type="standards", query="JWT token management")
+pos_search_project(content_type="standards", query="authentication testing strategies")
+pos_search_project(content_type="standards", query="when to use workflows for auth")
 # Now implement with comprehensive understanding
 ```
 
@@ -338,9 +338,9 @@ search_standards("when to use workflows for auth")
 **Two categories of files:**
 
 **Indexed (Query, Don't Read):**
-- `.praxis-os/standards/` → Use `search_standards()` - **NEVER read_file()**
-- `.praxis-os/workflows/` → Use `search_standards()` - **NEVER read_file()**
-- `.praxis-os/usage/` → Use `search_standards()` - **NEVER read_file()**
+- `.praxis-os/standards/` → Use `pos_search_project()` - **NEVER read_file()**
+- `.praxis-os/workflows/` → Use `pos_search_project()` - **NEVER read_file()**
+- `.praxis-os/usage/` → Use `pos_search_project()` - **NEVER read_file()**
 
 **Not Indexed (Read Directly):**
 - `.praxis-os/specs/` → Use `read_file()` - Project-specific specs
@@ -432,13 +432,13 @@ Before proceeding with user's task:
 
 | Situation | Example Query |
 |-----------|---------------|
-| **Starting new session** | `search_standards("prAxIs OS orientation")` |
-| **User gives request** | `search_standards("prAxIs OS orientation")` |
-| **After 20+ messages** | `search_standards("prAxIs OS orientation")` |
-| **Catching yourself in helper mode** | `search_standards("prAxIs OS orientation code author role")` |
-| **Uncertain about querying** | `search_standards("how many times should I query")` |
-| **Forgot the pattern** | `search_standards("prAxIs OS work pattern")` |
-| **Orientation refresh** | `search_standards("prAxIs OS orientation bootstrap queries")` |
+| **Starting new session** | `pos_search_project(content_type="standards", query="prAxIs OS orientation")` |
+| **User gives request** | `pos_search_project(content_type="standards", query="prAxIs OS orientation")` |
+| **After 20+ messages** | `pos_search_project(content_type="standards", query="prAxIs OS orientation")` |
+| **Catching yourself in helper mode** | `pos_search_project(content_type="standards", query="prAxIs OS orientation code author role")` |
+| **Uncertain about querying** | `pos_search_project(content_type="standards", query="how many times should I query")` |
+| **Forgot the pattern** | `pos_search_project(content_type="standards", query="prAxIs OS work pattern")` |
+| **Orientation refresh** | `pos_search_project(content_type="standards", query="prAxIs OS orientation bootstrap queries")` |
 
 ---
 
@@ -446,22 +446,22 @@ Before proceeding with user's task:
 
 **Query workflow for prAxIs OS mastery:**
 
-1. **Start with orientation** → `search_standards("prAxIs OS orientation")` (this document)
-2. **Learn decision protocol** → `search_standards("AI agent decision protocol")` → Loaded by Query 1
-3. **Learn development process** → `search_standards("user wants me to build something")` → Loaded by Query 2
-4. **Learn query construction** → `search_standards("query construction patterns")` → Loaded by Query 4
-5. **See practical examples** → `search_standards("AI agent quickstart")` → Loaded by Query 8
+1. **Start with orientation** → `pos_search_project(content_type="standards", query="prAxIs OS orientation")` (this document)
+2. **Learn decision protocol** → `pos_search_project(content_type="standards", query="AI agent decision protocol")` → Loaded by Query 1
+3. **Learn development process** → `pos_search_project(content_type="standards", query="user wants me to build something")` → Loaded by Query 2
+4. **Learn query construction** → `pos_search_project(content_type="standards", query="query construction patterns")` → Loaded by Query 4
+5. **See practical examples** → `pos_search_project(content_type="standards", query="AI agent quickstart")` → Loaded by Query 8
 
 **By Category:**
 
 **AI Assistant:**
-- `standards/ai-assistant/agent-decision-protocol.md` → `search_standards("inherited patterns efficiency paradox")`
-- `standards/ai-assistant/praxis-os-development-process.md` → `search_standards("three phase development")`
-- `standards/ai-assistant/query-construction-patterns.md` → `search_standards("query construction")`
+- `standards/ai-assistant/agent-decision-protocol.md` → `pos_search_project(content_type="standards", query="inherited patterns efficiency paradox")`
+- `standards/ai-assistant/agent-os-development-process.md` → `pos_search_project(content_type="standards", query="three phase development")`
+- `standards/ai-assistant/query-construction-patterns.md` → `pos_search_project(content_type="standards", query="query construction")`
 
 **Usage:**
-- `usage/ai-agent-quickstart.md` → `search_standards("AI agent quickstart examples")`
-- `usage/operating-model.md` → `search_standards("operating model")`
+- `usage/ai-agent-quickstart.md` → `pos_search_project(content_type="standards", query="AI agent quickstart examples")`
+- `usage/operating-model.md` → `pos_search_project(content_type="standards", query="operating model")`
 
 ---
 

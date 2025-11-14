@@ -4,17 +4,22 @@
 
 ---
 
+## Questions This Answers
+
+- **How do I update prAxIs OS?**
+- **When should I update prAxIs OS?**
+- **What's the difference between content and server updates?**
+- **How do I safely update without breaking custom content?**
+- **What's the automated workflow for prAxIs OS upgrades?**
+- **How do I get the latest standards and workflows?**
+- **What validation happens during an update?**
+- **How do I rollback if an update fails?**
+- **What are the triggers for updating prAxIs OS?**
+- **How long does a prAxIs OS update take?**
+
 ## 🚨 prAxIs OS Update Quick Reference (TL;DR)
 
-**Keywords for search**: agent os update, upgrade agent os, how to update agent os, agent os installation update, update standards workflows, sync from universal, agent os upgrade workflow, update procedure
-
-**Questions This Answers:**
-- "How do I update prAxIs OS?"
-- "User wants to upgrade prAxIs OS"
-- "How do I get the latest standards and workflows?"
-- "How do I safely update without breaking custom content?"
-- "When should I update prAxIs OS?"
-- "What's the difference between content and server updates?"
+**Keywords for search**: praxis os update, upgrade praxis os, how to update praxis os, praxis os installation update, update standards workflows, sync from universal, praxis os upgrade workflow, update procedure
 
 **Critical: Use the automated workflow, not manual commands!**
 
@@ -208,7 +213,7 @@ If commit hashes differ, an update is available.
 
 ```python
 # Discover the workflow first
-search_standards("agent os upgrade workflow")
+pos_search_project(content_type="standards", query="praxis os upgrade workflow")
 
 # Start the workflow
 start_workflow(
@@ -269,11 +274,11 @@ test ! -d .praxis-os/standards/ai-assistant/ && echo "✅ No flat structure"
 
 ```python
 # Test RAG search
-search_standards("testing standards")
+pos_search_project(content_type="standards", query="testing standards")
 # Should return results
 
 # Test workflow discovery
-search_standards("test generation workflow")
+pos_search_project(content_type="standards", query="test generation workflow")
 # Should return test_generation_v3
 
 # Test browser tool (if applicable)
@@ -452,21 +457,21 @@ The workflow maintains this automatically.
 
 **To find this standard:**
 ```python
-search_standards("how to update agent os")
-search_standards("agent os upgrade procedure")
-search_standards("sync from universal directory")
+pos_search_project(content_type="standards", query="how to update praxis os")
+pos_search_project(content_type="standards", query="praxis os upgrade procedure")
+pos_search_project(content_type="standards", query="sync from universal directory")
 ```
 
 **To find the workflow:**
 ```python
-search_standards("agent os upgrade workflow")
-search_standards("automated upgrade with rollback")
+pos_search_project(content_type="standards", query="praxis os upgrade workflow")
+pos_search_project(content_type="standards", query="automated upgrade with rollback")
 ```
 
 **To understand directory structure:**
 ```python
-search_standards("agent os directory structure universal namespace")
-search_standards("why nested standards structure")
+pos_search_project(content_type="standards", query="praxis os directory structure universal namespace")
+pos_search_project(content_type="standards", query="why nested standards structure")
 ```
 
 ---

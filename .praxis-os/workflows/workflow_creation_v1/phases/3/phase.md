@@ -50,5 +50,5 @@ This phase populates the core/ and supporting-docs/ directories with essential f
 
 **Start Here**: 🎯 NEXT-MANDATORY: task-1-create-command-glossary.md
 
-**After Phase 3 Complete**: 🎯 NEXT-MANDATORY: ../dynamic/phase-template.md (if dynamic) or ../4/phase.md (if static)
+**After Phase 3 Complete**: 🎯 NEXT-MANDATORY: ../4/phase.md
 

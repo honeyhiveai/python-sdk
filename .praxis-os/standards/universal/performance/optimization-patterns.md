@@ -652,14 +652,14 @@ function find_duplicates(items):
 
 | Situation | Example Query |
 |-----------|---------------|
-| **Slow code** | `search_standards("performance optimization")` |
-| **Profiling** | `search_standards("how to profile code")` |
-| **Bottlenecks** | `search_standards("identify bottlenecks")` |
-| **Caching** | `search_standards("caching patterns")` |
-| **Algorithm choice** | `search_standards("algorithmic complexity")` |
-| **Before optimizing** | `search_standards("premature optimization")` |
-| **Performance targets** | `search_standards("performance targets")` |
-| **Measurement** | `search_standards("how to measure performance")` |
+| **Slow code** | `pos_search_project(content_type="standards", query="performance optimization")` |
+| **Profiling** | `pos_search_project(content_type="standards", query="how to profile code")` |
+| **Bottlenecks** | `pos_search_project(content_type="standards", query="identify bottlenecks")` |
+| **Caching** | `pos_search_project(content_type="standards", query="caching patterns")` |
+| **Algorithm choice** | `pos_search_project(content_type="standards", query="algorithmic complexity")` |
+| **Before optimizing** | `pos_search_project(content_type="standards", query="premature optimization")` |
+| **Performance targets** | `pos_search_project(content_type="standards", query="performance targets")` |
+| **Measurement** | `pos_search_project(content_type="standards", query="how to measure performance")` |
 
 ---
 
@@ -667,30 +667,30 @@ function find_duplicates(items):
 
 **Query workflow for performance optimization:**
 
-1. **Start with optimization patterns** → `search_standards("performance optimization")` (this document)
-2. **Learn database optimization** → `search_standards("database patterns")` → `standards/database/database-patterns.md`
-3. **Understand concurrency** → `search_standards("concurrency patterns")` → `standards/concurrency/`
-4. **Learn testing** → `search_standards("performance testing")` → `standards/testing/integration-testing.md`
+1. **Start with optimization patterns** → `pos_search_project(content_type="standards", query="performance optimization")` (this document)
+2. **Learn database optimization** → `pos_search_project(content_type="standards", query="database patterns")` → `standards/database/database-patterns.md`
+3. **Understand concurrency** → `pos_search_project(content_type="standards", query="concurrency patterns")` → `standards/concurrency/`
+4. **Learn testing** → `pos_search_project(content_type="standards", query="performance testing")` → `standards/testing/integration-testing.md`
 
 **By Category:**
 
 **Database:**
-- `standards/database/database-patterns.md` - Database optimization → `search_standards("database patterns")`
+- `standards/database/database-patterns.md` - Database optimization → `pos_search_project(content_type="standards", query="database patterns")`
 
 **Concurrency:**
-- `standards/concurrency/race-conditions.md` - Concurrent safety → `search_standards("race conditions")`
-- `standards/concurrency/locking-strategies.md` - Locking patterns → `search_standards("locking strategies")`
+- `standards/concurrency/race-conditions.md` - Concurrent safety → `pos_search_project(content_type="standards", query="race conditions")`
+- `standards/concurrency/locking-strategies.md` - Locking patterns → `pos_search_project(content_type="standards", query="locking strategies")`
 
 **Testing:**
-- `standards/testing/integration-testing.md` - Performance tests → `search_standards("integration testing")`
-- `standards/testing/property-based-testing.md` - Load testing → `search_standards("property based testing")`
+- `standards/testing/integration-testing.md` - Performance tests → `pos_search_project(content_type="standards", query="integration testing")`
+- `standards/testing/property-based-testing.md` - Load testing → `pos_search_project(content_type="standards", query="property based testing")`
 
 **AI Safety:**
-- `standards/ai-safety/production-code-checklist.md` - Production requirements → `search_standards("production code checklist")`
+- `standards/ai-safety/production-code-checklist.md` - Production requirements → `pos_search_project(content_type="standards", query="production code checklist")`
 
 **Failure Modes:**
-- `standards/failure-modes/timeout-patterns.md` - Timeout handling → `search_standards("timeout patterns")`
-- `standards/failure-modes/circuit-breakers.md` - Resilience → `search_standards("circuit breakers")`
+- `standards/failure-modes/timeout-patterns.md` - Timeout handling → `pos_search_project(content_type="standards", query="timeout patterns")`
+- `standards/failure-modes/circuit-breakers.md` - Resilience → `pos_search_project(content_type="standards", query="circuit breakers")`
 
 ---
 

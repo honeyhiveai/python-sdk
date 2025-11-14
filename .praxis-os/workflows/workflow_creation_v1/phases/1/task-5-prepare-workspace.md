@@ -51,7 +51,7 @@ Calculate:
 Calculate all paths needed for creation:
 
 ```
-workflow_root = universal/workflows/{target_workflow_name}/
+workflow_root = .praxis-os/workflows/{target_workflow_type}/
   - metadata.json
   - core/
   - supporting-docs/

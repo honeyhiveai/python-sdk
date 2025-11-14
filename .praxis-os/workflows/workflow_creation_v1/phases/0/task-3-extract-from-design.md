@@ -120,6 +120,136 @@ task = {
 - Mentions "RAG", "query" → ["search_standards"]
 - Mentions "run", "execute" → ["run_terminal_cmd"]
 
+### Step 6B: Extract Detailed Task Information
+
+🚨 **CRITICAL**: This step extracts the rich detail needed for quality task file generation. Without this, Phase 4 will generate generic stubs.
+
+For each task identified in Step 6, perform deep extraction to populate optional fields that enable rich task generation.
+
+#### A. Extract Step-by-Step Outline
+
+Within the task description or following subsections, look for:
+- Numbered steps: "1. X, 2. Y, 3. Z"
+- Bulleted sub-items under the task
+- Sequential phrases: "First... then... finally..."
+- Instructional sequences with action verbs
+- Parenthetical details: "(include X, ensure Y, validate Z)"
+
+**Parsing Strategy**:
+1. If task has nested numbered/bulleted items, extract each as a step
+2. If task description contains sequential phrases, split into logical steps
+3. If task description includes parenthetical details, extract as separate steps
+4. If no explicit steps found, analyze task purpose and infer 3-5 logical steps
+
+Extract as: `steps_outline: ["Step 1 description", "Step 2 description", ...]`
+
+**Example**:
+- Task description: "Write Quick Reference section (front-load critical info, 200-400 tokens, high keyword density)"
+- Extracted steps_outline:
+  - "Front-load critical info in first 2 sentences"
+  - "Use high keyword density (3-5 mentions of core topic)"
+  - "Write 200-400 tokens total"
+  - "Optimize for RAG discoverability"
+
+#### B. Identify Required Examples
+
+Scan task description and phase context for mentions of:
+- "with examples"
+- "concrete scenarios"
+- "working code"
+- ">= N examples"
+- Specific example types: "success case", "failure case", "edge case"
+- "demonstrate", "show", "illustrate"
+
+**Parsing Strategy**:
+1. Extract explicit example requirements from task description
+2. If phase mentions examples generally, apply to relevant tasks
+3. For implementation/coding tasks, default to ["Success example", "Failure/edge case example"]
+4. For validation tasks, include ["Valid input example", "Invalid input example"]
+5. For writing tasks, include ["Good example", "Bad example comparison"]
+
+Extract as: `examples_needed: ["Example type 1", "Example type 2", ...]`
+
+**Example**:
+- Task description: "Add concrete examples (working code/scenarios)"
+- Extracted examples_needed:
+  - "Working code example showing correct implementation"
+  - "Scenario demonstrating common use case"
+  - "Edge case example with error handling"
+
+#### C. Extract Task-Level Validation Criteria
+
+From the phase's "Checkpoint Validation" or "Evidence Required" section:
+- Identify which validation fields apply to THIS specific task
+- Look for task-specific success criteria
+- Convert phase-level checks into task-level quality checks
+- Look for measurable outcomes in task description
+
+**Parsing Strategy**:
+1. Map phase validation fields to contributing tasks
+2. For each task, identify what evidence it produces
+3. Create measurable criteria for task completion
+4. Extract quantitative requirements (percentages, counts, sizes)
+5. Extract qualitative requirements (presence of elements, format compliance)
+
+Extract as: `validation_criteria: ["Criterion 1", "Criterion 2", ...]`
+
+**Example**:
+- Phase validation requires: `token_count: integer (200-400)`
+- Task: "Write Quick Reference section"
+- Extracted validation_criteria:
+  - "Token count between 200-400"
+  - "Core keyword appears 3-5 times"
+  - "Front-loaded critical information in first 2 sentences"
+  - "Natural language phrasing for RAG"
+
+#### D. Extract Task Context
+
+Capture rich contextual information from:
+- Phase purpose statement (why this phase matters)
+- Task description elaborations (details beyond the title)
+- Domain-specific terminology mentioned
+- Dependency information (what this task builds on)
+- Constraint mentions (what must be avoided)
+- "Why" statements explaining rationale
+
+**Parsing Strategy**:
+1. Combine phase purpose + task description context
+2. Extract any "why" explanations or rationale
+3. Include domain considerations mentioned
+4. Note constraints or anti-patterns
+5. Explain how this task contributes to overall workflow goal
+
+Extract as: `task_context: "Rich paragraph explaining why this task matters, constraints, and domain considerations"`
+
+**Example**:
+- Extracted task_context: "Quick Reference is the most important section for RAG discovery. Must be optimized for semantic search with natural language phrasing that matches common agent queries. High keyword density (3-5 mentions) ensures retrieval but must remain readable. The 200-400 token limit forces conciseness while the front-loading requirement (critical info in first 2 sentences) maximizes value even when truncated by chunking."
+
+#### E. Update Task Object with Extracted Information
+
+Append all extracted information to task object:
+```python
+task = {
+    "number": task_number,
+    "name": convert_to_kebab_case(task_title),
+    "purpose": task_description,
+    "domain_focus": extract_if_mentioned(),
+    "commands_needed": infer_commands(task_description),
+    "estimated_lines": 100,
+    # NEW FIELDS FROM DEEP EXTRACTION:
+    "steps_outline": extracted_steps,  # Array of step descriptions
+    "examples_needed": extracted_examples,  # Array of example types
+    "validation_criteria": extracted_criteria,  # Array of quality checks
+    "task_context": extracted_context  # Rich paragraph
+}
+```
+
+⚠️ **FALLBACK**: If deep extraction finds nothing:
+- `steps_outline`: Default to empty array `[]` (Phase 4 will use intelligent fallback)
+- `examples_needed`: Default to `["Success case example", "Failure/edge case example"]`
+- `validation_criteria`: Default to `["Task output is complete", "Task output meets requirements"]`
+- `task_context`: Default to phase purpose or generic `"Complete this task systematically"`
+
 ### Step 7: Extract Validation Gates
 
 Look for "Validation Gate", "Checkpoint Validation", "Evidence Required" sections.

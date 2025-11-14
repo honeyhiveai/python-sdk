@@ -11,7 +11,7 @@
 **Discovery Pattern:**
 1. Your agent framework (Cursor, Cline, Windsurf) automatically calls `tools/list` on MCP server connection
 2. You get complete tool schemas: names, parameters, types, descriptions
-3. Query `search_standards("how to use [tool-name]")` for usage patterns and examples
+3. Query `pos_search(content_type="standards", query="how to use [tool-name]")` for usage patterns and examples
 
 **Why Dynamic Discovery:**
 - ✅ Always current (no stale documentation)
@@ -21,7 +21,7 @@
 
 **Quick Actions:**
 - Need to know what tools exist? → Check your agent's MCP tool list (auto-populated)
-- Need usage examples? → `search_standards("how to use [tool-name]")`
+- Need usage examples? → `pos_search(content_type="standards", query="how to use [tool-name]")`
 - Need parameter details? → Tool schema from `tools/list` has complete type information
 
 ---
@@ -33,7 +33,7 @@ This standard defines how to discover available MCP tools dynamically using the 
 **Questions This Answers:**
 - What MCP tools are available in prAxIs OS?
 - How do I find out what parameters a tool takes?
-- What's the difference between tools/list and search_standards?
+- What's the difference between tools/list and pos_search?
 - Why shouldn't I create a static tool catalog?
 - How do I discover tool capabilities across different MCP servers?
 
@@ -81,7 +81,7 @@ The MCP protocol provides `tools/list` endpoint that returns complete tool infor
 {
   "tools": [
     {
-      "name": "search_standards",
+      "name": "pos_search",
       "description": "Semantic search over prAxIs OS documentation...",
       "inputSchema": {
         "type": "object",
@@ -126,8 +126,8 @@ The MCP protocol provides `tools/list` endpoint that returns complete tool infor
 2. **During conversation:**
    ```
    You: "Search for authentication patterns"
-   → Agent sees: search_standards tool available
-   → Agent generates: search_standards("authentication patterns")
+   → Agent sees: pos_search tool available
+   → Agent generates: pos_search(content_type="standards", query="authentication patterns")
    → Tool executes via MCP
    ```
 
@@ -147,7 +147,7 @@ The MCP protocol provides `tools/list` endpoint that returns complete tool infor
 - Required vs optional
 - Default values
 
-**Tier 2: Usage Patterns (from search_standards)**
+**Tier 2: Usage Patterns (from pos_search)**
 - When to use which tool
 - Common usage examples
 - Decision guidance
@@ -159,7 +159,7 @@ The MCP protocol provides `tools/list` endpoint that returns complete tool infor
 1. Agent knows tools exist (tools/list gave schemas)
 
 2. Agent needs usage guidance:
-   search_standards("how to use search_standards")
+   pos_search(content_type="standards", query="how to use pos_search")
    
 3. RAG returns:
    - When to query (before implementing)
@@ -168,7 +168,7 @@ The MCP protocol provides `tools/list` endpoint that returns complete tool infor
    - Example searches
 
 4. Agent generates informed tool call:
-   search_standards("race conditions in async handlers")
+   pos_search(content_type="standards", query="race conditions in async handlers")
 ```
 
 ---
@@ -179,7 +179,7 @@ When you need to understand MCP tools:
 
 - [ ] **Don't create static tool catalogs** - Use tools/list (dynamic)
 - [ ] **Trust your agent framework** - It already called tools/list
-- [ ] **Query for usage patterns** - `search_standards("how to use [tool]")`
+- [ ] **Query for usage patterns** - `pos_search(content_type="standards", query="how to use [tool]")`
 - [ ] **Check tool descriptions** - Parameter types in schema
 - [ ] **Test tool calls incrementally** - Start with required params
 - [ ] **Follow self-teaching pattern** - Tool descriptions teach querying
@@ -188,7 +188,7 @@ When writing MCP tool implementations:
 
 - [ ] **Write clear descriptions** - Explain what tool does
 - [ ] **Document parameters inline** - Schema descriptions
-- [ ] **Include usage guidance** - Point to search_standards
+- [ ] **Include usage guidance** - Point to pos_search
 - [ ] **Use type hints** - Enables proper schema generation
 - [ ] **Keep schemas current** - Generated from code (automatic)
 
@@ -211,7 +211,7 @@ Problem: Missing tools added last week
 Human: "What MCP tools are available?"
 Agent: "Let me check the current MCP server capabilities"
 Agent: [Accesses tools/list from framework's MCP connection]
-Agent: "Current tools: search_standards, start_workflow, invoke_specialist..."
+Agent: "Current tools: pos_search, start_workflow, invoke_specialist..."
 Benefit: Always current, no drift
 ```
 
@@ -219,18 +219,18 @@ Benefit: Always current, no drift
 
 **❌ Wrong Approach:**
 ```
-Agent: Needs to use search_standards
-Agent: search_standards(query="patterns")
+Agent: Needs to use pos_search
+Agent: pos_search(query="patterns")
 Error: Missing required parameter 'n_results'? No, it has default
 Problem: Confused by outdated docs
 ```
 
 **✅ Right Approach:**
 ```
-Agent: Needs to use search_standards
+Agent: Needs to use pos_search
 Agent: [Checks tool schema from tools/list]
 Agent: See: query (required), n_results (optional, default=5)
-Agent: search_standards(query="patterns")  # Correct!
+Agent: pos_search(query="patterns")  # Correct!
 Success: Used schema, not documentation
 ```
 
@@ -240,9 +240,9 @@ Success: Used schema, not documentation
 ```
 Agent: Need to search standards
 Agent: [tools/list provides schema] ← Tier 1: Structure
-Agent: search_standards("how to use search_standards") ← Tier 2: Guidance
+Agent: pos_search(content_type="standards", query="how to use pos_search") ← Tier 2: Guidance
 Agent: RAG returns: "Query before implementing, use natural language..."
-Agent: search_standards("how to handle race conditions in async code")
+Agent: pos_search(content_type="standards", query="how to handle race conditions in async code")
 Success: Schema + Usage patterns = Effective use
 ```
 
@@ -256,7 +256,7 @@ Success: Schema + Usage patterns = Effective use
 ```markdown
 # MCP Tools Catalog
 
-## search_standards
+## pos_search
 Parameters: query (string), n_results (int, default 5)
 Description: Search over standards...
 
@@ -274,7 +274,7 @@ Description: Start workflow...
 # MCP Tool Discovery Guide
 
 Use tools/list (automatic in your agent framework).
-Query search_standards("how to use [tool]") for usage patterns.
+Query pos_search(content_type="standards", query="how to use [tool]") for usage patterns.
 
 Always current. No maintenance. No drift.
 ```
@@ -284,7 +284,7 @@ Always current. No maintenance. No drift.
 **❌ Don't do this:**
 ```
 Agent: [Tries to remember tool signatures from previous session]
-Agent: search_standards(query, results)  # Wrong parameter name!
+Agent: pos_search(query, results)  # Wrong parameter name!
 Error: 'results' not recognized (correct: 'n_results')
 ```
 
@@ -292,7 +292,7 @@ Error: 'results' not recognized (correct: 'n_results')
 ```
 Agent: [Checks current schema from tools/list]
 Agent: Parameters: query, n_results (from schema)
-Agent: search_standards(query="patterns", n_results=5)
+Agent: pos_search(query="patterns", n_results=5)
 Success: Current schema, not memory
 ```
 
@@ -301,15 +301,15 @@ Success: Current schema, not memory
 **❌ Don't do this:**
 ```
 Agent: [Has schema, tries to use tool without context]
-Agent: search_standards("test")  # Too vague
+Agent: pos_search(content_type="standards", query="test")  # Too vague
 Result: Poor results (generic query)
 ```
 
 **✅ Do this instead:**
 ```
-Agent: search_standards("how to use search_standards")
+Agent: pos_search(content_type="standards", query="how to use pos_search")
 Agent: [Learns: natural language, specific queries, multi-angle]
-Agent: search_standards("how to handle database race conditions")
+Agent: pos_search(content_type="standards", query="how to handle database race conditions")
 Result: Excellent results (informed query)
 ```
 
@@ -320,19 +320,19 @@ Result: Excellent results (informed query)
 **Query workflow for tool discovery:**
 
 1. **Understanding tools/list** → This document
-2. **Writing for RAG** → `search_standards("RAG content authoring")`
-3. **Tool usage patterns** → `search_standards("how to use [tool-name]")`
+2. **Writing for RAG** → `pos_search(content_type="standards", query="RAG content authoring")`
+3. **Tool usage patterns** → `pos_search(content_type="standards", query="how to use [tool-name]")`
 4. **Self-teaching tools** → Tool descriptions include query guidance
 
 **By Category:**
 
 **MCP Protocol:**
-- `usage/mcp-usage-guide.md` → `search_standards("MCP usage guide")`
-- `standards/development/mcp-tool-design-best-practices.md` → `search_standards("MCP tool design")`
+- `usage/mcp-usage-guide.md` → `pos_search(content_type="standards", query="MCP usage guide")`
+- `standards/development/mcp-tool-design-best-practices.md` → `pos_search(content_type="standards", query="MCP tool design")`
 
 **Tool Usage:**
-- Query dynamically: `search_standards("how to use [tool-name]")`
-- Examples in orientation: `search_standards("prAxIs OS orientation")`
+- Query dynamically: `pos_search(content_type="standards", query="how to use [tool-name]")`
+- Examples in orientation: `pos_search(content_type="standards", query="prAxIs OS orientation")`
 
 ---
 
@@ -342,13 +342,13 @@ Result: Excellent results (informed query)
 → Your agent framework already called `tools/list`. Check your MCP tool list (Cursor: autocomplete, Cline: tool panel).
 
 **What if I need usage examples for a tool?**
-→ Query: `search_standards("how to use [tool-name]")` for patterns and examples.
+→ Query: `pos_search(content_type="standards", query="how to use [tool-name]")` for patterns and examples.
 
 **Why not maintain a tool catalog document?**
 → Documentation drift. tools/list is always current (generated from code). No maintenance needed.
 
 **What's the difference between tool schema and usage patterns?**
-→ Schema (tools/list): Structure (parameters, types). Usage patterns (search_standards): When/how to use effectively.
+→ Schema (tools/list): Structure (parameters, types). Usage patterns (pos_search): When/how to use effectively.
 
 **Do I need to call tools/list manually?**
 → No. Your agent framework (Cursor, Cline, etc.) automatically calls it on MCP connection.

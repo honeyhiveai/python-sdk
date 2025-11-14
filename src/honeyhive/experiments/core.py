@@ -6,6 +6,7 @@ This module provides the core experiment execution functionality including:
 - Integration with backend result endpoints
 """
 
+# pylint: disable=too-many-lines
 import asyncio
 import inspect  # ✅ TASK 2: Needed for signature detection
 import os
@@ -227,7 +228,8 @@ def run_experiment(
             params = sig.parameters
 
             # ✅ Automatically wrap the function with @trace decorator
-            # This creates a span for the user's function execution and captures inputs/outputs
+            # This creates a span for the user's function execution and
+            # captures inputs/outputs
             traced_function = trace(
                 event_type="chain",
                 event_name=function.__name__,
@@ -371,7 +373,7 @@ def run_experiment(
     return results
 
 
-def _update_run_with_results(
+def _update_run_with_results(  # pylint: disable=too-many-branches
     run_id: str,
     *,
     run_name: str,
@@ -423,6 +425,17 @@ def _update_run_with_results(
         if update_metadata:
             update_data["metadata"] = update_metadata
 
+        if verbose:
+            logger.info(
+                "Updating run %s with data: status=%s, name=%s, "
+                "event_ids=%d, metadata_keys=%s",
+                run_id,
+                update_data.get("status"),
+                update_data.get("name"),
+                len(update_data.get("event_ids", [])),
+                list(update_metadata.keys()) if update_metadata else [],
+            )
+
         client.evaluations.update_run_from_dict(run_id, update_data)
 
         if verbose:
@@ -434,7 +447,87 @@ def _update_run_with_results(
                     len(evaluator_metrics),
                 )
     except Exception as e:
-        logger.warning("Failed to update run: %s", str(e))
+        # Enhanced error logging for 400 errors
+        error_msg = str(e)
+        error_type = type(e).__name__
+
+        # Try to extract response details from different exception types
+        response_details = {}
+
+        # Check if it's a HoneyHiveError with error_response
+        # pylint: disable=no-member
+        if hasattr(e, "error_response") and e.error_response:
+            error_resp = e.error_response
+            response_details = {
+                "status_code": getattr(error_resp, "status_code", None),
+                "error_code": getattr(error_resp, "error_code", None),
+                "error_type": getattr(error_resp, "error_type", None),
+                "details": getattr(error_resp, "details", {}),
+            }
+        # Check if it has a response attribute (HTTPStatusError)
+        elif hasattr(e, "response"):
+            try:
+                response = e.response
+                response_details = {
+                    "status_code": getattr(response, "status_code", None),
+                    "reason": getattr(response, "reason_phrase", None),
+                }
+                # Try to get error response body
+                try:
+                    if hasattr(response, "json"):
+                        response_details["error_body"] = response.json()
+                except Exception:
+                    try:
+                        if hasattr(response, "text"):
+                            response_details["error_text"] = response.text[:500]
+                    except Exception:
+                        pass
+            except Exception:
+                pass
+        # Check if it has details attribute (custom exceptions)
+        elif hasattr(e, "details"):
+            response_details = {"details": e.details}
+        elif hasattr(e, "status_code"):
+            response_details = {"status_code": e.status_code}
+
+        # Log error details only in verbose mode
+        if verbose:
+            logger.warning(
+                "Failed to update run %s: %s (%s). Update data: status=%s, "
+                "name=%s, event_ids_count=%d, has_metadata=%s, "
+                "metadata_keys=%s, evaluator_metrics_count=%d. Response: %s",
+                run_id,
+                error_msg,
+                error_type,
+                update_data.get("status"),
+                update_data.get("name"),
+                len(update_data.get("event_ids", [])),
+                bool(update_data.get("metadata")),
+                list(update_metadata.keys()) if update_metadata else [],
+                len(evaluator_metrics) if evaluator_metrics else 0,
+                (
+                    response_details
+                    if response_details
+                    else "No response details available"
+                ),
+            )
+        else:
+            # Minimal error logging when not verbose
+            logger.warning("Failed to update run %s: %s", run_id, error_msg)
+
+        # Print warning for authentication exceptions per memory
+        status_code = response_details.get("status_code")
+        if (
+            status_code in (401, 403)
+            or "401" in error_msg
+            or "403" in error_msg
+            or "Authentication" in error_type
+        ):
+            logger.warning(
+                "⚠️  AUTHENTICATION EXCEPTION: Failed to update run %s due to "
+                "authentication error. Please check your API key and permissions.",
+                run_id,
+            )
 
 
 def _enrich_session_with_results(

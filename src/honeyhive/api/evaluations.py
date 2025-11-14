@@ -13,6 +13,7 @@ from ..models import (
     UpdateRunResponse,
 )
 from ..models.generated import UUIDType
+from ..utils.error_handler import APIError, ErrorContext, ErrorResponse
 from .base import BaseAPI
 
 
@@ -176,6 +177,46 @@ class EvaluationsAPI(BaseAPI):
     def update_run_from_dict(self, run_id: str, run_data: dict) -> UpdateRunResponse:
         """Update an evaluation run from dictionary (legacy method)."""
         response = self.client.request("PUT", f"/runs/{run_id}", json=run_data)
+
+        # Check response status before parsing
+        if response.status_code >= 400:
+            error_body = {}
+            try:
+                error_body = response.json()
+            except Exception:
+                try:
+                    error_body = {"error_text": response.text[:500]}
+                except Exception:
+                    pass
+
+            # Create ErrorResponse for proper error handling
+            error_response = ErrorResponse(
+                error_type="APIError",
+                error_message=(
+                    f"HTTP {response.status_code}: Failed to update run {run_id}"
+                ),
+                error_code=(
+                    "CLIENT_ERROR" if response.status_code < 500 else "SERVER_ERROR"
+                ),
+                status_code=response.status_code,
+                details={
+                    "run_id": run_id,
+                    "update_data": run_data,
+                    "error_response": error_body,
+                },
+                context=ErrorContext(
+                    operation="update_run_from_dict",
+                    method="PUT",
+                    url=f"/runs/{run_id}",
+                    json_data=run_data,
+                ),
+            )
+
+            raise APIError(
+                f"HTTP {response.status_code}: Failed to update run {run_id}",
+                error_response=error_response,
+                original_exception=None,
+            )
 
         data = response.json()
         return UpdateRunResponse(**data)

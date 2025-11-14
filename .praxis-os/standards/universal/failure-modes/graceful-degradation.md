@@ -288,13 +288,13 @@ These common mistakes prevent effective degradation or create poor user experien
 
 | Situation | Example Query |
 |-----------|---------------|
-| **Dependency failures** | `search_standards("graceful degradation")` |
-| **Service outages** | `search_standards("partial service")` |
-| **Feature planning** | `search_standards("feature degradation")` |
-| **User experience during failures** | `search_standards("communicate degraded service")` |
-| **Fallback strategies** | `search_standards("fallback data")` |
-| **Critical vs non-critical features** | `search_standards("degradation decision tree")` |
-| **System resilience** | `search_standards("reduced functionality")` |
+| **Dependency failures** | `pos_search_project(content_type="standards", query="graceful degradation")` |
+| **Service outages** | `pos_search_project(content_type="standards", query="partial service")` |
+| **Feature planning** | `pos_search_project(content_type="standards", query="feature degradation")` |
+| **User experience during failures** | `pos_search_project(content_type="standards", query="communicate degraded service")` |
+| **Fallback strategies** | `pos_search_project(content_type="standards", query="fallback data")` |
+| **Critical vs non-critical features** | `pos_search_project(content_type="standards", query="degradation decision tree")` |
+| **System resilience** | `pos_search_project(content_type="standards", query="reduced functionality")` |
 
 ---
 
@@ -302,26 +302,26 @@ These common mistakes prevent effective degradation or create poor user experien
 
 **Query workflow for resilient failure handling:**
 
-1. **Start with retries** → `search_standards("retry strategies")` → `standards/failure-modes/retry-strategies.md`
-2. **Add circuit breaker** → `search_standards("circuit breaker")` → `standards/failure-modes/circuit-breakers.md`
-3. **Plan degradation** → `search_standards("graceful degradation")` (this document)
-4. **Set timeouts** → `search_standards("timeout patterns")` → `standards/failure-modes/timeout-patterns.md`
+1. **Start with retries** → `pos_search_project(content_type="standards", query="retry strategies")` → `standards/failure-modes/retry-strategies.md`
+2. **Add circuit breaker** → `pos_search_project(content_type="standards", query="circuit breaker")` → `standards/failure-modes/circuit-breakers.md`
+3. **Plan degradation** → `pos_search_project(content_type="standards", query="graceful degradation")` (this document)
+4. **Set timeouts** → `pos_search_project(content_type="standards", query="timeout patterns")` → `standards/failure-modes/timeout-patterns.md`
 
 **By Category:**
 
 **Failure Modes:**
-- `standards/failure-modes/retry-strategies.md` - Retry logic for transient failures → `search_standards("retry strategies")`
-- `standards/failure-modes/circuit-breakers.md` - Fail fast when dependency is down → `search_standards("circuit breaker")`
-- `standards/failure-modes/timeout-patterns.md` - Timeout configuration → `search_standards("timeout patterns")`
+- `standards/failure-modes/retry-strategies.md` - Retry logic for transient failures → `pos_search_project(content_type="standards", query="retry strategies")`
+- `standards/failure-modes/circuit-breakers.md` - Fail fast when dependency is down → `pos_search_project(content_type="standards", query="circuit breaker")`
+- `standards/failure-modes/timeout-patterns.md` - Timeout configuration → `pos_search_project(content_type="standards", query="timeout patterns")`
 
 **Testing:**
-- `standards/testing/integration-testing.md` - Testing degraded behavior → `search_standards("integration testing")`
+- `standards/testing/integration-testing.md` - Testing degraded behavior → `pos_search_project(content_type="standards", query="integration testing")`
 
 **Architecture:**
-- `standards/architecture/api-design-principles.md` - API design for degraded states → `search_standards("API design")`
+- `standards/architecture/api-design-principles.md` - API design for degraded states → `pos_search_project(content_type="standards", query="API design")`
 
 **AI Safety:**
-- `standards/ai-safety/production-code-checklist.md` - Production code checklist (includes failure handling) → `search_standards("production code checklist")`
+- `standards/ai-safety/production-code-checklist.md` - Production code checklist (includes failure handling) → `pos_search_project(content_type="standards", query="production code checklist")`
 
 ---
 

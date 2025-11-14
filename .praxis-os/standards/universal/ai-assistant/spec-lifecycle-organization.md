@@ -25,10 +25,10 @@
 - ❌ Moving specs without using `git mv` (breaks history)
 
 **When to Query This Standard:**
-- Creating new spec → `search_standards("where to create new specification")`
-- After spec approval → `search_standards("spec approved where to move")`
-- After implementation → `search_standards("spec completed archive lifecycle")`
-- Checking spec status → `search_standards("spec status tracking organization")`
+- Creating new spec → `pos_search_project(content_type="standards", query="where to create new specification")`
+- After spec approval → `pos_search_project(content_type="standards", query="spec approved where to move")`
+- After implementation → `pos_search_project(content_type="standards", query="spec completed archive lifecycle")`
+- Checking spec status → `pos_search_project(content_type="standards", query="spec status tracking organization")`
 
 ---
 
@@ -203,15 +203,15 @@ Creating formal specifications anywhere except `specs/{review,approved,completed
 
 ```python
 # Find specs needing review
-search_standards("specs in review waiting for approval")
+pos_search_project(content_type="standards", query="specs in review waiting for approval")
 # Then: list_dir("specs/review/")
 
 # Find specs ready to implement
-search_standards("approved specs ready to build")
+pos_search_project(content_type="standards", query="approved specs ready to build")
 # Then: list_dir("specs/approved/")
 
 # Find completed specs for reference
-search_standards("completed specs historical reference")
+pos_search_project(content_type="standards", query="completed specs historical reference")
 # Then: list_dir("specs/completed/")
 ```
 
@@ -282,7 +282,7 @@ ls .praxis-os/specs/completed/
 # User says: "Create the spec"
 
 # Agent queries workflow
-search_standards("how to create specification")
+pos_search_project(content_type="standards", query="how to create specification")
 
 # Agent creates formal spec
 .praxis-os/specs/review/2025-10-21-auth-system/
@@ -351,7 +351,7 @@ git mv specs/approved/2025-10-21-auth-system \
 **AI Agent Discovery:**
 ```python
 # "What should I implement next?"
-search_standards("approved specs ready to implement")
+pos_search_project(content_type="standards", query="approved specs ready to implement")
 list_dir("specs/approved/")
 # Result: cache-refactor (oldest), api-versioning
 
@@ -403,15 +403,15 @@ git commit -m "Complete implementation of feature-name"
 **AI Agent Query Patterns:**
 ```python
 # Starting new work
-search_standards("what specs are approved for implementation")
+pos_search_project(content_type="standards", query="what specs are approved for implementation")
 list_dir("specs/approved/")
 
 # Checking review queue
-search_standards("specs waiting for approval")
+pos_search_project(content_type="standards", query="specs waiting for approval")
 list_dir("specs/review/")
 
 # Finding reference implementations
-search_standards("completed specs similar to authentication")
+pos_search_project(content_type="standards", query="completed specs similar to authentication")
 list_dir("specs/completed/")
 # Then search within for relevant specs
 ```
@@ -595,7 +595,7 @@ git commit -m "Complete implementation of feature"
 - ✅ Implementation documented in git history
 
 **Related Standards:**
-- `praxis-os-development-process.md` - Three-phase development workflow
+- `agent-os-development-process.md` - Three-phase development workflow
 - `workspace-organization.md` - Temporary design docs before formal specs
 - `creating-specs.md` (usage/) - How to create spec structure
 
@@ -607,8 +607,8 @@ git commit -m "Complete implementation of feature"
 
 1. **Query for guidance:**
 ```python
-search_standards("where to create new specification")
-search_standards("spec lifecycle organization")
+pos_search_project(content_type="standards", query="where to create new specification")
+pos_search_project(content_type="standards", query="spec lifecycle organization")
 ```
 
 2. **Check Phase 1 complete:**
@@ -646,8 +646,8 @@ git commit -m "Approve spec: feature-name for implementation"
 
 3. **Query implementation workflow:**
 ```python
-search_standards("how to execute specification")
-search_standards("Phase 3 implementation workflow")
+pos_search_project(content_type="standards", query="how to execute specification")
+pos_search_project(content_type="standards", query="Phase 3 implementation workflow")
 ```
 
 4. **Proceed to Phase 3:**

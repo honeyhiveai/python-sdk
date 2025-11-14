@@ -21,6 +21,8 @@ Review all specification documents to ensure every required section is present a
 - tasks.md must exist
 - implementation.md must exist
 
+⚠️ NOTE: README.md does NOT exist yet - it will be created in Task 3 after completeness and consistency reviews.
+
 ---
 
 ## Steps
@@ -147,10 +149,13 @@ Before proceeding:
 - [ ] All tasks.md sections complete ✅/❌
 - [ ] All implementation.md sections complete ✅/❌
 - [ ] No TODOs or placeholders remain ✅/❌
+- [ ] README.md does NOT exist yet (Task 3 will create it) ✅/❌
 
 🚨 FRAMEWORK-VIOLATION: Incomplete sections
 
 Cannot proceed to consistency review with missing sections. All content must be complete first.
+
+⚠️ REMINDER: README.md is intentionally absent at this stage - it will be created in Task 3.
 
 ---
 
