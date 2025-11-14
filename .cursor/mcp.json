@@ -1,10 +1,10 @@
 {
   "mcpServers": {
-    "agent-os-rag": {
-      "command": "${workspaceFolder}/.agent-os/venv/bin/python",
+    "praxis-os": {
+      "command": "${workspaceFolder}/.praxis-os/venv/bin/python",
       "args": [
         "-m",
-        "mcp_server",
+        "ouroboros",
         "--transport",
         "dual",
         "--log-level",
@@ -12,13 +12,15 @@
       ],
       "env": {
         "PROJECT_ROOT": "${workspaceFolder}",
-        "PYTHONPATH": "${workspaceFolder}/.agent-os",
+        "PYTHONPATH": "${workspaceFolder}/.praxis-os",
         "PYTHONUNBUFFERED": "1"
       },
       "autoApprove": [
-        "search_standards",
-        "get_current_phase",
-        "get_workflow_state",
+        "pos_search_project",
+        "pos_workflow",
+        "pos_browser",
+        "pos_filesystem",
+        "current_date",
         "get_server_info"
       ]
     }

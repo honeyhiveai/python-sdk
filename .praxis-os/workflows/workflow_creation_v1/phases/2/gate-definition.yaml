@@ -1,0 +1,30 @@
+# Gate Definition - Phase 2: Workflow Scaffolding
+# Created: 2025-10-20
+# Purpose: Validate workflow directory structure created
+
+checkpoint:
+  strict: false
+  allow_override: true
+
+evidence_schema:
+  workflow_directory_path:
+    type: string
+    required: true
+    description: "Path to created workflow directory"
+
+  phase_directories_count:
+    type: integer
+    required: true
+    description: "Number of phase directories created"
+
+  metadata_json_created:
+    type: boolean
+    required: true
+    description: "metadata.json file created and valid"
+
+  scaffolding_verified:
+    type: boolean
+    required: true
+    description: "All directory structure verified"
+
+validators: {}

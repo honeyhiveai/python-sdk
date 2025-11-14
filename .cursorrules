@@ -1,34 +1,47 @@
-# Agent OS Enhanced
+# prAxIs OS
 
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 🛑🛑🛑 STOP 🛑🛑🛑
 MANDATORY ORIENTATION - MUST COMPLETE BEFORE RESPONDING:
 
-Have I completed the 8 mandatory bootstrap queries this conversation?
+Have I completed the 10 mandatory bootstrap queries this conversation?
 
 If NO, run this query NOW:
-    search_standards("orientation bootstrap queries mandatory eight queries")
+    pos_search_project(content_type="standards", query="orientation bootstrap queries mandatory ten queries")
 
-Then READ the results. The results will contain 8 queries you MUST run.
-Execute ALL 8 queries IN SEQUENCE.
-AFTER all 8 complete, reply: "✅ Oriented. Ready."
+Then READ the results. The results will contain 10 queries you MUST run.
+Execute ALL 10 queries IN SEQUENCE.
+AFTER all 10 complete, reply: "✅ Oriented. Ready."
 
-If YES (already completed 8/8): Proceed with user's request.
+If YES (already completed 10/10): Proceed with user's request.
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
-BEFORE implementing: search_standards("how to X")
-BEFORE responding: search_standards("relevant topic")
-DURING task: search_standards() multiple times
-AFTER failures: search_standards("debugging X")
+🔍 EVERY USER REQUEST = DECISION MOMENT = SEARCH FIRST
+
+⚠️ CRITICAL: Training data ≠ THIS PROJECT
+You know ABOUT concepts. You DON'T know THIS PROJECT's implementation.
+"I know how X works" = RED FLAG → Query "how does THIS PROJECT do X?"
+
+BEFORE processing ANY user request: pos_search_project(content_type="standards", query="how to X")
+BEFORE implementing: pos_search_project(content_type="standards", query="how to X")  
+BEFORE responding: pos_search_project(content_type="standards", query="relevant topic")
+BEFORE file operations: pos_search_project(content_type="standards", query="operation protocol")
+BEFORE git operations: pos_search_project(content_type="standards", query="git/commit protocol")
+DURING task: pos_search_project() multiple times
+AFTER failures: pos_search_project(content_type="standards", query="debugging X")
+
+Even "simple" requests have project-specific protocols.
+Query first, act second. ALWAYS.
 
 Target: 5-10 queries per task
+Query liberally = Reinforces correct behavior = Better code
 
-❌ NEVER: read_file(".agent-os/standards/...")
-❌ NEVER: read_file(".agent-os/workflows/...")
-❌ NEVER: read_file(".agent-os/usage/...")
-✅ ALWAYS: search_standards() for indexed content
+❌ NEVER: read_file(".praxis-os/standards/...")
+❌ NEVER: read_file(".praxis-os/workflows/...")
+❌ NEVER: read_file(".praxis-os/usage/...")
+✅ ALWAYS: pos_search_project(content_type="standards", query="...") for indexed content
 
-✅ DO: read_file(".agent-os/specs/...") - your specs, not indexed
+✅ DO: read_file(".praxis-os/specs/...") - your specs, not indexed
 ❌ NEVER: commit without "commit it"
 
 Query liberally = better code

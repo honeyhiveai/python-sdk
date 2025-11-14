@@ -1,9 +1,0 @@
-Agent OS Workflows Version
-
-Last Updated: 2025-10-08
-Source Commit: ced34ea
-Source Repo: agent-os-enhanced
-Updated By: josh
-Notes: Synced workflows from agent-os-enhanced v1.3.0
-  - Added spec_creation_v1 workflow (NEW)
-  - Updated spec_execution_v1 workflow with latest changes

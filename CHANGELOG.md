@@ -2,6 +2,23 @@
 
 ### Added
 
+- **🚀 Infrastructure: praxis OS Migration - AI Development Framework Upgrade**
+  - **Framework Migration**: Migrated from `.agent-os/` to `.praxis-os/` directory structure
+  - **MCP Integration**: Added Model Context Protocol (MCP) based architecture via ouroboros server
+  - **Multi-Repo Code Intelligence**: Added cross-repository code search and analysis capabilities
+  - **Advanced RAG**: Upgraded to advanced RAG-based standards and workflow search system
+  - **Phase-Gated Workflows**: Added structured workflow execution with evidence-based validation
+  - **Query Gamification**: Added behavioral metrics and query feedback system for AI agents
+  - **Stateless Architecture**: Added standards for AI agent stateless operation and context management
+  - **Standards Migration**: Migrated all 50+ standards from `.agent-os/standards/` to `.praxis-os/standards/`
+  - **Workflows Migration**: Migrated all workflows including spec_creation_v1, spec_execution_v1, workflow_creation_v1
+  - **Specs Archive**: Migrated all completed specs to `.praxis-os/specs/completed/` (40+ specifications)
+  - **Workspace Organization**: Added `.praxis-os/workspace/` for analysis, design, and scratch work
+  - **YAML Config**: Updated `.yamllint` to praxis OS standards (200 char line-length, permissive rules)
+  - **Breaking Change**: AI development workflows now require praxis OS installation and MCP server
+  - Files changed: 1167 | Net additions: +53,256 lines
+  - Note: This is foundational infrastructure for AI-assisted development - extracted from python-sdk learnings
+
 - **✨ API Enhancement: DatasetsAPI Filtering - Complete Backend Parity**
   - **Name Filtering**: Added `name` parameter to `list_datasets()` and `list_datasets_async()` for exact name matching
   - **Datapoint Inclusion**: Added `include_datapoints` parameter to optionally include datapoints in response

@@ -1,0 +1,26 @@
+{
+  "mcpServers": {
+    "python-sdk": {
+      "command": "/Users/josh/src/github.com/honeyhiveai/python-sdk/.praxis-os/venv/bin/python",
+      "args": [
+        "-m",
+        "ouroboros",
+        "--transport",
+        "dual",
+        "--log-level",
+        "DEBUG"
+      ],
+      "env": {
+        "PYTHONPATH": "/Users/josh/src/github.com/honeyhiveai/python-sdk/.praxis-os"
+      },
+      "autoApprove": [
+        "pos_search_project",
+        "pos_workflow",
+        "pos_browser",
+        "pos_filesystem",
+        "get_server_info",
+        "current_date"
+      ]
+    }
+  }
+}

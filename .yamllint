@@ -1,25 +1,25 @@
 ---
-extends: default
+# yamllint configuration for HoneyHive Python SDK
+# Aligned with praxis OS standards for consistency
+# Permissive rules - focus on syntax errors, not style
 
-ignore: |
-  openapi.yaml
+extends: default
 
 rules:
   line-length:
-    max: 120
-    level: error
-
-  # Allow longer lines in certain contexts
-  comments:
-    min-spaces-from-content: 1
-
-  # Be more flexible with indentation for readability
+    max: 200
+    level: warning
+  
+  empty-lines:
+    max: 2
+    level: warning
+  
+  document-start: disable
+  
+  comments: disable
+  
   indentation:
-    spaces: 2
-    indent-sequences: true
-    check-multi-line-strings: false
-
-  # Allow truthy values like 'on' in GitHub Actions
-  truthy:
-    allowed-values: ['true', 'false', 'on', 'off', 'yes', 'no']
-    check-keys: true
+    spaces: consistent
+    indent-sequences: consistent
+  
+  truthy: disable

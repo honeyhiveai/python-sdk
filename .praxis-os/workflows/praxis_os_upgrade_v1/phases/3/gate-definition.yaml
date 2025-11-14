@@ -1,0 +1,20 @@
+# Gate Definition - Phase 3: Configuration Updates
+# Created: 2025-10-20
+# Purpose: Validate configuration updates complete
+
+checkpoint:
+  strict: false
+  allow_override: true
+
+evidence_schema:
+  all_tasks_completed:
+    type: boolean
+    required: true
+    description: "All tasks completed"
+
+  evidence_documented:
+    type: boolean
+    required: true
+    description: "Evidence documented"
+
+validators: {}
