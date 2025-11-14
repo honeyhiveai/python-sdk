@@ -26,7 +26,7 @@ class V3FrameworkExecutor:
         self.analysis_results = {}
         self.generated_test_file = None
         self.framework_root = Path(
-            ".agent-os/standards/ai-assistant/code-generation/tests/v3"
+            ".praxis-os/standards/development/code-generation/tests/v3"
         )
 
         if self.test_type not in ["unit", "integration"]:

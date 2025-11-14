@@ -34,6 +34,14 @@
 
 ### Fixed
 
+- **🐛 Infrastructure: Completed praxis OS pre-commit migration**
+  - Updated all pre-commit hooks to use `.praxis-os/` paths instead of `.agent-os/`
+  - Fixed `feature-list-sync` and `documentation-compliance-check` hooks that were blocking commits
+  - Updated 10 files: `.pre-commit-config.yaml`, `scripts/check-feature-sync.py`, `scripts/check-documentation-compliance.py`, `scripts/validate-docs-navigation.sh`, `scripts/validate-no-mocks-integration.py`, and 5 other scripts
+  - Changed 43 references from `.agent-os/` to `.praxis-os/` across pre-commit infrastructure
+  - Hook paths now correctly reference `.praxis-os/workspace/product/features.md` and `.praxis-os/standards/universal/best-practices.md`
+  - Files modified: 10 (pre-commit config + 9 scripts)
+
 - **🐛 Tracer: Fixed enrich_session inputs parameter causing 400 errors**
   - Fixed `UpdateEventRequest` not supporting `inputs` parameter - now maps unsupported fields to `metadata`
   - `enrich_session(inputs={...})` now correctly maps to `metadata["inputs"]` instead of causing 400 error

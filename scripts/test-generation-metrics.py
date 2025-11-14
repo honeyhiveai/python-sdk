@@ -125,9 +125,9 @@ class TestGenerationMetrics:
     def _check_linter_docs_coverage(self) -> Dict[str, Any]:
         """Check if all relevant linter documentation was discovered."""
         linter_dirs = [
-            ".agent-os/standards/ai-assistant/code-generation/linters/pylint/",
-            ".agent-os/standards/ai-assistant/code-generation/linters/black/",
-            ".agent-os/standards/ai-assistant/code-generation/linters/mypy/",
+            ".praxis-os/standards/development/code-generation/linters/pylint/",
+            ".praxis-os/standards/development/code-generation/linters/black/",
+            ".praxis-os/standards/development/code-generation/linters/mypy/",
         ]
 
         coverage = {}
@@ -147,7 +147,7 @@ class TestGenerationMetrics:
     def _validate_framework_checklist(self) -> Dict[str, Any]:
         """Validate framework checklist completion indicators."""
         checklist_path = Path(
-            ".agent-os/standards/ai-assistant/code-generation/pre-generation-checklist.md"
+            ".praxis-os/standards/development/code-generation/pre-generation-checklist.md"
         )
 
         if not checklist_path.exists():
@@ -537,7 +537,7 @@ class TestGenerationMetrics:
         """Get the current framework version/identifier."""
         try:
             framework_file = Path(
-                ".agent-os/standards/ai-assistant/code-generation/comprehensive-analysis-skip-proof.md"
+                ".praxis-os/standards/development/code-generation/comprehensive-analysis-skip-proof.md"
             )
             if framework_file.exists():
                 with open(framework_file, "r", encoding="utf-8") as f:
@@ -559,13 +559,13 @@ class TestGenerationMetrics:
         # For now, we check for the existence of key framework components
         checklist_indicators = {
             "checklist_exists": Path(
-                ".agent-os/standards/ai-assistant/code-generation/pre-generation-checklist.md"
+                ".praxis-os/standards/development/code-generation/pre-generation-checklist.md"
             ).exists(),
             "linter_docs_exist": Path(
-                ".agent-os/standards/ai-assistant/code-generation/linters/"
+                ".praxis-os/standards/development/code-generation/linters/"
             ).exists(),
             "comprehensive_framework_exists": Path(
-                ".agent-os/standards/ai-assistant/code-generation/comprehensive-analysis-skip-proof.md"
+                ".praxis-os/standards/development/code-generation/comprehensive-analysis-skip-proof.md"
             ).exists(),
         }
 

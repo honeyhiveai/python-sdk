@@ -19,9 +19,9 @@ def check_framework_compliance():
 
     # Check if framework files exist
     framework_files = [
-        ".agent-os/standards/ai-assistant/code-generation/comprehensive-analysis-skip-proof.md",
-        ".agent-os/standards/ai-assistant/code-generation/skip-proof-enforcement-card.md",
-        ".agent-os/standards/ai-assistant/TEST_GENERATION_MANDATORY_FRAMEWORK.md",
+        ".praxis-os/standards/development/code-generation/comprehensive-analysis-skip-proof.md",
+        ".praxis-os/standards/development/code-generation/skip-proof-enforcement-card.md",
+        ".praxis-os/standards/development/TEST_GENERATION_MANDATORY_FRAMEWORK.md",
     ]
 
     missing_files = []

@@ -66,15 +66,15 @@ repos:
         entry: tox -e docs
         language: system
         pass_filenames: false
-        files: '^(docs/.*\.(rst|md)|README\.md|CHANGELOG\.md|\.agent-os/(?!specs/).*\.md)$'
+        files: '^(docs/.*\.(rst|md)|README\.md|CHANGELOG\.md|\.praxis-os/(?!specs/).*\.md)$'
         stages: [pre-commit]
 
       - id: docs-navigation-validation
-        name: Documentation Navigation Validation (Agent OS Required)
+        name: Documentation Navigation Validation (praxis OS Required)
         entry: scripts/validate-docs-navigation.sh
         language: system
         pass_filenames: false
-        files: '^(docs/.*\.(rst|md)|README\.md|CHANGELOG\.md|\.agent-os/(?!specs/).*\.md)$'
+        files: '^(docs/.*\.(rst|md)|README\.md|CHANGELOG\.md|\.praxis-os/(?!specs/).*\.md)$'
         stages: [pre-commit]
 
       - id: feature-list-sync
@@ -82,7 +82,7 @@ repos:
         entry: scripts/check-feature-sync.py
         language: python
         pass_filenames: false
-        files: '^(src/.*\.py|docs/reference/.*\.rst|\.agent-os/product/features\.md)$'
+        files: '^(src/.*\.py|docs/reference/.*\.rst|\.praxis-os/workspace/product/features\.md)$'
         stages: [pre-commit]
 
       - id: documentation-compliance-check

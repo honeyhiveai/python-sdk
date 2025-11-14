@@ -94,7 +94,7 @@ def has_significant_changes(staged_files: list) -> bool:
         "pyproject.toml",  # Dependency/config changes
         "tox.ini",  # Build config changes
         "docs/",  # Documentation changes (significant)
-        ".agent-os/",  # Agent OS documentation changes
+        ".praxis-os/",  # praxis OS documentation changes
         "examples/",  # Example changes
     ]
 
@@ -104,7 +104,7 @@ def has_significant_changes(staged_files: list) -> bool:
         ".pytest_cache",
         "_build/",  # Sphinx build artifacts
         ".tox/",  # Tox artifacts
-        ".agent-os/specs/",  # Spec proposals - CHANGELOG required on implementation, not proposal
+        ".praxis-os/specs/",  # Spec proposals - CHANGELOG required on implementation, not proposal
     ]
 
     significant_files = []
@@ -133,7 +133,7 @@ def detect_change_type(staged_files: list, change_stats: dict) -> str:
         return "test"
     
     # Pure documentation changes
-    doc_patterns = ["docs/", "README.md", ".agent-os/"]
+    doc_patterns = ["docs/", "README.md", ".praxis-os/"]
     if all(any(f.startswith(p) for p in doc_patterns) for f in staged_files):
         return "docs"
     
@@ -195,13 +195,13 @@ def is_docs_changelog_updated(staged_files: list) -> bool:
 
 def is_reference_docs_updated(staged_files: list) -> bool:
     """Check if reference documentation is being updated."""
-    reference_files = ["docs/reference/index.rst", ".agent-os/product/features.md"]
+    reference_files = ["docs/reference/index.rst", ".praxis-os/workspace/product/features.md"]
     return any(ref_file in staged_files for ref_file in reference_files)
 
 
 def is_docs_only_commit(staged_files: list) -> bool:
     """Check if this is a documentation-only commit."""
-    doc_patterns = ["docs/", "README.md", ".agent-os/"]
+    doc_patterns = ["docs/", "README.md", ".praxis-os/"]
     non_doc_patterns = ["src/", "tests/", "examples/", "scripts/"]
 
     has_docs = any(
@@ -369,7 +369,7 @@ def main() -> NoReturn:
         )
         print("\nTo fix this:")
         print("1. Update docs/reference/index.rst with new features")
-        print("2. Update .agent-os/product/features.md if applicable")
+        print("2. Update .praxis-os/workspace/product/features.md if applicable")
         print("3. Stage updated docs: git add docs/reference/index.rst")
         print("4. Re-run your commit")
         print(f"\n💡 NOTE: Detected change type is '{change_type}'")

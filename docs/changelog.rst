@@ -21,6 +21,7 @@ Current Version Highlights
 
 * **AI Development Framework**: Migrated from Agent OS to praxis OS with MCP (Model Context Protocol) integration
 * **Enhanced Tooling**: Added multi-repo code intelligence, advanced RAG search, and phase-gated workflows
+* **Bug Fix**: Completed praxis OS pre-commit migration - fixed all hooks to use new .praxis-os/ paths (10 files, 43 references updated)
 * **Bug Fix**: Fixed enrich_session inputs parameter causing 400 errors - now maps unsupported fields to metadata
 * **Bug Fix**: Fixed OpenInference event type detection - ensures correct classification of instrumented spans (CHAIN, LLM, TOOL, etc.)
 * **Bug Fix**: Enhanced error logging for 400 errors in experiment runs for better debugging

@@ -4,7 +4,7 @@ Feature Documentation Synchronization Checker
 
 Ensures that feature documentation stays synchronized between:
 - docs/reference/index.rst (modern API reference documentation)
-- .agent-os/product/features.md (Agent OS product catalog)
+- .praxis-os/workspace/product/features.md (praxis OS product catalog)
 - Actual codebase features (src/honeyhive/)
 
 This prevents documentation drift and ensures comprehensive feature coverage.
@@ -53,14 +53,14 @@ def extract_features_from_reference_docs() -> Set[str]:
     return features
 
 
-def extract_features_from_agent_os() -> Set[str]:
-    """Extract features from .agent-os/product/features.md."""
-    agent_os_path = Path(".agent-os/product/features.md")
-    if not agent_os_path.exists():
-        print(f"❌ {agent_os_path} not found")
+def extract_features_from_praxis_os() -> Set[str]:
+    """Extract features from .praxis-os/workspace/product/features.md."""
+    praxis_os_path = Path(".praxis-os/workspace/product/features.md")
+    if not praxis_os_path.exists():
+        print(f"❌ {praxis_os_path} not found")
         return set()
 
-    content = agent_os_path.read_text()
+    content = praxis_os_path.read_text()
     # Extract features from markdown headers
     features = set()
     for line in content.split("\n"):
@@ -198,8 +198,8 @@ def check_required_docs_exist() -> bool:
         "docs/tutorials/index.rst",
         "docs/how-to/index.rst",
         "docs/explanation/index.rst",
-        ".agent-os/product/features.md",
-        ".agent-os/standards/best-practices.md",
+        ".praxis-os/workspace/product/features.md",
+        ".praxis-os/standards/universal/best-practices.md",
     ]
 
     missing_docs = []
@@ -252,14 +252,14 @@ def main() -> NoReturn:
         # Extract features from different sources
         print(f"\n🔍 Step 3: Feature Extraction")
         reference_docs_features = extract_features_from_reference_docs()
-        agent_os_features = extract_features_from_agent_os()
+        praxis_os_features = extract_features_from_praxis_os()
         codebase_components = extract_core_components_from_codebase()
 
         print(f"\n📊 Feature Coverage Analysis:")
         print(
             f"   Reference Docs (docs/reference/): {len(reference_docs_features)} features"
         )
-        print(f"   Agent OS (product/): {len(agent_os_features)} features")
+        print(f"   praxis OS (product/): {len(praxis_os_features)} features")
         print(f"   Codebase components: {len(codebase_components)} components")
 
         # Check for major discrepancies
@@ -269,18 +269,18 @@ def main() -> NoReturn:
             print("❌ No features found in docs/reference/index.rst")
             all_good = False
 
-        if len(agent_os_features) == 0:
-            print("❌ No features found in Agent OS features.md")
+        if len(praxis_os_features) == 0:
+            print("❌ No features found in praxis OS features.md")
             all_good = False
 
         # Warn about significant gaps (more than 50% difference)
-        if len(reference_docs_features) > 0 and len(agent_os_features) > 0:
-            ratio = min(len(reference_docs_features), len(agent_os_features)) / max(
-                len(reference_docs_features), len(agent_os_features)
+        if len(reference_docs_features) > 0 and len(praxis_os_features) > 0:
+            ratio = min(len(reference_docs_features), len(praxis_os_features)) / max(
+                len(reference_docs_features), len(praxis_os_features)
             )
             if ratio < 0.5:
                 print(
-                    f"⚠️  Significant feature count discrepancy: {len(reference_docs_features)} vs {len(agent_os_features)}"
+                    f"⚠️  Significant feature count discrepancy: {len(reference_docs_features)} vs {len(praxis_os_features)}"
                 )
                 print("   Consider updating documentation to ensure consistency")
 

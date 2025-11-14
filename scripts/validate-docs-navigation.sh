@@ -1,13 +1,13 @@
 #!/bin/bash
 # Documentation Navigation Validation Script
-# Required by Agent OS standards: .agent-os/standards/best-practices.md
+# Required by praxis OS standards: .praxis-os/standards/universal/best-practices.md
 #
 # This script validates that all documentation navigation links work correctly
 # and that the toctree structure is complete and accurate.
 
 set -e
 
-echo "🔍 Validating documentation navigation (Agent OS requirement)..."
+echo "🔍 Validating documentation navigation (praxis OS requirement)..."
 
 # Activate venv if it exists
 if [ -d "venv" ]; then
