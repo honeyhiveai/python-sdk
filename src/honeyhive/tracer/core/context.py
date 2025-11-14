@@ -348,28 +348,77 @@ class TracerContextMixin(TracerContextInterface):
         user_properties: Optional[Dict[str, Any]] = None,
         **kwargs: Any,
     ) -> Dict[str, Any]:
-        """Dynamically build session update parameters."""
-        update_params = {}
+        """Dynamically build session update parameters.
 
-        # Add parameters dynamically if they have content
-        param_mapping = {
-            "inputs": inputs,
-            "outputs": outputs,
-            "metadata": metadata,
-            "config": config,
-            "feedback": feedback,
-            "metrics": metrics,
-            "user_properties": user_properties,
+        Maps parameters to UpdateEventRequest supported fields only.
+        Unsupported fields (inputs, unrecognized kwargs) are merged into metadata.
+
+        UpdateEventRequest supports: metadata, feedback, metrics, outputs,
+        config, user_properties, duration (see src/honeyhive/api/events.py:45)
+        """
+        # Fields supported by UpdateEventRequest
+        # pylint: disable=invalid-name  # SUPPORTED_FIELDS is semantically a constant
+        SUPPORTED_FIELDS = {
+            "metadata",
+            "feedback",
+            "metrics",
+            "outputs",
+            "config",
+            "user_properties",
+            "duration",
         }
 
-        for param_name, param_value in param_mapping.items():
-            if param_value is not None and param_value:
-                update_params[param_name] = param_value
+        # Start with provided metadata (or empty dict)
+        merged_metadata = dict(metadata) if metadata else {}
 
-        # Add additional kwargs dynamically
-        for key, value in kwargs.items():
-            if value is not None and key not in update_params:
-                update_params[key] = value
+        # Map inputs to metadata (NOT supported by UpdateEventRequest)
+        if inputs:
+            merged_metadata["inputs"] = inputs
+            safe_log(
+                self,
+                "debug",
+                "Mapped 'inputs' to metadata (not supported by UpdateEventRequest)",
+            )
+
+        # Map unsupported kwargs to metadata
+        unsupported_kwargs = {
+            k: v
+            for k, v in kwargs.items()
+            if k not in SUPPORTED_FIELDS and v is not None
+        }
+        if unsupported_kwargs:
+            merged_metadata.update(unsupported_kwargs)
+            safe_log(
+                self,
+                "debug",
+                "Mapped unsupported kwargs to metadata: %s",
+                list(unsupported_kwargs.keys()),
+            )
+
+        # Build update params with only supported fields
+        update_params = {}
+
+        if merged_metadata:
+            update_params["metadata"] = merged_metadata
+
+        if outputs:
+            update_params["outputs"] = outputs
+
+        if config:
+            update_params["config"] = config
+
+        if feedback:
+            update_params["feedback"] = feedback
+
+        if metrics:
+            update_params["metrics"] = metrics
+
+        if user_properties:
+            update_params["user_properties"] = user_properties
+
+        # Handle duration from kwargs if present (supported field)
+        if "duration" in kwargs and kwargs["duration"] is not None:
+            update_params["duration"] = kwargs["duration"]
 
         return update_params
 

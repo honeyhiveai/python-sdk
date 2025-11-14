@@ -236,7 +236,10 @@ class TestEnrichSession:
         context_mixin: MockTracerContextMixin,
         mock_client: Mock,
     ) -> None:
-        """Test successful session enrichment."""
+        """Test successful session enrichment.
+
+        Note: inputs is mapped to metadata (not supported by UpdateEventRequest).
+        """
         # Arrange
         context_mixin.client = mock_client
         context_mixin._session_id = "test-session-123"
@@ -252,21 +255,24 @@ class TestEnrichSession:
         # Act
         context_mixin.enrich_session(inputs=inputs, outputs=outputs, metadata=metadata)
 
-        # Assert
+        # Assert - inputs should be merged into metadata
         mock_update_event_request.assert_called_once_with(
             event_id="test-session-123",
-            inputs=inputs,
+            metadata={
+                "meta_key": "meta_value",  # Original metadata
+                "inputs": inputs,  # inputs mapped to metadata
+            },
             outputs=outputs,
-            metadata=metadata,
         )
         mock_client.events.update_event.assert_called_once_with(mock_request_instance)
-        mock_safe_log.assert_called_once_with(
+        # Update fields list should reflect actual top-level fields
+        mock_safe_log.assert_called_with(
             context_mixin,
             "debug",
             "Session enriched successfully",
             honeyhive_data={
                 "session_id": "test-session-123",
-                "update_fields": ["inputs", "outputs", "metadata"],
+                "update_fields": ["metadata", "outputs"],
             },
         )
 
@@ -381,8 +387,8 @@ class TestEnrichSession:
         # Act
         context_mixin.enrich_session(inputs={"key": "value"})
 
-        # Assert
-        mock_safe_log.assert_called_once_with(
+        # Assert - Check that error was logged (there may be other debug logs)
+        mock_safe_log.assert_any_call(
             context_mixin,
             "error",
             f"Failed to enrich session: {test_error}",
@@ -396,7 +402,10 @@ class TestEnrichSession:
         context_mixin: MockTracerContextMixin,
         mock_client: Mock,
     ) -> None:
-        """Test session enrichment with additional kwargs."""
+        """Test session enrichment with additional kwargs.
+
+        Note: inputs and unsupported kwargs are mapped to metadata.
+        """
         # Arrange
         context_mixin.client = mock_client
         context_mixin._session_id = "test-session-123"
@@ -411,13 +420,15 @@ class TestEnrichSession:
                 inputs={"input": "value"}, custom_field="custom_value", another_field=42
             )
 
-        # Assert
+        # Assert - inputs and unsupported kwargs should be in metadata
         mock_update_event_request.assert_called_once()
         call_args = mock_update_event_request.call_args
         assert call_args[1]["event_id"] == "test-session-123"
-        assert call_args[1]["inputs"] == {"input": "value"}
-        assert call_args[1]["custom_field"] == "custom_value"
-        assert call_args[1]["another_field"] == 42
+        # All unsupported fields should be in metadata
+        assert "metadata" in call_args[1]
+        assert call_args[1]["metadata"]["inputs"] == {"input": "value"}
+        assert call_args[1]["metadata"]["custom_field"] == "custom_value"
+        assert call_args[1]["metadata"]["another_field"] == 42
         mock_client.events.update_event.assert_called_once_with(mock_request_instance)
 
     @patch("honeyhive.api.events.UpdateEventRequest")
@@ -703,7 +714,11 @@ class TestPrivateHelperMethods:
     def test_build_session_update_params_dynamically_all_params(
         self, context_mixin: MockTracerContextMixin
     ) -> None:
-        """Test building session update parameters with all parameters."""
+        """Test building session update parameters with all parameters.
+
+        Note: inputs is mapped to metadata (not supported by UpdateEventRequest).
+        unsupported kwargs are also mapped to metadata.
+        """
         # Arrange
         inputs = {"input": "value"}
         outputs = {"output": "value"}
@@ -712,26 +727,29 @@ class TestPrivateHelperMethods:
         feedback = {"feedback": "value"}
         metrics = {"metrics": "value"}
 
-        # Act
-        result = context_mixin._build_session_update_params_dynamically(
-            inputs=inputs,
-            outputs=outputs,
-            metadata=metadata,
-            config=config,
-            feedback=feedback,
-            metrics=metrics,
-            custom_field="custom_value",
-        )
+        with patch("honeyhive.tracer.core.context.safe_log"):
+            # Act
+            result = context_mixin._build_session_update_params_dynamically(
+                inputs=inputs,
+                outputs=outputs,
+                metadata=metadata,
+                config=config,
+                feedback=feedback,
+                metrics=metrics,
+                custom_field="custom_value",
+            )
 
-        # Assert
+        # Assert - inputs and custom_field should be merged into metadata
         expected = {
-            "inputs": inputs,
+            "metadata": {
+                "meta": "value",  # Original metadata
+                "inputs": {"input": "value"},  # Mapped from inputs param
+                "custom_field": "custom_value",  # Mapped from unsupported kwargs
+            },
             "outputs": outputs,
-            "metadata": metadata,
             "config": config,
             "feedback": feedback,
             "metrics": metrics,
-            "custom_field": "custom_value",
         }
         assert result == expected
 
@@ -775,26 +793,146 @@ class TestPrivateHelperMethods:
     def test_build_session_update_params_dynamically_partial_params(
         self, context_mixin: MockTracerContextMixin
     ) -> None:
-        """Test building session update parameters with partial parameters."""
-        # Act
-        result = context_mixin._build_session_update_params_dynamically(
-            inputs={"input": "value"},
-            outputs=None,
-            metadata={"meta": "value"},
-            config=None,
-            feedback=None,
-            metrics=None,
-            extra_field="extra_value",
-            none_field=None,
-        )
+        """Test building session update parameters with partial parameters.
 
-        # Assert
+        Note: inputs and unsupported extra_field are mapped to metadata.
+        """
+        with patch("honeyhive.tracer.core.context.safe_log"):
+            # Act
+            result = context_mixin._build_session_update_params_dynamically(
+                inputs={"input": "value"},
+                outputs=None,
+                metadata={"meta": "value"},
+                config=None,
+                feedback=None,
+                metrics=None,
+                extra_field="extra_value",
+                none_field=None,
+            )
+
+        # Assert - inputs and extra_field should be in metadata
         expected = {
-            "inputs": {"input": "value"},
-            "metadata": {"meta": "value"},
-            "extra_field": "extra_value",
+            "metadata": {
+                "meta": "value",  # Original metadata
+                "inputs": {"input": "value"},  # Mapped from inputs
+                "extra_field": "extra_value",  # Mapped from unsupported kwargs
+            },
         }
         assert result == expected
+
+    @patch("honeyhive.tracer.core.context.safe_log")
+    def test_build_session_update_params_maps_inputs_to_metadata(
+        self, mock_safe_log: Mock, context_mixin: MockTracerContextMixin
+    ) -> None:
+        """Test that inputs parameter is mapped to metadata.
+
+        Bug fix: UpdateEventRequest does NOT support inputs parameter,
+        so it must be mapped to metadata.
+        """
+        # Arrange
+        inputs = {"query": "test input", "user_id": "user-123"}
+
+        # Act
+        result = context_mixin._build_session_update_params_dynamically(inputs=inputs)
+
+        # Assert
+        assert "inputs" not in result  # inputs should NOT be a top-level field
+        assert "metadata" in result
+        assert result["metadata"]["inputs"] == inputs
+
+        # Verify logging
+        mock_safe_log.assert_called_once()
+        assert "Mapped 'inputs' to metadata" in str(mock_safe_log.call_args)
+
+    @patch("honeyhive.tracer.core.context.safe_log")
+    def test_build_session_update_params_maps_unsupported_kwargs_to_metadata(
+        self, mock_safe_log: Mock, context_mixin: MockTracerContextMixin
+    ) -> None:
+        """Test that unsupported kwargs are mapped to metadata.
+
+        Bug fix: Only supported UpdateEventRequest fields should be
+        returned. Unsupported kwargs must be mapped to metadata.
+        """
+        # Arrange - Pass unsupported kwargs
+        unsupported1 = "value1"
+        unsupported2 = {"nested": "value2"}
+
+        # Act
+        result = context_mixin._build_session_update_params_dynamically(
+            unsupported_field1=unsupported1,
+            unsupported_field2=unsupported2,
+        )
+
+        # Assert - Unsupported fields should be in metadata
+        assert "unsupported_field1" not in result  # Not a top-level field
+        assert "unsupported_field2" not in result
+        assert "metadata" in result
+        assert result["metadata"]["unsupported_field1"] == unsupported1
+        assert result["metadata"]["unsupported_field2"] == unsupported2
+
+        # Verify logging
+        mock_safe_log.assert_called_once()
+        assert "unsupported_field1" in str(mock_safe_log.call_args)
+        assert "unsupported_field2" in str(mock_safe_log.call_args)
+
+    def test_build_session_update_params_only_returns_supported_fields(
+        self, context_mixin: MockTracerContextMixin
+    ) -> None:
+        """Test that only UpdateEventRequest supported fields are returned.
+
+        Bug fix: Verify that the returned dict only contains fields that
+        UpdateEventRequest accepts (metadata, feedback, metrics, outputs,
+        config, user_properties, duration).
+        """
+        with patch("honeyhive.tracer.core.context.safe_log"):
+            # Act - Pass a mix of supported and unsupported fields
+            result = context_mixin._build_session_update_params_dynamically(
+                metadata={"meta": "value"},
+                feedback={"rating": 5},
+                metrics={"score": 0.95},
+                outputs={"result": "success"},
+                config={"model": "gpt-4"},
+                user_properties={"user_id": "123"},
+                duration=1500,  # Supported via kwargs
+                inputs={"input": "value"},  # Unsupported - should go to metadata
+                unsupported_field="unsupported",  # Unsupported - should go to metadata
+            )
+
+        # Assert - Only supported fields at top level
+        supported_fields = {
+            "metadata",
+            "feedback",
+            "metrics",
+            "outputs",
+            "config",
+            "user_properties",
+            "duration",
+        }
+        result_keys = set(result.keys())
+        assert result_keys.issubset(supported_fields)
+
+        # Verify unsupported fields went to metadata
+        assert result["metadata"]["inputs"] == {"input": "value"}
+        assert result["metadata"]["unsupported_field"] == "unsupported"
+
+    def test_build_session_update_params_preserves_duration_from_kwargs(
+        self, context_mixin: MockTracerContextMixin
+    ) -> None:
+        """Test that duration from kwargs is preserved as top-level field.
+
+        Bug fix: duration is a supported field, so it should NOT go to metadata.
+        """
+        with patch("honeyhive.tracer.core.context.safe_log"):
+            # Act
+            result = context_mixin._build_session_update_params_dynamically(
+                duration=2500,
+                metadata={"meta": "value"},
+            )
+
+        # Assert - duration should be top-level field, not in metadata
+        assert "duration" in result
+        assert result["duration"] == 2500
+        assert "duration" not in result.get("metadata", {})
 
 
 class TestEnrichSpan:

@@ -34,6 +34,14 @@
 
 ### Fixed
 
+- **🐛 Tracer: Fixed enrich_session inputs parameter causing 400 errors**
+  - Fixed `UpdateEventRequest` not supporting `inputs` parameter - now maps unsupported fields to `metadata`
+  - `enrich_session(inputs={...})` now correctly maps to `metadata["inputs"]` instead of causing 400 error
+  - All unsupported `**kwargs` are automatically mapped to `metadata` namespace
+  - Only supported fields (`metadata`, `feedback`, `metrics`, `outputs`, `config`, `user_properties`, `duration`) passed to UpdateEventRequest
+  - Added 4 new unit tests validating field mapping behavior
+  - Files: `src/honeyhive/tracer/core/context.py`, `tests/unit/test_tracer_core_context.py`
+
 - **🐛 Tracer: Fixed OpenInference event type detection priority**
   - Added `openinference.span.kind` attribute as Priority 3 in event type detection (before dynamic pattern matching)
   - Ensures deterministic mapping: LLM→model, CHAIN→chain, TOOL→tool, AGENT→chain, RETRIEVER→tool, EMBEDDING→tool, RERANKER→tool, GUARDRAIL→tool
