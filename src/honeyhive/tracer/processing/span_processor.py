@@ -866,8 +866,19 @@ class HoneyHiveSpanProcessor(SpanProcessor):
         Priority Order:
         1. honeyhive_event_type_raw - Set by @trace decorator (highest priority)
         2. honeyhive_event_type - Alternative explicit format
-        3. Span name inference - Pattern matching fallback
-        4. Default to "tool" - Final fallback
+        3. openinference.span.kind - Standard instrumentor convention (LLM/CHAIN/TOOL/AGENT)
+        4. Span name inference - Pattern matching fallback
+        5. Default to "tool" - Final fallback
+
+        OpenInference span.kind mappings:
+        - LLM → model (actual LLM invocations)
+        - CHAIN → chain (multi-step workflows)
+        - TOOL → tool (function/tool calls)
+        - AGENT → chain (agent operations)
+        - RETRIEVER → tool (retrieval operations)
+        - EMBEDDING → tool (embedding generation)
+        - RERANKER → tool (reranking operations)
+        - GUARDRAIL → tool (guardrail checks)
 
         :param span: The span to analyze for event type
         :type span: Span
@@ -919,7 +930,41 @@ class HoneyHiveSpanProcessor(SpanProcessor):
                 self._safe_log("debug", "✅ Event type from decorator: %s", direct_type)
                 return str(direct_type)
 
-            # Priority 4: Dynamic pattern matching using utility function
+            # Priority 4: OpenInference span.kind attribute (standard instrumentor convention)
+            span_kind = attributes.get("openinference.span.kind")
+            if span_kind:
+                # Map OpenInference span kinds to HoneyHive event types
+                # Complete OpenInference span.kind mapping
+                span_kind_upper = str(span_kind).upper()
+
+                # Deterministic mapping table
+                OPENINFERENCE_TO_HONEYHIVE = {
+                    "LLM": "model",  # LLM invocations
+                    "CHAIN": "chain",  # Multi-step workflows
+                    "TOOL": "tool",  # Tool/function calls
+                    "AGENT": "chain",  # Agent operations (map to chain)
+                    "RETRIEVER": "tool",  # Retrieval operations
+                    "EMBEDDING": "tool",  # Embedding generation (map to tool)
+                    "RERANKER": "tool",  # Reranking operations
+                    "GUARDRAIL": "tool",  # Guardrail checks
+                }
+
+                event_type = OPENINFERENCE_TO_HONEYHIVE.get(span_kind_upper)
+                if event_type:
+                    self._safe_log(
+                        "debug",
+                        f"✅ Event type from openinference.span.kind: {event_type} ({span_kind_upper})",
+                    )
+                    return event_type
+                else:
+                    # Unknown span.kind - log warning and default to tool
+                    self._safe_log(
+                        "warning",
+                        f"⚠️ Unknown openinference.span.kind: {span_kind_upper}, defaulting to tool",
+                    )
+                    return "tool"
+
+            # Priority 5: Dynamic pattern matching using utility function
             self._safe_log(
                 "debug", "🔍 Using dynamic pattern matching for span: '%s'", span.name
             )
@@ -938,7 +983,7 @@ class HoneyHiveSpanProcessor(SpanProcessor):
                 )
                 return detected_type
 
-            # Default fallback
+            # Priority 6: Default fallback
             self._safe_log(
                 "debug",
                 "⚠️ No event type pattern matched for '%s', defaulting to 'tool'",

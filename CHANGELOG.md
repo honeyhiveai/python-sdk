@@ -2,6 +2,14 @@
 
 ### Added
 
+- **🧪 Testing: Added Google ADK instrumentation exercise script**
+  - Comprehensive traffic generation script for validating OpenInference Google ADK instrumentation
+  - Exercises: Basic model calls, tool calls, chain workflows, multi-step workflows, parallel workflows, error scenarios, metadata/metrics, callbacks
+  - Features: Rate limiting (10 req/min), exponential backoff retry logic, per-exercise error handling
+  - Callback testing: `before_model_callback` for keyword blocking, `before_tool_callback` for policy enforcement
+  - Usage: `python examples/integrations/exercise_google_adk.py [--verbose] [--iterations N] [--rate-limit-delay SECS]`
+  - Files: `examples/integrations/exercise_google_adk.py`, `examples/integrations/README.md`
+
 - **🚀 Infrastructure: praxis OS Migration - AI Development Framework Upgrade**
   - **Framework Migration**: Migrated from `.agent-os/` to `.praxis-os/` directory structure
   - **MCP Integration**: Added Model Context Protocol (MCP) based architecture via ouroboros server
@@ -25,6 +33,13 @@
   - Note: This is foundational infrastructure for AI-assisted development - extracted from python-sdk learnings
 
 ### Fixed
+
+- **🐛 Tracer: Fixed OpenInference event type detection priority**
+  - Added `openinference.span.kind` attribute as Priority 3 in event type detection (before dynamic pattern matching)
+  - Ensures deterministic mapping: LLM→model, CHAIN→chain, TOOL→tool, AGENT→chain, RETRIEVER→tool, EMBEDDING→tool, RERANKER→tool, GUARDRAIL→tool
+  - Prevents incorrect classification of instrumented spans (e.g., CHAIN spans with "google" in name being classified as "model")
+  - Pattern matching now serves as fallback only for non-OpenInference spans
+  - File: `src/honeyhive/tracer/processing/span_processor.py`
 
 - **🐛 API: Enhanced error logging for 400 errors in update_run_with_results**
   - Added detailed error logging when backend returns 400 status code during experiment run updates

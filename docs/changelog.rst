@@ -21,8 +21,10 @@ Current Version Highlights
 
 * **AI Development Framework**: Migrated from Agent OS to praxis OS with MCP (Model Context Protocol) integration
 * **Enhanced Tooling**: Added multi-repo code intelligence, advanced RAG search, and phase-gated workflows
+* **Bug Fix**: Fixed OpenInference event type detection - ensures correct classification of instrumented spans (CHAIN, LLM, TOOL, etc.)
 * **Bug Fix**: Enhanced error logging for 400 errors in experiment runs for better debugging
 * **Bug Fix**: Corrected user_properties and metrics handling in enrich_span/enrich_session methods
+* **Testing**: Added Google ADK instrumentation exercise script with rate limiting, callbacks, and comprehensive test scenarios
 * **Breaking Change (Dev Only)**: AI development workflows now require praxis OS installation
 
 **✨ NEW: DatasetsAPI Filtering - Find Datasets Efficiently (Nov 10, 2025)**

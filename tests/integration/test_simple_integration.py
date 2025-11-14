@@ -347,9 +347,12 @@ class TestSimpleIntegration:
         """Test that environment configuration is properly set."""
         assert integration_client.test_mode is False  # Integration tests use real API
         # Assert server_url is configured (respects HH_API_URL env var
-        # - could be staging or production)
+        # - could be staging, production, or local dev)
         assert integration_client.server_url is not None
-        assert integration_client.server_url.startswith("https://api.")
+        # Allow localhost for local dev, or https://api. for staging/production
+        assert integration_client.server_url.startswith(
+            "https://api."
+        ) or integration_client.server_url.startswith("http://localhost")
 
     def test_fixture_availability(self, integration_client):
         """Test that required integration fixtures are available."""

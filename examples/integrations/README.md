@@ -252,4 +252,50 @@ tracer = HoneyHiveTracer.init(
 # Your LLM calls are automatically traced!
 ```
 
+## 🧪 **Testing & Validation Utilities**
+
+### Exercise Scripts
+
+Generate comprehensive traffic for fixture validation and attribute mapping testing:
+
+**[`exercise_google_adk.py`](exercise_google_adk.py)** - Google ADK traffic generator
+
+```bash
+# Generate traffic to validate fixtures and mappings
+python exercise_google_adk.py --verbose --iterations 3
+
+# Quick single run (with automatic rate limiting)
+python exercise_google_adk.py
+
+# Adjust rate limit delay for different quotas
+python exercise_google_adk.py --rate-limit-delay 10.0  # 10 seconds between calls
+```
+
+**Features:**
+- ⏱️  **Automatic rate limiting** (7s delay between calls, configurable)
+- 🔄 **Retry logic** with exponential backoff for 429 errors
+- 📊 **Progress tracking** with clear console output
+
+**Exercises 5 test scenarios:**
+1. **Basic Model Calls** - Validates MODEL span attributes (prompt_tokens, completion_tokens → metadata.*)
+2. **Tool Calls** - Validates TOOL span attributes (tool names, inputs, outputs)
+3. **Chain Workflows** - Validates CHAIN span attributes (flexible structure, inputs, outputs)
+4. **Error Scenarios** - Validates error attribute mapping and status codes
+5. **Metadata & Metrics** - Validates metadata.* and metrics.* attribute separation
+
+**Purpose:**
+- Validate fixture accuracy against real API responses
+- Test attribute mapping fixes (token metrics → metadata.*, cost/timing → metrics.*)
+- Verify frontend rendering behavior for different event types
+- Generate diverse span patterns for ingestion service testing
+
+### Span Capture Utilities
+
+**[`capture_spans.py`](capture_spans.py)** - Capture and export spans for fixture creation
+**[`convert_spans_to_test_cases.py`](convert_spans_to_test_cases.py)** - Generate test fixtures from captured spans
+
+See [`GENERATE_TEST_CASES.md`](GENERATE_TEST_CASES.md) for detailed workflow.
+
+---
+
 **Choose the integration that best fits your needs!** 🚀
