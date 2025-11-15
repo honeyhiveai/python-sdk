@@ -124,48 +124,7 @@ Create ``agent_server.py``:
    
    async def run_agent(user_id: str, query: str, agent_name: str) -> str:
        """Run Google ADK agent - automatically part of distributed trace."""
-       
-       # Create research agent
-       agent = LlmAgent(
-           model="gemini-2.0-flash-exp",
-           name=agent_name,
-           description="A research agent that gathers information on topics",
-           instruction="""You are a research assistant. When given a topic, 
-           provide key facts and important information in 2-3 clear sentences.""",
-           output_key="research_findings"
-       )
-       
-       # Create runner and execute
-       runner = Runner(
-           agent=agent,
-           app_name="distributed_agent_demo",
-           session_service=session_service
-       )
-       
-       session_id = tracer.session_id
-       try:
-           await session_service.create_session(
-               app_name="distributed_agent_demo",
-               user_id=user_id,
-               session_id=session_id
-           )
-       except Exception:
-           pass  # Session might already exist
-       
-       user_content = types.Content(
-           role='user',
-           parts=[types.Part(text=query)]
-       )
-       
-       final_response = ""
-       async for event in runner.run_async(
-           user_id=user_id,
-           session_id=session_id,
-           new_message=user_content
-       ):
-           if event.is_final_response() and event.content and event.content.parts:
-               final_response = event.content.parts[0].text
-       
+       # Your Agent Code here 
        return final_response or ""
    
    @app.route("/agent/invoke", methods=["POST"])
@@ -349,44 +308,7 @@ Create ``client_app.py``:
                event_name="call_agent_2",
                inputs={"research": query}
            ):
-               # Create local analysis agent
-               agent = LlmAgent(
-                   model="gemini-2.0-flash-exp",
-                   name="analysis_agent",
-                   description="Analysis agent",
-                   instruction=f"Analyze: {query}\n\nProvide 2-3 sentence analysis."
-               )
-               
-               # Run locally with Google ADK
-               runner = Runner(
-                   agent=agent,
-                   app_name=app_name,
-                   session_service=session_service
-               )
-               session_id = tracer.session_id
-               
-               try:
-                   await session_service.create_session(
-                       app_name=app_name,
-                       user_id=user_id,
-                       session_id=session_id
-                   )
-               except Exception:
-                   pass  # Session might already exist
-               
-               user_content = types.Content(
-                   role='user',
-                   parts=[types.Part(text=f"Analyze: {query[:500]}")]
-               )
-               
-               result = ""
-               async for event in runner.run_async(
-                   user_id=user_id,
-                   session_id=session_id,
-                   new_message=user_content
-               ):
-                   if event.is_final_response() and event.content and event.content.parts:
-                       result = event.content.parts[0].text or ""
+               # You can run your local analysis agent here
                
                tracer.enrich_span(
                    outputs={"response": result},
@@ -599,7 +521,7 @@ Next Steps
 **Key resources:**
 
 - :doc:`../reference/api/utilities` - Full API reference for distributed tracing utilities
-- :doc:`custom-spans` - Learn about ``enrich_span_context()`` and span enrichment
+- :doc:`../how-to/advanced-tracing/custom-spans` - Learn about ``enrich_span_context()`` and span enrichment
 - `Google ADK Documentation <https://github.com/google/genkit>`_ - Learn more about Google ADK
 
 **Key Takeaway:** With ``with_distributed_trace_context()``, distributed tracing is now a ONE LINE operation on the server side. You can trace complex multi-agent systems across process boundaries with minimal code. 🎉
