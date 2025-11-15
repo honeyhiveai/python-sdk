@@ -2,6 +2,63 @@
 
 ### Added
 
+- **🌐 Distributed Tracing: Simplified server-side context management (v1.0+)**
+  - Added `with_distributed_trace_context()` context manager for one-line distributed tracing setup
+  - Reduces server-side boilerplate from ~65 lines to 1 line of context management code
+  - Automatically extracts trace context, parses HoneyHive baggage (`session_id`, `project`, `source`), and attaches context
+  - Thread-safe context isolation per request, works with Flask, FastAPI, Django, etc.
+  - Handles `asyncio.run()` edge cases with automatic context cleanup on exceptions
+  - Exported from `honeyhive.tracer.processing.context` module
+  - Files: `src/honeyhive/tracer/processing/context.py`, `src/honeyhive/tracer/processing/__init__.py`
+  
+- **🐛 Distributed Tracing: Fixed @trace decorator baggage preservation**
+  - The `@trace` decorator now preserves existing OpenTelemetry baggage from distributed traces
+  - Previously, decorator unconditionally overwrote `session_id`, `project`, `source` with local tracer defaults
+  - Now checks if baggage keys exist and only sets defaults if missing
+  - Ensures distributed trace `session_id` propagates correctly through decorated functions
+  - Critical fix for multi-service distributed tracing scenarios
+  - Files: `src/honeyhive/tracer/instrumentation/decorators.py`
+
+- **📊 Tracing: Updated span processor to prioritize distributed trace baggage**
+  - `HoneyHiveSpanProcessor` now prioritizes `session_id`, `project`, `source` from OpenTelemetry baggage over tracer instance attributes
+  - Ensures server-side spans use client's `session_id` in distributed traces
+  - Falls back to tracer instance attributes for local (non-distributed) traces
+  - Maintains backwards compatibility for single-service applications
+  - Files: `src/honeyhive/tracer/processing/span_processor.py`
+
+- **✨ Tracing: Enhanced enrich_span_context() for explicit span enrichment**
+  - `enrich_span_context()` now accepts HoneyHive-specific parameters: `inputs`, `outputs`, `metadata`, `metrics`, `feedback`, `config`, `user_properties`, `error`, `event_id`
+  - Applies proper HoneyHive namespacing (`honeyhive_inputs.*`, `honeyhive_outputs.*`, etc.) via `enrich_span_core()`
+  - Uses `trace.use_span()` to explicitly set created span as current span, ensuring enrichment applies to the right span
+  - Perfect for creating custom spans with HoneyHive-specific attributes in non-decorated code paths
+  - Complements `@trace` decorator for scenarios requiring explicit span creation (conditional spans, loops, etc.)
+  - Files: `src/honeyhive/tracer/processing/context.py`
+
+- **🔧 SDK: Improved HoneyHiveTracer type inference with Self return type**
+  - Changed `HoneyHiveTracer.init()` return type from `HoneyHiveTracerBase` to `Self`
+  - Improves type checker inference - correctly identifies `HoneyHiveTracer.init()` returns `HoneyHiveTracer`, not base class
+  - Eliminates need for `# type: ignore` comments in typed codebases
+  - Better IDE autocomplete and type checking support
+  - Files: `src/honeyhive/tracer/core/base.py`
+
+- **📚 Documentation: Comprehensive distributed tracing guides**
+  - Updated distributed tracing tutorial with `with_distributed_trace_context()` pattern
+  - Added API reference documentation for all distributed tracing functions
+  - Updated Google ADK distributed tracing examples (client + server)
+  - Created design document summarizing all improvements
+  - Files: `docs/tutorials/06-distributed-tracing.rst`, `docs/reference/api/utilities.rst`, 
+    `examples/integrations/README_DISTRIBUTED_TRACING.md`, 
+    `.praxis-os/workspace/design/2025-11-14-distributed-tracing-improvements.md`
+
+- **🧪 Testing: Added unit tests for distributed tracing improvements**
+  - 8 tests for `with_distributed_trace_context()` covering baggage extraction, context attachment, error handling
+  - 5 tests for `@trace` decorator baggage preservation with distributed traces
+  - 1 test for span processor baggage priority logic
+  - All tests passing with existing test suite (191/224 integration tests passing)
+  - Files: `tests/unit/test_tracer_processing_context_distributed.py`, 
+    `tests/unit/test_tracer_instrumentation_decorators_baggage.py`,
+    `tests/unit/test_tracer_processing_span_processor.py`
+
 - **📚 Documentation: Restored missing praxis OS documentation files**
   - Recovered `.praxis-os/workspace/product/features.md` (734 lines) from pre-migration git history
   - Recovered `.praxis-os/standards/universal/best-practices.md` (390 lines) from pre-migration git history

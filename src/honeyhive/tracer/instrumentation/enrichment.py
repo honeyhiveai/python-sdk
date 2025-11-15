@@ -43,7 +43,7 @@ class NoOpSpan:
 # Justification: Enrichment requires multiple optional parameters for comprehensive
 # span metadata (metadata, metrics, feedback, inputs, outputs, config, etc.).
 # Many branches are needed to handle reserved parameters correctly.
-def enrich_span_core(
+def enrich_span_core(  # pylint: disable=too-many-locals
     attributes: Optional[Dict[str, Any]] = None,
     metadata: Optional[Dict[str, Any]] = None,
     metrics: Optional[Dict[str, Any]] = None,
@@ -165,8 +165,36 @@ def enrich_span_core(
             attribute_count += len(feedback)
 
         if inputs:
+            safe_log(
+                tracer_instance,
+                "debug",
+                f"Setting inputs on span: {getattr(current_span, 'name', 'unknown')}",
+                honeyhive_data={
+                    "span_name": getattr(current_span, "name", "unknown"),
+                    "inputs": inputs,
+                    "span_is_recording": (
+                        current_span.is_recording()
+                        if hasattr(current_span, "is_recording")
+                        else None
+                    ),
+                },
+            )
             _set_span_attributes(current_span, "honeyhive_inputs", inputs)
             attribute_count += len(inputs)
+            # Verify attributes were set
+            if verbose and hasattr(current_span, "attributes"):
+                span_attrs = getattr(current_span, "attributes", {})
+                input_attrs = {
+                    k: v
+                    for k, v in span_attrs.items()
+                    if k.startswith("honeyhive_inputs")
+                }
+                safe_log(
+                    tracer_instance,
+                    "debug",
+                    f"Inputs attributes after setting: {list(input_attrs.keys())}",
+                    honeyhive_data={"input_attrs": input_attrs},
+                )
 
         if outputs:
             _set_span_attributes(current_span, "honeyhive_outputs", outputs)

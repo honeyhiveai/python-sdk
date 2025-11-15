@@ -830,11 +830,23 @@ def _setup_decorator_baggage_context(tracer: Any, span: Any) -> None:
         if hasattr(tracer, "source") and tracer.source:
             baggage_items["source"] = str(tracer.source)
 
-        # Set baggage in current context
+        # Set baggage in current context, but preserve existing distributed trace baggage
+        # Priority: distributed trace context > local tracer defaults
         ctx = current_ctx
+        preserved_keys = []
+        overridden_keys = []
+
         for key, value in baggage_items.items():
             if value:
-                ctx = baggage.set_baggage(key, value, ctx)
+                # Check if key already exists in baggage (from distributed tracing)
+                existing_value = baggage.get_baggage(key, ctx)
+                if existing_value:
+                    # Preserve distributed trace baggage
+                    preserved_keys.append(f"{key}={existing_value}")
+                else:
+                    # Set tracer's value as default
+                    ctx = baggage.set_baggage(key, value, ctx)
+                    overridden_keys.append(f"{key}={value}")
 
         # Attach the context (only within the span scope)
         _token = context.attach(ctx)
@@ -846,6 +858,8 @@ def _setup_decorator_baggage_context(tracer: Any, span: Any) -> None:
             honeyhive_data={
                 "span_name": span.name if hasattr(span, "name") else "unknown",
                 "baggage_items": baggage_items,
+                "preserved_from_distributed_trace": preserved_keys,
+                "set_from_tracer_defaults": overridden_keys,
                 "tracer_id": id(tracer),
                 "context_attached": True,
             },

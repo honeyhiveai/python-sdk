@@ -226,7 +226,7 @@ class TestHoneyHiveSpanProcessorBaggageHandling:
     def test_get_basic_baggage_with_tracer_session_priority(
         self, mock_get_baggage: Mock
     ) -> None:
-        """Test baggage with tracer session ID taking priority."""
+        """Test baggage session_id taking priority over tracer session_id (distributed tracing)."""
         mock_tracer = Mock(spec=HoneyHiveTracer)
         mock_tracer.session_id = "tracer-session-456"
         mock_tracer.project_name = "test-project"
@@ -237,7 +237,9 @@ class TestHoneyHiveSpanProcessorBaggageHandling:
         def mock_baggage_side_effect(key: str, ctx: Context) -> Optional[str]:
             baggage_data = {
                 "session_id": "baggage-session-123",
-                # NOTE: project/source removed from baggage per multi-instance fix
+                # project/source also from baggage in distributed tracing
+                "project": "distributed-project",
+                "source": "distributed-source",
             }
             return baggage_data.get(key)
 
@@ -245,14 +247,14 @@ class TestHoneyHiveSpanProcessorBaggageHandling:
 
         result = processor._get_basic_baggage_attributes(mock_context)
 
+        # UPDATED: Baggage now takes priority for distributed tracing
         expected = {
-            "honeyhive.session_id": "tracer-session-456",
-            "traceloop.association.properties.session_id": "tracer-session-456",
-            # Multi-instance fix: project/source come from tracer instance, not baggage
-            "honeyhive.project": "test-project",
-            "traceloop.association.properties.project": "test-project",
-            "honeyhive.source": "test-source",
-            "traceloop.association.properties.source": "test-source",
+            "honeyhive.session_id": "baggage-session-123",
+            "traceloop.association.properties.session_id": "baggage-session-123",
+            "honeyhive.project": "distributed-project",
+            "traceloop.association.properties.project": "distributed-project",
+            "honeyhive.source": "distributed-source",
+            "traceloop.association.properties.source": "distributed-source",
         }
         assert result == expected
 

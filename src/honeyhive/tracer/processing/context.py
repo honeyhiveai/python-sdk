@@ -362,9 +362,18 @@ def _apply_baggage_context(
 
 @contextmanager
 def enrich_span_context(  # pylint: disable=too-many-arguments
-    span_name: str,
+    event_name: str,
     *,
     attributes: Optional[Dict[str, Any]] = None,
+    inputs: Optional[Dict[str, Any]] = None,
+    outputs: Optional[Dict[str, Any]] = None,
+    metadata: Optional[Dict[str, Any]] = None,
+    metrics: Optional[Dict[str, Any]] = None,
+    feedback: Optional[Dict[str, Any]] = None,
+    config: Optional[Dict[str, Any]] = None,
+    user_properties: Optional[Dict[str, Any]] = None,
+    error: Optional[str] = None,
+    event_id: Optional[str] = None,
     session_id: Optional[str] = None,
     project: Optional[str] = None,
     source: Optional[str] = None,
@@ -378,18 +387,40 @@ def enrich_span_context(  # pylint: disable=too-many-arguments
 
     This context manager creates a span with automatic HoneyHive attribute
     enrichment, including session context, experiment information, and
-    dynamic attribute discovery.
+    dynamic attribute discovery. It supports all reserved parameters from
+    enrich_span() for consistent API usage.
 
-    :param span_name: Human-readable name for the operation being traced
-    :type span_name: str
-    :param attributes: Initial attributes to set on the span
+    :param event_name: Human-readable name for the operation being traced
+    :type event_name: str
+    :param attributes: Initial attributes to set on the span (direct span attributes)
     :type attributes: Optional[Dict[str, Any]]
+    :param inputs: Inputs namespace (automatically prefixed with 'honeyhive_inputs.')
+    :type inputs: Optional[Dict[str, Any]]
+    :param outputs: Outputs namespace (automatically prefixed with 'honeyhive_outputs.')
+    :type outputs: Optional[Dict[str, Any]]
+    :param metadata: Metadata namespace (prefixed: 'honeyhive_metadata.')
+    :type metadata: Optional[Dict[str, Any]]
+    :param metrics: Metrics namespace (prefixed: 'honeyhive_metrics.')
+    :type metrics: Optional[Dict[str, Any]]
+    :param feedback: Feedback namespace (prefixed: 'honeyhive_feedback.')
+    :type feedback: Optional[Dict[str, Any]]
+    :param config: Config namespace (prefixed: 'honeyhive_config.')
+    :type config: Optional[Dict[str, Any]]
+    :param user_properties: User properties namespace
+        (prefixed: 'honeyhive_user_properties.')
+    :type user_properties: Optional[Dict[str, Any]]
+    :param error: Error message (stored as 'honeyhive_error', non-namespaced)
+    :type error: Optional[str]
+    :param event_id: Event ID (stored as 'honeyhive_event_id', non-namespaced)
+    :type event_id: Optional[str]
     :param session_id: Optional session ID for the span
     :type session_id: Optional[str]
     :param project: Optional project name for the span
     :type project: Optional[str]
     :param source: Optional source environment for the span
     :type source: Optional[str]
+    :param tracer_instance: Optional tracer instance
+    :type tracer_instance: Any
     :return: Context manager yielding the enriched span
     :rtype: Iterator[Any]
 
@@ -398,16 +429,23 @@ def enrich_span_context(  # pylint: disable=too-many-arguments
     .. code-block:: python
 
         with enrich_span_context("user_lookup",
-                               attributes={"user.id": "12345"}) as span:
+                               attributes={"user.id": "12345"},
+                               inputs={"user_id": "12345"}) as span:
             user = get_user_by_id("12345")
             span.set_attribute("user.found", user is not None)
 
     **Note:**
 
     This function automatically adds HoneyHive-specific attributes and
-    experiment context to the span. It's used internally by the tracer
-    but can also be used directly for custom span creation.
+    experiment context to the span. Reserved parameters (inputs, outputs,
+    metadata, etc.) are handled via enrich_span_core() for consistent
+    namespacing and backend recognition.
     """
+    # Import here to avoid circular dependency
+    from ..instrumentation.enrichment import (  # pylint: disable=import-outside-toplevel
+        enrich_span_core,
+    )
+
     # Get tracer from tracer instance if available, otherwise use global fallback
     if (
         tracer_instance
@@ -419,22 +457,105 @@ def enrich_span_context(  # pylint: disable=too-many-arguments
         # Fallback for cases where no tracer instance is provided
         tracer = trace.get_tracer("honeyhive.fallback")
 
-    # Prepare enriched attributes
+    # Prepare enriched attributes (HoneyHive core: session_id, project, source)
     enriched_attributes = _prepare_enriched_attributes(
         attributes, session_id, project, source, tracer_instance
     )
 
-    # Create and yield span
-    with tracer.start_span(span_name, attributes=enriched_attributes) as span:
-        try:
-            yield span
-        except Exception as e:
-            # Record exception and re-raise
-            if hasattr(span, "record_exception"):
-                span.record_exception(e)
-            if hasattr(span, "set_status"):
-                span.set_status(Status(StatusCode.ERROR, str(e)))
-            raise
+    # Create span using tracer.start_span() for proper lifecycle management
+    # Also use trace.use_span() to make it current for enrich_span_core()
+    with tracer.start_span(event_name, attributes=enriched_attributes) as span:
+        # Make this span current in OpenTelemetry context using use_span()
+        # Ensures enrich_span_core() gets correct span via get_current_span()
+        # end_on_exit=False as tracer.start_span() handles finalization
+        with trace.use_span(  # pylint: disable=not-context-manager
+            span, end_on_exit=False
+        ):
+            try:
+                # Span is now the current span in OpenTelemetry context
+                # Use enrich_span_core() to set reserved params with namespacing
+                # This reuses all existing logic without duplication
+
+                # Debug logging: Check if we have reserved parameters to set
+                has_reserved_params = any(
+                    [
+                        inputs,
+                        outputs,
+                        metadata,
+                        metrics,
+                        feedback,
+                        config,
+                        user_properties,
+                        error,
+                        event_id,
+                    ]
+                )
+
+                if has_reserved_params:
+                    safe_log(
+                        tracer_instance,
+                        "debug",
+                        f"Enriching span '{event_name}' with reserved parameters",
+                        honeyhive_data={
+                            "event_name": event_name,
+                            "has_inputs": bool(inputs),
+                            "has_outputs": bool(outputs),
+                            "has_metadata": bool(metadata),
+                            "has_metrics": bool(metrics),
+                            "has_feedback": bool(feedback),
+                            "has_config": bool(config),
+                            "has_user_properties": bool(user_properties),
+                            "has_error": bool(error),
+                            "has_event_id": bool(event_id),
+                        },
+                    )
+
+                enrich_span_core(
+                    inputs=inputs,
+                    outputs=outputs,
+                    metadata=metadata,
+                    metrics=metrics,
+                    feedback=feedback,
+                    config=config,
+                    user_properties=user_properties,
+                    error=error,
+                    event_id=event_id,
+                    tracer_instance=tracer_instance,
+                    verbose=(
+                        getattr(tracer_instance, "verbose", False)
+                        if tracer_instance
+                        else False
+                    ),
+                    # attributes handled via enriched_attributes above
+                )
+
+                # Debug logging: Verify span attributes were set
+                if has_reserved_params and hasattr(span, "attributes"):
+                    # Try to get span attributes for debugging
+                    span_attrs = getattr(span, "attributes", {})
+                    safe_log(
+                        tracer_instance,
+                        "debug",
+                        f"Span '{event_name}' enrichment completed",
+                        honeyhive_data={
+                            "event_name": event_name,
+                            "span_has_attributes": bool(span_attrs),
+                            "span_is_recording": (
+                                span.is_recording()
+                                if hasattr(span, "is_recording")
+                                else None
+                            ),
+                        },
+                    )
+
+                yield span
+            except Exception as e:
+                # Record exception and re-raise
+                if hasattr(span, "record_exception"):
+                    span.record_exception(e)
+                if hasattr(span, "set_status"):
+                    span.set_status(Status(StatusCode.ERROR, str(e)))
+                raise
 
 
 def _prepare_enriched_attributes(
@@ -617,6 +738,113 @@ def inject_context_into_carrier(
             e,
             honeyhive_data={"carrier_keys": list(carrier.keys())},
         )
+
+
+@contextmanager
+def with_distributed_trace_context(
+    carrier: Dict[str, str],
+    tracer_instance: "HoneyHiveTracer",
+    *,
+    session_id: Optional[str] = None,
+) -> Iterator["Context"]:
+    """Context manager for distributed tracing that extracts and sets up context.
+
+    This function extracts OpenTelemetry context from a carrier (e.g., HTTP headers),
+    extracts session_id from baggage if available, and attaches the context with
+    session_id in baggage. This is the recommended way to handle distributed tracing
+    on the server side.
+
+    :param carrier: Dictionary containing trace context (e.g., HTTP headers)
+    :type carrier: Dict[str, str]
+    :param tracer_instance: The tracer instance for propagator access
+    :type tracer_instance: HoneyHiveTracer
+    :param session_id: Optional explicit session_id to use (overrides baggage)
+    :type session_id: Optional[str]
+    :return: Context manager that yields the extracted context
+
+    **Example:**
+
+    .. code-block:: python
+
+        @app.route("/api/endpoint", methods=["POST"])
+        def my_endpoint():
+            with with_distributed_trace_context(dict(request.headers), tracer) as ctx:
+                # All spans created here will use the propagated session_id
+                with tracer.start_span("operation"):
+                    pass
+
+    **Note for async functions:**
+
+    If you need to use this with `asyncio.run()`, you'll need to re-attach the context
+    inside the async function since `asyncio.run()` creates a new event loop:
+
+    .. code-block:: python
+
+        with with_distributed_trace_context(dict(request.headers), tracer) as ctx:
+            async def my_async_function():
+                # Re-attach context in new event loop
+                token = context.attach(ctx)
+                try:
+                    # Your async code here
+                    pass
+                finally:
+                    context.detach(token)
+
+            asyncio.run(my_async_function())
+    """
+    # Extract trace context from carrier
+    incoming_context = extract_context_from_carrier(carrier, tracer_instance)
+
+    # Extract session_id, project, source from baggage header if not explicit
+    propagated_session_id = session_id
+    propagated_project = None
+    propagated_source = None
+
+    if not propagated_session_id:
+        baggage_header = carrier.get("baggage") or carrier.get("Baggage")
+        if baggage_header:
+            # Parse baggage manually (fallback if extract doesn't populate)
+            for item in baggage_header.split(","):
+                if "=" in item:
+                    key, value = item.split("=", 1)
+                    key = key.strip()
+                    value = value.strip()
+
+                    # Extract session_id
+                    if key in (
+                        "session_id",
+                        "honeyhive_session_id",
+                        "honeyhive.session_id",
+                    ):
+                        propagated_session_id = value
+                    # Extract project
+                    elif key in ("project", "honeyhive_project", "honeyhive.project"):
+                        propagated_project = value
+                    # Extract source
+                    elif key in ("source", "honeyhive_source", "honeyhive.source"):
+                        propagated_source = value
+
+    # Set up context with session_id, project, and source in baggage
+    context_to_use = incoming_context if incoming_context else context.get_current()
+    if propagated_session_id:
+        context_to_use = baggage.set_baggage(
+            "session_id", propagated_session_id, context_to_use
+        )
+    if propagated_project:
+        context_to_use = baggage.set_baggage(
+            "project", propagated_project, context_to_use
+        )
+    if propagated_source:
+        context_to_use = baggage.set_baggage(
+            "source", propagated_source, context_to_use
+        )
+
+    # Attach context
+    token = context.attach(context_to_use)
+    try:
+        yield context_to_use
+    finally:
+        context.detach(token)
 
 
 def extract_context_from_carrier(

@@ -18,7 +18,7 @@ dynamic logic for flexible configuration handling and graceful degradation.
 import os
 import platform
 import threading
-from typing import Any, Dict, Optional, Union
+from typing import Any, Dict, Optional, Self, Union
 
 from opentelemetry.trace import INVALID_SPAN_CONTEXT, SpanKind
 
@@ -530,7 +530,7 @@ class HoneyHiveTracerBase:  # pylint: disable=too-many-instance-attributes
         session_config: Optional["SessionConfig"] = None,
         evaluation_config: Optional["EvaluationConfig"] = None,
         **kwargs: Any,
-    ) -> "HoneyHiveTracerBase":
+    ) -> Self:
         """Factory method for creating tracer instances with dynamic configuration.
 
         This is a simple pass-through to __init__ for backwards compatibility.

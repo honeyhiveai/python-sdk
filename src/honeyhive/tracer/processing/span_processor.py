@@ -279,39 +279,43 @@ class HoneyHiveSpanProcessor(SpanProcessor):
         """
         attributes = {}
 
-        # Priority: tracer instance session_id (multi-instance isolation), then baggage
-        session_id = None
-        if self.tracer_instance and hasattr(self.tracer_instance, "session_id"):
-            session_id = self.tracer_instance.session_id
+        # Priority: baggage session_id (for distributed tracing), then tracer instance
+        # This ensures distributed traces use the propagated session_id from the client
+        session_id = baggage.get_baggage("session_id", ctx)
 
+        # Fallback to tracer instance session_id if baggage doesn't have it
+        # (for local tracing scenarios)
         if not session_id:
-            session_id = baggage.get_baggage("session_id", ctx)
+            if self.tracer_instance and hasattr(self.tracer_instance, "session_id"):
+                session_id = self.tracer_instance.session_id
 
         if session_id:
             attributes["honeyhive.session_id"] = session_id
             # Backend compatibility: also set Traceloop-style attribute
             attributes["traceloop.association.properties.session_id"] = session_id
 
-        # Priority: tracer instance (multi-instance isolation), then baggage
-        project = None
-        if self.tracer_instance and hasattr(self.tracer_instance, "project_name"):
-            project = self.tracer_instance.project_name
+        # Priority: baggage project (for distributed tracing), then tracer instance
+        project = baggage.get_baggage("project", ctx)
 
+        # Fallback to tracer instance project if baggage doesn't have it
         if not project:
-            project = baggage.get_baggage("project", ctx)
+            if self.tracer_instance and hasattr(self.tracer_instance, "project_name"):
+                project = self.tracer_instance.project_name
 
         if project:
             attributes["honeyhive.project"] = project
             # Backend compatibility: also set Traceloop-style attribute
             attributes["traceloop.association.properties.project"] = project
 
-        # Priority: tracer instance (multi-instance isolation), then baggage
-        source = None
-        if self.tracer_instance and hasattr(self.tracer_instance, "source_environment"):
-            source = self.tracer_instance.source_environment
+        # Priority: baggage source (for distributed tracing), then tracer instance
+        source = baggage.get_baggage("source", ctx)
 
+        # Fallback to tracer instance source if baggage doesn't have it
         if not source:
-            source = baggage.get_baggage("source", ctx)
+            if self.tracer_instance and hasattr(
+                self.tracer_instance, "source_environment"
+            ):
+                source = self.tracer_instance.source_environment
 
         if source:
             attributes["honeyhive.source"] = source
@@ -469,6 +473,68 @@ class HoneyHiveSpanProcessor(SpanProcessor):
 
         return attributes
 
+    def _get_all_baggage_attributes(self, ctx: Context) -> dict:
+        """Get all baggage attributes from context, excluding already-processed keys.
+
+        This method extracts ALL baggage items from the OpenTelemetry context and
+        adds them as span attributes with a "baggage." prefix. This ensures that
+        custom baggage items set by users are automatically propagated to spans.
+
+        Excludes keys that are already handled by:
+        - _get_basic_baggage_attributes (session_id, project, source, parent_id)
+        - _get_evaluation_attributes_from_baggage (run_id, dataset_id, datapoint_id)
+
+        :param ctx: OpenTelemetry context to extract baggage from
+        :type ctx: Context
+        :return: Dictionary of baggage attributes with "baggage." prefix
+        :rtype: dict
+        """
+        attributes = {}
+
+        try:
+            # Get all baggage items from context
+            all_baggage = baggage.get_all(ctx)
+            if not all_baggage:
+                return attributes
+
+            # Keys that are already processed by other methods
+            excluded_keys = {
+                "session_id",
+                "project",
+                "source",
+                "parent_id",
+                "run_id",
+                "dataset_id",
+                "datapoint_id",
+                "honeyhive_tracer_id",  # Internal tracer discovery key
+            }
+
+            # Extract all other baggage items
+            for key, value in all_baggage.items():
+                if key not in excluded_keys and value is not None:
+                    # Add baggage items with "baggage." prefix for clarity
+                    attributes[f"baggage.{key}"] = str(value)
+
+            if attributes:
+                self._safe_log(
+                    "debug",
+                    "📦 Extracted custom baggage attributes",
+                    honeyhive_data={
+                        "baggage_keys": list(attributes.keys()),
+                        "count": len(attributes),
+                    },
+                )
+
+        except Exception as e:
+            self._safe_log(
+                "warning",
+                "Failed to extract all baggage attributes: %s",
+                e,
+                honeyhive_data={"error_type": type(e).__name__},
+            )
+
+        return attributes
+
     def on_start(self, span: Span, parent_context: Optional[Context] = None) -> None:
         """Called when a span starts - enriches spans with HoneyHive attributes.
 
@@ -510,31 +576,34 @@ class HoneyHiveSpanProcessor(SpanProcessor):
                 return
 
             # Get session_id to determine if this span should be enriched
-            # Priority: tracer instance session_id (multi-instance), then baggage
-            session_id = None
-            if self.tracer_instance and hasattr(self.tracer_instance, "session_id"):
-                session_id = self.tracer_instance.session_id
+            # Priority: baggage session_id (for distributed tracing), then tracer instance
+            # This ensures distributed traces use the propagated session_id from the client
+            session_id = baggage.get_baggage("session_id", ctx)
+
+            if session_id:
                 self._safe_log(
                     "debug",
-                    "🔍 DEBUG: Using tracer instance session_id for multi-instance",
+                    "🔍 DEBUG: Using baggage session_id (distributed tracing)",
                     honeyhive_data={
                         "span_name": span.name,
                         "session_id": session_id,
-                        "tracer_instance_id": id(self.tracer_instance),
-                        "source": "tracer_instance",
+                        "source": "baggage",
                     },
                 )
 
+            # Fallback to tracer instance session_id if baggage doesn't have it
+            # (for local tracing scenarios)
             if not session_id:
-                session_id = baggage.get_baggage("session_id", ctx)
-                if session_id:
+                if self.tracer_instance and hasattr(self.tracer_instance, "session_id"):
+                    session_id = self.tracer_instance.session_id
                     self._safe_log(
                         "debug",
-                        "🔍 DEBUG: Using baggage session_id (fallback)",
+                        "🔍 DEBUG: Using tracer instance session_id (local tracing)",
                         honeyhive_data={
                             "span_name": span.name,
                             "session_id": session_id,
-                            "source": "baggage",
+                            "tracer_instance_id": id(self.tracer_instance),
+                            "source": "tracer_instance",
                         },
                     )
                 else:
@@ -589,6 +658,10 @@ class HoneyHiveSpanProcessor(SpanProcessor):
                 attributes_to_set.update(
                     self._get_evaluation_attributes_from_baggage(ctx)
                 )
+
+            # Add all custom baggage attributes (generalized baggage extraction)
+            # This extracts ALL baggage items not already processed above
+            attributes_to_set.update(self._get_all_baggage_attributes(ctx))
 
             # Apply all attributes to the span
             for key, value in attributes_to_set.items():

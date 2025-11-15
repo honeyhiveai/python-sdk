@@ -526,20 +526,164 @@ Instead of attaching context, extract the session ID from headers and initialize
 | **Best for**               | Complex distributed systems      | Simpler multi-service apps       |
 +----------------------------+----------------------------------+----------------------------------+
 
-.. tip::
-   **When to use Session ID middleware:**
+Simplified Pattern: with_distributed_trace_context() (Recommended)
+-------------------------------------------------------------------
+
+**New in v1.0+:** HoneyHive provides a context manager that simplifies server-side distributed tracing.
+
+**The Problem with Manual Context Management**
+
+The manual ``context.attach()`` / ``context.detach()`` pattern shown above requires ~65 lines of boilerplate code per service:
+
+.. code-block:: python
+
+   # Manual pattern (verbose)
+   from opentelemetry import context, baggage
    
-   - You find ``context.attach()`` confusing
+   incoming_context = extract_context_from_carrier(dict(request.headers), tracer)
+   
+   # Extract session_id from baggage header
+   baggage_header = request.headers.get('baggage')
+   session_id = None
+   if baggage_header:
+       for item in baggage_header.split(','):
+           if '=' in item:
+               key, value = item.split('=', 1)
+               if key.strip() in ('session_id', 'honeyhive_session_id'):
+                   session_id = value.strip()
+   
+   # Set up context with session_id
+   context_to_use = incoming_context if incoming_context else context.get_current()
+   if session_id:
+       context_to_use = baggage.set_baggage("session_id", session_id, context_to_use)
+   
+   # Attach context
+   token = context.attach(context_to_use)
+   try:
+       # Your business logic here
+       pass
+   finally:
+       context.detach(token)
+
+**The Solution: with_distributed_trace_context()**
+
+This helper reduces the boilerplate to a single line:
+
+.. code-block:: python
+
+   from honeyhive.tracer.processing.context import with_distributed_trace_context
+   
+   @app.route("/generate", methods=["POST"])
+   def generate():
+       """Server endpoint with distributed tracing - simplified!"""
+       
+       # 🎯 ONE LINE replaces ~65 lines of boilerplate
+       with with_distributed_trace_context(dict(request.headers), tracer):
+           # All spans created here automatically inherit the distributed trace context
+           with tracer.start_span("generate_response"):
+               # Your business logic
+               result = do_work()
+               return jsonify({"response": result})
+
+**What it Does**
+
+The helper automatically:
+
+1. **Extracts trace context** from HTTP headers (using OpenTelemetry propagators)
+2. **Parses HoneyHive baggage** (``session_id``, ``project``, ``source``)
+3. **Attaches context** so all spans become children of the parent trace
+4. **Cleans up** on exit (even if exceptions occur)
+5. **Thread-safe** - each request gets isolated context
+
+**Complete Example with Helper**
+
+.. code-block:: python
+
+   from flask import Flask, request, jsonify
+   from honeyhive import HoneyHiveTracer
+   from honeyhive.tracer.processing.context import with_distributed_trace_context
+   
+   tracer = HoneyHiveTracer.init(
+       project="distributed-tracing",
+       source="llm-service"
+   )
+   
+   app = Flask(__name__)
+   
+   @app.route("/generate", methods=["POST"])
+   def generate():
+       """Generate LLM response - simplified distributed tracing."""
+       
+       # Single line for distributed tracing setup
+       with with_distributed_trace_context(dict(request.headers), tracer):
+           # All spans here automatically use the client's session_id
+           with tracer.start_span("generate_llm_response") as span:
+               data = request.get_json()
+               
+               # Enrich span
+               span.set_attribute("user_id", data['user_id'])
+               span.set_attribute("prompt_length", len(data['prompt']))
+               
+               # Call LLM (instrumentor will create child spans)
+               result = call_llm(data['prompt'])
+               
+               span.set_attribute("response_length", len(result))
+               
+               return jsonify({"response": result})
+
+**Benefits**
+
+✅ **Concise**: 1 line vs 65 lines of context management  
+✅ **Thread-safe**: Automatic context isolation per request  
+✅ **Works with async**: Handles ``asyncio.run()`` edge cases  
+✅ **Automatic cleanup**: Context detached even on exceptions  
+✅ **Baggage preservation**: Respects client's ``session_id``, ``project``, ``source``
+
+**Works with @trace Decorator**
+
+The helper works seamlessly with the ``@trace`` decorator:
+
+.. code-block:: python
+
+   from honeyhive import trace
+   
+   @app.route("/process", methods=["POST"])
+   def process():
+       with with_distributed_trace_context(dict(request.headers), tracer):
+           # Decorator automatically uses the distributed context
+           return process_request()
+   
+   @trace(event_type="chain", event_name="process_request")
+   def process_request():
+       # This span is now part of the distributed trace!
+       return {"status": "success"}
+
+.. note::
+   **v1.0+ Improvement**: The ``@trace`` decorator now preserves existing baggage from distributed traces instead of overwriting it with local tracer defaults. This means you no longer need to manually set baggage in decorated functions.
+
+.. tip::
+   **Choosing the Right Pattern:**
+   
+   **Use with_distributed_trace_context() (Recommended):**
+   
+   - ✅ Modern Python applications (v1.0+)
+   - ✅ You want minimal boilerplate
+   - ✅ Thread-safe distributed tracing
+   - ✅ Works with Flask, FastAPI, Django, etc.
+   - ✅ Automatic baggage handling
+   
+   **Use Session ID middleware:**
+   
+   - You find context management confusing
    - You want explicit control over session boundaries
    - You already have middleware for other purposes
    - You're building a simpler multi-service app (2-3 services)
    
-   **When to use context.attach():**
+   **Use manual context.attach():**
    
-   - You're using standard OpenTelemetry patterns
-   - You have many services (5+) with complex call graphs
-   - You want automatic span hierarchy management
+   - You need fine-grained control over context lifecycle
    - You're integrating with other OpenTelemetry tools
+   - You have custom context propagation requirements
 
 Troubleshooting
 ---------------

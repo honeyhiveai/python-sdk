@@ -236,6 +236,213 @@ When to Use Context Managers
 - ❌ **Business functions**: Use decorators instead for better maintainability
 - ❌ **Simple operations**: Avoid over-instrumenting with unnecessary spans
 
+Enhanced Context Manager: enrich_span_context()
+------------------------------------------------
+
+**New in v1.0+:** For creating custom spans with HoneyHive-specific enrichment.
+
+**Problem**: You need to create explicit spans (not using decorators) but want HoneyHive's structured enrichment (inputs, outputs, metadata) with proper namespacing.
+
+**Solution**: Use ``enrich_span_context()`` instead of ``tracer.start_span()``.
+
+Basic Usage
+~~~~~~~~~~~
+
+.. code-block:: python
+
+   from honeyhive.tracer.processing.context import enrich_span_context
+   
+   def process_conditional_workflow(data: dict, mode: str):
+       """Example showing enrich_span_context for conditional spans."""
+       
+       # Standard decorator for the main function
+       if mode == "detailed":
+           # Use enrich_span_context for explicit span with HoneyHive enrichment
+           with enrich_span_context(
+               event_name="detailed_processing",
+               inputs={"data": data, "mode": mode},
+               metadata={"processing_type": "detailed", "complexity": "high"}
+           ):
+               result = perform_detailed_processing(data)
+               tracer.enrich_span(outputs={"result": result, "items_processed": len(result)})
+               return result
+       else:
+           # Simple processing without extra span
+           return perform_simple_processing(data)
+
+**What it Does:**
+
+1. Creates a new span with the specified name
+2. Applies HoneyHive-specific namespacing automatically:
+   - ``inputs`` → ``honeyhive_inputs.*``
+   - ``outputs`` → ``honeyhive_outputs.*``
+   - ``metadata`` → ``honeyhive_metadata.*``
+   - ``metrics`` → ``honeyhive_metrics.*``
+   - ``feedback`` → ``honeyhive_feedback.*``
+3. Sets the span as "current" so subsequent ``tracer.enrich_span()`` calls work correctly
+4. Automatically closes the span on exit
+
+Full Feature Example
+~~~~~~~~~~~~~~~~~~~~
+
+.. code-block:: python
+
+   from honeyhive.tracer.processing.context import enrich_span_context
+   
+   def process_agent_invocation(agent_name: str, query: str, use_cache: bool):
+       """Example showing all enrich_span_context parameters."""
+       
+       # Create span with full HoneyHive enrichment
+       with enrich_span_context(
+           event_name=f"call_agent_{agent_name}",
+           inputs={
+               "query": query,
+               "agent_name": agent_name,
+               "use_cache": use_cache
+           },
+           metadata={
+               "agent_type": "research" if "research" in agent_name else "analysis",
+               "cache_enabled": use_cache,
+               "invocation_mode": "remote" if should_use_remote() else "local"
+           },
+           metrics={
+               "query_length": len(query),
+               "estimated_tokens": estimate_tokens(query)
+           },
+           config={
+               "model": "gpt-4",
+               "temperature": 0.7,
+               "max_tokens": 500
+           }
+       ):
+           # Check cache
+           if use_cache:
+               cached_result = check_cache(agent_name, query)
+               if cached_result:
+                   tracer.enrich_span(
+                       outputs={"response": cached_result, "cache_hit": True},
+                       metrics={"response_time_ms": 5}
+                   )
+                   return cached_result
+           
+           # Call agent
+           result = invoke_agent(agent_name, query)
+           
+           # Enrich with results
+           tracer.enrich_span(
+               outputs={
+                   "response": result,
+                   "cache_hit": False,
+                   "response_length": len(result)
+               },
+               metrics={
+                   "response_time_ms": 250,
+                   "tokens_used": count_tokens(result)
+               }
+           )
+           
+           return result
+
+Comparison: enrich_span_context() vs tracer.start_span()
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+.. code-block:: python
+
+   # ❌ Without enrich_span_context (manual attribute setting)
+   with tracer.start_span("process_data") as span:
+       # Have to manually set attributes with correct namespacing
+       span.set_attribute("honeyhive_inputs.data", str(data))
+       span.set_attribute("honeyhive_metadata.type", "batch")
+       
+       result = process_data(data)
+       
+       # Have to manually set output attributes
+       span.set_attribute("honeyhive_outputs.result", str(result))
+   
+   # ✅ With enrich_span_context (automatic HoneyHive namespacing)
+   with enrich_span_context(
+       event_name="process_data",
+       inputs={"data": data},
+       metadata={"type": "batch"}
+   ):
+       result = process_data(data)
+       tracer.enrich_span(outputs={"result": result})
+
+**Benefits:**
+
+- ✅ **Automatic namespacing**: No need to manually add ``honeyhive_inputs.*`` prefixes
+- ✅ **Type-safe**: Structured parameters (dict) instead of string keys
+- ✅ **Consistent**: Same enrichment API as ``@trace`` decorator
+- ✅ **Correct context**: Uses ``trace.use_span()`` to ensure enrichment applies to the right span
+- ✅ **Flexible**: Can enrich at span creation and during execution
+
+When to Use enrich_span_context()
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+**Use ``enrich_span_context()`` when:**
+
+- ✅ Creating conditional spans (based on runtime conditions)
+- ✅ Creating spans in loops or iterations
+- ✅ Creating spans in non-function code blocks
+- ✅ You need HoneyHive's structured enrichment (inputs/outputs/metadata)
+- ✅ You want automatic namespacing for HoneyHive attributes
+
+**Use ``tracer.start_span()`` when:**
+
+- You only need basic OpenTelemetry attributes (not HoneyHive-specific)
+- You're setting custom attribute names that don't fit HoneyHive's structure
+- You need fine-grained control over span lifecycle
+
+**Use ``@trace`` decorator when:**
+
+- Tracing entire functions (the most common case)
+- You want automatic exception handling
+- You want cleaner, more maintainable code
+
+Real-World Example: Distributed Tracing
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+``enrich_span_context()`` is particularly useful for distributed tracing scenarios where you need to create explicit spans with proper enrichment:
+
+.. code-block:: python
+
+   from honeyhive.tracer.processing.context import enrich_span_context
+   import requests
+   
+   async def call_remote_agent(agent_name: str, query: str):
+       """Call remote agent with explicit span creation."""
+       
+       # Create explicit span for the remote call
+       with enrich_span_context(
+           event_name=f"call_{agent_name}_remote",
+           inputs={"query": query, "agent": agent_name},
+           metadata={"invocation_type": "remote", "protocol": "http"}
+       ):
+           # Inject distributed trace context
+           headers = {}
+           inject_context_into_carrier(headers, tracer)
+           
+           # Make remote call
+           response = requests.post(
+               f"{agent_server_url}/agent/invoke",
+               json={"query": query, "agent_name": agent_name},
+               headers=headers,
+               timeout=60
+           )
+           
+           result = response.json().get("response", "")
+           
+           # Enrich with response
+           tracer.enrich_span(
+               outputs={"response": result, "status_code": response.status_code},
+               metrics={"response_time_ms": response.elapsed.total_seconds() * 1000}
+           )
+           
+           return result
+
+.. seealso::
+   For more on distributed tracing, see :doc:`/tutorials/06-distributed-tracing`.
+
 Performance Monitoring
 ----------------------
 

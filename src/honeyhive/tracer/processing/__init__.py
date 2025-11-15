@@ -11,6 +11,7 @@ from .context import (
     get_current_baggage,
     inject_context_into_carrier,
     setup_baggage_context,
+    with_distributed_trace_context,
 )
 
 # OTLP export
@@ -29,4 +30,5 @@ __all__ = [
     "get_current_baggage",
     "inject_context_into_carrier",
     "setup_baggage_context",
+    "with_distributed_trace_context",
 ]
