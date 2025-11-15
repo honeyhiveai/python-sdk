@@ -268,404 +268,200 @@ Combine multiple patterns - later values override earlier ones:
    # honeyhive_metrics.score = 0.95
    # honeyhive_metrics.latency_ms = 150
 
-Pattern 1: Basic Enrichment with ``enrich_span()``
---------------------------------------------------
+Using ``enrich_span_context()`` for Inline Span Creation
+----------------------------------------------------------
 
-**When to use:** Add simple key-value metadata to any span.
+**New in v1.0+:** When you need to create and enrich a named span without refactoring code into separate functions.
 
-**Example:** Add user and request context to every LLM call.
+**When to use:**
+
+- ✅ You want explicit named spans for specific code blocks
+- ✅ It's hard or impractical to split code into separate functions
+- ✅ You need to enrich spans with inputs/outputs immediately upon creation
+- ✅ You want clear span boundaries without decorator overhead
+
+**Problem:** Using ``@trace`` decorator requires refactoring code into separate functions:
 
 .. code-block:: python
 
-   from honeyhive import HoneyHiveTracer, enrich_span
-   from openinference.instrumentation.openai import OpenAIInstrumentor
-   import openai
+   # Without decorator - no span created
+   def complex_workflow(data):
+       # Step 1: Preprocessing
+       cleaned = preprocess(data)
+       
+       # Step 2: Model inference
+       result = model.predict(cleaned)
+       
+       # Step 3: Postprocessing
+       final = postprocess(result)
+       
+       return final
+   
+   # With decorator - requires splitting into functions
+   @trace(event_name="preprocess_step")
+   def preprocess(data):
+       # preprocessing logic
+       pass
+   
+   @trace(event_name="inference_step")
+   def predict(data):
+       # inference logic
+       pass
+   
+   @trace(event_name="postprocess_step")
+   def postprocess(data):
+       # postprocessing logic
+       pass
+
+**Solution:** Use ``enrich_span_context()`` to create named spans inline:
+
+.. code-block:: python
+
+   from honeyhive.tracer.processing.context import enrich_span_context
+   from honeyhive import HoneyHiveTracer
    
    tracer = HoneyHiveTracer.init(project="my-app")
-   instrumentor = OpenAIInstrumentor()
-   instrumentor.instrument(tracer_provider=tracer.provider)
    
-   def process_user_request(user_id: str, request_id: str, query: str):
-       """Process user request with basic enrichment."""
+   def complex_workflow(data):
+       """Workflow with inline named spans - no refactoring needed!"""
        
-       # Enrich the current span with context
-       enrich_span({
-           "user_id": user_id,
-           "request_id": request_id,
-           "query_length": len(query),
-           "timestamp": time.time()
-       })
+       # Step 1: Create span for preprocessing
+       with enrich_span_context(
+           event_name="preprocess_step",
+           inputs={"raw_data_size": len(data)},
+           metadata={"stage": "preprocessing"}
+       ):
+           cleaned = preprocess_data(data)
+           tracer.enrich_span(outputs={"cleaned_size": len(cleaned)})
        
-       client = openai.OpenAI()
-       response = client.chat.completions.create(
-           model="gpt-3.5-turbo",
-           messages=[{"role": "user", "content": query}]
-       )
-       
-       return response.choices[0].message.content
-
-**Key Points:**
-
-- ``enrich_span()`` adds metadata to the **current active span**
-- Call it anywhere in your function before or after LLM calls
-- Metadata is automatically attached to the instrumentor-created span
-- Use consistent key names across your application for filtering
-
-Pattern 2: Automatic Enrichment in Decorators
----------------------------------------------
-
-**When to use:** Automatically enrich all calls to a decorated function with consistent metadata.
-
-**Example:** Add function-level context automatically.
-
-.. code-block:: python
-
-   from functools import wraps
-   from honeyhive import enrich_span, trace
-   from honeyhive.models import EventType
-   import time
-   
-   def auto_enrich(feature: str, event_type: EventType = EventType.chain):
-       """Decorator that automatically enriches spans."""
-       def decorator(func):
-           @wraps(func)
-           @trace(event_type=event_type)
-           def wrapper(*args, **kwargs):
-               # Automatic enrichment
-               enrich_span({
-                   "feature": feature,
-                   "function_name": func.__name__,
-                   "module": func.__module__,
-                   "timestamp": time.time()
-               })
-               
-               # Execute function
-               start_time = time.time()
-               try:
-                   result = func(*args, **kwargs)
-                   
-                   # Success enrichment
-                   enrich_span({
-                       "status": "success",
-                       "execution_time_ms": round((time.time() - start_time) * 1000, 2)
-                   })
-                   
-                   return result
-                   
-               except Exception as e:
-                   # Error enrichment
-                   enrich_span({
-                       "status": "error",
-                       "error_type": type(e).__name__,
-                       "error_message": str(e),
-                       "execution_time_ms": round((time.time() - start_time) * 1000, 2)
-                   })
-                   raise
-           
-           return wrapper
-       return decorator
-   
-   # Usage
-   @auto_enrich(feature="customer_support")
-   def handle_support_query(query: str) -> str:
-       client = openai.OpenAI()
-       response = client.chat.completions.create(
-           model="gpt-3.5-turbo",
-           messages=[{"role": "user", "content": query}]
-       )
-       return response.choices[0].message.content
-
-**Key Points:**
-
-- Decorator ensures consistent enrichment across functions
-- Automatically captures timing and error context
-- Reduces code duplication
-- Can be composed with other decorators
-
-Pattern 3: Context-Aware Enrichment
------------------------------------
-
-**When to use:** Enrich spans with data from application context (web requests, user sessions, etc.).
-
-**Example:** Add Flask/Django request context to traces.
-
-.. code-block:: python
-
-   from flask import Flask, request, g
-   from honeyhive import enrich_span, trace
-   from honeyhive.models import EventType
-   import openai
-   import time
-   import uuid
-   
-   app = Flask(__name__)
-   
-   @app.before_request
-   def before_request():
-       """Store request context for enrichment."""
-       g.request_start = time.time()
-       g.request_id = request.headers.get("X-Request-ID", str(uuid.uuid4()))
-   
-   def enrich_with_request_context():
-       """Helper to enrich with current request context."""
-       if not request:
-           return
-       
-       enrich_span({
-           "request_id": g.request_id,
-           "endpoint": request.endpoint,
-           "method": request.method,
-           "path": request.path,
-           "user_agent": request.user_agent.string,
-           "ip_address": request.remote_addr,
-           "referrer": request.referrer
-       })
-   
-   @app.route("/api/chat", methods=["POST"])
-   def chat_endpoint():
-       """Chat endpoint with context-aware enrichment."""
-       @trace(event_type=EventType.chain)
-       def _handle_chat():
-           # Enrich with request context
-           enrich_with_request_context()
-           
-           # Add business context
-           data = request.json
-           enrich_span({
-               "user_id": data.get("user_id"),
-               "message_length": len(data.get("message", "")),
-               "feature": "chat_api"
-           })
-           
-           # LLM call
-           client = openai.OpenAI()
-           response = client.chat.completions.create(
-               model="gpt-3.5-turbo",
-               messages=[{"role": "user", "content": data["message"]}]
+       # Step 2: Create span for model inference
+       with enrich_span_context(
+           event_name="inference_step",
+           inputs={"input_shape": cleaned.shape},
+           metadata={"model": "gpt-4", "temperature": 0.7}
+       ):
+           result = model.predict(cleaned)
+           tracer.enrich_span(
+               outputs={"prediction": result},
+               metrics={"confidence": 0.95}
            )
-           
-           return response.choices[0].message.content
        
-       result = _handle_chat()
-       return {"response": result}
+       # Step 3: Create span for postprocessing
+       with enrich_span_context(
+           event_name="postprocess_step",
+           inputs={"raw_result": result}
+       ):
+           final = postprocess(result)
+           tracer.enrich_span(outputs={"final_result": final})
+       
+       return final
 
-**Key Points:**
+**What you get in HoneyHive:**
 
-- Extract context from framework globals (Flask's ``g``, Django's middleware)
-- Create reusable enrichment helpers
-- Combine request context with business context
-- Useful for debugging production issues
+.. code-block:: text
 
-Pattern 4: Performance Metadata Enrichment
-------------------------------------------
+   📊 complex_workflow [ROOT]
+   ├── 🔧 preprocess_step
+   │   └── inputs: {"raw_data_size": 1000}
+   │   └── outputs: {"cleaned_size": 950}
+   │   └── metadata: {"stage": "preprocessing"}
+   ├── 🤖 inference_step
+   │   └── inputs: {"input_shape": [950, 128]}
+   │   └── outputs: {"prediction": "..."}
+   │   └── metadata: {"model": "gpt-4", "temperature": 0.7}
+   │   └── metrics: {"confidence": 0.95}
+   └── ✨ postprocess_step
+       └── inputs: {"raw_result": "..."}
+       └── outputs: {"final_result": "..."}
 
-**When to use:** Track detailed timing breakdowns and performance metrics.
+**Advantages over decorator approach:**
 
-**Example:** Measure and enrich with pipeline stage timings.
++----------------------------+----------------------------------+----------------------------------+
+| **Aspect**                 | **@trace decorator**             | **enrich_span_context()**        |
++============================+==================================+==================================+
+| **Refactoring**            | Must split into functions        | No refactoring needed            |
++----------------------------+----------------------------------+----------------------------------+
+| **Code Structure**         | Forces function boundaries       | Flexible inline usage            |
++----------------------------+----------------------------------+----------------------------------+
+| **Enrichment Timing**      | After span creation              | On creation + during execution   |
++----------------------------+----------------------------------+----------------------------------+
+| **Span Naming**            | Function name or explicit        | Always explicit                  |
++----------------------------+----------------------------------+----------------------------------+
+| **Best for**               | Reusable functions               | Inline code blocks               |
++----------------------------+----------------------------------+----------------------------------+
+
+**Real-world example: RAG Pipeline with inline spans**
 
 .. code-block:: python
 
-   import time
-   from dataclasses import dataclass
-   from typing import Dict
-   from honeyhive import enrich_span, trace
-   from honeyhive.models import EventType
+   from honeyhive.tracer.processing.context import enrich_span_context
+   from honeyhive import HoneyHiveTracer, trace
    import openai
    
-   @dataclass
-   class TimingContext:
-       """Context manager for timing measurements."""
-       stage: str
-       timings: Dict[str, float]
-       
-       def __enter__(self):
-           self.start = time.time()
-           return self
-       
-       def __exit__(self, *args):
-           elapsed = (time.time() - self.start) * 1000  # Convert to ms
-           self.timings[f"{self.stage}_ms"] = round(elapsed, 2)
+   tracer = HoneyHiveTracer.init(project="rag-app")
    
-   @trace(event_type=EventType.chain)
-   def rag_pipeline_with_timing(query: str, context_docs: list) -> str:
-       """RAG pipeline with detailed performance tracking."""
-       timings = {}
-       pipeline_start = time.time()
+   @trace(event_type="chain", event_name="rag_query")
+   def rag_query(query: str, context_docs: list) -> str:
+       """RAG pipeline with explicit span boundaries."""
        
-       # Stage 1: Document retrieval
-       with TimingContext("retrieval", timings):
-           relevant_docs = retrieve_documents(query, context_docs)
-           enrich_span({
-               "retrieval_doc_count": len(relevant_docs),
-               "total_docs_searched": len(context_docs)
-           })
+       # Span 1: Document retrieval
+       with enrich_span_context(
+           event_name="retrieve_documents",
+           inputs={"query": query, "doc_count": len(context_docs)},
+           metadata={"retrieval_method": "semantic_search"}
+       ):
+           relevant_docs = semantic_search(query, context_docs, top_k=5)
+           tracer.enrich_span(
+               outputs={"retrieved_count": len(relevant_docs)},
+               metrics={"avg_relevance_score": 0.87}
+           )
        
-       # Stage 2: Context building
-       with TimingContext("context_building", timings):
-           context = "\n\n".join(relevant_docs)
-           prompt = build_prompt(query, context)
-           enrich_span({
-               "context_length": len(context),
-               "prompt_length": len(prompt)
-           })
+       # Span 2: Context building
+       with enrich_span_context(
+           event_name="build_context",
+           inputs={"doc_count": len(relevant_docs)}
+       ):
+           context = "\n\n".join([doc.content for doc in relevant_docs])
+           prompt = f"Context:\n{context}\n\nQuestion: {query}\n\nAnswer:"
+           tracer.enrich_span(
+               outputs={"context_length": len(context), "prompt_length": len(prompt)}
+           )
        
-       # Stage 3: LLM generation
-       with TimingContext("llm_generation", timings):
+       # Span 3: LLM generation (instrumentor creates child spans automatically)
+       with enrich_span_context(
+           event_name="generate_answer",
+           inputs={"prompt_length": len(prompt)},
+           metadata={"model": "gpt-4", "max_tokens": 500}
+       ):
            client = openai.OpenAI()
            response = client.chat.completions.create(
-               model="gpt-3.5-turbo",
+               model="gpt-4",
                max_tokens=500,
                messages=[{"role": "user", "content": prompt}]
            )
-           result = response.choices[0].message.content
+           answer = response.choices[0].message.content
+           tracer.enrich_span(
+               outputs={"answer": answer},
+               metrics={"completion_tokens": response.usage.completion_tokens}
+           )
        
-       # Stage 4: Post-processing
-       with TimingContext("post_processing", timings):
-           processed_result = post_process(result)
-       
-       # Enrich with all timings
-       total_time = (time.time() - pipeline_start) * 1000
-       timings["total_pipeline_ms"] = round(total_time, 2)
-       
-       # Calculate percentages
-       for stage, duration in timings.items():
-           if stage != "total_pipeline_ms":
-               percentage = (duration / total_time) * 100
-               timings[f"{stage}_percentage"] = round(percentage, 1)
-       
-       enrich_span(timings)
-       enrich_span({
-           "performance_tier": "fast" if total_time < 1000 else "slow",
-           "pipeline_stages_completed": 4
-       })
-       
-       return processed_result
+       return answer
 
-**Key Points:**
+**Key benefits:**
 
-- Use context managers for clean timing code
-- Track stage-by-stage performance
-- Calculate and enrich with percentages
-- Identify performance bottlenecks easily
+- **Clear span boundaries**: Each pipeline stage has an explicit named span
+- **No refactoring**: Keep your logic in one function, add spans inline
+- **Rich context**: Set inputs/outputs/metadata when creating the span
+- **Flexible enrichment**: Can still call ``tracer.enrich_span()`` during execution
+- **Works with instrumentors**: Auto-instrumented spans (e.g., OpenAI) become children
 
-Pattern 5: Error Context Enrichment
------------------------------------
-
-**When to use:** Add comprehensive error context for debugging failures.
-
-**Example:** Capture detailed error information with retry logic.
-
-.. code-block:: python
-
-   import time
-   from typing import Optional
-   from honeyhive import enrich_span, trace
-   from honeyhive.models import EventType
-   import openai
+.. note::
+   **When to use each approach:**
    
-   @trace(event_type=EventType.chain)
-   def resilient_llm_call_with_enrichment(
-       prompt: str,
-       max_retries: int = 3,
-       backoff_base: float = 2.0
-   ) -> Optional[str]:
-       """LLM call with retry logic and rich error enrichment."""
-       
-       enrich_span({
-           "max_retries": max_retries,
-           "backoff_strategy": "exponential",
-           "prompt_length": len(prompt)
-       })
-       
-       client = openai.OpenAI()
-       attempt = 0
-       errors_encountered = []
-       
-       while attempt < max_retries:
-           attempt += 1
-           attempt_start = time.time()
-           
-           try:
-               response = client.chat.completions.create(
-                   model="gpt-3.5-turbo",
-                   messages=[{"role": "user", "content": prompt}],
-                   timeout=30.0
-               )
-               
-               # Success enrichment
-               enrich_span({
-                   "status": "success",
-                   "attempts_needed": attempt,
-                   "final_attempt_duration_ms": round((time.time() - attempt_start) * 1000, 2),
-                   "errors_before_success": len(errors_encountered)
-               })
-               
-               return response.choices[0].message.content
-               
-           except openai.RateLimitError as e:
-               error_info = {
-                   "attempt": attempt,
-                   "error_type": "rate_limit",
-                   "error_message": str(e),
-                   "retry_after": e.response.headers.get("Retry-After"),
-                   "duration_ms": round((time.time() - attempt_start) * 1000, 2)
-               }
-               errors_encountered.append(error_info)
-               
-               if attempt < max_retries:
-                   wait_time = backoff_base ** attempt
-                   enrich_span({
-                       f"attempt_{attempt}_error": "rate_limit",
-                       f"attempt_{attempt}_wait_time": wait_time
-                   })
-                   time.sleep(wait_time)
-               else:
-                   # Final failure enrichment
-                   enrich_span({
-                       "status": "error",
-                       "final_error_type": "rate_limit",
-                       "total_attempts": attempt,
-                       "all_errors": errors_encountered,
-                       "retry_exhausted": True
-                   })
-                   raise
-                   
-           except openai.APIError as e:
-               error_info = {
-                   "attempt": attempt,
-                   "error_type": "api_error",
-                   "error_message": str(e),
-                   "status_code": e.status_code if hasattr(e, 'status_code') else None,
-                   "duration_ms": round((time.time() - attempt_start) * 1000, 2)
-               }
-               errors_encountered.append(error_info)
-               
-               if attempt < max_retries:
-                   wait_time = backoff_base ** attempt
-                   enrich_span({
-                       f"attempt_{attempt}_error": "api_error",
-                       f"attempt_{attempt}_status_code": error_info["status_code"],
-                       f"attempt_{attempt}_wait_time": wait_time
-                   })
-                   time.sleep(wait_time)
-               else:
-                   enrich_span({
-                       "status": "error",
-                       "final_error_type": "api_error",
-                       "total_attempts": attempt,
-                       "all_errors": errors_encountered,
-                       "retry_exhausted": True
-                   })
-                   raise
-       
-       return None
-
-**Key Points:**
-
-- Capture error details at each retry attempt
-- Track error history across retries
-- Include timing for failed attempts
-- Differentiate between transient and permanent failures
+   - Use ``@trace`` decorator for **reusable functions** you call multiple times
+   - Use ``enrich_span_context()`` for **inline code blocks** that are hard to extract into functions
+   - Use ``tracer.enrich_span()`` for **adding metadata** to existing spans (decorator or instrumentor)
+   - Use ``tracer.enrich_session()`` for **session-wide metadata** that applies to all spans
 
 Advanced Techniques
 -------------------
