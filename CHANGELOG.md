@@ -2,6 +2,11 @@
 
 ### Added
 
+- **📚 Documentation: Restored missing praxis OS documentation files**
+  - Recovered `.praxis-os/workspace/product/features.md` (734 lines) from pre-migration git history
+  - Recovered `.praxis-os/standards/universal/best-practices.md` (390 lines) from pre-migration git history
+  - Fixes feature-list-sync pre-commit hook validation
+
 - **✨ Evaluation: Added pretty table output for evaluate() results**
   - Added `rich` library for beautiful terminal table formatting
   - Implemented `print_table()` method on `ExperimentResultSummary` for formatted result display
