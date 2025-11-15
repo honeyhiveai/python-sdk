@@ -2,6 +2,15 @@
 
 ### Added
 
+- **✨ Evaluation: Added pretty table output for evaluate() results**
+  - Added `rich` library for beautiful terminal table formatting
+  - Implemented `print_table()` method on `ExperimentResultSummary` for formatted result display
+  - Table displays: Run summary (ID, status, pass/fail counts), aggregated metrics, per-datapoint results (up to 20)
+  - Uses emojis and color for visual clarity (✅/❌ status indicators)
+  - Added `print_results` parameter to `evaluate()` function (default: `True` for automatic display)
+  - Includes 7 comprehensive unit tests with ANSI code stripping for clean assertions
+  - Matches main branch behavior for consistent user experience
+
 - **🧪 Testing: Added Google ADK instrumentation exercise script**
   - Comprehensive traffic generation script for validating OpenInference Google ADK instrumentation
   - Exercises: Basic model calls, tool calls, chain workflows, multi-step workflows, parallel workflows, error scenarios, metadata/metrics, callbacks

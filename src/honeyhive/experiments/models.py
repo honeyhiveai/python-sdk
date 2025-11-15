@@ -14,6 +14,9 @@ from enum import Enum
 from typing import Any, Dict, List, Optional
 
 from pydantic import BaseModel, ConfigDict, Field
+from rich.console import Console
+from rich.style import Style
+from rich.table import Table
 
 
 class ExperimentRunStatus(str, Enum):
@@ -154,6 +157,120 @@ class ExperimentResultSummary(BaseModel):
         default_factory=list,
         description="List of datapoint results (Datapoint1 from generated)",
     )
+
+    def print_table(self, run_name: Optional[str] = None) -> None:
+        """
+        Print evaluation results in a formatted table.
+
+        Displays:
+        - Run summary (ID, status, pass/fail counts)
+        - Aggregated metrics
+        - Per-datapoint details (if available)
+
+        Args:
+            run_name: Optional run name to display in table title
+
+        Example:
+            >>> result = evaluate(...)
+            >>> result.print_table(run_name="My Experiment")
+        """
+        console = Console()
+
+        # Print header
+        title = f"Evaluation Results: {run_name or self.run_id}"
+        console.print(f"\n{'=' * 80}")
+        console.print(f"[bold yellow]{title}[/bold yellow]")
+        console.print(f"{'=' * 80}\n")
+
+        # Print summary
+        status_emoji = "✅" if self.success else "❌"
+        status_color = "green" if self.success else "red"
+
+        console.print(f"[bold]Run ID:[/bold] {self.run_id}")
+        status_text = (
+            f"[bold]Status:[/bold] [{status_color}]"
+            f"{status_emoji} {self.status}[/{status_color}]"
+        )
+        console.print(status_text)
+        console.print(f"[bold]Passed:[/bold] {len(self.passed)}")
+        console.print(f"[bold]Failed:[/bold] {len(self.failed)}")
+        console.print()
+
+        # Print aggregated metrics table
+        metric_names = self.metrics.list_metrics()  # pylint: disable=no-member
+
+        if metric_names:
+            metrics_table = Table(
+                title="Aggregated Metrics",
+                show_lines=False,
+                title_style=Style(color="cyan", bold=True),
+            )
+            metrics_table.add_column(
+                "Metric", justify="left", style="magenta", no_wrap=True
+            )
+            metrics_table.add_column("Value", justify="right", style="green")
+            metrics_table.add_column("Type", justify="center", style="blue")
+
+            for metric_name in sorted(metric_names):
+                # pylint: disable=no-member
+                metric_data = self.metrics.get_metric(metric_name)
+                if metric_data and isinstance(metric_data, dict):
+                    aggregate_value = metric_data.get("aggregate", "N/A")
+                    metric_type = metric_data.get("metric_type", "unknown")
+
+                    # Format value based on type
+                    if isinstance(aggregate_value, float):
+                        value_str = f"{aggregate_value:.4f}"
+                    else:
+                        value_str = str(aggregate_value)
+
+                    metrics_table.add_row(metric_name, value_str, metric_type)
+
+            console.print(metrics_table)
+            console.print()
+
+        # Print per-datapoint summary if available
+        if self.datapoints:
+            datapoints_table = Table(
+                title=f"Datapoint Results ({len(self.datapoints)} total)",
+                show_lines=False,
+                title_style=Style(color="cyan", bold=True),
+            )
+            datapoints_table.add_column(
+                "Datapoint ID", justify="left", style="blue", no_wrap=False
+            )
+            datapoints_table.add_column(
+                "Session ID", justify="left", style="blue", no_wrap=False
+            )
+            datapoints_table.add_column("Status", justify="center", style="green")
+
+            for datapoint in self.datapoints[:20]:  # Limit to first 20 for display
+                if hasattr(datapoint, "datapoint_id"):
+                    dp_id = datapoint.datapoint_id or "N/A"
+                    session_id = getattr(datapoint, "session_id", "N/A") or "N/A"
+                    passed = getattr(datapoint, "passed", None)
+
+                    if passed is True:
+                        status = "[green]✅ Passed[/green]"
+                    elif passed is False:
+                        status = "[red]❌ Failed[/red]"
+                    else:
+                        status = "❓ Unknown"
+
+                    datapoints_table.add_row(dp_id, session_id, status)
+
+            console.print(datapoints_table)
+
+            if len(self.datapoints) > 20:
+                msg = (
+                    f"\n[dim](Showing first 20 of "
+                    f"{len(self.datapoints)} datapoints)[/dim]"
+                )
+                console.print(msg)
+
+            console.print()
+
+        console.print(f"{'=' * 80}\n")
 
 
 class RunComparisonResult(BaseModel):

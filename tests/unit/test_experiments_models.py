@@ -19,12 +19,20 @@ Tests cover:
 # Justification: Complete test class coverage for all model functionality
 # Justification: Pydantic dynamic fields and explicit empty checks in tests
 
+import re
+
 from honeyhive.experiments.models import (
     AggregatedMetrics,
     ExperimentResultSummary,
     ExperimentRunStatus,
     RunComparisonResult,
 )
+
+
+def strip_ansi(text: str) -> str:
+    """Remove ANSI escape codes from text for easier testing."""
+    ansi_escape = re.compile(r"\x1B(?:[@-Z\\-_]|\[[0-?]*[ -/]*[@-~])")
+    return ansi_escape.sub("", text)
 
 
 class TestExperimentRunStatus:
@@ -207,6 +215,133 @@ class TestExperimentResultSummary:
                 metrics=AggregatedMetrics(),
             )
             assert summary.status == status_value
+
+    def test_print_table_runs_without_error(self, capsys) -> None:
+        """Test that print_table executes without errors."""
+        metrics = AggregatedMetrics(
+            aggregation_function="average",
+            accuracy={"aggregate": 0.85, "metric_type": "numeric"},
+        )
+        summary = ExperimentResultSummary(
+            run_id="run-123",
+            status="completed",
+            success=True,
+            passed=["dp-1"],
+            failed=["dp-2"],
+            metrics=metrics,
+        )
+
+        # Should not raise any exceptions
+        summary.print_table()
+
+        # Verify some output was produced (strip ANSI codes for clean assertions)
+        captured = capsys.readouterr()
+        clean_output = strip_ansi(captured.out)
+        assert "run-123" in clean_output
+        assert "Evaluation Results" in clean_output
+
+    def test_print_table_with_run_name(self, capsys) -> None:
+        """Test that print_table displays custom run name."""
+        summary = ExperimentResultSummary(
+            run_id="run-123",
+            status="completed",
+            success=True,
+            metrics=AggregatedMetrics(),
+        )
+
+        summary.print_table(run_name="My Test Run")
+
+        captured = capsys.readouterr()
+        assert "My Test Run" in captured.out
+
+    def test_print_table_displays_metrics(self, capsys) -> None:
+        """Test that print_table displays aggregated metrics."""
+        metrics = AggregatedMetrics(
+            aggregation_function="average",
+            accuracy={"aggregate": 0.85, "metric_type": "numeric"},
+            latency={"aggregate": 120.5, "metric_type": "numeric"},
+        )
+        summary = ExperimentResultSummary(
+            run_id="run-123",
+            status="completed",
+            success=True,
+            metrics=metrics,
+        )
+
+        summary.print_table()
+
+        captured = capsys.readouterr()
+        assert "Aggregated Metrics" in captured.out
+        assert "accuracy" in captured.out
+        assert "0.8500" in captured.out
+        assert "latency" in captured.out
+        assert "120.5000" in captured.out
+
+    def test_print_table_handles_empty_metrics(self, capsys) -> None:
+        """Test that print_table handles empty metrics gracefully."""
+        metrics = AggregatedMetrics(aggregation_function="average")
+        summary = ExperimentResultSummary(
+            run_id="run-123",
+            status="completed",
+            success=True,
+            metrics=metrics,
+        )
+
+        # Should not raise any exceptions
+        summary.print_table()
+
+        captured = capsys.readouterr()
+        clean_output = strip_ansi(captured.out)
+        # Should not show metrics table if no metrics
+        assert "run-123" in clean_output
+
+    def test_print_table_displays_success_status(self, capsys) -> None:
+        """Test that print_table displays success status with emoji."""
+        summary = ExperimentResultSummary(
+            run_id="run-123",
+            status="completed",
+            success=True,
+            metrics=AggregatedMetrics(),
+        )
+
+        summary.print_table()
+
+        captured = capsys.readouterr()
+        assert "✅" in captured.out
+        assert "completed" in captured.out
+
+    def test_print_table_displays_failure_status(self, capsys) -> None:
+        """Test that print_table displays failure status with emoji."""
+        summary = ExperimentResultSummary(
+            run_id="run-123",
+            status="failed",
+            success=False,
+            metrics=AggregatedMetrics(),
+        )
+
+        summary.print_table()
+
+        captured = capsys.readouterr()
+        assert "❌" in captured.out
+        assert "failed" in captured.out
+
+    def test_print_table_displays_pass_fail_counts(self, capsys) -> None:
+        """Test that print_table displays pass/fail counts."""
+        summary = ExperimentResultSummary(
+            run_id="run-123",
+            status="completed",
+            success=True,
+            passed=["dp-1", "dp-2", "dp-3"],
+            failed=["dp-4"],
+            metrics=AggregatedMetrics(),
+        )
+
+        summary.print_table()
+
+        captured = capsys.readouterr()
+        clean_output = strip_ansi(captured.out)
+        assert "Passed: 3" in clean_output
+        assert "Failed: 1" in clean_output
 
 
 class TestRunComparisonResult:

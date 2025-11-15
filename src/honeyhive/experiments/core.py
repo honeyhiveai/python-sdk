@@ -717,6 +717,7 @@ def evaluate(  # pylint: disable=too-many-locals,too-many-branches
     max_workers: int = 10,
     aggregate_function: str = "average",
     verbose: bool = False,
+    print_results: bool = True,
 ) -> Any:
     """
         Run experiment evaluation with backend aggregation.
@@ -742,6 +743,8 @@ def evaluate(  # pylint: disable=too-many-locals,too-many-branches
             aggregate_function: Backend aggregation function
     +            ("average", "sum", "min", "max")
             verbose: Enable verbose logging
+            print_results: Print formatted results table after evaluation
+                (default: True)
 
         Returns:
             ExperimentResultSummary with backend-computed aggregates
@@ -1000,5 +1003,9 @@ def evaluate(  # pylint: disable=too-many-locals,too-many-branches
             len(result_summary.passed),
             len(result_summary.failed),
         )
+
+    # Print formatted results table if requested
+    if print_results:
+        result_summary.print_table(run_name=run_name)
 
     return result_summary

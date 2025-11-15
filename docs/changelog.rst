@@ -19,6 +19,7 @@ Current Version Highlights
 
 **🚀 INFRA: praxis OS Migration & Bug Fixes (Nov 14, 2025)**
 
+* **✨ NEW: Pretty Table Output for Evaluations**: Added beautiful terminal table display for evaluate() results with color, emojis, and formatted metrics
 * **AI Development Framework**: Migrated from Agent OS to praxis OS with MCP (Model Context Protocol) integration
 * **Enhanced Tooling**: Added multi-repo code intelligence, advanced RAG search, and phase-gated workflows
 * **Bug Fix**: Completed praxis OS pre-commit migration - fixed all hooks to use new .praxis-os/ paths (10 files, 43 references updated)
