@@ -1,60 +1,61 @@
 End-to-End Distributed Tracing
 ==============================
 
-**Problem:** You have a multi-service LLM application and need to trace requests as they flow across service boundaries to understand performance, errors, and dependencies.
+**Problem:** You have a multi-service AI agent application and need to trace requests as they flow across service boundaries to understand performance, errors, and dependencies.
 
-**Solution:** Use HoneyHive's distributed tracing with context propagation to create unified traces across multiple services in under 20 minutes.
+**Solution:** Use HoneyHive's distributed tracing with context propagation to create unified traces across multiple services in under 15 minutes.
 
-This tutorial walks you through building a complete distributed system with three services that share trace context, giving you end-to-end visibility into request flows.
+This tutorial walks you through building a distributed AI agent system using Google ADK, demonstrating how traces flow seamlessly across service boundaries.
 
 What You'll Build
 -----------------
 
-A microservices architecture with distributed tracing:
+A distributed AI agent architecture with mixed invocation patterns:
 
 .. mermaid::
 
    %%{init: {'theme':'base', 'themeVariables': {'primaryColor': '#4F81BD', 'primaryTextColor': '#ffffff', 'primaryBorderColor': '#333333', 'lineColor': '#333333', 'mainBkg': 'transparent', 'secondBkg': 'transparent', 'tertiaryColor': 'transparent', 'clusterBkg': 'transparent', 'clusterBorder': '#333333', 'edgeLabelBackground': 'transparent', 'background': 'transparent'}, 'flowchart': {'linkColor': '#333333', 'linkWidth': 2}}}%%
    graph LR
-       Client[Client Request]
-       Gateway[API Gateway<br/>Port 5000]
-       UserSvc[User Service<br/>Port 5001]
-       LLMSvc[LLM Service<br/>Port 5002]
+       Client[Client App<br/>Process A]
+       Principal[Principal Agent<br/>Process A]
+       RemoteAgent[Research Agent<br/>Process B - Remote]
+       LocalAgent[Analysis Agent<br/>Process A - Local]
        
-       Client -->|HTTP POST| Gateway
-       Gateway -->|Propagate Context| UserSvc
-       UserSvc -->|Propagate Context| LLMSvc
+       Client -->|user_call| Principal
+       Principal -->|HTTP + Context| RemoteAgent
+       Principal -->|Direct Call| LocalAgent
        
        classDef client fill:#7b1fa2,stroke:#333333,stroke-width:2px,color:#ffffff
-       classDef gateway fill:#1565c0,stroke:#333333,stroke-width:2px,color:#ffffff
-       classDef service fill:#2e7d32,stroke:#333333,stroke-width:2px,color:#ffffff
-       classDef llm fill:#ef6c00,stroke:#333333,stroke-width:2px,color:#ffffff
+       classDef principal fill:#1565c0,stroke:#333333,stroke-width:2px,color:#ffffff
+       classDef remote fill:#ef6c00,stroke:#333333,stroke-width:2px,color:#ffffff
+       classDef local fill:#2e7d32,stroke:#333333,stroke-width:2px,color:#ffffff
        
        class Client client
-       class Gateway gateway
-       class UserSvc service
-       class LLMSvc llm
+       class Principal principal
+       class RemoteAgent remote
+       class LocalAgent local
 
 **Architecture:**
 
-- **API Gateway**: Entry point, routes requests
-- **User Service**: Validates users, enriches context
-- **LLM Service**: Generates AI responses
+- **Client Application**: Initiates multi-turn conversation with agents
+- **Principal Agent**: Orchestrates calls to research and analysis agents
+- **Research Agent** (Remote): Runs in separate process, receives context via HTTP
+- **Analysis Agent** (Local): Runs in same process, directly inherits context
 
 **Key Learning:**
 
-- How to propagate trace context across services
-- How to inject context into HTTP headers
-- How to extract context from incoming requests
-- How to see unified traces in HoneyHive
+- How to propagate trace context to remote services using HTTP headers
+- How to use ``with_distributed_trace_context()`` for simplified server-side tracing
+- How to create unified traces spanning both local and distributed agents
+- How to see complete request flows in HoneyHive across service boundaries
 
 Prerequisites
 -------------
 
 - Python 3.11+ installed
 - HoneyHive API key from https://app.honeyhive.ai
-- OpenAI API key (or any LLM provider)
-- 20 minutes of time
+- Google Gemini API key (get one at https://aistudio.google.com/apikey)
+- 15 minutes of time
 
 Installation
 ------------
@@ -63,684 +64,543 @@ Install required packages:
 
 .. code-block:: bash
 
-   pip install honeyhive[openinference-openai] flask requests
+   pip install honeyhive google-adk openinference-instrumentation-google-adk flask requests
 
-Step 1: Create the LLM Service
--------------------------------
+Step 1: Set Environment Variables
+----------------------------------
 
-The downstream service that makes LLM calls.
+Create a ``.env`` file with your API keys:
 
-Create ``llm_service.py``:
+.. code-block:: bash
+
+   # Required
+   HH_API_KEY=your_honeyhive_api_key_here
+   HH_PROJECT=distributed-tracing-tutorial
+   GOOGLE_API_KEY=your_google_gemini_api_key_here
+   
+   # Optional
+   AGENT_SERVER_URL=http://localhost:5003
+
+Load environment variables:
+
+.. code-block:: bash
+
+   source .env
+
+Step 2: Create the Agent Server (Remote Service)
+-------------------------------------------------
+
+The remote service that runs a Google ADK research agent.
+
+Create ``agent_server.py``:
 
 .. code-block:: python
 
+   """Google ADK Agent Server - Demonstrates with_distributed_trace_context() helper."""
+   
    from flask import Flask, request, jsonify
-   from honeyhive import HoneyHiveTracer, trace
-   from honeyhive.tracer.processing.context import extract_context_from_carrier
-   from honeyhive.models import EventType
-   from opentelemetry import context
-   import openai
+   from honeyhive import HoneyHiveTracer
+   from honeyhive.tracer.processing.context import with_distributed_trace_context
+   from openinference.instrumentation.google_adk import GoogleADKInstrumentor
+   from google.adk.agents import LlmAgent
+   from google.adk.runners import Runner
+   from google.adk.sessions import InMemorySessionService
+   from google.genai import types
+   import os
    
    # Initialize HoneyHive tracer
    tracer = HoneyHiveTracer.init(
-       project="distributed-tracing-tutorial",
-       source="llm-service"
+       api_key=os.getenv("HH_API_KEY"),
+       project=os.getenv("HH_PROJECT", "distributed-tracing-tutorial"),
+       source="agent-server"
    )
+   
+   # Initialize Google ADK instrumentor
+   instrumentor = GoogleADKInstrumentor()
+   instrumentor.instrument(tracer_provider=tracer.provider)
    
    app = Flask(__name__)
+   session_service = InMemorySessionService()
    
-   @app.route('/generate', methods=['POST'])
-   def generate():
-       """Generate LLM response with distributed trace context."""
+   async def run_agent(user_id: str, query: str, agent_name: str) -> str:
+       """Run Google ADK agent - automatically part of distributed trace."""
        
-       # Step 1: Extract trace context from incoming headers
-       incoming_context = extract_context_from_carrier(dict(request.headers), tracer)
-       
-       # Step 2: Attach context so our spans are children of parent trace
-       if incoming_context:
-           token = context.attach(incoming_context)
-       
-       # Step 3: Create traced operation
-       @trace(tracer=tracer, event_type=EventType.model)
-       def generate_response(user_id: str, prompt: str) -> str:
-           """Generate LLM response - automatically part of distributed trace."""
-           
-           tracer.enrich_span({
-               "service": "llm-service",
-               "user_id": user_id,
-               "prompt_length": len(prompt)
-           })
-           
-           client = openai.OpenAI()
-           response = client.chat.completions.create(
-               model="gpt-3.5-turbo",
-               messages=[{"role": "user", "content": prompt}]
-           )
-           
-           result = response.choices[0].message.content
-           tracer.enrich_span({"response_length": len(result)})
-           
-           return result
-       
-       # Execute traced function
-       data = request.get_json()
-       result = generate_response(data['user_id'], data['prompt'])
-       
-       # Detach context
-       if incoming_context:
-           context.detach(token)
-       
-       return jsonify({"response": result})
-   
-   if __name__ == '__main__':
-       print("🔥 LLM Service starting on port 5002...")
-       app.run(port=5002, debug=True)
-
-**What's happening:**
-
-1. ``extract_context_from_carrier()`` extracts trace context from HTTP headers
-2. ``context.attach()`` makes our spans children of the parent trace
-3. The ``@trace`` decorator automatically uses the attached context
-4. All operations appear in a single unified trace
-
-Step 2: Create the User Service
---------------------------------
-
-The middle service that validates users and calls the LLM service.
-
-Create ``user_service.py``:
-
-.. code-block:: python
-
-   from flask import Flask, request, jsonify
-   from honeyhive import HoneyHiveTracer, trace
-   from honeyhive.tracer.processing.context import (
-       extract_context_from_carrier,
-       inject_context_into_carrier
-   )
-   from honeyhive.models import EventType
-   from opentelemetry import context
-   import requests
-   
-   # Initialize HoneyHive tracer
-   tracer = HoneyHiveTracer.init(
-       project="distributed-tracing-tutorial",
-       source="user-service"
-   )
-   
-   app = Flask(__name__)
-   
-   @app.route('/process', methods=['POST'])
-   def process():
-       """Process user request with distributed tracing."""
-       
-       # Extract context from incoming request
-       incoming_context = extract_context_from_carrier(dict(request.headers), tracer)
-       
-       if incoming_context:
-           token = context.attach(incoming_context)
-       
-       @trace(tracer=tracer, event_type=EventType.chain)
-       def process_user_request(user_id: str, query: str) -> dict:
-           """Validate user and call LLM service."""
-           
-           tracer.enrich_span({
-               "service": "user-service",
-               "user_id": user_id,
-               "operation": "process_request"
-           })
-           
-           # Step 1: Validate user
-           is_valid = validate_user(user_id)
-           
-           if not is_valid:
-               tracer.enrich_span({"validation": "failed"})
-               return {"error": "Invalid user"}
-           
-           tracer.enrich_span({"validation": "passed"})
-           
-           # Step 2: Inject context for downstream service
-           headers = {}
-           inject_context_into_carrier(headers, tracer)
-           
-           # Step 3: Call LLM service with propagated context
-           response = requests.post(
-               "http://localhost:5002/generate",
-               json={"user_id": user_id, "prompt": query},
-               headers=headers  # Trace context in headers
-           )
-           
-           tracer.enrich_span({"downstream_status": response.status_code})
-           
-           return response.json()
-       
-       @trace(tracer=tracer, event_type=EventType.tool)
-       def validate_user(user_id: str) -> bool:
-           """Validate user - appears as child span."""
-           
-           tracer.enrich_span({"operation": "validate_user", "user_id": user_id})
-           
-           # Simulate validation logic
-           valid = user_id.startswith("user_")
-           tracer.enrich_span({"is_valid": valid})
-           
-           return valid
-       
-       # Execute
-       data = request.get_json()
-       result = process_user_request(data['user_id'], data['query'])
-       
-       if incoming_context:
-           context.detach(token)
-       
-       return jsonify(result)
-   
-   if __name__ == '__main__':
-       print("👤 User Service starting on port 5001...")
-       app.run(port=5001, debug=True)
-
-**What's happening:**
-
-1. Extracts context from incoming request (from API Gateway)
-2. Creates traced operations that are children of parent span
-3. Injects context into headers for downstream call
-4. LLM Service receives the same trace context
-
-Step 3: Create the API Gateway
--------------------------------
-
-The entry point that initiates the distributed trace.
-
-Create ``api_gateway.py``:
-
-.. code-block:: python
-
-   from flask import Flask, request, jsonify
-   from honeyhive import HoneyHiveTracer, trace
-   from honeyhive.tracer.processing.context import inject_context_into_carrier
-   from honeyhive.models import EventType
-   import requests
-   
-   # Initialize HoneyHive tracer
-   tracer = HoneyHiveTracer.init(
-       project="distributed-tracing-tutorial",
-       source="api-gateway"
-   )
-   
-   app = Flask(__name__)
-   
-   @app.route('/api/query', methods=['POST'])
-   @trace(tracer=tracer, event_type=EventType.session)
-   def handle_query():
-       """API Gateway - initiates distributed trace."""
-       
-       data = request.get_json()
-       
-       tracer.enrich_span({
-           "service": "api-gateway",
-           "endpoint": "/api/query",
-           "user_id": data.get('user_id'),
-           "client_ip": request.remote_addr
-       })
-       
-       # Inject context into headers for downstream service
-       headers = {}
-       inject_context_into_carrier(headers, tracer)
-       
-       tracer.enrich_span({"propagated_headers": list(headers.keys())})
-       
-       # Call user service with trace context
-       response = requests.post(
-           "http://localhost:5001/process",
-           json=data,
-           headers=headers  # Trace context propagates here
+       # Create research agent
+       agent = LlmAgent(
+           model="gemini-2.0-flash-exp",
+           name=agent_name,
+           description="A research agent that gathers information on topics",
+           instruction="""You are a research assistant. When given a topic, 
+           provide key facts and important information in 2-3 clear sentences.""",
+           output_key="research_findings"
        )
        
-       tracer.enrich_span({
-           "user_service_status": response.status_code,
-           "response_size": len(response.content)
-       })
+       # Create runner and execute
+       runner = Runner(
+           agent=agent,
+           app_name="distributed_agent_demo",
+           session_service=session_service
+       )
        
-       return jsonify(response.json())
+       session_id = tracer.session_id
+       try:
+           await session_service.create_session(
+               app_name="distributed_agent_demo",
+               user_id=user_id,
+               session_id=session_id
+           )
+       except Exception:
+           pass  # Session might already exist
+       
+       user_content = types.Content(
+           role='user',
+           parts=[types.Part(text=query)]
+       )
+       
+       final_response = ""
+       async for event in runner.run_async(
+           user_id=user_id,
+           session_id=session_id,
+           new_message=user_content
+       ):
+           if event.is_final_response() and event.content and event.content.parts:
+               final_response = event.content.parts[0].text
+       
+       return final_response or ""
    
-   if __name__ == '__main__':
-       print("🌐 API Gateway starting on port 5000...")
-       app.run(port=5000, debug=True)
+   @app.route("/agent/invoke", methods=["POST"])
+   async def invoke_agent():
+       """Invoke agent with distributed tracing - ONE LINE setup!"""
+       
+       # 🎯 Single line replaces ~65 lines of context management boilerplate
+       with with_distributed_trace_context(dict(request.headers), tracer):
+           # All Google ADK spans created here automatically:
+           # 1. Link to the client's trace (same trace_id)
+           # 2. Use the client's session_id, project, source
+           # 3. Appear as children of the client's call_agent_1 span
+           
+           try:
+               data = request.get_json()
+               result = await run_agent(
+                   data.get("user_id", "default_user"),
+                   data.get("query", ""),
+                   data.get("agent_name", "research_agent")
+               )
+               return jsonify({
+                   "response": result,
+                   "agent": data.get("agent_name", "research_agent")
+               })
+           except Exception as e:
+               return jsonify({"error": str(e)}), 500
+   
+   if __name__ == "__main__":
+       print("🤖 Agent Server starting on port 5003...")
+       app.run(port=5003, debug=True, use_reloader=False)
 
 **What's happening:**
 
-1. ``@trace`` decorator creates the root span
-2. ``inject_context_into_carrier()`` adds trace context to headers
-3. User Service receives these headers and continues the trace
-4. Entire request flow appears as single unified trace
+1. ``with_distributed_trace_context()`` automatically:
+   - Extracts trace context from HTTP headers
+   - Parses ``session_id``, ``project``, ``source`` from baggage
+   - Attaches context so all spans link to client's trace
+   - Handles cleanup (even on exceptions)
+   
+2. Google ADK instrumentor automatically creates child spans for agent operations
+
+3. **Result**: All agent spans appear in the same unified trace as the client
+
+**Key benefit**: ONE LINE (``with_distributed_trace_context``) replaces ~65 lines of manual context extraction, baggage parsing, context attachment, and cleanup code.
+
+Step 3: Create the Client Application
+--------------------------------------
+
+The client orchestrates both remote and local agent calls.
+
+Create ``client_app.py``:
+
+.. code-block:: python
+
+   """Client Application - Orchestrates remote and local agent calls."""
+   
+   import asyncio
+   import os
+   from typing import Any
+   import requests
+   
+   from google.adk.sessions import InMemorySessionService
+   from google.adk.agents import LlmAgent
+   from google.adk.runners import Runner
+   from google.genai import types
+   
+   from honeyhive import HoneyHiveTracer, trace
+   from openinference.instrumentation.google_adk import GoogleADKInstrumentor
+   from honeyhive.tracer.processing.context import (
+       enrich_span_context,
+       inject_context_into_carrier
+   )
+   
+   # Initialize HoneyHive tracer
+   tracer = HoneyHiveTracer.init(
+       api_key=os.getenv("HH_API_KEY"),
+       project=os.getenv("HH_PROJECT", "distributed-tracing-tutorial"),
+       source="client-app"
+   )
+   
+   # Initialize Google ADK instrumentor (for local agent calls)
+   instrumentor = GoogleADKInstrumentor()
+   instrumentor.instrument(tracer_provider=tracer.provider)
+   
+   async def main():
+       """Main entry point - demonstrates multi-turn conversation."""
+       session_service = InMemorySessionService()
+       app_name = "distributed_agent_demo"
+       user_id = "demo_user"
+       
+       # Execute two user calls (multi-turn conversation)
+       await user_call(session_service, app_name, user_id,
+                      "Explain the benefits of renewable energy")
+       await user_call(session_service, app_name, user_id,
+                      "What are the main challenges?")
+   
+   @trace(event_type="chain", event_name="user_call")
+   async def user_call(
+       session_service: Any,
+       app_name: str,
+       user_id: str,
+       user_query: str
+   ) -> str:
+       """User entry point - initiates the agent workflow."""
+       result = await call_principal(
+           session_service,
+           app_name,
+           user_id,
+           user_query,
+           os.getenv("AGENT_SERVER_URL", "http://localhost:5003")
+       )
+       return result
+   
+   @trace(event_type="chain", event_name="call_principal")
+   async def call_principal(
+       session_service: Any,
+       app_name: str,
+       user_id: str,
+       query: str,
+       agent_server_url: str
+   ) -> str:
+       """Principal agent - orchestrates remote and local agents."""
+       
+       # Agent 1: Research (REMOTE - distributed tracing)
+       agent_1_result = await call_agent(
+           session_service, app_name, user_id, query,
+           use_research_agent=True, agent_server_url=agent_server_url
+       )
+       
+       # Agent 2: Analysis (LOCAL - same process)
+       agent_2_result = await call_agent(
+           session_service, app_name, user_id, agent_1_result,
+           use_research_agent=False, agent_server_url=agent_server_url
+       )
+       
+       return f"Research: {agent_1_result}\n\nAnalysis: {agent_2_result}"
+   
+   async def call_agent(
+       session_service: Any,
+       app_name: str,
+       user_id: str,
+       query: str,
+       use_research_agent: bool,
+       agent_server_url: str
+   ) -> str:
+       """Call agent - demonstrates mixed invocation patterns."""
+       
+       if use_research_agent:
+           # REMOTE invocation: Call agent server via HTTP
+           with enrich_span_context(
+               event_name="call_agent_1",
+               inputs={"query": query}
+           ):
+               # Inject trace context into HTTP headers
+               headers = {}
+               inject_context_into_carrier(headers, tracer)
+               
+               # HTTP call to remote agent server
+               response = requests.post(
+                   f"{agent_server_url}/agent/invoke",
+                   json={
+                       "user_id": user_id,
+                       "query": query,
+                       "agent_name": "research_agent"
+                   },
+                   headers=headers,  # Trace context propagates here!
+                   timeout=60
+               )
+               response.raise_for_status()
+               result = response.json().get("response", "")
+               
+               tracer.enrich_span(
+                   outputs={"response": result},
+                   metadata={"mode": "remote"}
+               )
+               return result
+       
+       else:
+           # LOCAL invocation: Run agent in same process
+           with enrich_span_context(
+               event_name="call_agent_2",
+               inputs={"research": query}
+           ):
+               # Create local analysis agent
+               agent = LlmAgent(
+                   model="gemini-2.0-flash-exp",
+                   name="analysis_agent",
+                   description="Analysis agent",
+                   instruction=f"Analyze: {query}\n\nProvide 2-3 sentence analysis."
+               )
+               
+               # Run locally with Google ADK
+               runner = Runner(
+                   agent=agent,
+                   app_name=app_name,
+                   session_service=session_service
+               )
+               session_id = tracer.session_id
+               
+               try:
+                   await session_service.create_session(
+                       app_name=app_name,
+                       user_id=user_id,
+                       session_id=session_id
+                   )
+               except Exception:
+                   pass  # Session might already exist
+               
+               user_content = types.Content(
+                   role='user',
+                   parts=[types.Part(text=f"Analyze: {query[:500]}")]
+               )
+               
+               result = ""
+               async for event in runner.run_async(
+                   user_id=user_id,
+                   session_id=session_id,
+                   new_message=user_content
+               ):
+                   if event.is_final_response() and event.content and event.content.parts:
+                       result = event.content.parts[0].text or ""
+               
+               tracer.enrich_span(
+                   outputs={"response": result},
+                   metadata={"mode": "local"}
+               )
+               return result
+   
+   if __name__ == "__main__":
+       asyncio.run(main())
+
+**What's happening:**
+
+**Client Side** (Context Injection):
+
+1. ``@trace`` decorators create traced functions
+2. ``enrich_span_context()`` creates explicit spans for each agent call
+3. ``inject_context_into_carrier()`` adds trace context to HTTP headers
+4. Headers are sent with the HTTP request to the agent server
+
+**Server Side** (Context Extraction):
+
+5. Agent server uses ``with_distributed_trace_context()`` to extract context
+6. All Google ADK spans on server inherit the client's context
+7. Spans from both client and server appear in same unified trace
+
+**Mixed Invocation**:
+
+- **Agent 1 (Remote)**: Calls agent server via HTTP, demonstrating distributed tracing
+- **Agent 2 (Local)**: Runs in same process, demonstrating local span nesting
 
 Step 4: Run and Test
 --------------------
 
-**Terminal 1** - Start LLM Service:
+**Terminal 1** - Start the Agent Server:
 
 .. code-block:: bash
 
-   python llm_service.py
+   source .env
+   python agent_server.py
 
-**Terminal 2** - Start User Service:
+You should see:
 
-.. code-block:: bash
+.. code-block:: text
 
-   python user_service.py
+   🤖 Agent Server starting on port 5003...
+   * Running on http://127.0.0.1:5003
 
-**Terminal 3** - Start API Gateway:
-
-.. code-block:: bash
-
-   python api_gateway.py
-
-**Terminal 4** - Test the distributed trace:
+**Terminal 2** - Run the Client Application:
 
 .. code-block:: bash
 
-   curl -X POST http://localhost:5000/api/query \
-     -H "Content-Type: application/json" \
-     -d '{"user_id": "user_123", "query": "Explain distributed tracing"}'
+   source .env
+   python client_app.py
 
-**Expected response:**
+You should see the client making two user calls (multi-turn conversation):
 
-.. code-block:: json
+.. code-block:: text
 
-   {
-     "response": "Distributed tracing is a method..."
-   }
+   Research: Renewable energy sources, such as solar, wind, and hydropower...
+   
+   Analysis: The transition to renewable energy requires addressing...
+
+**What's Happening:**
+
+1. Client makes first ``user_call`` asking about benefits of renewable energy
+2. ``call_principal`` orchestrates two agents:
+   - **Agent 1** (Remote): HTTP call to agent server → research findings
+   - **Agent 2** (Local): Runs in same process → analyzes research
+3. Client makes second ``user_call`` asking about challenges
+4. Same flow repeats for the second question
+5. **All spans** from both calls appear in same HoneyHive session
 
 Step 5: View in HoneyHive
 --------------------------
 
 1. Go to https://app.honeyhive.ai
 2. Navigate to project: ``distributed-tracing-tutorial``
-3. Click "Traces" in the left sidebar
-4. Find your trace - you'll see:
+3. Click "Sessions" in the left sidebar
+4. Find your session - you'll see:
 
-**Unified Trace Hierarchy:**
+**Unified Trace Hierarchy (First User Call):**
 
 .. code-block:: text
 
-   📊 handle_query (api-gateway) [ROOT]
-   ├── 👤 process_user_request (user-service)
-   │   ├── ✓ validate_user (user-service)
-   │   └── 🤖 generate_response (llm-service)
-   │       └── 💬 openai.chat.completions.create
+   📊 user_call [ROOT]
+   └── 🔗 call_principal
+       ├── 🌐 call_agent_1 (Remote - Process B)
+       │   └── 🤖 agent_run [research_agent] (on server)
+       │       └── 💬 gemini_chat_completion (Google ADK instrumentation)
+       └── 📍 call_agent_2 (Local - Process A)
+           └── 🤖 agent_run [analysis_agent] (same process)
+               └── 💬 gemini_chat_completion (Google ADK instrumentation)
 
 **Key observations:**
 
-- Single trace ID across all three services
-- Parent-child relationships preserved
-- Service names show where each span originated
-- Timing shows bottlenecks (LLM call is slowest)
-- All metadata enriched at each step
+- **Single session across all operations** (both user calls in same session)
+- **Parent-child relationships preserved** across service boundaries
+- **call_agent_1** (remote) shows HTTP call to agent server
+- **call_agent_2** (local) shows in-process agent execution
+- **Google ADK spans** (``agent_run``, ``gemini_chat_completion``) automatically captured
+- **Source attribution**: 
+  - ``client-app`` for client-side spans
+  - ``agent-server`` for server-side spans
+- **All metadata enriched**: inputs, outputs, mode (remote/local)
 
 What You Learned
 ----------------
 
-✅ **Context Propagation**
+✅ **Simplified Distributed Tracing (v1.0+)**
 
-- How to inject trace context into HTTP headers
-- How to extract context from incoming requests
-- How to attach context so spans become children
+- **Server-side**: ``with_distributed_trace_context()`` - ONE LINE replaces ~65 lines of boilerplate
+- **Client-side**: ``inject_context_into_carrier()`` - Add trace context to HTTP headers
+- Automatic baggage extraction (``session_id``, ``project``, ``source``)
+- Thread-safe context isolation per request
 
-✅ **Distributed Architecture**
+✅ **Mixed Invocation Patterns**
 
-- Multi-service tracing with Flask
-- Propagating context through service mesh
-- Maintaining trace hierarchy across services
+- **Remote agents**: HTTP calls with context propagation
+- **Local agents**: In-process execution with automatic context inheritance
+- Both patterns unified in same trace
+- Google ADK instrumentor automatically captures agent operations
 
-✅ **HoneyHive APIs**
+✅ **Key HoneyHive APIs Used**
 
-- ``inject_context_into_carrier(headers, tracer)`` - Add context to headers
-- ``extract_context_from_carrier(headers, tracer)`` - Extract context from headers
-- ``context.attach(ctx)`` - Make spans children of parent trace
-- ``tracer.enrich_span()`` - Instance method for explicit tracer enrichment (v1.0 primary API)
+- ``inject_context_into_carrier(headers, tracer)`` - Client-side: inject context into HTTP headers
+- ``with_distributed_trace_context(headers, tracer)`` - Server-side: extract and attach context (RECOMMENDED)
+- ``enrich_span_context(event_name, inputs, outputs)`` - Create enriched spans with explicit names
+- ``tracer.enrich_span(outputs, metadata)`` - Add attributes to current span
+- ``@trace`` decorator - Automatic function tracing (preserves distributed baggage v1.0+)
 
 ✅ **Practical Skills**
 
-- Debugging multi-service flows
+- Tracing multi-service AI agent systems
+- Debugging distributed agent workflows
 - Finding performance bottlenecks across services
-- Understanding request journeys end-to-end
-
-Alternative Pattern: Middleware with Session ID
-------------------------------------------------
-
-If you prefer not to use ``context.attach()``, you can explicitly set the session ID in middleware instead:
-
-**Advantages:**
-
-- ✅ More explicit control over session management
-- ✅ Simpler mental model (no context manipulation)
-- ✅ Works well with existing middleware patterns
-- ✅ Easier to debug (explicit session IDs in logs)
-
-**How it works:**
-
-Instead of attaching context, extract the session ID from headers and initialize the tracer with it.
-
-**Example: FastAPI Middleware**
-
-.. code-block:: python
-
-   from fastapi import FastAPI, Request
-   from honeyhive import HoneyHiveTracer, trace
-   import os
-   
-   app = FastAPI()
-   
-   @app.middleware("http")
-   async def tracing_middleware(request: Request, call_next):
-       # Extract session ID from headers (sent by upstream service)
-       session_id = request.headers.get("X-HoneyHive-Session-ID")
-       
-       if session_id:
-           # Initialize tracer with the propagated session ID
-           tracer = HoneyHiveTracer.init(
-               api_key=os.getenv("HH_API_KEY"),
-               project="distributed-app",
-               session_id=session_id  # Explicit session ID
-           )
-           
-           # Store tracer for use in request handlers
-           request.state.tracer = tracer
-       
-       response = await call_next(request)
-       return response
-   
-   @app.post("/process")
-   @trace(event_type="chain", event_name="user_process")
-   async def process(request: Request, data: dict):
-       # Access tracer from request state
-       tracer = request.state.tracer
-       
-       tracer.enrich_span({
-           "service": "user-service",
-           "user_id": data.get("user_id")
-       })
-       
-       # Call downstream service, passing session ID
-       import httpx
-       async with httpx.AsyncClient() as client:
-           response = await client.post(
-               "http://llm-service:5002/generate",
-               json=data,
-               headers={
-                   "X-HoneyHive-Session-ID": tracer.session_id
-               }
-           )
-       
-       return response.json()
-
-**Example: Flask Middleware**
-
-.. code-block:: python
-
-   from flask import Flask, request, g
-   from honeyhive import HoneyHiveTracer, trace
-   import os
-   
-   app = Flask(__name__)
-   
-   @app.before_request
-   def before_request():
-       # Extract session ID from headers
-       session_id = request.headers.get("X-HoneyHive-Session-ID")
-       
-       if session_id:
-           # Initialize tracer with propagated session ID
-           g.tracer = HoneyHiveTracer.init(
-               api_key=os.getenv("HH_API_KEY"),
-               project="distributed-app",
-               session_id=session_id
-           )
-   
-   @app.route("/process", methods=["POST"])
-   @trace(event_type="chain", event_name="process_request")
-   def process():
-       tracer = g.tracer
-       
-       tracer.enrich_span({
-           "service": "gateway",
-           "endpoint": "/process"
-       })
-       
-       # Process and return
-       return {"status": "success"}
-
-**Key differences from context.attach():**
-
-+----------------------------+----------------------------------+----------------------------------+
-| **Aspect**                 | **context.attach() Pattern**     | **Session ID Middleware Pattern**|
-+============================+==================================+==================================+
-| **Complexity**             | Uses OpenTelemetry context API   | Simple session ID passing        |
-+----------------------------+----------------------------------+----------------------------------+
-| **Explicitness**           | Implicit context inheritance     | Explicit session ID management   |
-+----------------------------+----------------------------------+----------------------------------+
-| **Debugging**              | Harder (context in thread-local) | Easier (session ID in headers)   |
-+----------------------------+----------------------------------+----------------------------------+
-| **Flexibility**            | Standard OpenTelemetry approach  | Framework-specific middleware    |
-+----------------------------+----------------------------------+----------------------------------+
-| **Best for**               | Complex distributed systems      | Simpler multi-service apps       |
-+----------------------------+----------------------------------+----------------------------------+
-
-Simplified Pattern: with_distributed_trace_context() (Recommended)
--------------------------------------------------------------------
-
-**New in v1.0+:** HoneyHive provides a context manager that simplifies server-side distributed tracing.
-
-**The Problem with Manual Context Management**
-
-The manual ``context.attach()`` / ``context.detach()`` pattern shown above requires ~65 lines of boilerplate code per service:
-
-.. code-block:: python
-
-   # Manual pattern (verbose)
-   from opentelemetry import context, baggage
-   
-   incoming_context = extract_context_from_carrier(dict(request.headers), tracer)
-   
-   # Extract session_id from baggage header
-   baggage_header = request.headers.get('baggage')
-   session_id = None
-   if baggage_header:
-       for item in baggage_header.split(','):
-           if '=' in item:
-               key, value = item.split('=', 1)
-               if key.strip() in ('session_id', 'honeyhive_session_id'):
-                   session_id = value.strip()
-   
-   # Set up context with session_id
-   context_to_use = incoming_context if incoming_context else context.get_current()
-   if session_id:
-       context_to_use = baggage.set_baggage("session_id", session_id, context_to_use)
-   
-   # Attach context
-   token = context.attach(context_to_use)
-   try:
-       # Your business logic here
-       pass
-   finally:
-       context.detach(token)
-
-**The Solution: with_distributed_trace_context()**
-
-This helper reduces the boilerplate to a single line:
-
-.. code-block:: python
-
-   from honeyhive.tracer.processing.context import with_distributed_trace_context
-   
-   @app.route("/generate", methods=["POST"])
-   def generate():
-       """Server endpoint with distributed tracing - simplified!"""
-       
-       # 🎯 ONE LINE replaces ~65 lines of boilerplate
-       with with_distributed_trace_context(dict(request.headers), tracer):
-           # All spans created here automatically inherit the distributed trace context
-           with tracer.start_span("generate_response"):
-               # Your business logic
-               result = do_work()
-               return jsonify({"response": result})
-
-**What it Does**
-
-The helper automatically:
-
-1. **Extracts trace context** from HTTP headers (using OpenTelemetry propagators)
-2. **Parses HoneyHive baggage** (``session_id``, ``project``, ``source``)
-3. **Attaches context** so all spans become children of the parent trace
-4. **Cleans up** on exit (even if exceptions occur)
-5. **Thread-safe** - each request gets isolated context
-
-**Complete Example with Helper**
-
-.. code-block:: python
-
-   from flask import Flask, request, jsonify
-   from honeyhive import HoneyHiveTracer
-   from honeyhive.tracer.processing.context import with_distributed_trace_context
-   
-   tracer = HoneyHiveTracer.init(
-       project="distributed-tracing",
-       source="llm-service"
-   )
-   
-   app = Flask(__name__)
-   
-   @app.route("/generate", methods=["POST"])
-   def generate():
-       """Generate LLM response - simplified distributed tracing."""
-       
-       # Single line for distributed tracing setup
-       with with_distributed_trace_context(dict(request.headers), tracer):
-           # All spans here automatically use the client's session_id
-           with tracer.start_span("generate_llm_response") as span:
-               data = request.get_json()
-               
-               # Enrich span
-               span.set_attribute("user_id", data['user_id'])
-               span.set_attribute("prompt_length", len(data['prompt']))
-               
-               # Call LLM (instrumentor will create child spans)
-               result = call_llm(data['prompt'])
-               
-               span.set_attribute("response_length", len(result))
-               
-               return jsonify({"response": result})
-
-**Benefits**
-
-✅ **Concise**: 1 line vs 65 lines of context management  
-✅ **Thread-safe**: Automatic context isolation per request  
-✅ **Works with async**: Handles ``asyncio.run()`` edge cases  
-✅ **Automatic cleanup**: Context detached even on exceptions  
-✅ **Baggage preservation**: Respects client's ``session_id``, ``project``, ``source``
-
-**Works with @trace Decorator**
-
-The helper works seamlessly with the ``@trace`` decorator:
-
-.. code-block:: python
-
-   from honeyhive import trace
-   
-   @app.route("/process", methods=["POST"])
-   def process():
-       with with_distributed_trace_context(dict(request.headers), tracer):
-           # Decorator automatically uses the distributed context
-           return process_request()
-   
-   @trace(event_type="chain", event_name="process_request")
-   def process_request():
-       # This span is now part of the distributed trace!
-       return {"status": "success"}
-
-.. note::
-   **v1.0+ Improvement**: The ``@trace`` decorator now preserves existing baggage from distributed traces instead of overwriting it with local tracer defaults. This means you no longer need to manually set baggage in decorated functions.
-
-.. tip::
-   **Choosing the Right Pattern:**
-   
-   **Use with_distributed_trace_context() (Recommended):**
-   
-   - ✅ Modern Python applications (v1.0+)
-   - ✅ You want minimal boilerplate
-   - ✅ Thread-safe distributed tracing
-   - ✅ Works with Flask, FastAPI, Django, etc.
-   - ✅ Automatic baggage handling
-   
-   **Use Session ID middleware:**
-   
-   - You find context management confusing
-   - You want explicit control over session boundaries
-   - You already have middleware for other purposes
-   - You're building a simpler multi-service app (2-3 services)
-   
-   **Use manual context.attach():**
-   
-   - You need fine-grained control over context lifecycle
-   - You're integrating with other OpenTelemetry tools
-   - You have custom context propagation requirements
+- Understanding agent interaction patterns end-to-end
 
 Troubleshooting
 ---------------
 
-**Problem: Traces appear as separate traces, not unified**
+**Problem: Remote agent spans don't appear in the trace**
 
-**Solution:** Check that:
+**Solution**: Check that context is being properly injected and extracted:
 
 .. code-block:: python
 
-   # In calling service: inject context
+   # Client side: Must inject context into headers
    headers = {}
    inject_context_into_carrier(headers, tracer)
-   requests.post(url, headers=headers)  # Must pass headers!
+   response = requests.post(url, json=data, headers=headers)  # headers required!
    
-   # In receiving service: extract and attach
-   incoming_context = extract_context_from_carrier(request.headers, tracer)
-   if incoming_context:
-       token = context.attach(incoming_context)
+   # Server side: Use with_distributed_trace_context() helper
+   with with_distributed_trace_context(dict(request.headers), tracer):
+       # All spans created here will link to client's trace
+       result = await run_agent(...)
 
-**Problem: Headers not propagating**
+**Problem: Agent server shows "Connection refused"**
 
-**Solution:** Verify Flask passes headers correctly:
+**Solution**: Ensure the agent server is running:
+
+.. code-block:: bash
+
+   # Terminal 1
+   source .env
+   python agent_server.py
+   
+   # Wait for: "🤖 Agent Server starting on port 5003..."
+
+**Problem: Missing GOOGLE_API_KEY error**
+
+**Solution**: Set your Google Gemini API key:
+
+.. code-block:: bash
+
+   # In .env file
+   GOOGLE_API_KEY=your_google_api_key_here
+   
+   # Reload
+   source .env
+
+**Problem: Server and client show different projects in HoneyHive**
+
+**Solution**: Both must use the same project name:
 
 .. code-block:: python
 
-   # Convert Flask headers to dict
-   headers_dict = dict(request.headers)
-   incoming_context = extract_context_from_carrier(headers_dict, tracer)
-
-**Problem: Services show different projects**
-
-**Solution:** All services should use the same project:
-
-.. code-block:: python
-
-   # Same project name in all three services
+   # In both agent_server.py and client_app.py
    tracer = HoneyHiveTracer.init(
        project="distributed-tracing-tutorial",  # Must match!
-       source="service-name"  # Can differ per service
+       source="agent-server"  # Can differ per service
    )
 
 Next Steps
 ----------
 
-**Expand your distributed tracing:**
+**Explore more Google ADK integrations:**
 
-- :doc:`../how-to/advanced-tracing/advanced-patterns` - Additional patterns
-- :doc:`../how-to/advanced-tracing/span-enrichment` - Enrich traces with metadata
-- :doc:`../explanation/concepts/tracing-fundamentals` - Deep dive into concepts
+- Try different Google ADK agents (planning, execution, tool-using agents)
+- Add more remote services to the distributed trace
+- Experiment with different agent orchestration patterns
 
 **Production considerations:**
 
-- :doc:`../how-to/deployment/production` - Production deployment patterns
-- Add service mesh (Istio, Linkerd) for automatic propagation
-- Implement sampling for high-traffic services
-- Add health checks and monitoring
+- Add error handling and retry logic for remote calls
+- Implement timeouts for agent invocations
+- Add monitoring and health checks for agent servers
+- Consider using async HTTP clients (``httpx``, ``aiohttp``) for better performance
+- Implement sampling for high-traffic production systems
 
-**Key Takeaway:** Distributed tracing unifies your view across services, making debugging and optimization dramatically easier. You can now trace requests from entry point to LLM call and back. 🎉
+**Key resources:**
+
+- :doc:`../reference/api/utilities` - Full API reference for distributed tracing utilities
+- :doc:`custom-spans` - Learn about ``enrich_span_context()`` and span enrichment
+- `Google ADK Documentation <https://github.com/google/genkit>`_ - Learn more about Google ADK
+
+**Key Takeaway:** With ``with_distributed_trace_context()``, distributed tracing is now a ONE LINE operation on the server side. You can trace complex multi-agent systems across process boundaries with minimal code. 🎉
 
