@@ -1,0 +1,30 @@
+# Gate Definition - Phase 1: Definition Import & Validation
+# Created: 2025-10-20
+# Purpose: Validate workflow definition loaded and valid
+
+checkpoint:
+  strict: false
+  allow_override: true
+
+evidence_schema:
+  definition_path:
+    type: string
+    required: true
+    description: "Path to workflow definition file"
+
+  definition_valid:
+    type: boolean
+    required: true
+    description: "All validation checks passed"
+
+  total_target_phases:
+    type: integer
+    required: true
+    description: "Number of phases in target workflow"
+
+  total_target_tasks:
+    type: integer
+    required: true
+    description: "Total tasks across all target phases"
+
+validators: {}

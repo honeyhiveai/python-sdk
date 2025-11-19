@@ -1,0 +1,243 @@
+# .praxis-os/config/index_config.yaml
+
+# ============================================================================
+# RAG Search Configuration
+# ============================================================================
+# This file controls how prAxIs OS searches your project's standards and code.
+# You don't need to understand the internals - just enable what you want.
+#
+# TL;DR:
+# - standards: Search your documentation/standards (markdown files)
+# - code: Search your actual source code (Python, TS, etc.)
+#
+# All features are FREE (zero API cost, runs locally)
+# All search features are LanceDB native - no external libraries!
+
+# ============================================================================
+# Why Both Vector AND Keyword Search? (Hybrid Search)
+# ============================================================================
+# Each search method catches different things. Together = better results.
+#
+# Vector Search (Semantic) is good at:
+#   Query: "where do I edit source files during development?"
+#   Finds: "file modification locations", "local iteration workflow"
+#   → Matches by MEANING, even if words are different
+#
+# FTS / Keyword Search (BM25-based, LanceDB native!) is good at:
+#   Query: "MCP server startup"
+#   Finds: Docs with EXACT phrase "MCP server" (not "service" or "daemon")
+#   → Matches by EXACT WORDS in your query
+#
+# Keyword ONLY finds exact terms, Vector ONLY finds concepts.
+# HYBRID finds both sets, merges them = complete answer!
+#
+# Bottom line: Vector catches concepts, keyword catches terminology.
+#              Hybrid = best of both worlds.
+
+indexes:
+  # ===========================================================================
+  # STANDARDS SEARCH (Documentation / Markdown Files)
+  # ===========================================================================
+  # Search your prAxIs OS standards, docs, and markdown files.
+  # Uses hybrid vector + keyword search + metadata filtering.
+  #
+  # Example: pos_search(content_type="standards", query="workflow gates")
+  standards:
+    enabled: true
+
+    source_paths:
+      - standards/  # All your standards (universal + project)
+
+    file_patterns:
+      - "*.md"  # Only index markdown files
+
+    # -------------------------------------------------------------------------
+    # Vector Search (Semantic/Meaning-Based)
+    # -------------------------------------------------------------------------
+    # Finds documents by MEANING, not exact words.
+    # Cost: Zero (runs locally), Speed: ~50-100ms, Storage: ~134MB model
+    vector:
+      enabled: true
+
+      # Which AI model to use for understanding meaning
+      # - BAAI/bge-small-en-v1.5: DEFAULT - Good balance (134MB, fast)
+      # - BAAI/bge-base-en-v1.5: Better accuracy (438MB, medium)
+      # - BAAI/bge-large-en-v1.5: Best accuracy (1.3GB, slow)
+      model: BAAI/bge-small-en-v1.5  # MIT licensed, zero cost
+
+      # Chunking: Split docs into smaller pieces for better search
+      # chunk_size: ~500 tokens (2-3 paragraphs)
+      # chunk_overlap: 50 tokens (~1-2 sentences) to prevent concept splitting
+      chunk_size: 500
+      chunk_overlap: 50
+
+    # -------------------------------------------------------------------------
+    # Full-Text Search (Keyword/Exact Word Matching)
+    # -------------------------------------------------------------------------
+    # Finds documents by EXACT WORDS. LanceDB native BM25-based FTS.
+    # Cost: Zero, Speed: ~10-20ms, Storage: ~10MB
+    fts:
+      enabled: true
+      with_position: false      # Phrase queries disabled (faster, smaller)
+      stem: true                # "running" → "run" (better recall)
+      remove_stop_words: true   # Remove "the", "a", "is" (better precision)
+      ascii_folding: true       # "café" → "cafe" (international text)
+      max_token_length: 40      # Filter out base64, long URLs
+
+    # -------------------------------------------------------------------------
+    # Metadata Filtering (Filter by Topic Before Searching)
+    # -------------------------------------------------------------------------
+    # Pre-filter by domain/phase/role for faster, more accurate results.
+    # Uses LanceDB scalar indexes (BTREE/BITMAP) for sub-ms filtering.
+    # Cost: Zero, Speed: <1ms, Storage: ~1-5MB
+    metadata:
+      enabled: true
+
+      # Scalar indexes (LanceDB native)
+      scalar_indexes:
+        - column: domain
+          index_type: btree    # High cardinality (many unique values)
+        - column: phase
+          index_type: bitmap   # Low cardinality (8 phases: 1-8)
+        - column: role
+          index_type: bitmap   # Few roles: agent, human, framework
+        - column: audience
+          index_type: btree    # Medium-high cardinality
+
+      # How to generate metadata
+      auto_generate: true   # Extract from headers/keywords (zero cost)
+      llm_enhance: false    # Optional: Better metadata (costs money)
+
+  # ===========================================================================
+  # CODE SEARCH (Source Code / AST-Based)
+  # ===========================================================================
+  # Search your actual project source code using Abstract Syntax Tree parsing.
+  # Find functions, classes, implementations - verify docs against reality!
+  #
+  # Example: pos_search(content_type="code", query="StateManager initialization")
+  code:
+    enabled: true
+
+    # Auto-install missing Tree-sitter parsers on server startup
+    # When enabled, server will automatically pip install tree-sitter-{language}
+    # for any configured language that's missing. Disable for air-gapped environments.
+    auto_install_parsers: true
+
+    source_paths:
+      - mcp_server/   # Index the local .praxis-os/mcp_server installation
+
+    # What to exclude (config-driven flexibility!)
+    exclude_patterns:
+      - "**/tests/**"        # Skip test files (separation of concerns)
+      - "*/node_modules/*"   # Don't index dependencies
+      - "*/__pycache__/*"    # Don't index Python cache
+      - "*/venv/*"           # Don't index virtual env
+      - "*/dist/*"           # Don't index build output
+      - "*/build/*"
+      - "*/htmlcov/*"        # Don't index coverage reports
+      - "*/.coverage*"       # Don't index coverage data files
+
+    # -------------------------------------------------------------------------
+    # Language Configurations (Fully Config-Driven!)
+    # -------------------------------------------------------------------------
+    # Each language specifies:
+    # - file_extensions: Which files belong to this language
+    # - node_types: Tree-sitter AST node type → symbol type mapping
+    #
+    # To add a new language:
+    # 1. Add config below
+    # 2. Install parser: pip install tree-sitter-{language}
+    # 3. Restart server - that's it!
+    languages:
+      python:
+        file_extensions: [".py", ".pyx", ".pyi"]
+        node_types:
+          function_definition: function
+          class_definition: class
+          async_function_definition: function
+
+      javascript:
+        file_extensions: [".js", ".mjs", ".cjs", ".jsx"]
+        node_types:
+          function_declaration: function
+          class_declaration: class
+          method_definition: method
+          arrow_function: function
+
+      typescript:
+        file_extensions: [".ts", ".tsx"]
+        node_types:
+          function_declaration: function
+          class_declaration: class
+          method_definition: method
+          arrow_function: function
+
+      go:
+        file_extensions: [".go"]
+        node_types:
+          function_declaration: function
+          method_declaration: method
+          type_declaration: class  # Structs/interfaces as "class"
+
+      rust:
+        file_extensions: [".rs"]
+        node_types:
+          function_item: function
+          struct_item: class
+          impl_item: class
+          trait_item: class
+
+    # -------------------------------------------------------------------------
+    # Query Performance Tuning
+    # -------------------------------------------------------------------------
+    query_strategy:
+      parallel_threshold: 3      # Use parallel queries for 4+ languages
+      max_workers: 10            # Max parallel query threads
+      overfetch_multiplier: 5    # Fetch 5x results for symbol_type filtering
+
+# ============================================================================
+# Search Strategy Configuration
+# ============================================================================
+# How different search methods are combined for best results
+
+retrieval:
+  # ---------------------------------------------------------------------------
+  # Hybrid Search (Combine FTS + Vector)
+  # ---------------------------------------------------------------------------
+  # Merges keyword + semantic results using Reciprocal Rank Fusion (RRF).
+  # Standard algorithm, works well, no tuning needed.
+  fusion_strategy: reciprocal_rank
+
+  # ---------------------------------------------------------------------------
+  # Re-Ranking (Improve Top Results)
+  # ---------------------------------------------------------------------------
+  # After initial search, re-score top N results with cross-encoder for
+  # better accuracy. +20ms per query but worth it for better results.
+  rerank:
+    enabled: true
+    model: cross-encoder/ms-marco-MiniLM-L-6-v2  # Fast, accurate
+    top_n: 10  # Re-rank top 10 candidates
+
+# ============================================================================
+# File Monitoring (Auto-Rebuild on Changes)
+# ============================================================================
+# Watches source files and automatically rebuilds indexes when changed.
+# Per-content-type debouncing prevents rebuild storms.
+
+monitoring:
+  file_watcher:
+    enabled: true
+
+    # Per-content-type monitoring with independent debouncing
+    watched_content:
+      standards:
+        paths: [standards/]
+        patterns: ["*.md"]
+        exclude: ["**/node_modules/**", "**/.git/**"]
+        debounce_seconds: 2.0
+
+      code:
+        paths: [mcp_server/]
+        patterns: ["*.py"]
+        exclude: ["**/tests/**", "**/__pycache__/**", "**/venv/**"]
+        debounce_seconds: 3.0

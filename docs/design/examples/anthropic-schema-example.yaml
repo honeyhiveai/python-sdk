@@ -1,0 +1,309 @@
+# Anthropic Instrumentation Schema (Example)
+# Shows how schemas differ per provider while maintaining consistency
+
+library:
+  name: "anthropic"
+  import_path: "anthropic"
+  version_constraint: ">=0.18.0"
+  description: "Anthropic Python SDK instrumentation"
+
+metadata:
+  maintainer: "agent-os"
+  last_updated: "2025-10-15"
+  api_version: "v1"
+  semantic_conventions:
+    - "gen_ai"
+
+targets:
+  # ============================================================================
+  # Target 1: Messages API (Non-Streaming)
+  # ============================================================================
+  - target_id: "messages_create"
+    description: "Instrument synchronous messages API calls"
+
+    location:
+      module: "anthropic.resources.messages"
+      class: "Messages"
+      method: "create"
+      condition:
+        path: "kwargs.stream"
+        equals: false
+
+    span_config:
+      name: "anthropic.messages.create"
+      kind: "CLIENT"
+      semantic_convention: "gen_ai"
+
+    extract_before:
+      # Static attributes
+      - attribute: "gen_ai.system"
+        value: "anthropic"
+        type: "string"
+
+      - attribute: "gen_ai.operation.name"
+        value: "messages"
+        type: "string"
+
+      # Required parameters
+      - attribute: "gen_ai.request.model"
+        path: "kwargs.model"
+        type: "string"
+        required: true
+
+      - attribute: "gen_ai.request.max_tokens"
+        path: "kwargs.max_tokens"
+        type: "int"
+        required: true  # Required for Anthropic!
+
+      # Optional parameters (Anthropic-specific names)
+      - attribute: "gen_ai.request.temperature"
+        path: "kwargs.temperature"
+        type: "float"
+        default: 1.0
+
+      - attribute: "gen_ai.request.top_p"
+        path: "kwargs.top_p"
+        type: "float"
+        required: false
+
+      - attribute: "gen_ai.request.top_k"
+        path: "kwargs.top_k"
+        type: "int"
+        required: false
+
+      # System prompt (Anthropic-specific)
+      - attribute: "gen_ai.request.system"
+        path: "kwargs.system"
+        type: "string"
+        required: false
+        max_length: 10000
+        description: "Anthropic uses system param instead of system message"
+
+      # Messages array (similar to OpenAI but slight differences)
+      - attribute: "gen_ai.request.messages"
+        path: "kwargs.messages"
+        type: "array"
+        required: true
+        flatten_to:
+          - attribute: "gen_ai.request.messages.{index}.role"
+            path: "role"
+            type: "string"
+
+          - attribute: "gen_ai.request.messages.{index}.content"
+            path: "content"
+            type: "auto"  # Can be string or array of content blocks
+            max_length: 10000
+
+      # Stop sequences
+      - attribute: "gen_ai.request.stop_sequences"
+        path: "kwargs.stop_sequences"
+        type: "array"
+        required: false
+        flatten_to:
+          - attribute: "gen_ai.request.stop_sequences.{index}"
+            path: "."  # Array of strings
+            type: "string"
+
+    extract_after:
+      # Response metadata
+      - attribute: "gen_ai.response.id"
+        path: "result.id"
+        type: "string"
+
+      - attribute: "gen_ai.response.type"
+        path: "result.type"
+        type: "string"
+
+      - attribute: "gen_ai.response.role"
+        path: "result.role"
+        type: "string"
+
+      - attribute: "gen_ai.response.model"
+        path: "result.model"
+        type: "string"
+
+      # Content (Anthropic returns array of content blocks)
+      - attribute: "gen_ai.response.content"
+        path: "result.content"
+        type: "array"
+        flatten_to:
+          - attribute: "gen_ai.response.content.{index}.type"
+            path: "type"
+
+          - attribute: "gen_ai.response.content.{index}.text"
+            path: "text"
+            max_length: 10000
+
+      # Stop reason
+      - attribute: "gen_ai.response.stop_reason"
+        path: "result.stop_reason"
+        type: "string"
+
+      - attribute: "gen_ai.response.stop_sequence"
+        path: "result.stop_sequence"
+        type: "string"
+        required: false
+
+      # Token usage (Anthropic structure)
+      - attribute: "gen_ai.usage.input_tokens"
+        path: "result.usage.input_tokens"
+        type: "int"
+
+      - attribute: "gen_ai.usage.output_tokens"
+        path: "result.usage.output_tokens"
+        type: "int"
+
+      # Calculate total (not provided by Anthropic)
+      - attribute: "gen_ai.usage.total_tokens"
+        transform: "sum_tokens"
+        dependencies:
+          - "result.usage.input_tokens"
+          - "result.usage.output_tokens"
+
+      - attribute: "gen_ai.response.latency_ms"
+        path: "latency_ms"
+        type: "float"
+
+    extract_on_error:
+      - attribute: "error.type"
+        path: "exception.__class__.__name__"
+        type: "string"
+
+      - attribute: "error.message"
+        path: "exception.message"
+        type: "string"
+
+      # Anthropic-specific error attributes
+      - attribute: "error.anthropic.type"
+        path: "exception.type"
+        type: "string"
+        required: false
+
+      - attribute: "error.anthropic.error.type"
+        path: "exception.error.type"
+        type: "string"
+        required: false
+
+      - attribute: "error.anthropic.error.message"
+        path: "exception.error.message"
+        type: "string"
+        required: false
+
+  # ============================================================================
+  # Target 2: Messages API (Streaming)
+  # ============================================================================
+  - target_id: "messages_create_stream"
+    description: "Instrument streaming messages API calls"
+
+    location:
+      module: "anthropic.resources.messages"
+      class: "Messages"
+      method: "create"
+      condition:
+        path: "kwargs.stream"
+        equals: true
+
+    span_config:
+      name: "anthropic.messages.create.stream"
+      kind: "CLIENT"
+      semantic_convention: "gen_ai"
+
+    streaming:
+      enabled: true
+      capture_chunks: true
+      max_chunks: 100
+      aggregate_on_complete: true
+
+    extract_before:
+      - attribute: "gen_ai.system"
+        value: "anthropic"
+
+      - attribute: "gen_ai.request.model"
+        path: "kwargs.model"
+        required: true
+
+      - attribute: "gen_ai.request.stream"
+        value: true
+        type: "boolean"
+
+      # ... (same as non-streaming, abbreviated)
+
+    extract_per_chunk:
+      # Anthropic streaming events
+      - attribute: "gen_ai.response.chunk.{index}.type"
+        path: "chunk.type"
+        type: "string"
+
+      - attribute: "gen_ai.response.chunk.{index}.delta.type"
+        path: "chunk.delta.type"
+        type: "string"
+        required: false
+
+      - attribute: "gen_ai.response.chunk.{index}.delta.text"
+        path: "chunk.delta.text"
+        type: "string"
+        required: false
+
+      - attribute: "gen_ai.response.chunk.{index}.delta.stop_reason"
+        path: "chunk.delta.stop_reason"
+        type: "string"
+        required: false
+
+    extract_after_stream:
+      - attribute: "gen_ai.response.content.0.text"
+        aggregate: "chunks"
+        transform: "aggregate_anthropic_stream_content"
+
+      - attribute: "gen_ai.response.stop_reason"
+        aggregate: "last_chunk"
+        path: "delta.stop_reason"
+
+      - attribute: "gen_ai.response.stream.chunks_count"
+        aggregate: "count"
+
+      - attribute: "gen_ai.response.latency_ms"
+        path: "latency_ms"
+        type: "float"
+
+# ============================================================================
+# Custom Transformations
+# ============================================================================
+transforms:
+  # Sum input and output tokens
+  sum_tokens:
+    type: "python"
+    code: |
+      input_tokens = context.get('result', {}).get('usage', {}).get('input_tokens', 0)
+      output_tokens = context.get('result', {}).get('usage', {}).get('output_tokens', 0)
+      return input_tokens + output_tokens
+
+  # Aggregate Anthropic streaming content
+  aggregate_anthropic_stream_content:
+    type: "python"
+    code: |
+      chunks = context.get('chunks', [])
+      content_parts = []
+      for chunk in chunks:
+        if chunk.get('type') == 'content_block_delta':
+          delta_text = chunk.get('delta', {}).get('text')
+          if delta_text:
+            content_parts.append(delta_text)
+      return ''.join(content_parts)
+
+# ============================================================================
+# Validation Rules
+# ============================================================================
+validation:
+  required_attributes:
+    - "gen_ai.system"
+    - "gen_ai.request.model"
+    - "gen_ai.request.max_tokens"  # Required for Anthropic!
+
+  translation_consistency:
+    provider: "anthropic"
+    convention: "gen_ai"
+    required_for_translation:
+      - "gen_ai.system"
+      - "gen_ai.request.model"
+      - "gen_ai.request.messages"
+      - "gen_ai.response.content"

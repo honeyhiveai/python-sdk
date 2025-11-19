@@ -1,0 +1,46 @@
+# Multi-stage build: first stage builds the bundle
+FROM public.ecr.aws/lambda/python:3.11 AS builder
+
+# Install build tools
+RUN pip install --upgrade pip setuptools wheel
+
+# Copy project files
+COPY . /build/
+
+# Create the bundle in /lambda-bundle
+WORKDIR /lambda-bundle
+
+# Copy HoneyHive SDK
+COPY src/honeyhive ./honeyhive/
+
+# Copy Lambda functions from both locations
+COPY tests/lambda/lambda_functions/*.py ./
+COPY lambda_functions/*.py ./
+
+# Install dependencies directly to current directory
+RUN pip install --target . \
+    httpx \
+    opentelemetry-api \
+    opentelemetry-sdk \
+    opentelemetry-exporter-otlp-proto-http \
+    wrapt \
+    pydantic \
+    python-dotenv \
+    click \
+    pyyaml
+
+# Clean up unnecessary files
+RUN find . -type d -name "__pycache__" -exec rm -rf {} + 2>/dev/null || true && \
+    find . -type f -name "*.pyc" -delete 2>/dev/null || true && \
+    find . -type f -name "*.pyo" -delete 2>/dev/null || true
+
+# Second stage: create the runtime container
+FROM public.ecr.aws/lambda/python:3.11
+
+# Copy the bundle from builder stage
+COPY --from=builder /lambda-bundle/ ${LAMBDA_TASK_ROOT}/
+
+# Verify everything works
+RUN python -c "import sys; print('✅ Python path:', sys.path[:2]); import honeyhive; from honeyhive.tracer import HoneyHiveTracer; import httpx, opentelemetry; print('✅ All working')"
+
+CMD ["working_sdk_test.lambda_handler"]

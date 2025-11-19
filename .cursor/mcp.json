@@ -1,0 +1,28 @@
+{
+  "mcpServers": {
+    "praxis-os": {
+      "command": "${workspaceFolder}/.praxis-os/venv/bin/python",
+      "args": [
+        "-m",
+        "ouroboros",
+        "--transport",
+        "dual",
+        "--log-level",
+        "INFO"
+      ],
+      "env": {
+        "PROJECT_ROOT": "${workspaceFolder}",
+        "PYTHONPATH": "${workspaceFolder}/.praxis-os",
+        "PYTHONUNBUFFERED": "1"
+      },
+      "autoApprove": [
+        "pos_search_project",
+        "pos_workflow",
+        "pos_browser",
+        "pos_filesystem",
+        "current_date",
+        "get_server_info"
+      ]
+    }
+  }
+}

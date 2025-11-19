@@ -1,0 +1,1642 @@
+# ============================================================================
+# Ouroboros MCP Server Configuration
+# ============================================================================
+# This file configures what prAxIs OS indexes and how it searches your project.
+#
+# ⚠️ INSTALLATION NOTE: You MUST customize code indexing paths below
+#    to match your project's source code layout!
+#
+# Path Resolution:
+#   - All paths are relative to .praxis-os/ directory (not project root)
+#   - Example: If your code is at project-root/src/, use "../src/"
+#   - Example: If your code is at project-root/lib/, use "../lib/"
+#   - ✅ NEW: You can safely use top-level paths like ["../"] because
+#            prAxIs OS automatically respects your .gitignore file!
+#
+# After installation, update the 'code' and 'ast' sections below with your
+# project's actual source code paths and languages.
+#
+# ✅ NEW FEATURE: Automatic File Exclusion
+#    - prAxIs OS automatically respects your project's .gitignore file
+#    - Build artifacts (node_modules/, __pycache__/, dist/, etc.) are
+#      automatically excluded - no manual configuration needed!
+#    - See the 'code' section below for detailed exclusion options
+
+version: "1.0"
+
+# ============================================================================
+# RAG Subsystem Configuration
+# ============================================================================
+# Configures what gets indexed and how search works.
+#
+# Three types of indexes:
+#   1. Standards: Documentation/markdown files (usually fine as-is)
+#   2. Code: Source code semantic search + call graph (MUST customize paths!)
+#   3. AST: Structural code search (MUST customize paths!)
+
+indexes:
+  # ========================================================================
+  # Standards Index (Documentation/Markdown)
+  # ========================================================================
+  # Indexes your project's standards, docs, and markdown files.
+  # Usually fine as-is unless you have custom documentation locations.
+  #
+  # What it does:
+  #   - Hybrid search: Combines semantic (vector) + keyword (FTS) search
+  #   - Vector search: Finds docs by MEANING (e.g., "error handling" finds
+  #                    docs about exceptions, try/catch, etc.)
+  #   - FTS search: Finds docs by EXACT WORDS (e.g., "MCP server" finds
+  #                 only docs with that exact phrase)
+  #   - Together: Best of both worlds (concepts + terminology)
+  #
+  # Chunking Strategy:
+  #   - chunk_size: 800 tokens (~2-3 paragraphs) - larger chunks = more context
+  #   - chunk_overlap: 100 tokens (~1-2 sentences) - prevents concept splitting
+  #   - Why larger? Docs need context, code needs precision
+  #
+  # Metadata Filtering:
+  #   - Pre-filters by domain/phase before searching (faster, more accurate)
+  #   - Uses scalar indexes (BTREE/BITMAP) for sub-millisecond filtering
+  #   - Usually fine as-is (auto-generated from headers/keywords)
+  standards:
+    source_paths:
+      - "standards/"  # Relative to .praxis-os/ (usually fine as-is)
+
+    vector:
+      # BGE models (BAAI General Embedding) - More accurate than MiniLM
+      # Options:
+      #   - BAAI/bge-small-en-v1.5: DEFAULT - Good balance (134MB, fast, 384 dim)
+      #   - BAAI/bge-base-en-v1.5: Better accuracy (438MB, medium, 768 dim)
+      #   - BAAI/bge-large-en-v1.5: Best accuracy (1.3GB, slow, 1024 dim)
+      model: "BAAI/bge-small-en-v1.5"  # MIT licensed, zero cost, offline
+      dimension: 384  # Model-specific (384 for small, 768 for base, 1024 for large)
+      chunk_size: 800  # Larger chunks = more context for docs
+      chunk_overlap: 100  # Prevents concept splitting at boundaries
+
+    fts: {}  # Use all defaults (enabled=True, tokenizer="default")
+
+    metadata_filtering:
+      enabled: true
+      scalar_indexes:
+        - column: "domain"  # High cardinality (workflow, rag, browser, etc.)
+          index_type: "BTREE"
+        - column: "phase"  # Low cardinality (0-8 phases)
+          index_type: "BITMAP"
+        - column: "section"  # Medium-high cardinality
+          index_type: "BTREE"
+      auto_generate: true  # Extract metadata from headers/keywords (zero cost)
+      llm_enhance: false  # Optional: Better metadata (costs money, usually not needed)
+
+  # ========================================================================
+  # Code Index (CRITICAL: Customize for Your Project!)
+  # ========================================================================
+  # ⚠️ YOU MUST UPDATE source_paths BELOW to match your project structure!
+  #
+  # What it does:
+  #   - Semantic code search: Find functions/classes by meaning
+  #   - Call graph: Find who calls what (recursive traversal)
+  #   - Hybrid search: Vector + FTS (same as standards)
+  #   - ✅ NEW: Automatic file exclusion via .gitignore (see below)
+  #
+  # Common Project Patterns:
+  #   Python:
+  #     - Standard: ["../src/", "../lib/"]
+  #     - Root-level: ["../"] (✅ Now safe! .gitignore automatically excludes build artifacts)
+  #     - Package: ["../mypackage/"]
+  #
+  #   JavaScript/TypeScript:
+  #     - Standard: ["../src/", "../app/", "../components/"]
+  #     - Next.js: ["../app/", "../components/", "../lib/"]
+  #     - Monorepo: ["../packages/*/src/", "../apps/*/src/"]
+  #     - Root-level: ["../"] (✅ Now safe! node_modules/ automatically excluded)
+  #
+  #   Go:
+  #     - Standard: ["../cmd/", "../pkg/", "../internal/"]
+  #     - Simple: ["../"] (✅ Now safe! vendor/ automatically excluded)
+  #
+  #   Rust:
+  #     - Standard: ["../src/"]
+  #     - Root-level: ["../"] (✅ Now safe! target/ automatically excluded)
+  #
+  #   Multi-language:
+  #     - ["../src/python/", "../src/typescript/", "../src/go/"]
+  #
+  # ✅ TIP: You can now safely point to top-level directories (e.g., ["../"])
+  #         because prAxIs OS automatically respects your .gitignore file!
+  #         Build artifacts (node_modules/, __pycache__/, dist/, etc.) are
+  #         automatically excluded - no need to manually list them.
+  #
+  # Languages:
+  #   - Add languages you use: ["python", "typescript", "javascript", "go", "rust"]
+  #   - Supported: python, javascript, typescript, go, rust
+  #   - More languages can be added via config (no code changes needed)
+  #
+  # Chunking Strategy:
+  #   - chunk_size: 200 tokens (~1 function) - smaller chunks = more precision
+  #   - chunk_overlap: 20 tokens (~few lines) - prevents function splitting
+  #   - Why smaller? Code search needs function-level precision, not doc-level context
+  code:
+    source_paths:
+      # HoneyHive Python SDK source code
+      - "../src/honeyhive/"
+
+    languages:
+      # Python SDK + TypeScript services from hive-kube
+      - "python"
+      - "typescript"
+      - "javascript"
+
+    vector:
+      # CodeBERT - Specifically designed for code embeddings
+      # Better semantic understanding of code than general-purpose models
+      # Options:
+      #   - microsoft/codebert-base: DEFAULT - Best for code (768 dim)
+      #   - microsoft/codebert-base-mlm: Alternative CodeBERT variant
+      model: "microsoft/codebert-base"  # MIT licensed, zero cost, offline
+      dimension: 768  # CodeBERT-base uses 768 dimensions
+      chunk_size: 200  # Smaller chunks = function-level precision
+      chunk_overlap: 20  # Prevents function splitting
+
+    fts: {}  # Use all defaults (enabled=True)
+
+    graph: {}  # Use all defaults (max_depth=10, etc.)
+
+    duckdb_path: ".cache/code.duckdb"  # Call graph database (usually fine as-is)
+
+    # ========================================================================
+    # File Exclusion System (NEW: Automatic .gitignore Support!)
+    # ========================================================================
+    # prAxIs OS automatically excludes unwanted files using a three-tier system:
+    #
+    # Tier 1: .gitignore patterns (if respect_gitignore: true)
+    #   - Automatically reads and respects your project's .gitignore file
+    #   - Zero-config for most projects - works out of the box!
+    #   - Files ignored by git are automatically excluded from indexing
+    #   - Uses proper gitignore pattern matching (not simple substring matching)
+    #
+    # Tier 2: Built-in defaults (when no .gitignore exists or respect_gitignore: false)
+    #   - Comprehensive patterns covering 200+ common build artifacts
+    #   - Python: __pycache__/, .tox/, .pytest_cache/, dist/, build/, etc.
+    #   - JavaScript: node_modules/, .next/, dist/, build/, etc.
+    #   - Rust: target/, Go: vendor/, Java: .gradle/, etc.
+    #   - IDEs, OS files, logs, databases, secrets, etc.
+    #   - Uses proper gitignore pattern matching (same as Tier 1)
+    #
+    # Tier 3: Config exclude_patterns (additive override)
+    #   - Additional patterns you specify in config
+    #   - Merged with .gitignore (both apply)
+    #   - Use gitignore format: "custom_build/", "*.generated.py"
+    #   - Uses proper gitignore pattern matching (same as Tier 1)
+    #
+    # Benefits:
+    #   ✅ Zero-config: Most projects work out-of-the-box with .gitignore
+    #   ✅ No crashes: Build artifacts automatically excluded
+    #   ✅ Clean search: Only source code indexed, not dependencies
+    #   ✅ Flexible: Add custom patterns when needed
+    #   ✅ Proper matching: Uses gitignore-parser library (required dependency)
+    #
+    # Examples:
+    #   # Use .gitignore automatically (default - recommended)
+    #   respect_gitignore: true
+    #   exclude_patterns: null
+    #
+    #   # Disable .gitignore, use built-in defaults only
+    #   respect_gitignore: false
+    #   exclude_patterns: null
+    #
+    #   # Use .gitignore + additional custom patterns
+    #   respect_gitignore: true
+    #   exclude_patterns:
+    #     - "custom_build_dir/**"
+    #     - "*.generated.py"
+    #     - "test_fixtures/"
+    #
+    #   # Custom patterns only (no .gitignore, no built-in defaults)
+    #   respect_gitignore: false
+    #   exclude_patterns:
+    #     - "my_custom_exclude/"
+    #     - "*.temp"
+    #
+    # Note: Pattern matching uses the gitignore-parser library (required dependency)
+    #       for accurate gitignore-compatible behavior. All patterns follow standard
+    #       gitignore syntax rules (wildcards, negation with !, etc.).
+    respect_gitignore: true  # ✅ Default: Automatically respect .gitignore patterns (recommended)
+    exclude_patterns: null  # Optional: Additional exclusion patterns in gitignore format
+
+    # ========================================================================
+    # AST-Aware Code Chunking Configuration (NEW)
+    # ========================================================================
+    # Enables intelligent code chunking at function/class boundaries using Tree-sitter AST parsing.
+    #
+    # What it does:
+    #   - Chunks code at logical boundaries (functions, classes) instead of arbitrary lines
+    #   - Applies "import penalty" to de-prioritize import-heavy chunks in search
+    #   - Gracefully falls back to line-based chunking if AST parsing fails
+    #   - Config-driven: Add new languages without code changes
+    #
+    # Chunking Strategy:
+    #   - "ast": AST-aware chunking (recommended for Python, TypeScript, Go)
+    #   - "line": Line-based fallback (simple, but less precise)
+    #
+    # Import Penalty:
+    #   - Chunks with >50% import statements get penalized by this multiplier
+    #   - 0.3 = imports rank 3x lower than implementation code
+    #   - 1.0 = no penalty, 0.0 = filter out entirely
+    #
+    # Language Configs:
+    #   - Define AST node types for each language
+    #   - import_nodes: Nodes representing import/export statements
+    #   - definition_nodes: Nodes representing function/class definitions
+    #   - split_boundary_nodes: Nodes representing control flow (if, for, etc.)
+    #
+    # Benefits:
+    #   ✅ More relevant search results: Implementation code ranks higher than imports
+    #   ✅ Function-level precision: Chunks align with logical code boundaries
+    #   ✅ Graceful degradation: Falls back to line-based if AST parsing fails
+    #   ✅ Config-driven: Add new languages by updating this config (no code changes)
+    #
+    # Rollback:
+    #   - To disable AST chunking, set chunking_strategy: "line"
+    #   - Or remove language_configs section entirely
+    chunking_strategy: "ast"  # Options: "ast" (AST-aware, recommended) or "line" (fallback)
+
+    language_configs:
+      python:
+        chunking:
+          import_nodes:
+            - "import_statement"
+            - "import_from_statement"
+          definition_nodes:
+            - "function_definition"
+            - "async_function_definition"
+            - "class_definition"
+          split_boundary_nodes:
+            - "if_statement"
+            - "for_statement"
+            - "while_statement"
+            - "try_statement"
+            - "with_statement"
+          import_penalty: 0.3  # Imports rank 3x lower than implementation code
+
+      typescript:
+        chunking:
+          import_nodes:
+            - "import_statement"
+            - "export_statement"
+          definition_nodes:
+            - "function_declaration"
+            - "function"
+            - "arrow_function"
+            - "method_definition"
+            - "class_declaration"
+          split_boundary_nodes:
+            - "if_statement"
+            - "for_statement"
+            - "while_statement"
+            - "try_statement"
+          import_penalty: 0.3
+
+      go:
+        chunking:
+          import_nodes:
+            - "import_declaration"
+            - "import_spec"
+          definition_nodes:
+            - "function_declaration"
+            - "method_declaration"
+            - "type_declaration"
+            - "struct_type"
+          split_boundary_nodes:
+            - "if_statement"
+            - "for_statement"
+            - "select_statement"
+            - "switch_statement"
+            - "defer_statement"
+          import_penalty: 0.3
+
+    # ========================================================================
+    # Multi-Repo Partitioning Configuration (NEW)
+    # ========================================================================
+    # Enables multi-repository code intelligence with isolated partitions.
+    #
+    # What it does:
+    #   - Separate logical collections of repositories
+    #   - Isolated indexing for different purposes (primary code vs. instrumentors)
+    #   - Per-partition performance targets
+    #   - Configurable cross-repo call graph edges
+    #
+    # Partitions:
+    #   - primary: Main project code (praxis-os, python-sdk)
+    #   - instrumentors: External instrumentation frameworks to analyze
+    #
+    # Repository Fields:
+    #   - name: Unique identifier for the repository
+    #   - path: Local filesystem path (relative to .praxis-os/)
+    #   - url: Git repository URL (for future sync support)
+    #   - provider: Source (e.g., "honeyhive", "openlit", "traceloop", "arize")
+    #   - sparse_paths: Optional list of subdirectories to index
+    #   - enabled: Whether to index this repository
+    #
+    # Performance Targets:
+    #   - semantic: p50/p95/p99 latency (ms) for semantic search
+    #   - ast: p50/p95/p99 latency (ms) for AST queries
+    #   - graph: p50/p95/p99 latency (ms) for graph traversal
+    #
+    # graph_cross_repo:
+    #   - true: Allow cross-repo edges in call graph (primary partition)
+    #   - false: Isolate repos in call graph (instrumentors partition)
+    # Multi-Repo Partitioning (Simplified Architecture)
+    # ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+    # One partition = one repository. Define multiple domains (code/tests/docs)
+    # per repository with flexible include/exclude patterns.
+    #
+    # Design Philosophy:
+    #   - Simple: partition name = repo name (1:1 mapping)
+    #   - Flexible: define domains that match YOUR project structure
+    #   - Domain-agnostic: works for any project type
+    #
+    # Example:
+    #   partitions:
+    #     my-project:
+    #       path: ../
+    #       domains:
+    #         code:
+    #           include_paths: [src/, lib/]
+    #           exclude_patterns: null
+    #         tests:
+    #           include_paths: [tests/]
+    #           exclude_patterns: null
+    #
+    partitions:
+      python-sdk:
+        path: ../
+        domains:
+          code:
+            include_paths: [src/honeyhive/]
+            exclude_patterns: null
+            metadata:
+              project: python-sdk
+              type: library
+              language: python
+          tests:
+            include_paths: [tests/]
+            exclude_patterns: null
+            metadata:
+              project: python-sdk
+              type: tests
+              language: python
+
+      hive-kube:
+        path: ../../hive-kube/kubernetes
+        domains:
+          backend:
+            include_paths: [backend_service/app/]
+            exclude_patterns: null
+            metadata:
+              service: backend
+              type: api
+              language: typescript
+          frontend:
+            include_paths: [frontend_service/app/, frontend_service/src/]
+            exclude_patterns: null
+            metadata:
+              service: frontend
+              type: ui
+              language: typescript
+              framework: nextjs
+          ingestion:
+            include_paths: [ingestion_service/app/]
+            exclude_patterns: null
+            metadata:
+              service: ingestion
+              type: data-pipeline
+              language: typescript
+              critical: "true"  # Referenced often in SDK work
+          beekeeper:
+            include_paths: [beekeeper_service/app/]
+            exclude_patterns: null
+            metadata:
+              service: beekeeper
+              type: cron-jobs
+              language: typescript
+          evaluation:
+            include_paths: [evaluation_service/app/]
+            exclude_patterns: null
+            metadata:
+              service: evaluation
+              type: llm-eval
+              language: typescript
+          enrichment:
+            include_paths: [enrichment_service/app/]
+            exclude_patterns: null
+            metadata:
+              service: enrichment
+              type: data-pipeline
+              language: typescript
+          notification:
+            include_paths: [notification_service/app/]
+            exclude_patterns: null
+            metadata:
+              service: notification
+              type: messaging
+              language: typescript
+          llm_proxy:
+            include_paths: [llm_proxy_service/]
+            exclude_patterns: [__pycache__/]
+            metadata:
+              service: llm-proxy
+              type: proxy
+              language: python
+          python_metrics:
+            include_paths: [python_metric_service/]
+            exclude_patterns: [__pycache__/]
+            metadata:
+              service: python-metrics
+              type: metrics
+              language: python
+
+      # Add instrumentor repositories here when ready to extract semantic conventions
+      # Example structure:
+      # opentelemetry-python-contrib:
+      #   path: ../../opentelemetry-python-contrib
+      #   domains:
+      #     openai-instrumentor:
+      #       include_paths: [instrumentation/opentelemetry-instrumentation-openai/]
+      #       exclude_patterns: null
+      #       metadata:
+      #         framework: openai
+      #         type: instrumentor
+      #         provider: opentelemetry
+      #     anthropic-instrumentor:
+      #       include_paths: [instrumentation/opentelemetry-instrumentation-anthropic/]
+      openlit:
+        path: ../../../openlit/openlit
+        domains:
+          ag2:
+            include_paths:
+              - sdk/python/src/openlit/instrumentation/ag2
+            exclude_patterns:
+              - "**/__pycache__/**"
+              - "**/*.pyc"
+              - "**/tests/**"
+            metadata:
+              type: instrumentor
+              provider: openlit
+              framework: ag2
+
+          agno:
+            include_paths:
+              - sdk/python/src/openlit/instrumentation/agno
+            exclude_patterns:
+              - "**/__pycache__/**"
+              - "**/*.pyc"
+              - "**/tests/**"
+            metadata:
+              type: instrumentor
+              provider: openlit
+              framework: agno
+
+          ai21:
+            include_paths:
+              - sdk/python/src/openlit/instrumentation/ai21
+            exclude_patterns:
+              - "**/__pycache__/**"
+              - "**/*.pyc"
+              - "**/tests/**"
+            metadata:
+              type: instrumentor
+              provider: openlit
+              framework: ai21
+
+          anthropic:
+            include_paths:
+              - sdk/python/src/openlit/instrumentation/anthropic
+            exclude_patterns:
+              - "**/__pycache__/**"
+              - "**/*.pyc"
+              - "**/tests/**"
+            metadata:
+              type: instrumentor
+              provider: openlit
+              framework: anthropic
+
+          assemblyai:
+            include_paths:
+              - sdk/python/src/openlit/instrumentation/assemblyai
+            exclude_patterns:
+              - "**/__pycache__/**"
+              - "**/*.pyc"
+              - "**/tests/**"
+            metadata:
+              type: instrumentor
+              provider: openlit
+              framework: assemblyai
+
+          astra:
+            include_paths:
+              - sdk/python/src/openlit/instrumentation/astra
+            exclude_patterns:
+              - "**/__pycache__/**"
+              - "**/*.pyc"
+              - "**/tests/**"
+            metadata:
+              type: instrumentor
+              provider: openlit
+              framework: astra
+
+          azure_ai_inference:
+            include_paths:
+              - sdk/python/src/openlit/instrumentation/azure_ai_inference
+            exclude_patterns:
+              - "**/__pycache__/**"
+              - "**/*.pyc"
+              - "**/tests/**"
+            metadata:
+              type: instrumentor
+              provider: openlit
+              framework: azure_ai_inference
+
+          bedrock:
+            include_paths:
+              - sdk/python/src/openlit/instrumentation/bedrock
+            exclude_patterns:
+              - "**/__pycache__/**"
+              - "**/*.pyc"
+              - "**/tests/**"
+            metadata:
+              type: instrumentor
+              provider: openlit
+              framework: bedrock
+
+          browser_use:
+            include_paths:
+              - sdk/python/src/openlit/instrumentation/browser_use
+            exclude_patterns:
+              - "**/__pycache__/**"
+              - "**/*.pyc"
+              - "**/tests/**"
+            metadata:
+              type: instrumentor
+              provider: openlit
+              framework: browser_use
+
+          chroma:
+            include_paths:
+              - sdk/python/src/openlit/instrumentation/chroma
+            exclude_patterns:
+              - "**/__pycache__/**"
+              - "**/*.pyc"
+              - "**/tests/**"
+            metadata:
+              type: instrumentor
+              provider: openlit
+              framework: chroma
+
+          cohere:
+            include_paths:
+              - sdk/python/src/openlit/instrumentation/cohere
+            exclude_patterns:
+              - "**/__pycache__/**"
+              - "**/*.pyc"
+              - "**/tests/**"
+            metadata:
+              type: instrumentor
+              provider: openlit
+              framework: cohere
+
+          controlflow:
+            include_paths:
+              - sdk/python/src/openlit/instrumentation/controlflow
+            exclude_patterns:
+              - "**/__pycache__/**"
+              - "**/*.pyc"
+              - "**/tests/**"
+            metadata:
+              type: instrumentor
+              provider: openlit
+              framework: controlflow
+
+          crawl4ai:
+            include_paths:
+              - sdk/python/src/openlit/instrumentation/crawl4ai
+            exclude_patterns:
+              - "**/__pycache__/**"
+              - "**/*.pyc"
+              - "**/tests/**"
+            metadata:
+              type: instrumentor
+              provider: openlit
+              framework: crawl4ai
+
+          crewai:
+            include_paths:
+              - sdk/python/src/openlit/instrumentation/crewai
+            exclude_patterns:
+              - "**/__pycache__/**"
+              - "**/*.pyc"
+              - "**/tests/**"
+            metadata:
+              type: instrumentor
+              provider: openlit
+              framework: crewai
+
+          dynamiq:
+            include_paths:
+              - sdk/python/src/openlit/instrumentation/dynamiq
+            exclude_patterns:
+              - "**/__pycache__/**"
+              - "**/*.pyc"
+              - "**/tests/**"
+            metadata:
+              type: instrumentor
+              provider: openlit
+              framework: dynamiq
+
+          elevenlabs:
+            include_paths:
+              - sdk/python/src/openlit/instrumentation/elevenlabs
+            exclude_patterns:
+              - "**/__pycache__/**"
+              - "**/*.pyc"
+              - "**/tests/**"
+            metadata:
+              type: instrumentor
+              provider: openlit
+              framework: elevenlabs
+
+          firecrawl:
+            include_paths:
+              - sdk/python/src/openlit/instrumentation/firecrawl
+            exclude_patterns:
+              - "**/__pycache__/**"
+              - "**/*.pyc"
+              - "**/tests/**"
+            metadata:
+              type: instrumentor
+              provider: openlit
+              framework: firecrawl
+
+          google_ai_studio:
+            include_paths:
+              - sdk/python/src/openlit/instrumentation/google_ai_studio
+            exclude_patterns:
+              - "**/__pycache__/**"
+              - "**/*.pyc"
+              - "**/tests/**"
+            metadata:
+              type: instrumentor
+              provider: openlit
+              framework: google_ai_studio
+
+          gpt4all:
+            include_paths:
+              - sdk/python/src/openlit/instrumentation/gpt4all
+            exclude_patterns:
+              - "**/__pycache__/**"
+              - "**/*.pyc"
+              - "**/tests/**"
+            metadata:
+              type: instrumentor
+              provider: openlit
+              framework: gpt4all
+
+          gpu:
+            include_paths:
+              - sdk/python/src/openlit/instrumentation/gpu
+            exclude_patterns:
+              - "**/__pycache__/**"
+              - "**/*.pyc"
+              - "**/tests/**"
+            metadata:
+              type: instrumentor
+              provider: openlit
+              framework: gpu
+
+          groq:
+            include_paths:
+              - sdk/python/src/openlit/instrumentation/groq
+            exclude_patterns:
+              - "**/__pycache__/**"
+              - "**/*.pyc"
+              - "**/tests/**"
+            metadata:
+              type: instrumentor
+              provider: openlit
+              framework: groq
+
+          haystack:
+            include_paths:
+              - sdk/python/src/openlit/instrumentation/haystack
+            exclude_patterns:
+              - "**/__pycache__/**"
+              - "**/*.pyc"
+              - "**/tests/**"
+            metadata:
+              type: instrumentor
+              provider: openlit
+              framework: haystack
+
+          julep:
+            include_paths:
+              - sdk/python/src/openlit/instrumentation/julep
+            exclude_patterns:
+              - "**/__pycache__/**"
+              - "**/*.pyc"
+              - "**/tests/**"
+            metadata:
+              type: instrumentor
+              provider: openlit
+              framework: julep
+
+          langchain:
+            include_paths:
+              - sdk/python/src/openlit/instrumentation/langchain
+            exclude_patterns:
+              - "**/__pycache__/**"
+              - "**/*.pyc"
+              - "**/tests/**"
+            metadata:
+              type: instrumentor
+              provider: openlit
+              framework: langchain
+
+          langchain_community:
+            include_paths:
+              - sdk/python/src/openlit/instrumentation/langchain_community
+            exclude_patterns:
+              - "**/__pycache__/**"
+              - "**/*.pyc"
+              - "**/tests/**"
+            metadata:
+              type: instrumentor
+              provider: openlit
+              framework: langchain_community
+
+          letta:
+            include_paths:
+              - sdk/python/src/openlit/instrumentation/letta
+            exclude_patterns:
+              - "**/__pycache__/**"
+              - "**/*.pyc"
+              - "**/tests/**"
+            metadata:
+              type: instrumentor
+              provider: openlit
+              framework: letta
+
+          litellm:
+            include_paths:
+              - sdk/python/src/openlit/instrumentation/litellm
+            exclude_patterns:
+              - "**/__pycache__/**"
+              - "**/*.pyc"
+              - "**/tests/**"
+            metadata:
+              type: instrumentor
+              provider: openlit
+              framework: litellm
+
+          llamaindex:
+            include_paths:
+              - sdk/python/src/openlit/instrumentation/llamaindex
+            exclude_patterns:
+              - "**/__pycache__/**"
+              - "**/*.pyc"
+              - "**/tests/**"
+            metadata:
+              type: instrumentor
+              provider: openlit
+              framework: llamaindex
+
+          mcp:
+            include_paths:
+              - sdk/python/src/openlit/instrumentation/mcp
+            exclude_patterns:
+              - "**/__pycache__/**"
+              - "**/*.pyc"
+              - "**/tests/**"
+            metadata:
+              type: instrumentor
+              provider: openlit
+              framework: mcp
+
+          mem0:
+            include_paths:
+              - sdk/python/src/openlit/instrumentation/mem0
+            exclude_patterns:
+              - "**/__pycache__/**"
+              - "**/*.pyc"
+              - "**/tests/**"
+            metadata:
+              type: instrumentor
+              provider: openlit
+              framework: mem0
+
+          milvus:
+            include_paths:
+              - sdk/python/src/openlit/instrumentation/milvus
+            exclude_patterns:
+              - "**/__pycache__/**"
+              - "**/*.pyc"
+              - "**/tests/**"
+            metadata:
+              type: instrumentor
+              provider: openlit
+              framework: milvus
+
+          mistral:
+            include_paths:
+              - sdk/python/src/openlit/instrumentation/mistral
+            exclude_patterns:
+              - "**/__pycache__/**"
+              - "**/*.pyc"
+              - "**/tests/**"
+            metadata:
+              type: instrumentor
+              provider: openlit
+              framework: mistral
+
+          multion:
+            include_paths:
+              - sdk/python/src/openlit/instrumentation/multion
+            exclude_patterns:
+              - "**/__pycache__/**"
+              - "**/*.pyc"
+              - "**/tests/**"
+            metadata:
+              type: instrumentor
+              provider: openlit
+              framework: multion
+
+          ollama:
+            include_paths:
+              - sdk/python/src/openlit/instrumentation/ollama
+            exclude_patterns:
+              - "**/__pycache__/**"
+              - "**/*.pyc"
+              - "**/tests/**"
+            metadata:
+              type: instrumentor
+              provider: openlit
+              framework: ollama
+
+          openai:
+            include_paths:
+              - sdk/python/src/openlit/instrumentation/openai
+            exclude_patterns:
+              - "**/__pycache__/**"
+              - "**/*.pyc"
+              - "**/tests/**"
+            metadata:
+              type: instrumentor
+              provider: openlit
+              framework: openai
+
+          openai_agents:
+            include_paths:
+              - sdk/python/src/openlit/instrumentation/openai_agents
+            exclude_patterns:
+              - "**/__pycache__/**"
+              - "**/*.pyc"
+              - "**/tests/**"
+            metadata:
+              type: instrumentor
+              provider: openlit
+              framework: openai_agents
+
+          pinecone:
+            include_paths:
+              - sdk/python/src/openlit/instrumentation/pinecone
+            exclude_patterns:
+              - "**/__pycache__/**"
+              - "**/*.pyc"
+              - "**/tests/**"
+            metadata:
+              type: instrumentor
+              provider: openlit
+              framework: pinecone
+
+          premai:
+            include_paths:
+              - sdk/python/src/openlit/instrumentation/premai
+            exclude_patterns:
+              - "**/__pycache__/**"
+              - "**/*.pyc"
+              - "**/tests/**"
+            metadata:
+              type: instrumentor
+              provider: openlit
+              framework: premai
+
+          pydantic_ai:
+            include_paths:
+              - sdk/python/src/openlit/instrumentation/pydantic_ai
+            exclude_patterns:
+              - "**/__pycache__/**"
+              - "**/*.pyc"
+              - "**/tests/**"
+            metadata:
+              type: instrumentor
+              provider: openlit
+              framework: pydantic_ai
+
+          qdrant:
+            include_paths:
+              - sdk/python/src/openlit/instrumentation/qdrant
+            exclude_patterns:
+              - "**/__pycache__/**"
+              - "**/*.pyc"
+              - "**/tests/**"
+            metadata:
+              type: instrumentor
+              provider: openlit
+              framework: qdrant
+
+          reka:
+            include_paths:
+              - sdk/python/src/openlit/instrumentation/reka
+            exclude_patterns:
+              - "**/__pycache__/**"
+              - "**/*.pyc"
+              - "**/tests/**"
+            metadata:
+              type: instrumentor
+              provider: openlit
+              framework: reka
+
+          sarvam:
+            include_paths:
+              - sdk/python/src/openlit/instrumentation/sarvam
+            exclude_patterns:
+              - "**/__pycache__/**"
+              - "**/*.pyc"
+              - "**/tests/**"
+            metadata:
+              type: instrumentor
+              provider: openlit
+              framework: sarvam
+
+          together:
+            include_paths:
+              - sdk/python/src/openlit/instrumentation/together
+            exclude_patterns:
+              - "**/__pycache__/**"
+              - "**/*.pyc"
+              - "**/tests/**"
+            metadata:
+              type: instrumentor
+              provider: openlit
+              framework: together
+
+          transformers:
+            include_paths:
+              - sdk/python/src/openlit/instrumentation/transformers
+            exclude_patterns:
+              - "**/__pycache__/**"
+              - "**/*.pyc"
+              - "**/tests/**"
+            metadata:
+              type: instrumentor
+              provider: openlit
+              framework: transformers
+
+          vertexai:
+            include_paths:
+              - sdk/python/src/openlit/instrumentation/vertexai
+            exclude_patterns:
+              - "**/__pycache__/**"
+              - "**/*.pyc"
+              - "**/tests/**"
+            metadata:
+              type: instrumentor
+              provider: openlit
+              framework: vertexai
+
+          vllm:
+            include_paths:
+              - sdk/python/src/openlit/instrumentation/vllm
+            exclude_patterns:
+              - "**/__pycache__/**"
+              - "**/*.pyc"
+              - "**/tests/**"
+            metadata:
+              type: instrumentor
+              provider: openlit
+              framework: vllm
+
+      traceloop:
+        path: ../../../traceloop/openllmetry
+        domains:
+          alephalpha:
+            include_paths:
+              - packages/opentelemetry-instrumentation-alephalpha
+            exclude_patterns:
+              - "**/__pycache__/**"
+              - "**/*.pyc"
+              - "**/tests/**"
+              - "**/node_modules/**"
+            metadata:
+              type: instrumentor
+              provider: traceloop
+              framework: alephalpha
+
+          anthropic:
+            include_paths:
+              - packages/opentelemetry-instrumentation-anthropic
+            exclude_patterns:
+              - "**/__pycache__/**"
+              - "**/*.pyc"
+              - "**/tests/**"
+              - "**/node_modules/**"
+            metadata:
+              type: instrumentor
+              provider: traceloop
+              framework: anthropic
+
+          bedrock:
+            include_paths:
+              - packages/opentelemetry-instrumentation-bedrock
+            exclude_patterns:
+              - "**/__pycache__/**"
+              - "**/*.pyc"
+              - "**/tests/**"
+              - "**/node_modules/**"
+            metadata:
+              type: instrumentor
+              provider: traceloop
+              framework: bedrock
+
+          chromadb:
+            include_paths:
+              - packages/opentelemetry-instrumentation-chromadb
+            exclude_patterns:
+              - "**/__pycache__/**"
+              - "**/*.pyc"
+              - "**/tests/**"
+              - "**/node_modules/**"
+            metadata:
+              type: instrumentor
+              provider: traceloop
+              framework: chromadb
+
+          cohere:
+            include_paths:
+              - packages/opentelemetry-instrumentation-cohere
+            exclude_patterns:
+              - "**/__pycache__/**"
+              - "**/*.pyc"
+              - "**/tests/**"
+              - "**/node_modules/**"
+            metadata:
+              type: instrumentor
+              provider: traceloop
+              framework: cohere
+
+          crewai:
+            include_paths:
+              - packages/opentelemetry-instrumentation-crewai
+            exclude_patterns:
+              - "**/__pycache__/**"
+              - "**/*.pyc"
+              - "**/tests/**"
+              - "**/node_modules/**"
+            metadata:
+              type: instrumentor
+              provider: traceloop
+              framework: crewai
+
+          google_generativeai:
+            include_paths:
+              - packages/opentelemetry-instrumentation-google-generativeai
+            exclude_patterns:
+              - "**/__pycache__/**"
+              - "**/*.pyc"
+              - "**/tests/**"
+              - "**/node_modules/**"
+            metadata:
+              type: instrumentor
+              provider: traceloop
+              framework: google_generativeai
+
+          groq:
+            include_paths:
+              - packages/opentelemetry-instrumentation-groq
+            exclude_patterns:
+              - "**/__pycache__/**"
+              - "**/*.pyc"
+              - "**/tests/**"
+              - "**/node_modules/**"
+            metadata:
+              type: instrumentor
+              provider: traceloop
+              framework: groq
+
+          haystack:
+            include_paths:
+              - packages/opentelemetry-instrumentation-haystack
+            exclude_patterns:
+              - "**/__pycache__/**"
+              - "**/*.pyc"
+              - "**/tests/**"
+              - "**/node_modules/**"
+            metadata:
+              type: instrumentor
+              provider: traceloop
+              framework: haystack
+
+          lancedb:
+            include_paths:
+              - packages/opentelemetry-instrumentation-lancedb
+            exclude_patterns:
+              - "**/__pycache__/**"
+              - "**/*.pyc"
+              - "**/tests/**"
+              - "**/node_modules/**"
+            metadata:
+              type: instrumentor
+              provider: traceloop
+              framework: lancedb
+
+          langchain:
+            include_paths:
+              - packages/opentelemetry-instrumentation-langchain
+            exclude_patterns:
+              - "**/__pycache__/**"
+              - "**/*.pyc"
+              - "**/tests/**"
+              - "**/node_modules/**"
+            metadata:
+              type: instrumentor
+              provider: traceloop
+              framework: langchain
+
+          llamaindex:
+            include_paths:
+              - packages/opentelemetry-instrumentation-llamaindex
+            exclude_patterns:
+              - "**/__pycache__/**"
+              - "**/*.pyc"
+              - "**/tests/**"
+              - "**/node_modules/**"
+            metadata:
+              type: instrumentor
+              provider: traceloop
+              framework: llamaindex
+
+          marqo:
+            include_paths:
+              - packages/opentelemetry-instrumentation-marqo
+            exclude_patterns:
+              - "**/__pycache__/**"
+              - "**/*.pyc"
+              - "**/tests/**"
+              - "**/node_modules/**"
+            metadata:
+              type: instrumentor
+              provider: traceloop
+              framework: marqo
+
+          mcp:
+            include_paths:
+              - packages/opentelemetry-instrumentation-mcp
+            exclude_patterns:
+              - "**/__pycache__/**"
+              - "**/*.pyc"
+              - "**/tests/**"
+              - "**/node_modules/**"
+            metadata:
+              type: instrumentor
+              provider: traceloop
+              framework: mcp
+
+          milvus:
+            include_paths:
+              - packages/opentelemetry-instrumentation-milvus
+            exclude_patterns:
+              - "**/__pycache__/**"
+              - "**/*.pyc"
+              - "**/tests/**"
+              - "**/node_modules/**"
+            metadata:
+              type: instrumentor
+              provider: traceloop
+              framework: milvus
+
+          mistralai:
+            include_paths:
+              - packages/opentelemetry-instrumentation-mistralai
+            exclude_patterns:
+              - "**/__pycache__/**"
+              - "**/*.pyc"
+              - "**/tests/**"
+              - "**/node_modules/**"
+            metadata:
+              type: instrumentor
+              provider: traceloop
+              framework: mistralai
+
+          ollama:
+            include_paths:
+              - packages/opentelemetry-instrumentation-ollama
+            exclude_patterns:
+              - "**/__pycache__/**"
+              - "**/*.pyc"
+              - "**/tests/**"
+              - "**/node_modules/**"
+            metadata:
+              type: instrumentor
+              provider: traceloop
+              framework: ollama
+
+          openai:
+            include_paths:
+              - packages/opentelemetry-instrumentation-openai
+            exclude_patterns:
+              - "**/__pycache__/**"
+              - "**/*.pyc"
+              - "**/tests/**"
+              - "**/node_modules/**"
+            metadata:
+              type: instrumentor
+              provider: traceloop
+              framework: openai
+
+          openai_agents:
+            include_paths:
+              - packages/opentelemetry-instrumentation-openai-agents
+            exclude_patterns:
+              - "**/__pycache__/**"
+              - "**/*.pyc"
+              - "**/tests/**"
+              - "**/node_modules/**"
+            metadata:
+              type: instrumentor
+              provider: traceloop
+              framework: openai_agents
+
+          pinecone:
+            include_paths:
+              - packages/opentelemetry-instrumentation-pinecone
+            exclude_patterns:
+              - "**/__pycache__/**"
+              - "**/*.pyc"
+              - "**/tests/**"
+              - "**/node_modules/**"
+            metadata:
+              type: instrumentor
+              provider: traceloop
+              framework: pinecone
+
+          qdrant:
+            include_paths:
+              - packages/opentelemetry-instrumentation-qdrant
+            exclude_patterns:
+              - "**/__pycache__/**"
+              - "**/*.pyc"
+              - "**/tests/**"
+              - "**/node_modules/**"
+            metadata:
+              type: instrumentor
+              provider: traceloop
+              framework: qdrant
+
+          replicate:
+            include_paths:
+              - packages/opentelemetry-instrumentation-replicate
+            exclude_patterns:
+              - "**/__pycache__/**"
+              - "**/*.pyc"
+              - "**/tests/**"
+              - "**/node_modules/**"
+            metadata:
+              type: instrumentor
+              provider: traceloop
+              framework: replicate
+
+          sagemaker:
+            include_paths:
+              - packages/opentelemetry-instrumentation-sagemaker
+            exclude_patterns:
+              - "**/__pycache__/**"
+              - "**/*.pyc"
+              - "**/tests/**"
+              - "**/node_modules/**"
+            metadata:
+              type: instrumentor
+              provider: traceloop
+              framework: sagemaker
+
+          together:
+            include_paths:
+              - packages/opentelemetry-instrumentation-together
+            exclude_patterns:
+              - "**/__pycache__/**"
+              - "**/*.pyc"
+              - "**/tests/**"
+              - "**/node_modules/**"
+            metadata:
+              type: instrumentor
+              provider: traceloop
+              framework: together
+
+          transformers:
+            include_paths:
+              - packages/opentelemetry-instrumentation-transformers
+            exclude_patterns:
+              - "**/__pycache__/**"
+              - "**/*.pyc"
+              - "**/tests/**"
+              - "**/node_modules/**"
+            metadata:
+              type: instrumentor
+              provider: traceloop
+              framework: transformers
+
+          vertexai:
+            include_paths:
+              - packages/opentelemetry-instrumentation-vertexai
+            exclude_patterns:
+              - "**/__pycache__/**"
+              - "**/*.pyc"
+              - "**/tests/**"
+              - "**/node_modules/**"
+            metadata:
+              type: instrumentor
+              provider: traceloop
+              framework: vertexai
+
+          watsonx:
+            include_paths:
+              - packages/opentelemetry-instrumentation-watsonx
+            exclude_patterns:
+              - "**/__pycache__/**"
+              - "**/*.pyc"
+              - "**/tests/**"
+              - "**/node_modules/**"
+            metadata:
+              type: instrumentor
+              provider: traceloop
+              framework: watsonx
+
+          weaviate:
+            include_paths:
+              - packages/opentelemetry-instrumentation-weaviate
+            exclude_patterns:
+              - "**/__pycache__/**"
+              - "**/*.pyc"
+              - "**/tests/**"
+              - "**/node_modules/**"
+            metadata:
+              type: instrumentor
+              provider: traceloop
+              framework: weaviate
+
+          writer:
+            include_paths:
+              - packages/opentelemetry-instrumentation-writer
+            exclude_patterns:
+              - "**/__pycache__/**"
+              - "**/*.pyc"
+              - "**/tests/**"
+              - "**/node_modules/**"
+            metadata:
+              type: instrumentor
+              provider: traceloop
+              framework: writer
+
+      pydantic_ai:
+        path: ../../../pydantic/pydantic-ai
+        domains:
+          core:
+            include_paths:
+              - pydantic_ai_slim/pydantic_ai
+            exclude_patterns:
+              - "**/__pycache__/**"
+              - "**/*.pyc"
+              - "**/tests/**"
+            metadata:
+              type: framework
+              category: agent-framework
+              focus: core-agent-logic
+
+          evals:
+            include_paths:
+              - pydantic_evals
+            exclude_patterns:
+              - "**/__pycache__/**"
+              - "**/*.pyc"
+              - "**/tests/**"
+            metadata:
+              type: framework
+              category: evaluation
+              focus: agent-testing
+
+          graph:
+            include_paths:
+              - pydantic_graph
+            exclude_patterns:
+              - "**/__pycache__/**"
+              - "**/*.pyc"
+              - "**/tests/**"
+            metadata:
+              type: framework
+              category: workflow
+              focus: graph-execution
+
+          cli:
+            include_paths:
+              - clai
+            exclude_patterns:
+              - "**/__pycache__/**"
+              - "**/*.pyc"
+              - "**/tests/**"
+            metadata:
+              type: framework
+              category: tooling
+              focus: command-line
+
+      praxis_os:
+        path: ../../praxis-os
+        domains:
+          core:
+            include_paths:
+              - .praxis-os/ouroboros
+            exclude_patterns:
+              - "**/__pycache__/**"
+              - "**/*.pyc"
+              - "**/tests/**"
+              - "**/.pytest_cache/**"
+              - "**/subsystems/**"  # Index subsystems separately
+              - "**/tools/**"  # Index tools separately
+              - "**/middleware/**"  # Index middleware separately
+              - "**/config/**"  # Index config separately
+              - "**/foundation/**"  # Index foundation separately
+              - "**/utils/**"  # Index utils separately
+            metadata:
+              project: praxis-os
+              type: mcp-server
+              component: core
+              critical: "true"
+
+          config:
+            include_paths:
+              - .praxis-os/ouroboros/config
+            exclude_patterns:
+              - "**/__pycache__/**"
+              - "**/*.pyc"
+            metadata:
+              project: praxis-os
+              type: mcp-server
+              component: config-system
+
+          foundation:
+            include_paths:
+              - .praxis-os/ouroboros/foundation
+            exclude_patterns:
+              - "**/__pycache__/**"
+              - "**/*.pyc"
+            metadata:
+              project: praxis-os
+              type: mcp-server
+              component: infrastructure
+
+          middleware:
+            include_paths:
+              - .praxis-os/ouroboros/middleware
+            exclude_patterns:
+              - "**/__pycache__/**"
+              - "**/*.pyc"
+            metadata:
+              project: praxis-os
+              type: mcp-server
+              component: request-pipeline
+
+          rag:
+            include_paths:
+              - .praxis-os/ouroboros/subsystems/rag
+            exclude_patterns:
+              - "**/__pycache__/**"
+              - "**/*.pyc"
+            metadata:
+              project: praxis-os
+              type: mcp-server
+              component: rag-subsystem
+              critical: "true"
+
+          workflow:
+            include_paths:
+              - .praxis-os/ouroboros/subsystems/workflow
+            exclude_patterns:
+              - "**/__pycache__/**"
+              - "**/*.pyc"
+            metadata:
+              project: praxis-os
+              type: mcp-server
+              component: workflow-subsystem
+
+          browser:
+            include_paths:
+              - .praxis-os/ouroboros/subsystems/browser
+            exclude_patterns:
+              - "**/__pycache__/**"
+              - "**/*.pyc"
+            metadata:
+              project: praxis-os
+              type: mcp-server
+              component: browser-subsystem
+
+          tools:
+            include_paths:
+              - .praxis-os/ouroboros/tools
+            exclude_patterns:
+              - "**/__pycache__/**"
+              - "**/*.pyc"
+            metadata:
+              project: praxis-os
+              type: mcp-server
+              component: mcp-tools
+              critical: "true"
+
+          utils:
+            include_paths:
+              - .praxis-os/ouroboros/utils
+            exclude_patterns:
+              - "**/__pycache__/**"
+              - "**/*.pyc"
+            metadata:
+              project: praxis-os
+              type: mcp-server
+              component: utilities
+
+  #   - Examples: "all async functions", "all classes with method X",
+  #               "all error handling blocks"
+  #   - Uses Tree-sitter parsers for language-specific AST parsing
+  #
+  # Paths should match code.source_paths above (same directories).
+  #
+  # Auto-install Parsers:
+  #   - If auto_install_parsers: true, server will automatically install
+  #     missing Tree-sitter parsers (e.g., tree-sitter-python)
+  #   - Requires internet access on first startup
+  #   - Set to false for air-gapped environments (install manually)
+  ast:
+    source_paths:
+      # HoneyHive Python SDK source code (matches code.source_paths)
+      - "../src/honeyhive/"
+
+    languages:
+      # Python SDK + TypeScript services (matches code.languages)
+      - "python"
+      - "typescript"
+      - "javascript"
+
+    auto_install_parsers: true  # Auto-install missing parsers (requires internet)
+    venv_path: "venv/"  # Isolated venv for parser installation (usually fine as-is)
+
+  # ========================================================================
+  # File Watcher (Incremental Updates)
+  # ========================================================================
+  # Automatically rebuilds indexes when files change.
+  #
+  # What it does:
+  #   - Watches source files for changes
+  #   - Automatically rebuilds affected indexes (standards, code, AST)
+  #   - Debounces rapid changes (waits 500ms before rebuilding)
+  #
+  # Usually fine as-is (enabled=True, debounce_ms=500).
+  # Disable if you want manual rebuilds only.
+  file_watcher: {}  # Use all defaults (enabled=True, debounce_ms=500)
+
+# ============================================================================
+# Workflow Subsystem Configuration
+# ============================================================================
+# Configures phase-gated workflow execution.
+#
+workflow:
+  workflows_dir: "workflows/"
+  state_dir: ".cache/state/"  # Workflow state persistence (usually fine as-is)
+  session_timeout_minutes: 1440  # 24 hours (reasonable default)
+
+# ============================================================================
+# Browser Subsystem Configuration
+# ============================================================================
+# Configures browser automation (Playwright).
+#
+# Usually fine as-is unless you need different browser type or session limits.
+browser:
+  browser_type: "chromium"  # Options: chromium, firefox, webkit
+  headless: true  # Run without UI (set false for debugging)
+  max_sessions: 10  # Max concurrent browser sessions
+  session_timeout_minutes: 30  # Auto-cleanup idle sessions
+
+# ============================================================================
+# Logging Configuration
+# ============================================================================
+# Configures structured logging and behavioral metrics.
+#
+# Usually fine as-is unless you need different log levels or formats.
+logging:
+  level: "INFO"  # Options: DEBUG, INFO, WARNING, ERROR, CRITICAL
+  format: "text"  # Options: "text" (human-readable) or "json" (structured)
+  log_dir: ".cache/logs/"  # Log file location (usually fine as-is)
+  behavioral_metrics_enabled: true  # Track query diversity, trends, prepend effectiveness

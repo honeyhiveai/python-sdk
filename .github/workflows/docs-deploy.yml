@@ -1,0 +1,191 @@
+---
+name: Deploy Documentation to GitHub Pages
+
+# Deploy Sphinx documentation to GitHub Pages
+# Triggers: main branch push, releases, manual dispatch
+
+on:
+  push:
+    branches: [main, complete-refactor]
+    paths:
+      - 'docs/**'
+      - 'src/**'
+      - '*.md'
+      - 'pyproject.toml'
+      - '.agent-os/product/**'
+      - '.agent-os/standards/**'
+      - 'examples/**'
+  release:
+    types: [published]
+  workflow_dispatch:
+    inputs:
+      validate_only:
+        description: 'Only validate, do not deploy'
+        required: false
+        default: false
+        type: boolean
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: "pages-${{ github.ref }}"
+  cancel-in-progress: false
+
+jobs:
+  validate-and-build:
+    name: Validate and Build Documentation
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      # MANDATORY: AI Assistant Validation Protocol
+      - name: 🔍 Validate Current API Surface
+        run: |
+          echo "AI Assistant Validation Protocol: Checking current API exports..."
+
+          # Verify __init__.py exists and contains expected exports
+          if [ ! -f "src/honeyhive/__init__.py" ]; then
+            echo "❌ src/honeyhive/__init__.py not found"
+            exit 1
+          fi
+
+          # Check that HoneyHive and HoneyHiveTracer are in __all__
+          if ! grep -q '"HoneyHive"' src/honeyhive/__init__.py; then
+            echo "❌ HoneyHive not found in __all__ exports"
+            exit 1
+          fi
+
+          if ! grep -q '"HoneyHiveTracer"' src/honeyhive/__init__.py; then
+            echo "❌ HoneyHiveTracer not found in __all__ exports"
+            exit 1
+          fi
+
+          echo "✅ API validation passed - both HoneyHive and HoneyHiveTracer found in exports"
+
+      - name: Set up Python 3.11
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+          cache: 'pip'
+
+      - name: Create virtual environment (python-sdk)
+        run: |
+          python -m venv python-sdk
+          source python-sdk/bin/activate
+          echo "python-sdk/bin" >> $GITHUB_PATH
+          python --version
+
+      - name: Install dependencies
+        run: |
+          source python-sdk/bin/activate
+          python -m pip install --upgrade pip
+
+          # Install package in development mode
+          pip install -e .
+
+          # Install documentation dependencies
+          pip install sphinx>=7.0.0 sphinx-rtd-theme>=1.3.0
+          pip install sphinx-autodoc-typehints myst-parser sphinx-copybutton sphinx-design
+          pip install sphinxcontrib-mermaid sphinx-tabs
+
+          # Validate Sphinx version
+          python -c "import sphinx; print(f'Sphinx version: {sphinx.__version__}')"
+
+      - name: Test API imports
+        run: |
+          source python-sdk/bin/activate
+
+          # Test that our documented API actually works
+          python -c "
+          try:
+              from honeyhive import HoneyHive, HoneyHiveTracer
+              print('✅ Core imports successful: HoneyHive, HoneyHiveTracer')
+
+              from honeyhive import trace, evaluate
+              print('✅ Function imports successful: trace, evaluate')
+
+              import honeyhive
+              print(f'✅ Package version: {honeyhive.__version__}')
+          except ImportError as e:
+              print(f'❌ Import failed: {e}')
+              exit(1)
+          "
+
+      - name: Build Sphinx documentation
+        run: |
+          source python-sdk/bin/activate
+          cd docs
+
+          # Clean previous builds
+          make clean
+
+          # Build HTML documentation with warnings as errors
+          echo "🔧 Building documentation with strict validation..."
+          make html 2>&1 | tee build.log
+
+          # Additional validation: Check for common issues
+          echo "🔍 Running additional documentation validation..."
+          # Check for broken internal links (basic validation)
+          if grep -i "unknown document" build.log; then
+            echo "❌ Found broken internal links in build log"
+            cat build.log
+            exit 1
+          fi
+
+          # Check for any warnings that might have been missed
+          if grep -i "warning" build.log; then
+            echo "❌ Found warnings in documentation build"
+            cat build.log
+            exit 1
+          fi
+
+          # Create .nojekyll for GitHub Pages
+          touch _build/html/.nojekyll
+
+          # Validate build output
+          if [ ! -f "_build/html/index.html" ]; then
+            echo "❌ Documentation build failed - index.html not found"
+            exit 1
+          fi
+
+          # Check that key pages exist
+          required_pages=("tutorials/index.html" "how-to/index.html" "reference/index.html" "development/index.html")
+          for page in "${required_pages[@]}"; do
+            if [ ! -f "_build/html/$page" ]; then
+              echo "❌ Required page missing: $page"
+              exit 1
+            fi
+          done
+
+          echo "✅ Documentation built and validated successfully"
+          ls -la _build/html/
+
+      - name: Upload Pages artifact
+        if: inputs.validate_only != true
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: ./docs/_build/html
+
+  deploy:
+    name: Deploy to GitHub Pages
+    if: inputs.validate_only != true
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    runs-on: ubuntu-latest
+    needs: validate-and-build
+    steps:
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4
+
+      - name: Log deployment success
+        run: |
+          echo "✅ Documentation deployed successfully"
+          echo "📚 URL: ${{ steps.deployment.outputs.page_url }}"

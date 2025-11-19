@@ -1023,7 +1023,7 @@ paths:
               schema:
                 $ref: '#/components/schemas/ExperimentResultResponse'
         '400':
-          description: Error processing experiment result      
+          description: Error processing experiment result
   /runs/{run_id_1}/compare-with/{run_id_2}:
     get:
       summary: Retrieve experiment comparison
@@ -1060,7 +1060,7 @@ paths:
               schema:
                 $ref: '#/components/schemas/ExperimentComparisonResponse'
         '400':
-          description: Error processing experiment comparison      
+          description: Error processing experiment comparison
   /configurations:
     get:
       summary: Retrieve a list of configurations
@@ -2694,14 +2694,14 @@ components:
                 type: array
                 items:
                   oneOf:
-                    - type: number
-                    - type: boolean
+                  - type: number
+                  - type: boolean
               new_values:
                 type: array
                 items:
                   oneOf:
-                    - type: number
-                    - type: boolean
+                  - type: number
+                  - type: boolean
         commonDatapoints:
           type: array
           items:

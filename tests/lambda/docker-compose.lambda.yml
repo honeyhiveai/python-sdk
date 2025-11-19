@@ -1,0 +1,82 @@
+version: '3.8'
+
+services:
+  lambda-python311:
+    image: public.ecr.aws/lambda/python:3.11
+    platform: linux/amd64
+    volumes:
+      - ./lambda_functions:/var/task:ro
+      - ../../src:/var/task/honeyhive:ro
+    environment:
+      - AWS_LAMBDA_FUNCTION_NAME=honeyhive-test-py311
+      - AWS_LAMBDA_FUNCTION_VERSION=1
+      - AWS_LAMBDA_FUNCTION_MEMORY_SIZE=128
+      - HH_API_KEY=test-key
+      - HH_PROJECT=lambda-test
+      - HH_SOURCE=aws-lambda
+    ports:
+      - "9000:8080"
+    command: basic_tracing.lambda_handler
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8080/2015-03-31/functions/function/invocations"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  lambda-python312:
+    image: public.ecr.aws/lambda/python:3.12
+    platform: linux/amd64
+    volumes:
+      - ./lambda_functions:/var/task:ro
+      - ../../src:/var/task/honeyhive:ro
+    environment:
+      - AWS_LAMBDA_FUNCTION_NAME=honeyhive-test-py312
+      - AWS_LAMBDA_FUNCTION_VERSION=1
+      - AWS_LAMBDA_FUNCTION_MEMORY_SIZE=128
+      - HH_API_KEY=test-key
+      - HH_PROJECT=lambda-test
+      - HH_SOURCE=aws-lambda
+    ports:
+      - "9001:8080"
+    command: basic_tracing.lambda_handler
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8080/2015-03-31/functions/function/invocations"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  lambda-cold-start-test:
+    image: public.ecr.aws/lambda/python:3.11
+    platform: linux/amd64
+    volumes:
+      - ./lambda_functions:/var/task:ro
+      - ../../src:/var/task/honeyhive:ro
+    environment:
+      - AWS_LAMBDA_FUNCTION_NAME=honeyhive-cold-start-test
+      - AWS_LAMBDA_FUNCTION_VERSION=1
+      - AWS_LAMBDA_FUNCTION_MEMORY_SIZE=128
+      - HH_API_KEY=test-key
+      - HH_PROJECT=lambda-cold-start-test
+    ports:
+      - "9002:8080"
+    command: cold_start_test.lambda_handler
+
+  lambda-memory-test:
+    image: public.ecr.aws/lambda/python:3.11
+    platform: linux/amd64
+    volumes:
+      - ./lambda_functions:/var/task:ro
+      - ../../src:/var/task/honeyhive:ro
+    environment:
+      - AWS_LAMBDA_FUNCTION_NAME=honeyhive-memory-test
+      - AWS_LAMBDA_FUNCTION_VERSION=1
+      - AWS_LAMBDA_FUNCTION_MEMORY_SIZE=512  # Higher memory for stress testing
+      - HH_API_KEY=test-key
+      - HH_PROJECT=lambda-memory-test
+    ports:
+      - "9003:8080"
+    command: basic_tracing.lambda_handler
+
+networks:
+  default:
+    name: honeyhive-lambda-test

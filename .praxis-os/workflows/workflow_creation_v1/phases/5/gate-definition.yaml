@@ -1,0 +1,55 @@
+# Gate Definition - Phase 5: Testing & Delivery
+# Created: 2025-10-20
+# Purpose: Validate workflow tested, refined, and production-ready
+
+checkpoint:
+  strict: false
+  allow_override: true
+
+evidence_schema:
+  dry_run_successful:
+    type: boolean
+    required: true
+    description: "Dry run completed without errors"
+
+  usability_issues_count:
+    type: integer
+    required: true
+    description: "Number of usability issues found"
+
+  refinements_applied:
+    type: boolean
+    required: true
+    description: "All identified issues addressed"
+
+  usage_guide_created:
+    type: boolean
+    required: true
+    description: "Usage guide written"
+
+  final_compliance_passed:
+    type: boolean
+    required: true
+    description: "Final compliance check passed"
+
+  content_quality_passed:
+    type: boolean
+    required: true
+    description: "No generic stubs detected"
+
+  content_quality_compliance_percent:
+    type: integer
+    required: true
+    description: "Percentage of compliant task files"
+
+  generic_content_detected:
+    type: boolean
+    required: true
+    description: "No generic placeholder content found"
+
+  human_approved:
+    type: boolean
+    required: true
+    description: "Human reviewed and approved for production"
+
+validators: {}

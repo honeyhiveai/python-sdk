@@ -1,0 +1,62 @@
+# HoneyHive SDK Compatibility Matrix Test Requirements
+
+# Core HoneyHive SDK
+honeyhive[opentelemetry]
+
+# OpenInference Instrumentation - Core Providers (Python 3.12+ compatible)
+openinference-instrumentation-openai
+openinference-instrumentation-anthropic
+openinference-instrumentation-bedrock
+openinference-instrumentation-google-generativeai
+openinference-instrumentation-google-adk
+openinference-instrumentation-mcp
+
+# OpenTelemetry Instrumentation - For Traceloop Tests
+opentelemetry-instrumentation-openai
+opentelemetry-instrumentation-anthropic
+opentelemetry-instrumentation-bedrock
+opentelemetry-instrumentation-google-generativeai
+opentelemetry-instrumentation-mcp
+
+# Note: Some packages may not support Python 3.12+ yet
+# openinference-instrumentation-langchain
+# openinference-instrumentation-llama-index
+
+# Model Provider SDKs (for compatible tests only)
+openai>=1.0.0
+anthropic>=0.20.0
+boto3>=1.28.0
+botocore>=1.28.0
+google-generativeai>=0.3.0
+google-genai>=1.33.0
+# Commented out until Python 3.12+ support is available
+# langchain>=0.2.0
+# langchain-openai>=0.1.0
+# llama-index>=0.10.0
+# llama-index-llms-openai
+# llama-index-embeddings-openai
+
+# Optional/Extended Provider Support
+# Uncomment these for extended testing:
+
+# openinference-instrumentation-cohere
+# openinference-instrumentation-vertexai
+# openinference-instrumentation-mistralai
+# openinference-instrumentation-groq
+# openinference-instrumentation-huggingface
+# openinference-instrumentation-ollama
+# openinference-instrumentation-dspy
+
+# cohere>=4.0.0
+# google-cloud-aiplatform>=1.38.0
+# mistralai>=0.1.0
+# groq>=0.4.0
+# transformers>=4.35.0
+# torch>=2.0.0
+# ollama>=0.1.0
+# dspy-ai>=2.4.0
+
+# Development and Testing
+pytest>=7.0.0
+pytest-asyncio>=0.21.0
+pytest-timeout>=2.1.0

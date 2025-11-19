@@ -1,0 +1,148 @@
+🔍 Analyzing Cursor Token Usage from Global Database
+
+====================================================================================================
+📊 Processing sessions...
+  Processed 100 sessions...
+  Processed 200 sessions...
+  Processed 300 sessions...
+  Processed 400 sessions...
+
+✅ Processed 498 sessions out of 517 total entries
+
+====================================================================================================
+
+📊 TOKEN USAGE BY PROJECT & MONTH
+
+====================================================================================================
+
+📦 cline/cline
+----------------------------------------------------------------------------------------------------
+  2025-10:      211,531 ctx tokens (~$    4.23) |   3 sessions |   400 msgs | +  4254/-    12 lines | ✓ 2 ✗ 1
+    TOTAL:      211,531 ctx tokens (~$    4.23) |   3 sessions
+
+📦 honeyhiveai/agent-os-enhanced
+----------------------------------------------------------------------------------------------------
+  2025-10:    6,593,707 ctx tokens (~$  131.87) |  71 sessions | 35201 msgs | +469048/-125212 lines | ✓64 ✗ 7
+    TOTAL:    6,593,707 ctx tokens (~$  131.87) |  71 sessions
+
+📦 honeyhiveai/disk-usage-typescript
+----------------------------------------------------------------------------------------------------
+  2025-08:      110,272 ctx tokens (~$    2.21) |   1 sessions |   191 msgs | +     0/-     0 lines | ✓ 1 ✗ 0
+    TOTAL:      110,272 ctx tokens (~$    2.21) |   1 sessions
+
+📦 honeyhiveai/gen-python-sdk
+----------------------------------------------------------------------------------------------------
+  2025-08:      345,391 ctx tokens (~$    6.91) |   4 sessions |  3584 msgs | +     0/-     0 lines | ✓ 3 ✗ 1
+    TOTAL:      345,391 ctx tokens (~$    6.91) |   4 sessions
+
+📦 honeyhiveai/go_ingestion
+----------------------------------------------------------------------------------------------------
+  2025-10:      108,122 ctx tokens (~$    2.16) |   1 sessions |   113 msgs | +  4810/-    21 lines | ✓ 0 ✗ 1
+    TOTAL:      108,122 ctx tokens (~$    2.16) |   1 sessions
+
+📦 honeyhiveai/hive-kube
+----------------------------------------------------------------------------------------------------
+  2025-09:      418,103 ctx tokens (~$    8.36) |   4 sessions |  1348 msgs | +  8670/-    43 lines | ✓ 3 ✗ 1
+  2025-10:    2,671,717 ctx tokens (~$   53.43) |  27 sessions | 12670 msgs | +118907/-  4224 lines | ✓25 ✗ 2
+    TOTAL:    3,089,820 ctx tokens (~$   61.80) |  31 sessions
+
+📦 honeyhiveai/honeyhive-dsl
+----------------------------------------------------------------------------------------------------
+  2025-10:      123,555 ctx tokens (~$    2.47) |   1 sessions |   991 msgs | + 26676/-   286 lines | ✓ 1 ✗ 0
+    TOTAL:      123,555 ctx tokens (~$    2.47) |   1 sessions
+
+📦 honeyhiveai/honeyhive-pki
+----------------------------------------------------------------------------------------------------
+  2025-08:      106,003 ctx tokens (~$    2.12) |   1 sessions |   329 msgs | +     0/-     0 lines | ✓ 1 ✗ 0
+    TOTAL:      106,003 ctx tokens (~$    2.12) |   1 sessions
+
+📦 honeyhiveai/ingestion-experiment
+----------------------------------------------------------------------------------------------------
+  2025-09:       51,297 ctx tokens (~$    1.03) |   1 sessions |  2589 msgs | +     0/-     0 lines | ✓ 1 ✗ 0
+    TOTAL:       51,297 ctx tokens (~$    1.03) |   1 sessions
+
+📦 honeyhiveai/praxis-os
+----------------------------------------------------------------------------------------------------
+  2025-10:      115,553 ctx tokens (~$    2.31) |   1 sessions |   801 msgs | +   564/-   161 lines | ✓ 1 ✗ 0
+    TOTAL:      115,553 ctx tokens (~$    2.31) |   1 sessions
+
+📦 honeyhiveai/python-sdk
+----------------------------------------------------------------------------------------------------
+  2025-08:    1,747,636 ctx tokens (~$   34.95) |  27 sessions | 13869 msgs | +     0/-     0 lines | ✓20 ✗ 7
+  2025-09:   13,969,272 ctx tokens (~$  279.39) | 145 sessions | 124595 msgs | +556563/-269996 lines | ✓116 ✗29
+  2025-10:    4,908,067 ctx tokens (~$   98.16) |  44 sessions | 11043 msgs | +108313/-  2433 lines | ✓35 ✗ 9
+    TOTAL:   20,624,975 ctx tokens (~$  412.50) | 216 sessions
+
+📦 honeyhiveai/python-sdk-experiment
+----------------------------------------------------------------------------------------------------
+  2025-08:       81,959 ctx tokens (~$    1.64) |   1 sessions |   123 msgs | +     0/-     0 lines | ✓ 1 ✗ 0
+    TOTAL:       81,959 ctx tokens (~$    1.64) |   1 sessions
+
+📦 honeyhiveai/sample
+----------------------------------------------------------------------------------------------------
+  2025-08:      112,106 ctx tokens (~$    2.24) |   2 sessions |  3534 msgs | +     0/-     0 lines | ✓ 1 ✗ 1
+    TOTAL:      112,106 ctx tokens (~$    2.24) |   2 sessions
+
+📦 honeyhiveai/test-python-sdk
+----------------------------------------------------------------------------------------------------
+  2025-08:      250,133 ctx tokens (~$    5.00) |   3 sessions |   717 msgs | +     0/-     0 lines | ✓ 3 ✗ 0
+    TOTAL:      250,133 ctx tokens (~$    5.00) |   3 sessions
+
+📦 josh-paul/dotted_dict
+----------------------------------------------------------------------------------------------------
+  2025-08:       92,316 ctx tokens (~$    1.85) |   1 sessions |   394 msgs | +     0/-     0 lines | ✓ 1 ✗ 0
+    TOTAL:       92,316 ctx tokens (~$    1.85) |   1 sessions
+
+📦 unknown
+----------------------------------------------------------------------------------------------------
+  2025-08:       49,561 ctx tokens (~$    0.99) |  66 sessions |    45 msgs | +     0/-     0 lines | ✓ 3 ✗ 0
+  2025-09:      862,442 ctx tokens (~$   17.25) |  39 sessions |   428 msgs | +     0/-     0 lines | ✓12 ✗ 4
+  2025-10:    1,054,044 ctx tokens (~$   21.08) |  55 sessions |  1069 msgs | +     0/-     0 lines | ✓20 ✗ 2
+    TOTAL:    1,966,047 ctx tokens (~$   39.32) | 160 sessions
+
+====================================================================================================
+🎯 GRAND TOTAL:   33,982,787 context tokens (~$  679.66) | 498 sessions
+====================================================================================================
+
+📅 MONTHLY TOTALS (All Projects)
+
+====================================================================================================
+  2025-08:    2,895,377 ctx tokens (~$   57.91) | 106 sessions |  22786 messages
+  2025-09:   15,301,114 ctx tokens (~$  306.02) | 189 sessions | 128960 messages
+  2025-10:   15,786,296 ctx tokens (~$  315.73) | 203 sessions |  62288 messages
+
+====================================================================================================
+
+🔥 TOP 20 SESSIONS BY TOKEN USAGE
+
+====================================================================================================
+ 1.                   honeyhiveai/python-sdk | 2025-09-22 |    176,000 tokens | 3065 msgs |  54 files |   aborted | Establish performance benchmarks for tracer
+ 2.                   honeyhiveai/python-sdk | 2025-09-09 |    176,000 tokens | 1777 msgs |  21 files |   aborted | Review agent operating system standards
+ 3.                   honeyhiveai/python-sdk | 2025-09-18 |    176,000 tokens | 1583 msgs |  26 files |   aborted | Review documentation for unique IDs and standards
+ 4.                   honeyhiveai/python-sdk | 2025-09-09 |    176,000 tokens | 1717 msgs |  56 files |   aborted | Analyze trace output for issues
+ 5.            honeyhiveai/agent-os-enhanced | 2025-10-08 |    171,145 tokens | 1288 msgs |  24 files |   aborted | Improve code quality with tox and lint
+ 6.                   honeyhiveai/python-sdk | 2025-08-31 |    162,254 tokens | 1097 msgs |  48 files |   aborted | Load and enforce cursor rules
+ 7.            honeyhiveai/agent-os-enhanced | 2025-10-12 |    157,951 tokens | 1101 msgs |  63 files | completed | Commit staged files to repository
+ 8.                    honeyhiveai/hive-kube | 2025-09-06 |    156,387 tokens |  205 msgs |  53 files | completed | we are going to be working on otel_process_service.js in the
+ 9.                    honeyhiveai/hive-kube | 2025-10-09 |    156,042 tokens |  628 msgs |  14 files | completed | Locate /test endpoint in monorepo
+10.            honeyhiveai/agent-os-enhanced | 2025-10-10 |    155,156 tokens |  256 msgs |   4 files | completed | Execute documentation restructure task
+11.            honeyhiveai/agent-os-enhanced | 2025-10-24 |    154,785 tokens | 1512 msgs |  51 files | completed | Understanding GitHub Copilot in agent mode
+12.                   honeyhiveai/python-sdk | 2025-10-15 |    154,591 tokens |  167 msgs |   3 files |   aborted | Analyze Anthropic SDK for support strategies
+13.            honeyhiveai/agent-os-enhanced | 2025-10-14 |    153,870 tokens |  432 msgs |   7 files | completed | Discussing message prepend effectiveness
+14.                   honeyhiveai/python-sdk | 2025-10-14 |    151,881 tokens |  155 msgs |   3 files | completed | Deep dive into tracer module architecture
+15.                   honeyhiveai/python-sdk | 2025-10-15 |    151,778 tokens |  122 msgs |   4 files | completed | Deep analysis of AWS Bedrock SDK
+16.            honeyhiveai/agent-os-enhanced | 2025-10-22 |    151,258 tokens |  140 msgs |   7 files | completed | Review persona architecture design document
+17.                   honeyhiveai/python-sdk | 2025-09-21 |    151,123 tokens |  277 msgs |   2 files | completed | Build unit tests for initialization.py
+18.                   honeyhiveai/python-sdk | 2025-09-08 |    150,917 tokens | 1756 msgs |  25 files | completed | Read agent operating system standards
+19.            honeyhiveai/agent-os-enhanced | 2025-10-13 |    150,663 tokens |  250 msgs |   1 files | completed | Execute agent OS upgrade workflow
+20.                   honeyhiveai/python-sdk | 2025-10-01 |    150,096 tokens |  174 msgs |   6 files | completed | Generate valid openapi traced traffic
+
+====================================================================================================
+
+💡 Notes:
+  - Context tokens = tokens loaded into context window per session
+  - Actual cost is MUCH higher: each message uses the full context
+  - Example: 100K context × 50 messages = 5M tokens input total
+  - Cost estimates use ~$20/M tokens (Cursor markup estimate)
+  - These are MINIMUM costs; actual costs include output tokens + all turns
+====================================================================================================

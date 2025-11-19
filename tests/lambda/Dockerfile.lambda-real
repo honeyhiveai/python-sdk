@@ -1,0 +1,43 @@
+# Production Lambda container with real HoneyHive SDK
+FROM public.ecr.aws/lambda/python:3.11
+
+# Install system dependencies
+RUN yum update -y && yum install -y gcc
+
+# Set working directory for builds
+WORKDIR /tmp/build
+
+# Copy the entire project for SDK installation
+COPY . .
+
+# Install the HoneyHive SDK from source with all dependencies
+RUN pip install --no-cache-dir --upgrade pip && \
+    pip install --no-cache-dir \
+    opentelemetry-api \
+    opentelemetry-sdk \
+    opentelemetry-exporter-otlp \
+    opentelemetry-instrumentation \
+    opentelemetry-propagator-b3 \
+    opentelemetry-propagator-jaeger \
+    opentelemetry-propagator-aws-xray \
+    requests \
+    pydantic && \
+    pip install --no-cache-dir -e .
+
+# Copy Lambda functions to task root
+COPY tests/lambda/lambda_functions/ ${LAMBDA_TASK_ROOT}/
+
+# Install additional test dependencies
+RUN pip install --no-cache-dir pytest
+
+# Verify SDK installation
+RUN python -c "from honeyhive.tracer import HoneyHiveTracer; print('✅ Real HoneyHive SDK installed successfully')"
+
+# Clean up build directory
+RUN rm -rf /tmp/build
+
+# Set the Lambda task root as working directory
+WORKDIR ${LAMBDA_TASK_ROOT}
+
+# Default handler
+CMD ["real_sdk_test.lambda_handler"]

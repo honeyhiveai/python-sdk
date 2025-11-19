@@ -1,0 +1,45 @@
+# Gate Definition - Phase 0: Supporting Documents Integration
+# Auto-generated: 2025-10-20
+# Purpose: Validate supporting documents have been properly processed
+
+checkpoint:
+  strict: true
+  allow_override: true
+
+evidence_schema:
+  spec_directory_created:
+    type: boolean
+    required: true
+    description: "Spec directory created with YYYY-MM-DD-descriptive-name format"
+
+  supporting_docs_directory_exists:
+    type: boolean
+    required: true
+    description: "supporting-docs/ directory exists in spec"
+
+  documents_processed:
+    type: boolean
+    required: true
+    description: "All documents processed (embedded or referenced)"
+
+  index_created:
+    type: boolean
+    required: true
+    description: "INDEX.md created with all documents listed"
+
+  insights_extracted:
+    type: boolean
+    required: true
+    description: "Each document has extracted insights documented"
+
+  mode_documented:
+    type: boolean
+    required: true
+    description: "Mode documented (embed vs reference)"
+
+  cross_reference_complete:
+    type: boolean
+    required: true
+    description: "Cross-reference summary complete"
+
+validators: {}

@@ -1,0 +1,186 @@
+# HoneyHive Integration Examples - Requirements
+# 
+# This requirements.txt includes all packages needed to run the various
+# integration examples in this directory. Install specific subsets based
+# on which integrations you want to use.
+
+# =============================================================================
+# CORE DEPENDENCIES (Required for all examples)
+# =============================================================================
+honeyhive
+python-dotenv
+pydantic
+opentelemetry-sdk
+
+# =============================================================================
+# LLM PROVIDER SDKs
+# =============================================================================
+
+# OpenAI
+openai
+
+# Anthropic (Claude)
+anthropic
+
+# AWS Bedrock
+boto3
+
+# Google AI
+google-generativeai
+
+# =============================================================================
+# OPENINFERENCE INSTRUMENTORS (Lightweight, community-driven)
+# =============================================================================
+
+# OpenAI instrumentor (used by multiple frameworks)
+openinference-instrumentation-openai
+
+# Anthropic instrumentor
+openinference-instrumentation-anthropic
+
+# AWS Bedrock instrumentor
+openinference-instrumentation-bedrock
+
+# Google ADK instrumentor
+openinference-instrumentation-google-adk
+
+# LangChain instrumentor (for LangGraph)
+openinference-instrumentation-langchain
+
+# DSPy instrumentor
+openinference-instrumentation-dspy
+
+# OpenAI Agents SDK instrumentor
+openinference-instrumentation-openai-agents
+
+# =============================================================================
+# TRACELOOP INSTRUMENTORS (Enhanced with production optimizations)
+# =============================================================================
+
+# Traceloop SDK (includes instrumentors for OpenAI, Anthropic, Bedrock, etc.)
+# Note: Traceloop can be installed via honeyhive extras for convenience:
+#   honeyhive[traceloop-openai]
+#   honeyhive[traceloop-anthropic]
+#   honeyhive[traceloop-bedrock]
+#   honeyhive[traceloop-azure-openai]
+#   honeyhive[traceloop-google-ai]
+#   honeyhive[traceloop-mcp]
+# Or install traceloop-sdk directly:
+traceloop-sdk
+
+# =============================================================================
+# AGENT FRAMEWORKS
+# =============================================================================
+
+# Microsoft AutoGen
+autogen-agentchat
+autogen-ext[openai]
+
+# DSPy (Programming with Language Models)
+dspy
+
+# Microsoft Semantic Kernel
+semantic-kernel
+
+# AWS Strands
+strands
+
+# Pydantic AI
+pydantic-ai
+
+# LangGraph (State graphs for agents)
+langgraph
+langchain-openai
+
+# OpenAI Agents SDK
+openai-agents
+
+# Google Agent Development Kit
+google-adk
+
+# =============================================================================
+# INSTALLATION COMMANDS BY INTEGRATION
+# =============================================================================
+
+# OpenAI (Simple):
+#   pip install honeyhive openai openinference-instrumentation-openai
+
+# Anthropic:
+#   pip install honeyhive anthropic openinference-instrumentation-anthropic
+
+# AWS Bedrock:
+#   pip install honeyhive boto3 openinference-instrumentation-bedrock
+
+# Google AI:
+#   pip install honeyhive google-generativeai
+
+# Google ADK:
+#   pip install honeyhive google-adk openinference-instrumentation-google-adk
+
+# DSPy:
+#   pip install honeyhive dspy openinference-instrumentation-dspy openinference-instrumentation-openai
+
+# AutoGen:
+#   pip install honeyhive autogen-agentchat autogen-ext[openai] openinference-instrumentation-openai
+
+# Semantic Kernel:
+#   pip install honeyhive semantic-kernel openinference-instrumentation-openai
+
+# Strands:
+#   pip install honeyhive strands boto3
+
+# Pydantic AI:
+#   pip install honeyhive pydantic-ai openinference-instrumentation-anthropic
+
+# LangGraph:
+#   pip install honeyhive langgraph langchain-openai openinference-instrumentation-langchain
+
+# OpenAI Agents SDK:
+#   pip install honeyhive openai-agents openinference-instrumentation-openai-agents openinference-instrumentation-openai
+
+# Traceloop OpenAI:
+#   pip install honeyhive[traceloop-openai]
+#   # or: pip install honeyhive traceloop-sdk openai
+
+# Traceloop Anthropic:
+#   pip install honeyhive[traceloop-anthropic]
+#   # or: pip install honeyhive traceloop-sdk anthropic
+
+# Traceloop Bedrock:
+#   pip install honeyhive[traceloop-bedrock]
+#   # or: pip install honeyhive traceloop-sdk boto3
+
+# Traceloop Azure OpenAI:
+#   pip install honeyhive[traceloop-azure-openai]
+#   # or: pip install honeyhive traceloop-sdk openai
+
+# Traceloop Google AI:
+#   pip install honeyhive[traceloop-google-ai]
+#   # or: pip install honeyhive traceloop-sdk google-generativeai
+
+# Traceloop MCP:
+#   pip install honeyhive[traceloop-mcp]
+#   # or: pip install honeyhive traceloop-sdk
+
+# =============================================================================
+# NOTES
+# =============================================================================
+# 
+# To install all dependencies (not recommended for production):
+#   pip install -r requirements.txt
+#
+# To install for specific integration, use the commands above or install
+# only the packages you need.
+#
+# Environment Variables Required:
+#   - HH_API_KEY: Your HoneyHive API key
+#   - HH_PROJECT: Your HoneyHive project name
+#   
+# Provider-specific environment variables:
+#   - OPENAI_API_KEY: For OpenAI integrations
+#   - ANTHROPIC_API_KEY: For Anthropic integrations
+#   - AWS_ACCESS_KEY_ID, AWS_SECRET_ACCESS_KEY: For AWS Bedrock/Strands
+#   - GOOGLE_API_KEY: For Google AI/ADK integrations
+#
+# See README.md for detailed setup instructions for each integration.
+

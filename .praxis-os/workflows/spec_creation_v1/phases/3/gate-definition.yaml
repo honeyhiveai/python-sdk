@@ -1,0 +1,50 @@
+# Gate Definition - Phase 3: Task Breakdown
+# Created: 2025-10-20
+# Purpose: Validate implementation tasks documented in tasks.md
+
+checkpoint:
+  strict: true
+  allow_override: true
+
+evidence_schema:
+  supporting_docs_reviewed:
+    type: boolean
+    required: true
+    description: "Re-read supporting docs sections relevant to task breakdown"
+
+  tasks_created:
+    type: boolean
+    required: true
+    description: "tasks.md file exists"
+
+  phases_defined:
+    type: boolean
+    required: true
+    description: "At least 1 phase defined"
+
+  tasks_defined:
+    type: boolean
+    required: true
+    description: "At least 3 tasks defined"
+
+  acceptance_criteria_complete:
+    type: boolean
+    required: true
+    description: "All tasks have acceptance criteria"
+
+  dependencies_mapped:
+    type: boolean
+    required: true
+    description: "Dependencies mapped"
+
+  validation_gates_specified:
+    type: boolean
+    required: true
+    description: "Validation gates specified"
+
+  time_estimates_provided:
+    type: boolean
+    required: true
+    description: "Time estimates provided"
+
+validators: {}

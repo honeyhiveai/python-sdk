@@ -1,0 +1,934 @@
+---
+# Generated from design document
+# Date: 2025-10-13
+# Source: .agent-os/specs/design-spec.md
+
+name: "standards-creation-v1"
+version: "1.0.0"
+workflow_type: "standards_creation"
+
+# ============================================================================
+# Problem Definition
+# ============================================================================
+
+problem:
+  statement: |
+    Manual standards creation lacks programmatic validation and consistent quality.
+    AI creates standards following documented guidelines, but without enforcement:
+    - Context degradation causes RAG optimization guidelines to fade
+    - Inconsistent quality depends on AI memory of guidelines
+    - No measurable validation (subjective "looks good" reviews)
+    - Manual testing is time-consuming and incomplete
+    - Standards may not be discoverable via natural queries
+
+    This leads to standards that work for point-in-time creation but don't scale
+    to system-wide consistency and don't guarantee discoverability.
+
+  why_workflow: |
+    A workflow enforces quality gates programmatically, ensuring every standard
+    meets RAG optimization criteria, structure requirements, and discoverability
+    thresholds before commit. This creates a self-reinforcing loop where standards
+    teach creation and creation validates standards.
+
+  success_criteria:
+    - "95%+ standards pass validation on first attempt (after AI learns patterns)"
+    - "85%+ discoverability rate (queries find standard in top 3)"
+    - "0 standards committed without validation passing"
+    - "Validation completes in < 60 seconds"
+
+# ============================================================================
+# Phases
+# ============================================================================
+
+phases:
+  - number: 0
+    name: "Discovery & Context"
+    purpose: "Gather context and understand domain before creating standard"
+    deliverable: "Domain keywords, related standards, key concepts, and audience understanding"
+
+    tasks:
+      - number: 1
+        name: "query-existing-standards"
+        purpose: "Query existing standards for similar topics using RAG"
+        domain_focus: "standards_discovery"
+        commands_needed:
+          - "search_standards"
+        steps_outline:
+          - "Identify core topic and keywords for search"
+          - "Execute RAG queries to find related standards"
+          - "Review results and note similar patterns"
+          - "Extract common terminology and approaches"
+        examples_needed:
+          - "RAG query returning relevant existing standards"
+          - "No results found scenario (new topic)"
+        validation_criteria:
+          - "At least 2 related standards identified"
+          - "Search queries executed successfully"
+          - "Common patterns documented"
+        task_context: |
+          Understanding existing standards helps ensure consistency with established
+          patterns and avoids duplication. RAG queries reveal how similar topics are
+          structured and what terminology is already in use.
+
+      - number: 2
+        name: "identify-domain-keywords"
+        purpose: "Identify domain keywords and concepts for RAG optimization"
+        domain_focus: "keyword_extraction"
+        commands_needed:
+          - "read_file"
+        steps_outline:
+          - "Extract primary topic and subtopics"
+          - "Identify technical terminology"
+          - "List action verbs agents will use in queries"
+          - "Note common problem-solving phrases"
+          - "Compile keyword list (>= 10 keywords)"
+        examples_needed:
+          - "Keyword list for test generation topic"
+          - "Keyword list for deployment workflow topic"
+        validation_criteria:
+          - "At least 10 keywords identified"
+          - "Mix of nouns, verbs, and domain terms"
+          - "Keywords match natural query patterns"
+        task_context: |
+          Keywords drive RAG discoverability. Identifying them early ensures they're
+          woven throughout the standard naturally, not stuffed artificially.
+
+      - number: 3
+        name: "review-related-patterns"
+        purpose: "Review related standards for structural and content patterns"
+        commands_needed:
+          - "read_file"
+        steps_outline:
+          - "Read related standards identified in task 1"
+          - "Note section structures used"
+          - "Identify example patterns"
+          - "Extract quality check approaches"
+          - "Document patterns to replicate"
+        examples_needed:
+          - "Pattern analysis from existing high-quality standard"
+        validation_criteria:
+          - "At least 3 patterns documented"
+          - "Structure patterns noted"
+          - "Content patterns noted"
+        task_context: |
+          Consistency across standards improves system usability. Agents learn to
+          expect certain sections and formats.
+
+      - number: 4
+        name: "extract-key-concepts"
+        purpose: "Extract key concepts and terminology for standard"
+        steps_outline:
+          - "List core concepts to explain"
+          - "Identify prerequisite knowledge"
+          - "Note concepts requiring examples"
+          - "Plan concept progression (simple to complex)"
+        examples_needed:
+          - "Concept list with dependencies mapped"
+        validation_criteria:
+          - "At least 5 key concepts extracted"
+          - "Concepts ordered logically"
+          - "Prerequisites identified"
+        task_context: |
+          Clear concept identification ensures comprehensive coverage and logical
+          flow in the final standard.
+
+      - number: 5
+        name: "understand-target-audience"
+        purpose: "Understand target audience (AI agents querying naturally)"
+        steps_outline:
+          - "Identify common agent queries for this topic"
+          - "Note query patterns (how-to, when-to, troubleshooting)"
+          - "List expected use cases"
+          - "Define success criteria for agent understanding"
+        examples_needed:
+          - "Sample agent queries for this topic"
+        validation_criteria:
+          - "At least 5 query patterns identified"
+          - "Use cases documented"
+          - "Audience needs understood"
+        task_context: |
+          Standards must be written for AI agent consumption via RAG. Understanding
+          how agents query ensures content matches search patterns.
+
+    validation_gate:
+      evidence_required:
+        domain_keywords_identified:
+          type: "array"
+          description: "List of >= 10 domain keywords"
+          validator: "min_length_10"
+        related_standards_found:
+          type: "array"
+          description: "List of >= 2 related standards"
+          validator: "min_length_2"
+        key_concepts_extracted:
+          type: "array"
+          description: "List of >= 5 key concepts"
+          validator: "min_length_5"
+        audience_understood:
+          type: "boolean"
+          description: "Audience needs and query patterns documented"
+          validator: "is_true"
+      human_approval_required: false
+
+  - number: 1
+    name: "Content Creation"
+    purpose: "Author standard with all required sections"
+    deliverable: "Complete standard with Quick Reference, Questions, Purpose, Content, Examples, and Related Standards"
+
+    tasks:
+      - number: 1
+        name: "write-quick-reference"
+        purpose: "Write Quick Reference section (front-load critical info)"
+        domain_focus: "rag_optimization"
+        commands_needed:
+          - "write"
+        steps_outline:
+          - "Front-load critical information in first 2 sentences"
+          - "Write 200-400 tokens total"
+          - "Use high keyword density (core topic appears 3-5 times)"
+          - "Ensure natural language phrasing for RAG discoverability"
+          - "Include explicit keywords list"
+        examples_needed:
+          - "Well-optimized Quick Reference example"
+          - "Poorly optimized example (generic, low keyword density)"
+        validation_criteria:
+          - "Quick Reference section present"
+          - "Token count between 200-400"
+          - "Core keyword appears 3-5 times"
+          - "Critical information in first 2 sentences"
+          - "Natural language phrasing (not keyword stuffing)"
+        task_context: |
+          Quick Reference / TL;DR is the most important section for RAG semantic
+          search discovery. Must be optimized with high keyword density while
+          maintaining natural language. The 200-400 token limit forces conciseness.
+          Front-loading critical information maximizes value even when truncated by
+          semantic chunking.
+
+      - number: 2
+        name: "write-questions-section"
+        purpose: "Write Questions This Answers (>= 5 queries agents will use)"
+        domain_focus: "rag_optimization"
+        commands_needed:
+          - "write"
+        steps_outline:
+          - "Write queries from Phase 0 audience understanding"
+          - "Cover 5 query angles: how-to, when-to, problem-solving, decision-making, tool-discovery"
+          - "Use natural language phrasing (how agents actually query)"
+          - "Ensure questions are specific, not generic"
+          - "Aim for >= 5 questions"
+        examples_needed:
+          - "Good question set covering all angles"
+          - "Bad question set (generic, vague)"
+        validation_criteria:
+          - "At least 5 questions present"
+          - "Questions cover multiple angles"
+          - "Natural language phrasing"
+          - "Questions are specific to topic"
+        task_context: |
+          Questions This Answers section provides direct query hooks for RAG. Each
+          question becomes a potential search path to this standard. Natural language
+          questions match how agents actually query the system.
+
+      - number: 3
+        name: "write-purpose-section"
+        purpose: "Write Purpose section (problem + solution)"
+        commands_needed:
+          - "write"
+        steps_outline:
+          - "State the problem this standard addresses"
+          - "Explain why this standard exists"
+          - "Describe the solution approach"
+          - "Keep concise (1-3 paragraphs)"
+        examples_needed:
+          - "Clear purpose statement"
+        validation_criteria:
+          - "Purpose section present"
+          - "Problem clearly stated"
+          - "Solution explained"
+          - "Concise (not rambling)"
+        task_context: |
+          Purpose provides context for why this standard matters. Helps agents
+          understand when to use vs when to skip.
+
+      - number: 4
+        name: "write-detailed-content"
+        purpose: "Write detailed content sections with guidance, examples, and patterns"
+        commands_needed:
+          - "write"
+        steps_outline:
+          - "Organize content by key concepts from Phase 0"
+          - "Use descriptive headers (not generic)"
+          - "Include guidance for each concept"
+          - "Add patterns and best practices"
+          - "Ensure each section is semantically complete"
+        examples_needed:
+          - "Well-structured content section"
+        validation_criteria:
+          - "Multiple content sections present"
+          - "Headers are descriptive"
+          - "Content is comprehensive"
+          - "Sections are semantically complete"
+        task_context: |
+          Detailed content is where agents learn the actual implementation. Must be
+          thorough yet concise, with clear structure for semantic chunking.
+
+      - number: 5
+        name: "add-concrete-examples"
+        purpose: "Add concrete examples (working code/scenarios)"
+        commands_needed:
+          - "write"
+        steps_outline:
+          - "Create at least 2 examples"
+          - "Include success case example"
+          - "Include failure/edge case example"
+          - "Ensure examples are complete and runnable"
+          - "Add explanatory comments"
+        examples_needed:
+          - "Complete working code example"
+          - "Scenario-based example with context"
+        validation_criteria:
+          - "At least 2 examples present"
+          - "Examples are complete"
+          - "Examples are diverse (success + failure/edge)"
+          - "Examples include explanations"
+        task_context: |
+          Concrete examples make abstract concepts tangible. Working code or complete
+          scenarios help agents understand practical application.
+
+      - number: 6
+        name: "link-related-standards"
+        purpose: "Link to related standards (no duplication)"
+        commands_needed:
+          - "search_standards"
+          - "write"
+        steps_outline:
+          - "Use related standards from Phase 0"
+          - "Create links instead of duplicating content"
+          - "Add brief context for each link"
+          - "Ensure links resolve correctly"
+        examples_needed:
+          - "Related standards section with contextual links"
+        validation_criteria:
+          - "Related Standards section present"
+          - "At least 1 link included"
+          - "Links have context"
+          - "No content duplication"
+        task_context: |
+          Linking to related standards prevents duplication and establishes the
+          knowledge graph. Agents can navigate related topics without redundancy.
+
+    validation_gate:
+      evidence_required:
+        has_quick_ref:
+          type: "boolean"
+          description: "Quick Reference section present"
+          validator: "is_true"
+        has_questions:
+          type: "boolean"
+          description: ">= 5 questions present"
+          validator: "is_true"
+        has_purpose:
+          type: "boolean"
+          description: "Purpose section present"
+          validator: "is_true"
+        has_examples:
+          type: "boolean"
+          description: ">= 2 examples present"
+          validator: "is_true"
+        has_related_standards:
+          type: "boolean"
+          description: ">= 1 related standard link"
+          validator: "is_true"
+        sections_complete:
+          type: "boolean"
+          description: "All sections have content"
+          validator: "is_true"
+        markdown_valid:
+          type: "boolean"
+          description: "Valid markdown syntax"
+          validator: "is_true"
+      human_approval_required: false
+
+  - number: 2
+    name: "RAG Optimization"
+    purpose: "Optimize content for RAG semantic search discovery"
+    deliverable: "RAG-optimized standard with keyword density, query hooks, descriptive headers, and semantic chunking"
+
+    tasks:
+      - number: 1
+        name: "optimize-keyword-density"
+        purpose: "Optimize keyword density (TL;DR: high, body: natural)"
+        domain_focus: "rag_optimization"
+        commands_needed:
+          - "read_file"
+          - "search_replace"
+        steps_outline:
+          - "Analyze TL;DR keyword density (should be high: 3-5 mentions)"
+          - "Analyze body keyword density (should be natural: distributed)"
+          - "Adjust TL;DR if density too low or too high"
+          - "Ensure body keywords are natural, not stuffed"
+        examples_needed:
+          - "Optimal keyword density example"
+          - "Keyword stuffing example (too high)"
+        validation_criteria:
+          - "TL;DR keyword density is high (3-5 mentions)"
+          - "Body keyword density is natural"
+          - "Keywords distributed throughout content"
+          - "No keyword stuffing detected"
+        task_context: |
+          Keyword density drives RAG retrieval. TL;DR needs high density for
+          discovery; body needs natural distribution for context.
+
+      - number: 2
+        name: "add-query-hooks"
+        purpose: "Add query hooks throughout content (natural language phrasing)"
+        domain_focus: "rag_optimization"
+        commands_needed:
+          - "read_file"
+          - "search_replace"
+        steps_outline:
+          - "Review Questions This Answers section"
+          - "Add query hook phrases in content sections"
+          - "Use natural language matching agent queries"
+          - "Ensure at least 5 hooks total"
+        examples_needed:
+          - "Content with effective query hooks"
+        validation_criteria:
+          - "At least 5 query hooks present"
+          - "Hooks use natural language"
+          - "Hooks match common query patterns"
+        task_context: |
+          Query hooks are phrases in content that match natural language queries,
+          improving semantic search matching beyond just keywords.
+
+      - number: 3
+        name: "optimize-headers"
+        purpose: "Optimize headers for keywords (descriptive, not generic)"
+        commands_needed:
+          - "read_file"
+          - "search_replace"
+        steps_outline:
+          - "Review all headers (H2, H3)"
+          - "Replace generic headers with descriptive ones"
+          - "Include domain keywords in headers"
+          - "Ensure headers are specific to content"
+        examples_needed:
+          - "Good headers: 'How to Execute Specs' vs 'Usage'"
+          - "Bad headers: 'Step 1', 'Overview'"
+        validation_criteria:
+          - "At least 3 major headers present"
+          - "Headers are descriptive, not generic"
+          - "Headers include domain keywords"
+          - "Headers specific to content"
+        task_context: |
+          Headers are weighted heavily in semantic search. Descriptive, keyword-rich
+          headers improve discoverability dramatically.
+
+      - number: 4
+        name: "ensure-semantic-chunking"
+        purpose: "Ensure semantic chunking (100-500 tokens per chunk, complete)"
+        domain_focus: "semantic_chunking"
+        commands_needed:
+          - "read_file"
+        steps_outline:
+          - "Review markdown structure"
+          - "Ensure sections respect markdown boundaries"
+          - "Check chunk sizes (100-500 tokens target)"
+          - "Verify each chunk is semantically complete"
+          - "Add context if chunks are too short"
+        examples_needed:
+          - "Well-chunked content example"
+          - "Poorly chunked content (incomplete chunks)"
+        validation_criteria:
+          - "Chunks respect markdown boundaries"
+          - "Chunk sizes 100-500 tokens"
+          - "Each chunk semantically complete"
+          - "Parent headers tracked for context"
+        task_context: |
+          Semantic chunking determines how RAG retrieves content. Properly sized,
+          complete chunks improve both retrieval accuracy and context quality.
+
+    validation_gate:
+      evidence_required:
+        keyword_density_tldr:
+          type: "string"
+          description: "TL;DR keyword density classification"
+          validator: "equals_high"
+        keyword_density_body:
+          type: "string"
+          description: "Body keyword density classification"
+          validator: "equals_natural"
+        query_hooks_count:
+          type: "integer"
+          description: "Number of query hooks"
+          validator: "greater_than_or_equal_5"
+        headers_descriptive:
+          type: "boolean"
+          description: "Headers are descriptive and keyword-rich"
+          validator: "is_true"
+        semantic_chunks_valid:
+          type: "boolean"
+          description: "Chunks are 100-500 tokens and complete"
+          validator: "is_true"
+      human_approval_required: false
+
+  - number: 3
+    name: "Discoverability Testing"
+    purpose: "Validate standard is discoverable via natural queries from multiple angles"
+    deliverable: "Discoverability test results showing >= 80% queries found in top 3"
+
+    tasks:
+      - number: 1
+        name: "generate-test-queries"
+        purpose: "Generate 5 test queries (one per angle)"
+        domain_focus: "query_generation"
+        commands_needed:
+          - "write"
+        steps_outline:
+          - "Generate how-to query: 'How do I [task]?'"
+          - "Generate when-to query: 'When should I use [concept]?'"
+          - "Generate problem-solving query: '[Problem] not working'"
+          - "Generate decision-making query: 'Should I use [X] or [Y]?'"
+          - "Generate tool-discovery query: 'What tool for [task]?'"
+        examples_needed:
+          - "Complete query set for test generation topic"
+          - "Complete query set for deployment workflow topic"
+        validation_criteria:
+          - "5 queries generated (one per angle)"
+          - "Queries are natural language"
+          - "Queries match expected agent patterns"
+          - "Queries are specific to topic"
+        task_context: |
+          Multi-angle testing ensures the standard is discoverable from different
+          query perspectives. Agents approach topics from various angles depending
+          on their current need.
+
+      - number: 2
+        name: "execute-rag-queries"
+        purpose: "Execute queries against RAG engine (with new standard)"
+        domain_focus: "rag_testing"
+        commands_needed:
+          - "search_standards"
+        steps_outline:
+          - "For each test query, execute RAG search"
+          - "Record results (top 5 chunks)"
+          - "Note rank of new standard"
+          - "Record relevance scores"
+        examples_needed:
+          - "RAG query results with ranking"
+        validation_criteria:
+          - "All 5 queries executed successfully"
+          - "Results recorded for each query"
+          - "Rankings documented"
+          - "Relevance scores captured"
+        task_context: |
+          Actual RAG execution is the only true test of discoverability. Simulation
+          cannot replace testing against the real search system.
+
+      - number: 3
+        name: "measure-relevance-ranking"
+        purpose: "Measure relevance scores and ranking"
+        commands_needed:
+          - "read_file"
+        steps_outline:
+          - "Analyze results from each query"
+          - "Count queries where standard appears in top 3"
+          - "Calculate found rate (should be >= 80%)"
+          - "Calculate average relevance score"
+          - "Calculate average rank for found queries"
+        examples_needed:
+          - "Results analysis showing >= 80% success"
+        validation_criteria:
+          - "Queries found in top 3: >= 4 out of 5 (80%)"
+          - "Average relevance >= 0.85"
+          - "Average rank <= 2.0"
+          - "No angle completely missing"
+        task_context: |
+          Quantitative metrics ensure discoverability meets thresholds. 80% found
+          rate means agents can discover this standard from most query angles.
+
+      - number: 4
+        name: "analyze-results"
+        purpose: "Analyze results (found in top 3?) and determine pass/fail"
+        commands_needed:
+          - "read_file"
+        steps_outline:
+          - "Review found rate against 80% threshold"
+          - "Identify which angles failed (if any)"
+          - "Determine if improvements needed"
+          - "Document pass/fail decision"
+        examples_needed:
+          - "Passing analysis (4/5 found)"
+          - "Failing analysis (2/5 found)"
+        validation_criteria:
+          - "Found rate >= 80%"
+          - "Failed angles identified"
+          - "Clear pass/fail determination"
+        task_context: |
+          Clear pass/fail criteria prevent subjective judgment. If standard fails,
+          iteration is required.
+
+      - number: 5
+        name: "iterate-if-needed"
+        purpose: "Iterate if discoverability < 80%"
+        commands_needed:
+          - "search_replace"
+        steps_outline:
+          - "If pass: proceed to next phase"
+          - "If fail: identify weak angles"
+          - "Add keywords/hooks for failed angles"
+          - "Re-test failed queries"
+          - "Repeat until >= 80%"
+        examples_needed:
+          - "Iteration to improve tool-discovery angle"
+        validation_criteria:
+          - "Iteration performed if needed"
+          - "Final found rate >= 80%"
+          - "Improvements documented"
+        task_context: |
+          Iteration ensures quality standards are met before proceeding. Failed
+          discovery must be fixed, not accepted.
+
+    validation_gate:
+      evidence_required:
+        queries_tested:
+          type: "integer"
+          description: "Number of queries tested"
+          validator: "equals_5"
+        queries_found_top3:
+          type: "integer"
+          description: "Queries found in top 3"
+          validator: "greater_than_or_equal_4"
+        average_relevance:
+          type: "float"
+          description: "Average relevance score"
+          validator: "greater_than_or_equal_0_85"
+        average_rank:
+          type: "float"
+          description: "Average rank for found queries"
+          validator: "less_than_or_equal_2_0"
+        discoverability_passed:
+          type: "boolean"
+          description: "Discoverability meets >= 80% threshold"
+          validator: "is_true"
+      human_approval_required: false
+
+  - number: 4
+    name: "Semantic Validation"
+    purpose: "Ensure semantic quality and completeness"
+    deliverable: "Validated chunks, links, and content quality"
+
+    tasks:
+      - number: 1
+        name: "analyze-chunk-sizes"
+        purpose: "Analyze chunk sizes (after semantic chunking)"
+        domain_focus: "semantic_chunking"
+        commands_needed:
+          - "read_file"
+        steps_outline:
+          - "Parse standard into semantic chunks"
+          - "Count tokens per chunk"
+          - "Calculate min, max, average chunk size"
+          - "Identify chunks outside 100-500 token range"
+        examples_needed:
+          - "Chunk size analysis results"
+        validation_criteria:
+          - "All chunks 100-500 tokens"
+          - "Average chunk size 200-400 tokens"
+          - "No chunks too small or too large"
+        task_context: |
+          Chunk size impacts RAG retrieval quality. Too small = insufficient context.
+          Too large = imprecise matching.
+
+      - number: 2
+        name: "verify-semantic-completeness"
+        purpose: "Verify semantic completeness (chunks standalone)"
+        domain_focus: "semantic_validation"
+        commands_needed:
+          - "read_file"
+        steps_outline:
+          - "Review each chunk for completeness"
+          - "Check for orphaned references"
+          - "Verify context preservation via parent headers"
+          - "Ensure no dangling pronouns without antecedents"
+        examples_needed:
+          - "Complete chunk example"
+          - "Incomplete chunk with orphaned reference"
+        validation_criteria:
+          - "All chunks semantically complete"
+          - "No orphaned references"
+          - "Context preserved via parent headers"
+          - "Chunks understandable standalone"
+        task_context: |
+          Chunks must be semantically complete because agents only see individual
+          chunks during retrieval, not full documents.
+
+      - number: 3
+        name: "validate-all-links"
+        purpose: "Validate all links (references resolve)"
+        commands_needed:
+          - "read_file"
+        steps_outline:
+          - "Extract all markdown links"
+          - "For internal links: check file exists"
+          - "For external URLs: perform DNS check"
+          - "Skip anchor links in v1.0"
+          - "Document broken links"
+        examples_needed:
+          - "Link validation passing"
+          - "Link validation with broken links"
+        validation_criteria:
+          - "All links validated"
+          - "Internal file links resolve"
+          - "External URLs have valid DNS"
+          - "No broken links found"
+        task_context: |
+          Broken links degrade standard quality and agent trust. Link validation
+          ensures all references are accessible.
+
+      - number: 4
+        name: "check-no-duplication"
+        purpose: "Check no duplication (links to source of truth instead)"
+        commands_needed:
+          - "read_file"
+          - "grep"
+        steps_outline:
+          - "Scan for duplicated content from related standards"
+          - "Verify links used instead of copying"
+          - "Check for repeated sections within standard"
+          - "Flag any duplication found"
+        examples_needed:
+          - "Good linking practice (no duplication)"
+          - "Bad practice (copied content)"
+        validation_criteria:
+          - "No content duplicated from related standards"
+          - "Links used instead of copying"
+          - "No internal duplication"
+        task_context: |
+          Duplication creates maintenance burden and version conflicts. Single source
+          of truth via links is critical.
+
+      - number: 5
+        name: "verify-code-examples"
+        purpose: "Verify code examples (if any) are complete"
+        commands_needed:
+          - "read_file"
+        steps_outline:
+          - "Identify all code examples"
+          - "Check each for completeness"
+          - "Verify syntax is valid"
+          - "Ensure examples include necessary context"
+        examples_needed:
+          - "Complete code example"
+          - "Incomplete code example"
+        validation_criteria:
+          - "All code examples complete"
+          - "Syntax valid"
+          - "Examples include context"
+          - "Examples are runnable"
+        task_context: |
+          Incomplete code examples frustrate agents. Examples must be complete enough
+          to understand and use.
+
+    validation_gate:
+      evidence_required:
+        chunk_sizes_valid:
+          type: "boolean"
+          description: "All chunks 100-500 tokens"
+          validator: "is_true"
+        chunks_standalone:
+          type: "boolean"
+          description: "All chunks semantically complete"
+          validator: "is_true"
+        links_valid:
+          type: "boolean"
+          description: "All links resolve"
+          validator: "is_true"
+        no_duplication:
+          type: "boolean"
+          description: "No duplicated content"
+          validator: "is_true"
+        code_examples_complete:
+          type: "boolean"
+          description: "All code examples complete"
+          validator: "is_true"
+      human_approval_required: false
+
+  - number: 5
+    name: "Integration & Commit"
+    purpose: "Commit standard and validate immediate discoverability"
+    deliverable: "Committed standard, indexed in RAG, and immediately discoverable"
+
+    tasks:
+      - number: 1
+        name: "generate-validation-report"
+        purpose: "Generate final validation report"
+        commands_needed:
+          - "write"
+        steps_outline:
+          - "Compile results from all phases"
+          - "Calculate overall quality score"
+          - "List all validations passed"
+          - "Note any warnings or recommendations"
+          - "Format report for human review"
+        examples_needed:
+          - "Complete validation report"
+        validation_criteria:
+          - "Report includes all phase results"
+          - "Overall score calculated"
+          - "Human-readable format"
+        task_context: |
+          Validation report provides audit trail and quality documentation for the
+          standard.
+
+      - number: 2
+        name: "commit-to-repository"
+        purpose: "Commit standard to repository"
+        commands_needed:
+          - "run_terminal_cmd"
+        steps_outline:
+          - "Add standard file to git"
+          - "Commit with descriptive message"
+          - "Record commit hash"
+          - "Push to remote (if configured)"
+        examples_needed:
+          - "Git commit command"
+        validation_criteria:
+          - "Standard file committed"
+          - "Commit hash recorded"
+          - "No git errors"
+        task_context: |
+          Committing to git provides version control and audit trail for standards
+          evolution.
+
+      - number: 3
+        name: "trigger-index-rebuild"
+        purpose: "Trigger RAG index rebuild (incremental)"
+        domain_focus: "rag_indexing"
+        commands_needed:
+          - "run_terminal_cmd"
+        steps_outline:
+          - "Trigger incremental index rebuild"
+          - "Wait for rebuild completion (timeout: 30s)"
+          - "Verify rebuild successful"
+          - "Record rebuild time"
+        examples_needed:
+          - "Index rebuild command"
+        validation_criteria:
+          - "Index rebuild triggered"
+          - "Rebuild completed successfully"
+          - "Rebuild time < 10 seconds (incremental)"
+        task_context: |
+          RAG index must be updated before standard is discoverable. Incremental
+          rebuild ensures fast updates.
+
+      - number: 4
+        name: "validate-immediate-discoverability"
+        purpose: "Validate standard immediately discoverable (re-test primary query)"
+        commands_needed:
+          - "search_standards"
+        steps_outline:
+          - "Select primary query from Phase 3 (best-performing)"
+          - "Execute RAG search"
+          - "Verify standard appears in top 3"
+          - "Record results"
+        examples_needed:
+          - "Immediate discoverability test passing"
+        validation_criteria:
+          - "Primary query executed"
+          - "Standard found in top 3"
+          - "Immediate discoverability confirmed"
+        task_context: |
+          Final confirmation that the standard is live and discoverable in the RAG
+          system.
+
+      - number: 5
+        name: "update-related-standards"
+        purpose: "Update related standards if needed (backlinks)"
+        commands_needed:
+          - "read_file"
+          - "search_replace"
+        steps_outline:
+          - "Review related standards from Phase 0"
+          - "Check if backlinks needed"
+          - "Add backlinks to new standard"
+          - "Commit related standard updates"
+        examples_needed:
+          - "Backlink addition to related standard"
+        validation_criteria:
+          - "Related standards reviewed"
+          - "Backlinks added if needed"
+          - "Updates committed"
+        task_context: |
+          Bidirectional linking creates knowledge graph navigation. Related standards
+          should link back to new standard.
+
+      - number: 6
+        name: "record-metrics"
+        purpose: "Record validation metrics for system evolution tracking"
+        commands_needed:
+          - "write"
+        steps_outline:
+          - "Record quality scores from all phases"
+          - "Record discoverability metrics"
+          - "Record validation time"
+          - "Store metrics for trend analysis"
+        examples_needed:
+          - "Metrics record format"
+        validation_criteria:
+          - "All metrics recorded"
+          - "Metrics stored persistently"
+          - "Ready for trend analysis"
+        task_context: |
+          Metrics tracking enables system evolution monitoring and continuous
+          improvement of standards creation process.
+
+    validation_gate:
+      evidence_required:
+        validation_report_created:
+          type: "boolean"
+          description: "Final validation report created"
+          validator: "is_true"
+        standard_committed:
+          type: "boolean"
+          description: "Standard committed to git"
+          validator: "is_true"
+        index_rebuilt:
+          type: "boolean"
+          description: "RAG index rebuilt"
+          validator: "is_true"
+        immediately_discoverable:
+          type: "boolean"
+          description: "Standard discoverable via primary query"
+          validator: "is_true"
+        related_standards_updated:
+          type: "boolean"
+          description: "Related standards backlinks added"
+          validator: "is_true"
+        metrics_recorded:
+          type: "boolean"
+          description: "Validation metrics stored"
+          validator: "is_true"
+      human_approval_required: false
+
+# ============================================================================
+# Optional Configuration
+# ============================================================================
+
+dynamic: false
+
+target_language: "any"
+
+created: "2025-10-13"
+
+tags:
+  - "standards"
+  - "validation"
+  - "rag_optimization"
+  - "documentation"
+  - "quality"
+
+quality_standards:
+  task_file_target_lines: 100
+  examples_per_task_min: 2
+  validation_criteria_min: 3

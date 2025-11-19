@@ -1,0 +1,25 @@
+---
+# yamllint configuration for HoneyHive Python SDK
+# Aligned with praxis OS standards for consistency
+# Permissive rules - focus on syntax errors, not style
+
+extends: default
+
+rules:
+  line-length:
+    max: 200
+    level: warning
+  
+  empty-lines:
+    max: 2
+    level: warning
+  
+  document-start: disable
+  
+  comments: disable
+  
+  indentation:
+    spaces: consistent
+    indent-sequences: consistent
+  
+  truthy: disable

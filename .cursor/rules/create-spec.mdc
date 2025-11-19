@@ -1,0 +1,96 @@
+# Create Spec - HoneyHive Python SDK
+
+When creating specifications for new features, follow the Agent OS specification standards.
+
+## 🚨 CRITICAL: Follow Agent OS Standards
+
+**All specification creation MUST follow the standards defined in:**
+- **`.agent-os/standards/best-practices.md`** - Complete Agent OS specification standards (starting at "📋 Agent OS Specification Standards")
+
+**Key Requirements**:
+- **File Structure**: Follow the mandatory 5-file structure (srd.md, specs.md, tasks.md, README.md, implementation.md)
+- **Content Standards**: Each file has specific required sections and format requirements
+- **Task Format**: Follow checkbox specifications defined in `.cursor/rules/execute-tasks.mdc`
+- **Date Standards**: Use current system date for all spec creation
+
+## Spec Creation Protocol
+
+**MANDATORY**: When creating new Agent OS specs, AI assistants MUST:
+
+### 1. Get Current Date
+```bash
+CURRENT_DATE=$(date +"%Y-%m-%d")
+echo "Today is: $CURRENT_DATE"
+```
+
+### 2. Create Directory with Proper Naming
+```bash
+SPEC_NAME="your-spec-name"
+SPEC_DIR=".agent-os/specs/${CURRENT_DATE}-${SPEC_NAME}"
+mkdir -p "$SPEC_DIR"
+```
+
+### 3. Create ALL Required Files
+```bash
+# Create mandatory files
+touch "$SPEC_DIR/srd.md"
+touch "$SPEC_DIR/specs.md" 
+touch "$SPEC_DIR/tasks.md"
+
+# Create recommended files
+touch "$SPEC_DIR/README.md"
+
+# Create optional files (if needed)
+touch "$SPEC_DIR/implementation.md"
+```
+
+### 4. Use Proper Headers in Each File
+```markdown
+# Spec Name - File Type
+
+**Date**: 2025-09-06
+**Status**: Draft/Active/Completed
+**Priority**: High/Medium/Low
+```
+
+## Validation Commands
+
+**Use the validation commands defined in `.agent-os/standards/best-practices.md`**
+
+**Quick Validation**:
+```bash
+# Get current date for spec creation
+CURRENT_DATE=$(date +"%Y-%m-%d")
+echo "Today is: $CURRENT_DATE"
+
+# Verify spec follows Agent OS standards
+# (Complete validation commands are in .agent-os/standards/best-practices.md)
+```
+
+## Standards to Follow
+- **Agent OS Standards**: `.agent-os/standards/best-practices.md`
+- **Technology Stack**: `.agent-os/standards/tech-stack.md`
+- **Code Style**: `.agent-os/standards/code-style.md`
+
+## Critical Rules for HoneyHive SDK
+1. **NO MOCKS IN INTEGRATION TESTS** - Integration tests must use real systems
+2. **All functions must have type hints** and docstrings
+3. **Minimum 80% test coverage** (project-wide)
+4. **Use tox for ALL testing** - Never pytest directly
+5. **Graceful degradation required** - Never crash host app
+6. **Use EventType enums** - Never string literals in documentation
+7. **Test count reporting** - Always report total tests correctly (unit + integration)
+
+## Common Violations to Prevent
+
+**❌ WRONG**:
+- Not consulting `.agent-os/standards/best-practices.md` before creating specs
+- Duplicating standards content instead of referencing it
+- Ignoring existing Agent OS specification structure
+- **Task format errors**: Using checkboxes on section headers or wrong checkbox format
+
+**✅ CORRECT**:
+- **Always reference Agent OS standards first**: Read `.agent-os/standards/best-practices.md`
+- **Follow established patterns**: Use existing specs as templates
+- **Proper task format**: Follow checkbox specifications in `.cursor/rules/execute-tasks.mdc`
+- **Leverage standards system**: Reference, don't duplicate

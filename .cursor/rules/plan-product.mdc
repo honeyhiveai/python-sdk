@@ -1,0 +1,50 @@
+# Plan Product - HoneyHive Python SDK
+
+When planning or understanding the product architecture, refer to the Agent OS product documentation:
+
+## Product Documentation
+- Overview: `.agent-os/product/overview.md`
+- Audience: `.agent-os/product/audience.md`
+- Roadmap: `.agent-os/product/roadmap.md`
+- Features: `.agent-os/product/features.md`
+- Decisions: `.agent-os/product/decisions.md`
+
+## Key Product Information
+- **Vision**: Comprehensive observability and evaluation platform for LLM applications
+- **Architecture**: OpenTelemetry-based with multi-instance support, no singleton pattern
+- **Target Users**: AI/ML engineers, Platform engineers, Data scientists
+- **Current Version**: 0.1.0 (complete-refactor branch)
+- **Test Coverage**: 81.14% (950+ tests: 831 unit + 119 integration)
+- **Python Support**: 3.11, 3.12, 3.13
+
+## Core Features
+- Universal @trace decorator (sync/async) with EventType enums
+- Multi-instance tracer support (no singleton pattern)
+- Automatic session management
+- Client and server-side evaluations
+- 20+ LLM provider integrations
+- Two-tier testing: Unit (mocked) vs Integration (real APIs)
+- Graceful degradation (never crashes host app)
+- Type safety with comprehensive type hints and docstrings
+
+## When to Use This Command
+Use @plan-product when:
+- Starting a new major feature
+- Understanding the product architecture
+- Reviewing the development roadmap
+- Making architectural decisions
+
+## Standards to Follow
+Always reference:
+- `.agent-os/standards/best-practices.md` for development practices (includes Agent OS spec standards)
+- `.agent-os/standards/tech-stack.md` for technology choices
+- `.agent-os/standards/code-style.md` for coding standards
+
+## Critical Product Rules
+1. **NO MOCKS IN INTEGRATION TESTS** - Integration tests must use real systems
+2. **Multi-instance support** - No singleton pattern allowed
+3. **Graceful degradation** - Never crash host applications
+4. **Type safety** - All functions must have type hints and docstrings
+5. **EventType enums** - Never use string literals in documentation
+6. **Test coverage** - Minimum 80% project-wide
+7. **Tox testing** - Never use pytest directly

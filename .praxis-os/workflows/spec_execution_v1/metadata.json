@@ -1,0 +1,176 @@
+{
+  "workflow_type": "spec_execution_v1",
+  "version": "1.0.0",
+  "name": "Specification Execution Workflow",
+  "description": "Execute tasks from a specification systematically with phase-gating and validation. Parses tasks.md from a spec directory, extracts phases dynamically, and guides systematic implementation with checkpoint validation at each phase.",
+  "author": "Agent OS Team",
+  "strict_mode": true,
+  "created_date": "2025-10-07",
+  "total_phases": "dynamic",
+  "estimated_duration": "Based on spec estimates (typically 1-4 weeks)",
+  "primary_outputs": [
+    "Fully implemented feature from spec",
+    "All tests passing (unit + integration)",
+    "Production-ready code meeting quality standards",
+    "Phase-by-phase validation evidence",
+    "Complete implementation audit trail"
+  ],
+  "phases": [
+    {
+      "phase_number": 0,
+      "phase_name": "Spec Analysis & Planning",
+      "purpose": "Parse specification structure, extract phases and tasks, validate completeness, and build execution plan",
+      "estimated_effort": "5-10 minutes",
+      "key_deliverables": [
+        "Phase list extracted from tasks.md",
+        "Task breakdown with acceptance criteria",
+        "Dependencies mapped and validated",
+        "Relevant standards queried",
+        "Execution plan built"
+      ],
+      "validation_criteria": [
+        "tasks.md exists and is parseable",
+        "All phases have tasks defined",
+        "Dependencies are valid and resolvable",
+        "Required spec files present (tasks.md, specs.md, implementation.md)",
+        "Execution plan complete"
+      ],
+      "tasks": [
+        {
+          "task_number": 1,
+          "name": "Locate and Validate Spec",
+          "file": "task-1-locate-spec.md",
+          "purpose": "Find spec directory, validate structure, check required files"
+        },
+        {
+          "task_number": 2,
+          "name": "Parse Tasks File",
+          "file": "task-2-parse-tasks.md",
+          "purpose": "Extract phases, tasks, dependencies, and validation gates from tasks.md"
+        },
+        {
+          "task_number": 3,
+          "name": "Build Execution Plan",
+          "file": "task-3-build-plan.md",
+          "purpose": "Create execution plan, query standards, prepare for implementation"
+        }
+      ]
+    },
+    {
+      "phase_number": "1-N",
+      "phase_name": "Dynamic Implementation Phases",
+      "purpose": "Execute tasks for each phase defined in tasks.md, following spec design and implementation guidance",
+      "estimated_effort": "From tasks.md phase estimates",
+      "key_deliverables": [
+        "All tasks in phase completed",
+        "Tests passing for implemented functionality",
+        "Evidence collected for checkpoint validation",
+        "Documentation updated",
+        "Code reviewed and linted"
+      ],
+      "validation_criteria": [
+        "All task acceptance criteria met",
+        "Phase validation gate passed",
+        "No linting errors",
+        "Tests passing (unit + integration)",
+        "Production code checklist satisfied"
+      ],
+      "task_execution": {
+        "template": "dynamic/task-template.md",
+        "phase_template": "dynamic/phase-template.md",
+        "approach": "horizontal_scaling",
+        "description": "Use get_task(session_id, phase, task_number) to retrieve one task at a time, execute it completely with full production quality, then move to next task"
+      }
+    }
+  ],
+  "core_utilities": [
+    {
+      "name": "Task Parser",
+      "file": "core/task-parser.md",
+      "purpose": "Parse tasks.md structure, extract phases, tasks, dependencies, and validation gates"
+    },
+    {
+      "name": "Dependency Resolver",
+      "file": "core/dependency-resolver.md",
+      "purpose": "Validate and resolve task dependencies, determine execution order"
+    },
+    {
+      "name": "Validation Gates",
+      "file": "core/validation-gates.md",
+      "purpose": "Extract and validate checkpoint criteria from tasks.md"
+    }
+  ],
+  "usage": {
+    "when_to_use": [
+      "Executing a feature spec systematically",
+      "Need tracked progress with state persistence",
+      "Want validation gates between phases",
+      "Prefer structured over ad-hoc implementation",
+      "Working on complex features with multiple phases",
+      "Need audit trail of implementation decisions"
+    ],
+    "prerequisites": [
+      "Complete spec in .praxis-os/specs/YYYY-MM-DD-name/",
+      "tasks.md with phased task breakdown",
+      "specs.md with technical design",
+      "implementation.md with patterns and guidance",
+      "README.md with executive summary"
+    ],
+    "example_invocation": {
+      "workflow_type": "spec_execution_v1",
+      "target_file": ".praxis-os/specs/2025-10-07-mcp-server-modular-redesign",
+      "options": {
+        "spec_path": ".praxis-os/specs/2025-10-07-mcp-server-modular-redesign"
+      }
+    }
+  },
+  "quality_standards": {
+    "code_quality": [
+      "Follow production code checklist (universal/standards/ai-safety/production-code-checklist.md)",
+      "Comprehensive Sphinx-style docstrings for all code",
+      "Full type hints (parameters and return types)",
+      "Error handling with specific exception types",
+      "Resource lifecycle management (proper cleanup)"
+    ],
+    "testing": [
+      "Unit tests for all new functions/classes",
+      "Integration tests for component interactions",
+      "Minimum 80% code coverage",
+      "All tests passing before phase completion"
+    ],
+    "documentation": [
+      "Inline code comments for complex logic",
+      "API documentation for public interfaces",
+      "Update relevant README files",
+      "Document design decisions"
+    ]
+  },
+  "workflow_features": {
+    "state_tracking": "Full workflow state persisted via workflow engine",
+    "checkpoint_gates": "Enforced validation between phases",
+    "resumability": "Resume from last completed checkpoint after interruption",
+    "horizontal_scaling": "One task at a time via get_task() for focused execution",
+    "standards_integration": "Automatic querying of relevant standards via MCP",
+    "audit_trail": "Complete record of tasks completed, evidence collected, decisions made"
+  },
+  "notes": [
+    "This workflow dynamically adapts to the spec structure",
+    "Phase count and tasks determined by parsing tasks.md",
+    "Validation gates extracted from tasks.md ensure quality",
+    "Use get_task() for horizontal scaling (one task at a time)",
+    "Production code checklist enforced throughout",
+    "Can nest other workflows (e.g., test_generation_v3) within tasks"
+  ],
+  "dynamic_phases": true,
+  "dynamic_config": {
+    "source_type": "spec_tasks_md",
+    "source_path_key": "spec_path",
+    "templates": {
+      "phase": "phases/dynamic/phase-template.md",
+      "task": "phases/dynamic/task-template.md"
+    },
+    "parser": "spec_tasks_parser"
+  },
+  "required_options": ["spec_path"]
+}
+

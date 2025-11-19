@@ -1,125 +1,367 @@
-[tool.poetry]
-name = "HoneyHive"
-version = "0.2.57"
-description = "The HoneyHive SDK for Python"
-authors = ["HoneyHive <support@honeyhive.ai>"]
+[project]
+name = "honeyhive"
+dynamic = ["version"]
+description = "HoneyHive Python SDK - LLM Observability and Evaluation Platform"
 readme = "README.md"
-repository = "https://github.com/honeyhiveai/python-sdk.git"
-packages = [
-    { include = "honeyhive", from = "src" }
+requires-python = ">=3.11"
+license = {text = "MIT"}
+authors = [
+    {name = "HoneyHive Team", email = "team@honeyhive.ai"}
 ]
-include = ["py.typed", "src/honeyhive/py.typed"]
-license = "Apache License 2.0"
+keywords = ["llm", "observability", "evaluation", "tracing", "monitoring", "ai"]
 classifiers = [
-    "Development Status :: 5 - Production/Stable",
+    "Development Status :: 4 - Beta",
     "Intended Audience :: Developers",
-    "Natural Language :: English",
-    "License :: OSI Approved :: Apache Software License",
-    "Programming Language :: Python :: 3.10",
+    "License :: OSI Approved :: MIT License",
+    "Operating System :: OS Independent",
+    "Programming Language :: Python :: 3",
     "Programming Language :: Python :: 3.11",
     "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
+    "Topic :: Software Development :: Libraries :: Python Modules",
+    "Topic :: System :: Monitoring",
+    "Topic :: System :: Logging",
 ]
 
-[tool.setuptools.package-data]
-"*" = ["py.typed", "src/honeyhive/py.typed"]
+dependencies = [
+    "httpx>=0.24.0",
+    "opentelemetry-api>=1.20.0",
+    "opentelemetry-sdk>=1.20.0",
+    "opentelemetry-exporter-otlp-proto-http>=1.20.0",
+    "wrapt>=1.14.0",
+    "pydantic>=2.0.0",
+    "pydantic-settings>=2.0.0",
+    "python-dotenv>=1.0.0",
+    "click>=8.0.0",
+    "pyyaml>=6.0",
+    "rich>=13.0.0",
+]
 
-[virtualenvs]
-in-project = true
+[project.optional-dependencies]
+# Development dependencies
+dev = [
+    "pytest>=7.0.0",
+    "pytest-asyncio>=0.21.0",
+    "pytest-cov>=7.0.0",
+    "pytest-mock>=3.10.0",
+    "pytest-xdist>=3.0.0",
+    "tox>=4.0.0",
+    "black>=23.0.0",
+    "isort>=5.12.0",
+    "flake8>=6.0.0",
+    "mypy>=1.0.0",
+    "typeguard>=4.0.0",
+    "psutil>=5.9.0",
+    "yamllint>=1.37.0",
+    "requests>=2.31.0",  # For docs navigation validation
+    "beautifulsoup4>=4.12.0",  # For docs navigation validation
+]
 
-############################################################
-# The "main" group provides a complete installation
-# uncompressed size = 145MB
-############################################################
-[tool.poetry.dependencies]
-python = ">=3.10,<4.0"
-eval-type-backport = ">=0.2.0"
-httpx = ">=0.27.0"
-jsonpath-python = ">=1.0.6"
-pydantic = ">=2.10.0"
-python-dateutil = ">=2.8.2"
-typing-inspect = ">=0.9.0"
-requests = ">=2.25.1"
-uplink = ">=0.1.0"
-dataclasses-json = ">=0.6.7"
-traceloop-sdk = "0.42.0"
-rich = ">=13.9.4"
-pyyaml = ">=6.0.1"
-############################################################
+# Documentation
+docs = [
+    "sphinx>=7.0.0",
+    "sphinx-rtd-theme>=1.3.0",
+    "myst-parser>=2.0.0",
+]
 
+# LLM Provider Integrations (OpenInference Instrumentors)
+# Each integration group includes the instrumentor and commonly used provider SDK
 
+# OpenAI (openinference-openai)
+openinference-openai = [
+    "openinference-instrumentation-openai>=0.1.0",
+    "openai>=1.0.0",
+]
 
-############################################################
-# The "lambda" group provides a minimal installation without traceloop
-# uncompressed size = 86MB
-############################################################
-[tool.poetry.group.lambda]
-optional = true
-[tool.poetry.group.lambda.dependencies]
-python = ">=3.10,<4.0"
-eval-type-backport = ">=0.2.0"
-httpx = ">=0.27.0"
-jsonpath-python = ">=1.0.6"
-pydantic = ">=2.10.0"
-python-dateutil = ">=2.8.2"
-typing-inspect = ">=0.9.0"
-requests = ">=2.25.1"
-uplink = ">=0.1.0"
-dataclasses-json = ">=0.6.7"
-traceloop-sdk = "0.42.0"
-############################################################
+# Anthropic (openinference-anthropic)
+openinference-anthropic = [
+    "openinference-instrumentation-anthropic>=0.1.0", 
+    "anthropic>=0.18.0",
+]
 
+# Google Generative AI (openinference-google-generativeai)
+openinference-google-ai = [
+    "openinference-instrumentation-google-generativeai>=0.1.0",
+    "google-generativeai>=0.3.0",
+]
 
+# Google Agent Development Kit (openinference-google-adk)
+openinference-google-adk = [
+    "openinference-instrumentation-google-adk>=0.1.0",
+    "google-adk>=0.1.0",
+]
 
-############################################################
-# The "core" group installs the SDK only without autotracing
-# uncompressed size = 37MB
-############################################################
-[tool.poetry.group.core]
-optional = true
-[tool.poetry.group.core.dependencies]
-python = ">=3.10,<4.0"
-eval-type-backport = ">=0.2.0"
-httpx = ">=0.27.0"
-jsonpath-python = ">=1.0.6"
-pydantic = "2.10.0"
-python-dateutil = ">=2.8.2"
-typing-inspect = ">=0.9.0"
-requests = ">=2.25.1"
-uplink = ">=0.1.0"
-dataclasses-json = ">=0.6.7"
-############################################################
+# AWS Bedrock (openinference-bedrock)
+openinference-aws-bedrock = [
+    "openinference-instrumentation-bedrock>=0.1.0",
+    "boto3>=1.26.0",
+]
 
+# Azure OpenAI (openinference-openai)
+openinference-azure-openai = [
+    "openinference-instrumentation-openai>=0.1.0",
+    "openai>=1.0.0",
+    "azure-identity>=1.12.0",
+]
 
-[tool.poetry.group.dev.dependencies]
-mypy = "==1.10.1"
-pylint = "==3.2.3"
-types-python-dateutil = ">=2.9.0.20240316"
-pytest = ">=8.1.1"
+# MCP (openinference-mcp)
+openinference-mcp = [
+    "openinference-instrumentation-mcp>=1.3.0",
+]
+
+# OpenLLMetry (Traceloop) Alternative Integrations
+# Each integration group includes individual Traceloop instrumentor and commonly used provider SDK
+# Note: Packages are named "opentelemetry-instrumentation-*" but are published by Traceloop
+
+# OpenAI (traceloop-openai)
+traceloop-openai = [
+    "opentelemetry-instrumentation-openai>=0.46.0,<1.0.0",
+    "openai>=1.0.0",
+]
+
+# Anthropic (traceloop-anthropic)
+traceloop-anthropic = [
+    "opentelemetry-instrumentation-anthropic>=0.46.0,<1.0.0", 
+    "anthropic>=0.17.0",
+]
+
+# Google Generative AI (traceloop-google-ai)
+traceloop-google-ai = [
+    "opentelemetry-instrumentation-google-generativeai>=0.46.0,<1.0.0",
+    "google-generativeai>=0.3.0",
+]
+
+# AWS Bedrock (traceloop-bedrock)
+traceloop-aws-bedrock = [
+    "opentelemetry-instrumentation-bedrock>=0.46.0,<1.0.0",
+    "boto3>=1.26.0",
+]
+
+# Azure OpenAI (traceloop-azure-openai)
+traceloop-azure-openai = [
+    "opentelemetry-instrumentation-openai>=0.46.0,<1.0.0",
+    "openai>=1.0.0",
+    "azure-identity>=1.12.0",
+]
+
+# MCP (traceloop-mcp)
+traceloop-mcp = [
+    "opentelemetry-instrumentation-mcp>=0.46.0,<1.0.0",
+]
+
+# Note: Only documented integrations are included
+# See docs/how-to/integrations/ for supported providers
+
+# Convenience Groups (OpenInference Instrumentors)
+# All Available OpenInference Integrations (documented only)
+all-openinference = [
+    "openinference-openai",
+    "openinference-anthropic",
+    "openinference-google-ai",
+    "openinference-google-adk",
+    "openinference-aws-bedrock",
+    "openinference-azure-openai",
+    "openinference-mcp",
+]
+
+# Common LLM Providers (OpenInference Ecosystem)
+openinference-llm-providers = [
+    "openinference-openai",
+    "openinference-anthropic",
+    "openinference-google-ai",
+    "openinference-aws-bedrock",
+]
+
+# OpenLLMetry (Traceloop) Convenience Groups
+# All Available Traceloop Integrations (documented only)
+all-traceloop = [
+    "traceloop-openai",
+    "traceloop-anthropic",
+    "traceloop-google-ai",
+    "traceloop-aws-bedrock",
+    "traceloop-azure-openai",
+    "traceloop-mcp",
+]
+
+# Common LLM Providers (Traceloop Ecosystem)
+traceloop-llm-providers = [
+    "traceloop-openai",
+    "traceloop-anthropic", 
+    "traceloop-google-ai",
+    "traceloop-aws-bedrock",
+]
+
+[project.urls]
+Homepage = "https://honeyhive.ai"
+Documentation = "https://docs.honeyhive.ai"
+Repository = "https://github.com/honeyhiveai/python-sdk"
+"Bug Tracker" = "https://github.com/honeyhiveai/python-sdk/issues"
+
+[project.scripts]
+honeyhive = "honeyhive.cli.main:cli"
 
 [build-system]
-requires = ["poetry-core"]
-build-backend = "poetry.core.masonry.api"
+requires = ["hatchling"]
+build-backend = "hatchling.build"
 
-[tool.pytest.ini_options]
-pythonpath = ["src"]
+[tool.hatch.version]
+path = "src/honeyhive/__init__.py"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/honeyhive"]
+
+[tool.black]
+line-length = 88
+target-version = ['py311', 'py312', 'py313']
+include = '\.pyi?$'
+extend-exclude = '''
+/(
+  # directories
+  \.eggs
+  | \.git
+  | \.hg
+  | \.mypy_cache
+  | \.tox
+  | \.venv
+  | build
+  | dist
+)/
+'''
+
+[tool.isort]
+profile = "black"
+multi_line_output = 3
+line_length = 88
+known_first_party = ["honeyhive"]
+
+[tool.pylint.messages_control]
+disable = [
+    "W0702",  # bare-except (acceptable in some cases)
+    "W0718",  # broad-exception-caught (acceptable in some cases)
+    "W0719",  # broad-exception-raised (acceptable for graceful degradation)
+    "W0212",  # protected-access (approved for test files)
+]
+
+[tool.pylint.format]
+max-line-length = 88
+
+[tool.pylint.design]
+max-args = 15
+max-attributes = 20
+max-bool-expr = 5
+max-branches = 20
+max-locals = 25
+max-parents = 7
+max-public-methods = 30
+max-returns = 10
+max-statements = 100
+
+[tool.pylint.basic]
+good-names = ["i", "j", "k", "ex", "Run", "_", "id", "db", "api", "ui", "ui_", "id_", "ip_", "ip", "setUp", "tearDown"]
+
+[tool.pylint.logging]
+# Recognize safe_log as a logging function for proper lazy formatting analysis
+logging-modules = ["logging", "honeyhive.utils.logger"]
+
+[tool.pylint.master]
+fail-under = 9.99
+init-hook = 'import sys; from pathlib import Path; sys.path.insert(0, str(Path.cwd() / ".agent-os"))'
+
+[tool.pylint.files]
+ignore-patterns = [
+    ".*generated\\.py$",
+]
 
 [tool.mypy]
-disable_error_code = "misc"
+python_version = "3.11"
+plugins = ["pydantic.mypy"]
+warn_return_any = true
+warn_unused_configs = true
+disallow_untyped_defs = true
+disallow_incomplete_defs = true
+check_untyped_defs = true
+disallow_untyped_decorators = true
+no_implicit_optional = true
+warn_redundant_casts = true
 
 [[tool.mypy.overrides]]
-module = "typing_inspect"
+module = [
+    "httpx.*",
+    "opentelemetry.*",
+    "wrapt.*",
+    "click.*",
+    "yaml.*",
+    "requests.*",
+]
 ignore_missing_imports = true
 
 [[tool.mypy.overrides]]
-module = "jsonpath"
-ignore_missing_imports = true
+module = "honeyhive.experiments.evaluators"
+ignore_errors = true
 
-[tool.pyright]
-venvPath = "."
-venv = ".venv"
+[tool.pydantic-mypy]
+init_forbid_extra = true
+init_typed = true
+warn_required_dynamic_aliases = true
 
-[tool.poetry.urls]
-Documentation = "https://docs.honeyhive.ai/"
+[tool.pytest.ini_options]
+minversion = "7.0"
+addopts = "-ra -q --strict-markers --strict-config"
+testpaths = ["tests"]
+asyncio_mode = "auto"
+markers = [
+    "slow: marks tests as slow (deselect with '-m \"not slow\"')",
+    "integration: marks tests as integration tests",
+    "unit: marks tests as unit tests",
+]
 
-[tool.poetry.scripts]
-honeyhive = "honeyhive.cli.__main__:main"
+[tool.coverage.run]
+source = ["src/honeyhive"]
+parallel = true
+omit = [
+    "*/tests/*",
+    "*/test_*",
+    "*/__pycache__/*",
+    "*/venv/*",
+    "*/env/*",
+    "*/.env/*",
+    "*/.venv/*",
+    "*/.tox/*",
+    "*/build/*",
+    "*/dist/*",
+]
+
+[tool.coverage.report]
+# Project-wide coverage requirement: 80%
+fail_under = 80
+show_missing = true
+skip_covered = false
+precision = 2
+# Individual file coverage requirement: 70% (strongly recommended)
+skip_empty = true
+
+exclude_lines = [
+    "pragma: no cover",
+    "def __repr__",
+    "if self.debug:",
+    "if settings.DEBUG",
+    "raise AssertionError",
+    "raise NotImplementedError",
+    "if 0:",
+    "if __name__ == .__main__.:",
+    "class .*\\bProtocol\\):",
+    "@(abc\\.)?abstractmethod",
+]
+
+[tool.coverage.html]
+directory = "htmlcov"
+
+# Documentation quality configuration
+[tool.doc8]
+max-line-length = 79
+ignore = ["D002", "D004"]  # Allow trailing whitespace in some contexts
+
+[tool.docs-quality]
+max-issues-per-file = 1000
+enable-auto-fix = true
+

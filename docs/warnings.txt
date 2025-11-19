@@ -1,0 +1,279 @@
+.pkg: _optional_hooks> python /Users/josh/.pyenv/versions/3.12.9/lib/python3.12/site-packages/pyproject_api/_backend.py True hatchling.build
+.pkg: get_requires_for_build_sdist> python /Users/josh/.pyenv/versions/3.12.9/lib/python3.12/site-packages/pyproject_api/_backend.py True hatchling.build
+.pkg: build_sdist> python /Users/josh/.pyenv/versions/3.12.9/lib/python3.12/site-packages/pyproject_api/_backend.py True hatchling.build
+docs: install_package> python -I -m pip install --force-reinstall --no-deps /Users/josh/src/github.com/honeyhiveai/python-sdk/.tox/.tmp/package/564/honeyhive-1.0.0rc3.tar.gz
+docs: commands[0]> python -c 'import shutil; import os; path='"'"'docs/_build'"'"'; shutil.rmtree(path) if os.path.exists(path) else None'
+docs: commands[1]> sphinx-build -W -b html docs docs/_build/html
+Running Sphinx v8.2.3
+loading translations [en]... done
+making output directory... done
+Converting `source_suffix = '.rst'` to `source_suffix = {'.rst': 'restructuredtext'}`.
+loading intersphinx inventory 'python' from https://docs.python.org/3/objects.inv ...
+loading intersphinx inventory 'opentelemetry' from https://opentelemetry-python.readthedocs.io/en/latest/objects.inv ...
+loading intersphinx inventory 'pydantic' from https://docs.pydantic.dev/latest/objects.inv ...
+building [mo]: targets for 0 po files that are out of date
+writing output... 
+building [html]: targets for 98 source files that are out of date
+updating environment: [new config] 98 added, 0 changed, 0 removed
+reading sources... [  1%] changelog
+reading sources... [  2%] development/agent-os-mcp-server
+reading sources... [  3%] development/index
+reading sources... [  4%] development/post-mortems/2025-09-05-proxy-tracer-provider-bug
+reading sources... [  5%] development/release-process
+reading sources... [  6%] development/testing/ci-cd-integration
+reading sources... [  7%] development/testing/integration-testing
+reading sources... [  8%] development/testing/integration-testing-strategy
+reading sources... [  9%] development/testing/lambda-testing
+reading sources... [ 10%] development/testing/mocking-strategies
+reading sources... [ 11%] development/testing/performance-testing
+reading sources... [ 12%] development/testing/setup-and-commands
+reading sources... [ 13%] development/testing/troubleshooting-tests
+reading sources... [ 14%] development/testing/unit-testing
+reading sources... [ 15%] development/workflow-optimization
+reading sources... [ 16%] explanation/architecture/byoi-design
+reading sources... [ 17%] explanation/architecture/diagrams
+reading sources... [ 18%] explanation/architecture/overview
+reading sources... [ 19%] explanation/concepts/experiments-architecture
+reading sources... [ 20%] explanation/concepts/llm-observability
+reading sources... [ 21%] explanation/concepts/tracing-fundamentals
+reading sources... [ 22%] explanation/index
+reading sources... [ 23%] how-to/advanced-tracing/advanced-patterns
+reading sources... [ 24%] how-to/advanced-tracing/class-decorators
+reading sources... [ 26%] how-to/advanced-tracing/custom-spans
+reading sources... [ 27%] how-to/advanced-tracing/index
+reading sources... [ 28%] how-to/advanced-tracing/session-enrichment
+reading sources... [ 29%] how-to/advanced-tracing/span-enrichment
+reading sources... [ 30%] how-to/advanced-tracing/tracer-auto-discovery
+reading sources... [ 31%] how-to/deployment/production
+reading sources... [ 32%] how-to/deployment/pyproject-integration
+reading sources... [ 33%] how-to/deployment/tracer-initialization-patterns
+reading sources... [ 34%] how-to/evaluation/best-practices
+reading sources... [ 35%] how-to/evaluation/comparing-experiments
+reading sources... [ 36%] how-to/evaluation/creating-evaluators
+reading sources... [ 37%] how-to/evaluation/dataset-crud
+reading sources... [ 38%] how-to/evaluation/dataset-management
+reading sources... [ 39%] how-to/evaluation/index
+reading sources... [ 40%] how-to/evaluation/multi-step-experiments
+reading sources... [ 41%] how-to/evaluation/result-analysis
+reading sources... [ 42%] how-to/evaluation/running-experiments
+reading sources... [ 43%] how-to/evaluation/server-side-evaluators
+reading sources... [ 44%] how-to/evaluation/troubleshooting
+reading sources... [ 45%] how-to/index
+reading sources... [ 46%] how-to/integrations/anthropic
+reading sources... [ 47%] how-to/integrations/azure-openai
+reading sources... [ 48%] how-to/integrations/bedrock
+reading sources... [ 49%] how-to/integrations/google-adk
+reading sources... [ 50%] how-to/integrations/google-ai
+reading sources... [ 51%] how-to/integrations/mcp
+reading sources... [ 52%] how-to/integrations/multi-provider
+reading sources... [ 53%] how-to/integrations/non-instrumentor-frameworks
+reading sources... [ 54%] how-to/integrations/openai
+reading sources... [ 55%] how-to/integrations/strands
+reading sources... [ 56%] how-to/llm-application-patterns
+reading sources... [ 57%] how-to/migration-compatibility/backwards-compatibility-guide
+reading sources... [ 58%] how-to/migration-compatibility/migration-guide
+reading sources... [ 59%] how-to/monitoring/export-traces
+reading sources... [ 60%] how-to/testing-applications
+reading sources... [ 61%] index
+reading sources... [ 62%] reference/api/client
+reading sources... [ 63%] reference/api/client-apis
+reading sources... [ 64%] reference/api/config-models
+reading sources... [ 65%] reference/api/decorators
+reading sources... [ 66%] reference/api/errors
+reading sources... [ 67%] reference/api/evaluators-complete
+reading sources... [ 68%] reference/api/models-complete
+reading sources... [ 69%] reference/api/tracer
+reading sources... [ 70%] reference/api/tracer-architecture
+reading sources... [ 71%] reference/api/tracer-internals
+reading sources... [ 72%] reference/api/utilities
+reading sources... [ 73%] reference/cli/commands
+reading sources... [ 74%] reference/cli/index
+reading sources... [ 76%] reference/cli/options
+reading sources... [ 77%] reference/configuration/authentication
+reading sources... [ 78%] reference/configuration/config-options
+reading sources... [ 79%] reference/configuration/environment-vars
+reading sources... [ 80%] reference/configuration/hybrid-config-approach
+reading sources... [ 81%] reference/data-models/evaluations
+reading sources... [ 82%] reference/data-models/events
+reading sources... [ 83%] reference/data-models/spans
+reading sources... [ 84%] reference/evaluation/deprecation-notice
+reading sources... [ 85%] reference/evaluation/evaluators
+reading sources... [ 86%] reference/experiments/core-functions
+reading sources... [ 87%] reference/experiments/evaluators
+reading sources... [ 88%] reference/experiments/experiments
+reading sources... [ 89%] reference/experiments/models
+reading sources... [ 90%] reference/experiments/results
+reading sources... [ 91%] reference/experiments/utilities
+reading sources... [ 92%] reference/index
+reading sources... [ 93%] tutorials/01-setup-first-tracer
+reading sources... [ 94%] tutorials/02-add-llm-tracing-5min
+reading sources... [ 95%] tutorials/03-enable-span-enrichment
+reading sources... [ 96%] tutorials/04-configure-multi-instance
+reading sources... [ 97%] tutorials/05-run-first-experiment
+reading sources... [ 98%] tutorials/06-distributed-tracing
+reading sources... [ 99%] tutorials/advanced-configuration
+reading sources... [100%] tutorials/index
+
+looking for now-outdated files... none found
+pickling environment... done
+checking consistency... /Users/josh/src/github.com/honeyhiveai/python-sdk/docs/reference/experiments/core-functions.rst: document is referenced in multiple toctrees: ['reference/experiments/experiments', 'reference/index'], selecting: reference/index <- reference/experiments/core-functions
+/Users/josh/src/github.com/honeyhiveai/python-sdk/docs/reference/experiments/evaluators.rst: document is referenced in multiple toctrees: ['reference/experiments/experiments', 'reference/index'], selecting: reference/index <- reference/experiments/evaluators
+/Users/josh/src/github.com/honeyhiveai/python-sdk/docs/reference/experiments/models.rst: document is referenced in multiple toctrees: ['reference/experiments/experiments', 'reference/index'], selecting: reference/index <- reference/experiments/models
+/Users/josh/src/github.com/honeyhiveai/python-sdk/docs/reference/experiments/results.rst: document is referenced in multiple toctrees: ['reference/experiments/experiments', 'reference/index'], selecting: reference/index <- reference/experiments/results
+/Users/josh/src/github.com/honeyhiveai/python-sdk/docs/reference/experiments/utilities.rst: document is referenced in multiple toctrees: ['reference/experiments/experiments', 'reference/index'], selecting: reference/index <- reference/experiments/utilities
+done
+preparing documents... done
+copying assets... 
+copying static files... 
+Writing evaluated template result to /Users/josh/src/github.com/honeyhiveai/python-sdk/docs/_build/html/_static/basic.css
+Writing evaluated template result to /Users/josh/src/github.com/honeyhiveai/python-sdk/docs/_build/html/_static/language_data.js
+Writing evaluated template result to /Users/josh/src/github.com/honeyhiveai/python-sdk/docs/_build/html/_static/documentation_options.js
+Writing evaluated template result to /Users/josh/src/github.com/honeyhiveai/python-sdk/docs/_build/html/_static/js/versions.js
+copying static files: done
+copying extra files... 
+copying extra files: done
+copying assets: done
+writing output... [  1%] changelog
+writing output... [  2%] development/agent-os-mcp-server
+writing output... [  3%] development/index
+writing output... [  4%] development/post-mortems/2025-09-05-proxy-tracer-provider-bug
+writing output... [  5%] development/release-process
+writing output... [  6%] development/testing/ci-cd-integration
+writing output... [  7%] development/testing/integration-testing
+writing output... [  8%] development/testing/integration-testing-strategy
+writing output... [  9%] development/testing/lambda-testing
+writing output... [ 10%] development/testing/mocking-strategies
+writing output... [ 11%] development/testing/performance-testing
+writing output... [ 12%] development/testing/setup-and-commands
+writing output... [ 13%] development/testing/troubleshooting-tests
+writing output... [ 14%] development/testing/unit-testing
+writing output... [ 15%] development/workflow-optimization
+writing output... [ 16%] explanation/architecture/byoi-design
+writing output... [ 17%] explanation/architecture/diagrams
+writing output... [ 18%] explanation/architecture/overview
+writing output... [ 19%] explanation/concepts/experiments-architecture
+writing output... [ 20%] explanation/concepts/llm-observability
+writing output... [ 21%] explanation/concepts/tracing-fundamentals
+writing output... [ 22%] explanation/index
+writing output... [ 23%] how-to/advanced-tracing/advanced-patterns
+writing output... [ 24%] how-to/advanced-tracing/class-decorators
+writing output... [ 26%] how-to/advanced-tracing/custom-spans
+writing output... [ 27%] how-to/advanced-tracing/index
+writing output... [ 28%] how-to/advanced-tracing/session-enrichment
+writing output... [ 29%] how-to/advanced-tracing/span-enrichment
+writing output... [ 30%] how-to/advanced-tracing/tracer-auto-discovery
+writing output... [ 31%] how-to/deployment/production
+writing output... [ 32%] how-to/deployment/pyproject-integration
+writing output... [ 33%] how-to/deployment/tracer-initialization-patterns
+writing output... [ 34%] how-to/evaluation/best-practices
+writing output... [ 35%] how-to/evaluation/comparing-experiments
+writing output... [ 36%] how-to/evaluation/creating-evaluators
+writing output... [ 37%] how-to/evaluation/dataset-crud
+writing output... [ 38%] how-to/evaluation/dataset-management
+writing output... [ 39%] how-to/evaluation/index
+writing output... [ 40%] how-to/evaluation/multi-step-experiments
+writing output... [ 41%] how-to/evaluation/result-analysis
+writing output... [ 42%] how-to/evaluation/running-experiments
+writing output... [ 43%] how-to/evaluation/server-side-evaluators
+writing output... [ 44%] how-to/evaluation/troubleshooting
+writing output... [ 45%] how-to/index
+writing output... [ 46%] how-to/integrations/anthropic
+writing output... [ 47%] how-to/integrations/azure-openai
+writing output... [ 48%] how-to/integrations/bedrock
+writing output... [ 49%] how-to/integrations/google-adk
+writing output... [ 50%] how-to/integrations/google-ai
+writing output... [ 51%] how-to/integrations/mcp
+writing output... [ 52%] how-to/integrations/multi-provider
+writing output... [ 53%] how-to/integrations/non-instrumentor-frameworks
+writing output... [ 54%] how-to/integrations/openai
+writing output... [ 55%] how-to/integrations/strands
+writing output... [ 56%] how-to/llm-application-patterns
+writing output... [ 57%] how-to/migration-compatibility/backwards-compatibility-guide
+writing output... [ 58%] how-to/migration-compatibility/migration-guide
+writing output... [ 59%] how-to/monitoring/export-traces
+writing output... [ 60%] how-to/testing-applications
+writing output... [ 61%] index
+writing output... [ 62%] reference/api/client
+writing output... [ 63%] reference/api/client-apis
+writing output... [ 64%] reference/api/config-models
+writing output... [ 65%] reference/api/decorators
+writing output... [ 66%] reference/api/errors
+writing output... [ 67%] reference/api/evaluators-complete
+writing output... [ 68%] reference/api/models-complete
+writing output... [ 69%] reference/api/tracer
+writing output... [ 70%] reference/api/tracer-architecture
+writing output... [ 71%] reference/api/tracer-internals
+writing output... [ 72%] reference/api/utilities
+writing output... [ 73%] reference/cli/commands
+writing output... [ 74%] reference/cli/index
+writing output... [ 76%] reference/cli/options
+writing output... [ 77%] reference/configuration/authentication
+writing output... [ 78%] reference/configuration/config-options
+writing output... [ 79%] reference/configuration/environment-vars
+writing output... [ 80%] reference/configuration/hybrid-config-approach
+writing output... [ 81%] reference/data-models/evaluations
+writing output... [ 82%] reference/data-models/events
+writing output... [ 83%] reference/data-models/spans
+writing output... [ 84%] reference/evaluation/deprecation-notice
+writing output... [ 85%] reference/evaluation/evaluators
+writing output... [ 86%] reference/experiments/core-functions
+writing output... [ 87%] reference/experiments/evaluators
+writing output... [ 88%] reference/experiments/experiments
+writing output... [ 89%] reference/experiments/models
+writing output... [ 90%] reference/experiments/results
+writing output... [ 91%] reference/experiments/utilities
+writing output... [ 92%] reference/index
+writing output... [ 93%] tutorials/01-setup-first-tracer
+writing output... [ 94%] tutorials/02-add-llm-tracing-5min
+writing output... [ 95%] tutorials/03-enable-span-enrichment
+writing output... [ 96%] tutorials/04-configure-multi-instance
+writing output... [ 97%] tutorials/05-run-first-experiment
+writing output... [ 98%] tutorials/06-distributed-tracing
+writing output... [ 99%] tutorials/advanced-configuration
+writing output... [100%] tutorials/index
+
+generating indices... genindex py-modindex done
+highlighting module code... [  3%] honeyhive.api.base
+highlighting module code... [  6%] honeyhive.api.client
+highlighting module code... [  9%] honeyhive.api.datasets
+highlighting module code... [ 12%] honeyhive.api.evaluations
+highlighting module code... [ 15%] honeyhive.api.events
+highlighting module code... [ 18%] honeyhive.api.metrics
+highlighting module code... [ 21%] honeyhive.api.projects
+highlighting module code... [ 24%] honeyhive.api.session
+highlighting module code... [ 26%] honeyhive.api.tools
+highlighting module code... [ 29%] honeyhive.config.models.api_client
+highlighting module code... [ 32%] honeyhive.config.models.base
+highlighting module code... [ 35%] honeyhive.config.models.experiment
+highlighting module code... [ 38%] honeyhive.config.models.http_client
+highlighting module code... [ 41%] honeyhive.config.models.tracer
+highlighting module code... [ 44%] honeyhive.evaluation._compat
+highlighting module code... [ 47%] honeyhive.evaluation.evaluators
+highlighting module code... [ 50%] honeyhive.experiments.core
+highlighting module code... [ 53%] honeyhive.experiments.evaluators
+highlighting module code... [ 56%] honeyhive.experiments.models
+highlighting module code... [ 59%] honeyhive.models.generated
+highlighting module code... [ 62%] honeyhive.tracer.core.base
+highlighting module code... [ 65%] honeyhive.tracer.core.tracer
+highlighting module code... [ 68%] honeyhive.tracer.infra.environment
+highlighting module code... [ 71%] honeyhive.tracer.instrumentation.decorators
+highlighting module code... [ 74%] honeyhive.tracer.integration.compatibility
+highlighting module code... [ 76%] honeyhive.tracer.integration.error_handling
+highlighting module code... [ 79%] honeyhive.tracer.processing.otlp_profiles
+highlighting module code... [ 82%] honeyhive.utils.baggage_dict
+highlighting module code... [ 85%] honeyhive.utils.cache
+highlighting module code... [ 88%] honeyhive.utils.connection_pool
+highlighting module code... [ 91%] honeyhive.utils.dotdict
+highlighting module code... [ 94%] honeyhive.utils.error_handler
+highlighting module code... [ 97%] honeyhive.utils.logger
+highlighting module code... [100%] honeyhive.utils.retry
+
+writing additional pages... search done
+dumping search index in English (code: en)... done
+dumping object inventory... done
+build succeeded.
+
+The HTML pages are in docs/_build/html.
+.pkg: _exit> python /Users/josh/.pyenv/versions/3.12.9/lib/python3.12/site-packages/pyproject_api/_backend.py True hatchling.build
+  docs: OK (44.03=setup[10.32]+cmd[0.05,33.65] seconds)
+  congratulations :) (44.11 seconds)

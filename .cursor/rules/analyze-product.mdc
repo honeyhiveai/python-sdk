@@ -1,0 +1,119 @@
+# Analyze Product - HoneyHive Python SDK
+
+When analyzing the existing codebase or adding Agent OS to existing code:
+
+## Analysis Process
+
+### 1. Understand Current Architecture
+```python
+# Key directories to analyze
+src/honeyhive/
+├── api/           # API client layer
+├── tracer/        # OpenTelemetry integration
+├── evaluation/    # Evaluation framework
+├── models/        # Data models
+└── utils/         # Shared utilities
+```
+
+### 2. Key Architectural Patterns
+
+#### Multi-Instance Support
+- Each tracer instance is independent
+- No global singleton pattern
+- Thread-safe operations
+
+#### Unified Decorators
+```python
+# Single @trace works for both sync and async
+from honeyhive.models import EventType
+
+@trace(event_type=EventType.tool)
+def sync_func(): pass
+
+@trace(event_type=EventType.tool)
+async def async_func(): pass
+```
+
+#### Graceful Degradation
+- SDK never crashes host application
+- Errors logged but handled gracefully
+- Optional returns for non-critical operations
+
+### 3. Current Implementation Details
+
+#### Testing Framework
+- **950+ tests** currently passing (831 unit + 119 integration)
+- **81.14% coverage** achieved (exceeds 80% requirement)
+- **Two-tier testing**: Unit (mocked, fast) vs Integration (real APIs, no mocks)
+- **tox** for test orchestration
+- Python 3.11, 3.12, 3.13 support
+- **NO MOCKS IN INTEGRATION TESTS** - Critical rule established
+
+#### Configuration
+- Environment variables: HH_*, HTTP_*, EXPERIMENT_*
+- Configuration precedence: Constructor > Env > Defaults
+- HTTP tracing disabled by default
+
+#### Key Dependencies
+- OpenTelemetry >=1.20.0
+- httpx >=0.24.0
+- pydantic >=2.0.0
+- Python 3.11+ required
+
+### 4. Integration Points
+
+#### Provider Integrations
+- OpenAI / Azure OpenAI
+- Anthropic Claude
+- Google Gemini
+- AWS Bedrock
+- 15+ more providers
+
+#### Framework Support
+- LangChain / LangGraph
+- LlamaIndex
+- CrewAI
+- LiteLLM
+
+### 5. When Analyzing Existing Code
+
+#### Check for:
+- Existing test patterns
+- Configuration mechanisms
+- Error handling approaches
+- Performance optimizations
+- Security practices
+
+#### Document in Agent OS:
+- Update `.agent-os/product/features.md` with discovered features
+- Add to `.agent-os/product/decisions.md` for architectural choices
+- Create specs in `.agent-os/specs/` for improvements
+
+## Critical Patterns to Maintain
+
+1. **NO MOCKS IN INTEGRATION TESTS** - Integration tests must use real systems
+2. **Always use tox** for testing - Never pytest directly
+3. **Type hints mandatory** on all functions with docstrings
+4. **No code in __init__.py** files - Only imports
+5. **Multi-instance support** required - No singleton pattern
+6. **Graceful degradation** essential - Never crash host app
+7. **EventType enums only** - Never string literals in documentation
+8. **80% test coverage** minimum (project-wide)
+9. **Test count reporting** - Always report total tests correctly (unit + integration)
+
+## Standards to Follow
+Always reference:
+- **Best Practices**: `.agent-os/standards/best-practices.md` (includes Agent OS spec standards)
+- **Technology Stack**: `.agent-os/standards/tech-stack.md` for technology choices
+- **Code Style**: `.agent-os/standards/code-style.md` for coding standards
+
+## References
+- **Product Documentation**:
+  - Overview: `.agent-os/product/overview.md`
+  - Features: `.agent-os/product/features.md`
+  - Roadmap: `.agent-os/product/roadmap.md`
+  - Decisions: `.agent-os/product/decisions.md`
+- **Standards Documentation**:
+  - Best Practices: `.agent-os/standards/best-practices.md`
+  - Tech Stack: `.agent-os/standards/tech-stack.md`
+  - Code Style: `.agent-os/standards/code-style.md`

@@ -1,0 +1,128 @@
+# Execute Tasks - HoneyHive Python SDK
+
+When executing tasks from specifications, follow these guidelines:
+
+## Task Execution Process
+
+### 1. Locate Current Tasks
+Check the active spec's `tasks.md` file in `.agent-os/specs/`
+
+### 2. Task Status
+- [ ] Not started
+- [x] Completed
+- [~] In progress (optional marker)
+
+### 3. Execution Guidelines
+
+#### Code Implementation
+- **ALWAYS use type hints** on all functions
+- **Use Black formatting** (line length 88)
+- **No code in `__init__.py`** files
+- **Follow patterns** in `.agent-os/standards/code-style.md`
+
+#### Testing Requirements
+```bash
+# ALWAYS use tox, NEVER run pytest directly
+tox -e unit         # Unit tests (fast, mocked)
+tox -e integration  # Integration tests (REAL APIs, NO MOCKS)
+tox -e py311        # Python 3.11 tests
+tox -e py312        # Python 3.12 tests  
+tox -e py313        # Python 3.13 tests
+tox -e lint         # Linting checks (≥8.0/10.0 pylint score)
+tox -e format       # Code formatting checks
+```
+
+#### 🚨 CRITICAL: NO MOCKS IN INTEGRATION TESTS
+
+**ABSOLUTE RULE**: Integration tests MUST exercise real systems and real APIs.
+
+- ✅ **Real API calls** to HoneyHive, OpenAI, Anthropic, etc.
+- ✅ **Real OpenTelemetry components** (TracerProvider, SpanProcessor, etc.)
+- ✅ **Real network requests** and responses
+- ✅ **Real error conditions** from external services
+- ❌ **NO unittest.mock** in integration tests
+- ❌ **NO test_mode=True** in integration tests
+- ❌ **NO mocked HTTP responses** in integration tests
+- ❌ **NO fake/stub implementations** in integration tests
+
+**If you need mocks, write unit tests instead.**
+
+#### Key Patterns
+```python
+# Multi-instance tracer (no singleton)
+tracer1 = HoneyHiveTracer.init(api_key="key1")
+tracer2 = HoneyHiveTracer.init(api_key="key2")
+
+# Unified decorator for sync/async with EventType enums
+from honeyhive.models import EventType
+
+@trace(event_type=EventType.model)  # Use enums, not strings
+def llm_function(): pass
+
+@trace(event_type=EventType.tool)   # Individual function/utility
+def utility_function(): pass
+
+@trace(event_type=EventType.chain)  # Multi-step workflow
+async def workflow_function(): pass
+
+# Graceful degradation
+try:
+    result = operation()
+except Exception as e:
+    logger.warning(f"Operation failed: {e}")
+    return None  # Don't crash host app
+```
+
+#### Documentation Standards
+```python
+# MANDATORY: Use EventType enums in ALL documentation examples
+from honeyhive.models import EventType
+
+# ✅ CORRECT
+@trace(event_type=EventType.model)
+def correct_example(): pass
+
+# ❌ WRONG - Never use string literals
+@trace(event_type="model")  # This breaks type safety
+def wrong_example(): pass
+```
+
+### 4. Update Documentation
+- Update task status in `tasks.md`
+- Add decisions to `.agent-os/product/decisions.md`
+- Update features in `.agent-os/product/features.md` if needed
+
+### 5. Validation
+- Ensure all tests pass with tox
+- Verify backwards compatibility
+- Check performance impact
+- Update CHANGELOG.md
+
+## Critical Rules
+1. **NO MOCKS IN INTEGRATION TESTS** - Integration tests must use real systems
+2. **Use tox for ALL testing** - Never pytest directly
+3. **Type hints required** - All functions and docstrings mandatory
+4. **80% test coverage** minimum (project-wide)
+5. **Graceful degradation** - Never crash host app
+6. **HTTP tracing off by default** for performance
+7. **EventType enums only** - Never string literals in documentation
+8. **Test count reporting** - Always report total tests correctly (unit + integration)
+9. **Date usage** - Always use `date +"%Y-%m-%d"` for current date
+10. **Commit messages** - Follow Conventional Commits format
+
+## Standards to Follow
+Always reference:
+- **Best Practices**: `.agent-os/standards/best-practices.md` (includes Agent OS spec standards)
+- **Technology Stack**: `.agent-os/standards/tech-stack.md` for technology choices
+- **Code Style**: `.agent-os/standards/code-style.md` for coding standards
+
+## References
+- **Product Documentation**:
+  - Overview: `.agent-os/product/overview.md`
+  - Features: `.agent-os/product/features.md`
+  - Roadmap: `.agent-os/product/roadmap.md`
+  - Decisions: `.agent-os/product/decisions.md`
+- **Standards Documentation**:
+  - Best Practices: `.agent-os/standards/best-practices.md`
+  - Tech Stack: `.agent-os/standards/tech-stack.md`
+  - Code Style: `.agent-os/standards/code-style.md`

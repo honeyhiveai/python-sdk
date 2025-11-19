@@ -1,0 +1,156 @@
+---
+name: Documentation Navigation Validation
+
+on:
+  # Run after docs are deployed - MANDATORY on every deploy
+  workflow_run:
+    workflows: ["Deploy Documentation"]
+    types:
+      - completed
+
+  # Also run on any push to main (docs may be deployed via push)
+  push:
+    branches: [main]
+    paths:
+      - 'docs/**'
+      - '.github/workflows/docs-*.yml'
+      - '.agent-os/product/**'
+      - '.agent-os/standards/**'
+
+  # Allow manual trigger for testing
+  workflow_dispatch:
+    inputs:
+      base_url:
+        description: 'Base URL to validate (defaults to production)'
+        required: false
+        default: 'https://honeyhiveai.github.io/python-sdk'
+
+  # Weekly monitoring as backup (catch deployment drift)
+  schedule:
+    - cron: '0 6 * * 1'  # Weekly on Monday at 6 AM UTC
+
+permissions:
+  contents: read
+  actions: read
+
+jobs:
+  validate-navigation:
+    name: Validate Documentation Navigation
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install validation dependencies
+        run: |
+          pip install -r docs/utils/requirements.txt
+
+      - name: Wait for deployment to complete
+        if: github.event_name == 'workflow_run'
+        run: |
+          echo "🕐 Waiting for deployment to fully complete and propagate..."
+          echo "📡 GitHub Pages deployment can take up to 10 minutes to fully propagate"
+          sleep 120  # Wait 2 minutes for immediate availability
+
+          # Check if deployment was successful first
+          if [ "${{ github.event.workflow_run.conclusion }}" != "success" ]; then
+            echo "❌ Documentation deployment failed - skipping validation"
+            exit 0
+          fi
+
+          echo "✅ Deployment completed successfully, proceeding with validation"
+
+      - name: Validate production documentation
+        if: github.event_name != 'workflow_dispatch'
+        run: |
+          python docs/utils/validate_navigation.py \
+            --base-url https://honeyhiveai.github.io/python-sdk \
+            --timeout 15
+
+      - name: Validate custom URL documentation
+        if: github.event_name == 'workflow_dispatch'
+        run: |
+          python docs/utils/validate_navigation.py \
+            --base-url "${{ github.event.inputs.base_url }}" \
+            --timeout 15
+
+      - name: Report results
+        if: failure()
+        run: |
+          echo "🚨 CRITICAL: Documentation navigation validation failed!"
+          echo "📋 This indicates broken documentation that affects users"
+          echo "🔍 Check the logs above for specific broken links or missing pages"
+          echo ""
+          echo "💡 Common issues and fixes:"
+          echo "  - New pages not added to toctree → Add to appropriate index.rst"
+          echo "  - Broken cross-references → Fix :doc: or :ref: targets"
+          echo "  - Missing files after restructuring → Update all references"
+          echo "  - Deployment issues → Check GitHub Pages configuration"
+          echo ""
+          echo "🛠️  To fix locally:"
+          echo "  1. python docs/utils/validate_navigation.py --local"
+          echo "  2. Fix any reported issues"
+          echo "  3. Test with: tox -e docs"
+          echo "  4. Commit and push fixes"
+          echo ""
+          echo "⚠️  Documentation deployment is considered FAILED until navigation works"
+          exit 1
+
+  validate-local-build:
+    name: Validate Local Documentation Build
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install dependencies
+        run: |
+          pip install -e .
+          pip install -r docs/utils/requirements.txt
+          pip install restructuredtext-lint rstcheck-core doc8
+
+      - name: Build documentation locally
+        run: |
+          cd docs
+          python -m http.server 8000 --directory _build/html &
+          SERVER_PID=$!
+          echo "SERVER_PID=$SERVER_PID" >> $GITHUB_ENV
+          sleep 5
+        env:
+          SPHINX_BUILD_WARNINGS: true
+
+      - name: Run tox docs build
+        run: |
+          tox -e docs
+
+      - name: Documentation Quality Check
+        run: |
+          python scripts/docs-quality.py check --path docs
+
+      - name: Validate local build navigation
+        run: |
+          cd docs
+          python -m http.server 8000 --directory _build/html &
+          SERVER_PID=$!
+          sleep 10
+          python utils/validate_navigation.py --local --timeout 10
+          kill $SERVER_PID
+
+      - name: Cleanup
+        if: always()
+        run: |
+          if [ ! -z "$SERVER_PID" ]; then
+            kill $SERVER_PID || true
+          fi

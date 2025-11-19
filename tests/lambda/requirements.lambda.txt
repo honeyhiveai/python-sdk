@@ -1,0 +1,4 @@
+# Lambda-specific requirements
+requests>=2.25.0
+pydantic>=1.8.0
+# Add other dependencies your Lambda functions need

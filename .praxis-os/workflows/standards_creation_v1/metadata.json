@@ -1,0 +1,280 @@
+{
+  "workflow_type": "standards_creation_v1",
+  "version": "1.0.0",
+  "name": "standards-creation-v1",
+  "description": "Manual standards creation lacks programmatic validation and consistent quality. A workflow enforces quality gates programmatically, ensuring every standard\nmeets RAG optimization criteria, structure requirements, and discoverability\nthresholds before commit.",
+  "total_phases": 6,
+  "estimated_duration": "15-20 minutes",
+  "primary_outputs": [
+    "RAG-optimized standard with all required sections",
+    "Structure validation passed",
+    "Discoverability test results (>= 80%)",
+    "Semantic validation passed",
+    "Committed and indexed standard"
+  ],
+  "dynamic_phases": false,
+  "target_language": [
+    "any"
+  ],
+  "phases": [
+    {
+      "phase_number": 0,
+      "phase_name": "Discovery & Context",
+      "purpose": "Gather context and understand domain before creating standard",
+      "estimated_effort": "2-4 minutes",
+      "key_deliverables": [
+        "Domain keywords, related standards, key concepts, and audience understanding"
+      ],
+      "validation_criteria": [
+        "domain_keywords_identified",
+        "related_standards_found",
+        "key_concepts_extracted"
+      ],
+      "tasks": [
+        {
+          "task_number": 1,
+          "name": "query-existing-standards",
+          "file": "task-1-query-existing-standards.md"
+        },
+        {
+          "task_number": 2,
+          "name": "identify-domain-keywords",
+          "file": "task-2-identify-domain-keywords.md"
+        },
+        {
+          "task_number": 3,
+          "name": "review-related-patterns",
+          "file": "task-3-review-related-patterns.md"
+        },
+        {
+          "task_number": 4,
+          "name": "extract-key-concepts",
+          "file": "task-4-extract-key-concepts.md"
+        },
+        {
+          "task_number": 5,
+          "name": "understand-target-audience",
+          "file": "task-5-understand-target-audience.md"
+        }
+      ]
+    },
+    {
+      "phase_number": 1,
+      "phase_name": "Content Creation",
+      "purpose": "Author standard with all required sections",
+      "estimated_effort": "2-4 minutes",
+      "key_deliverables": [
+        "Complete standard with Quick Reference, Questions, Purpose, Content, Examples, and Related Standards"
+      ],
+      "validation_criteria": [
+        "has_quick_ref",
+        "has_questions",
+        "has_purpose"
+      ],
+      "tasks": [
+        {
+          "task_number": 1,
+          "name": "write-quick-reference",
+          "file": "task-1-write-quick-reference.md"
+        },
+        {
+          "task_number": 2,
+          "name": "write-questions-section",
+          "file": "task-2-write-questions-section.md"
+        },
+        {
+          "task_number": 3,
+          "name": "write-purpose-section",
+          "file": "task-3-write-purpose-section.md"
+        },
+        {
+          "task_number": 4,
+          "name": "write-detailed-content",
+          "file": "task-4-write-detailed-content.md"
+        },
+        {
+          "task_number": 5,
+          "name": "add-concrete-examples",
+          "file": "task-5-add-concrete-examples.md"
+        },
+        {
+          "task_number": 6,
+          "name": "link-related-standards",
+          "file": "task-6-link-related-standards.md"
+        }
+      ]
+    },
+    {
+      "phase_number": 2,
+      "phase_name": "RAG Optimization",
+      "purpose": "Optimize content for RAG semantic search discovery",
+      "estimated_effort": "2-4 minutes",
+      "key_deliverables": [
+        "RAG-optimized standard with keyword density, query hooks, descriptive headers, and semantic chunking"
+      ],
+      "validation_criteria": [
+        "keyword_density_tldr",
+        "keyword_density_body",
+        "query_hooks_count"
+      ],
+      "tasks": [
+        {
+          "task_number": 1,
+          "name": "optimize-keyword-density",
+          "file": "task-1-optimize-keyword-density.md"
+        },
+        {
+          "task_number": 2,
+          "name": "add-query-hooks",
+          "file": "task-2-add-query-hooks.md"
+        },
+        {
+          "task_number": 3,
+          "name": "optimize-headers",
+          "file": "task-3-optimize-headers.md"
+        },
+        {
+          "task_number": 4,
+          "name": "ensure-semantic-chunking",
+          "file": "task-4-ensure-semantic-chunking.md"
+        }
+      ]
+    },
+    {
+      "phase_number": 3,
+      "phase_name": "Discoverability Testing",
+      "purpose": "Validate standard is discoverable via natural queries from multiple angles",
+      "estimated_effort": "2-4 minutes",
+      "key_deliverables": [
+        "Discoverability test results showing >= 80% queries found in top 3"
+      ],
+      "validation_criteria": [
+        "queries_tested",
+        "queries_found_top3",
+        "average_relevance"
+      ],
+      "tasks": [
+        {
+          "task_number": 1,
+          "name": "generate-test-queries",
+          "file": "task-1-generate-test-queries.md"
+        },
+        {
+          "task_number": 2,
+          "name": "execute-rag-queries",
+          "file": "task-2-execute-rag-queries.md"
+        },
+        {
+          "task_number": 3,
+          "name": "measure-relevance-ranking",
+          "file": "task-3-measure-relevance-ranking.md"
+        },
+        {
+          "task_number": 4,
+          "name": "analyze-results",
+          "file": "task-4-analyze-results.md"
+        },
+        {
+          "task_number": 5,
+          "name": "iterate-if-needed",
+          "file": "task-5-iterate-if-needed.md"
+        }
+      ]
+    },
+    {
+      "phase_number": 4,
+      "phase_name": "Semantic Validation",
+      "purpose": "Ensure semantic quality and completeness",
+      "estimated_effort": "2-4 minutes",
+      "key_deliverables": [
+        "Validated chunks, links, and content quality"
+      ],
+      "validation_criteria": [
+        "chunk_sizes_valid",
+        "chunks_standalone",
+        "links_valid"
+      ],
+      "tasks": [
+        {
+          "task_number": 1,
+          "name": "analyze-chunk-sizes",
+          "file": "task-1-analyze-chunk-sizes.md"
+        },
+        {
+          "task_number": 2,
+          "name": "verify-semantic-completeness",
+          "file": "task-2-verify-semantic-completeness.md"
+        },
+        {
+          "task_number": 3,
+          "name": "validate-all-links",
+          "file": "task-3-validate-all-links.md"
+        },
+        {
+          "task_number": 4,
+          "name": "check-no-duplication",
+          "file": "task-4-check-no-duplication.md"
+        },
+        {
+          "task_number": 5,
+          "name": "verify-code-examples",
+          "file": "task-5-verify-code-examples.md"
+        }
+      ]
+    },
+    {
+      "phase_number": 5,
+      "phase_name": "Integration & Commit",
+      "purpose": "Commit standard and validate immediate discoverability",
+      "estimated_effort": "2-4 minutes",
+      "key_deliverables": [
+        "Committed standard, indexed in RAG, and immediately discoverable"
+      ],
+      "validation_criteria": [
+        "validation_report_created",
+        "standard_committed",
+        "index_rebuilt"
+      ],
+      "tasks": [
+        {
+          "task_number": 1,
+          "name": "generate-validation-report",
+          "file": "task-1-generate-validation-report.md"
+        },
+        {
+          "task_number": 2,
+          "name": "commit-to-repository",
+          "file": "task-2-commit-to-repository.md"
+        },
+        {
+          "task_number": 3,
+          "name": "trigger-index-rebuild",
+          "file": "task-3-trigger-index-rebuild.md"
+        },
+        {
+          "task_number": 4,
+          "name": "validate-immediate-discoverability",
+          "file": "task-4-validate-immediate-discoverability.md"
+        },
+        {
+          "task_number": 5,
+          "name": "update-related-standards",
+          "file": "task-5-update-related-standards.md"
+        },
+        {
+          "task_number": 6,
+          "name": "record-metrics",
+          "file": "task-6-record-metrics.md"
+        }
+      ]
+    }
+  ],
+  "created": "2025-10-13",
+  "tags": [
+    "standards",
+    "validation",
+    "rag_optimization",
+    "documentation",
+    "quality"
+  ]
+}

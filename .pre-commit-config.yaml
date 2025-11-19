@@ -1,0 +1,102 @@
+# Pre-commit hooks for HoneyHive Python SDK
+# See https://pre-commit.com for more information
+#
+# IMPORTANT: All code quality checks use tox environments to ensure consistency
+# between local development, pre-commit, and CI/CD environments.
+#
+# STRICT MODE: These hooks will BLOCK commits with ANY issues
+# Auto-fix runs first, then validation ensures no issues remain
+---
+fail_fast: true  # Stop on first failure - no bypassing quality checks
+repos:
+  - repo: https://github.com/adrienverge/yamllint
+    rev: v1.37.0
+    hooks:
+      - id: yamllint
+        args: [-c=.yamllint]
+        files: '^.*\.(yaml|yml)$'
+
+  - repo: local
+    hooks:
+      # Structural Validation (Must Run First)
+      - id: no-mocks-in-integration-tests
+        name: No Mocks in Integration Tests Check
+        entry: scripts/validate-no-mocks-integration.sh
+        language: system
+        files: '^tests/integration/.*\.py$'
+        pass_filenames: false
+        stages: [pre-commit]
+
+      # Code Quality Checks (Fast)
+      - id: tox-format-check
+        name: Code Formatting Check (Black + isort)
+        entry: tox -e format
+        language: system
+        pass_filenames: false
+        files: '^(src/.*\.py|tests/.*\.py|examples/.*\.py|scripts/.*\.py)$'
+        stages: [pre-commit]
+
+      - id: tox-lint-check
+        name: Code Quality Check (Pylint + Mypy)
+        entry: tox -e lint
+        language: system
+        pass_filenames: false
+        files: '^(src/.*\.py|tests/.*\.py|examples/.*\.py|scripts/.*\.py)$'
+        stages: [pre-commit]
+
+      # Test Suite Execution (Agent OS Zero Failing Tests Policy)
+      - id: unit-tests
+        name: Unit Test Suite (Fast, Mocked)
+        entry: tox -e unit
+        language: system
+        pass_filenames: false
+        files: '^(src/.*\.py|tests/unit/.*\.py)$'
+        stages: [pre-commit]
+
+      - id: integration-tests-basic
+        name: Basic Integration Tests (Real APIs, Credential Check)
+        entry: scripts/run-basic-integration-tests.sh
+        language: system
+        pass_filenames: false
+        files: '^(src/.*\.py|tests/integration/.*\.py)$'
+        stages: [pre-commit]
+
+      - id: docs-build-check
+        name: Documentation Build Check
+        entry: tox -e docs
+        language: system
+        pass_filenames: false
+        files: '^(docs/.*\.(rst|md)|README\.md|CHANGELOG\.md|\.praxis-os/(?!specs/).*\.md)$'
+        stages: [pre-commit]
+
+      - id: docs-navigation-validation
+        name: Documentation Navigation Validation (praxis OS Required)
+        entry: scripts/validate-docs-navigation.sh
+        language: system
+        pass_filenames: false
+        files: '^(docs/.*\.(rst|md)|README\.md|CHANGELOG\.md|\.praxis-os/(?!specs/).*\.md)$'
+        stages: [pre-commit]
+
+      - id: feature-list-sync
+        name: Feature Documentation Synchronization Check
+        entry: scripts/check-feature-sync.py
+        language: python
+        pass_filenames: false
+        files: '^(src/.*\.py|docs/reference/.*\.rst|\.praxis-os/workspace/product/features\.md)$'
+        stages: [pre-commit]
+
+      - id: documentation-compliance-check
+        name: Documentation Compliance Check
+        entry: scripts/check-documentation-compliance.py
+        language: python
+        pass_filenames: false
+        always_run: true
+        stages: [pre-commit]
+
+      - id: invalid-tracer-pattern-check
+        name: Invalid Tracer Pattern Check
+        entry: scripts/validate-tracer-patterns.sh
+        language: system
+        files: '^(docs/.*\.(rst|md)|examples/.*\.py|src/.*\.py)$'
+        pass_filenames: false
+        stages: [pre-commit]

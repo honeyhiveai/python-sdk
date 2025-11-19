@@ -1,0 +1,342 @@
+---
+name: Tox Full Test Suite
+
+'on':
+  workflow_dispatch:
+    inputs:
+      python_versions:
+        description: 'Python versions to test (comma-separated)'
+        required: false
+        default: '3.11,3.12,3.13'
+      tox_environments:
+        description: 'Additional tox environments to run'
+        required: false
+        default: 'lint,format,docs'
+      upload_coverage:
+        description: 'Upload coverage reports'
+        type: boolean
+        required: false
+        default: true
+  workflow_call:
+    inputs:
+      python_versions:
+        description: 'Python versions to test (comma-separated)'
+        required: false
+        default: '3.11,3.12,3.13'
+        type: string
+      tox_environments:
+        description: 'Additional tox environments to run'
+        required: false
+        default: 'lint,format,docs'
+        type: string
+      upload_coverage:
+        description: 'Upload coverage reports'
+        type: boolean
+        required: false
+        default: true
+    secrets:
+      HH_API_KEY:
+        required: false
+      HH_PROJECT:
+        required: false
+      HH_TEST_API_KEY:
+        required: false
+      CODECOV_TOKEN:
+        required: false
+      # LLM Provider API Keys for real instrumentor testing
+      OPENAI_API_KEY:
+        required: false
+      ANTHROPIC_API_KEY:
+        required: false
+      GOOGLE_API_KEY:
+        required: false
+      AWS_ACCESS_KEY_ID:
+        required: false
+      AWS_SECRET_ACCESS_KEY:
+        required: false
+  push:
+    branches: [main]  # Only run on pushes to the protected main branch
+    paths:
+      - 'src/**'
+      - 'tests/**'
+      - 'tox.ini'
+      - 'pyproject.toml'
+      - '.github/workflows/tox-full-suite.yml'
+  pull_request:
+    # Run on all PRs - immediate feedback on feature branch work
+    paths:
+      - 'src/**'
+      - 'tests/**'
+      - 'tox.ini'
+      - 'pyproject.toml'
+      - '.github/workflows/tox-full-suite.yml'
+
+permissions:
+  contents: read
+  actions: read
+
+env:
+  # Test environment variables
+  HH_API_KEY: test-api-key-12345
+  HH_API_URL: https://api.honeyhive.ai
+  HH_SOURCE: github-actions
+  HH_TEST_MODE: true
+  HH_DEBUG_MODE: true
+  HH_DISABLE_TRACING: false
+  HH_DISABLE_HTTP_TRACING: false
+  HH_OTLP_ENABLED: false
+
+jobs:
+  # === PYTHON VERSION TESTING ===
+  python-tests:
+    name: "🐍 Python ${{ matrix.python-version }}"
+    if: "!contains(github.event.head_commit.message, '[skip-tests]')"
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        python-version: ['3.11', '3.12', '3.13']
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Python ${{ matrix.python-version }}
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+          cache: 'pip'
+
+      - name: Install tox and dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install tox>=4.0 tox-gh-actions
+
+      - name: Run comprehensive test suite
+        run: |
+          tox -e py${{ matrix.python-version == '3.11' && '311' || matrix.python-version == '3.12' && '312' || '313' }}
+        env:
+          HH_API_KEY: ${{ secrets.HH_API_KEY || env.HH_API_KEY }}
+
+      - name: Upload coverage reports
+        if: inputs.upload_coverage != false
+        uses: codecov/codecov-action@v4
+        with:
+          file: ./coverage.xml
+          token: ${{ secrets.CODECOV_TOKEN }}
+          fail_ci_if_error: false
+
+      - name: Upload test results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: test-results-python-${{ matrix.python-version }}
+          path: |
+            .coverage
+            coverage.xml
+            .tox/*/log/
+          retention-days: 7
+
+
+  # === CODE QUALITY & DOCUMENTATION ===
+  quality-and-docs:
+    name: "🔍 Quality & 📚 Docs"
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Python 3.12
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+          cache: 'pip'
+
+      - name: Install tox and dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install tox>=4.0
+
+      - name: Run code quality checks
+        run: |
+          echo "🔍 Running linting checks..."
+          tox -e lint
+          echo "✨ Running format checks..."
+          tox -e format
+
+      - name: Build documentation
+        run: |
+          echo "📚 Building documentation..."
+          tox -e docs
+
+      - name: Upload quality results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: quality-results
+          path: |
+            .tox/lint/log/
+            .tox/format/log/
+          retention-days: 7
+
+      - name: Upload documentation build
+        uses: actions/upload-artifact@v4
+        with:
+          name: documentation-build
+          path: docs/_build/html/
+          retention-days: 14
+
+  # === INTEGRATION TESTS (Real APIs, NO MOCKS) ===
+  integration-tests:
+    name: "🔗 Integration Tests (Real APIs)"
+    runs-on: ubuntu-latest
+    if: >-
+      !contains(github.event.head_commit.message, '[skip-tests]') &&
+      !contains(github.event.head_commit.message, '[skip-integration]')
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Python 3.12
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+          cache: 'pip'
+
+      - name: Install tox and dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install tox>=4.0
+
+      - name: Check for API credentials
+        id: check_credentials
+        run: |
+          if [[ -n "${{ secrets.HH_API_KEY }}" ]]; then
+            echo "has_honeyhive_key=true" >> $GITHUB_OUTPUT
+          else
+            echo "has_honeyhive_key=false" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Run integration tests with real APIs (NO MOCKS)
+        if: steps.check_credentials.outputs.has_honeyhive_key == 'true'
+        run: |
+          echo "🔗 Running integration tests with REAL APIs (NO MOCKS)..."
+          tox -e integration
+        env:
+          # HoneyHive credentials (required)
+          HH_API_KEY: ${{ secrets.HH_API_KEY }}
+          HH_PROJECT: ${{ secrets.HH_PROJECT }}
+          HH_SOURCE: "github-actions-integration"
+          HH_TEST_MODE: false
+          HH_API_URL: https://api.honeyhive.ai
+          # LLM Provider credentials (optional - tests will skip if not available)
+          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+          GOOGLE_API_KEY: ${{ secrets.GOOGLE_API_KEY }}
+          AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          AWS_DEFAULT_REGION: us-east-1
+          # CI indicators
+          CI: true
+          GITHUB_ACTIONS: true
+
+      - name: Skip integration tests (no credentials)
+        if: steps.check_credentials.outputs.has_honeyhive_key == 'false'
+        run: |
+          echo "⚠️ Skipping integration tests - HH_API_KEY not available"
+          echo "Integration tests require HH_API_KEY secret to be configured"
+          echo "This is expected for external contributors and forks"
+
+      - name: Upload integration test results
+        if: always() && steps.check_credentials.outputs.has_honeyhive_key == 'true'
+        uses: actions/upload-artifact@v4
+        with:
+          name: integration-test-results
+          path: |
+            .coverage
+            coverage.xml
+            .tox/integration/log/
+          retention-days: 7
+
+  # === TEST SUITE SUMMARY ===
+  summary:
+    name: "📊 Test Summary"
+    needs: [python-tests, quality-and-docs, integration-tests]
+    runs-on: ubuntu-latest
+    if: always()
+
+    steps:
+      - name: Download all artifacts
+        uses: actions/download-artifact@v4
+        with:
+          path: artifacts/
+
+      - name: Generate test summary
+        run: |
+          echo "# 🧪 Tox Test Suite Summary" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+
+          # Python Version Results
+          echo "## 🐍 Python Version Testing" >> $GITHUB_STEP_SUMMARY
+          python_result="${{ needs.python-tests.result == 'success' && '✅ PASSED' || '❌ FAILED' }}"
+          echo "- **Python 3.11:** $python_result" >> $GITHUB_STEP_SUMMARY
+          echo "- **Python 3.12:** $python_result" >> $GITHUB_STEP_SUMMARY
+          echo "- **Python 3.13:** $python_result" >> $GITHUB_STEP_SUMMARY
+
+          # Integration Tests
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "## 🔗 Integration Testing (Real APIs, NO MOCKS)" >> $GITHUB_STEP_SUMMARY
+          integration_result="${{ needs.integration-tests.result == 'success' && '✅ PASSED' ||
+            needs.integration-tests.result == 'skipped' && '⏭️ SKIPPED' || '❌ FAILED' }}"
+          echo "- **Integration Tests:** $integration_result" >> $GITHUB_STEP_SUMMARY
+
+          # Quality Checks
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "## 🔍 Quality & Documentation" >> $GITHUB_STEP_SUMMARY
+          quality_docs_result="${{ needs.quality-and-docs.result == 'success' && '✅ PASSED' || '❌ FAILED' }}"
+          echo "- **Code Quality & Docs:** $quality_docs_result" >> $GITHUB_STEP_SUMMARY
+
+          # Overall Status
+          echo "" >> $GITHUB_STEP_SUMMARY
+          if [ "${{ needs.python-tests.result }}" = "success" ] && \
+             [ "${{ needs.quality-and-docs.result }}" = "success" ] && \
+             ([ "${{ needs.integration-tests.result }}" = "success" ] ||
+             [ "${{ needs.integration-tests.result }}" = "skipped" ]); then
+            echo "## 🎉 **ALL TESTS PASSED**" >> $GITHUB_STEP_SUMMARY
+            echo "The full tox test suite completed successfully!" >> $GITHUB_STEP_SUMMARY
+            echo "" >> $GITHUB_STEP_SUMMARY
+            echo "**Testing Strategy:**" >> $GITHUB_STEP_SUMMARY
+            echo "- **Unit Tests**: Fast, mocked (included in Python version testing)" >> $GITHUB_STEP_SUMMARY
+            echo "- **Integration Tests**: Real APIs, NO MOCKS" >> $GITHUB_STEP_SUMMARY
+          else
+            echo "## ❌ **TESTS FAILED**" >> $GITHUB_STEP_SUMMARY
+            echo "Some tests failed. Please review the logs above." >> $GITHUB_STEP_SUMMARY
+          fi
+
+  # === OPTIONAL: FULL TOX SUITE (Sequential) ===
+  tox-full-sequential:
+    name: "🎯 Sequential Suite"
+    runs-on: ubuntu-latest
+    if: github.event_name == 'workflow_dispatch'
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Python 3.12
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+          cache: 'pip'
+
+      - name: Install tox and dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install tox>=4.0
+
+      - name: Run full tox suite sequentially
+        run: |
+          echo "Running full tox suite for comparison..."
+          tox
