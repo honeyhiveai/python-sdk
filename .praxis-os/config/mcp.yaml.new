@@ -1,0 +1,744 @@
+# ============================================================================
+# Ouroboros MCP Server Configuration
+# ============================================================================
+# This file configures what prAxIs OS indexes and how it searches your project.
+#
+# ⚠️ INSTALLATION NOTE: You MUST customize code indexing paths below
+#    to match your project's source code layout!
+#
+# Path Resolution:
+#   - All paths are relative to .praxis-os/ directory (not project root)
+#   - Example: If your code is at project-root/src/, use "../src/"
+#   - Example: If your code is at project-root/lib/, use "../lib/"
+#   - ✅ NEW: You can safely use top-level paths like ["../"] because
+#            prAxIs OS automatically respects your .gitignore file!
+#
+# After installation, update the 'code' section below with your
+# project's actual source code paths and languages.
+#
+# ✅ NEW FEATURE: Automatic File Exclusion
+#    - prAxIs OS automatically respects your project's .gitignore file
+#    - Build artifacts (node_modules/, __pycache__/, dist/, etc.) are
+#      automatically excluded - no manual configuration needed!
+#    - See the 'code' section below for detailed exclusion options
+#
+# 🚀 NEW FEATURE: Multi-Repo Code Intelligence
+#    - Search across MULTIPLE local repositories simultaneously!
+#    - Example: Search both your main app AND SDKs/libraries you develop
+#    - Configure multiple "partitions" (repos) in the code section below
+#    - See detailed multi-repo configuration examples in the code section
+
+version: "1.0"
+
+# ============================================================================
+# RAG Subsystem Configuration
+# ============================================================================
+# Configures what gets indexed and how search works.
+#
+# Three types of indexes:
+#   1. Standards: Documentation/markdown files (usually fine as-is)
+#   2. Code: Source code semantic search + call graph (MUST customize paths!)
+#   3. AST: Structural code search (DEPRECATED - now unified with Code)
+#
+# 🆕 The AST index is now part of the Code index (partition-based architecture).
+#    The ast: section still exists for backward compatibility but is not used
+#    in multi-repo mode. Configure everything in the code: section below.
+
+indexes:
+  # ========================================================================
+  # Standards Index (Documentation/Markdown)
+  # ========================================================================
+  # Indexes your project's standards, docs, and markdown files.
+  # Usually fine as-is unless you have custom documentation locations.
+  #
+  # What it does:
+  #   - Hybrid search: Combines semantic (vector) + keyword (FTS) search
+  #   - Vector search: Finds docs by MEANING (e.g., "error handling" finds
+  #                    docs about exceptions, try/catch, etc.)
+  #   - FTS search: Finds docs by EXACT WORDS (e.g., "MCP server" finds
+  #                 only docs with that exact phrase)
+  #   - Together: Best of both worlds (concepts + terminology)
+  #
+  # Chunking Strategy:
+  #   - chunk_size: 800 tokens (~2-3 paragraphs) - larger chunks = more context
+  #   - chunk_overlap: 100 tokens (~1-2 sentences) - prevents concept splitting
+  #   - Why larger? Docs need context, code needs precision
+  #
+  # Metadata Filtering:
+  #   - Pre-filters by domain/phase before searching (faster, more accurate)
+  #   - Uses scalar indexes (BTREE/BITMAP) for sub-millisecond filtering
+  #   - Usually fine as-is (auto-generated from headers/keywords)
+  standards:
+    source_paths:
+      - "standards/"  # Relative to .praxis-os/ (usually fine as-is)
+
+    vector:
+      # BGE models (BAAI General Embedding) - More accurate than MiniLM
+      # Options:
+      #   - BAAI/bge-small-en-v1.5: DEFAULT - Good balance (134MB, fast, 384 dim)
+      #   - BAAI/bge-base-en-v1.5: Better accuracy (438MB, medium, 768 dim)
+      #   - BAAI/bge-large-en-v1.5: Best accuracy (1.3GB, slow, 1024 dim)
+      model: "BAAI/bge-small-en-v1.5"  # MIT licensed, zero cost, offline
+      dimension: 384  # Model-specific (384 for small, 768 for base, 1024 for large)
+      chunk_size: 800  # Larger chunks = more context for docs
+      chunk_overlap: 100  # Prevents concept splitting at boundaries
+
+    fts: {}  # Use all defaults (enabled=True, tokenizer="default")
+
+    metadata_filtering:
+      enabled: true
+      scalar_indexes:
+        - column: "domain"  # High cardinality (workflow, rag, browser, etc.)
+          index_type: "BTREE"
+        - column: "phase"  # Low cardinality (0-8 phases)
+          index_type: "BITMAP"
+        - column: "section"  # Medium-high cardinality
+          index_type: "BTREE"
+      auto_generate: true  # Extract metadata from headers/keywords (zero cost)
+      llm_enhance: false  # Optional: Better metadata (costs money, usually not needed)
+
+  # ========================================================================
+  # Code Index (CRITICAL: Customize for Your Project!)
+  # ========================================================================
+  # ⚠️ YOU MUST UPDATE THIS SECTION to match your project structure!
+  #
+  # 🚀 NEW: Multi-Repo Support - Two Configuration Modes:
+  #
+  # MODE 1: Single-Repo (Legacy) - Simple, single codebase
+  # MODE 2: Multi-Repo (NEW) - Search across multiple local repositories
+  #
+  # ========================================================================
+  # MODE 1: SINGLE-REPO CONFIGURATION (Legacy)
+  # ========================================================================
+  # Use this if you only have ONE codebase to index.
+  #
+  # What it does:
+  #   - Semantic code search: Find functions/classes by meaning
+  #   - Call graph: Find who calls what (recursive traversal)
+  #   - AST search: Find code by structure (e.g., all async functions)
+  #   - Hybrid search: Vector + FTS (same as standards)
+  #   - ✅ Automatic file exclusion via .gitignore
+  #
+  # Common Single-Repo Patterns:
+  #   Python:
+  #     source_paths: ["../src/", "../lib/"]
+  #     languages: ["python"]
+  #
+  #   JavaScript/TypeScript:
+  #     source_paths: ["../src/", "../app/", "../components/"]
+  #     languages: ["javascript", "typescript"]
+  #
+  #   Go:
+  #     source_paths: ["../cmd/", "../pkg/", "../internal/"]
+  #     languages: ["go"]
+  #
+  #   Rust:
+  #     source_paths: ["../src/"]
+  #     languages: ["rust"]
+  #
+  #   Multi-language:
+  #     source_paths: ["../src/python/", "../src/typescript/"]
+  #     languages: ["python", "typescript"]
+  #
+  # ✅ TIP: You can now safely point to top-level directories (e.g., ["../"])
+  #         because prAxIs OS automatically respects your .gitignore file!
+  #
+  # EXAMPLE SINGLE-REPO CONFIG:
+  # code:
+  #   source_paths:
+  #     - "../src/"
+  #   languages:
+  #     - "python"
+  #   vector:
+  #     model: "microsoft/codebert-base"
+  #     dimension: 768
+  #     chunk_size: 200
+  #     chunk_overlap: 20
+  #   fts: {}
+  #   graph: {}
+  #   duckdb_path: ".cache/code.duckdb"
+  #   respect_gitignore: true
+  #   exclude_patterns: null
+  #
+  # ========================================================================
+  # MODE 2: MULTI-REPO CONFIGURATION (NEW - Recommended!)
+  # ========================================================================
+  # Use this to search across MULTIPLE local repositories simultaneously.
+  #
+  # ┌─────────────────────────────────────────────────────────────────────┐
+  # │ 🎯 QUICK START: Understanding Multi-Repo Terminology                │
+  # └─────────────────────────────────────────────────────────────────────┘
+  #
+  # PARTITION = One Git Repository
+  #   - Example: "python-sdk" repository is ONE partition
+  #   - Example: "praxis-os" monorepo is ONE partition
+  #   - Path points to the repository root
+  #   - Each partition has its own semantic index and call graph
+  #
+  # DOMAIN = Logical grouping within a repository
+  #   - Example: "code" (production code) is ONE domain
+  #   - Example: "tests" (test files) is ONE domain
+  #   - Example: "docs" (documentation) is ONE domain
+  #   - include_paths are relative to the partition's path
+  #   - Domains let you tag/organize code within a repo
+  #
+  # RULE OF THUMB:
+  #   - Different Git repos? → Different partitions
+  #   - Different services in same repo? → Different domains
+  #   - Different code types (code/tests/docs)? → Different domains
+  #   - Want to filter searches by type? → Use domains
+  #
+  # ⚠️ DOMAIN NAMING RULES (Important!):
+  #   - Use underscores (_), NOT hyphens (-)
+  #   - No spaces or special characters
+  #   - Valid examples: my_service, api_v2, test_fixtures, backend_api
+  #   - Invalid examples: my-service, api-v2, test-fixtures (will error!)
+  #
+  # 📚 WORKING EXAMPLE:
+  #   If you have praxis-os cloned alongside python-sdk, check:
+  #   ../python-sdk/.praxis-os/config/mcp.yaml
+  #
+  #   It shows a real production multi-repo setup with:
+  #   - Python SDK (main project)
+  #   - hive-kube monorepo (10 services as domains)
+  #   - Proper partition/domain structure
+  #
+  # ┌─────────────────────────────────────────────────────────────────────┐
+  # │ 🎯 Why Use Multi-Repo Indexing?                                     │
+  # └─────────────────────────────────────────────────────────────────────┘
+  #
+  # Use Case 1: Feature Parity Validation
+  #   - Porting service from TypeScript to Go?
+  #   - Index BOTH repos to compare implementations
+  #   - Search: "authentication logic" → see both versions side-by-side
+  #   - Ensures you don't miss edge cases or features
+  #
+  # Use Case 2: Integration Contract Discovery
+  #   - Your service outputs events to ClickHouse
+  #   - Backend service queries those events
+  #   - Index backend to see what fields it expects
+  #   - Ensures your output format matches downstream needs
+  #   - Prevents breaking changes to implicit contracts
+  #
+  # Use Case 3: Cross-Service Pattern Learning
+  #   - How does backend handle errors?
+  #   - How does frontend display loading states?
+  #   - Search across all services to find patterns
+  #   - Learn from existing implementations
+  #
+  # Use Case 4: Debugging Data Flow
+  #   - Trace data from ingestion → storage → backend → frontend
+  #   - Find where data transformation happens
+  #   - Understand full system behavior
+  #   - Debug issues that span multiple services
+  #
+  # 💡 Without multi-repo: You code in isolation, break integrations
+  # ✅ With multi-repo: You see the whole system, maintain contracts
+  #
+  # 🎯 Use Cases:
+  #   - Search your main app + SDKs/libraries you develop
+  #   - Search across microservices in a monorepo
+  #   - Compare implementations across different projects
+  #   - Trace bugs across multiple codebases
+  #   - Understand how your SDK integrates with your framework
+  #
+  # 🏗️ Architecture: Partition-Based
+  #   - Each repository = one "partition" (isolated index)
+  #   - Partitions can be searched together OR individually
+  #   - Call graphs are per-partition (don't cross repo boundaries)
+  #   - Semantic search works across ALL partitions
+  #
+  # 📦 What is a Partition?
+  #   - A partition is an independent code repository with its own:
+  #     * Source code path (can be outside project root!)
+  #     * Semantic index (CodeBERT embeddings for search)
+  #     * AST index (Tree-sitter parsed syntax)
+  #     * Call graph (DuckDB for "who calls what")
+  #   - Partitions are indexed separately but searchable together
+  #   - Example: "praxis-os" partition + "python-sdk" partition
+  #
+  # 📂 How Multi-Repo Works:
+  #   1. Define multiple partitions below (each = one repository)
+  #   2. prAxIs OS indexes each partition independently
+  #   3. Search queries can target:
+  #      - ALL partitions (default) - find concepts across all repos
+  #      - SPECIFIC partition - focus on one repo
+  #   4. Results include partition metadata (which repo it's from)
+  #
+  # 🔍 Search Patterns:
+  #   # Search ALL repos (default)
+  #   pos_search_project(action="search_code", query="async HTTP client")
+  #   → Returns: Results from ALL partitions, ranked by relevance
+  #
+  #   # Search SPECIFIC repo
+  #   pos_search_project(
+  #       action="search_code",
+  #       query="async HTTP client",
+  #       filters={"partition": "python-sdk"}
+  #   )
+  #   → Returns: Results ONLY from python-sdk partition
+  #
+  #   # Call graph (MUST specify partition)
+  #   pos_search_project(
+  #       action="find_callers",
+  #       query="HoneyHiveTracer.__init__",
+  #       filters={"partition": "python-sdk"}
+  #   )
+  #   → Returns: Who calls this function (within python-sdk only)
+  #
+  # ⚠️ CRITICAL: Call graph operations (find_callers, find_dependencies,
+  #             find_call_paths) REQUIRE partition specification because
+  #             call graphs don't cross repository boundaries.
+  #
+  # 📁 Directory Layout:
+  #   praxis-os/
+  #   ├── .praxis-os/
+  #   │   ├── config/
+  #   │   │   └── mcp.yaml  # ← This file
+  #   │   ├── ouroboros/    # Framework code (partition 1)
+  #   │   └── .cache/
+  #   │       └── indexes/
+  #   │           └── code/
+  #   │               ├── praxis-os/       # Partition 1 indexes
+  #   │               │   ├── semantic/    # LanceDB vector index
+  #   │               │   └── graph.duckdb # Call graph
+  #   │               └── python-sdk/      # Partition 2 indexes
+  #   │                   ├── semantic/
+  #   │                   └── graph.duckdb
+  #   └── ../python-sdk/    # SDK code (partition 2)
+  #       └── src/
+  #
+  # 🎨 Multi-Repo Configuration Examples:
+  #
+  # ┌─────────────────────────────────────────────────────────────────────┐
+  # │ ⚠️  CRITICAL: Schema Requirements                                   │
+  # └─────────────────────────────────────────────────────────────────────┘
+  #
+  # In multi-repo mode, you MUST include BOTH:
+  #   1. source_paths: Base paths for THIS project (always required!)
+  #   2. partitions: Additional repositories to index (optional)
+  #
+  # ❌ WRONG (Missing source_paths):
+  #   code:
+  #     partitions:
+  #       my-project:
+  #         path: ../
+  #
+  # ✅ CORRECT (Has both):
+  #   code:
+  #     source_paths: ["../src/"]  # ← REQUIRED for this project
+  #     partitions:                # ← OPTIONAL for other repos
+  #       other-repo:
+  #         path: ../../other-repo
+  #
+  # Why both? source_paths defines YOUR main project, partitions add
+  # ADDITIONAL repositories. Even with partitions, source_paths is required.
+  #
+  # ┌─────────────────────────────────────────────────────────────────────┐
+  # │ EXAMPLE 1: Framework + SDK (Recommended Pattern)                    │
+  # └─────────────────────────────────────────────────────────────────────┘
+  # Use case: Search your main framework AND the SDK you're developing
+  #
+  # ⚠️ NOTE: Even though we use partitions, source_paths is still REQUIRED.
+  #          See "CRITICAL: Schema Requirements" section above.
+  #
+  # code:
+  #   source_paths: ["ouroboros/", "scripts/"]  # ← REQUIRED: Your main project
+  #   enabled: true
+  #   partitions:                               # ← OPTIONAL: Additional repos
+  #     praxis-os:                          # Partition 1: Your framework
+  #       path: .                            # Current directory (.praxis-os/)
+  #       domains:
+  #         code:
+  #           include_paths:                 # Index these directories
+  #             - ouroboros/                 # Main source code
+  #             - scripts/                   # Helper scripts
+  #           exclude_patterns: null         # Use .gitignore (default)
+  #           metadata:                      # Optional: Tag results
+  #             project: praxis-os
+  #             type: framework
+  #         tests:                           # Optional: Separate test domain
+  #           include_paths:
+  #             - tests/
+  #           metadata:
+  #             type: tests
+  #
+  #     python-sdk:                          # Partition 2: Your SDK
+  #       path: ../../python-sdk             # Relative to .praxis-os/
+  #       domains:
+  #         code:
+  #           include_paths:
+  #             - src/                       # Only index src/ (not venv/)
+  #           exclude_patterns: null         # Use .gitignore in SDK repo
+  #           metadata:
+  #             project: python-sdk
+  #             type: library
+  #
+  #   languages: ["python"]                  # Applies to ALL partitions
+  #   vector:                                # Applies to ALL partitions
+  #     model: "microsoft/codebert-base"
+  #     dimension: 768
+  #     chunk_size: 200
+  #     chunk_overlap: 20
+  #   fts: {}
+  #   graph: {}
+  #
+  # Benefits:
+  #   ✅ Search "rate limiting" → finds implementations in BOTH repos
+  #   ✅ Search "HoneyHiveTracer" with partition filter → SDK only
+  #   ✅ Compare error handling patterns across projects
+  #   ✅ Trace bugs from SDK to framework (or vice versa)
+  #   ✅ Understand how SDK integrates with framework
+  #
+  # ┌─────────────────────────────────────────────────────────────────────┐
+  # │ EXAMPLE 2: Monorepo with Multiple Services                          │
+  # └─────────────────────────────────────────────────────────────────────┘
+  # Use case: Search across microservices in a monorepo
+  #
+  # code:
+  #   source_paths: ["../services/", "../apps/"]  # ← REQUIRED: Base paths
+  #   enabled: true
+  #   partitions:
+  #     api-service:
+  #       path: ../services/api
+  #       domains:
+  #         code:
+  #           include_paths: [src/]
+  #           metadata: {service: api, type: backend}
+  #
+  #     auth-service:
+  #       path: ../services/auth
+  #       domains:
+  #         code:
+  #           include_paths: [src/]
+  #           metadata: {service: auth, type: backend}
+  #
+  #     frontend:
+  #       path: ../apps/web
+  #       domains:
+  #         code:
+  #           include_paths: [src/, app/, components/]
+  #           metadata: {type: frontend}
+  #
+  #   languages: ["typescript", "javascript"]
+  #   vector: {model: "microsoft/codebert-base", dimension: 768}
+  #
+  # Benefits:
+  #   ✅ Find all authentication code across services
+  #   ✅ Compare API patterns between microservices
+  #   ✅ Find where frontend calls backend APIs
+  #
+  # ┌─────────────────────────────────────────────────────────────────────┐
+  # │ EXAMPLE 3: Multi-Language Project                                   │
+  # └─────────────────────────────────────────────────────────────────────┘
+  # Use case: Search across backend (Python) + frontend (TypeScript)
+  #
+  # code:
+  #   source_paths: ["../backend/", "../frontend/"]  # ← REQUIRED: Base paths
+  #   enabled: true
+  #   partitions:
+  #     backend:
+  #       path: ../backend
+  #       domains:
+  #         code:
+  #           include_paths: [src/]
+  #           metadata: {language: python, type: backend}
+  #
+  #     frontend:
+  #       path: ../frontend
+  #       domains:
+  #         code:
+  #           include_paths: [src/, components/]
+  #           metadata: {language: typescript, type: frontend}
+  #
+  #   languages: ["python", "typescript", "javascript"]
+  #
+  #   # Language-specific configuration for AST chunking
+  #   # REQUIRED when using multiple languages to avoid warning spam
+  #   # Each language needs: extensions + tree_sitter_language name
+  #   #
+  #   # Common languages shown below. For other languages, see:
+  #   # https://tree-sitter.github.io/tree-sitter/#available-parsers
+  #   language_configs:
+  #     python:
+  #       extensions: [".py"]
+  #       tree_sitter_language: "python"
+  #     typescript:
+  #       extensions: [".ts", ".tsx"]
+  #       tree_sitter_language: "typescript"
+  #     javascript:
+  #       extensions: [".js", ".jsx", ".mjs"]
+  #       tree_sitter_language: "javascript"
+  #     # Other common languages:
+  #     # rust: {extensions: [".rs"], tree_sitter_language: "rust"}
+  #     # go: {extensions: [".go"], tree_sitter_language: "go"}
+  #     # java: {extensions: [".java"], tree_sitter_language: "java"}
+  #     # cpp: {extensions: [".cpp", ".cc", ".cxx", ".h", ".hpp"], tree_sitter_language: "cpp"}
+  #     # c: {extensions: [".c", ".h"], tree_sitter_language: "c"}
+  #     # ruby: {extensions: [".rb"], tree_sitter_language: "ruby"}
+  #
+  #   vector: {model: "microsoft/codebert-base", dimension: 768}
+  #
+  # ┌─────────────────────────────────────────────────────────────────────┐
+  # │ EXAMPLE 4: Framework + Multiple SDKs                                │
+  # └─────────────────────────────────────────────────────────────────────┘
+  # Use case: Main framework + Python SDK + TypeScript SDK
+  #
+  # code:
+  #   source_paths: ["ouroboros/"]  # ← REQUIRED: Your framework code
+  #   enabled: true
+  #   partitions:
+  #     framework:
+  #       path: .
+  #       domains:
+  #         code:
+  #           include_paths: [ouroboros/]
+  #
+  #     python-sdk:
+  #       path: ../../sdks/python-sdk
+  #       domains:
+  #         code:
+  #           include_paths: [src/]
+  #           metadata: {sdk: python}
+  #
+  #     typescript-sdk:
+  #       path: ../../sdks/typescript-sdk
+  #       domains:
+  #         code:
+  #           include_paths: [src/]
+  #           metadata: {sdk: typescript}
+  #
+  #   languages: ["python", "typescript"]
+  #
+  #   # Language-specific configuration for AST chunking
+  #   # REQUIRED when using multiple languages to avoid warning spam
+  #   # Each language needs: extensions + tree_sitter_language name
+  #   #
+  #   # Common languages shown below. For other languages, see:
+  #   # https://tree-sitter.github.io/tree-sitter/#available-parsers
+  #   language_configs:
+  #     python:
+  #       extensions: [".py"]
+  #       tree_sitter_language: "python"
+  #     typescript:
+  #       extensions: [".ts", ".tsx"]
+  #       tree_sitter_language: "typescript"
+  #     # Other common languages:
+  #     # rust: {extensions: [".rs"], tree_sitter_language: "rust"}
+  #     # go: {extensions: [".go"], tree_sitter_language: "go"}
+  #     # java: {extensions: [".java"], tree_sitter_language: "java"}
+  #     # cpp: {extensions: [".cpp", ".cc", ".cxx", ".h", ".hpp"], tree_sitter_language: "cpp"}
+  #     # c: {extensions: [".c", ".h"], tree_sitter_language: "c"}
+  #     # ruby: {extensions: [".rb"], tree_sitter_language: "ruby"}
+  #
+  #   vector: {model: "microsoft/codebert-base", dimension: 768}
+  #
+  # Benefits:
+  #   ✅ Compare SDK implementations (Python vs TypeScript)
+  #   ✅ Find how each SDK integrates with framework
+  #   ✅ Ensure consistency across SDK APIs
+  #
+  # ========================================================================
+  # TROUBLESHOOTING MULTI-REPO CONFIG
+  # ========================================================================
+  #
+  # Common Error: "source_paths: Field required"
+  #   Problem: Missing source_paths in multi-repo mode
+  #   Fix: Add source_paths even when using partitions
+  #   Example:
+  #     code:
+  #       source_paths: ["../src/"]  # ← Add this!
+  #       partitions: ...
+  #
+  # Common Error: "List should have at least 1 item after validation"
+  #   Problem: source_paths is empty []
+  #   Fix: Provide at least one path
+  #   Example: source_paths: ["../"]  # Use project root if needed
+  #
+  # Common Error: "Avoid spaces, hyphens, and special characters"
+  #   Problem: Domain name uses hyphens (e.g., my-service)
+  #   Fix: Use underscores instead
+  #   Wrong: my-service, api-v2, test-fixtures
+  #   Right: my_service, api_v2, test_fixtures
+  #
+  # Common Error: "Extra inputs are not permitted"
+  #   Problem: Used 'enabled: true' at code level in single-repo mode
+  #   Fix: Remove 'enabled: true' (only needed in multi-repo mode)
+  #
+  # Common Error: "Path does not exist"
+  #   Problem: Partition path is incorrect or repo not cloned
+  #   Fix: Verify path is relative to .praxis-os/ directory
+  #   Example: If SDK is at /home/user/python-sdk and praxis-os is at
+  #            /home/user/praxis-os, use path: ../../python-sdk
+  #
+  # 💡 TIP: See working multi-repo example
+  #    If you have python-sdk cloned, check:
+  #    ../python-sdk/.praxis-os/config/mcp.yaml
+  #
+  # 💡 TIP: Start simple, iterate
+  #    1. Start with single-repo mode (just source_paths)
+  #    2. Verify it works (restart MCP server)
+  #    3. Add first partition
+  #    4. Verify it works
+  #    5. Add more partitions incrementally
+  #
+  # ========================================================================
+  # ACTUAL CONFIGURATION (Choose Single-Repo OR Multi-Repo)
+  # ========================================================================
+  #
+  # 🎯 CURRENT CONFIG: Single-Repo (Template - Must Customize!)
+  #
+  # ⚠️ TO ENABLE MULTI-REPO:
+  #    1. Comment out the single-repo config below
+  #    2. Uncomment one of the multi-repo examples above
+  #    3. Adjust paths/languages to match your project
+  #    4. Restart the MCP server
+  #
+  code:
+    # ──────────────────────────────────────────────────────────────────
+    # SINGLE-REPO MODE (Current - Template)
+    # ──────────────────────────────────────────────────────────────────
+    # ⚠️ CHANGE THIS: Replace with your project's source code paths
+    source_paths:
+      - "ouroboros/"  # ⚠️ TEMPLATE: Replace this!
+
+    # ⚠️ UPDATE THIS: Add languages your project uses
+    # Supported: python, javascript, typescript, go, rust
+    languages:
+      - "python"  # ⚠️ TEMPLATE: Add your languages here
+
+    vector:
+      # CodeBERT - Specifically designed for code embeddings
+      # Better semantic understanding of code than general-purpose models
+      model: "microsoft/codebert-base"  # MIT licensed, zero cost, offline
+      dimension: 768  # CodeBERT-base uses 768 dimensions
+      chunk_size: 200  # Smaller chunks = function-level precision
+      chunk_overlap: 20  # Prevents function splitting
+
+    fts: {}  # Use all defaults (enabled=True)
+    graph: {}  # Use all defaults (max_depth=10)
+    duckdb_path: ".cache/code.duckdb"  # Call graph database
+
+    # ────────────────────────────────────────────────────────────────
+    # File Exclusion (Applies to Single-Repo mode)
+    # ────────────────────────────────────────────────────────────────
+    # ✅ Automatic .gitignore support (zero-config for most projects)
+    respect_gitignore: true
+    exclude_patterns: null
+
+    # ──────────────────────────────────────────────────────────────────
+    # MULTI-REPO MODE (Commented Out - Uncomment to Enable)
+    # ──────────────────────────────────────────────────────────────────
+    # ⚠️ REMEMBER: source_paths is REQUIRED even in multi-repo mode!
+    #
+    # source_paths: ["ouroboros/", "scripts/"]  # ← REQUIRED for main project
+    # enabled: true
+    # partitions:
+    #   praxis-os:                        # Partition 1: This framework
+    #     path: .                          # Current directory
+    #     domains:
+    #       code:
+    #         include_paths:
+    #           - ouroboros/              # Framework code
+    #           - scripts/                # Helper scripts
+    #         exclude_patterns: null      # Use .gitignore
+    #         metadata:
+    #           project: praxis-os
+    #           type: framework
+    #       tests:
+    #         include_paths:
+    #           - tests/
+    #         metadata:
+    #           type: tests
+    #
+    #   python-sdk:                       # Partition 2: Your SDK
+    #     path: ../../python-sdk          # Relative to .praxis-os/
+    #     domains:
+    #       code:
+    #         include_paths:
+    #           - src/                    # Index only src/ (not venv/)
+    #         exclude_patterns: null
+    #         metadata:
+    #           project: python-sdk
+    #           type: library
+    #
+    # languages: ["python"]               # Applies to ALL partitions
+    # vector:
+    #   model: "microsoft/codebert-base"
+    #   dimension: 768
+    #   chunk_size: 200
+    #   chunk_overlap: 20
+    # fts: {}
+    # graph: {}
+
+  # ========================================================================
+  # AST Index (DEPRECATED - Use code.partitions instead)
+  # ========================================================================
+  # ⚠️ The AST index is now unified with the Code index in multi-repo mode.
+  #    This section exists for backward compatibility with single-repo mode.
+  #
+  # In single-repo mode: AST is a separate index (legacy behavior)
+  # In multi-repo mode: AST is part of each partition's GraphIndex
+  #
+  # If using multi-repo mode, this section is ignored.
+  # If using single-repo mode, this section should match code.source_paths.
+  ast:
+    source_paths:
+      - "ouroboros/"  # ⚠️ TEMPLATE: Should match code.source_paths
+
+    languages:
+      - "python"  # ⚠️ TEMPLATE: Should match code.languages
+
+    auto_install_parsers: true  # Auto-install missing Tree-sitter parsers
+    venv_path: "venv/"  # Isolated venv for parser installation
+
+  # ========================================================================
+  # File Watcher (Incremental Updates)
+  # ========================================================================
+  # Automatically rebuilds indexes when files change.
+  #
+  # What it does:
+  #   - Watches source files for changes
+  #   - Automatically rebuilds affected indexes (standards, code, AST)
+  #   - Debounces rapid changes (waits 500ms before rebuilding)
+  #   - Works across ALL partitions in multi-repo mode
+  #
+  # Usually fine as-is (enabled=True, debounce_ms=500).
+  # Disable if you want manual rebuilds only.
+  file_watcher: {}  # Use all defaults (enabled=True, debounce_ms=500)
+
+# ============================================================================
+# Workflow Subsystem Configuration
+# ============================================================================
+# Configures phase-gated workflow execution.
+#
+# Usually fine as-is unless you have custom workflow locations or need
+# different session timeouts.
+workflow:
+  workflows_dir: "workflows/"  # Workflow definitions (usually fine as-is)
+  state_dir: ".cache/state/"  # Workflow state persistence (usually fine as-is)
+  session_timeout_minutes: 1440  # 24 hours (reasonable default)
+
+# ============================================================================
+# Browser Subsystem Configuration
+# ============================================================================
+# Configures browser automation (Playwright).
+#
+# Usually fine as-is unless you need different browser type or session limits.
+browser:
+  browser_type: "chromium"  # Options: chromium, firefox, webkit
+  headless: true  # Run without UI (set false for debugging)
+  max_sessions: 10  # Max concurrent browser sessions
+  session_timeout_minutes: 30  # Auto-cleanup idle sessions
+
+# ============================================================================
+# Logging Configuration
+# ============================================================================
+# Configures structured logging and behavioral metrics.
+#
+# Usually fine as-is unless you need different log levels or formats.
+logging:
+  level: "INFO"  # Options: DEBUG, INFO, WARNING, ERROR, CRITICAL
+  format: "text"  # Options: "text" (human-readable) or "json" (structured)
+  log_dir: ".cache/logs/"  # Log file location (usually fine as-is)
+  behavioral_metrics_enabled: true  # Track query diversity, trends, prepend effectiveness
