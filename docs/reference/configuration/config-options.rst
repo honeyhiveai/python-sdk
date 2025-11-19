@@ -467,6 +467,333 @@ Tracing Configuration
    
    **Behavior**: Oldest spans are dropped when queue is full
 
+OpenTelemetry Span Limits
+~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+.. note::
+   **🆕 NEW in v1.0**: Configurable span limits with automatic core attribute preservation
+   
+   These settings control OpenTelemetry span size limits. **The SDK defaults are optimized for 95% of use cases** - only increase limits when you actually hit them, not preemptively.
+
+.. py:data:: max_attributes
+   :type: int
+   :value: 1024
+
+   **Description**: Maximum number of attributes (key-value pairs) per span
+   
+   **Environment Variable**: ``HH_MAX_ATTRIBUTES``
+   
+   **Default**: ``1024`` (**recommended** - optimized for LLM workloads)
+   
+   **Backend Maximum**: ``10,000`` (supported for edge cases only)
+   
+   **OpenTelemetry Default**: ``128`` (SDK increases this 8x for LLM workloads)
+   
+   **Range**: 128 - 10,000
+   
+   **⚠️ Important**: The default of 1024 is **intentionally set to handle 95% of use cases**. Only increase this limit when you **actually encounter** "attribute limit exceeded" errors in production, not preemptively.
+   
+   **When You Might Need More**:
+   - Large embeddings (>1MB) with extensive metadata
+   - High-resolution image processing with detailed annotations
+   - Complex multi-step chains with per-step metadata
+   - Debug/development scenarios requiring verbose attribute capture
+   
+   **Trade-offs**:
+   - **Higher limits**: Support larger payloads, more metadata
+   - **Lower limits**: Reduced memory usage, faster serialization
+   
+   **Performance Impact**: Minimal (<1ms overhead) with lazy core attribute preservation
+   
+   **Important**: When limit is exceeded, OpenTelemetry uses FIFO eviction (oldest attributes dropped first). The SDK automatically preserves critical attributes (``session_id``, ``event_type``, ``event_name``, ``source``) when spans approach the limit.
+
+   **Example**:
+
+   .. code-block:: python
+
+      from honeyhive.config.models import TracerConfig
+      from honeyhive import HoneyHiveTracer
+      
+      # Default: 1024 attributes (recommended)
+      tracer = HoneyHiveTracer.init(
+          api_key="hh_...",
+          project="my-project"
+      )
+      
+      # Increased for large embeddings
+      config = TracerConfig(
+          api_key="hh_...",
+          project="my-project",
+          max_attributes=5000  # Increase to 5000
+      )
+      tracer = HoneyHiveTracer(config=config)
+      
+      # Or via environment variable
+      # export HH_MAX_ATTRIBUTES=5000
+
+.. py:data:: max_events
+   :type: int
+   :value: 1024
+
+   **Description**: Maximum number of events per span
+   
+   **Environment Variable**: ``HH_MAX_EVENTS``
+   
+   **Default**: ``1024`` (conservative SDK default)
+   
+   **Backend Maximum**: ``10,000`` (increase if needed)
+   
+   **OpenTelemetry Default**: ``128`` (SDK increases this 8x)
+   
+   **Range**: 128 - 10,000
+   
+   **Use Cases**:
+   - **Default (1024)**: Most LLM applications with typical event counts
+   - **Increased (2000-5000)**: High-frequency logging, detailed trace events
+   - **Maximum (10,000)**: Debug scenarios, comprehensive event capture
+   
+   **Note**: Events are flattened to pseudo-attributes (``_event.0.*``, ``_event.1.*``, etc.) by the ingestion service, so they count toward effective attribute limit.
+   
+   **Trade-offs**:
+   - **Higher limits**: Capture more detailed execution flow
+   - **Lower limits**: Reduced network payload size
+   
+   **Example**:
+
+   .. code-block:: python
+
+      # Increase for high-frequency event logging
+      config = TracerConfig(
+          api_key="hh_...",
+          project="my-project",
+          max_events=3000
+      )
+
+.. py:data:: max_links
+   :type: int
+   :value: 128
+
+   **Description**: Maximum number of span links per span (for distributed tracing)
+   
+   **Environment Variable**: ``HH_MAX_LINKS``
+   
+   **Default**: ``128`` (typically sufficient)
+   
+   **Backend Maximum**: ``10,000`` (rarely needed)
+   
+   **OpenTelemetry Default**: ``128`` (SDK uses standard default)
+   
+   **Range**: 1 - 10,000
+   
+   **Use Cases**:
+   - **Default (128)**: Standard distributed tracing scenarios
+   - **Increased (500+)**: Complex microservice architectures, fan-out patterns
+   
+   **Note**: Span links are used for distributed tracing to link spans across service boundaries. Most applications don't need more than the default.
+   
+   **Example**:
+
+   .. code-block:: python
+
+      # Increase for complex distributed systems
+      config = TracerConfig(
+          api_key="hh_...",
+          project="my-project",
+          max_links=500
+      )
+
+.. py:data:: max_span_size
+   :type: int
+   :value: 10485760
+
+   **Description**: Maximum total span size in bytes (attributes + events + links combined)
+   
+   **Environment Variable**: ``HH_MAX_SPAN_SIZE``
+   
+   **Default**: ``10485760`` (10 MB - **recommended** for most use cases)
+   
+   **Backend Maximum**: ``104857600`` (100 MB - supported for edge cases only)
+   
+   **Range**: 1,048,576 - 104,857,600 (1 MB - 100 MB)
+   
+   **⚠️ Important**: The default of 10 MB is **sufficient for 95% of applications** including small-to-medium images, embeddings, and typical LLM metadata. Only increase when you **actually encounter** "span size exceeded" errors.
+   
+   **When You Might Need More**:
+   - High-resolution images (>10 MB each)
+   - Audio/video file processing (>10 MB payloads)
+   - Scientific computing with large matrices/tensors
+   - Debug scenarios capturing extensive state
+   
+   **Important**: This is a **total span size limit** enforced in-memory before serialization. OpenTelemetry doesn't provide this natively, so the SDK implements custom size tracking.
+   
+   **Trade-offs**:
+   - **Higher limits**: Support larger payloads (images, audio, video)
+   - **Lower limits**: Reduced memory usage, faster network transmission
+   
+   **Performance Impact**: Size checking adds ~0.001ms overhead per span
+   
+   **Span Size Breakdown**:
+
+   - **Attributes**: Each key-value pair (~100-1000 bytes typical)
+   - **Events**: Each event with data (~50-500 bytes typical)
+   - **Links**: Each link reference (~100 bytes typical)
+   - **Large Data**: Images (100KB-10MB), embeddings (1KB-100KB), audio (1MB-50MB)
+   
+   **Example**:
+
+   .. code-block:: python
+
+      # Default: 10 MB
+      tracer = HoneyHiveTracer.init(
+          api_key="hh_...",
+          project="my-project"
+      )
+      
+      # Increased for image processing
+      config = TracerConfig(
+          api_key="hh_...",
+          project="my-project",
+          max_span_size=52428800  # 50 MB
+      )
+      
+      # Maximum for video/audio processing
+      config = TracerConfig(
+          api_key="hh_...",
+          project="my-project",
+          max_span_size=104857600  # 100 MB (backend max)
+      )
+
+.. py:data:: preserve_core_attributes
+   :type: bool
+   :value: True
+
+   **Description**: Enable automatic preservation of critical attributes to prevent data loss
+   
+   **Environment Variable**: ``HH_PRESERVE_CORE_ATTRIBUTES``
+   
+   **Default**: ``True`` (enabled - **strongly recommended**)
+   
+   **Behavior**: When spans approach the attribute limit (95% threshold), the SDK automatically re-sets critical attributes just before ``span.end()`` to ensure they survive OpenTelemetry's FIFO eviction policy.
+   
+   **Critical Attributes Protected**:
+   
+   - ``session_id`` (CRITICAL - required for backend ingestion)
+   - ``source`` (CRITICAL - required for backend routing)
+   - ``event_type`` (HIGH - required for span classification)
+   - ``event_name`` (HIGH - required for span identification)
+   - ``project`` (NORMAL - required for project routing)
+   - ``config`` (NORMAL - optional configuration name)
+   
+   **Why This Matters**:
+   
+   OpenTelemetry uses strict FIFO (First-In-First-Out) eviction when spans exceed attribute limits. Without preservation:
+   
+   1. Critical attributes set early (like ``session_id``) get evicted first
+   2. Backend rejects spans missing required attributes
+   3. **Data loss occurs silently**
+   
+   With preservation enabled:
+   
+   1. SDK monitors attribute count per span
+   2. When span reaches 95% of limit, preservation activates
+   3. Critical attributes are re-set LAST (become newest)
+   4. Critical attributes survive eviction, span is accepted
+   
+   **Performance Impact**:
+   
+   - **Normal spans** (<95% of limit): **Zero overhead**
+   - **Large spans** (>95% of limit): **~0.5ms overhead** (lazy activation)
+   - **Memory**: Negligible (only attributes checked, not copied)
+   
+   **When to Disable**:
+   
+   - ⚠️ **Never in production** - high risk of data loss
+   - Debugging OpenTelemetry behavior
+   - Performance profiling (measure raw OTel overhead)
+   - Testing attribute eviction scenarios
+   
+   **Example**:
+
+   .. code-block:: python
+
+      # Default: Enabled (recommended)
+      tracer = HoneyHiveTracer.init(
+          api_key="hh_...",
+          project="my-project"
+      )
+      
+      # Explicitly enable (redundant but clear)
+      config = TracerConfig(
+          api_key="hh_...",
+          project="my-project",
+          preserve_core_attributes=True
+      )
+      
+      # ⚠️ Disable only for debugging (NOT for production)
+      config = TracerConfig(
+          api_key="hh_...",
+          project="my-project",
+          preserve_core_attributes=False  # RISKY: Can cause data loss
+      )
+
+.. important::
+   **Span Limit Configuration Best Practices**
+   
+   1. **Use the defaults** (1024 attrs, 10MB) - optimized for 95% of use cases
+   2. **Don't preemptively increase limits** - only adjust when you hit actual errors
+   3. **Monitor in production** - use HoneyHive dashboard to track span sizes
+   4. **Keep preservation enabled** - prevents silent data loss from FIFO eviction
+   5. **Increase incrementally** - if needed, increase by 2-3x, not to maximum
+   6. **Higher limits = higher costs** - larger spans mean more memory, network, and storage
+   
+   **Common Configuration Scenarios**:
+
+   .. code-block:: python
+
+      # Scenario 1: Standard LLM application (RECOMMENDED - use defaults)
+      config = TracerConfig(
+          api_key="hh_...",
+          project="my-project"
+          # Uses defaults: 1024 attrs, 10MB, preservation ON
+          # This handles 95% of use cases
+      )
+      
+      # Scenario 2: Image processing (only if hitting limits)
+      config = TracerConfig(
+          api_key="hh_...",
+          project="image-pipeline",
+          max_attributes=2048,       # 2x increase (not 10x)
+          max_span_size=20971520     # 20 MB (2x increase, not 100 MB)
+      )
+      
+      # Scenario 3: High-resolution media (rare edge case)
+      config = TracerConfig(
+          api_key="hh_...",
+          project="media-pipeline",
+          max_attributes=3000,       # 3x increase
+          max_span_size=52428800     # 50 MB (5x increase)
+      )
+      
+      # ⚠️ Scenario 4: Maximum limits (ONLY for extreme edge cases)
+      # WARNING: Higher memory usage, network costs, and processing time
+      config = TracerConfig(
+          api_key="hh_...",
+          project="scientific-computing",
+          max_attributes=10000,      # Backend maximum (use sparingly)
+          max_span_size=104857600,   # Backend maximum (100 MB)
+          verbose=True
+      )
+      # Only use maximum limits if:
+      # - You've verified you actually need them
+      # - You've tested memory/network impact
+      # - You understand the cost implications
+
+.. seealso::
+   **Related Documentation**
+   
+   - :doc:`/reference/api/tracer` - Tracer initialization with span limits
+   - :doc:`/reference/api/config-models` - Configuration model API reference
+
 Evaluation Configuration
 ------------------------
 

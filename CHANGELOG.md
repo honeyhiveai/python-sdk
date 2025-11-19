@@ -18,6 +18,14 @@
   - All limits configurable via TracerConfig or environment variables (`HH_MAX_ATTRIBUTES`, `HH_MAX_EVENTS`, `HH_MAX_LINKS`, `HH_MAX_SPAN_SIZE`)
   - Files: `src/honeyhive/config/models/tracer.py`, `src/honeyhive/tracer/instrumentation/initialization.py`, `src/honeyhive/tracer/integration/detection.py`
 
+- **📖 Documentation: Comprehensive span limit configuration guide**
+  - Added detailed documentation for all span limit settings (`max_attributes`, `max_events`, `max_links`, `max_span_size`, `preserve_core_attributes`)
+  - Documented environment variables, defaults, backend maximums, and performance implications
+  - Emphasized SDK defaults (1024 attrs, 10MB) are optimized for 95% of use cases - backend limits (10,000 attrs, 100MB) are for edge cases only
+  - Added configuration examples showing conservative increases (not maxing out limits)
+  - Explained OpenTelemetry FIFO eviction behavior and automatic core attribute preservation
+  - Files: `docs/reference/configuration/config-options.rst`
+
 - **🌐 Distributed Tracing: Simplified server-side context management (v1.0+)**
   - Added `with_distributed_trace_context()` context manager for one-line distributed tracing setup
   - Reduces server-side boilerplate from ~65 lines to 1 line of context management code
