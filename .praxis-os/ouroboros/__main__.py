@@ -57,6 +57,7 @@ except ImportError:
     pass
 
 from ouroboros.foundation import PortManager, ProjectInfoDiscovery, TransportManager
+from ouroboros.foundation.runtime_lock import RuntimeLock
 
 logger = logging.getLogger(__name__)
 
@@ -181,6 +182,7 @@ Examples:
     logger.info("=" * 60)
     
     # Initialize components (for cleanup in finally block)
+    runtime_lock = None
     port_manager = None
     transport_mgr = None
     init_lock = None
@@ -189,6 +191,16 @@ Examples:
         # Find and validate .praxis-os directory
         base_path = find_praxis_os_directory()
         logger.info("Base path: %s", base_path)
+        
+        # Acquire runtime lock (enforces singleton - one server per project)
+        runtime_lock = RuntimeLock(base_path)
+        if not runtime_lock.acquire():
+            # Another MCP server is already running - exit gracefully
+            logger.info(
+                "Another MCP server is already running for this project. "
+                "Exiting gracefully (singleton enforcement)."
+            )
+            sys.exit(0)
         
         # Acquire initialization lock (defends against concurrent spawns)
         from ouroboros.foundation.init_lock import InitLock
@@ -269,6 +281,9 @@ Examples:
         
         if init_lock:
             init_lock.release()
+        
+        if runtime_lock:
+            runtime_lock.release()
         
         logger.info("Shutdown complete")
 

@@ -12,8 +12,8 @@ This test suite validates all CRUD operations for HoneyHive API clients:
 Reference: INTEGRATION_TEST_INVENTORY_AND_GAP_ANALYSIS.md Phase 1 Critical Tests
 """
 
-# pylint: disable=duplicate-code,too-many-statements,too-many-locals
-# pylint: disable=too-many-lines
+# pylint: disable=duplicate-code,too-many-statements,too-many-locals,too-many-lines,unused-argument
+# Justification: unused-argument: Integration test fixtures
 # Justification: Comprehensive integration test suite covering 7 API clients
 
 import time

@@ -9,6 +9,10 @@ This module maintains full backwards compatibility with the main branch interfac
 while adding new functionality. All main branch usage patterns are supported.
 """
 
+# pylint: disable=R0801
+# Justification: Shared patterns with test_tracer_instrumentation_enrichment.py
+# for parameter normalization and enrichment logic
+
 # Standard library imports
 from contextlib import _GeneratorContextManager, contextmanager
 from typing import Any, Dict, Iterator, Optional, Union

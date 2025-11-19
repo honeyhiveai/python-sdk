@@ -46,6 +46,11 @@ class MockHoneyHiveTracer:
         self.config.verbose = False
         self.config.session = Mock()
         self.config.session.inputs = {}
+        # Span limit configuration
+        self.config.max_attributes = 1024
+        self.config.max_events = 1024
+        self.config.max_links = 128
+        self.config.max_span_size = 10 * 1024 * 1024  # 10MB
 
         # Tracer instance attributes
         self.project_name: Any = "test-project"  # Allow both str and None
@@ -529,6 +534,9 @@ class TestTracerInitialization:
 
         # Assert
         assert self.mock_tracer.span_processor == mock_span_processor
+        # Only HoneyHiveSpanProcessor is added (CoreAttributePreservationProcessor removed)
+        assert self.mock_tracer.provider.add_span_processor.call_count == 1
+        # Verify HoneyHiveSpanProcessor was added
         self.mock_tracer.provider.add_span_processor.assert_called_once_with(
             mock_span_processor
         )
@@ -681,6 +689,9 @@ class TestTracerInitialization:
         assert self.mock_tracer.provider == mock_provider_instance
         assert self.mock_tracer.is_main_provider is False
         mock_create_provider.assert_called_once_with(self.mock_tracer)
+        # Only HoneyHiveSpanProcessor is added (CoreAttributePreservationProcessor removed)
+        assert mock_provider_instance.add_span_processor.call_count == 1
+        # Verify HoneyHiveSpanProcessor was added
         mock_provider_instance.add_span_processor.assert_called_once_with(
             mock_span_processor
         )

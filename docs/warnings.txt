@@ -1,2176 +1,279 @@
-[91m/Users/josh/src/github.com/honeyhiveai/python-sdk/docs/explanation/architecture/overview.rst:2: WARNING: Title underline too short.
-
-Architecture Overview
-==================== [docutils][39;49;00m
-[91m/Users/josh/src/github.com/honeyhiveai/python-sdk/docs/explanation/architecture/overview.rst:132: WARNING: Title underline too short.
-
-Key Design Decisions
-------------------- [docutils][39;49;00m
-[91m/Users/josh/src/github.com/honeyhiveai/python-sdk/docs/explanation/architecture/overview.rst:132: WARNING: Title underline too short.
-
-Key Design Decisions
-------------------- [docutils][39;49;00m
-[91m/Users/josh/src/github.com/honeyhiveai/python-sdk/docs/explanation/concepts/tracing-fundamentals.rst:175: WARNING: Title underline too short.
-
-LLM-Specific Tracing Considerations
----------------------------------- [docutils][39;49;00m
-[91m/Users/josh/src/github.com/honeyhiveai/python-sdk/docs/explanation/concepts/tracing-fundamentals.rst:175: WARNING: Title underline too short.
-
-LLM-Specific Tracing Considerations
----------------------------------- [docutils][39;49;00m
-[91m/Users/josh/src/github.com/honeyhiveai/python-sdk/docs/explanation/concepts/tracing-fundamentals.rst:255: WARNING: Title underline too short.
-
-Sampling and Performance
------------------------ [docutils][39;49;00m
-[91m/Users/josh/src/github.com/honeyhiveai/python-sdk/docs/explanation/concepts/tracing-fundamentals.rst:255: WARNING: Title underline too short.
-
-Sampling and Performance
------------------------ [docutils][39;49;00m
-[91m/Users/josh/src/github.com/honeyhiveai/python-sdk/docs/explanation/concepts/tracing-fundamentals.rst:358: WARNING: Title underline too short.
-
-Integration with Monitoring Systems
----------------------------------- [docutils][39;49;00m
-[91m/Users/josh/src/github.com/honeyhiveai/python-sdk/docs/explanation/concepts/tracing-fundamentals.rst:358: WARNING: Title underline too short.
-
-Integration with Monitoring Systems
----------------------------------- [docutils][39;49;00m
-[91m/Users/josh/src/github.com/honeyhiveai/python-sdk/docs/explanation/concepts/tracing-fundamentals.rst:419: WARNING: Title underline too short.
-
-Best Practices Summary
---------------------- [docutils][39;49;00m
-[91m/Users/josh/src/github.com/honeyhiveai/python-sdk/docs/explanation/concepts/tracing-fundamentals.rst:419: WARNING: Title underline too short.
-
-Best Practices Summary
---------------------- [docutils][39;49;00m
-[91m/Users/josh/src/github.com/honeyhiveai/python-sdk/docs/how-to/advanced-tracing/custom-spans.rst:537: WARNING: Title underline too short.
-
-Best Practices Summary
---------------------- [docutils][39;49;00m
-[91m/Users/josh/src/github.com/honeyhiveai/python-sdk/docs/how-to/advanced-tracing/custom-spans.rst:537: WARNING: Title underline too short.
-
-Best Practices Summary
---------------------- [docutils][39;49;00m
-[91m/Users/josh/src/github.com/honeyhiveai/python-sdk/docs/how-to/common-patterns.rst:926: WARNING: Title underline too short.
-
-Best Practices Summary
---------------------- [docutils][39;49;00m
-[91m/Users/josh/src/github.com/honeyhiveai/python-sdk/docs/how-to/common-patterns.rst:926: WARNING: Title underline too short.
-
-Best Practices Summary
---------------------- [docutils][39;49;00m
-[91m/Users/josh/src/github.com/honeyhiveai/python-sdk/docs/how-to/deployment/production.rst:23: WARNING: Title underline too short.
-
-Security Configuration
---------------------- [docutils][39;49;00m
-[91m/Users/josh/src/github.com/honeyhiveai/python-sdk/docs/how-to/deployment/production.rst:23: WARNING: Title underline too short.
-
-Security Configuration
---------------------- [docutils][39;49;00m
-[91m/Users/josh/src/github.com/honeyhiveai/python-sdk/docs/how-to/deployment/production.rst:26: WARNING: Title underline too short.
-
-API Key Management
-~~~~~~~~~~~~~~~~~ [docutils][39;49;00m
-[91m/Users/josh/src/github.com/honeyhiveai/python-sdk/docs/how-to/deployment/production.rst:106: WARNING: Title underline too short.
-
-Network Security
-~~~~~~~~~~~~~~~ [docutils][39;49;00m
-[91m/Users/josh/src/github.com/honeyhiveai/python-sdk/docs/how-to/deployment/production.rst:106: WARNING: Title underline too short.
-
-Network Security
-~~~~~~~~~~~~~~~ [docutils][39;49;00m
-[91m/Users/josh/src/github.com/honeyhiveai/python-sdk/docs/how-to/deployment/production.rst:141: WARNING: Title underline too short.
-
-Performance Optimization
------------------------ [docutils][39;49;00m
-[91m/Users/josh/src/github.com/honeyhiveai/python-sdk/docs/how-to/deployment/production.rst:141: WARNING: Title underline too short.
-
-Performance Optimization
------------------------ [docutils][39;49;00m
-[91m/Users/josh/src/github.com/honeyhiveai/python-sdk/docs/how-to/deployment/production.rst:144: WARNING: Title underline too short.
-
-Minimize Overhead
-~~~~~~~~~~~~~~~~ [docutils][39;49;00m
-[91m/Users/josh/src/github.com/honeyhiveai/python-sdk/docs/how-to/deployment/production.rst:221: WARNING: Title underline too short.
-
-Graceful Degradation
-~~~~~~~~~~~~~~~~~~~ [docutils][39;49;00m
-[91m/Users/josh/src/github.com/honeyhiveai/python-sdk/docs/how-to/deployment/production.rst:264: WARNING: Title underline too short.
-
-Retry Logic
-~~~~~~~~~~ [docutils][39;49;00m
-[91m/Users/josh/src/github.com/honeyhiveai/python-sdk/docs/how-to/deployment/production.rst:264: WARNING: Title underline too short.
-
-Retry Logic
-~~~~~~~~~~ [docutils][39;49;00m
-[91m/Users/josh/src/github.com/honeyhiveai/python-sdk/docs/how-to/deployment/production.rst:295: WARNING: Title underline too short.
-
-Circuit Breaker Pattern
-~~~~~~~~~~~~~~~~~~~~~~ [docutils][39;49;00m
-[91m/Users/josh/src/github.com/honeyhiveai/python-sdk/docs/how-to/deployment/production.rst:295: WARNING: Title underline too short.
-
-Circuit Breaker Pattern
-~~~~~~~~~~~~~~~~~~~~~~ [docutils][39;49;00m
-[91m/Users/josh/src/github.com/honeyhiveai/python-sdk/docs/how-to/deployment/production.rst:358: WARNING: Title underline too short.
-
-Monitoring Production Health
---------------------------- [docutils][39;49;00m
-[91m/Users/josh/src/github.com/honeyhiveai/python-sdk/docs/how-to/deployment/production.rst:358: WARNING: Title underline too short.
-
-Monitoring Production Health
---------------------------- [docutils][39;49;00m
-[91m/Users/josh/src/github.com/honeyhiveai/python-sdk/docs/how-to/deployment/production.rst:361: WARNING: Title underline too short.
-
-Application Metrics
-~~~~~~~~~~~~~~~~~~ [docutils][39;49;00m
-[91m/Users/josh/src/github.com/honeyhiveai/python-sdk/docs/how-to/deployment/production.rst:422: WARNING: Title underline too short.
-
-Health Check Endpoints
-~~~~~~~~~~~~~~~~~~~~~ [docutils][39;49;00m
-[91m/Users/josh/src/github.com/honeyhiveai/python-sdk/docs/how-to/deployment/production.rst:422: WARNING: Title underline too short.
-
-Health Check Endpoints
-~~~~~~~~~~~~~~~~~~~~~ [docutils][39;49;00m
-[91m/Users/josh/src/github.com/honeyhiveai/python-sdk/docs/how-to/deployment/production.rst:468: WARNING: Title underline too short.
-
-Logging Integration
-~~~~~~~~~~~~~~~~~~ [docutils][39;49;00m
-[91m/Users/josh/src/github.com/honeyhiveai/python-sdk/docs/how-to/deployment/production.rst:468: WARNING: Title underline too short.
-
-Logging Integration
-~~~~~~~~~~~~~~~~~~ [docutils][39;49;00m
-[91m/Users/josh/src/github.com/honeyhiveai/python-sdk/docs/how-to/deployment/production.rst:512: WARNING: Title underline too short.
-
-Deployment Strategies
--------------------- [docutils][39;49;00m
-[91m/Users/josh/src/github.com/honeyhiveai/python-sdk/docs/how-to/deployment/production.rst:512: WARNING: Title underline too short.
-
-Deployment Strategies
--------------------- [docutils][39;49;00m
-[91m/Users/josh/src/github.com/honeyhiveai/python-sdk/docs/how-to/deployment/production.rst:515: WARNING: Title underline too short.
-
-Blue-Green Deployment
-~~~~~~~~~~~~~~~~~~~~ [docutils][39;49;00m
-[91m/Users/josh/src/github.com/honeyhiveai/python-sdk/docs/how-to/deployment/production.rst:542: WARNING: Title underline too short.
-
-Canary Deployment
-~~~~~~~~~~~~~~~~ [docutils][39;49;00m
-[91m/Users/josh/src/github.com/honeyhiveai/python-sdk/docs/how-to/deployment/production.rst:542: WARNING: Title underline too short.
-
-Canary Deployment
-~~~~~~~~~~~~~~~~ [docutils][39;49;00m
-[91m/Users/josh/src/github.com/honeyhiveai/python-sdk/docs/how-to/deployment/production.rst:571: WARNING: Title underline too short.
-
-Container Deployment
-------------------- [docutils][39;49;00m
-[91m/Users/josh/src/github.com/honeyhiveai/python-sdk/docs/how-to/deployment/production.rst:571: WARNING: Title underline too short.
-
-Container Deployment
-------------------- [docutils][39;49;00m
-[91m/Users/josh/src/github.com/honeyhiveai/python-sdk/docs/how-to/deployment/production.rst:574: WARNING: Title underline too short.
-
-Docker Configuration
-~~~~~~~~~~~~~~~~~~~ [docutils][39;49;00m
-[91m/Users/josh/src/github.com/honeyhiveai/python-sdk/docs/how-to/deployment/production.rst:709: WARNING: Title underline too short.
-
-Production Checklist
-------------------- [docutils][39;49;00m
-[91m/Users/josh/src/github.com/honeyhiveai/python-sdk/docs/how-to/deployment/production.rst:709: WARNING: Title underline too short.
-
-Production Checklist
-------------------- [docutils][39;49;00m
-[91m/Users/josh/src/github.com/honeyhiveai/python-sdk/docs/how-to/deployment/production.rst:712: WARNING: Title underline too short.
-
-Before Going Live
-~~~~~~~~~~~~~~~~ [docutils][39;49;00m
-[91m/Users/josh/src/github.com/honeyhiveai/python-sdk/docs/how-to/deployment/production.rst:745: WARNING: Title underline too short.
-
-Ongoing Maintenance
-~~~~~~~~~~~~~~~~~~ [docutils][39;49;00m
-[91m/Users/josh/src/github.com/honeyhiveai/python-sdk/docs/how-to/deployment/production.rst:745: WARNING: Title underline too short.
-
-Ongoing Maintenance
-~~~~~~~~~~~~~~~~~~ [docutils][39;49;00m
-[31m/Users/josh/src/github.com/honeyhiveai/python-sdk/docs/how-to/integrations/aws-bedrock.rst:30: ERROR: Malformed table.
-Text in column margin in table line 4.
-
-================= ========================= =================================
-Provider          Models                    Use Cases
-================= ========================= =================================
-Anthropic         Claude 3 (Haiku/Sonnet/Opus) Conversation, analysis, coding
-Amazon            Titan Text/Embeddings    Content generation, search
-AI21 Labs         Jurassic-2               Text generation, summarization
-Cohere            Command/Embed            Generation, embeddings
-Meta              Llama 2                  Open-source text generation
-Stability AI      Stable Diffusion         Image generation
-================= ========================= ================================= [docutils][39;49;00m
-[91m/Users/josh/src/github.com/honeyhiveai/python-sdk/docs/how-to/integrations/aws-bedrock.rst:638: WARNING: Title underline too short.
-
-Environment and Security Configuration
-------------------------------------- [docutils][39;49;00m
-[91m/Users/josh/src/github.com/honeyhiveai/python-sdk/docs/how-to/integrations/aws-bedrock.rst:638: WARNING: Title underline too short.
-
-Environment and Security Configuration
-------------------------------------- [docutils][39;49;00m
-[91m/Users/josh/src/github.com/honeyhiveai/python-sdk/docs/how-to/integrations/azure-openai.rst:168: WARNING: Title underline too short.
-
-Multi-Deployment Strategy
------------------------- [docutils][39;49;00m
-[91m/Users/josh/src/github.com/honeyhiveai/python-sdk/docs/how-to/integrations/azure-openai.rst:168: WARNING: Title underline too short.
-
-Multi-Deployment Strategy
------------------------- [docutils][39;49;00m
-[91m/Users/josh/src/github.com/honeyhiveai/python-sdk/docs/how-to/integrations/google-ai.rst:547: WARNING: Title underline too short.
-
-Common Issues & Solutions
------------------------- [docutils][39;49;00m
-[91m/Users/josh/src/github.com/honeyhiveai/python-sdk/docs/how-to/integrations/google-ai.rst:547: WARNING: Title underline too short.
-
-Common Issues & Solutions
------------------------- [docutils][39;49;00m
-[91m/Users/josh/src/github.com/honeyhiveai/python-sdk/docs/how-to/integrations/index.rst:66: WARNING: Title underline too short.
-
-Available Providers
------------------- [docutils][39;49;00m
-[91m/Users/josh/src/github.com/honeyhiveai/python-sdk/docs/how-to/integrations/index.rst:66: WARNING: Title underline too short.
-
-Available Providers
------------------- [docutils][39;49;00m
-[31m/Users/josh/src/github.com/honeyhiveai/python-sdk/docs/how-to/integrations/index.rst:71: ERROR: Malformed table.
-Text in column margin in table line 4.
-
-=================== ================================ ===========================================
-Provider            Instrumentor Package             Documentation
-=================== ================================ ===========================================
-OpenAI              openinference-instrumentation-openai           :doc:`openai`
-Anthropic           openinference-instrumentation-anthropic        :doc:`anthropic`
-Google AI           openinference-instrumentation-google-generativeai  :doc:`google-ai`
-AWS Bedrock         openinference-instrumentation-bedrock          :doc:`aws-bedrock`
-Azure OpenAI        openinference-instrumentation-openai           :doc:`azure-openai`
-Multiple Providers  Multiple instrumentors                         :doc:`multi-provider`
-=================== ================================ =========================================== [docutils][39;49;00m
-[91m/Users/josh/src/github.com/honeyhiveai/python-sdk/docs/how-to/integrations/multi-provider.rst:172: WARNING: Title underline too short.
-
-Cost Optimization Strategy
-------------------------- [docutils][39;49;00m
-[91m/Users/josh/src/github.com/honeyhiveai/python-sdk/docs/how-to/integrations/multi-provider.rst:172: WARNING: Title underline too short.
-
-Cost Optimization Strategy
-------------------------- [docutils][39;49;00m
-[91m/Users/josh/src/github.com/honeyhiveai/python-sdk/docs/how-to/integrations/multi-provider.rst:311: WARNING: Title underline too short.
-
-Environment-Based Provider Selection
------------------------------------ [docutils][39;49;00m
-[91m/Users/josh/src/github.com/honeyhiveai/python-sdk/docs/how-to/integrations/multi-provider.rst:311: WARNING: Title underline too short.
-
-Environment-Based Provider Selection
------------------------------------ [docutils][39;49;00m
-[91m/Users/josh/src/github.com/honeyhiveai/python-sdk/docs/how-to/integrations/multi-provider.rst:490: WARNING: Title underline too short.
-
-Monitoring Multi-Provider Performance
------------------------------------- [docutils][39;49;00m
-[91m/Users/josh/src/github.com/honeyhiveai/python-sdk/docs/how-to/integrations/multi-provider.rst:490: WARNING: Title underline too short.
-
-Monitoring Multi-Provider Performance
------------------------------------- [docutils][39;49;00m
-[91m/Users/josh/src/github.com/honeyhiveai/python-sdk/docs/how-to/testing/ci-cd-integration.rst:51: WARNING: Title underline too short.
-
-GitHub Actions Integration
-------------------------- [docutils][39;49;00m
-[91m/Users/josh/src/github.com/honeyhiveai/python-sdk/docs/how-to/testing/ci-cd-integration.rst:51: WARNING: Title underline too short.
-
-GitHub Actions Integration
-------------------------- [docutils][39;49;00m
-[91m/Users/josh/src/github.com/honeyhiveai/python-sdk/docs/how-to/testing/ci-cd-integration.rst:297: WARNING: Title underline too short.
-
-GitLab CI Integration
--------------------- [docutils][39;49;00m
-[91m/Users/josh/src/github.com/honeyhiveai/python-sdk/docs/how-to/testing/ci-cd-integration.rst:297: WARNING: Title underline too short.
-
-GitLab CI Integration
--------------------- [docutils][39;49;00m
-[91m/Users/josh/src/github.com/honeyhiveai/python-sdk/docs/how-to/testing/ci-cd-integration.rst:450: WARNING: Title underline too short.
-
-Jenkins Pipeline Integration
---------------------------- [docutils][39;49;00m
-[91m/Users/josh/src/github.com/honeyhiveai/python-sdk/docs/how-to/testing/ci-cd-integration.rst:450: WARNING: Title underline too short.
-
-Jenkins Pipeline Integration
---------------------------- [docutils][39;49;00m
-[91m/Users/josh/src/github.com/honeyhiveai/python-sdk/docs/how-to/testing/ci-cd-integration.rst:694: WARNING: Title underline too short.
-
-Azure DevOps Integration
------------------------ [docutils][39;49;00m
-[91m/Users/josh/src/github.com/honeyhiveai/python-sdk/docs/how-to/testing/ci-cd-integration.rst:694: WARNING: Title underline too short.
-
-Azure DevOps Integration
------------------------ [docutils][39;49;00m
-[91m/Users/josh/src/github.com/honeyhiveai/python-sdk/docs/how-to/testing/ci-cd-integration.rst:828: WARNING: Title underline too short.
-
-Environment-Specific Testing
---------------------------- [docutils][39;49;00m
-[91m/Users/josh/src/github.com/honeyhiveai/python-sdk/docs/how-to/testing/ci-cd-integration.rst:828: WARNING: Title underline too short.
-
-Environment-Specific Testing
---------------------------- [docutils][39;49;00m
-[91m/Users/josh/src/github.com/honeyhiveai/python-sdk/docs/how-to/testing/ci-cd-integration.rst:896: WARNING: Title underline too short.
-
-Performance Regression Tracking
------------------------------- [docutils][39;49;00m
-[91m/Users/josh/src/github.com/honeyhiveai/python-sdk/docs/how-to/testing/ci-cd-integration.rst:896: WARNING: Title underline too short.
-
-Performance Regression Tracking
------------------------------- [docutils][39;49;00m
-[91m/Users/josh/src/github.com/honeyhiveai/python-sdk/docs/how-to/testing/ci-cd-integration.rst:1041: WARNING: Title underline too short.
-
-Best Practices for CI/CD Testing
-------------------------------- [docutils][39;49;00m
-[91m/Users/josh/src/github.com/honeyhiveai/python-sdk/docs/how-to/testing/ci-cd-integration.rst:1041: WARNING: Title underline too short.
-
-Best Practices for CI/CD Testing
-------------------------------- [docutils][39;49;00m
-[91m/Users/josh/src/github.com/honeyhiveai/python-sdk/docs/how-to/testing/index.rst:12: WARNING: Title underline too short.
-
-Testing Quick Start
------------------- [docutils][39;49;00m
-[91m/Users/josh/src/github.com/honeyhiveai/python-sdk/docs/how-to/testing/index.rst:41: WARNING: Title underline too short.
-
-Testing Overview
---------------- [docutils][39;49;00m
-[91m/Users/josh/src/github.com/honeyhiveai/python-sdk/docs/how-to/testing/index.rst:41: WARNING: Title underline too short.
-
-Testing Overview
---------------- [docutils][39;49;00m
-[91m/Users/josh/src/github.com/honeyhiveai/python-sdk/docs/how-to/testing/index.rst:60: WARNING: Title underline too short.
-
-Quick Solutions
--------------- [docutils][39;49;00m
-[91m/Users/josh/src/github.com/honeyhiveai/python-sdk/docs/how-to/testing/index.rst:60: WARNING: Title underline too short.
-
-Quick Solutions
--------------- [docutils][39;49;00m
-[91m/Users/josh/src/github.com/honeyhiveai/python-sdk/docs/how-to/testing/index.rst:125: WARNING: Title underline too short.
-
-Code Quality Requirements
------------------------- [docutils][39;49;00m
-[91m/Users/josh/src/github.com/honeyhiveai/python-sdk/docs/how-to/testing/index.rst:125: WARNING: Title underline too short.
-
-Code Quality Requirements
------------------------- [docutils][39;49;00m
-[91m/Users/josh/src/github.com/honeyhiveai/python-sdk/docs/how-to/testing/index.rst:150: WARNING: Title underline too short.
-
-Testing Commands
---------------- [docutils][39;49;00m
-[91m/Users/josh/src/github.com/honeyhiveai/python-sdk/docs/how-to/testing/index.rst:150: WARNING: Title underline too short.
-
-Testing Commands
---------------- [docutils][39;49;00m
-[91m/Users/josh/src/github.com/honeyhiveai/python-sdk/docs/how-to/testing/index.rst:191: WARNING: Title underline too short.
-
-Test Environment Setup
---------------------- [docutils][39;49;00m
-[91m/Users/josh/src/github.com/honeyhiveai/python-sdk/docs/how-to/testing/index.rst:191: WARNING: Title underline too short.
-
-Test Environment Setup
---------------------- [docutils][39;49;00m
-[91m/Users/josh/src/github.com/honeyhiveai/python-sdk/docs/how-to/testing/index.rst:237: WARNING: Title underline too short.
-
-Performance Testing
------------------- [docutils][39;49;00m
-[91m/Users/josh/src/github.com/honeyhiveai/python-sdk/docs/how-to/testing/index.rst:237: WARNING: Title underline too short.
-
-Performance Testing
------------------- [docutils][39;49;00m
-[91m/Users/josh/src/github.com/honeyhiveai/python-sdk/docs/how-to/testing/index.rst:274: WARNING: Title underline too short.
-
-Best Practices
-------------- [docutils][39;49;00m
-[91m/Users/josh/src/github.com/honeyhiveai/python-sdk/docs/how-to/testing/index.rst:274: WARNING: Title underline too short.
-
-Best Practices
-------------- [docutils][39;49;00m
-[91m/Users/josh/src/github.com/honeyhiveai/python-sdk/docs/how-to/testing/integration-testing.rst:57: WARNING: Title underline too short.
-
-Testing Component Interactions
------------------------------ [docutils][39;49;00m
-[91m/Users/josh/src/github.com/honeyhiveai/python-sdk/docs/how-to/testing/integration-testing.rst:57: WARNING: Title underline too short.
-
-Testing Component Interactions
------------------------------ [docutils][39;49;00m
-[91m/Users/josh/src/github.com/honeyhiveai/python-sdk/docs/how-to/testing/integration-testing.rst:131: WARNING: Title underline too short.
-
-Testing Multi-Instance Patterns
------------------------------- [docutils][39;49;00m
-[91m/Users/josh/src/github.com/honeyhiveai/python-sdk/docs/how-to/testing/integration-testing.rst:131: WARNING: Title underline too short.
-
-Testing Multi-Instance Patterns
------------------------------- [docutils][39;49;00m
-[91m/Users/josh/src/github.com/honeyhiveai/python-sdk/docs/how-to/testing/integration-testing.rst:242: WARNING: Title underline too short.
-
-Testing LLM Provider Integration
-------------------------------- [docutils][39;49;00m
-[91m/Users/josh/src/github.com/honeyhiveai/python-sdk/docs/how-to/testing/integration-testing.rst:242: WARNING: Title underline too short.
-
-Testing LLM Provider Integration
-------------------------------- [docutils][39;49;00m
-[91m/Users/josh/src/github.com/honeyhiveai/python-sdk/docs/how-to/testing/integration-testing.rst:324: WARNING: Title underline too short.
-
-Testing Real API Integration
---------------------------- [docutils][39;49;00m
-[91m/Users/josh/src/github.com/honeyhiveai/python-sdk/docs/how-to/testing/integration-testing.rst:324: WARNING: Title underline too short.
-
-Testing Real API Integration
---------------------------- [docutils][39;49;00m
-[91m/Users/josh/src/github.com/honeyhiveai/python-sdk/docs/how-to/testing/integration-testing.rst:421: WARNING: Title underline too short.
-
-Testing Environment Integration
------------------------------- [docutils][39;49;00m
-[91m/Users/josh/src/github.com/honeyhiveai/python-sdk/docs/how-to/testing/integration-testing.rst:421: WARNING: Title underline too short.
-
-Testing Environment Integration
------------------------------- [docutils][39;49;00m
-[91m/Users/josh/src/github.com/honeyhiveai/python-sdk/docs/how-to/testing/integration-testing.rst:499: WARNING: Title underline too short.
-
-Testing Error Scenarios Integration
----------------------------------- [docutils][39;49;00m
-[91m/Users/josh/src/github.com/honeyhiveai/python-sdk/docs/how-to/testing/integration-testing.rst:499: WARNING: Title underline too short.
-
-Testing Error Scenarios Integration
----------------------------------- [docutils][39;49;00m
-[91m/Users/josh/src/github.com/honeyhiveai/python-sdk/docs/how-to/testing/integration-testing.rst:594: WARNING: Title underline too short.
-
-Testing Configuration Integration
-------------------------------- [docutils][39;49;00m
-[91m/Users/josh/src/github.com/honeyhiveai/python-sdk/docs/how-to/testing/integration-testing.rst:594: WARNING: Title underline too short.
-
-Testing Configuration Integration
-------------------------------- [docutils][39;49;00m
-[91m/Users/josh/src/github.com/honeyhiveai/python-sdk/docs/how-to/testing/integration-testing.rst:675: WARNING: Title underline too short.
-
-Testing Performance Integration
------------------------------ [docutils][39;49;00m
-[91m/Users/josh/src/github.com/honeyhiveai/python-sdk/docs/how-to/testing/integration-testing.rst:675: WARNING: Title underline too short.
-
-Testing Performance Integration
------------------------------ [docutils][39;49;00m
-[91m/Users/josh/src/github.com/honeyhiveai/python-sdk/docs/how-to/testing/integration-testing.rst:774: WARNING: Title underline too short.
-
-Running Integration Tests
------------------------- [docutils][39;49;00m
-[91m/Users/josh/src/github.com/honeyhiveai/python-sdk/docs/how-to/testing/integration-testing.rst:774: WARNING: Title underline too short.
-
-Running Integration Tests
------------------------- [docutils][39;49;00m
-[91m/Users/josh/src/github.com/honeyhiveai/python-sdk/docs/how-to/testing/integration-testing.rst:869: WARNING: Title underline too short.
-
-Best Practices
-------------- [docutils][39;49;00m
-[91m/Users/josh/src/github.com/honeyhiveai/python-sdk/docs/how-to/testing/integration-testing.rst:869: WARNING: Title underline too short.
-
-Best Practices
-------------- [docutils][39;49;00m
-[91m/Users/josh/src/github.com/honeyhiveai/python-sdk/docs/how-to/testing/lambda-testing.rst:63: WARNING: Title underline too short.
-
-Why Lambda Testing Matters
-------------------------- [docutils][39;49;00m
-[91m/Users/josh/src/github.com/honeyhiveai/python-sdk/docs/how-to/testing/lambda-testing.rst:63: WARNING: Title underline too short.
-
-Why Lambda Testing Matters
-------------------------- [docutils][39;49;00m
-[91m/Users/josh/src/github.com/honeyhiveai/python-sdk/docs/how-to/testing/lambda-testing.rst:129: WARNING: Title underline too short.
-
-Lambda Testing Infrastructure
----------------------------- [docutils][39;49;00m
-[91m/Users/josh/src/github.com/honeyhiveai/python-sdk/docs/how-to/testing/lambda-testing.rst:129: WARNING: Title underline too short.
-
-Lambda Testing Infrastructure
----------------------------- [docutils][39;49;00m
-[91m/Users/josh/src/github.com/honeyhiveai/python-sdk/docs/how-to/testing/lambda-testing.rst:483: WARNING: Title underline too short.
-
-Performance Testing & Benchmarking
---------------------------------- [docutils][39;49;00m
-[91m/Users/josh/src/github.com/honeyhiveai/python-sdk/docs/how-to/testing/lambda-testing.rst:483: WARNING: Title underline too short.
-
-Performance Testing & Benchmarking
---------------------------------- [docutils][39;49;00m
-[91m/Users/josh/src/github.com/honeyhiveai/python-sdk/docs/how-to/testing/lambda-testing.rst:722: WARNING: Title underline too short.
-
-CI/CD Integration Testing
------------------------- [docutils][39;49;00m
-[91m/Users/josh/src/github.com/honeyhiveai/python-sdk/docs/how-to/testing/lambda-testing.rst:722: WARNING: Title underline too short.
-
-CI/CD Integration Testing
------------------------- [docutils][39;49;00m
-[91m/Users/josh/src/github.com/honeyhiveai/python-sdk/docs/how-to/testing/lambda-testing.rst:886: WARNING: Title underline too short.
-
-Production Lambda Testing
------------------------- [docutils][39;49;00m
-[91m/Users/josh/src/github.com/honeyhiveai/python-sdk/docs/how-to/testing/lambda-testing.rst:886: WARNING: Title underline too short.
-
-Production Lambda Testing
------------------------- [docutils][39;49;00m
-[91m/Users/josh/src/github.com/honeyhiveai/python-sdk/docs/how-to/testing/lambda-testing.rst:1045: WARNING: Title underline too short.
-
-Lambda Optimization Best Practices
---------------------------------- [docutils][39;49;00m
-[91m/Users/josh/src/github.com/honeyhiveai/python-sdk/docs/how-to/testing/lambda-testing.rst:1045: WARNING: Title underline too short.
-
-Lambda Optimization Best Practices
---------------------------------- [docutils][39;49;00m
-[91m/Users/josh/src/github.com/honeyhiveai/python-sdk/docs/how-to/testing/lambda-testing.rst:1108: WARNING: Title underline too short.
-
-Troubleshooting Lambda Issues
----------------------------- [docutils][39;49;00m
-[91m/Users/josh/src/github.com/honeyhiveai/python-sdk/docs/how-to/testing/lambda-testing.rst:1108: WARNING: Title underline too short.
-
-Troubleshooting Lambda Issues
----------------------------- [docutils][39;49;00m
-[31m/Users/josh/src/github.com/honeyhiveai/python-sdk/docs/how-to/testing/lambda-testing.rst:1129: ERROR: Unexpected indentation. [docutils][39;49;00m
-[91m/Users/josh/src/github.com/honeyhiveai/python-sdk/docs/how-to/testing/lambda-testing.rst:1132: WARNING: Block quote ends without a blank line; unexpected unindent. [docutils][39;49;00m
-[31m/Users/josh/src/github.com/honeyhiveai/python-sdk/docs/how-to/testing/lambda-testing.rst:1157: ERROR: Unexpected indentation. [docutils][39;49;00m
-[91m/Users/josh/src/github.com/honeyhiveai/python-sdk/docs/how-to/testing/lambda-testing.rst:1162: WARNING: Block quote ends without a blank line; unexpected unindent. [docutils][39;49;00m
-[31m/Users/josh/src/github.com/honeyhiveai/python-sdk/docs/how-to/testing/lambda-testing.rst:1166: ERROR: Unexpected indentation. [docutils][39;49;00m
-[31m/Users/josh/src/github.com/honeyhiveai/python-sdk/docs/how-to/testing/lambda-testing.rst:1186: ERROR: Unexpected indentation. [docutils][39;49;00m
-[91m/Users/josh/src/github.com/honeyhiveai/python-sdk/docs/how-to/testing/lambda-testing.rst:1191: WARNING: Definition list ends without a blank line; unexpected unindent. [docutils][39;49;00m
-[91m/Users/josh/src/github.com/honeyhiveai/python-sdk/docs/how-to/testing/lambda-testing.rst:1192: WARNING: Block quote ends without a blank line; unexpected unindent. [docutils][39;49;00m
-[91m/Users/josh/src/github.com/honeyhiveai/python-sdk/docs/how-to/testing/lambda-testing.rst:1195: WARNING: Title underline too short.
-
-Lambda Testing Commands
----------------------- [docutils][39;49;00m
-[91m/Users/josh/src/github.com/honeyhiveai/python-sdk/docs/how-to/testing/lambda-testing.rst:1195: WARNING: Title underline too short.
-
-Lambda Testing Commands
----------------------- [docutils][39;49;00m
-[91m/Users/josh/src/github.com/honeyhiveai/python-sdk/docs/how-to/testing/lambda-testing.rst:1255: WARNING: Title underline too short.
-
-Advanced Lambda Testing Scenarios
--------------------------------- [docutils][39;49;00m
-[91m/Users/josh/src/github.com/honeyhiveai/python-sdk/docs/how-to/testing/lambda-testing.rst:1255: WARNING: Title underline too short.
-
-Advanced Lambda Testing Scenarios
--------------------------------- [docutils][39;49;00m
-[91m/Users/josh/src/github.com/honeyhiveai/python-sdk/docs/how-to/testing/mocking-strategies.rst:46: WARNING: Title underline too short.
-
-Mock Tracer Creation
-------------------- [docutils][39;49;00m
-[91m/Users/josh/src/github.com/honeyhiveai/python-sdk/docs/how-to/testing/mocking-strategies.rst:46: WARNING: Title underline too short.
-
-Mock Tracer Creation
-------------------- [docutils][39;49;00m
-[91m/Users/josh/src/github.com/honeyhiveai/python-sdk/docs/how-to/testing/mocking-strategies.rst:252: WARNING: Title underline too short.
-
-Patching Strategies
------------------- [docutils][39;49;00m
-[91m/Users/josh/src/github.com/honeyhiveai/python-sdk/docs/how-to/testing/mocking-strategies.rst:252: WARNING: Title underline too short.
-
-Patching Strategies
------------------- [docutils][39;49;00m
-[91m/Users/josh/src/github.com/honeyhiveai/python-sdk/docs/how-to/testing/mocking-strategies.rst:345: WARNING: Title underline too short.
-
-Fixture-Based Mocking
--------------------- [docutils][39;49;00m
-[91m/Users/josh/src/github.com/honeyhiveai/python-sdk/docs/how-to/testing/mocking-strategies.rst:345: WARNING: Title underline too short.
-
-Fixture-Based Mocking
--------------------- [docutils][39;49;00m
-[91m/Users/josh/src/github.com/honeyhiveai/python-sdk/docs/how-to/testing/mocking-strategies.rst:444: WARNING: Title underline too short.
-
-Mocking External Dependencies
----------------------------- [docutils][39;49;00m
-[91m/Users/josh/src/github.com/honeyhiveai/python-sdk/docs/how-to/testing/mocking-strategies.rst:444: WARNING: Title underline too short.
-
-Mocking External Dependencies
----------------------------- [docutils][39;49;00m
-[91m/Users/josh/src/github.com/honeyhiveai/python-sdk/docs/how-to/testing/mocking-strategies.rst:572: WARNING: Title underline too short.
-
-Mocking Async Operations
------------------------ [docutils][39;49;00m
-[91m/Users/josh/src/github.com/honeyhiveai/python-sdk/docs/how-to/testing/mocking-strategies.rst:572: WARNING: Title underline too short.
-
-Mocking Async Operations
------------------------ [docutils][39;49;00m
-[91m/Users/josh/src/github.com/honeyhiveai/python-sdk/docs/how-to/testing/performance-testing.rst:78: WARNING: Title underline too short.
-
-Performance Testing Framework
----------------------------- [docutils][39;49;00m
-[91m/Users/josh/src/github.com/honeyhiveai/python-sdk/docs/how-to/testing/performance-testing.rst:78: WARNING: Title underline too short.
-
-Performance Testing Framework
----------------------------- [docutils][39;49;00m
-[91m/Users/josh/src/github.com/honeyhiveai/python-sdk/docs/how-to/testing/performance-testing.rst:355: WARNING: Title underline too short.
-
-Memory Performance Testing
-------------------------- [docutils][39;49;00m
-[91m/Users/josh/src/github.com/honeyhiveai/python-sdk/docs/how-to/testing/performance-testing.rst:355: WARNING: Title underline too short.
-
-Memory Performance Testing
-------------------------- [docutils][39;49;00m
-[91m/Users/josh/src/github.com/honeyhiveai/python-sdk/docs/how-to/testing/performance-testing.rst:550: WARNING: Title underline too short.
-
-Async Performance Testing
------------------------- [docutils][39;49;00m
-[91m/Users/josh/src/github.com/honeyhiveai/python-sdk/docs/how-to/testing/performance-testing.rst:550: WARNING: Title underline too short.
-
-Async Performance Testing
------------------------- [docutils][39;49;00m
-[91m/Users/josh/src/github.com/honeyhiveai/python-sdk/docs/how-to/testing/performance-testing.rst:678: WARNING: Title underline too short.
-
-Load Testing
------------ [docutils][39;49;00m
-[91m/Users/josh/src/github.com/honeyhiveai/python-sdk/docs/how-to/testing/performance-testing.rst:678: WARNING: Title underline too short.
-
-Load Testing
------------ [docutils][39;49;00m
-[91m/Users/josh/src/github.com/honeyhiveai/python-sdk/docs/how-to/testing/performance-testing.rst:844: WARNING: Title underline too short.
-
-Lambda Performance Testing
-------------------------- [docutils][39;49;00m
-[91m/Users/josh/src/github.com/honeyhiveai/python-sdk/docs/how-to/testing/performance-testing.rst:844: WARNING: Title underline too short.
-
-Lambda Performance Testing
-------------------------- [docutils][39;49;00m
-[91m/Users/josh/src/github.com/honeyhiveai/python-sdk/docs/how-to/testing/performance-testing.rst:1011: WARNING: Title underline too short.
-
-Performance Testing Commands
---------------------------- [docutils][39;49;00m
-[91m/Users/josh/src/github.com/honeyhiveai/python-sdk/docs/how-to/testing/performance-testing.rst:1011: WARNING: Title underline too short.
-
-Performance Testing Commands
---------------------------- [docutils][39;49;00m
-[91m/Users/josh/src/github.com/honeyhiveai/python-sdk/docs/how-to/testing/performance-testing.rst:1187: WARNING: Title underline too short.
-
-Performance Monitoring Integration
---------------------------------- [docutils][39;49;00m
-[91m/Users/josh/src/github.com/honeyhiveai/python-sdk/docs/how-to/testing/performance-testing.rst:1187: WARNING: Title underline too short.
-
-Performance Monitoring Integration
---------------------------------- [docutils][39;49;00m
-[91m/Users/josh/src/github.com/honeyhiveai/python-sdk/docs/how-to/testing/troubleshooting-tests.rst:391: WARNING: Title underline too short.
-
-Environment Issues
------------------ [docutils][39;49;00m
-[91m/Users/josh/src/github.com/honeyhiveai/python-sdk/docs/how-to/testing/troubleshooting-tests.rst:391: WARNING: Title underline too short.
-
-Environment Issues
------------------ [docutils][39;49;00m
-[91m/Users/josh/src/github.com/honeyhiveai/python-sdk/docs/how-to/testing/troubleshooting-tests.rst:536: WARNING: Title underline too short.
-
-Debugging Test Data and Fixtures
-------------------------------- [docutils][39;49;00m
-[91m/Users/josh/src/github.com/honeyhiveai/python-sdk/docs/how-to/testing/troubleshooting-tests.rst:536: WARNING: Title underline too short.
-
-Debugging Test Data and Fixtures
-------------------------------- [docutils][39;49;00m
-[91m/Users/josh/src/github.com/honeyhiveai/python-sdk/docs/how-to/testing/troubleshooting-tests.rst:606: WARNING: Title underline too short.
-
-Async Test Debugging
-------------------- [docutils][39;49;00m
-[91m/Users/josh/src/github.com/honeyhiveai/python-sdk/docs/how-to/testing/troubleshooting-tests.rst:606: WARNING: Title underline too short.
-
-Async Test Debugging
-------------------- [docutils][39;49;00m
-[91m/Users/josh/src/github.com/honeyhiveai/python-sdk/docs/how-to/testing/troubleshooting-tests.rst:681: WARNING: Title underline too short.
-
-Test Debugging Tools
-------------------- [docutils][39;49;00m
-[91m/Users/josh/src/github.com/honeyhiveai/python-sdk/docs/how-to/testing/troubleshooting-tests.rst:681: WARNING: Title underline too short.
-
-Test Debugging Tools
-------------------- [docutils][39;49;00m
-[91m/Users/josh/src/github.com/honeyhiveai/python-sdk/docs/how-to/testing/unit-testing.rst:107: WARNING: Title underline too short.
-
-Testing Span Operations
----------------------- [docutils][39;49;00m
-[91m/Users/josh/src/github.com/honeyhiveai/python-sdk/docs/how-to/testing/unit-testing.rst:107: WARNING: Title underline too short.
-
-Testing Span Operations
----------------------- [docutils][39;49;00m
-[91m/Users/josh/src/github.com/honeyhiveai/python-sdk/docs/how-to/testing/unit-testing.rst:262: WARNING: Title underline too short.
-
-Testing Multi-Instance Behavior
------------------------------- [docutils][39;49;00m
-[91m/Users/josh/src/github.com/honeyhiveai/python-sdk/docs/how-to/testing/unit-testing.rst:262: WARNING: Title underline too short.
-
-Testing Multi-Instance Behavior
------------------------------- [docutils][39;49;00m
-[91m/Users/josh/src/github.com/honeyhiveai/python-sdk/docs/how-to/testing/unit-testing.rst:424: WARNING: Title underline too short.
-
-Testing Configuration Loading
----------------------------- [docutils][39;49;00m
-[91m/Users/josh/src/github.com/honeyhiveai/python-sdk/docs/how-to/testing/unit-testing.rst:424: WARNING: Title underline too short.
-
-Testing Configuration Loading
----------------------------- [docutils][39;49;00m
-[91m/Users/josh/src/github.com/honeyhiveai/python-sdk/docs/how-to/testing/unit-testing.rst:489: WARNING: Title underline too short.
-
-Testing Session Management
-------------------------- [docutils][39;49;00m
-[91m/Users/josh/src/github.com/honeyhiveai/python-sdk/docs/how-to/testing/unit-testing.rst:489: WARNING: Title underline too short.
-
-Testing Session Management
-------------------------- [docutils][39;49;00m
-[91m/Users/josh/src/github.com/honeyhiveai/python-sdk/docs/how-to/testing/unit-testing.rst:538: WARNING: Title underline too short.
-
-Testing Performance Impact
-------------------------- [docutils][39;49;00m
-[91m/Users/josh/src/github.com/honeyhiveai/python-sdk/docs/how-to/testing/unit-testing.rst:538: WARNING: Title underline too short.
-
-Testing Performance Impact
-------------------------- [docutils][39;49;00m
-[91m/Users/josh/src/github.com/honeyhiveai/python-sdk/docs/how-to/testing/unit-testing.rst:624: WARNING: Title underline too short.
-
-Mock Testing Utilities
---------------------- [docutils][39;49;00m
-[91m/Users/josh/src/github.com/honeyhiveai/python-sdk/docs/how-to/testing/unit-testing.rst:624: WARNING: Title underline too short.
-
-Mock Testing Utilities
---------------------- [docutils][39;49;00m
-[91m/Users/josh/src/github.com/honeyhiveai/python-sdk/docs/how-to/testing/unit-testing.rst:725: WARNING: Title underline too short.
-
-Advanced Unit Testing Patterns
------------------------------ [docutils][39;49;00m
-[91m/Users/josh/src/github.com/honeyhiveai/python-sdk/docs/how-to/testing/unit-testing.rst:725: WARNING: Title underline too short.
-
-Advanced Unit Testing Patterns
------------------------------ [docutils][39;49;00m
-[91m/Users/josh/src/github.com/honeyhiveai/python-sdk/docs/how-to/testing/unit-testing.rst:919: WARNING: Title underline too short.
-
-Running Unit Tests
------------------ [docutils][39;49;00m
-[91m/Users/josh/src/github.com/honeyhiveai/python-sdk/docs/how-to/testing/unit-testing.rst:919: WARNING: Title underline too short.
-
-Running Unit Tests
------------------ [docutils][39;49;00m
-[91m/Users/josh/src/github.com/honeyhiveai/python-sdk/docs/how-to/troubleshooting.rst:10: WARNING: Title underline too short.
-
-Quick Diagnosis
--------------- [docutils][39;49;00m
-[91m/Users/josh/src/github.com/honeyhiveai/python-sdk/docs/how-to/troubleshooting.rst:36: WARNING: Title underline too short.
-
-Installation Problems
-~~~~~~~~~~~~~~~~~~~~ [docutils][39;49;00m
-[91m/Users/josh/src/github.com/honeyhiveai/python-sdk/docs/how-to/troubleshooting.rst:91: WARNING: Title underline too short.
-
-Dependency Conflicts
-~~~~~~~~~~~~~~~~~~~ [docutils][39;49;00m
-[91m/Users/josh/src/github.com/honeyhiveai/python-sdk/docs/how-to/troubleshooting.rst:91: WARNING: Title underline too short.
-
-Dependency Conflicts
-~~~~~~~~~~~~~~~~~~~ [docutils][39;49;00m
-[91m/Users/josh/src/github.com/honeyhiveai/python-sdk/docs/how-to/troubleshooting.rst:130: WARNING: Title underline too short.
-
-Python Version Issues
-~~~~~~~~~~~~~~~~~~~~ [docutils][39;49;00m
-[91m/Users/josh/src/github.com/honeyhiveai/python-sdk/docs/how-to/troubleshooting.rst:130: WARNING: Title underline too short.
-
-Python Version Issues
-~~~~~~~~~~~~~~~~~~~~ [docutils][39;49;00m
-[91m/Users/josh/src/github.com/honeyhiveai/python-sdk/docs/how-to/troubleshooting.rst:156: WARNING: Title underline too short.
-
-Configuration Issues
-------------------- [docutils][39;49;00m
-[91m/Users/josh/src/github.com/honeyhiveai/python-sdk/docs/how-to/troubleshooting.rst:156: WARNING: Title underline too short.
-
-Configuration Issues
-------------------- [docutils][39;49;00m
-[91m/Users/josh/src/github.com/honeyhiveai/python-sdk/docs/how-to/troubleshooting.rst:161: WARNING: Title underline too short.
-
-API Key Problems
-~~~~~~~~~~~~~~~ [docutils][39;49;00m
-[91m/Users/josh/src/github.com/honeyhiveai/python-sdk/docs/how-to/troubleshooting.rst:212: WARNING: Title underline too short.
-
-Network Connectivity
-~~~~~~~~~~~~~~~~~~~ [docutils][39;49;00m
-[91m/Users/josh/src/github.com/honeyhiveai/python-sdk/docs/how-to/troubleshooting.rst:212: WARNING: Title underline too short.
-
-Network Connectivity
-~~~~~~~~~~~~~~~~~~~ [docutils][39;49;00m
-[91m/Users/josh/src/github.com/honeyhiveai/python-sdk/docs/how-to/troubleshooting.rst:261: WARNING: Title underline too short.
-
-Project Configuration
-~~~~~~~~~~~~~~~~~~~~ [docutils][39;49;00m
-[91m/Users/josh/src/github.com/honeyhiveai/python-sdk/docs/how-to/troubleshooting.rst:261: WARNING: Title underline too short.
-
-Project Configuration
-~~~~~~~~~~~~~~~~~~~~ [docutils][39;49;00m
-[91m/Users/josh/src/github.com/honeyhiveai/python-sdk/docs/how-to/troubleshooting.rst:295: WARNING: Title underline too short.
-
-Tracing Issues
-------------- [docutils][39;49;00m
-[91m/Users/josh/src/github.com/honeyhiveai/python-sdk/docs/how-to/troubleshooting.rst:295: WARNING: Title underline too short.
-
-Tracing Issues
-------------- [docutils][39;49;00m
-[91m/Users/josh/src/github.com/honeyhiveai/python-sdk/docs/how-to/troubleshooting.rst:374: WARNING: Title underline too short.
-
-Instrumentor Problems
-~~~~~~~~~~~~~~~~~~~~ [docutils][39;49;00m
-[91m/Users/josh/src/github.com/honeyhiveai/python-sdk/docs/how-to/troubleshooting.rst:374: WARNING: Title underline too short.
-
-Instrumentor Problems
-~~~~~~~~~~~~~~~~~~~~ [docutils][39;49;00m
-[91m/Users/josh/src/github.com/honeyhiveai/python-sdk/docs/how-to/troubleshooting.rst:433: WARNING: Title underline too short.
-
-Performance Issues
------------------ [docutils][39;49;00m
-[91m/Users/josh/src/github.com/honeyhiveai/python-sdk/docs/how-to/troubleshooting.rst:433: WARNING: Title underline too short.
-
-Performance Issues
------------------ [docutils][39;49;00m
-[91m/Users/josh/src/github.com/honeyhiveai/python-sdk/docs/how-to/troubleshooting.rst:438: WARNING: Title underline too short.
-
-High Latency or Overhead
-~~~~~~~~~~~~~~~~~~~~~~~ [docutils][39;49;00m
-[91m/Users/josh/src/github.com/honeyhiveai/python-sdk/docs/how-to/troubleshooting.rst:511: WARNING: Title underline too short.
-
-Memory Usage Issues
-~~~~~~~~~~~~~~~~~~ [docutils][39;49;00m
-[91m/Users/josh/src/github.com/honeyhiveai/python-sdk/docs/how-to/troubleshooting.rst:511: WARNING: Title underline too short.
-
-Memory Usage Issues
-~~~~~~~~~~~~~~~~~~ [docutils][39;49;00m
-[91m/Users/josh/src/github.com/honeyhiveai/python-sdk/docs/how-to/troubleshooting.rst:545: WARNING: Title underline too short.
-
-Common Error Messages
-~~~~~~~~~~~~~~~~~~~~ [docutils][39;49;00m
-[91m/Users/josh/src/github.com/honeyhiveai/python-sdk/docs/how-to/troubleshooting.rst:585: WARNING: Title underline too short.
-
-Getting More Help
----------------- [docutils][39;49;00m
-[91m/Users/josh/src/github.com/honeyhiveai/python-sdk/docs/how-to/troubleshooting.rst:585: WARNING: Title underline too short.
-
-Getting More Help
----------------- [docutils][39;49;00m
-[91m/Users/josh/src/github.com/honeyhiveai/python-sdk/docs/reference/api/decorators.rst:82: WARNING: Title underline too short.
-
-Advanced Configuration
-~~~~~~~~~~~~~~~~~~~~~ [docutils][39;49;00m
-[91m/Users/josh/src/github.com/honeyhiveai/python-sdk/docs/reference/api/decorators.rst:82: WARNING: Title underline too short.
-
-Advanced Configuration
-~~~~~~~~~~~~~~~~~~~~~ [docutils][39;49;00m
-[91m/Users/josh/src/github.com/honeyhiveai/python-sdk/docs/reference/api/decorators.rst:142: WARNING: Title underline too short.
-
-Async Function Support
-~~~~~~~~~~~~~~~~~~~~~ [docutils][39;49;00m
-[91m/Users/josh/src/github.com/honeyhiveai/python-sdk/docs/reference/api/decorators.rst:142: WARNING: Title underline too short.
-
-Async Function Support
-~~~~~~~~~~~~~~~~~~~~~ [docutils][39;49;00m
-[91m/Users/josh/src/github.com/honeyhiveai/python-sdk/docs/reference/api/decorators.rst:168: WARNING: Title underline too short.
-
-Class Method Support
-~~~~~~~~~~~~~~~~~~~ [docutils][39;49;00m
-[91m/Users/josh/src/github.com/honeyhiveai/python-sdk/docs/reference/api/decorators.rst:168: WARNING: Title underline too short.
-
-Class Method Support
-~~~~~~~~~~~~~~~~~~~ [docutils][39;49;00m
-[91m/Users/josh/src/github.com/honeyhiveai/python-sdk/docs/reference/api/decorators.rst:221: WARNING: Title underline too short.
-
-Error Handling and Exception Capture
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ [docutils][39;49;00m
-[91m/Users/josh/src/github.com/honeyhiveai/python-sdk/docs/reference/api/decorators.rst:221: WARNING: Title underline too short.
-
-Error Handling and Exception Capture
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ [docutils][39;49;00m
-[91m/Users/josh/src/github.com/honeyhiveai/python-sdk/docs/reference/api/decorators.rst:265: WARNING: Title underline too short.
-
-Nested Function Tracing
-~~~~~~~~~~~~~~~~~~~~~~ [docutils][39;49;00m
-[91m/Users/josh/src/github.com/honeyhiveai/python-sdk/docs/reference/api/decorators.rst:265: WARNING: Title underline too short.
-
-Nested Function Tracing
-~~~~~~~~~~~~~~~~~~~~~~ [docutils][39;49;00m
-[91m/Users/josh/src/github.com/honeyhiveai/python-sdk/docs/reference/api/decorators.rst:316: WARNING: Title underline too short.
-
-@atrace Decorator
----------------- [docutils][39;49;00m
-[91m/Users/josh/src/github.com/honeyhiveai/python-sdk/docs/reference/api/decorators.rst:316: WARNING: Title underline too short.
-
-@atrace Decorator
----------------- [docutils][39;49;00m
-[91m/Users/josh/src/github.com/honeyhiveai/python-sdk/docs/reference/api/decorators.rst:346: WARNING: Title underline too short.
-
-@evaluate Decorator
------------------- [docutils][39;49;00m
-[91m/Users/josh/src/github.com/honeyhiveai/python-sdk/docs/reference/api/decorators.rst:346: WARNING: Title underline too short.
-
-@evaluate Decorator
------------------- [docutils][39;49;00m
-[91m/Users/josh/src/github.com/honeyhiveai/python-sdk/docs/reference/api/decorators.rst:354: WARNING: duplicate object description of honeyhive.evaluate, other instance in reference/api/decorators, use :no-index: for one of them[39;49;00m
-[91m/Users/josh/src/github.com/honeyhiveai/python-sdk/docs/reference/api/decorators.rst:378: WARNING: Title underline too short.
-
-Basic Evaluation
-~~~~~~~~~~~~~~~ [docutils][39;49;00m
-[91m/Users/josh/src/github.com/honeyhiveai/python-sdk/docs/reference/api/decorators.rst:410: WARNING: Title underline too short.
-
-Multiple Evaluators
-~~~~~~~~~~~~~~~~~~ [docutils][39;49;00m
-[91m/Users/josh/src/github.com/honeyhiveai/python-sdk/docs/reference/api/decorators.rst:410: WARNING: Title underline too short.
-
-Multiple Evaluators
-~~~~~~~~~~~~~~~~~~ [docutils][39;49;00m
-[91m/Users/josh/src/github.com/honeyhiveai/python-sdk/docs/reference/api/decorators.rst:443: WARNING: Title underline too short.
-
-Evaluation with Context
-~~~~~~~~~~~~~~~~~~~~~~ [docutils][39;49;00m
-[91m/Users/josh/src/github.com/honeyhiveai/python-sdk/docs/reference/api/decorators.rst:443: WARNING: Title underline too short.
-
-Evaluation with Context
-~~~~~~~~~~~~~~~~~~~~~~ [docutils][39;49;00m
-[91m/Users/josh/src/github.com/honeyhiveai/python-sdk/docs/reference/api/decorators.rst:468: WARNING: Title underline too short.
-
-Custom Evaluators
-~~~~~~~~~~~~~~~~ [docutils][39;49;00m
-[91m/Users/josh/src/github.com/honeyhiveai/python-sdk/docs/reference/api/decorators.rst:468: WARNING: Title underline too short.
-
-Custom Evaluators
-~~~~~~~~~~~~~~~~ [docutils][39;49;00m
-[91m/Users/josh/src/github.com/honeyhiveai/python-sdk/docs/reference/api/decorators.rst:524: WARNING: Title underline too short.
-
-Async Evaluation
-~~~~~~~~~~~~~~~ [docutils][39;49;00m
-[91m/Users/josh/src/github.com/honeyhiveai/python-sdk/docs/reference/api/decorators.rst:524: WARNING: Title underline too short.
-
-Async Evaluation
-~~~~~~~~~~~~~~~ [docutils][39;49;00m
-[91m/Users/josh/src/github.com/honeyhiveai/python-sdk/docs/reference/api/decorators.rst:545: WARNING: Title underline too short.
-
-Combined Decorators
------------------- [docutils][39;49;00m
-[91m/Users/josh/src/github.com/honeyhiveai/python-sdk/docs/reference/api/decorators.rst:545: WARNING: Title underline too short.
-
-Combined Decorators
------------------- [docutils][39;49;00m
-[91m/Users/josh/src/github.com/honeyhiveai/python-sdk/docs/reference/api/decorators.rst:647: WARNING: Title underline too short.
-
-Helper Functions
---------------- [docutils][39;49;00m
-[91m/Users/josh/src/github.com/honeyhiveai/python-sdk/docs/reference/api/decorators.rst:647: WARNING: Title underline too short.
-
-Helper Functions
---------------- [docutils][39;49;00m
-[91m/Users/josh/src/github.com/honeyhiveai/python-sdk/docs/reference/api/decorators.rst:650: WARNING: Title underline too short.
-
-enrich_span()
-~~~~~~~~~~~~ [docutils][39;49;00m
-[91m/Users/josh/src/github.com/honeyhiveai/python-sdk/docs/reference/api/decorators.rst:658: WARNING: duplicate object description of honeyhive.enrich_span, other instance in reference/api/decorators, use :no-index: for one of them[39;49;00m
-[91m/Users/josh/src/github.com/honeyhiveai/python-sdk/docs/reference/api/decorators.rst:764: WARNING: Title underline too short.
-
-get_logger()
-~~~~~~~~~~~ [docutils][39;49;00m
-[91m/Users/josh/src/github.com/honeyhiveai/python-sdk/docs/reference/api/decorators.rst:764: WARNING: Title underline too short.
-
-get_logger()
-~~~~~~~~~~~ [docutils][39;49;00m
-[91m/Users/josh/src/github.com/honeyhiveai/python-sdk/docs/reference/api/decorators.rst:772: WARNING: duplicate object description of honeyhive.get_logger, other instance in reference/api/decorators, use :no-index: for one of them[39;49;00m
-[91m/Users/josh/src/github.com/honeyhiveai/python-sdk/docs/reference/api/decorators.rst:868: WARNING: Title underline too short.
-
-Performance Optimization
------------------------ [docutils][39;49;00m
-[91m/Users/josh/src/github.com/honeyhiveai/python-sdk/docs/reference/api/decorators.rst:868: WARNING: Title underline too short.
-
-Performance Optimization
------------------------ [docutils][39;49;00m
-[91m/Users/josh/src/github.com/honeyhiveai/python-sdk/docs/reference/api/decorators.rst:1092: WARNING: Title underline too short.
-
-Framework Integration Examples
------------------------------ [docutils][39;49;00m
-[91m/Users/josh/src/github.com/honeyhiveai/python-sdk/docs/reference/api/decorators.rst:1092: WARNING: Title underline too short.
-
-Framework Integration Examples
------------------------------ [docutils][39;49;00m
-[91m/Users/josh/src/github.com/honeyhiveai/python-sdk/docs/reference/api/decorators.rst:1221: WARNING: Title underline too short.
-
-Best Practices
-------------- [docutils][39;49;00m
-[91m/Users/josh/src/github.com/honeyhiveai/python-sdk/docs/reference/api/decorators.rst:1221: WARNING: Title underline too short.
-
-Best Practices
-------------- [docutils][39;49;00m
-[91m/Users/josh/src/github.com/honeyhiveai/python-sdk/docs/reference/api/decorators.rst:1300: WARNING: Title underline too short.
-
-Common Pitfalls and Solutions
---------------------------- [docutils][39;49;00m
-[91m/Users/josh/src/github.com/honeyhiveai/python-sdk/docs/reference/api/decorators.rst:1300: WARNING: Title underline too short.
-
-Common Pitfalls and Solutions
---------------------------- [docutils][39;49;00m
-[91m/Users/josh/src/github.com/honeyhiveai/python-sdk/docs/reference/api/tracer.rst:34: WARNING: duplicate object description of honeyhive.HoneyHiveTracer.init, other instance in reference/api/tracer, use :no-index: for one of them[39;49;00m
-[91m/Users/josh/src/github.com/honeyhiveai/python-sdk/docs/reference/api/tracer.rst:224: WARNING: duplicate object description of honeyhive.trace, other instance in reference/api/decorators, use :no-index: for one of them[39;49;00m
-[91m/Users/josh/src/github.com/honeyhiveai/python-sdk/docs/reference/api/tracer.rst:338: WARNING: Title underline too short.
-
-enrich_current_span()
-~~~~~~~~~~~~~~~~~~~~ [docutils][39;49;00m
-[91m/Users/josh/src/github.com/honeyhiveai/python-sdk/docs/reference/api/tracer.rst:338: WARNING: Title underline too short.
-
-enrich_current_span()
-~~~~~~~~~~~~~~~~~~~~ [docutils][39;49;00m
-[91m/Users/josh/src/github.com/honeyhiveai/python-sdk/docs/reference/api/tracer.rst:674: WARNING: Title underline too short.
-
-Context Propagation
------------------- [docutils][39;49;00m
-[91m/Users/josh/src/github.com/honeyhiveai/python-sdk/docs/reference/api/tracer.rst:674: WARNING: Title underline too short.
-
-Context Propagation
------------------- [docutils][39;49;00m
-[91m/Users/josh/src/github.com/honeyhiveai/python-sdk/docs/reference/api/tracer.rst:842: WARNING: Title underline too short.
-
-Framework Integration Examples
------------------------------ [docutils][39;49;00m
-[91m/Users/josh/src/github.com/honeyhiveai/python-sdk/docs/reference/api/tracer.rst:842: WARNING: Title underline too short.
-
-Framework Integration Examples
------------------------------ [docutils][39;49;00m
-[91m/Users/josh/src/github.com/honeyhiveai/python-sdk/docs/reference/api/tracer.rst:960: WARNING: Title underline too short.
-
-Performance Considerations
-------------------------- [docutils][39;49;00m
-[91m/Users/josh/src/github.com/honeyhiveai/python-sdk/docs/reference/api/tracer.rst:960: WARNING: Title underline too short.
-
-Performance Considerations
-------------------------- [docutils][39;49;00m
-[91m/Users/josh/src/github.com/honeyhiveai/python-sdk/docs/reference/cli/commands.rst:89: WARNING: Title underline too short.
-
-Authentication Commands
----------------------- [docutils][39;49;00m
-[91m/Users/josh/src/github.com/honeyhiveai/python-sdk/docs/reference/cli/commands.rst:89: WARNING: Title underline too short.
-
-Authentication Commands
----------------------- [docutils][39;49;00m
-[91m/Users/josh/src/github.com/honeyhiveai/python-sdk/docs/reference/cli/commands.rst:166: WARNING: Title underline too short.
-
-Project Commands
---------------- [docutils][39;49;00m
-[91m/Users/josh/src/github.com/honeyhiveai/python-sdk/docs/reference/cli/commands.rst:166: WARNING: Title underline too short.
-
-Project Commands
---------------- [docutils][39;49;00m
-[91m/Users/josh/src/github.com/honeyhiveai/python-sdk/docs/reference/cli/commands.rst:328: WARNING: Title underline too short.
-
-Session Commands
---------------- [docutils][39;49;00m
-[91m/Users/josh/src/github.com/honeyhiveai/python-sdk/docs/reference/cli/commands.rst:328: WARNING: Title underline too short.
-
-Session Commands
---------------- [docutils][39;49;00m
-[91m/Users/josh/src/github.com/honeyhiveai/python-sdk/docs/reference/cli/commands.rst:431: WARNING: Title underline too short.
-
-Event Commands
-------------- [docutils][39;49;00m
-[91m/Users/josh/src/github.com/honeyhiveai/python-sdk/docs/reference/cli/commands.rst:431: WARNING: Title underline too short.
-
-Event Commands
-------------- [docutils][39;49;00m
-[91m/Users/josh/src/github.com/honeyhiveai/python-sdk/docs/reference/cli/commands.rst:616: WARNING: Title underline too short.
-
-Evaluation Commands
------------------- [docutils][39;49;00m
-[91m/Users/josh/src/github.com/honeyhiveai/python-sdk/docs/reference/cli/commands.rst:616: WARNING: Title underline too short.
-
-Evaluation Commands
------------------- [docutils][39;49;00m
-[91m/Users/josh/src/github.com/honeyhiveai/python-sdk/docs/reference/cli/commands.rst:813: WARNING: Title underline too short.
-
-Trace Analysis Commands
----------------------- [docutils][39;49;00m
-[91m/Users/josh/src/github.com/honeyhiveai/python-sdk/docs/reference/cli/commands.rst:813: WARNING: Title underline too short.
-
-Trace Analysis Commands
----------------------- [docutils][39;49;00m
-[91m/Users/josh/src/github.com/honeyhiveai/python-sdk/docs/reference/cli/commands.rst:993: WARNING: Title underline too short.
-
-Utility Commands
---------------- [docutils][39;49;00m
-[91m/Users/josh/src/github.com/honeyhiveai/python-sdk/docs/reference/cli/commands.rst:993: WARNING: Title underline too short.
-
-Utility Commands
---------------- [docutils][39;49;00m
-[91m/Users/josh/src/github.com/honeyhiveai/python-sdk/docs/reference/cli/commands.rst:1104: WARNING: Title underline too short.
-
-Environment Variables
--------------------- [docutils][39;49;00m
-[91m/Users/josh/src/github.com/honeyhiveai/python-sdk/docs/reference/cli/commands.rst:1104: WARNING: Title underline too short.
-
-Environment Variables
--------------------- [docutils][39;49;00m
-[91m/Users/josh/src/github.com/honeyhiveai/python-sdk/docs/reference/cli/commands.rst:1149: WARNING: Title underline too short.
-
-Examples and Use Cases
---------------------- [docutils][39;49;00m
-[91m/Users/josh/src/github.com/honeyhiveai/python-sdk/docs/reference/cli/commands.rst:1149: WARNING: Title underline too short.
-
-Examples and Use Cases
---------------------- [docutils][39;49;00m
-[91m/Users/josh/src/github.com/honeyhiveai/python-sdk/docs/reference/cli/index.rst:12: WARNING: Title underline too short.
-
-Installation and Setup
---------------------- [docutils][39;49;00m
-[91m/Users/josh/src/github.com/honeyhiveai/python-sdk/docs/reference/cli/index.rst:28: WARNING: Title underline too short.
-
-Configuration
-~~~~~~~~~~~~ [docutils][39;49;00m
-[91m/Users/josh/src/github.com/honeyhiveai/python-sdk/docs/reference/cli/index.rst:44: WARNING: Title underline too short.
-
-Global Options
-------------- [docutils][39;49;00m
-[91m/Users/josh/src/github.com/honeyhiveai/python-sdk/docs/reference/cli/index.rst:44: WARNING: Title underline too short.
-
-Global Options
-------------- [docutils][39;49;00m
-[91m/Users/josh/src/github.com/honeyhiveai/python-sdk/docs/reference/cli/index.rst:68: WARNING: Title underline too short.
-
-Commands Overview
---------------- [docutils][39;49;00m
-[91m/Users/josh/src/github.com/honeyhiveai/python-sdk/docs/reference/cli/index.rst:68: WARNING: Title underline too short.
-
-Commands Overview
---------------- [docutils][39;49;00m
-[91m/Users/josh/src/github.com/honeyhiveai/python-sdk/docs/reference/cli/index.rst:86: WARNING: Title underline too short.
-
-Configuration Commands
--------------------- [docutils][39;49;00m
-[91m/Users/josh/src/github.com/honeyhiveai/python-sdk/docs/reference/cli/index.rst:86: WARNING: Title underline too short.
-
-Configuration Commands
--------------------- [docutils][39;49;00m
-[91m/Users/josh/src/github.com/honeyhiveai/python-sdk/docs/reference/cli/index.rst:89: WARNING: Title underline too short.
-
-honeyhive configure
-~~~~~~~~~~~~~~~~~~ [docutils][39;49;00m
-[91m/Users/josh/src/github.com/honeyhiveai/python-sdk/docs/reference/cli/index.rst:149: WARNING: Title underline too short.
-
-Project Management
------------------ [docutils][39;49;00m
-[91m/Users/josh/src/github.com/honeyhiveai/python-sdk/docs/reference/cli/index.rst:149: WARNING: Title underline too short.
-
-Project Management
------------------ [docutils][39;49;00m
-[91m/Users/josh/src/github.com/honeyhiveai/python-sdk/docs/reference/cli/index.rst:152: WARNING: Title underline too short.
-
-honeyhive project
-~~~~~~~~~~~~~~~~ [docutils][39;49;00m
-[91m/Users/josh/src/github.com/honeyhiveai/python-sdk/docs/reference/cli/index.rst:171: WARNING: Title underline too short.
-
-honeyhive project list
-~~~~~~~~~~~~~~~~~~~~~ [docutils][39;49;00m
-[91m/Users/josh/src/github.com/honeyhiveai/python-sdk/docs/reference/cli/index.rst:171: WARNING: Title underline too short.
-
-honeyhive project list
-~~~~~~~~~~~~~~~~~~~~~ [docutils][39;49;00m
-[91m/Users/josh/src/github.com/honeyhiveai/python-sdk/docs/reference/cli/index.rst:223: WARNING: Title underline too short.
-
-honeyhive project create
-~~~~~~~~~~~~~~~~~~~~~~~ [docutils][39;49;00m
-[91m/Users/josh/src/github.com/honeyhiveai/python-sdk/docs/reference/cli/index.rst:223: WARNING: Title underline too short.
-
-honeyhive project create
-~~~~~~~~~~~~~~~~~~~~~~~ [docutils][39;49;00m
-[91m/Users/josh/src/github.com/honeyhiveai/python-sdk/docs/reference/cli/index.rst:273: WARNING: Title underline too short.
-
-honeyhive project show
-~~~~~~~~~~~~~~~~~~~~~ [docutils][39;49;00m
-[91m/Users/josh/src/github.com/honeyhiveai/python-sdk/docs/reference/cli/index.rst:273: WARNING: Title underline too short.
-
-honeyhive project show
-~~~~~~~~~~~~~~~~~~~~~ [docutils][39;49;00m
-[91m/Users/josh/src/github.com/honeyhiveai/python-sdk/docs/reference/cli/index.rst:321: WARNING: Title underline too short.
-
-Session Management
------------------ [docutils][39;49;00m
-[91m/Users/josh/src/github.com/honeyhiveai/python-sdk/docs/reference/cli/index.rst:321: WARNING: Title underline too short.
-
-Session Management
------------------ [docutils][39;49;00m
-[91m/Users/josh/src/github.com/honeyhiveai/python-sdk/docs/reference/cli/index.rst:324: WARNING: Title underline too short.
-
-honeyhive session
-~~~~~~~~~~~~~~~~ [docutils][39;49;00m
-[91m/Users/josh/src/github.com/honeyhiveai/python-sdk/docs/reference/cli/index.rst:342: WARNING: Title underline too short.
-
-honeyhive session list
-~~~~~~~~~~~~~~~~~~~~~ [docutils][39;49;00m
-[91m/Users/josh/src/github.com/honeyhiveai/python-sdk/docs/reference/cli/index.rst:342: WARNING: Title underline too short.
-
-honeyhive session list
-~~~~~~~~~~~~~~~~~~~~~ [docutils][39;49;00m
-[91m/Users/josh/src/github.com/honeyhiveai/python-sdk/docs/reference/cli/index.rst:383: WARNING: Title underline too short.
-
-honeyhive session show
-~~~~~~~~~~~~~~~~~~~~~ [docutils][39;49;00m
-[91m/Users/josh/src/github.com/honeyhiveai/python-sdk/docs/reference/cli/index.rst:383: WARNING: Title underline too short.
-
-honeyhive session show
-~~~~~~~~~~~~~~~~~~~~~ [docutils][39;49;00m
-[91m/Users/josh/src/github.com/honeyhiveai/python-sdk/docs/reference/cli/index.rst:428: WARNING: Title underline too short.
-
-Event Management
---------------- [docutils][39;49;00m
-[91m/Users/josh/src/github.com/honeyhiveai/python-sdk/docs/reference/cli/index.rst:428: WARNING: Title underline too short.
-
-Event Management
---------------- [docutils][39;49;00m
-[91m/Users/josh/src/github.com/honeyhiveai/python-sdk/docs/reference/cli/index.rst:431: WARNING: Title underline too short.
-
-honeyhive event
-~~~~~~~~~~~~~~ [docutils][39;49;00m
-[91m/Users/josh/src/github.com/honeyhiveai/python-sdk/docs/reference/cli/index.rst:448: WARNING: Title underline too short.
-
-honeyhive event list
-~~~~~~~~~~~~~~~~~~~ [docutils][39;49;00m
-[91m/Users/josh/src/github.com/honeyhiveai/python-sdk/docs/reference/cli/index.rst:448: WARNING: Title underline too short.
-
-honeyhive event list
-~~~~~~~~~~~~~~~~~~~ [docutils][39;49;00m
-[91m/Users/josh/src/github.com/honeyhiveai/python-sdk/docs/reference/cli/index.rst:493: WARNING: Title underline too short.
-
-honeyhive event search
-~~~~~~~~~~~~~~~~~~~~~ [docutils][39;49;00m
-[91m/Users/josh/src/github.com/honeyhiveai/python-sdk/docs/reference/cli/index.rst:493: WARNING: Title underline too short.
-
-honeyhive event search
-~~~~~~~~~~~~~~~~~~~~~ [docutils][39;49;00m
-[91m/Users/josh/src/github.com/honeyhiveai/python-sdk/docs/reference/cli/index.rst:545: WARNING: Title underline too short.
-
-Evaluation Commands
------------------- [docutils][39;49;00m
-[91m/Users/josh/src/github.com/honeyhiveai/python-sdk/docs/reference/cli/index.rst:545: WARNING: Title underline too short.
-
-Evaluation Commands
------------------- [docutils][39;49;00m
-[91m/Users/josh/src/github.com/honeyhiveai/python-sdk/docs/reference/cli/index.rst:548: WARNING: Title underline too short.
-
-honeyhive evaluate
-~~~~~~~~~~~~~~~~~ [docutils][39;49;00m
-[91m/Users/josh/src/github.com/honeyhiveai/python-sdk/docs/reference/cli/index.rst:566: WARNING: Title underline too short.
-
-honeyhive evaluate single
-~~~~~~~~~~~~~~~~~~~~~~~~ [docutils][39;49;00m
-[91m/Users/josh/src/github.com/honeyhiveai/python-sdk/docs/reference/cli/index.rst:566: WARNING: Title underline too short.
-
-honeyhive evaluate single
-~~~~~~~~~~~~~~~~~~~~~~~~ [docutils][39;49;00m
-[91m/Users/josh/src/github.com/honeyhiveai/python-sdk/docs/reference/cli/index.rst:618: WARNING: Title underline too short.
-
-honeyhive evaluate batch
-~~~~~~~~~~~~~~~~~~~~~~~ [docutils][39;49;00m
-[91m/Users/josh/src/github.com/honeyhiveai/python-sdk/docs/reference/cli/index.rst:618: WARNING: Title underline too short.
-
-honeyhive evaluate batch
-~~~~~~~~~~~~~~~~~~~~~~~ [docutils][39;49;00m
-[91m/Users/josh/src/github.com/honeyhiveai/python-sdk/docs/reference/cli/index.rst:689: WARNING: Title underline too short.
-
-honeyhive evaluate project
-~~~~~~~~~~~~~~~~~~~~~~~~~ [docutils][39;49;00m
-[91m/Users/josh/src/github.com/honeyhiveai/python-sdk/docs/reference/cli/index.rst:689: WARNING: Title underline too short.
-
-honeyhive evaluate project
-~~~~~~~~~~~~~~~~~~~~~~~~~ [docutils][39;49;00m
-[91m/Users/josh/src/github.com/honeyhiveai/python-sdk/docs/reference/cli/index.rst:743: WARNING: Title underline too short.
-
-Trace Analysis
-------------- [docutils][39;49;00m
-[91m/Users/josh/src/github.com/honeyhiveai/python-sdk/docs/reference/cli/index.rst:743: WARNING: Title underline too short.
-
-Trace Analysis
-------------- [docutils][39;49;00m
-[91m/Users/josh/src/github.com/honeyhiveai/python-sdk/docs/reference/cli/index.rst:746: WARNING: Title underline too short.
-
-honeyhive trace
-~~~~~~~~~~~~~~ [docutils][39;49;00m
-[91m/Users/josh/src/github.com/honeyhiveai/python-sdk/docs/reference/cli/index.rst:764: WARNING: Title underline too short.
-
-honeyhive trace show
-~~~~~~~~~~~~~~~~~~~ [docutils][39;49;00m
-[91m/Users/josh/src/github.com/honeyhiveai/python-sdk/docs/reference/cli/index.rst:764: WARNING: Title underline too short.
-
-honeyhive trace show
-~~~~~~~~~~~~~~~~~~~ [docutils][39;49;00m
-[91m/Users/josh/src/github.com/honeyhiveai/python-sdk/docs/reference/cli/index.rst:827: WARNING: Title underline too short.
-
-honeyhive trace analyze
-~~~~~~~~~~~~~~~~~~~~~~ [docutils][39;49;00m
-[91m/Users/josh/src/github.com/honeyhiveai/python-sdk/docs/reference/cli/index.rst:827: WARNING: Title underline too short.
-
-honeyhive trace analyze
-~~~~~~~~~~~~~~~~~~~~~~ [docutils][39;49;00m
-[91m/Users/josh/src/github.com/honeyhiveai/python-sdk/docs/reference/cli/index.rst:868: WARNING: Title underline too short.
-
-Data Export
----------- [docutils][39;49;00m
-[91m/Users/josh/src/github.com/honeyhiveai/python-sdk/docs/reference/cli/index.rst:868: WARNING: Title underline too short.
-
-Data Export
----------- [docutils][39;49;00m
-[91m/Users/josh/src/github.com/honeyhiveai/python-sdk/docs/reference/cli/index.rst:871: WARNING: Title underline too short.
-
-honeyhive export
-~~~~~~~~~~~~~~~ [docutils][39;49;00m
-[91m/Users/josh/src/github.com/honeyhiveai/python-sdk/docs/reference/cli/index.rst:889: WARNING: Title underline too short.
-
-honeyhive export events
-~~~~~~~~~~~~~~~~~~~~~~ [docutils][39;49;00m
-[91m/Users/josh/src/github.com/honeyhiveai/python-sdk/docs/reference/cli/index.rst:889: WARNING: Title underline too short.
-
-honeyhive export events
-~~~~~~~~~~~~~~~~~~~~~~ [docutils][39;49;00m
-[91m/Users/josh/src/github.com/honeyhiveai/python-sdk/docs/reference/cli/index.rst:943: WARNING: Title underline too short.
-
-Validation Commands
------------------ [docutils][39;49;00m
-[91m/Users/josh/src/github.com/honeyhiveai/python-sdk/docs/reference/cli/index.rst:943: WARNING: Title underline too short.
-
-Validation Commands
------------------ [docutils][39;49;00m
-[91m/Users/josh/src/github.com/honeyhiveai/python-sdk/docs/reference/cli/index.rst:946: WARNING: Title underline too short.
-
-honeyhive validate
-~~~~~~~~~~~~~~~~~ [docutils][39;49;00m
-[91m/Users/josh/src/github.com/honeyhiveai/python-sdk/docs/reference/cli/index.rst:963: WARNING: Title underline too short.
-
-honeyhive validate config
-~~~~~~~~~~~~~~~~~~~~~~~~ [docutils][39;49;00m
-[91m/Users/josh/src/github.com/honeyhiveai/python-sdk/docs/reference/cli/index.rst:963: WARNING: Title underline too short.
-
-honeyhive validate config
-~~~~~~~~~~~~~~~~~~~~~~~~ [docutils][39;49;00m
-[91m/Users/josh/src/github.com/honeyhiveai/python-sdk/docs/reference/cli/index.rst:1000: WARNING: Title underline too short.
-
-honeyhive validate api
-~~~~~~~~~~~~~~~~~~~~~ [docutils][39;49;00m
-[91m/Users/josh/src/github.com/honeyhiveai/python-sdk/docs/reference/cli/index.rst:1000: WARNING: Title underline too short.
-
-honeyhive validate api
-~~~~~~~~~~~~~~~~~~~~~ [docutils][39;49;00m
-[91m/Users/josh/src/github.com/honeyhiveai/python-sdk/docs/reference/cli/index.rst:1037: WARNING: Title underline too short.
-
-Scripting and Automation
------------------------ [docutils][39;49;00m
-[91m/Users/josh/src/github.com/honeyhiveai/python-sdk/docs/reference/cli/index.rst:1037: WARNING: Title underline too short.
-
-Scripting and Automation
------------------------ [docutils][39;49;00m
-[91m/Users/josh/src/github.com/honeyhiveai/python-sdk/docs/reference/cli/index.rst:1040: WARNING: Title underline too short.
-
-Output Formats
-~~~~~~~~~~~~~ [docutils][39;49;00m
-[91m/Users/josh/src/github.com/honeyhiveai/python-sdk/docs/reference/cli/index.rst:1056: WARNING: Title underline too short.
-
-Exit Codes
-~~~~~~~~~ [docutils][39;49;00m
-[91m/Users/josh/src/github.com/honeyhiveai/python-sdk/docs/reference/cli/index.rst:1056: WARNING: Title underline too short.
-
-Exit Codes
-~~~~~~~~~ [docutils][39;49;00m
-[91m/Users/josh/src/github.com/honeyhiveai/python-sdk/docs/reference/cli/index.rst:1083: WARNING: Title underline too short.
-
-Configuration Files
-~~~~~~~~~~~~~~~~~~ [docutils][39;49;00m
-[91m/Users/josh/src/github.com/honeyhiveai/python-sdk/docs/reference/cli/index.rst:1083: WARNING: Title underline too short.
-
-Configuration Files
-~~~~~~~~~~~~~~~~~~ [docutils][39;49;00m
-[91m/Users/josh/src/github.com/honeyhiveai/python-sdk/docs/reference/cli/index.rst:1105: WARNING: Title underline too short.
-
-Advanced Usage
-------------- [docutils][39;49;00m
-[91m/Users/josh/src/github.com/honeyhiveai/python-sdk/docs/reference/cli/index.rst:1105: WARNING: Title underline too short.
-
-Advanced Usage
-------------- [docutils][39;49;00m
-[91m/Users/josh/src/github.com/honeyhiveai/python-sdk/docs/reference/cli/index.rst:1108: WARNING: Title underline too short.
-
-Batch Processing
-~~~~~~~~~~~~~~~ [docutils][39;49;00m
-[91m/Users/josh/src/github.com/honeyhiveai/python-sdk/docs/reference/cli/index.rst:1126: WARNING: Title underline too short.
-
-Integration with CI/CD
-~~~~~~~~~~~~~~~~~~~~~ [docutils][39;49;00m
-[91m/Users/josh/src/github.com/honeyhiveai/python-sdk/docs/reference/cli/index.rst:1126: WARNING: Title underline too short.
-
-Integration with CI/CD
-~~~~~~~~~~~~~~~~~~~~~ [docutils][39;49;00m
-[91m/Users/josh/src/github.com/honeyhiveai/python-sdk/docs/reference/cli/index.rst:1161: WARNING: Title underline too short.
-
-Monitoring and Alerting
-~~~~~~~~~~~~~~~~~~~~~~ [docutils][39;49;00m
-[91m/Users/josh/src/github.com/honeyhiveai/python-sdk/docs/reference/cli/index.rst:1161: WARNING: Title underline too short.
-
-Monitoring and Alerting
-~~~~~~~~~~~~~~~~~~~~~~ [docutils][39;49;00m
-[91m/Users/josh/src/github.com/honeyhiveai/python-sdk/docs/reference/cli/index.rst:1184: WARNING: Title underline too short.
-
-Troubleshooting
--------------- [docutils][39;49;00m
-[91m/Users/josh/src/github.com/honeyhiveai/python-sdk/docs/reference/cli/index.rst:1184: WARNING: Title underline too short.
-
-Troubleshooting
--------------- [docutils][39;49;00m
-[91m/Users/josh/src/github.com/honeyhiveai/python-sdk/docs/reference/cli/index.rst:1187: WARNING: Title underline too short.
-
-Common Issues
-~~~~~~~~~~~~ [docutils][39;49;00m
-[91m/Users/josh/src/github.com/honeyhiveai/python-sdk/docs/reference/cli/index.rst:1221: WARNING: Title underline too short.
-
-Debug Mode
-~~~~~~~~~ [docutils][39;49;00m
-[91m/Users/josh/src/github.com/honeyhiveai/python-sdk/docs/reference/cli/index.rst:1221: WARNING: Title underline too short.
-
-Debug Mode
-~~~~~~~~~ [docutils][39;49;00m
-[91m/Users/josh/src/github.com/honeyhiveai/python-sdk/docs/reference/cli/options.rst:17: WARNING: Title underline too short.
-
-Authentication Options
-~~~~~~~~~~~~~~~~~~~~~ [docutils][39;49;00m
-[91m/Users/josh/src/github.com/honeyhiveai/python-sdk/docs/reference/cli/options.rst:69: WARNING: Title underline too short.
-
-Output Options
-~~~~~~~~~~~~~ [docutils][39;49;00m
-[91m/Users/josh/src/github.com/honeyhiveai/python-sdk/docs/reference/cli/options.rst:69: WARNING: Title underline too short.
-
-Output Options
-~~~~~~~~~~~~~ [docutils][39;49;00m
-[91m/Users/josh/src/github.com/honeyhiveai/python-sdk/docs/reference/cli/options.rst:153: WARNING: Title underline too short.
-
-Help and Information
-~~~~~~~~~~~~~~~~~~~ [docutils][39;49;00m
-[91m/Users/josh/src/github.com/honeyhiveai/python-sdk/docs/reference/cli/options.rst:153: WARNING: Title underline too short.
-
-Help and Information
-~~~~~~~~~~~~~~~~~~~ [docutils][39;49;00m
-[91m/Users/josh/src/github.com/honeyhiveai/python-sdk/docs/reference/cli/options.rst:183: WARNING: Title underline too short.
-
-Command-Specific Options
------------------------ [docutils][39;49;00m
-[91m/Users/josh/src/github.com/honeyhiveai/python-sdk/docs/reference/cli/options.rst:183: WARNING: Title underline too short.
-
-Command-Specific Options
------------------------ [docutils][39;49;00m
-[91m/Users/josh/src/github.com/honeyhiveai/python-sdk/docs/reference/cli/options.rst:186: WARNING: Title underline too short.
-
-Project Commands
-~~~~~~~~~~~~~~~ [docutils][39;49;00m
-[91m/Users/josh/src/github.com/honeyhiveai/python-sdk/docs/reference/cli/options.rst:267: WARNING: Title underline too short.
-
-Session Commands
-~~~~~~~~~~~~~~~ [docutils][39;49;00m
-[91m/Users/josh/src/github.com/honeyhiveai/python-sdk/docs/reference/cli/options.rst:267: WARNING: Title underline too short.
-
-Session Commands
-~~~~~~~~~~~~~~~ [docutils][39;49;00m
-[91m/Users/josh/src/github.com/honeyhiveai/python-sdk/docs/reference/cli/options.rst:314: WARNING: Title underline too short.
-
-Event Commands
-~~~~~~~~~~~~~ [docutils][39;49;00m
-[91m/Users/josh/src/github.com/honeyhiveai/python-sdk/docs/reference/cli/options.rst:314: WARNING: Title underline too short.
-
-Event Commands
-~~~~~~~~~~~~~ [docutils][39;49;00m
-[91m/Users/josh/src/github.com/honeyhiveai/python-sdk/docs/reference/cli/options.rst:518: WARNING: Title underline too short.
-
-Evaluation Commands
-~~~~~~~~~~~~~~~~~~ [docutils][39;49;00m
-[91m/Users/josh/src/github.com/honeyhiveai/python-sdk/docs/reference/cli/options.rst:518: WARNING: Title underline too short.
-
-Evaluation Commands
-~~~~~~~~~~~~~~~~~~ [docutils][39;49;00m
-[91m/Users/josh/src/github.com/honeyhiveai/python-sdk/docs/reference/cli/options.rst:677: WARNING: Title underline too short.
-
-Trace Analysis Commands
-~~~~~~~~~~~~~~~~~~~~~~ [docutils][39;49;00m
-[91m/Users/josh/src/github.com/honeyhiveai/python-sdk/docs/reference/cli/options.rst:677: WARNING: Title underline too short.
-
-Trace Analysis Commands
-~~~~~~~~~~~~~~~~~~~~~~ [docutils][39;49;00m
-[91m/Users/josh/src/github.com/honeyhiveai/python-sdk/docs/reference/cli/options.rst:760: WARNING: Title underline too short.
-
-Configuration Options
-~~~~~~~~~~~~~~~~~~~~ [docutils][39;49;00m
-[91m/Users/josh/src/github.com/honeyhiveai/python-sdk/docs/reference/cli/options.rst:760: WARNING: Title underline too short.
-
-Configuration Options
-~~~~~~~~~~~~~~~~~~~~ [docutils][39;49;00m
-[91m/Users/josh/src/github.com/honeyhiveai/python-sdk/docs/reference/cli/options.rst:790: WARNING: Title underline too short.
-
-Advanced Options
---------------- [docutils][39;49;00m
-[91m/Users/josh/src/github.com/honeyhiveai/python-sdk/docs/reference/cli/options.rst:790: WARNING: Title underline too short.
-
-Advanced Options
---------------- [docutils][39;49;00m
-[91m/Users/josh/src/github.com/honeyhiveai/python-sdk/docs/reference/cli/options.rst:793: WARNING: Title underline too short.
-
-Filtering and Search
-~~~~~~~~~~~~~~~~~~~ [docutils][39;49;00m
-[91m/Users/josh/src/github.com/honeyhiveai/python-sdk/docs/reference/cli/options.rst:914: WARNING: Title underline too short.
-
-Pagination Options
-~~~~~~~~~~~~~~~~~ [docutils][39;49;00m
-[91m/Users/josh/src/github.com/honeyhiveai/python-sdk/docs/reference/cli/options.rst:914: WARNING: Title underline too short.
-
-Pagination Options
-~~~~~~~~~~~~~~~~~ [docutils][39;49;00m
-[91m/Users/josh/src/github.com/honeyhiveai/python-sdk/docs/reference/cli/options.rst:939: WARNING: Title underline too short.
-
-Performance Options
-~~~~~~~~~~~~~~~~~~ [docutils][39;49;00m
-[91m/Users/josh/src/github.com/honeyhiveai/python-sdk/docs/reference/cli/options.rst:939: WARNING: Title underline too short.
-
-Performance Options
-~~~~~~~~~~~~~~~~~~ [docutils][39;49;00m
-[91m/Users/josh/src/github.com/honeyhiveai/python-sdk/docs/reference/cli/options.rst:974: WARNING: Title underline too short.
-
-Debug Options
-~~~~~~~~~~~~ [docutils][39;49;00m
-[91m/Users/josh/src/github.com/honeyhiveai/python-sdk/docs/reference/cli/options.rst:974: WARNING: Title underline too short.
-
-Debug Options
-~~~~~~~~~~~~ [docutils][39;49;00m
-[91m/Users/josh/src/github.com/honeyhiveai/python-sdk/docs/reference/cli/options.rst:1010: WARNING: Title underline too short.
-
-Option Precedence
----------------- [docutils][39;49;00m
-[91m/Users/josh/src/github.com/honeyhiveai/python-sdk/docs/reference/cli/options.rst:1010: WARNING: Title underline too short.
-
-Option Precedence
----------------- [docutils][39;49;00m
-[91m/Users/josh/src/github.com/honeyhiveai/python-sdk/docs/reference/cli/options.rst:1033: WARNING: Title underline too short.
-
-Validation Rules
---------------- [docutils][39;49;00m
-[91m/Users/josh/src/github.com/honeyhiveai/python-sdk/docs/reference/cli/options.rst:1033: WARNING: Title underline too short.
-
-Validation Rules
---------------- [docutils][39;49;00m
-[91m/Users/josh/src/github.com/honeyhiveai/python-sdk/docs/reference/configuration/authentication.rst:12: WARNING: Title underline too short.
-
-API Key Authentication
---------------------- [docutils][39;49;00m
-[91m/Users/josh/src/github.com/honeyhiveai/python-sdk/docs/reference/configuration/authentication.rst:15: WARNING: Title underline too short.
-
-Basic Authentication
-~~~~~~~~~~~~~~~~~~~ [docutils][39;49;00m
-[91m/Users/josh/src/github.com/honeyhiveai/python-sdk/docs/reference/configuration/authentication.rst:90: WARNING: Title underline too short.
-
-Direct Parameter
-~~~~~~~~~~~~~~~ [docutils][39;49;00m
-[91m/Users/josh/src/github.com/honeyhiveai/python-sdk/docs/reference/configuration/authentication.rst:90: WARNING: Title underline too short.
-
-Direct Parameter
-~~~~~~~~~~~~~~~ [docutils][39;49;00m
-[91m/Users/josh/src/github.com/honeyhiveai/python-sdk/docs/reference/configuration/authentication.rst:112: WARNING: Title underline too short.
-
-Configuration File
-~~~~~~~~~~~~~~~~~ [docutils][39;49;00m
-[91m/Users/josh/src/github.com/honeyhiveai/python-sdk/docs/reference/configuration/authentication.rst:112: WARNING: Title underline too short.
-
-Configuration File
-~~~~~~~~~~~~~~~~~ [docutils][39;49;00m
-[91m/Users/josh/src/github.com/honeyhiveai/python-sdk/docs/reference/configuration/authentication.rst:141: WARNING: Title underline too short.
-
-CLI Authentication
-~~~~~~~~~~~~~~~~~ [docutils][39;49;00m
-[91m/Users/josh/src/github.com/honeyhiveai/python-sdk/docs/reference/configuration/authentication.rst:141: WARNING: Title underline too short.
-
-CLI Authentication
-~~~~~~~~~~~~~~~~~ [docutils][39;49;00m
-[91m/Users/josh/src/github.com/honeyhiveai/python-sdk/docs/reference/configuration/authentication.rst:204: WARNING: Title underline too short.
-
-API Key Management
-~~~~~~~~~~~~~~~~~ [docutils][39;49;00m
-[91m/Users/josh/src/github.com/honeyhiveai/python-sdk/docs/reference/configuration/authentication.rst:275: WARNING: Title underline too short.
-
-Storage Security
-~~~~~~~~~~~~~~~ [docutils][39;49;00m
-[91m/Users/josh/src/github.com/honeyhiveai/python-sdk/docs/reference/configuration/authentication.rst:275: WARNING: Title underline too short.
-
-Storage Security
-~~~~~~~~~~~~~~~ [docutils][39;49;00m
-[91m/Users/josh/src/github.com/honeyhiveai/python-sdk/docs/reference/configuration/authentication.rst:330: WARNING: Title underline too short.
-
-Access Control
-~~~~~~~~~~~~~ [docutils][39;49;00m
-[91m/Users/josh/src/github.com/honeyhiveai/python-sdk/docs/reference/configuration/authentication.rst:330: WARNING: Title underline too short.
-
-Access Control
-~~~~~~~~~~~~~ [docutils][39;49;00m
-[91m/Users/josh/src/github.com/honeyhiveai/python-sdk/docs/reference/configuration/authentication.rst:354: WARNING: Title underline too short.
-
-Environment-Specific Authentication
----------------------------------- [docutils][39;49;00m
-[91m/Users/josh/src/github.com/honeyhiveai/python-sdk/docs/reference/configuration/authentication.rst:354: WARNING: Title underline too short.
-
-Environment-Specific Authentication
----------------------------------- [docutils][39;49;00m
-[91m/Users/josh/src/github.com/honeyhiveai/python-sdk/docs/reference/configuration/authentication.rst:357: WARNING: Title underline too short.
-
-Development Environment
-~~~~~~~~~~~~~~~~~~~~~~ [docutils][39;49;00m
-[91m/Users/josh/src/github.com/honeyhiveai/python-sdk/docs/reference/configuration/authentication.rst:378: WARNING: Title underline too short.
-
-Testing Environment
-~~~~~~~~~~~~~~~~~~ [docutils][39;49;00m
-[91m/Users/josh/src/github.com/honeyhiveai/python-sdk/docs/reference/configuration/authentication.rst:378: WARNING: Title underline too short.
-
-Testing Environment
-~~~~~~~~~~~~~~~~~~ [docutils][39;49;00m
-[91m/Users/josh/src/github.com/honeyhiveai/python-sdk/docs/reference/configuration/authentication.rst:405: WARNING: Title underline too short.
-
-Production Environment
-~~~~~~~~~~~~~~~~~~~~~ [docutils][39;49;00m
-[91m/Users/josh/src/github.com/honeyhiveai/python-sdk/docs/reference/configuration/authentication.rst:405: WARNING: Title underline too short.
-
-Production Environment
-~~~~~~~~~~~~~~~~~~~~~ [docutils][39;49;00m
-[91m/Users/josh/src/github.com/honeyhiveai/python-sdk/docs/reference/configuration/authentication.rst:430: WARNING: Title underline too short.
-
-CI/CD Authentication
-------------------- [docutils][39;49;00m
-[91m/Users/josh/src/github.com/honeyhiveai/python-sdk/docs/reference/configuration/authentication.rst:430: WARNING: Title underline too short.
-
-CI/CD Authentication
-------------------- [docutils][39;49;00m
-[91m/Users/josh/src/github.com/honeyhiveai/python-sdk/docs/reference/configuration/authentication.rst:433: WARNING: Title underline too short.
-
-GitHub Actions
-~~~~~~~~~~~~~ [docutils][39;49;00m
-[91m/Users/josh/src/github.com/honeyhiveai/python-sdk/docs/reference/configuration/authentication.rst:472: WARNING: Title underline too short.
-
-GitLab CI
-~~~~~~~~ [docutils][39;49;00m
-[91m/Users/josh/src/github.com/honeyhiveai/python-sdk/docs/reference/configuration/authentication.rst:472: WARNING: Title underline too short.
-
-GitLab CI
-~~~~~~~~ [docutils][39;49;00m
-[91m/Users/josh/src/github.com/honeyhiveai/python-sdk/docs/reference/configuration/authentication.rst:495: WARNING: Title underline too short.
-
-Jenkins
-~~~~~~ [docutils][39;49;00m
-[91m/Users/josh/src/github.com/honeyhiveai/python-sdk/docs/reference/configuration/authentication.rst:495: WARNING: Title underline too short.
-
-Jenkins
-~~~~~~ [docutils][39;49;00m
-[91m/Users/josh/src/github.com/honeyhiveai/python-sdk/docs/reference/configuration/authentication.rst:527: WARNING: Title underline too short.
-
-Docker Authentication
--------------------- [docutils][39;49;00m
-[91m/Users/josh/src/github.com/honeyhiveai/python-sdk/docs/reference/configuration/authentication.rst:527: WARNING: Title underline too short.
-
-Docker Authentication
--------------------- [docutils][39;49;00m
-[91m/Users/josh/src/github.com/honeyhiveai/python-sdk/docs/reference/configuration/authentication.rst:657: WARNING: Title underline too short.
-
-Troubleshooting Authentication
------------------------------ [docutils][39;49;00m
-[91m/Users/josh/src/github.com/honeyhiveai/python-sdk/docs/reference/configuration/authentication.rst:657: WARNING: Title underline too short.
-
-Troubleshooting Authentication
------------------------------ [docutils][39;49;00m
-[91m/Users/josh/src/github.com/honeyhiveai/python-sdk/docs/reference/configuration/authentication.rst:660: WARNING: Title underline too short.
-
-Common Issues
-~~~~~~~~~~~~ [docutils][39;49;00m
-[91m/Users/josh/src/github.com/honeyhiveai/python-sdk/docs/reference/configuration/authentication.rst:717: WARNING: Title underline too short.
-
-Debugging Tools
-~~~~~~~~~~~~~~ [docutils][39;49;00m
-[91m/Users/josh/src/github.com/honeyhiveai/python-sdk/docs/reference/configuration/authentication.rst:717: WARNING: Title underline too short.
-
-Debugging Tools
-~~~~~~~~~~~~~~ [docutils][39;49;00m
-[91m/Users/josh/src/github.com/honeyhiveai/python-sdk/docs/reference/configuration/authentication.rst:788: WARNING: Title underline too short.
-
-Security Monitoring
------------------- [docutils][39;49;00m
-[91m/Users/josh/src/github.com/honeyhiveai/python-sdk/docs/reference/configuration/authentication.rst:788: WARNING: Title underline too short.
-
-Security Monitoring
------------------- [docutils][39;49;00m
-[91m/Users/josh/src/github.com/honeyhiveai/python-sdk/docs/reference/configuration/config-options.rst:25: WARNING: Title underline too short.
-
-Authentication
-~~~~~~~~~~~~~ [docutils][39;49;00m
-[91m/Users/josh/src/github.com/honeyhiveai/python-sdk/docs/reference/configuration/config-options.rst:59: WARNING: Title underline too short.
-
-Project Configuration
-~~~~~~~~~~~~~~~~~~~~ [docutils][39;49;00m
-[91m/Users/josh/src/github.com/honeyhiveai/python-sdk/docs/reference/configuration/config-options.rst:59: WARNING: Title underline too short.
-
-Project Configuration
-~~~~~~~~~~~~~~~~~~~~ [docutils][39;49;00m
-[91m/Users/josh/src/github.com/honeyhiveai/python-sdk/docs/reference/configuration/config-options.rst:107: WARNING: Title underline too short.
-
-Operational Mode
-~~~~~~~~~~~~~~~ [docutils][39;49;00m
-[91m/Users/josh/src/github.com/honeyhiveai/python-sdk/docs/reference/configuration/config-options.rst:107: WARNING: Title underline too short.
-
-Operational Mode
-~~~~~~~~~~~~~~~ [docutils][39;49;00m
-[91m/Users/josh/src/github.com/honeyhiveai/python-sdk/docs/reference/configuration/config-options.rst:144: WARNING: Title underline too short.
-
-HTTP Configuration
-~~~~~~~~~~~~~~~~~ [docutils][39;49;00m
-[91m/Users/josh/src/github.com/honeyhiveai/python-sdk/docs/reference/configuration/config-options.rst:215: WARNING: Title underline too short.
-
-Tracing Configuration
-~~~~~~~~~~~~~~~~~~~~ [docutils][39;49;00m
-[91m/Users/josh/src/github.com/honeyhiveai/python-sdk/docs/reference/configuration/config-options.rst:215: WARNING: Title underline too short.
-
-Tracing Configuration
-~~~~~~~~~~~~~~~~~~~~ [docutils][39;49;00m
-[91m/Users/josh/src/github.com/honeyhiveai/python-sdk/docs/reference/configuration/config-options.rst:277: WARNING: Title underline too short.
-
-Evaluation Configuration
------------------------ [docutils][39;49;00m
-[91m/Users/josh/src/github.com/honeyhiveai/python-sdk/docs/reference/configuration/config-options.rst:277: WARNING: Title underline too short.
-
-Evaluation Configuration
------------------------ [docutils][39;49;00m
-[91m/Users/josh/src/github.com/honeyhiveai/python-sdk/docs/reference/configuration/config-options.rst:280: WARNING: Title underline too short.
-
-Evaluation Settings
-~~~~~~~~~~~~~~~~~~ [docutils][39;49;00m
-[91m/Users/josh/src/github.com/honeyhiveai/python-sdk/docs/reference/configuration/config-options.rst:331: WARNING: Title underline too short.
-
-Default Evaluators
-~~~~~~~~~~~~~~~~~ [docutils][39;49;00m
-[91m/Users/josh/src/github.com/honeyhiveai/python-sdk/docs/reference/configuration/config-options.rst:331: WARNING: Title underline too short.
-
-Default Evaluators
-~~~~~~~~~~~~~~~~~ [docutils][39;49;00m
-[91m/Users/josh/src/github.com/honeyhiveai/python-sdk/docs/reference/configuration/config-options.rst:353: WARNING: Title underline too short.
-
-Logging Configuration
--------------------- [docutils][39;49;00m
-[91m/Users/josh/src/github.com/honeyhiveai/python-sdk/docs/reference/configuration/config-options.rst:353: WARNING: Title underline too short.
-
-Logging Configuration
--------------------- [docutils][39;49;00m
-[91m/Users/josh/src/github.com/honeyhiveai/python-sdk/docs/reference/configuration/config-options.rst:356: WARNING: Title underline too short.
-
-Log Settings
-~~~~~~~~~~~ [docutils][39;49;00m
-[91m/Users/josh/src/github.com/honeyhiveai/python-sdk/docs/reference/configuration/config-options.rst:449: WARNING: Title underline too short.
-
-SSL/TLS Configuration
-~~~~~~~~~~~~~~~~~~~~ [docutils][39;49;00m
-[91m/Users/josh/src/github.com/honeyhiveai/python-sdk/docs/reference/configuration/config-options.rst:449: WARNING: Title underline too short.
-
-SSL/TLS Configuration
-~~~~~~~~~~~~~~~~~~~~ [docutils][39;49;00m
-[91m/Users/josh/src/github.com/honeyhiveai/python-sdk/docs/reference/configuration/config-options.rst:479: WARNING: Title underline too short.
-
-Development Environment
-~~~~~~~~~~~~~~~~~~~~~~ [docutils][39;49;00m
-[91m/Users/josh/src/github.com/honeyhiveai/python-sdk/docs/reference/configuration/config-options.rst:501: WARNING: Title underline too short.
-
-Staging Environment
-~~~~~~~~~~~~~~~~~~ [docutils][39;49;00m
-[91m/Users/josh/src/github.com/honeyhiveai/python-sdk/docs/reference/configuration/config-options.rst:501: WARNING: Title underline too short.
-
-Staging Environment
-~~~~~~~~~~~~~~~~~~ [docutils][39;49;00m
-[91m/Users/josh/src/github.com/honeyhiveai/python-sdk/docs/reference/configuration/config-options.rst:523: WARNING: Title underline too short.
-
-Production Environment
-~~~~~~~~~~~~~~~~~~~~~ [docutils][39;49;00m
-[91m/Users/josh/src/github.com/honeyhiveai/python-sdk/docs/reference/configuration/config-options.rst:523: WARNING: Title underline too short.
-
-Production Environment
-~~~~~~~~~~~~~~~~~~~~~ [docutils][39;49;00m
-[91m/Users/josh/src/github.com/honeyhiveai/python-sdk/docs/reference/configuration/config-options.rst:553: WARNING: Title underline too short.
-
-Lambda/Serverless Environment
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~ [docutils][39;49;00m
-[91m/Users/josh/src/github.com/honeyhiveai/python-sdk/docs/reference/configuration/config-options.rst:553: WARNING: Title underline too short.
-
-Lambda/Serverless Environment
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~ [docutils][39;49;00m
-[91m/Users/josh/src/github.com/honeyhiveai/python-sdk/docs/reference/configuration/config-options.rst:577: WARNING: Title underline too short.
-
-YAML Configuration
-~~~~~~~~~~~~~~~~~ [docutils][39;49;00m
-[91m/Users/josh/src/github.com/honeyhiveai/python-sdk/docs/reference/configuration/config-options.rst:623: WARNING: Title underline too short.
-
-JSON Configuration
-~~~~~~~~~~~~~~~~~ [docutils][39;49;00m
-[91m/Users/josh/src/github.com/honeyhiveai/python-sdk/docs/reference/configuration/config-options.rst:623: WARNING: Title underline too short.
-
-JSON Configuration
-~~~~~~~~~~~~~~~~~ [docutils][39;49;00m
-[91m/Users/josh/src/github.com/honeyhiveai/python-sdk/docs/reference/configuration/config-options.rst:652: WARNING: Title underline too short.
-
-Configuration Loading
--------------------- [docutils][39;49;00m
-[91m/Users/josh/src/github.com/honeyhiveai/python-sdk/docs/reference/configuration/config-options.rst:652: WARNING: Title underline too short.
-
-Configuration Loading
--------------------- [docutils][39;49;00m
-[91m/Users/josh/src/github.com/honeyhiveai/python-sdk/docs/reference/configuration/environment-vars.rst:12: WARNING: Title underline too short.
-
-Core Configuration Variables
---------------------------- [docutils][39;49;00m
-[91m/Users/josh/src/github.com/honeyhiveai/python-sdk/docs/reference/configuration/environment-vars.rst:15: WARNING: Title underline too short.
-
-Authentication
-~~~~~~~~~~~~~ [docutils][39;49;00m
-[91m/Users/josh/src/github.com/honeyhiveai/python-sdk/docs/reference/configuration/environment-vars.rst:43: WARNING: Title underline too short.
-
-Project Configuration
-~~~~~~~~~~~~~~~~~~~~ [docutils][39;49;00m
-[91m/Users/josh/src/github.com/honeyhiveai/python-sdk/docs/reference/configuration/environment-vars.rst:43: WARNING: Title underline too short.
-
-Project Configuration
-~~~~~~~~~~~~~~~~~~~~ [docutils][39;49;00m
-[91m/Users/josh/src/github.com/honeyhiveai/python-sdk/docs/reference/configuration/environment-vars.rst:77: WARNING: Title underline too short.
-
-Network Configuration
-~~~~~~~~~~~~~~~~~~~~ [docutils][39;49;00m
-[91m/Users/josh/src/github.com/honeyhiveai/python-sdk/docs/reference/configuration/environment-vars.rst:77: WARNING: Title underline too short.
-
-Network Configuration
-~~~~~~~~~~~~~~~~~~~~ [docutils][39;49;00m
-[91m/Users/josh/src/github.com/honeyhiveai/python-sdk/docs/reference/configuration/environment-vars.rst:113: WARNING: Title underline too short.
-
-Testing and Development
-~~~~~~~~~~~~~~~~~~~~~~ [docutils][39;49;00m
-[91m/Users/josh/src/github.com/honeyhiveai/python-sdk/docs/reference/configuration/environment-vars.rst:113: WARNING: Title underline too short.
-
-Testing and Development
-~~~~~~~~~~~~~~~~~~~~~~ [docutils][39;49;00m
-[91m/Users/josh/src/github.com/honeyhiveai/python-sdk/docs/reference/configuration/environment-vars.rst:184: WARNING: Title underline too short.
-
-Connection Pooling
-~~~~~~~~~~~~~~~~~ [docutils][39;49;00m
-[91m/Users/josh/src/github.com/honeyhiveai/python-sdk/docs/reference/configuration/environment-vars.rst:184: WARNING: Title underline too short.
-
-Connection Pooling
-~~~~~~~~~~~~~~~~~ [docutils][39;49;00m
-[91m/Users/josh/src/github.com/honeyhiveai/python-sdk/docs/reference/configuration/environment-vars.rst:213: WARNING: Title underline too short.
-
-Tracing Configuration
--------------------- [docutils][39;49;00m
-[91m/Users/josh/src/github.com/honeyhiveai/python-sdk/docs/reference/configuration/environment-vars.rst:213: WARNING: Title underline too short.
-
-Tracing Configuration
--------------------- [docutils][39;49;00m
-[91m/Users/josh/src/github.com/honeyhiveai/python-sdk/docs/reference/configuration/environment-vars.rst:216: WARNING: Title underline too short.
-
-Instrumentation Control
-~~~~~~~~~~~~~~~~~~~~~~ [docutils][39;49;00m
-[91m/Users/josh/src/github.com/honeyhiveai/python-sdk/docs/reference/configuration/environment-vars.rst:254: WARNING: Title underline too short.
-
-Sampling Configuration
-~~~~~~~~~~~~~~~~~~~~~ [docutils][39;49;00m
-[91m/Users/josh/src/github.com/honeyhiveai/python-sdk/docs/reference/configuration/environment-vars.rst:254: WARNING: Title underline too short.
-
-Sampling Configuration
-~~~~~~~~~~~~~~~~~~~~~ [docutils][39;49;00m
-[91m/Users/josh/src/github.com/honeyhiveai/python-sdk/docs/reference/configuration/environment-vars.rst:287: WARNING: Title underline too short.
-
-Security Configuration
---------------------- [docutils][39;49;00m
-[91m/Users/josh/src/github.com/honeyhiveai/python-sdk/docs/reference/configuration/environment-vars.rst:287: WARNING: Title underline too short.
-
-Security Configuration
---------------------- [docutils][39;49;00m
-[91m/Users/josh/src/github.com/honeyhiveai/python-sdk/docs/reference/configuration/environment-vars.rst:290: WARNING: Title underline too short.
-
-SSL/TLS Settings
-~~~~~~~~~~~~~~~ [docutils][39;49;00m
-[91m/Users/josh/src/github.com/honeyhiveai/python-sdk/docs/reference/configuration/environment-vars.rst:322: WARNING: Title underline too short.
-
-Proxy Configuration
-~~~~~~~~~~~~~~~~~~ [docutils][39;49;00m
-[91m/Users/josh/src/github.com/honeyhiveai/python-sdk/docs/reference/configuration/environment-vars.rst:322: WARNING: Title underline too short.
-
-Proxy Configuration
-~~~~~~~~~~~~~~~~~~ [docutils][39;49;00m
-[91m/Users/josh/src/github.com/honeyhiveai/python-sdk/docs/reference/configuration/environment-vars.rst:351: WARNING: Title underline too short.
-
-Data Privacy
-~~~~~~~~~~~ [docutils][39;49;00m
-[91m/Users/josh/src/github.com/honeyhiveai/python-sdk/docs/reference/configuration/environment-vars.rst:351: WARNING: Title underline too short.
-
-Data Privacy
-~~~~~~~~~~~ [docutils][39;49;00m
-[91m/Users/josh/src/github.com/honeyhiveai/python-sdk/docs/reference/configuration/environment-vars.rst:380: WARNING: Title underline too short.
-
-Evaluation Configuration
------------------------ [docutils][39;49;00m
-[91m/Users/josh/src/github.com/honeyhiveai/python-sdk/docs/reference/configuration/environment-vars.rst:380: WARNING: Title underline too short.
-
-Evaluation Configuration
------------------------ [docutils][39;49;00m
-[91m/Users/josh/src/github.com/honeyhiveai/python-sdk/docs/reference/configuration/environment-vars.rst:383: WARNING: Title underline too short.
-
-Evaluator Settings
-~~~~~~~~~~~~~~~~~ [docutils][39;49;00m
-[91m/Users/josh/src/github.com/honeyhiveai/python-sdk/docs/reference/configuration/environment-vars.rst:412: WARNING: Title underline too short.
-
-Provider-Specific Variables
--------------------------- [docutils][39;49;00m
-[91m/Users/josh/src/github.com/honeyhiveai/python-sdk/docs/reference/configuration/environment-vars.rst:412: WARNING: Title underline too short.
-
-Provider-Specific Variables
--------------------------- [docutils][39;49;00m
-[91m/Users/josh/src/github.com/honeyhiveai/python-sdk/docs/reference/configuration/environment-vars.rst:415: WARNING: Title underline too short.
-
-OpenAI Configuration
-~~~~~~~~~~~~~~~~~~~ [docutils][39;49;00m
-[91m/Users/josh/src/github.com/honeyhiveai/python-sdk/docs/reference/configuration/environment-vars.rst:443: WARNING: Title underline too short.
-
-Anthropic Configuration
-~~~~~~~~~~~~~~~~~~~~~~ [docutils][39;49;00m
-[91m/Users/josh/src/github.com/honeyhiveai/python-sdk/docs/reference/configuration/environment-vars.rst:443: WARNING: Title underline too short.
-
-Anthropic Configuration
-~~~~~~~~~~~~~~~~~~~~~~ [docutils][39;49;00m
-[91m/Users/josh/src/github.com/honeyhiveai/python-sdk/docs/reference/configuration/environment-vars.rst:467: WARNING: Title underline too short.
-
-Environment-Specific Configurations
----------------------------------- [docutils][39;49;00m
-[91m/Users/josh/src/github.com/honeyhiveai/python-sdk/docs/reference/configuration/environment-vars.rst:467: WARNING: Title underline too short.
-
-Environment-Specific Configurations
----------------------------------- [docutils][39;49;00m
-[91m/Users/josh/src/github.com/honeyhiveai/python-sdk/docs/reference/configuration/environment-vars.rst:470: WARNING: Title underline too short.
-
-Development Environment
-~~~~~~~~~~~~~~~~~~~~~~ [docutils][39;49;00m
-[91m/Users/josh/src/github.com/honeyhiveai/python-sdk/docs/reference/configuration/environment-vars.rst:488: WARNING: Title underline too short.
-
-Staging Environment
-~~~~~~~~~~~~~~~~~~ [docutils][39;49;00m
-[91m/Users/josh/src/github.com/honeyhiveai/python-sdk/docs/reference/configuration/environment-vars.rst:488: WARNING: Title underline too short.
-
-Staging Environment
-~~~~~~~~~~~~~~~~~~ [docutils][39;49;00m
-[91m/Users/josh/src/github.com/honeyhiveai/python-sdk/docs/reference/configuration/environment-vars.rst:505: WARNING: Title underline too short.
-
-Production Environment
-~~~~~~~~~~~~~~~~~~~~~ [docutils][39;49;00m
-[91m/Users/josh/src/github.com/honeyhiveai/python-sdk/docs/reference/configuration/environment-vars.rst:505: WARNING: Title underline too short.
-
-Production Environment
-~~~~~~~~~~~~~~~~~~~~~ [docutils][39;49;00m
-[91m/Users/josh/src/github.com/honeyhiveai/python-sdk/docs/reference/configuration/environment-vars.rst:526: WARNING: Title underline too short.
-
-Container Deployment
-------------------- [docutils][39;49;00m
-[91m/Users/josh/src/github.com/honeyhiveai/python-sdk/docs/reference/configuration/environment-vars.rst:526: WARNING: Title underline too short.
-
-Container Deployment
-------------------- [docutils][39;49;00m
-[91m/Users/josh/src/github.com/honeyhiveai/python-sdk/docs/reference/configuration/environment-vars.rst:529: WARNING: Title underline too short.
-
-Docker Configuration
-~~~~~~~~~~~~~~~~~~~ [docutils][39;49;00m
-[91m/Users/josh/src/github.com/honeyhiveai/python-sdk/docs/reference/configuration/environment-vars.rst:571: WARNING: Title underline too short.
-
-Kubernetes Configuration
-~~~~~~~~~~~~~~~~~~~~~~~ [docutils][39;49;00m
-[91m/Users/josh/src/github.com/honeyhiveai/python-sdk/docs/reference/configuration/environment-vars.rst:571: WARNING: Title underline too short.
-
-Kubernetes Configuration
-~~~~~~~~~~~~~~~~~~~~~~~ [docutils][39;49;00m
-[91m/Users/josh/src/github.com/honeyhiveai/python-sdk/docs/reference/configuration/environment-vars.rst:622: WARNING: Title underline too short.
-
-Environment Variable Validation
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ [docutils][39;49;00m
-[91m/Users/josh/src/github.com/honeyhiveai/python-sdk/docs/reference/configuration/environment-vars.rst:670: WARNING: Title underline too short.
-
-Configuration Loading Patterns
------------------------------ [docutils][39;49;00m
-[91m/Users/josh/src/github.com/honeyhiveai/python-sdk/docs/reference/configuration/environment-vars.rst:670: WARNING: Title underline too short.
-
-Configuration Loading Patterns
------------------------------ [docutils][39;49;00m
-[91m/Users/josh/src/github.com/honeyhiveai/python-sdk/docs/reference/configuration/environment-vars.rst:673: WARNING: Title underline too short.
-
-Hierarchical Configuration
-~~~~~~~~~~~~~~~~~~~~~~~~~ [docutils][39;49;00m
-[91m/Users/josh/src/github.com/honeyhiveai/python-sdk/docs/reference/configuration/environment-vars.rst:749: WARNING: Title underline too short.
-
-Configuration Factory
-~~~~~~~~~~~~~~~~~~~~ [docutils][39;49;00m
-[91m/Users/josh/src/github.com/honeyhiveai/python-sdk/docs/reference/configuration/environment-vars.rst:749: WARNING: Title underline too short.
-
-Configuration Factory
-~~~~~~~~~~~~~~~~~~~~ [docutils][39;49;00m
-[91m/Users/josh/src/github.com/honeyhiveai/python-sdk/docs/reference/configuration/environment-vars.rst:783: WARNING: Title underline too short.
-
-Troubleshooting Configuration
----------------------------- [docutils][39;49;00m
-[91m/Users/josh/src/github.com/honeyhiveai/python-sdk/docs/reference/configuration/environment-vars.rst:783: WARNING: Title underline too short.
-
-Troubleshooting Configuration
----------------------------- [docutils][39;49;00m
-[91m/Users/josh/src/github.com/honeyhiveai/python-sdk/docs/reference/configuration/environment-vars.rst:786: WARNING: Title underline too short.
-
-Common Issues
-~~~~~~~~~~~~ [docutils][39;49;00m
-[91m/Users/josh/src/github.com/honeyhiveai/python-sdk/docs/reference/data-models/evaluations.rst:485: WARNING: Title underline too short.
-
-Multi-Evaluator Results
----------------------- [docutils][39;49;00m
-[91m/Users/josh/src/github.com/honeyhiveai/python-sdk/docs/reference/data-models/evaluations.rst:485: WARNING: Title underline too short.
-
-Multi-Evaluator Results
----------------------- [docutils][39;49;00m
-[91m/Users/josh/src/github.com/honeyhiveai/python-sdk/docs/reference/data-models/evaluations.rst:602: WARNING: Title underline too short.
-
-Evaluation Configuration
------------------------ [docutils][39;49;00m
-[91m/Users/josh/src/github.com/honeyhiveai/python-sdk/docs/reference/data-models/evaluations.rst:602: WARNING: Title underline too short.
-
-Evaluation Configuration
------------------------ [docutils][39;49;00m
-[91m/Users/josh/src/github.com/honeyhiveai/python-sdk/docs/reference/data-models/evaluations.rst:659: WARNING: Title underline too short.
-
-Evaluation Metrics
------------------ [docutils][39;49;00m
-[91m/Users/josh/src/github.com/honeyhiveai/python-sdk/docs/reference/data-models/evaluations.rst:659: WARNING: Title underline too short.
-
-Evaluation Metrics
------------------ [docutils][39;49;00m
-[91m/Users/josh/src/github.com/honeyhiveai/python-sdk/docs/reference/data-models/evaluations.rst:797: WARNING: Title underline too short.
-
-Best Practices
-------------- [docutils][39;49;00m
-[91m/Users/josh/src/github.com/honeyhiveai/python-sdk/docs/reference/data-models/evaluations.rst:797: WARNING: Title underline too short.
-
-Best Practices
-------------- [docutils][39;49;00m
-[91m/Users/josh/src/github.com/honeyhiveai/python-sdk/docs/reference/data-models/events.rst:12: WARNING: Title underline too short.
-
-Core Event Model
---------------- [docutils][39;49;00m
-[91m/Users/josh/src/github.com/honeyhiveai/python-sdk/docs/reference/data-models/events.rst:258: WARNING: Title underline too short.
-
-LLM Event Model
--------------- [docutils][39;49;00m
-[91m/Users/josh/src/github.com/honeyhiveai/python-sdk/docs/reference/data-models/events.rst:258: WARNING: Title underline too short.
-
-LLM Event Model
--------------- [docutils][39;49;00m
-[91m/Users/josh/src/github.com/honeyhiveai/python-sdk/docs/reference/data-models/events.rst:370: WARNING: Title underline too short.
-
-Tool Event Model
---------------- [docutils][39;49;00m
-[91m/Users/josh/src/github.com/honeyhiveai/python-sdk/docs/reference/data-models/events.rst:370: WARNING: Title underline too short.
-
-Tool Event Model
---------------- [docutils][39;49;00m
-[91m/Users/josh/src/github.com/honeyhiveai/python-sdk/docs/reference/data-models/events.rst:437: WARNING: Title underline too short.
-
-Evaluation Event Model
---------------------- [docutils][39;49;00m
-[91m/Users/josh/src/github.com/honeyhiveai/python-sdk/docs/reference/data-models/events.rst:437: WARNING: Title underline too short.
-
-Evaluation Event Model
---------------------- [docutils][39;49;00m
-[91m/Users/josh/src/github.com/honeyhiveai/python-sdk/docs/reference/data-models/events.rst:515: WARNING: Title underline too short.
-
-Event Serialization
------------------- [docutils][39;49;00m
-[91m/Users/josh/src/github.com/honeyhiveai/python-sdk/docs/reference/data-models/events.rst:515: WARNING: Title underline too short.
-
-Event Serialization
------------------- [docutils][39;49;00m
-[91m/Users/josh/src/github.com/honeyhiveai/python-sdk/docs/reference/data-models/events.rst:590: WARNING: Title underline too short.
-
-Common Patterns
--------------- [docutils][39;49;00m
-[91m/Users/josh/src/github.com/honeyhiveai/python-sdk/docs/reference/data-models/events.rst:590: WARNING: Title underline too short.
-
-Common Patterns
--------------- [docutils][39;49;00m
-[91m/Users/josh/src/github.com/honeyhiveai/python-sdk/docs/reference/data-models/events.rst:664: WARNING: Title underline too short.
-
-Best Practices
-------------- [docutils][39;49;00m
-[91m/Users/josh/src/github.com/honeyhiveai/python-sdk/docs/reference/data-models/events.rst:664: WARNING: Title underline too short.
-
-Best Practices
-------------- [docutils][39;49;00m
-[91m/Users/josh/src/github.com/honeyhiveai/python-sdk/docs/reference/data-models/spans.rst:316: WARNING: Title underline too short.
-
-HoneyHive Span Extensions
------------------------- [docutils][39;49;00m
-[91m/Users/josh/src/github.com/honeyhiveai/python-sdk/docs/reference/data-models/spans.rst:316: WARNING: Title underline too short.
-
-HoneyHive Span Extensions
------------------------- [docutils][39;49;00m
-[91m/Users/josh/src/github.com/honeyhiveai/python-sdk/docs/reference/data-models/spans.rst:410: WARNING: Title underline too short.
-
-Span Context Model
------------------ [docutils][39;49;00m
-[91m/Users/josh/src/github.com/honeyhiveai/python-sdk/docs/reference/data-models/spans.rst:410: WARNING: Title underline too short.
-
-Span Context Model
------------------ [docutils][39;49;00m
-[91m/Users/josh/src/github.com/honeyhiveai/python-sdk/docs/reference/data-models/spans.rst:457: WARNING: Title underline too short.
-
-Complete Span Example
--------------------- [docutils][39;49;00m
-[91m/Users/josh/src/github.com/honeyhiveai/python-sdk/docs/reference/data-models/spans.rst:457: WARNING: Title underline too short.
-
-Complete Span Example
--------------------- [docutils][39;49;00m
-[91m/Users/josh/src/github.com/honeyhiveai/python-sdk/docs/reference/data-models/spans.rst:525: WARNING: Title underline too short.
-
-Trace Hierarchy Example
----------------------- [docutils][39;49;00m
-[91m/Users/josh/src/github.com/honeyhiveai/python-sdk/docs/reference/data-models/spans.rst:525: WARNING: Title underline too short.
-
-Trace Hierarchy Example
----------------------- [docutils][39;49;00m
-[91m/Users/josh/src/github.com/honeyhiveai/python-sdk/docs/reference/data-models/spans.rst:596: WARNING: Title underline too short.
-
-Span Export Format
------------------ [docutils][39;49;00m
-[91m/Users/josh/src/github.com/honeyhiveai/python-sdk/docs/reference/data-models/spans.rst:596: WARNING: Title underline too short.
-
-Span Export Format
------------------ [docutils][39;49;00m
-[91m/Users/josh/src/github.com/honeyhiveai/python-sdk/docs/reference/data-models/spans.rst:658: WARNING: Title underline too short.
-
-Best Practices
-------------- [docutils][39;49;00m
-[91m/Users/josh/src/github.com/honeyhiveai/python-sdk/docs/reference/data-models/spans.rst:658: WARNING: Title underline too short.
-
-Best Practices
-------------- [docutils][39;49;00m
-[91m/Users/josh/src/github.com/honeyhiveai/python-sdk/docs/reference/evaluation/evaluators.rst:803: WARNING: Title underline too short.
-
-With Manual Evaluation
-~~~~~~~~~~~~~~~~~~~~~ [docutils][39;49;00m
-[91m/Users/josh/src/github.com/honeyhiveai/python-sdk/docs/reference/evaluation/evaluators.rst:803: WARNING: Title underline too short.
-
-With Manual Evaluation
-~~~~~~~~~~~~~~~~~~~~~ [docutils][39;49;00m
-[31m/Users/josh/src/github.com/honeyhiveai/python-sdk/docs/tutorials/05-dashboard-tour.rst:206: ERROR: Unexpected indentation. [docutils][39;49;00m
-[91m/Users/josh/src/github.com/honeyhiveai/python-sdk/docs/tutorials/05-dashboard-tour.rst:209: WARNING: Definition list ends without a blank line; unexpected unindent. [docutils][39;49;00m
-[31m/Users/josh/src/github.com/honeyhiveai/python-sdk/docs/tutorials/05-dashboard-tour.rst:211: ERROR: Unexpected indentation. [docutils][39;49;00m
-[91m/Users/josh/src/github.com/honeyhiveai/python-sdk/docs/tutorials/05-dashboard-tour.rst:213: WARNING: Block quote ends without a blank line; unexpected unindent. [docutils][39;49;00m
-[31m/Users/josh/src/github.com/honeyhiveai/python-sdk/docs/tutorials/05-dashboard-tour.rst:215: ERROR: Unexpected indentation. [docutils][39;49;00m
-[91m/Users/josh/src/github.com/honeyhiveai/python-sdk/docs/tutorials/05-dashboard-tour.rst:217: WARNING: Block quote ends without a blank line; unexpected unindent. [docutils][39;49;00m
-[91m/Users/josh/src/github.com/honeyhiveai/python-sdk/docs/tutorials/05-dashboard-tour.rst:218: WARNING: Block quote ends without a blank line; unexpected unindent. [docutils][39;49;00m
-[31m/Users/josh/src/github.com/honeyhiveai/python-sdk/docs/tutorials/05-dashboard-tour.rst:221: ERROR: Unexpected indentation. [docutils][39;49;00m
-[91m/Users/josh/src/github.com/honeyhiveai/python-sdk/docs/tutorials/05-dashboard-tour.rst:223: WARNING: Block quote ends without a blank line; unexpected unindent. [docutils][39;49;00m
-[91m/Users/josh/src/github.com/honeyhiveai/python-sdk/docs/tutorials/05-dashboard-tour.rst:224: WARNING: Definition list ends without a blank line; unexpected unindent. [docutils][39;49;00m
-[31m/Users/josh/src/github.com/honeyhiveai/python-sdk/docs/tutorials/05-dashboard-tour.rst:317: ERROR: Unexpected indentation. [docutils][39;49;00m
-[91m/Users/josh/src/github.com/honeyhiveai/python-sdk/docs/tutorials/05-dashboard-tour.rst:319: WARNING: Block quote ends without a blank line; unexpected unindent. [docutils][39;49;00m
-[91m/Users/josh/src/github.com/honeyhiveai/python-sdk/docs/tutorials/05-dashboard-tour.rst:320: WARNING: Definition list ends without a blank line; unexpected unindent. [docutils][39;49;00m
-[91m/Users/josh/src/github.com/honeyhiveai/python-sdk/docs/explanation/architecture/overview.rst:161: WARNING: unknown document: 'multi-instance' [ref.doc][39;49;00m
-[91m/Users/josh/src/github.com/honeyhiveai/python-sdk/docs/explanation/architecture/overview.rst:162: WARNING: unknown document: 'opentelemetry' [ref.doc][39;49;00m
-[91m/Users/josh/src/github.com/honeyhiveai/python-sdk/docs/explanation/concepts/llm-observability.rst:580: WARNING: unknown document: '../../how-to/monitoring/performance' [ref.doc][39;49;00m
-[91m/Users/josh/src/github.com/honeyhiveai/python-sdk/docs/explanation/concepts/tracing-fundamentals.rst:38: WARNING: Lexing literal_block '# Example trace hierarchy\ncustomer_support_request  # Root span\n├── validate_input       # Child span\n├── classify_query       # Child span\n├── llm_completion      # Child span\n│   ├── prompt_preparation\n│   └── api_call\n└── format_response     # Child span' as "python" resulted in an error at token: '├'. Retrying in relaxed mode. [misc.highlighting_failure][39;49;00m
-[91m/Users/josh/src/github.com/honeyhiveai/python-sdk/docs/reference/api/decorators.rst:1403: WARNING: unknown document: '../../how-to/advanced-tracing/decorators' [ref.doc][39;49;00m
-[91m/Users/josh/src/github.com/honeyhiveai/python-sdk/docs/reference/api/tracer.rst:1066: WARNING: unknown document: '../decorators' [ref.doc][39;49;00m
-[91m/Users/josh/src/github.com/honeyhiveai/python-sdk/docs/reference/api/tracer.rst:1067: WARNING: unknown document: '../client' [ref.doc][39;49;00m
-[91m/Users/josh/src/github.com/honeyhiveai/python-sdk/docs/reference/api/tracer.rst:1072: WARNING: unknown document: '../../explanation/architecture/multi-instance' [ref.doc][39;49;00m
-[91m/Users/josh/src/github.com/honeyhiveai/python-sdk/docs/reference/cli/commands.rst:1232: WARNING: unknown document: '../../how-to/ci-cd-integration' [ref.doc][39;49;00m
-[91m/Users/josh/src/github.com/honeyhiveai/python-sdk/docs/reference/cli/index.rst:1240: WARNING: unknown document: '../../explanation/concepts/evaluation-theory' [ref.doc][39;49;00m
-[91m/Users/josh/src/github.com/honeyhiveai/python-sdk/docs/reference/evaluation/evaluators.rst:1152: WARNING: unknown document: '../../how-to/evaluation/custom-evaluators' [ref.doc][39;49;00m
-[91m/Users/josh/src/github.com/honeyhiveai/python-sdk/docs/reference/evaluation/evaluators.rst:1153: WARNING: unknown document: '../../explanation/concepts/evaluation-theory' [ref.doc][39;49;00m
+.pkg: _optional_hooks> python /Users/josh/.pyenv/versions/3.12.9/lib/python3.12/site-packages/pyproject_api/_backend.py True hatchling.build
+.pkg: get_requires_for_build_sdist> python /Users/josh/.pyenv/versions/3.12.9/lib/python3.12/site-packages/pyproject_api/_backend.py True hatchling.build
+.pkg: build_sdist> python /Users/josh/.pyenv/versions/3.12.9/lib/python3.12/site-packages/pyproject_api/_backend.py True hatchling.build
+docs: install_package> python -I -m pip install --force-reinstall --no-deps /Users/josh/src/github.com/honeyhiveai/python-sdk/.tox/.tmp/package/564/honeyhive-1.0.0rc3.tar.gz
+docs: commands[0]> python -c 'import shutil; import os; path='"'"'docs/_build'"'"'; shutil.rmtree(path) if os.path.exists(path) else None'
+docs: commands[1]> sphinx-build -W -b html docs docs/_build/html
+Running Sphinx v8.2.3
+loading translations [en]... done
+making output directory... done
+Converting `source_suffix = '.rst'` to `source_suffix = {'.rst': 'restructuredtext'}`.
+loading intersphinx inventory 'python' from https://docs.python.org/3/objects.inv ...
+loading intersphinx inventory 'opentelemetry' from https://opentelemetry-python.readthedocs.io/en/latest/objects.inv ...
+loading intersphinx inventory 'pydantic' from https://docs.pydantic.dev/latest/objects.inv ...
+building [mo]: targets for 0 po files that are out of date
+writing output... 
+building [html]: targets for 98 source files that are out of date
+updating environment: [new config] 98 added, 0 changed, 0 removed
+reading sources... [  1%] changelog
+reading sources... [  2%] development/agent-os-mcp-server
+reading sources... [  3%] development/index
+reading sources... [  4%] development/post-mortems/2025-09-05-proxy-tracer-provider-bug
+reading sources... [  5%] development/release-process
+reading sources... [  6%] development/testing/ci-cd-integration
+reading sources... [  7%] development/testing/integration-testing
+reading sources... [  8%] development/testing/integration-testing-strategy
+reading sources... [  9%] development/testing/lambda-testing
+reading sources... [ 10%] development/testing/mocking-strategies
+reading sources... [ 11%] development/testing/performance-testing
+reading sources... [ 12%] development/testing/setup-and-commands
+reading sources... [ 13%] development/testing/troubleshooting-tests
+reading sources... [ 14%] development/testing/unit-testing
+reading sources... [ 15%] development/workflow-optimization
+reading sources... [ 16%] explanation/architecture/byoi-design
+reading sources... [ 17%] explanation/architecture/diagrams
+reading sources... [ 18%] explanation/architecture/overview
+reading sources... [ 19%] explanation/concepts/experiments-architecture
+reading sources... [ 20%] explanation/concepts/llm-observability
+reading sources... [ 21%] explanation/concepts/tracing-fundamentals
+reading sources... [ 22%] explanation/index
+reading sources... [ 23%] how-to/advanced-tracing/advanced-patterns
+reading sources... [ 24%] how-to/advanced-tracing/class-decorators
+reading sources... [ 26%] how-to/advanced-tracing/custom-spans
+reading sources... [ 27%] how-to/advanced-tracing/index
+reading sources... [ 28%] how-to/advanced-tracing/session-enrichment
+reading sources... [ 29%] how-to/advanced-tracing/span-enrichment
+reading sources... [ 30%] how-to/advanced-tracing/tracer-auto-discovery
+reading sources... [ 31%] how-to/deployment/production
+reading sources... [ 32%] how-to/deployment/pyproject-integration
+reading sources... [ 33%] how-to/deployment/tracer-initialization-patterns
+reading sources... [ 34%] how-to/evaluation/best-practices
+reading sources... [ 35%] how-to/evaluation/comparing-experiments
+reading sources... [ 36%] how-to/evaluation/creating-evaluators
+reading sources... [ 37%] how-to/evaluation/dataset-crud
+reading sources... [ 38%] how-to/evaluation/dataset-management
+reading sources... [ 39%] how-to/evaluation/index
+reading sources... [ 40%] how-to/evaluation/multi-step-experiments
+reading sources... [ 41%] how-to/evaluation/result-analysis
+reading sources... [ 42%] how-to/evaluation/running-experiments
+reading sources... [ 43%] how-to/evaluation/server-side-evaluators
+reading sources... [ 44%] how-to/evaluation/troubleshooting
+reading sources... [ 45%] how-to/index
+reading sources... [ 46%] how-to/integrations/anthropic
+reading sources... [ 47%] how-to/integrations/azure-openai
+reading sources... [ 48%] how-to/integrations/bedrock
+reading sources... [ 49%] how-to/integrations/google-adk
+reading sources... [ 50%] how-to/integrations/google-ai
+reading sources... [ 51%] how-to/integrations/mcp
+reading sources... [ 52%] how-to/integrations/multi-provider
+reading sources... [ 53%] how-to/integrations/non-instrumentor-frameworks
+reading sources... [ 54%] how-to/integrations/openai
+reading sources... [ 55%] how-to/integrations/strands
+reading sources... [ 56%] how-to/llm-application-patterns
+reading sources... [ 57%] how-to/migration-compatibility/backwards-compatibility-guide
+reading sources... [ 58%] how-to/migration-compatibility/migration-guide
+reading sources... [ 59%] how-to/monitoring/export-traces
+reading sources... [ 60%] how-to/testing-applications
+reading sources... [ 61%] index
+reading sources... [ 62%] reference/api/client
+reading sources... [ 63%] reference/api/client-apis
+reading sources... [ 64%] reference/api/config-models
+reading sources... [ 65%] reference/api/decorators
+reading sources... [ 66%] reference/api/errors
+reading sources... [ 67%] reference/api/evaluators-complete
+reading sources... [ 68%] reference/api/models-complete
+reading sources... [ 69%] reference/api/tracer
+reading sources... [ 70%] reference/api/tracer-architecture
+reading sources... [ 71%] reference/api/tracer-internals
+reading sources... [ 72%] reference/api/utilities
+reading sources... [ 73%] reference/cli/commands
+reading sources... [ 74%] reference/cli/index
+reading sources... [ 76%] reference/cli/options
+reading sources... [ 77%] reference/configuration/authentication
+reading sources... [ 78%] reference/configuration/config-options
+reading sources... [ 79%] reference/configuration/environment-vars
+reading sources... [ 80%] reference/configuration/hybrid-config-approach
+reading sources... [ 81%] reference/data-models/evaluations
+reading sources... [ 82%] reference/data-models/events
+reading sources... [ 83%] reference/data-models/spans
+reading sources... [ 84%] reference/evaluation/deprecation-notice
+reading sources... [ 85%] reference/evaluation/evaluators
+reading sources... [ 86%] reference/experiments/core-functions
+reading sources... [ 87%] reference/experiments/evaluators
+reading sources... [ 88%] reference/experiments/experiments
+reading sources... [ 89%] reference/experiments/models
+reading sources... [ 90%] reference/experiments/results
+reading sources... [ 91%] reference/experiments/utilities
+reading sources... [ 92%] reference/index
+reading sources... [ 93%] tutorials/01-setup-first-tracer
+reading sources... [ 94%] tutorials/02-add-llm-tracing-5min
+reading sources... [ 95%] tutorials/03-enable-span-enrichment
+reading sources... [ 96%] tutorials/04-configure-multi-instance
+reading sources... [ 97%] tutorials/05-run-first-experiment
+reading sources... [ 98%] tutorials/06-distributed-tracing
+reading sources... [ 99%] tutorials/advanced-configuration
+reading sources... [100%] tutorials/index
+
+looking for now-outdated files... none found
+pickling environment... done
+checking consistency... /Users/josh/src/github.com/honeyhiveai/python-sdk/docs/reference/experiments/core-functions.rst: document is referenced in multiple toctrees: ['reference/experiments/experiments', 'reference/index'], selecting: reference/index <- reference/experiments/core-functions
+/Users/josh/src/github.com/honeyhiveai/python-sdk/docs/reference/experiments/evaluators.rst: document is referenced in multiple toctrees: ['reference/experiments/experiments', 'reference/index'], selecting: reference/index <- reference/experiments/evaluators
+/Users/josh/src/github.com/honeyhiveai/python-sdk/docs/reference/experiments/models.rst: document is referenced in multiple toctrees: ['reference/experiments/experiments', 'reference/index'], selecting: reference/index <- reference/experiments/models
+/Users/josh/src/github.com/honeyhiveai/python-sdk/docs/reference/experiments/results.rst: document is referenced in multiple toctrees: ['reference/experiments/experiments', 'reference/index'], selecting: reference/index <- reference/experiments/results
+/Users/josh/src/github.com/honeyhiveai/python-sdk/docs/reference/experiments/utilities.rst: document is referenced in multiple toctrees: ['reference/experiments/experiments', 'reference/index'], selecting: reference/index <- reference/experiments/utilities
+done
+preparing documents... done
+copying assets... 
+copying static files... 
+Writing evaluated template result to /Users/josh/src/github.com/honeyhiveai/python-sdk/docs/_build/html/_static/basic.css
+Writing evaluated template result to /Users/josh/src/github.com/honeyhiveai/python-sdk/docs/_build/html/_static/language_data.js
+Writing evaluated template result to /Users/josh/src/github.com/honeyhiveai/python-sdk/docs/_build/html/_static/documentation_options.js
+Writing evaluated template result to /Users/josh/src/github.com/honeyhiveai/python-sdk/docs/_build/html/_static/js/versions.js
+copying static files: done
+copying extra files... 
+copying extra files: done
+copying assets: done
+writing output... [  1%] changelog
+writing output... [  2%] development/agent-os-mcp-server
+writing output... [  3%] development/index
+writing output... [  4%] development/post-mortems/2025-09-05-proxy-tracer-provider-bug
+writing output... [  5%] development/release-process
+writing output... [  6%] development/testing/ci-cd-integration
+writing output... [  7%] development/testing/integration-testing
+writing output... [  8%] development/testing/integration-testing-strategy
+writing output... [  9%] development/testing/lambda-testing
+writing output... [ 10%] development/testing/mocking-strategies
+writing output... [ 11%] development/testing/performance-testing
+writing output... [ 12%] development/testing/setup-and-commands
+writing output... [ 13%] development/testing/troubleshooting-tests
+writing output... [ 14%] development/testing/unit-testing
+writing output... [ 15%] development/workflow-optimization
+writing output... [ 16%] explanation/architecture/byoi-design
+writing output... [ 17%] explanation/architecture/diagrams
+writing output... [ 18%] explanation/architecture/overview
+writing output... [ 19%] explanation/concepts/experiments-architecture
+writing output... [ 20%] explanation/concepts/llm-observability
+writing output... [ 21%] explanation/concepts/tracing-fundamentals
+writing output... [ 22%] explanation/index
+writing output... [ 23%] how-to/advanced-tracing/advanced-patterns
+writing output... [ 24%] how-to/advanced-tracing/class-decorators
+writing output... [ 26%] how-to/advanced-tracing/custom-spans
+writing output... [ 27%] how-to/advanced-tracing/index
+writing output... [ 28%] how-to/advanced-tracing/session-enrichment
+writing output... [ 29%] how-to/advanced-tracing/span-enrichment
+writing output... [ 30%] how-to/advanced-tracing/tracer-auto-discovery
+writing output... [ 31%] how-to/deployment/production
+writing output... [ 32%] how-to/deployment/pyproject-integration
+writing output... [ 33%] how-to/deployment/tracer-initialization-patterns
+writing output... [ 34%] how-to/evaluation/best-practices
+writing output... [ 35%] how-to/evaluation/comparing-experiments
+writing output... [ 36%] how-to/evaluation/creating-evaluators
+writing output... [ 37%] how-to/evaluation/dataset-crud
+writing output... [ 38%] how-to/evaluation/dataset-management
+writing output... [ 39%] how-to/evaluation/index
+writing output... [ 40%] how-to/evaluation/multi-step-experiments
+writing output... [ 41%] how-to/evaluation/result-analysis
+writing output... [ 42%] how-to/evaluation/running-experiments
+writing output... [ 43%] how-to/evaluation/server-side-evaluators
+writing output... [ 44%] how-to/evaluation/troubleshooting
+writing output... [ 45%] how-to/index
+writing output... [ 46%] how-to/integrations/anthropic
+writing output... [ 47%] how-to/integrations/azure-openai
+writing output... [ 48%] how-to/integrations/bedrock
+writing output... [ 49%] how-to/integrations/google-adk
+writing output... [ 50%] how-to/integrations/google-ai
+writing output... [ 51%] how-to/integrations/mcp
+writing output... [ 52%] how-to/integrations/multi-provider
+writing output... [ 53%] how-to/integrations/non-instrumentor-frameworks
+writing output... [ 54%] how-to/integrations/openai
+writing output... [ 55%] how-to/integrations/strands
+writing output... [ 56%] how-to/llm-application-patterns
+writing output... [ 57%] how-to/migration-compatibility/backwards-compatibility-guide
+writing output... [ 58%] how-to/migration-compatibility/migration-guide
+writing output... [ 59%] how-to/monitoring/export-traces
+writing output... [ 60%] how-to/testing-applications
+writing output... [ 61%] index
+writing output... [ 62%] reference/api/client
+writing output... [ 63%] reference/api/client-apis
+writing output... [ 64%] reference/api/config-models
+writing output... [ 65%] reference/api/decorators
+writing output... [ 66%] reference/api/errors
+writing output... [ 67%] reference/api/evaluators-complete
+writing output... [ 68%] reference/api/models-complete
+writing output... [ 69%] reference/api/tracer
+writing output... [ 70%] reference/api/tracer-architecture
+writing output... [ 71%] reference/api/tracer-internals
+writing output... [ 72%] reference/api/utilities
+writing output... [ 73%] reference/cli/commands
+writing output... [ 74%] reference/cli/index
+writing output... [ 76%] reference/cli/options
+writing output... [ 77%] reference/configuration/authentication
+writing output... [ 78%] reference/configuration/config-options
+writing output... [ 79%] reference/configuration/environment-vars
+writing output... [ 80%] reference/configuration/hybrid-config-approach
+writing output... [ 81%] reference/data-models/evaluations
+writing output... [ 82%] reference/data-models/events
+writing output... [ 83%] reference/data-models/spans
+writing output... [ 84%] reference/evaluation/deprecation-notice
+writing output... [ 85%] reference/evaluation/evaluators
+writing output... [ 86%] reference/experiments/core-functions
+writing output... [ 87%] reference/experiments/evaluators
+writing output... [ 88%] reference/experiments/experiments
+writing output... [ 89%] reference/experiments/models
+writing output... [ 90%] reference/experiments/results
+writing output... [ 91%] reference/experiments/utilities
+writing output... [ 92%] reference/index
+writing output... [ 93%] tutorials/01-setup-first-tracer
+writing output... [ 94%] tutorials/02-add-llm-tracing-5min
+writing output... [ 95%] tutorials/03-enable-span-enrichment
+writing output... [ 96%] tutorials/04-configure-multi-instance
+writing output... [ 97%] tutorials/05-run-first-experiment
+writing output... [ 98%] tutorials/06-distributed-tracing
+writing output... [ 99%] tutorials/advanced-configuration
+writing output... [100%] tutorials/index
+
+generating indices... genindex py-modindex done
+highlighting module code... [  3%] honeyhive.api.base
+highlighting module code... [  6%] honeyhive.api.client
+highlighting module code... [  9%] honeyhive.api.datasets
+highlighting module code... [ 12%] honeyhive.api.evaluations
+highlighting module code... [ 15%] honeyhive.api.events
+highlighting module code... [ 18%] honeyhive.api.metrics
+highlighting module code... [ 21%] honeyhive.api.projects
+highlighting module code... [ 24%] honeyhive.api.session
+highlighting module code... [ 26%] honeyhive.api.tools
+highlighting module code... [ 29%] honeyhive.config.models.api_client
+highlighting module code... [ 32%] honeyhive.config.models.base
+highlighting module code... [ 35%] honeyhive.config.models.experiment
+highlighting module code... [ 38%] honeyhive.config.models.http_client
+highlighting module code... [ 41%] honeyhive.config.models.tracer
+highlighting module code... [ 44%] honeyhive.evaluation._compat
+highlighting module code... [ 47%] honeyhive.evaluation.evaluators
+highlighting module code... [ 50%] honeyhive.experiments.core
+highlighting module code... [ 53%] honeyhive.experiments.evaluators
+highlighting module code... [ 56%] honeyhive.experiments.models
+highlighting module code... [ 59%] honeyhive.models.generated
+highlighting module code... [ 62%] honeyhive.tracer.core.base
+highlighting module code... [ 65%] honeyhive.tracer.core.tracer
+highlighting module code... [ 68%] honeyhive.tracer.infra.environment
+highlighting module code... [ 71%] honeyhive.tracer.instrumentation.decorators
+highlighting module code... [ 74%] honeyhive.tracer.integration.compatibility
+highlighting module code... [ 76%] honeyhive.tracer.integration.error_handling
+highlighting module code... [ 79%] honeyhive.tracer.processing.otlp_profiles
+highlighting module code... [ 82%] honeyhive.utils.baggage_dict
+highlighting module code... [ 85%] honeyhive.utils.cache
+highlighting module code... [ 88%] honeyhive.utils.connection_pool
+highlighting module code... [ 91%] honeyhive.utils.dotdict
+highlighting module code... [ 94%] honeyhive.utils.error_handler
+highlighting module code... [ 97%] honeyhive.utils.logger
+highlighting module code... [100%] honeyhive.utils.retry
+
+writing additional pages... search done
+dumping search index in English (code: en)... done
+dumping object inventory... done
+build succeeded.
+
+The HTML pages are in docs/_build/html.
+.pkg: _exit> python /Users/josh/.pyenv/versions/3.12.9/lib/python3.12/site-packages/pyproject_api/_backend.py True hatchling.build
+  docs: OK (44.03=setup[10.32]+cmd[0.05,33.65] seconds)
+  congratulations :) (44.11 seconds)

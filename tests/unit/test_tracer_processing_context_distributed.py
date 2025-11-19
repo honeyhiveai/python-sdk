@@ -4,6 +4,8 @@ This module tests the with_distributed_trace_context() context manager
 for server-side distributed tracing.
 """
 
+# pylint: disable=C0301,W0611
+# Justification: line-too-long: Complex context propagation assertions; unused-import: Test imports
 from typing import Dict
 from unittest.mock import Mock, patch
 
@@ -55,7 +57,9 @@ class TestWithDistributedTraceContext:
         mock_tracer._propagator = Mock()
 
         carrier = {
-            "baggage": "session_id=test-session-123,project=test-project,source=test-source",
+            "baggage": (
+                "session_id=test-session-123," "project=test-project,source=test-source"
+            ),
             "traceparent": "00-123456789abcdef0-0123456789abcdef-01",
         }
 
@@ -85,13 +89,17 @@ class TestWithDistributedTraceContext:
                 assert any("source" in call and "test-source" in call for call in calls)
 
     def test_handles_honeyhive_prefix_variants(self) -> None:
-        """Test that various baggage key prefixes are handled (session_id, honeyhive_session_id, honeyhive.session_id)."""
+        """Test that various baggage key prefixes are handled."""
         mock_tracer = Mock(spec=HoneyHiveTracer)
         mock_tracer._propagator = Mock()
 
         # Test honeyhive_session_id variant
         carrier = {
-            "baggage": "honeyhive_session_id=test-session-123,honeyhive_project=test-project,honeyhive_source=test-source",
+            "baggage": (
+                "honeyhive_session_id=test-session-123,"
+                "honeyhive_project=test-project,"
+                "honeyhive_source=test-source"
+            ),
         }
 
         with patch(

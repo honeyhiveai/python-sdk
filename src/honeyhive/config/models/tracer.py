@@ -86,8 +86,8 @@ class TracerConfig(BaseHoneyHiveConfig):
         examples=["dev", "staging", "production"],
     )
 
-    server_url: Optional[str] = Field(  # type: ignore[call-overload,pydantic-alias]
-        default=None,
+    server_url: str = Field(  # type: ignore[call-overload,pydantic-alias]
+        default="https://api.honeyhive.ai",
         description="Custom HoneyHive server URL",
         validation_alias=AliasChoices("HH_API_URL", "server_url"),
         examples=["https://api.honeyhive.ai", "https://custom.honeyhive.com"],
@@ -111,6 +111,54 @@ class TracerConfig(BaseHoneyHiveConfig):
         default=False,
         description="Disable all tracing functionality",
         validation_alias=AliasChoices("HH_DISABLE_TRACING", "disable_tracing"),
+    )
+
+    # OpenTelemetry Span Limits Configuration
+    max_attributes: int = Field(  # type: ignore[call-overload,pydantic-alias]
+        default=1024,
+        description=(
+            "Maximum number of attributes per span "
+            "(OpenTelemetry default: 128, HoneyHive default: 1024)"
+        ),
+        validation_alias=AliasChoices("HH_MAX_ATTRIBUTES", "max_attributes"),
+        examples=[128, 256, 500, 1024, 2000],
+    )
+
+    max_events: int = Field(  # type: ignore[call-overload,pydantic-alias]
+        default=1024,
+        description=(
+            "Maximum number of events per span (matches max_attributes "
+            "because events are flattened to pseudo-attributes)"
+        ),
+        validation_alias=AliasChoices("HH_MAX_EVENTS", "max_events"),
+    )
+
+    max_links: int = Field(  # type: ignore[call-overload,pydantic-alias]
+        default=128,
+        description="Maximum number of links per span",
+        validation_alias=AliasChoices("HH_MAX_LINKS", "max_links"),
+    )
+
+    max_span_size: int = Field(  # type: ignore[call-overload,pydantic-alias]
+        default=10 * 1024 * 1024,  # 10MB default
+        description="Maximum total size of span (attributes + events + links) in bytes",
+        validation_alias=AliasChoices("HH_MAX_SPAN_SIZE", "max_span_size"),
+        examples=[1048576, 5242880, 10485760, 20971520],  # 1MB, 5MB, 10MB, 20MB
+    )
+
+    # Core Attribute Preservation Configuration
+    preserve_core_attributes: bool = Field(  # type: ignore[pydantic-alias]
+        default=True,
+        description=(
+            "Enable core attribute preservation to prevent FIFO eviction "
+            "of critical attributes (session_id, event_type, etc.). When "
+            "enabled, re-sets core attributes before span.end() to ensure "
+            "they survive eviction. Disable only for debugging or extreme "
+            "performance requirements."
+        ),
+        validation_alias=AliasChoices(
+            "HH_PRESERVE_CORE_ATTRIBUTES", "preserve_core_attributes"
+        ),
     )
 
     # Dynamic Cache Configuration - Uses dynamic logic for performance optimization
@@ -193,16 +241,23 @@ class TracerConfig(BaseHoneyHiveConfig):
 
     @field_validator("server_url", mode="before")
     @classmethod
-    def validate_server_url(cls, v: Any) -> Optional[str]:
+    def validate_server_url(cls, v: Any) -> str:
         """Validate server URL format with graceful degradation.
 
         Args:
             v: The server URL to validate
 
         Returns:
-            The validated server URL, or None if invalid
+            The validated and normalized server URL, or default if invalid
         """
-        return _safe_validate_url(v, "server_url", allow_none=True, default=None)
+        if v is None:
+            return "https://api.honeyhive.ai"
+
+        validated = _safe_validate_url(
+            v, "server_url", allow_none=False, default="https://api.honeyhive.ai"
+        )
+        # Remove trailing slash for consistency
+        return validated.rstrip("/") if validated else "https://api.honeyhive.ai"
 
     @field_validator("source", mode="before")
     @classmethod

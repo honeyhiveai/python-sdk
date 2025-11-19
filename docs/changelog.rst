@@ -17,6 +17,14 @@ Latest Release Notes
 Current Version Highlights
 ~~~~~~~~~~~~~~~~~~~~~~~~~~
 
+**🛡️ NEW: Configurable Span Limits & Core Attribute Preservation (Nov 18, 2025)**
+
+* **Lazy-Activated Preservation**: Automatically preserves critical attributes (session_id, event_type, event_name, source) to prevent data loss when spans exceed attribute limits
+* **Performance Optimized**: Only triggers for large spans (95%+ of limit), <0.001ms overhead for normal spans, ~0.5ms for large spans
+* **Configurable Limits**: New span limit controls - max_attributes (1024, up from OTel's 128), max_events (1024), max_links (128), max_span_size (10MB)
+* **Zero Configuration**: Works out of the box with sane defaults, fully configurable via TracerConfig or environment variables
+* **Data Safety**: Prevents span rejection by backend when critical attributes are evicted by OpenTelemetry's FIFO policy
+
 **🚀 INFRA: praxis OS Migration & Bug Fixes (Nov 14, 2025)**
 
 * **✨ NEW: Pretty Table Output for Evaluations**: Added beautiful terminal table display for evaluate() results with color, emojis, and formatted metrics

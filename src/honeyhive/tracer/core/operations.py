@@ -5,16 +5,21 @@ operations. It uses dynamic logic for flexible span handling, attribute
 processing, and event creation with comprehensive error handling.
 """
 
-# pylint: disable=duplicate-code
-# Justification: Legitimate shared patterns with decorator and base mixins.
-# Duplicate code represents common dynamic attribute normalization and event
-# creation patterns shared across core mixin classes for consistent behavior.
+# pylint: disable=duplicate-code,too-many-lines
+# Justification for duplicate-code: Legitimate shared patterns with decorator
+# and base mixins. Duplicate code represents common dynamic attribute
+# normalization and event creation patterns shared across core mixin classes
+# for consistent behavior.
+# Justification for too-many-lines: Comprehensive operations mixin providing
+# span creation, event management, enrichment, and finalization. Core module
+# with 1006 lines (6 lines over limit) - acceptable for central operations.
 
 from abc import ABC, abstractmethod
 from contextlib import AbstractContextManager, contextmanager
 from typing import TYPE_CHECKING, Any, Dict, Iterator, Optional, Union
 
 from opentelemetry import trace
+from opentelemetry.baggage import get_baggage
 from opentelemetry.trace import SpanKind, Status, StatusCode
 
 from ...api.events import CreateEventRequest
@@ -90,6 +95,7 @@ class TracerOperationsMixin(TracerOperationsInterface):
         tracer: Optional[Any]
         client: Optional[Any]
         session_api: Optional[Any]
+        config: Any  # TracerConfig provided by base class
         _session_id: Optional[str]
         _baggage_lock: Any
 
@@ -205,7 +211,11 @@ class TracerOperationsMixin(TracerOperationsInterface):
             raise
         finally:
             # Dynamic span finalization
+            safe_log(
+                self, "debug", f"⭐ START_SPAN: Finalize span in finally block: {name}"
+            )
             self._finalize_span_dynamically(span)
+            safe_log(self, "debug", f"✅ START_SPAN: Span finalized: {name}")
 
     # pylint: disable=too-many-arguments
     # Justification: Internal span creation method needs multiple parameters
@@ -501,20 +511,105 @@ class TracerOperationsMixin(TracerOperationsInterface):
         """Dynamically generate error description from exception."""
         return f"{type(exception).__name__}: {str(exception)}"
 
+    def _preserve_core_attributes_inline(self, span: Any) -> None:
+        """Re-set core attributes inline to ensure they survive FIFO eviction.
+
+        Called just before span.end() for spans approaching the attribute limit.
+        By setting core attributes LAST, they become the NEWEST attributes and
+        survive OpenTelemetry's FIFO eviction policy.
+
+        Args:
+            span: The span to preserve core attributes on (must be mutable)
+        """
+        try:
+            # 1. CRITICAL: Session ID (required for backend ingestion)
+            session_id = None
+            baggage_session_id = get_baggage("honeyhive.session_id")
+            if baggage_session_id:
+                session_id = str(baggage_session_id)
+            if not session_id:
+                config_session_id = getattr(self.config, "session_id", None)
+                if config_session_id:
+                    session_id = str(config_session_id)
+            if session_id:
+                span.set_attribute("honeyhive.session_id", session_id)
+
+            # 2. CRITICAL: Source (required for backend routing)
+            source = getattr(self, "source", None) or getattr(
+                self.config, "source", "unknown"
+            )
+            span.set_attribute("honeyhive.source", source)
+
+            # 3-6: Event type, name, project, config (if already set)
+            if hasattr(span, "attributes") and span.attributes:
+                event_type = span.attributes.get(
+                    "honeyhive_event_type"
+                ) or span.attributes.get("honeyhive.event_type")
+                if event_type:
+                    span.set_attribute("honeyhive.event_type", event_type)
+
+                event_name = span.attributes.get(
+                    "honeyhive_event_name"
+                ) or span.attributes.get("honeyhive.event_name")
+                if event_name:
+                    span.set_attribute("honeyhive.event_name", event_name)
+
+                project = getattr(self, "project", None) or getattr(
+                    self.config, "project", None
+                )
+                if project:
+                    span.set_attribute("honeyhive.project", project)
+
+                config_name = span.attributes.get("honeyhive_config")
+                if config_name:
+                    span.set_attribute("honeyhive.config", config_name)
+        except Exception:
+            # Best-effort optimization - don't fail span finalization
+            pass
+
     def _finalize_span_dynamically(self, span: Any) -> None:
-        """Dynamically finalize span with proper cleanup."""
+        """Dynamically finalize span with proper cleanup.
+
+        This method is called in the finally block of start_span() and is
+        guaranteed to run for every span. If core attribute preservation is
+        enabled and the span is approaching the attribute limit (95% threshold),
+        this method will re-set core attributes just before span.end() to ensure
+        they survive FIFO eviction.
+
+        Args:
+            span: The span to finalize (must be mutable, not yet ReadableSpan)
+        """
         if isinstance(span, NoOpSpan):
+            safe_log(self, "debug", "Skipping finalize for NoOpSpan")
             return
 
         try:
+            # 🎯 LAZY ACTIVATION: Only preserve core if approaching limit
+            if getattr(self.config, "preserve_core_attributes", True):
+                max_attributes = getattr(self.config, "max_attributes", 1024)
+                threshold = int(max_attributes * 0.95)  # 95% of limit
+
+                # Check current attribute count (minimal overhead: ~0.001ms)
+                current_count = (
+                    len(span.attributes) if hasattr(span, "attributes") else 0
+                )
+
+                if current_count >= threshold:
+                    # Span is approaching limit - preserve core attributes
+                    # by re-setting them LAST to survive FIFO eviction
+                    self._preserve_core_attributes_inline(span)
+
+            # NOW end the span (converts to ReadableSpan and calls on_end)
             span.end()
-            safe_log(self, "debug", "Span ended successfully")
         except Exception as e:
             safe_log(
                 self,
-                "warning",
-                f"Failed to end span: {e}",
-                honeyhive_data={"error_type": type(e).__name__},
+                "error",
+                "Failed to finalize span",
+                honeyhive_data={
+                    "error_type": type(e).__name__,
+                    "error_message": str(e),
+                },
             )
 
     # pylint: disable=too-many-arguments

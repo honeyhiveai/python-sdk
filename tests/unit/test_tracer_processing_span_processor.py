@@ -11,7 +11,8 @@ Analysis Applied:
 - Phase 5: Coverage completeness with all conditional branches and exception paths
 """
 
-# pylint: disable=protected-access,too-many-lines,unused-argument,unnecessary-lambda
+# pylint: disable=protected-access,too-many-lines,unused-argument,unnecessary-lambda,line-too-long,use-implicit-booleaness-not-comparison
+# Justification: line-too-long: Complex processor assertions; use-implicit-booleaness-not-comparison: Explicit empty dict check for clarity
 
 from typing import Any, Dict, Optional
 from unittest.mock import Mock, call, patch
@@ -226,7 +227,7 @@ class TestHoneyHiveSpanProcessorBaggageHandling:
     def test_get_basic_baggage_with_tracer_session_priority(
         self, mock_get_baggage: Mock
     ) -> None:
-        """Test baggage session_id taking priority over tracer session_id (distributed tracing)."""
+        """Test baggage session_id priority over tracer session_id."""
         mock_tracer = Mock(spec=HoneyHiveTracer)
         mock_tracer.session_id = "tracer-session-456"
         mock_tracer.project_name = "test-project"

@@ -13,6 +13,9 @@ Tests cover:
 - Error handling, edge cases, and failure scenarios
 """
 
+# pylint: disable=R0801
+# Justification: Shared test patterns with experiment integration and performance tests
+
 # pylint: disable=protected-access,redefined-outer-name,too-many-public-methods
 # pylint: disable=too-many-lines,unused-argument,too-few-public-methods
 # pylint: disable=line-too-long,too-many-positional-arguments,no-member

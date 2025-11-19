@@ -1,16 +1,18 @@
 """
-Component Helpers for Cascading Health Check Architecture.
+Component Helpers for Cascading Health Check and Build Status Architecture.
 
 This module provides core abstractions for the fractal component registry pattern
 used throughout the RAG subsystem. The pattern is self-similar (fractal), meaning
-the same abstractions (ComponentDescriptor + dynamic_health_check) are used at
-every level of the hierarchy: IndexManager, StandardsIndex, CodeIndex, GraphIndex,
-and their sub-components. This creates a uniform, composable architecture where
-parent indexes discover child component health dynamically without hardcoded logic.
+the same abstractions (ComponentDescriptor + dynamic_health_check + dynamic_build_status)
+are used at every level of the hierarchy: IndexManager, StandardsIndex, CodeIndex,
+GraphIndex, and their sub-components. This creates a uniform, composable architecture
+where parent indexes discover child component health and build status dynamically
+without hardcoded logic.
 
 Key Abstractions:
     - ComponentDescriptor: Declarative metadata for registering components
     - dynamic_health_check(): Generic helper to aggregate component health
+    - dynamic_build_status(): Generic helper to aggregate component build status
 
 Architectural Pattern:
     The fractal pattern eliminates O(N²) maintenance cost by using dynamic discovery.
@@ -24,8 +26,9 @@ Example Usage:
     from ouroboros.subsystems.rag.utils.component_helpers import (
         ComponentDescriptor,
         dynamic_health_check,
+        dynamic_build_status,
     )
-    from ouroboros.subsystems.rag.models import HealthStatus
+    from ouroboros.subsystems.rag.base import HealthStatus, BuildStatus
     
     class MyIndex:
         def __init__(self):
@@ -35,6 +38,7 @@ Example Usage:
                     provides=["data_a"],
                     capabilities=["query_a"],
                     health_check=self._check_a_health,
+                    build_status_check=self._check_a_build_status,
                     rebuild=self._rebuild_a,
                     dependencies=[],
                 ),
@@ -43,6 +47,7 @@ Example Usage:
                     provides=["data_b"],
                     capabilities=["query_b"],
                     health_check=self._check_b_health,
+                    build_status_check=self._check_b_build_status,
                     rebuild=self._rebuild_b,
                     dependencies=["component_a"],
                 ),
@@ -51,6 +56,10 @@ Example Usage:
         def health_check(self) -> HealthStatus:
             \"\"\"Delegate to dynamic helper for automatic aggregation.\"\"\"
             return dynamic_health_check(self.components)
+        
+        def build_status(self) -> BuildStatus:
+            \"\"\"Delegate to dynamic helper for automatic aggregation.\"\"\"
+            return dynamic_build_status(self.components)
     ```
 
 See Also:
@@ -59,8 +68,11 @@ See Also:
 """
 
 from dataclasses import dataclass
-from typing import Dict, List, Callable, Any
+from typing import TYPE_CHECKING, Any, Callable, Dict, List
 import logging
+
+if TYPE_CHECKING:
+    from ouroboros.subsystems.rag.base import BuildStatus
 
 logger = logging.getLogger(__name__)
 
@@ -108,6 +120,12 @@ class ComponentDescriptor:
             
             Example: `lambda: self._check_ast_health()`
         
+        build_status_check (Callable): Function that checks component build status.
+            Must be callable with no arguments, returning BuildStatus.
+            Typically a bound method like `self._check_ast_build_status`.
+            
+            Example: `lambda: self._check_ast_build_status()`
+        
         rebuild (Callable): Function that rebuilds component.
             Must be callable with no arguments, returning None or raising exception.
             Typically a bound method like `self._rebuild_ast`.
@@ -126,6 +144,7 @@ class ComponentDescriptor:
         - provides must be non-empty list
         - capabilities must be non-empty list
         - health_check must be callable
+        - build_status_check must be callable
         - rebuild must be callable
         - dependencies can be empty (no validation required)
     
@@ -134,7 +153,7 @@ class ComponentDescriptor:
     
     Example:
         ```python
-        from ouroboros.subsystems.rag.models import HealthStatus
+        from ouroboros.subsystems.rag.models import HealthStatus, BuildStatus
         
         class MyIndex:
             def __init__(self):
@@ -144,6 +163,7 @@ class ComponentDescriptor:
                         provides=["ast_nodes"],
                         capabilities=["search_ast"],
                         health_check=self._check_ast_health,
+                        build_status_check=self._check_ast_build_status,
                         rebuild=self._rebuild_ast,
                         dependencies=[],
                     ),
@@ -153,6 +173,10 @@ class ComponentDescriptor:
                 # ... check AST table ...
                 return HealthStatus(healthy=True, details={})
             
+            def _check_ast_build_status(self) -> BuildStatus:
+                # ... check AST build status ...
+                return BuildStatus(state=IndexBuildState.BUILT, message="AST built", progress_percent=100.0)
+            
             def _rebuild_ast(self) -> None:
                 # ... rebuild AST index ...
                 pass
@@ -160,6 +184,7 @@ class ComponentDescriptor:
     
     See Also:
         - dynamic_health_check(): Uses ComponentDescriptor to aggregate health
+        - dynamic_build_status(): Uses ComponentDescriptor to aggregate build status
         - specs/2025-11-08-cascading-health-check-architecture/specs.md: Design rationale
     """
     
@@ -167,6 +192,7 @@ class ComponentDescriptor:
     provides: List[str]
     capabilities: List[str]
     health_check: Callable
+    build_status_check: Callable
     rebuild: Callable
     dependencies: List[str]
     
@@ -208,6 +234,13 @@ class ComponentDescriptor:
                 f"ComponentDescriptor.health_check must be callable for component '{self.name}'. "
                 f"Received {type(self.health_check).__name__}. "
                 "Example: health_check=self._check_ast_health, health_check=lambda: HealthStatus(...)"
+            )
+        
+        if not callable(self.build_status_check):
+            raise ValueError(
+                f"ComponentDescriptor.build_status_check must be callable for component '{self.name}'. "
+                f"Received {type(self.build_status_check).__name__}. "
+                "Example: build_status_check=self._check_ast_build_status, build_status_check=lambda: BuildStatus(...)"
             )
         
         if not callable(self.rebuild):
@@ -321,6 +354,17 @@ def dynamic_health_check(components: Dict[str, ComponentDescriptor]) -> "HealthS
             status = descriptor.health_check()
             component_health[name] = status
             
+            # DEBUG: Log each component's health status
+            logger.debug(
+                f"  Component '{name}' health: {status.healthy} - {status.message}"
+            )
+            if not status.healthy:
+                logger.warning(
+                    f"  ⚠️  Component '{name}' is UNHEALTHY: {status.message}"
+                )
+                if status.details:
+                    logger.warning(f"      Details: {status.details}")
+            
             # Track healthy count
             if status.healthy:
                 healthy_count += 1
@@ -365,6 +409,174 @@ def dynamic_health_check(components: Dict[str, ComponentDescriptor]) -> "HealthS
             "capabilities": capabilities,
             "component_count": len(components),
             "healthy_count": healthy_count,
+        },
+    )
+
+
+def dynamic_build_status(components: Dict[str, ComponentDescriptor]) -> "BuildStatus":
+    """
+    Aggregate build status across all registered components (fractal pattern).
+    
+    This mirrors dynamic_health_check() but for build status. It dynamically discovers
+    all registered components, calls their build_status_check() functions, and aggregates
+    using priority-based selection (worst state bubbles up).
+    
+    The function is defensive: if a component's build_status_check() raises an exception,
+    it's caught, logged, and treated as FAILED (not crash).
+    
+    Args:
+        components (Dict[str, ComponentDescriptor]): Registry of components to check.
+            Key is component name (e.g., "ast", "graph"), value is ComponentDescriptor.
+            Can be empty dict (treated as BUILT).
+    
+    Returns:
+        BuildStatus: Aggregated build status with:
+            - state (IndexBuildState): Worst state from all components (highest priority)
+            - message (str): Summary message (e.g., "2/2 components built")
+            - progress_percent (float): Average progress across all components
+            - details (dict): Contains:
+                - "components" (dict): Per-component build status {name: BuildStatus}
+                - "component_count" (int): Total number of components
+                - "states" (dict): State counts {state: count}
+    
+    Behavior:
+        - Empty components dict: Returns BuildStatus(state=BUILT, progress=100.0)
+        - All components BUILT: Returns BuildStatus(state=BUILT, progress=100.0)
+        - Any component FAILED: Returns BuildStatus(state=FAILED, ...)
+        - Mix of states: Returns worst state (highest priority)
+        - Exception in build_status_check(): Caught, logged, treated as FAILED
+    
+    Priority Aggregation:
+        Uses IndexBuildState.priority property to determine worst state:
+        FAILED (4) > BUILDING (3) > QUEUED_TO_BUILD (2) > NOT_BUILT (1) > BUILT (0)
+    
+    Progress Calculation:
+        Average of all component progress_percent values. If any component is BUILDING,
+        the overall progress reflects the average. If all BUILT, progress is 100.0.
+    
+    Example:
+        ```python
+        components = {
+            "ast": ComponentDescriptor(
+                name="ast",
+                build_status_check=lambda: BuildStatus(
+                    state=IndexBuildState.BUILT,
+                    message="AST built",
+                    progress_percent=100.0
+                ),
+                ...
+            ),
+            "graph": ComponentDescriptor(
+                name="graph",
+                build_status_check=lambda: BuildStatus(
+                    state=IndexBuildState.BUILDING,
+                    message="Graph building",
+                    progress_percent=45.5
+                ),
+                ...
+            ),
+        }
+        
+        result = dynamic_build_status(components)
+        # result.state == IndexBuildState.BUILDING (worst state)
+        # result.progress_percent == 72.75 (average of 100.0 and 45.5)
+        # result.details["components"]["ast"].state == BUILT
+        # result.details["components"]["graph"].state == BUILDING
+        ```
+    
+    See Also:
+        - ComponentDescriptor: Defines component metadata
+        - dynamic_health_check(): Parallel function for health aggregation
+        - IndexBuildState: Enum with priority property
+    """
+    from ouroboros.subsystems.rag.base import BuildStatus, IndexBuildState
+    
+    # Handle empty components (treated as BUILT)
+    if not components:
+        return BuildStatus(
+            state=IndexBuildState.BUILT,
+            message="No components registered (built by default)",
+            progress_percent=100.0,
+            details={
+                "components": {},
+                "component_count": 0,
+                "states": {},
+            },
+        )
+    
+    # Aggregate component build status
+    component_statuses: Dict[str, Any] = {}
+    worst_state = IndexBuildState.BUILT
+    worst_priority = 0
+    total_progress = 0.0
+    state_counts: Dict[str, int] = {}
+    
+    for name, descriptor in components.items():
+        try:
+            # Call component build_status_check() (may raise exception)
+            status = descriptor.build_status_check()
+            component_statuses[name] = status
+            
+            # Track worst state (highest priority)
+            if status.state.priority > worst_priority:
+                worst_state = status.state
+                worst_priority = status.state.priority
+            
+            # Accumulate progress
+            total_progress += status.progress_percent
+            
+            # Count states
+            state_name = status.state.value
+            state_counts[state_name] = state_counts.get(state_name, 0) + 1
+        
+        except Exception as e:
+            # Defensive: catch exceptions, treat as FAILED
+            logger.error(
+                f"Component '{name}' build_status_check() raised exception: {type(e).__name__}: {e}",
+                exc_info=True,
+            )
+            
+            # Create error BuildStatus for this component
+            error_status = BuildStatus(
+                state=IndexBuildState.FAILED,
+                message=f"Build status check raised exception: {type(e).__name__}: {str(e)}",
+                progress_percent=0.0,
+                error=str(e),
+                details={"error": str(e), "error_type": type(e).__name__},
+            )
+            component_statuses[name] = error_status
+            
+            # Update worst state to FAILED
+            if IndexBuildState.FAILED.priority > worst_priority:
+                worst_state = IndexBuildState.FAILED
+                worst_priority = IndexBuildState.FAILED.priority
+            
+            # Count as FAILED
+            state_counts["failed"] = state_counts.get("failed", 0) + 1
+    
+    # Calculate average progress
+    avg_progress = total_progress / len(components)
+    
+    # Build summary message
+    built_count = state_counts.get("built", 0)
+    if worst_state == IndexBuildState.BUILT:
+        message = f"All {len(components)} components built"
+    elif worst_state == IndexBuildState.BUILDING:
+        message = f"Building: {built_count}/{len(components)} components built"
+    elif worst_state == IndexBuildState.FAILED:
+        failed_count = state_counts.get("failed", 0)
+        message = f"Build failed: {failed_count}/{len(components)} components failed"
+    else:
+        message = f"Build status: {worst_state.value} ({built_count}/{len(components)} built)"
+    
+    return BuildStatus(
+        state=worst_state,
+        message=message,
+        progress_percent=avg_progress,
+        details={
+            "components": component_statuses,
+            "component_count": len(components),
+            "states": state_counts,
         },
     )
 

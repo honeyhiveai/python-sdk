@@ -4,6 +4,8 @@ This module tests that the @trace decorator preserves existing baggage
 from distributed tracing instead of overwriting it.
 """
 
+# pylint: disable=C0301,W0613
+# Justification: line-too-long: Complex baggage test assertions; unused-argument: Pytest fixtures
 from unittest.mock import Mock, patch
 
 import pytest
@@ -111,7 +113,7 @@ class TestDecoratorBaggagePreservation:
         mock_set_baggage: Mock,
         mock_get_baggage: Mock,
     ) -> None:
-        """Test that existing project and source from distributed trace are preserved."""
+        """Test existing project/source from distributed trace are preserved."""
         mock_tracer = Mock(spec=HoneyHiveTracer)
         mock_tracer.session_id = "local-session-123"
         mock_tracer.project = "local-project"

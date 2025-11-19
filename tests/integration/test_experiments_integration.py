@@ -11,8 +11,9 @@ Tests cover:
 - Result aggregation from backend
 """
 
-# pylint: disable=too-many-lines
-# Justification: Comprehensive integration test scenarios require extensive test cases
+# pylint: disable=R0801,too-many-lines
+# Justification: Shared integration test patterns with v1 requirements tests (R0801)
+# and comprehensive integration test scenarios require extensive test cases
 
 import os
 import time

@@ -17,7 +17,12 @@ from pathlib import Path
 from typing import Any, Dict, List, Optional, Union, TYPE_CHECKING
 
 from ouroboros.config.schemas.indexes import PartitionConfig
-from ouroboros.subsystems.rag.base import BaseIndex, SearchResult, HealthStatus
+from ouroboros.subsystems.rag.base import BaseIndex, SearchResult, HealthStatus, BuildStatus
+from ouroboros.subsystems.rag.utils.component_helpers import (
+    ComponentDescriptor,
+    dynamic_build_status,
+    dynamic_health_check,
+)
 from ouroboros.utils.errors import ActionableError
 
 if TYPE_CHECKING:
@@ -100,11 +105,40 @@ class CodePartition:
         self.semantic = semantic_index
         self.graph = graph_index  # Contains both AST and graph functionality
         
+        # Register components for fractal health checks and build status
+        # This follows the same pattern as StandardsIndex and CodeIndex
+        self.components: Dict[str, ComponentDescriptor] = {}
+        
+        # Register semantic component (if exists)
+        if self.semantic:
+            self.components["semantic"] = ComponentDescriptor(
+                name="semantic",
+                provides=["code_chunks", "embeddings", "fts_index"],
+                capabilities=["search"],
+                health_check=lambda idx=self.semantic: idx.health_check(),
+                build_status_check=lambda idx=self.semantic: idx.build_status(),
+                rebuild=lambda: None,  # Rebuild not implemented yet
+                dependencies=[],
+            )
+        
+        # Register graph component (if exists)
+        if self.graph:
+            self.components["graph"] = ComponentDescriptor(
+                name="graph",
+                provides=["ast_nodes", "symbols", "relationships"],
+                capabilities=["search_ast", "find_callers", "find_dependencies", "find_call_paths"],
+                health_check=lambda idx=self.graph: idx.health_check(),
+                build_status_check=lambda idx=self.graph: idx.build_status(),
+                rebuild=lambda: None,  # Rebuild not implemented yet
+                dependencies=[],
+            )
+        
         logger.info(
-            "CodePartition '%s' initialized: path=%s, domains=%s",
+            "CodePartition '%s' initialized: path=%s, domains=%s, components=%s",
             partition_name,
             self.path,
-            list(self.domains.keys())
+            list(self.domains.keys()),
+            list(self.components.keys())
         )
     
     def search(
@@ -217,66 +251,64 @@ class CodePartition:
                 how_to_fix=f"Use one of: search_code, search_ast, find_callers, find_dependencies, find_call_paths"
             )
     
-    def health_check(self) -> HealthStatus:
-        """Aggregate health check from all sub-indexes.
+    def build_status(self) -> BuildStatus:
+        """Aggregate build status from all sub-indexes using fractal pattern.
         
-        Returns fractal ComponentDescriptor showing:
-        - Partition-level status (healthy if all sub-indexes healthy)
-        - Sub-index statuses (semantic, AST, graph)
-        - Chunk counts per domain
-        - Query latency p95
+        Delegates to dynamic_build_status() for automatic aggregation across
+        registered components (semantic, graph). This follows the same pattern
+        as StandardsIndex and CodeIndex.
+        
+        The fractal helper automatically:
+        - Calls build_status_check() on each registered component
+        - Aggregates using priority-based selection (worst state wins)
+        - Calculates average progress across all components
+        - Handles exceptions defensively (treats as FAILED)
+        - Builds summary message with component counts
         
         Returns:
-            ComponentDescriptor dict with 3-level hierarchy:
-            {
-                "name": "partition:praxis-os",
-                "status": "healthy",
-                "metadata": {
-                    "path": "../",
-                    "domains": ["code", "tests"],
-                    "repo_name": "praxis-os"
-                },
-                "sub_components": [
-                    {"name": "semantic", "status": "healthy", ...},
-                    {"name": "ast", "status": "healthy", ...},
-                    {"name": "graph", "status": "healthy", ...}
-                ]
-            }
+            BuildStatus with aggregated state, message, and progress:
+            - state: Worst state from all sub-indexes (BUILT, BUILDING, FAILED, etc.)
+            - message: Summary of partition build status
+            - progress_percent: Average progress across sub-indexes
+            - details: Sub-component build statuses
+        
+        Example:
+            >>> status = partition.build_status()
+            >>> print(status.state)  # IndexBuildState.BUILT
+            >>> print(status.progress_percent)  # 100.0
+            >>> print(status.details["components"].keys())  # dict_keys(['semantic', 'graph'])
+        """
+        return dynamic_build_status(self.components)
+    
+    def health_check(self) -> HealthStatus:
+        """Aggregate health check from all sub-indexes using fractal pattern.
+        
+        Delegates to dynamic_health_check() for automatic aggregation across
+        registered components (semantic, graph). This follows the same pattern
+        as StandardsIndex and CodeIndex.
+        
+        The fractal helper automatically:
+        - Calls health_check() on each registered component
+        - Aggregates health (all healthy = True, any unhealthy = False)
+        - Builds capability map from component capabilities
+        - Handles exceptions defensively (treats as unhealthy)
+        - Provides component-level diagnostics in details
+        
+        Returns:
+            HealthStatus with aggregated health from all sub-indexes:
+            - healthy (bool): True only if ALL sub-indexes healthy
+            - message (str): Summary of health status
+            - details (dict): Contains:
+                - "components" (dict): Per-component health {name: HealthStatus}
+                - "capabilities" (dict): Capability map {capability: bool}
+                - "component_count" (int): Total number of components
+                - "healthy_count" (int): Number of healthy components
         
         Example:
             >>> health = partition.health_check()
-            >>> print(health["status"])  # "healthy"
-            >>> print(len(health["sub_components"]))  # 3 (semantic, ast, graph)
+            >>> print(health.healthy)  # True
+            >>> print(health.details["component_count"])  # 2 (semantic, graph)
+            >>> print(health.details["capabilities"])  # {"search": True, "find_callers": True, ...}
         """
-        # Aggregate sub-index health checks
-        sub_components = []
-        all_healthy = True
-        
-        if self.semantic:
-            semantic_health = self.semantic.health_check()
-            sub_components.append(semantic_health)
-            if not semantic_health.healthy:
-                all_healthy = False
-        
-        if self.graph:
-            graph_health = self.graph.health_check()
-            sub_components.append(graph_health)
-            if not graph_health.healthy:
-                all_healthy = False
-        
-        # Partition-level health (return HealthStatus object, not dict)
-        from ouroboros.subsystems.rag.base import HealthStatus
-        
-        return HealthStatus(
-            healthy=all_healthy,
-            message=f"Partition '{self.name}': {len(sub_components)} sub-components ({'healthy' if all_healthy else 'degraded'})",
-            details={
-                "name": f"partition:{self.name}",
-                "path": str(self.path),
-                "domains": list(self.domains.keys()),
-                "domain_count": len(self.domains),
-                "repo_name": self.name,
-                "sub_components": sub_components
-            }
-        )
+        return dynamic_health_check(self.components)
 

@@ -5,7 +5,8 @@ TracerContextMixin classes, focusing on context management, baggage operations,
 and session enrichment functionality.
 """
 
-# pylint: disable=too-many-lines,redefined-outer-name,protected-access,R0917
+# pylint: disable=too-many-lines,redefined-outer-name,protected-access,R0917,R0903
+# Justification: too-few-public-methods: Test helper class is acceptable
 # Justification: Comprehensive unit test coverage requires extensive test cases
 # Pytest fixture pattern requires parameter shadowing
 # Protected access needed for testing internal methods

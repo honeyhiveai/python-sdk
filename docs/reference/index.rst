@@ -22,6 +22,8 @@ The HoneyHive Python SDK provides a comprehensive API for LLM observability and 
 
 **Latest Updates** (November 2025):
 
+- **Configurable Span Limits**: New ``TracerConfig`` options for span attribute/event/link limits (``max_attributes=1024``, ``max_events=1024``, ``max_links=128``, ``max_span_size=10MB``)
+- **Core Attribute Preservation**: Automatic preservation of critical attributes (``session_id``, ``event_type``, ``event_name``, ``source``) with lazy activation for large spans
 - **DatasetsAPI Filtering**: Enhanced ``list_datasets()`` with server-side filtering (``name`` and ``include_datapoints`` parameters) for efficient large-scale dataset management
 
 Core Capabilities

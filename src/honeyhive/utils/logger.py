@@ -183,8 +183,8 @@ class HoneyHiveLogger:
 
         Uses dynamic logic to prioritize:
         1. Explicit level parameter
-        2. Verbose parameter (True = DEBUG, False = INFO)
-        3. Default to INFO
+        2. Verbose parameter (True = DEBUG, False = WARNING)
+        3. Default to WARNING
 
         Args:
             level: Explicit log level
@@ -196,7 +196,7 @@ class HoneyHiveLogger:
         # Priority 1: Explicit level parameter
         if level is not None:
             if isinstance(level, str):
-                return getattr(logging, level.upper(), logging.INFO)
+                return getattr(logging, level.upper(), logging.WARNING)
             if isinstance(level, int):
                 return level
 
@@ -204,10 +204,11 @@ class HoneyHiveLogger:
         if verbose is True:
             return logging.DEBUG
         if verbose is False:
-            return logging.INFO
+            return logging.WARNING
 
-        # Priority 3: Default to INFO
-        return logging.INFO
+        # Priority 3: Default to WARNING (suppress INFO/DEBUG, show
+        # WARNING/ERROR/CRITICAL)
+        return logging.WARNING
 
     def update_verbose_setting(self, verbose: bool) -> None:
         """Dynamically update the logger's verbose setting.
@@ -219,7 +220,7 @@ class HoneyHiveLogger:
             verbose: New verbose setting
         """
         self.verbose = verbose
-        new_level = logging.DEBUG if verbose else logging.INFO
+        new_level = logging.DEBUG if verbose else logging.WARNING
         self.logger.setLevel(new_level)
 
     def _log_with_context(

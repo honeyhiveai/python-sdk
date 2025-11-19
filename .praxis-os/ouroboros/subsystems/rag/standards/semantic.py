@@ -27,6 +27,7 @@ from typing import Any, Dict, List, Optional
 from ouroboros.config.schemas.indexes import StandardsIndexConfig
 from ouroboros.subsystems.rag.base import BaseIndex, HealthStatus, SearchResult
 from ouroboros.subsystems.rag.utils.lancedb_helpers import EmbeddingModelLoader, LanceDBConnection, safe_encode
+from ouroboros.subsystems.rag.utils.progress_file import ProgressFileManager
 from ouroboros.utils.errors import ActionableError, IndexError
 
 logger = logging.getLogger(__name__)
@@ -75,6 +76,14 @@ class SemanticIndex(BaseIndex):
         
         # Lazy-load embedding model via helper
         self._reranker = None
+        
+        # Progress file manager for build progress reporting
+        progress_cache_dir = base_path / ".cache" / "rag" / "build-progress"
+        self._progress_manager = ProgressFileManager(
+            cache_dir=progress_cache_dir,
+            index_name="standards",
+            component="vector"  # SemanticIndex is primarily vector-based
+        )
         
         logger.info("SemanticIndex initialized (lazy-load mode)")
     
@@ -133,49 +142,74 @@ class SemanticIndex(BaseIndex):
         """
         logger.info("Building standards index from %d source paths", len(source_paths))
         
-        # Check if index already exists
-        db = self.db_connection.connect()
-        existing_tables = db.table_names()
+        try:
+            # Write initial progress (0%)
+            self._progress_manager.write_progress(0.0, "Starting build...")
+            
+            # Check if index already exists
+            db = self.db_connection.connect()
+            existing_tables = db.table_names()
+            
+            if "standards" in existing_tables and not force:
+                logger.info("Standards index already exists. Use force=True to rebuild.")
+                # Cleanup progress file on early return
+                self._progress_manager.delete_progress()
+                return
+            
+            # Load embedding model via helper (caching)
+            self._progress_manager.write_progress(5.0, "Loading embedding model...")
+            embedding_model = EmbeddingModelLoader.load(self.config.vector.model)
+            
+            # Collect and chunk documents
+            self._progress_manager.write_progress(10.0, "Collecting and chunking documents...")
+            chunks = self._collect_and_chunk(source_paths)
+            logger.info("Collected %d chunks from source paths", len(chunks))
+            
+            if not chunks:
+                # Cleanup progress file on error
+                self._progress_manager.delete_progress()
+                raise ActionableError(
+                    what_failed="Build standards index",
+                    why_failed="No content found in source paths",
+                    how_to_fix=f"Check that source paths contain markdown files: {source_paths}"
+                )
+            
+            # Generate embeddings with progress reporting
+            logger.info("Generating embeddings for %d chunks...", len(chunks))
+            texts = [chunk["content"] for chunk in chunks]
+            
+            # Report progress during embedding (20% -> 70% of total progress)
+            self._progress_manager.write_progress(20.0, f"Generating embeddings for {len(chunks)} chunks...")
+            embeddings = safe_encode(embedding_model, texts, show_progress_bar=True)
+            self._progress_manager.write_progress(70.0, f"Embeddings generated for {len(chunks)} chunks")
+            
+            # Add embeddings to chunks
+            for chunk, embedding in zip(chunks, embeddings):
+                chunk["vector"] = embedding.tolist()
+            
+            # Create table (drop existing if force=True)
+            if "standards" in existing_tables and force:
+                logger.info("Dropping existing standards table (force rebuild)")
+                db.drop_table("standards")
+            
+            self._progress_manager.write_progress(75.0, f"Creating LanceDB table with {len(chunks)} chunks...")
+            logger.info("Creating standards table with %d chunks", len(chunks))
+            self._table = db.create_table("standards", data=chunks)
+            
+            # Build indexes
+            self._progress_manager.write_progress(85.0, "Building FTS and metadata indexes...")
+            self._build_indexes()
+            
+            # Success - cleanup progress file
+            self._progress_manager.write_progress(100.0, "Build complete!")
+            self._progress_manager.delete_progress()
+            
+            logger.info("✅ Standards index built successfully")
         
-        if "standards" in existing_tables and not force:
-            logger.info("Standards index already exists. Use force=True to rebuild.")
-            return
-        
-        # Load embedding model via helper (caching)
-        embedding_model = EmbeddingModelLoader.load(self.config.vector.model)
-        
-        # Collect and chunk documents
-        chunks = self._collect_and_chunk(source_paths)
-        logger.info("Collected %d chunks from source paths", len(chunks))
-        
-        if not chunks:
-            raise ActionableError(
-                what_failed="Build standards index",
-                why_failed="No content found in source paths",
-                how_to_fix=f"Check that source paths contain markdown files: {source_paths}"
-            )
-        
-        # Generate embeddings
-        logger.info("Generating embeddings for %d chunks...", len(chunks))
-        texts = [chunk["content"] for chunk in chunks]
-        embeddings = safe_encode(embedding_model, texts, show_progress_bar=True)
-        
-        # Add embeddings to chunks
-        for chunk, embedding in zip(chunks, embeddings):
-            chunk["vector"] = embedding.tolist()
-        
-        # Create table (drop existing if force=True)
-        if "standards" in existing_tables and force:
-            logger.info("Dropping existing standards table (force rebuild)")
-            db.drop_table("standards")
-        
-        logger.info("Creating standards table with %d chunks", len(chunks))
-        self._table = db.create_table("standards", data=chunks)
-        
-        # Build indexes
-        self._build_indexes()
-        
-        logger.info("✅ Standards index built successfully")
+        except Exception as e:
+            # Cleanup progress file on failure
+            self._progress_manager.delete_progress()
+            raise
     
     def _collect_and_chunk(self, source_paths: List[Path]) -> List[Dict[str, Any]]:
         """Collect markdown files and chunk them.
@@ -759,6 +793,23 @@ class SemanticIndex(BaseIndex):
             logger.info("Deleted chunks for file: %s", relative_path)
         except Exception as e:
             logger.warning("Failed to delete chunks for %s: %s", relative_path, e)
+    
+    def build_status(self) -> "BuildStatus":  # type: ignore[name-defined]
+        """Check build status (not implemented for internal semantic index).
+        
+        This is an internal implementation class. Build status is handled
+        by the container class (StandardsIndex).
+        
+        Returns:
+            BuildStatus indicating BUILT (stub implementation)
+        """
+        from ouroboros.subsystems.rag.base import BuildStatus, IndexBuildState
+        
+        return BuildStatus(
+            state=IndexBuildState.BUILT,
+            message="Internal semantic index (build status tracked by container)",
+            progress_percent=100.0,
+        )
     
     def health_check(self) -> HealthStatus:
         """Check index health with dynamic validation.

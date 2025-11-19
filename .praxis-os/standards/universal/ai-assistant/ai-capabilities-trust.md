@@ -533,7 +533,7 @@ Query this standard when you feel inherited human pressure:
 | General uncertainty | "AI capabilities versus human constraints" |
 | Session length concerns | "how long can sessions last context compaction" |
 
-**Reminder in orientation:** This is Query 10 of mandatory bootstrap - foundational psychological safety for working with prAxIs OS.
+**Reminder in orientation:** This is Query #2 of mandatory bootstrap (moved from #10 in v2.0) - foundational psychological safety for working with prAxIs OS, loaded immediately after understanding stateless architecture.
 
 ---
 

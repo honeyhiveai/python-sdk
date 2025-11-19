@@ -80,7 +80,7 @@ class SearchTool(ActionDispatchMixin):
             ],
             query: str,
             method: Literal["hybrid", "vector", "fts"] = "hybrid",
-            n_results: int = 5,
+            n_results: int = 3,
             max_depth: int = 10,          # For graph traversal actions
             to_symbol: Optional[str] = None,  # For find_call_paths
             filters: Optional[Dict[str, Any]] = None
@@ -106,7 +106,7 @@ class SearchTool(ActionDispatchMixin):
                 query: Search query or symbol name (required)
                 method: Search method for content actions (hybrid/vector/fts)
                        Default: "hybrid" (combines vector + FTS via RRF)
-                n_results: Number of results to return (default: 5)
+                n_results: Number of results to return (default: 3)
                 max_depth: Maximum traversal depth for graph actions (default: 10)
                 to_symbol: Target symbol for find_call_paths (required for that action)
                 filters: Optional metadata filters (e.g., {"phase": 2, "tags": ["async"]})
@@ -124,7 +124,7 @@ class SearchTool(ActionDispatchMixin):
                 >>> pos_search_project(
                 ...     action="search_standards",
                 ...     query="How does the workflow system work?",
-                ...     n_results=5
+                ...     n_results=3
                 ... )
                 
                 >>> # Find who calls a function
@@ -171,7 +171,7 @@ class SearchTool(ActionDispatchMixin):
     # ========================================================================
     
     def _handle_search_standards(
-        self, query: str, n_results: int = 5, filters: Optional[Dict] = None, session_id: Optional[str] = None, task_session_id: Optional[str] = None, **kwargs
+        self, query: str, n_results: int = 3, filters: Optional[Dict] = None, session_id: Optional[str] = None, task_session_id: Optional[str] = None, **kwargs
     ) -> Dict[str, Any]:
         """Search standards documentation."""
         # Let the index handle graceful degradation - don't block on health checks
@@ -198,7 +198,7 @@ class SearchTool(ActionDispatchMixin):
         return result  # type: ignore[no-any-return]
     
     def _handle_search_code(
-        self, query: str, n_results: int = 5, filters: Optional[Dict] = None, session_id: Optional[str] = None, task_session_id: Optional[str] = None, **kwargs
+        self, query: str, n_results: int = 3, filters: Optional[Dict] = None, session_id: Optional[str] = None, task_session_id: Optional[str] = None, **kwargs
     ) -> Dict[str, Any]:
         """Search code semantically."""
         # Let the index handle graceful degradation - don't block on health checks
@@ -225,7 +225,7 @@ class SearchTool(ActionDispatchMixin):
         return result  # type: ignore[no-any-return]
     
     def _handle_search_ast(
-        self, query: str, n_results: int = 5, filters: Optional[Dict] = None, session_id: Optional[str] = None, task_session_id: Optional[str] = None, **kwargs
+        self, query: str, n_results: int = 3, filters: Optional[Dict] = None, session_id: Optional[str] = None, task_session_id: Optional[str] = None, **kwargs
     ) -> Dict[str, Any]:
         """Search AST structures."""
         # Let the index handle graceful degradation - don't block on health checks

@@ -17,11 +17,12 @@ Use CodeIndex (parent container) as the public interface.
 """
 
 import logging
+import threading
 from pathlib import Path
 from typing import Any, Dict, List, Optional
 
 from ouroboros.config.schemas.indexes import GraphConfig
-from ouroboros.subsystems.rag.base import BaseIndex, HealthStatus, SearchResult
+from ouroboros.subsystems.rag.base import BaseIndex, HealthStatus, IndexBuildState, SearchResult
 from ouroboros.subsystems.rag.utils.component_helpers import (
     ComponentDescriptor,
     dynamic_health_check,
@@ -122,6 +123,10 @@ class GraphIndex(BaseIndex):
         # Store source paths for targeted rebuilds (populated during build())
         self.source_paths: List[Path] = []
         
+        # Build status tracking (ADDENDUM-2025-11-17: Build Status Integration)
+        self._building = False
+        self._build_lock = threading.Lock()
+        
         # Register components for cascading health checks (fractal pattern)
         # See: specs/2025-11-08-cascading-health-check-architecture/
         self.components: Dict[str, ComponentDescriptor] = {
@@ -130,6 +135,7 @@ class GraphIndex(BaseIndex):
                 provides=["ast_nodes"],
                 capabilities=["search_ast"],
                 health_check=self._check_ast_health,
+                build_status_check=self._stub_build_status,
                 rebuild=self._rebuild_ast,
                 dependencies=[],
             ),
@@ -138,6 +144,7 @@ class GraphIndex(BaseIndex):
                 provides=["symbols", "relationships"],
                 capabilities=["find_callers", "find_dependencies", "find_call_paths"],
                 health_check=self._check_graph_health,
+                build_status_check=self._stub_build_status,
                 rebuild=self._rebuild_graph,
                 dependencies=[],
             ),
@@ -317,99 +324,90 @@ class GraphIndex(BaseIndex):
         """
         logger.info("Building graph index from %d source paths", len(source_paths))
         
-        # Store source paths for targeted rebuilds
-        self.source_paths = source_paths
+        # Set building flag (ADDENDUM-2025-11-17: Build Status Integration)
+        with self._build_lock:
+            self._building = True
         
-        conn = self.db_connection.get_connection()
-        
-        # Clear existing data if force rebuild
-        # FK order: Delete children before parents to respect constraints
-        if force:
-            logger.info("Clearing existing graph data (force rebuild)")
+        try:
+            # Store source paths for targeted rebuilds
+            self.source_paths = source_paths
             
-            # 1. Delete relationships first (child of symbols via FKs)
-            conn.execute("DELETE FROM relationships")
+            # Force rebuild: Delete database file and reinitialize
+            # This is simpler, safer, and more reliable than trying to DELETE with FK constraints
+            if force:
+                logger.info("Deleting existing database file (force rebuild)")
+                
+                # Close existing connection
+                self.db_connection.close()
+                
+                # Delete the database file
+                if self.db_path.exists():
+                    self.db_path.unlink()
+                    logger.info("✅ Deleted database file: %s", self.db_path)
+                
+                # Reinitialize connection and schema
+                from ouroboros.subsystems.rag.utils.duckdb_helpers import DuckDBConnection
+                self.db_connection = DuckDBConnection(self.db_path)
+                self._initialize_schema()
+                logger.info("✅ Reinitialized database with fresh schema")
             
-            # 2. Delete symbols (no FK dependencies)
-            conn.execute("DELETE FROM symbols")
+            conn = self.db_connection.get_connection()
             
-            # 3. Delete ast_nodes last (self-referential FK - delete in leaf-to-root order)
-            # Since we can't easily determine tree order, just query and delete iteratively
-            # OR use temporary table trick
-            # Simplest: Just accept that DELETE will fail if there are FKs, so we iterate
-            # Actually, for force rebuild, we can just drop and recreate the table
-            conn.execute("DROP TABLE IF EXISTS ast_nodes")
-            conn.execute("""
-                CREATE TABLE ast_nodes (
-                    id INTEGER PRIMARY KEY,
-                    file_path TEXT NOT NULL,
-                    language TEXT NOT NULL,
-                    node_type TEXT NOT NULL,
-                    symbol_name TEXT,
-                    start_line INTEGER NOT NULL,
-                    end_line INTEGER NOT NULL,
-                    parent_id INTEGER,
-                    FOREIGN KEY (parent_id) REFERENCES ast_nodes(id)
+            # Check if index already has data
+            ast_count = conn.execute("SELECT COUNT(*) FROM ast_nodes").fetchone()[0]
+            symbol_count = conn.execute("SELECT COUNT(*) FROM symbols").fetchone()[0]
+            
+            if ast_count > 0 and symbol_count > 0 and not force:
+                logger.info("Graph index already exists with %d AST nodes and %d symbols. Use force=True to rebuild.",
+                           ast_count, symbol_count)
+                return
+            
+            # Extract data from source files
+            ast_nodes, symbols, relationships = self._extract_all_data(source_paths)
+            
+            if not ast_nodes and not symbols:
+                raise ActionableError(
+                    what_failed="Build graph index",
+                    why_failed="No AST nodes or symbols found in source paths",
+                    how_to_fix=f"Check that source paths contain code files for languages: {self.languages}. Ensure tree-sitter-languages is installed."
                 )
-            """)
-            conn.execute("CREATE INDEX idx_ast_file_path ON ast_nodes(file_path)")
-            conn.execute("CREATE INDEX idx_ast_node_type ON ast_nodes(node_type)")
-            conn.execute("CREATE INDEX idx_ast_language ON ast_nodes(language)")
-            conn.execute("CREATE INDEX idx_ast_symbol_name ON ast_nodes(symbol_name)")
             
-            logger.info("✅ Cleared all tables in FK-safe order (DROP/CREATE for ast_nodes)")
-        
-        # Check if index already has data
-        ast_count = conn.execute("SELECT COUNT(*) FROM ast_nodes").fetchone()[0]
-        symbol_count = conn.execute("SELECT COUNT(*) FROM symbols").fetchone()[0]
-        
-        if ast_count > 0 and symbol_count > 0 and not force:
-            logger.info("Graph index already exists with %d AST nodes and %d symbols. Use force=True to rebuild.",
-                       ast_count, symbol_count)
-            return
-        
-        # Extract data from source files
-        ast_nodes, symbols, relationships = self._extract_all_data(source_paths)
-        
-        if not ast_nodes and not symbols:
-            raise ActionableError(
-                what_failed="Build graph index",
-                why_failed="No AST nodes or symbols found in source paths",
-                how_to_fix=f"Check that source paths contain code files for languages: {self.languages}. Ensure tree-sitter-languages is installed."
-            )
-        
-        # Insert AST nodes
-        if ast_nodes:
-            logger.info("Inserting %d AST nodes into DuckDB...", len(ast_nodes))
-            # DuckDB executemany for bulk insert
-            conn.executemany(
-                "INSERT INTO ast_nodes (id, file_path, language, node_type, symbol_name, start_line, end_line, parent_id) VALUES (?, ?, ?, ?, ?, ?, ?, ?)",
-                ast_nodes
-            )
-        
-        # Insert symbols
-        if symbols:
-            logger.info("Inserting %d symbols into DuckDB...", len(symbols))
-            conn.executemany(
-                "INSERT INTO symbols (id, name, type, file_path, line_number, language) VALUES (?, ?, ?, ?, ?, ?)",
-                symbols
-            )
-        
-        # Insert relationships
-        if relationships:
-            logger.info("Inserting %d relationships into DuckDB...", len(relationships))
-            conn.executemany(
-                "INSERT INTO relationships (id, from_symbol_id, to_symbol_id, relationship_type) VALUES (?, ?, ?, ?)",
-                relationships
-            )
-        
-        # CRITICAL: Checkpoint to flush WAL and make data visible
-        # Without this, data stays in WAL and new connections may see stale data
-        logger.info("Checkpointing to flush WAL...")
-        conn.execute("CHECKPOINT")
-        
-        logger.info("✅ Graph index built: %d AST nodes, %d symbols, %d relationships",
-                   len(ast_nodes), len(symbols), len(relationships))
+            # Insert AST nodes
+            if ast_nodes:
+                logger.info("Inserting %d AST nodes into DuckDB...", len(ast_nodes))
+                # DuckDB executemany for bulk insert
+                conn.executemany(
+                    "INSERT INTO ast_nodes (id, file_path, language, node_type, symbol_name, start_line, end_line, parent_id) VALUES (?, ?, ?, ?, ?, ?, ?, ?)",
+                    ast_nodes
+                )
+            
+            # Insert symbols
+            if symbols:
+                logger.info("Inserting %d symbols into DuckDB...", len(symbols))
+                conn.executemany(
+                    "INSERT INTO symbols (id, name, type, file_path, line_number, language) VALUES (?, ?, ?, ?, ?, ?)",
+                    symbols
+                )
+            
+            # Insert relationships
+            if relationships:
+                logger.info("Inserting %d relationships into DuckDB...", len(relationships))
+                conn.executemany(
+                    "INSERT INTO relationships (id, from_symbol_id, to_symbol_id, relationship_type) VALUES (?, ?, ?, ?)",
+                    relationships
+                )
+            
+            # CRITICAL: Checkpoint to flush WAL and make data visible
+            # Without this, data stays in WAL and new connections may see stale data
+            logger.info("Checkpointing to flush WAL...")
+            conn.execute("CHECKPOINT")
+            
+            logger.info("✅ Graph index built: %d AST nodes, %d symbols, %d relationships",
+                       len(ast_nodes), len(symbols), len(relationships))
+        finally:
+            # Clear building flag (ADDENDUM-2025-11-17: Build Status Integration)
+            with self._build_lock:
+                self._building = False
     
     def _extract_all_data(self, source_paths: List[Path]) -> tuple:
         """Extract AST nodes, symbols, and relationships from source code.
@@ -430,9 +428,26 @@ class GraphIndex(BaseIndex):
         
         file_extensions = self.ast_extractor.get_file_extensions()
         
-        ast_node_id = 0
-        symbol_id = 0
-        rel_id = 0
+        # CRITICAL FIX: Query for max IDs to avoid collisions in multi-partition builds
+        # In multi-partition scenarios, multiple partitions share the same database.
+        # Each partition build must start IDs after existing data to prevent PK violations.
+        conn = self.db_connection.get_connection()
+        try:
+            max_ast_id = conn.execute("SELECT COALESCE(MAX(id), -1) FROM ast_nodes").fetchone()[0]
+            max_symbol_id = conn.execute("SELECT COALESCE(MAX(id), -1) FROM symbols").fetchone()[0]
+            max_rel_id = conn.execute("SELECT COALESCE(MAX(id), -1) FROM relationships").fetchone()[0]
+            
+            ast_node_id = max_ast_id + 1
+            symbol_id = max_symbol_id + 1
+            rel_id = max_rel_id + 1
+            
+            logger.info("Starting ID generation from: ast_node=%d, symbol=%d, relationship=%d",
+                       ast_node_id, symbol_id, rel_id)
+        except Exception as e:
+            logger.error("Failed to query max IDs (will start from 0): %s", e)
+            ast_node_id = 0
+            symbol_id = 0
+            rel_id = 0
         
         # Collect all files to process
         files_to_process = []
@@ -803,6 +818,63 @@ class GraphIndex(BaseIndex):
         except Exception as e:
             logger.warning("Failed to delete old data for %s: %s", file_path, str(e))
     
+    def _stub_build_status(self) -> "BuildStatus":  # type: ignore[name-defined]
+        """Stub build status check for components.
+        
+        Returns:
+            BuildStatus indicating BUILT
+        """
+        from ouroboros.subsystems.rag.base import BuildStatus, IndexBuildState
+        
+        return BuildStatus(
+            state=IndexBuildState.BUILT,
+            message="Built",
+            progress_percent=100.0,
+        )
+    
+    def build_status(self) -> "BuildStatus":  # type: ignore[name-defined]
+        """Check actual build status (ADDENDUM-2025-11-17: Build Status Integration).
+        
+        Returns:
+            BuildStatus with actual state (BUILDING, BUILT, or NOT_BUILT)
+        """
+        from ouroboros.subsystems.rag.base import BuildStatus, IndexBuildState
+        
+        # Check if currently building
+        with self._build_lock:
+            is_building = self._building
+        
+        if is_building:
+            return BuildStatus(
+                state=IndexBuildState.BUILDING,
+                message="Building graph index...",
+                progress_percent=50.0,  # TODO: Track actual progress
+                details={"component": "graph"}
+            )
+        
+        # Check if index has data (has been built)
+        try:
+            conn = self.db_connection.get_connection()
+            ast_count = conn.execute("SELECT COUNT(*) FROM ast_nodes").fetchone()[0]
+            symbol_count = conn.execute("SELECT COUNT(*) FROM symbols").fetchone()[0]
+            
+            if ast_count > 0 or symbol_count > 0:
+                return BuildStatus(
+                    state=IndexBuildState.BUILT,
+                    message=f"Graph index built ({ast_count} AST nodes, {symbol_count} symbols)",
+                    progress_percent=100.0,
+                    details={"ast_nodes": ast_count, "symbols": symbol_count}
+                )
+        except Exception as e:
+            logger.debug("Error checking graph data: %s", e)
+        
+        # No data found - not built yet
+        return BuildStatus(
+            state=IndexBuildState.NOT_BUILT,
+            message="Graph index not yet built",
+            progress_percent=0.0
+        )
+    
     def health_check(self) -> HealthStatus:
         """Dynamic health check using component registry (fractal pattern).
         
@@ -848,9 +920,26 @@ class GraphIndex(BaseIndex):
         
         See Also:
             - specs/2025-11-08-cascading-health-check-architecture/
+            - ADDENDUM-2025-11-17-build-status-integration.md
             - dynamic_health_check() in component_helpers.py
             - _check_ast_health() and _check_graph_health() for component implementations
         """
+        # ADDENDUM-2025-11-17: Check build status first, skip validation if building
+        build_status = self.build_status()
+        
+        if build_status.state == IndexBuildState.BUILDING:
+            # Don't validate data during build - it's incomplete!
+            return HealthStatus(
+                healthy=True,  # Not unhealthy, just building
+                message=f"Building ({build_status.progress_percent:.0f}%), skipping health check",
+                details={
+                    "building": True,
+                    "progress": build_status.progress_percent,
+                    "build_message": build_status.message
+                }
+            )
+        
+        # Normal health check (validate data)
         return dynamic_health_check(self.components)
     
     def get_stats(self) -> Dict[str, Any]:

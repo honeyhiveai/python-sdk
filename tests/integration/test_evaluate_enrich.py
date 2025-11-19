@@ -5,7 +5,8 @@ with enrich_span() calls, validating that tracer discovery works correctly
 via baggage propagation after the v1.0 selective propagation fix.
 """
 
-# pylint: disable=unused-argument
+# pylint: disable=unused-argument,import-outside-toplevel,unused-variable,unused-import
+# Justification: Dynamic test imports; unused: Test scaffolding
 # Justification:
 # - Unused datapoint arg in test fixture
 

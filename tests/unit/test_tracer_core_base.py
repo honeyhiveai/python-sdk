@@ -84,7 +84,7 @@ def mock_unified_config() -> Mock:
         Mock DotDict config with standard values
     """
     config = Mock()
-    config.get.side_effect = lambda key, default=None: {
+    config_values = {
         "api_key": "test-api-key",
         "project": "test-project",
         "session_name": "test-session",
@@ -98,7 +98,17 @@ def mock_unified_config() -> Mock:
         "source": "test-source",
         "disable_http_tracing": False,
         "is_evaluation": False,
-    }.get(key, default)
+        "max_attributes": 1024,
+        "max_events": 1024,
+        "max_links": 128,
+        "max_span_size": 10485760,
+        "preserve_core_attributes": True,
+    }
+    # Support both .get() and attribute access
+    config.get.side_effect = lambda key, default=None: config_values.get(key, default)
+    # Set as attributes as well for direct access
+    for key, value in config_values.items():
+        setattr(config, key, value)
     return config
 
 

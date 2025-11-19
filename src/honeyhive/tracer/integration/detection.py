@@ -450,6 +450,7 @@ def is_noop_or_proxy_provider(provider: Any) -> bool:
 
 def atomic_provider_detection_and_setup(
     tracer_instance: Any = None,
+    span_limits: Optional[Any] = None,
 ) -> Tuple[str, Optional[Any], Dict[str, Any]]:
     """Atomically detect provider and set up new provider if needed.
 
@@ -527,8 +528,28 @@ def atomic_provider_detection_and_setup(
             },
         )
 
-        # Step 3: Create new TracerProvider
-        new_provider = TracerProvider()
+        # Step 3: Create new TracerProvider with span limits
+        if span_limits:
+            new_provider = TracerProvider(span_limits=span_limits)
+            safe_log(
+                tracer_instance,
+                "debug",
+                "Creating TracerProvider with custom span limits",
+                honeyhive_data={
+                    "max_attributes": (
+                        span_limits.max_attributes
+                        if hasattr(span_limits, "max_attributes")
+                        else "unknown"
+                    ),
+                },
+            )
+        else:
+            new_provider = TracerProvider()
+            safe_log(
+                tracer_instance,
+                "debug",
+                "Creating TracerProvider with default span limits",
+            )
 
         # Step 4: Immediately set as global provider (atomic with detection)
         try:

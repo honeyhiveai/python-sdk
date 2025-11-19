@@ -726,7 +726,15 @@ class TestTracerOperationsMixin:  # pylint: disable=too-many-public-methods
     def test_finalize_span_dynamically_success(
         self, mock_tracer_operations: MockTracerOperations, mock_span: Mock
     ) -> None:
-        """Test successful span finalization."""
+        """Test successful span finalization with small span (no preservation)."""
+        # Setup: Small span (10 attributes - below 95% threshold)
+        mock_span.name = "test_span"
+        mock_span.attributes = {f"attr_{i}": f"value_{i}" for i in range(10)}
+
+        # Configure mock to skip preservation (small span)
+        mock_tracer_operations.config.preserve_core_attributes = True
+        mock_tracer_operations.config.max_attributes = 1024
+
         mock_tracer_operations._finalize_span_dynamically(mock_span)
 
         mock_span.end.assert_called_once()

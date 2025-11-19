@@ -33,12 +33,15 @@ See Also:
     - Pydantic v2 validators: https://docs.pydantic.dev/latest/concepts/validators/
 """
 
+import logging
 from pathlib import Path
-from typing import Optional
+from typing import List, Optional
 
 from pydantic import Field, field_validator, model_validator
 
 from ouroboros.config.schemas.base import BaseConfig
+
+logger = logging.getLogger(__name__)
 
 
 class VectorConfig(BaseConfig):
@@ -377,6 +380,7 @@ class GraphConfig(BaseConfig):
         - find_call_paths: Show call chain from A to B
 
     Key Settings:
+        - enabled: Enable graph traversal index
         - max_depth: Maximum recursion depth (1-100)
         - relationship_types: Relationship types to track
 
@@ -389,6 +393,7 @@ class GraphConfig(BaseConfig):
         >>> from ouroboros.config.schemas.indexes import GraphConfig
         >>> 
         >>> config = GraphConfig(
+        ...     enabled=True,
         ...     max_depth=10,
         ...     relationship_types=["calls", "imports", "inherits"]
         ... )
@@ -401,6 +406,11 @@ class GraphConfig(BaseConfig):
     Security:
         max_depth prevents infinite recursion in circular call graphs.
     """
+
+    enabled: bool = Field(
+        default=True,
+        description="Enable graph traversal index (DuckDB call graph)",
+    )
 
     max_depth: int = Field(
         default=10,
@@ -997,6 +1007,7 @@ class ASTIndexConfig(BaseConfig):
         - Find all error handling blocks
 
     Key Settings:
+        - enabled: Enable AST structural search index
         - source_paths: Code directories to parse
         - languages: Languages to support (Tree-sitter parsers)
         - auto_install_parsers: Auto-install missing parsers
@@ -1010,6 +1021,7 @@ class ASTIndexConfig(BaseConfig):
         >>> from ouroboros.config.schemas.indexes import ASTIndexConfig
         >>> 
         >>> config = ASTIndexConfig(
+        ...     enabled=True,
         ...     source_paths=["src/", "lib/"],
         ...     languages=["python", "typescript", "rust"],
         ...     auto_install_parsers=True,
@@ -1023,6 +1035,11 @@ class ASTIndexConfig(BaseConfig):
     Security:
         Parser installation uses isolated venv (no system pollution).
     """
+
+    enabled: bool = Field(
+        default=True,
+        description="Enable AST structural search index (Tree-sitter)",
+    )
 
     source_paths: list[str] = Field(
         ...,
@@ -1048,6 +1065,189 @@ class ASTIndexConfig(BaseConfig):
 
 
 
+class IndexBuildConfig(BaseConfig):
+    """Configuration for resilient index building.
+    
+    Provides configurable thresholds, retry policies, and TTLs for robust
+    index building with graceful degradation and auto-repair.
+    
+    Key Settings:
+        - disk_space_threshold_gb: Minimum free disk space required (GB)
+        - max_retries: Maximum retry attempts for transient failures
+        - retry_backoff_base: Exponential backoff base (seconds)
+        - transient_error_keywords: Keywords to identify transient errors
+        - *_error_ttl_hours: TTL for different error types
+        - report_progress_per_component: Enable component-level progress
+        - telemetry_enabled: Enable telemetry event emission
+    
+    Error TTL Strategy:
+        - Config errors: No TTL (persist until restart) - requires code/config fix
+        - Transient errors: 24h TTL - external issues may resolve
+        - Resource errors: 1h TTL - disk/memory issues should be fixed quickly
+    
+    Validation Warnings:
+        Logs warnings for potentially unsafe config overrides:
+        - Disk space threshold <1GB (may cause mid-build failures)
+        - Max retries >5 (may delay failure detection)
+        - Max retries =0 (disables retry for transient failures)
+        - Transient TTL <1h (may cause frequent rebuild attempts)
+        - Resource TTL >24h (resource issues should be fixed quickly)
+        - Backoff base >5.0 (may cause excessive delays)
+    
+    Example:
+        >>> from ouroboros.config.schemas.indexes import IndexBuildConfig
+        >>> 
+        >>> # Production config (safe defaults)
+        >>> config = IndexBuildConfig(
+        ...     disk_space_threshold_gb=2.0,
+        ...     max_retries=3,
+        ...     retry_backoff_base=2.0,
+        ...     transient_error_ttl_hours=24.0,
+        ...     resource_error_ttl_hours=1.0,
+        ...     report_progress_per_component=True,
+        ...     telemetry_enabled=False
+        ... )
+        >>> 
+        >>> # Development config (aggressive retries)
+        >>> dev_config = IndexBuildConfig(
+        ...     disk_space_threshold_gb=0.5,  # ⚠️ Warning logged
+        ...     max_retries=5,  # ⚠️ Warning logged
+        ...     transient_error_ttl_hours=1.0,  # ⚠️ Warning logged
+        ... )
+    
+    Traceability:
+        FR-029: IndexBuildConfig Schema
+        FR-030: Config Validation Warnings
+    """
+    
+    disk_space_threshold_gb: float = Field(
+        default=2.0,
+        ge=0.1,
+        description="Minimum free disk space required to build (GB)"
+    )
+    
+    max_retries: int = Field(
+        default=3,
+        ge=0,
+        le=10,
+        description="Max retries for transient failures"
+    )
+    
+    retry_backoff_base: float = Field(
+        default=2.0,
+        ge=1.0,
+        le=10.0,
+        description="Exponential backoff base (seconds)"
+    )
+    
+    transient_error_keywords: List[str] = Field(
+        default_factory=lambda: [
+            "timeout",
+            "connection",
+            "network",
+            "temporary",
+            "unavailable",
+            "model download",
+        ],
+        description="Keywords to identify transient errors"
+    )
+    
+    config_error_ttl_hours: Optional[float] = Field(
+        default=None,
+        description="TTL for config errors (None = until restart)"
+    )
+    
+    transient_error_ttl_hours: float = Field(
+        default=24.0,
+        ge=0.1,
+        description="TTL for transient errors (hours)"
+    )
+    
+    resource_error_ttl_hours: float = Field(
+        default=1.0,
+        ge=0.1,
+        description="TTL for resource errors (hours)"
+    )
+    
+    report_progress_per_component: bool = Field(
+        default=True,
+        description="Report progress at component level"
+    )
+    
+    telemetry_enabled: bool = Field(
+        default=False,
+        description="Enable telemetry event emission"
+    )
+    
+    @model_validator(mode="after")
+    def validate_config(self) -> "IndexBuildConfig":
+        """Validate config and log warnings for unsafe overrides.
+        
+        Warnings logged for:
+            - Disk space threshold <1GB
+            - Max retries >5 or =0
+            - TTLs too short (<1h for transient)
+            - Backoff base too high (>5.0)
+        
+        Returns:
+            Self (for method chaining)
+        """
+        # Warn if disk space threshold is too low
+        if self.disk_space_threshold_gb < 1.0:
+            logger.warning(
+                "⚠️  Low disk_space_threshold_gb (%.1fGB). "
+                "Recommended: 2GB+ to prevent mid-build failures. "
+                "Current setting may cause frequent build failures.",
+                self.disk_space_threshold_gb
+            )
+        
+        # Warn if max_retries is too high
+        if self.max_retries > 5:
+            logger.warning(
+                "⚠️  High max_retries (%d). "
+                "May delay failure detection and mask persistent issues. "
+                "Recommended: 3 retries for transient failures.",
+                self.max_retries
+            )
+        
+        # Warn if max_retries is disabled
+        if self.max_retries == 0:
+            logger.warning(
+                "⚠️  Retries disabled (max_retries=0). "
+                "Transient failures (network timeouts, model downloads) will fail immediately. "
+                "Recommended: 3 retries."
+            )
+        
+        # Warn if TTLs are too short
+        if self.transient_error_ttl_hours < 1.0:
+            logger.warning(
+                "⚠️  Short transient_error_ttl_hours (%.1fh). "
+                "May cause frequent rebuild attempts for persistent issues. "
+                "Recommended: 24h to allow time for external issues to resolve.",
+                self.transient_error_ttl_hours
+            )
+        
+        # Warn if resource error TTL is too long
+        if self.resource_error_ttl_hours > 24.0:
+            logger.warning(
+                "⚠️  Long resource_error_ttl_hours (%.1fh). "
+                "Resource issues (disk space, memory) should be resolved quickly. "
+                "Recommended: 1h to encourage prompt resolution.",
+                self.resource_error_ttl_hours
+            )
+        
+        # Warn if backoff base is too high
+        if self.retry_backoff_base > 5.0:
+            logger.warning(
+                "⚠️  High retry_backoff_base (%.1fs). "
+                "May cause excessive delays between retries. "
+                "Recommended: 2.0s for balanced retry timing.",
+                self.retry_backoff_base
+            )
+        
+        return self
+
+
 class IndexesConfig(BaseConfig):
     """
     Root configuration for all RAG indexes.
@@ -1061,6 +1261,7 @@ class IndexesConfig(BaseConfig):
         - ast: AST index configuration
         - cache_path: Base cache path for all indexes
         - file_watcher: File monitoring configuration
+        - build: Resilient index building configuration
 
     Cache Structure:
         .praxis-os/.cache/indexes/
@@ -1078,7 +1279,8 @@ class IndexesConfig(BaseConfig):
         ...     code=CodeIndexConfig(...),
         ...     ast=ASTIndexConfig(...),
         ...     cache_path=Path(".cache/indexes"),  # Relative to base_path
-        ...     file_watcher=FileWatcherConfig(enabled=True)
+        ...     file_watcher=FileWatcherConfig(enabled=True),
+        ...     build=IndexBuildConfig()  # Use defaults
         ... )
 
     Validation:
@@ -1109,6 +1311,11 @@ class IndexesConfig(BaseConfig):
         ...,
         description="File watcher configuration",
     )
+    
+    build: IndexBuildConfig = Field(
+        default_factory=IndexBuildConfig,
+        description="Resilient index building configuration",
+    )
 
 
 __all__ = [
@@ -1124,6 +1331,7 @@ __all__ = [
     "StandardsIndexConfig",
     "CodeIndexConfig",
     "ASTIndexConfig",
+    "IndexBuildConfig",
     "IndexesConfig",
     "MetadataFilteringConfig",
 ]

@@ -25,10 +25,13 @@ try:
     DEPENDENCIES_AVAILABLE = True
 except ImportError:
     DEPENDENCIES_AVAILABLE = False
-    print("⚠️  Warning: requests and beautifulsoup4 not installed")
-    print("   Install with: pip install -r docs/utils/requirements.txt")
-    print("   Skipping navigation validation...")
-    sys.exit(0)  # Exit successfully to not block commits
+    print("❌ ERROR: Required dependencies not installed!")
+    print("   Navigation validation requires: requests, beautifulsoup4")
+    print("   Install with: pip install requests beautifulsoup4")
+    print("   Or: pip install -r docs/utils/requirements.txt")
+    print("")
+    print("   Navigation validation CANNOT be skipped.")
+    sys.exit(1)  # Fail the pre-commit hook!
 
 
 class NavigationValidator:

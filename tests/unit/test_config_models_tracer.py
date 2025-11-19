@@ -41,7 +41,7 @@ class TestTracerConfig:
             assert config.verbose is False
             assert config.session_name is None
             assert config.source == "dev"
-            assert config.server_url is None
+            assert config.server_url == "https://api.honeyhive.ai"
             assert config.disable_http_tracing is True
             assert config.disable_batch is False
             assert config.disable_tracing is False
@@ -56,6 +56,12 @@ class TestTracerConfig:
             assert config.run_id is None
             assert config.dataset_id is None
             assert config.datapoint_id is None
+            # Span limit defaults
+            assert config.max_attributes == 1024
+            assert config.max_events == 1024
+            assert config.max_links == 128
+            assert config.max_span_size == 10 * 1024 * 1024  # 10MB
+            assert config.preserve_core_attributes is True  # Default enabled
 
     def test_initialization_with_values(self) -> None:
         """Test TracerConfig initialization with provided values."""
@@ -76,6 +82,11 @@ class TestTracerConfig:
             inputs={"user_id": "123"},
             is_evaluation=True,
             run_id="eval-run-123",
+            max_attributes=2048,
+            max_events=256,
+            max_links=256,
+            max_span_size=20 * 1024 * 1024,  # 20MB
+            preserve_core_attributes=False,  # Explicitly disable for testing
         )
 
         assert config.api_key == "hh_test_key"
@@ -94,6 +105,12 @@ class TestTracerConfig:
         assert config.inputs == {"user_id": "123"}
         assert config.is_evaluation is True
         assert config.run_id == "eval-run-123"
+        # Span limit custom values
+        assert config.max_attributes == 2048
+        assert config.max_events == 256
+        assert config.max_links == 256
+        assert config.max_span_size == 20 * 1024 * 1024  # 20MB
+        assert config.preserve_core_attributes is False  # Custom value
 
     def test_validate_server_url_valid_https(self) -> None:
         """Test server URL validation with valid HTTPS URL."""
@@ -107,10 +124,10 @@ class TestTracerConfig:
 
     @patch("honeyhive.config.models.base.logger")
     def test_validate_server_url_invalid_protocol(self, mock_logger: Mock) -> None:
-        """Test server URL validation with invalid protocol."""
+        """Test server URL validation with invalid protocol falls back to default."""
         config = TracerConfig(server_url="ftp://invalid.com")
 
-        assert config.server_url is None
+        assert config.server_url == "https://api.honeyhive.ai"
         mock_logger.warning.assert_called_once()
         call_args = mock_logger.warning.call_args
         assert (
@@ -119,10 +136,10 @@ class TestTracerConfig:
 
     @patch("honeyhive.config.models.base.logger")
     def test_validate_server_url_non_string(self, mock_logger: Mock) -> None:
-        """Test server URL validation with non-string value."""
+        """Test server URL validation with non-string value falls back to default."""
         config = TracerConfig(server_url=12345)  # type: ignore[arg-type]
 
-        assert config.server_url is None
+        assert config.server_url == "https://api.honeyhive.ai"
         mock_logger.warning.assert_called_once()
         call_args = mock_logger.warning.call_args
         assert (
@@ -132,9 +149,9 @@ class TestTracerConfig:
         )
 
     def test_validate_server_url_none(self) -> None:
-        """Test server URL validation with None value."""
+        """Test server URL validation with None value defaults to API URL."""
         config = TracerConfig(server_url=None)
-        assert config.server_url is None
+        assert config.server_url == "https://api.honeyhive.ai"
 
     def test_validate_source_valid_string(self) -> None:
         """Test source validation with valid string."""
@@ -266,6 +283,11 @@ class TestTracerConfig:
                 "HH_CACHE_ENABLED": "false",
                 "HH_CACHE_MAX_SIZE": "2000",
                 "HH_CACHE_TTL": "600.0",
+                "HH_MAX_ATTRIBUTES": "5000",
+                "HH_MAX_EVENTS": "512",
+                "HH_MAX_LINKS": "256",
+                "HH_MAX_SPAN_SIZE": "52428800",  # 50MB in bytes
+                "HH_PRESERVE_CORE_ATTRIBUTES": "false",  # Disable via env var
             },
             clear=True,
         ):
@@ -282,6 +304,12 @@ class TestTracerConfig:
             assert config.cache_enabled is False
             assert config.cache_max_size == 2000
             assert config.cache_ttl == 600.0
+            # Span limit environment variables
+            assert config.max_attributes == 5000
+            assert config.max_events == 512
+            assert config.max_links == 256
+            assert config.max_span_size == 52428800  # 50MB
+            assert config.preserve_core_attributes is False  # Disabled via env var
 
     def test_extra_fields_forbidden(self) -> None:
         """Test that extra fields are forbidden in configuration."""
@@ -598,7 +626,7 @@ class TestConfigModelIntegration:
             session_id="invalid-uuid",  # Invalid UUID, should become None
         )
 
-        assert tracer_config.server_url is None
+        assert tracer_config.server_url == "https://api.honeyhive.ai"
         assert tracer_config.source == "dev"
         assert tracer_config.session_id is None
 

@@ -8,7 +8,8 @@ by Agent OS standards.
 NO MOCKING - All tests use real OpenTelemetry components and real API calls.
 """
 
-# pylint: disable=line-too-long,too-many-lines,too-many-locals,duplicate-code
+# pylint: disable=line-too-long,too-many-lines,too-many-locals,duplicate-code,too-many-statements
+# Justification: too-many-statements: Comprehensive performance test requires many assertions
 # Justification: Integration tests require comprehensive coverage and detailed assertions
 
 import json

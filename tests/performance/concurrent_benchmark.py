@@ -8,12 +8,12 @@ This module tests performance under concurrent load with:
 - Scalability testing
 """
 
-# pylint: disable=duplicate-code,cyclic-import
-# pylint: disable=too-many-lines,protected-access,redefined-outer-name,too-many-public-methods,line-too-long
-# Justification:
-# - duplicate-code: Legitimate shared patterns with enrichment implementations
-# - cyclic-import: Test imports trigger circular dependencies in main codebase (acceptable for tests)
-# - Other: Performance benchmark file with comprehensive concurrent testing requiring extensive test coverage
+# pylint: disable=R0401,R0801,R0902,R0903,R0913,R0914,R0915,C0301,W0621
+# Justification: Performance benchmark with test patterns that trigger:
+# - R0401 (cyclic-import): Test imports honeyhive package causing cycles
+# - R0801 (duplicate-code): Shared test patterns with integration tests
+# - W0621 (redefined-outer-name): Test function scoping
+# - R0902-R0915, C0301: Comprehensive concurrent testing requirements
 
 import queue
 import statistics

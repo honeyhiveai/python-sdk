@@ -9,6 +9,8 @@ Tests cover:
 5. Session linking
 """
 
+# pylint: disable=R0801
+# Justification: Shared test patterns with experiment integration tests
 import inspect
 from typing import Any, Dict
 from unittest.mock import Mock, patch

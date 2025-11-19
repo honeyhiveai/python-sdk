@@ -1,11 +1,14 @@
 """HoneyHive span processor for OpenTelemetry integration."""
 
-# pylint: disable=duplicate-code,protected-access,too-many-lines
+# pylint: disable=duplicate-code,protected-access,too-many-lines,line-too-long,invalid-name,no-else-return
 # Justification: Legitimate shared patterns with utils and decorators.
 # Duplicate code represents common LLM attribute lists and model patterns
 # shared across processing and utility modules for consistent event detection.
 # protected-access: Accessing _config is the established pattern for tracer config
 # too-many-lines: Comprehensive span processor with debugging requires additional code
+# line-too-long: Complex OpenTelemetry attribute mappings exceed 88 char limit
+# invalid-name: OPENINFERENCE_TO_HONEYHIVE is a constant mapping dict (acceptable)
+# no-else-return: Early return pattern improves readability in complex conditionals
 
 import json
 from typing import Any, Optional
@@ -87,7 +90,8 @@ class HoneyHiveSpanProcessor(SpanProcessor):
 
     def _safe_log(self, level: str, message: str, *args: Any, **kwargs: Any) -> None:
         """Safely log using the centralized safe_log utility."""
-        # pylint: disable=import-outside-toplevel  # Avoids circular import: processor -> logger -> lifecycle
+        # pylint: disable=import-outside-toplevel  # Avoids circular
+        # import: processor -> logger
         from ...utils.logger import safe_log
 
         # Format message with args if provided (maintain backward compatibility)
@@ -279,7 +283,8 @@ class HoneyHiveSpanProcessor(SpanProcessor):
         """
         attributes = {}
 
-        # Priority: baggage session_id (for distributed tracing), then tracer instance
+        # Priority: baggage session_id (for distributed tracing),
+        # then tracer instance
         # This ensures distributed traces use the propagated session_id from the client
         session_id = baggage.get_baggage("session_id", ctx)
 
@@ -438,7 +443,8 @@ class HoneyHiveSpanProcessor(SpanProcessor):
         """Get evaluation metadata from baggage (run_id, dataset_id, datapoint_id).
 
         This method reads evaluation context that was set during evaluate() execution
-        and ensures it propagates to all child spans created during datapoint processing.
+        and ensures it propagates to all child spans created during
+        # datapoint processing.
 
         :param ctx: OpenTelemetry context to extract baggage from
         :type ctx: Context
@@ -489,7 +495,7 @@ class HoneyHiveSpanProcessor(SpanProcessor):
         :return: Dictionary of baggage attributes with "baggage." prefix
         :rtype: dict
         """
-        attributes = {}
+        attributes: dict[str, Any] = {}
 
         try:
             # Get all baggage items from context
@@ -576,8 +582,9 @@ class HoneyHiveSpanProcessor(SpanProcessor):
                 return
 
             # Get session_id to determine if this span should be enriched
-            # Priority: baggage session_id (for distributed tracing), then tracer instance
-            # This ensures distributed traces use the propagated session_id from the client
+            # Priority: baggage session_id (distributed tracing), then
+            # tracer instance. This ensures distributed traces use the
+            # propagated session_id from the client
             session_id = baggage.get_baggage("session_id", ctx)
 
             if session_id:
@@ -609,7 +616,10 @@ class HoneyHiveSpanProcessor(SpanProcessor):
                 else:
                     self._safe_log(
                         "debug",
-                        "⚠️ DEBUG: No session_id found in tracer instance or baggage",
+                        (
+                            "⚠️ DEBUG: No session_id found in tracer "
+                            "instance or baggage"
+                        ),
                         honeyhive_data={
                             "span_name": span.name,
                             "tracer_instance_id": (
@@ -654,7 +664,8 @@ class HoneyHiveSpanProcessor(SpanProcessor):
                     self._get_traceloop_compatibility_attributes(ctx)
                 )
 
-                # Add evaluation metadata from baggage (run_id, dataset_id, datapoint_id)
+                # Add evaluation metadata from baggage (run_id, dataset_id,
+                # datapoint_id)
                 attributes_to_set.update(
                     self._get_evaluation_attributes_from_baggage(ctx)
                 )
@@ -706,9 +717,15 @@ class HoneyHiveSpanProcessor(SpanProcessor):
         :type span: ReadableSpan
         """
         try:
+            self._safe_log("debug", f"🟦 ON_END CALLED for span: {span.name}")
+
             # Get span duration for performance metrics
             span_context = span.get_span_context()
             if span_context is None or span_context.span_id == 0:
+                self._safe_log(
+                    "warning",
+                    f"❌ ON_END: Invalid span context for {span.name}, skipping",
+                )
                 return  # Skip invalid spans
 
             # Extract span attributes
@@ -724,7 +741,12 @@ class HoneyHiveSpanProcessor(SpanProcessor):
             if not session_id_raw:
                 # Span has no session_id, skipping HoneyHive export
                 self._safe_log(
-                    "debug", "⚠️ Span has no session_id, skipping HoneyHive export"
+                    "warning",
+                    (
+                        f"⚠️ ON_END: Span {span.name} has no session_id, "
+                        f"skipping HoneyHive export. Attributes: "
+                        f"{list(attributes.keys())}"
+                    ),
                 )
                 return
 
@@ -749,7 +771,10 @@ class HoneyHiveSpanProcessor(SpanProcessor):
             else:
                 self._safe_log(
                     "warning",
-                    "⚠️ No valid export method for mode: %s, client: %s, exporter: %s",
+                    (
+                        "⚠️ No valid export method for mode: %s, "
+                        "client: %s, exporter: %s"
+                    ),
                     self.mode,
                     self.client is not None,
                     self.otlp_exporter is not None,
@@ -939,7 +964,8 @@ class HoneyHiveSpanProcessor(SpanProcessor):
         Priority Order:
         1. honeyhive_event_type_raw - Set by @trace decorator (highest priority)
         2. honeyhive_event_type - Alternative explicit format
-        3. openinference.span.kind - Standard instrumentor convention (LLM/CHAIN/TOOL/AGENT)
+        3. openinference.span.kind - Standard instrumentor convention
+           (LLM/CHAIN/TOOL/AGENT)
         4. Span name inference - Pattern matching fallback
         5. Default to "tool" - Final fallback
 
@@ -1000,10 +1026,15 @@ class HoneyHiveSpanProcessor(SpanProcessor):
             # Priority 3: Direct decorator attributes
             direct_type = attributes.get("honeyhive_event_type")
             if direct_type and direct_type != "tool":
-                self._safe_log("debug", "✅ Event type from decorator: %s", direct_type)
+                (
+                    self._safe_log(
+                        "debug", "✅ Event type from decorator: %s", direct_type
+                    )
+                )
                 return str(direct_type)
 
-            # Priority 4: OpenInference span.kind attribute (standard instrumentor convention)
+            # Priority 4: OpenInference span.kind attribute (standard
+            # instrumentor convention)
             span_kind = attributes.get("openinference.span.kind")
             if span_kind:
                 # Map OpenInference span kinds to HoneyHive event types
@@ -1026,14 +1057,20 @@ class HoneyHiveSpanProcessor(SpanProcessor):
                 if event_type:
                     self._safe_log(
                         "debug",
-                        f"✅ Event type from openinference.span.kind: {event_type} ({span_kind_upper})",
+                        (
+                            f"✅ Event type from openinference.span.kind: "
+                            f"{event_type} ({span_kind_upper})"
+                        ),
                     )
                     return event_type
                 else:
                     # Unknown span.kind - log warning and default to tool
                     self._safe_log(
                         "warning",
-                        f"⚠️ Unknown openinference.span.kind: {span_kind_upper}, defaulting to tool",
+                        (
+                            f"⚠️ Unknown openinference.span.kind: "
+                            f"{span_kind_upper}, defaulting to tool"
+                        ),
                     )
                     return "tool"
 
@@ -1137,7 +1174,8 @@ class HoneyHiveSpanProcessor(SpanProcessor):
 
             # Handle error status
             if span.status and hasattr(span.status, "status_code"):
-                # pylint: disable=import-outside-toplevel  # Only needed when span has error status
+                # pylint: disable=import-outside-toplevel  # Only needed when
+                # span has error status
                 from opentelemetry.trace import StatusCode
 
                 if span.status.status_code == StatusCode.ERROR:

@@ -1,5 +1,7 @@
 """Integration tests for tracer functionality in HoneyHive."""
 
+# pylint: disable=C0301
+# Justification: line-too-long: Complex integration test assertions
 import os
 import time
 from typing import Any
@@ -472,7 +474,7 @@ class TestUnifiedEnrichSpanIntegration:
     def test_enrich_span_with_user_properties_and_metrics_integration(
         self, integration_tracer: Any, integration_client: Any, real_project: Any
     ) -> None:
-        """Test enrich_span with user_properties and metrics - verify correct namespaces."""
+        """Test enrich_span with user_properties and metrics."""
         # Generate unique identifier for backend verification
         _, unique_id = generate_test_id("enrich_span_user_props", "integration")
 

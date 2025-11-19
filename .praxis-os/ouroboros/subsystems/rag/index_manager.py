@@ -15,8 +15,10 @@ Design Principles:
 """
 
 import logging
+import threading
+import time
 from pathlib import Path
-from typing import Any, Dict, List, Optional
+from typing import Any, Callable, Dict, List, Optional
 
 from ouroboros.config.schemas.indexes import IndexesConfig
 from ouroboros.subsystems.rag.base import BaseIndex, HealthStatus, SearchResult
@@ -74,6 +76,22 @@ class IndexManager:
         # Index registry: {index_name: BaseIndex}
         self._indexes: Dict[str, BaseIndex] = {}
         
+        # Build state cache for performance optimization
+        # Maps index_name -> BuildStatus with TTL-based invalidation
+        self._build_state_cache: Dict[str, Any] = {}  # BuildStatus type imported later
+        self._build_state_cache_time: Dict[str, float] = {}
+        self._build_state_cache_lock = threading.RLock()
+        
+        # Cache TTL configuration
+        self._build_state_cache_ttl: float = 60.0  # BUILT state (stable)
+        self._building_state_cache_ttl: float = 5.0  # BUILDING state (dynamic, will be calculated)
+        
+        # Thread safety for _indexes dict
+        self._indexes_lock = threading.RLock()
+        
+        # Telemetry callback (optional, disabled by default)
+        self._telemetry_callback: Optional[Callable[[str, Dict[str, Any]], None]] = None
+        
         # Initialize indexes based on config
         try:
             self._init_indexes()
@@ -128,6 +146,17 @@ class IndexManager:
                 self._indexes[index_name] = index_instance
                 logger.info(f"✅ {class_name} initialized: {description}")
                 
+                # Inject corruption handler for auto-repair
+                # This enables indexes to trigger automatic rebuilds when corruption is detected
+                try:
+                    index_instance.set_corruption_handler(
+                        lambda error, idx_name=index_name: self._handle_corruption(idx_name, error)
+                    )
+                    logger.debug(f"Corruption handler injected for {index_name} index")
+                except Exception as e:
+                    # Don't fail initialization if handler injection fails
+                    logger.warning(f"Failed to inject corruption handler for {index_name}: {e}")
+                
             except ImportError as e:
                 logger.warning(f"{class_name} not available (module not found): {e}")
             except Exception as e:
@@ -139,6 +168,456 @@ class IndexManager:
                 what_failed="IndexManager initialization",
                 why_failed="No indexes were successfully initialized",
                 how_to_fix="Check that at least one index is enabled in config/mcp.yaml and dependencies are installed."
+            )
+    
+    def _get_required_indexes_for_action(self, action: str) -> List[str]:
+        """Get list of required indexes for an action.
+        
+        Maps actions to the indexes they require. Used for build readiness checks
+        before executing actions. This ensures we don't attempt queries on indexes
+        that aren't built yet.
+        
+        Args:
+            action: The action to perform (e.g., "search_standards", "find_callers")
+            
+        Returns:
+            List of index names required for this action (e.g., ["standards"], ["code"])
+            
+        Examples:
+            >>> manager._get_required_indexes_for_action("search_standards")
+            ["standards"]
+            >>> manager._get_required_indexes_for_action("find_callers")
+            ["code"]
+            >>> manager._get_required_indexes_for_action("search_ast")
+            ["code"]
+        
+        Note:
+            This method uses the same ACTION_REGISTRY as route_action() to ensure
+            consistency. If the action is not in the registry, returns empty list.
+        """
+        # Action registry: maps action pattern → (index_name, method_name, is_search)
+        # This is the same registry used by route_action() for consistency
+        ACTION_REGISTRY = {
+            "search_standards": ("standards", "search", True),
+            "search_code": ("code", "search", True),
+            "search_ast": ("code", "search_ast", False),  # AST search via CodeIndex.search_ast()
+            "find_callers": ("code", "find_callers", False),  # Graph via CodeIndex.find_callers()
+            "find_dependencies": ("code", "find_dependencies", False),  # Graph via CodeIndex.find_dependencies()
+            "find_call_paths": ("code", "find_call_paths", False),  # Graph via CodeIndex.find_call_paths()
+        }
+        
+        if action not in ACTION_REGISTRY:
+            return []
+        
+        index_name, _, _ = ACTION_REGISTRY[action]
+        return [index_name]
+    
+    def _check_build_readiness(self, action: str) -> Optional[Dict[str, Any]]:
+        """Check if required indexes for an action are built and ready.
+        
+        This method checks the build status of all indexes required for the action.
+        If any required index is not BUILT, returns an error response with details.
+        If all required indexes are BUILT, returns None (ready to proceed).
+        
+        Args:
+            action: The action to perform (e.g., "search_standards", "find_callers")
+            
+        Returns:
+            None if all required indexes are BUILT (ready to proceed)
+            Dict with error response if any required index is not BUILT
+            
+        Examples:
+            >>> # All indexes built
+            >>> manager._check_build_readiness("search_standards")
+            None
+            
+            >>> # Standards index not built
+            >>> manager._check_build_readiness("search_standards")
+            {
+                "status": "error",
+                "error": "Index not built",
+                "message": "standards index is not built (state: NOT_BUILT)",
+                "build_status": {...}
+            }
+        
+        Note:
+            This method uses build_status() from indexes, which delegates to
+            dynamic_build_status() for fractal aggregation of component status.
+        """
+        from ouroboros.subsystems.rag.base import IndexBuildState
+        
+        # Get required indexes for this action
+        required_indexes = self._get_required_indexes_for_action(action)
+        
+        if not required_indexes:
+            # Unknown action or no indexes required
+            return None
+        
+        # Check build status of each required index
+        for index_name in required_indexes:
+            # Check if index exists
+            if index_name not in self._indexes:
+                return {
+                    "status": "error",
+                    "error": "Index not available",
+                    "message": f"{index_name} index is not available (not configured or failed to initialize)",
+                    "how_to_fix": f"Ensure {index_name} index is configured in config/mcp.yaml and dependencies are installed",
+                }
+            
+            # Get index build status
+            index = self._indexes[index_name]
+            build_status = index.build_status()
+            
+            # Check if index is BUILT
+            if build_status.state != IndexBuildState.BUILT:
+                return {
+                    "status": "error",
+                    "error": "Index not built",
+                    "message": f"{index_name} index is not built (state: {build_status.state.value})",
+                    "build_status": {
+                        "state": build_status.state.value,
+                        "message": build_status.message,
+                        "progress_percent": build_status.progress_percent,
+                        "details": build_status.details,
+                    },
+                    "how_to_fix": f"Build the {index_name} index first using the build action or ensure_all_indexes_healthy()",
+                }
+        
+        # All required indexes are BUILT
+        return None
+    
+    def _format_building_response(self, index_name: str, build_status: Any) -> Dict[str, Any]:
+        """Format a response when an index is currently building.
+        
+        Provides informative feedback to the user about build progress,
+        including progress percentage, estimated time, and suggestions.
+        
+        Args:
+            index_name: Name of the index that's building
+            build_status: BuildStatus object from the index
+            
+        Returns:
+            Dict with status, message, and build progress information
+            
+        Example:
+            >>> status = BuildStatus(
+            ...     state=IndexBuildState.BUILDING,
+            ...     message="Building vector index",
+            ...     progress_percent=45.5,
+            ...     details={"chunks_processed": 1000}
+            ... )
+            >>> manager._format_building_response("standards", status)
+            {
+                "status": "building",
+                "message": "standards index is currently building (45.5% complete)",
+                "build_status": {
+                    "state": "building",
+                    "message": "Building vector index",
+                    "progress_percent": 45.5,
+                    "details": {"chunks_processed": 1000}
+                },
+                "suggestion": "Wait for build to complete or try again in a few moments"
+            }
+        """
+        return {
+            "status": "building",
+            "message": f"{index_name} index is currently building ({build_status.progress_percent:.1f}% complete)",
+            "build_status": {
+                "state": build_status.state.value,
+                "message": build_status.message,
+                "progress_percent": build_status.progress_percent,
+                "details": build_status.details,
+            },
+            "suggestion": "Wait for build to complete or try again in a few moments",
+        }
+    
+    def _format_failed_response(self, index_name: str, build_status: Any) -> Dict[str, Any]:
+        """Format a response when an index build has failed.
+        
+        Provides detailed error information and remediation guidance to help
+        the user recover from build failures.
+        
+        Args:
+            index_name: Name of the index that failed to build
+            build_status: BuildStatus object from the index
+            
+        Returns:
+            Dict with status, error message, and remediation guidance
+            
+        Example:
+            >>> status = BuildStatus(
+            ...     state=IndexBuildState.FAILED,
+            ...     message="Build failed: Disk space exhausted",
+            ...     progress_percent=0.0,
+            ...     error="No space left on device",
+            ...     details={"error_type": "OSError"}
+            ... )
+            >>> manager._format_failed_response("standards", status)
+            {
+                "status": "error",
+                "error": "Index build failed",
+                "message": "standards index build failed: Disk space exhausted",
+                "build_status": {
+                    "state": "failed",
+                    "message": "Build failed: Disk space exhausted",
+                    "progress_percent": 0.0,
+                    "error": "No space left on device",
+                    "details": {"error_type": "OSError"}
+                },
+                "how_to_fix": "Check server logs for details. Try rebuilding with force=True..."
+            }
+        """
+        return {
+            "status": "error",
+            "error": "Index build failed",
+            "message": f"{index_name} index build failed: {build_status.message}",
+            "build_status": {
+                "state": build_status.state.value,
+                "message": build_status.message,
+                "progress_percent": build_status.progress_percent,
+                "error": build_status.error,
+                "details": build_status.details,
+            },
+            "how_to_fix": (
+                f"Check server logs for details. Try rebuilding the {index_name} index with force=True. "
+                f"If the error persists, check disk space, permissions, and dependencies."
+            ),
+        }
+    
+    def _attach_build_metadata(self, response: Dict[str, Any], index_name: str) -> Dict[str, Any]:
+        """Attach build status metadata to a successful response.
+        
+        Adds optional build status information to the response for observability.
+        This helps users understand the state of the index that served their query,
+        which can be useful for debugging or monitoring.
+        
+        Args:
+            response: The response dict to augment
+            index_name: Name of the index that served the query
+            
+        Returns:
+            Response dict with added "_build_metadata" field
+            
+        Example:
+            >>> response = {"status": "success", "results": [...], "count": 5}
+            >>> manager._attach_build_metadata(response, "standards")
+            {
+                "status": "success",
+                "results": [...],
+                "count": 5,
+                "_build_metadata": {
+                    "index": "standards",
+                    "state": "built",
+                    "progress_percent": 100.0
+                }
+            }
+        
+        Note:
+            The "_build_metadata" field is prefixed with underscore to indicate
+            it's optional metadata, not core response data.
+        """
+        try:
+            index = self._indexes.get(index_name)
+            if index:
+                build_status = index.build_status()
+                response["_build_metadata"] = {
+                    "index": index_name,
+                    "state": build_status.state.value,
+                    "progress_percent": build_status.progress_percent,
+                }
+        except Exception as e:
+            # Don't fail the response if metadata attachment fails
+            logger.warning(f"Failed to attach build metadata for {index_name}: {e}")
+        
+        return response
+    
+    def _handle_corruption(self, index_name: str, error: Exception) -> None:
+        """Handle corruption detection from an index (callback pattern).
+        
+        This method is called by indexes when they detect corruption during operations.
+        It triggers auto-repair by scheduling a background rebuild and emits telemetry.
+        
+        Args:
+            index_name: Name of the corrupted index
+            error: The exception that indicates corruption
+            
+        Example:
+            >>> # Index detects corruption and calls this handler
+            >>> manager._handle_corruption("standards", CorruptionError("Table missing"))
+            # Logs error, invalidates cache, schedules rebuild
+        
+        Note:
+            This is a callback method set via set_corruption_handler() on indexes.
+            It's designed to be non-blocking - rebuild happens in background thread.
+        """
+        logger.error(
+            f"Corruption detected in {index_name} index: {type(error).__name__}: {error}",
+            exc_info=True
+        )
+        
+        # Emit telemetry for corruption detection
+        from datetime import datetime, timezone
+        self._emit_telemetry("corruption_detected", {
+            "index_name": index_name,
+            "timestamp": datetime.now(timezone.utc).isoformat(),
+            "error_type": type(error).__name__,
+            "error_message": str(error),
+        })
+        
+        # Invalidate build cache for this index
+        self._invalidate_build_cache(index_name)
+        
+        # Trigger background rebuild
+        # Note: This uses threading to avoid blocking the current operation
+        import threading
+        rebuild_thread = threading.Thread(
+            target=self._rebuild_index_background,
+            args=(index_name,),
+            name=f"rebuild-{index_name}",
+            daemon=True  # Don't prevent shutdown
+        )
+        rebuild_thread.start()
+        
+        # Emit telemetry for auto-repair trigger
+        self._emit_telemetry("auto_repair_triggered", {
+            "index_name": index_name,
+            "timestamp": datetime.now(timezone.utc).isoformat(),
+            "trigger_reason": "corruption_detected",
+        })
+        
+        logger.info(f"Auto-repair triggered for {index_name} index (background rebuild started)")
+    
+    def _rebuild_index_background(self, index_name: str) -> None:
+        """Rebuild an index in the background (called from corruption handler).
+        
+        This method runs in a separate thread to avoid blocking the main operation.
+        It performs a full rebuild with force=True to clear corruption.
+        
+        Args:
+            index_name: Name of the index to rebuild
+            
+        Note:
+            This method includes error handling to prevent thread crashes.
+            Failures are logged but don't propagate to the main thread.
+        """
+        try:
+            logger.info(f"Background rebuild starting for {index_name} index")
+            self.rebuild_index(index_name, force=True)
+            logger.info(f"Background rebuild completed successfully for {index_name} index")
+            
+            # Emit telemetry for successful auto-repair
+            from datetime import datetime, timezone
+            self._emit_telemetry("auto_repair_completed", {
+                "index_name": index_name,
+                "timestamp": datetime.now(timezone.utc).isoformat(),
+                "success": True,
+            })
+        except Exception as e:
+            logger.error(
+                f"Background rebuild failed for {index_name} index: {type(e).__name__}: {e}",
+                exc_info=True
+            )
+            
+            # Emit telemetry for failed auto-repair
+            from datetime import datetime, timezone
+            self._emit_telemetry("auto_repair_completed", {
+                "index_name": index_name,
+                "timestamp": datetime.now(timezone.utc).isoformat(),
+                "success": False,
+                "error_type": type(e).__name__,
+                "error_message": str(e),
+            })
+    
+    def set_telemetry_callback(
+        self,
+        callback: Optional[Callable[[str, Dict[str, Any]], None]]
+    ) -> None:
+        """Set telemetry callback for event emission (optional).
+        
+        Telemetry is disabled by default. When enabled, this callback is invoked
+        for key events like build progress, corruption detection, and auto-repair.
+        
+        The callback should be non-blocking and handle errors gracefully, as
+        telemetry failures will not propagate (logged only).
+        
+        Args:
+            callback: Function to call on telemetry events.
+                     Signature: (event_type: str, event_data: Dict[str, Any]) -> None
+                     If None, disables telemetry.
+        
+        Event Types:
+            - "build_started": Index build initiated
+            - "build_progress": Build progress update
+            - "build_completed": Build finished successfully
+            - "build_failed": Build failed
+            - "corruption_detected": Corruption detected during operation
+            - "auto_repair_triggered": Auto-repair initiated
+            - "auto_repair_completed": Auto-repair finished
+        
+        Event Data (common fields):
+            - "index_name": Name of the index (str)
+            - "timestamp": ISO 8601 timestamp (str)
+            - Additional fields vary by event type
+        
+        Example:
+            >>> def my_telemetry_handler(event_type: str, event_data: Dict[str, Any]):
+            ...     print(f"Event: {event_type}, Data: {event_data}")
+            >>> 
+            >>> manager.set_telemetry_callback(my_telemetry_handler)
+            >>> # Now telemetry events will be emitted
+            >>> 
+            >>> manager.set_telemetry_callback(None)
+            >>> # Telemetry disabled
+        
+        Note:
+            Telemetry is controlled by config.build.telemetry_enabled.
+            Even with a callback set, events are only emitted if enabled in config.
+        """
+        self._telemetry_callback = callback
+        if callback:
+            logger.info("Telemetry callback registered")
+        else:
+            logger.info("Telemetry callback disabled")
+    
+    def _emit_telemetry(self, event_type: str, event_data: Dict[str, Any]) -> None:
+        """Emit telemetry event (internal helper).
+        
+        Calls the telemetry callback if set and enabled in config.
+        Catches and logs errors to prevent telemetry failures from affecting
+        core functionality.
+        
+        Args:
+            event_type: Type of event (e.g., "build_started", "corruption_detected")
+            event_data: Event-specific data dictionary
+        
+        Example:
+            >>> self._emit_telemetry("build_started", {
+            ...     "index_name": "standards",
+            ...     "timestamp": datetime.now(timezone.utc).isoformat(),
+            ...     "source_paths": ["standards/"],
+            ... })
+        
+        Note:
+            This method is defensive - telemetry failures are logged but never
+            propagate to the caller. Telemetry is optional and should never
+            break core functionality.
+        """
+        # Check if telemetry is enabled in config
+        if not self.config.build.telemetry_enabled:
+            return
+        
+        # Check if callback is set
+        if not self._telemetry_callback:
+            return
+        
+        try:
+            # Call the callback
+            self._telemetry_callback(event_type, event_data)
+        except Exception as e:
+            # Log error but don't propagate - telemetry is optional
+            logger.error(
+                f"Telemetry callback failed for event '{event_type}': {type(e).__name__}: {e}",
+                exc_info=False  # Don't clutter logs with stack traces
             )
     
     def route_action(self, action: str, **kwargs) -> Dict[str, Any]:
@@ -193,6 +672,11 @@ class IndexManager:
                 how_to_fix=f"Ensure {index_name} index is configured in config/mcp.yaml and dependencies are installed"
             )
         
+        # Check build readiness (resilient index building)
+        build_error = self._check_build_readiness(action)
+        if build_error:
+            return build_error
+        
         # Execute the action
         try:
             index = self._indexes[index_name]
@@ -211,6 +695,9 @@ class IndexManager:
                     response["diagnostics"] = self._generate_diagnostics(
                         action, index_name, index, kwargs
                     )
+                
+                # Attach build metadata for observability
+                response = self._attach_build_metadata(response, index_name)
                 
                 return response
             else:
@@ -242,6 +729,9 @@ class IndexManager:
                     response["diagnostics"] = self._generate_diagnostics(
                         action, index_name, index, kwargs
                     )
+                
+                # Attach build metadata for observability
+                response = self._attach_build_metadata(response, index_name)
                 
                 return response
                 
@@ -609,4 +1099,80 @@ class IndexManager:
                 stats[name] = {"error": str(e)}
         
         return stats
+    
+    # ========================================================================
+    # Build State Cache Methods (Performance Foundation - Phase 0)
+    # ========================================================================
+    
+    def _calculate_building_ttl(self, progress_percent: float) -> float:
+        """Calculate dynamic TTL for BUILDING state based on progress.
+        
+        The TTL adapts to build progress to balance freshness and performance:
+        - Early stage (0-10%): 2s TTL - Fast changes, check frequently
+        - Mid stage (10-50%): 5s TTL - Steady progress, moderate checks
+        - Late stage (50-100%): 10s TTL - Slow near completion, less frequent checks
+        
+        Args:
+            progress_percent: Build progress percentage (0-100)
+            
+        Returns:
+            TTL in seconds (2.0, 5.0, or 10.0)
+            
+        Examples:
+            >>> manager._calculate_building_ttl(5.0)
+            2.0
+            >>> manager._calculate_building_ttl(30.0)
+            5.0
+            >>> manager._calculate_building_ttl(75.0)
+            10.0
+        """
+        if progress_percent < 10:
+            return 2.0
+        elif progress_percent < 50:
+            return 5.0
+        else:
+            return 10.0
+    
+    def _invalidate_build_cache(self, index_name: str) -> None:
+        """Atomically invalidate build state cache for an index.
+        
+        This method is thread-safe and removes both the cached status and timestamp
+        for the specified index. Used when build state changes (e.g., build starts,
+        completes, or fails).
+        
+        Args:
+            index_name: Name of the index to invalidate
+            
+        Thread Safety:
+            Uses RLock to ensure atomic removal from both cache dictionaries.
+            Safe to call from multiple threads simultaneously.
+            
+        Examples:
+            >>> manager._invalidate_build_cache("standards")
+            # Cache entry removed atomically
+        """
+        with self._build_state_cache_lock:
+            self._build_state_cache.pop(index_name, None)
+            self._build_state_cache_time.pop(index_name, None)
+    
+    def _iter_indexes(self) -> List[tuple[str, BaseIndex]]:
+        """Safely iterate over indexes with thread safety.
+        
+        Returns a snapshot of the indexes dictionary to prevent concurrent
+        modification errors during iteration. Use this instead of directly
+        iterating over self._indexes.items().
+        
+        Returns:
+            List of (index_name, index_instance) tuples
+            
+        Thread Safety:
+            Creates a snapshot under lock, preventing concurrent modification
+            errors if indexes are added/removed during iteration.
+            
+        Examples:
+            >>> for name, index in manager._iter_indexes():
+            ...     print(f"Index: {name}")
+        """
+        with self._indexes_lock:
+            return list(self._indexes.items())
 

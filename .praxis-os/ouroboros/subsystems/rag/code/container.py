@@ -35,16 +35,17 @@ Traceability:
 
 import logging
 from pathlib import Path
-from typing import Any, Dict, List, Optional
+from typing import Any, Callable, Dict, List, Optional
 
 from ouroboros.config.schemas.indexes import CodeIndexConfig
-from ouroboros.subsystems.rag.base import BaseIndex, HealthStatus, SearchResult
+from ouroboros.subsystems.rag.base import BaseIndex, BuildStatus, HealthStatus, IndexBuildState, SearchResult
 from ouroboros.subsystems.rag.code.graph import GraphIndex
 from ouroboros.subsystems.rag.code.reconciler import PartitionReconciler
 from ouroboros.subsystems.rag.code.semantic import SemanticIndex
 from ouroboros.subsystems.rag.lock_manager import IndexLockManager
 from ouroboros.subsystems.rag.utils.component_helpers import (
     ComponentDescriptor,
+    dynamic_build_status,
     dynamic_health_check,
 )
 from ouroboros.subsystems.rag.utils.corruption_detector import is_corruption_error
@@ -101,6 +102,9 @@ class CodeIndex(BaseIndex):
         self.config = config
         self.base_path = base_path
         
+        # Corruption handler for auto-repair (set by IndexManager)
+        self._corruption_handler: Optional[Callable[[Exception], None]] = None
+        
         # Initialize incremental indexer for parse-once-index-thrice optimization
         from ouroboros.subsystems.rag.code.indexer import IncrementalIndexer
         self._incremental_indexer = IncrementalIndexer(config, base_path)
@@ -139,27 +143,43 @@ class CodeIndex(BaseIndex):
             
             # Create internal indexes (legacy single-repo)
             self._semantic_index = SemanticIndex(config, base_path)
-            self._graph_index = GraphIndex(
-                config.graph, 
-                base_path, 
-                languages=config.languages,
-                code_config=config.model_dump()  # Pass full config dict for language_configs
-            )
+            
+            # Graph index is optional (only create if enabled)
+            if config.graph.enabled:
+                self._graph_index = GraphIndex(
+                    config.graph, 
+                    base_path, 
+                    languages=config.languages,
+                    code_config=config.model_dump()  # Pass full config dict for language_configs
+                )
+            else:
+                self._graph_index = None  # type: ignore[assignment]
+            
             logger.info("CodeIndex initialized in SINGLE-REPO mode (legacy)")
         
         # Create lock manager for concurrency control
         lock_dir = base_path / ".cache" / "locks"
         self._lock_manager = IndexLockManager("code", lock_dir)
         
+        # Build status tracking (ADDENDUM-2025-11-17: Build Status Integration)
+        import threading
+        self._building = False
+        self._build_lock = threading.Lock()
+        
         # Register components for cascading health checks
+        # Conditional Registration: Components are only registered if enabled in config.
+        # This ensures health checks only count enabled components, preventing false negatives.
+        self.components: Dict[str, ComponentDescriptor]
+        
         if self._multi_partition_mode:
             # In multi-partition mode, components are the partitions themselves
-            self.components: Dict[str, ComponentDescriptor] = {
+            self.components = {
                 partition_name: ComponentDescriptor(
                     name=f"partition:{partition_name}",
                     provides=["code_chunks", "embeddings", "ast_nodes", "symbols"],
                     capabilities=["search", "search_ast", "find_callers", "find_dependencies"],
                     health_check=lambda p=partition: p.health_check(),
+                    build_status_check=lambda p=partition: p.build_status(),
                     rebuild=lambda: None,
                     dependencies=[],
                 )
@@ -169,26 +189,34 @@ class CodeIndex(BaseIndex):
             # Legacy single-repo component registry
             # Use default argument binding (lambda idx=self._semantic_index) to avoid late binding issues
             # where lambda captures variables by reference, not value
-            self.components = {
-                "semantic": ComponentDescriptor(
-                    name="semantic",
-                    provides=["code_chunks", "embeddings", "fts_index"],
-                    capabilities=["search"],
-                    health_check=lambda idx=self._semantic_index: idx.health_check(),
-                    rebuild=lambda: None,  # SemanticIndex doesn't have targeted rebuild yet (full rebuild only)
-                    dependencies=[],
-                ),
-                "graph": ComponentDescriptor(
+            self.components = {}
+            
+            # Semantic index is always registered (vector + optional FTS)
+            # Note: FTS within semantic is conditionally enabled via config.fts.enabled
+            self.components["semantic"] = ComponentDescriptor(
+                name="semantic",
+                provides=["code_chunks", "embeddings", "fts_index"],
+                capabilities=["search"],
+                health_check=lambda idx=self._semantic_index: idx.health_check(),
+                build_status_check=self._check_semantic_build_status,
+                rebuild=lambda: None,  # SemanticIndex doesn't have targeted rebuild yet (full rebuild only)
+                dependencies=[],
+            )
+            
+            # Graph index is optional (conditional registration)
+            if config.graph.enabled:
+                self.components["graph"] = ComponentDescriptor(
                     name="graph",
                     provides=["ast_nodes", "symbols", "relationships"],
                     capabilities=["search_ast", "find_callers", "find_dependencies", "find_call_paths"],
                     health_check=lambda idx=self._graph_index: idx.health_check(),
+                    build_status_check=self._check_graph_build_status,
                     rebuild=lambda: None,  # GraphIndex has component-level rebuilds internally, not at container level
                     dependencies=[],
-                ),
-            }
+                )
         
-        logger.info("CodeIndex container initialized with component registry and lock management")
+        component_names = list(self.components.keys())
+        logger.info("CodeIndex container initialized with component registry (%s) and lock management", ", ".join(component_names))
     
     def _initialize_partitions(self, config: CodeIndexConfig, base_path: Path) -> Dict[str, Any]:
         """Initialize partitions from config (multi-repo mode).
@@ -308,56 +336,66 @@ class CodeIndex(BaseIndex):
             ActionableError: If build fails or lock cannot be acquired
         """
         logger.info("CodeIndex.build() acquiring exclusive lock")
-        with self._lock_manager.exclusive_lock():
-            if self._multi_partition_mode:
-                # Multi-partition build: iterate over all partitions
-                logger.info("CodeIndex.build() building %d partitions", len(self._partitions))
-                
-                for partition_name, partition in self._partitions.items():
-                    try:
-                        logger.info("Building partition '%s' from path: %s", partition_name, partition.path)
-                        
-                        # Collect source paths from all domains (code, tests, docs, etc.)
-                        source_paths = []
-                        for domain_name, domain_config in partition.domains.items():
-                            if domain_config.include_paths:
-                                # Resolve include_paths relative to partition path
-                                for include_path in domain_config.include_paths:
-                                    full_path = partition.path / include_path
-                                    source_paths.append(full_path)
-                                    logger.info("  Domain '%s' include path: %s", domain_name, full_path)
-                        
-                        # Fallback to partition root if no include_paths specified
-                        if not source_paths:
-                            source_paths = [partition.path]
-                            logger.info("  No include_paths specified, using partition root: %s", partition.path)
-                        
-                        # Build semantic index for this partition
-                        if partition.semantic:
-                            logger.info("  Building semantic index for '%s' with %d source paths", partition_name, len(source_paths))
-                            partition.semantic.build(source_paths, force)
-                        
-                        # Build graph index for this partition
-                        if partition.graph:
-                            logger.info("  Building graph index for '%s' with %d source paths", partition_name, len(source_paths))
-                            partition.graph.build(source_paths, force)
-                        
-                        logger.info("  ✅ Partition '%s' built successfully", partition_name)
+        
+        # Set building flag (ADDENDUM-2025-11-17: Build Status Integration)
+        with self._build_lock:
+            self._building = True
+        
+        try:
+            with self._lock_manager.exclusive_lock():
+                if self._multi_partition_mode:
+                    # Multi-partition build: iterate over all partitions
+                    logger.info("CodeIndex.build() building %d partitions", len(self._partitions))
                     
-                    except Exception as e:
-                        logger.error("Failed to build partition '%s': %s", partition_name, e, exc_info=True)
-                        # Continue with other partitions (graceful degradation)
-                
-                logger.info("✅ CodeIndex multi-partition build complete")
-            else:
-                # Legacy single-repo build
-                logger.info("CodeIndex.build() building semantic index (LanceDB)")
-                self._semantic_index.build(source_paths, force)
-                
-                logger.info("CodeIndex.build() building graph index (DuckDB)")
-                self._graph_index.build(source_paths, force)
-                
-                logger.info("✅ CodeIndex built successfully (semantic + graph)")
+                    for partition_name, partition in self._partitions.items():
+                        try:
+                            logger.info("Building partition '%s' from path: %s", partition_name, partition.path)
+                            
+                            # Collect source paths from all domains (code, tests, docs, etc.)
+                            source_paths = []
+                            for domain_name, domain_config in partition.domains.items():
+                                if domain_config.include_paths:
+                                    # Resolve include_paths relative to partition path
+                                    for include_path in domain_config.include_paths:
+                                        full_path = partition.path / include_path
+                                        source_paths.append(full_path)
+                                        logger.info("  Domain '%s' include path: %s", domain_name, full_path)
+                            
+                            # Fallback to partition root if no include_paths specified
+                            if not source_paths:
+                                source_paths = [partition.path]
+                                logger.info("  No include_paths specified, using partition root: %s", partition.path)
+                            
+                            # Build semantic index for this partition
+                            if partition.semantic:
+                                logger.info("  Building semantic index for '%s' with %d source paths", partition_name, len(source_paths))
+                                partition.semantic.build(source_paths, force)
+                            
+                            # Build graph index for this partition
+                            if partition.graph:
+                                logger.info("  Building graph index for '%s' with %d source paths", partition_name, len(source_paths))
+                                partition.graph.build(source_paths, force)
+                            
+                            logger.info("  ✅ Partition '%s' built successfully", partition_name)
+                        
+                        except Exception as e:
+                            logger.error("Failed to build partition '%s': %s", partition_name, e, exc_info=True)
+                            # Continue with other partitions (graceful degradation)
+                    
+                    logger.info("✅ CodeIndex multi-partition build complete")
+                else:
+                    # Legacy single-repo build
+                    logger.info("CodeIndex.build() building semantic index (LanceDB)")
+                    self._semantic_index.build(source_paths, force)
+                    
+                    logger.info("CodeIndex.build() building graph index (DuckDB)")
+                    self._graph_index.build(source_paths, force)
+                    
+                    logger.info("✅ CodeIndex built successfully (semantic + graph)")
+        finally:
+            # Clear building flag (ADDENDUM-2025-11-17: Build Status Integration)
+            with self._build_lock:
+                self._building = False
     
     def search(
         self,
@@ -434,11 +472,20 @@ class CodeIndex(BaseIndex):
             except Exception as e:
                 # Check if this is a corruption error
                 if is_corruption_error(e):
-                    logger.warning("Corruption detected during search, attempting auto-repair...")
+                    logger.warning("Corruption detected during search, triggering auto-repair...")
+                    
+                    # Call corruption handler if set (triggers background rebuild)
+                    if self._corruption_handler:
+                        try:
+                            self._corruption_handler(e)
+                        except Exception as handler_error:
+                            logger.error(f"Corruption handler failed: {handler_error}", exc_info=True)
+                    
+                    # Raise actionable error to inform caller
                     raise ActionableError(
                         what_failed="Search code index (semantic)",
                         why_failed=f"Index corrupted: {e}",
-                        how_to_fix="Auto-repair required. Rebuild semantic index."
+                        how_to_fix="Auto-repair has been triggered. Wait for rebuild to complete or manually rebuild the index."
                     ) from e
                 else:
                     # Not a corruption error, re-raise
@@ -619,8 +666,114 @@ class CodeIndex(BaseIndex):
                     self._incremental_indexer.clear_cache()
                     raise
     
+    # Component-specific build status checks for fractal pattern
+    def _check_semantic_build_status(self) -> BuildStatus:
+        """Check semantic component build status.
+        
+        Verifies whether the LanceDB table exists and has code embeddings.
+        
+        Checks (in order):
+        1. Progress file (if building) - returns BUILDING state
+        2. Table exists and has rows - returns BUILT state
+        3. Table doesn't exist - returns NOT_BUILT state
+        
+        Returns:
+            BuildStatus for semantic component
+        """
+        try:
+            # Check for progress file first (indicates active build)
+            progress_data = self._semantic_index._progress_manager.read_progress()
+            if progress_data:
+                return BuildStatus(
+                    state=IndexBuildState.BUILDING,
+                    message=progress_data.message,
+                    progress_percent=progress_data.progress_percent,
+                    details={
+                        "timestamp": progress_data.timestamp,
+                        "component": progress_data.component,
+                    },
+                )
+            
+            # Check if table exists and has data
+            stats = self._semantic_index.get_stats()
+            chunk_count = stats.get("chunk_count", 0)
+            
+            if chunk_count > 0:
+                return BuildStatus(
+                    state=IndexBuildState.BUILT,
+                    message=f"Semantic index built ({chunk_count} chunks)",
+                    progress_percent=100.0,
+                    details={"chunk_count": chunk_count},
+                )
+            else:
+                return BuildStatus(
+                    state=IndexBuildState.NOT_BUILT,
+                    message="Semantic index not built (no chunks)",
+                    progress_percent=0.0,
+                    details={"chunk_count": 0},
+                )
+        
+        except Exception as e:
+            logger.error(f"Semantic build status check failed: {e}", exc_info=True)
+            return BuildStatus(
+                state=IndexBuildState.FAILED,
+                message=f"Semantic build status check failed: {type(e).__name__}",
+                progress_percent=0.0,
+                error=str(e),
+                details={"error": str(e), "error_type": type(e).__name__},
+            )
+    
+    def _check_graph_build_status(self) -> BuildStatus:
+        """Check graph component build status.
+        
+        Verifies whether the DuckDB tables (AST + graph) exist and have data.
+        Graph is optional - if disabled in config, returns BUILT (not required).
+        
+        Returns:
+            BuildStatus for graph component
+        """
+        try:
+            # Check if graph is enabled in config
+            if not self.config.graph.enabled:
+                return BuildStatus(
+                    state=IndexBuildState.BUILT,
+                    message="Graph disabled in config (not required)",
+                    progress_percent=100.0,
+                    details={"enabled": False},
+                )
+            
+            # Check if graph tables exist (delegate to health check logic)
+            health = self._graph_index.health_check()
+            
+            if health.healthy:
+                return BuildStatus(
+                    state=IndexBuildState.BUILT,
+                    message="Graph index built and functional",
+                    progress_percent=100.0,
+                    details=health.details,
+                )
+            else:
+                return BuildStatus(
+                    state=IndexBuildState.NOT_BUILT,
+                    message="Graph index not built or unhealthy",
+                    progress_percent=0.0,
+                    details=health.details,
+                )
+        
+        except Exception as e:
+            logger.error(f"Graph build status check failed: {e}", exc_info=True)
+            return BuildStatus(
+                state=IndexBuildState.FAILED,
+                message=f"Graph build status check failed: {type(e).__name__}",
+                progress_percent=0.0,
+                error=str(e),
+                details={"error": str(e), "error_type": type(e).__name__},
+            )
+    
     def health_check(self) -> HealthStatus:
         """Dynamic health check using component registry (fractal pattern).
+        
+        ADDENDUM-2025-11-17: Now checks build status first, skips validation if building.
         
         Delegates to dynamic_health_check() which:
         1. Calls each component's health_check() lambda
@@ -636,7 +789,50 @@ class CodeIndex(BaseIndex):
         Returns:
             HealthStatus with nested components dict showing health of semantic and graph
         """
+        # ADDENDUM-2025-11-17: Check build status first, skip validation if building
+        build_status = self.build_status()
+        
+        if build_status.state == IndexBuildState.BUILDING:
+            # Don't validate data during build - it's incomplete!
+            return HealthStatus(
+                healthy=True,  # Not unhealthy, just building
+                message=f"Building ({build_status.progress_percent:.0f}%), skipping health check",
+                details={
+                    "building": True,
+                    "progress": build_status.progress_percent,
+                    "build_message": build_status.message
+                }
+            )
+        
+        # Normal health check (validate data)
         return dynamic_health_check(self.components)
+    
+    def build_status(self) -> BuildStatus:
+        """Dynamic build status check using component registry (fractal pattern).
+        
+        ADDENDUM-2025-11-17: Now checks container-level building flag first.
+        
+        Aggregates build status from all registered components (semantic, graph)
+        using priority-based selection (worst state bubbles up). This provides
+        granular visibility into build progress and enables partial build scenarios.
+        
+        Returns:
+            BuildStatus with aggregated state from all components
+        """
+        # Check if container is building (ADDENDUM-2025-11-17)
+        with self._build_lock:
+            is_building = self._building
+        
+        if is_building:
+            return BuildStatus(
+                state=IndexBuildState.BUILDING,
+                message="Building code index...",
+                progress_percent=50.0,
+                details={"component": "code"}
+            )
+        
+        # Aggregate from components (fractal pattern)
+        return dynamic_build_status(self.components)
     
     def get_stats(self) -> Dict[str, Any]:
         """Get code index statistics (aggregated from semantic + graph).
@@ -702,6 +898,23 @@ class CodeIndex(BaseIndex):
                 "total_symbols": graph_stats.get("symbol_count", 0),
                 "total_relationships": graph_stats.get("relationship_count", 0),
             }
+    
+    def set_corruption_handler(self, handler: Optional[Callable[[str, Exception], None]]) -> None:
+        """Set callback for corruption detection (enables auto-repair).
+        
+        Overrides BaseIndex.set_corruption_handler() to store the handler.
+        When corruption is detected during operations, this handler is called
+        to trigger automatic rebuild.
+        
+        Args:
+            handler: Callback function that takes (index_name, exception) and triggers repair.
+                     Typically set by IndexManager to trigger background rebuild.
+        """
+        # Wrap handler to match internal signature (Exception only)
+        if handler:
+            self._corruption_handler = lambda e: handler("code", e)
+        else:
+            self._corruption_handler = None
     
     # ========================================================================
     # Extended Methods (not in BaseIndex, specific to code index)
@@ -783,6 +996,12 @@ class CodeIndex(BaseIndex):
                     return all_results[:n_results]
             else:
                 # Legacy single-repo mode
+                if self._graph_index is None:
+                    raise ActionableError(
+                        what_failed="Search AST",
+                        why_failed="Graph index is disabled",
+                        how_to_fix="Enable graph index in config: graph.enabled = true"
+                    )
                 return self._graph_index.search_ast(pattern, n_results, filters)
     
     def find_callers(self, symbol_name: str, max_depth: int = 10, partition: Optional[str] = None) -> List[Dict[str, Any]]:
@@ -829,6 +1048,12 @@ class CodeIndex(BaseIndex):
                 return self._partitions[partition].search(symbol_name, "find_callers", max_depth=max_depth)  # type: ignore[no-any-return]
             else:
                 # Legacy single-repo mode
+                if self._graph_index is None:
+                    raise ActionableError(
+                        what_failed="Find callers",
+                        why_failed="Graph index is disabled",
+                        how_to_fix="Enable graph index in config: graph.enabled = true"
+                    )
                 return self._graph_index.find_callers(symbol_name, max_depth)
     
     def find_dependencies(self, symbol_name: str, max_depth: int = 10, partition: Optional[str] = None) -> List[Dict[str, Any]]:
@@ -875,6 +1100,12 @@ class CodeIndex(BaseIndex):
                 return self._partitions[partition].search(symbol_name, "find_dependencies", max_depth=max_depth)  # type: ignore[no-any-return]
             else:
                 # Legacy single-repo mode
+                if self._graph_index is None:
+                    raise ActionableError(
+                        what_failed="Find dependencies",
+                        why_failed="Graph index is disabled",
+                        how_to_fix="Enable graph index in config: graph.enabled = true"
+                    )
                 return self._graph_index.find_dependencies(symbol_name, max_depth)
     
     def find_call_paths(
@@ -934,4 +1165,10 @@ class CodeIndex(BaseIndex):
                 )
             else:
                 # Legacy single-repo mode
+                if self._graph_index is None:
+                    raise ActionableError(
+                        what_failed="Find call paths",
+                        why_failed="Graph index is disabled",
+                        how_to_fix="Enable graph index in config: graph.enabled = true"
+                    )
                 return self._graph_index.find_call_paths(from_symbol, to_symbol, max_depth)

@@ -6,8 +6,10 @@ pattern detection using standard fixtures and comprehensive edge case coverage
 following Agent OS testing standards.
 """
 
-# pylint: disable=too-many-lines
-# Large test file expected - comprehensive backwards compatibility and feature testing
+# pylint: disable=R0801,too-many-lines
+# Justification: Shared patterns with enrichment.py for testing parameter
+# normalization (R0801) and large test file expected - comprehensive backwards
+# compatibility and feature testing
 
 from typing import Any
 from unittest.mock import Mock, patch

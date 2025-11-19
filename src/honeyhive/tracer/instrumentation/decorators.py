@@ -45,11 +45,12 @@ See Also:
     :mod:`honeyhive.tracer.enrichment_core`: Span enrichment functionality
 """
 
-# pylint: disable=duplicate-code,R0801,import-outside-toplevel,too-many-branches
+# pylint: disable=duplicate-code,R0801,import-outside-toplevel,too-many-branches,line-too-long
 # Duplicate code patterns here are acceptable architectural patterns:
 # 1. Agent OS graceful degradation error handling - consistent across modules
 # import-outside-toplevel: Conditional imports avoid circular dependencies
 # too-many-branches: Complex decorator logic requires comprehensive branching
+# line-too-long: Complex decorator signatures and attribute mappings exceed 88 chars
 # 2. Pydantic field validators for OTLP configs - domain-specific but identical logic
 # 3. Standard exception logging patterns - architectural consistency for error handling
 # 4. Dynamic attribute normalization patterns - shared across decorator and core mixins
@@ -387,7 +388,18 @@ def _execute_with_tracing_sync(
                     pass
 
             # Execute the function (sync only)
+            safe_log(
+                tracer, "debug", f"🔴 DECORATOR: Executing function: {func.__name__}"
+            )
             result = func(*args, **func_kwargs)
+            safe_log(
+                tracer,
+                "debug",
+                (
+                    f"🟡 DECORATOR: Function completed: {func.__name__}, "
+                    f"result type: {type(result).__name__}"
+                ),
+            )
 
             # Set outputs dynamically
             if span is not None:
@@ -407,6 +419,11 @@ def _execute_with_tracing_sync(
                 except Exception:
                     pass
 
+            safe_log(
+                tracer,
+                "debug",
+                f"🟣 DECORATOR: About to exit context manager for: {func.__name__}",
+            )
             return result
 
     except Exception as e:
@@ -830,7 +847,8 @@ def _setup_decorator_baggage_context(tracer: Any, span: Any) -> None:
         if hasattr(tracer, "source") and tracer.source:
             baggage_items["source"] = str(tracer.source)
 
-        # Set baggage in current context, but preserve existing distributed trace baggage
+        # Set baggage in current context, but preserve existing distributed
+        # trace baggage
         # Priority: distributed trace context > local tracer defaults
         ctx = current_ctx
         preserved_keys = []

@@ -235,7 +235,7 @@ class TestHoneyHiveLogger:
         assert logger.logger == mock_logger
         assert logger.verbose is None
         mock_get_logger.assert_called_once_with("test.logger")
-        mock_logger.setLevel.assert_called_once_with(logging.INFO)
+        mock_logger.setLevel.assert_called_once_with(logging.WARNING)
         assert mock_logger.propagate is False
 
     @patch("honeyhive.utils.logger.logging.getLogger")
@@ -296,7 +296,7 @@ class TestHoneyHiveLogger:
 
         # Assert
         assert logger.verbose is False
-        mock_logger.setLevel.assert_called_once_with(logging.INFO)
+        mock_logger.setLevel.assert_called_once_with(logging.WARNING)
 
     @patch("honeyhive.utils.logger.logging.getLogger")
     def test_initialization_with_custom_handler(self, mock_get_logger: Mock) -> None:
@@ -389,7 +389,7 @@ class TestHoneyHiveLogger:
         result = logger._determine_log_level_dynamically("INVALID", None)
 
         # Assert
-        assert result == logging.INFO
+        assert result == logging.WARNING
 
     def test_determine_log_level_dynamically_with_verbose_true(self) -> None:
         """Test dynamic log level determination with verbose=True."""
@@ -411,7 +411,7 @@ class TestHoneyHiveLogger:
         result = logger._determine_log_level_dynamically(None, False)
 
         # Assert
-        assert result == logging.INFO
+        assert result == logging.WARNING
 
     def test_determine_log_level_dynamically_with_defaults(self) -> None:
         """Test dynamic log level determination with default values."""
@@ -422,7 +422,7 @@ class TestHoneyHiveLogger:
         result = logger._determine_log_level_dynamically(None, None)
 
         # Assert
-        assert result == logging.INFO
+        assert result == logging.WARNING
 
     @patch("honeyhive.utils.logger.logging.getLogger")
     def test_update_verbose_setting_to_true(self, mock_get_logger: Mock) -> None:
@@ -454,7 +454,7 @@ class TestHoneyHiveLogger:
 
         # Assert
         assert logger.verbose is False
-        mock_logger.setLevel.assert_called_with(logging.INFO)
+        mock_logger.setLevel.assert_called_with(logging.WARNING)
 
     @patch("honeyhive.utils.logger.logging.getLogger")
     def test_log_with_context_basic(self, mock_get_logger: Mock) -> None:
@@ -1269,8 +1269,8 @@ class TestEdgeCasesAndErrorHandling:
         _ = HoneyHiveLogger("test.logger", level=123.45)  # type: ignore[arg-type]
 
         # Assert
-        # Should fall back to INFO level
-        mock_logger.setLevel.assert_called_once_with(logging.INFO)
+        # Should fall back to WARNING level
+        mock_logger.setLevel.assert_called_once_with(logging.WARNING)
 
     def test_honeyhive_formatter_with_complex_honeyhive_data(self) -> None:
         """Test HoneyHiveFormatter with complex nested HoneyHive data."""

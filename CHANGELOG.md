@@ -2,6 +2,22 @@
 
 ### Added
 
+- **🛡️ Tracing: Lazy-activated core attribute preservation for large spans**
+  - Added automatic preservation of critical HoneyHive attributes (`session_id`, `event_type`, `event_name`, `source`) to prevent FIFO eviction in OpenTelemetry's BoundedAttributes storage
+  - Implements lazy activation at 95% threshold (973/1024 attributes) - only large spans pay ~0.5ms overhead, normal spans have <0.001ms impact
+  - Prevents data loss when spans exceed the configurable attribute limit (default 1024, up from OpenTelemetry's 128)
+  - Preservation logic integrated into `_finalize_span_dynamically()` before `span.end()` - no separate processor needed
+  - Configurable via `preserve_core_attributes` config option (default: `True`)
+  - Files: `src/honeyhive/tracer/core/operations.py`, `src/honeyhive/tracer/core/preservation.py`, `src/honeyhive/tracer/core/priorities.py`
+
+- **⚙️ Configuration: Configurable OpenTelemetry span limits**
+  - Added `max_attributes` config option (default: 1024, OpenTelemetry default: 128) to control maximum attributes per span
+  - Added `max_events` config option (default: 1024) to control maximum events per span (matches `max_attributes` due to backend event flattening)
+  - Added `max_links` config option (default: 128) to control maximum links per span
+  - Added `max_span_size` config option (default: 10MB) for future total span size enforcement
+  - All limits configurable via TracerConfig or environment variables (`HH_MAX_ATTRIBUTES`, `HH_MAX_EVENTS`, `HH_MAX_LINKS`, `HH_MAX_SPAN_SIZE`)
+  - Files: `src/honeyhive/config/models/tracer.py`, `src/honeyhive/tracer/instrumentation/initialization.py`, `src/honeyhive/tracer/integration/detection.py`
+
 - **🌐 Distributed Tracing: Simplified server-side context management (v1.0+)**
   - Added `with_distributed_trace_context()` context manager for one-line distributed tracing setup
   - Reduces server-side boilerplate from ~65 lines to 1 line of context management code

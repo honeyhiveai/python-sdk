@@ -16,7 +16,7 @@ from typing import TYPE_CHECKING, Any, Dict, Optional
 from opentelemetry.baggage.propagation import W3CBaggagePropagator
 from opentelemetry.propagators.composite import CompositePropagator
 from opentelemetry.sdk.resources import Resource
-from opentelemetry.sdk.trace import TracerProvider
+from opentelemetry.sdk.trace import SpanLimits, TracerProvider
 from opentelemetry.trace.propagation.tracecontext import (
     TraceContextTextMapPropagator,
 )
@@ -91,7 +91,8 @@ def _create_tracer_provider_with_resources(tracer_instance: Any) -> TracerProvid
         # Create Resource from detected attributes
         resource = Resource.create(resource_attributes)
 
-        # Create TracerProvider with resource
+        # Create TracerProvider with resource (span limits already applied
+        # via atomic detection)
         provider = TracerProvider(resource=resource)
 
         safe_log(
@@ -265,8 +266,32 @@ def _initialize_otel_components(tracer_instance: Any) -> None:
     :type tracer_instance: HoneyHiveTracer
     :note: Uses thread-safe atomic provider detection to prevent race conditions
     """
+    # Get user-configured span limits from tracer config BEFORE provider creation
+    max_attributes = getattr(tracer_instance.config, "max_attributes", 1024)
+    max_events = getattr(tracer_instance.config, "max_events", 1024)
+    max_links = getattr(tracer_instance.config, "max_links", 128)
+    max_span_size = getattr(
+        tracer_instance.config, "max_span_size", 10 * 1024 * 1024
+    )  # 10MB
+
+    # Store max_span_size on tracer instance for span processor access
+    # (OTel doesn't support total span size limits natively)
+    tracer_instance._max_span_size = max_span_size
+
+    # Create SpanLimits to pass to provider creation
+    # Note: max_span_size is NOT in SpanLimits - it's enforced separately
+    # in span processor
+    span_limits = SpanLimits(
+        max_attributes=max_attributes,
+        max_events=max_events,
+        max_links=max_links,
+    )
+
     # Use atomic provider detection to prevent race conditions
-    strategy_name, main_provider, provider_info = atomic_provider_detection_and_setup()
+    # Pass span_limits so new providers are created with correct limits
+    strategy_name, main_provider, provider_info = atomic_provider_detection_and_setup(
+        tracer_instance=tracer_instance, span_limits=span_limits
+    )
 
     safe_log(
         tracer_instance,
@@ -276,6 +301,7 @@ def _initialize_otel_components(tracer_instance: Any) -> None:
             "provider_class": provider_info["provider_class_name"],
             "strategy": strategy_name,
             "atomic_operation": True,
+            "max_attributes": max_attributes,
         },
     )
 
@@ -329,7 +355,7 @@ def _setup_main_provider_components(
         },
     )
 
-    # Add our span processor to the existing provider
+    # Add span processor to the existing provider
     try:
         tracer_instance.span_processor = HoneyHiveSpanProcessor(
             client=getattr(tracer_instance, "client", None),
@@ -438,7 +464,7 @@ def _setup_main_provider(
         },
     )
 
-    # Add our span processor directly with proper configuration
+    # Add span processor with proper configuration
     try:
         tracer_instance.span_processor = HoneyHiveSpanProcessor(
             client=getattr(tracer_instance, "client", None),
@@ -497,7 +523,7 @@ def _setup_independent_provider(
         },
     )
 
-    # Add our span processor to OUR isolated provider with proper configuration
+    # Add span processor to OUR isolated provider with proper configuration
     try:
         tracer_instance.span_processor = HoneyHiveSpanProcessor(
             client=getattr(tracer_instance, "client", None),

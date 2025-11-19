@@ -29,6 +29,7 @@ Traceability:
 """
 
 import logging
+import threading
 from pathlib import Path
 from typing import Any, Dict, Optional
 
@@ -174,7 +175,7 @@ def create_server(base_path: Path, transport_mode: str = "stdio") -> FastMCP:
         
         # Check health status (fast, non-blocking)
         # Note: We do NOT auto-build during init to avoid blocking stdio transport
-        # Index building will happen in background task if needed
+        # Background thread will build indexes after server starts (Option 2: Eventually Consistent)
         result = index_manager.ensure_all_indexes_healthy(auto_build=False)
         
         # Log summary (just health check, not rebuild)
@@ -190,6 +191,53 @@ def create_server(base_path: Path, transport_mode: str = "stdio") -> FastMCP:
         logger.warning("⚠️  IndexManager initialization failed: %s", e)
         logger.warning("    RAG tools will not be available")
         index_manager = None
+    
+    # 4a.1. Background Index Building (Eventually Consistent)
+    # Start background thread to build unhealthy indexes after server init completes.
+    # This ensures server is responsive immediately while indexes converge to healthy state.
+    if index_manager and not result["all_healthy"]:
+        def _build_indexes_background():
+            """Background thread to build indexes after server starts.
+            
+            This function runs in a daemon thread and will not block server shutdown.
+            It builds all unhealthy indexes to ensure eventually consistent state.
+            
+            Design:
+            - Daemon thread (dies with main process)
+            - No inter-thread communication needed (fire-and-forget)
+            - Logs progress for observability
+            - Graceful error handling (won't crash server)
+            """
+            try:
+                logger.info("🔄 Starting background index building thread...")
+                
+                # Build all unhealthy indexes (auto_build=True, incremental=True)
+                build_result = index_manager.ensure_all_indexes_healthy(auto_build=True)
+                
+                if build_result["all_healthy"]:
+                    logger.info("✅ Background index building complete - all indexes healthy")
+                else:
+                    failed = build_result.get("indexes_failed", [])
+                    if failed:
+                        logger.warning(
+                            "⚠️  Background index building completed with failures: %s",
+                            ", ".join(failed)
+                        )
+                    else:
+                        logger.info("✅ Background index building complete")
+                        
+            except Exception as e:
+                logger.error("❌ Background index building failed: %s", e, exc_info=True)
+                logger.error("   Indexes will remain unhealthy until manual rebuild or server restart")
+        
+        # Start daemon thread (non-blocking, will die with main process)
+        build_thread = threading.Thread(
+            target=_build_indexes_background,
+            name="index-builder",
+            daemon=True
+        )
+        build_thread.start()
+        logger.info("📋 Background index building scheduled (non-blocking)")
     
     # 4b. File Watcher (incremental index updates)
     logger.info("Initializing FileWatcher...")

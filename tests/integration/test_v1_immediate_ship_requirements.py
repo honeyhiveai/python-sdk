@@ -10,8 +10,10 @@ Tests the 5 critical fixes for v1.0 release with real backend validation:
 These tests validate end-to-end behavior with REAL API calls and backend verification.
 """
 
-# pylint: disable=too-many-lines
-# Justification: Comprehensive integration test scenarios require extensive test cases
+# pylint: disable=R0801,too-many-lines
+# Justification: Shared integration test patterns with experiments integration
+# tests (R0801) and comprehensive integration test scenarios require extensive
+# test cases
 
 import os
 import time
