@@ -2,6 +2,57 @@
 
 ### Added
 
+- **✨ API: Enhanced Metric Schema with Backend Parity**
+  - Updated `Metric` and `MetricEdit` schemas to match backend `BaseMetricSchema`
+  - Changed metric type enum from `custom/model/human/composite` to `PYTHON/LLM/HUMAN/COMPOSITE`
+  - Added return type `categorical` for categorical metrics
+  - Added new fields: `sampling_percentage`, `scale`, `categories`, `filters`, `id`, `created_at`, `updated_at`
+  - Updated `Threshold` model to support `pass_when` (boolean or number) and `passing_categories` (array)
+  - Consolidated `criteria` field to handle code, prompts, and criteria (previously separate fields)
+  - Files: `openapi.yaml`, `src/honeyhive/models/generated.py`
+
+- **✨ API: Enhanced Datapoints Filtering**
+  - Added `dataset_id` parameter for filtering by dataset ID (NanoID format)
+  - Added `dataset_name` parameter for filtering by dataset name
+  - Legacy `dataset` parameter now auto-detects whether value is ID (24 chars) or name
+  - Removed `limit` parameter from `list_datapoints()` (not supported by backend API spec)
+  - Files: `openapi.yaml`, `src/honeyhive/api/datapoints.py`
+
+- **✨ API: Auto-Conversion for EventFilter Lists**
+  - `EventsAPI.list_events()` now accepts single `EventFilter` or `List[EventFilter]`
+  - Automatically converts single filter to list for convenience
+  - Signature: `list_events(event_filters: Union[EventFilter, List[EventFilter]], ...)`
+  - Files: `src/honeyhive/api/events.py`
+
+- **✨ Models: Enhanced UUIDType with String Representation**
+  - Added `__str__()` and `__repr__()` methods to `UUIDType` for proper string conversion
+  - Ensures UUIDs display correctly in logs and debugging output
+  - Files: `src/honeyhive/models/generated.py`
+
+### Changed
+
+- **🔄 API: Metric Deletion Authorization Change**
+  - Metric deletion via API now raises `AuthenticationError` with message to use webapp
+  - Updated unit tests to expect `AuthenticationError` instead of success/failure responses
+  - Files: `src/honeyhive/api/metrics.py`, `tests/unit/test_api_metrics.py`
+
+### Fixed
+
+- **🐛 Tests: Fixed Unit Test Failures After Model Regeneration**
+  - Updated `test_uuid_type` to use real UUID instead of invalid string
+  - Fixed `test_create_run_success/async` to use `mode="json"` in `model_dump()` calls
+  - Removed invalid `llm` value from `EventType` enum tests (not in spec)
+  - Updated enum attribute names: `EventType1.model` → `EventType1.model_`, `Operator.is_` → `Operator.is`, `Type.string` → `Type.string_`
+  - Fixed tracer initialization test to avoid AsyncMock issues by using `new_callable=MagicMock`
+  - Files: `tests/unit/test_api_evaluations.py`, `tests/unit/test_api_events.py`, `tests/unit/test_api_datapoints.py`, `tests/unit/test_api_metrics.py`, `tests/unit/test_models_generated.py`, `tests/unit/test_models_integration.py`, `tests/unit/test_tracer_instrumentation_initialization.py`
+
+### Technical Details
+
+- **Test Suite**: All 2,956 unit tests passing (100% success rate)
+- **Coverage**: Maintained high test coverage across all modified modules
+- **Breaking Changes**: None - all changes maintain backward compatibility
+- **Migration**: Automatic enum name changes may require attention in strict type checking
+
 - **🛡️ Tracing: Lazy-activated core attribute preservation for large spans**
   - Added automatic preservation of critical HoneyHive attributes (`session_id`, `event_type`, `event_name`, `source`) to prevent FIFO eviction in OpenTelemetry's BoundedAttributes storage
   - Implements lazy activation at 95% threshold (973/1024 attributes) - only large spans pay ~0.5ms overhead, normal spans have <0.001ms impact

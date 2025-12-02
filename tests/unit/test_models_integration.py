@@ -397,7 +397,7 @@ class TestTracingParams:
 
     def test_tracing_params_event_type_validation_with_string(self) -> None:
         """Test TracingParams event_type validation with valid strings."""
-        valid_event_types = ["model", "tool", "chain", "session", "llm"]
+        valid_event_types = ["model", "tool", "chain", "session"]
 
         for event_type in valid_event_types:
             params = TracingParams(event_type=event_type)
@@ -687,7 +687,7 @@ class TestEventTypeEnum:
     def test_event_type_enum_values(self) -> None:
         """Test EventType enum has expected values."""
         # Test that EventType enum has the expected values
-        expected_values = {"session", "model", "tool", "chain", "llm"}
+        expected_values = {"session", "model", "tool", "chain"}
         actual_values = {e.value for e in GeneratedEventType}
 
         assert expected_values.issubset(actual_values)

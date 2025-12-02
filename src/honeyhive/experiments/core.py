@@ -130,6 +130,7 @@ def run_experiment(
     dataset: List[Dict[str, Any]],
     datapoint_ids: List[str],
     *,
+    server_url: Optional[str] = None,
     experiment_context: ExperimentContext,
     api_key: Optional[str] = None,
     max_workers: int = 10,
@@ -208,7 +209,9 @@ def run_experiment(
 
         # Create NEW tracer instance for this datapoint
         # Each tracer is completely isolated (own API client, logger, state)
-        tracer = HoneyHiveTracer(api_key=api_key, verbose=verbose, **tracer_config)
+        tracer = HoneyHiveTracer(
+            api_key=api_key, server_url=server_url, verbose=verbose, **tracer_config
+        )
 
         try:
             # Execute function with tracer active
@@ -930,6 +933,7 @@ def evaluate(  # pylint: disable=too-many-locals,too-many-branches
         function=function,
         dataset=dataset_list,
         datapoint_ids=datapoint_ids,
+        server_url=server_url,
         experiment_context=context,
         api_key=api_key,
         max_workers=max_workers,

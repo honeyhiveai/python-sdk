@@ -412,9 +412,7 @@ class TestDatapointsAPI:  # pylint: disable=too-many-public-methods
                 result = datapoints_api.list_datapoints()
 
                 # Verify request was made correctly
-                mock_request.assert_called_once_with(
-                    "GET", "/datapoints", params={"limit": "100"}
-                )
+                mock_request.assert_called_once_with("GET", "/datapoints", params={})
 
                 # Verify data processing
                 mock_process.assert_called_once_with(
@@ -443,17 +441,17 @@ class TestDatapointsAPI:  # pylint: disable=too-many-public-methods
                 mock_process.return_value = [Datapoint(_id="datapoint-filtered")]
 
                 result = datapoints_api.list_datapoints(
-                    project="test-project", dataset="test-dataset", limit=50
+                    project="test-project", dataset="test-dataset"
                 )
 
                 # Verify request was made correctly
+                # Legacy 'dataset' param is mapped to 'dataset_name' for non-NanoID strings
                 mock_request.assert_called_once_with(
                     "GET",
                     "/datapoints",
                     params={
-                        "limit": "50",
                         "project": "test-project",
-                        "dataset": "test-dataset",
+                        "dataset_name": "test-dataset",
                     },
                 )
 
@@ -484,14 +482,14 @@ class TestDatapointsAPI:  # pylint: disable=too-many-public-methods
                 mock_process.return_value = [Datapoint(_id="datapoint-async")]
 
                 result = await datapoints_api.list_datapoints_async(
-                    project="async-project", limit=25
+                    project="async-project"
                 )
 
                 # Verify request was made correctly
                 mock_request.assert_called_once_with(
                     "GET",
                     "/datapoints",
-                    params={"limit": "25", "project": "async-project"},
+                    params={"project": "async-project"},
                 )
 
                 # Verify data processing
@@ -694,9 +692,7 @@ class TestDatapointsAPI:  # pylint: disable=too-many-public-methods
                 result = datapoints_api.list_datapoints()
 
                 # Verify request was made correctly
-                mock_request.assert_called_once_with(
-                    "GET", "/datapoints", params={"limit": "100"}
-                )
+                mock_request.assert_called_once_with("GET", "/datapoints", params={})
 
                 # Verify data processing
                 mock_process.assert_called_once_with([], Datapoint, "datapoints")
@@ -725,9 +721,7 @@ class TestDatapointsAPI:  # pylint: disable=too-many-public-methods
                 result = datapoints_api.list_datapoints()
 
                 # Verify request was made correctly
-                mock_request.assert_called_once_with(
-                    "GET", "/datapoints", params={"limit": "100"}
-                )
+                mock_request.assert_called_once_with("GET", "/datapoints", params={})
 
                 # Verify data processing with empty list
                 mock_process.assert_called_once_with([], Datapoint, "datapoints")

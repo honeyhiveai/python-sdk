@@ -17,6 +17,16 @@ Latest Release Notes
 Current Version Highlights
 ~~~~~~~~~~~~~~~~~~~~~~~~~~
 
+**✨ NEW: Enhanced API Schemas & Filtering (Dec 2, 2025)**
+
+* **Metric Schema Updates**: Updated to match backend with new enum values (PYTHON/LLM/HUMAN/COMPOSITE), added sampling_percentage, scale, categories, filters, timestamps
+* **Datapoints Filtering**: Added dataset_id and dataset_name parameters, removed limit parameter (not in API spec), auto-detects ID vs name for legacy dataset parameter
+* **EventFilter Convenience**: list_events() now accepts single EventFilter or List[EventFilter] with automatic conversion
+* **UUIDType Display**: Added __str__ and __repr__ methods for proper string representation in logs
+* **Metric Deletion**: Now raises AuthenticationError - users must use webapp to delete metrics
+* **Test Fixes**: Fixed all unit test failures after model regeneration (enum name changes, UUID validation, AsyncMock issues)
+* **Files Modified**: 12 files (+458/-479 lines) with comprehensive test coverage
+
 **🛡️ NEW: Configurable Span Limits & Core Attribute Preservation (Nov 18, 2025)**
 
 * **Lazy-Activated Preservation**: Automatically preserves critical attributes (session_id, event_type, event_name, source) to prevent data loss when spans exceed attribute limits

@@ -190,33 +190,71 @@ class MetricsAPI(BaseAPI):
         return Metric(**data)
 
     def delete_metric(self, metric_id: str) -> bool:
-        """Delete a metric by ID."""
-        context = self._create_error_context(
-            operation="delete_metric",
-            method="DELETE",
-            path="/metrics",
-            additional_context={"metric_id": metric_id},
+        """Delete a metric by ID.
+
+        Note: Deleting metrics via API is not authorized for security reasons.
+        Please use the HoneyHive web application to delete metrics.
+
+        Args:
+            metric_id: The ID of the metric to delete
+
+        Raises:
+            AuthenticationError: Always raised as this operation is not permitted via API
+        """
+        from ..utils.error_handler import AuthenticationError, ErrorResponse
+
+        error_response = ErrorResponse(
+            success=False,
+            error_type="AuthenticationError",
+            error_message=(
+                "Deleting metrics via API is not authorized. "
+                "Please use the HoneyHive web application to delete metrics."
+            ),
+            error_code="UNAUTHORIZED_OPERATION",
+            status_code=403,
+            details={
+                "operation": "delete_metric",
+                "metric_id": metric_id,
+                "reason": "Metrics can only be deleted via the web application",
+            },
         )
 
-        with self.error_handler.handle_operation(context):
-            # Backend expects DELETE /metrics?metric_id=...
-            response = self.client.request(
-                "DELETE", "/metrics", params={"metric_id": metric_id}
-            )
-            return response.status_code == 200
+        raise AuthenticationError(
+            "Deleting metrics via API is not authorized. Please use the webapp.",
+            error_response=error_response,
+        )
 
     async def delete_metric_async(self, metric_id: str) -> bool:
-        """Delete a metric by ID asynchronously."""
-        context = self._create_error_context(
-            operation="delete_metric_async",
-            method="DELETE",
-            path="/metrics",
-            additional_context={"metric_id": metric_id},
+        """Delete a metric by ID asynchronously.
+
+        Note: Deleting metrics via API is not authorized for security reasons.
+        Please use the HoneyHive web application to delete metrics.
+
+        Args:
+            metric_id: The ID of the metric to delete
+
+        Raises:
+            AuthenticationError: Always raised as this operation is not permitted via API
+        """
+        from ..utils.error_handler import AuthenticationError, ErrorResponse
+
+        error_response = ErrorResponse(
+            success=False,
+            error_type="AuthenticationError",
+            error_message=(
+                "Deleting metrics via API is not authorized. "
+                "Please use the HoneyHive web application to delete metrics."
+            ),
+            error_code="UNAUTHORIZED_OPERATION",
+            status_code=403,
+            details={
+                "operation": "delete_metric_async",
+                "metric_id": metric_id,
+                "reason": "Metrics can only be deleted via the web application",
+            },
         )
 
-        with self.error_handler.handle_operation(context):
-            # Backend expects DELETE /metrics?metric_id=...
-            response = await self.client.request_async(
-                "DELETE", "/metrics", params={"metric_id": metric_id}
-            )
-            return response.status_code == 200
+        raise AuthenticationError(
+            "Deleting metrics via API is not authorized. Please use the webapp.",
+            error_response=error_response,
+        )

@@ -21,7 +21,7 @@ import pytest
 from honeyhive.api.metrics import MetricsAPI
 from honeyhive.models import Metric, MetricEdit
 from honeyhive.models.generated import ReturnType, Type1
-from honeyhive.utils.error_handler import ErrorContext
+from honeyhive.utils.error_handler import AuthenticationError, ErrorContext
 
 
 class TestMetricsAPIInitialization:
@@ -724,191 +724,48 @@ class TestMetricsAPIUpdateMetric:
 class TestMetricsAPIDeleteMetric:
     """Test suite for metric deletion methods with error handling."""
 
-    def test_delete_metric_success(self, mock_client: Mock) -> None:
-        """Test successful metric deletion with error handling.
+    def test_delete_metric_raises_authentication_error(self, mock_client: Mock) -> None:
+        """Test that delete_metric raises AuthenticationError.
 
-        Verifies that delete_metric creates proper error context,
-        uses error handler, and returns True for successful deletion.
+        Metric deletion via API is not authorized - users must use the webapp.
         """
-        # Arrange
         metric_id = "delete-metric-123"
-        mock_response = Mock()
-        mock_response.status_code = 200
-        mock_client.request.return_value = mock_response
 
-        mock_error_handler = Mock()
-        mock_context_manager = Mock()
-        mock_context_manager.__enter__ = Mock(return_value=mock_context_manager)
-        mock_context_manager.__exit__ = Mock(return_value=None)
-        mock_error_handler.handle_operation.return_value = mock_context_manager
-
-        with patch(
-            "honeyhive.api.base.get_error_handler", return_value=mock_error_handler
-        ):
+        with patch("honeyhive.api.base.get_error_handler"):
             metrics_api = MetricsAPI(mock_client)
 
-            with patch.object(
-                metrics_api, "_create_error_context"
-            ) as mock_create_context:
-                mock_error_context = Mock(spec=ErrorContext)
-                mock_create_context.return_value = mock_error_context
+            # Act & Assert
+            with pytest.raises(AuthenticationError) as exc_info:
+                metrics_api.delete_metric(metric_id)
 
-                # Act
-                result = metrics_api.delete_metric(metric_id)
+            assert "not authorized" in str(exc_info.value).lower()
+            assert "webapp" in str(exc_info.value).lower()
 
-                # Assert
-                assert result is True
-
-                # Verify error context creation - CRITICAL ERROR HANDLING BRANCH
-                mock_create_context.assert_called_once_with(
-                    operation="delete_metric",
-                    method="DELETE",
-                    path="/metrics",
-                    additional_context={"metric_id": metric_id},
-                )
-
-                # Verify error handler usage
-                mock_error_handler.handle_operation.assert_called_once_with(
-                    mock_error_context
-                )
-
-                # Verify API call within error handler context
-                mock_client.request.assert_called_once_with(
-                    "DELETE", "/metrics", params={"metric_id": metric_id}
-                )
-
-    def test_delete_metric_failure(self, mock_client: Mock) -> None:
-        """Test metric deletion failure handling.
-
-        Verifies that delete_metric returns False when API returns
-        non-200 status code.
-        """
-        # Arrange
-        metric_id = "delete-fail-metric-456"
-        mock_response = Mock()
-        mock_response.status_code = 404
-        mock_client.request.return_value = mock_response
-
-        mock_error_handler = Mock()
-        mock_context_manager = Mock()
-        mock_context_manager.__enter__ = Mock(return_value=mock_context_manager)
-        mock_context_manager.__exit__ = Mock(return_value=None)
-        mock_error_handler.handle_operation.return_value = mock_context_manager
-
-        with patch(
-            "honeyhive.api.base.get_error_handler", return_value=mock_error_handler
-        ):
-            metrics_api = MetricsAPI(mock_client)
-
-            with patch.object(
-                metrics_api, "_create_error_context"
-            ) as mock_create_context:
-                mock_error_context = Mock(spec=ErrorContext)
-                mock_create_context.return_value = mock_error_context
-
-                # Act
-                result = metrics_api.delete_metric(metric_id)
-
-                # Assert
-                assert result is False
-
-                # Verify error context and handler were still used
-                mock_create_context.assert_called_once()
-                mock_error_handler.handle_operation.assert_called_once()
+            # Verify no API call was made
+            mock_client.request.assert_not_called()
 
     @pytest.mark.asyncio
-    async def test_delete_metric_async_success(self, mock_client: Mock) -> None:
-        """Test successful asynchronous metric deletion with error handling.
+    async def test_delete_metric_async_raises_authentication_error(
+        self, mock_client: Mock
+    ) -> None:
+        """Test that delete_metric_async raises AuthenticationError.
 
-        Verifies that delete_metric_async creates proper error context,
-        uses error handler, and returns True for successful deletion.
+        Metric deletion via API is not authorized - users must use the webapp.
         """
-        # Arrange
         metric_id = "async-delete-metric-789"
-        mock_response = Mock()
-        mock_response.status_code = 200
-        mock_client.request_async = AsyncMock(return_value=mock_response)
 
-        mock_error_handler = Mock()
-        mock_context_manager = Mock()
-        mock_context_manager.__enter__ = Mock(return_value=mock_context_manager)
-        mock_context_manager.__exit__ = Mock(return_value=None)
-        mock_error_handler.handle_operation.return_value = mock_context_manager
-
-        with patch(
-            "honeyhive.api.base.get_error_handler", return_value=mock_error_handler
-        ):
+        with patch("honeyhive.api.base.get_error_handler"):
             metrics_api = MetricsAPI(mock_client)
 
-            with patch.object(
-                metrics_api, "_create_error_context"
-            ) as mock_create_context:
-                mock_error_context = Mock(spec=ErrorContext)
-                mock_create_context.return_value = mock_error_context
+            # Act & Assert
+            with pytest.raises(AuthenticationError) as exc_info:
+                await metrics_api.delete_metric_async(metric_id)
 
-                # Act
-                result = await metrics_api.delete_metric_async(metric_id)
+            assert "not authorized" in str(exc_info.value).lower()
+            assert "webapp" in str(exc_info.value).lower()
 
-                # Assert
-                assert result is True
-
-                # Verify error context creation - CRITICAL ASYNC ERROR HANDLING BRANCH
-                mock_create_context.assert_called_once_with(
-                    operation="delete_metric_async",
-                    method="DELETE",
-                    path="/metrics",
-                    additional_context={"metric_id": metric_id},
-                )
-
-                # Verify error handler usage
-                mock_error_handler.handle_operation.assert_called_once_with(
-                    mock_error_context
-                )
-
-                # Verify async API call within error handler context
-                mock_client.request_async.assert_called_once_with(
-                    "DELETE", "/metrics", params={"metric_id": metric_id}
-                )
-
-    @pytest.mark.asyncio
-    async def test_delete_metric_async_failure(self, mock_client: Mock) -> None:
-        """Test asynchronous metric deletion failure handling.
-
-        Verifies that delete_metric_async returns False when API returns
-        non-200 status code in async context.
-        """
-        # Arrange
-        metric_id = "async-delete-fail-metric-101"
-        mock_response = Mock()
-        mock_response.status_code = 500
-        mock_client.request_async = AsyncMock(return_value=mock_response)
-
-        mock_error_handler = Mock()
-        mock_context_manager = Mock()
-        mock_context_manager.__enter__ = Mock(return_value=mock_context_manager)
-        mock_context_manager.__exit__ = Mock(return_value=None)
-        mock_error_handler.handle_operation.return_value = mock_context_manager
-
-        with patch(
-            "honeyhive.api.base.get_error_handler", return_value=mock_error_handler
-        ):
-            metrics_api = MetricsAPI(mock_client)
-
-            with patch.object(
-                metrics_api, "_create_error_context"
-            ) as mock_create_context:
-                mock_error_context = Mock(spec=ErrorContext)
-                mock_create_context.return_value = mock_error_context
-
-                # Act
-                result = await metrics_api.delete_metric_async(metric_id)
-
-                # Assert
-                assert result is False
-
-                # Verify error context and handler were still used
-                mock_create_context.assert_called_once()
-                mock_error_handler.handle_operation.assert_called_once()
+            # Verify no async API call was made
+            mock_client.request_async.assert_not_called()
 
 
 class TestMetricsAPIIntegration:
