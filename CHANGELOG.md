@@ -49,7 +49,8 @@
 - **🐛 Tests: Fixed Integration Test Failures After API Changes**
   - Updated `backend_verification.py` to use `event_filters=` parameter (changed from `event_filter=`)
   - Removed `limit` parameter from all `list_datapoints()` calls in integration tests
-  - Files: `tests/utils/backend_verification.py`, `tests/integration/test_api_clients_integration.py`, `tests/integration/test_simple_integration.py`, `tests/integration/test_end_to_end_validation.py`
+  - Fixed `test_model_workflow_integration` to use real UUID instead of invalid `"event-123"` string with `UUIDType`
+  - Files: `tests/utils/backend_verification.py`, `tests/integration/test_api_clients_integration.py`, `tests/integration/test_simple_integration.py`, `tests/integration/test_end_to_end_validation.py`, `tests/integration/test_model_integration.py`
 
 ### Technical Details
 

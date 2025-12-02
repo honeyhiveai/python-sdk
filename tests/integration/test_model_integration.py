@@ -1,5 +1,6 @@
 """Integration tests for model validation and serialization in HoneyHive."""
 
+import uuid
 from datetime import datetime
 
 import pytest
@@ -164,7 +165,7 @@ class TestModelIntegration:
         run_request = CreateRunRequest(
             project="integration-test-project",
             name="workflow-evaluation",
-            event_ids=[UUIDType("event-123")],
+            event_ids=[UUIDType(str(uuid.uuid4()))],  # Use real UUID
             configuration={"metrics": ["accuracy", "precision"]},
         )
 

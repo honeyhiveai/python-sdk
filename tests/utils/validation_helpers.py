@@ -102,7 +102,7 @@ def verify_datapoint_creation(
             # Fallback: Try list-based retrieval if direct get fails
             logger.debug(f"Direct retrieval failed, trying list-based: {e}")
 
-            datapoints = client.datapoints.list_datapoints(project=project, limit=100)
+            datapoints = client.datapoints.list_datapoints(project=project)
 
             # Find matching datapoint
             for dp in datapoints:
