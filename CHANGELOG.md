@@ -46,6 +46,11 @@
   - Fixed tracer initialization test to avoid AsyncMock issues by using `new_callable=MagicMock`
   - Files: `tests/unit/test_api_evaluations.py`, `tests/unit/test_api_events.py`, `tests/unit/test_api_datapoints.py`, `tests/unit/test_api_metrics.py`, `tests/unit/test_models_generated.py`, `tests/unit/test_models_integration.py`, `tests/unit/test_tracer_instrumentation_initialization.py`
 
+- **🐛 Tests: Fixed Integration Test Failures After API Changes**
+  - Updated `backend_verification.py` to use `event_filters=` parameter (changed from `event_filter=`)
+  - Removed `limit` parameter from all `list_datapoints()` calls in integration tests
+  - Files: `tests/utils/backend_verification.py`, `tests/integration/test_api_clients_integration.py`, `tests/integration/test_simple_integration.py`, `tests/integration/test_end_to_end_validation.py`
+
 ### Technical Details
 
 - **Test Suite**: All 2,956 unit tests passing (100% success rate)

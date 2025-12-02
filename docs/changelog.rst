@@ -25,7 +25,8 @@ Current Version Highlights
 * **UUIDType Display**: Added __str__ and __repr__ methods for proper string representation in logs
 * **Metric Deletion**: Now raises AuthenticationError - users must use webapp to delete metrics
 * **Test Fixes**: Fixed all unit test failures after model regeneration (enum name changes, UUID validation, AsyncMock issues)
-* **Files Modified**: 12 files (+458/-479 lines) with comprehensive test coverage
+* **Integration Test Fixes**: Updated backend_verification.py to use event_filters parameter, removed limit from list_datapoints calls
+* **Files Modified**: 16 files (+485/-496 lines) with comprehensive test coverage
 
 **🛡️ NEW: Configurable Span Limits & Core Attribute Preservation (Nov 18, 2025)**
 

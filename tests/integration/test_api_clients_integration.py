@@ -340,7 +340,6 @@ class TestDatapointsAPI:
         # Test retrieval (via list since get_datapoint might not exist)
         datapoints = integration_client.datapoints.list_datapoints(
             project=integration_project_name,
-            limit=50,
         )
 
         # Find our datapoint
@@ -380,7 +379,6 @@ class TestDatapointsAPI:
         # Test listing
         datapoints = integration_client.datapoints.list_datapoints(
             project=integration_project_name,
-            limit=50,
         )
 
         assert datapoints is not None
@@ -399,7 +397,6 @@ class TestDatapointsAPI:
         # Test pagination
         datapoints_page = integration_client.datapoints.list_datapoints(
             project=integration_project_name,
-            limit=2,
         )
         assert len(datapoints_page) <= 2
 

@@ -510,7 +510,7 @@ class TestEndToEndValidation:
 
             # Validate datapoint exists
             datapoints = integration_client.datapoints.list_datapoints(
-                project=real_project, limit=50
+                project=real_project
             )
             found_datapoint = None
             for dp in datapoints:

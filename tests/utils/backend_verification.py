@@ -70,7 +70,7 @@ def verify_backend_event(
         try:
             # SDK client handles HTTP retries automatically
             events = client.events.list_events(
-                event_filter=event_filter,
+                event_filters=event_filter,  # Changed to event_filters (accepts single or list)
                 limit=100,
                 project=project,  # Critical: include project for proper filtering
             )
