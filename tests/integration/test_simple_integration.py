@@ -65,7 +65,7 @@ class TestSimpleIntegration:
             try:
                 # List datapoints to find our created one
                 datapoints = integration_client.datapoints.list_datapoints(
-                    project=integration_project_name, limit=50
+                    project=integration_project_name
                 )
 
                 # Find our specific datapoint

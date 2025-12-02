@@ -1,6 +1,6 @@
 """Events API module for HoneyHive."""
 
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List, Optional, Union
 
 from ..models import CreateEventRequest, Event, EventFilter
 from .base import BaseAPI
@@ -324,42 +324,68 @@ class EventsAPI(BaseAPI):
         )
 
     def list_events(
-        self, event_filter: EventFilter, limit: int = 100, project: Optional[str] = None
+        self,
+        event_filters: Union[EventFilter, List[EventFilter]],
+        limit: int = 100,
+        project: Optional[str] = None,
+        page: int = 1,
     ) -> List[Event]:
         """List events using EventFilter model with dynamic processing optimization.
 
         Uses the proper /events/export POST endpoint as specified in OpenAPI spec.
 
         Args:
-            event_filter: EventFilter object with filtering criteria
-            limit: Maximum number of events to return
+            event_filters: EventFilter or list of EventFilter objects with filtering criteria
+            limit: Maximum number of events to return (default: 100)
             project: Project name to filter by (required by API)
+            page: Page number for pagination (default: 1)
+
+        Returns:
+            List of Event objects matching the filters
+
+        Examples:
+            Filter events by type and status::
+
+                filters = [
+                    EventFilter(field="event_type", operator="is", value="model", type="string"),
+                    EventFilter(field="error", operator="is not", value=None, type="string"),
+                ]
+                events = client.events.list_events(
+                    event_filters=filters,
+                    project="My Project",
+                    limit=50
+                )
         """
         if not project:
             raise ValueError("project parameter is required for listing events")
 
+        # Auto-convert single EventFilter to list
+        if isinstance(event_filters, EventFilter):
+            event_filters = [event_filters]
+
         # Build filters array as expected by /events/export endpoint
         filters = []
-        if (
-            event_filter.field
-            and event_filter.value
-            and event_filter.operator
-            and event_filter.type
-        ):
-            filter_dict = {
-                "field": str(event_filter.field),
-                "value": str(event_filter.value),
-                "operator": event_filter.operator.value,
-                "type": event_filter.type.value,
-            }
-            filters.append(filter_dict)
+        for event_filter in event_filters:
+            if (
+                event_filter.field
+                and event_filter.value is not None
+                and event_filter.operator
+                and event_filter.type
+            ):
+                filter_dict = {
+                    "field": str(event_filter.field),
+                    "value": str(event_filter.value),
+                    "operator": event_filter.operator.value,
+                    "type": event_filter.type.value,
+                }
+                filters.append(filter_dict)
 
         # Build request body according to OpenAPI spec
         request_body = {
             "project": project,
             "filters": filters,
             "limit": limit,
-            "page": 1,
+            "page": page,
         }
 
         response = self.client.request("POST", "/events/export", json=request_body)
@@ -434,42 +460,68 @@ class EventsAPI(BaseAPI):
         return {"events": events, "totalEvents": data.get("totalEvents", 0)}
 
     async def list_events_async(
-        self, event_filter: EventFilter, limit: int = 100, project: Optional[str] = None
+        self,
+        event_filters: Union[EventFilter, List[EventFilter]],
+        limit: int = 100,
+        project: Optional[str] = None,
+        page: int = 1,
     ) -> List[Event]:
         """List events asynchronously using EventFilter model.
 
         Uses the proper /events/export POST endpoint as specified in OpenAPI spec.
 
         Args:
-            event_filter: EventFilter object with filtering criteria
-            limit: Maximum number of events to return
+            event_filters: EventFilter or list of EventFilter objects with filtering criteria
+            limit: Maximum number of events to return (default: 100)
             project: Project name to filter by (required by API)
+            page: Page number for pagination (default: 1)
+
+        Returns:
+            List of Event objects matching the filters
+
+        Examples:
+            Filter events by type and status::
+
+                filters = [
+                    EventFilter(field="event_type", operator="is", value="model", type="string"),
+                    EventFilter(field="error", operator="is not", value=None, type="string"),
+                ]
+                events = await client.events.list_events_async(
+                    event_filters=filters,
+                    project="My Project",
+                    limit=50
+                )
         """
         if not project:
             raise ValueError("project parameter is required for listing events")
 
+        # Auto-convert single EventFilter to list
+        if isinstance(event_filters, EventFilter):
+            event_filters = [event_filters]
+
         # Build filters array as expected by /events/export endpoint
         filters = []
-        if (
-            event_filter.field
-            and event_filter.value
-            and event_filter.operator
-            and event_filter.type
-        ):
-            filter_dict = {
-                "field": str(event_filter.field),
-                "value": str(event_filter.value),
-                "operator": event_filter.operator.value,
-                "type": event_filter.type.value,
-            }
-            filters.append(filter_dict)
+        for event_filter in event_filters:
+            if (
+                event_filter.field
+                and event_filter.value is not None
+                and event_filter.operator
+                and event_filter.type
+            ):
+                filter_dict = {
+                    "field": str(event_filter.field),
+                    "value": str(event_filter.value),
+                    "operator": event_filter.operator.value,
+                    "type": event_filter.type.value,
+                }
+                filters.append(filter_dict)
 
         # Build request body according to OpenAPI spec
         request_body = {
             "project": project,
             "filters": filters,
             "limit": limit,
-            "page": 1,
+            "page": page,
         }
 
         response = await self.client.request_async(

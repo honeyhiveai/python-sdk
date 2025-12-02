@@ -1,5 +1,7 @@
 """Unit tests for generated models."""
 
+import uuid
+
 import pytest
 from pydantic import ValidationError
 
@@ -59,11 +61,12 @@ class TestGeneratedModels:
 
     def test_uuid_type(self):
         """Test UUIDType functionality."""
-        uuid_obj = UUIDType("test-uuid-123")
+        test_uuid = uuid.uuid4()
+        uuid_obj = UUIDType(test_uuid)
 
-        assert uuid_obj.root == "test-uuid-123"
-        assert str(uuid_obj) == "test-uuid-123"
-        assert repr(uuid_obj) == "UUIDType(test-uuid-123)"
+        assert uuid_obj.root == test_uuid
+        assert str(uuid_obj) == str(test_uuid)
+        assert repr(uuid_obj) == f"UUIDType({test_uuid})"
 
     def test_model_serialization(self):
         """Test model serialization."""

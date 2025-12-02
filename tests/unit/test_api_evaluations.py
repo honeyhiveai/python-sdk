@@ -57,7 +57,9 @@ class TestEvaluationsAPI:  # pylint: disable=attribute-defined-outside-init
 
         # Verify client call
         self.mock_client.request.assert_called_once_with(
-            "POST", "/runs", json={"run": request.model_dump(exclude_none=True)}
+            "POST",
+            "/runs",
+            json={"run": request.model_dump(mode="json", exclude_none=True)},
         )
 
     def test_create_run_with_uuid_conversion(self) -> None:
@@ -133,7 +135,9 @@ class TestEvaluationsAPI:  # pylint: disable=attribute-defined-outside-init
 
         assert isinstance(result, CreateRunResponse)
         self.mock_client.request_async.assert_called_once_with(
-            "POST", "/runs", json={"run": request.model_dump(exclude_none=True)}
+            "POST",
+            "/runs",
+            json={"run": request.model_dump(mode="json", exclude_none=True)},
         )
 
     @pytest.mark.asyncio

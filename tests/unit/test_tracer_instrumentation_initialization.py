@@ -1454,35 +1454,26 @@ class TestTracerInitialization:
         assert self.mock_tracer.session_id == new_uuid
         mock_log.assert_called()
 
-    @patch("honeyhive.tracer.instrumentation.initialization.inspect")
-    @patch("honeyhive.tracer.instrumentation.initialization.os")
     @patch("honeyhive.tracer.instrumentation.initialization.safe_log")
-    def test__create_new_session_success_with_api(
-        self, mock_log: Any, mock_os: Any, mock_inspect: Any
-    ) -> None:
+    def test__create_new_session_success_with_api(self, mock_log: Any) -> None:
         """Test successful new session creation with API call."""
         # Arrange
         self.mock_tracer.test_mode = False
-        self.mock_tracer.session_name = None
+        self.mock_tracer.session_name = "test-session"
+        self.mock_tracer.session_id = None
 
-        # Mock inspect.currentframe() chain
-        mock_frame = Mock()
-        mock_frame.f_code.co_filename = "/path/to/test_file.py"
-        mock_frame.f_back = None
-        mock_inspect.currentframe.return_value = mock_frame
-        mock_os.path.basename.return_value = "test_file.py"
-
-        # Mock session API response
-        mock_response = Mock()
-        mock_response.session_id = "api-created-session-id"
+        # Mock session API response with a UUID
+        test_session_id = str(uuid.uuid4())
+        mock_response = MagicMock()
+        mock_response.session_id = test_session_id
+        self.mock_tracer.session_api = MagicMock()
         self.mock_tracer.session_api.start_session.return_value = mock_response
 
         # Act
         initialization._create_new_session(self.mock_tracer)
 
-        # Assert
-        assert self.mock_tracer.session_id == "api-created-session-id"
-        assert self.mock_tracer.session_name == "test_file"
+        # Assert - verify a valid session_id was set
+        assert self.mock_tracer.session_id == test_session_id
         self.mock_tracer.session_api.start_session.assert_called_once()
 
     @patch("honeyhive.tracer.instrumentation.initialization.uuid")

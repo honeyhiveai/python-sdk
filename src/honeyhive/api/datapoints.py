@@ -155,14 +155,39 @@ class DatapointsAPI(BaseAPI):
         self,
         project: Optional[str] = None,
         dataset: Optional[str] = None,
-        limit: int = 100,
+        dataset_id: Optional[str] = None,
+        dataset_name: Optional[str] = None,
     ) -> List[Datapoint]:
-        """List datapoints with optional filtering."""
-        params = {"limit": str(limit)}
+        """List datapoints with optional filtering.
+
+        Args:
+            project: Project name to filter by
+            dataset: (Legacy) Dataset ID or name to filter by - use dataset_id or dataset_name instead
+            dataset_id: Dataset ID to filter by (takes precedence over dataset_name)
+            dataset_name: Dataset name to filter by
+
+        Returns:
+            List of Datapoint objects matching the filters
+        """
+        params = {}
         if project:
             params["project"] = project
-        if dataset:
-            params["dataset"] = dataset
+
+        # Prioritize explicit parameters over legacy 'dataset'
+        if dataset_id:
+            params["dataset_id"] = dataset_id
+        elif dataset_name:
+            params["dataset_name"] = dataset_name
+        elif dataset:
+            # Legacy: try to determine if it's an ID or name
+            # NanoIDs are 24 chars, so use that as heuristic
+            if (
+                len(dataset) == 24
+                and dataset.replace("_", "").replace("-", "").isalnum()
+            ):
+                params["dataset_id"] = dataset
+            else:
+                params["dataset_name"] = dataset
 
         response = self.client.request("GET", "/datapoints", params=params)
         data = response.json()
@@ -174,14 +199,39 @@ class DatapointsAPI(BaseAPI):
         self,
         project: Optional[str] = None,
         dataset: Optional[str] = None,
-        limit: int = 100,
+        dataset_id: Optional[str] = None,
+        dataset_name: Optional[str] = None,
     ) -> List[Datapoint]:
-        """List datapoints asynchronously with optional filtering."""
-        params = {"limit": str(limit)}
+        """List datapoints asynchronously with optional filtering.
+
+        Args:
+            project: Project name to filter by
+            dataset: (Legacy) Dataset ID or name to filter by - use dataset_id or dataset_name instead
+            dataset_id: Dataset ID to filter by (takes precedence over dataset_name)
+            dataset_name: Dataset name to filter by
+
+        Returns:
+            List of Datapoint objects matching the filters
+        """
+        params = {}
         if project:
             params["project"] = project
-        if dataset:
-            params["dataset"] = dataset
+
+        # Prioritize explicit parameters over legacy 'dataset'
+        if dataset_id:
+            params["dataset_id"] = dataset_id
+        elif dataset_name:
+            params["dataset_name"] = dataset_name
+        elif dataset:
+            # Legacy: try to determine if it's an ID or name
+            # NanoIDs are 24 chars, so use that as heuristic
+            if (
+                len(dataset) == 24
+                and dataset.replace("_", "").replace("-", "").isalnum()
+            ):
+                params["dataset_id"] = dataset
+            else:
+                params["dataset_name"] = dataset
 
         response = await self.client.request_async("GET", "/datapoints", params=params)
         data = response.json()
