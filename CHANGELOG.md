@@ -52,6 +52,14 @@
   - Fixed `test_model_workflow_integration` to use real UUID instead of invalid `"event-123"` string with `UUIDType`
   - Files: `tests/utils/backend_verification.py`, `tests/integration/test_api_clients_integration.py`, `tests/integration/test_simple_integration.py`, `tests/integration/test_end_to_end_validation.py`, `tests/integration/test_model_integration.py`
 
+- **🐛 Tracing: Fixed Session ID Initialization with Provided Session IDs**
+  - Sessions are now always created/initialized in backend, even when `session_id` is explicitly provided
+  - Prevents backend bug where inputs/outputs would be auto-populated from the first event if session didn't exist
+  - Added UUID format validation for provided session IDs with automatic fallback to new UUID if invalid
+  - Properly preserves explicitly provided session IDs through the session creation process
+  - Invalid session IDs trigger degraded mode with appropriate warnings
+  - Files: `src/honeyhive/tracer/instrumentation/initialization.py`, `tests/unit/test_tracer_instrumentation_initialization.py`, `tests/unit/test_tracer_core_base.py`
+
 ### Technical Details
 
 - **Test Suite**: All 2,956 unit tests passing (100% success rate)

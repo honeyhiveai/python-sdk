@@ -1188,7 +1188,7 @@ class TestTracerInitialization:
     # ========================================================================
 
     @patch("honeyhive.tracer.instrumentation.initialization._create_new_session")
-    @patch("honeyhive.tracer.instrumentation.initialization._validate_session_id")
+    @patch("honeyhive.tracer.instrumentation.initialization.uuid")
     @patch("honeyhive.tracer.instrumentation.initialization.SessionAPI")
     @patch("honeyhive.tracer.instrumentation.initialization.HoneyHive")
     @patch("honeyhive.tracer.instrumentation.initialization.safe_log")
@@ -1197,16 +1197,25 @@ class TestTracerInitialization:
         mock_log: Any,
         mock_client: Any,
         mock_session_api: Any,
-        mock_validate: Any,
+        mock_uuid: Any,
         mock_create: Any,
     ) -> None:
-        """Test session management initialization with existing session ID."""
+        """Test session management initialization with existing session ID.
+
+        With the fix, we now always create/initialize the session in backend
+        even when session_id is provided, to prevent backend auto-population bug.
+        """
         # Arrange
         mock_client_instance = Mock()
         mock_session_api_instance = Mock()
         mock_client.return_value = mock_client_instance
         mock_session_api.return_value = mock_session_api_instance
-        self.mock_tracer.session_id = "existing-session-id"
+        # Use a valid UUID format
+        valid_session_id = "550e8400-e29b-41d4-a716-446655440000"
+        self.mock_tracer.session_id = valid_session_id
+        # Mock UUID validation to pass
+        mock_uuid.UUID.return_value = Mock()
+        mock_uuid.UUID.return_value.__str__ = lambda x: valid_session_id
 
         # Act
         initialization._initialize_session_management(self.mock_tracer)
@@ -1214,8 +1223,10 @@ class TestTracerInitialization:
         # Assert
         assert self.mock_tracer.client == mock_client_instance
         assert self.mock_tracer.session_api == mock_session_api_instance
-        mock_validate.assert_called_once_with(self.mock_tracer)
-        mock_create.assert_not_called()
+        # Now we always call _create_new_session even when session_id is provided
+        mock_create.assert_called_once_with(self.mock_tracer)
+        # UUID validation should have been called inline
+        mock_uuid.UUID.assert_called_once_with(valid_session_id)
         mock_log.assert_called()
 
     @patch("honeyhive.tracer.instrumentation.initialization._create_new_session")
