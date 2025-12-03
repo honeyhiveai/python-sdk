@@ -385,8 +385,11 @@ class TestHoneyHiveTracerBaseCoreAttributes:
         assert hasattr(tracer, "_evaluation_context")
         assert isinstance(tracer._evaluation_context, dict)
 
+    @patch("honeyhive.tracer.instrumentation.initialization._create_new_session")
     @patch("honeyhive.tracer.core.base.create_unified_config")
-    def test_session_id_from_session_config(self, mock_create: Mock) -> None:
+    def test_session_id_from_session_config(
+        self, mock_create: Mock, mock_create_session: Mock
+    ) -> None:
         """Test session_id from SessionConfig is properly extracted.
 
         This verifies the bugfix where session_id passed via SessionConfig
@@ -412,6 +415,13 @@ class TestHoneyHiveTracerBaseCoreAttributes:
         mock_unified.session_id = test_session_id
         mock_create.return_value = mock_unified
 
+        # Mock session creation to preserve the session_id
+        # Since we now always create sessions, mock it to return the same session_id
+        from honeyhive.api.session import SessionStartResponse
+
+        mock_response = SessionStartResponse(session_id=test_session_id)
+        mock_create_session.return_value = mock_response
+
         # Initialize tracer with both configs
         tracer = HoneyHiveTracerBase(
             config=tracer_config, session_config=session_config
@@ -421,9 +431,10 @@ class TestHoneyHiveTracerBaseCoreAttributes:
         assert tracer.session_id == test_session_id
         assert tracer._session_id == test_session_id
 
+    @patch("honeyhive.tracer.instrumentation.initialization._create_new_session")
     @patch("honeyhive.tracer.core.base.create_unified_config")
     def test_session_id_priority_session_config_over_root(
-        self, mock_create: Mock
+        self, mock_create: Mock, mock_create_session: Mock
     ) -> None:
         """Test SessionConfig session_id takes priority over root-level session_id.
 
@@ -450,6 +461,12 @@ class TestHoneyHiveTracerBaseCoreAttributes:
         # Promote SessionConfig session_id to root (what create_unified_config does now)
         mock_unified.session_id = session_config_id
         mock_create.return_value = mock_unified
+
+        # Mock session creation to preserve the session_id
+        from honeyhive.api.session import SessionStartResponse
+
+        mock_response = SessionStartResponse(session_id=session_config_id)
+        mock_create_session.return_value = mock_response
 
         # Initialize tracer
         tracer = HoneyHiveTracerBase(

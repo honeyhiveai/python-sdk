@@ -1033,12 +1033,54 @@ def _initialize_session_management(tracer_instance: Any) -> None:
         tracer_instance.session_api = SessionAPI(tracer_instance.client)
 
         # Handle session ID initialization
+        # Always create/initialize session in backend, even if session_id is provided
+        # This ensures the session exists and prevents backend from auto-populating
+        # inputs/outputs from the first event
+        provided_session_id = None
         if tracer_instance.session_id:
-            # Validate existing session ID
-            _validate_session_id(tracer_instance)
-        else:
-            # Create new session
-            _create_new_session(tracer_instance)
+            # Store provided session_id for later use
+            provided_session_id = tracer_instance.session_id
+            # Validate UUID format first
+            try:
+                uuid.UUID(tracer_instance.session_id)
+                tracer_instance.session_id = tracer_instance.session_id.lower()
+                tracer_instance._session_id = tracer_instance.session_id
+                safe_log(
+                    tracer_instance,
+                    "debug",
+                    "Validated provided session_id, will initialize session in backend",
+                    honeyhive_data={"session_id": tracer_instance.session_id},
+                )
+            except Exception as e:
+                # Invalid UUID format - generate new one
+                fallback_id = str(uuid.uuid4())
+                tracer_instance.session_id = fallback_id
+                tracer_instance._session_id = fallback_id
+                tracer_instance._degraded_mode = True
+                if not hasattr(tracer_instance, "_degradation_reasons"):
+                    tracer_instance._degradation_reasons = []
+                tracer_instance._degradation_reasons.append("invalid_session_id")
+                safe_log(
+                    tracer_instance,
+                    "warning",
+                    f"Invalid session_id format: {e}. Generated new UUID for operation.",
+                    honeyhive_data={
+                        "session_id": tracer_instance.session_id,
+                        "error_type": type(e).__name__,
+                        "operation": "session_id_validation",
+                    },
+                )
+
+        # Always create/initialize session in backend (even if session_id was provided)
+        # This ensures session exists and prevents backend auto-population bug
+        if provided_session_id:
+            safe_log(
+                tracer_instance,
+                "debug",
+                "Initializing session in backend with provided session_id",
+                honeyhive_data={"session_id": provided_session_id},
+            )
+        _create_new_session(tracer_instance)
 
         safe_log(
             tracer_instance,
@@ -1238,30 +1280,56 @@ def _create_new_session(tracer_instance: Any) -> None:
             )
 
         # Create session via API with metadata
+        # If session_id is already set (explicitly provided), use it when creating session
+        # This ensures session exists in backend and prevents auto-population bug
         session_response = tracer_instance.session_api.start_session(
             project=tracer_instance.project_name,
             session_name=session_name,
             source=tracer_instance.source_environment,
+            session_id=tracer_instance.session_id,  # Use provided session_id if set
             inputs=tracer_instance.config.session.inputs,
             metadata=session_metadata if session_metadata else None,
         )
 
         if session_response and hasattr(session_response, "session_id"):
-            tracer_instance.session_id = session_response.session_id
-            tracer_instance._session_id = (
-                session_response.session_id
-            )  # Update private attribute
-            tracer_instance.session_name = session_name
+            # Preserve explicitly provided session_id if it was set
+            # Otherwise use the session_id from the response
+            provided_session_id = tracer_instance.session_id
+            response_session_id = session_response.session_id
 
-            safe_log(
-                tracer_instance,
-                "info",
-                "Created new session",
-                honeyhive_data={
-                    "session_id": tracer_instance.session_id,
-                    "session_name": session_name,
-                },
-            )
+            # Use provided session_id if it matches response (session was created with it)
+            # Otherwise use response session_id (new session was created)
+            if (
+                provided_session_id
+                and provided_session_id.lower() == response_session_id.lower()
+            ):
+                # Session was created with the provided session_id - keep it
+                tracer_instance.session_id = provided_session_id.lower()
+                tracer_instance._session_id = provided_session_id.lower()
+                safe_log(
+                    tracer_instance,
+                    "info",
+                    "Initialized session with provided session_id",
+                    honeyhive_data={
+                        "session_id": tracer_instance.session_id,
+                        "session_name": session_name,
+                    },
+                )
+            else:
+                # New session was created - use response session_id
+                tracer_instance.session_id = response_session_id
+                tracer_instance._session_id = response_session_id
+                safe_log(
+                    tracer_instance,
+                    "info",
+                    "Created new session",
+                    honeyhive_data={
+                        "session_id": tracer_instance.session_id,
+                        "session_name": session_name,
+                    },
+                )
+
+            tracer_instance.session_name = session_name
         else:
             # Fallback to UUID if session creation fails
             fallback_id = str(uuid.uuid4())

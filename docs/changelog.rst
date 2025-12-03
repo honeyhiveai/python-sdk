@@ -17,6 +17,13 @@ Latest Release Notes
 Current Version Highlights
 ~~~~~~~~~~~~~~~~~~~~~~~~~~
 
+**🐛 FIXED: Session ID Initialization (Dec 2025)**
+
+* **Backend Sync**: Sessions are now always initialized in backend, even when session_id is explicitly provided
+* **Bug Prevention**: Prevents backend bug where inputs/outputs would be auto-populated from the first event if session didn't exist
+* **UUID Validation**: Added automatic UUID format validation with fallback to new UUID if invalid
+* **Session Preservation**: Properly preserves explicitly provided session IDs through the session creation process
+
 **✨ NEW: Enhanced API Schemas & Filtering (Dec 2, 2025)**
 
 * **Metric Schema Updates**: Updated to match backend with new enum values (PYTHON/LLM/HUMAN/COMPOSITE), added sampling_percentage, scale, categories, filters, timestamps
