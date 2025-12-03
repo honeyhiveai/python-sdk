@@ -1,5 +1,7 @@
 ## [Unreleased]
 
+## [1.0.0rc5] - 2025-12-03
+
 ### Added
 
 - **✨ API: Enhanced Metric Schema with Backend Parity**
