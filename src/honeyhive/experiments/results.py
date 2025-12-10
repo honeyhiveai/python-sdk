@@ -71,9 +71,7 @@ def get_run_result(
 
     # Parse datapoints into DatapointResult objects
     raw_datapoints: List[Dict[str, Any]] = response.get("datapoints", [])
-    datapoints: List[DatapointResult] = [
-        DatapointResult(**dp) for dp in raw_datapoints
-    ]
+    datapoints: List[DatapointResult] = [DatapointResult(**dp) for dp in raw_datapoints]
 
     # Parse response into ExperimentResultSummary
     return ExperimentResultSummary(

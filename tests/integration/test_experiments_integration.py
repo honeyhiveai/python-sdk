@@ -1326,7 +1326,6 @@ class TestExperimentsIntegration:
             print(f"\n❌ Backend enrichment validation failed: {e}")
             raise
 
-
     def test_experiment_result_models_match_real_api_response(
         self,
         real_api_key: str,
@@ -1406,9 +1405,9 @@ class TestExperimentsIntegration:
 
         # Validate AggregatedMetrics
         print(f"\nMetrics type: {type(result.metrics)}")
-        assert isinstance(result.metrics, AggregatedMetrics), (
-            f"metrics should be AggregatedMetrics, got {type(result.metrics)}"
-        )
+        assert isinstance(
+            result.metrics, AggregatedMetrics
+        ), f"metrics should be AggregatedMetrics, got {type(result.metrics)}"
 
         # Validate metrics.details is a list of MetricDetail
         # pylint: disable=no-member
@@ -1417,9 +1416,9 @@ class TestExperimentsIntegration:
         if result.metrics.details:
             for detail in result.metrics.details:
                 print(f"  - {detail.metric_name}: {detail.aggregate} ({type(detail)})")
-                assert isinstance(detail, MetricDetail), (
-                    f"detail should be MetricDetail, got {type(detail)}"
-                )
+                assert isinstance(
+                    detail, MetricDetail
+                ), f"detail should be MetricDetail, got {type(detail)}"
                 assert isinstance(detail.metric_name, str)
                 # aggregate can be None, float, int, or bool
                 if detail.aggregate is not None:
@@ -1445,9 +1444,9 @@ class TestExperimentsIntegration:
         if result.datapoints:
             for dp in result.datapoints:
                 print(f"  - Datapoint: {dp.datapoint_id}, passed: {dp.passed}")
-                assert isinstance(dp, DatapointResult), (
-                    f"datapoint should be DatapointResult, got {type(dp)}"
-                )
+                assert isinstance(
+                    dp, DatapointResult
+                ), f"datapoint should be DatapointResult, got {type(dp)}"
                 # datapoint_id and session_id can be None or str
                 if dp.datapoint_id is not None:
                     assert isinstance(dp.datapoint_id, str)
