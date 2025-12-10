@@ -1204,3 +1204,186 @@ class TestEvaluate:
         call_kwargs = mock_honeyhive_class.call_args[1]
         assert call_kwargs["server_url"] == "https://staging.honeyhive.com"
         assert result == mock_result
+
+
+class TestAsyncFunctionSupport:
+    """Test suite for async function support in run_experiment."""
+
+    @pytest.fixture
+    def mock_tracer(self) -> Mock:
+        """Create a mock HoneyHiveTracer."""
+        tracer = Mock()
+        tracer.project = "test-project"
+        mock_span = Mock()
+        tracer.start_span.return_value.__enter__ = Mock(return_value=mock_span)
+        tracer.start_span.return_value.__exit__ = Mock(return_value=False)
+        return tracer
+
+    @pytest.fixture
+    def experiment_context(self) -> ExperimentContext:
+        """Create a test experiment context."""
+        return ExperimentContext(
+            run_id="run-123",
+            dataset_id="ds-456",
+            project="test-project",
+        )
+
+    @patch("honeyhive.experiments.core.force_flush_tracer")
+    @patch("honeyhive.experiments.core.HoneyHiveTracer")
+    def test_async_function_execution(
+        self,
+        mock_tracer_class: Mock,
+        mock_flush: Mock,
+        experiment_context: ExperimentContext,
+        mock_tracer: Mock,
+    ) -> None:
+        """Test that async functions are detected and executed correctly."""
+        mock_tracer_class.return_value = mock_tracer
+
+        async def async_function(datapoint: Dict[str, Any]) -> Dict[str, Any]:
+            """Async test function."""
+            inputs = datapoint.get("inputs", {})
+            return {"output": f"async-processed-{inputs.get('query', 'default')}"}
+
+        dataset = [{"inputs": {"query": "test"}, "ground_truth": {"answer": "a1"}}]
+        datapoint_ids = ["dp-1"]
+
+        results = run_experiment(
+            function=async_function,
+            dataset=dataset,
+            datapoint_ids=datapoint_ids,
+            experiment_context=experiment_context,
+            api_key="test-key",
+            max_workers=1,
+            verbose=False,
+        )
+
+        assert len(results) == 1
+        assert results[0]["datapoint_id"] == "dp-1"
+        assert results[0]["status"] == "success"
+        assert results[0]["outputs"] == {"output": "async-processed-test"}
+        assert results[0]["error"] is None
+
+    @patch("honeyhive.experiments.core.force_flush_tracer")
+    @patch("honeyhive.experiments.core.HoneyHiveTracer")
+    def test_async_function_with_tracer_parameter(
+        self,
+        mock_tracer_class: Mock,
+        mock_flush: Mock,
+        experiment_context: ExperimentContext,
+        mock_tracer: Mock,
+    ) -> None:
+        """Test async function with tracer parameter."""
+        mock_tracer_class.return_value = mock_tracer
+
+        async def async_function_with_tracer(
+            datapoint: Dict[str, Any], tracer: Any
+        ) -> Dict[str, Any]:
+            """Async test function with tracer parameter."""
+            inputs = datapoint.get("inputs", {})
+            return {"output": f"async-with-tracer-{inputs.get('query', 'default')}"}
+
+        dataset = [{"inputs": {"query": "test"}, "ground_truth": {"answer": "a1"}}]
+        datapoint_ids = ["dp-1"]
+
+        results = run_experiment(
+            function=async_function_with_tracer,
+            dataset=dataset,
+            datapoint_ids=datapoint_ids,
+            experiment_context=experiment_context,
+            api_key="test-key",
+            max_workers=1,
+            verbose=False,
+        )
+
+        assert len(results) == 1
+        assert results[0]["datapoint_id"] == "dp-1"
+        assert results[0]["status"] == "success"
+        assert results[0]["outputs"] == {"output": "async-with-tracer-test"}
+
+    @patch("honeyhive.experiments.core.force_flush_tracer")
+    @patch("honeyhive.experiments.core.HoneyHiveTracer")
+    def test_async_function_error_handling(
+        self,
+        mock_tracer_class: Mock,
+        mock_flush: Mock,
+        experiment_context: ExperimentContext,
+        mock_tracer: Mock,
+    ) -> None:
+        """Test error handling when async function raises exception."""
+        mock_tracer_class.return_value = mock_tracer
+
+        async def failing_async_function(datapoint: Dict[str, Any]) -> Dict[str, Any]:
+            """Async function that raises an error."""
+            raise ValueError("Async test error")
+
+        dataset = [{"inputs": {"query": "test"}}]
+        datapoint_ids = ["dp-1"]
+
+        results = run_experiment(
+            function=failing_async_function,
+            dataset=dataset,
+            datapoint_ids=datapoint_ids,
+            experiment_context=experiment_context,
+            api_key="test-key",
+            max_workers=1,
+        )
+
+        assert len(results) == 1
+        assert results[0]["status"] == "failed"
+        assert results[0]["error"] == "Async test error"
+        assert results[0]["outputs"] is None
+
+    @patch("honeyhive.experiments.core.force_flush_tracer")
+    @patch("honeyhive.experiments.core.HoneyHiveTracer")
+    def test_multiple_async_datapoints(
+        self,
+        mock_tracer_class: Mock,
+        mock_flush: Mock,
+        experiment_context: ExperimentContext,
+        mock_tracer: Mock,
+    ) -> None:
+        """Test async function execution with multiple datapoints."""
+        mock_tracer_class.return_value = mock_tracer
+
+        async def async_function(datapoint: Dict[str, Any]) -> Dict[str, Any]:
+            """Async test function."""
+            inputs = datapoint.get("inputs", {})
+            return {"output": f"async-{inputs.get('query', 'default')}"}
+
+        dataset = [
+            {"inputs": {"query": "test1"}, "ground_truth": {"answer": "a1"}},
+            {"inputs": {"query": "test2"}, "ground_truth": {"answer": "a2"}},
+            {"inputs": {"query": "test3"}, "ground_truth": {"answer": "a3"}},
+        ]
+        datapoint_ids = ["dp-1", "dp-2", "dp-3"]
+
+        results = run_experiment(
+            function=async_function,
+            dataset=dataset,
+            datapoint_ids=datapoint_ids,
+            experiment_context=experiment_context,
+            api_key="test-key",
+            max_workers=2,
+            verbose=False,
+        )
+
+        assert len(results) == 3
+        result_ids = {r["datapoint_id"] for r in results}
+        assert result_ids == {"dp-1", "dp-2", "dp-3"}
+        # All should be successful
+        for result in results:
+            assert result["status"] == "success"
+
+    def test_async_function_detection(self) -> None:
+        """Test that asyncio.iscoroutinefunction correctly detects async functions."""
+        import asyncio
+
+        def sync_function(datapoint: Dict[str, Any]) -> Dict[str, Any]:
+            return {"output": "sync"}
+
+        async def async_function(datapoint: Dict[str, Any]) -> Dict[str, Any]:
+            return {"output": "async"}
+
+        assert not asyncio.iscoroutinefunction(sync_function)
+        assert asyncio.iscoroutinefunction(async_function)

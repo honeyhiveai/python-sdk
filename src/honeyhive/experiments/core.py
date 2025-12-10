@@ -152,7 +152,9 @@ def run_experiment(
     - Python 3.11+ GIL improvements for I/O
 
     Args:
-        function: User function to execute against each datapoint
+        function: User function to execute against each datapoint. Can be either
+            a synchronous function or an async function. Async functions are
+            automatically detected and executed with asyncio.run().
         dataset: List of datapoint dictionaries
         datapoint_ids: List of datapoint IDs (parallel to dataset)
         experiment_context: ExperimentContext with run metadata
@@ -167,6 +169,11 @@ def run_experiment(
         >>> def my_function(inputs, ground_truth):
         ...     return {"output": "test"}
         >>>
+        >>> # Async functions are also supported
+        >>> async def my_async_function(inputs, ground_truth):
+        ...     result = await some_async_call()
+        ...     return {"output": result}
+        >>>
         >>> context = ExperimentContext(
         ...     run_id="run-123",
         ...     dataset_id="ds-456",
@@ -174,7 +181,7 @@ def run_experiment(
         ... )
         >>>
         >>> results = run_experiment(
-        ...     function=my_function,
+        ...     function=my_function,  # or my_async_function
         ...     dataset=[{"inputs": {}, "ground_truth": {}}],
         ...     datapoint_ids=["dp-1"],
         ...     experiment_context=context,
@@ -239,6 +246,9 @@ def run_experiment(
                 tracer=tracer,
             )(function)
 
+            # Check if the function is async
+            is_async = asyncio.iscoroutinefunction(function)
+
             if "tracer" in params:
                 # NEW v1.0 pattern: pass tracer for enrich_span/enrich_session support
                 if verbose:
@@ -247,7 +257,10 @@ def run_experiment(
                         "info",
                         "Calling function with tracer parameter (v1.0 feature)",
                     )
-                outputs = traced_function(datapoint, tracer=tracer)
+                if is_async:
+                    outputs = asyncio.run(traced_function(datapoint, tracer=tracer))
+                else:
+                    outputs = traced_function(datapoint, tracer=tracer)
             else:
                 # MAIN BRANCH pattern: backward compatible
                 if verbose:
@@ -256,7 +269,10 @@ def run_experiment(
                         "info",
                         "Calling function without tracer (main branch compatible)",
                     )
-                outputs = traced_function(datapoint)
+                if is_async:
+                    outputs = asyncio.run(traced_function(datapoint))
+                else:
+                    outputs = traced_function(datapoint)
 
             # Capture session ID from tracer for linking to run
             # Outputs will be enriched later via UpdateEventRequest after tracer flush
@@ -723,72 +739,79 @@ def evaluate(  # pylint: disable=too-many-locals,too-many-branches
     print_results: bool = True,
 ) -> Any:
     """
-        Run experiment evaluation with backend aggregation.
+    Run experiment evaluation with backend aggregation.
 
-        This is the main user-facing API for running experiments. It:
-        1. Prepares dataset (external or HoneyHive)
-        2. Creates experiment run via API
-        3. Executes function against dataset with tracer multi-instance
-        4. Runs evaluators (if provided)
-        5. Retrieves aggregated results from backend
+    This is the main user-facing API for running experiments. It:
+    1. Prepares dataset (external or HoneyHive)
+    2. Creates experiment run via API
+    3. Executes function against dataset with tracer multi-instance
+    4. Runs evaluators (if provided)
+    5. Retrieves aggregated results from backend
 
-        Args:
-            function: User function to execute against each datapoint
-            dataset: External dataset (list of dicts with 'inputs' and 'ground_truth')
-            dataset_id: HoneyHive dataset ID (alternative to external dataset)
-            evaluators: List of evaluator functions (optional)
-            api_key: HoneyHive API key (or set HONEYHIVE_API_KEY/HH_API_KEY env var)
-            server_url: HoneyHive server URL (or set HONEYHIVE_SERVER_URL/
-                HH_SERVER_URL/HH_API_URL env var)
-            project: HoneyHive project (or set HONEYHIVE_PROJECT env var)
-            name: Experiment run name (auto-generated if not provided)
-            max_workers: ThreadPool size for concurrent execution (default: 10)
-            aggregate_function: Backend aggregation function
-    +            ("average", "sum", "min", "max")
-            verbose: Enable verbose logging
-            print_results: Print formatted results table after evaluation
-                (default: True)
+    Args:
+        function: User function to execute against each datapoint. Can be either
+            a synchronous function or an async function. Async functions are
+            automatically detected and executed with asyncio.run().
+        dataset: External dataset (list of dicts with 'inputs' and 'ground_truth')
+        dataset_id: HoneyHive dataset ID (alternative to external dataset)
+        evaluators: List of evaluator functions (optional)
+        api_key: HoneyHive API key (or set HONEYHIVE_API_KEY/HH_API_KEY env var)
+        server_url: HoneyHive server URL (or set HONEYHIVE_SERVER_URL/
+            HH_SERVER_URL/HH_API_URL env var)
+        project: HoneyHive project (or set HONEYHIVE_PROJECT env var)
+        name: Experiment run name (auto-generated if not provided)
+        max_workers: ThreadPool size for concurrent execution (default: 10)
+        aggregate_function: Backend aggregation function
+            ("average", "sum", "min", "max")
+        verbose: Enable verbose logging
+        print_results: Print formatted results table after evaluation
+            (default: True)
 
-        Returns:
-            ExperimentResultSummary with backend-computed aggregates
+    Returns:
+        ExperimentResultSummary with backend-computed aggregates
 
-        Raises:
-            ValueError: If neither dataset nor dataset_id provided, or both provided
+    Raises:
+        ValueError: If neither dataset nor dataset_id provided, or both provided
 
-        Examples:
-            >>> from honeyhive import HoneyHive
-            >>> from honeyhive.experiments import evaluate
-            >>>
-            >>> # Define function to test
-            >>> def my_function(inputs, ground_truth):
-            ...     # Your LLM call or function logic
-            ...     return {"output": "result"}
-            >>>
-            >>> # External dataset
-            >>> dataset = [
-            ...     {"inputs": {"query": "test1"}, "ground_truth": {"answer": "a1"}},
-            ...     {"inputs": {"query": "test2"}, "ground_truth": {"answer": "a2"}}
-            ... ]
-            >>>
-            >>> result = evaluate(
-            ...     function=my_function,
-            ...     dataset=dataset,
-            ...     api_key="hh_...",
-            ...     project="my-project",
-            ...     name="My Experiment"
-            ... )
-            >>>
-            >>> print(f"Success: {result.success}")
-            >>> print(f"Passed: {len(result.passed)}")
-            >>> print(f"Metrics: {result.metrics.list_metrics()}")
-            >>>
-            >>> # HoneyHive dataset
-            >>> result = evaluate(
-            ...     function=my_function,
-            ...     dataset_id="ds-123",
-            ...     api_key="hh_...",
-            ...     project="my-project"
-            ... )
+    Examples:
+        >>> from honeyhive import HoneyHive
+        >>> from honeyhive.experiments import evaluate
+        >>>
+        >>> # Define function to test (sync)
+        >>> def my_function(inputs, ground_truth):
+        ...     # Your LLM call or function logic
+        ...     return {"output": "result"}
+        >>>
+        >>> # Async functions are also supported
+        >>> async def my_async_function(inputs, ground_truth):
+        ...     result = await some_async_llm_call()
+        ...     return {"output": result}
+        >>>
+        >>> # External dataset
+        >>> dataset = [
+        ...     {"inputs": {"query": "test1"}, "ground_truth": {"answer": "a1"}},
+        ...     {"inputs": {"query": "test2"}, "ground_truth": {"answer": "a2"}}
+        ... ]
+        >>>
+        >>> result = evaluate(
+        ...     function=my_function,  # or my_async_function
+        ...     dataset=dataset,
+        ...     api_key="hh_...",
+        ...     project="my-project",
+        ...     name="My Experiment"
+        ... )
+        >>>
+        >>> print(f"Success: {result.success}")
+        >>> print(f"Passed: {len(result.passed)}")
+        >>> print(f"Metrics: {result.metrics.list_metrics()}")
+        >>>
+        >>> # HoneyHive dataset
+        >>> result = evaluate(
+        ...     function=my_function,
+        ...     dataset_id="ds-123",
+        ...     api_key="hh_...",
+        ...     project="my-project"
+        ... )
     """
     # Validate inputs
     if dataset is None and dataset_id is None:

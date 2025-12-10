@@ -228,6 +228,90 @@ Your function MUST accept a ``datapoint`` parameter, and can optionally accept a
        inputs = datapoint.get("inputs", {})
        return {"output": inputs["query"]}
 
+Can I use async functions with evaluate()?
+------------------------------------------
+
+.. versionadded:: 1.0
+
+   The ``evaluate()`` function now supports async functions.
+
+**Yes! Async functions are fully supported.**
+
+If your application uses async operations (like async LLM clients), you can pass an async function directly to ``evaluate()``. Async functions are automatically detected and executed correctly.
+
+.. code-block:: python
+
+   from typing import Any, Dict
+   from honeyhive.experiments import evaluate
+   import asyncio
+   
+   
+   # Option 1: Basic async function
+   async def my_async_function(datapoint: Dict[str, Any]) -> Dict[str, Any]:
+       """Async evaluation function.
+       
+       Args:
+           datapoint: Dictionary with 'inputs' and 'ground_truth' keys
+       
+       Returns:
+           dict: Your function's output
+       """
+       inputs = datapoint.get("inputs", {})
+       
+       # Use async operations (e.g., async LLM client)
+       result = await async_llm_call(inputs["prompt"])
+       
+       return {"answer": result}
+   
+   
+   # Option 2: Async function with tracer parameter
+   async def my_async_function_with_tracer(
+       datapoint: Dict[str, Any],
+       tracer: HoneyHiveTracer
+   ) -> Dict[str, Any]:
+       """Async evaluation function with tracer access.
+       
+       Args:
+           datapoint: Dictionary with 'inputs' and 'ground_truth' keys
+           tracer: HoneyHiveTracer instance (auto-injected)
+       
+       Returns:
+           dict: Your function's output
+       """
+       inputs = datapoint.get("inputs", {})
+       
+       # Use tracer for enrichment
+       tracer.enrich_session(metadata={"async": True})
+       
+       # Use async operations
+       result = await async_llm_call(inputs["prompt"])
+       
+       return {"answer": result}
+   
+   
+   # Run experiment with async function - works the same as sync!
+   result = evaluate(
+       function=my_async_function,
+       dataset=dataset,
+       api_key="your-api-key",
+       project="your-project",
+       name="Async Experiment v1"
+   )
+
+.. note::
+   **How it works:**
+   
+   - Async functions are automatically detected using ``asyncio.iscoroutinefunction()``
+   - Each datapoint is processed in a separate thread using ``ThreadPoolExecutor``
+   - Async functions are executed with ``asyncio.run()`` inside each worker thread
+   - Both sync and async functions work seamlessly with the optional ``tracer`` parameter
+
+**When to use async functions:**
+
+- When using async LLM clients (e.g., ``openai.AsyncOpenAI``)
+- When making concurrent API calls within your function
+- When your existing application code is already async
+
 How do I use ground_truth from datapoints in my experiments?
 -------------------------------------------------------------
 
