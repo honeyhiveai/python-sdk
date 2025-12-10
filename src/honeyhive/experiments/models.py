@@ -309,7 +309,7 @@ class ExperimentResultSummary(BaseModel):
         console.print()
 
         # Print aggregated metrics table
-        metric_names = self.metrics.list_metrics()
+        metric_names = self.metrics.list_metrics()  # pylint: disable=no-member
 
         if metric_names:
             metrics_table = Table(
@@ -324,7 +324,7 @@ class ExperimentResultSummary(BaseModel):
             metrics_table.add_column("Type", justify="center", style="blue")
 
             for metric_name in sorted(metric_names):
-                metric_detail = self.metrics.get_metric(metric_name)
+                metric_detail = self.metrics.get_metric(metric_name)  # pylint: disable=no-member
                 if metric_detail is not None:
                     aggregate_value = metric_detail.aggregate
                     metric_type = metric_detail.metric_type or "unknown"
