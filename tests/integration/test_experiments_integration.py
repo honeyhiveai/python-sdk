@@ -1331,7 +1331,6 @@ class TestExperimentsIntegration:
         self,
         real_api_key: str,
         real_project: str,
-        integration_client: HoneyHive,
     ) -> None:
         """Test that new typed models correctly parse real API responses.
 
@@ -1341,7 +1340,8 @@ class TestExperimentsIntegration:
         3. DatapointResult objects are properly typed
         4. print_table() works correctly with real API data
         """
-        # Import the new typed models
+        # pylint: disable=import-outside-toplevel
+        # Import the new typed models (inside test to avoid circular imports)
         from honeyhive.experiments.models import (
             AggregatedMetrics,
             DatapointResult,
@@ -1411,6 +1411,8 @@ class TestExperimentsIntegration:
         )
 
         # Validate metrics.details is a list of MetricDetail
+        # pylint: disable=no-member
+        # Note: pylint doesn't understand Pydantic model fields
         print(f"Metrics details count: {len(result.metrics.details)}")
         if result.metrics.details:
             for detail in result.metrics.details:
@@ -1438,6 +1440,7 @@ class TestExperimentsIntegration:
             assert first_metric is None or isinstance(first_metric, MetricDetail)
 
         # Validate datapoints
+        # pylint: disable=not-an-iterable
         print(f"\nDatapoints count: {len(result.datapoints)}")
         if result.datapoints:
             for dp in result.datapoints:

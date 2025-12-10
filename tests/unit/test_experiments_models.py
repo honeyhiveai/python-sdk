@@ -712,7 +712,9 @@ class TestAggregatedMetricsWithDetails:
         metrics = AggregatedMetrics(
             aggregation_function="average",
             details=[
-                MetricDetail(metric_name="accuracy", aggregate=0.85, metric_type="numeric"),
+                MetricDetail(
+                    metric_name="accuracy", aggregate=0.85, metric_type="numeric"
+                ),
             ],
         )
 
