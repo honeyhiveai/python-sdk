@@ -17,6 +17,13 @@ Latest Release Notes
 Current Version Highlights
 ~~~~~~~~~~~~~~~~~~~~~~~~~~
 
+**🐛 FIXED: enrich_session() Metadata Requirement (Unreleased)**
+
+* **Flexible Enrichment**: ``enrich_session()`` now works correctly even when no parameters (metadata, inputs, outputs, etc.) are explicitly provided
+* **Bug Fix**: Previously, calling ``enrich_session()`` without parameters would silently fail due to empty ``update_params`` check
+* **Improved Behavior**: Session enrichment now proceeds when a valid session_id is available, regardless of whether enrichment data is provided
+* **Files**: ``src/honeyhive/tracer/core/context.py``
+
 **🐛 FIXED: Session ID Initialization (Dec 2025)**
 
 * **Backend Sync**: Sessions are now always initialized in backend, even when session_id is explicitly provided

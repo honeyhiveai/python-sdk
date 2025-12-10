@@ -114,7 +114,6 @@ class TracerContextMixin(TracerContextInterface):
     # for comprehensive session data (inputs, outputs, metadata, config, etc.).
     def enrich_session(
         self,
-        session_id: Optional[str] = None,
         metadata: Optional[Dict[str, Any]] = None,
         inputs: Optional[Dict[str, Any]] = None,
         outputs: Optional[Dict[str, Any]] = None,
@@ -122,6 +121,7 @@ class TracerContextMixin(TracerContextInterface):
         feedback: Optional[Dict[str, Any]] = None,
         metrics: Optional[Dict[str, Any]] = None,
         user_properties: Optional[Dict[str, Any]] = None,
+        session_id: Optional[str] = None,
         **kwargs: Any,
     ) -> None:
         """Enrich current session with dynamic metadata management.

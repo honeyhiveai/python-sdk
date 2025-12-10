@@ -46,10 +46,10 @@ Function Signature
 
    Add metadata and metrics to a session with backend persistence.
    
-   **Parameters:**
+   .. note::
+      **All parameters are optional**: You can call ``enrich_session()`` without any parameters. The function will work correctly as long as a valid session_id is available (either explicitly provided or detected from the active context). This is useful for ensuring a session exists or "touching" it even when you don't have enrichment data to add.
    
-   :param session_id: Explicit session ID to enrich. If not provided, uses the active session from context.
-   :type session_id: Optional[str]
+   **Parameters:**
    
    :param metadata: Business context data (user IDs, features, session info).
    :type metadata: Optional[Dict[str, Any]]
@@ -71,6 +71,9 @@ Function Signature
    
    :param user_properties: User-specific properties (user_id, plan, etc.). Stored as a separate field in the backend, not merged into metadata.
    :type user_properties: Optional[Dict[str, Any]]
+
+   :param session_id: Explicit session ID to enrich. If not provided, uses the active session from context.
+   :type session_id: Optional[str]
    
    :param kwargs: Additional keyword arguments (passed through for extensibility).
    :type kwargs: Any
@@ -125,6 +128,9 @@ The simplest usage enriches the currently active session:
        model="gpt-3.5-turbo",
        messages=[{"role": "user", "content": "Hello!"}]
    )
+
+.. note::
+   **Optional Parameters**: All parameters to ``enrich_session()`` are optional. You can call ``enrich_session()`` without any parameters to ensure the session exists or to "touch" it, even if you don't have enrichment data to add at that moment. The function will work correctly as long as a valid session_id is available (either explicitly provided or detected from the active context).
 
 Enrich Specific Session
 ~~~~~~~~~~~~~~~~~~~~~~~

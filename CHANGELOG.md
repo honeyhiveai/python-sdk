@@ -1,5 +1,13 @@
 ## [Unreleased]
 
+### Fixed
+
+- **🐛 Tracing: Fixed enrich_session() requiring explicit metadata parameter**
+  - `enrich_session()` now works correctly even when no parameters (metadata, inputs, outputs, etc.) are explicitly provided
+  - Previously, calling `enrich_session()` without parameters would silently fail due to empty `update_params` check
+  - Fix ensures session enrichment proceeds when a valid session_id is available, regardless of whether enrichment data is provided
+  - Files: `src/honeyhive/tracer/core/context.py`
+
 ## [1.0.0rc5] - 2025-12-03
 
 ### Added
