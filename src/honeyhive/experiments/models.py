@@ -186,44 +186,65 @@ class AggregatedMetrics(BaseModel):
     # Allow extra fields for backward compatibility with dynamic metric keys
     model_config = ConfigDict(extra="allow")
 
-    def get_metric(self, metric_name: str) -> Optional[MetricDetail]:
+    def get_metric(
+        self, metric_name: str
+    ) -> Optional[Union[MetricDetail, Dict[str, Any]]]:
         """
         Get a specific metric by name.
+
+        Supports both the new 'details' array format (returns MetricDetail)
+        and the legacy model_extra format (returns dict) for backward compatibility.
 
         Args:
             metric_name: Name of the metric to retrieve
 
         Returns:
-            MetricDetail object or None if not found
+            MetricDetail object (new format), dict (legacy format), or None if not found
 
         Example:
             >>> metrics.get_metric("accuracy")
             MetricDetail(metric_name='accuracy', aggregate=0.85, ...)
         """
+        # First check the details array (new format)
         for metric in self.details:
             if metric.metric_name == metric_name:
                 return metric
-        return None
+        # Fall back to model_extra (legacy format for backward compatibility)
+        extra = self.model_extra or {}
+        return extra.get(metric_name)
 
     def list_metrics(self) -> List[str]:
         """
         List all metric names in this result.
 
+        Supports both the new 'details' array format and the legacy model_extra
+        format for backward compatibility.
+
         Returns:
-            List of metric names from the details array
+            List of metric names from details array or model_extra keys
 
         Example:
             >>> metrics.list_metrics()
             ['accuracy', 'latency', 'cost']
         """
-        return [metric.metric_name for metric in self.details]
+        # First check the details array (new format)
+        if self.details:
+            # pylint: disable=not-an-iterable
+            return [metric.metric_name for metric in self.details]
+        # Fall back to model_extra (legacy format for backward compatibility)
+        extra = self.model_extra or {}
+        # Exclude known fields that aren't metrics
+        return [k for k in extra.keys() if k not in ("aggregation_function",)]
 
-    def get_all_metrics(self) -> Dict[str, MetricDetail]:
+    def get_all_metrics(self) -> Dict[str, Union[MetricDetail, Dict[str, Any]]]:
         """
         Get all metrics as a dictionary.
 
+        Supports both the new 'details' array format (returns MetricDetail values)
+        and the legacy model_extra format (returns dict values) for backward compatibility.
+
         Returns:
-            Dictionary mapping metric names to MetricDetail objects
+            Dictionary mapping metric names to MetricDetail objects or dicts
 
         Example:
             >>> metrics.get_all_metrics()
@@ -232,7 +253,14 @@ class AggregatedMetrics(BaseModel):
                 'latency': MetricDetail(metric_name='latency', aggregate=120.5, ...)
             }
         """
-        return {metric.metric_name: metric for metric in self.details}
+        # First check the details array (new format)
+        if self.details:
+            # pylint: disable=not-an-iterable
+            return {metric.metric_name: metric for metric in self.details}
+        # Fall back to model_extra (legacy format for backward compatibility)
+        extra = self.model_extra or {}
+        # Exclude known fields that aren't metrics
+        return {k: v for k, v in extra.items() if k not in ("aggregation_function",)}
 
 
 class ExperimentResultSummary(BaseModel):
@@ -324,12 +352,19 @@ class ExperimentResultSummary(BaseModel):
             metrics_table.add_column("Type", justify="center", style="blue")
 
             for metric_name in sorted(metric_names):
-                metric_detail = self.metrics.get_metric(
-                    metric_name
-                )  # pylint: disable=no-member
-                if metric_detail is not None:
-                    aggregate_value = metric_detail.aggregate
-                    metric_type = metric_detail.metric_type or "unknown"
+                # pylint: disable=no-member
+                metric_data = self.metrics.get_metric(metric_name)
+                if metric_data is not None:
+                    # Handle both MetricDetail objects (new format) and dicts (legacy)
+                    if isinstance(metric_data, MetricDetail):
+                        aggregate_value = metric_data.aggregate
+                        metric_type = metric_data.metric_type or "unknown"
+                    elif isinstance(metric_data, dict):
+                        aggregate_value = metric_data.get("aggregate")
+                        metric_type = metric_data.get("metric_type", "unknown")
+                    else:
+                        aggregate_value = None
+                        metric_type = "unknown"
 
                     # Format value based on type
                     if aggregate_value is None:
