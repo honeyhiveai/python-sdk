@@ -1,5 +1,14 @@
 ## [Unreleased]
 
+### Added
+
+- **✨ Experiments: Async function support for evaluate()**
+  - `honeyhive.experiments.evaluate()` now accepts async functions for the `function` parameter
+  - Async functions are automatically detected using `asyncio.iscoroutinefunction()` and executed with `asyncio.run()` inside worker threads
+  - Enables use of async LLM clients and other async operations in experiment functions without changing the `evaluate()` call site
+  - Both sync and async functions work seamlessly with the tracer parameter pattern
+  - Files: `src/honeyhive/experiments/core.py`
+
 ### Fixed
 
 - **🐛 Tracing: Fixed enrich_session() requiring explicit metadata parameter**
