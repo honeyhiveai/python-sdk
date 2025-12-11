@@ -537,6 +537,119 @@ add a ``tracer`` parameter to your function signature:
        inputs = datapoint.get("inputs", {})
        return {"answer": process_query(inputs["query"])}
 
+How do I trace third-party library calls in my evaluation?
+----------------------------------------------------------
+
+.. versionadded:: 1.0
+
+   The ``evaluate()`` function now supports the ``instrumentors`` parameter.
+
+**Use the instrumentors Parameter for Automatic Tracing**
+
+If your evaluation function uses third-party libraries (OpenAI, Anthropic, Google ADK, LangChain, etc.), you can automatically trace their calls by passing instrumentor factory functions:
+
+.. code-block:: python
+
+   from typing import Any, Dict
+   from honeyhive.experiments import evaluate
+   from openinference.instrumentation.openai import OpenAIInstrumentor
+   
+   
+   def my_function(datapoint: Dict[str, Any]) -> Dict[str, Any]:
+       """Evaluation function using OpenAI."""
+       inputs = datapoint.get("inputs", {})
+       
+       # OpenAI calls will be automatically traced
+       client = openai.OpenAI()
+       response = client.chat.completions.create(
+           model="gpt-4",
+           messages=[{"role": "user", "content": inputs["prompt"]}]
+       )
+       
+       return {"answer": response.choices[0].message.content}
+   
+   
+   # Pass instrumentor factories - each datapoint gets its own instance
+   result = evaluate(
+       function=my_function,
+       dataset=dataset,
+       instrumentors=[lambda: OpenAIInstrumentor()],  # Factory function
+       name="openai-traced-experiment"
+   )
+
+.. important::
+   **Why Factory Functions?**
+   
+   The ``instrumentors`` parameter accepts **factory functions** (callables that return instrumentor instances), not instrumentor instances directly. This ensures each datapoint gets its own isolated instrumentor instance, preventing trace routing issues in concurrent processing.
+   
+   - **Correct**: ``instrumentors=[lambda: OpenAIInstrumentor()]``
+   - **Incorrect**: ``instrumentors=[OpenAIInstrumentor()]``
+
+**Multiple Instrumentors:**
+
+.. code-block:: python
+
+   from openinference.instrumentation.openai import OpenAIInstrumentor
+   from openinference.instrumentation.langchain import LangChainInstrumentor
+   
+   result = evaluate(
+       function=my_function,
+       dataset=dataset,
+       instrumentors=[
+           lambda: OpenAIInstrumentor(),
+           lambda: LangChainInstrumentor(),
+       ],
+       name="multi-instrumented-experiment"
+   )
+
+**Google ADK Example:**
+
+.. code-block:: python
+
+   from openinference.instrumentation.google_adk import GoogleADKInstrumentor
+   from google.adk.agents import Agent
+   from google.adk.runners import Runner
+   
+   
+   async def run_adk_agent(datapoint: Dict[str, Any]) -> Dict[str, Any]:
+       """Run Google ADK agent - calls are automatically traced."""
+       inputs = datapoint.get("inputs", {})
+       
+       agent = Agent(name="my_agent", model="gemini-2.0-flash", ...)
+       runner = Runner(agent=agent, ...)
+       
+       # ADK agent calls will be traced
+       response = await runner.run_async(...)
+       
+       return {"response": response}
+   
+   
+   result = evaluate(
+       function=run_adk_agent,
+       dataset=dataset,
+       instrumentors=[lambda: GoogleADKInstrumentor()],
+       name="adk-agent-evaluation"
+   )
+
+.. note::
+   **How it works:**
+   
+   - Each datapoint gets its own tracer instance (multi-instance architecture)
+   - For each datapoint, the SDK creates fresh instrumentor instances from your factories
+   - Instrumentors are configured with the datapoint's tracer provider via ``instrumentor.instrument(tracer_provider=tracer.provider)``
+   - This ensures all traces from that datapoint are routed to the correct session
+
+**Supported Instrumentors:**
+
+Any OpenInference-compatible instrumentor works with this pattern:
+
+- ``openinference.instrumentation.openai.OpenAIInstrumentor``
+- ``openinference.instrumentation.anthropic.AnthropicInstrumentor``
+- ``openinference.instrumentation.google_adk.GoogleADKInstrumentor``
+- ``openinference.instrumentation.langchain.LangChainInstrumentor``
+- ``openinference.instrumentation.llama_index.LlamaIndexInstrumentor``
+- And many more...
+
 My experiments are too slow on large datasets
 ---------------------------------------------
 

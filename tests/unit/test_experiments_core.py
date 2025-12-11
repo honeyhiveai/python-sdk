@@ -1387,3 +1387,235 @@ class TestAsyncFunctionSupport:
 
         assert not asyncio.iscoroutinefunction(sync_function)
         assert asyncio.iscoroutinefunction(async_function)
+
+
+class TestInstrumentorsSupport:
+    """Test suite for instrumentors parameter in run_experiment and evaluate."""
+
+    @pytest.fixture
+    def mock_tracer(self) -> Mock:
+        """Create a mock HoneyHiveTracer with provider attribute."""
+        tracer = Mock()
+        tracer.project = "test-project"
+        tracer.provider = Mock()
+        mock_span = Mock()
+        tracer.start_span.return_value.__enter__ = Mock(return_value=mock_span)
+        tracer.start_span.return_value.__exit__ = Mock(return_value=False)
+        return tracer
+
+    @pytest.fixture
+    def experiment_context(self) -> ExperimentContext:
+        """Create a test experiment context."""
+        return ExperimentContext(
+            run_id="run-123",
+            dataset_id="ds-456",
+            project="test-project",
+        )
+
+    @pytest.fixture
+    def simple_function(self) -> Any:
+        """Simple test function."""
+
+        def func(datapoint: Dict[str, Any]) -> Dict[str, Any]:
+            inputs = datapoint.get("inputs", {})
+            return {"output": f"processed-{inputs.get('query', 'default')}"}
+
+        return func
+
+    @patch("honeyhive.experiments.core.force_flush_tracer")
+    @patch("honeyhive.experiments.core.HoneyHiveTracer")
+    def test_instrumentors_called_with_tracer_provider(
+        self,
+        mock_tracer_class: Mock,
+        mock_flush: Mock,
+        experiment_context: ExperimentContext,
+        simple_function: Any,
+        mock_tracer: Mock,
+    ) -> None:
+        """Test that instrumentor factories are called and instrument() is invoked."""
+        mock_tracer_class.return_value = mock_tracer
+
+        mock_instrumentor = Mock()
+        instrumentor_factory = Mock(return_value=mock_instrumentor)
+
+        dataset = [{"inputs": {"query": "test"}, "ground_truth": {"answer": "a1"}}]
+        datapoint_ids = ["dp-1"]
+
+        run_experiment(
+            function=simple_function,
+            dataset=dataset,
+            datapoint_ids=datapoint_ids,
+            experiment_context=experiment_context,
+            api_key="test-key",
+            max_workers=1,
+            verbose=False,
+            instrumentors=[instrumentor_factory],
+        )
+
+        instrumentor_factory.assert_called_once()
+        mock_instrumentor.instrument.assert_called_once_with(
+            tracer_provider=mock_tracer.provider
+        )
+
+    @patch("honeyhive.experiments.core.force_flush_tracer")
+    @patch("honeyhive.experiments.core.HoneyHiveTracer")
+    def test_multiple_instrumentors(
+        self,
+        mock_tracer_class: Mock,
+        mock_flush: Mock,
+        experiment_context: ExperimentContext,
+        simple_function: Any,
+        mock_tracer: Mock,
+    ) -> None:
+        """Test that multiple instrumentor factories are all called."""
+        mock_tracer_class.return_value = mock_tracer
+
+        mock_instrumentor1 = Mock()
+        mock_instrumentor2 = Mock()
+        factory1 = Mock(return_value=mock_instrumentor1)
+        factory2 = Mock(return_value=mock_instrumentor2)
+
+        dataset = [{"inputs": {"query": "test"}}]
+        datapoint_ids = ["dp-1"]
+
+        run_experiment(
+            function=simple_function,
+            dataset=dataset,
+            datapoint_ids=datapoint_ids,
+            experiment_context=experiment_context,
+            api_key="test-key",
+            max_workers=1,
+            instrumentors=[factory1, factory2],
+        )
+
+        factory1.assert_called_once()
+        factory2.assert_called_once()
+        mock_instrumentor1.instrument.assert_called_once()
+        mock_instrumentor2.instrument.assert_called_once()
+
+    @patch("honeyhive.experiments.core.force_flush_tracer")
+    @patch("honeyhive.experiments.core.HoneyHiveTracer")
+    def test_instrumentors_per_datapoint_isolation(
+        self,
+        mock_tracer_class: Mock,
+        mock_flush: Mock,
+        experiment_context: ExperimentContext,
+        simple_function: Any,
+        mock_tracer: Mock,
+    ) -> None:
+        """Test that each datapoint gets its own instrumentor instance."""
+        mock_tracer_class.return_value = mock_tracer
+
+        call_count = {"count": 0}
+
+        def instrumentor_factory() -> Mock:
+            call_count["count"] += 1
+            return Mock()
+
+        dataset = [
+            {"inputs": {"query": "test1"}},
+            {"inputs": {"query": "test2"}},
+            {"inputs": {"query": "test3"}},
+        ]
+        datapoint_ids = ["dp-1", "dp-2", "dp-3"]
+
+        run_experiment(
+            function=simple_function,
+            dataset=dataset,
+            datapoint_ids=datapoint_ids,
+            experiment_context=experiment_context,
+            api_key="test-key",
+            max_workers=1,
+            instrumentors=[instrumentor_factory],
+        )
+
+        assert call_count["count"] == 3
+
+    @patch("honeyhive.experiments.core.force_flush_tracer")
+    @patch("honeyhive.experiments.core.HoneyHiveTracer")
+    def test_instrumentor_error_handling(
+        self,
+        mock_tracer_class: Mock,
+        mock_flush: Mock,
+        experiment_context: ExperimentContext,
+        simple_function: Any,
+        mock_tracer: Mock,
+    ) -> None:
+        """Test that instrumentor errors are caught and logged."""
+        mock_tracer_class.return_value = mock_tracer
+
+        def failing_factory() -> Mock:
+            raise ValueError("Instrumentor creation failed")
+
+        dataset = [{"inputs": {"query": "test"}}]
+        datapoint_ids = ["dp-1"]
+
+        results = run_experiment(
+            function=simple_function,
+            dataset=dataset,
+            datapoint_ids=datapoint_ids,
+            experiment_context=experiment_context,
+            api_key="test-key",
+            max_workers=1,
+            instrumentors=[failing_factory],
+        )
+
+        assert len(results) == 1
+        assert results[0]["status"] == "success"
+
+    @patch("honeyhive.experiments.core.force_flush_tracer")
+    @patch("honeyhive.experiments.core.HoneyHiveTracer")
+    def test_no_instrumentors_works(
+        self,
+        mock_tracer_class: Mock,
+        mock_flush: Mock,
+        experiment_context: ExperimentContext,
+        simple_function: Any,
+        mock_tracer: Mock,
+    ) -> None:
+        """Test that run_experiment works without instrumentors."""
+        mock_tracer_class.return_value = mock_tracer
+
+        dataset = [{"inputs": {"query": "test"}}]
+        datapoint_ids = ["dp-1"]
+
+        results = run_experiment(
+            function=simple_function,
+            dataset=dataset,
+            datapoint_ids=datapoint_ids,
+            experiment_context=experiment_context,
+            api_key="test-key",
+            max_workers=1,
+        )
+
+        assert len(results) == 1
+        assert results[0]["status"] == "success"
+
+    @patch("honeyhive.experiments.core.force_flush_tracer")
+    @patch("honeyhive.experiments.core.HoneyHiveTracer")
+    def test_empty_instrumentors_list(
+        self,
+        mock_tracer_class: Mock,
+        mock_flush: Mock,
+        experiment_context: ExperimentContext,
+        simple_function: Any,
+        mock_tracer: Mock,
+    ) -> None:
+        """Test that empty instrumentors list works."""
+        mock_tracer_class.return_value = mock_tracer
+
+        dataset = [{"inputs": {"query": "test"}}]
+        datapoint_ids = ["dp-1"]
+
+        results = run_experiment(
+            function=simple_function,
+            dataset=dataset,
+            datapoint_ids=datapoint_ids,
+            experiment_context=experiment_context,
+            api_key="test-key",
+            max_workers=1,
+            instrumentors=[],
+        )
+
+        assert len(results) == 1
+        assert results[0]["status"] == "success"

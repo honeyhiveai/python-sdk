@@ -2,6 +2,15 @@
 
 ### Added
 
+- **✨ Experiments: Instrumentors support for evaluate()**
+  - `honeyhive.experiments.evaluate()` and `run_experiment()` now accept an `instrumentors` parameter
+  - Pass factory functions (e.g., `[lambda: GoogleADKInstrumentor()]`) to automatically instrument third-party libraries
+  - Each datapoint gets its own tracer and instrumentor instance, ensuring traces are routed correctly to the right session
+  - Instrumentors are automatically configured with the datapoint's tracer provider via `instrumentor.instrument(tracer_provider=tracer.provider)`
+  - Supports any OpenInference-compatible instrumentor (OpenAI, Anthropic, Google ADK, LangChain, etc.)
+  - Added example script `examples/evaluate_with_adk_instrumentor.py` demonstrating Google ADK agent evaluation
+  - Files: `src/honeyhive/experiments/core.py`, `examples/evaluate_with_adk_instrumentor.py`
+
 - **✨ Experiments: Async function support for evaluate()**
   - `honeyhive.experiments.evaluate()` now accepts async functions for the `function` parameter
   - Async functions are automatically detected using `asyncio.iscoroutinefunction()` and executed with `asyncio.run()` inside worker threads
