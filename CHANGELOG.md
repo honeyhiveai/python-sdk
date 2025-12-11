@@ -2,6 +2,15 @@
 
 ### Added
 
+- **✨ OTLP: HTTP/JSON export format support**
+  - Added `OTLPJSONExporter` class for exporting spans in JSON format over HTTP
+  - Added `otlp_protocol` configuration option to `OTLPConfig` (supports `"http/protobuf"` or `"http/json"`)
+  - `HoneyHiveOTLPExporter` now supports protocol selection via `protocol` parameter
+  - Protocol can be set via environment variable `HH_OTLP_PROTOCOL` or `OTEL_EXPORTER_OTLP_PROTOCOL`
+  - JSON exporter sends spans with `Content-Type: application/json` header
+  - All attribute values are serialized as strings to allow backend type conversion testing
+  - Files: `src/honeyhive/tracer/processing/otlp_exporter.py`, `src/honeyhive/config/models/otlp.py`, `src/honeyhive/tracer/instrumentation/initialization.py`
+
 - **✨ Experiments: Instrumentors support for evaluate()**
   - `honeyhive.experiments.evaluate()` and `run_experiment()` now accept an `instrumentors` parameter
   - Pass factory functions (e.g., `[lambda: GoogleADKInstrumentor()]`) to automatically instrument third-party libraries

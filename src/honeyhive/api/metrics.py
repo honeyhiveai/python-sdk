@@ -3,6 +3,7 @@
 from typing import List, Optional
 
 from ..models import Metric, MetricEdit
+from ..utils.error_handler import AuthenticationError, ErrorResponse
 from .base import BaseAPI
 
 
@@ -199,10 +200,9 @@ class MetricsAPI(BaseAPI):
             metric_id: The ID of the metric to delete
 
         Raises:
-            AuthenticationError: Always raised as this operation is not permitted via API
+            AuthenticationError: Always raised as this operation is not permitted
+                via API
         """
-        from ..utils.error_handler import AuthenticationError, ErrorResponse
-
         error_response = ErrorResponse(
             success=False,
             error_type="AuthenticationError",
@@ -234,10 +234,9 @@ class MetricsAPI(BaseAPI):
             metric_id: The ID of the metric to delete
 
         Raises:
-            AuthenticationError: Always raised as this operation is not permitted via API
+            AuthenticationError: Always raised as this operation is not permitted
+                via API
         """
-        from ..utils.error_handler import AuthenticationError, ErrorResponse
-
         error_response = ErrorResponse(
             success=False,
             error_type="AuthenticationError",

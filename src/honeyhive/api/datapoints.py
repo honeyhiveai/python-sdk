@@ -162,7 +162,8 @@ class DatapointsAPI(BaseAPI):
 
         Args:
             project: Project name to filter by
-            dataset: (Legacy) Dataset ID or name to filter by - use dataset_id or dataset_name instead
+            dataset: (Legacy) Dataset ID or name to filter by - use dataset_id or
+                dataset_name instead
             dataset_id: Dataset ID to filter by (takes precedence over dataset_name)
             dataset_name: Dataset name to filter by
 
@@ -206,7 +207,8 @@ class DatapointsAPI(BaseAPI):
 
         Args:
             project: Project name to filter by
-            dataset: (Legacy) Dataset ID or name to filter by - use dataset_id or dataset_name instead
+            dataset: (Legacy) Dataset ID or name to filter by - use dataset_id or
+                dataset_name instead
             dataset_id: Dataset ID to filter by (takes precedence over dataset_name)
             dataset_name: Dataset name to filter by
 
