@@ -1326,6 +1326,150 @@ class TestExperimentsIntegration:
             print(f"\n❌ Backend enrichment validation failed: {e}")
             raise
 
+    def test_experiment_result_models_match_real_api_response(
+        self,
+        real_api_key: str,
+        real_project: str,
+    ) -> None:
+        """Test that new typed models correctly parse real API responses.
+
+        This test validates:
+        1. ExperimentResultSummary is returned with correct types
+        2. AggregatedMetrics.details contains MetricDetail objects
+        3. DatapointResult objects are properly typed
+        4. print_table() works correctly with real API data
+        """
+        # pylint: disable=import-outside-toplevel
+        # Import the new typed models (inside test to avoid circular imports)
+        from honeyhive.experiments.models import (
+            AggregatedMetrics,
+            DatapointResult,
+            MetricDetail,
+        )
+
+        def simple_function(datapoint: Dict[str, Any]) -> Dict[str, Any]:
+            """Simple test function that doubles a value."""
+            inputs = datapoint.get("inputs", {})
+            value = inputs.get("value", 0)
+            return {"result": value * 2}
+
+        def accuracy_evaluator(
+            outputs: Dict[str, Any],
+            _inputs: Dict[str, Any],
+            ground_truth: Dict[str, Any],
+        ) -> float:
+            """Check if output matches expected value."""
+            expected = ground_truth.get("expected", 0)
+            actual = outputs.get("result", 0)
+            return 1.0 if actual == expected else 0.0
+
+        dataset = [
+            {"inputs": {"value": 5}, "ground_truth": {"expected": 10}},
+            {"inputs": {"value": 10}, "ground_truth": {"expected": 20}},
+        ]
+
+        run_name = f"typed-models-test-{int(time.time())}"
+
+        print(f"\n{'='*70}")
+        print("TESTING TYPED MODELS WITH REAL API")
+        print(f"{'='*70}")
+        print(f"Run name: {run_name}")
+
+        # Execute evaluate()
+        result = evaluate(
+            function=simple_function,
+            dataset=dataset,
+            evaluators=[accuracy_evaluator],
+            api_key=real_api_key,
+            project=real_project,
+            name=run_name,
+            aggregate_function="average",
+            verbose=False,
+        )
+
+        # Validate result structure
+        assert result is not None, "Result should not be None"
+        assert result.run_id, "Should have run_id"
+
+        print(f"\n{'='*70}")
+        print("VALIDATING TYPED MODEL STRUCTURE")
+        print(f"{'='*70}")
+
+        # Validate ExperimentResultSummary fields
+        print(f"Run ID: {result.run_id}")
+        print(f"Status: {result.status}")
+        print(f"Success: {result.success}")
+        assert isinstance(result.run_id, str)
+        assert isinstance(result.status, str)
+        assert isinstance(result.success, bool)
+
+        # Validate AggregatedMetrics
+        print(f"\nMetrics type: {type(result.metrics)}")
+        assert isinstance(
+            result.metrics, AggregatedMetrics
+        ), f"metrics should be AggregatedMetrics, got {type(result.metrics)}"
+
+        # Validate metrics.details is a list of MetricDetail
+        # pylint: disable=no-member
+        # Note: pylint doesn't understand Pydantic model fields
+        print(f"Metrics details count: {len(result.metrics.details)}")
+        if result.metrics.details:
+            for detail in result.metrics.details:
+                print(f"  - {detail.metric_name}: {detail.aggregate} ({type(detail)})")
+                assert isinstance(
+                    detail, MetricDetail
+                ), f"detail should be MetricDetail, got {type(detail)}"
+                assert isinstance(detail.metric_name, str)
+                # aggregate can be None, float, int, or bool
+                if detail.aggregate is not None:
+                    assert isinstance(detail.aggregate, (float, int, bool))
+
+        # Validate list_metrics() returns metric names
+        metric_names = result.metrics.list_metrics()
+        print(f"\nMetric names from list_metrics(): {metric_names}")
+        assert isinstance(metric_names, list)
+        if metric_names:
+            for name in metric_names:
+                assert isinstance(name, str)
+
+        # Validate get_metric() returns MetricDetail or None
+        if metric_names:
+            first_metric = result.metrics.get_metric(metric_names[0])
+            print(f"get_metric('{metric_names[0]}'): {first_metric}")
+            assert first_metric is None or isinstance(first_metric, MetricDetail)
+
+        # Validate datapoints
+        # pylint: disable=not-an-iterable
+        print(f"\nDatapoints count: {len(result.datapoints)}")
+        if result.datapoints:
+            for dp in result.datapoints:
+                print(f"  - Datapoint: {dp.datapoint_id}, passed: {dp.passed}")
+                assert isinstance(
+                    dp, DatapointResult
+                ), f"datapoint should be DatapointResult, got {type(dp)}"
+                # datapoint_id and session_id can be None or str
+                if dp.datapoint_id is not None:
+                    assert isinstance(dp.datapoint_id, str)
+                if dp.session_id is not None:
+                    assert isinstance(dp.session_id, str)
+                # passed can be None or bool
+                if dp.passed is not None:
+                    assert isinstance(dp.passed, bool)
+
+        # Test print_table() works with real data
+        print(f"\n{'='*70}")
+        print("TESTING print_table() WITH REAL DATA")
+        print(f"{'='*70}")
+
+        # This should not raise any exceptions
+        result.print_table(run_name=run_name)
+
+        print(f"\n{'='*70}")
+        print("TYPED MODELS VALIDATION PASSED")
+        print(f"{'='*70}")
+        print("All model types validated successfully")
+        print("print_table() executed without errors")
+
 
 if __name__ == "__main__":
     pytest.main([__file__, "-v", "-s", "--real-api"])
