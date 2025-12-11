@@ -4,6 +4,13 @@
 
 set -e
 
+# Skip setup if running in Nix shell (Nix handles everything automatically)
+if [[ -n "$IN_NIX_SHELL" ]]; then
+    echo "✨ Detected Nix shell environment - setup is handled automatically by flake.nix"
+    echo "   No manual setup needed!"
+    exit 0
+fi
+
 echo "🔧 Setting up HoneyHive Python SDK development environment..."
 
 # Check if we're in a virtual environment

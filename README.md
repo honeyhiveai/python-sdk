@@ -77,6 +77,25 @@ For detailed guidance on including HoneyHive in your `pyproject.toml`, see our [
 
 ### Development Installation
 
+**Option A: Nix Flakes (Recommended)**
+
+```bash
+git clone https://github.com/honeyhiveai/python-sdk.git
+cd python-sdk
+
+# Allow direnv (one-time setup)
+direnv allow
+
+# That's it! Environment automatically configured with:
+# - Python 3.12
+# - All dev dependencies
+# - Pre-commit hooks
+```
+
+See [NIX_SETUP.md](NIX_SETUP.md) for full details.
+
+**Option B: Traditional Setup**
+
 ```bash
 git clone https://github.com/honeyhiveai/python-sdk.git
 cd python-sdk
@@ -97,7 +116,7 @@ tox -e format && tox -e lint
 
 #### Development Environment Setup
 
-**⚠️ CRITICAL: All developers must run the setup script once:**
+**⚠️ CRITICAL: All developers must run the setup script once (unless using Nix):**
 
 ```bash
 # This installs pre-commit hooks for automatic code quality enforcement

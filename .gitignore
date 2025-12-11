@@ -141,8 +141,12 @@
 .spyproject
 .tox/
 .venv
+.venv/
 .vscode/
 .webassets-cache
+.direnv/
+result
+result-*
 /site
 Desktop.ini
 ENV/
