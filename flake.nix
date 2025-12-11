@@ -10,10 +10,10 @@
     flake-utils.lib.eachDefaultSystem (system:
       let
         pkgs = nixpkgs.legacyPackages.${system};
-        
+
         # Python with required version (3.11+)
         python = pkgs.python312;
-        
+
         # Python development dependencies
         pythonEnv = python.withPackages (ps: with ps; [
           pip
@@ -31,14 +31,14 @@
             buildInputs = [
             # Python environment
             pythonEnv
-            
+
             # Development tools
             pkgs.git
             pkgs.pre-commit
-            
+
             # For documentation building
             pkgs.gnumake
-            
+
             # Useful utilities
             pkgs.which
             pkgs.curl
@@ -48,19 +48,23 @@
           shellHook = ''
             # Set up color output
             export TERM=xterm-256color
-            
+
+            # Fix xcrun warnings on macOS by unsetting DEVELOPER_DIR
+            # See: https://github.com/NixOS/nixpkgs/issues/376958#issuecomment-3471021813
+            unset DEVELOPER_DIR
+
             # Create virtual environment if it doesn't exist
             if [ ! -d .venv ]; then
               echo "🔧 Creating virtual environment..."
               ${pythonEnv}/bin/python -m venv .venv
             fi
-            
+
             # Activate virtual environment
             source .venv/bin/activate
-            
+
             # Upgrade pip (silent)
             pip install --upgrade pip > /dev/null 2>&1
-            
+
             # Install package in editable mode with dev dependencies
             if [ ! -f .venv/.installed ]; then
               echo "📦 Installing dependencies (first run)..."
@@ -71,7 +75,7 @@
               echo "Run 'make help' to see available commands"
               echo ""
             fi
-            
+
             # Install pre-commit hooks if not already installed
             if [ ! -f .git/hooks/pre-commit ]; then
               pre-commit install > /dev/null 2>&1
@@ -80,13 +84,13 @@
 
           # Environment variables
           PYTHONPATH = ".";
-          
+
           # Prevent Python from writing bytecode
           PYTHONDONTWRITEBYTECODE = "1";
-          
+
           # Force Python to use UTF-8
           PYTHONIOENCODING = "UTF-8";
-          
+
           # Enable Python development mode
           PYTHONDEVMODE = "1";
         };
