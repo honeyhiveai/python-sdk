@@ -138,14 +138,14 @@ dataset = [
 ]
 
 
-def evaluation_function(inputs, ground_truth):
+def evaluation_function(datapoint):
     """
     Evaluation function that runs the ADK agent for each datapoint.
 
     The instrumentors passed to evaluate() will automatically trace
     all ADK agent calls within this function.
     """
-    query = inputs.get("query", "")
+    query = datapoint.get("inputs", {}).get("query", "")
     response = asyncio.run(run_agent(query))
     return {"response": response}
 
