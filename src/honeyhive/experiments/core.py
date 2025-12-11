@@ -12,7 +12,7 @@ import inspect  # ✅ TASK 2: Needed for signature detection
 import os
 import uuid
 from concurrent.futures import ThreadPoolExecutor, as_completed
-from typing import Any, Callable, Dict, List, Optional, Union
+from typing import Any, Callable, Dict, List, Optional
 from uuid import UUID
 
 from honeyhive.api.client import HoneyHive
