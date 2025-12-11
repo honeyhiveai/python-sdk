@@ -17,6 +17,16 @@ Latest Release Notes
 Current Version Highlights
 ~~~~~~~~~~~~~~~~~~~~~~~~~~
 
+**🐛 FIXED: Metrics Table Printing Empty Values (Unreleased)**
+
+* **Root Cause**: SDK expected metrics as dynamic top-level keys but backend returns them in a ``details`` array format per OpenAPI spec
+* **New Typed Models**: Added ``MetricDetail``, ``DatapointResult``, ``DatapointMetric``, ``MetricDatapoints`` Pydantic models with proper type hints
+* **Updated AggregatedMetrics**: Now uses ``details: List[MetricDetail]`` field to match backend response format
+* **Updated print_table()**: Iterates over ``details`` array and extracts ``aggregate`` values from ``MetricDetail`` objects
+* **Backward Compatible**: ``get_metric()``, ``list_metrics()``, ``get_all_metrics()`` support both new ``details`` array format and legacy ``model_extra`` format
+* **Test Coverage**: Added 19 unit tests for typed models and integration test against real API
+* **Files**: ``src/honeyhive/experiments/models.py``, ``src/honeyhive/experiments/results.py``
+
 **🐛 FIXED: enrich_session() Metadata Requirement (Unreleased)**
 
 * **Flexible Enrichment**: ``enrich_session()`` now works correctly even when no parameters (metadata, inputs, outputs, etc.) are explicitly provided

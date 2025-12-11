@@ -9,7 +9,25 @@
   - Both sync and async functions work seamlessly with the tracer parameter pattern
   - Files: `src/honeyhive/experiments/core.py`
 
+- **✨ Experiments: Typed Pydantic models for experiment results**
+  - Added `MetricDetail` model for individual metric results with fields: `metric_name`, `metric_type`, `event_name`, `event_type`, `aggregate`, `values`, `datapoints`
+  - Added `DatapointResult` model for per-datapoint results with fields: `datapoint_id`, `session_id`, `passed`, `metrics`
+  - Added `DatapointMetric` model for individual metric values within datapoints
+  - Added `MetricDatapoints` model for tracking passed/failed datapoint IDs per metric
+  - All models include proper type hints and Pydantic validation
+  - Files: `src/honeyhive/experiments/models.py`
+
 ### Fixed
+
+- **🐛 Experiments: Fixed metrics table printing empty values after evaluate()**
+  - Root cause: SDK expected metrics as dynamic top-level keys but backend returns them in a `details` array format per OpenAPI spec
+  - Updated `AggregatedMetrics` to use `details: List[MetricDetail]` field to match backend response format
+  - Updated `print_table()` to iterate over `details` array and extract `aggregate` values from `MetricDetail` objects
+  - Updated `get_run_result()` to parse datapoints into typed `DatapointResult` objects
+  - Maintains backward compatibility: `get_metric()`, `list_metrics()`, and `get_all_metrics()` support both new `details` array format and legacy `model_extra` format
+  - Added 19 unit tests for typed models and print_table() function
+  - Added integration test `test_experiment_result_models_match_real_api_response` to validate against real API
+  - Files: `src/honeyhive/experiments/models.py`, `src/honeyhive/experiments/results.py`, `tests/unit/test_experiments_models.py`, `tests/integration/test_experiments_integration.py`
 
 - **🐛 Tracing: Fixed enrich_session() requiring explicit metadata parameter**
   - `enrich_session()` now works correctly even when no parameters (metadata, inputs, outputs, etc.) are explicitly provided

@@ -27,38 +27,127 @@ ExperimentRunStatus
       if result.status == ExperimentRunStatus.COMPLETED:
           print("Experiment finished!")
 
+MetricDatapoints
+----------------
+
+.. py:class:: MetricDatapoints
+
+   Model for tracking passed/failed datapoint IDs per metric.
+
+   **Attributes:**
+
+   - ``passed`` (List[str]) - List of datapoint IDs that passed this metric
+   - ``failed`` (List[str]) - List of datapoint IDs that failed this metric
+
+MetricDetail
+------------
+
+.. py:class:: MetricDetail
+
+   Detailed information about a single metric result.
+
+   **Attributes:**
+
+   - ``metric_name`` (str) - Name of the metric
+   - ``metric_type`` (Optional[str]) - Type of metric ("numeric", "boolean", etc.)
+   - ``event_name`` (Optional[str]) - Name of the event that generated this metric
+   - ``event_type`` (Optional[str]) - Type of event ("model", "tool", etc.)
+   - ``aggregate`` (Optional[Union[float, int, bool, str]]) - Aggregated value across all datapoints
+   - ``values`` (Optional[List[Any]]) - Individual values per datapoint
+   - ``datapoints`` (Optional[MetricDatapoints]) - Passed/failed datapoint tracking
+
+   **Usage:**
+
+   .. code-block:: python
+
+      from honeyhive.experiments import get_run_result
+      
+      result = get_run_result(client, "run-123")
+      
+      # Get a specific metric detail
+      accuracy = result.metrics.get_metric("accuracy_evaluator")
+      if accuracy:
+          print(f"Aggregate: {accuracy.aggregate}")
+          print(f"Type: {accuracy.metric_type}")
+
+DatapointMetric
+---------------
+
+.. py:class:: DatapointMetric
+
+   Individual metric value for a single datapoint.
+
+   **Attributes:**
+
+   - ``name`` (str) - Name of the metric
+   - ``event_name`` (Optional[str]) - Name of the event
+   - ``event_type`` (Optional[str]) - Type of event
+   - ``value`` (Optional[Union[float, int, bool, str]]) - Metric value for this datapoint
+   - ``passed`` (Optional[bool]) - Whether this metric passed for this datapoint
+
+DatapointResult
+---------------
+
+.. py:class:: DatapointResult
+
+   Result for a single datapoint in an experiment run.
+
+   **Attributes:**
+
+   - ``datapoint_id`` (Optional[str]) - Unique identifier for the datapoint
+   - ``session_id`` (Optional[str]) - Session ID associated with this datapoint
+   - ``passed`` (Optional[bool]) - Whether all metrics passed for this datapoint
+   - ``metrics`` (Optional[List[DatapointMetric]]) - Individual metric results
+
+   **Usage:**
+
+   .. code-block:: python
+
+      from honeyhive.experiments import get_run_result
+      
+      result = get_run_result(client, "run-123")
+      
+      for datapoint in result.datapoints:
+          print(f"Datapoint: {datapoint.datapoint_id}")
+          print(f"Passed: {datapoint.passed}")
+          if datapoint.metrics:
+              for metric in datapoint.metrics:
+                  print(f"  {metric.name}: {metric.value}")
+
 AggregatedMetrics
 -----------------
 
 .. py:class:: AggregatedMetrics
 
-   Dynamic model for aggregated experiment metrics.
+   Aggregated experiment metrics with support for both new ``details`` array format
+   and legacy ``model_extra`` format for backward compatibility.
 
    **Attributes:**
 
    - ``aggregation_function`` (Optional[str]) - Aggregation method used ("average", "sum", etc.)
-   - Dynamic metric fields (accessed via helper methods)
+   - ``details`` (List[MetricDetail]) - List of metric details from backend (new format)
 
    **Methods:**
 
-   .. py:method:: get_metric(metric_name: str) -> Any
+   .. py:method:: get_metric(metric_name: str) -> Optional[Union[MetricDetail, Dict[str, Any]]]
 
-      Get value for a specific metric.
+      Get value for a specific metric. Supports both new ``details`` array format
+      (returns ``MetricDetail``) and legacy ``model_extra`` format (returns dict).
 
       :param metric_name: Name of the metric
-      :returns: Metric value or None if not found
+      :returns: MetricDetail object, dict, or None if not found
 
    .. py:method:: list_metrics() -> List[str]
 
       List all available metric names.
 
-      :returns: List of metric names
+      :returns: List of metric names from ``details`` array or ``model_extra`` keys
 
-   .. py:method:: get_all_metrics() -> Dict[str, Any]
+   .. py:method:: get_all_metrics() -> Dict[str, Union[MetricDetail, Dict[str, Any]]]
 
       Get all metrics as a dictionary.
 
-      :returns: Dictionary of all metrics
+      :returns: Dictionary mapping metric names to MetricDetail objects or dicts
 
    **Usage:**
 
@@ -69,8 +158,12 @@ AggregatedMetrics
       result = get_run_result(client, "run-123")
       metrics = result.metrics
       
-      # Get specific metric
+      # Get specific metric (returns MetricDetail with new format)
       accuracy = metrics.get_metric("accuracy_evaluator")
+      if accuracy:
+          # Access typed attributes
+          print(f"Aggregate: {accuracy.aggregate}")
+          print(f"Type: {accuracy.metric_type}")
       
       # List all metrics
       metric_names = metrics.list_metrics()
