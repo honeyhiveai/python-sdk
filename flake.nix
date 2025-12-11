@@ -28,12 +28,13 @@
       in
       {
         devShells.default = pkgs.mkShell {
-          buildInputs = [
+            buildInputs = [
             # Python environment
             pythonEnv
             
             # Development tools
             pkgs.git
+            pkgs.pre-commit
             
             # For documentation building
             pkgs.gnumake
@@ -64,20 +65,10 @@
             if [ ! -f .venv/.installed ]; then
               echo "📦 Installing dependencies (first run)..."
               pip install -e ".[dev,docs]" > /dev/null 2>&1
-              pip install pre-commit>=3.6.0 tox>=4.0.0 > /dev/null 2>&1
               touch .venv/.installed
               echo "✨ Environment ready!"
               echo ""
-              echo "📋 Available commands:"
-              echo "  pytest              - Run tests"
-              echo "  tox -e lint         - Run linting"
-              echo "  tox -e format       - Check formatting"
-              echo "  black src tests     - Format code"
-              echo "  isort src tests     - Sort imports"
-              echo "  pre-commit run -a   - Run all pre-commit hooks"
-              echo ""
-              echo "📚 Documentation:"
-              echo "  cd docs && make html  - Build documentation"
+              echo "Run 'make help' to see available commands"
               echo ""
             fi
             
