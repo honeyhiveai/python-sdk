@@ -174,7 +174,7 @@ Processing Module (``tracer/processing/``)
    * - ``context.py``
      - Context injection and extraction
    * - ``otlp_exporter.py``
-     - OTLP exporter configuration
+     - OTLP exporter configuration (supports Protobuf and JSON formats)
    * - ``otlp_profiles.py``
      - OTLP export profiles
    * - ``otlp_session.py``

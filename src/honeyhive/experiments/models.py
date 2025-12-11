@@ -241,7 +241,8 @@ class AggregatedMetrics(BaseModel):
         Get all metrics as a dictionary.
 
         Supports both the new 'details' array format (returns MetricDetail values)
-        and the legacy model_extra format (returns dict values) for backward compatibility.
+        and the legacy model_extra format (returns dict values) for backward
+        compatibility.
 
         Returns:
             Dictionary mapping metric names to MetricDetail objects or dicts

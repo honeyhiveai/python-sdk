@@ -41,6 +41,19 @@ Environment Profile
    :undoc-members:
    :show-inheritance:
 
+OTLP Exporters
+~~~~~~~~~~~~~~~
+
+.. autoclass:: honeyhive.tracer.processing.otlp_exporter.HoneyHiveOTLPExporter
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
+.. autoclass:: honeyhive.tracer.processing.otlp_exporter.OTLPJSONExporter
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
 Infrastructure
 --------------
 

@@ -335,7 +335,8 @@ class EventsAPI(BaseAPI):
         Uses the proper /events/export POST endpoint as specified in OpenAPI spec.
 
         Args:
-            event_filters: EventFilter or list of EventFilter objects with filtering criteria
+            event_filters: EventFilter or list of EventFilter objects with
+                filtering criteria
             limit: Maximum number of events to return (default: 100)
             project: Project name to filter by (required by API)
             page: Page number for pagination (default: 1)
@@ -347,8 +348,18 @@ class EventsAPI(BaseAPI):
             Filter events by type and status::
 
                 filters = [
-                    EventFilter(field="event_type", operator="is", value="model", type="string"),
-                    EventFilter(field="error", operator="is not", value=None, type="string"),
+                    EventFilter(
+                        field="event_type",
+                        operator="is",
+                        value="model",
+                        type="string",
+                    ),
+                    EventFilter(
+                        field="error",
+                        operator="is not",
+                        value=None,
+                        type="string",
+                    ),
                 ]
                 events = client.events.list_events(
                     event_filters=filters,
@@ -471,7 +482,8 @@ class EventsAPI(BaseAPI):
         Uses the proper /events/export POST endpoint as specified in OpenAPI spec.
 
         Args:
-            event_filters: EventFilter or list of EventFilter objects with filtering criteria
+            event_filters: EventFilter or list of EventFilter objects with
+                filtering criteria
             limit: Maximum number of events to return (default: 100)
             project: Project name to filter by (required by API)
             page: Page number for pagination (default: 1)
@@ -483,8 +495,18 @@ class EventsAPI(BaseAPI):
             Filter events by type and status::
 
                 filters = [
-                    EventFilter(field="event_type", operator="is", value="model", type="string"),
-                    EventFilter(field="error", operator="is not", value=None, type="string"),
+                    EventFilter(
+                        field="event_type",
+                        operator="is",
+                        value="model",
+                        type="string",
+                    ),
+                    EventFilter(
+                        field="error",
+                        operator="is not",
+                        value=None,
+                        type="string",
+                    ),
                 ]
                 events = await client.events.list_events_async(
                     event_filters=filters,

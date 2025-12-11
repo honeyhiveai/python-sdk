@@ -109,6 +109,7 @@ Environment Variables
    # Optional
    export HH_SOURCE="my-application"
    export HH_OTLP_ENABLED="true"  # Enable OTLP export (default: true)
+   export HH_OTLP_PROTOCOL="http/json"  # Use JSON format (default: http/protobuf)
 
 Code Configuration
 ~~~~~~~~~~~~~~~~~~
