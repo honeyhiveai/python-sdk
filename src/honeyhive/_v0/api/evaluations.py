@@ -3,6 +3,8 @@
 from typing import Any, Dict, Optional, cast
 from uuid import UUID
 
+from honeyhive.utils.error_handler import APIError, ErrorContext, ErrorResponse
+
 from ..models import (
     CreateRunRequest,
     CreateRunResponse,
@@ -13,7 +15,6 @@ from ..models import (
     UpdateRunResponse,
 )
 from ..models.generated import UUIDType
-from honeyhive.utils.error_handler import APIError, ErrorContext, ErrorResponse
 from .base import BaseAPI
 
 

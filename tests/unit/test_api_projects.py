@@ -64,7 +64,9 @@ def projects_api(mock_client: Mock, mock_error_handler: Mock) -> ProjectsAPI:
     Returns:
         ProjectsAPI instance with mocked dependencies
     """
-    with patch("honeyhive._v0.api.base.get_error_handler", return_value=mock_error_handler):
+    with patch(
+        "honeyhive._v0.api.base.get_error_handler", return_value=mock_error_handler
+    ):
         return ProjectsAPI(mock_client)
 
 

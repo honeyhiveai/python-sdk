@@ -11,6 +11,7 @@ from honeyhive.utils.connection_pool import ConnectionPool, PoolConfig
 from honeyhive.utils.error_handler import ErrorContext, get_error_handler
 from honeyhive.utils.logger import HoneyHiveLogger, get_logger, safe_log
 from honeyhive.utils.retry import RetryConfig
+
 from .configurations import ConfigurationsAPI
 from .datapoints import DatapointsAPI
 from .datasets import DatasetsAPI
