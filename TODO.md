@@ -60,6 +60,25 @@ These are **implementation bugs** that the tests are correctly catching, not tes
 
 ---
 
+## CI Issues: Lambda Compatibility Suite
+
+### Issue 4: Invalid `event_type` in Lambda Test Code
+
+**File:** `tests/lambda/lambda_functions/basic_tracing.py:38`
+
+**Problem:** The Lambda test uses `event_type="lambda"` which is not a valid value. Valid values are: `session`, `model`, `tool`, `chain`.
+
+**Error:**
+```
+ValidationError: 1 validation error for TracingParams
+event_type
+  Value error, Invalid event_type 'lambda'. Must be one of: session, model, tool, chain
+```
+
+**Fix:** Change `event_type="lambda"` to a valid value like `event_type="tool"` in the Lambda test code.
+
+---
+
 ## DEPRECATED: Previous Categories (Now Resolved or Reclassified)
 
 ### Category 1: Missing `tracer_id` Property - RESOLVED
