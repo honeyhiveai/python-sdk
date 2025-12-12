@@ -25,6 +25,8 @@ RUN pip install --target . \
     opentelemetry-exporter-otlp-proto-http \
     wrapt \
     pydantic \
+    pydantic-settings \
+    attrs \
     python-dotenv \
     click \
     pyyaml

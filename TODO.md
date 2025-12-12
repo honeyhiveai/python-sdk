@@ -1,92 +1,72 @@
 # TODO - Test Failures to Fix
 
-This document tracks the 37 test failures discovered after fixing the model generation and test infrastructure. These appear to be pre-existing issues where the codebase evolved but tests weren't updated to match the new APIs.
+This document tracks test failures and implementation issues discovered during v1.x development.
 
 **Last Updated:** 2025-12-12  
-**Test Command:** `make test` (runs `pytest tests/unit/ tests/tracer/ tests/compatibility/ -n auto`)  
-**Total Failures:** 35 out of 3014 tests (2 fixed: UUIDType repr issues)
+**Test Command:** `direnv exec . pytest tests/tracer/ -v`  
+**Current Status:** 35 passed, 6 failed (after test API fixes)
 
 ---
 
-## Category 1: Missing `tracer_id` Property (8 failures)
+## RESOLVED: Test API Fixes (Commits 3a8d052, 3b99361)
 
-**Issue:** Tests expect `.tracer_id` as a public property, but the implementation only has `._tracer_id` (private attribute).
+The following test issues have been **fixed** by updating tests to match the v0 API:
 
-**Root Cause:** The `HoneyHiveTracer` class needs a public `@property` for `tracer_id` to expose the private `._tracer_id` attribute.
+### Fixed: `tracer_id` → `_tracer_id` attribute access
+Tests were using `tracer.tracer_id` but v0 API only has private `_tracer_id`. Tests updated to use `_tracer_id`.
+
+### Fixed: `name` → `event_name` parameter  
+Tests were using `@trace(name="...")` but v0 API only accepts `event_name`. Tests updated.
+
+### Fixed: Arbitrary kwargs → `metadata={}` dict
+Tests were passing arbitrary kwargs like `key="value"` but v0 API only accepts structured `metadata={}` dict. Tests updated.
+
+---
+
+## REMAINING: Implementation Issues (6 failures)
+
+These are **implementation bugs** that the tests are correctly catching, not test bugs.
+
+### Issue 1: SAFE_PROPAGATION_KEYS Missing Keys
+
+**File:** `src/honeyhive/tracer/processing/context.py`
+
+**Problem:** `SAFE_PROPAGATION_KEYS` is missing `project` and `source` keys.
+
+**Expected:** `{'project', 'source', 'run_id', 'dataset_id', 'datapoint_id', 'honeyhive_tracer_id'}`  
+**Actual:** `{'run_id', 'dataset_id', 'datapoint_id', 'honeyhive_tracer_id'}`
+
+**Affected Test:**
+- `tests/tracer/test_baggage_isolation.py::TestSelectiveBaggagePropagation::test_safe_keys_constant_complete`
+
+### Issue 2: enrich_span Metadata Not Being Set
+
+**Problem:** `tracer.enrich_span(metadata={"key": "value"})` is not setting `honeyhive.metadata.key` on span attributes.
+
+**Example:** After calling `tracer.enrich_span(metadata={"env": "production"})`, the span attributes don't contain `honeyhive.metadata.env`.
 
 **Affected Tests:**
-- `tests/tracer/test_baggage_isolation.py::TestBaggagePropagationIntegration::test_multi_instance_no_interference`
-- `tests/tracer/test_baggage_isolation.py::TestTracerDiscoveryViaBaggage::test_discover_tracer_from_baggage`
-- `tests/tracer/test_baggage_isolation.py::TestBaggageIsolation::test_two_tracers_isolated_baggage`
-- `tests/tracer/test_baggage_isolation.py::TestTracerDiscoveryViaBaggage::test_discovery_with_evaluation_context`
-- `tests/tracer/test_multi_instance.py::TestMultiInstanceSafety::test_discovery_in_threads`
-- `tests/tracer/test_multi_instance.py::TestMultiInstanceSafety::test_registry_concurrent_access`
 - `tests/tracer/test_multi_instance.py::TestMultiInstanceIntegration::test_two_projects_same_process`
 - `tests/tracer/test_multi_instance.py::TestMultiInstanceSafety::test_no_cross_contamination`
+- `tests/tracer/test_baggage_isolation.py::TestBaggagePropagationIntegration::test_evaluate_pattern_simulation`
 
-**Example Error:**
-```
-AttributeError: 'HoneyHiveTracer' object has no attribute 'tracer_id'. Did you mean: '_tracer_id'?
-```
+### Issue 3: Baggage Isolation Between Nested Tracers
 
-**Suggested Fix:**
-Add to `src/honeyhive/tracer/core/tracer.py` or `base.py`:
-```python
-@property
-def tracer_id(self) -> str:
-    """Public accessor for tracer ID."""
-    return self._tracer_id
-```
+**Problem:** When tracer2 starts a span inside tracer1's span context, the baggage shows tracer2's ID instead of maintaining proper isolation. The test expects each tracer to see its own ID in baggage within its own span context.
+
+**Affected Tests:**
+- `tests/tracer/test_baggage_isolation.py::TestBaggageIsolation::test_two_tracers_isolated_baggage`
+- `tests/tracer/test_baggage_isolation.py::TestBaggagePropagationIntegration::test_multi_instance_no_interference`
 
 ---
 
-## Category 2: `trace` Decorator Kwargs Handling (21 failures)
+## DEPRECATED: Previous Categories (Now Resolved or Reclassified)
 
-**Issue:** The `_create_tracing_params()` function rejects kwargs that tests are passing to the `@trace` decorator (e.g., `name=`, `key=`, arbitrary attributes).
+### Category 1: Missing `tracer_id` Property - RESOLVED
+Tests updated to use `_tracer_id` instead of expecting public `tracer_id` property.
 
-**Root Cause:** The decorator API may have changed to be more strict about accepted parameters, but tests still use the old flexible kwargs approach.
-
-**Affected Tests:**
-- `tests/tracer/test_trace.py::TestTraceDecorator::test_trace_basic`
-- `tests/tracer/test_trace.py::TestTraceDecorator::test_trace_with_attributes`
-- `tests/tracer/test_trace.py::TestTraceDecorator::test_trace_with_return_value`
-- `tests/tracer/test_trace.py::TestTraceDecorator::test_trace_with_exception`
-- `tests/tracer/test_trace.py::TestTraceDecorator::test_trace_with_complex_attributes`
-- `tests/tracer/test_trace.py::TestTraceDecorator::test_trace_error_recovery`
-- `tests/tracer/test_trace.py::TestTraceDecorator::test_trace_performance`
-- `tests/tracer/test_trace.py::TestTraceDecorator::test_trace_with_arguments`
-- `tests/tracer/test_trace.py::TestTraceDecorator::test_trace_with_none_attributes`
-- `tests/tracer/test_trace.py::TestTraceDecorator::test_trace_with_dynamic_attributes`
-- `tests/tracer/test_trace.py::TestTraceDecorator::test_trace_concurrent_usage`
-- `tests/tracer/test_trace.py::TestTraceDecorator::test_trace_with_async_function`
-- `tests/tracer/test_trace.py::TestTraceDecorator::test_trace_with_context_manager`
-- `tests/tracer/test_trace.py::TestTraceDecorator::test_trace_with_generator_function`
-- `tests/tracer/test_trace.py::TestTraceDecorator::test_trace_with_nested_calls`
-- `tests/tracer/test_trace.py::TestTraceDecorator::test_trace_with_keyword_arguments`
-- `tests/tracer/test_trace.py::TestTraceDecorator::test_trace_with_class_method`
-- `tests/tracer/test_trace.py::TestTraceDecorator::test_trace_memory_usage`
-- `tests/tracer/test_trace.py::TestTraceDecorator::test_trace_with_large_data`
-- `tests/tracer/test_trace.py::TestTraceDecorator::test_trace_with_empty_attributes`
-- `tests/tracer/test_trace.py::TestTraceDecorator::test_trace_with_static_method`
-
-**Example Error:**
-```
-TypeError: _create_tracing_params() got an unexpected keyword argument 'name'
-TypeError: _create_tracing_params() got an unexpected keyword argument 'key'
-```
-
-**Example Test Usage:**
-```python
-@trace(name="test-function", tracer=self.mock_tracer)
-@trace(event_name="test-function", key="value", tracer=self.mock_tracer)
-```
-
-**Investigation Needed:**
-1. Check `src/honeyhive/tracer/instrumentation/decorators.py` to see what params are accepted
-2. Determine if the decorator API intentionally changed or if tests need updating
-3. Either:
-   - Update `_create_tracing_params()` to accept/ignore arbitrary kwargs, OR
-   - Update all test cases to use the new strict API
+### Category 2: `trace` Decorator Kwargs Handling - RESOLVED  
+Tests updated to use `event_name=` instead of `name=` and `metadata={}` instead of arbitrary kwargs
 
 ---
 
