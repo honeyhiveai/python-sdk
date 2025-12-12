@@ -38,7 +38,8 @@ help:
 	@echo "  make docs-clean      - Clean documentation build"
 	@echo ""
 	@echo "SDK Generation:"
-	@echo "  make generate        - Regenerate models from OpenAPI spec"
+	@echo "  make generate        - Generate v1 client from full OpenAPI spec"
+	@echo "  make generate-minimal - Generate v1 client from minimal spec (testing)"
 	@echo "  make generate-sdk    - Generate full SDK to comparison_output/ (for analysis)"
 	@echo "  make compare-sdk     - Compare generated SDK with current implementation"
 	@echo ""
@@ -125,10 +126,17 @@ docs-clean:
 	cd docs && $(MAKE) clean
 
 # SDK Generation
+# Generate v1 client from full OpenAPI spec
 generate:
-	python scripts/generate_models.py
+	python scripts/generate_client.py
 	$(MAKE) format
 
+# Generate v1 client from minimal spec (for testing pipeline)
+generate-minimal:
+	python scripts/generate_client.py --minimal
+	$(MAKE) format
+
+# Generate full SDK to comparison_output/ (for analysis)
 generate-sdk:
 	python scripts/generate_models_and_client.py
 
