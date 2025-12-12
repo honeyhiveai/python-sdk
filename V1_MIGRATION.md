@@ -251,8 +251,8 @@ The version number in `pyproject.toml` determines which client is included.
 - [x] Phase 1: Create backwards-compat shims for deep imports
 - [x] Phase 1: Update test mock paths to `_v0` locations
 - [x] Phase 1: Verify tests pass (165/166 in affected files, 1 pre-existing mock issue)
-- [ ] Phase 2: Move OpenAPI spec to `openapi/v0.yaml`
-- [ ] Phase 2: Create minimal `openapi/v1.yaml`
+- [x] Phase 2: Move OpenAPI spec to `openapi/v0.yaml`
+- [x] Phase 2: Create minimal `openapi/v1.yaml`
 - [ ] Phase 3: Create v1 generation script
 - [ ] Phase 3: Add `make generate-v1` target
 - [ ] Phase 4: Configure hatch build exclusions

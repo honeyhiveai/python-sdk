@@ -994,6 +994,7 @@ def main():
 
     # Check for OpenAPI spec
     openapi_files = [
+        "openapi/v1.yaml",
         "openapi_comprehensive_dynamic.yaml",
         "openapi.yaml",
     ]

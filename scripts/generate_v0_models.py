@@ -25,8 +25,8 @@ from pathlib import Path
 
 # Get the repo root directory
 REPO_ROOT = Path(__file__).parent.parent
-OPENAPI_SPEC = REPO_ROOT / "openapi.yaml"
-OUTPUT_FILE = REPO_ROOT / "src" / "honeyhive" / "models" / "generated.py"
+OPENAPI_SPEC = REPO_ROOT / "openapi" / "v0.yaml"
+OUTPUT_FILE = REPO_ROOT / "src" / "honeyhive" / "_v0" / "models" / "generated.py"
 
 
 def post_process_generated_file(filepath: Path) -> bool:
