@@ -59,16 +59,18 @@ make help              # Show all available commands
 make test              # Run all tests
 make test-fast         # Run tests in parallel
 make test-unit         # Unit tests only
-make check-integration # Comprehensive integration test checks
-make check-all         # Run ALL checks (tests + docs + compliance)
+make test-integration  # Integration tests only
 
-# Code Quality (Fast - runs in pre-commit)
+# Code Quality
 make format            # Format code with black and isort
 make lint              # Run linting checks
-make check             # Run format + lint checks
 make typecheck         # Run mypy type checking
+make check             # Run ALL checks (everything that was in pre-commit)
 
-# Comprehensive Checks (Not in pre-commit - run manually)
+# Individual Checks (for granular control)
+make check-format            # Check code formatting only
+make check-lint              # Check linting only
+make check-integration       # Integration test validation
 make check-docs              # Build and validate documentation
 make check-docs-compliance   # Check documentation compliance
 make check-feature-sync      # Check feature documentation sync

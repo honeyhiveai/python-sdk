@@ -1,4 +1,4 @@
-.PHONY: help install install-dev test test-fast test-unit test-integration check-integration check-all lint format check typecheck check-docs check-docs-compliance check-feature-sync check-tracer-patterns check-no-mocks docs docs-serve docs-clean generate-sdk compare-sdk clean clean-all
+.PHONY: help install install-dev test test-fast test-unit test-integration check-integration lint format check check-format check-lint typecheck check-docs check-docs-compliance check-feature-sync check-tracer-patterns check-no-mocks docs docs-serve docs-clean generate-sdk compare-sdk clean clean-all
 
 # Default target
 help:
@@ -15,16 +15,17 @@ help:
 	@echo "  make test-fast       - Run tests in parallel"
 	@echo "  make test-unit       - Run unit tests only"
 	@echo "  make test-integration - Run integration tests only"
-	@echo "  make check-integration - Run comprehensive integration test checks"
-	@echo "  make check-all       - Run ALL checks (tests + docs + compliance)"
 	@echo ""
 	@echo "Code Quality:"
-	@echo "  make lint            - Run linting checks"
 	@echo "  make format          - Format code with black and isort"
-	@echo "  make check           - Run format and lint checks"
+	@echo "  make lint            - Run linting checks"
 	@echo "  make typecheck       - Run mypy type checking"
+	@echo "  make check           - Run ALL checks (everything that was in pre-commit)"
 	@echo ""
-	@echo "Comprehensive Checks (not in pre-commit):"
+	@echo "Individual Checks (for granular control):"
+	@echo "  make check-format    - Check code formatting only"
+	@echo "  make check-lint      - Check linting only"
+	@echo "  make check-integration - Integration test validation"
 	@echo "  make check-docs      - Build and validate documentation"
 	@echo "  make check-docs-compliance - Check documentation compliance"
 	@echo "  make check-feature-sync - Check feature documentation sync"
@@ -69,26 +70,29 @@ test-unit:
 
 check-integration:
 	@echo "Running comprehensive integration test checks..."
-	scripts/validate-no-mocks-integration.sh
 	scripts/run-basic-integration-tests.sh
 
-check-all: check check-docs check-integration
-	@echo "✅ All checks passed!"
-
 # Code Quality
-lint:
-	tox -e lint
-
 format:
 	black src tests
 	isort src tests
 
-check:
-	tox -e format
+lint:
 	tox -e lint
 
 typecheck:
 	mypy src
+
+check-format:
+	tox -e format
+
+check-lint:
+	tox -e lint
+
+# Comprehensive check - runs everything that was in pre-commit hooks
+check: check-format check-lint test-unit check-no-mocks check-integration check-docs check-docs-compliance check-feature-sync check-tracer-patterns
+	@echo ""
+	@echo "✅ All checks passed!"
 
 check-docs-compliance:
 	python scripts/check-documentation-compliance.py
