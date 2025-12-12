@@ -6,23 +6,25 @@ from ..api_config import APIConfig, HTTPException
 from ..models import *
 
 
-def getConfigurations(
+def getDatapoints(
     api_config_override: Optional[APIConfig] = None,
     *,
-    name: Optional[str] = None,
-    env: Optional[str] = None,
-    tags: Optional[str] = None,
-) -> List[GetConfigurationsResponse]:
+    datapoint_ids: Optional[List[str]] = None,
+    dataset_name: Optional[str] = None,
+) -> GetDatapointsResponse:
     api_config = api_config_override if api_config_override else APIConfig()
 
     base_path = api_config.base_path
-    path = f"/configurations"
+    path = f"/datapoints"
     headers = {
         "Content-Type": "application/json",
         "Accept": "application/json",
         "Authorization": f"Bearer { api_config.get_access_token() }",
     }
-    query_params: Dict[str, Any] = {"name": name, "env": env, "tags": tags}
+    query_params: Dict[str, Any] = {
+        "datapoint_ids": datapoint_ids,
+        "dataset_name": dataset_name,
+    }
 
     query_params = {
         key: value for (key, value) in query_params.items() if value is not None
@@ -39,21 +41,23 @@ def getConfigurations(
     if response.status_code != 200:
         raise HTTPException(
             response.status_code,
-            f"getConfigurations failed with status code: {response.status_code}",
+            f"getDatapoints failed with status code: {response.status_code}",
         )
     else:
         body = None if 200 == 204 else response.json()
 
-    return [GetConfigurationsResponse(**item) for item in body]
+    return (
+        GetDatapointsResponse(**body) if body is not None else GetDatapointsResponse()
+    )
 
 
-def createConfiguration(
-    api_config_override: Optional[APIConfig] = None, *, data: CreateConfigurationRequest
-) -> CreateConfigurationResponse:
+def createDatapoint(
+    api_config_override: Optional[APIConfig] = None, *, data: CreateDatapointRequest
+) -> CreateDatapointResponse:
     api_config = api_config_override if api_config_override else APIConfig()
 
     base_path = api_config.base_path
-    path = f"/configurations"
+    path = f"/datapoints"
     headers = {
         "Content-Type": "application/json",
         "Accept": "application/json",
@@ -77,28 +81,109 @@ def createConfiguration(
     if response.status_code != 200:
         raise HTTPException(
             response.status_code,
-            f"createConfiguration failed with status code: {response.status_code}",
+            f"createDatapoint failed with status code: {response.status_code}",
         )
     else:
         body = None if 200 == 204 else response.json()
 
     return (
-        CreateConfigurationResponse(**body)
+        CreateDatapointResponse(**body)
         if body is not None
-        else CreateConfigurationResponse()
+        else CreateDatapointResponse()
     )
 
 
-def updateConfiguration(
+def batchCreateDatapoints(
     api_config_override: Optional[APIConfig] = None,
     *,
-    id: str,
-    data: UpdateConfigurationRequest,
-) -> UpdateConfigurationResponse:
+    data: BatchCreateDatapointsRequest,
+) -> BatchCreateDatapointsResponse:
     api_config = api_config_override if api_config_override else APIConfig()
 
     base_path = api_config.base_path
-    path = f"/configurations/{id}"
+    path = f"/datapoints/batch"
+    headers = {
+        "Content-Type": "application/json",
+        "Accept": "application/json",
+        "Authorization": f"Bearer { api_config.get_access_token() }",
+    }
+    query_params: Dict[str, Any] = {}
+
+    query_params = {
+        key: value for (key, value) in query_params.items() if value is not None
+    }
+
+    with httpx.Client(base_url=base_path, verify=api_config.verify) as client:
+        response = client.request(
+            "post",
+            httpx.URL(path),
+            headers=headers,
+            params=query_params,
+            json=data.dict(),
+        )
+
+    if response.status_code != 200:
+        raise HTTPException(
+            response.status_code,
+            f"batchCreateDatapoints failed with status code: {response.status_code}",
+        )
+    else:
+        body = None if 200 == 204 else response.json()
+
+    return (
+        BatchCreateDatapointsResponse(**body)
+        if body is not None
+        else BatchCreateDatapointsResponse()
+    )
+
+
+def getDatapoint(
+    api_config_override: Optional[APIConfig] = None, *, id: str
+) -> Dict[str, Any]:
+    api_config = api_config_override if api_config_override else APIConfig()
+
+    base_path = api_config.base_path
+    path = f"/datapoints/{id}"
+    headers = {
+        "Content-Type": "application/json",
+        "Accept": "application/json",
+        "Authorization": f"Bearer { api_config.get_access_token() }",
+    }
+    query_params: Dict[str, Any] = {}
+
+    query_params = {
+        key: value for (key, value) in query_params.items() if value is not None
+    }
+
+    with httpx.Client(base_url=base_path, verify=api_config.verify) as client:
+        response = client.request(
+            "get",
+            httpx.URL(path),
+            headers=headers,
+            params=query_params,
+        )
+
+    if response.status_code != 200:
+        raise HTTPException(
+            response.status_code,
+            f"getDatapoint failed with status code: {response.status_code}",
+        )
+    else:
+        body = None if 200 == 204 else response.json()
+
+    return body
+
+
+def updateDatapoint(
+    api_config_override: Optional[APIConfig] = None,
+    *,
+    id: str,
+    data: UpdateDatapointRequest,
+) -> UpdateDatapointResponse:
+    api_config = api_config_override if api_config_override else APIConfig()
+
+    base_path = api_config.base_path
+    path = f"/datapoints/{id}"
     headers = {
         "Content-Type": "application/json",
         "Accept": "application/json",
@@ -122,25 +207,25 @@ def updateConfiguration(
     if response.status_code != 200:
         raise HTTPException(
             response.status_code,
-            f"updateConfiguration failed with status code: {response.status_code}",
+            f"updateDatapoint failed with status code: {response.status_code}",
         )
     else:
         body = None if 200 == 204 else response.json()
 
     return (
-        UpdateConfigurationResponse(**body)
+        UpdateDatapointResponse(**body)
         if body is not None
-        else UpdateConfigurationResponse()
+        else UpdateDatapointResponse()
     )
 
 
-def deleteConfiguration(
+def deleteDatapoint(
     api_config_override: Optional[APIConfig] = None, *, id: str
-) -> DeleteConfigurationResponse:
+) -> DeleteDatapointResponse:
     api_config = api_config_override if api_config_override else APIConfig()
 
     base_path = api_config.base_path
-    path = f"/configurations/{id}"
+    path = f"/datapoints/{id}"
     headers = {
         "Content-Type": "application/json",
         "Accept": "application/json",
@@ -163,13 +248,13 @@ def deleteConfiguration(
     if response.status_code != 200:
         raise HTTPException(
             response.status_code,
-            f"deleteConfiguration failed with status code: {response.status_code}",
+            f"deleteDatapoint failed with status code: {response.status_code}",
         )
     else:
         body = None if 200 == 204 else response.json()
 
     return (
-        DeleteConfigurationResponse(**body)
+        DeleteDatapointResponse(**body)
         if body is not None
-        else DeleteConfigurationResponse()
+        else DeleteDatapointResponse()
     )

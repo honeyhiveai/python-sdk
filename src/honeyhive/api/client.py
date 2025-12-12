@@ -1,647 +1,370 @@
-"""HoneyHive API Client - HTTP client with retry support."""
+"""HoneyHive API Client.
 
-import asyncio
-import time
-from typing import Any, Dict, Optional
+This module provides the main HoneyHive client with an ergonomic interface
+wrapping the auto-generated API code.
 
-import httpx
+Usage:
+    from honeyhive.api import HoneyHive
 
-from honeyhive.config.models.api_client import APIClientConfig
-from honeyhive.utils.connection_pool import ConnectionPool, PoolConfig
-from honeyhive.utils.error_handler import ErrorContext, get_error_handler
-from honeyhive.utils.logger import HoneyHiveLogger, get_logger, safe_log
-from honeyhive.utils.retry import RetryConfig
+    client = HoneyHive(api_key="hh_...")
 
-from .configurations import ConfigurationsAPI
-from .datapoints import DatapointsAPI
-from .datasets import DatasetsAPI
-from .evaluations import EvaluationsAPI
-from .events import EventsAPI
-from .metrics import MetricsAPI
-from .projects import ProjectsAPI
-from .session import SessionAPI
-from .tools import ToolsAPI
+    # Configurations
+    configs = client.configurations.list(project="my-project")
+    client.configurations.create(CreateConfigurationRequest(...))
+
+    # Datasets
+    datasets = client.datasets.list(project="my-project")
+
+    # Experiments
+    runs = client.experiments.list_runs(project="my-project")
+"""
+
+from typing import Any, Dict, List, Optional
+
+from honeyhive._generated.api_config import APIConfig
+
+# Import models used in type hints
+from honeyhive._generated.models import (
+    CreateConfigurationRequest,
+    CreateConfigurationResponse,
+    CreateDatapointRequest,
+    CreateDatapointResponse,
+    CreateDatasetRequest,
+    CreateDatasetResponse,
+    CreateMetricRequest,
+    CreateMetricResponse,
+    CreateToolRequest,
+    CreateToolResponse,
+    DeleteConfigurationResponse,
+    DeleteDatapointResponse,
+    DeleteDatasetResponse,
+    DeleteExperimentRunResponse,
+    DeleteMetricResponse,
+    DeleteSessionResponse,
+    DeleteToolResponse,
+    GetConfigurationsResponse,
+    GetDatapointResponse,
+    GetDatapointsResponse,
+    GetDatasetsResponse,
+    GetExperimentRunResponse,
+    GetExperimentRunsResponse,
+    GetExperimentRunsSchemaResponse,
+    GetMetricsResponse,
+    GetSessionResponse,
+    GetToolsResponse,
+    PostExperimentRunRequest,
+    PostExperimentRunResponse,
+    PutExperimentRunRequest,
+    PutExperimentRunResponse,
+    UpdateConfigurationRequest,
+    UpdateConfigurationResponse,
+    UpdateDatapointRequest,
+    UpdateDatapointResponse,
+    UpdateDatasetRequest,
+    UpdateDatasetResponse,
+    UpdateMetricRequest,
+    UpdateMetricResponse,
+    UpdateToolRequest,
+    UpdateToolResponse,
+)
+
+# Import all services
+from honeyhive._generated.services import Configurations_service as configs_svc
+from honeyhive._generated.services import Datapoints_service as datapoints_svc
+from honeyhive._generated.services import Datasets_service as datasets_svc
+from honeyhive._generated.services import Events_service as events_svc
+from honeyhive._generated.services import Experiments_service as experiments_svc
+from honeyhive._generated.services import Metrics_service as metrics_svc
+from honeyhive._generated.services import Projects_service as projects_svc
+from honeyhive._generated.services import Session_service as session_svc
+from honeyhive._generated.services import Sessions_service as sessions_svc
+from honeyhive._generated.services import Tools_service as tools_svc
+
+from ._base import BaseAPI
 
 
-class RateLimiter:
-    """Simple rate limiter for API calls.
+class ConfigurationsAPI(BaseAPI):
+    """Configurations API."""
 
-    Provides basic rate limiting functionality to prevent
-    exceeding API rate limits.
+    def list(self, project: Optional[str] = None) -> List[GetConfigurationsResponse]:
+        """List configurations."""
+        return configs_svc.getConfigurations(self._api_config, project=project)
+
+    def create(
+        self, request: CreateConfigurationRequest
+    ) -> CreateConfigurationResponse:
+        """Create a configuration."""
+        return configs_svc.createConfiguration(self._api_config, data=request)
+
+    def update(
+        self, id: str, request: UpdateConfigurationRequest
+    ) -> UpdateConfigurationResponse:
+        """Update a configuration."""
+        return configs_svc.updateConfiguration(self._api_config, id=id, data=request)
+
+    def delete(self, id: str) -> DeleteConfigurationResponse:
+        """Delete a configuration."""
+        return configs_svc.deleteConfiguration(self._api_config, id=id)
+
+
+class DatapointsAPI(BaseAPI):
+    """Datapoints API."""
+
+    def list(
+        self,
+        project: str,
+        dataset_id: Optional[str] = None,
+        type: Optional[str] = None,
+    ) -> GetDatapointsResponse:
+        """List datapoints."""
+        return datapoints_svc.getDatapoints(
+            self._api_config, project=project, dataset_id=dataset_id, type=type
+        )
+
+    def get(self, id: str) -> GetDatapointResponse:
+        """Get a datapoint by ID."""
+        return datapoints_svc.getDatapoint(self._api_config, id=id)
+
+    def create(self, request: CreateDatapointRequest) -> CreateDatapointResponse:
+        """Create a datapoint."""
+        return datapoints_svc.createDatapoint(self._api_config, data=request)
+
+    def update(
+        self, id: str, request: UpdateDatapointRequest
+    ) -> UpdateDatapointResponse:
+        """Update a datapoint."""
+        return datapoints_svc.updateDatapoint(self._api_config, id=id, data=request)
+
+    def delete(self, id: str) -> DeleteDatapointResponse:
+        """Delete a datapoint."""
+        return datapoints_svc.deleteDatapoint(self._api_config, id=id)
+
+
+class DatasetsAPI(BaseAPI):
+    """Datasets API."""
+
+    def list(
+        self,
+        project: Optional[str] = None,
+        name: Optional[str] = None,
+        type: Optional[str] = None,
+    ) -> GetDatasetsResponse:
+        """List datasets."""
+        return datasets_svc.getDatasets(
+            self._api_config, project=project, name=name, type=type
+        )
+
+    def create(self, request: CreateDatasetRequest) -> CreateDatasetResponse:
+        """Create a dataset."""
+        return datasets_svc.createDataset(self._api_config, data=request)
+
+    def update(self, request: UpdateDatasetRequest) -> UpdateDatasetResponse:
+        """Update a dataset."""
+        return datasets_svc.updateDataset(self._api_config, data=request)
+
+    def delete(self, id: str) -> DeleteDatasetResponse:
+        """Delete a dataset."""
+        return datasets_svc.deleteDataset(self._api_config, dataset_id=id)
+
+
+class EventsAPI(BaseAPI):
+    """Events API."""
+
+    def list(self, data: Dict[str, Any]) -> Dict[str, Any]:
+        """Get events."""
+        return events_svc.getEvents(self._api_config, data=data)
+
+    def create(self, data: Dict[str, Any]) -> Dict[str, Any]:
+        """Create an event."""
+        return events_svc.createEvent(self._api_config, data=data)
+
+    def update(self, data: Dict[str, Any]) -> None:
+        """Update an event."""
+        return events_svc.updateEvent(self._api_config, data=data)
+
+    def create_batch(self, data: Dict[str, Any]) -> Dict[str, Any]:
+        """Create events in batch."""
+        return events_svc.createEventBatch(self._api_config, data=data)
+
+
+class ExperimentsAPI(BaseAPI):
+    """Experiments API."""
+
+    def get_schema(self, project: str) -> GetExperimentRunsSchemaResponse:
+        """Get experiment runs schema."""
+        return experiments_svc.getExperimentRunsSchema(
+            self._api_config, project=project
+        )
+
+    def list_runs(
+        self,
+        project: str,
+        experiment_id: Optional[str] = None,
+    ) -> GetExperimentRunsResponse:
+        """List experiment runs."""
+        return experiments_svc.getRuns(
+            self._api_config, project=project, experiment_id=experiment_id
+        )
+
+    def get_run(self, run_id: str) -> GetExperimentRunResponse:
+        """Get an experiment run by ID."""
+        return experiments_svc.getRun(self._api_config, run_id=run_id)
+
+    def create_run(
+        self, request: PostExperimentRunRequest
+    ) -> PostExperimentRunResponse:
+        """Create an experiment run."""
+        return experiments_svc.createRun(self._api_config, data=request)
+
+    def update_run(
+        self, run_id: str, request: PutExperimentRunRequest
+    ) -> PutExperimentRunResponse:
+        """Update an experiment run."""
+        return experiments_svc.updateRun(self._api_config, run_id=run_id, data=request)
+
+    def delete_run(self, run_id: str) -> DeleteExperimentRunResponse:
+        """Delete an experiment run."""
+        return experiments_svc.deleteRun(self._api_config, run_id=run_id)
+
+
+class MetricsAPI(BaseAPI):
+    """Metrics API."""
+
+    def list(
+        self,
+        project: Optional[str] = None,
+        name: Optional[str] = None,
+        type: Optional[str] = None,
+    ) -> GetMetricsResponse:
+        """List metrics."""
+        return metrics_svc.getMetrics(
+            self._api_config, project=project, name=name, type=type
+        )
+
+    def create(self, request: CreateMetricRequest) -> CreateMetricResponse:
+        """Create a metric."""
+        return metrics_svc.createMetric(self._api_config, data=request)
+
+    def update(self, request: UpdateMetricRequest) -> UpdateMetricResponse:
+        """Update a metric."""
+        return metrics_svc.updateMetric(self._api_config, data=request)
+
+    def delete(self, id: str) -> DeleteMetricResponse:
+        """Delete a metric."""
+        return metrics_svc.deleteMetric(self._api_config, metric_id=id)
+
+
+class ProjectsAPI(BaseAPI):
+    """Projects API."""
+
+    def list(self, name: Optional[str] = None) -> Dict[str, Any]:
+        """List projects."""
+        return projects_svc.getProjects(self._api_config, name=name)
+
+    def create(self, data: Dict[str, Any]) -> Dict[str, Any]:
+        """Create a project."""
+        return projects_svc.createProject(self._api_config, data=data)
+
+    def update(self, data: Dict[str, Any]) -> Dict[str, Any]:
+        """Update a project."""
+        return projects_svc.updateProject(self._api_config, data=data)
+
+    def delete(self, name: str) -> Dict[str, Any]:
+        """Delete a project."""
+        return projects_svc.deleteProject(self._api_config, name=name)
+
+
+class SessionsAPI(BaseAPI):
+    """Sessions API."""
+
+    def get(self, session_id: str) -> GetSessionResponse:
+        """Get a session by ID."""
+        return sessions_svc.getSession(self._api_config, session_id=session_id)
+
+    def delete(self, session_id: str) -> DeleteSessionResponse:
+        """Delete a session."""
+        return sessions_svc.deleteSession(self._api_config, session_id=session_id)
+
+    def start(self, data: Dict[str, Any]) -> Dict[str, Any]:
+        """Start a new session."""
+        return session_svc.startSession(self._api_config, data=data)
+
+
+class ToolsAPI(BaseAPI):
+    """Tools API."""
+
+    def list(self) -> List[GetToolsResponse]:
+        """List tools."""
+        return tools_svc.getTools(self._api_config)
+
+    def create(self, request: CreateToolRequest) -> CreateToolResponse:
+        """Create a tool."""
+        return tools_svc.createTool(self._api_config, data=request)
+
+    def update(self, request: UpdateToolRequest) -> UpdateToolResponse:
+        """Update a tool."""
+        return tools_svc.updateTool(self._api_config, data=request)
+
+    def delete(self, id: str) -> DeleteToolResponse:
+        """Delete a tool."""
+        return tools_svc.deleteTool(self._api_config, tool_id=id)
+
+
+class HoneyHive:
+    """Main HoneyHive API client.
+
+    Provides an ergonomic interface to the HoneyHive API.
+
+    Usage:
+        client = HoneyHive(api_key="hh_...")
+
+        # List configurations
+        configs = client.configurations.list(project="my-project")
+
+        # Create a dataset
+        from honeyhive.models import CreateDatasetRequest
+        dataset = client.datasets.create(CreateDatasetRequest(...))
+
+    Attributes:
+        configurations: API for managing configurations.
+        datapoints: API for managing datapoints.
+        datasets: API for managing datasets.
+        events: API for managing events.
+        experiments: API for managing experiment runs.
+        metrics: API for managing metrics.
+        projects: API for managing projects.
+        sessions: API for managing sessions.
+        tools: API for managing tools.
     """
 
-    def __init__(self, max_calls: int = 100, time_window: float = 60.0):
-        """Initialize the rate limiter.
-
-        Args:
-            max_calls: Maximum number of calls allowed in the time window
-            time_window: Time window in seconds for rate limiting
-        """
-        self.max_calls = max_calls
-        self.time_window = time_window
-        self.calls: list = []
-
-    def can_call(self) -> bool:
-        """Check if a call can be made.
-
-        Returns:
-            True if a call can be made, False if rate limit is exceeded
-        """
-        now = time.time()
-        # Remove old calls outside the time window
-        self.calls = [
-            call_time for call_time in self.calls if now - call_time < self.time_window
-        ]
-
-        if len(self.calls) < self.max_calls:
-            self.calls.append(now)
-            return True
-        return False
-
-    def wait_if_needed(self) -> None:
-        """Wait if rate limit is exceeded.
-
-        Blocks execution until a call can be made.
-        """
-        while not self.can_call():
-            time.sleep(0.1)  # Small delay
-
-
-# ConnectionPool is now imported from utils.connection_pool for full feature support
-
-
-class HoneyHive:  # pylint: disable=too-many-instance-attributes
-    """Main HoneyHive API client."""
-
-    # Type annotations for instance attributes
-    logger: Optional[HoneyHiveLogger]
-
-    def __init__(  # pylint: disable=too-many-arguments
+    def __init__(
         self,
-        *,
-        api_key: Optional[str] = None,
-        server_url: Optional[str] = None,
-        timeout: Optional[float] = None,
-        retry_config: Optional[RetryConfig] = None,
-        rate_limit_calls: int = 100,
-        rate_limit_window: float = 60.0,
-        max_connections: int = 10,
-        max_keepalive: int = 20,
-        test_mode: Optional[bool] = None,
-        verbose: bool = False,
-        tracer_instance: Optional[Any] = None,
-    ):
+        api_key: str,
+        base_url: str = "https://api.honeyhive.ai",
+    ) -> None:
         """Initialize the HoneyHive client.
 
         Args:
-            api_key: API key for authentication
-            server_url: Server URL for the API
-            timeout: Request timeout in seconds
-            retry_config: Retry configuration
-            rate_limit_calls: Maximum calls per time window
-            rate_limit_window: Time window in seconds
-            max_connections: Maximum connections in pool
-            max_keepalive: Maximum keepalive connections
-            test_mode: Enable test mode (None = use config default)
-            verbose: Enable verbose logging for API debugging
-            tracer_instance: Optional tracer instance for multi-instance logging
+            api_key: HoneyHive API key (typically starts with 'hh_').
+            base_url: API base URL (default: https://api.honeyhive.ai).
         """
-        # Load fresh config using per-instance configuration
-
-        # Create fresh config instance to pick up environment variables
-        fresh_config = APIClientConfig()
-
-        self.api_key = api_key or fresh_config.api_key
-        # Allow initialization without API key for degraded mode
-        # API calls will fail gracefully if no key is provided
-
-        self.server_url = server_url or fresh_config.server_url
-        # pylint: disable=no-member
-        # fresh_config.http_config is HTTPClientConfig instance, not FieldInfo
-        self.timeout = timeout or fresh_config.http_config.timeout
-        self.retry_config = retry_config or RetryConfig()
-        self.test_mode = fresh_config.test_mode if test_mode is None else test_mode
-        self.verbose = verbose or fresh_config.verbose
-        self.tracer_instance = tracer_instance
-
-        # Initialize rate limiter and connection pool with configuration values
-        self.rate_limiter = RateLimiter(
-            rate_limit_calls or fresh_config.http_config.rate_limit_calls,
-            rate_limit_window or fresh_config.http_config.rate_limit_window,
+        self._api_config = APIConfig(
+            base_path=base_url,
+            access_token=api_key,
         )
 
-        # ENVIRONMENT-AWARE CONNECTION POOL: Full features in production, \
-        # safe in pytest-xdist
-        # Uses feature-complete connection pool with automatic environment detection
-        self.connection_pool = ConnectionPool(
-            config=PoolConfig(
-                max_connections=max_connections
-                or fresh_config.http_config.max_connections,
-                max_keepalive_connections=max_keepalive
-                or fresh_config.http_config.max_keepalive_connections,
-                timeout=self.timeout,
-                keepalive_expiry=30.0,  # Default keepalive expiry
-                retries=self.retry_config.max_retries,
-                pool_timeout=10.0,  # Default pool timeout
-            )
-        )
-
-        # Initialize logger for independent use (when not used by tracer)
-        # When used by tracer, logging goes through tracer's safe_log
-        if not self.tracer_instance:
-            if self.verbose:
-                self.logger = get_logger("honeyhive.client", level="DEBUG")
-            else:
-                self.logger = get_logger("honeyhive.client")
-        else:
-            # When used by tracer, we don't need an independent logger
-            self.logger = None
-
-        # Lazy initialization of HTTP clients
-        self._sync_client: Optional[httpx.Client] = None
-        self._async_client: Optional[httpx.AsyncClient] = None
-
-        # Initialize API modules
-        self.sessions = SessionAPI(self)  # Changed from self.session to self.sessions
-        self.events = EventsAPI(self)
-        self.tools = ToolsAPI(self)
-        self.datapoints = DatapointsAPI(self)
-        self.datasets = DatasetsAPI(self)
-        self.configurations = ConfigurationsAPI(self)
-        self.projects = ProjectsAPI(self)
-        self.metrics = MetricsAPI(self)
-        self.evaluations = EvaluationsAPI(self)
-
-        # Log initialization after all setup is complete
-        # Enhanced safe_log handles tracer_instance delegation and fallbacks
-        safe_log(
-            self,
-            "info",
-            "HoneyHive client initialized",
-            honeyhive_data={
-                "server_url": self.server_url,
-                "test_mode": self.test_mode,
-                "verbose": self.verbose,
-            },
-        )
-
-    def _log(
-        self,
-        level: str,
-        message: str,
-        honeyhive_data: Optional[Dict[str, Any]] = None,
-        **kwargs: Any,
-    ) -> None:
-        """Unified logging method using enhanced safe_log with automatic delegation.
-
-        Enhanced safe_log automatically handles:
-        - Tracer instance delegation when self.tracer_instance exists
-        - Independent logger usage when self.logger exists
-        - Graceful fallback for all other cases
-
-        Args:
-            level: Log level (debug, info, warning, error)
-            message: Log message
-            honeyhive_data: Optional structured data
-            **kwargs: Additional keyword arguments
-        """
-        # Enhanced safe_log handles all the delegation logic automatically
-        safe_log(self, level, message, honeyhive_data=honeyhive_data, **kwargs)
+        # Initialize API namespaces
+        self.configurations = ConfigurationsAPI(self._api_config)
+        self.datapoints = DatapointsAPI(self._api_config)
+        self.datasets = DatasetsAPI(self._api_config)
+        self.events = EventsAPI(self._api_config)
+        self.experiments = ExperimentsAPI(self._api_config)
+        self.metrics = MetricsAPI(self._api_config)
+        self.projects = ProjectsAPI(self._api_config)
+        self.sessions = SessionsAPI(self._api_config)
+        self.tools = ToolsAPI(self._api_config)
 
     @property
-    def client_kwargs(self) -> Dict[str, Any]:
-        """Get common client configuration."""
-        # pylint: disable=import-outside-toplevel
-        # Justification: Avoids circular import (__init__.py imports this module)
-        from honeyhive import __version__
-
-        return {
-            "headers": {
-                "Authorization": f"Bearer {self.api_key}",
-                "Content-Type": "application/json",
-                "User-Agent": f"HoneyHive-Python-SDK/{__version__}",
-            },
-            "timeout": self.timeout,
-            "limits": httpx.Limits(
-                max_connections=self.connection_pool.config.max_connections,
-                max_keepalive_connections=(
-                    self.connection_pool.config.max_keepalive_connections
-                ),
-            ),
-        }
-
-    @property
-    def sync_client(self) -> httpx.Client:
-        """Get or create sync HTTP client."""
-        if self._sync_client is None:
-            self._sync_client = httpx.Client(**self.client_kwargs)
-        return self._sync_client
-
-    @property
-    def async_client(self) -> httpx.AsyncClient:
-        """Get or create async HTTP client."""
-        if self._async_client is None:
-            self._async_client = httpx.AsyncClient(**self.client_kwargs)
-        return self._async_client
-
-    def _make_url(self, path: str) -> str:
-        """Create full URL from path."""
-        if path.startswith("http"):
-            return path
-        return f"{self.server_url.rstrip('/')}/{path.lstrip('/')}"
-
-    def get_health(self) -> Dict[str, Any]:
-        """Get API health status. Returns basic info since health endpoint \
-        may not exist."""
-
-        error_handler = get_error_handler()
-        context = ErrorContext(
-            operation="get_health",
-            method="GET",
-            url=f"{self.server_url}/api/v1/health",
-            client_name="HoneyHive",
-        )
-
-        try:
-            with error_handler.handle_operation(context):
-                response = self.request("GET", "/api/v1/health")
-                if response.status_code == 200:
-                    return response.json()  # type: ignore[no-any-return]
-        except Exception:
-            # Health endpoint may not exist, return basic info
-            pass
-
-        # Return basic health info if health endpoint doesn't exist
-        return {
-            "status": "healthy",
-            "message": "API client is operational",
-            "server_url": self.server_url,
-            "timestamp": time.time(),
-        }
-
-    async def get_health_async(self) -> Dict[str, Any]:
-        """Get API health status asynchronously. Returns basic info since \
-        health endpoint may not exist."""
-
-        error_handler = get_error_handler()
-        context = ErrorContext(
-            operation="get_health_async",
-            method="GET",
-            url=f"{self.server_url}/api/v1/health",
-            client_name="HoneyHive",
-        )
-
-        try:
-            with error_handler.handle_operation(context):
-                response = await self.request_async("GET", "/api/v1/health")
-                if response.status_code == 200:
-                    return response.json()  # type: ignore[no-any-return]
-        except Exception:
-            # Health endpoint may not exist, return basic info
-            pass
-
-        # Return basic health info if health endpoint doesn't exist
-        return {
-            "status": "healthy",
-            "message": "API client is operational",
-            "server_url": self.server_url,
-            "timestamp": time.time(),
-        }
-
-    def request(
-        self,
-        method: str,
-        path: str,
-        params: Optional[Dict[str, Any]] = None,
-        json: Optional[Any] = None,
-        **kwargs: Any,
-    ) -> httpx.Response:
-        """Make a synchronous HTTP request with rate limiting and retry logic."""
-        # Enhanced debug logging for pytest hang investigation
-        self._log(
-            "debug",
-            "🔍 REQUEST START",
-            honeyhive_data={
-                "method": method,
-                "path": path,
-                "params": params,
-                "json": json,
-                "test_mode": self.test_mode,
-            },
-        )
-
-        # Apply rate limiting
-        self._log("debug", "🔍 Applying rate limiting...")
-        self.rate_limiter.wait_if_needed()
-        self._log("debug", "🔍 Rate limiting completed")
-
-        url = self._make_url(path)
-        self._log("debug", f"🔍 URL created: {url}")
-
-        self._log(
-            "debug",
-            "Making request",
-            honeyhive_data={
-                "method": method,
-                "url": url,
-                "params": params,
-                "json": json,
-            },
-        )
-
-        if self.verbose:
-            self._log(
-                "info",
-                "API Request Details",
-                honeyhive_data={
-                    "method": method,
-                    "url": url,
-                    "params": params,
-                    "json": json,
-                    "headers": self.client_kwargs.get("headers", {}),
-                    "timeout": self.timeout,
-                },
-            )
-
-        # Import error handler here to avoid circular imports
-
-        self._log("debug", "🔍 Creating error handler...")
-        error_handler = get_error_handler()
-        context = ErrorContext(
-            operation="request",
-            method=method,
-            url=url,
-            params=params,
-            json_data=json,
-            client_name="HoneyHive",
-        )
-        self._log("debug", "🔍 Error handler created")
-
-        self._log("debug", "🔍 Starting HTTP request...")
-        with error_handler.handle_operation(context):
-            self._log("debug", "🔍 Making sync_client.request call...")
-            response = self.sync_client.request(
-                method, url, params=params, json=json, **kwargs
-            )
-            self._log(
-                "debug",
-                f"🔍 HTTP request completed with status: {response.status_code}",
-            )
-
-            if self.verbose:
-                self._log(
-                    "info",
-                    "API Response Details",
-                    honeyhive_data={
-                        "method": method,
-                        "url": url,
-                        "status_code": response.status_code,
-                        "headers": dict(response.headers),
-                        "elapsed_time": (
-                            response.elapsed.total_seconds()
-                            if hasattr(response, "elapsed")
-                            else None
-                        ),
-                    },
-                )
-
-            if self.retry_config.should_retry(response):
-                return self._retry_request(method, path, params, json, **kwargs)
-
-            return response
-
-    async def request_async(
-        self,
-        method: str,
-        path: str,
-        params: Optional[Dict[str, Any]] = None,
-        json: Optional[Any] = None,
-        **kwargs: Any,
-    ) -> httpx.Response:
-        """Make an asynchronous HTTP request with rate limiting and retry logic."""
-        # Apply rate limiting
-        self.rate_limiter.wait_if_needed()
-
-        url = self._make_url(path)
-
-        self._log(
-            "debug",
-            "Making async request",
-            honeyhive_data={
-                "method": method,
-                "url": url,
-                "params": params,
-                "json": json,
-            },
-        )
-
-        if self.verbose:
-            self._log(
-                "info",
-                "API Request Details",
-                honeyhive_data={
-                    "method": method,
-                    "url": url,
-                    "params": params,
-                    "json": json,
-                    "headers": self.client_kwargs.get("headers", {}),
-                    "timeout": self.timeout,
-                },
-            )
-
-        # Import error handler here to avoid circular imports
-
-        error_handler = get_error_handler()
-        context = ErrorContext(
-            operation="request_async",
-            method=method,
-            url=url,
-            params=params,
-            json_data=json,
-            client_name="HoneyHive",
-        )
-
-        with error_handler.handle_operation(context):
-            response = await self.async_client.request(
-                method, url, params=params, json=json, **kwargs
-            )
-
-            if self.verbose:
-                self._log(
-                    "info",
-                    "API Async Response Details",
-                    honeyhive_data={
-                        "method": method,
-                        "url": url,
-                        "status_code": response.status_code,
-                        "headers": dict(response.headers),
-                        "elapsed_time": (
-                            response.elapsed.total_seconds()
-                            if hasattr(response, "elapsed")
-                            else None
-                        ),
-                    },
-                )
-
-            if self.retry_config.should_retry(response):
-                return await self._retry_request_async(
-                    method, path, params, json, **kwargs
-                )
-
-            return response
-
-    def _retry_request(
-        self,
-        method: str,
-        path: str,
-        params: Optional[Dict[str, Any]] = None,
-        json: Optional[Any] = None,
-        **kwargs: Any,
-    ) -> httpx.Response:
-        """Retry a synchronous request."""
-        for attempt in range(1, self.retry_config.max_retries + 1):
-            delay: float = 0.0
-            if self.retry_config.backoff_strategy:
-                delay = self.retry_config.backoff_strategy.get_delay(attempt)
-            if delay > 0:
-                time.sleep(delay)
-
-            # Use unified logging - safe_log handles shutdown detection automatically
-            self._log(
-                "info",
-                f"Retrying request (attempt {attempt})",
-                honeyhive_data={
-                    "method": method,
-                    "path": path,
-                    "attempt": attempt,
-                },
-            )
-
-            if self.verbose:
-                self._log(
-                    "info",
-                    "Retry Request Details",
-                    honeyhive_data={
-                        "method": method,
-                        "path": path,
-                        "attempt": attempt,
-                        "delay": delay,
-                        "params": params,
-                        "json": json,
-                    },
-                )
-
-            try:
-                response = self.sync_client.request(
-                    method, self._make_url(path), params=params, json=json, **kwargs
-                )
-                return response
-            except Exception:
-                if attempt == self.retry_config.max_retries:
-                    raise
-                continue
-
-        raise httpx.RequestError("Max retries exceeded")
-
-    async def _retry_request_async(
-        self,
-        method: str,
-        path: str,
-        params: Optional[Dict[str, Any]] = None,
-        json: Optional[Any] = None,
-        **kwargs: Any,
-    ) -> httpx.Response:
-        """Retry an asynchronous request."""
-        for attempt in range(1, self.retry_config.max_retries + 1):
-            delay: float = 0.0
-            if self.retry_config.backoff_strategy:
-                delay = self.retry_config.backoff_strategy.get_delay(attempt)
-            if delay > 0:
-
-                await asyncio.sleep(delay)
-
-            # Use unified logging - safe_log handles shutdown detection automatically
-            self._log(
-                "info",
-                f"Retrying async request (attempt {attempt})",
-                honeyhive_data={
-                    "method": method,
-                    "path": path,
-                    "attempt": attempt,
-                },
-            )
-
-            if self.verbose:
-                self._log(
-                    "info",
-                    "Retry Async Request Details",
-                    honeyhive_data={
-                        "method": method,
-                        "path": path,
-                        "attempt": attempt,
-                        "delay": delay,
-                        "params": params,
-                        "json": json,
-                    },
-                )
-
-            try:
-                response = await self.async_client.request(
-                    method, self._make_url(path), params=params, json=json, **kwargs
-                )
-                return response
-            except Exception:
-                if attempt == self.retry_config.max_retries:
-                    raise
-                continue
-
-        raise httpx.RequestError("Max retries exceeded")
-
-    def close(self) -> None:
-        """Close the HTTP clients."""
-        if self._sync_client:
-            self._sync_client.close()
-            self._sync_client = None
-        if self._async_client:
-            # AsyncClient doesn't have close(), it has aclose()
-            # But we can't call aclose() in a sync context
-            # So we'll just set it to None and let it be garbage collected
-            self._async_client = None
-
-        # Use unified logging - safe_log handles shutdown detection automatically
-        self._log("info", "HoneyHive client closed")
-
-    async def aclose(self) -> None:
-        """Close the HTTP clients asynchronously."""
-        if self._async_client:
-            await self._async_client.aclose()
-            self._async_client = None
-
-        # Use unified logging - safe_log handles shutdown detection automatically
-        self._log("info", "HoneyHive async client closed")
-
-    def __enter__(self) -> "HoneyHive":
-        """Context manager entry."""
-        return self
-
-    def __exit__(
-        self,
-        exc_type: Optional[type],
-        exc_val: Optional[BaseException],
-        exc_tb: Optional[Any],
-    ) -> None:
-        """Context manager exit."""
-        self.close()
-
-    async def __aenter__(self) -> "HoneyHive":
-        """Async context manager entry."""
-        return self
-
-    async def __aexit__(
-        self,
-        exc_type: Optional[type],
-        exc_val: Optional[BaseException],
-        exc_tb: Optional[Any],
-    ) -> None:
-        """Async context manager exit."""
-        await self.aclose()
+    def api_config(self) -> APIConfig:
+        """Access the underlying API configuration."""
+        return self._api_config

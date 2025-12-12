@@ -3,9 +3,9 @@ from typing import *
 from pydantic import BaseModel, Field
 
 
-class CreateConfigurationRequest(BaseModel):
+class UpdateConfigurationRequest(BaseModel):
     """
-    CreateConfigurationRequest model
+    UpdateConfigurationRequest model
     """
 
     model_config = {"populate_by_name": True, "validate_assignment": True}
@@ -14,9 +14,11 @@ class CreateConfigurationRequest(BaseModel):
 
     type: Optional[str] = Field(validation_alias="type", default=None)
 
-    provider: str = Field(validation_alias="provider")
+    provider: Optional[str] = Field(validation_alias="provider", default=None)
 
-    parameters: Dict[str, Any] = Field(validation_alias="parameters")
+    parameters: Optional[Dict[str, Any]] = Field(
+        validation_alias="parameters", default=None
+    )
 
     env: Optional[List[str]] = Field(validation_alias="env", default=None)
 

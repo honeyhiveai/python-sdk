@@ -6,56 +6,11 @@ from ..api_config import APIConfig, HTTPException
 from ..models import *
 
 
-async def getConfigurations(
-    api_config_override: Optional[APIConfig] = None,
-    *,
-    name: Optional[str] = None,
-    env: Optional[str] = None,
-    tags: Optional[str] = None,
-) -> List[GetConfigurationsResponse]:
+def getTools(api_config_override: Optional[APIConfig] = None) -> List[GetToolsResponse]:
     api_config = api_config_override if api_config_override else APIConfig()
 
     base_path = api_config.base_path
-    path = f"/configurations"
-    headers = {
-        "Content-Type": "application/json",
-        "Accept": "application/json",
-        "Authorization": f"Bearer { api_config.get_access_token() }",
-    }
-    query_params: Dict[str, Any] = {"name": name, "env": env, "tags": tags}
-
-    query_params = {
-        key: value for (key, value) in query_params.items() if value is not None
-    }
-
-    async with httpx.AsyncClient(
-        base_url=base_path, verify=api_config.verify
-    ) as client:
-        response = await client.request(
-            "get",
-            httpx.URL(path),
-            headers=headers,
-            params=query_params,
-        )
-
-    if response.status_code != 200:
-        raise HTTPException(
-            response.status_code,
-            f"getConfigurations failed with status code: {response.status_code}",
-        )
-    else:
-        body = None if 200 == 204 else response.json()
-
-    return [GetConfigurationsResponse(**item) for item in body]
-
-
-async def createConfiguration(
-    api_config_override: Optional[APIConfig] = None, *, data: CreateConfigurationRequest
-) -> CreateConfigurationResponse:
-    api_config = api_config_override if api_config_override else APIConfig()
-
-    base_path = api_config.base_path
-    path = f"/configurations"
+    path = f"/tools"
     headers = {
         "Content-Type": "application/json",
         "Accept": "application/json",
@@ -67,10 +22,45 @@ async def createConfiguration(
         key: value for (key, value) in query_params.items() if value is not None
     }
 
-    async with httpx.AsyncClient(
-        base_url=base_path, verify=api_config.verify
-    ) as client:
-        response = await client.request(
+    with httpx.Client(base_url=base_path, verify=api_config.verify) as client:
+        response = client.request(
+            "get",
+            httpx.URL(path),
+            headers=headers,
+            params=query_params,
+        )
+
+    if response.status_code != 200:
+        raise HTTPException(
+            response.status_code,
+            f"getTools failed with status code: {response.status_code}",
+        )
+    else:
+        body = None if 200 == 204 else response.json()
+
+    return [GetToolsResponse(**item) for item in body]
+
+
+def createTool(
+    api_config_override: Optional[APIConfig] = None, *, data: CreateToolRequest
+) -> CreateToolResponse:
+    api_config = api_config_override if api_config_override else APIConfig()
+
+    base_path = api_config.base_path
+    path = f"/tools"
+    headers = {
+        "Content-Type": "application/json",
+        "Accept": "application/json",
+        "Authorization": f"Bearer { api_config.get_access_token() }",
+    }
+    query_params: Dict[str, Any] = {}
+
+    query_params = {
+        key: value for (key, value) in query_params.items() if value is not None
+    }
+
+    with httpx.Client(base_url=base_path, verify=api_config.verify) as client:
+        response = client.request(
             "post",
             httpx.URL(path),
             headers=headers,
@@ -81,28 +71,21 @@ async def createConfiguration(
     if response.status_code != 200:
         raise HTTPException(
             response.status_code,
-            f"createConfiguration failed with status code: {response.status_code}",
+            f"createTool failed with status code: {response.status_code}",
         )
     else:
         body = None if 200 == 204 else response.json()
 
-    return (
-        CreateConfigurationResponse(**body)
-        if body is not None
-        else CreateConfigurationResponse()
-    )
+    return CreateToolResponse(**body) if body is not None else CreateToolResponse()
 
 
-async def updateConfiguration(
-    api_config_override: Optional[APIConfig] = None,
-    *,
-    id: str,
-    data: UpdateConfigurationRequest,
-) -> UpdateConfigurationResponse:
+def updateTool(
+    api_config_override: Optional[APIConfig] = None, *, data: UpdateToolRequest
+) -> UpdateToolResponse:
     api_config = api_config_override if api_config_override else APIConfig()
 
     base_path = api_config.base_path
-    path = f"/configurations/{id}"
+    path = f"/tools"
     headers = {
         "Content-Type": "application/json",
         "Accept": "application/json",
@@ -114,10 +97,8 @@ async def updateConfiguration(
         key: value for (key, value) in query_params.items() if value is not None
     }
 
-    async with httpx.AsyncClient(
-        base_url=base_path, verify=api_config.verify
-    ) as client:
-        response = await client.request(
+    with httpx.Client(base_url=base_path, verify=api_config.verify) as client:
+        response = client.request(
             "put",
             httpx.URL(path),
             headers=headers,
@@ -128,40 +109,34 @@ async def updateConfiguration(
     if response.status_code != 200:
         raise HTTPException(
             response.status_code,
-            f"updateConfiguration failed with status code: {response.status_code}",
+            f"updateTool failed with status code: {response.status_code}",
         )
     else:
         body = None if 200 == 204 else response.json()
 
-    return (
-        UpdateConfigurationResponse(**body)
-        if body is not None
-        else UpdateConfigurationResponse()
-    )
+    return UpdateToolResponse(**body) if body is not None else UpdateToolResponse()
 
 
-async def deleteConfiguration(
-    api_config_override: Optional[APIConfig] = None, *, id: str
-) -> DeleteConfigurationResponse:
+def deleteTool(
+    api_config_override: Optional[APIConfig] = None, *, function_id: str
+) -> DeleteToolResponse:
     api_config = api_config_override if api_config_override else APIConfig()
 
     base_path = api_config.base_path
-    path = f"/configurations/{id}"
+    path = f"/tools"
     headers = {
         "Content-Type": "application/json",
         "Accept": "application/json",
         "Authorization": f"Bearer { api_config.get_access_token() }",
     }
-    query_params: Dict[str, Any] = {}
+    query_params: Dict[str, Any] = {"function_id": function_id}
 
     query_params = {
         key: value for (key, value) in query_params.items() if value is not None
     }
 
-    async with httpx.AsyncClient(
-        base_url=base_path, verify=api_config.verify
-    ) as client:
-        response = await client.request(
+    with httpx.Client(base_url=base_path, verify=api_config.verify) as client:
+        response = client.request(
             "delete",
             httpx.URL(path),
             headers=headers,
@@ -171,13 +146,9 @@ async def deleteConfiguration(
     if response.status_code != 200:
         raise HTTPException(
             response.status_code,
-            f"deleteConfiguration failed with status code: {response.status_code}",
+            f"deleteTool failed with status code: {response.status_code}",
         )
     else:
         body = None if 200 == 204 else response.json()
 
-    return (
-        DeleteConfigurationResponse(**body)
-        if body is not None
-        else DeleteConfigurationResponse()
-    )
+    return DeleteToolResponse(**body) if body is not None else DeleteToolResponse()
