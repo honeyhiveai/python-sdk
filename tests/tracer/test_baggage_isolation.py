@@ -133,7 +133,7 @@ class TestBaggageIsolation:
         with tracer1.start_span("span-1"):
             ctx1 = context.get_current()
             tracer1_id_in_baggage = baggage.get_baggage("honeyhive_tracer_id", ctx1)
-            assert tracer1_id_in_baggage == tracer1.tracer_id
+            assert tracer1_id_in_baggage == tracer1._tracer_id
 
             # Use tracer 2 in nested context
             with tracer2.start_span("span-2"):
@@ -141,10 +141,10 @@ class TestBaggageIsolation:
                 tracer2_id_in_baggage = baggage.get_baggage("honeyhive_tracer_id", ctx2)
 
                 # Tracer 2 should have its own ID in baggage
-                assert tracer2_id_in_baggage == tracer2.tracer_id
+                assert tracer2_id_in_baggage == tracer2._tracer_id
 
                 # Verify they're different
-                assert tracer1.tracer_id != tracer2.tracer_id
+                assert tracer1._tracer_id != tracer2._tracer_id
 
     def test_nested_spans_preserve_baggage(self) -> None:
         """Test nested spans preserve baggage context."""
@@ -199,7 +199,7 @@ class TestTracerDiscoveryViaBaggage:
 
             # Should find the tracer
             if discovered:  # May be None in some test environments
-                assert discovered.tracer_id == tracer._tracer_id
+                assert discovered._tracer_id == tracer._tracer_id
                 assert discovered.project_name == tracer.project_name
 
     def test_no_tracer_returns_none(self) -> None:
@@ -234,7 +234,7 @@ class TestTracerDiscoveryViaBaggage:
             discovered = get_tracer_from_baggage()
 
             if discovered:
-                assert discovered.tracer_id == tracer._tracer_id
+                assert discovered._tracer_id == tracer._tracer_id
 
                 # Evaluation context should also be in baggage
                 ctx = context.get_current()
@@ -303,7 +303,7 @@ class TestBaggagePropagationIntegration:
                 ctx_a = context.get_current()
                 assert (
                     baggage.get_baggage("honeyhive_tracer_id", ctx_a)
-                    == tracer_a.tracer_id
+                    == tracer_a._tracer_id
                 )
 
         # Use tracer B (separate context)
@@ -315,8 +315,8 @@ class TestBaggagePropagationIntegration:
                 ctx_b = context.get_current()
                 assert (
                     baggage.get_baggage("honeyhive_tracer_id", ctx_b)
-                    == tracer_b.tracer_id
+                    == tracer_b._tracer_id
                 )
 
         # Verify they were different
-        assert tracer_a.tracer_id != tracer_b.tracer_id
+        assert tracer_a._tracer_id != tracer_b._tracer_id
