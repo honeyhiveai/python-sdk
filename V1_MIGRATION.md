@@ -255,7 +255,7 @@ The version number in `pyproject.toml` determines which client is included.
 - [x] Phase 2: Create minimal `openapi/v1.yaml`
 - [x] Phase 3: Create v1 generation script
 - [x] Phase 3: Add `make generate-v1` target
-- [ ] Phase 4: Configure hatch build exclusions
-- [ ] Phase 4: Test local builds of both versions
+- [x] Phase 4: Configure hatch build exclusions
+- [x] Phase 4: Test local builds of both versions
 - [ ] Phase 5: Set up CI/CD for dual publishing
 - [ ] Phase 6: Import full v1 spec and regenerate

@@ -1,4 +1,4 @@
-.PHONY: help install install-dev test test-all test-unit test-integration check-integration lint format check check-format check-lint typecheck check-docs check-docs-compliance check-feature-sync check-tracer-patterns check-no-mocks docs docs-serve docs-clean generate-v0-client generate-v1-client generate-sdk compare-sdk clean clean-all
+.PHONY: help install install-dev test test-all test-unit test-integration check-integration lint format check check-format check-lint typecheck check-docs check-docs-compliance check-feature-sync check-tracer-patterns check-no-mocks docs docs-serve docs-clean generate-v0-client generate-v1-client generate-sdk compare-sdk build-v0 build-v1 inspect-package clean clean-all
 
 # Default target
 help:
@@ -42,6 +42,11 @@ help:
 	@echo "  make generate-v1-client - Generate v1 client from OpenAPI spec (openapi-python-client)"
 	@echo "  make generate-sdk    - Generate full SDK for comparison (openapi-python-client)"
 	@echo "  make compare-sdk     - Compare generated SDK with current implementation"
+	@echo ""
+	@echo "Package Building:"
+	@echo "  make build-v0        - Build v0.x package (excludes _v1/)"
+	@echo "  make build-v1        - Build v1.x package (excludes _v0/)"
+	@echo "  make inspect-package - Inspect contents of built package"
 	@echo ""
 	@echo "Maintenance:"
 	@echo "  make clean           - Remove build artifacts"
@@ -143,6 +148,35 @@ compare-sdk:
 		exit 1; \
 	fi
 	python comparison_output/full_sdk/compare_with_current.py
+
+# Package Building
+build-v0:
+	@echo "📦 Building v0.x package (excluding _v1/)..."
+	rm -rf dist/
+	python -m build --no-isolation --wheel
+	@echo "🔧 Removing _v1/ from wheel..."
+	python scripts/filter_wheel.py dist/*.whl --exclude "_v1"
+	@echo "✅ v0 package built in dist/"
+
+build-v1:
+	@echo "📦 Building v1.x package (excluding _v0/)..."
+	rm -rf dist/
+	python -m build --no-isolation --wheel
+	@echo "🔧 Removing _v0/ from wheel..."
+	python scripts/filter_wheel.py dist/*.whl --exclude "_v0"
+	@echo "✅ v1 package built in dist/"
+
+inspect-package:
+	@echo "📋 Inspecting built package contents..."
+	@if [ ! -d "dist" ]; then \
+		echo "❌ No dist/ directory. Run 'make build-v0' or 'make build-v1' first."; \
+		exit 1; \
+	fi
+	@for whl in dist/*.whl; do \
+		echo ""; \
+		echo "=== Contents of $$whl ==="; \
+		unzip -l "$$whl" | grep -E "honeyhive/(_v0|_v1|api|models)" | head -30; \
+	done
 
 # Maintenance
 clean:

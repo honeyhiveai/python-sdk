@@ -58,6 +58,8 @@ dev = [
     "datamodel-code-generator==0.25.0",  # For model generation from OpenAPI spec (pinned to match original generation)
     "openapi-python-client>=0.28.0",  # For SDK generation
     "docker>=7.0.0",  # For Lambda container tests
+    "build>=1.0.0",  # For building packages
+    "hatchling>=1.18.0",  # Build backend
 ]
 
 # Documentation
@@ -212,6 +214,12 @@ path = "src/honeyhive/__init__.py"
 
 [tool.hatch.build.targets.wheel]
 packages = ["src/honeyhive"]
+
+[tool.hatch.build.targets.wheel.hooks.custom]
+path = "hatch_build.py"
+
+[tool.hatch.build.targets.sdist.hooks.custom]
+path = "hatch_build.py"
 
 [tool.black]
 line-length = 88
