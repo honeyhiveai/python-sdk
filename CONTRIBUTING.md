@@ -34,17 +34,34 @@ The Maintainers
 **Option A: Nix Flakes (Recommended)**
 
 ```bash
+git clone https://github.com/honeyhiveai/python-sdk.git
 cd python-sdk
-direnv allow  # One-time setup - automatically configures environment
+
+# Allow direnv (one-time setup)
+direnv allow
+
+# That's it! Environment automatically configured with:
+# - Python 3.12
+# - All dev dependencies
+# - Tox environments
 ```
+
+See [NIX_SETUP.md](NIX_SETUP.md) for full details on the Nix development environment.
 
 **Option B: Traditional Setup**
 
 ```bash
+git clone https://github.com/honeyhiveai/python-sdk.git
 cd python-sdk
+
+# Create and activate virtual environment named 'python-sdk' (required)
 python -m venv python-sdk
-source python-sdk/bin/activate
+source python-sdk/bin/activate  # On Windows: python-sdk\Scripts\activate
+
+# Install in development mode with all dependencies
 pip install -e ".[dev,docs]"
+
+# Set up development environment (installs tools, runs verification)
 ./scripts/setup-dev.sh
 ```
 
@@ -57,18 +74,27 @@ make help
 ```
 
 Key commands:
-- `make check` - Run all comprehensive checks (everything that was in pre-commit)
+- `make check` - Run all comprehensive checks (format, lint, tests, docs, validation)
 - `make test` - Run all tests
-- `make format` - Format code
+- `make format` - Format code with Black and isort
+- `make lint` - Run linting checks
 - `make generate-sdk` - Generate SDK from OpenAPI spec
 
-### Pre-commit Hooks
+### Code Quality Checks
 
-Pre-commit hooks are **fast** (runs in seconds) and automatically enforce:
+Before pushing code, run:
+```bash
+make check
+```
+
+This runs all quality checks:
 - ✅ Black formatting
 - ✅ Import sorting (isort)
 - ✅ Static analysis (pylint + mypy)
-- ✅ YAML validation
 - ✅ Unit tests (fast, mocked)
+- ✅ Integration test validation
+- ✅ Documentation builds
+- ✅ Tracer pattern validation
+- ✅ Feature documentation sync
 
-**Heavy checks moved to Makefile**: Integration tests, documentation builds, and compliance checks are now run via `make check-all` instead of on every commit. This makes commits fast while still allowing comprehensive validation when needed.
+All these checks also run automatically in CI when you push or create a pull request.

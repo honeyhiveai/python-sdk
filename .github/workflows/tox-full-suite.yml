@@ -165,6 +165,16 @@ jobs:
           echo "✨ Running format checks..."
           tox -e format
 
+      - name: Validate tracer patterns
+        run: |
+          echo "🔍 Validating tracer patterns..."
+          bash scripts/validate-tracer-patterns.sh
+
+      - name: Check feature documentation sync
+        run: |
+          echo "📋 Checking feature documentation synchronization..."
+          python scripts/check-feature-sync.py
+
       - name: Build documentation
         run: |
           echo "📚 Building documentation..."
@@ -218,6 +228,11 @@ jobs:
           else
             echo "has_honeyhive_key=false" >> $GITHUB_OUTPUT
           fi
+
+      - name: Validate no mocks in integration tests
+        run: |
+          echo "🔍 Validating integration tests use real APIs (no mocks)..."
+          bash scripts/validate-no-mocks-integration.sh
 
       - name: Run integration tests with real APIs (NO MOCKS)
         if: steps.check_credentials.outputs.has_honeyhive_key == 'true'

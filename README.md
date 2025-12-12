@@ -75,69 +75,6 @@ pip install honeyhive
 
 For detailed guidance on including HoneyHive in your `pyproject.toml`, see our [pyproject.toml Integration Guide](https://honeyhiveai.github.io/python-sdk/how-to/deployment/pyproject-integration.html).
 
-### Development Installation
-
-**Option A: Nix Flakes (Recommended)**
-
-```bash
-git clone https://github.com/honeyhiveai/python-sdk.git
-cd python-sdk
-
-# Allow direnv (one-time setup)
-direnv allow
-
-# That's it! Environment automatically configured with:
-# - Python 3.12
-# - All dev dependencies
-# - Pre-commit hooks
-```
-
-See [NIX_SETUP.md](NIX_SETUP.md) for full details.
-
-**Option B: Traditional Setup**
-
-```bash
-git clone https://github.com/honeyhiveai/python-sdk.git
-cd python-sdk
-
-# Create and activate virtual environment named 'python-sdk' (required)
-python -m venv python-sdk
-source python-sdk/bin/activate  # On Windows: python-sdk\Scripts\activate
-
-# Install in development mode
-pip install -e .
-
-# 🚨 MANDATORY: Set up development environment (one-time setup)
-./scripts/setup-dev.sh
-
-# Verify setup (should pass all checks)
-tox -e format && tox -e lint
-```
-
-#### Development Environment Setup
-
-**⚠️ CRITICAL: All developers must run the setup script once (unless using Nix):**
-
-```bash
-# This installs pre-commit hooks for automatic code quality enforcement
-./scripts/setup-dev.sh
-```
-
-**Pre-commit hooks automatically enforce:**
-- **Black formatting** (88-character lines)
-- **Import sorting** (isort with black profile)  
-- **Static analysis** (pylint + mypy)
-- **YAML validation** (yamllint with 120-character lines)
-- **Documentation synchronization** (feature docs, changelog)
-- **Tox verification** (format and lint checks)
-
-**Before every commit, the system automatically runs:**
-1. Code formatting and import sorting
-2. Static analysis and type checking
-3. Documentation build verification
-4. Feature documentation synchronization
-5. Mandatory changelog update verification
-
 ## 🔧 Quick Start
 
 ### Basic Usage
@@ -383,3 +320,7 @@ src/honeyhive/
 | `HH_HTTPS_PROXY` | HTTPS proxy URL | `None` |
 | `HH_NO_PROXY` | Proxy bypass list | `None` |
 | `HH_VERIFY_SSL` | SSL verification | `true`
+
+## 🤝 Contributing
+
+Want to contribute to HoneyHive? See [CONTRIBUTING.md](CONTRIBUTING.md) for development setup and guidelines.

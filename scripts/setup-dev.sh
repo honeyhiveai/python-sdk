@@ -1,6 +1,6 @@
 #!/bin/bash
 # Development environment setup script for HoneyHive Python SDK
-# This ensures all developers have consistent tooling and pre-commit hooks
+# This ensures all developers have consistent tooling
 
 set -e
 
@@ -35,11 +35,6 @@ echo "✅ Virtual environment: $VIRTUAL_ENV"
 # Install development dependencies
 echo "📦 Installing development dependencies..."
 pip install -e .
-pip install pre-commit>=3.6.0
-
-# Install pre-commit hooks
-echo "🪝 Installing pre-commit hooks..."
-pre-commit install
 
 # Verify tools are working
 echo "🔍 Verifying development tools..."
@@ -66,9 +61,9 @@ echo ""
 echo "🎉 Development environment setup complete!"
 echo ""
 echo "📋 Next steps:"
-echo "  1. All commits will now automatically run quality checks"
-echo "  2. To manually run checks: tox -e lint && tox -e format"
-echo "  3. To skip pre-commit hooks (emergency only): git commit --no-verify"
+echo "  1. Run 'make check' to validate your changes before committing"
+echo "  2. All checks will run in CI when you push"
+echo "  3. Use 'make help' to see all available commands"
 echo ""
 echo "📚 More info:"
 echo "  - praxis OS standards: .praxis-os/standards/"
