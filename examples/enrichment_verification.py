@@ -47,7 +47,8 @@ def verify_enrichment_data(
         event_user_props = event_data.get("user_properties", {})
         if isinstance(event_user_props, dict):
             results["user_properties_correct"] = all(
-                event_user_props.get(k) == v for k, v in expected_user_properties.items()
+                event_user_props.get(k) == v
+                for k, v in expected_user_properties.items()
             )
         print(f"  User Properties: {event_user_props}")
         print(f"  Expected: {expected_user_properties}")
@@ -170,19 +171,35 @@ def main():
             try:
                 print("\n  📥 Fetching session from API...")
                 session_response = client.sessions.get_session(session_id)
-                event_data = session_response.event.model_dump() if hasattr(session_response, "event") else session_response.event.dict() if hasattr(session_response.event, "dict") else {}
+                event_data = (
+                    session_response.event.model_dump()
+                    if hasattr(session_response, "event")
+                    else (
+                        session_response.event.dict()
+                        if hasattr(session_response.event, "dict")
+                        else {}
+                    )
+                )
 
                 print("\n  🔍 Verifying Session Enrichment:")
                 print("-" * 40)
                 results = verify_enrichment_data(
                     event_data,
-                    expected_user_properties={"user_id": "test-user-456", "tier": "enterprise"},
+                    expected_user_properties={
+                        "user_id": "test-user-456",
+                        "tier": "enterprise",
+                    },
                     expected_metrics={"session_duration_ms": 500},
-                    expected_metadata={"source": "enrichment_test", "test_id": "session_test_1"},
+                    expected_metadata={
+                        "source": "enrichment_test",
+                        "test_id": "session_test_1",
+                    },
                 )
 
                 print("\n  📊 Session Verification Results:")
-                print(f"    User Properties Correct: {results['user_properties_correct']}")
+                print(
+                    f"    User Properties Correct: {results['user_properties_correct']}"
+                )
                 print(f"    Metrics Correct: {results['metrics_correct']}")
                 print(f"    Metadata Correct: {results['metadata_correct']}")
 
@@ -194,7 +211,9 @@ def main():
 
             except Exception as e:
                 print(f"\n  ⚠️  Could not fetch session: {e}")
-                print("     This is expected if HH_API_KEY is not set or API is unavailable")
+                print(
+                    "     This is expected if HH_API_KEY is not set or API is unavailable"
+                )
     else:
         print("  ⚠️  Could not start session")
 
@@ -208,14 +227,14 @@ def main():
             print("  📥 Fetching recent events...")
             # Wait a bit more for OTLP export to complete
             time.sleep(3)
-            
+
             # Use a simpler approach - list events by session_id
             # The span should be associated with the session
             if session_id:
                 try:
                     # Try to get events for the session
                     from honeyhive.models.generated import EventFilter, Operator
-                    
+
                     # Create a simple filter for session_id
                     filters = [
                         EventFilter(
@@ -234,27 +253,42 @@ def main():
                     events = events_result.get("events", [])
                     if events:
                         print(f"  ✓ Found {len(events)} event(s) for session")
-                        
+
                         # Find the span event (event_type="tool", event_name="enrich_span_test")
                         span_event = None
                         for event in events:
-                            event_dict = event.model_dump() if hasattr(event, "model_dump") else event.dict() if hasattr(event, "dict") else dict(event)
+                            event_dict = (
+                                event.model_dump()
+                                if hasattr(event, "model_dump")
+                                else (
+                                    event.dict()
+                                    if hasattr(event, "dict")
+                                    else dict(event)
+                                )
+                            )
                             if event_dict.get("event_name") == "enrich_span_test":
                                 span_event = event_dict
                                 break
-                        
+
                         if span_event:
                             print("\n  🔍 Verifying Span Enrichment from Backend:")
                             print("-" * 50)
                             print(f"  Event ID: {span_event.get('event_id', 'N/A')}")
-                            print(f"  Event Name: {span_event.get('event_name', 'N/A')}")
-                            print(f"  Event Type: {span_event.get('event_type', 'N/A')}")
+                            print(
+                                f"  Event Name: {span_event.get('event_name', 'N/A')}"
+                            )
+                            print(
+                                f"  Event Type: {span_event.get('event_type', 'N/A')}"
+                            )
 
                             # Check metrics
                             event_metrics = span_event.get("metrics", {})
                             print(f"\n  📊 Metrics in backend event:")
                             print(f"     {event_metrics}")
-                            if event_metrics.get("score") == 0.95 and event_metrics.get("latency_ms") == 150:
+                            if (
+                                event_metrics.get("score") == 0.95
+                                and event_metrics.get("latency_ms") == 150
+                            ):
                                 print("     ✅ Metrics correctly stored!")
                             else:
                                 print("     ⚠️  Metrics mismatch!")
@@ -272,11 +306,16 @@ def main():
                             event_user_props = span_event.get("user_properties", {})
                             print(f"\n  👤 User Properties in backend event:")
                             print(f"     {event_user_props}")
-                            if event_user_props.get("user_id") == "test-user-123" and event_user_props.get("plan") == "premium":
+                            if (
+                                event_user_props.get("user_id") == "test-user-123"
+                                and event_user_props.get("plan") == "premium"
+                            ):
                                 print("     ✅ User Properties correctly stored!")
                             else:
                                 print("     ⚠️  User Properties mismatch!")
-                                print("     Note: For spans, user_properties may be in attributes/honeyhive_user_properties.*")
+                                print(
+                                    "     Note: For spans, user_properties may be in attributes/honeyhive_user_properties.*"
+                                )
                         else:
                             print("  ⚠️  Could not find span event 'enrich_span_test'")
                             print("     This may be because:")
@@ -284,10 +323,13 @@ def main():
                             print("     - Event name doesn't match")
                     else:
                         print("  ⚠️  No events found for session")
-                        print("     This may be because OTLP export hasn't completed yet")
+                        print(
+                            "     This may be because OTLP export hasn't completed yet"
+                        )
                 except Exception as e:
                     print(f"  ⚠️  Error fetching events: {e}")
                     import traceback
+
                     traceback.print_exc()
             else:
                 print("  ⚠️  No session_id available to fetch events")
@@ -295,8 +337,11 @@ def main():
         except Exception as e:
             print(f"\n  ⚠️  Could not fetch events: {e}")
             import traceback
+
             traceback.print_exc()
-            print("     This is expected if HH_API_KEY is not set or API is unavailable")
+            print(
+                "     This is expected if HH_API_KEY is not set or API is unavailable"
+            )
 
     # ========================================================================
     # Summary
@@ -306,15 +351,22 @@ def main():
     print("=" * 60)
     print("\n✅ Enrichment tests completed!")
     print("\nExpected Behavior:")
-    print("  1. enrich_span(user_properties={...}) → Should go to User Properties namespace")
-    print("  2. enrich_span(metrics={...}) → Should go to Automated Evaluations (metrics) namespace")
-    print("  3. enrich_session(user_properties={...}) → Should go to User Properties field (not metadata)")
+    print(
+        "  1. enrich_span(user_properties={...}) → Should go to User Properties namespace"
+    )
+    print(
+        "  2. enrich_span(metrics={...}) → Should go to Automated Evaluations (metrics) namespace"
+    )
+    print(
+        "  3. enrich_session(user_properties={...}) → Should go to User Properties field (not metadata)"
+    )
     print("\nIf verification shows incorrect behavior, there may be a bug in:")
     print("  - enrich_span() routing user_properties/metrics to metadata")
-    print("  - enrich_session() merging user_properties into metadata instead of separate field")
+    print(
+        "  - enrich_session() merging user_properties into metadata instead of separate field"
+    )
     print("\nSee the code comments and verification output above for details.")
 
 
 if __name__ == "__main__":
     main()
-

@@ -17,9 +17,7 @@ from opentelemetry.baggage.propagation import W3CBaggagePropagator
 from opentelemetry.propagators.composite import CompositePropagator
 from opentelemetry.sdk.resources import Resource
 from opentelemetry.sdk.trace import SpanLimits, TracerProvider
-from opentelemetry.trace.propagation.tracecontext import (
-    TraceContextTextMapPropagator,
-)
+from opentelemetry.trace.propagation.tracecontext import TraceContextTextMapPropagator
 
 from ...api.client import HoneyHive
 from ...api.session import SessionAPI

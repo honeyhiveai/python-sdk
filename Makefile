@@ -1,4 +1,4 @@
-.PHONY: help install install-dev test test-fast test-unit test-integration check-integration lint format check check-format check-lint typecheck check-docs check-docs-compliance check-feature-sync check-tracer-patterns check-no-mocks docs docs-serve docs-clean generate-v0-client generate-sdk compare-sdk clean clean-all
+.PHONY: help install install-dev test test-all test-unit test-integration check-integration lint format check check-format check-lint typecheck check-docs check-docs-compliance check-feature-sync check-tracer-patterns check-no-mocks docs docs-serve docs-clean generate-v0-client generate-sdk compare-sdk clean clean-all
 
 # Default target
 help:
@@ -11,10 +11,10 @@ help:
 	@echo "  make setup           - Run initial development setup"
 	@echo ""
 	@echo "Testing:"
-	@echo "  make test            - Run all tests"
-	@echo "  make test-fast       - Run tests in parallel"
+	@echo "  make test            - Run tests in parallel (unit, tracer, compatibility - no external deps)"
+	@echo "  make test-all        - Run ALL tests in parallel (requires .env with API credentials)"
 	@echo "  make test-unit       - Run unit tests only"
-	@echo "  make test-integration - Run integration tests only"
+	@echo "  make test-integration - Run integration tests only (requires .env)"
 	@echo ""
 	@echo "Code Quality:"
 	@echo "  make format          - Format code with black and isort"
@@ -57,17 +57,20 @@ setup:
 	./scripts/setup-dev.sh
 
 # Testing
+# Default test target runs tests that don't require external dependencies
+# (no .env file, no Docker, no real API credentials needed)
+# Uses parallel execution (-n auto) for speed
 test:
-	pytest
+	pytest tests/unit/ tests/tracer/ tests/compatibility/ -n auto
 
-test-fast:
+test-all:
 	pytest -n auto
 
 test-integration:
 	pytest tests/integration/
 
 test-unit:
-	pytest tests/unit/
+	pytest tests/unit/ -n auto
 
 check-integration:
 	@echo "Running comprehensive integration test checks..."
@@ -75,8 +78,8 @@ check-integration:
 
 # Code Quality
 format:
-	black src tests
-	isort src tests
+	black src tests examples scripts
+	isort src tests examples scripts
 
 lint:
 	tox -e lint
@@ -124,6 +127,7 @@ docs-clean:
 # SDK Generation
 generate-v0-client:
 	python scripts/generate_v0_models.py
+	$(MAKE) format
 
 generate-sdk:
 	python scripts/generate_models_and_client.py
@@ -146,4 +150,4 @@ clean:
 	rm -rf build/ dist/ comparison_output/
 
 clean-all: clean
-	rm -rf .venv/ python-sdk/ .direnv/
+	rm -rf .venv/ python-sdk/ .direnv/ .tox/

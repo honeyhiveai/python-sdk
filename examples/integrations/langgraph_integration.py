@@ -42,6 +42,7 @@ async def main():
         from langchain_openai import ChatOpenAI
         from langgraph.graph import END, START, StateGraph
         from openinference.instrumentation.langchain import LangChainInstrumentor
+
         from honeyhive import HoneyHiveTracer
         from honeyhive.tracer.instrumentation.decorators import trace
 
@@ -59,7 +60,7 @@ async def main():
             api_key=hh_api_key,
             project=hh_project,
             session_name=Path(__file__).stem,  # Use filename as session name
-            source="langgraph_example"
+            source="langgraph_example",
         )
         print("✓ HoneyHive tracer initialized")
 
@@ -99,12 +100,15 @@ async def main():
     except ImportError as e:
         print(f"❌ Import error: {e}")
         print("\n💡 Install required packages:")
-        print("   pip install honeyhive langgraph langchain-openai openinference-instrumentation-langchain")
+        print(
+            "   pip install honeyhive langgraph langchain-openai openinference-instrumentation-langchain"
+        )
         return False
 
     except Exception as e:
         print(f"❌ Example failed: {e}")
         import traceback
+
         traceback.print_exc()
         return False
 
@@ -114,6 +118,7 @@ async def test_basic_graph(tracer: "HoneyHiveTracer", model: "ChatOpenAI") -> st
 
     from langchain_openai import ChatOpenAI
     from langgraph.graph import END, START, StateGraph
+
     from honeyhive.tracer.instrumentation.decorators import trace
 
     # Define state schema
@@ -149,7 +154,7 @@ async def test_basic_graph(tracer: "HoneyHiveTracer", model: "ChatOpenAI") -> st
 
     # Execute the graph - all operations will be logged to HoneyHive
     result = await graph.ainvoke({"message": "", "response": ""})
-    
+
     return result.get("response", "No response")
 
 
@@ -158,6 +163,7 @@ async def test_conditional_graph(tracer: "HoneyHiveTracer", model: "ChatOpenAI")
 
     from langchain_openai import ChatOpenAI
     from langgraph.graph import END, START, StateGraph
+
     from honeyhive.tracer.instrumentation.decorators import trace
 
     # Define state schema
@@ -183,20 +189,24 @@ async def test_conditional_graph(tracer: "HoneyHiveTracer", model: "ChatOpenAI")
     def handle_technical(state: ConditionalState) -> ConditionalState:
         """Handle technical questions with detailed response."""
         question = state["question"]
-        response = model.invoke(
-            f"Provide a technical, detailed answer to: {question}"
-        )
-        return {"question": question, "category": state["category"], "response": response.content}
+        response = model.invoke(f"Provide a technical, detailed answer to: {question}")
+        return {
+            "question": question,
+            "category": state["category"],
+            "response": response.content,
+        }
 
     # Node 3: Handle general questions
     @trace(event_type="tool", event_name="handle_general_node", tracer=tracer)
     def handle_general(state: ConditionalState) -> ConditionalState:
         """Handle general questions with simple response."""
         question = state["question"]
-        response = model.invoke(
-            f"Provide a brief, friendly answer to: {question}"
-        )
-        return {"question": question, "category": state["category"], "response": response.content}
+        response = model.invoke(f"Provide a brief, friendly answer to: {question}")
+        return {
+            "question": question,
+            "category": state["category"],
+            "response": response.content,
+        }
 
     # Routing function
     def route_question(state: ConditionalState) -> str:
@@ -222,12 +232,10 @@ async def test_conditional_graph(tracer: "HoneyHiveTracer", model: "ChatOpenAI")
     graph = workflow.compile()
 
     # Test with a technical question
-    result = await graph.ainvoke({
-        "question": "How does machine learning work?",
-        "category": "",
-        "response": ""
-    })
-    
+    result = await graph.ainvoke(
+        {"question": "How does machine learning work?", "category": "", "response": ""}
+    )
+
     return result.get("response", "No response")
 
 
@@ -236,6 +244,7 @@ async def test_agent_graph(tracer: "HoneyHiveTracer", model: "ChatOpenAI") -> st
 
     from langchain_openai import ChatOpenAI
     from langgraph.graph import END, START, StateGraph
+
     from honeyhive.tracer.instrumentation.decorators import trace
 
     # Define state schema
@@ -259,7 +268,7 @@ async def test_agent_graph(tracer: "HoneyHiveTracer", model: "ChatOpenAI") -> st
             "plan": response.content,
             "research": "",
             "answer": "",
-            "iterations": state.get("iterations", 0)
+            "iterations": state.get("iterations", 0),
         }
 
     # Node 2: Gather information
@@ -277,7 +286,7 @@ async def test_agent_graph(tracer: "HoneyHiveTracer", model: "ChatOpenAI") -> st
             "plan": plan,
             "research": response.content,
             "answer": "",
-            "iterations": state.get("iterations", 0) + 1
+            "iterations": state.get("iterations", 0) + 1,
         }
 
     # Node 3: Synthesize answer
@@ -296,7 +305,7 @@ async def test_agent_graph(tracer: "HoneyHiveTracer", model: "ChatOpenAI") -> st
             "plan": state["plan"],
             "research": research,
             "answer": response.content,
-            "iterations": state.get("iterations", 0)
+            "iterations": state.get("iterations", 0),
         }
 
     # Node 4: Evaluate if answer is sufficient
@@ -334,14 +343,16 @@ async def test_agent_graph(tracer: "HoneyHiveTracer", model: "ChatOpenAI") -> st
     graph = workflow.compile()
 
     # Execute the agent graph
-    result = await graph.ainvoke({
-        "input": "What are the benefits of renewable energy?",
-        "plan": "",
-        "research": "",
-        "answer": "",
-        "iterations": 0
-    })
-    
+    result = await graph.ainvoke(
+        {
+            "input": "What are the benefits of renewable energy?",
+            "plan": "",
+            "research": "",
+            "answer": "",
+            "iterations": 0,
+        }
+    )
+
     return result.get("answer", "No answer generated")
 
 
@@ -355,4 +366,3 @@ if __name__ == "__main__":
     else:
         print("\n❌ Example failed!")
         sys.exit(1)
-

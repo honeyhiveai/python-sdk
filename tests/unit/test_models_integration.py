@@ -40,9 +40,7 @@ from honeyhive.models import (
     TracingParams,
     UUIDType,
 )
-from honeyhive.models.generated import (
-    CallType,
-)
+from honeyhive.models.generated import CallType
 from honeyhive.models.generated import EventType as GeneratedEventType
 from honeyhive.models.generated import (
     EventType1,

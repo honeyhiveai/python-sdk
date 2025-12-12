@@ -2,11 +2,7 @@
 
 from typing import List, Optional
 
-from ..models import (
-    Configuration,
-    PostConfigurationRequest,
-    PutConfigurationRequest,
-)
+from ..models import Configuration, PostConfigurationRequest, PutConfigurationRequest
 from .base import BaseAPI
 
 

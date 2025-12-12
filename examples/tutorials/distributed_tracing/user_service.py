@@ -3,16 +3,18 @@
 This service validates users and calls the LLM service, propagating trace context.
 """
 
-from flask import Flask, request, jsonify
+import os
+
+import requests
+from flask import Flask, jsonify, request
+from opentelemetry import context
+
 from honeyhive import HoneyHiveTracer, trace
+from honeyhive.models import EventType
 from honeyhive.tracer.processing.context import (
     extract_context_from_carrier,
     inject_context_into_carrier,
 )
-from honeyhive.models import EventType
-from opentelemetry import context
-import requests
-import os
 
 # Initialize HoneyHive tracer
 tracer = HoneyHiveTracer.init(
@@ -39,7 +41,11 @@ def process():
         """Validate user and call LLM service."""
 
         tracer.enrich_span(
-            {"service": "user-service", "user_id": user_id, "operation": "process_request"}
+            {
+                "service": "user-service",
+                "user_id": user_id,
+                "operation": "process_request",
+            }
         )
 
         # Step 1: Validate user
@@ -101,6 +107,7 @@ def health():
 
 if __name__ == "__main__":
     print("👤 User Service starting on port 5001...")
-    print("Environment: HH_API_KEY =", "✓ Set" if os.getenv("HH_API_KEY") else "✗ Missing")
+    print(
+        "Environment: HH_API_KEY =", "✓ Set" if os.getenv("HH_API_KEY") else "✗ Missing"
+    )
     app.run(port=5001, debug=True, use_reloader=False)
-

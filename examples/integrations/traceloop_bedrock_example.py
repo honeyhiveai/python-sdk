@@ -11,19 +11,19 @@ Requirements:
 - Set environment variables: HH_API_KEY, AWS_ACCESS_KEY_ID, AWS_SECRET_ACCESS_KEY
 """
 
-import os
 import json
-from typing import Dict, Any, List
-
-# Import HoneyHive components
-from honeyhive import HoneyHiveTracer, trace, enrich_span
-from honeyhive.models import EventType
+import os
+from typing import Any, Dict, List
 
 # Import AWS Bedrock SDK
 import boto3
 
 # Import OpenLLMetry Bedrock instrumentor
 from opentelemetry.instrumentation.bedrock import BedrockInstrumentor
+
+# Import HoneyHive components
+from honeyhive import HoneyHiveTracer, enrich_span, trace
+from honeyhive.models import EventType
 
 
 def setup_tracing() -> HoneyHiveTracer:

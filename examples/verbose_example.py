@@ -15,7 +15,8 @@ Key features demonstrated:
 
 import os
 import time
-from typing import Dict, Any
+from typing import Any, Dict
+
 from honeyhive import HoneyHive, HoneyHiveTracer
 
 # Set environment variables for configuration

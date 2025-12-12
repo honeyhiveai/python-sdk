@@ -111,7 +111,7 @@ def extract_core_components_from_codebase() -> Set[str]:
 def check_documentation_build() -> bool:
     """Check if documentation builds successfully with enhanced error reporting."""
     print("🔍 Checking documentation build...")
-    
+
     # Check for existing build artifacts that might cause conflicts
     build_dir = Path("docs/_build")
     if build_dir.exists():
@@ -119,11 +119,12 @@ def check_documentation_build() -> bool:
         try:
             # Try to clean up existing build
             import shutil
+
             shutil.rmtree(build_dir)
             print("   Cleaned up existing build directory")
         except Exception as e:
             print(f"   Warning: Could not clean build directory: {e}")
-    
+
     # Use subprocess for better error handling and output capture
     start_time = time.time()
     try:
@@ -133,11 +134,11 @@ def check_documentation_build() -> bool:
             capture_output=True,
             text=True,
             timeout=180,  # 3 minute timeout
-            cwd=os.getcwd()
+            cwd=os.getcwd(),
         )
         elapsed_time = time.time() - start_time
         print(f"   Build completed in {elapsed_time:.2f} seconds")
-        
+
         if result.returncode == 0:
             print("✅ Documentation builds successfully")
             return True
@@ -146,41 +147,45 @@ def check_documentation_build() -> bool:
             print(f"   Exit code: {result.returncode}")
             print(f"   Working directory: {os.getcwd()}")
             print(f"   Command: tox -e docs")
-            
+
             # Enhanced error reporting
             if result.stdout:
                 print(f"   STDOUT (last 1000 chars):")
                 print(f"   {result.stdout[-1000:]}")
-            
+
             if result.stderr:
                 print(f"   STDERR (last 1000 chars):")
                 print(f"   {result.stderr[-1000:]}")
-            
+
             # Check for common error patterns
             combined_output = (result.stdout or "") + (result.stderr or "")
             if "Directory not empty" in combined_output:
-                print("   🔍 Detected 'Directory not empty' error - likely build artifact conflict")
+                print(
+                    "   🔍 Detected 'Directory not empty' error - likely build artifact conflict"
+                )
             if "Theme error" in combined_output:
-                print("   🔍 Detected 'Theme error' - likely Sphinx configuration issue")
+                print(
+                    "   🔍 Detected 'Theme error' - likely Sphinx configuration issue"
+                )
             if "OSError" in combined_output:
                 print("   🔍 Detected OSError - likely file system or permission issue")
-            
+
             print("   Run 'tox -e docs' manually to see full detailed errors")
             return False
-            
+
     except subprocess.TimeoutExpired as e:
         elapsed_time = time.time() - start_time
         print(f"❌ Documentation build timed out after {elapsed_time:.2f} seconds")
         print("   This may indicate a hanging process or resource contention")
         print("   Run 'tox -e docs' manually to see detailed errors")
         return False
-        
+
     except FileNotFoundError as e:
         print(f"❌ Command not found: {e}")
         print("   Ensure tox is installed and available in PATH")
         print(f"   Current PATH: {os.environ.get('PATH', 'Not set')}")
         return False
-        
+
     except Exception as e:
         print(f"❌ Unexpected error during documentation build: {e}")
         print(f"   Exception type: {type(e).__name__}")
@@ -233,13 +238,13 @@ def main() -> NoReturn:
     print(f"📁 Working directory: {os.getcwd()}")
     print(f"🐍 Python version: {sys.version}")
     print(f"🔧 Process ID: {os.getpid()}")
-    
+
     # Environment diagnostics
     print(f"🌍 Environment variables:")
-    for key in ['VIRTUAL_ENV', 'PATH', 'PYTHONPATH', 'TOX_ENV_NAME']:
-        value = os.environ.get(key, 'Not set')
+    for key in ["VIRTUAL_ENV", "PATH", "PYTHONPATH", "TOX_ENV_NAME"]:
+        value = os.environ.get(key, "Not set")
         print(f"   {key}: {value[:100]}{'...' if len(value) > 100 else ''}")
-    
+
     try:
         # Check if documentation builds
         print(f"\n🔨 Step 1: Documentation Build Check")
@@ -287,7 +292,7 @@ def main() -> NoReturn:
         # Final result
         elapsed_time = time.time() - start_time
         print(f"\n⏱️  Total execution time: {elapsed_time:.2f} seconds")
-        
+
         if build_ok and docs_exist and all_good:
             print("\n✅ Documentation validation passed")
             sys.exit(0)
@@ -302,10 +307,12 @@ def main() -> NoReturn:
             print("2. Fix any documentation build errors: tox -e docs")
             print("3. Update feature documentation to stay synchronized")
             sys.exit(1)
-            
+
     except Exception as e:
         elapsed_time = time.time() - start_time
-        print(f"\n💥 Unexpected error in main execution after {elapsed_time:.2f} seconds:")
+        print(
+            f"\n💥 Unexpected error in main execution after {elapsed_time:.2f} seconds:"
+        )
         print(f"   Exception: {e}")
         print(f"   Type: {type(e).__name__}")
         print(f"   Traceback:")

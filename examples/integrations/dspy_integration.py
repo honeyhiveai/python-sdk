@@ -44,6 +44,7 @@ async def main():
         import dspy
         from openinference.instrumentation.dspy import DSPyInstrumentor
         from openinference.instrumentation.openai import OpenAIInstrumentor
+
         from honeyhive import HoneyHiveTracer
         from honeyhive.tracer.instrumentation.decorators import trace
 
@@ -74,7 +75,7 @@ async def main():
         # 4. Instrument DSPy and OpenAI with HoneyHive tracer
         dspy_instrumentor.instrument(tracer_provider=tracer.provider)
         print("✓ DSPy instrumented with HoneyHive tracer")
-        
+
         openai_instrumentor.instrument(tracer_provider=tracer.provider)
         print("✓ OpenAI instrumented with HoneyHive tracer")
 
@@ -159,12 +160,15 @@ async def main():
     except ImportError as e:
         print(f"❌ Import error: {e}")
         print("\n💡 Install required packages:")
-        print("   pip install honeyhive dspy openinference-instrumentation-dspy openinference-instrumentation-openai")
+        print(
+            "   pip install honeyhive dspy openinference-instrumentation-dspy openinference-instrumentation-openai"
+        )
         return False
 
     except Exception as e:
         print(f"❌ Example failed: {e}")
         import traceback
+
         traceback.print_exc()
         return False
 
@@ -172,52 +176,58 @@ async def main():
 async def test_basic_predict(tracer: "HoneyHiveTracer") -> str:
     """Test 1: Basic Predict module."""
 
-    from honeyhive.tracer.instrumentation.decorators import trace
     import dspy
+
+    from honeyhive.tracer.instrumentation.decorators import trace
 
     @trace(event_type="chain", event_name="test_basic_predict", tracer=tracer)
     def _test():
         # Simple string signature
         predict = dspy.Predict("question -> answer")
-        
+
         response = predict(question="What is the capital of France?")
         return response.answer
-    
+
     return await asyncio.to_thread(_test)
 
 
 async def test_chain_of_thought(tracer: "HoneyHiveTracer") -> str:
     """Test 2: ChainOfThought module for reasoning."""
 
-    from honeyhive.tracer.instrumentation.decorators import trace
     import dspy
+
+    from honeyhive.tracer.instrumentation.decorators import trace
 
     @trace(event_type="chain", event_name="test_chain_of_thought", tracer=tracer)
     def _test():
         # ChainOfThought adds reasoning steps
         cot = dspy.ChainOfThought("question -> answer")
-        
-        response = cot(question="If a train travels at 60 mph for 2.5 hours, how far does it go?")
+
+        response = cot(
+            question="If a train travels at 60 mph for 2.5 hours, how far does it go?"
+        )
         return response.answer
-    
+
     return await asyncio.to_thread(_test)
 
 
 async def test_custom_signature(tracer: "HoneyHiveTracer") -> str:
     """Test 3: Custom signature with typed fields."""
 
-    from honeyhive.tracer.instrumentation.decorators import trace
     import dspy
+
+    from honeyhive.tracer.instrumentation.decorators import trace
 
     class SummarizeSignature(dspy.Signature):
         """Summarize a piece of text into a concise summary."""
+
         text: str = dspy.InputField(desc="The text to summarize")
         summary: str = dspy.OutputField(desc="A concise summary of the text")
 
     @trace(event_type="chain", event_name="test_custom_signature", tracer=tracer)
     def _test():
         summarizer = dspy.Predict(SummarizeSignature)
-        
+
         text = """
         Artificial intelligence (AI) is intelligence demonstrated by machines, 
         in contrast to the natural intelligence displayed by humans and animals. 
@@ -225,18 +235,19 @@ async def test_custom_signature(tracer: "HoneyHiveTracer") -> str:
         any device that perceives its environment and takes actions that maximize 
         its chance of successfully achieving its goals.
         """
-        
+
         response = summarizer(text=text)
         return response.summary
-    
+
     return await asyncio.to_thread(_test)
 
 
 async def test_react_agent(tracer: "HoneyHiveTracer") -> str:
     """Test 4: ReAct agent with tools."""
 
-    from honeyhive.tracer.instrumentation.decorators import trace
     import dspy
+
+    from honeyhive.tracer.instrumentation.decorators import trace
 
     def get_weather(city: str) -> str:
         """Get the current weather for a city."""
@@ -255,40 +266,42 @@ async def test_react_agent(tracer: "HoneyHiveTracer") -> str:
     def _test():
         # ReAct combines reasoning and acting
         react = dspy.ReAct("question -> answer", tools=[get_weather, calculate])
-        
+
         response = react(question="What is 15 * 8?")
         return response.answer
-    
+
     return await asyncio.to_thread(_test)
 
 
 async def test_multi_step_reasoning(tracer: "HoneyHiveTracer") -> str:
     """Test 5: Multi-step reasoning with intermediate steps."""
 
-    from honeyhive.tracer.instrumentation.decorators import trace
     import dspy
+
+    from honeyhive.tracer.instrumentation.decorators import trace
 
     @trace(event_type="chain", event_name="test_multi_step_reasoning", tracer=tracer)
     def _test():
         # Use ChainOfThought for complex reasoning
         cot = dspy.ChainOfThought("problem -> solution")
-        
+
         problem = """
         A farmer has chickens and rabbits. In total, there are 35 heads and 94 legs.
         How many chickens and how many rabbits does the farmer have?
         """
-        
+
         response = cot(problem=problem)
         return response.solution
-    
+
     return await asyncio.to_thread(_test)
 
 
 async def test_custom_module(tracer: "HoneyHiveTracer") -> str:
     """Test 6: Custom DSPy module."""
 
-    from honeyhive.tracer.instrumentation.decorators import trace
     import dspy
+
+    from honeyhive.tracer.instrumentation.decorators import trace
 
     class QuestionAnswerModule(dspy.Module):
         def __init__(self):
@@ -301,50 +314,55 @@ async def test_custom_module(tracer: "HoneyHiveTracer") -> str:
     @trace(event_type="chain", event_name="test_custom_module", tracer=tracer)
     def _test():
         qa_module = QuestionAnswerModule()
-        
+
         context = """
         The Eiffel Tower is a wrought-iron lattice tower on the Champ de Mars in Paris, France.
         It is named after the engineer Gustave Eiffel, whose company designed and built the tower.
         Constructed from 1887 to 1889, it was initially criticized but has become a global 
         cultural icon of France and one of the most recognizable structures in the world.
         """
-        
+
         question = "Who designed the Eiffel Tower?"
-        
+
         response = qa_module(context=context, question=question)
         return response.answer
-    
+
     return await asyncio.to_thread(_test)
 
 
 async def test_classification(tracer: "HoneyHiveTracer") -> str:
     """Test 7: Text classification."""
 
-    from honeyhive.tracer.instrumentation.decorators import trace
     import dspy
+
+    from honeyhive.tracer.instrumentation.decorators import trace
 
     class ClassifySignature(dspy.Signature):
         """Classify text into a sentiment category."""
+
         text: str = dspy.InputField(desc="The text to classify")
-        sentiment: str = dspy.OutputField(desc="The sentiment: positive, negative, or neutral")
+        sentiment: str = dspy.OutputField(
+            desc="The sentiment: positive, negative, or neutral"
+        )
 
     @trace(event_type="chain", event_name="test_classification", tracer=tracer)
     def _test():
         classifier = dspy.Predict(ClassifySignature)
-        
+
         text = "I absolutely loved this product! It exceeded all my expectations."
-        
+
         response = classifier(text=text)
         return response.sentiment
-    
+
     return await asyncio.to_thread(_test)
 
 
 async def test_retrieval(tracer: "HoneyHiveTracer") -> str:
     """Test 8: Simulated retrieval-augmented generation."""
 
-    from honeyhive.tracer.instrumentation.decorators import trace
     import dspy
+
+    from honeyhive.tracer.instrumentation.decorators import trace
 
     class RAGModule(dspy.Module):
         def __init__(self):
@@ -358,27 +376,29 @@ async def test_retrieval(tracer: "HoneyHiveTracer") -> str:
             It emphasizes code readability with significant indentation.
             Python is dynamically-typed and garbage-collected.
             """
-            
+
             return self.generate_answer(context=context, query=query)
 
     @trace(event_type="chain", event_name="test_retrieval", tracer=tracer)
     def _test():
         rag = RAGModule()
-        
+
         response = rag(query="Who created Python and when?")
         return response.answer
-    
+
     return await asyncio.to_thread(_test)
 
 
 async def test_bootstrap_optimizer(tracer: "HoneyHiveTracer") -> int:
     """Test 9: BootstrapFewShot optimizer for program optimization."""
 
-    from honeyhive.tracer.instrumentation.decorators import trace
     import dspy
+
+    from honeyhive.tracer.instrumentation.decorators import trace
 
     class QASignature(dspy.Signature):
         """Answer questions accurately."""
+
         question: str = dspy.InputField()
         answer: str = dspy.OutputField()
 
@@ -386,164 +406,164 @@ async def test_bootstrap_optimizer(tracer: "HoneyHiveTracer") -> int:
     def _test():
         # Create a simple QA program
         qa_program = dspy.Predict(QASignature)
-        
+
         # Create training examples
         trainset = [
             dspy.Example(
-                question="What is the capital of France?",
-                answer="Paris"
+                question="What is the capital of France?", answer="Paris"
             ).with_inputs("question"),
-            dspy.Example(
-                question="What is 2+2?",
-                answer="4"
-            ).with_inputs("question"),
-            dspy.Example(
-                question="What color is the sky?",
-                answer="Blue"
-            ).with_inputs("question"),
+            dspy.Example(question="What is 2+2?", answer="4").with_inputs("question"),
+            dspy.Example(question="What color is the sky?", answer="Blue").with_inputs(
+                "question"
+            ),
         ]
-        
+
         # Define a simple metric
         def qa_metric(example, pred, trace=None):
             return example.answer.lower() in pred.answer.lower()
-        
+
         # Use BootstrapFewShot optimizer
         try:
-            optimizer = dspy.BootstrapFewShot(metric=qa_metric, max_bootstrapped_demos=2)
+            optimizer = dspy.BootstrapFewShot(
+                metric=qa_metric, max_bootstrapped_demos=2
+            )
             optimized_program = optimizer.compile(qa_program, trainset=trainset)
-            
+
             # Test the optimized program
             result = optimized_program(question="What is the capital of Italy?")
             print(f"   Optimized answer: {result.answer}")
-            
+
             return len(trainset)
         except Exception as e:
-            print(f"   Note: Bootstrap optimization requires more examples in practice. Error: {e}")
+            print(
+                f"   Note: Bootstrap optimization requires more examples in practice. Error: {e}"
+            )
             return 3  # Return number of training examples
-    
+
     return await asyncio.to_thread(_test)
 
 
 async def test_gepa_optimizer(tracer: "HoneyHiveTracer") -> str:
     """Test 10: GEPA (Generalized Evolutionary Prompt Adaptation) optimizer."""
 
-    from honeyhive.tracer.instrumentation.decorators import trace
     import dspy
+
+    from honeyhive.tracer.instrumentation.decorators import trace
 
     class FacilitySupportSignature(dspy.Signature):
         """Classify facility support requests by urgency and category."""
+
         request: str = dspy.InputField(desc="The facility support request")
-        urgency: str = dspy.OutputField(desc="Urgency level: low, medium, high, critical")
-        category: str = dspy.OutputField(desc="Request category: maintenance, IT, security, cleaning")
+        urgency: str = dspy.OutputField(
+            desc="Urgency level: low, medium, high, critical"
+        )
+        category: str = dspy.OutputField(
+            desc="Request category: maintenance, IT, security, cleaning"
+        )
 
     @trace(event_type="chain", event_name="test_gepa_optimizer", tracer=tracer)
     def _test():
         # Create a facility support classifier
         classifier = dspy.ChainOfThought(FacilitySupportSignature)
-        
+
         # Create training examples for GEPA
         trainset = [
             dspy.Example(
                 request="The server room AC is completely down",
                 urgency="critical",
-                category="maintenance"
+                category="maintenance",
             ).with_inputs("request"),
             dspy.Example(
                 request="Need new desk lamp for office 203",
                 urgency="low",
-                category="maintenance"
+                category="maintenance",
             ).with_inputs("request"),
             dspy.Example(
-                request="Cannot access company database",
-                urgency="high",
-                category="IT"
+                request="Cannot access company database", urgency="high", category="IT"
             ).with_inputs("request"),
             dspy.Example(
                 request="Suspicious person in parking lot",
                 urgency="critical",
-                category="security"
+                category="security",
             ).with_inputs("request"),
         ]
-        
+
         # Define metric for facility support
         def facility_metric(example, pred, trace=None):
             urgency_match = example.urgency.lower() == pred.urgency.lower()
             category_match = example.category.lower() == pred.category.lower()
             return (urgency_match + category_match) / 2  # Average score
-        
+
         # Try to use GEPA optimizer
         try:
             # GEPA uses evolutionary techniques for prompt optimization
             gepa_optimizer = dspy.GEPA(
-                metric=facility_metric,
-                max_iterations=2,
-                population_size=2
+                metric=facility_metric, max_iterations=2, population_size=2
             )
             optimized_classifier = gepa_optimizer.compile(classifier, trainset=trainset)
-            
+
             # Test the optimized classifier
             test_request = "Broken window in conference room B"
             result = optimized_classifier(request=test_request)
-            
+
             return f"Urgency: {result.urgency}, Category: {result.category}"
         except AttributeError:
             # GEPA might not be available in all DSPy versions
             print("   Note: GEPA optimizer not available in this DSPy version")
             # Fall back to testing the base classifier
             result = classifier(request="Broken window in conference room B")
-            return f"Urgency: {result.urgency}, Category: {result.category} (unoptimized)"
+            return (
+                f"Urgency: {result.urgency}, Category: {result.category} (unoptimized)"
+            )
         except Exception as e:
             print(f"   Note: GEPA optimization requires more configuration. Error: {e}")
             result = classifier(request="Broken window in conference room B")
             return f"Urgency: {result.urgency}, Category: {result.category} (fallback)"
-    
+
     return await asyncio.to_thread(_test)
 
 
 async def test_evaluation_metrics(tracer: "HoneyHiveTracer") -> float:
     """Test 11: Evaluation with custom metrics."""
 
-    from honeyhive.tracer.instrumentation.decorators import trace
     import dspy
+
+    from honeyhive.tracer.instrumentation.decorators import trace
 
     @trace(event_type="chain", event_name="test_evaluation_metrics", tracer=tracer)
     def _test():
         # Create a simple math solver
         math_solver = dspy.ChainOfThought("problem -> solution")
-        
+
         # Create test examples
         testset = [
-            dspy.Example(
-                problem="What is 5 + 3?",
-                solution="8"
-            ).with_inputs("problem"),
-            dspy.Example(
-                problem="What is 10 - 4?",
-                solution="6"
-            ).with_inputs("problem"),
-            dspy.Example(
-                problem="What is 3 * 4?",
-                solution="12"
-            ).with_inputs("problem"),
+            dspy.Example(problem="What is 5 + 3?", solution="8").with_inputs("problem"),
+            dspy.Example(problem="What is 10 - 4?", solution="6").with_inputs(
+                "problem"
+            ),
+            dspy.Example(problem="What is 3 * 4?", solution="12").with_inputs(
+                "problem"
+            ),
         ]
-        
+
         # Define a metric that checks if the answer contains the correct number
         def math_metric(example, pred, trace=None):
             correct_answer = example.solution
             predicted_answer = pred.solution
             # Simple check: does the prediction contain the correct number?
             return correct_answer in predicted_answer
-        
+
         # Evaluate the program
         try:
             from dspy import Evaluate
+
             evaluator = Evaluate(
                 devset=testset,
                 metric=math_metric,
                 num_threads=1,
-                display_progress=False
+                display_progress=False,
             )
-            
+
             score = evaluator(math_solver)
             return float(score)
         except Exception as e:
@@ -555,7 +575,7 @@ async def test_evaluation_metrics(tracer: "HoneyHiveTracer") -> float:
                 if math_metric(example, pred):
                     correct += 1
             return correct / len(testset)
-    
+
     return await asyncio.to_thread(_test)
 
 
@@ -569,4 +589,3 @@ if __name__ == "__main__":
     else:
         print("\n❌ Example failed!")
         sys.exit(1)
-

@@ -4,8 +4,7 @@ import asyncio
 import time
 from unittest.mock import Mock, patch
 
-from honeyhive.tracer.decorators import trace
-from honeyhive.tracer.otel_tracer import HoneyHiveTracer
+from honeyhive.tracer import HoneyHiveTracer, trace
 
 
 class TestTraceDecorator:

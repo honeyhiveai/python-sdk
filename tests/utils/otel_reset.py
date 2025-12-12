@@ -21,12 +21,8 @@ try:
     from honeyhive.tracer import clear_registry
 except ImportError:
     clear_registry = None
-from honeyhive.tracer.lifecycle.core import (
-    _new_spans_disabled,
-)
-from honeyhive.utils.logger import (
-    reset_logging_state,
-)
+from honeyhive.tracer.lifecycle.core import _new_spans_disabled
+from honeyhive.utils.logger import reset_logging_state
 
 
 class OTELStateManager:

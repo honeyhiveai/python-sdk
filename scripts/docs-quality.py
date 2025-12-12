@@ -57,7 +57,7 @@ from contextlib import redirect_stderr
 from dataclasses import dataclass, field
 from enum import Enum
 from pathlib import Path
-from typing import Dict, List, Optional, Set, Tuple, Any, Union, Collection
+from typing import Any, Collection, Dict, List, Optional, Set, Tuple, Union
 
 # Core RST processing dependencies (required)
 import docutils.core  # type: ignore[import-untyped]
@@ -72,13 +72,18 @@ DOCUTILS_AVAILABLE = True  # Always available since it's required
 def setup_global_sphinx_docutils_integration() -> bool:
     """Register Sphinx directives and roles globally in docutils before any tool imports."""
     try:
-        from docutils.parsers.rst import directives, roles  # type: ignore[import-untyped]
-        from docutils.parsers.rst.directives import unchanged, flag, positive_int  # type: ignore[import-untyped]
-
         # nodes already imported at module level
-
         # Custom Sphinx directive implementations
         from docutils.parsers.rst import Directive  # type: ignore[import-untyped]
+        from docutils.parsers.rst import (  # type: ignore[import-untyped]
+            directives,
+            roles,
+        )
+        from docutils.parsers.rst.directives import (  # type: ignore[import-untyped]
+            flag,
+            positive_int,
+            unchanged,
+        )
 
         class GlobalTocTreeDirective(Directive):
             """Global toctree directive for all RST tools."""
@@ -2667,13 +2672,11 @@ class EnhancedRSTProcessor:
     def _setup_sphinx_docutils_integration(self) -> None:
         """Set up Sphinx-aware docutils by registering known directives and roles."""
         try:
-            from docutils.parsers.rst import directives, roles
-            from docutils.parsers.rst.directives import unchanged, flag, positive_int
-
             # nodes already imported at module level
-
             # Create a comprehensive toctree directive that handles navigation validation
             from docutils.parsers.rst import Directive  # type: ignore[import-untyped]
+            from docutils.parsers.rst import directives, roles
+            from docutils.parsers.rst.directives import flag, positive_int, unchanged
 
             class TocTreeDirective(Directive):
                 """Sphinx toctree directive with navigation validation."""
@@ -3170,11 +3173,14 @@ class EnhancedRSTProcessor:
             return []
 
         try:
-            from sphinx.parsers.rst import Parser  # type: ignore[import-not-found] # pylint: disable=no-name-in-module
-            from sphinx.util.docutils import docutils_namespace  # type: ignore[import-not-found]
+            from sphinx.parsers.rst import (
+                Parser,  # type: ignore[import-not-found] # pylint: disable=no-name-in-module
+            )
+            from sphinx.util.docutils import (
+                docutils_namespace,  # type: ignore[import-not-found]
+            )
 
             # io and redirect_stderr already imported at module level
-
             # Capture Sphinx warnings/errors
             error_stream = io.StringIO()
             issues = []

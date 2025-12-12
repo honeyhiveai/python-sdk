@@ -16,10 +16,7 @@ from honeyhive.models.generated import (
     Type3,
     UUIDType,
 )
-from tests.utils import (
-    create_openai_config_request,
-    create_session_request,
-)
+from tests.utils import create_openai_config_request, create_session_request
 
 
 class TestAPIWorkflows:

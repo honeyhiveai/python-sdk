@@ -7,10 +7,10 @@ Exit code 0: All quality gates passed
 Exit code 1: Quality failures with detailed output
 """
 
-import sys
-import subprocess
-import re
 import argparse
+import re
+import subprocess
+import sys
 from pathlib import Path
 
 

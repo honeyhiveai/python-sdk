@@ -11,11 +11,7 @@ The experiments module replaces the legacy evaluation module while maintaining
 backward compatibility through deprecation aliases.
 """
 
-from honeyhive.experiments.core import (
-    ExperimentContext,
-    evaluate,
-    run_experiment,
-)
+from honeyhive.experiments.core import ExperimentContext, evaluate, run_experiment
 from honeyhive.experiments.evaluators import (
     EvalResult,
     EvalSettings,
@@ -29,11 +25,7 @@ from honeyhive.experiments.models import (
     ExperimentRunStatus,
     RunComparisonResult,
 )
-from honeyhive.experiments.results import (
-    compare_runs,
-    get_run_metrics,
-    get_run_result,
-)
+from honeyhive.experiments.results import compare_runs, get_run_metrics, get_run_result
 from honeyhive.experiments.utils import (
     generate_external_datapoint_id,
     generate_external_dataset_id,

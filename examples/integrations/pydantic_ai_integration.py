@@ -40,9 +40,10 @@ async def main():
 
     try:
         # Import required packages
-        from pydantic_ai import Agent
-        from pydantic import BaseModel, Field
         from openinference.instrumentation.anthropic import AnthropicInstrumentor
+        from pydantic import BaseModel, Field
+        from pydantic_ai import Agent
+
         from honeyhive import HoneyHiveTracer
         from honeyhive.tracer.instrumentation.decorators import trace
 
@@ -60,7 +61,7 @@ async def main():
             api_key=hh_api_key,
             project=hh_project,
             session_name=Path(__file__).stem,  # Use filename as session name
-            source="pydantic_ai_example"
+            source="pydantic_ai_example",
         )
         print("✓ HoneyHive tracer initialized")
 
@@ -112,12 +113,15 @@ async def main():
     except ImportError as e:
         print(f"❌ Import error: {e}")
         print("\n💡 Install required packages:")
-        print("   pip install honeyhive pydantic-ai openinference-instrumentation-anthropic")
+        print(
+            "   pip install honeyhive pydantic-ai openinference-instrumentation-anthropic"
+        )
         return False
 
     except Exception as e:
         print(f"❌ Example failed: {e}")
         import traceback
+
         traceback.print_exc()
         return False
 
@@ -126,28 +130,31 @@ async def test_basic_agent(tracer: "HoneyHiveTracer") -> str:
     """Test 1: Basic agent with simple query."""
 
     from pydantic_ai import Agent
+
     from honeyhive.tracer.instrumentation.decorators import trace
 
     @trace(event_type="chain", event_name="test_basic_agent", tracer=tracer)
     async def _test():
         agent = Agent(
-            'anthropic:claude-sonnet-4-0',
-            instructions='Be concise, reply with one sentence.',
+            "anthropic:claude-sonnet-4-0",
+            instructions="Be concise, reply with one sentence.",
         )
 
         result = await agent.run('Where does "hello world" come from?')
         return result.output
-    
+
     return await _test()
 
 
 async def test_structured_output(tracer: "HoneyHiveTracer") -> str:
     """Test 2: Agent with structured output using Pydantic models."""
 
-    from pydantic_ai import Agent
-    from pydantic import BaseModel, Field
-    from honeyhive.tracer.instrumentation.decorators import trace
     import json
+
+    from pydantic import BaseModel, Field
+    from pydantic_ai import Agent
+
+    from honeyhive.tracer.instrumentation.decorators import trace
 
     class CityInfo(BaseModel):
         name: str = Field(description="The name of the city")
@@ -159,7 +166,7 @@ async def test_structured_output(tracer: "HoneyHiveTracer") -> str:
     async def _test():
         # Agent that returns structured JSON output
         agent = Agent(
-            'anthropic:claude-sonnet-4-0',
+            "anthropic:claude-sonnet-4-0",
         )
 
         result = await agent.run(
@@ -171,7 +178,7 @@ async def test_structured_output(tracer: "HoneyHiveTracer") -> str:
 
 Return ONLY the JSON, no other text."""
         )
-        
+
         # Parse the JSON response
         try:
             city_data = json.loads(result.output)
@@ -179,7 +186,7 @@ Return ONLY the JSON, no other text."""
         except:
             # If not valid JSON, return the raw output
             return str(result.output)
-    
+
     return await _test()
 
 
@@ -187,13 +194,14 @@ async def test_agent_with_tools(tracer: "HoneyHiveTracer") -> str:
     """Test 3: Agent with custom tools/functions."""
 
     from pydantic_ai import Agent, RunContext
+
     from honeyhive.tracer.instrumentation.decorators import trace
 
     @trace(event_type="chain", event_name="test_agent_with_tools", tracer=tracer)
     async def _test():
         agent = Agent(
-            'anthropic:claude-sonnet-4-0',
-            instructions='You are a helpful assistant with access to tools. Use them when needed.',
+            "anthropic:claude-sonnet-4-0",
+            instructions="You are a helpful assistant with access to tools. Use them when needed.",
         )
 
         @agent.tool
@@ -204,9 +212,11 @@ async def test_agent_with_tools(tracer: "HoneyHiveTracer") -> str:
                 "london": "Cloudy, 15°C",
                 "new york": "Sunny, 22°C",
                 "tokyo": "Rainy, 18°C",
-                "paris": "Partly cloudy, 17°C"
+                "paris": "Partly cloudy, 17°C",
             }
-            return weather_data.get(city.lower(), f"Weather data not available for {city}")
+            return weather_data.get(
+                city.lower(), f"Weather data not available for {city}"
+            )
 
         @agent.tool
         def calculate(ctx: RunContext[None], expression: str) -> str:
@@ -217,9 +227,9 @@ async def test_agent_with_tools(tracer: "HoneyHiveTracer") -> str:
             except Exception as e:
                 return f"Error: {str(e)}"
 
-        result = await agent.run('What is the weather in London and what is 15 * 8?')
+        result = await agent.run("What is the weather in London and what is 15 * 8?")
         return result.output
-    
+
     return await _test()
 
 
@@ -227,12 +237,15 @@ async def test_agent_with_system_prompt(tracer: "HoneyHiveTracer") -> str:
     """Test 4: Agent with dynamic system prompt."""
 
     from pydantic_ai import Agent, RunContext
+
     from honeyhive.tracer.instrumentation.decorators import trace
 
-    @trace(event_type="chain", event_name="test_agent_with_system_prompt", tracer=tracer)
+    @trace(
+        event_type="chain", event_name="test_agent_with_system_prompt", tracer=tracer
+    )
     async def _test():
         agent = Agent(
-            'anthropic:claude-sonnet-4-0',
+            "anthropic:claude-sonnet-4-0",
         )
 
         @agent.system_prompt
@@ -244,17 +257,19 @@ You should:
 - Be concise but thorough
 - Use examples when helpful"""
 
-        result = await agent.run('Explain what an API is')
+        result = await agent.run("Explain what an API is")
         return result.output
-    
+
     return await _test()
 
 
 async def test_agent_with_dependencies(tracer: "HoneyHiveTracer") -> str:
     """Test 5: Agent with dependency injection for context."""
 
-    from pydantic_ai import Agent, RunContext
     from dataclasses import dataclass
+
+    from pydantic_ai import Agent, RunContext
+
     from honeyhive.tracer.instrumentation.decorators import trace
 
     @dataclass
@@ -266,7 +281,7 @@ async def test_agent_with_dependencies(tracer: "HoneyHiveTracer") -> str:
     @trace(event_type="chain", event_name="test_agent_with_dependencies", tracer=tracer)
     async def _test():
         agent = Agent(
-            'anthropic:claude-sonnet-4-0',
+            "anthropic:claude-sonnet-4-0",
             deps_type=UserContext,
         )
 
@@ -283,12 +298,12 @@ Tailor your responses to their role and preferences: {ctx.deps.preferences}"""
         user_ctx = UserContext(
             user_name="Alice",
             user_role="Software Engineer",
-            preferences={"language": "Python", "level": "advanced"}
+            preferences={"language": "Python", "level": "advanced"},
         )
 
-        result = await agent.run('Give me a programming tip', deps=user_ctx)
+        result = await agent.run("Give me a programming tip", deps=user_ctx)
         return result.output
-    
+
     return await _test()
 
 
@@ -296,29 +311,32 @@ async def test_streaming_agent(tracer: "HoneyHiveTracer") -> int:
     """Test 6: Agent with streaming responses."""
 
     from pydantic_ai import Agent
+
     from honeyhive.tracer.instrumentation.decorators import trace
 
     @trace(event_type="chain", event_name="test_streaming_agent", tracer=tracer)
     async def _test():
         agent = Agent(
-            'anthropic:claude-sonnet-4-0',
-            instructions='Provide a detailed response about the topic.',
+            "anthropic:claude-sonnet-4-0",
+            instructions="Provide a detailed response about the topic.",
         )
 
         chunk_count = 0
         full_response = ""
-        
-        async with agent.run_stream('Explain the concept of machine learning in 3 paragraphs') as response:
+
+        async with agent.run_stream(
+            "Explain the concept of machine learning in 3 paragraphs"
+        ) as response:
             async for chunk in response.stream_text():
                 full_response += chunk
                 chunk_count += 1
-        
+
         # Get final result
         final = await response.get_data()
         print(f"   Received {chunk_count} chunks, final output: {final.output[:50]}...")
-        
+
         return chunk_count
-    
+
     return await _test()
 
 
@@ -332,4 +350,3 @@ if __name__ == "__main__":
     else:
         print("\n❌ Example failed!")
         sys.exit(1)
-

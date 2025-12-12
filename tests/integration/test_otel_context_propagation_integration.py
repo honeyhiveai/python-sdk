@@ -23,9 +23,7 @@ from opentelemetry import trace as otel_trace
 from opentelemetry.baggage.propagation import W3CBaggagePropagator
 from opentelemetry.context import Context
 from opentelemetry.propagators.composite import CompositePropagator
-from opentelemetry.trace.propagation.tracecontext import (
-    TraceContextTextMapPropagator,
-)
+from opentelemetry.trace.propagation.tracecontext import TraceContextTextMapPropagator
 
 from honeyhive.tracer import enrich_span, trace
 from tests.utils import (  # pylint: disable=no-name-in-module

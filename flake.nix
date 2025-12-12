@@ -14,15 +14,14 @@
         # Python with required version (3.11+)
         python = pkgs.python312;
 
-        # Python development dependencies
+        # Python development dependencies (minimal base)
+        # All other dependencies (including requests, beautifulsoup4, pyyaml)
+        # are managed via pip and pyproject.toml to avoid duplication
         pythonEnv = python.withPackages (ps: with ps; [
           pip
           setuptools
           wheel
           virtualenv
-          requests
-          beautifulsoup4
-          pyyaml
         ]);
 
       in
@@ -31,13 +30,6 @@
             buildInputs = [
             # Python environment
             pythonEnv
-
-            # System utilities and development tools
-            pkgs.git
-            pkgs.gnumake
-            pkgs.which
-            pkgs.curl
-            pkgs.jq
             # Note: pre-commit is now installed via pip as part of dev dependencies
           ];
 
@@ -57,17 +49,17 @@
 
             # Activate virtual environment
             source .venv/bin/activate
-            
+
             # Ensure venv site-packages and src are in PYTHONPATH
             export PYTHONPATH="src:.venv/lib/python3.12/site-packages:.:$PYTHONPATH"
-            
+
             # Upgrade pip (silent)
             pip install --upgrade pip > /dev/null 2>&1
 
             # Install package in editable mode with dev dependencies
             if [ ! -f .venv/.installed ]; then
               echo "📦 Installing dependencies (first run)..."
-              pip install -e ".[dev,docs]" > /dev/null 2>&1
+              pip install -e ".[dev,docs]" 2>&1
               touch .venv/.installed
               echo "✨ Environment ready!"
               echo ""
@@ -83,13 +75,13 @@
 
           # Environment variables
           # Note: PYTHONPATH is set in shellHook after venv activation
-          
+
           # Prevent Python from writing bytecode
           PYTHONDONTWRITEBYTECODE = "1";
-          
+
           # Force Python to use UTF-8
           PYTHONIOENCODING = "UTF-8";
-          
+
           # Enable Python development mode
           PYTHONDEVMODE = "1";
         };

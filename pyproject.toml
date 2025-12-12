@@ -46,8 +46,8 @@ dev = [
     "pytest-mock>=3.10.0",
     "pytest-xdist>=3.0.0",
     "tox>=4.0.0",
-    "black>=23.0.0",
-    "isort>=5.12.0",
+    "black==25.1.0",
+    "isort==5.13.2",
     "flake8>=6.0.0",
     "mypy>=1.0.0",
     "typeguard>=4.0.0",
@@ -56,8 +56,9 @@ dev = [
     "pre-commit>=3.0.0",  # For git hooks
     "requests>=2.31.0",  # For docs navigation validation
     "beautifulsoup4>=4.12.0",  # For docs navigation validation
-    "datamodel-code-generator==0.43.0",  # For model generation from OpenAPI spec
+    "datamodel-code-generator==0.25.0",  # For model generation from OpenAPI spec (pinned to match original generation)
     "openapi-python-client>=0.28.0",  # For SDK generation
+    "docker>=7.0.0",  # For Lambda container tests
 ]
 
 # Documentation
@@ -78,7 +79,7 @@ openinference-openai = [
 
 # Anthropic (openinference-anthropic)
 openinference-anthropic = [
-    "openinference-instrumentation-anthropic>=0.1.0", 
+    "openinference-instrumentation-anthropic>=0.1.0",
     "anthropic>=0.18.0",
 ]
 
@@ -124,7 +125,7 @@ traceloop-openai = [
 
 # Anthropic (traceloop-anthropic)
 traceloop-anthropic = [
-    "opentelemetry-instrumentation-anthropic>=0.46.0,<1.0.0", 
+    "opentelemetry-instrumentation-anthropic>=0.46.0,<1.0.0",
     "anthropic>=0.17.0",
 ]
 
@@ -189,7 +190,7 @@ all-traceloop = [
 # Common LLM Providers (Traceloop Ecosystem)
 traceloop-llm-providers = [
     "traceloop-openai",
-    "traceloop-anthropic", 
+    "traceloop-anthropic",
     "traceloop-google-ai",
     "traceloop-aws-bedrock",
 ]
@@ -367,4 +368,3 @@ ignore = ["D002", "D004"]  # Allow trailing whitespace in some contexts
 [tool.docs-quality]
 max-issues-per-file = 1000
 enable-auto-fix = true
-

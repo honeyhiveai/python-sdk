@@ -1,18 +1,15 @@
-from honeyhive import HoneyHive
-from honeyhive.experiments import evaluate
 import os
-from dotenv import load_dotenv
 from datetime import datetime
-from honeyhive.api import DatasetsAPI, DatapointsAPI, MetricsAPI
-from pydantic import BaseModel
 from uuid import uuid4
+
+from dotenv import load_dotenv
+from pydantic import BaseModel
+
+from honeyhive import HoneyHive, enrich_span
+from honeyhive.api import DatapointsAPI, DatasetsAPI, MetricsAPI
+from honeyhive.experiments import evaluate
+from honeyhive.models import CreateDatapointRequest, CreateDatasetRequest, Metric
 from honeyhive.models.generated import ReturnType
-from honeyhive.models import (
-    CreateDatapointRequest,
-    CreateDatasetRequest,
-    Metric,
-)
-from honeyhive import enrich_span
 
 load_dotenv()
 
@@ -21,6 +18,7 @@ DATASET_NAME = "sample-honeyhive-9-30-25"
 
 def invoke_summary_agent(**kwargs):
     return "The American Shorthair is a pedigreed cat breed, originally known as the Domestic Shorthair, that was among the first CFA-registered breeds in 1906 and was renamed in 1966 to distinguish it from random-bred domestic short-haired cats while highlighting its American origins."
+
 
 dataset = [
     {
@@ -43,13 +41,12 @@ dataset = [
 
 
 if __name__ == "__main__":
+
     def evaluation_function(datapoint):
         inputs = datapoint.get("inputs", {})
         context = inputs.get("context", "")
         enrich_span(metrics={"input_length": len(context)})
-        return {
-            "answer": invoke_summary_agent(**{"context": context})
-        }
+        return {"answer": invoke_summary_agent(**{"context": context})}
 
     result = evaluate(
         function=evaluation_function,

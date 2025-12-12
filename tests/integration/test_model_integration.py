@@ -13,18 +13,9 @@ from honeyhive.models import (
     PostConfigurationRequest,
     SessionStartRequest,
 )
-from honeyhive.models.generated import (
-    CallType,
-    EnvEnum,
-    EventType1,
-)
+from honeyhive.models.generated import CallType, EnvEnum, EventType1
 from honeyhive.models.generated import FunctionCallParams as GeneratedFunctionCallParams
-from honeyhive.models.generated import (
-    Parameters2,
-    SelectedFunction,
-    Type3,
-    UUIDType,
-)
+from honeyhive.models.generated import Parameters2, SelectedFunction, Type3, UUIDType
 
 
 @pytest.mark.integration

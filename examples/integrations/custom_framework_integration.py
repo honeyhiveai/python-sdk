@@ -7,11 +7,13 @@ with any non-instrumentor framework.
 """
 
 import os
-import time
 import threading
-from typing import Dict, Any, List
+import time
+from typing import Any, Dict, List
+
 from opentelemetry import trace
 from opentelemetry.sdk.trace import TracerProvider
+
 from honeyhive import HoneyHiveTracer
 
 

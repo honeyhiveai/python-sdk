@@ -72,15 +72,15 @@ def main():
 
     try:
         # Import HoneyHive tracer
-        from honeyhive import HoneyHiveTracer
+        # Import Google AI
+        import google.generativeai as genai
 
         # Import the instrumentor (note: GoogleGenerativeAiInstrumentor, not GoogleGenerativeAIInstrumentor)
         from opentelemetry.instrumentation.google_generativeai import (
             GoogleGenerativeAiInstrumentor,
         )
 
-        # Import Google AI
-        import google.generativeai as genai
+        from honeyhive import HoneyHiveTracer
 
         print("✅ All imports successful!")
 

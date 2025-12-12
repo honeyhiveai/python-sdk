@@ -15,7 +15,7 @@ Environment Variables:
     AWS_SECRET_ACCESS_KEY: Your AWS secret key
     AWS_SESSION_TOKEN: Your AWS session token (optional, for temporary credentials)
     AWS_REGION: AWS region (default: us-east-1)
-    
+
 Alternative: Use AWS CLI default profile or IAM role (credentials auto-detected)
 """
 
@@ -24,7 +24,7 @@ import json
 import os
 import sys
 from pathlib import Path
-from typing import Dict, Any
+from typing import Any, Dict
 
 
 async def main():
@@ -35,7 +35,9 @@ async def main():
     hh_project = os.getenv("HH_PROJECT")
     aws_access_key = os.getenv("AWS_ACCESS_KEY_ID")
     aws_secret_key = os.getenv("AWS_SECRET_ACCESS_KEY")
-    aws_session_token = os.getenv("AWS_SESSION_TOKEN")  # Optional for temporary credentials
+    aws_session_token = os.getenv(
+        "AWS_SESSION_TOKEN"
+    )  # Optional for temporary credentials
     aws_region = os.getenv("AWS_REGION", "us-east-1")
 
     if not all([hh_api_key, hh_project]):
@@ -44,14 +46,18 @@ async def main():
         print("   - HH_PROJECT: Your HoneyHive project name")
         print("\nSet these environment variables and try again.")
         return False
-    
+
     # Check AWS credentials (will fall back to boto3 default credential chain)
     if not aws_access_key or not aws_secret_key:
         print("⚠️  AWS credentials not found in environment variables.")
-        print("   Will use boto3 default credential chain (AWS CLI profile, IAM role, etc.)")
-        print("   Set AWS_ACCESS_KEY_ID and AWS_SECRET_ACCESS_KEY to use explicit credentials.")
+        print(
+            "   Will use boto3 default credential chain (AWS CLI profile, IAM role, etc.)"
+        )
+        print(
+            "   Set AWS_ACCESS_KEY_ID and AWS_SECRET_ACCESS_KEY to use explicit credentials."
+        )
         print()
-    
+
     if aws_session_token:
         print("✓ AWS session token detected - using temporary credentials")
 
@@ -59,6 +65,7 @@ async def main():
         # Import required packages
         import boto3
         from openinference.instrumentation.bedrock import BedrockInstrumentor
+
         from honeyhive import HoneyHiveTracer
         from honeyhive.tracer.instrumentation.decorators import trace
 
@@ -76,7 +83,7 @@ async def main():
             api_key=hh_api_key,
             project=hh_project,
             session_name=Path(__file__).stem,  # Use filename as session name
-            source="bedrock_example"
+            source="bedrock_example",
         )
         print("✓ HoneyHive tracer initialized")
 
@@ -86,15 +93,15 @@ async def main():
 
         # 3. Create Bedrock Runtime client
         print(f"✓ AWS region configured: {aws_region}")
-        
+
         # Build client kwargs based on available credentials
         client_kwargs = {"region_name": aws_region}
-        
+
         # If explicit credentials are provided, use them
         if aws_access_key and aws_secret_key:
             client_kwargs["aws_access_key_id"] = aws_access_key
             client_kwargs["aws_secret_access_key"] = aws_secret_key
-            
+
             # Add session token if provided (for temporary credentials)
             if aws_session_token:
                 client_kwargs["aws_session_token"] = aws_session_token
@@ -104,7 +111,7 @@ async def main():
         else:
             # Fall back to boto3's default credential chain
             print("✓ Using boto3 default credential chain")
-        
+
         bedrock_client = boto3.client("bedrock-runtime", **client_kwargs)
 
         # 4. Test Amazon Nova models
@@ -166,6 +173,7 @@ async def main():
     except Exception as e:
         print(f"❌ Example failed: {e}")
         import traceback
+
         traceback.print_exc()
         return False
 
@@ -186,19 +194,15 @@ async def test_amazon_nova(tracer: "HoneyHiveTracer", client) -> str:
             messages=[
                 {
                     "role": "user",
-                    "content": [{"text": "Explain quantum computing in one sentence."}]
+                    "content": [{"text": "Explain quantum computing in one sentence."}],
                 }
             ],
-            inferenceConfig={
-                "maxTokens": 512,
-                "temperature": 0.7,
-                "topP": 0.9
-            }
+            inferenceConfig={"maxTokens": 512, "temperature": 0.7, "topP": 0.9},
         )
 
         # Extract response text
         return response["output"]["message"]["content"][0]["text"]
-    
+
     # Run synchronously in async context
     return await asyncio.to_thread(_test)
 
@@ -220,7 +224,7 @@ async def test_amazon_titan(tracer: "HoneyHiveTracer", client) -> str:
                 "maxTokenCount": 512,
                 "temperature": 0.7,
                 "topP": 0.9,
-            }
+            },
         }
 
         # Convert to JSON and invoke
@@ -230,7 +234,7 @@ async def test_amazon_titan(tracer: "HoneyHiveTracer", client) -> str:
         # Decode and extract response
         model_response = json.loads(response["body"].read())
         return model_response["results"][0]["outputText"]
-    
+
     return await asyncio.to_thread(_test)
 
 
@@ -250,19 +254,15 @@ async def test_anthropic_claude(tracer: "HoneyHiveTracer", client) -> str:
             messages=[
                 {
                     "role": "user",
-                    "content": [{"text": "Explain machine learning in simple terms."}]
+                    "content": [{"text": "Explain machine learning in simple terms."}],
                 }
             ],
-            inferenceConfig={
-                "maxTokens": 512,
-                "temperature": 0.5,
-                "topP": 0.9
-            }
+            inferenceConfig={"maxTokens": 512, "temperature": 0.5, "topP": 0.9},
         )
 
         # Extract response text
         return response["output"]["message"]["content"][0]["text"]
-    
+
     return await asyncio.to_thread(_test)
 
 
@@ -282,18 +282,21 @@ async def test_converse_api(tracer: "HoneyHiveTracer", client) -> str:
             messages=[
                 {
                     "role": "user",
-                    "content": [{"text": "Write a haiku about artificial intelligence."}]
+                    "content": [
+                        {"text": "Write a haiku about artificial intelligence."}
+                    ],
                 }
             ],
-            system=[{"text": "You are a creative poet who writes concise, meaningful poetry."}],
-            inferenceConfig={
-                "maxTokens": 200,
-                "temperature": 0.8
-            }
+            system=[
+                {
+                    "text": "You are a creative poet who writes concise, meaningful poetry."
+                }
+            ],
+            inferenceConfig={"maxTokens": 200, "temperature": 0.8},
         )
 
         return response["output"]["message"]["content"][0]["text"]
-    
+
     return await asyncio.to_thread(_test)
 
 
@@ -313,29 +316,26 @@ async def test_streaming_response(tracer: "HoneyHiveTracer", client) -> int:
             messages=[
                 {
                     "role": "user",
-                    "content": [{"text": "Tell me a short story about a robot."}]
+                    "content": [{"text": "Tell me a short story about a robot."}],
                 }
             ],
-            inferenceConfig={
-                "maxTokens": 512,
-                "temperature": 0.7
-            }
+            inferenceConfig={"maxTokens": 512, "temperature": 0.7},
         )
 
         # Process stream and count chunks
         chunk_count = 0
         full_text = ""
-        
+
         for chunk in streaming_response["stream"]:
             if "contentBlockDelta" in chunk:
                 text = chunk["contentBlockDelta"]["delta"]["text"]
                 full_text += text
                 chunk_count += 1
                 print(text, end="", flush=True)
-        
+
         print()  # New line after streaming
         return chunk_count
-    
+
     return await asyncio.to_thread(_test)
 
 
@@ -347,74 +347,76 @@ async def test_multi_turn_conversation(tracer: "HoneyHiveTracer", client) -> lis
     @trace(event_type="chain", event_name="test_multi_turn_conversation", tracer=tracer)
     def _test():
         model_id = "anthropic.claude-3-haiku-20240307-v1:0"
-        
+
         # Build conversation history
         conversation = []
-        
+
         # Turn 1: Initial question
-        conversation.append({
-            "role": "user",
-            "content": [{"text": "What are the three primary colors?"}]
-        })
-        
+        conversation.append(
+            {
+                "role": "user",
+                "content": [{"text": "What are the three primary colors?"}],
+            }
+        )
+
         response1 = client.converse(
             modelId=model_id,
             messages=conversation,
-            inferenceConfig={"maxTokens": 300, "temperature": 0.5}
+            inferenceConfig={"maxTokens": 300, "temperature": 0.5},
         )
-        
+
         assistant_response1 = response1["output"]["message"]["content"][0]["text"]
-        conversation.append({
-            "role": "assistant",
-            "content": [{"text": assistant_response1}]
-        })
-        
+        conversation.append(
+            {"role": "assistant", "content": [{"text": assistant_response1}]}
+        )
+
         # Turn 2: Follow-up question
-        conversation.append({
-            "role": "user",
-            "content": [{"text": "Can you mix them to create other colors?"}]
-        })
-        
+        conversation.append(
+            {
+                "role": "user",
+                "content": [{"text": "Can you mix them to create other colors?"}],
+            }
+        )
+
         response2 = client.converse(
             modelId=model_id,
             messages=conversation,
-            inferenceConfig={"maxTokens": 300, "temperature": 0.5}
+            inferenceConfig={"maxTokens": 300, "temperature": 0.5},
         )
-        
+
         assistant_response2 = response2["output"]["message"]["content"][0]["text"]
-        conversation.append({
-            "role": "assistant",
-            "content": [{"text": assistant_response2}]
-        })
-        
+        conversation.append(
+            {"role": "assistant", "content": [{"text": assistant_response2}]}
+        )
+
         # Turn 3: Final question
-        conversation.append({
-            "role": "user",
-            "content": [{"text": "Give me an example."}]
-        })
-        
+        conversation.append(
+            {"role": "user", "content": [{"text": "Give me an example."}]}
+        )
+
         response3 = client.converse(
             modelId=model_id,
             messages=conversation,
-            inferenceConfig={"maxTokens": 300, "temperature": 0.5}
+            inferenceConfig={"maxTokens": 300, "temperature": 0.5},
         )
-        
+
         assistant_response3 = response3["output"]["message"]["content"][0]["text"]
-        
+
         print(f"\n  Turn 1 Response: {assistant_response1[:50]}...")
         print(f"  Turn 2 Response: {assistant_response2[:50]}...")
         print(f"  Turn 3 Response: {assistant_response3[:50]}...")
-        
+
         return conversation
-    
+
     return await asyncio.to_thread(_test)
 
 
 async def test_document_understanding(tracer: "HoneyHiveTracer", client) -> str:
     """Test 7: Document understanding with Converse API."""
 
-    from honeyhive.tracer.instrumentation.decorators import trace
     import base64
+
+    from honeyhive.tracer.instrumentation.decorators import trace
 
     @trace(event_type="chain", event_name="test_document_understanding", tracer=tracer)
     def _test():
@@ -446,12 +448,14 @@ Amazon Nova is a new generation of foundation models that deliver frontier intel
             {
                 "role": "user",
                 "content": [
-                    {"text": "Briefly summarize the key features of Amazon Nova described in this document."},
+                    {
+                        "text": "Briefly summarize the key features of Amazon Nova described in this document."
+                    },
                     {
                         "document": {
                             "format": "txt",
                             "name": "Amazon Nova Overview",
-                            "source": {"bytes": document_text.encode('utf-8')},
+                            "source": {"bytes": document_text.encode("utf-8")},
                         }
                     },
                 ],
@@ -467,7 +471,7 @@ Amazon Nova is a new generation of foundation models that deliver frontier intel
 
         # Extract response text
         return response["output"]["message"]["content"][0]["text"]
-    
+
     return await asyncio.to_thread(_test)
 
 
@@ -506,7 +510,7 @@ async def test_native_streaming(tracer: "HoneyHiveTracer", client) -> int:
         # Extract and print the response text in real-time
         chunk_count = 0
         full_text = ""
-        
+
         print("   Streaming response: ", end="", flush=True)
         for event in streaming_response["body"]:
             chunk = json.loads(event["chunk"]["bytes"])
@@ -516,10 +520,10 @@ async def test_native_streaming(tracer: "HoneyHiveTracer", client) -> int:
                     full_text += text
                     chunk_count += 1
                     print(text, end="", flush=True)
-        
+
         print()  # New line after streaming
         return chunk_count
-    
+
     return await asyncio.to_thread(_test)
 
 
@@ -533,4 +537,3 @@ if __name__ == "__main__":
     else:
         print("\n❌ Example failed!")
         sys.exit(1)
-

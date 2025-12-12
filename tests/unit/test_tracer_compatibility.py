@@ -44,12 +44,7 @@ with (
     # Configure mock to return a new Mock instance each time it's called
     mock_span_processor.return_value = MagicMock()
 
-    from honeyhive.tracer import (
-        HoneyHiveTracer,
-        atrace,
-        trace,
-        trace_class,
-    )
+    from honeyhive.tracer import HoneyHiveTracer, atrace, trace, trace_class
     from honeyhive.tracer.registry import (
         clear_registry,
         get_registry_stats,

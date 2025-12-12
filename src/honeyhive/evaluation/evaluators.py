@@ -16,10 +16,7 @@ from dataclasses import dataclass, field
 from typing import Any, Callable, Dict, List, Optional, Union
 
 from honeyhive.api.client import HoneyHive
-from honeyhive.models.generated import (
-    CreateRunRequest,
-    EvaluationRun,
-)
+from honeyhive.models.generated import CreateRunRequest, EvaluationRun
 
 # Config import removed - not used in this module
 

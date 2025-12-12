@@ -47,6 +47,7 @@ tracer = HoneyHiveTracer.init(
     test_mode=False,
 )
 
+
 class SummarizerResponse(BaseModel):
     """Response model for structured output."""
 
@@ -281,30 +282,30 @@ def test_swarm_collaboration():
 
     # Execute the swarm on a task
     task = "Calculate the compound interest for $1000 principal, 5% annual rate, over 3 years, compounded annually. Use the formula: A = P(1 + r)^t"
-    
+
     print(f"\n📋 Task: {task}")
     print("\n🤝 Swarm executing...")
-    
+
     result = swarm(task)
 
     # Display results
     print(f"\n✅ Swarm Status: {result.status}")
     print(f"📊 Total Iterations: {result.execution_count}")
     print(f"⏱️  Execution Time: {result.execution_time}ms")
-    
+
     # Show agent collaboration flow
     print(f"\n👥 Agent Collaboration Flow:")
     for i, node in enumerate(result.node_history, 1):
         print(f"   {i}. {node.node_id}")
-    
+
     # Display final result
     if result.node_history:
         final_agent = result.node_history[-1].node_id
         print(f"\n💬 Final Result from {final_agent}:")
         final_result = result.results.get(final_agent)
-        if final_result and hasattr(final_result, 'result'):
+        if final_result and hasattr(final_result, "result"):
             print(f"   {final_result.result}")
-    
+
     print("\n📊 Expected in HoneyHive:")
     print("   - Span: swarm invocation")
     print("   - Span: invoke_agent researcher (initial agent)")
@@ -365,7 +366,7 @@ def test_graph_workflow():
     print("   Research → Analysis ↘")
     print("   Research → Fact Check → Report")
     print("   Analysis → Report ↗")
-    
+
     builder = GraphBuilder()
 
     # Add nodes
@@ -392,10 +393,10 @@ def test_graph_workflow():
 
     # Execute the graph on a task
     task = "Research the benefits of renewable energy sources, focusing on solar and wind power. Analyze cost trends and verify environmental impact claims."
-    
+
     print(f"\n📋 Task: {task}")
     print("\n⚙️  Graph executing...")
-    
+
     result = graph(task)
 
     # Display results
@@ -404,12 +405,12 @@ def test_graph_workflow():
     print(f"✓  Completed: {result.completed_nodes}")
     print(f"✗  Failed: {result.failed_nodes}")
     print(f"⏱️  Execution Time: {result.execution_time}ms")
-    
+
     # Show execution order
     print(f"\n🔄 Execution Order:")
     for i, node in enumerate(result.execution_order, 1):
         print(f"   {i}. {node.node_id} - {node.execution_status}")
-    
+
     # Display results from each node
     print(f"\n📄 Node Results:")
     for node_id in ["research", "analysis", "fact_check", "report"]:
@@ -418,13 +419,13 @@ def test_graph_workflow():
             print(f"\n   {node_id}:")
             result_text = str(node_result.result)[:150]  # First 150 chars
             print(f"      {result_text}...")
-    
+
     # Display final report (from report_writer)
     if "report" in result.results:
         final_report = result.results["report"].result
         print(f"\n📋 Final Report:")
         print(f"   {final_report}")
-    
+
     print("\n📊 Expected in HoneyHive:")
     print("   - Span: graph invocation")
     print("   - Span: invoke_agent research (entry point)")
@@ -469,7 +470,9 @@ if __name__ == "__main__":
         print("   ✓ 8 root spans (one per test)")
         print("   ✓ Agent names: BasicAgent, MathAgent, StreamingAgent, etc.")
         print("   ✓ Swarm collaboration with researcher → coder → reviewer flow")
-        print("   ✓ Graph workflow with parallel processing: research → analysis/fact_check → report")
+        print(
+            "   ✓ Graph workflow with parallel processing: research → analysis/fact_check → report"
+        )
         print("   ✓ Tool execution spans with calculator inputs/outputs")
         print("   ✓ Token usage (prompt/completion/total)")
         print("   ✓ Latency metrics (TTFT, total duration)")

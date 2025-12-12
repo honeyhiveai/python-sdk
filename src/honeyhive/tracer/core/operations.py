@@ -25,9 +25,7 @@ from opentelemetry.trace import SpanKind, Status, StatusCode
 from ...api.events import CreateEventRequest
 from ...models.generated import EventType1
 from ...utils.logger import is_shutdown_detected, safe_log
-from ..lifecycle.core import (
-    is_new_span_creation_disabled,
-)
+from ..lifecycle.core import is_new_span_creation_disabled
 from .base import NoOpSpan
 
 if TYPE_CHECKING:

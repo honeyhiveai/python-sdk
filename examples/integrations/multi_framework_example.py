@@ -6,15 +6,17 @@ non-instrumentor frameworks simultaneously, showing how they can
 coexist and share tracing context.
 """
 
-import os
-import time
 import asyncio
-from typing import Dict, Any, List, Optional
-from opentelemetry import trace
-from honeyhive import HoneyHiveTracer
+import os
 
 # Import mock frameworks for demonstration
 import sys
+import time
+from typing import Any, Dict, List, Optional
+
+from opentelemetry import trace
+
+from honeyhive import HoneyHiveTracer
 
 sys.path.append(os.path.join(os.path.dirname(__file__), "..", "..", "tests"))
 

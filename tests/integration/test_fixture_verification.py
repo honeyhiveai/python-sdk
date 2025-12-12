@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 """Simple test to verify that integration test fixtures work correctly."""
+
 # pylint: disable=too-many-lines,protected-access,redefined-outer-name,too-many-public-methods,line-too-long
 # Justification: Integration test file with fixture verification
 

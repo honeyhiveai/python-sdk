@@ -19,11 +19,7 @@ from unittest.mock import Mock, patch
 import pytest
 from pydantic import ValidationError
 
-from honeyhive.config.models.tracer import (
-    EvaluationConfig,
-    SessionConfig,
-    TracerConfig,
-)
+from honeyhive.config.models.tracer import EvaluationConfig, SessionConfig, TracerConfig
 
 
 class TestTracerConfig:
