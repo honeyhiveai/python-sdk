@@ -17,6 +17,11 @@ Latest Release Notes
 Current Version Highlights
 ~~~~~~~~~~~~~~~~~~~~~~~~~~
 
+**🔧 IMPROVED: Development Tooling (Dec 2025)**
+
+* **Makefile Added**: Common development tasks now available via simple ``make`` commands
+* **SDK Generation**: Generate and compare SDK from OpenAPI spec with ``make generate-sdk`` and ``make compare-sdk``
+
 **🐛 FIXED: Session ID Initialization (Dec 2025)**
 
 * **Backend Sync**: Sessions are now always initialized in backend, even when session_id is explicitly provided

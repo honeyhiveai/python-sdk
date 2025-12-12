@@ -12,8 +12,10 @@ echo "🔍 Validating documentation navigation (praxis OS requirement)..."
 # Activate venv if it exists
 if [ -d "venv" ]; then
     source venv/bin/activate
+    export PYTHONPATH="venv/lib/python3.12/site-packages:.:$PYTHONPATH"
 elif [ -d ".venv" ]; then
     source .venv/bin/activate
+    export PYTHONPATH=".venv/lib/python3.12/site-packages:.:$PYTHONPATH"
 fi
 
 # Build documentation first

@@ -61,7 +61,10 @@
 
             # Activate virtual environment
             source .venv/bin/activate
-
+            
+            # Ensure venv site-packages is in PYTHONPATH for Nix Python
+            export PYTHONPATH=".venv/lib/python3.12/site-packages:.:$PYTHONPATH"
+            
             # Upgrade pip (silent)
             pip install --upgrade pip > /dev/null 2>&1
 
@@ -83,14 +86,14 @@
           '';
 
           # Environment variables
-          PYTHONPATH = ".";
-
+          # Note: PYTHONPATH is set in shellHook after venv activation
+          
           # Prevent Python from writing bytecode
           PYTHONDONTWRITEBYTECODE = "1";
-
+          
           # Force Python to use UTF-8
           PYTHONIOENCODING = "UTF-8";
-
+          
           # Enable Python development mode
           PYTHONDEVMODE = "1";
         };

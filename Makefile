@@ -1,4 +1,4 @@
-.PHONY: help install install-dev test test-fast test-integration lint format check docs docs-serve generate-sdk clean
+.PHONY: help install install-dev test test-fast test-integration lint format check check-docs-compliance docs docs-serve generate-sdk compare-sdk clean
 
 # Default target
 help:
@@ -21,6 +21,7 @@ help:
 	@echo "  make format          - Format code with black and isort"
 	@echo "  make check           - Run format and lint checks"
 	@echo "  make typecheck       - Run mypy type checking"
+	@echo "  make check-docs-compliance - Check documentation compliance (heavy)"
 	@echo ""
 	@echo "Documentation:"
 	@echo "  make docs            - Build documentation"
@@ -29,6 +30,7 @@ help:
 	@echo ""
 	@echo "SDK Generation:"
 	@echo "  make generate-sdk    - Generate SDK from OpenAPI spec"
+	@echo "  make compare-sdk     - Compare generated SDK with current implementation"
 	@echo ""
 	@echo "Maintenance:"
 	@echo "  make clean           - Remove build artifacts"
@@ -72,6 +74,9 @@ check:
 typecheck:
 	mypy src
 
+check-docs-compliance:
+	python scripts/check-documentation-compliance.py
+
 # Documentation
 docs:
 	cd docs && $(MAKE) html
@@ -85,6 +90,13 @@ docs-clean:
 # SDK Generation
 generate-sdk:
 	python scripts/generate_models_and_client.py
+
+compare-sdk:
+	@if [ ! -d "comparison_output/full_sdk" ]; then \
+		echo "❌ No generated SDK found. Run 'make generate-sdk' first."; \
+		exit 1; \
+	fi
+	python comparison_output/full_sdk/compare_with_current.py
 
 # Maintenance
 clean:

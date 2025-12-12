@@ -1,5 +1,14 @@
 ## [Unreleased]
 
+### Changed
+
+- **🔧 Developer Experience: Added Makefile for Common Development Tasks**
+  - Added `make generate-sdk` - Generate SDK from OpenAPI specification
+  - Added `make compare-sdk` - Compare generated SDK with current implementation
+  - Added `openapi-python-client>=0.28.0` to dev dependencies for SDK generation
+  - Added `comparison_output/` to `.gitignore` for generated SDK artifacts
+  - Files: `Makefile`, `pyproject.toml`, `.gitignore`
+
 ## [1.0.0rc5] - 2025-12-03
 
 ### Added

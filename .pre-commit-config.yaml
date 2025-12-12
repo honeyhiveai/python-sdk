@@ -85,13 +85,15 @@ repos:
         files: '^(src/.*\.py|docs/reference/.*\.rst|\.praxis-os/workspace/product/features\.md)$'
         stages: [pre-commit]
 
-      - id: documentation-compliance-check
-        name: Documentation Compliance Check
-        entry: scripts/check-documentation-compliance.py
-        language: python
-        pass_filenames: false
-        always_run: true
-        stages: [pre-commit]
+      # Disabled: Too heavy for pre-commit (takes minutes)
+      # Run manually with: make check-docs-compliance
+      # - id: documentation-compliance-check
+      #   name: Documentation Compliance Check
+      #   entry: scripts/check-documentation-compliance.py
+      #   language: python
+      #   pass_filenames: false
+      #   always_run: true
+      #   stages: [pre-commit]
 
       - id: invalid-tracer-pattern-check
         name: Invalid Tracer Pattern Check

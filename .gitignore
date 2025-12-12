@@ -155,6 +155,7 @@ Thumbs.db
 __pycache__/
 __pypackages__/
 build/
+comparison_output/
 celerybeat-schedule
 celerybeat.pid
 cover/

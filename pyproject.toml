@@ -55,6 +55,7 @@ dev = [
     "yamllint>=1.37.0",
     "requests>=2.31.0",  # For docs navigation validation
     "beautifulsoup4>=4.12.0",  # For docs navigation validation
+    "openapi-python-client>=0.28.0",  # For SDK generation
 ]
 
 # Documentation
