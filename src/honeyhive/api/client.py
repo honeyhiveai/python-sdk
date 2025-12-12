@@ -8,15 +8,11 @@ Usage:
 
     client = HoneyHive(api_key="hh_...")
 
-    # Configurations
+    # Sync usage
     configs = client.configurations.list(project="my-project")
-    client.configurations.create(CreateConfigurationRequest(...))
 
-    # Datasets
-    datasets = client.datasets.list(project="my-project")
-
-    # Experiments
-    runs = client.experiments.list_runs(project="my-project")
+    # Async usage
+    configs = await client.configurations.list_async(project="my-project")
 """
 
 from typing import Any, Dict, List, Optional
@@ -68,7 +64,8 @@ from honeyhive._generated.models import (
     UpdateToolResponse,
 )
 
-# Import all services
+# Import async services
+# Import sync services
 from honeyhive._generated.services import Configurations_service as configs_svc
 from honeyhive._generated.services import Datapoints_service as datapoints_svc
 from honeyhive._generated.services import Datasets_service as datasets_svc
@@ -79,6 +76,22 @@ from honeyhive._generated.services import Projects_service as projects_svc
 from honeyhive._generated.services import Session_service as session_svc
 from honeyhive._generated.services import Sessions_service as sessions_svc
 from honeyhive._generated.services import Tools_service as tools_svc
+from honeyhive._generated.services import (
+    async_Configurations_service as configs_svc_async,
+)
+from honeyhive._generated.services import (
+    async_Datapoints_service as datapoints_svc_async,
+)
+from honeyhive._generated.services import async_Datasets_service as datasets_svc_async
+from honeyhive._generated.services import async_Events_service as events_svc_async
+from honeyhive._generated.services import (
+    async_Experiments_service as experiments_svc_async,
+)
+from honeyhive._generated.services import async_Metrics_service as metrics_svc_async
+from honeyhive._generated.services import async_Projects_service as projects_svc_async
+from honeyhive._generated.services import async_Session_service as session_svc_async
+from honeyhive._generated.services import async_Sessions_service as sessions_svc_async
+from honeyhive._generated.services import async_Tools_service as tools_svc_async
 
 from ._base import BaseAPI
 
@@ -86,6 +99,7 @@ from ._base import BaseAPI
 class ConfigurationsAPI(BaseAPI):
     """Configurations API."""
 
+    # Sync methods
     def list(self, project: Optional[str] = None) -> List[GetConfigurationsResponse]:
         """List configurations."""
         return configs_svc.getConfigurations(self._api_config, project=project)
@@ -106,10 +120,40 @@ class ConfigurationsAPI(BaseAPI):
         """Delete a configuration."""
         return configs_svc.deleteConfiguration(self._api_config, id=id)
 
+    # Async methods
+    async def list_async(
+        self, project: Optional[str] = None
+    ) -> List[GetConfigurationsResponse]:
+        """List configurations asynchronously."""
+        return await configs_svc_async.getConfigurations(
+            self._api_config, project=project
+        )
+
+    async def create_async(
+        self, request: CreateConfigurationRequest
+    ) -> CreateConfigurationResponse:
+        """Create a configuration asynchronously."""
+        return await configs_svc_async.createConfiguration(
+            self._api_config, data=request
+        )
+
+    async def update_async(
+        self, id: str, request: UpdateConfigurationRequest
+    ) -> UpdateConfigurationResponse:
+        """Update a configuration asynchronously."""
+        return await configs_svc_async.updateConfiguration(
+            self._api_config, id=id, data=request
+        )
+
+    async def delete_async(self, id: str) -> DeleteConfigurationResponse:
+        """Delete a configuration asynchronously."""
+        return await configs_svc_async.deleteConfiguration(self._api_config, id=id)
+
 
 class DatapointsAPI(BaseAPI):
     """Datapoints API."""
 
+    # Sync methods
     def list(
         self,
         project: str,
@@ -139,10 +183,47 @@ class DatapointsAPI(BaseAPI):
         """Delete a datapoint."""
         return datapoints_svc.deleteDatapoint(self._api_config, id=id)
 
+    # Async methods
+    async def list_async(
+        self,
+        project: str,
+        dataset_id: Optional[str] = None,
+        type: Optional[str] = None,
+    ) -> GetDatapointsResponse:
+        """List datapoints asynchronously."""
+        return await datapoints_svc_async.getDatapoints(
+            self._api_config, project=project, dataset_id=dataset_id, type=type
+        )
+
+    async def get_async(self, id: str) -> GetDatapointResponse:
+        """Get a datapoint by ID asynchronously."""
+        return await datapoints_svc_async.getDatapoint(self._api_config, id=id)
+
+    async def create_async(
+        self, request: CreateDatapointRequest
+    ) -> CreateDatapointResponse:
+        """Create a datapoint asynchronously."""
+        return await datapoints_svc_async.createDatapoint(
+            self._api_config, data=request
+        )
+
+    async def update_async(
+        self, id: str, request: UpdateDatapointRequest
+    ) -> UpdateDatapointResponse:
+        """Update a datapoint asynchronously."""
+        return await datapoints_svc_async.updateDatapoint(
+            self._api_config, id=id, data=request
+        )
+
+    async def delete_async(self, id: str) -> DeleteDatapointResponse:
+        """Delete a datapoint asynchronously."""
+        return await datapoints_svc_async.deleteDatapoint(self._api_config, id=id)
+
 
 class DatasetsAPI(BaseAPI):
     """Datasets API."""
 
+    # Sync methods
     def list(
         self,
         project: Optional[str] = None,
@@ -166,10 +247,39 @@ class DatasetsAPI(BaseAPI):
         """Delete a dataset."""
         return datasets_svc.deleteDataset(self._api_config, dataset_id=id)
 
+    # Async methods
+    async def list_async(
+        self,
+        project: Optional[str] = None,
+        name: Optional[str] = None,
+        type: Optional[str] = None,
+    ) -> GetDatasetsResponse:
+        """List datasets asynchronously."""
+        return await datasets_svc_async.getDatasets(
+            self._api_config, project=project, name=name, type=type
+        )
+
+    async def create_async(
+        self, request: CreateDatasetRequest
+    ) -> CreateDatasetResponse:
+        """Create a dataset asynchronously."""
+        return await datasets_svc_async.createDataset(self._api_config, data=request)
+
+    async def update_async(
+        self, request: UpdateDatasetRequest
+    ) -> UpdateDatasetResponse:
+        """Update a dataset asynchronously."""
+        return await datasets_svc_async.updateDataset(self._api_config, data=request)
+
+    async def delete_async(self, id: str) -> DeleteDatasetResponse:
+        """Delete a dataset asynchronously."""
+        return await datasets_svc_async.deleteDataset(self._api_config, dataset_id=id)
+
 
 class EventsAPI(BaseAPI):
     """Events API."""
 
+    # Sync methods
     def list(self, data: Dict[str, Any]) -> Dict[str, Any]:
         """Get events."""
         return events_svc.getEvents(self._api_config, data=data)
@@ -186,10 +296,28 @@ class EventsAPI(BaseAPI):
         """Create events in batch."""
         return events_svc.createEventBatch(self._api_config, data=data)
 
+    # Async methods
+    async def list_async(self, data: Dict[str, Any]) -> Dict[str, Any]:
+        """Get events asynchronously."""
+        return await events_svc_async.getEvents(self._api_config, data=data)
+
+    async def create_async(self, data: Dict[str, Any]) -> Dict[str, Any]:
+        """Create an event asynchronously."""
+        return await events_svc_async.createEvent(self._api_config, data=data)
+
+    async def update_async(self, data: Dict[str, Any]) -> None:
+        """Update an event asynchronously."""
+        return await events_svc_async.updateEvent(self._api_config, data=data)
+
+    async def create_batch_async(self, data: Dict[str, Any]) -> Dict[str, Any]:
+        """Create events in batch asynchronously."""
+        return await events_svc_async.createEventBatch(self._api_config, data=data)
+
 
 class ExperimentsAPI(BaseAPI):
     """Experiments API."""
 
+    # Sync methods
     def get_schema(self, project: str) -> GetExperimentRunsSchemaResponse:
         """Get experiment runs schema."""
         return experiments_svc.getExperimentRunsSchema(
@@ -226,10 +354,50 @@ class ExperimentsAPI(BaseAPI):
         """Delete an experiment run."""
         return experiments_svc.deleteRun(self._api_config, run_id=run_id)
 
+    # Async methods
+    async def get_schema_async(self, project: str) -> GetExperimentRunsSchemaResponse:
+        """Get experiment runs schema asynchronously."""
+        return await experiments_svc_async.getExperimentRunsSchema(
+            self._api_config, project=project
+        )
+
+    async def list_runs_async(
+        self,
+        project: str,
+        experiment_id: Optional[str] = None,
+    ) -> GetExperimentRunsResponse:
+        """List experiment runs asynchronously."""
+        return await experiments_svc_async.getRuns(
+            self._api_config, project=project, experiment_id=experiment_id
+        )
+
+    async def get_run_async(self, run_id: str) -> GetExperimentRunResponse:
+        """Get an experiment run by ID asynchronously."""
+        return await experiments_svc_async.getRun(self._api_config, run_id=run_id)
+
+    async def create_run_async(
+        self, request: PostExperimentRunRequest
+    ) -> PostExperimentRunResponse:
+        """Create an experiment run asynchronously."""
+        return await experiments_svc_async.createRun(self._api_config, data=request)
+
+    async def update_run_async(
+        self, run_id: str, request: PutExperimentRunRequest
+    ) -> PutExperimentRunResponse:
+        """Update an experiment run asynchronously."""
+        return await experiments_svc_async.updateRun(
+            self._api_config, run_id=run_id, data=request
+        )
+
+    async def delete_run_async(self, run_id: str) -> DeleteExperimentRunResponse:
+        """Delete an experiment run asynchronously."""
+        return await experiments_svc_async.deleteRun(self._api_config, run_id=run_id)
+
 
 class MetricsAPI(BaseAPI):
     """Metrics API."""
 
+    # Sync methods
     def list(
         self,
         project: Optional[str] = None,
@@ -253,10 +421,35 @@ class MetricsAPI(BaseAPI):
         """Delete a metric."""
         return metrics_svc.deleteMetric(self._api_config, metric_id=id)
 
+    # Async methods
+    async def list_async(
+        self,
+        project: Optional[str] = None,
+        name: Optional[str] = None,
+        type: Optional[str] = None,
+    ) -> GetMetricsResponse:
+        """List metrics asynchronously."""
+        return await metrics_svc_async.getMetrics(
+            self._api_config, project=project, name=name, type=type
+        )
+
+    async def create_async(self, request: CreateMetricRequest) -> CreateMetricResponse:
+        """Create a metric asynchronously."""
+        return await metrics_svc_async.createMetric(self._api_config, data=request)
+
+    async def update_async(self, request: UpdateMetricRequest) -> UpdateMetricResponse:
+        """Update a metric asynchronously."""
+        return await metrics_svc_async.updateMetric(self._api_config, data=request)
+
+    async def delete_async(self, id: str) -> DeleteMetricResponse:
+        """Delete a metric asynchronously."""
+        return await metrics_svc_async.deleteMetric(self._api_config, metric_id=id)
+
 
 class ProjectsAPI(BaseAPI):
     """Projects API."""
 
+    # Sync methods
     def list(self, name: Optional[str] = None) -> Dict[str, Any]:
         """List projects."""
         return projects_svc.getProjects(self._api_config, name=name)
@@ -273,10 +466,28 @@ class ProjectsAPI(BaseAPI):
         """Delete a project."""
         return projects_svc.deleteProject(self._api_config, name=name)
 
+    # Async methods
+    async def list_async(self, name: Optional[str] = None) -> Dict[str, Any]:
+        """List projects asynchronously."""
+        return await projects_svc_async.getProjects(self._api_config, name=name)
+
+    async def create_async(self, data: Dict[str, Any]) -> Dict[str, Any]:
+        """Create a project asynchronously."""
+        return await projects_svc_async.createProject(self._api_config, data=data)
+
+    async def update_async(self, data: Dict[str, Any]) -> Dict[str, Any]:
+        """Update a project asynchronously."""
+        return await projects_svc_async.updateProject(self._api_config, data=data)
+
+    async def delete_async(self, name: str) -> Dict[str, Any]:
+        """Delete a project asynchronously."""
+        return await projects_svc_async.deleteProject(self._api_config, name=name)
+
 
 class SessionsAPI(BaseAPI):
     """Sessions API."""
 
+    # Sync methods
     def get(self, session_id: str) -> GetSessionResponse:
         """Get a session by ID."""
         return sessions_svc.getSession(self._api_config, session_id=session_id)
@@ -289,10 +500,28 @@ class SessionsAPI(BaseAPI):
         """Start a new session."""
         return session_svc.startSession(self._api_config, data=data)
 
+    # Async methods
+    async def get_async(self, session_id: str) -> GetSessionResponse:
+        """Get a session by ID asynchronously."""
+        return await sessions_svc_async.getSession(
+            self._api_config, session_id=session_id
+        )
+
+    async def delete_async(self, session_id: str) -> DeleteSessionResponse:
+        """Delete a session asynchronously."""
+        return await sessions_svc_async.deleteSession(
+            self._api_config, session_id=session_id
+        )
+
+    async def start_async(self, data: Dict[str, Any]) -> Dict[str, Any]:
+        """Start a new session asynchronously."""
+        return await session_svc_async.startSession(self._api_config, data=data)
+
 
 class ToolsAPI(BaseAPI):
     """Tools API."""
 
+    # Sync methods
     def list(self) -> List[GetToolsResponse]:
         """List tools."""
         return tools_svc.getTools(self._api_config)
@@ -309,21 +538,38 @@ class ToolsAPI(BaseAPI):
         """Delete a tool."""
         return tools_svc.deleteTool(self._api_config, tool_id=id)
 
+    # Async methods
+    async def list_async(self) -> List[GetToolsResponse]:
+        """List tools asynchronously."""
+        return await tools_svc_async.getTools(self._api_config)
+
+    async def create_async(self, request: CreateToolRequest) -> CreateToolResponse:
+        """Create a tool asynchronously."""
+        return await tools_svc_async.createTool(self._api_config, data=request)
+
+    async def update_async(self, request: UpdateToolRequest) -> UpdateToolResponse:
+        """Update a tool asynchronously."""
+        return await tools_svc_async.updateTool(self._api_config, data=request)
+
+    async def delete_async(self, id: str) -> DeleteToolResponse:
+        """Delete a tool asynchronously."""
+        return await tools_svc_async.deleteTool(self._api_config, tool_id=id)
+
 
 class HoneyHive:
     """Main HoneyHive API client.
 
-    Provides an ergonomic interface to the HoneyHive API.
+    Provides an ergonomic interface to the HoneyHive API with both
+    sync and async methods.
 
     Usage:
         client = HoneyHive(api_key="hh_...")
 
-        # List configurations
+        # Sync
         configs = client.configurations.list(project="my-project")
 
-        # Create a dataset
-        from honeyhive.models import CreateDatasetRequest
-        dataset = client.datasets.create(CreateDatasetRequest(...))
+        # Async
+        configs = await client.configurations.list_async(project="my-project")
 
     Attributes:
         configurations: API for managing configurations.
