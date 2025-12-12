@@ -196,7 +196,7 @@ class TestSessionAPIInitialization:
         # Arrange
         mock_client.server_url = "https://api.honeyhive.ai"
 
-        with patch("honeyhive._v0.api.base.get_error_handler") as mock_get_handler:
+        with patch("honeyhive.api.base.get_error_handler") as mock_get_handler:
             mock_error_handler = Mock()
             mock_get_handler.return_value = mock_error_handler
 
@@ -217,7 +217,7 @@ class TestSessionAPIInitialization:
         # Arrange
         mock_client.server_url = "https://api.honeyhive.ai"
 
-        with patch("honeyhive._v0.api.base.get_error_handler"):
+        with patch("honeyhive.api.base.get_error_handler"):
             # Act
             session_api = SessionAPI(mock_client)
 
@@ -238,7 +238,7 @@ class TestSessionAPIInitialization:
         mock_client.server_url = "https://custom.api.com"
         mock_client.api_key = "custom-key-123"
 
-        with patch("honeyhive._v0.api.base.get_error_handler"):
+        with patch("honeyhive.api.base.get_error_handler"):
             # Act
             session_api = SessionAPI(mock_client)
 
@@ -264,7 +264,7 @@ class TestSessionAPICreateSession:
         mock_response = Mock()
         mock_response.json.return_value = {"session_id": "session-created-123"}
 
-        with patch("honeyhive._v0.api.base.get_error_handler"):
+        with patch("honeyhive.api.base.get_error_handler"):
             session_api = SessionAPI(mock_client)
 
             with patch.object(mock_client, "request", return_value=mock_response):
@@ -303,7 +303,7 @@ class TestSessionAPICreateSession:
         mock_response = Mock()
         mock_response.json.return_value = {"session_id": "custom-session-456"}
 
-        with patch("honeyhive._v0.api.base.get_error_handler"):
+        with patch("honeyhive.api.base.get_error_handler"):
             session_api = SessionAPI(mock_client)
 
             with patch.object(mock_client, "request", return_value=mock_response):
@@ -331,7 +331,7 @@ class TestSessionAPICreateSession:
 
         test_exception = RuntimeError("Network error")
 
-        with patch("honeyhive._v0.api.base.get_error_handler"):
+        with patch("honeyhive.api.base.get_error_handler"):
             session_api = SessionAPI(mock_client)
 
             with patch.object(mock_client, "request", side_effect=test_exception):
@@ -353,7 +353,7 @@ class TestSessionAPICreateSession:
         mock_response = Mock()
         mock_response.json.return_value = {"error": "Invalid request"}
 
-        with patch("honeyhive._v0.api.base.get_error_handler"):
+        with patch("honeyhive.api.base.get_error_handler"):
             session_api = SessionAPI(mock_client)
 
             with patch.object(mock_client, "request", return_value=mock_response):
@@ -381,7 +381,7 @@ class TestSessionAPICreateSessionFromDict:
         mock_response = Mock()
         mock_response.json.return_value = {"session_id": "session-dict-123"}
 
-        with patch("honeyhive._v0.api.base.get_error_handler"):
+        with patch("honeyhive.api.base.get_error_handler"):
             session_api = SessionAPI(mock_client)
 
             with patch.object(mock_client, "request", return_value=mock_response):
@@ -417,7 +417,7 @@ class TestSessionAPICreateSessionFromDict:
         mock_response = Mock()
         mock_response.json.return_value = {"session_id": "session-nested-456"}
 
-        with patch("honeyhive._v0.api.base.get_error_handler"):
+        with patch("honeyhive.api.base.get_error_handler"):
             session_api = SessionAPI(mock_client)
 
             with patch.object(mock_client, "request", return_value=mock_response):
@@ -446,7 +446,7 @@ class TestSessionAPICreateSessionFromDict:
         mock_response = Mock()
         mock_response.json.return_value = {"session_id": "session-empty-789"}
 
-        with patch("honeyhive._v0.api.base.get_error_handler"):
+        with patch("honeyhive.api.base.get_error_handler"):
             session_api = SessionAPI(mock_client)
 
             with patch.object(mock_client, "request", return_value=mock_response):
@@ -475,7 +475,7 @@ class TestSessionAPIStartSession:
         mock_response = Mock()
         mock_response.json.return_value = {"session_id": "session-start-123"}
 
-        with patch("honeyhive._v0.api.base.get_error_handler"):
+        with patch("honeyhive.api.base.get_error_handler"):
             session_api = SessionAPI(mock_client)
 
             with patch.object(mock_client, "request", return_value=mock_response):
@@ -504,7 +504,7 @@ class TestSessionAPIStartSession:
         mock_response = Mock()
         mock_response.json.return_value = {"session_id": "custom-start-456"}
 
-        with patch("honeyhive._v0.api.base.get_error_handler"):
+        with patch("honeyhive.api.base.get_error_handler"):
             session_api = SessionAPI(mock_client)
 
             with patch.object(mock_client, "request", return_value=mock_response):
@@ -530,7 +530,7 @@ class TestSessionAPIStartSession:
         mock_response = Mock()
         mock_response.json.return_value = {"session_id": "session-kwargs-789"}
 
-        with patch("honeyhive._v0.api.base.get_error_handler"):
+        with patch("honeyhive.api.base.get_error_handler"):
             session_api = SessionAPI(mock_client)
 
             with patch.object(mock_client, "request", return_value=mock_response):
@@ -560,7 +560,7 @@ class TestSessionAPIStartSession:
             "session": {"session_id": "session-nested-abc"}
         }
 
-        with patch("honeyhive._v0.api.base.get_error_handler"):
+        with patch("honeyhive.api.base.get_error_handler"):
             session_api = SessionAPI(mock_client)
 
             with patch.object(mock_client, "request", return_value=mock_response):
@@ -585,7 +585,7 @@ class TestSessionAPIStartSession:
         mock_response = Mock()
         mock_response.json.return_value = {"error": "Session creation failed"}
 
-        with patch("honeyhive._v0.api.base.get_error_handler"):
+        with patch("honeyhive.api.base.get_error_handler"):
             session_api = SessionAPI(mock_client)
 
             with patch.object(mock_client, "request", return_value=mock_response):
@@ -614,7 +614,7 @@ class TestSessionAPIStartSession:
             "session": {"session_id": "session-warning-def"}
         }
 
-        with patch("honeyhive._v0.api.base.get_error_handler"):
+        with patch("honeyhive.api.base.get_error_handler"):
             session_api = SessionAPI(mock_client)
 
             with patch.object(mock_client, "request", return_value=mock_response):
@@ -656,7 +656,7 @@ class TestSessionAPIGetSession:
         mock_response = Mock()
         mock_response.json.return_value = event_data
 
-        with patch("honeyhive._v0.api.base.get_error_handler"):
+        with patch("honeyhive.api.base.get_error_handler"):
             session_api = SessionAPI(mock_client)
 
             with patch.object(mock_client, "request", return_value=mock_response):
@@ -690,7 +690,7 @@ class TestSessionAPIGetSession:
             "SessionWithCamelCase123",
         ]
 
-        with patch("honeyhive._v0.api.base.get_error_handler"):
+        with patch("honeyhive.api.base.get_error_handler"):
             session_api = SessionAPI(mock_client)
 
             for session_id in session_ids:
@@ -726,7 +726,7 @@ class TestSessionAPIGetSession:
         session_id = "session-error-123"
         test_exception = RuntimeError("Session not found")
 
-        with patch("honeyhive._v0.api.base.get_error_handler"):
+        with patch("honeyhive.api.base.get_error_handler"):
             session_api = SessionAPI(mock_client)
 
             with patch.object(mock_client, "request", side_effect=test_exception):
@@ -747,7 +747,7 @@ class TestSessionAPIGetSession:
         mock_response = Mock()
         mock_response.json.return_value = invalid_event_data
 
-        with patch("honeyhive._v0.api.base.get_error_handler"):
+        with patch("honeyhive.api.base.get_error_handler"):
             session_api = SessionAPI(mock_client)
 
             with patch.object(mock_client, "request", return_value=mock_response):
@@ -773,7 +773,7 @@ class TestSessionAPIDeleteSession:
         mock_response = Mock()
         mock_response.status_code = 200
 
-        with patch("honeyhive._v0.api.base.get_error_handler") as mock_get_handler:
+        with patch("honeyhive.api.base.get_error_handler") as mock_get_handler:
             mock_error_handler = Mock()
             mock_context_manager = Mock()
             mock_error_handler.handle_operation.return_value = mock_context_manager
@@ -808,7 +808,7 @@ class TestSessionAPIDeleteSession:
         mock_response = Mock()
         mock_response.status_code = 404
 
-        with patch("honeyhive._v0.api.base.get_error_handler") as mock_get_handler:
+        with patch("honeyhive.api.base.get_error_handler") as mock_get_handler:
             mock_error_handler = Mock()
             mock_context_manager = Mock()
             mock_error_handler.handle_operation.return_value = mock_context_manager
@@ -838,7 +838,7 @@ class TestSessionAPIDeleteSession:
         mock_response = Mock()
         mock_response.status_code = 200
 
-        with patch("honeyhive._v0.api.base.get_error_handler") as mock_get_handler:
+        with patch("honeyhive.api.base.get_error_handler") as mock_get_handler:
             mock_error_handler = Mock()
             mock_context_manager = Mock()
             mock_error_handler.handle_operation.return_value = mock_context_manager
@@ -883,7 +883,7 @@ class TestSessionAPIDeleteSession:
 
         mock_client.server_url = "https://api.honeyhive.ai"
 
-        with patch("honeyhive._v0.api.base.get_error_handler") as mock_get_handler:
+        with patch("honeyhive.api.base.get_error_handler") as mock_get_handler:
             mock_error_handler = Mock()
             mock_context_manager = Mock()
             mock_error_handler.handle_operation.return_value = mock_context_manager
@@ -926,7 +926,7 @@ class TestSessionAPIAsyncMethods:
         mock_response = Mock()
         mock_response.json.return_value = {"session_id": "session-async-123"}
 
-        with patch("honeyhive._v0.api.base.get_error_handler"):
+        with patch("honeyhive.api.base.get_error_handler"):
             session_api = SessionAPI(mock_client)
 
             with patch.object(mock_client, "request_async", return_value=mock_response):
@@ -956,7 +956,7 @@ class TestSessionAPIAsyncMethods:
         mock_response = Mock()
         mock_response.json.return_value = {"session_id": "session-dict-async-456"}
 
-        with patch("honeyhive._v0.api.base.get_error_handler"):
+        with patch("honeyhive.api.base.get_error_handler"):
             session_api = SessionAPI(mock_client)
 
             with patch.object(mock_client, "request_async", return_value=mock_response):
@@ -978,7 +978,7 @@ class TestSessionAPIAsyncMethods:
         mock_response = Mock()
         mock_response.json.return_value = {"session_id": "session-start-async-789"}
 
-        with patch("honeyhive._v0.api.base.get_error_handler"):
+        with patch("honeyhive.api.base.get_error_handler"):
             session_api = SessionAPI(mock_client)
 
             with patch.object(mock_client, "request_async", return_value=mock_response):
@@ -1014,7 +1014,7 @@ class TestSessionAPIAsyncMethods:
         mock_response = Mock()
         mock_response.json.return_value = event_data
 
-        with patch("honeyhive._v0.api.base.get_error_handler"):
+        with patch("honeyhive.api.base.get_error_handler"):
             session_api = SessionAPI(mock_client)
 
             with patch.object(mock_client, "request_async", return_value=mock_response):
@@ -1040,7 +1040,7 @@ class TestSessionAPIAsyncMethods:
         mock_response = Mock()
         mock_response.status_code = 200
 
-        with patch("honeyhive._v0.api.base.get_error_handler") as mock_get_handler:
+        with patch("honeyhive.api.base.get_error_handler") as mock_get_handler:
             mock_error_handler = Mock()
             mock_context_manager = Mock()
             mock_error_handler.handle_operation.return_value = mock_context_manager
@@ -1073,7 +1073,7 @@ class TestSessionAPIAsyncMethods:
         mock_response = Mock()
         mock_response.status_code = 200
 
-        with patch("honeyhive._v0.api.base.get_error_handler") as mock_get_handler:
+        with patch("honeyhive.api.base.get_error_handler") as mock_get_handler:
             mock_error_handler = Mock()
             mock_context_manager = Mock()
             mock_error_handler.handle_operation.return_value = mock_context_manager
@@ -1141,7 +1141,7 @@ class TestSessionAPIIntegration:
 
         mock_client.server_url = "https://api.honeyhive.ai"
 
-        with patch("honeyhive._v0.api.base.get_error_handler") as mock_get_handler:
+        with patch("honeyhive.api.base.get_error_handler") as mock_get_handler:
             mock_error_handler = Mock()
             mock_context_manager = Mock()
             mock_error_handler.handle_operation.return_value = mock_context_manager
@@ -1189,7 +1189,7 @@ class TestSessionAPIIntegration:
         # Arrange
         test_exception = RuntimeError("Integration test error")
 
-        with patch("honeyhive._v0.api.base.get_error_handler"):
+        with patch("honeyhive.api.base.get_error_handler"):
             session_api = SessionAPI(mock_client)
 
             with patch.object(mock_client, "request", side_effect=test_exception):
@@ -1219,7 +1219,7 @@ class TestSessionAPIIntegration:
             {"session": {"session_id": "format-test-2"}},  # Nested session_id
         ]
 
-        with patch("honeyhive._v0.api.base.get_error_handler"):
+        with patch("honeyhive.api.base.get_error_handler"):
             session_api = SessionAPI(mock_client)
 
             for i, response_format in enumerate(response_formats):

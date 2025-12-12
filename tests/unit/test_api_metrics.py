@@ -34,7 +34,7 @@ class TestMetricsAPIInitialization:
         and initializes with proper client reference.
         """
         # Arrange & Act
-        with patch("honeyhive._v0.api.base.get_error_handler") as mock_get_handler:
+        with patch("honeyhive.api.base.get_error_handler") as mock_get_handler:
             mock_error_handler = Mock()
             mock_get_handler.return_value = mock_error_handler
 
@@ -54,7 +54,7 @@ class TestMetricsAPIInitialization:
         # Arrange
         mock_client.base_url = "https://custom.honeyhive.ai"
 
-        with patch("honeyhive._v0.api.base.get_error_handler") as mock_get_handler:
+        with patch("honeyhive.api.base.get_error_handler") as mock_get_handler:
             mock_error_handler = Mock()
             mock_get_handler.return_value = mock_error_handler
 
@@ -101,7 +101,7 @@ class TestMetricsAPICreateMetric:
             return_type=ReturnType.float,
         )
 
-        with patch("honeyhive._v0.api.base.get_error_handler"):
+        with patch("honeyhive.api.base.get_error_handler"):
             metrics_api = MetricsAPI(mock_client)
 
             # Act
@@ -150,7 +150,7 @@ class TestMetricsAPICreateMetric:
             "model_name": "gpt-4",
         }
 
-        with patch("honeyhive._v0.api.base.get_error_handler"):
+        with patch("honeyhive.api.base.get_error_handler"):
             metrics_api = MetricsAPI(mock_client)
 
             # Act
@@ -194,7 +194,7 @@ class TestMetricsAPICreateMetric:
             return_type=ReturnType.string,
         )
 
-        with patch("honeyhive._v0.api.base.get_error_handler"):
+        with patch("honeyhive.api.base.get_error_handler"):
             metrics_api = MetricsAPI(mock_client)
 
             # Act
@@ -242,7 +242,7 @@ class TestMetricsAPICreateMetric:
             "return_type": "float",
         }
 
-        with patch("honeyhive._v0.api.base.get_error_handler"):
+        with patch("honeyhive.api.base.get_error_handler"):
             metrics_api = MetricsAPI(mock_client)
 
             # Act
@@ -284,7 +284,7 @@ class TestMetricsAPIGetMetric:
         )
         mock_client.request.return_value = mock_response
 
-        with patch("honeyhive._v0.api.base.get_error_handler"):
+        with patch("honeyhive.api.base.get_error_handler"):
             metrics_api = MetricsAPI(mock_client)
 
             # Act
@@ -325,7 +325,7 @@ class TestMetricsAPIGetMetric:
         mock_response.json.return_value = mock_response_data
         mock_client.request_async = AsyncMock(return_value=mock_response)
 
-        with patch("honeyhive._v0.api.base.get_error_handler"):
+        with patch("honeyhive.api.base.get_error_handler"):
             metrics_api = MetricsAPI(mock_client)
 
             # Act
@@ -379,7 +379,7 @@ class TestMetricsAPIListMetrics:
 
         mock_processed_metrics = [Mock(), Mock()]
 
-        with patch("honeyhive._v0.api.base.get_error_handler"):
+        with patch("honeyhive.api.base.get_error_handler"):
             metrics_api = MetricsAPI(mock_client)
 
             with patch.object(
@@ -419,7 +419,7 @@ class TestMetricsAPIListMetrics:
 
         mock_processed_metrics: list[Mock] = []
 
-        with patch("honeyhive._v0.api.base.get_error_handler"):
+        with patch("honeyhive.api.base.get_error_handler"):
             metrics_api = MetricsAPI(mock_client)
 
             with patch.object(
@@ -468,7 +468,7 @@ class TestMetricsAPIListMetrics:
 
         mock_processed_metrics: list[Mock] = [Mock()]
 
-        with patch("honeyhive._v0.api.base.get_error_handler"):
+        with patch("honeyhive.api.base.get_error_handler"):
             metrics_api = MetricsAPI(mock_client)
 
             with patch.object(
@@ -511,7 +511,7 @@ class TestMetricsAPIListMetrics:
 
         mock_processed_metrics: list[Mock] = []
 
-        with patch("honeyhive._v0.api.base.get_error_handler"):
+        with patch("honeyhive.api.base.get_error_handler"):
             metrics_api = MetricsAPI(mock_client)
 
             with patch.object(
@@ -562,7 +562,7 @@ class TestMetricsAPIUpdateMetric:
             description="Updated metric description",
         )
 
-        with patch("honeyhive._v0.api.base.get_error_handler"):
+        with patch("honeyhive.api.base.get_error_handler"):
             metrics_api = MetricsAPI(mock_client)
 
             # Act
@@ -609,7 +609,7 @@ class TestMetricsAPIUpdateMetric:
             "description": "Dict updated metric description",
         }
 
-        with patch("honeyhive._v0.api.base.get_error_handler"):
+        with patch("honeyhive.api.base.get_error_handler"):
             metrics_api = MetricsAPI(mock_client)
 
             # Act
@@ -653,7 +653,7 @@ class TestMetricsAPIUpdateMetric:
             description="Async updated metric description",
         )
 
-        with patch("honeyhive._v0.api.base.get_error_handler"):
+        with patch("honeyhive.api.base.get_error_handler"):
             metrics_api = MetricsAPI(mock_client)
 
             # Act
@@ -702,7 +702,7 @@ class TestMetricsAPIUpdateMetric:
             "description": "Async dict updated metric description",
         }
 
-        with patch("honeyhive._v0.api.base.get_error_handler"):
+        with patch("honeyhive.api.base.get_error_handler"):
             metrics_api = MetricsAPI(mock_client)
 
             # Act
@@ -731,7 +731,7 @@ class TestMetricsAPIDeleteMetric:
         """
         metric_id = "delete-metric-123"
 
-        with patch("honeyhive._v0.api.base.get_error_handler"):
+        with patch("honeyhive.api.base.get_error_handler"):
             metrics_api = MetricsAPI(mock_client)
 
             # Act & Assert
@@ -754,7 +754,7 @@ class TestMetricsAPIDeleteMetric:
         """
         metric_id = "async-delete-metric-789"
 
-        with patch("honeyhive._v0.api.base.get_error_handler"):
+        with patch("honeyhive.api.base.get_error_handler"):
             metrics_api = MetricsAPI(mock_client)
 
             # Act & Assert
@@ -778,7 +778,7 @@ class TestMetricsAPIIntegration:
         and maintains proper inheritance chain.
         """
         # Arrange & Act
-        with patch("honeyhive._v0.api.base.get_error_handler"):
+        with patch("honeyhive.api.base.get_error_handler"):
             metrics_api = MetricsAPI(mock_client)
 
             # Assert
@@ -813,7 +813,7 @@ class TestMetricsAPIIntegration:
             return_type=ReturnType.float,
         )
 
-        with patch("honeyhive._v0.api.base.get_error_handler"):
+        with patch("honeyhive.api.base.get_error_handler"):
             metrics_api = MetricsAPI(mock_client)
 
             # Act - Test create_metric serialization

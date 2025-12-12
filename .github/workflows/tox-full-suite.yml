@@ -162,15 +162,10 @@ jobs:
           python -m pip install --upgrade pip
           pip install -e ".[dev]"
 
-      - name: Regenerate v0 client
+      - name: Regenerate models
         run: |
-          echo "🔄 Regenerating v0 client..."
-          python scripts/generate_v0_models.py
-
-      - name: Regenerate v1 client
-        run: |
-          echo "🔄 Regenerating v1 client..."
-          python scripts/generate_v1_client.py
+          echo "🔄 Regenerating models from OpenAPI spec..."
+          python scripts/generate_models.py
 
       - name: Check for uncommitted changes
         run: |
@@ -184,103 +179,11 @@ jobs:
             echo "Diff:"
             git diff --stat
             echo ""
-            echo "Please run 'make generate-v0-client' and 'make generate-v1-client' locally and commit the changes."
+            echo "Please run 'make generate' locally and commit the changes."
             exit 1
           else
             echo "✅ Generated code is up-to-date!"
           fi
-
-  # === PACKAGE BUILD VERIFICATION ===
-  # TODO: Add publishing steps for v0.x to PyPI from main branch
-  # TODO: Add publishing steps for v1.x to PyPI from v1 branch or v1.* tags
-  package-build:
-    name: "📦 Package Build"
-    runs-on: ubuntu-latest
-
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
-
-      - name: Set up Python 3.12
-        uses: actions/setup-python@v5
-        with:
-          python-version: '3.12'
-          cache: 'pip'
-
-      - name: Install dependencies
-        run: |
-          python -m pip install --upgrade pip
-          pip install -e ".[dev]"
-
-      - name: Build v0 package
-        run: |
-          echo "📦 Building v0.x package (excluding _v1/)..."
-          rm -rf dist/
-          python -m build --no-isolation --wheel
-          echo "🔧 Removing _v1/ from wheel..."
-          python scripts/filter_wheel.py dist/*.whl --exclude "_v1"
-          # Rename to indicate v0
-          mkdir -p dist/v0
-          mv dist/*.whl dist/v0/
-          echo "✅ v0 package built"
-
-      - name: Inspect v0 package
-        run: |
-          echo "📋 Inspecting v0 package contents..."
-          for whl in dist/v0/*.whl; do
-            echo ""
-            echo "=== Contents of $whl ==="
-            unzip -l "$whl" | grep -E "honeyhive/(_v0|_v1|api|models)" | head -30
-            echo ""
-            echo "Verifying _v1/ is excluded..."
-            if unzip -l "$whl" | grep -q "honeyhive/_v1/"; then
-              echo "❌ ERROR: _v1/ found in v0 package!"
-              exit 1
-            fi
-            echo "✅ _v1/ correctly excluded from v0 package"
-          done
-
-      - name: Build v1 package
-        run: |
-          echo "📦 Building v1.x package (excluding _v0/)..."
-          rm -rf dist/v1
-          python -m build --no-isolation --wheel
-          echo "🔧 Removing _v0/ from wheel..."
-          python scripts/filter_wheel.py dist/*.whl --exclude "_v0"
-          # Move to v1 directory
-          mkdir -p dist/v1
-          mv dist/*.whl dist/v1/
-          echo "✅ v1 package built"
-
-      - name: Inspect v1 package
-        run: |
-          echo "📋 Inspecting v1 package contents..."
-          for whl in dist/v1/*.whl; do
-            echo ""
-            echo "=== Contents of $whl ==="
-            unzip -l "$whl" | grep -E "honeyhive/(_v0|_v1|api|models)" | head -30
-            echo ""
-            echo "Verifying _v0/ is excluded..."
-            if unzip -l "$whl" | grep -q "honeyhive/_v0/"; then
-              echo "❌ ERROR: _v0/ found in v1 package!"
-              exit 1
-            fi
-            echo "✅ _v0/ correctly excluded from v1 package"
-          done
-
-      - name: Upload v0 wheel
-        uses: actions/upload-artifact@v4
-        with:
-          name: wheel-v0
-          path: dist/v0/*.whl
-          retention-days: 14
-
-      - name: Upload v1 wheel
-        uses: actions/upload-artifact@v4
-        with:
-          name: wheel-v1
-          path: dist/v1/*.whl
-          retention-days: 14
 
   # === CODE QUALITY & DOCUMENTATION ===
   quality-and-docs:
@@ -422,7 +325,7 @@ jobs:
   # === TEST SUITE SUMMARY ===
   summary:
     name: "📊 Test Summary"
-    needs: [python-tests, quality-and-docs, integration-tests, generated-code-check, package-build]
+    needs: [python-tests, quality-and-docs, integration-tests, generated-code-check]
     runs-on: ubuntu-latest
     if: always()
 
@@ -463,18 +366,11 @@ jobs:
           generated_result="${{ needs.generated-code-check.result == 'success' && '✅ UP-TO-DATE' || '❌ OUT OF SYNC' }}"
           echo "- **Generated Code:** $generated_result" >> $GITHUB_STEP_SUMMARY
 
-          # Package Build
-          echo "" >> $GITHUB_STEP_SUMMARY
-          echo "## 📦 Package Build" >> $GITHUB_STEP_SUMMARY
-          package_result="${{ needs.package-build.result == 'success' && '✅ PASSED' || '❌ FAILED' }}"
-          echo "- **v0 & v1 Wheels:** $package_result" >> $GITHUB_STEP_SUMMARY
-
           # Overall Status
           echo "" >> $GITHUB_STEP_SUMMARY
           if [ "${{ needs.python-tests.result }}" = "success" ] && \
              [ "${{ needs.quality-and-docs.result }}" = "success" ] && \
              [ "${{ needs.generated-code-check.result }}" = "success" ] && \
-             [ "${{ needs.package-build.result }}" = "success" ] && \
              ([ "${{ needs.integration-tests.result }}" = "success" ] ||
              [ "${{ needs.integration-tests.result }}" = "skipped" ]); then
             echo "## 🎉 **ALL TESTS PASSED**" >> $GITHUB_STEP_SUMMARY

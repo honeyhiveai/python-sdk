@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-Generate v0 Models and Client from OpenAPI Specification
+Generate Models from OpenAPI Specification
 
 This script regenerates the Pydantic models from the OpenAPI specification
 using datamodel-codegen. This is the lightweight, hand-written API client
@@ -8,7 +8,7 @@ approach where models are auto-generated but the client code is maintained
 manually.
 
 Usage:
-    python scripts/generate_v0_models.py
+    python scripts/generate_models.py
 
 The generated models are written to:
     src/honeyhive/models/generated.py
@@ -18,15 +18,14 @@ Post-processing:
     compatibility (e.g., adding __str__ to UUIDType for proper string conversion).
 """
 
-import re
 import subprocess
 import sys
 from pathlib import Path
 
 # Get the repo root directory
 REPO_ROOT = Path(__file__).parent.parent
-OPENAPI_SPEC = REPO_ROOT / "openapi" / "v0.yaml"
-OUTPUT_FILE = REPO_ROOT / "src" / "honeyhive" / "_v0" / "models" / "generated.py"
+OPENAPI_SPEC = REPO_ROOT / "openapi" / "v1.yaml"
+OUTPUT_FILE = REPO_ROOT / "src" / "honeyhive" / "models" / "generated.py"
 
 
 def post_process_generated_file(filepath: Path) -> bool:
@@ -75,7 +74,7 @@ def post_process_generated_file(filepath: Path) -> bool:
 
 def main():
     """Generate models from OpenAPI specification."""
-    print("🚀 Generating v0 Models (datamodel-codegen)")
+    print("🚀 Generating Models (datamodel-codegen)")
     print("=" * 50)
 
     # Validate that the OpenAPI spec exists

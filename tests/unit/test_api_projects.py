@@ -64,9 +64,7 @@ def projects_api(mock_client: Mock, mock_error_handler: Mock) -> ProjectsAPI:
     Returns:
         ProjectsAPI instance with mocked dependencies
     """
-    with patch(
-        "honeyhive._v0.api.base.get_error_handler", return_value=mock_error_handler
-    ):
+    with patch("honeyhive.api.base.get_error_handler", return_value=mock_error_handler):
         return ProjectsAPI(mock_client)
 
 
@@ -164,7 +162,7 @@ class TestProjectsAPIInitialization:
         inherits from BaseAPI, and sets up error handler.
         """
         # Arrange & Act
-        with patch("honeyhive._v0.api.base.get_error_handler") as mock_get_handler:
+        with patch("honeyhive.api.base.get_error_handler") as mock_get_handler:
             mock_error_handler = Mock()
             mock_get_handler.return_value = mock_error_handler
 
@@ -182,7 +180,7 @@ class TestProjectsAPIInitialization:
         Verifies inheritance and that BaseAPI methods are available.
         """
         # Arrange & Act
-        with patch("honeyhive._v0.api.base.get_error_handler"):
+        with patch("honeyhive.api.base.get_error_handler"):
             projects_api = ProjectsAPI(mock_client)
 
             # Assert

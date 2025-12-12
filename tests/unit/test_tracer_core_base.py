@@ -922,7 +922,7 @@ class TestHoneyHiveTracerBaseProperties:
 class TestHoneyHiveTracerBaseUtilityMethods:
     """Test utility methods and helper functions."""
 
-    @patch("honeyhive._v0.api.client.safe_log")
+    @patch("honeyhive.api.client.safe_log")
     @patch("honeyhive.tracer.core.base.create_unified_config")
     def test_safe_log_method(
         self, mock_create: Mock, mock_safe_log: Mock, mock_unified_config: Mock

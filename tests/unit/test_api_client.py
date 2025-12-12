@@ -159,9 +159,9 @@ class TestRateLimiter:
 class TestHoneyHiveInitialization:
     """Test suite for HoneyHive client initialization."""
 
-    @patch("honeyhive._v0.api.client.safe_log")
-    @patch("honeyhive._v0.api.client.get_logger")
-    @patch("honeyhive._v0.api.client.APIClientConfig")
+    @patch("honeyhive.api.client.safe_log")
+    @patch("honeyhive.api.client.get_logger")
+    @patch("honeyhive.api.client.APIClientConfig")
     def test_initialization_default_values(
         self, mock_config_class: Mock, mock_get_logger: Mock, mock_safe_log: Mock
     ) -> None:
@@ -191,9 +191,9 @@ class TestHoneyHiveInitialization:
         assert client.logger == mock_logger
         mock_safe_log.assert_called()
 
-    @patch("honeyhive._v0.api.client.safe_log")
-    @patch("honeyhive._v0.api.client.get_logger")
-    @patch("honeyhive._v0.api.client.APIClientConfig")
+    @patch("honeyhive.api.client.safe_log")
+    @patch("honeyhive.api.client.get_logger")
+    @patch("honeyhive.api.client.APIClientConfig")
     def test_initialization_custom_values(
         self, mock_config_class: Mock, mock_get_logger: Mock, mock_safe_log: Mock
     ) -> None:
@@ -228,9 +228,9 @@ class TestHoneyHiveInitialization:
         assert client.test_mode is True
         assert client.verbose is True
 
-    @patch("honeyhive._v0.api.client.safe_log")
-    @patch("honeyhive._v0.api.client.get_logger")
-    @patch("honeyhive._v0.api.client.APIClientConfig")
+    @patch("honeyhive.api.client.safe_log")
+    @patch("honeyhive.api.client.get_logger")
+    @patch("honeyhive.api.client.APIClientConfig")
     def test_initialization_with_tracer_instance(
         self, mock_config_class: Mock, mock_get_logger: Mock, mock_safe_log: Mock
     ) -> None:
@@ -261,9 +261,9 @@ class TestHoneyHiveInitialization:
 class TestHoneyHiveClientProperties:
     """Test suite for HoneyHive client properties and methods."""
 
-    @patch("honeyhive._v0.api.client.safe_log")
-    @patch("honeyhive._v0.api.client.get_logger")
-    @patch("honeyhive._v0.api.client.APIClientConfig")
+    @patch("honeyhive.api.client.safe_log")
+    @patch("honeyhive.api.client.get_logger")
+    @patch("honeyhive.api.client.APIClientConfig")
     def test_client_kwargs_basic(
         self, mock_config_class: Mock, mock_get_logger: Mock, mock_safe_log: Mock
     ) -> None:
@@ -288,9 +288,9 @@ class TestHoneyHiveClientProperties:
         assert kwargs["headers"]["User-Agent"] == f"HoneyHive-Python-SDK/{__version__}"
         assert "limits" in kwargs
 
-    @patch("honeyhive._v0.api.client.safe_log")
-    @patch("honeyhive._v0.api.client.get_logger")
-    @patch("honeyhive._v0.api.client.APIClientConfig")
+    @patch("honeyhive.api.client.safe_log")
+    @patch("honeyhive.api.client.get_logger")
+    @patch("honeyhive.api.client.APIClientConfig")
     def test_make_url_relative_path(
         self, mock_config_class: Mock, mock_get_logger: Mock, mock_safe_log: Mock
     ) -> None:
@@ -313,9 +313,9 @@ class TestHoneyHiveClientProperties:
         # Assert against actual configured server_url (respects environment)
         assert url == f"{client.server_url}/api/v1/events"
 
-    @patch("honeyhive._v0.api.client.safe_log")
-    @patch("honeyhive._v0.api.client.get_logger")
-    @patch("honeyhive._v0.api.client.APIClientConfig")
+    @patch("honeyhive.api.client.safe_log")
+    @patch("honeyhive.api.client.get_logger")
+    @patch("honeyhive.api.client.APIClientConfig")
     def test_make_url_absolute_path(
         self, mock_config_class: Mock, mock_get_logger: Mock, mock_safe_log: Mock
     ) -> None:
@@ -342,9 +342,9 @@ class TestHoneyHiveHTTPClients:
     """Test suite for HoneyHive HTTP client management."""
 
     @patch("httpx.Client")
-    @patch("honeyhive._v0.api.client.safe_log")
-    @patch("honeyhive._v0.api.client.get_logger")
-    @patch("honeyhive._v0.api.client.APIClientConfig")
+    @patch("honeyhive.api.client.safe_log")
+    @patch("honeyhive.api.client.get_logger")
+    @patch("honeyhive.api.client.APIClientConfig")
     def test_sync_client_creation(
         self,
         mock_config_class: Mock,
@@ -380,9 +380,9 @@ class TestHoneyHiveHTTPClients:
         assert mock_httpx_client.call_count == 1  # Should not create a new client
 
     @patch("httpx.AsyncClient")
-    @patch("honeyhive._v0.api.client.safe_log")
-    @patch("honeyhive._v0.api.client.get_logger")
-    @patch("honeyhive._v0.api.client.APIClientConfig")
+    @patch("honeyhive.api.client.safe_log")
+    @patch("honeyhive.api.client.get_logger")
+    @patch("honeyhive.api.client.APIClientConfig")
     def test_async_client_creation(
         self,
         mock_config_class: Mock,
@@ -422,9 +422,9 @@ class TestHoneyHiveHealthCheck:
     """Test suite for HoneyHive health check functionality."""
 
     @patch("time.time")
-    @patch("honeyhive._v0.api.client.safe_log")
-    @patch("honeyhive._v0.api.client.get_logger")
-    @patch("honeyhive._v0.api.client.APIClientConfig")
+    @patch("honeyhive.api.client.safe_log")
+    @patch("honeyhive.api.client.get_logger")
+    @patch("honeyhive.api.client.APIClientConfig")
     def test_get_health_success(
         self,
         mock_config_class: Mock,
@@ -463,9 +463,9 @@ class TestHoneyHiveHealthCheck:
             mock_request.assert_called_once_with("GET", "/api/v1/health")
 
     @patch("time.time")
-    @patch("honeyhive._v0.api.client.safe_log")
-    @patch("honeyhive._v0.api.client.get_logger")
-    @patch("honeyhive._v0.api.client.APIClientConfig")
+    @patch("honeyhive.api.client.safe_log")
+    @patch("honeyhive.api.client.get_logger")
+    @patch("honeyhive.api.client.APIClientConfig")
     def test_get_health_exception(
         self,
         mock_config_class: Mock,
@@ -508,9 +508,9 @@ class TestHoneyHiveHealthCheck:
 class TestHoneyHiveRequestHandling:
     """Test suite for HoneyHive request handling functionality."""
 
-    @patch("honeyhive._v0.api.client.safe_log")
-    @patch("honeyhive._v0.api.client.get_logger")
-    @patch("honeyhive._v0.api.client.APIClientConfig")
+    @patch("honeyhive.api.client.safe_log")
+    @patch("honeyhive.api.client.get_logger")
+    @patch("honeyhive.api.client.APIClientConfig")
     def test_request_success(
         self, mock_config_class: Mock, mock_get_logger: Mock, mock_safe_log: Mock
     ) -> None:
@@ -550,9 +550,9 @@ class TestHoneyHiveRequestHandling:
                 json=None,
             )
 
-    @patch("honeyhive._v0.api.client.safe_log")
-    @patch("honeyhive._v0.api.client.get_logger")
-    @patch("honeyhive._v0.api.client.APIClientConfig")
+    @patch("honeyhive.api.client.safe_log")
+    @patch("honeyhive.api.client.get_logger")
+    @patch("honeyhive.api.client.APIClientConfig")
     def test_request_with_retry_success(
         self, mock_config_class: Mock, mock_get_logger: Mock, mock_safe_log: Mock
     ) -> None:
@@ -590,9 +590,9 @@ class TestHoneyHiveRequestHandling:
                 mock_retry_request.assert_called_once()
 
     @patch("time.sleep")
-    @patch("honeyhive._v0.api.client.safe_log")
-    @patch("honeyhive._v0.api.client.get_logger")
-    @patch("honeyhive._v0.api.client.APIClientConfig")
+    @patch("honeyhive.api.client.safe_log")
+    @patch("honeyhive.api.client.get_logger")
+    @patch("honeyhive.api.client.APIClientConfig")
     def test_retry_request_success_after_failure(
         self,
         mock_config_class: Mock,
@@ -642,9 +642,9 @@ class TestHoneyHiveRequestHandling:
         assert mock_sleep.call_count == 2
         mock_sleep.assert_has_calls([call(1.0), call(1.0)])
 
-    @patch("honeyhive._v0.api.client.safe_log")
-    @patch("honeyhive._v0.api.client.get_logger")
-    @patch("honeyhive._v0.api.client.APIClientConfig")
+    @patch("honeyhive.api.client.safe_log")
+    @patch("honeyhive.api.client.get_logger")
+    @patch("honeyhive.api.client.APIClientConfig")
     def test_retry_request_max_retries_exceeded(
         self, mock_config_class: Mock, mock_get_logger: Mock, mock_safe_log: Mock
     ) -> None:
@@ -685,9 +685,9 @@ class TestHoneyHiveRequestHandling:
 class TestHoneyHiveContextManager:
     """Test suite for HoneyHive context manager functionality."""
 
-    @patch("honeyhive._v0.api.client.safe_log")
-    @patch("honeyhive._v0.api.client.get_logger")
-    @patch("honeyhive._v0.api.client.APIClientConfig")
+    @patch("honeyhive.api.client.safe_log")
+    @patch("honeyhive.api.client.get_logger")
+    @patch("honeyhive.api.client.APIClientConfig")
     def test_context_manager_enter(
         self, mock_config_class: Mock, mock_get_logger: Mock, mock_safe_log: Mock
     ) -> None:
@@ -712,9 +712,9 @@ class TestHoneyHiveContextManager:
 
         assert result == client
 
-    @patch("honeyhive._v0.api.client.safe_log")
-    @patch("honeyhive._v0.api.client.get_logger")
-    @patch("honeyhive._v0.api.client.APIClientConfig")
+    @patch("honeyhive.api.client.safe_log")
+    @patch("honeyhive.api.client.get_logger")
+    @patch("honeyhive.api.client.APIClientConfig")
     def test_context_manager_exit(
         self, mock_config_class: Mock, mock_get_logger: Mock, mock_safe_log: Mock
     ) -> None:
@@ -738,9 +738,9 @@ class TestHoneyHiveContextManager:
 
             mock_close.assert_called_once()
 
-    @patch("honeyhive._v0.api.client.safe_log")
-    @patch("honeyhive._v0.api.client.get_logger")
-    @patch("honeyhive._v0.api.client.APIClientConfig")
+    @patch("honeyhive.api.client.safe_log")
+    @patch("honeyhive.api.client.get_logger")
+    @patch("honeyhive.api.client.APIClientConfig")
     def test_context_manager_full_workflow(
         self, mock_config_class: Mock, mock_get_logger: Mock, mock_safe_log: Mock
     ) -> None:
@@ -768,9 +768,9 @@ class TestHoneyHiveContextManager:
 class TestHoneyHiveCleanup:
     """Test suite for HoneyHive cleanup functionality."""
 
-    @patch("honeyhive._v0.api.client.safe_log")
-    @patch("honeyhive._v0.api.client.get_logger")
-    @patch("honeyhive._v0.api.client.APIClientConfig")
+    @patch("honeyhive.api.client.safe_log")
+    @patch("honeyhive.api.client.get_logger")
+    @patch("honeyhive.api.client.APIClientConfig")
     def test_close_with_clients(
         self, mock_config_class: Mock, mock_get_logger: Mock, mock_safe_log: Mock
     ) -> None:
@@ -802,9 +802,9 @@ class TestHoneyHiveCleanup:
         assert client._async_client is None
         mock_safe_log.assert_called()
 
-    @patch("honeyhive._v0.api.client.safe_log")
-    @patch("honeyhive._v0.api.client.get_logger")
-    @patch("honeyhive._v0.api.client.APIClientConfig")
+    @patch("honeyhive.api.client.safe_log")
+    @patch("honeyhive.api.client.get_logger")
+    @patch("honeyhive.api.client.APIClientConfig")
     def test_close_without_clients(
         self, mock_config_class: Mock, mock_get_logger: Mock, mock_safe_log: Mock
     ) -> None:
@@ -832,9 +832,9 @@ class TestHoneyHiveCleanup:
         # Should not raise any errors
         mock_safe_log.assert_called()
 
-    @patch("honeyhive._v0.api.client.safe_log")
-    @patch("honeyhive._v0.api.client.get_logger")
-    @patch("honeyhive._v0.api.client.APIClientConfig")
+    @patch("honeyhive.api.client.safe_log")
+    @patch("honeyhive.api.client.get_logger")
+    @patch("honeyhive.api.client.APIClientConfig")
     def test_close_with_exception(
         self, mock_config_class: Mock, mock_get_logger: Mock, mock_safe_log: Mock
     ) -> None:
@@ -870,9 +870,9 @@ class TestHoneyHiveCleanup:
 class TestHoneyHiveLogging:
     """Test suite for HoneyHive logging functionality."""
 
-    @patch("honeyhive._v0.api.client.safe_log")
-    @patch("honeyhive._v0.api.client.get_logger")
-    @patch("honeyhive._v0.api.client.APIClientConfig")
+    @patch("honeyhive.api.client.safe_log")
+    @patch("honeyhive.api.client.get_logger")
+    @patch("honeyhive.api.client.APIClientConfig")
     def test_log_method_basic(
         self, mock_config_class: Mock, mock_get_logger: Mock, mock_safe_log: Mock
     ) -> None:
@@ -900,9 +900,9 @@ class TestHoneyHiveLogging:
             client, "info", "Test message", honeyhive_data=None
         )
 
-    @patch("honeyhive._v0.api.client.safe_log")
-    @patch("honeyhive._v0.api.client.get_logger")
-    @patch("honeyhive._v0.api.client.APIClientConfig")
+    @patch("honeyhive.api.client.safe_log")
+    @patch("honeyhive.api.client.get_logger")
+    @patch("honeyhive.api.client.APIClientConfig")
     def test_log_method_with_data(
         self, mock_config_class: Mock, mock_get_logger: Mock, mock_safe_log: Mock
     ) -> None:
@@ -942,9 +942,9 @@ class TestHoneyHiveAsyncMethods:
     """Test suite for HoneyHive async methods."""
 
     @pytest.mark.asyncio
-    @patch("honeyhive._v0.api.client.safe_log")
-    @patch("honeyhive._v0.api.client.get_logger")
-    @patch("honeyhive._v0.api.client.APIClientConfig")
+    @patch("honeyhive.api.client.safe_log")
+    @patch("honeyhive.api.client.get_logger")
+    @patch("honeyhive.api.client.APIClientConfig")
     async def test_get_health_async_success(
         self, mock_config_class: Mock, mock_get_logger: Mock, mock_safe_log: Mock
     ) -> None:
@@ -978,9 +978,9 @@ class TestHoneyHiveAsyncMethods:
             mock_request_async.assert_called_once_with("GET", "/api/v1/health")
 
     @pytest.mark.asyncio
-    @patch("honeyhive._v0.api.client.safe_log")
-    @patch("honeyhive._v0.api.client.get_logger")
-    @patch("honeyhive._v0.api.client.APIClientConfig")
+    @patch("honeyhive.api.client.safe_log")
+    @patch("honeyhive.api.client.get_logger")
+    @patch("honeyhive.api.client.APIClientConfig")
     async def test_get_health_async_exception(
         self, mock_config_class: Mock, mock_get_logger: Mock, mock_safe_log: Mock
     ) -> None:
@@ -1017,9 +1017,9 @@ class TestHoneyHiveAsyncMethods:
             assert "timestamp" in result
 
     @pytest.mark.asyncio
-    @patch("honeyhive._v0.api.client.safe_log")
-    @patch("honeyhive._v0.api.client.get_logger")
-    @patch("honeyhive._v0.api.client.APIClientConfig")
+    @patch("honeyhive.api.client.safe_log")
+    @patch("honeyhive.api.client.get_logger")
+    @patch("honeyhive.api.client.APIClientConfig")
     async def test_request_async_success(
         self, mock_config_class: Mock, mock_get_logger: Mock, mock_safe_log: Mock
     ) -> None:
@@ -1057,9 +1057,9 @@ class TestHoneyHiveAsyncMethods:
             )
 
     @pytest.mark.asyncio
-    @patch("honeyhive._v0.api.client.safe_log")
-    @patch("honeyhive._v0.api.client.get_logger")
-    @patch("honeyhive._v0.api.client.APIClientConfig")
+    @patch("honeyhive.api.client.safe_log")
+    @patch("honeyhive.api.client.get_logger")
+    @patch("honeyhive.api.client.APIClientConfig")
     async def test_aclose(
         self, mock_config_class: Mock, mock_get_logger: Mock, mock_safe_log: Mock
     ) -> None:
@@ -1092,9 +1092,9 @@ class TestHoneyHiveAsyncMethods:
 class TestHoneyHiveVerboseLogging:
     """Test suite for HoneyHive verbose logging functionality."""
 
-    @patch("honeyhive._v0.api.client.safe_log")
-    @patch("honeyhive._v0.api.client.get_logger")
-    @patch("honeyhive._v0.api.client.APIClientConfig")
+    @patch("honeyhive.api.client.safe_log")
+    @patch("honeyhive.api.client.get_logger")
+    @patch("honeyhive.api.client.APIClientConfig")
     def test_verbose_request_logging(
         self, mock_config_class: Mock, mock_get_logger: Mock, mock_safe_log: Mock
     ) -> None:
@@ -1134,9 +1134,9 @@ class TestHoneyHiveAsyncRetryLogic:
     """Test suite for HoneyHive async retry logic."""
 
     @pytest.mark.asyncio
-    @patch("honeyhive._v0.api.client.safe_log")
-    @patch("honeyhive._v0.api.client.get_logger")
-    @patch("honeyhive._v0.api.client.APIClientConfig")
+    @patch("honeyhive.api.client.safe_log")
+    @patch("honeyhive.api.client.get_logger")
+    @patch("honeyhive.api.client.APIClientConfig")
     async def test_aclose_without_client(
         self, mock_config_class: Mock, mock_get_logger: Mock, mock_safe_log: Mock
     ) -> None:
@@ -1164,9 +1164,9 @@ class TestHoneyHiveAsyncRetryLogic:
         mock_safe_log.assert_called()
 
     @pytest.mark.asyncio
-    @patch("honeyhive._v0.api.client.safe_log")
-    @patch("honeyhive._v0.api.client.get_logger")
-    @patch("honeyhive._v0.api.client.APIClientConfig")
+    @patch("honeyhive.api.client.safe_log")
+    @patch("honeyhive.api.client.get_logger")
+    @patch("honeyhive.api.client.APIClientConfig")
     async def test_request_async_with_error_handling(
         self, mock_config_class: Mock, mock_get_logger: Mock, mock_safe_log: Mock
     ) -> None:
@@ -1198,9 +1198,9 @@ class TestHoneyHiveAsyncRetryLogic:
 class TestHoneyHiveEdgeCases:
     """Test suite for HoneyHive edge cases and error scenarios."""
 
-    @patch("honeyhive._v0.api.client.safe_log")
-    @patch("honeyhive._v0.api.client.get_logger")
-    @patch("honeyhive._v0.api.client.APIClientConfig")
+    @patch("honeyhive.api.client.safe_log")
+    @patch("honeyhive.api.client.get_logger")
+    @patch("honeyhive.api.client.APIClientConfig")
     def test_sync_client_property_creation(
         self, mock_config_class: Mock, mock_get_logger: Mock, mock_safe_log: Mock
     ) -> None:
@@ -1227,9 +1227,9 @@ class TestHoneyHiveEdgeCases:
         assert sync_client is not None
         assert client._sync_client is not None
 
-    @patch("honeyhive._v0.api.client.safe_log")
-    @patch("honeyhive._v0.api.client.get_logger")
-    @patch("honeyhive._v0.api.client.APIClientConfig")
+    @patch("honeyhive.api.client.safe_log")
+    @patch("honeyhive.api.client.get_logger")
+    @patch("honeyhive.api.client.APIClientConfig")
     def test_async_client_property_creation(
         self, mock_config_class: Mock, mock_get_logger: Mock, mock_safe_log: Mock
     ) -> None:
@@ -1260,9 +1260,9 @@ class TestHoneyHiveEdgeCases:
 class TestHoneyHiveErrorHandling:
     """Test suite for HoneyHive error handling."""
 
-    @patch("honeyhive._v0.api.client.safe_log")
-    @patch("honeyhive._v0.api.client.get_logger")
-    @patch("honeyhive._v0.api.client.APIClientConfig")
+    @patch("honeyhive.api.client.safe_log")
+    @patch("honeyhive.api.client.get_logger")
+    @patch("honeyhive.api.client.APIClientConfig")
     def test_request_http_error(
         self, mock_config_class: Mock, mock_get_logger: Mock, mock_safe_log: Mock
     ) -> None:

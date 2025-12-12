@@ -32,7 +32,7 @@ class TestBaseAPIInitialization:
         # Arrange
         mock_client.server_url = "https://api.honeyhive.ai"
 
-        with patch("honeyhive._v0.api.base.get_error_handler") as mock_get_handler:
+        with patch("honeyhive.api.base.get_error_handler") as mock_get_handler:
             mock_error_handler = Mock()
             mock_get_handler.return_value = mock_error_handler
 
@@ -57,7 +57,7 @@ class TestBaseAPIInitialization:
         mock_client.server_url = "https://custom.api.com"
         mock_client.api_key = "test-key-123"
 
-        with patch("honeyhive._v0.api.base.get_error_handler") as mock_get_handler:
+        with patch("honeyhive.api.base.get_error_handler") as mock_get_handler:
             mock_error_handler = Mock()
             mock_get_handler.return_value = mock_error_handler
 
@@ -88,7 +88,7 @@ class TestBaseAPIInitialization:
                 """Another method to satisfy pylint."""
                 return "another"
 
-        with patch("honeyhive._v0.api.base.get_error_handler") as mock_get_handler:
+        with patch("honeyhive.api.base.get_error_handler") as mock_get_handler:
             mock_error_handler = Mock()
             mock_get_handler.return_value = mock_error_handler
 
@@ -111,7 +111,7 @@ class TestBaseAPICreateErrorContext:
         # Arrange
         mock_client.server_url = "https://api.honeyhive.ai"
 
-        with patch("honeyhive._v0.api.base.get_error_handler"):
+        with patch("honeyhive.api.base.get_error_handler"):
             base_api = BaseAPI(mock_client)
 
             # Act
@@ -136,7 +136,7 @@ class TestBaseAPICreateErrorContext:
         # Arrange
         mock_client.server_url = "https://api.honeyhive.ai"
 
-        with patch("honeyhive._v0.api.base.get_error_handler"):
+        with patch("honeyhive.api.base.get_error_handler"):
             base_api = BaseAPI(mock_client)
 
             # Act
@@ -158,7 +158,7 @@ class TestBaseAPICreateErrorContext:
         test_json_data = {"name": "test_event", "data": {"key": "value"}}
         additional_context = {"request_id": "req-123", "user_id": "user-456"}
 
-        with patch("honeyhive._v0.api.base.get_error_handler"):
+        with patch("honeyhive.api.base.get_error_handler"):
             base_api = BaseAPI(mock_client)
 
             # Act
@@ -189,7 +189,7 @@ class TestBaseAPICreateErrorContext:
         # Arrange
         mock_client.server_url = "https://api.honeyhive.ai"
 
-        with patch("honeyhive._v0.api.base.get_error_handler"):
+        with patch("honeyhive.api.base.get_error_handler"):
             base_api = BaseAPI(mock_client)
 
             # Act
@@ -213,7 +213,7 @@ class TestBaseAPICreateErrorContext:
         # Arrange
         mock_client.server_url = "https://api.honeyhive.ai"
 
-        with patch("honeyhive._v0.api.base.get_error_handler"):
+        with patch("honeyhive.api.base.get_error_handler"):
             base_api = BaseAPI(mock_client)
 
             # Act
@@ -233,7 +233,7 @@ class TestBaseAPIProcessDataDynamically:
         the method returns an empty list without processing.
         """
         # Arrange
-        with patch("honeyhive._v0.api.base.get_error_handler"):
+        with patch("honeyhive.api.base.get_error_handler"):
             base_api = BaseAPI(mock_client)
 
             # Act
@@ -256,7 +256,7 @@ class TestBaseAPIProcessDataDynamically:
 
         test_data = [{"id": 1, "name": "item1"}, {"id": 2, "name": "item2"}]
 
-        with patch("honeyhive._v0.api.base.get_error_handler"):
+        with patch("honeyhive.api.base.get_error_handler"):
             base_api = BaseAPI(mock_client)
 
             with patch.object(base_api.client, "_log") as mock_log:
@@ -296,7 +296,7 @@ class TestBaseAPIProcessDataDynamically:
 
         test_data = [{"id": "invalid"}, {"id": 2, "name": "valid_item"}]
 
-        with patch("honeyhive._v0.api.base.get_error_handler"):
+        with patch("honeyhive.api.base.get_error_handler"):
             base_api = BaseAPI(mock_client)
 
             with patch.object(base_api.client, "_log") as mock_log:
@@ -328,7 +328,7 @@ class TestBaseAPIProcessDataDynamically:
 
         test_data = [{"id": i, "name": f"item{i}"} for i in range(150)]
 
-        with patch("honeyhive._v0.api.base.get_error_handler"):
+        with patch("honeyhive.api.base.get_error_handler"):
             base_api = BaseAPI(mock_client)
 
             with patch.object(base_api.client, "_log") as mock_log:
@@ -375,7 +375,7 @@ class TestBaseAPIProcessDataDynamically:
 
         test_data = [{"id": i, "name": f"item{i}"} for i in range(600)]
 
-        with patch("honeyhive._v0.api.base.get_error_handler"):
+        with patch("honeyhive.api.base.get_error_handler"):
             base_api = BaseAPI(mock_client)
 
             with patch.object(base_api.client, "_log") as mock_log:
@@ -413,7 +413,7 @@ class TestBaseAPIProcessDataDynamically:
 
         test_data = [{"id": i, "name": f"item{i}"} for i in range(200)]
 
-        with patch("honeyhive._v0.api.base.get_error_handler"):
+        with patch("honeyhive.api.base.get_error_handler"):
             base_api = BaseAPI(mock_client)
 
             with patch.object(base_api.client, "_log") as mock_log:
@@ -458,7 +458,7 @@ class TestBaseAPIProcessDataDynamically:
 
         test_data = [{"id": i, "name": f"item{i}"} for i in range(155)]
 
-        with patch("honeyhive._v0.api.base.get_error_handler"):
+        with patch("honeyhive.api.base.get_error_handler"):
             base_api = BaseAPI(mock_client)
 
             with patch.object(base_api.client, "_log") as mock_log:
@@ -494,7 +494,7 @@ class TestBaseAPIProcessDataDynamically:
 
         test_data = [{"id": 1, "name": "custom_item"}]
 
-        with patch("honeyhive._v0.api.base.get_error_handler"):
+        with patch("honeyhive.api.base.get_error_handler"):
             base_api = BaseAPI(mock_client)
 
             with patch.object(base_api.client, "_log") as mock_log:
@@ -526,7 +526,7 @@ class TestBaseAPIProcessDataDynamically:
 
         test_data = [{"id": i, "invalid": True} for i in range(150)]
 
-        with patch("honeyhive._v0.api.base.get_error_handler"):
+        with patch("honeyhive.api.base.get_error_handler"):
             base_api = BaseAPI(mock_client)
 
             with patch.object(base_api.client, "_log") as mock_log:
@@ -563,7 +563,7 @@ class TestBaseAPIIntegration:
         # Arrange
         mock_client.server_url = "https://api.honeyhive.ai"
 
-        with patch("honeyhive._v0.api.base.get_error_handler"):
+        with patch("honeyhive.api.base.get_error_handler"):
             base_api = BaseAPI(mock_client)
 
             # Test error context creation
@@ -610,7 +610,7 @@ class TestBaseAPIIntegration:
 
         mock_client.server_url = "https://api.honeyhive.ai"
 
-        with patch("honeyhive._v0.api.base.get_error_handler"):
+        with patch("honeyhive.api.base.get_error_handler"):
             events_api = EventsAPI(mock_client)
 
             # Act
