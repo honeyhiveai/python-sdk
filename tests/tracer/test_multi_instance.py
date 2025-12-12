@@ -173,7 +173,7 @@ class TestMultiInstanceSafety:
         assert len(tracers) == 30, f"Expected 30 tracers, got {len(tracers)}"
 
         # Verify all tracer IDs are unique
-        tracer_ids = [t.tracer_id for t in tracers]
+        tracer_ids = [t._tracer_id for t in tracers]
         assert len(set(tracer_ids)) == 30, "Tracer IDs not unique"
 
     def test_discovery_in_threads(self) -> None:
@@ -196,7 +196,7 @@ class TestMultiInstanceSafety:
 
                     # Verify discovery worked
                     if discovered:
-                        results[thread_id] = discovered.tracer_id == tracer._tracer_id
+                        results[thread_id] = discovered._tracer_id == tracer._tracer_id
                     else:
                         results[thread_id] = False
 
