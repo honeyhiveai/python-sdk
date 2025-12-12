@@ -59,13 +59,21 @@ make help              # Show all available commands
 make test              # Run all tests
 make test-fast         # Run tests in parallel
 make test-unit         # Unit tests only
-make test-integration  # Integration tests only
+make check-integration # Comprehensive integration test checks
+make check-all         # Run ALL checks (tests + docs + compliance)
 
-# Code Quality
+# Code Quality (Fast - runs in pre-commit)
 make format            # Format code with black and isort
 make lint              # Run linting checks
 make check             # Run format + lint checks
 make typecheck         # Run mypy type checking
+
+# Comprehensive Checks (Not in pre-commit - run manually)
+make check-docs              # Build and validate documentation
+make check-docs-compliance   # Check documentation compliance
+make check-feature-sync      # Check feature documentation sync
+make check-tracer-patterns   # Check for invalid tracer patterns
+make check-no-mocks          # Verify no mocks in integration tests
 
 # Documentation
 make docs              # Build documentation
@@ -74,6 +82,7 @@ make docs-clean        # Clean doc build artifacts
 
 # SDK Generation
 make generate-sdk      # Generate SDK from openapi.yaml
+make compare-sdk       # Compare generated SDK with current
 
 # Maintenance
 make clean             # Remove build artifacts
@@ -82,9 +91,11 @@ make clean-all         # Deep clean (includes .venv)
 
 ### Pre-commit Hooks
 
-Pre-commit hooks are automatically installed and will run on every commit to enforce:
-- Black formatting
-- Import sorting (isort)
-- Static analysis (pylint + mypy)
-- YAML validation
-- Documentation synchronization
+Pre-commit hooks are **fast** (runs in seconds) and automatically enforce:
+- ✅ Black formatting
+- ✅ Import sorting (isort)
+- ✅ Static analysis (pylint + mypy)
+- ✅ YAML validation
+- ✅ Unit tests (fast, mocked)
+
+**Heavy checks moved to Makefile**: Integration tests, documentation builds, and compliance checks are now run via `make check-all` instead of on every commit. This makes commits fast while still allowing comprehensive validation when needed.

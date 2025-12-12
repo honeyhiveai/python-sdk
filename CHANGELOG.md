@@ -2,12 +2,16 @@
 
 ### Changed
 
-- **🔧 Developer Experience: Added Makefile for Common Development Tasks**
-  - Added `make generate-sdk` - Generate SDK from OpenAPI specification
-  - Added `make compare-sdk` - Compare generated SDK with current implementation
+- **🔧 Developer Experience: Streamlined Pre-commit Hooks & Added Makefile**
+  - **Pre-commit hooks now fast**: Only runs format, lint, and unit tests (seconds instead of minutes)
+  - **Comprehensive checks via Makefile**: `make check-all`, `make check-docs`, `make check-integration`
+  - **SDK Generation**: `make generate-sdk` - Generate SDK from OpenAPI specification
+  - **SDK Comparison**: `make compare-sdk` - Compare generated SDK with current implementation
+  - **Individual checks**: `make check-docs-compliance`, `make check-feature-sync`, `make check-tracer-patterns`, `make check-no-mocks`
   - Added `openapi-python-client>=0.28.0` to dev dependencies for SDK generation
   - Added `comparison_output/` to `.gitignore` for generated SDK artifacts
-  - Files: `Makefile`, `pyproject.toml`, `.gitignore`
+  - Fixed Nix environment PYTHONPATH for proper package resolution
+  - Files: `.pre-commit-config.yaml`, `Makefile`, `pyproject.toml`, `.gitignore`, `flake.nix`, `scripts/validate-docs-navigation.sh`
 
 ## [1.0.0rc5] - 2025-12-03
 
