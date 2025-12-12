@@ -57,7 +57,7 @@ def events_api(mock_client: Mock) -> EventsAPI:
     Returns:
         EventsAPI instance for testing
     """
-    with patch("honeyhive.api.base.get_error_handler"):
+    with patch("honeyhive._v0.api.base.get_error_handler"):
         return EventsAPI(mock_client)
 
 

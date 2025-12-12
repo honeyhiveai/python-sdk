@@ -825,7 +825,7 @@ class TestModuleLevelFunctions:
         mock_extract_verbose.assert_called_once_with(mock_tracer)
         mock_logger_class.assert_called_once_with("test.logger", verbose=True)
 
-    @patch("honeyhive.utils.logger.get_logger")
+    @patch("honeyhive._v0.api.client.get_logger")
     def test_get_tracer_logger_with_default_name(self, mock_get_logger: Mock) -> None:
         """Test get_tracer_logger with default logger name generation."""
         # Arrange
@@ -843,7 +843,7 @@ class TestModuleLevelFunctions:
             name="honeyhive.tracer.test-tracer-123", tracer_instance=mock_tracer
         )
 
-    @patch("honeyhive.utils.logger.get_logger")
+    @patch("honeyhive._v0.api.client.get_logger")
     def test_get_tracer_logger_with_custom_name(self, mock_get_logger: Mock) -> None:
         """Test get_tracer_logger with custom logger name."""
         # Arrange
@@ -860,7 +860,7 @@ class TestModuleLevelFunctions:
             name="custom.logger", tracer_instance=mock_tracer
         )
 
-    @patch("honeyhive.utils.logger.get_logger")
+    @patch("honeyhive._v0.api.client.get_logger")
     def test_get_tracer_logger_without_tracer_id(self, mock_get_logger: Mock) -> None:
         """Test get_tracer_logger when tracer has no tracer_id attribute."""
         # Arrange
@@ -1040,7 +1040,7 @@ class TestSafeLogFunction:
         mock_api_client.tracer_instance = mock_actual_tracer
         del mock_api_client.logger  # Remove logger from API client
 
-        with patch("honeyhive.utils.logger.safe_log") as mock_safe_log_recursive:
+        with patch("honeyhive._v0.api.client.safe_log") as mock_safe_log_recursive:
             # Act
             safe_log(mock_api_client, "warning", "Warning message")
 
@@ -1050,7 +1050,7 @@ class TestSafeLogFunction:
             )
 
     @patch("honeyhive.utils.logger._detect_shutdown_conditions")
-    @patch("honeyhive.utils.logger.get_logger")
+    @patch("honeyhive._v0.api.client.get_logger")
     def test_safe_log_with_partial_tracer_instance(
         self, mock_get_logger: Mock, mock_detect_shutdown: Mock
     ) -> None:
@@ -1074,7 +1074,7 @@ class TestSafeLogFunction:
         mock_get_logger.assert_called_once_with("honeyhive.early_init", verbose=True)
 
     @patch("honeyhive.utils.logger._detect_shutdown_conditions")
-    @patch("honeyhive.utils.logger.get_logger")
+    @patch("honeyhive._v0.api.client.get_logger")
     def test_safe_log_with_fallback_logger(
         self, mock_get_logger: Mock, mock_detect_shutdown: Mock
     ) -> None:
@@ -1191,7 +1191,7 @@ class TestSafeLogFunction:
         # safe_log should complete without raising exceptions
         # The function should not crash with valid logger setup
 
-    @patch("honeyhive.utils.logger.safe_log")
+    @patch("honeyhive._v0.api.client.safe_log")
     def test_safe_debug_convenience_function(self, mock_safe_log: Mock) -> None:
         """Test safe_debug convenience function."""
         # Arrange
@@ -1205,7 +1205,7 @@ class TestSafeLogFunction:
             mock_tracer, "debug", "Debug message", extra="value"
         )
 
-    @patch("honeyhive.utils.logger.safe_log")
+    @patch("honeyhive._v0.api.client.safe_log")
     def test_safe_info_convenience_function(self, mock_safe_log: Mock) -> None:
         """Test safe_info convenience function."""
         # Arrange
@@ -1219,7 +1219,7 @@ class TestSafeLogFunction:
             mock_tracer, "info", "Info message", extra="value"
         )
 
-    @patch("honeyhive.utils.logger.safe_log")
+    @patch("honeyhive._v0.api.client.safe_log")
     def test_safe_warning_convenience_function(self, mock_safe_log: Mock) -> None:
         """Test safe_warning convenience function."""
         # Arrange
@@ -1233,7 +1233,7 @@ class TestSafeLogFunction:
             mock_tracer, "warning", "Warning message", extra="value"
         )
 
-    @patch("honeyhive.utils.logger.safe_log")
+    @patch("honeyhive._v0.api.client.safe_log")
     def test_safe_error_convenience_function(self, mock_safe_log: Mock) -> None:
         """Test safe_error convenience function."""
         # Arrange
