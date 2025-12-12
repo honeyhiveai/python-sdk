@@ -53,8 +53,10 @@ dev = [
     "typeguard>=4.0.0",
     "psutil>=5.9.0",
     "yamllint>=1.37.0",
+    "pre-commit>=3.0.0",  # For git hooks
     "requests>=2.31.0",  # For docs navigation validation
     "beautifulsoup4>=4.12.0",  # For docs navigation validation
+    "datamodel-code-generator==0.43.0",  # For model generation from OpenAPI spec
     "openapi-python-client>=0.28.0",  # For SDK generation
 ]
 

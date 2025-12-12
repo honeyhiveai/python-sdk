@@ -1,4 +1,4 @@
-.PHONY: help install install-dev test test-fast test-unit test-integration check-integration lint format check check-format check-lint typecheck check-docs check-docs-compliance check-feature-sync check-tracer-patterns check-no-mocks docs docs-serve docs-clean generate-sdk compare-sdk clean clean-all
+.PHONY: help install install-dev test test-fast test-unit test-integration check-integration lint format check check-format check-lint typecheck check-docs check-docs-compliance check-feature-sync check-tracer-patterns check-no-mocks docs docs-serve docs-clean generate-v0-client generate-sdk compare-sdk clean clean-all
 
 # Default target
 help:
@@ -38,7 +38,8 @@ help:
 	@echo "  make docs-clean      - Clean documentation build"
 	@echo ""
 	@echo "SDK Generation:"
-	@echo "  make generate-sdk    - Generate SDK from OpenAPI spec"
+	@echo "  make generate-v0-client - Regenerate v0 models from OpenAPI spec (datamodel-codegen)"
+	@echo "  make generate-sdk    - Generate full SDK from OpenAPI spec (openapi-python-client)"
 	@echo "  make compare-sdk     - Compare generated SDK with current implementation"
 	@echo ""
 	@echo "Maintenance:"
@@ -121,6 +122,9 @@ docs-clean:
 	cd docs && $(MAKE) clean
 
 # SDK Generation
+generate-v0-client:
+	python scripts/generate_v0_models.py
+
 generate-sdk:
 	python scripts/generate_models_and_client.py
 

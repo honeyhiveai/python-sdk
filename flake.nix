@@ -32,17 +32,13 @@
             # Python environment
             pythonEnv
 
-            # Development tools
+            # System utilities and development tools
             pkgs.git
-            pkgs.pre-commit
-
-            # For documentation building
             pkgs.gnumake
-
-            # Useful utilities
             pkgs.which
             pkgs.curl
             pkgs.jq
+            # Note: pre-commit is now installed via pip as part of dev dependencies
           ];
 
           shellHook = ''
@@ -62,8 +58,8 @@
             # Activate virtual environment
             source .venv/bin/activate
             
-            # Ensure venv site-packages is in PYTHONPATH for Nix Python
-            export PYTHONPATH=".venv/lib/python3.12/site-packages:.:$PYTHONPATH"
+            # Ensure venv site-packages and src are in PYTHONPATH
+            export PYTHONPATH="src:.venv/lib/python3.12/site-packages:.:$PYTHONPATH"
             
             # Upgrade pip (silent)
             pip install --upgrade pip > /dev/null 2>&1
