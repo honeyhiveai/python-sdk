@@ -20,7 +20,7 @@ help:
 	@echo "  make format          - Format code with black and isort"
 	@echo "  make lint            - Run linting checks"
 	@echo "  make typecheck       - Run mypy type checking"
-	@echo "  make check           - Run ALL checks (everything that was in pre-commit)"
+	@echo "  make check           - Run ALL checks"
 	@echo ""
 	@echo "Individual Checks (for granular control):"
 	@echo "  make check-format    - Check code formatting only"
@@ -93,7 +93,7 @@ check-format:
 check-lint:
 	tox -e lint
 
-# Comprehensive check - runs everything that was in pre-commit hooks
+# Comprehensive check - runs all quality checks
 check: check-format check-lint test-unit check-no-mocks check-integration check-docs check-docs-compliance check-feature-sync check-tracer-patterns
 	@echo ""
 	@echo "✅ All checks passed!"

@@ -1,5 +1,5 @@
 #!/bin/bash
-# Basic Integration Tests for Pre-commit Hook
+# Basic Integration Tests
 # Runs a minimal subset of integration tests with credential validation
 # Part of the HoneyHive Python SDK Agent OS Zero Failing Tests Policy
 
@@ -12,7 +12,7 @@ YELLOW='\033[1;33m'
 BLUE='\033[0;34m'
 NC='\033[0m' # No Color
 
-echo -e "${BLUE}🧪 Basic Integration Tests (Pre-commit)${NC}"
+echo -e "${BLUE}🧪 Basic Integration Tests${NC}"
 echo "========================================"
 
 # Check for required credentials
@@ -22,7 +22,7 @@ if [[ -z "${HH_API_KEY:-}" ]]; then
     echo -e "${YELLOW}⚠️  HH_API_KEY not set - skipping integration tests${NC}"
     echo "   Integration tests require valid HoneyHive API credentials"
     echo "   Set HH_API_KEY environment variable to run integration tests"
-    echo -e "${GREEN}✅ Pre-commit check passed (credentials not available)${NC}"
+    echo -e "${GREEN}✅ Check passed (credentials not available)${NC}"
     exit 0
 fi
 
@@ -30,7 +30,7 @@ if [[ -z "${HH_PROJECT:-}" ]]; then
     echo -e "${YELLOW}⚠️  HH_PROJECT not set - skipping integration tests${NC}"
     echo "   Integration tests require HH_PROJECT environment variable"
     echo "   Set HH_PROJECT environment variable to run integration tests"
-    echo -e "${GREEN}✅ Pre-commit check passed (credentials not available)${NC}"
+    echo -e "${GREEN}✅ Check passed (credentials not available)${NC}"
     exit 0
 fi
 
@@ -68,4 +68,4 @@ timeout 120s tox -e integration -- "${BASIC_TESTS[@]}" --tb=short -q || {
 }
 
 echo -e "${GREEN}✅ Basic integration tests passed${NC}"
-echo -e "${GREEN}🎉 Pre-commit integration test check complete${NC}"
+echo -e "${GREEN}🎉 Integration test check complete${NC}"

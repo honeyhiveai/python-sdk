@@ -30,7 +30,6 @@
             buildInputs = [
             # Python environment
             pythonEnv
-            # Note: pre-commit is now installed via pip as part of dev dependencies
           ];
 
           shellHook = ''
@@ -65,11 +64,6 @@
               echo ""
               echo "Run 'make help' to see available commands"
               echo ""
-            fi
-
-            # Install pre-commit hooks if not already installed
-            if [ ! -f .git/hooks/pre-commit ]; then
-              pre-commit install > /dev/null 2>&1
             fi
           '';
 
