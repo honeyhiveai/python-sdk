@@ -105,7 +105,9 @@ def filter_wheel(wheel_path: str, exclude_pattern: str) -> None:
                     arcname = file_path.relative_to(tmpdir)
                     zf.write(file_path, arcname)
 
-    print(f"  ✅ Removed {removed_count} director{'y' if removed_count == 1 else 'ies'}")
+    print(
+        f"  ✅ Removed {removed_count} director{'y' if removed_count == 1 else 'ies'}"
+    )
 
 
 def main():

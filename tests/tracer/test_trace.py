@@ -40,7 +40,11 @@ class TestTraceDecorator:
     def test_trace_with_metadata(self) -> None:
         """Test trace decorator with metadata (v0 API compatible)."""
 
-        @trace(event_name="test-function", metadata={"key": "value"}, tracer=self.mock_tracer)
+        @trace(
+            event_name="test-function",
+            metadata={"key": "value"},
+            tracer=self.mock_tracer,
+        )
         def test_func():
             return "test result"
 

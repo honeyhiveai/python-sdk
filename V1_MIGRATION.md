@@ -259,4 +259,4 @@ The version number in `pyproject.toml` determines which client is included.
 - [x] Phase 4: Test local builds of both versions
 - [x] Phase 5: Set up CI job to build and verify both v0 and v1 wheels
 - [ ] Phase 5: Add publishing steps to PyPI (TODO in workflow)
-- [ ] Phase 6: Import full v1 spec and regenerate
+- [x] Phase 6: Import full v1 spec and regenerate (306 files)

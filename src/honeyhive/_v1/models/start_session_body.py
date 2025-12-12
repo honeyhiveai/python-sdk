@@ -9,7 +9,7 @@ from attrs import field as _attrs_field
 from ..types import UNSET, Unset
 
 if TYPE_CHECKING:
-    from ..models.session_start_request import SessionStartRequest
+    from ..models.todo_schema import TODOSchema
 
 
 T = TypeVar("T", bound="StartSessionBody")
@@ -19,10 +19,11 @@ T = TypeVar("T", bound="StartSessionBody")
 class StartSessionBody:
     """
     Attributes:
-        session (SessionStartRequest | Unset):
+        session (TODOSchema | Unset): TODO: This is a placeholder schema. Proper Zod schemas need to be created in
+            @hive-kube/core-ts for: Sessions, Events, Projects, and Experiment comparison/result endpoints.
     """
 
-    session: SessionStartRequest | Unset = UNSET
+    session: TODOSchema | Unset = UNSET
     additional_properties: dict[str, Any] = _attrs_field(init=False, factory=dict)
 
     def to_dict(self) -> dict[str, Any]:
@@ -40,15 +41,15 @@ class StartSessionBody:
 
     @classmethod
     def from_dict(cls: type[T], src_dict: Mapping[str, Any]) -> T:
-        from ..models.session_start_request import SessionStartRequest
+        from ..models.todo_schema import TODOSchema
 
         d = dict(src_dict)
         _session = d.pop("session", UNSET)
-        session: SessionStartRequest | Unset
+        session: TODOSchema | Unset
         if isinstance(_session, Unset):
             session = UNSET
         else:
-            session = SessionStartRequest.from_dict(_session)
+            session = TODOSchema.from_dict(_session)
 
         start_session_body = cls(
             session=session,
