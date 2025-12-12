@@ -50,46 +50,17 @@ pip install -e ".[dev,docs]"
 
 ### Common Development Tasks
 
-We provide a Makefile for common development tasks:
+We provide a Makefile for common development tasks. Run:
 
 ```bash
-make help              # Show all available commands
-
-# Testing
-make test              # Run all tests
-make test-fast         # Run tests in parallel
-make test-unit         # Unit tests only
-make test-integration  # Integration tests only
-
-# Code Quality
-make format            # Format code with black and isort
-make lint              # Run linting checks
-make typecheck         # Run mypy type checking
-make check             # Run ALL checks (everything that was in pre-commit)
-
-# Individual Checks (for granular control)
-make check-format            # Check code formatting only
-make check-lint              # Check linting only
-make check-integration       # Integration test validation
-make check-docs              # Build and validate documentation
-make check-docs-compliance   # Check documentation compliance
-make check-feature-sync      # Check feature documentation sync
-make check-tracer-patterns   # Check for invalid tracer patterns
-make check-no-mocks          # Verify no mocks in integration tests
-
-# Documentation
-make docs              # Build documentation
-make docs-serve        # Build and serve docs locally
-make docs-clean        # Clean doc build artifacts
-
-# SDK Generation
-make generate-sdk      # Generate SDK from openapi.yaml
-make compare-sdk       # Compare generated SDK with current
-
-# Maintenance
-make clean             # Remove build artifacts
-make clean-all         # Deep clean (includes .venv)
+make help
 ```
+
+Key commands:
+- `make check` - Run all comprehensive checks (everything that was in pre-commit)
+- `make test` - Run all tests
+- `make format` - Format code
+- `make generate-sdk` - Generate SDK from OpenAPI spec
 
 ### Pre-commit Hooks
 
