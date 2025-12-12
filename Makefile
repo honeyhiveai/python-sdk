@@ -1,4 +1,4 @@
-.PHONY: help install install-dev test test-all test-unit test-integration check-integration lint format check check-format check-lint typecheck check-docs check-docs-compliance check-feature-sync check-tracer-patterns check-no-mocks docs docs-serve docs-clean generate generate-v0-client generate-v1-client compare-sdk build-v0 build-v1 inspect-package clean clean-all
+.PHONY: help install install-dev test test-all test-unit test-integration check-integration lint format check check-format check-lint typecheck check-docs check-docs-compliance check-feature-sync check-tracer-patterns check-no-mocks docs docs-serve docs-clean generate generate-v0-client generate-v1-client generate-sdk compare-sdk build-v0 build-v1 inspect-package clean clean-all
 
 # Default target
 help:
@@ -41,6 +41,7 @@ help:
 	@echo "  make generate        - Generate both v0 and v1 clients and format"
 	@echo "  make generate-v0-client - Regenerate v0 models only (datamodel-codegen)"
 	@echo "  make generate-v1-client - Generate v1 client only (openapi-python-client)"
+	@echo "  make generate-sdk    - Generate full SDK to comparison_output/"
 	@echo "  make compare-sdk     - Compare generated SDK with current implementation"
 	@echo ""
 	@echo "Package Building:"
@@ -140,9 +141,12 @@ generate-v0-client:
 generate-v1-client:
 	python scripts/generate_v1_client.py
 
+generate-sdk:
+	python scripts/generate_models_and_client.py
+
 compare-sdk:
 	@if [ ! -d "comparison_output/full_sdk" ]; then \
-		echo "❌ No generated SDK found. Run 'python scripts/generate_models_and_client.py' first."; \
+		echo "❌ No generated SDK found. Run 'make generate-sdk' first."; \
 		exit 1; \
 	fi
 	python comparison_output/full_sdk/compare_with_current.py
