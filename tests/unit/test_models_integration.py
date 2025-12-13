@@ -40,16 +40,11 @@ from honeyhive.models import (
     TracingParams,
     UUIDType,
 )
-from honeyhive.models.generated import CallType
 from honeyhive.models.generated import EventType as GeneratedEventType
 from honeyhive.models.generated import (
-    EventType1,
     Operator,
     Parameters,
-    ReturnType,
     ToolType,
-    Type,
-    Type1,
 )
 
 
@@ -403,8 +398,8 @@ class TestTracingParams:
 
     def test_tracing_params_event_type_validation_with_enum(self) -> None:
         """Test TracingParams event_type validation with EventType enum."""
-        params = TracingParams(event_type=GeneratedEventType.model)
-        assert params.event_type == GeneratedEventType.model
+        params = TracingParams(event_type="model")
+        assert params.event_type == "model"
 
     def test_tracing_params_event_type_validation_with_none(self) -> None:
         """Test TracingParams event_type validation with None value."""
@@ -459,7 +454,7 @@ class TestModelValidation:
         # Parameters and CallType imported at top level
 
         parameters = Parameters(
-            call_type=CallType.chat,
+            call_type="chat",
             model="gpt-4",
         )
 
@@ -486,7 +481,7 @@ class TestModelValidation:
             "name": "test-tool",
             "description": "A test tool",
             "parameters": {"param1": "value1"},
-            "tool_type": ToolType.function,
+            "tool_type": "function",
         }
 
         tool = Tool(**tool_data)
@@ -502,15 +497,15 @@ class TestModelValidation:
 
         metric_data: Dict[str, Any] = {
             "name": "test-metric",
-            "type": Type1.PYTHON,
+            "type": "PYTHON",
             "criteria": "def evaluate(output): return 1.0",
             "description": "A test metric",
-            "return_type": ReturnType.float,
+            "return_type": "float",
         }
 
         metric = Metric(**metric_data)
         assert metric.name == "test-metric"
-        assert metric.type == Type1.PYTHON
+        assert metric.type == "PYTHON"
         assert metric.description == "A test metric"
 
     def test_event_filter_model_creation(self) -> None:
@@ -520,8 +515,8 @@ class TestModelValidation:
         filter_data: Dict[str, Any] = {
             "field": "metadata.cost",
             "value": "0.01",
-            "operator": Operator.greater_than,
-            "type": Type.number,
+            "operator": "greater_than",
+            "type": "number",
         }
 
         event_filter = EventFilter(**filter_data)
@@ -545,7 +540,7 @@ class TestModelIntegrationPatterns:
             "project": "test-project",
             "source": "production",
             "event_name": "llm_call",
-            "event_type": EventType1.model,
+            "event_type": model,
             "config": {"model": "gpt-4", "temperature": 0.7},
             "inputs": {"prompt": "Hello, world!"},
             "outputs": {"response": "Hello! How can I help you today?"},
@@ -615,7 +610,7 @@ class TestModelIntegrationPatterns:
                 "project": "test-project",
                 "source": "test",
                 "event_name": f"event-{i}",
-                "event_type": EventType1.model,
+                "event_type": model,
                 "config": {"model": "gpt-4"},
                 "inputs": {"prompt": f"prompt-{i}"},
                 "duration": 1000.0,
@@ -656,7 +651,7 @@ class TestModelIntegrationPatterns:
             project="test-project",
             source="test",
             event_name="test-event",
-            event_type=EventType1.model,
+            event_type="model",
             config={"temperature": 0.7},
             inputs={"prompt": "test"},
             duration=1000.0,
@@ -699,7 +694,7 @@ class TestEventTypeEnum:
             project="test",
             source="test",
             event_name="test",
-            event_type=EventType1.model,
+            event_type="model",
             config={"model": "gpt-4"},
             inputs={"prompt": "test"},
             duration=1000.0,
@@ -709,8 +704,8 @@ class TestEventTypeEnum:
 
     def test_event_type_enum_in_tracing_params(self) -> None:
         """Test EventType enum usage in TracingParams."""
-        params = TracingParams(event_type=GeneratedEventType.tool)
-        assert params.event_type == GeneratedEventType.tool
+        params = TracingParams(event_type="tool")
+        assert params.event_type == "tool"
 
 
 class TestModelSerialization:
@@ -724,7 +719,7 @@ class TestModelSerialization:
             project="test-project",
             source="test",
             event_name="test-event",
-            event_type=EventType1.model,
+            event_type="model",
             config={"temperature": 0.7},
             inputs={"prompt": "test"},
             outputs={"response": "result"},

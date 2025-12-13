@@ -27,7 +27,6 @@ from honeyhive.models import (
     PostConfigurationRequest,
     PutConfigurationRequest,
 )
-from honeyhive.models.generated import CallType, Type6
 
 
 class TestCreateConfigurationResponse:
@@ -152,7 +151,7 @@ class TestConfigurationsAPICreateConfiguration:
         """Test create_configuration with successful response."""
         # Arrange
         api = ConfigurationsAPI(mock_client)
-        parameters = Parameters2(call_type=CallType.chat, model="gpt-3.5-turbo")
+        parameters = Parameters2(call_type="chat", model="gpt-3.5-turbo")
         request = PostConfigurationRequest(
             project="test-project",
             name="test-config",
@@ -184,7 +183,7 @@ class TestConfigurationsAPICreateConfiguration:
         """Test create_configuration with failure response."""
         # Arrange
         api = ConfigurationsAPI(mock_client)
-        parameters = Parameters2(call_type=CallType.chat, model="gpt-3.5-turbo")
+        parameters = Parameters2(call_type="chat", model="gpt-3.5-turbo")
         request = PostConfigurationRequest(
             project="test-project",
             name="test-config",
@@ -210,7 +209,7 @@ class TestConfigurationsAPICreateConfiguration:
         """Test create_configuration with missing fields in response."""
         # Arrange
         api = ConfigurationsAPI(mock_client)
-        parameters = Parameters2(call_type=CallType.chat, model="gpt-3.5-turbo")
+        parameters = Parameters2(call_type=chat, model="gpt-3.5-turbo")
         request = PostConfigurationRequest(
             project="test-project",
             name="test-config",
@@ -236,7 +235,7 @@ class TestConfigurationsAPICreateConfiguration:
         """Test create_configuration properly serializes request."""
         # Arrange
         api = ConfigurationsAPI(mock_client)
-        parameters = Parameters2(call_type=CallType.chat, model="gpt-3.5-turbo")
+        parameters = Parameters2(call_type=chat, model="gpt-3.5-turbo")
         request = PostConfigurationRequest(
             project="test-project",
             name="test-config",
@@ -340,7 +339,7 @@ class TestConfigurationsAPICreateConfigurationAsync:
         """Test create_configuration_async with successful response."""
         # Arrange
         api = ConfigurationsAPI(mock_client)
-        parameters = Parameters2(call_type=CallType.chat, model="gpt-3.5-turbo")
+        parameters = Parameters2(call_type=chat, model="gpt-3.5-turbo")
         request = PostConfigurationRequest(
             project="test-project",
             name="async-config",
@@ -373,7 +372,7 @@ class TestConfigurationsAPICreateConfigurationAsync:
         """Test create_configuration_async with failure response."""
         # Arrange
         api = ConfigurationsAPI(mock_client)
-        parameters = Parameters2(call_type=CallType.chat, model="gpt-3.5-turbo")
+        parameters = Parameters2(call_type=chat, model="gpt-3.5-turbo")
         request = PostConfigurationRequest(
             project="test-project",
             name="async-config",
@@ -910,7 +909,7 @@ class TestConfigurationsAPIUpdateConfiguration:
         # Arrange
         api = ConfigurationsAPI(mock_client)
         config_id = "config-123"
-        parameters = Parameters1(call_type=CallType.chat, model="gpt-4")
+        parameters = Parameters1(call_type=chat, model="gpt-4")
         request = PutConfigurationRequest(
             project="test-project",
             name="updated-config",
@@ -944,13 +943,13 @@ class TestConfigurationsAPIUpdateConfiguration:
         # Arrange
         api = ConfigurationsAPI(mock_client)
         config_id = "different-config-456"
-        parameters = Parameters1(call_type=CallType.completion, model="claude-3")
+        parameters = Parameters1(call_type=completion, model="claude-3")
         request = PutConfigurationRequest(
             project="test-project",
             name="different-updated-config",
             provider="anthropic",
             parameters=parameters,
-            type=Type6.LLM,
+            type=LLM,
         )
         updated_config_data = {
             "id": config_id,
@@ -982,7 +981,7 @@ class TestConfigurationsAPIUpdateConfiguration:
         # Arrange
         api = ConfigurationsAPI(mock_client)
         config_id = "config-123"
-        parameters = Parameters1(call_type=CallType.chat, model="gpt-3.5-turbo")
+        parameters = Parameters1(call_type=chat, model="gpt-3.5-turbo")
         request = PutConfigurationRequest(
             project="test-project",
             name="serialization-test",
@@ -1084,7 +1083,7 @@ class TestConfigurationsAPIUpdateConfigurationAsync:
         # Arrange
         api = ConfigurationsAPI(mock_client)
         config_id = "async-update-config-123"
-        parameters = Parameters1(call_type=CallType.chat, model="gpt-4")
+        parameters = Parameters1(call_type=chat, model="gpt-4")
         request = PutConfigurationRequest(
             project="test-project",
             name="async-updated-config",
@@ -1121,13 +1120,13 @@ class TestConfigurationsAPIUpdateConfigurationAsync:
         # Arrange
         api = ConfigurationsAPI(mock_client)
         config_id = "async-different-update-456"
-        parameters = Parameters1(call_type=CallType.completion, model="claude-3")
+        parameters = Parameters1(call_type=completion, model="claude-3")
         request = PutConfigurationRequest(
             project="test-project",
             name="async-different-updated",
             provider="anthropic",
             parameters=parameters,
-            type=Type6.LLM,
+            type=LLM,
         )
         updated_config_data = {
             "id": config_id,

@@ -13,9 +13,8 @@ from honeyhive.models import (
     PostConfigurationRequest,
     SessionStartRequest,
 )
-from honeyhive.models.generated import CallType, EnvEnum, EventType1
 from honeyhive.models.generated import FunctionCallParams as GeneratedFunctionCallParams
-from honeyhive.models.generated import Parameters2, SelectedFunction, Type3, UUIDType
+from honeyhive.models.generated import Parameters2, SelectedFunction, UUIDType
 
 
 @pytest.mark.integration
@@ -31,7 +30,7 @@ class TestModelIntegration:
             name="complex-config",
             provider="openai",
             parameters=Parameters2(
-                call_type=CallType.chat,
+                call_type="chat",
                 model="gpt-4",
                 hyperparameters={"temperature": 0.7, "max_tokens": 1000, "top_p": 0.9},
                 responseFormat={"type": "json_object"},
@@ -54,7 +53,7 @@ class TestModelIntegration:
                 functionCallParams=GeneratedFunctionCallParams.auto,
                 forceFunction={"enabled": False},
             ),
-            env=[EnvEnum.prod, EnvEnum.staging],
+            env=["prod", "staging"],
             user_properties={"team": "AI-Research", "project_lead": "Dr. Smith"},
         )
 
@@ -74,8 +73,8 @@ class TestModelIntegration:
         )
 
         # Verify enum serialization
-        assert config_dict["parameters"]["call_type"] == CallType.chat
-        assert config_dict["env"] == [EnvEnum.prod, EnvEnum.staging]
+        assert config_dict["parameters"]["call_type"] == "chat"
+        assert config_dict["env"] == ["prod", "staging"]
 
     def test_model_validation_integration(self):
         """Test model validation with complex data."""
@@ -84,7 +83,7 @@ class TestModelIntegration:
             project="integration-test-project",
             source="production",
             event_name="validation-test-event",
-            event_type=EventType1.model,
+            event_type="model",
             config={
                 "model": "gpt-4",
                 "provider": "openai",
@@ -105,7 +104,7 @@ class TestModelIntegration:
 
         # Verify model is valid
         assert event_request.project == "integration-test-project"
-        assert event_request.event_type == EventType1.model
+        assert event_request.event_type == "model"
         assert event_request.duration == 1500.0
         assert event_request.metadata["experiment_id"] == "exp-789"
 
@@ -128,7 +127,7 @@ class TestModelIntegration:
             project="integration-test-project",
             source="integration-test",
             event_name="model-workflow-event",
-            event_type=EventType1.model,
+            event_type="model",
             config={"model": "gpt-4", "provider": "openai"},
             inputs={"prompt": "Workflow test prompt"},
             duration=1000.0,
@@ -149,7 +148,7 @@ class TestModelIntegration:
             name="workflow-tool",
             description="Tool for workflow testing",
             parameters={"test": True, "workflow": "integration"},
-            type=Type3.function,
+            type="function",
         )
 
         # Step 5: Create evaluation run request
@@ -185,7 +184,7 @@ class TestModelIntegration:
             project="test-project",
             source="test",
             event_name="minimal-event",
-            event_type=EventType1.model,
+            event_type="model",
             config={},
             inputs={},
             duration=0.0,
@@ -216,7 +215,7 @@ class TestModelIntegration:
             project="test-project",
             source="test",
             event_name="complex-event",
-            event_type=EventType1.model,
+            event_type="model",
             config=complex_config,
             inputs={"complex_input": complex_config},
             duration=100.0,
@@ -238,7 +237,7 @@ class TestModelIntegration:
                 project="test-project",
                 source="test",
                 event_name="invalid-event",
-                event_type="invalid_type",  # Should be EventType1 enum
+                event_type="invalid_type",  # Should be valid event type string
                 config={},
                 inputs={},
                 duration=0.0,
@@ -278,7 +277,7 @@ class TestModelIntegration:
             name="large-config",
             provider="openai",
             parameters=Parameters2(
-                call_type=CallType.chat,
+                call_type="chat",
                 model="gpt-4",
                 hyperparameters=large_hyperparameters,
                 responseFormat={"type": "text"},

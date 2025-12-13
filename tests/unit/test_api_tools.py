@@ -23,7 +23,6 @@ import pytest
 from honeyhive.api.base import BaseAPI
 from honeyhive.api.tools import ToolsAPI
 from honeyhive.models import CreateToolRequest, Tool, UpdateToolRequest
-from honeyhive.models.generated import Type3
 
 
 class TestToolsAPIInitialization:
@@ -71,7 +70,7 @@ class TestCreateTool:
             name="test-tool",
             description="Test tool description",
             parameters={"param1": "value1"},
-            type=Type3.function,
+            type=function,
         )
 
         with patch.object(mock_client, "request", return_value=mock_response):
@@ -107,7 +106,7 @@ class TestCreateTool:
         }
 
         request = CreateToolRequest(
-            task="minimal-project", name="minimal-tool", parameters={}, type=Type3.tool
+            task="minimal-project", name="minimal-tool", parameters={}, type=tool
         )
 
         with patch.object(mock_client, "request", return_value=mock_response):
@@ -126,7 +125,7 @@ class TestCreateTool:
         # Arrange
         tools_api = ToolsAPI(mock_client)
         request = CreateToolRequest(
-            task="test-project", name="test-tool", parameters={}, type=Type3.function
+            task="test-project", name="test-tool", parameters={}, type=function
         )
 
         with patch.object(mock_client, "request", side_effect=Exception("API Error")):
@@ -220,7 +219,7 @@ class TestCreateToolAsync:
             name="async-tool",
             description="Async test tool",
             parameters={"async_param": "async_value"},
-            type=Type3.function,
+            type=function,
         )
 
         with patch.object(mock_client, "request_async", return_value=mock_response):
@@ -246,7 +245,7 @@ class TestCreateToolAsync:
         # Arrange
         tools_api = ToolsAPI(mock_client)
         request = CreateToolRequest(
-            task="error-project", name="error-tool", parameters={}, type=Type3.function
+            task="error-project", name="error-tool", parameters={}, type=function
         )
 
         with patch.object(
@@ -1125,7 +1124,7 @@ class TestToolsAPIParameterValidation:
             name="test-tool",
             description=None,  # This should be excluded
             parameters={},
-            type=Type3.function,
+            type=function,
         )
 
         with patch.object(mock_client, "request", return_value=mock_response):

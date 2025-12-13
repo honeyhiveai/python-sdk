@@ -21,16 +21,11 @@ from typing import Any
 import pytest
 
 from honeyhive.models.generated import (
-    CallType,
     CreateDatapointRequest,
     CreateEventRequest,
-    EventFilter,
-    EventType1,
-    Operator,
     Parameters2,
     PostConfigurationRequest,
     SessionStartRequest,
-    Type,
 )
 from tests.utils import (  # pylint: disable=no-name-in-module
     generate_test_id,
@@ -186,7 +181,7 @@ class TestEndToEndValidation:
                     project=real_project,
                     source="integration-test",
                     event_name=f"{event_name}-{i}",
-                    event_type=EventType1.model,
+                    event_type="model",
                     config={
                         "model": "gpt-4",
                         "temperature": 0.7,
@@ -230,12 +225,12 @@ class TestEndToEndValidation:
 
             # Step 5: Validate event-session relationships
             print("🔍 Validating event-session relationships...")
-            session_filter = EventFilter(
-                field="session_id",
-                value=session_id,
-                operator=Operator.is_,
-                type=Type.string,
-            )
+            session_filter = {
+                "field": "session_id",
+                "value": session_id,
+                "operator": "is",
+                "type": "string",
+            }
 
             events_result = integration_client.events.get_events(
                 project=real_project, filters=[session_filter], limit=20
@@ -321,7 +316,7 @@ class TestEndToEndValidation:
                 project=integration_project_name,
                 provider="openai",
                 parameters=Parameters2(
-                    call_type=CallType.chat,
+                    call_type="chat",
                     model="gpt-3.5-turbo",
                     hyperparameters={
                         "temperature": 0.8,
@@ -380,7 +375,7 @@ class TestEndToEndValidation:
             # Validate parameters integrity (API only stores call_type and model currently)
             params = found_config.parameters
             assert params.model == "gpt-3.5-turbo", "Model parameter corrupted"
-            assert params.call_type == CallType.chat, "Call type parameter corrupted"
+            assert params.call_type == "chat", "Call type parameter corrupted"
             # Note: API currently only stores call_type and model, not temperature, max_tokens, etc.
 
             print("✅ CONFIGURATION VALIDATION SUCCESSFUL:")
@@ -423,7 +418,7 @@ class TestEndToEndValidation:
                 project=real_project,
                 provider="openai",
                 parameters=Parameters2(
-                    call_type=CallType.chat,
+                    call_type="chat",
                     model="gpt-4",
                     hyperparameters={"temperature": 0.5},
                 ),

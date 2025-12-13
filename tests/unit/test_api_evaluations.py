@@ -14,8 +14,8 @@ from honeyhive.models import (
     GetRunsResponse,
     UpdateRunRequest,
     UpdateRunResponse,
+    UUIDType,
 )
-from honeyhive.models.generated import Status, UUIDType
 
 
 class TestEvaluationsAPI:  # pylint: disable=attribute-defined-outside-init
@@ -182,7 +182,7 @@ class TestEvaluationsAPI:  # pylint: disable=attribute-defined-outside-init
         assert isinstance(result, GetRunResponse)
         assert result.evaluation is not None
         assert result.evaluation.name == "test-run"
-        assert result.evaluation.status == Status.completed
+        assert result.evaluation.status == "completed"
         self.mock_client.request.assert_called_once_with("GET", f"/runs/{run_id}")
 
     @pytest.mark.asyncio

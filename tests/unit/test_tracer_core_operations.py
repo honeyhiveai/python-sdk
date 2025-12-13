@@ -29,7 +29,6 @@ import pytest
 from opentelemetry.trace import SpanKind, StatusCode
 
 from honeyhive.api.events import CreateEventRequest
-from honeyhive.models.generated import EventType1
 from honeyhive.tracer.core.base import NoOpSpan
 from honeyhive.tracer.core.operations import (
     TracerOperationsInterface,
@@ -953,7 +952,7 @@ class TestTracerOperationsMixin:  # pylint: disable=too-many-public-methods
             with patch.object(
                 mock_tracer_operations,
                 "_convert_event_type_dynamically",
-                return_value=EventType1.tool,
+                return_value="tool",
             ):
                 with patch.object(
                     mock_tracer_operations,
@@ -990,7 +989,7 @@ class TestTracerOperationsMixin:  # pylint: disable=too-many-public-methods
         """Test event type conversion for model."""
         result = mock_tracer_operations._convert_event_type_dynamically("model")
 
-        assert result == EventType1.model
+        assert result == "model"
 
     def test_convert_event_type_dynamically_tool(
         self, mock_tracer_operations: MockTracerOperations
@@ -998,7 +997,7 @@ class TestTracerOperationsMixin:  # pylint: disable=too-many-public-methods
         """Test event type conversion for tool."""
         result = mock_tracer_operations._convert_event_type_dynamically("tool")
 
-        assert result == EventType1.tool
+        assert result == "tool"
 
     def test_convert_event_type_dynamically_chain(
         self, mock_tracer_operations: MockTracerOperations
@@ -1006,7 +1005,7 @@ class TestTracerOperationsMixin:  # pylint: disable=too-many-public-methods
         """Test event type conversion for chain."""
         result = mock_tracer_operations._convert_event_type_dynamically("chain")
 
-        assert result == EventType1.chain
+        assert result == "chain"
 
     def test_convert_event_type_dynamically_session(
         self, mock_tracer_operations: MockTracerOperations
@@ -1016,8 +1015,8 @@ class TestTracerOperationsMixin:  # pylint: disable=too-many-public-methods
 
         # Should fallback to tool if session not available
         assert result in [
-            EventType1.tool,
-            getattr(EventType1, "session", EventType1.tool),
+            "tool",
+            "session",
         ]
 
     def test_convert_event_type_dynamically_unknown(
@@ -1026,7 +1025,7 @@ class TestTracerOperationsMixin:  # pylint: disable=too-many-public-methods
         """Test event type conversion for unknown type."""
         result = mock_tracer_operations._convert_event_type_dynamically("unknown")
 
-        assert result == EventType1.tool
+        assert result == "tool"
 
     def test_extract_event_id_dynamically_from_attribute(
         self, mock_tracer_operations: MockTracerOperations, mock_response: Mock

@@ -8,11 +8,8 @@ import uuid
 import pytest
 
 from honeyhive.models.generated import (
-    CallType,
     CreateDatapointRequest,
     CreateEventRequest,
-    EventFilter,
-    EventType1,
     Parameters2,
     PostConfigurationRequest,
     SessionStartRequest,
@@ -127,7 +124,7 @@ class TestSimpleIntegration:
             project=integration_project_name,
             provider="openai",
             parameters=Parameters2(
-                call_type=CallType.chat,
+                call_type="chat",
                 model="gpt-3.5-turbo",
                 temperature=0.7,
                 max_tokens=100,
@@ -226,7 +223,7 @@ class TestSimpleIntegration:
                 project=integration_project_name,
                 source="integration-test",
                 event_name=f"test-event-{test_id}",
-                event_type=EventType1.model,
+                event_type="model",
                 config={"model": "gpt-4", "test_id": test_id},
                 inputs={"prompt": f"integration test prompt {test_id}"},
                 session_id=session_id,
@@ -250,9 +247,9 @@ class TestSimpleIntegration:
                 assert session.event.session_id == session_id
 
                 # Retrieve events for this session
-                session_filter = EventFilter(
-                    field="session_id", value=session_id, operator="is", type="id"
-                )
+                session_filter = {
+                    "field": "session_id", "value": session_id, "operator": "is", "type": "id"
+                }
 
                 events_result = integration_client.events.get_events(
                     project=integration_project_name, filters=[session_filter], limit=10
@@ -309,7 +306,7 @@ class TestSimpleIntegration:
             project="test-project",
             source="test",
             event_name="test-event",
-            event_type=EventType1.model,
+            event_type="model",
             config={"model": "gpt-4"},
             inputs={"prompt": "test"},
             duration=100.0,
@@ -317,7 +314,7 @@ class TestSimpleIntegration:
 
         event_dict = event_request.model_dump(exclude_none=True)
         assert event_dict["project"] == "test-project"
-        assert event_dict["event_type"] == EventType1.model
+        assert event_dict["event_type"] == "model"
         assert event_dict["config"]["model"] == "gpt-4"
 
     def test_error_handling(self, integration_client):

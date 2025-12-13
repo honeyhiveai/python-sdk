@@ -9,8 +9,6 @@ import time
 from typing import Any, Optional
 
 from honeyhive import HoneyHive
-from honeyhive.models import EventFilter
-from honeyhive.models.generated import Operator, Type
 from honeyhive.utils.logger import get_logger
 
 from .test_config import test_config
@@ -50,20 +48,20 @@ def verify_backend_event(
 
     # Create event filter - search by event name first (more reliable)
     if expected_event_name:
-        event_filter = EventFilter(
-            field="event_name",
-            value=expected_event_name,
-            operator=Operator.is_,
-            type=Type.string,
-        )
+        event_filter = {
+            "field": "event_name",
+            "value": expected_event_name,
+            "operator": "is",
+            "type": "string",
+        }
     else:
         # Fallback to searching by metadata if no event name provided
-        event_filter = EventFilter(
-            field="metadata.test.unique_id",
-            value=unique_identifier,
-            operator=Operator.is_,
-            type=Type.string,
-        )
+        event_filter = {
+            "field": "metadata.test.unique_id",
+            "value": unique_identifier,
+            "operator": "is",
+            "type": "string",
+        }
 
     # Simple retry loop for "event not found yet" (backend processing delays)
     for attempt in range(test_config.max_attempts):

@@ -12,8 +12,6 @@ from honeyhive.models.generated import (
     CreateEventRequest,
     CreateRunRequest,
     CreateToolRequest,
-    EventType1,
-    Type3,
     UUIDType,
 )
 from tests.utils import create_openai_config_request, create_session_request
@@ -110,7 +108,7 @@ class TestAPIWorkflows:
             project="test-project",
             source="test",
             event_name="test-event",
-            event_type=EventType1.model,
+            event_type="model",
             config={"model": "gpt-4"},
             inputs={"prompt": "test prompt"},
             duration=150.0,
@@ -206,7 +204,7 @@ class TestAPIWorkflows:
             name="test-tool",
             description="Test tool for unit testing",
             parameters={"test": True},
-            type=Type3.function,
+            type="function",
         )
 
         # Execute

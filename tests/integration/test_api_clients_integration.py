@@ -23,7 +23,6 @@ from typing import Any
 import pytest
 
 from honeyhive.models.generated import (
-    CallType,
     CreateDatapointRequest,
     CreateDatasetRequest,
     CreateProjectRequest,
@@ -33,9 +32,6 @@ from honeyhive.models.generated import (
     Metric,
     Parameters2,
     PostConfigurationRequest,
-    ReturnType,
-    Type1,
-    Type3,
     UpdateProjectRequest,
     UpdateToolRequest,
 )
@@ -64,7 +60,7 @@ class TestConfigurationsAPI:
 
         # Create configuration request with proper Parameters2 structure
         parameters = Parameters2(
-            call_type=CallType.chat,
+            call_type="chat",
             model="gpt-4",
             hyperparameters={"temperature": 0.7, "test_id": test_id},
         )
@@ -119,7 +115,7 @@ class TestConfigurationsAPI:
         config_name = f"test_get_config_{test_id}"
 
         parameters = Parameters2(
-            call_type=CallType.chat,
+            call_type="chat",
             model="gpt-3.5-turbo",
         )
         config_request = PostConfigurationRequest(
@@ -165,7 +161,7 @@ class TestConfigurationsAPI:
 
         for i in range(3):
             parameters = Parameters2(
-                call_type=CallType.chat,
+                call_type="chat",
                 model="gpt-3.5-turbo",
                 hyperparameters={"test_id": test_id, "index": i},
             )
@@ -223,7 +219,7 @@ class TestConfigurationsAPI:
         config_name = f"test_update_config_{test_id}"
 
         parameters = Parameters2(
-            call_type=CallType.chat,
+            call_type="chat",
             model="gpt-3.5-turbo",
             hyperparameters={"temperature": 0.5},
         )
@@ -277,7 +273,7 @@ class TestConfigurationsAPI:
         config_name = f"test_delete_config_{test_id}"
 
         parameters = Parameters2(
-            call_type=CallType.chat,
+            call_type="chat",
             model="gpt-3.5-turbo",
             hyperparameters={"test": "delete"},
         )
@@ -668,7 +664,7 @@ class TestToolsAPI:
                     },
                 },
             },
-            type=Type3.function,
+            type="function",
         )
 
         # Create tool
@@ -712,7 +708,7 @@ class TestToolsAPI:
                     "parameters": {"type": "object", "properties": {}},
                 },
             },
-            type=Type3.function,
+            type="function",
         )
 
         created_tool = integration_client.tools.create_tool(tool_request)
@@ -770,7 +766,7 @@ class TestToolsAPI:
                         "parameters": {"type": "object", "properties": {}},
                     },
                 },
-                type=Type3.function,
+                type="function",
             )
             tool = integration_client.tools.create_tool(tool_request)
             tool_id = getattr(tool, "_id", None) or getattr(tool, "field_id", None)
@@ -820,7 +816,7 @@ class TestToolsAPI:
                     "parameters": {"type": "object", "properties": {}},
                 },
             },
-            type=Type3.function,
+            type="function",
         )
 
         created_tool = integration_client.tools.create_tool(tool_request)
@@ -892,7 +888,7 @@ class TestToolsAPI:
                     "parameters": {"type": "object", "properties": {}},
                 },
             },
-            type=Type3.function,
+            type="function",
         )
 
         created_tool = integration_client.tools.create_tool(tool_request)
@@ -927,10 +923,10 @@ class TestMetricsAPI:
         # Create metric request
         metric_request = Metric(
             name=metric_name,
-            type=Type1.PYTHON,
+            type="python",
             criteria="def evaluate(generation, metadata):\n    return len(generation)",
             description=f"Test metric {test_id}",
-            return_type=ReturnType.float,
+            return_type="float",
         )
 
         # Create metric
@@ -939,7 +935,7 @@ class TestMetricsAPI:
         # Verify metric created
         assert metric is not None
         assert metric.name == metric_name
-        assert metric.type == Type1.PYTHON
+        assert metric.type == "python"
         assert metric.description == f"Test metric {test_id}"
 
     def test_get_metric(
@@ -952,10 +948,10 @@ class TestMetricsAPI:
 
         metric_request = Metric(
             name=metric_name,
-            type=Type1.PYTHON,
+            type="python",
             criteria="def evaluate(generation, metadata):\n    return 1.0",
             description="Test metric for retrieval",
-            return_type=ReturnType.float,
+            return_type="float",
         )
 
         created_metric = integration_client.metrics.create_metric(metric_request)
@@ -995,10 +991,10 @@ class TestMetricsAPI:
         for i in range(2):
             metric_request = Metric(
                 name=f"test_list_metric_{test_id}_{i}",
-                type=Type1.PYTHON,
+                type="python",
                 criteria=f"def evaluate(generation, metadata):\n    return {i}",
                 description=f"Test metric {i}",
-                return_type=ReturnType.float,
+                return_type="float",
             )
             integration_client.metrics.create_metric(metric_request)
 

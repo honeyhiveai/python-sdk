@@ -24,7 +24,6 @@ import pytest
 
 from honeyhive import HoneyHive, HoneyHiveTracer, enrich_session, trace
 from honeyhive.experiments import evaluate
-from honeyhive.models.generated import EventFilter, Operator, Type
 
 
 @pytest.mark.integration
@@ -104,12 +103,12 @@ class TestV1ImmediateShipRequirements:
         events_response = integration_client.events.get_events(
             project=real_project,
             filters=[
-                EventFilter(
-                    field="session_id",
-                    operator=Operator.is_,
-                    value=session_id_str,
-                    type=Type.id,
-                ),
+                {
+                    "field": "session_id",
+                    "operator": "is",
+                    "value": session_id_str,
+                    "type": "id",
+                },
             ],
             limit=100,
         )

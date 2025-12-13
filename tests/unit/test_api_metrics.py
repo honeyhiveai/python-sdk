@@ -20,7 +20,6 @@ import pytest
 
 from honeyhive.api.metrics import MetricsAPI
 from honeyhive.models import Metric, MetricEdit
-from honeyhive.models.generated import ReturnType, Type1
 from honeyhive.utils.error_handler import AuthenticationError, ErrorContext
 
 
@@ -95,10 +94,10 @@ class TestMetricsAPICreateMetric:
 
         test_metric = Metric(
             name="test_metric",
-            type=Type1.PYTHON,
+            type=PYTHON,
             criteria="def evaluate(event): return True",
             description="Test metric description",
-            return_type=ReturnType.float,
+            return_type=float,
         )
 
         with patch("honeyhive.api.base.get_error_handler"):
@@ -188,10 +187,10 @@ class TestMetricsAPICreateMetric:
 
         test_metric = Metric(
             name="async_metric",
-            type=Type1.COMPOSITE,
+            type=COMPOSITE,
             criteria="weighted-average",
             description="Async metric description",
-            return_type=ReturnType.string,
+            return_type=string,
         )
 
         with patch("honeyhive.api.base.get_error_handler"):
@@ -807,10 +806,10 @@ class TestMetricsAPIIntegration:
 
         test_metric = Metric(
             name="test_metric",
-            type=Type1.PYTHON,
+            type=PYTHON,
             criteria="def evaluate(event): return True",
             description="Test description",
-            return_type=ReturnType.float,
+            return_type=float,
         )
 
         with patch("honeyhive.api.base.get_error_handler"):

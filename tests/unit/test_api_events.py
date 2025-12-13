@@ -27,8 +27,7 @@ from honeyhive.api.events import (
     EventsAPI,
     UpdateEventRequest,
 )
-from honeyhive.models import CreateEventRequest, Event, EventFilter
-from honeyhive.models.generated import EventType1, Operator, Type
+from honeyhive.models import EventFilter
 from honeyhive.utils.error_handler import ErrorContext
 
 
@@ -72,7 +71,7 @@ def sample_create_event_request() -> CreateEventRequest:
         project="test-project",
         source="test-source",
         event_name="test-event",
-        event_type=EventType1.model,
+        event_type="model",
         config={"model": "gpt-4", "temperature": 0.7},
         inputs={"prompt": "test prompt"},
         duration=1500.0,
@@ -91,8 +90,8 @@ def sample_event_filter() -> EventFilter:
     return EventFilter(
         field="metadata.user_id",
         value="test-user",
-        operator=Operator.is_,
-        type=Type.string,
+        operator="is",
+        type="string",
     )
 
 
@@ -298,7 +297,7 @@ class TestBatchCreateEventRequest:
             project="test-project-2",
             source="test-source-2",
             event_name="test-event-2",
-            event_type=EventType1.tool,
+            event_type="tool",
             config={"tool": "calculator"},
             inputs={"operation": "add"},
             duration=800.0,
@@ -1379,8 +1378,8 @@ class TestEventsAPIListEvents:
             EventFilter(
                 field="metadata.user_id",
                 value="test-user",
-                operator=Operator.is_,
-                type=Type.string,
+                operator="is",
+                type="string",
             )
         ]
         date_range = {"$gte": "2023-01-01", "$lte": "2023-12-31"}
