@@ -22,8 +22,8 @@ from opentelemetry import trace
 from opentelemetry.baggage import get_baggage
 from opentelemetry.trace import SpanKind, Status, StatusCode
 
-from ...api.events import CreateEventRequest
-from ...models.generated import EventType1
+# Event request is now built as a dict and passed directly to the API
+# EventType values are now plain strings since we pass dicts to the API
 from ...utils.logger import is_shutdown_detected, safe_log
 from ..lifecycle.core import is_new_span_creation_disabled
 from .base import NoOpSpan
@@ -92,7 +92,6 @@ class TracerOperationsMixin(TracerOperationsInterface):
         # Note: is_initialized and project_name are properties in base class
         tracer: Optional[Any]
         client: Optional[Any]
-        session_api: Optional[Any]
         config: Any  # TracerConfig provided by base class
         _session_id: Optional[str]
         _baggage_lock: Any
@@ -704,7 +703,7 @@ class TracerOperationsMixin(TracerOperationsInterface):
 
             # Create event via API
             if self.client is not None:
-                response = self.client.events.create_event(event_request)
+                response = self.client.events.create(data=event_request)
                 safe_log(
                     self,
                     "debug",
@@ -847,13 +846,13 @@ class TracerOperationsMixin(TracerOperationsInterface):
         feedback: Optional[Dict[str, Any]] = None,
         metrics: Optional[Dict[str, Any]] = None,
         **kwargs: Any,
-    ) -> CreateEventRequest:
+    ) -> Dict[str, Any]:
         """Dynamically build event request with flexible parameter handling."""
         # Get target session ID
         target_session_id = self._get_target_session_id_dynamically()
 
-        # Convert string event_type to EventType1 enum dynamically
-        event_type_enum = self._convert_event_type_dynamically(event_type)
+        # Normalize event_type string
+        event_type_str = self._normalize_event_type(event_type)
 
         # Build base request parameters with proper types using dynamic methods
         request_params: Dict[str, Any] = {
@@ -861,7 +860,7 @@ class TracerOperationsMixin(TracerOperationsInterface):
             "source": self._get_source_dynamically(),
             "session_id": str(target_session_id) if target_session_id else None,
             "event_name": str(event_name),
-            "event_type": event_type_enum,
+            "event_type": event_type_str,
             "config": self._get_config_dynamically(config),
             "inputs": self._get_inputs_dynamically(inputs),
             "duration": self._get_duration_dynamically(duration),
@@ -903,23 +902,22 @@ class TracerOperationsMixin(TracerOperationsInterface):
             if value is not None and key not in request_params:
                 request_params[key] = value
 
-        return CreateEventRequest(**request_params)
+        return request_params
 
-    def _convert_event_type_dynamically(self, event_type: str) -> EventType1:
-        """Dynamically convert string event type to enum."""
-        # Dynamic mapping with fallback
-        type_mapping = {
-            "model": EventType1.model,
-            "tool": EventType1.tool,
-            "chain": EventType1.chain,
-        }
+    def _normalize_event_type(self, event_type: str) -> str:
+        """Normalize event type string."""
+        # Valid event types
+        valid_types = {"model", "tool", "chain"}
 
-        # Handle session type - fallback to tool if not available
-        if event_type.lower() == "session":
-            # Check if session type exists, otherwise use tool
-            return getattr(EventType1, "session", EventType1.tool)
+        # Normalize to lowercase
+        normalized = event_type.lower()
 
-        return type_mapping.get(event_type.lower(), EventType1.tool)
+        # Handle session type - fallback to tool since session is handled separately
+        if normalized == "session":
+            return "tool"
+
+        # Return normalized type or default to tool
+        return normalized if normalized in valid_types else "tool"
 
     def _extract_event_id_dynamically(self, response: Any) -> Optional[str]:
         """Dynamically extract event ID from API response."""

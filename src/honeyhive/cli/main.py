@@ -8,6 +8,7 @@ from io import StringIO
 from typing import Any, Dict, Optional
 
 import click
+import httpx
 import yaml
 
 from ..api.client import HoneyHive
@@ -324,14 +325,22 @@ def request(
         data: JSON string containing request body data
         timeout: Request timeout in seconds
     """
+    import os
+
     try:
-        client = HoneyHive()
+        # Get API key from environment
+        api_key = os.getenv("HONEYHIVE_API_KEY") or os.getenv("HH_API_KEY")
+        base_url = os.getenv("HONEYHIVE_SERVER_URL") or os.getenv("HH_API_URL") or "https://api.honeyhive.ai"
+
+        if not api_key:
+            click.echo("No API key found - set HONEYHIVE_API_KEY or HH_API_KEY", err=True)
+            sys.exit(1)
 
         # Parse headers and data
-        request_headers = {}
+        request_headers = {"Authorization": f"Bearer {api_key}"}
         if headers:
             try:
-                request_headers = json.loads(headers)
+                request_headers.update(json.loads(headers))
             except json.JSONDecodeError:
                 click.echo("Invalid JSON for headers", err=True)
                 sys.exit(1)
@@ -344,15 +353,15 @@ def request(
                 click.echo("Invalid JSON for data", err=True)
                 sys.exit(1)
 
-        # Make request
+        # Make request using httpx directly
         start_time = time.time()
-        response = client.sync_client.request(
-            method=method,
-            url=url,
-            headers=request_headers,
-            json=request_data,
-            timeout=timeout,
-        )
+        with httpx.Client(base_url=base_url, timeout=timeout) as client:
+            response = client.request(
+                method=method,
+                url=url,
+                headers=request_headers,
+                json=request_data,
+            )
         duration = time.time() - start_time
 
         # Display response
@@ -363,7 +372,7 @@ def request(
         try:
             response_data = response.json()
             click.echo(f"Response: {json.dumps(response_data, indent=2)}")
-        except:
+        except Exception:
             click.echo(f"Response: {response.text}")
 
     except Exception as e:

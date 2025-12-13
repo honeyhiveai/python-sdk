@@ -30,6 +30,7 @@
             buildInputs = [
             # Python environment
             pythonEnv
+            pkgs.yq
           ];
 
           shellHook = ''

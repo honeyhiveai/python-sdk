@@ -20,7 +20,6 @@ from opentelemetry.sdk.trace import SpanLimits, TracerProvider
 from opentelemetry.trace.propagation.tracecontext import TraceContextTextMapPropagator
 
 from ...api.client import HoneyHive
-from ...api.session import SessionAPI
 
 # Removed get_config import - using per-instance configuration instead
 from ...utils.logger import get_tracer_logger, safe_log
@@ -1012,23 +1011,20 @@ def _initialize_session_management(tracer_instance: Any) -> None:
     :note: Uses graceful degradation for API connection failures
     """
     try:
-        # Create client and session API using dynamic configuration extraction
+        # Create HoneyHive client using dynamic configuration extraction
 
         # Extract configuration values dynamically (config object and legacy attributes)
         api_key = getattr(tracer_instance.config, "api_key", None)
         server_url = getattr(
             tracer_instance.config, "server_url", "https://api.honeyhive.ai"
         )
-        test_mode = getattr(tracer_instance.config, "test_mode", False)
-        verbose = getattr(tracer_instance.config, "verbose", False)
 
-        tracer_instance.client = HoneyHive(
-            api_key=api_key,
-            server_url=server_url,
-            test_mode=test_mode,
-            verbose=verbose,
-        )
-        tracer_instance.session_api = SessionAPI(tracer_instance.client)
+        # Build client parameters (new HoneyHive client only accepts api_key and base_url)
+        client_params = {"api_key": api_key}
+        if server_url:
+            client_params["base_url"] = server_url
+
+        tracer_instance.client = HoneyHive(**client_params)
 
         # Handle session ID initialization
         # Always create/initialize session in backend, even if session_id is provided
@@ -1280,20 +1276,22 @@ def _create_new_session(tracer_instance: Any) -> None:
         # Create session via API with metadata
         # If session_id is already set (explicitly provided), use it when creating session
         # This ensures session exists in backend and prevents auto-population bug
-        session_response = tracer_instance.session_api.start_session(
-            project=tracer_instance.project_name,
-            session_name=session_name,
-            source=tracer_instance.source_environment,
-            session_id=tracer_instance.session_id,  # Use provided session_id if set
-            inputs=tracer_instance.config.session.inputs,
-            metadata=session_metadata if session_metadata else None,
-        )
+        session_params = {
+            "project": tracer_instance.project_name,
+            "session_name": session_name,
+            "source": tracer_instance.source_environment,
+            "session_id": tracer_instance.session_id,  # Use provided session_id if set
+            "inputs": tracer_instance.config.session.inputs,
+            "metadata": session_metadata if session_metadata else None,
+        }
+        session_response = tracer_instance.client.sessions.start(data=session_params)
 
-        if session_response and hasattr(session_response, "session_id"):
+        # Response is a dict with 'session_id' key
+        if session_response and isinstance(session_response, dict) and "session_id" in session_response:
             # Preserve explicitly provided session_id if it was set
             # Otherwise use the session_id from the response
             provided_session_id = tracer_instance.session_id
-            response_session_id = session_response.session_id
+            response_session_id = session_response["session_id"]
 
             # Use provided session_id if it matches response (session was created with it)
             # Otherwise use response session_id (new session was created)

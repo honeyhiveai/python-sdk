@@ -23,7 +23,6 @@ from typing import Any, Dict, Optional, Self, Union
 from opentelemetry.trace import INVALID_SPAN_CONTEXT, SpanKind
 
 from ...api.client import HoneyHive
-from ...api.session import SessionAPI
 from ...config import create_unified_config
 from ...config.models import EvaluationConfig, SessionConfig, TracerConfig
 from ...utils.cache import CacheConfig, CacheManager
@@ -116,7 +115,6 @@ class HoneyHiveTracerBase:  # pylint: disable=too-many-instance-attributes
     # Type annotations for instance attributes
     config: DotDict
     client: Optional["HoneyHive"]
-    session_api: Optional["SessionAPI"]
     _baggage_lock: "threading.Lock"
     _session_id: Optional[str]
     tracer: Any  # OpenTelemetry Tracer instance
@@ -323,8 +321,7 @@ class HoneyHiveTracerBase:  # pylint: disable=too-many-instance-attributes
         api_params = self._extract_api_parameters_dynamically(config)
         if api_params:
             try:
-                self.client = HoneyHive(**api_params, tracer_instance=self)
-                self.session_api = SessionAPI(self.client)
+                self.client = HoneyHive(**api_params)
             except Exception as e:
                 safe_log(
                     self,
@@ -335,10 +332,8 @@ class HoneyHiveTracerBase:  # pylint: disable=too-many-instance-attributes
                 )
                 # Graceful degradation
                 self.client = None
-                self.session_api = None
         else:
             self.client = None
-            self.session_api = None
 
     def _extract_api_parameters_dynamically(
         self, config: Dict[str, Any]
@@ -352,22 +347,13 @@ class HoneyHiveTracerBase:  # pylint: disable=too-many-instance-attributes
         if not api_key or not project:
             return None
 
-        # Build API parameters dynamically (only params accepted by HoneyHive API)
-        api_params = {}
+        # Build API parameters (new HoneyHive client only accepts api_key and base_url)
+        api_params = {"api_key": api_key}
 
-        # Map configuration keys to API client parameters (excluding project)
-        param_mapping = {
-            "api_key": "api_key",
-            "server_url": "server_url",
-            "timeout": "timeout",
-            "test_mode": "test_mode",
-            "verbose": "verbose",
-        }
-
-        for config_key, api_key_param in param_mapping.items():
-            value = config.get(config_key)
-            if value is not None:
-                api_params[api_key_param] = value
+        # Map server_url to base_url for the new client
+        server_url = config.get("server_url")
+        if server_url:
+            api_params["base_url"] = server_url
 
         return api_params
 
@@ -556,7 +542,7 @@ class HoneyHiveTracerBase:  # pylint: disable=too-many-instance-attributes
         """Dynamically determine if session should be created automatically."""
         # Check if we have the necessary components and configuration
         return (
-            self.session_api is not None
+            self.client is not None
             and self._session_name is not None
             and self._session_id is None  # Don't create if already have session_id
             and not self.test_mode  # Skip in test mode
@@ -564,22 +550,23 @@ class HoneyHiveTracerBase:  # pylint: disable=too-many-instance-attributes
 
     def _create_session_dynamically(self) -> None:
         """Dynamically create a session using available configuration."""
-        if not self.session_api or not self._session_name:
+        if not self.client or not self._session_name:
             return
 
         try:
             # Build session creation parameters dynamically
             session_params = self._build_session_parameters_dynamically()
 
-            # Create session via API
-            response = self.session_api.create_session_from_dict(session_params)
+            # Create session via API using the new client.sessions.start() method
+            response = self.client.sessions.start(data=session_params)
 
-            if hasattr(response, "session_id"):
+            # Response is a dict with 'session_id' key
+            if isinstance(response, dict) and "session_id" in response:
                 # pylint: disable=attribute-defined-outside-init
                 # Justification: _session_id is properly initialized in __init__.
                 # This is legitimate reassignment during dynamic session creation,
                 # not a first-time attribute definition.
-                self._session_id = response.session_id
+                self._session_id = response["session_id"]
                 safe_log(
                     self,
                     "info",

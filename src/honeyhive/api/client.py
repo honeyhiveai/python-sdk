@@ -393,6 +393,72 @@ class ExperimentsAPI(BaseAPI):
         """Delete an experiment run asynchronously."""
         return await experiments_svc_async.deleteRun(self._api_config, run_id=run_id)
 
+    def get_result(
+        self,
+        run_id: str,
+        project_id: str,
+        aggregate_function: Optional[str] = None,
+    ) -> Dict[str, Any]:
+        """Get experiment run result."""
+        result = experiments_svc.getExperimentResult(
+            self._api_config,
+            run_id=run_id,
+            project_id=project_id,
+            aggregate_function=aggregate_function,
+        )
+        # TODOSchema is a pass-through dict model
+        return result.model_dump() if hasattr(result, "model_dump") else dict(result)
+
+    def compare_runs(
+        self,
+        run_id_1: str,
+        run_id_2: str,
+        project_id: str,
+        aggregate_function: Optional[str] = None,
+    ) -> Dict[str, Any]:
+        """Compare two experiment runs."""
+        result = experiments_svc.getExperimentComparison(
+            self._api_config,
+            project_id=project_id,
+            run_id_1=run_id_1,
+            run_id_2=run_id_2,
+            aggregate_function=aggregate_function,
+        )
+        # TODOSchema is a pass-through dict model
+        return result.model_dump() if hasattr(result, "model_dump") else dict(result)
+
+    async def get_result_async(
+        self,
+        run_id: str,
+        project_id: str,
+        aggregate_function: Optional[str] = None,
+    ) -> Dict[str, Any]:
+        """Get experiment run result asynchronously."""
+        result = await experiments_svc_async.getExperimentResult(
+            self._api_config,
+            run_id=run_id,
+            project_id=project_id,
+            aggregate_function=aggregate_function,
+        )
+        return result.model_dump() if hasattr(result, "model_dump") else dict(result)
+
+    async def compare_runs_async(
+        self,
+        run_id_1: str,
+        run_id_2: str,
+        project_id: str,
+        aggregate_function: Optional[str] = None,
+    ) -> Dict[str, Any]:
+        """Compare two experiment runs asynchronously."""
+        result = await experiments_svc_async.getExperimentComparison(
+            self._api_config,
+            project_id=project_id,
+            run_id_1=run_id_1,
+            run_id_2=run_id_2,
+            aggregate_function=aggregate_function,
+        )
+        return result.model_dump() if hasattr(result, "model_dump") else dict(result)
+
 
 class MetricsAPI(BaseAPI):
     """Metrics API."""
