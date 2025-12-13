@@ -246,6 +246,53 @@ AssertionError: assert 'honeyhive.metadata.datapoint' in {'honeyhive.project': '
 
 ---
 
+---
+
+## Category 6: Incomplete OpenAPI Schemas for /runs Endpoints
+
+### Issue: Result and Comparison Endpoints Return TODOSchema
+
+**Files Affected:**
+- OpenAPI spec: `openapi/v1.yaml`
+- SDK usage: `experiments/results.py` - functions `get_run_result()` and `compare_runs()`
+
+**Problem:** The following endpoints have placeholder schemas in the OpenAPI spec:
+
+1. **GET /runs/{run_id}/result** - Returns `TODOSchema` (just `{message: string}`)
+   - Should return properly typed experiment result with metrics, pass/fail counts, datapoints, etc.
+   - Referenced from: `experiments.results.get_run_result()`
+
+2. **GET /runs/{run_id_1}/compare-with/{run_id_2}** - Returns `TODOSchema` (placeholder)
+   - Should return properly typed comparison result with metric deltas, datapoint differences, etc.
+   - Referenced from: `experiments.results.compare_runs()`
+
+**Working Endpoints:**
+- `POST /runs` uses `PostExperimentRunRequest` → `PostExperimentRunResponse` ✅
+- `PUT /runs/{run_id}` uses `PutExperimentRunRequest` → `PutExperimentRunResponse` ✅
+
+**Backend Implementation Status:**
+The backend uses `TODOSchema` as a placeholder with note:
+> "TODO: This is a placeholder schema. Proper Zod schemas need to be created in @hive-kube/core-ts for: Sessions, Events, Projects, and Experiment comparison/result endpoints."
+
+**Impact:**
+- SDK response handling in `experiments/results.py` cannot be strongly typed
+- Type checking for result comparisons is limited to `Dict[str, Any]`
+- Function signatures require manual handling since response schema is incomplete
+
+**Action Items:**
+- [ ] Work with backend team to implement proper schemas for result/comparison endpoints
+- [ ] Update `openapi/v1.yaml` once backend schemas are available
+- [ ] Regenerate models using `openapi-python-generator`
+- [ ] Update `experiments/results.py` to use properly typed responses
+- [ ] Update `experiments/models.py` with proper result/comparison models if not generated
+
+**Related Code:**
+- OpenAPI endpoint specs: `openapi/v1.yaml` lines 1200-1300 (result/comparison endpoints)
+- SDK implementation: `src/honeyhive/experiments/results.py` (lines 45-100)
+- Extended models: `src/honeyhive/experiments/models.py` (ExperimentResultSummary, RunComparisonResult)
+
+---
+
 ## Related Commits
 
 - `f6c6199` - Fixed test infrastructure and import paths for Pydantic v2 compatibility

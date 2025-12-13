@@ -16,7 +16,8 @@ from dataclasses import dataclass, field
 from typing import Any, Callable, Dict, List, Optional, Union
 
 from honeyhive.api.client import HoneyHive
-from honeyhive.models.generated import CreateRunRequest, EvaluationRun
+from honeyhive.models import PostExperimentRunRequest
+from honeyhive.experiments.models import ExperimentResultSummary
 
 # Config import removed - not used in this module
 
@@ -753,7 +754,7 @@ def create_evaluation_run(
     _results: List[EvaluationResult],
     metadata: Optional[Dict[str, Any]] = None,
     client: Optional[HoneyHive] = None,
-) -> Optional[EvaluationRun]:
+) -> Optional[ExperimentResultSummary]:
     """Create an evaluation run in HoneyHive.
 
     Args:
@@ -768,7 +769,12 @@ def create_evaluation_run(
     """
     if client is None:
         try:
-            client = HoneyHive()
+            import os
+            api_key = os.getenv("HONEYHIVE_API_KEY") or os.getenv("HH_API_KEY")
+            if not api_key:
+                logger.warning("No API key found - set HONEYHIVE_API_KEY or HH_API_KEY")
+                return None
+            client = HoneyHive(api_key=api_key)
         except Exception as e:
             logger.warning("Could not create HoneyHive client: %s", e)
             return None
@@ -777,12 +783,12 @@ def create_evaluation_run(
         # Aggregate results (commented out for future use)
         # total_score = sum(r.score for r in results)
 
-        # Prepare run data - CreateRunRequest expects specific fields
+        # Prepare run data - PostExperimentRunRequest expects specific fields
         # For now, we'll create a minimal request with required fields
         # Note: This is a simplified version - in production you'd want proper UUIDs
         try:
             # Create run request with minimal required data
-            run_request = CreateRunRequest(
+            run_request = PostExperimentRunRequest(
                 name=name,
                 project=project,  # This should be a valid UUID string
                 event_ids=[],  # Empty list for now - in production you'd want \
@@ -794,18 +800,18 @@ def create_evaluation_run(
                 metadata=metadata or {},
             )
         except Exception as e:
-            logger.warning("Could not create CreateRunRequest: %s", e)
+            logger.warning("Could not create PostExperimentRunRequest: %s", e)
             # Fallback: return None instead of crashing
             return None
 
-        # Submit to API
-        response = client.evaluations.create_run(run_request)
+        # Submit to API (experiments API handles runs)
+        response = client.experiments.create_run(run_request)
 
         logger.info(
             "Created evaluation run: %s",
-            response.evaluation.run_id if response.evaluation else "unknown",
+            response.run_id if hasattr(response, "run_id") else "unknown",
         )
-        return response.evaluation
+        return response
 
     except Exception as e:
         logger.error("Failed to create evaluation run: %s", e)

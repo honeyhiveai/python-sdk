@@ -33,11 +33,8 @@ from honeyhive.experiments.utils import (
     prepare_run_request_data,
 )
 
-# Import generated models with experiment terminology aliases
-from honeyhive.models.generated import EvaluationRun
-
 # Type aliases for experiment terminology
-ExperimentRun = EvaluationRun
+ExperimentRun = ExperimentResultSummary
 
 __all__ = [
     # Extended models
