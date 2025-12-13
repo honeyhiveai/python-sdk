@@ -25,9 +25,8 @@ from typing import Any, Dict, Optional, Tuple
 
 from honeyhive import HoneyHive
 from honeyhive.models import (
-    CreateDatapointRequest,
     CreateConfigurationRequest,
-    PostConfigurationRequest,
+    CreateDatapointRequest,
 )
 from honeyhive.utils.logger import get_logger
 
@@ -194,7 +193,7 @@ def verify_session_creation(
 def verify_configuration_creation(
     client: HoneyHive,
     project: str,
-    config_request: PostConfigurationRequest,
+    config_request: Dict[str, Any],
     expected_config_name: Optional[str] = None,
 ) -> Any:
     """Verify complete configuration lifecycle: create → store → retrieve → validate.
