@@ -24,11 +24,10 @@ import time
 from typing import Any, Dict, Optional, Tuple
 
 from honeyhive import HoneyHive
-from honeyhive.models.generated import (
+from honeyhive.models import (
     CreateDatapointRequest,
-    CreateEventRequest,
+    CreateConfigurationRequest,
     PostConfigurationRequest,
-    SessionStartRequest,
 )
 from honeyhive.utils.logger import get_logger
 
@@ -131,7 +130,7 @@ def verify_datapoint_creation(
 def verify_session_creation(
     client: HoneyHive,
     project: str,
-    session_request: SessionStartRequest,
+    session_request: Dict[str, Any],
     expected_session_name: Optional[str] = None,  # pylint: disable=unused-argument
 ) -> Any:
     """Verify complete session lifecycle: create → store → retrieve → validate.
@@ -256,7 +255,7 @@ def verify_configuration_creation(
 def verify_event_creation(
     client: HoneyHive,
     project: str,
-    event_request: CreateEventRequest,
+    event_request: Dict[str, Any],
     unique_identifier: str,
     expected_event_name: Optional[str] = None,
 ) -> Any:
