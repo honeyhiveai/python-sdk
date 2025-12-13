@@ -5,54 +5,46 @@ from unittest.mock import Mock, patch
 
 import pytest
 
-from honeyhive.models.generated import (
-    CallType,
-    EnvEnum,
-    Parameters2,
-    PostConfigurationRequest,
-    SessionStartRequest,
-)
-
 
 def create_openai_config_request(project="test-project", name="test-config"):
     """Create a standard OpenAI configuration request for testing."""
-    return PostConfigurationRequest(
-        project=project,
-        name=name,
-        provider="openai",
-        parameters=Parameters2(
-            call_type=CallType.chat,
-            model="gpt-4",
-            responseFormat={"type": "text"},
-            forceFunction={"enabled": False},
-        ),
-        env=[EnvEnum.dev],
-        user_properties={},
-    )
+    return {
+        "project": project,
+        "name": name,
+        "provider": "openai",
+        "parameters": {
+            "call_type": "chat",
+            "model": "gpt-4",
+            "responseFormat": {"type": "text"},
+            "forceFunction": {"enabled": False},
+        },
+        "env": ["dev"],
+        "user_properties": {},
+    }
 
 
 def create_session_request(
     project="test-project", session_name="test-session", source="test"
 ):
     """Create a standard session request for testing."""
-    return SessionStartRequest(
-        project=project,
-        session_name=session_name,
-        source=source,
-        session_id=None,
-        children_ids=None,
-        config={},
-        inputs={},
-        outputs={},
-        error=None,
-        duration=None,
-        user_properties={},
-        metrics={},
-        feedback={},
-        metadata={},
-        start_time=None,
-        end_time=None,
-    )
+    return {
+        "project": project,
+        "session_name": session_name,
+        "source": source,
+        "session_id": None,
+        "children_ids": None,
+        "config": {},
+        "inputs": {},
+        "outputs": {},
+        "error": None,
+        "duration": None,
+        "user_properties": {},
+        "metrics": {},
+        "feedback": {},
+        "metadata": {},
+        "start_time": None,
+        "end_time": None,
+    }
 
 
 def mock_api_error_response(exception_message="API Error"):
