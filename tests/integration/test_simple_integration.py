@@ -9,7 +9,6 @@ import pytest
 
 # v1 models - note: Sessions and Events use dict-based APIs
 from honeyhive.models import CreateConfigurationRequest, CreateDatapointRequest
-from tests.utils import create_session_request
 
 
 class TestSimpleIntegration:
@@ -42,10 +41,13 @@ class TestSimpleIntegration:
             # Step 1: Create datapoint
             datapoint_response = integration_client.datapoints.create(datapoint_request)
 
-            # Verify creation response
-            assert hasattr(datapoint_response, "field_id")
-            assert datapoint_response.field_id is not None
-            created_id = datapoint_response.field_id
+            # Verify creation response - v1 API returns different structure
+            assert hasattr(datapoint_response, "inserted")
+            assert datapoint_response.inserted is True
+            assert hasattr(datapoint_response, "result")
+            assert "insertedIds" in datapoint_response.result
+            assert len(datapoint_response.result["insertedIds"]) > 0
+            created_id = datapoint_response.result["insertedIds"][0]
 
             # Step 2: Wait for data propagation (real systems need time)
             time.sleep(2)
@@ -53,9 +55,8 @@ class TestSimpleIntegration:
             # Step 3: Validate data is actually stored by retrieving it
             try:
                 # List datapoints to find our created one
-                datapoints = integration_client.datapoints.list(
-                    project=integration_project_name
-                )
+                # Note: v1 API uses datapoint_ids or dataset_name, not project
+                datapoints = integration_client.datapoints.list()
 
                 # Find our specific datapoint
                 found_datapoint = None
@@ -111,39 +112,38 @@ class TestSimpleIntegration:
         test_id = str(uuid.uuid4())[:8]
         config_name = f"integration-test-config-{test_id}"
 
-        config_request = PostConfigurationRequest(
+        # v1 API uses CreateConfigurationRequest with dict parameters
+        # Note: project is passed to list(), not in the request body
+        config_request = CreateConfigurationRequest(
             name=config_name,
-            project=integration_project_name,
             provider="openai",
-            parameters=Parameters2(
-                call_type="chat",
-                model="gpt-3.5-turbo",
-                temperature=0.7,
-                max_tokens=100,
-            ),
+            parameters={
+                "call_type": "chat",
+                "model": "gpt-3.5-turbo",
+                "temperature": 0.7,
+                "max_tokens": 100,
+            },
         )
 
         try:
-            # Step 1: Create configuration
-            config_response = integration_client.configurations.create_configuration(
-                config_request
-            )
+            # Step 1: Create configuration - v1 API uses .create() method
+            config_response = integration_client.configurations.create(config_request)
 
-            # Verify creation response
+            # Verify creation response - v1 API response structure
             assert config_response.acknowledged is True
-            assert config_response.inserted_id is not None
-            assert config_response.success is True
+            assert hasattr(config_response, "insertedId")
+            assert config_response.insertedId is not None
 
-            print(f"✅ Configuration created with ID: {config_response.inserted_id}")
+            print(f"✅ Configuration created with ID: {config_response.insertedId}")
 
             # Step 2: Wait for data propagation
             time.sleep(2)
 
             # Step 3: Validate data is actually stored by retrieving it
             try:
-                # List configurations to find our created one
-                configurations = integration_client.configurations.list_configurations(
-                    project=integration_project_name, limit=50
+                # List configurations to find our created one - v1 API uses .list() method
+                configurations = integration_client.configurations.list(
+                    project=integration_project_name
                 )
 
                 # Find our specific configuration
@@ -196,49 +196,52 @@ class TestSimpleIntegration:
         session_name = f"integration-test-session-{test_id}"
 
         try:
-            # Step 1: Create session
-            session_request = SessionStartRequest(
-                project=integration_project_name,
-                session_name=session_name,
-                source="integration-test",
-            )
+            # Step 1: Create session - v1 API uses dict-based request and .start() method
+            session_data = {
+                "project": integration_project_name,
+                "session_name": session_name,
+                "source": "integration-test",
+            }
 
-            session_response = integration_client.sessions.create_session(
-                session_request
-            )
-            assert hasattr(session_response, "session_id")
-            assert session_response.session_id is not None
-            session_id = session_response.session_id
+            session_response = integration_client.sessions.start(session_data)
+            # v1 API returns dict with session_id
+            assert isinstance(session_response, dict)
+            assert "session_id" in session_response
+            assert session_response["session_id"] is not None
+            session_id = session_response["session_id"]
 
-            # Step 2: Create event linked to session
-            event_request = CreateEventRequest(
-                project=integration_project_name,
-                source="integration-test",
-                event_name=f"test-event-{test_id}",
-                event_type="model",
-                config={"model": "gpt-4", "test_id": test_id},
-                inputs={"prompt": f"integration test prompt {test_id}"},
-                session_id=session_id,
-                duration=100.0,
-            )
+            # Step 2: Create event linked to session - v1 API uses dict-based request
+            event_data = {
+                "project": integration_project_name,
+                "source": "integration-test",
+                "event_name": f"test-event-{test_id}",
+                "event_type": "model",
+                "config": {"model": "gpt-4", "test_id": test_id},
+                "inputs": {"prompt": f"integration test prompt {test_id}"},
+                "session_id": session_id,
+                "duration": 100.0,
+            }
 
-            event_response = integration_client.events.create_event(event_request)
-            assert hasattr(event_response, "event_id")
-            assert event_response.event_id is not None
-            event_id = event_response.event_id
+            event_response = integration_client.events.create(event_data)
+            # v1 API returns dict with event_id
+            assert isinstance(event_response, dict)
+            assert "event_id" in event_response
+            assert event_response["event_id"] is not None
+            event_id = event_response["event_id"]
 
             # Step 3: Wait for data propagation
             time.sleep(3)
 
             # Step 4: Validate session and event are stored and linked
             try:
-                # Retrieve session
-                session = integration_client.sessions.get_session(session_id)
+                # Retrieve session - v1 API uses .get() method
+                session = integration_client.sessions.get(session_id)
                 assert session is not None
-                assert hasattr(session, "event")
-                assert session.event.session_id == session_id
+                # v1 API returns GetSessionResponse with "request" field (EventNode)
+                assert hasattr(session, "request")
+                assert session.request.session_id == session_id
 
-                # Retrieve events for this session
+                # Retrieve events for this session - v1 API uses .list() method
                 session_filter = {
                     "field": "session_id",
                     "value": session_id,
@@ -246,7 +249,7 @@ class TestSimpleIntegration:
                     "type": "id",
                 }
 
-                events_result = integration_client.events.get_events(
+                events_result = integration_client.events.list(
                     project=integration_project_name, filters=[session_filter], limit=10
                 )
 
@@ -289,28 +292,27 @@ class TestSimpleIntegration:
 
     def test_model_serialization_workflow(self):
         """Test that models can be created and serialized."""
-        # Test session request
-        session_request = create_session_request()
+        # v1 API uses dict-based requests for sessions and events, test with typed models
 
-        session_dict = session_request.model_dump(exclude_none=True)
-        assert session_dict["project"] == "test-project"
-        assert session_dict["session_name"] == "test-session"
-
-        # Test event request
-        event_request = CreateEventRequest(
-            project="test-project",
-            source="test",
-            event_name="test-event",
-            event_type="model",
-            config={"model": "gpt-4"},
-            inputs={"prompt": "test"},
-            duration=100.0,
+        # Test datapoint request serialization
+        datapoint_request = CreateDatapointRequest(
+            inputs={"query": "test query"},
+            ground_truth={"response": "test response"},
         )
+        datapoint_dict = datapoint_request.model_dump(exclude_none=True)
+        assert datapoint_dict["inputs"]["query"] == "test query"
+        assert datapoint_dict["ground_truth"]["response"] == "test response"
 
-        event_dict = event_request.model_dump(exclude_none=True)
-        assert event_dict["project"] == "test-project"
-        assert event_dict["event_type"] == "model"
-        assert event_dict["config"]["model"] == "gpt-4"
+        # Test configuration request serialization
+        config_request = CreateConfigurationRequest(
+            name="test-config",
+            provider="openai",
+            parameters={"model": "gpt-4", "temperature": 0.7},
+        )
+        config_dict = config_request.model_dump(exclude_none=True)
+        assert config_dict["name"] == "test-config"
+        assert config_dict["provider"] == "openai"
+        assert config_dict["parameters"]["model"] == "gpt-4"
 
     def test_error_handling(self, integration_client):
         """Test error handling with real API calls."""
@@ -325,19 +327,20 @@ class TestSimpleIntegration:
 
         # Test with invalid data to trigger real API error
         invalid_request = CreateDatapointRequest(
-            project="", inputs={}  # Invalid empty project  # Invalid empty inputs
+            inputs={},  # Empty inputs
+            linked_datasets=[],  # Empty linked datasets
         )
 
         # Real API should handle this gracefully or return appropriate error
+        # v1 API uses .create() method
         try:
-            integration_client.datapoints.create_datapoint(invalid_request)
+            integration_client.datapoints.create(invalid_request)
         except Exception:
             # Expected - real API validation should catch invalid data
             pass
 
     def test_environment_configuration(self, integration_client):
         """Test that environment configuration is properly set."""
-        assert integration_client.test_mode is False  # Integration tests use real API
         # Assert server_url is configured (respects HH_API_URL env var
         # - could be staging, production, or local dev)
         assert integration_client.server_url is not None
@@ -350,6 +353,5 @@ class TestSimpleIntegration:
         """Test that required integration fixtures are available."""
         assert integration_client is not None
         assert hasattr(integration_client, "api_key")
-        assert hasattr(integration_client, "test_mode")
-        # Verify it's configured for real API usage
-        assert integration_client.test_mode is False
+        # Verify it has the required attributes for real API usage
+        assert hasattr(integration_client, "server_url")

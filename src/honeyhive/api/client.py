@@ -156,13 +156,17 @@ class DatapointsAPI(BaseAPI):
     # Sync methods
     def list(
         self,
-        project: str,
-        dataset_id: Optional[str] = None,
-        type: Optional[str] = None,
+        datapoint_ids: Optional[List[str]] = None,
+        dataset_name: Optional[str] = None,
     ) -> GetDatapointsResponse:
-        """List datapoints."""
+        """List datapoints.
+
+        Args:
+            datapoint_ids: Optional list of datapoint IDs to fetch.
+            dataset_name: Optional dataset name to filter by.
+        """
         return datapoints_svc.getDatapoints(
-            self._api_config, project=project, dataset_id=dataset_id, type=type
+            self._api_config, datapoint_ids=datapoint_ids, dataset_name=dataset_name
         )
 
     def get(self, id: str) -> GetDatapointResponse:
@@ -186,13 +190,17 @@ class DatapointsAPI(BaseAPI):
     # Async methods
     async def list_async(
         self,
-        project: str,
-        dataset_id: Optional[str] = None,
-        type: Optional[str] = None,
+        datapoint_ids: Optional[List[str]] = None,
+        dataset_name: Optional[str] = None,
     ) -> GetDatapointsResponse:
-        """List datapoints asynchronously."""
+        """List datapoints asynchronously.
+
+        Args:
+            datapoint_ids: Optional list of datapoint IDs to fetch.
+            dataset_name: Optional dataset name to filter by.
+        """
         return await datapoints_svc_async.getDatapoints(
-            self._api_config, project=project, dataset_id=dataset_id, type=type
+            self._api_config, datapoint_ids=datapoint_ids, dataset_name=dataset_name
         )
 
     async def get_async(self, id: str) -> GetDatapointResponse:
@@ -226,13 +234,22 @@ class DatasetsAPI(BaseAPI):
     # Sync methods
     def list(
         self,
-        project: Optional[str] = None,
+        dataset_id: Optional[str] = None,
         name: Optional[str] = None,
-        type: Optional[str] = None,
+        include_datapoints: Optional[bool] = None,
     ) -> GetDatasetsResponse:
-        """List datasets."""
+        """List datasets.
+
+        Args:
+            dataset_id: Optional dataset ID to fetch.
+            name: Optional dataset name to filter by.
+            include_datapoints: Whether to include datapoints in the response.
+        """
         return datasets_svc.getDatasets(
-            self._api_config, project=project, name=name, type=type
+            self._api_config,
+            dataset_id=dataset_id,
+            name=name,
+            include_datapoints=include_datapoints,
         )
 
     def create(self, request: CreateDatasetRequest) -> CreateDatasetResponse:
@@ -250,13 +267,22 @@ class DatasetsAPI(BaseAPI):
     # Async methods
     async def list_async(
         self,
-        project: Optional[str] = None,
+        dataset_id: Optional[str] = None,
         name: Optional[str] = None,
-        type: Optional[str] = None,
+        include_datapoints: Optional[bool] = None,
     ) -> GetDatasetsResponse:
-        """List datasets asynchronously."""
+        """List datasets asynchronously.
+
+        Args:
+            dataset_id: Optional dataset ID to fetch.
+            name: Optional dataset name to filter by.
+            include_datapoints: Whether to include datapoints in the response.
+        """
         return await datasets_svc_async.getDatasets(
-            self._api_config, project=project, name=name, type=type
+            self._api_config,
+            dataset_id=dataset_id,
+            name=name,
+            include_datapoints=include_datapoints,
         )
 
     async def create_async(
