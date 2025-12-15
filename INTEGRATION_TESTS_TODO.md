@@ -31,8 +31,21 @@ Tracking issues blocking integration tests from passing.
 
 - `test_simple_integration.py::test_session_event_workflow_with_validation` - blocked by missing `/v1/session/start`
 
+## Generated Client Issues
+
+Several auto-generated API endpoints return `Dict[str, Any]` instead of properly typed Pydantic models due to incomplete OpenAPI specifications:
+
+- **Events Service**: All endpoints (createEvent, getEvents, createModelEvent, etc.)
+- **Session Service**: startSession endpoint
+- **Datapoints Service**: getDatapoint endpoint (others are properly typed)
+- **Projects Service**: Uses TODOSchema placeholder models
+
+**Details:** See [UNTYPED_ENDPOINTS.md](./UNTYPED_ENDPOINTS.md) for full analysis and long-term fix plan.
+
+**Impact:** Workarounds like `_get_field()` helper needed to handle both dict and object responses. Will be resolved when OpenAPI spec is fixed and client is regenerated.
+
 ## Notes
 
 - Staging server: `https://api.testing-dp-1.honeyhive.ai`
 - v1 API endpoints use `/v1/` prefix
-- Sessions and Events APIs use dict-based requests (no typed Pydantic models)
+- Sessions and Events APIs use dict-based requests (no typed Pydantic models) - see UNTYPED_ENDPOINTS.md

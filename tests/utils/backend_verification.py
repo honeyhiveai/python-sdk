@@ -16,6 +16,20 @@ from .test_config import test_config
 logger = get_logger(__name__)
 
 
+def _get_field(obj: Any, field: str, default: Any = None) -> Any:
+    """Get field from object or dict, supporting both attribute and dict access.
+
+    WORKAROUND: Some generated API endpoints return Dict[str, Any] instead of typed
+    Pydantic models due to incomplete OpenAPI specs (e.g., Events endpoints).
+    This helper handles both cases until specs are fixed and client is regenerated.
+
+    See: UNTYPED_ENDPOINTS.md for details on which endpoints are untyped.
+    """
+    if isinstance(obj, dict):
+        return obj.get(field, default)
+    return getattr(obj, field, default)
+
+
 class BackendVerificationError(Exception):
     """Raised when backend verification fails after all retries."""
 
@@ -67,20 +81,31 @@ def verify_backend_event(
     for attempt in range(test_config.max_attempts):
         try:
             # SDK client handles HTTP retries automatically
-            events = client.events.list_events(
-                event_filters=event_filter,  # Changed to event_filters (accepts single or list)
-                limit=100,
-                project=project,  # Critical: include project for proper filtering
-            )
+            # Build the data dict for the v1 API
+            data = {
+                "project": project,  # Critical: include project for proper filtering
+                "filters": [event_filter],  # v1 API expects a list of filters
+                "limit": 100,
+            }
+            events_response = client.events.list(data=data)
 
-            # Validate API response
-            if events is None:
+            # Validate API response - v1 API returns a dict with "events" key
+            if events_response is None:
                 logger.warning(f"API returned None for events (attempt {attempt + 1})")
                 continue
 
+            if not isinstance(events_response, dict):
+                logger.warning(
+                    f"API returned non-dict response: {type(events_response)} "
+                    f"(attempt {attempt + 1})"
+                )
+                continue
+
+            # Extract events list from response
+            events = events_response.get("events", [])
             if not isinstance(events, list):
                 logger.warning(
-                    f"API returned non-list response: {type(events)} "
+                    f"API response 'events' field is not a list: {type(events)} "
                     f"(attempt {attempt + 1})"
                 )
                 continue
@@ -179,17 +204,17 @@ def _find_child_by_parent_id(
     parent_span: Any, events: list, debug_content: bool
 ) -> Optional[Any]:
     """Find child span by parent_id relationship."""
-    parent_id = getattr(parent_span, "event_id", "")
+    parent_id = _get_field(parent_span, "event_id", "")
     if not parent_id:
         return None
     child_spans = [
-        event for event in events if getattr(event, "parent_id", "") == parent_id
+        event for event in events if _get_field(event, "parent_id", "") == parent_id
     ]
     if child_spans:
         if debug_content:
             logger.debug(
                 f"✅ Found child span by parent_id relationship: "
-                f"'{child_spans[0].event_name}'"
+                f"'{_get_field(child_spans[0], 'event_name')}'"
             )
         return child_spans[0]
     return None
@@ -213,7 +238,7 @@ def _find_span_by_naming_pattern(
         related_spans = [
             event
             for event in events
-            if getattr(event, "event_name", "") == expected_event_name
+            if _get_field(event, "event_name", "") == expected_event_name
         ]
         if related_spans:
             return _find_best_related_span(related_spans, parent_span, debug_content)
@@ -224,18 +249,18 @@ def _find_best_related_span(
     related_spans: list, parent_span: Any, debug_content: bool
 ) -> Optional[Any]:
     """Find the best related span using session and time proximity."""
-    parent_session = getattr(parent_span, "session_id", "")
-    parent_time = getattr(parent_span, "start_time", None)
+    parent_session = _get_field(parent_span, "session_id", "")
+    parent_time = _get_field(parent_span, "start_time", None)
     for span in related_spans:
-        span_session = getattr(span, "session_id", "")
-        span_time = getattr(span, "start_time", None)
+        span_session = _get_field(span, "session_id", "")
+        span_time = _get_field(span, "start_time", None)
 
         # Check session match
         if parent_session and span_session == parent_session:
             if debug_content:
                 logger.debug(
                     f"✅ Found related span by session + "
-                    f"naming pattern: '{span.event_name}'"
+                    f"naming pattern: '{_get_field(span, 'event_name')}'"
                 )
             return span
 
@@ -247,7 +272,7 @@ def _find_best_related_span(
                     if debug_content:
                         logger.debug(
                             f"✅ Found related span by time + "
-                            f"naming pattern: '{span.event_name}'"
+                            f"naming pattern: '{_get_field(span, 'event_name')}'"
                         )
                     return span
             except (TypeError, ValueError):
@@ -257,7 +282,7 @@ def _find_best_related_span(
     if debug_content:
         logger.debug(
             f"✅ Found related span by naming pattern (fallback): "
-            f"'{related_spans[0].event_name}'"
+            f"'{_get_field(related_spans[0], 'event_name')}'"
         )
     return related_spans[0]
 
@@ -304,8 +329,8 @@ def _find_related_span(  # pylint: disable=too-many-branches
         )
 
     for parent_span in parent_spans:  # pylint: disable=too-many-nested-blocks
-        parent_name = getattr(parent_span, "event_name", "")
-        parent_id = getattr(parent_span, "event_id", "")
+        parent_name = _get_field(parent_span, "event_name", "")
+        parent_id = _get_field(parent_span, "event_id", "")
 
         if debug_content:
             logger.debug(f"🔗 Analyzing parent span: '{parent_name}' (ID: {parent_id})")
@@ -315,15 +340,15 @@ def _find_related_span(  # pylint: disable=too-many-branches
             child_spans = [
                 event
                 for event in events
-                if getattr(event, "parent_id", "") == parent_id
-                and getattr(event, "event_name", "") == expected_event_name
+                if _get_field(event, "parent_id", "") == parent_id
+                and _get_field(event, "event_name", "") == expected_event_name
             ]
 
             if child_spans:
                 if debug_content:
                     logger.debug(
                         f"✅ Found child span by parent_id relationship: "
-                        f"'{child_spans[0].event_name}'"
+                        f"'{_get_field(child_spans[0], 'event_name')}'"
                     )
                 return child_spans[0]
 
@@ -347,24 +372,25 @@ def _find_related_span(  # pylint: disable=too-many-branches
                 related_spans = [
                     event
                     for event in events
-                    if getattr(event, "event_name", "") == expected_event_name
+                    if _get_field(event, "event_name", "") == expected_event_name
                 ]
 
                 if related_spans:
                     # Prefer spans that share session or temporal proximity with parent
-                    parent_session = getattr(parent_span, "session_id", "")
-                    parent_time = getattr(parent_span, "start_time", None)
+                    parent_session = _get_field(parent_span, "session_id", "")
+                    parent_time = _get_field(parent_span, "start_time", None)
 
                     for span in related_spans:
-                        span_session = getattr(span, "session_id", "")
-                        span_time = getattr(span, "start_time", None)
+                        span_session = _get_field(span, "session_id", "")
+                        span_time = _get_field(span, "start_time", None)
 
                         # Check session match
                         if parent_session and span_session == parent_session:
                             if debug_content:
+                                event_name = _get_field(span, "event_name")
                                 logger.debug(
                                     f"✅ Found related span by session + "
-                                    f"naming pattern: '{span.event_name}'"
+                                    f"naming pattern: '{event_name}'"
                                 )
                             return span
 
@@ -376,9 +402,10 @@ def _find_related_span(  # pylint: disable=too-many-branches
                                     abs(parent_time - span_time) < 60
                                 ):  # 60 seconds window
                                     if debug_content:
+                                        event_name = _get_field(span, "event_name")
                                         logger.debug(
                                             f"✅ Found related span by time + "
-                                            f"naming pattern: '{span.event_name}'"
+                                            f"naming pattern: '{event_name}'"
                                         )
                                     return span
                             except (TypeError, ValueError):
@@ -389,7 +416,7 @@ def _find_related_span(  # pylint: disable=too-many-branches
                     if debug_content:
                         logger.debug(
                             f"✅ Found related span by naming pattern (fallback): "
-                            f"'{related_spans[0].event_name}'"
+                            f"'{_get_field(related_spans[0], 'event_name')}'"
                         )
                     return related_spans[0]
 
@@ -397,14 +424,14 @@ def _find_related_span(  # pylint: disable=too-many-branches
     direct_matches = [
         event
         for event in events
-        if getattr(event, "event_name", "") == expected_event_name
+        if _get_field(event, "event_name", "") == expected_event_name
     ]
 
     if direct_matches:
         if debug_content:
             logger.debug(
                 f"✅ Found span by direct name match (fallback): "
-                f"'{direct_matches[0].event_name}'"
+                f"'{_get_field(direct_matches[0], 'event_name')}'"
             )
         return direct_matches[0]
 
@@ -421,31 +448,33 @@ def _extract_unique_id(event: Any) -> Optional[str]:
     """Extract unique_id from event, checking multiple possible locations.
 
     Optimized for performance with early returns and minimal attribute access.
+    Supports both dict and object-based events.
     """
     # Check metadata (nested structure) - most common location
-    metadata = getattr(event, "metadata", None)
+    metadata = _get_field(event, "metadata", None)
     if metadata:
-        # Fast nested check
-        test_data = metadata.get("test")
-        if isinstance(test_data, dict):
-            unique_id = test_data.get("unique_id")
+        # Fast nested check - handle both dict and object metadata
+        if isinstance(metadata, dict):
+            test_data = metadata.get("test")
+            if isinstance(test_data, dict):
+                unique_id = test_data.get("unique_id")
+                if unique_id:
+                    return str(unique_id)
+
+            # Fallback to flat structure
+            unique_id = metadata.get("test.unique_id")
             if unique_id:
                 return str(unique_id)
 
-        # Fallback to flat structure
-        unique_id = metadata.get("test.unique_id")
-        if unique_id:
-            return str(unique_id)
-
     # Check inputs/outputs (less common)
-    inputs = getattr(event, "inputs", None)
-    if inputs:
+    inputs = _get_field(event, "inputs", None)
+    if inputs and isinstance(inputs, dict):
         unique_id = inputs.get("test.unique_id")
         if unique_id:
             return str(unique_id)
 
-    outputs = getattr(event, "outputs", None)
-    if outputs:
+    outputs = _get_field(event, "outputs", None)
+    if outputs and isinstance(outputs, dict):
         unique_id = outputs.get("test.unique_id")
         if unique_id:
             return str(unique_id)
@@ -456,16 +485,19 @@ def _extract_unique_id(event: Any) -> Optional[str]:
 def _debug_event_content(event: Any, unique_identifier: str) -> None:
     """Debug helper to log detailed event content."""
     logger.debug("🔍 === EVENT CONTENT DEBUG ===")
-    logger.debug(f"📋 Event Name: {getattr(event, 'event_name', 'unknown')}")
-    logger.debug(f"🆔 Event ID: {getattr(event, 'event_id', 'unknown')}")
+    logger.debug(f"📋 Event Name: {_get_field(event, 'event_name', 'unknown')}")
+    logger.debug(f"🆔 Event ID: {_get_field(event, 'event_id', 'unknown')}")
     logger.debug(f"🔗 Unique ID: {unique_identifier}")
 
     # Log event attributes if available
-    if hasattr(event, "inputs") and event.inputs:
-        logger.debug(f"📥 Inputs: {event.inputs}")
-    if hasattr(event, "outputs") and event.outputs:
-        logger.debug(f"📤 Outputs: {event.outputs}")
-    if hasattr(event, "metadata") and event.metadata:
-        logger.debug(f"📊 Metadata: {event.metadata}")
+    inputs = _get_field(event, "inputs", None)
+    if inputs:
+        logger.debug(f"📥 Inputs: {inputs}")
+    outputs = _get_field(event, "outputs", None)
+    if outputs:
+        logger.debug(f"📤 Outputs: {outputs}")
+    metadata = _get_field(event, "metadata", None)
+    if metadata:
+        logger.debug(f"📊 Metadata: {metadata}")
 
     logger.debug("🔍 === END EVENT DEBUG ===")
