@@ -20,12 +20,14 @@ from typing import Any
 
 import pytest
 
-from honeyhive.models.generated import (
+from honeyhive.models import (
     CreateDatapointRequest,
-    CreateEventRequest,
-    Parameters2,
-    PostConfigurationRequest,
-    SessionStartRequest,
+    # Note: The following models from v0 API don't exist in v1 API:
+    # - CreateEventRequest (events API changed in v1)
+    # - Parameters2 (replaced with Dict[str, Any] in v1)
+    # - PostConfigurationRequest (renamed to CreateConfigurationRequest in v1)
+    # - SessionStartRequest (sessions API changed in v1)
+    # These will need to be updated during API migration
 )
 from tests.utils import (  # pylint: disable=no-name-in-module
     generate_test_id,
