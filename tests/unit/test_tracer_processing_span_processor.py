@@ -61,7 +61,7 @@ class TestHoneyHiveSpanProcessorInitialization:
 
         assert processor.tracer_instance is mock_tracer
 
-    @patch("honeyhive.api.client.safe_log")
+    @patch("honeyhive.utils.logger.safe_log")
     def test_init_logging_client_mode(self, mock_safe_log: Mock) -> None:
         """Test initialization logging for client mode - EXACT messages."""
         mock_client = Mock()
@@ -84,7 +84,7 @@ class TestHoneyHiveSpanProcessorInitialization:
         ]
         mock_safe_log.assert_has_calls(expected_calls)
 
-    @patch("honeyhive.api.client.safe_log")
+    @patch("honeyhive.utils.logger.safe_log")
     def test_init_logging_otlp_immediate_mode(self, mock_safe_log: Mock) -> None:
         """Test initialization logging for OTLP immediate mode - EXACT messages."""
         mock_tracer = Mock(spec=HoneyHiveTracer)
@@ -106,7 +106,7 @@ class TestHoneyHiveSpanProcessorInitialization:
         ]
         mock_safe_log.assert_has_calls(expected_calls)
 
-    @patch("honeyhive.api.client.safe_log")
+    @patch("honeyhive.utils.logger.safe_log")
     def test_init_logging_otlp_batched_mode(self, mock_safe_log: Mock) -> None:
         """Test initialization logging for OTLP batched mode - EXACT messages."""
         mock_tracer = Mock(spec=HoneyHiveTracer)
@@ -132,7 +132,7 @@ class TestHoneyHiveSpanProcessorInitialization:
 class TestHoneyHiveSpanProcessorSafeLog:
     """Test safe logging functionality."""
 
-    @patch("honeyhive.api.client.safe_log")
+    @patch("honeyhive.utils.logger.safe_log")
     def test_safe_log_with_args(self, mock_safe_log: Mock) -> None:
         """Test safe logging with format arguments."""
         mock_tracer = Mock(spec=HoneyHiveTracer)
@@ -142,7 +142,7 @@ class TestHoneyHiveSpanProcessorSafeLog:
 
         mock_safe_log.assert_called_with(mock_tracer, "debug", "Test message arg1 42")
 
-    @patch("honeyhive.api.client.safe_log")
+    @patch("honeyhive.utils.logger.safe_log")
     def test_safe_log_with_kwargs(self, mock_safe_log: Mock) -> None:
         """Test safe logging with keyword arguments."""
         mock_tracer = Mock(spec=HoneyHiveTracer)
@@ -154,7 +154,7 @@ class TestHoneyHiveSpanProcessorSafeLog:
             mock_tracer, "info", "Test message", honeyhive_data={"key": "value"}
         )
 
-    @patch("honeyhive.api.client.safe_log")
+    @patch("honeyhive.utils.logger.safe_log")
     def test_safe_log_no_args(self, mock_safe_log: Mock) -> None:
         """Test safe logging without arguments."""
         mock_tracer = Mock(spec=HoneyHiveTracer)
@@ -465,7 +465,7 @@ class TestHoneyHiveSpanProcessorExperimentAttributes:
         expected = {"honeyhive.experiment_id": "exp-789"}
         assert result == expected
 
-    @patch("honeyhive.api.client.safe_log")
+    @patch("honeyhive.utils.logger.safe_log")
     def test_get_experiment_attributes_exception_handling(
         self, mock_safe_log: Mock
     ) -> None:
@@ -528,7 +528,7 @@ class TestHoneyHiveSpanProcessorAssociationProperties:
         assert not result
 
     @patch("honeyhive.tracer.processing.span_processor.baggage.get_baggage")
-    @patch("honeyhive.api.client.safe_log")
+    @patch("honeyhive.utils.logger.safe_log")
     def test_process_association_properties_exception_handling(
         self, mock_safe_log: Mock, mock_get_baggage: Mock
     ) -> None:
@@ -578,7 +578,7 @@ class TestHoneyHiveSpanProcessorTraceloopCompatibility:
 class TestHoneyHiveSpanProcessorEventTypeDetection:
     """Test event type detection logic with all conditional branches."""
 
-    @patch("honeyhive.api.client.safe_log")
+    @patch("honeyhive.utils.logger.safe_log")
     def test_detect_event_type_from_raw_attribute(self, mock_safe_log: Mock) -> None:
         """Test event type detection from honeyhive_event_type_raw attribute."""
         processor = HoneyHiveSpanProcessor()
@@ -591,7 +591,7 @@ class TestHoneyHiveSpanProcessorEventTypeDetection:
 
         assert result == "model"
 
-    @patch("honeyhive.api.client.safe_log")
+    @patch("honeyhive.utils.logger.safe_log")
     def test_detect_event_type_from_direct_attribute(self, mock_safe_log: Mock) -> None:
         """Test event type detection from honeyhive_event_type attribute."""
         processor = HoneyHiveSpanProcessor()
@@ -605,7 +605,7 @@ class TestHoneyHiveSpanProcessorEventTypeDetection:
 
         assert result is None
 
-    @patch("honeyhive.api.client.safe_log")
+    @patch("honeyhive.utils.logger.safe_log")
     def test_detect_event_type_ignores_tool_default(self, mock_safe_log: Mock) -> None:
         """Test that existing 'tool' value is ignored and pattern matching is used."""
         processor = HoneyHiveSpanProcessor()
@@ -623,7 +623,7 @@ class TestHoneyHiveSpanProcessorEventTypeDetection:
 
             assert result == "model"
 
-    @patch("honeyhive.api.client.safe_log")
+    @patch("honeyhive.utils.logger.safe_log")
     def test_detect_event_type_default_fallback(self, mock_safe_log: Mock) -> None:
         """Test event type detection default fallback to 'tool'."""
         processor = HoneyHiveSpanProcessor()
@@ -641,7 +641,7 @@ class TestHoneyHiveSpanProcessorEventTypeDetection:
 
             assert result == "tool"
 
-    @patch("honeyhive.api.client.safe_log")
+    @patch("honeyhive.utils.logger.safe_log")
     def test_detect_event_type_no_attributes(self, mock_safe_log: Mock) -> None:
         """Test event type detection with no attributes."""
         processor = HoneyHiveSpanProcessor()
@@ -654,7 +654,7 @@ class TestHoneyHiveSpanProcessorEventTypeDetection:
 
         assert result == "tool"
 
-    @patch("honeyhive.api.client.safe_log")
+    @patch("honeyhive.utils.logger.safe_log")
     def test_detect_event_type_exception_fallback(self, mock_safe_log: Mock) -> None:
         """Test event type detection exception handling."""
         processor = HoneyHiveSpanProcessor()
@@ -671,7 +671,7 @@ class TestHoneyHiveSpanProcessorEventTypeDetection:
 class TestHoneyHiveSpanProcessorOnStart:
     """Test on_start method functionality with all conditional branches."""
 
-    @patch("honeyhive.api.client.safe_log")
+    @patch("honeyhive.utils.logger.safe_log")
     def test_on_start_basic_functionality(self, mock_safe_log: Mock) -> None:
         """Test basic on_start functionality."""
         processor = HoneyHiveSpanProcessor()
@@ -684,7 +684,7 @@ class TestHoneyHiveSpanProcessorOnStart:
 
         mock_safe_log.assert_called()
 
-    @patch("honeyhive.api.client.safe_log")
+    @patch("honeyhive.utils.logger.safe_log")
     def test_on_start_with_tracer_session_id(self, mock_safe_log: Mock) -> None:
         """Test on_start with tracer instance having session_id."""
         mock_tracer = Mock(spec=HoneyHiveTracer)
@@ -701,7 +701,7 @@ class TestHoneyHiveSpanProcessorOnStart:
         mock_safe_log.assert_called()
 
     @patch("honeyhive.tracer.processing.span_processor.baggage.get_baggage")
-    @patch("honeyhive.api.client.safe_log")
+    @patch("honeyhive.utils.logger.safe_log")
     def test_on_start_with_baggage_session_id(
         self, mock_safe_log: Mock, mock_get_baggage: Mock
     ) -> None:
@@ -720,7 +720,7 @@ class TestHoneyHiveSpanProcessorOnStart:
 
         mock_safe_log.assert_called()
 
-    @patch("honeyhive.api.client.safe_log")
+    @patch("honeyhive.utils.logger.safe_log")
     def test_on_start_no_session_id(self, mock_safe_log: Mock) -> None:
         """Test on_start with no session_id found."""
         processor = HoneyHiveSpanProcessor()
@@ -738,7 +738,7 @@ class TestHoneyHiveSpanProcessorOnStart:
 
             mock_safe_log.assert_called()
 
-    @patch("honeyhive.api.client.safe_log")
+    @patch("honeyhive.utils.logger.safe_log")
     def test_on_start_context_none(self, mock_safe_log: Mock) -> None:
         """Test on_start with None context."""
         processor = HoneyHiveSpanProcessor()
@@ -753,7 +753,7 @@ class TestHoneyHiveSpanProcessorOnStart:
 
             mock_safe_log.assert_called()
 
-    @patch("honeyhive.api.client.safe_log")
+    @patch("honeyhive.utils.logger.safe_log")
     def test_on_start_exception_handling(self, mock_safe_log: Mock) -> None:
         """Test on_start exception handling."""
         processor = HoneyHiveSpanProcessor()
@@ -775,7 +775,7 @@ class TestHoneyHiveSpanProcessorOnEnd:
     """Test on_end method functionality with all conditional branches."""
 
     @patch("honeyhive.tracer.processing.span_processor.baggage.get_baggage")
-    @patch("honeyhive.api.client.safe_log")
+    @patch("honeyhive.utils.logger.safe_log")
     def test_on_end_client_mode_success(
         self, mock_safe_log: Mock, mock_get_baggage: Mock
     ) -> None:
@@ -804,7 +804,7 @@ class TestHoneyHiveSpanProcessorOnEnd:
 
         mock_client.events.create.assert_called_once()
 
-    @patch("honeyhive.api.client.safe_log")
+    @patch("honeyhive.utils.logger.safe_log")
     def test_on_end_otlp_mode_success(self, mock_safe_log: Mock) -> None:
         """Test on_end in OTLP mode with successful processing."""
         mock_exporter = Mock()
@@ -820,7 +820,7 @@ class TestHoneyHiveSpanProcessorOnEnd:
 
         mock_exporter.export.assert_called_once_with([mock_span])
 
-    @patch("honeyhive.api.client.safe_log")
+    @patch("honeyhive.utils.logger.safe_log")
     def test_on_end_no_session_id(self, mock_safe_log: Mock) -> None:
         """Test on_end with no session_id - should skip export."""
         processor = HoneyHiveSpanProcessor()
@@ -833,7 +833,7 @@ class TestHoneyHiveSpanProcessorOnEnd:
 
         mock_safe_log.assert_called()
 
-    @patch("honeyhive.api.client.safe_log")
+    @patch("honeyhive.utils.logger.safe_log")
     def test_on_end_invalid_span_context(self, mock_safe_log: Mock) -> None:
         """Test on_end with invalid span context."""
         processor = HoneyHiveSpanProcessor()
@@ -847,7 +847,7 @@ class TestHoneyHiveSpanProcessorOnEnd:
 
         mock_safe_log.assert_called()
 
-    @patch("honeyhive.api.client.safe_log")
+    @patch("honeyhive.utils.logger.safe_log")
     def test_on_end_no_valid_export_method(self, mock_safe_log: Mock) -> None:
         """Test on_end with no valid export method."""
         processor = HoneyHiveSpanProcessor()  # No client or exporter
@@ -861,7 +861,7 @@ class TestHoneyHiveSpanProcessorOnEnd:
 
         mock_safe_log.assert_called()
 
-    @patch("honeyhive.api.client.safe_log")
+    @patch("honeyhive.utils.logger.safe_log")
     def test_on_end_exception_handling(self, mock_safe_log: Mock) -> None:
         """Test on_end exception handling."""
         mock_client = Mock()
@@ -882,7 +882,7 @@ class TestHoneyHiveSpanProcessorOnEnd:
 class TestHoneyHiveSpanProcessorSending:
     """Test span sending functionality with all conditional branches."""
 
-    @patch("honeyhive.api.client.safe_log")
+    @patch("honeyhive.utils.logger.safe_log")
     def test_send_via_client_success(self, mock_safe_log: Mock) -> None:
         """Test successful span sending via client."""
         mock_client = Mock()
@@ -902,7 +902,7 @@ class TestHoneyHiveSpanProcessorSending:
 
         mock_client.events.create.assert_called_once()
 
-    @patch("honeyhive.api.client.safe_log")
+    @patch("honeyhive.utils.logger.safe_log")
     def test_send_via_client_no_events_method(self, mock_safe_log: Mock) -> None:
         """Test client without events.create method."""
         mock_client = Mock()
@@ -915,7 +915,7 @@ class TestHoneyHiveSpanProcessorSending:
 
         mock_safe_log.assert_called()
 
-    @patch("honeyhive.api.client.safe_log")
+    @patch("honeyhive.utils.logger.safe_log")
     def test_send_via_client_exception_handling(self, mock_safe_log: Mock) -> None:
         """Test client sending with exception handling."""
         mock_client = Mock()
@@ -928,7 +928,7 @@ class TestHoneyHiveSpanProcessorSending:
 
         mock_safe_log.assert_called()
 
-    @patch("honeyhive.api.client.safe_log")
+    @patch("honeyhive.utils.logger.safe_log")
     def test_send_via_otlp_batched_mode(self, mock_safe_log: Mock) -> None:
         """Test OTLP sending in batched mode."""
         mock_exporter = Mock()
@@ -943,7 +943,7 @@ class TestHoneyHiveSpanProcessorSending:
 
         mock_exporter.export.assert_called_once_with([mock_span])
 
-    @patch("honeyhive.api.client.safe_log")
+    @patch("honeyhive.utils.logger.safe_log")
     def test_send_via_otlp_immediate_mode(self, mock_safe_log: Mock) -> None:
         """Test OTLP sending in immediate mode."""
         mock_exporter = Mock()
@@ -958,7 +958,7 @@ class TestHoneyHiveSpanProcessorSending:
 
         mock_exporter.export.assert_called_once_with([mock_span])
 
-    @patch("honeyhive.api.client.safe_log")
+    @patch("honeyhive.utils.logger.safe_log")
     def test_send_via_otlp_no_exporter(self, mock_safe_log: Mock) -> None:
         """Test OTLP sending with no exporter."""
         processor = HoneyHiveSpanProcessor()  # No exporter
@@ -968,7 +968,7 @@ class TestHoneyHiveSpanProcessorSending:
 
         mock_safe_log.assert_called()
 
-    @patch("honeyhive.api.client.safe_log")
+    @patch("honeyhive.utils.logger.safe_log")
     def test_send_via_otlp_with_result_name(self, mock_safe_log: Mock) -> None:
         """Test OTLP sending with result that has name attribute."""
         mock_exporter = Mock()
@@ -984,7 +984,7 @@ class TestHoneyHiveSpanProcessorSending:
         mock_exporter.export.assert_called_once_with([mock_span])
         mock_safe_log.assert_called()
 
-    @patch("honeyhive.api.client.safe_log")
+    @patch("honeyhive.utils.logger.safe_log")
     def test_send_via_otlp_exception_handling(self, mock_safe_log: Mock) -> None:
         """Test OTLP sending with exception handling."""
         mock_exporter = Mock()
@@ -1002,7 +1002,7 @@ class TestHoneyHiveSpanProcessorAttributeProcessing:
     """Test attribute processing functionality with all conditional branches."""
 
     @patch("honeyhive.tracer.processing.span_processor.extract_raw_attributes")
-    @patch("honeyhive.api.client.safe_log")
+    @patch("honeyhive.utils.logger.safe_log")
     def test_process_honeyhive_attributes_basic(
         self, mock_safe_log: Mock, mock_extract: Mock
     ) -> None:
@@ -1021,7 +1021,7 @@ class TestHoneyHiveSpanProcessorAttributeProcessing:
         mock_extract.assert_called()
 
     @patch("honeyhive.tracer.processing.span_processor.extract_raw_attributes")
-    @patch("honeyhive.api.client.safe_log")
+    @patch("honeyhive.utils.logger.safe_log")
     def test_process_honeyhive_attributes_no_attributes(
         self, mock_safe_log: Mock, mock_extract: Mock
     ) -> None:
@@ -1039,7 +1039,7 @@ class TestHoneyHiveSpanProcessorAttributeProcessing:
         # Method returns None, just verify it was called
 
     @patch("honeyhive.tracer.processing.span_processor.extract_raw_attributes")
-    @patch("honeyhive.api.client.safe_log")
+    @patch("honeyhive.utils.logger.safe_log")
     def test_process_honeyhive_attributes_exception_handling(
         self, mock_safe_log: Mock, mock_extract: Mock
     ) -> None:
@@ -1092,7 +1092,7 @@ class TestHoneyHiveSpanProcessorLifecycle:
 
         # Method returns None, just verify shutdown was called
 
-    @patch("honeyhive.api.client.safe_log")
+    @patch("honeyhive.utils.logger.safe_log")
     def test_shutdown_exception_handling(self, mock_safe_log: Mock) -> None:
         """Test shutdown with exception handling."""
         mock_exporter = Mock()
@@ -1136,7 +1136,7 @@ class TestHoneyHiveSpanProcessorLifecycle:
 
         assert result is True
 
-    @patch("honeyhive.api.client.safe_log")
+    @patch("honeyhive.utils.logger.safe_log")
     def test_force_flush_exception_handling(self, mock_safe_log: Mock) -> None:
         """Test force flush with exception handling."""
         mock_exporter = Mock()
@@ -1258,7 +1258,7 @@ class TestHoneyHiveSpanProcessorConversion:
         assert result["event_name"] == "test_operation"
         assert "error" not in result
 
-    @patch("honeyhive.api.client.safe_log")
+    @patch("honeyhive.utils.logger.safe_log")
     def test_convert_span_to_event_exception_handling(
         self, mock_safe_log: Mock
     ) -> None:

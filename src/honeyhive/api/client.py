@@ -680,3 +680,13 @@ class HoneyHive:
     def api_config(self) -> APIConfig:
         """Access the underlying API configuration."""
         return self._api_config
+
+    @property
+    def server_url(self) -> str:
+        """Get the HoneyHive API server URL."""
+        return self._api_config.base_path
+
+    @server_url.setter
+    def server_url(self, value: str) -> None:
+        """Set the HoneyHive API server URL."""
+        self._api_config.base_path = value
