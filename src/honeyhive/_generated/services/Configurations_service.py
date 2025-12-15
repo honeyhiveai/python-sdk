@@ -16,7 +16,7 @@ def getConfigurations(
     api_config = api_config_override if api_config_override else APIConfig()
 
     base_path = api_config.base_path
-    path = f"/configurations"
+    path = f"/v1/configurations"
     headers = {
         "Content-Type": "application/json",
         "Accept": "application/json",
@@ -53,7 +53,7 @@ def createConfiguration(
     api_config = api_config_override if api_config_override else APIConfig()
 
     base_path = api_config.base_path
-    path = f"/configurations"
+    path = f"/v1/configurations"
     headers = {
         "Content-Type": "application/json",
         "Accept": "application/json",
@@ -71,7 +71,7 @@ def createConfiguration(
             httpx.URL(path),
             headers=headers,
             params=query_params,
-            json=data.dict(),
+            json=data.model_dump(exclude_none=True),
         )
 
     if response.status_code != 200:
@@ -98,7 +98,7 @@ def updateConfiguration(
     api_config = api_config_override if api_config_override else APIConfig()
 
     base_path = api_config.base_path
-    path = f"/configurations/{id}"
+    path = f"/v1/configurations/{id}"
     headers = {
         "Content-Type": "application/json",
         "Accept": "application/json",
@@ -116,7 +116,7 @@ def updateConfiguration(
             httpx.URL(path),
             headers=headers,
             params=query_params,
-            json=data.dict(),
+            json=data.model_dump(exclude_none=True),
         )
 
     if response.status_code != 200:
@@ -140,7 +140,7 @@ def deleteConfiguration(
     api_config = api_config_override if api_config_override else APIConfig()
 
     base_path = api_config.base_path
-    path = f"/configurations/{id}"
+    path = f"/v1/configurations/{id}"
     headers = {
         "Content-Type": "application/json",
         "Accept": "application/json",

@@ -20,7 +20,6 @@ from honeyhive._generated.models import (
     CreateMetricResponse,
     CreateToolRequest,
     CreateToolResponse,
-    DeleteConfigurationParams,
     DeleteConfigurationResponse,
     DeleteDatapointParams,
     DeleteDatapointResponse,
@@ -30,7 +29,6 @@ from honeyhive._generated.models import (
     DeleteExperimentRunResponse,
     DeleteMetricQuery,
     DeleteMetricResponse,
-    DeleteSessionParams,
     DeleteSessionResponse,
     DeleteToolQuery,
     DeleteToolResponse,
@@ -56,7 +54,6 @@ from honeyhive._generated.models import (
     GetExperimentRunsSchemaResponse,
     GetMetricsQuery,
     GetMetricsResponse,
-    GetSessionParams,
     GetSessionResponse,
     GetToolsResponse,
     PostExperimentRunRequest,
@@ -68,7 +65,6 @@ from honeyhive._generated.models import (
     RunMetricRequest,
     RunMetricResponse,
     TODOSchema,
-    UpdateConfigurationParams,
     UpdateConfigurationRequest,
     UpdateConfigurationResponse,
     UpdateDatapointParams,
@@ -86,11 +82,9 @@ __all__ = [
     # Configuration models
     "CreateConfigurationRequest",
     "CreateConfigurationResponse",
-    "DeleteConfigurationParams",
     "DeleteConfigurationResponse",
     "GetConfigurationsQuery",
     "GetConfigurationsResponse",
-    "UpdateConfigurationParams",
     "UpdateConfigurationRequest",
     "UpdateConfigurationResponse",
     # Datapoint models
@@ -152,9 +146,7 @@ __all__ = [
     "UpdateMetricRequest",
     "UpdateMetricResponse",
     # Session models
-    "DeleteSessionParams",
     "DeleteSessionResponse",
-    "GetSessionParams",
     "GetSessionResponse",
     # Tool models
     "CreateToolRequest",

@@ -229,9 +229,12 @@ def real_source(real_api_credentials: Dict[str, Any]) -> str:
 
 
 @pytest.fixture
-def integration_client(real_api_key: str) -> HoneyHive:
+def integration_client(real_api_credentials: Dict[str, Any]) -> HoneyHive:
     """HoneyHive client for integration tests with real API credentials."""
-    return HoneyHive(api_key=real_api_key, test_mode=False)
+    return HoneyHive(
+        api_key=real_api_credentials["api_key"],
+        base_url=real_api_credentials["server_url"],
+    )
 
 
 @pytest.fixture

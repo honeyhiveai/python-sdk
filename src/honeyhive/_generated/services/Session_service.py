@@ -12,7 +12,7 @@ def startSession(
     api_config = api_config_override if api_config_override else APIConfig()
 
     base_path = api_config.base_path
-    path = f"/session/start"
+    path = f"/v1/session/start"
     headers = {
         "Content-Type": "application/json",
         "Accept": "application/json",

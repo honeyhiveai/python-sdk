@@ -16,7 +16,7 @@ async def getDatasets(
     api_config = api_config_override if api_config_override else APIConfig()
 
     base_path = api_config.base_path
-    path = f"/datasets"
+    path = f"/v1/datasets"
     headers = {
         "Content-Type": "application/json",
         "Accept": "application/json",
@@ -59,7 +59,7 @@ async def createDataset(
     api_config = api_config_override if api_config_override else APIConfig()
 
     base_path = api_config.base_path
-    path = f"/datasets"
+    path = f"/v1/datasets"
     headers = {
         "Content-Type": "application/json",
         "Accept": "application/json",
@@ -79,7 +79,7 @@ async def createDataset(
             httpx.URL(path),
             headers=headers,
             params=query_params,
-            json=data.dict(),
+            json=data.model_dump(exclude_none=True),
         )
 
     if response.status_code != 200:
@@ -101,7 +101,7 @@ async def updateDataset(
     api_config = api_config_override if api_config_override else APIConfig()
 
     base_path = api_config.base_path
-    path = f"/datasets"
+    path = f"/v1/datasets"
     headers = {
         "Content-Type": "application/json",
         "Accept": "application/json",
@@ -121,7 +121,7 @@ async def updateDataset(
             httpx.URL(path),
             headers=headers,
             params=query_params,
-            json=data.dict(),
+            json=data.model_dump(exclude_none=True),
         )
 
     if response.status_code != 200:
@@ -143,7 +143,7 @@ async def deleteDataset(
     api_config = api_config_override if api_config_override else APIConfig()
 
     base_path = api_config.base_path
-    path = f"/datasets"
+    path = f"/v1/datasets"
     headers = {
         "Content-Type": "application/json",
         "Accept": "application/json",
@@ -187,7 +187,7 @@ async def addDatapoints(
     api_config = api_config_override if api_config_override else APIConfig()
 
     base_path = api_config.base_path
-    path = f"/datasets/{dataset_id}/datapoints"
+    path = f"/v1/datasets/{dataset_id}/datapoints"
     headers = {
         "Content-Type": "application/json",
         "Accept": "application/json",
@@ -207,7 +207,7 @@ async def addDatapoints(
             httpx.URL(path),
             headers=headers,
             params=query_params,
-            json=data.dict(),
+            json=data.model_dump(exclude_none=True),
         )
 
     if response.status_code != 200:
@@ -232,7 +232,7 @@ async def removeDatapoint(
     api_config = api_config_override if api_config_override else APIConfig()
 
     base_path = api_config.base_path
-    path = f"/datasets/{dataset_id}/datapoints/{datapoint_id}"
+    path = f"/v1/datasets/{dataset_id}/datapoints/{datapoint_id}"
     headers = {
         "Content-Type": "application/json",
         "Accept": "application/json",

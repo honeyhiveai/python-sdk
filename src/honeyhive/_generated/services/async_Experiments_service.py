@@ -15,7 +15,7 @@ async def getExperimentRunsSchema(
     api_config = api_config_override if api_config_override else APIConfig()
 
     base_path = api_config.base_path
-    path = f"/runs/schema"
+    path = f"/v1/runs/schema"
     headers = {
         "Content-Type": "application/json",
         "Accept": "application/json",
@@ -71,7 +71,7 @@ async def getRuns(
     api_config = api_config_override if api_config_override else APIConfig()
 
     base_path = api_config.base_path
-    path = f"/runs"
+    path = f"/v1/runs"
     headers = {
         "Content-Type": "application/json",
         "Accept": "application/json",
@@ -124,7 +124,7 @@ async def createRun(
     api_config = api_config_override if api_config_override else APIConfig()
 
     base_path = api_config.base_path
-    path = f"/runs"
+    path = f"/v1/runs"
     headers = {
         "Content-Type": "application/json",
         "Accept": "application/json",
@@ -144,7 +144,7 @@ async def createRun(
             httpx.URL(path),
             headers=headers,
             params=query_params,
-            json=data.dict(),
+            json=data.model_dump(exclude_none=True),
         )
 
     if response.status_code != 200:
@@ -168,7 +168,7 @@ async def getRun(
     api_config = api_config_override if api_config_override else APIConfig()
 
     base_path = api_config.base_path
-    path = f"/runs/{run_id}"
+    path = f"/v1/runs/{run_id}"
     headers = {
         "Content-Type": "application/json",
         "Accept": "application/json",
@@ -214,7 +214,7 @@ async def updateRun(
     api_config = api_config_override if api_config_override else APIConfig()
 
     base_path = api_config.base_path
-    path = f"/runs/{run_id}"
+    path = f"/v1/runs/{run_id}"
     headers = {
         "Content-Type": "application/json",
         "Accept": "application/json",
@@ -234,7 +234,7 @@ async def updateRun(
             httpx.URL(path),
             headers=headers,
             params=query_params,
-            json=data.dict(),
+            json=data.model_dump(exclude_none=True),
         )
 
     if response.status_code != 200:
@@ -258,7 +258,7 @@ async def deleteRun(
     api_config = api_config_override if api_config_override else APIConfig()
 
     base_path = api_config.base_path
-    path = f"/runs/{run_id}"
+    path = f"/v1/runs/{run_id}"
     headers = {
         "Content-Type": "application/json",
         "Accept": "application/json",
@@ -305,7 +305,7 @@ async def getExperimentResult(
     api_config = api_config_override if api_config_override else APIConfig()
 
     base_path = api_config.base_path
-    path = f"/runs/{run_id}/result"
+    path = f"/v1/runs/{run_id}/result"
     headers = {
         "Content-Type": "application/json",
         "Accept": "application/json",
@@ -352,7 +352,7 @@ async def getExperimentComparison(
     api_config = api_config_override if api_config_override else APIConfig()
 
     base_path = api_config.base_path
-    path = f"/runs/{run_id_1}/compare-with/{run_id_2}"
+    path = f"/v1/runs/{run_id_1}/compare-with/{run_id_2}"
     headers = {
         "Content-Type": "application/json",
         "Accept": "application/json",

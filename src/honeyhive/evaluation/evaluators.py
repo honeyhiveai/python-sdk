@@ -16,8 +16,8 @@ from dataclasses import dataclass, field
 from typing import Any, Callable, Dict, List, Optional, Union
 
 from honeyhive.api.client import HoneyHive
-from honeyhive.models import PostExperimentRunRequest
 from honeyhive.experiments.models import ExperimentResultSummary
+from honeyhive.models import PostExperimentRunRequest
 
 # Config import removed - not used in this module
 
@@ -770,6 +770,7 @@ def create_evaluation_run(
     if client is None:
         try:
             import os
+
             api_key = os.getenv("HONEYHIVE_API_KEY") or os.getenv("HH_API_KEY")
             if not api_key:
                 logger.warning("No API key found - set HONEYHIVE_API_KEY or HH_API_KEY")

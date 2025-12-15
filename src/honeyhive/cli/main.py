@@ -330,10 +330,16 @@ def request(
     try:
         # Get API key from environment
         api_key = os.getenv("HONEYHIVE_API_KEY") or os.getenv("HH_API_KEY")
-        base_url = os.getenv("HONEYHIVE_SERVER_URL") or os.getenv("HH_API_URL") or "https://api.honeyhive.ai"
+        base_url = (
+            os.getenv("HONEYHIVE_SERVER_URL")
+            or os.getenv("HH_API_URL")
+            or "https://api.honeyhive.ai"
+        )
 
         if not api_key:
-            click.echo("No API key found - set HONEYHIVE_API_KEY or HH_API_KEY", err=True)
+            click.echo(
+                "No API key found - set HONEYHIVE_API_KEY or HH_API_KEY", err=True
+            )
             sys.exit(1)
 
         # Parse headers and data

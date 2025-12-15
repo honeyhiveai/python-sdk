@@ -41,11 +41,7 @@ from honeyhive.models import (
     UUIDType,
 )
 from honeyhive.models.generated import EventType as GeneratedEventType
-from honeyhive.models.generated import (
-    Operator,
-    Parameters,
-    ToolType,
-)
+from honeyhive.models.generated import Operator, Parameters, ToolType
 
 
 class TestModelsIntegration:

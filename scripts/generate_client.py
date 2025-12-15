@@ -118,10 +118,21 @@ def post_process(output_dir: Path) -> bool:
         init_file.write_text('"""Auto-generated HoneyHive API client."""\n')
         print("  ✓ Created __init__.py")
 
-    # Future customizations can be added here:
-    # - Add custom methods to models
-    # - Fix any known generation issues
-    # - Add type stubs if needed
+    # Fix serialization to exclude None values
+    # The API rejects null values, so we must use model_dump(exclude_none=True)
+    services_dir = output_dir / "services"
+    if services_dir.exists():
+        fixed_count = 0
+        for service_file in services_dir.glob("*.py"):
+            content = service_file.read_text()
+            if "data.dict()" in content:
+                content = content.replace(
+                    "data.dict()", "data.model_dump(exclude_none=True)"
+                )
+                service_file.write_text(content)
+                fixed_count += 1
+        if fixed_count > 0:
+            print(f"  ✓ Fixed serialization in {fixed_count} service files")
 
     print("  ✓ Post-processing complete")
     return True

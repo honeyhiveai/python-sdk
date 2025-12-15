@@ -10,7 +10,7 @@ def getTools(api_config_override: Optional[APIConfig] = None) -> List[GetToolsRe
     api_config = api_config_override if api_config_override else APIConfig()
 
     base_path = api_config.base_path
-    path = f"/tools"
+    path = f"/v1/tools"
     headers = {
         "Content-Type": "application/json",
         "Accept": "application/json",
@@ -47,7 +47,7 @@ def createTool(
     api_config = api_config_override if api_config_override else APIConfig()
 
     base_path = api_config.base_path
-    path = f"/tools"
+    path = f"/v1/tools"
     headers = {
         "Content-Type": "application/json",
         "Accept": "application/json",
@@ -65,7 +65,7 @@ def createTool(
             httpx.URL(path),
             headers=headers,
             params=query_params,
-            json=data.dict(),
+            json=data.model_dump(exclude_none=True),
         )
 
     if response.status_code != 200:
@@ -85,7 +85,7 @@ def updateTool(
     api_config = api_config_override if api_config_override else APIConfig()
 
     base_path = api_config.base_path
-    path = f"/tools"
+    path = f"/v1/tools"
     headers = {
         "Content-Type": "application/json",
         "Accept": "application/json",
@@ -103,7 +103,7 @@ def updateTool(
             httpx.URL(path),
             headers=headers,
             params=query_params,
-            json=data.dict(),
+            json=data.model_dump(exclude_none=True),
         )
 
     if response.status_code != 200:
@@ -123,7 +123,7 @@ def deleteTool(
     api_config = api_config_override if api_config_override else APIConfig()
 
     base_path = api_config.base_path
-    path = f"/tools"
+    path = f"/v1/tools"
     headers = {
         "Content-Type": "application/json",
         "Accept": "application/json",

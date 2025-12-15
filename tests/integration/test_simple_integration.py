@@ -7,13 +7,8 @@ import uuid
 
 import pytest
 
-from honeyhive.models.generated import (
-    CreateDatapointRequest,
-    CreateEventRequest,
-    Parameters2,
-    PostConfigurationRequest,
-    SessionStartRequest,
-)
+# v1 models - note: Sessions and Events use dict-based APIs
+from honeyhive.models import CreateConfigurationRequest, CreateDatapointRequest
 from tests.utils import create_session_request
 
 
@@ -39,16 +34,13 @@ class TestSimpleIntegration:
         test_response = f"integration test response {test_id}"
 
         datapoint_request = CreateDatapointRequest(
-            project=integration_project_name,
             inputs={"query": test_query, "test_id": test_id},
             ground_truth={"response": test_response},
         )
 
         try:
             # Step 1: Create datapoint
-            datapoint_response = integration_client.datapoints.create_datapoint(
-                datapoint_request
-            )
+            datapoint_response = integration_client.datapoints.create(datapoint_request)
 
             # Verify creation response
             assert hasattr(datapoint_response, "field_id")
@@ -61,7 +53,7 @@ class TestSimpleIntegration:
             # Step 3: Validate data is actually stored by retrieving it
             try:
                 # List datapoints to find our created one
-                datapoints = integration_client.datapoints.list_datapoints(
+                datapoints = integration_client.datapoints.list(
                     project=integration_project_name
                 )
 
@@ -248,7 +240,10 @@ class TestSimpleIntegration:
 
                 # Retrieve events for this session
                 session_filter = {
-                    "field": "session_id", "value": session_id, "operator": "is", "type": "id"
+                    "field": "session_id",
+                    "value": session_id,
+                    "operator": "is",
+                    "type": "id",
                 }
 
                 events_result = integration_client.events.get_events(

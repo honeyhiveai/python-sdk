@@ -12,7 +12,7 @@ def getProjects(
     api_config = api_config_override if api_config_override else APIConfig()
 
     base_path = api_config.base_path
-    path = f"/projects"
+    path = f"/v1/projects"
     headers = {
         "Content-Type": "application/json",
         "Accept": "application/json",
@@ -49,7 +49,7 @@ def createProject(
     api_config = api_config_override if api_config_override else APIConfig()
 
     base_path = api_config.base_path
-    path = f"/projects"
+    path = f"/v1/projects"
     headers = {
         "Content-Type": "application/json",
         "Accept": "application/json",
@@ -67,7 +67,7 @@ def createProject(
             httpx.URL(path),
             headers=headers,
             params=query_params,
-            json=data.dict(),
+            json=data.model_dump(exclude_none=True),
         )
 
     if response.status_code != 200:
@@ -87,7 +87,7 @@ def updateProject(
     api_config = api_config_override if api_config_override else APIConfig()
 
     base_path = api_config.base_path
-    path = f"/projects"
+    path = f"/v1/projects"
     headers = {
         "Content-Type": "application/json",
         "Accept": "application/json",
@@ -105,7 +105,7 @@ def updateProject(
             httpx.URL(path),
             headers=headers,
             params=query_params,
-            json=data.dict(),
+            json=data.model_dump(exclude_none=True),
         )
 
     if response.status_code != 200:
@@ -125,7 +125,7 @@ def deleteProject(
     api_config = api_config_override if api_config_override else APIConfig()
 
     base_path = api_config.base_path
-    path = f"/projects"
+    path = f"/v1/projects"
     headers = {
         "Content-Type": "application/json",
         "Accept": "application/json",

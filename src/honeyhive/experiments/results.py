@@ -83,7 +83,9 @@ def get_run_result(
     )
 
 
-def get_run_metrics(client: Any, run_id: str, project_id: str) -> Dict[str, Any]:  # HoneyHive client
+def get_run_metrics(
+    client: Any, run_id: str, project_id: str
+) -> Dict[str, Any]:  # HoneyHive client
     """
     Get raw metrics for a run (without aggregation).
 

@@ -660,6 +660,7 @@ class HoneyHive:
             api_key: HoneyHive API key (typically starts with 'hh_').
             base_url: API base URL (default: https://api.honeyhive.ai).
         """
+        self._api_key = api_key
         self._api_config = APIConfig(
             base_path=base_url,
             access_token=api_key,
@@ -680,6 +681,11 @@ class HoneyHive:
     def api_config(self) -> APIConfig:
         """Access the underlying API configuration."""
         return self._api_config
+
+    @property
+    def api_key(self) -> str:
+        """Get the HoneyHive API key."""
+        return self._api_key
 
     @property
     def server_url(self) -> str:

@@ -5,7 +5,7 @@ info:
 servers:
   - url: https://api.honeyhive.ai
 paths:
-  /session/start:
+  /v1/session/start:
     post:
       summary: Start a new session
       operationId: startSession
@@ -30,7 +30,7 @@ paths:
                 properties:
                   session_id:
                     type: string
-  /sessions/{session_id}:
+  /v1/sessions/{session_id}:
     get:
       summary: Get session tree by session ID
       operationId: getSession
@@ -42,7 +42,9 @@ paths:
           in: path
           required: true
           schema:
-            $ref: '#/components/schemas/GetSessionParams'
+            type: string
+            format: uuid
+          description: Session ID (UUIDv4)
       responses:
         '200':
           description: Session tree with nested events
@@ -67,7 +69,9 @@ paths:
           in: path
           required: true
           schema:
-            $ref: '#/components/schemas/DeleteSessionParams'
+            type: string
+            format: uuid
+          description: Session ID (UUIDv4)
       responses:
         '200':
           description: Session deleted successfully
@@ -79,7 +83,7 @@ paths:
           description: Invalid session ID or missing required scope
         '500':
           description: Error deleting session
-  /events:
+  /v1/events:
     post:
       tags:
         - Events
@@ -172,7 +176,7 @@ paths:
           description: Event updated
         '400':
           description: Bad request
-  /events/export:
+  /v1/events/export:
     post:
       tags:
         - Events
@@ -230,7 +234,7 @@ paths:
                   totalEvents:
                     type: number
                     description: Total number of events in the specified filter
-  /events/model:
+  /v1/events/model:
     post:
       tags:
         - Events
@@ -261,7 +265,7 @@ paths:
                 example:
                   event_id: 7f22137a-6911-4ed3-bc36-110f1dde6b66
                   success: true
-  /events/batch:
+  /v1/events/batch:
     post:
       tags:
         - Events
@@ -334,7 +338,7 @@ paths:
                     - Could not create event due to missing inputs
                     - Could not create event due to missing source
                   success: true
-  /events/model/batch:
+  /v1/events/model/batch:
     post:
       tags:
         - Events
@@ -402,7 +406,7 @@ paths:
                     - Could not create event due to missing model
                     - Could not create event due to missing provider
                   success: true
-  /metrics:
+  /v1/metrics:
     get:
       tags:
         - Metrics
@@ -489,7 +493,7 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/DeleteMetricResponse'
-  /metrics/run_metric:
+  /v1/metrics/run_metric:
     post:
       tags:
         - Metrics
@@ -509,7 +513,7 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/RunMetricResponse'
-  /tools:
+  /v1/tools:
     get:
       tags:
         - Tools
@@ -578,7 +582,7 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/DeleteToolResponse'
-  /datapoints:
+  /v1/datapoints:
     get:
       summary: Retrieve a list of datapoints
       operationId: getDatapoints
@@ -624,7 +628,7 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/CreateDatapointResponse'
-  /datapoints/batch:
+  /v1/datapoints/batch:
     post:
       summary: Create multiple datapoints in batch
       operationId: batchCreateDatapoints
@@ -643,7 +647,7 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/BatchCreateDatapointsResponse'
-  /datapoints/{id}:
+  /v1/datapoints/{id}:
     get:
       summary: Retrieve a specific datapoint
       operationId: getDatapoint
@@ -714,7 +718,7 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/DeleteDatapointResponse'
-  /datasets:
+  /v1/datasets:
     get:
       tags:
         - Datasets
@@ -803,7 +807,7 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/DeleteDatasetResponse'
-  /datasets/{dataset_id}/datapoints:
+  /v1/datasets/{dataset_id}/datapoints:
     post:
       tags:
         - Datasets
@@ -829,7 +833,7 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/AddDatapointsResponse'
-  /datasets/{dataset_id}/datapoints/{datapoint_id}:
+  /v1/datasets/{dataset_id}/datapoints/{datapoint_id}:
     delete:
       tags:
         - Datasets
@@ -855,7 +859,7 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/RemoveDatapointResponse'
-  /projects:
+  /v1/projects:
     get:
       tags:
         - Projects
@@ -922,7 +926,7 @@ paths:
       responses:
         '200':
           description: Project deleted
-  /runs/schema:
+  /v1/runs/schema:
     get:
       summary: Get experiment runs schema
       operationId: getExperimentRunsSchema
@@ -960,7 +964,7 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/GetExperimentRunsSchemaResponse'
-  /runs:
+  /v1/runs:
     post:
       summary: Create a new evaluation run
       operationId: createRun
@@ -1084,7 +1088,7 @@ paths:
                 $ref: '#/components/schemas/GetExperimentRunsResponse'
         '400':
           description: Error fetching evaluations
-  /runs/{run_id}:
+  /v1/runs/{run_id}:
     get:
       summary: Get details of an evaluation run
       operationId: getRun
@@ -1151,7 +1155,7 @@ paths:
                 $ref: '#/components/schemas/DeleteExperimentRunResponse'
         '400':
           description: Error deleting evaluation
-  /runs/{run_id}/result:
+  /v1/runs/{run_id}/result:
     get:
       summary: Retrieve experiment result
       operationId: getExperimentResult
@@ -1192,7 +1196,7 @@ paths:
                 $ref: '#/components/schemas/TODOSchema'
         '400':
           description: Error processing experiment result
-  /runs/{run_id_1}/compare-with/{run_id_2}:
+  /v1/runs/{run_id_1}/compare-with/{run_id_2}:
     get:
       summary: Retrieve experiment comparison
       operationId: getExperimentComparison
@@ -1238,7 +1242,7 @@ paths:
                 $ref: '#/components/schemas/TODOSchema'
         '400':
           description: Error processing experiment comparison
-  /configurations:
+  /v1/configurations:
     get:
       summary: Retrieve a list of configurations
       operationId: getConfigurations
@@ -1290,7 +1294,7 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/CreateConfigurationResponse'
-  /configurations/{id}:
+  /v1/configurations/{id}:
     put:
       summary: Update an existing configuration
       operationId: updateConfiguration
@@ -1542,24 +1546,6 @@ components:
           type: string
         tags:
           type: string
-    UpdateConfigurationParams:
-      type: object
-      properties:
-        configId:
-          type: string
-          minLength: 1
-      required:
-        - configId
-      additionalProperties: false
-    DeleteConfigurationParams:
-      type: object
-      properties:
-        id:
-          type: string
-          minLength: 1
-      required:
-        - id
-      additionalProperties: false
     CreateConfigurationResponse:
       type: object
       properties:
@@ -1726,67 +1712,35 @@ components:
       required:
         - id
     CreateDatapointRequest:
-      anyOf:
-        - type: object
-          properties:
-            inputs:
-              type: object
-              additionalProperties: {}
-              default: &ref_5 {}
-            history:
-              type: array
-              items:
-                type: object
-                additionalProperties: {}
-                default: *ref_5
-              default: &ref_6 []
-            ground_truth:
-              type: object
-              additionalProperties: {}
-              default: *ref_5
-            metadata:
-              type: object
-              additionalProperties: {}
-              default: *ref_5
-            linked_event:
-              type: string
-            linked_datasets:
-              type: array
-              items:
-                type: string
-                minLength: 1
-              default: &ref_7 []
-        - type: array
+      type: object
+      properties:
+        inputs:
+          type: object
+          additionalProperties: {}
+          default: &ref_5 {}
+        history:
+          type: array
           items:
             type: object
-            properties:
-              inputs:
-                type: object
-                additionalProperties: {}
-                default: *ref_5
-              history:
-                type: array
-                items:
-                  type: object
-                  additionalProperties: {}
-                  default: *ref_5
-                default: *ref_6
-              ground_truth:
-                type: object
-                additionalProperties: {}
-                default: *ref_5
-              metadata:
-                type: object
-                additionalProperties: {}
-                default: *ref_5
-              linked_event:
-                type: string
-              linked_datasets:
-                type: array
-                items:
-                  type: string
-                  minLength: 1
-                default: *ref_7
+            additionalProperties: {}
+            default: *ref_5
+          default: []
+        ground_truth:
+          type: object
+          additionalProperties: {}
+          default: *ref_5
+        metadata:
+          type: object
+          additionalProperties: {}
+          default: *ref_5
+        linked_event:
+          type: string
+        linked_datasets:
+          type: array
+          items:
+            type: string
+            minLength: 1
+          default: []
     UpdateDatapointRequest:
       type: object
       properties:
@@ -1846,17 +1800,17 @@ components:
               type: array
               items:
                 type: string
-              default: &ref_8 []
+              default: &ref_6 []
             history:
               type: array
               items:
                 type: string
-              default: &ref_9 []
+              default: &ref_7 []
             ground_truth:
               type: array
               items:
                 type: string
-              default: &ref_10 []
+              default: &ref_8 []
         filters:
           anyOf:
             - type: object
@@ -2049,7 +2003,7 @@ components:
       properties:
         name:
           type: string
-          default: Dataset 12/11
+          default: Dataset 12/15
         description:
           type: string
         datapoints:
@@ -2114,17 +2068,17 @@ components:
               type: array
               items:
                 type: string
-              default: *ref_8
+              default: *ref_6
             history:
               type: array
               items:
                 type: string
-              default: *ref_9
+              default: *ref_7
             ground_truth:
               type: array
               items:
                 type: string
-              default: *ref_10
+              default: *ref_8
       required:
         - data
         - mapping
@@ -2648,7 +2602,7 @@ components:
           default: ''
         return_type:
           type: string
-          enum: &ref_11
+          enum: &ref_9
             - float
             - boolean
             - string
@@ -2752,7 +2706,7 @@ components:
                   operator:
                     anyOf:
                       - type: string
-                        enum: &ref_12
+                        enum: &ref_10
                           - exists
                           - not exists
                           - is
@@ -2760,7 +2714,7 @@ components:
                           - contains
                           - not contains
                       - type: string
-                        enum: &ref_13
+                        enum: &ref_11
                           - exists
                           - not exists
                           - is
@@ -2768,12 +2722,12 @@ components:
                           - greater than
                           - less than
                       - type: string
-                        enum: &ref_14
+                        enum: &ref_12
                           - exists
                           - not exists
                           - is
                       - type: string
-                        enum: &ref_15
+                        enum: &ref_13
                           - exists
                           - not exists
                           - is
@@ -2789,7 +2743,7 @@ components:
                       - type: 'null'
                   type:
                     type: string
-                    enum: &ref_16
+                    enum: &ref_14
                       - string
                       - number
                       - boolean
@@ -2799,7 +2753,7 @@ components:
                   - operator
                   - value
                   - type
-          default: &ref_17
+          default: &ref_15
             filterArray: []
           required:
             - filterArray
@@ -2829,7 +2783,7 @@ components:
           default: ''
         return_type:
           type: string
-          enum: *ref_11
+          enum: *ref_9
           default: float
         enabled_in_prod:
           type: boolean
@@ -2929,13 +2883,13 @@ components:
                   operator:
                     anyOf:
                       - type: string
+                        enum: *ref_10
+                      - type: string
+                        enum: *ref_11
+                      - type: string
                         enum: *ref_12
                       - type: string
                         enum: *ref_13
-                      - type: string
-                        enum: *ref_14
-                      - type: string
-                        enum: *ref_15
                   value:
                     anyOf:
                       - type: string
@@ -2945,13 +2899,13 @@ components:
                       - type: 'null'
                   type:
                     type: string
-                    enum: *ref_16
+                    enum: *ref_14
                 required:
                   - field
                   - operator
                   - value
                   - type
-          default: *ref_17
+          default: *ref_15
           required:
             - filterArray
           additionalProperties: false
@@ -3000,7 +2954,7 @@ components:
               default: ''
             return_type:
               type: string
-              enum: *ref_11
+              enum: *ref_9
               default: float
             enabled_in_prod:
               type: boolean
@@ -3100,13 +3054,13 @@ components:
                       operator:
                         anyOf:
                           - type: string
+                            enum: *ref_10
+                          - type: string
+                            enum: *ref_11
+                          - type: string
                             enum: *ref_12
                           - type: string
                             enum: *ref_13
-                          - type: string
-                            enum: *ref_14
-                          - type: string
-                            enum: *ref_15
                       value:
                         anyOf:
                           - type: string
@@ -3116,13 +3070,13 @@ components:
                           - type: 'null'
                       type:
                         type: string
-                        enum: *ref_16
+                        enum: *ref_14
                     required:
                       - field
                       - operator
                       - value
                       - type
-              default: *ref_17
+              default: *ref_15
               required:
                 - filterArray
               additionalProperties: false
@@ -3156,7 +3110,7 @@ components:
             default: ''
           return_type:
             type: string
-            enum: *ref_11
+            enum: *ref_9
             default: float
           enabled_in_prod:
             type: boolean
@@ -3256,13 +3210,13 @@ components:
                     operator:
                       anyOf:
                         - type: string
+                          enum: *ref_10
+                        - type: string
+                          enum: *ref_11
+                        - type: string
                           enum: *ref_12
                         - type: string
                           enum: *ref_13
-                        - type: string
-                          enum: *ref_14
-                        - type: string
-                          enum: *ref_15
                     value:
                       anyOf:
                         - type: string
@@ -3272,13 +3226,13 @@ components:
                         - type: 'null'
                     type:
                       type: string
-                      enum: *ref_16
+                      enum: *ref_14
                   required:
                     - field
                     - operator
                     - value
                     - type
-            default: *ref_17
+            default: *ref_15
             required:
               - filterArray
             additionalProperties: false
@@ -3327,14 +3281,6 @@ components:
       required:
         - deleted
     RunMetricResponse: {}
-    GetSessionParams:
-      type: object
-      properties:
-        session_id:
-          type: string
-      required:
-        - session_id
-      description: Path parameters for retrieving a session by ID
     EventNode:
       type: object
       properties:
@@ -3406,14 +3352,6 @@ components:
       required:
         - request
       description: Session tree with nested events
-    DeleteSessionParams:
-      type: object
-      properties:
-        session_id:
-          type: string
-      required:
-        - session_id
-      description: Path parameters for deleting a session by ID
     DeleteSessionResponse:
       type: object
       properties:
@@ -3435,7 +3373,7 @@ components:
         parameters: {}
         tool_type:
           type: string
-          enum: &ref_18
+          enum: &ref_16
             - function
             - tool
       required:
@@ -3451,7 +3389,7 @@ components:
         parameters: {}
         tool_type:
           type: string
-          enum: *ref_18
+          enum: *ref_16
         id:
           type: string
           minLength: 1
@@ -3482,7 +3420,7 @@ components:
           parameters: {}
           tool_type:
             type: string
-            enum: *ref_18
+            enum: *ref_16
           created_at:
             type: string
           updated_at:
@@ -3511,7 +3449,7 @@ components:
             parameters: {}
             tool_type:
               type: string
-              enum: *ref_18
+              enum: *ref_16
             created_at:
               type: string
             updated_at:
@@ -3543,7 +3481,7 @@ components:
             parameters: {}
             tool_type:
               type: string
-              enum: *ref_18
+              enum: *ref_16
             created_at:
               type: string
             updated_at:
@@ -3575,7 +3513,7 @@ components:
             parameters: {}
             tool_type:
               type: string
-              enum: *ref_18
+              enum: *ref_16
             created_at:
               type: string
             updated_at:

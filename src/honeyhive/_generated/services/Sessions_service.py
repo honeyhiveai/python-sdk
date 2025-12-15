@@ -7,12 +7,12 @@ from ..models import *
 
 
 def getSession(
-    api_config_override: Optional[APIConfig] = None, *, session_id: GetSessionParams
+    api_config_override: Optional[APIConfig] = None, *, session_id: str
 ) -> GetSessionResponse:
     api_config = api_config_override if api_config_override else APIConfig()
 
     base_path = api_config.base_path
-    path = f"/sessions/{session_id}"
+    path = f"/v1/sessions/{session_id}"
     headers = {
         "Content-Type": "application/json",
         "Accept": "application/json",
@@ -44,12 +44,12 @@ def getSession(
 
 
 def deleteSession(
-    api_config_override: Optional[APIConfig] = None, *, session_id: DeleteSessionParams
+    api_config_override: Optional[APIConfig] = None, *, session_id: str
 ) -> DeleteSessionResponse:
     api_config = api_config_override if api_config_override else APIConfig()
 
     base_path = api_config.base_path
-    path = f"/sessions/{session_id}"
+    path = f"/v1/sessions/{session_id}"
     headers = {
         "Content-Type": "application/json",
         "Accept": "application/json",

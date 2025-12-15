@@ -15,7 +15,7 @@ async def getMetrics(
     api_config = api_config_override if api_config_override else APIConfig()
 
     base_path = api_config.base_path
-    path = f"/metrics"
+    path = f"/v1/metrics"
     headers = {
         "Content-Type": "application/json",
         "Accept": "application/json",
@@ -54,7 +54,7 @@ async def createMetric(
     api_config = api_config_override if api_config_override else APIConfig()
 
     base_path = api_config.base_path
-    path = f"/metrics"
+    path = f"/v1/metrics"
     headers = {
         "Content-Type": "application/json",
         "Accept": "application/json",
@@ -74,7 +74,7 @@ async def createMetric(
             httpx.URL(path),
             headers=headers,
             params=query_params,
-            json=data.dict(),
+            json=data.model_dump(exclude_none=True),
         )
 
     if response.status_code != 200:
@@ -94,7 +94,7 @@ async def updateMetric(
     api_config = api_config_override if api_config_override else APIConfig()
 
     base_path = api_config.base_path
-    path = f"/metrics"
+    path = f"/v1/metrics"
     headers = {
         "Content-Type": "application/json",
         "Accept": "application/json",
@@ -114,7 +114,7 @@ async def updateMetric(
             httpx.URL(path),
             headers=headers,
             params=query_params,
-            json=data.dict(),
+            json=data.model_dump(exclude_none=True),
         )
 
     if response.status_code != 200:
@@ -134,7 +134,7 @@ async def deleteMetric(
     api_config = api_config_override if api_config_override else APIConfig()
 
     base_path = api_config.base_path
-    path = f"/metrics"
+    path = f"/v1/metrics"
     headers = {
         "Content-Type": "application/json",
         "Accept": "application/json",
@@ -173,7 +173,7 @@ async def runMetric(
     api_config = api_config_override if api_config_override else APIConfig()
 
     base_path = api_config.base_path
-    path = f"/metrics/run_metric"
+    path = f"/v1/metrics/run_metric"
     headers = {
         "Content-Type": "application/json",
         "Accept": "application/json",
@@ -193,7 +193,7 @@ async def runMetric(
             httpx.URL(path),
             headers=headers,
             params=query_params,
-            json=data.dict(),
+            json=data.model_dump(exclude_none=True),
         )
 
     if response.status_code != 200:

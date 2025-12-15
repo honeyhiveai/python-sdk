@@ -24,10 +24,7 @@ import time
 from typing import Any, Dict, Optional, Tuple
 
 from honeyhive import HoneyHive
-from honeyhive.models import (
-    CreateConfigurationRequest,
-    CreateDatapointRequest,
-)
+from honeyhive.models import CreateConfigurationRequest, CreateDatapointRequest
 from honeyhive.utils.logger import get_logger
 
 from .backend_verification import verify_backend_event

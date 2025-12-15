@@ -1287,7 +1287,11 @@ def _create_new_session(tracer_instance: Any) -> None:
         session_response = tracer_instance.client.sessions.start(data=session_params)
 
         # Response is a dict with 'session_id' key
-        if session_response and isinstance(session_response, dict) and "session_id" in session_response:
+        if (
+            session_response
+            and isinstance(session_response, dict)
+            and "session_id" in session_response
+        ):
             # Preserve explicitly provided session_id if it was set
             # Otherwise use the session_id from the response
             provided_session_id = tracer_instance.session_id
