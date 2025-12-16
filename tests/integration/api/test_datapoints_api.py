@@ -6,7 +6,7 @@ from typing import Any
 
 import pytest
 
-from honeyhive.models import CreateDatapointRequest
+from honeyhive.models import CreateDatapointRequest, CreateDatapointResponse, GetDatapointsResponse
 
 
 class TestDatapointsAPI:
@@ -28,6 +28,7 @@ class TestDatapointsAPI:
         response = integration_client.datapoints.create(datapoint_request)
 
         # v1 API returns CreateDatapointResponse with inserted and result fields
+        assert isinstance(response, CreateDatapointResponse)
         assert response.inserted is True
         assert "insertedIds" in response.result
         assert len(response.result["insertedIds"]) > 0
@@ -51,6 +52,7 @@ class TestDatapointsAPI:
                 ground_truth={"response": f"response {i}"},
             )
             response = integration_client.datapoints.create(datapoint_request)
+            assert isinstance(response, CreateDatapointResponse)
             assert response.inserted is True
 
         time.sleep(2)
@@ -58,12 +60,8 @@ class TestDatapointsAPI:
         # Test listing - v1 API uses datapoint_ids or dataset_name, not project
         datapoints_response = integration_client.datapoints.list()
 
-        assert datapoints_response is not None
-        datapoints = (
-            datapoints_response.datapoints
-            if hasattr(datapoints_response, "datapoints")
-            else []
-        )
+        assert isinstance(datapoints_response, GetDatapointsResponse)
+        datapoints = datapoints_response.datapoints
         assert isinstance(datapoints, list)
 
     def test_update_datapoint(

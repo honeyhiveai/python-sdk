@@ -23,6 +23,7 @@ import pytest
 from honeyhive.models import (
     CreateConfigurationRequest,
     CreateDatapointRequest,
+    GetDatasetsResponse,
     GetEventsResponse,
 )
 from tests.utils import (  # pylint: disable=no-name-in-module
@@ -505,6 +506,7 @@ class TestEndToEndValidation:
 
             # Validate datapoint exists
             datapoints_response = integration_client.datapoints.list()
+            # GetDatapointsResponse has datapoints field
             datapoints = (
                 datapoints_response.datapoints
                 if hasattr(datapoints_response, "datapoints")

@@ -6,7 +6,7 @@ from typing import Any
 
 import pytest
 
-from honeyhive.models import CreateDatasetRequest
+from honeyhive.models import CreateDatasetRequest, GetDatasetsResponse
 
 
 class TestDatasetsAPI:
@@ -36,16 +36,12 @@ class TestDatasetsAPI:
 
         # Verify via list
         datasets_response = integration_client.datasets.list()
-        datasets = (
-            datasets_response.datapoints
-            if hasattr(datasets_response, "datapoints")
-            else []
-        )
+        assert isinstance(datasets_response, GetDatasetsResponse)
+        datasets = datasets_response.datapoints
         found = None
         for ds in datasets:
-            ds_name = (
-                ds.get("name") if isinstance(ds, dict) else getattr(ds, "name", None)
-            )
+            # GetDatasetsResponse.datapoints is List[Dict[str, Any]]
+            ds_name = ds.get("name")
             if ds_name == dataset_name:
                 found = ds
                 break
@@ -73,23 +69,13 @@ class TestDatasetsAPI:
 
         # Test retrieval via list (v1 doesn't have get_dataset method)
         datasets_response = integration_client.datasets.list(name=dataset_name)
-        datasets = (
-            datasets_response.datapoints
-            if hasattr(datasets_response, "datapoints")
-            else []
-        )
+        assert isinstance(datasets_response, GetDatasetsResponse)
+        datasets = datasets_response.datapoints
         assert len(datasets) >= 1
         dataset = datasets[0]
-        ds_name = (
-            dataset.get("name")
-            if isinstance(dataset, dict)
-            else getattr(dataset, "name", None)
-        )
-        ds_desc = (
-            dataset.get("description")
-            if isinstance(dataset, dict)
-            else getattr(dataset, "description", None)
-        )
+        # GetDatasetsResponse.datapoints is List[Dict[str, Any]]
+        ds_name = dataset.get("name")
+        ds_desc = dataset.get("description")
         assert ds_name == dataset_name
         assert ds_desc == "Test get dataset"
 
@@ -117,12 +103,8 @@ class TestDatasetsAPI:
         # Test listing
         datasets_response = integration_client.datasets.list()
 
-        assert datasets_response is not None
-        datasets = (
-            datasets_response.datapoints
-            if hasattr(datasets_response, "datapoints")
-            else []
-        )
+        assert isinstance(datasets_response, GetDatasetsResponse)
+        datasets = datasets_response.datapoints
         assert isinstance(datasets, list)
         assert len(datasets) >= 2
 
@@ -149,19 +131,12 @@ class TestDatasetsAPI:
         # Test filtering by name
         datasets_response = integration_client.datasets.list(name=unique_name)
 
-        assert datasets_response is not None
-        datasets = (
-            datasets_response.datapoints
-            if hasattr(datasets_response, "datapoints")
-            else []
-        )
+        assert isinstance(datasets_response, GetDatasetsResponse)
+        datasets = datasets_response.datapoints
         assert isinstance(datasets, list)
         assert len(datasets) >= 1
-        found = any(
-            (d.get("name") if isinstance(d, dict) else getattr(d, "name", None))
-            == unique_name
-            for d in datasets
-        )
+        # GetDatasetsResponse.datapoints is List[Dict[str, Any]]
+        found = any(d.get("name") == unique_name for d in datasets)
         assert found, f"Dataset with name {unique_name} not found in results"
 
         # Cleanup

@@ -6,7 +6,7 @@ from typing import Any
 
 import pytest
 
-from honeyhive.models import CreateMetricRequest
+from honeyhive.models import CreateMetricRequest, CreateMetricResponse, GetMetricsResponse
 
 
 class TestMetricsAPI:
@@ -32,25 +32,10 @@ class TestMetricsAPI:
 
         metric = integration_client.metrics.create(metric_request)
 
-        assert metric is not None
-        metric_name_attr = (
-            metric.get("name")
-            if isinstance(metric, dict)
-            else getattr(metric, "name", None)
-        )
-        metric_type_attr = (
-            metric.get("type")
-            if isinstance(metric, dict)
-            else getattr(metric, "type", None)
-        )
-        metric_desc_attr = (
-            metric.get("description")
-            if isinstance(metric, dict)
-            else getattr(metric, "description", None)
-        )
-        assert metric_name_attr == metric_name
-        assert metric_type_attr == "python"
-        assert metric_desc_attr == f"Test metric {test_id}"
+        assert isinstance(metric, CreateMetricResponse)
+        assert metric.name == metric_name
+        assert metric.type == "python"
+        assert metric.description == f"Test metric {test_id}"
 
     @pytest.mark.skip(
         reason="Backend Issue: createMetric endpoint returns 400 Bad Request error (blocks retrieval test)"
@@ -72,13 +57,8 @@ class TestMetricsAPI:
 
         created_metric = integration_client.metrics.create(metric_request)
 
-        metric_id = (
-            created_metric.get("id")
-            if isinstance(created_metric, dict)
-            else getattr(
-                created_metric, "id", getattr(created_metric, "metric_id", None)
-            )
-        )
+        assert isinstance(created_metric, CreateMetricResponse)
+        metric_id = getattr(created_metric, "id", getattr(created_metric, "metric_id", None))
         if not metric_id:
             pytest.skip(
                 "Metric creation didn't return ID - backend may not support retrieval"
@@ -87,35 +67,21 @@ class TestMetricsAPI:
 
         # v1 API doesn't have get_metric by ID - use list and filter
         metrics_response = integration_client.metrics.list(name=metric_name)
-        metrics = (
-            metrics_response.metrics if hasattr(metrics_response, "metrics") else []
-        )
+        assert isinstance(metrics_response, GetMetricsResponse)
+        metrics = metrics_response.metrics
         retrieved_metric = None
         for m in metrics:
-            m_name = m.get("name") if isinstance(m, dict) else getattr(m, "name", None)
+            # GetMetricsResponse.metrics is List[Dict[str, Any]]
+            m_name = m.get("name")
             if m_name == metric_name:
                 retrieved_metric = m
                 break
 
         assert retrieved_metric is not None
-        ret_name = (
-            retrieved_metric.get("name")
-            if isinstance(retrieved_metric, dict)
-            else getattr(retrieved_metric, "name", None)
-        )
-        ret_type = (
-            retrieved_metric.get("type")
-            if isinstance(retrieved_metric, dict)
-            else getattr(retrieved_metric, "type", None)
-        )
-        ret_desc = (
-            retrieved_metric.get("description")
-            if isinstance(retrieved_metric, dict)
-            else getattr(retrieved_metric, "description", None)
-        )
-        assert ret_name == metric_name
-        assert ret_type == "python"
-        assert ret_desc == "Test metric for retrieval"
+        # GetMetricsResponse.metrics is List[Dict[str, Any]]
+        assert retrieved_metric.get("name") == metric_name
+        assert retrieved_metric.get("type") == "python"
+        assert retrieved_metric.get("description") == "Test metric for retrieval"
 
     @pytest.mark.skip(
         reason="Backend Issue: createMetric endpoint returns 400 Bad Request error (blocks list test)"
@@ -140,10 +106,8 @@ class TestMetricsAPI:
 
         metrics_response = integration_client.metrics.list()
 
-        assert metrics_response is not None
-        metrics = (
-            metrics_response.metrics if hasattr(metrics_response, "metrics") else []
-        )
+        assert isinstance(metrics_response, GetMetricsResponse)
+        metrics = metrics_response.metrics
         assert isinstance(metrics, list)
         # May be empty, that's ok - basic existence check
         assert len(metrics) >= 0

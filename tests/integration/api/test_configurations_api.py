@@ -6,7 +6,11 @@ from typing import Any
 
 import pytest
 
-from honeyhive.models import CreateConfigurationRequest
+from honeyhive.models import (
+    CreateConfigurationRequest,
+    CreateConfigurationResponse,
+    GetConfigurationsResponse,
+)
 
 
 class TestConfigurationsAPI:
@@ -42,9 +46,8 @@ class TestConfigurationsAPI:
 
         response = integration_client.configurations.create(config_request)
 
-        assert hasattr(response, "acknowledged")
+        assert isinstance(response, CreateConfigurationResponse)
         assert response.acknowledged is True
-        assert hasattr(response, "insertedId")
         assert response.insertedId is not None
 
         created_id = response.insertedId
@@ -52,7 +55,9 @@ class TestConfigurationsAPI:
         time.sleep(2)
 
         configs = integration_client.configurations.list()
-        assert configs is not None
+        # configurations.list() returns List[GetConfigurationsResponse]
+        assert isinstance(configs, list)
+        assert all(isinstance(cfg, GetConfigurationsResponse) for cfg in configs)
         found = None
         for cfg in configs:
             if hasattr(cfg, "name") and cfg.name == config_name:
@@ -129,8 +134,9 @@ class TestConfigurationsAPI:
 
         configs = integration_client.configurations.list()
 
-        assert configs is not None
+        # configurations.list() returns List[GetConfigurationsResponse]
         assert isinstance(configs, list)
+        assert all(isinstance(cfg, GetConfigurationsResponse) for cfg in configs)
 
         # Cleanup
         for config_id in created_ids:
