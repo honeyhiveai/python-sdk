@@ -79,9 +79,9 @@ openinference-anthropic = [
     "anthropic>=0.18.0",
 ]
 
-# Google Generative AI (openinference-google-generativeai)
+# Google Generative AI (openinference-google-genai)
 openinference-google-ai = [
-    "openinference-instrumentation-google-generativeai>=0.1.0",
+    "openinference-instrumentation-google-genai>=0.1.0",
     "google-generativeai>=0.3.0",
 ]
 
@@ -154,41 +154,81 @@ traceloop-mcp = [
 
 # Convenience Groups (OpenInference Instrumentors)
 # All Available OpenInference Integrations (documented only)
+# Note: Must list actual packages, not extra names (pyproject.toml doesn't support extra references)
 all-openinference = [
-    "openinference-openai",
-    "openinference-anthropic",
-    "openinference-google-ai",
-    "openinference-google-adk",
-    "openinference-aws-bedrock",
-    "openinference-azure-openai",
-    "openinference-mcp",
+    # openinference-openai
+    "openinference-instrumentation-openai>=0.1.0",
+    "openai>=1.0.0",
+    # openinference-anthropic
+    "openinference-instrumentation-anthropic>=0.1.0",
+    "anthropic>=0.18.0",
+    # openinference-google-ai
+    "openinference-instrumentation-google-genai>=0.1.0",
+    "google-generativeai>=0.3.0",
+    # openinference-google-adk
+    "openinference-instrumentation-google-adk>=0.1.0",
+    "google-adk>=0.1.0",
+    # openinference-aws-bedrock
+    "openinference-instrumentation-bedrock>=0.1.0",
+    "boto3>=1.26.0",
+    # openinference-azure-openai (openai already included above)
+    "azure-identity>=1.12.0",
+    # openinference-mcp
+    "openinference-instrumentation-mcp>=1.3.0",
 ]
 
 # Common LLM Providers (OpenInference Ecosystem)
 openinference-llm-providers = [
-    "openinference-openai",
-    "openinference-anthropic",
-    "openinference-google-ai",
-    "openinference-aws-bedrock",
+    # openinference-openai
+    "openinference-instrumentation-openai>=0.1.0",
+    "openai>=1.0.0",
+    # openinference-anthropic
+    "openinference-instrumentation-anthropic>=0.1.0",
+    "anthropic>=0.18.0",
+    # openinference-google-ai
+    "openinference-instrumentation-google-genai>=0.1.0",
+    "google-generativeai>=0.3.0",
+    # openinference-aws-bedrock
+    "openinference-instrumentation-bedrock>=0.1.0",
+    "boto3>=1.26.0",
 ]
 
 # OpenLLMetry (Traceloop) Convenience Groups
 # All Available Traceloop Integrations (documented only)
+# Note: Must list actual packages, not extra names (pyproject.toml doesn't support extra references)
 all-traceloop = [
-    "traceloop-openai",
-    "traceloop-anthropic",
-    "traceloop-google-ai",
-    "traceloop-aws-bedrock",
-    "traceloop-azure-openai",
-    "traceloop-mcp",
+    # traceloop-openai
+    "opentelemetry-instrumentation-openai>=0.46.0,<1.0.0",
+    "openai>=1.0.0",
+    # traceloop-anthropic
+    "opentelemetry-instrumentation-anthropic>=0.46.0,<1.0.0",
+    "anthropic>=0.17.0",
+    # traceloop-google-ai
+    "opentelemetry-instrumentation-google-generativeai>=0.46.0,<1.0.0",
+    "google-generativeai>=0.3.0",
+    # traceloop-aws-bedrock
+    "opentelemetry-instrumentation-bedrock>=0.46.0,<1.0.0",
+    "boto3>=1.26.0",
+    # traceloop-azure-openai (openai already included above)
+    "azure-identity>=1.12.0",
+    # traceloop-mcp
+    "opentelemetry-instrumentation-mcp>=0.46.0,<1.0.0",
 ]
 
 # Common LLM Providers (Traceloop Ecosystem)
 traceloop-llm-providers = [
-    "traceloop-openai",
-    "traceloop-anthropic", 
-    "traceloop-google-ai",
-    "traceloop-aws-bedrock",
+    # traceloop-openai
+    "opentelemetry-instrumentation-openai>=0.46.0,<1.0.0",
+    "openai>=1.0.0",
+    # traceloop-anthropic
+    "opentelemetry-instrumentation-anthropic>=0.46.0,<1.0.0",
+    "anthropic>=0.17.0",
+    # traceloop-google-ai
+    "opentelemetry-instrumentation-google-generativeai>=0.46.0,<1.0.0",
+    "google-generativeai>=0.3.0",
+    # traceloop-aws-bedrock
+    "opentelemetry-instrumentation-bedrock>=0.46.0,<1.0.0",
+    "boto3>=1.26.0",
 ]
 
 [project.urls]
