@@ -92,25 +92,19 @@ paths:
         content:
           application/json:
             schema:
-              type: object
-              properties:
-                event:
-                  $ref: '#/components/schemas/TODOSchema'
+              $ref: '#/components/schemas/PostEventRequest'
       responses:
         '200':
-          description: Event created
+          description: Event created successfully
           content:
             application/json:
               schema:
-                type: object
-                properties:
-                  event_id:
-                    type: string
-                  success:
-                    type: boolean
-                example:
-                  event_id: 7f22137a-6911-4ed3-bc36-110f1dde6b66
-                  success: true
+                $ref: '#/components/schemas/PostEventResponse'
+              example:
+                event_id: 7f22137a-6911-4ed3-bc36-110f1dde6b66
+                success: true
+        '400':
+          description: Bad request (invalid event data or missing required fields)
     put:
       tags:
         - Events
@@ -173,6 +167,245 @@ paths:
           description: Event updated
         '400':
           description: Bad request
+    get:
+      tags:
+        - Events
+      operationId: getEvents
+      summary: Query events with filters and projections
+      description: Retrieve events with optional filtering, projections, and pagination
+      parameters:
+        - name: dateRange
+          in: query
+          required: false
+          schema:
+            oneOf:
+              - type: string
+              - type: object
+                properties:
+                  $gte:
+                    type: string
+                    format: date-time
+                  $lte:
+                    type: string
+                    format: date-time
+          description: Date range filter (ISO string or object with $gte/$lte)
+        - name: filters
+          in: query
+          required: false
+          schema:
+            oneOf:
+              - type: array
+                items:
+                  type: object
+              - type: string
+          description: Array of filter objects or JSON string
+        - name: projections
+          in: query
+          required: false
+          schema:
+            oneOf:
+              - type: array
+                items:
+                  type: string
+              - type: string
+          description: Fields to include in response (array or JSON string)
+        - name: ignore_order
+          in: query
+          required: false
+          schema:
+            oneOf:
+              - type: boolean
+              - type: string
+          description: Whether to ignore ordering
+        - name: limit
+          in: query
+          required: false
+          schema:
+            oneOf:
+              - type: integer
+              - type: string
+          description: Maximum number of results (default 1000)
+        - name: page
+          in: query
+          required: false
+          schema:
+            oneOf:
+              - type: integer
+              - type: string
+          description: Page number (default 1)
+        - name: evaluation_id
+          in: query
+          required: false
+          schema:
+            type: string
+          description: Filter by evaluation ID
+      responses:
+        '200':
+          description: Events retrieved successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GetEventsResponse'
+        '400':
+          description: Bad request (missing required scopes or invalid parameters)
+  /v1/events/chart:
+    get:
+      tags:
+        - Events
+      operationId: getEventsChart
+      summary: Get charting data for events
+      description: Retrieve aggregated chart data for events with optional grouping and bucketing
+      parameters:
+        - name: dateRange
+          in: query
+          required: false
+          schema:
+            oneOf:
+              - type: string
+              - type: object
+                properties:
+                  $gte:
+                    type: string
+                    format: date-time
+                  $lte:
+                    type: string
+                    format: date-time
+          description: Date range filter (ISO string or object with $gte/$lte)
+        - name: filters
+          in: query
+          required: false
+          schema:
+            oneOf:
+              - type: array
+                items:
+                  type: object
+              - type: string
+          description: Array of filter objects or JSON string
+        - name: metric
+          in: query
+          required: false
+          schema:
+            type: string
+          description: Metric to aggregate (default 'duration')
+        - name: groupBy
+          in: query
+          required: false
+          schema:
+            type: string
+          description: Field to group by
+        - name: bucket
+          in: query
+          required: false
+          schema:
+            type: string
+            enum:
+              - minute
+              - minutes
+              - 1m
+              - hour
+              - hours
+              - 1h
+              - day
+              - days
+              - 1d
+              - week
+              - weeks
+              - 1w
+              - month
+              - months
+              - 1M
+          description: Time bucket for aggregation (default 'hour')
+        - name: aggregation
+          in: query
+          required: false
+          schema:
+            type: string
+            enum:
+              - avg
+              - average
+              - mean
+              - p50
+              - p75
+              - p90
+              - p95
+              - p99
+              - count
+              - sum
+              - min
+              - max
+              - median
+          description: Aggregation function (default 'average')
+        - name: evaluation_id
+          in: query
+          required: false
+          schema:
+            type: string
+          description: Filter by evaluation ID
+        - name: only_experiments
+          in: query
+          required: false
+          schema:
+            oneOf:
+              - type: boolean
+              - type: string
+          description: Filter to only experiment events
+      responses:
+        '200':
+          description: Chart data retrieved successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GetEventsChartResponse'
+        '400':
+          description: Bad request (missing required scopes or invalid parameters)
+  /v1/events/{session_id}:
+    get:
+      tags:
+        - Events
+      operationId: getEventsBySessionId
+      summary: Get nested events for a session
+      description: Retrieve all nested events for a specific session ID
+      parameters:
+        - name: session_id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+          description: Session ID (UUIDv4)
+      responses:
+        '200':
+          description: Session events retrieved successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GetEventsBySessionIdResponse'
+        '400':
+          description: Bad request (missing required scopes or invalid session ID)
+  /v1/events/{event_id}:
+    delete:
+      tags:
+        - Events
+      operationId: deleteEvent
+      summary: Delete an event
+      description: Delete a specific event by event ID
+      parameters:
+        - name: event_id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+          description: Event ID (UUIDv4)
+      responses:
+        '200':
+          description: Event deleted successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DeleteEventResponse'
+        '400':
+          description: Bad request (missing required scopes or invalid event ID)
   /v1/events/export:
     post:
       tags:
@@ -2203,6 +2436,366 @@ components:
       required:
         - dereferenced
         - message
+    Event:
+      type: object
+      properties:
+        event_id:
+          type: string
+        project_id:
+          type: string
+        tenant:
+          type: string
+        event_name:
+          type: string
+        event_type:
+          type: string
+        metrics:
+          type: object
+          additionalProperties: {}
+        metadata:
+          type: object
+          additionalProperties: {}
+        feedback:
+          type: object
+          properties:
+            ground_truth: {}
+      required:
+        - event_id
+        - project_id
+        - tenant
+    PostEventRequest:
+      type: object
+      properties:
+        event:
+          type: object
+          properties:
+            event_id:
+              type: string
+            project_id:
+              type: string
+            tenant:
+              type: string
+            event_name:
+              type: string
+            event_type:
+              type: string
+            metrics:
+              type: object
+              additionalProperties: {}
+            metadata:
+              type: object
+              additionalProperties: {}
+            feedback:
+              type: object
+              properties:
+                ground_truth: {}
+          required:
+            - event_id
+            - project_id
+            - tenant
+      required:
+        - event
+      description: Request to create a new event
+    GetEventsQuery:
+      type: object
+      properties:
+        dateRange:
+          anyOf:
+            - type: object
+              properties:
+                $gte:
+                  type: string
+                  format: date-time
+                $lte:
+                  type: string
+                  format: date-time
+              required:
+                - $gte
+                - $lte
+            - type: string
+        filters:
+          anyOf:
+            - type: array
+              items:
+                type: object
+                properties:
+                  field:
+                    type: string
+                  operator:
+                    anyOf:
+                      - type: string
+                        enum: &ref_9
+                          - exists
+                          - not exists
+                          - is
+                          - is not
+                          - contains
+                          - not contains
+                      - type: string
+                        enum: &ref_10
+                          - exists
+                          - not exists
+                          - is
+                          - is not
+                          - greater than
+                          - less than
+                      - type: string
+                        enum: &ref_11
+                          - exists
+                          - not exists
+                          - is
+                      - type: string
+                        enum: &ref_12
+                          - exists
+                          - not exists
+                          - is
+                          - is not
+                          - after
+                          - before
+                  value:
+                    anyOf:
+                      - type: string
+                      - type: number
+                      - type: boolean
+                      - type: 'null'
+                      - type: 'null'
+                  type:
+                    type: string
+                    enum: &ref_13
+                      - string
+                      - number
+                      - boolean
+                      - datetime
+                required:
+                  - field
+                  - operator
+                  - value
+                  - type
+            - type: string
+            - type: array
+              items:
+                type: string
+        projections:
+          anyOf:
+            - type: array
+              items:
+                type: string
+            - type: string
+        ignore_order:
+          anyOf:
+            - type: boolean
+            - type: string
+        limit:
+          anyOf:
+            - type: number
+            - type: string
+        page:
+          anyOf:
+            - type: number
+            - type: string
+        evaluation_id:
+          type: string
+      description: Query parameters for GET /events
+    GetEventsChartQuery:
+      type: object
+      properties:
+        dateRange:
+          anyOf:
+            - type: object
+              properties:
+                $gte:
+                  type: string
+                  format: date-time
+                $lte:
+                  type: string
+                  format: date-time
+              required:
+                - $gte
+                - $lte
+            - type: string
+        filters:
+          anyOf:
+            - type: array
+              items:
+                type: object
+                properties:
+                  field:
+                    type: string
+                  operator:
+                    anyOf:
+                      - type: string
+                        enum: *ref_9
+                      - type: string
+                        enum: *ref_10
+                      - type: string
+                        enum: *ref_11
+                      - type: string
+                        enum: *ref_12
+                  value:
+                    anyOf:
+                      - type: string
+                      - type: number
+                      - type: boolean
+                      - type: 'null'
+                      - type: 'null'
+                  type:
+                    type: string
+                    enum: *ref_13
+                required:
+                  - field
+                  - operator
+                  - value
+                  - type
+            - type: string
+            - type: array
+              items:
+                type: string
+        metric:
+          type: string
+        groupBy:
+          type: string
+        bucket:
+          type: string
+        aggregation:
+          type: string
+        evaluation_id:
+          type: string
+        only_experiments:
+          anyOf:
+            - type: boolean
+            - type: string
+      description: Query parameters for GET /events/chart
+    GetEventsBySessionIdParams:
+      type: object
+      properties:
+        session_id:
+          type: string
+      required:
+        - session_id
+      description: Path parameters for GET /events/:session_id
+    DeleteEventParams:
+      type: object
+      properties:
+        event_id:
+          type: string
+      required:
+        - event_id
+      description: Path parameters for DELETE /events/:event_id
+    PostEventResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+        event_id:
+          type: string
+      required:
+        - success
+      description: Response after creating an event
+    GetEventsResponse:
+      type: object
+      properties:
+        events:
+          type: array
+          items: {}
+        totalEvents:
+          type: number
+      required:
+        - events
+        - totalEvents
+    GetEventsChartResponse:
+      type: object
+      properties:
+        events:
+          type: array
+          items: {}
+        totalEvents:
+          type: number
+      required:
+        - events
+        - totalEvents
+      description: Chart data response for events
+    EventNode:
+      type: object
+      properties:
+        event_id:
+          type: string
+        event_type:
+          type: string
+          enum:
+            - session
+            - model
+            - chain
+            - tool
+        event_name:
+          type: string
+        parent_id:
+          type: string
+        children:
+          type: array
+          items: {}
+        start_time:
+          type: number
+        end_time:
+          type: number
+        duration:
+          type: number
+        metadata:
+          type: object
+          properties:
+            num_events:
+              type: number
+            num_model_events:
+              type: number
+            has_feedback:
+              type: boolean
+            cost:
+              type: number
+            total_tokens:
+              type: number
+            prompt_tokens:
+              type: number
+            completion_tokens:
+              type: number
+            scope:
+              type: object
+              properties:
+                name:
+                  type: string
+        session_id:
+          type: string
+        children_ids:
+          type: array
+          items:
+            type: string
+      required:
+        - event_id
+        - event_type
+        - event_name
+        - children
+        - start_time
+        - end_time
+        - duration
+        - metadata
+      description: Event node in session tree with nested children
+    GetEventsBySessionIdResponse:
+      type: object
+      properties:
+        request:
+          $ref: '#/components/schemas/EventNode'
+      required:
+        - request
+      description: Session tree with nested events
+    DeleteEventResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+        deleted:
+          type: string
+      required:
+        - success
+        - deleted
+      description: Response for DELETE /events/:event_id
     PostExperimentRunRequest:
       type: object
       properties:
@@ -2599,7 +3192,7 @@ components:
           default: ''
         return_type:
           type: string
-          enum: &ref_9
+          enum: &ref_14
             - float
             - boolean
             - string
@@ -2703,34 +3296,13 @@ components:
                   operator:
                     anyOf:
                       - type: string
-                        enum: &ref_10
-                          - exists
-                          - not exists
-                          - is
-                          - is not
-                          - contains
-                          - not contains
+                        enum: *ref_9
                       - type: string
-                        enum: &ref_11
-                          - exists
-                          - not exists
-                          - is
-                          - is not
-                          - greater than
-                          - less than
+                        enum: *ref_10
                       - type: string
-                        enum: &ref_12
-                          - exists
-                          - not exists
-                          - is
+                        enum: *ref_11
                       - type: string
-                        enum: &ref_13
-                          - exists
-                          - not exists
-                          - is
-                          - is not
-                          - after
-                          - before
+                        enum: *ref_12
                   value:
                     anyOf:
                       - type: string
@@ -2740,11 +3312,7 @@ components:
                       - type: 'null'
                   type:
                     type: string
-                    enum: &ref_14
-                      - string
-                      - number
-                      - boolean
-                      - datetime
+                    enum: *ref_13
                 required:
                   - field
                   - operator
@@ -2780,7 +3348,7 @@ components:
           default: ''
         return_type:
           type: string
-          enum: *ref_9
+          enum: *ref_14
           default: float
         enabled_in_prod:
           type: boolean
@@ -2880,13 +3448,13 @@ components:
                   operator:
                     anyOf:
                       - type: string
+                        enum: *ref_9
+                      - type: string
                         enum: *ref_10
                       - type: string
                         enum: *ref_11
                       - type: string
                         enum: *ref_12
-                      - type: string
-                        enum: *ref_13
                   value:
                     anyOf:
                       - type: string
@@ -2896,7 +3464,7 @@ components:
                       - type: 'null'
                   type:
                     type: string
-                    enum: *ref_14
+                    enum: *ref_13
                 required:
                   - field
                   - operator
@@ -2951,7 +3519,7 @@ components:
               default: ''
             return_type:
               type: string
-              enum: *ref_9
+              enum: *ref_14
               default: float
             enabled_in_prod:
               type: boolean
@@ -3051,13 +3619,13 @@ components:
                       operator:
                         anyOf:
                           - type: string
+                            enum: *ref_9
+                          - type: string
                             enum: *ref_10
                           - type: string
                             enum: *ref_11
                           - type: string
                             enum: *ref_12
-                          - type: string
-                            enum: *ref_13
                       value:
                         anyOf:
                           - type: string
@@ -3067,7 +3635,7 @@ components:
                           - type: 'null'
                       type:
                         type: string
-                        enum: *ref_14
+                        enum: *ref_13
                     required:
                       - field
                       - operator
@@ -3107,7 +3675,7 @@ components:
             default: ''
           return_type:
             type: string
-            enum: *ref_9
+            enum: *ref_14
             default: float
           enabled_in_prod:
             type: boolean
@@ -3207,13 +3775,13 @@ components:
                     operator:
                       anyOf:
                         - type: string
+                          enum: *ref_9
+                        - type: string
                           enum: *ref_10
                         - type: string
                           enum: *ref_11
                         - type: string
                           enum: *ref_12
-                        - type: string
-                          enum: *ref_13
                     value:
                       anyOf:
                         - type: string
@@ -3223,7 +3791,7 @@ components:
                         - type: 'null'
                     type:
                       type: string
-                      enum: *ref_14
+                      enum: *ref_13
                   required:
                     - field
                     - operator
@@ -3373,69 +3941,6 @@ components:
             - number
             - 'null'
       description: Full session event object returned after starting a new session
-    EventNode:
-      type: object
-      properties:
-        event_id:
-          type: string
-        event_type:
-          type: string
-          enum:
-            - session
-            - model
-            - chain
-            - tool
-        event_name:
-          type: string
-        parent_id:
-          type: string
-        children:
-          type: array
-          items: {}
-        start_time:
-          type: number
-        end_time:
-          type: number
-        duration:
-          type: number
-        metadata:
-          type: object
-          properties:
-            num_events:
-              type: number
-            num_model_events:
-              type: number
-            has_feedback:
-              type: boolean
-            cost:
-              type: number
-            total_tokens:
-              type: number
-            prompt_tokens:
-              type: number
-            completion_tokens:
-              type: number
-            scope:
-              type: object
-              properties:
-                name:
-                  type: string
-        session_id:
-          type: string
-        children_ids:
-          type: array
-          items:
-            type: string
-      required:
-        - event_id
-        - event_type
-        - event_name
-        - children
-        - start_time
-        - end_time
-        - duration
-        - metadata
-      description: Event node in session tree with nested children
     GetSessionResponse:
       type: object
       properties:

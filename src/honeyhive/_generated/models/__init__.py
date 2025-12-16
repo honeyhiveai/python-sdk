@@ -17,6 +17,8 @@ from .DeleteDatapointParams import *
 from .DeleteDatapointResponse import *
 from .DeleteDatasetQuery import *
 from .DeleteDatasetResponse import *
+from .DeleteEventParams import *
+from .DeleteEventResponse import *
 from .DeleteExperimentRunParams import *
 from .DeleteExperimentRunResponse import *
 from .DeleteMetricQuery import *
@@ -24,6 +26,7 @@ from .DeleteMetricResponse import *
 from .DeleteSessionResponse import *
 from .DeleteToolQuery import *
 from .DeleteToolResponse import *
+from .Event import *
 from .EventNode import *
 from .GetConfigurationsQuery import *
 from .GetConfigurationsResponse import *
@@ -33,6 +36,12 @@ from .GetDatapointsQuery import *
 from .GetDatapointsResponse import *
 from .GetDatasetsQuery import *
 from .GetDatasetsResponse import *
+from .GetEventsBySessionIdParams import *
+from .GetEventsBySessionIdResponse import *
+from .GetEventsChartQuery import *
+from .GetEventsChartResponse import *
+from .GetEventsQuery import *
+from .GetEventsResponse import *
 from .GetExperimentRunCompareEventsQuery import *
 from .GetExperimentRunCompareParams import *
 from .GetExperimentRunCompareQuery import *
@@ -48,6 +57,8 @@ from .GetMetricsQuery import *
 from .GetMetricsResponse import *
 from .GetSessionResponse import *
 from .GetToolsResponse import *
+from .PostEventRequest import *
+from .PostEventResponse import *
 from .PostExperimentRunRequest import *
 from .PostExperimentRunResponse import *
 from .PostSessionRequest import *
