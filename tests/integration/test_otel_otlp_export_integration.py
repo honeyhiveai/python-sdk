@@ -119,6 +119,7 @@ class TestOTELOTLPExportIntegration:
             tracer=integration_tracer,
             client=integration_client,
             project=real_project,
+            session_id=integration_tracer.session_id,
             span_name="otlp_config_verification",
             unique_identifier=unique_id,
             span_attributes={
@@ -207,6 +208,7 @@ class TestOTELOTLPExportIntegration:
             tracer=integration_tracer,
             client=integration_client,
             project=real_project,
+            session_id=integration_tracer.session_id,
             span_name="otlp_real_backend_verification",
             unique_identifier=unique_id,
             span_attributes={
@@ -258,6 +260,7 @@ class TestOTELOTLPExportIntegration:
             tracer=integration_tracer,
             client=integration_client,
             project=real_project,
+            session_id=integration_tracer.session_id,
             span_name=test_operation_name,
             unique_identifier=unique_id,
             span_attributes={
@@ -367,6 +370,7 @@ class TestOTELOTLPExportIntegration:
             tracer=integration_tracer,
             client=integration_client,
             project=real_project,
+            session_id=integration_tracer.session_id,
             span_name="otlp_batch_verification",
             unique_identifier=unique_id,
             span_attributes={
@@ -450,6 +454,7 @@ class TestOTELOTLPExportIntegration:
             tracer=integration_tracer,
             client=integration_client,
             project=real_project,
+            session_id=integration_tracer.session_id,
             span_name="otlp_decorator_spans_verification",
             unique_identifier=unique_id,
             span_attributes={
@@ -565,6 +570,7 @@ class TestOTELOTLPExportIntegration:
             tracer=integration_tracer,
             client=integration_client,
             project=real_project,
+            session_id=integration_tracer.session_id,
             span_name="otlp_error_handling_verification",
             unique_identifier=unique_id,
             span_attributes={
@@ -669,6 +675,7 @@ class TestOTELOTLPExportIntegration:
             tracer=integration_tracer,
             client=integration_client,
             project=real_project,
+            session_id=integration_tracer.session_id,
             unique_identifier=unique_id,
             span_name="otlp_high_cardinality_verification",
             span_attributes={
@@ -725,6 +732,7 @@ class TestOTELOTLPExportIntegration:
             tracer=integration_tracer,
             client=integration_client,
             project=real_project,
+            session_id=integration_tracer.session_id,
             span_name="otlp_performance_verification",
             unique_identifier=unique_id,
             span_attributes={
@@ -784,6 +792,7 @@ class TestOTELOTLPExportIntegration:
             tracer=integration_tracer,
             client=integration_client,
             project=real_project,
+            session_id=integration_tracer.session_id,
             span_name="otlp_custom_headers_verification",
             unique_identifier=unique_id,
             span_attributes={
@@ -843,6 +852,7 @@ class TestOTELOTLPExportIntegration:
             tracer=tracer_batch,
             client=integration_client,
             project=real_project,
+            session_id=tracer_batch.session_id,
             span_name="otlp_batch_vs_simple_verification",
             unique_identifier=unique_id,
             span_attributes={

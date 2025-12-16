@@ -60,6 +60,7 @@ class TestOTELSpanLifecycleIntegration:
             tracer=integration_tracer,
             client=integration_client,
             project=real_project,
+            session_id=integration_tracer.session_id,
             span_name=test_operation_name,
             unique_identifier=test_unique_id,
             span_attributes={
@@ -159,6 +160,7 @@ class TestOTELSpanLifecycleIntegration:
             tracer=integration_tracer,
             client=integration_client,
             project=real_project,
+            session_id=integration_tracer.session_id,
             span_name=test_operation_name,
             unique_identifier=test_unique_id,
             span_attributes={
@@ -225,6 +227,7 @@ class TestOTELSpanLifecycleIntegration:
             tracer=integration_tracer,
             client=integration_client,
             project=real_project,
+            session_id=integration_tracer.session_id,
             span_name=f"{test_operation_name}_success",
             unique_identifier=f"{test_unique_id}_success",
             span_attributes={
@@ -246,6 +249,7 @@ class TestOTELSpanLifecycleIntegration:
             tracer=integration_tracer,
             client=integration_client,
             project=real_project,
+            session_id=integration_tracer.session_id,
             span_name=f"{test_operation_name}_error",
             unique_identifier=f"{test_unique_id}_error",
             span_attributes={
@@ -298,6 +302,7 @@ class TestOTELSpanLifecycleIntegration:
             tracer=integration_tracer,
             client=integration_client,
             project=real_project,
+            session_id=integration_tracer.session_id,
             span_name=f"{test_operation_name}_parent",
             unique_identifier=f"{test_unique_id}_parent",
             span_attributes={
@@ -321,6 +326,7 @@ class TestOTELSpanLifecycleIntegration:
                     tracer=integration_tracer,
                     client=integration_client,
                     project=real_project,
+                    session_id=integration_tracer.session_id,
                     span_name=f"{test_operation_name}_child_{i}",
                     unique_identifier=f"{test_unique_id}_child_{i}",
                     span_attributes={
@@ -351,6 +357,7 @@ class TestOTELSpanLifecycleIntegration:
                 tracer=integration_tracer,
                 client=integration_client,
                 project=real_project,
+                session_id=integration_tracer.session_id,
                 span_name=f"{test_operation_name}_grandchild",
                 unique_identifier=f"{test_unique_id}_grandchild",
                 span_attributes={
@@ -409,6 +416,7 @@ class TestOTELSpanLifecycleIntegration:
             tracer=integration_tracer,
             client=integration_client,
             project=real_project,
+            session_id=integration_tracer.session_id,
             span_name=parent_event_name,
             unique_identifier=f"{test_unique_id}_parent",
             span_attributes={
@@ -431,6 +439,7 @@ class TestOTELSpanLifecycleIntegration:
                 tracer=integration_tracer,
                 client=integration_client,
                 project=real_project,
+                session_id=integration_tracer.session_id,
                 span_name=child_event_name,
                 unique_identifier=f"{test_unique_id}_child",
                 span_attributes={

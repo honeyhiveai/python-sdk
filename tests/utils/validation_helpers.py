@@ -281,6 +281,7 @@ def verify_configuration_creation(
 def verify_event_creation(
     client: HoneyHive,
     project: str,
+    session_id: str,
     event_request: Dict[str, Any],
     unique_identifier: str,
     expected_event_name: Optional[str] = None,
@@ -293,6 +294,7 @@ def verify_event_creation(
     Args:
         client: HoneyHive client instance
         project: Project name for filtering
+        session_id: Session ID for backend verification
         event_request: Event creation request
         unique_identifier: Unique identifier for backend verification
         expected_event_name: Expected event name for validation
@@ -331,6 +333,7 @@ def verify_event_creation(
         return verify_backend_event(
             client=client,
             project=project,
+            session_id=session_id,
             unique_identifier=unique_identifier,
             expected_event_name=expected_name,
         )
@@ -342,6 +345,7 @@ def verify_event_creation(
 def verify_span_export(
     client: HoneyHive,
     project: str,
+    session_id: str,
     unique_identifier: str,
     expected_event_name: str,
     debug_content: bool = False,
@@ -353,6 +357,7 @@ def verify_span_export(
     Args:
         client: HoneyHive client instance
         project: Project name for filtering
+        session_id: Session ID for backend verification
         unique_identifier: Unique identifier for span identification
         expected_event_name: Expected event name for the span
         debug_content: Whether to log detailed event content for debugging
@@ -367,6 +372,7 @@ def verify_span_export(
         return verify_backend_event(
             client=client,
             project=project,
+            session_id=session_id,
             unique_identifier=unique_identifier,
             expected_event_name=expected_event_name,
             debug_content=debug_content,
@@ -380,6 +386,7 @@ def verify_tracer_span(  # pylint: disable=R0917
     tracer: Any,
     client: HoneyHive,
     project: str,
+    session_id: str,
     span_name: str,
     unique_identifier: str,
     span_attributes: Optional[Dict[str, Any]] = None,
@@ -393,6 +400,7 @@ def verify_tracer_span(  # pylint: disable=R0917
         tracer: HoneyHive tracer instance
         client: HoneyHive client instance
         project: Project name
+        session_id: Session ID for backend verification
         span_name: Name for the span
         unique_identifier: Unique identifier for verification
         span_attributes: Optional attributes to set on the span
@@ -414,6 +422,7 @@ def verify_tracer_span(  # pylint: disable=R0917
     return verify_span_export(
         client=client,
         project=project,
+        session_id=session_id,
         unique_identifier=unique_identifier,
         expected_event_name=span_name,
         debug_content=debug_content,

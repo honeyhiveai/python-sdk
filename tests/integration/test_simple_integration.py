@@ -288,7 +288,10 @@ class TestSimpleIntegration:
                 print("   Proper linking verified")
 
             except Exception as retrieval_error:
-                # If retrieval fails, still consider test successful if creation worked
+                # Workaround: GET /v1/sessions/{session_id} endpoint is not deployed on
+                # testing backend (returns 404 Route not found), so we can only validate
+                # session/event creation, not retrieval. This try/except allows the test
+                # to pass when session/event creation succeeds, even if retrieval fails.
                 print(
                     f"⚠️ Session/Event created but validation failed: {retrieval_error}"
                 )

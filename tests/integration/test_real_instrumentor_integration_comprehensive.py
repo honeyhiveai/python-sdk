@@ -61,6 +61,7 @@ class TestRealInstrumentorIntegration:
             tracer=tracer,
             client=integration_client,
             project=real_project,
+            session_id=tracer.session_id,
             span_name="test_span",
             unique_identifier=unique_id,
             span_attributes={
@@ -315,6 +316,7 @@ print("✅ Subprocess integration test passed")
                 tracer=tracer,
                 client=integration_client,
                 project=real_project,
+                session_id=tracer.session_id,
                 span_name="multi_instrumentor_test",
                 unique_identifier=unique_id,
                 span_attributes={
@@ -426,6 +428,7 @@ print("✅ Subprocess integration test passed")
                 tracer=tracer,
                 client=integration_client,
                 project=real_project,
+                session_id=tracer.session_id,
                 span_name="error_test",
                 unique_identifier=unique_id1,
                 span_attributes={
@@ -454,6 +457,7 @@ print("✅ Subprocess integration test passed")
             tracer=tracer,
             client=integration_client,
             project=real_project,
+            session_id=tracer.session_id,
             span_name="post_error_test",
             unique_identifier=unique_id2,
             span_attributes={
@@ -487,6 +491,7 @@ class TestRealAPIWorkflows:
             tracer=tracer,
             client=integration_client,
             project=real_project,
+            session_id=tracer.session_id,
             span_name="ai_application_workflow",
             unique_identifier=unique_id_main,
             span_attributes={
@@ -502,6 +507,7 @@ class TestRealAPIWorkflows:
             tracer=tracer,
             client=integration_client,
             project=real_project,
+            session_id=tracer.session_id,
             span_name="input_processing",
             unique_identifier=unique_id_input,
             span_attributes={
@@ -517,6 +523,7 @@ class TestRealAPIWorkflows:
             tracer=tracer,
             client=integration_client,
             project=real_project,
+            session_id=tracer.session_id,
             span_name="model_inference",
             unique_identifier=unique_id_model,
             span_attributes={
@@ -533,6 +540,7 @@ class TestRealAPIWorkflows:
             tracer=tracer,
             client=integration_client,
             project=real_project,
+            session_id=tracer.session_id,
             span_name="output_processing",
             unique_identifier=unique_id_output,
             span_attributes={

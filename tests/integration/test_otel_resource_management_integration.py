@@ -80,10 +80,12 @@ class TestOTELResourceManagementIntegration:
 
         # ✅ STANDARD PATTERN: Use verify_tracer_span for span creation + backend
         # verification
+        summary_tracer = tracer_factory("summary_tracer")
         summary_event = verify_tracer_span(
-            tracer=tracer_factory("summary_tracer"),
+            tracer=summary_tracer,
             client=integration_client,
             project=real_project,
+            session_id=summary_tracer.session_id,
             span_name=f"{test_operation_name}_summary",
             unique_identifier=summary_unique_id,
             span_attributes={
@@ -173,6 +175,7 @@ class TestOTELResourceManagementIntegration:
             tracer=integration_tracer,
             client=integration_client,
             project=real_project,
+            session_id=integration_tracer.session_id,
             span_name=f"{test_operation_name}_summary",
             unique_identifier=test_unique_id,
             span_attributes={
@@ -288,10 +291,12 @@ class TestOTELResourceManagementIntegration:
 
         # ✅ STANDARD PATTERN: Use verify_tracer_span for span creation + backend
         # verification
+        stress_summary_tracer = tracer_factory("stress_summary")
         summary_event = verify_tracer_span(
-            tracer=tracer_factory("stress_summary"),
+            tracer=stress_summary_tracer,
             client=integration_client,
             project=real_project,
+            session_id=stress_summary_tracer.session_id,
             span_name=f"{test_operation_name}_summary",
             unique_identifier=test_unique_id,
             span_attributes={
@@ -395,6 +400,7 @@ class TestOTELResourceManagementIntegration:
             tracer=integration_tracer,
             client=integration_client,
             project=real_project,
+            session_id=integration_tracer.session_id,
             span_name=f"{test_operation_name}_summary",
             unique_identifier=test_unique_id,
             span_attributes={

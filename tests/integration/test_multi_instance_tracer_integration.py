@@ -42,6 +42,7 @@ class TestMultiInstanceTracerIntegration:
             tracer=tracer1,
             client=integration_client,
             project=real_project,
+            session_id=tracer1.session_id,
             span_name="multi_tracer_span1",
             unique_identifier=unique_id1,
             span_attributes={
@@ -56,6 +57,7 @@ class TestMultiInstanceTracerIntegration:
             tracer=tracer2,
             client=integration_client,
             project=real_project,
+            session_id=tracer2.session_id,
             span_name="multi_tracer_span2",
             unique_identifier=unique_id2,
             span_attributes={

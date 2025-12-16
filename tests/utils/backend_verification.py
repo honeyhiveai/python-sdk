@@ -9,7 +9,7 @@ import time
 from typing import Any, Optional
 
 from honeyhive import HoneyHive
-from honeyhive.models import GetEventsResponse
+from honeyhive.models import GetEventsBySessionIdResponse
 from honeyhive.utils.logger import get_logger
 
 from .test_config import test_config
@@ -38,6 +38,7 @@ class BackendVerificationError(Exception):
 def verify_backend_event(
     client: HoneyHive,
     project: str,
+    session_id: str,
     unique_identifier: str,
     expected_event_name: Optional[str] = None,
     debug_content: bool = False,
@@ -50,6 +51,7 @@ def verify_backend_event(
     Args:
         client: HoneyHive client instance (uses its configured retry settings)
         project: Project name for filtering
+        session_id: Session ID to retrieve events for
         unique_identifier: Unique identifier to search for (test.unique_id attribute)
         expected_event_name: Expected event name for validation
         debug_content: Whether to log detailed event content for debugging
@@ -61,41 +63,18 @@ def verify_backend_event(
         BackendVerificationError: If event not found after all retries
     """
 
-    # Create event filter - search by event name first (more reliable)
-    if expected_event_name:
-        event_filter = {
-            "field": "event_name",
-            "value": expected_event_name,
-            "operator": "is",
-            "type": "string",
-        }
-    else:
-        # Fallback to searching by metadata if no event name provided
-        event_filter = {
-            "field": "metadata.test.unique_id",
-            "value": unique_identifier,
-            "operator": "is",
-            "type": "string",
-        }
-
     # Simple retry loop for "event not found yet" (backend processing delays)
     for attempt in range(test_config.max_attempts):
         try:
             # SDK client handles HTTP retries automatically
-            # Build the data dict for the v1 API
-            data = {
-                "project": project,  # Critical: include project for proper filtering
-                "filters": [event_filter],  # v1 API expects a list of filters
-                "limit": 100,
-            }
-            events_response = client.events.list(data=data)
+            events_response = client.events.get_by_session_id(session_id=session_id)
 
-            # Validate API response - now returns typed GetEventsResponse model
+            # Validate API response - now returns typed GetEventsBySessionIdResponse model
             if events_response is None:
                 logger.warning(f"API returned None for events (attempt {attempt + 1})")
                 continue
 
-            if not isinstance(events_response, GetEventsResponse):
+            if not isinstance(events_response, GetEventsBySessionIdResponse):
                 logger.warning(
                     f"API returned unexpected response type: {type(events_response)} "
                     f"(attempt {attempt + 1})"

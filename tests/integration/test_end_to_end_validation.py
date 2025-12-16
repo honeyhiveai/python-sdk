@@ -126,7 +126,9 @@ class TestEndToEndValidation:
             # required
             pytest.fail(f"Integration test failed - real system must work: {e}")
 
-    @pytest.mark.skip(reason="v1 /session/start endpoint not deployed yet (404)")
+    @pytest.mark.skip(
+        reason="GET /v1/sessions/{session_id} endpoint not deployed on testing backend (returns 404 Route not found)"
+    )
     def test_session_event_relationship_validation(
         self, integration_client: Any, real_project: Any
     ) -> None:
@@ -200,6 +202,7 @@ class TestEndToEndValidation:
                 verified_event = verify_event_creation(
                     client=integration_client,
                     project=real_project,
+                    session_id=session_id,
                     event_request=event_request,
                     unique_identifier=unique_id,
                     expected_event_name=f"{event_name}-{i}",
@@ -395,7 +398,9 @@ class TestEndToEndValidation:
                 f"Configuration integration test failed - real system must work: {e}"
             )
 
-    @pytest.mark.skip(reason="v1 /session/start endpoint not deployed yet (404)")
+    @pytest.mark.skip(
+        reason="GET /v1/sessions/{session_id} endpoint not deployed on testing backend (returns 404 Route not found)"
+    )
     def test_cross_entity_data_consistency(
         self, integration_client: Any, real_project: Any
     ) -> None:

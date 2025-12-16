@@ -36,7 +36,7 @@ class TestHoneyHiveAttributesBackendIntegration:
     """
 
     @pytest.mark.tracer
-    @pytest.mark.skip(reason="GET /v1/events endpoint not deployed yet")
+    @pytest.mark.skip(reason="GET /v1/events/{session_id} endpoint not deployed on testing backend (returns 'Route not found')")
     def test_decorator_event_type_backend_verification(
         self,
         integration_tracer: Any,
@@ -85,6 +85,7 @@ class TestHoneyHiveAttributesBackendIntegration:
             tracer=integration_tracer,
             client=integration_client,
             project=real_project,
+            session_id=integration_tracer.session_id,
             span_name=verification_span_name,
             unique_identifier=test_id,
             span_attributes={
@@ -105,7 +106,7 @@ class TestHoneyHiveAttributesBackendIntegration:
         assert event.source == real_source
 
     @pytest.mark.tracer
-    @pytest.mark.skip(reason="GET /v1/events endpoint not deployed yet")
+    @pytest.mark.skip(reason="GET /v1/events/{session_id} endpoint not deployed on testing backend (returns 'Route not found')")
     def test_direct_span_event_type_inference(
         self, integration_tracer: Any, integration_client: Any
     ) -> None:
@@ -148,6 +149,7 @@ class TestHoneyHiveAttributesBackendIntegration:
         event = verify_span_export(
             client=integration_client,
             project=integration_tracer.project,
+            session_id=integration_tracer.session_id,
             unique_identifier=test_id,
             expected_event_name=event_name,
             debug_content=True,
@@ -162,7 +164,7 @@ class TestHoneyHiveAttributesBackendIntegration:
 
     @pytest.mark.tracer
     @pytest.mark.models
-    @pytest.mark.skip(reason="GET /v1/events endpoint not deployed yet")
+    @pytest.mark.skip(reason="GET /v1/events/{session_id} endpoint not deployed on testing backend (returns 'Route not found')")
     def test_all_event_types_backend_conversion(
         self, integration_tracer: Any, integration_client: Any
     ) -> None:
@@ -220,6 +222,7 @@ class TestHoneyHiveAttributesBackendIntegration:
             event = verify_span_export(
                 client=integration_client,
                 project=integration_tracer.project,
+                session_id=integration_tracer.session_id,
                 unique_identifier=unique_id,
                 expected_event_name=event_name,
                 debug_content=True,
@@ -234,7 +237,7 @@ class TestHoneyHiveAttributesBackendIntegration:
 
     @pytest.mark.tracer
     @pytest.mark.multi_instance
-    @pytest.mark.skip(reason="GET /v1/events endpoint not deployed yet")
+    @pytest.mark.skip(reason="GET /v1/events/{session_id} endpoint not deployed on testing backend (returns 'Route not found')")
     def test_multi_instance_attribute_isolation(
         self,
         real_api_credentials: Any,  # pylint: disable=unused-argument
@@ -308,6 +311,7 @@ class TestHoneyHiveAttributesBackendIntegration:
         event1 = verify_span_export(
             client=client,
             project=tracer1.project,
+            session_id=tracer1.session_id,
             unique_identifier=f"{test_id}_tracer1",
             expected_event_name=f"tracer1_event_{test_id}",
             debug_content=True,
@@ -316,6 +320,7 @@ class TestHoneyHiveAttributesBackendIntegration:
         event2 = verify_span_export(
             client=client,
             project=tracer2.project,
+            session_id=tracer2.session_id,
             unique_identifier=f"{test_id}_tracer2",
             expected_event_name=f"tracer2_event_{test_id}",
             debug_content=True,
@@ -344,7 +349,7 @@ class TestHoneyHiveAttributesBackendIntegration:
 
     @pytest.mark.tracer
     @pytest.mark.end_to_end
-    @pytest.mark.skip(reason="GET /v1/events endpoint not deployed yet")
+    @pytest.mark.skip(reason="GET /v1/events/{session_id} endpoint not deployed on testing backend (returns 'Route not found')")
     def test_comprehensive_attribute_backend_verification(
         self, integration_tracer: Any, integration_client: Any, real_project: Any
     ) -> None:
@@ -361,6 +366,7 @@ class TestHoneyHiveAttributesBackendIntegration:
             tracer=integration_tracer,
             client=integration_client,
             project=real_project,
+            session_id=integration_tracer.session_id,
             span_name=event_name,
             unique_identifier=test_id,
             span_attributes={

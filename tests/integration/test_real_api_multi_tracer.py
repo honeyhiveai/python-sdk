@@ -43,6 +43,7 @@ class TestRealAPIMultiTracer:
             tracer=tracer1,
             client=integration_client,
             project=real_project,
+            session_id=tracer1.session_id,
             span_name="real_session1",
             unique_identifier=unique_id1,
             span_attributes={
@@ -57,6 +58,7 @@ class TestRealAPIMultiTracer:
             tracer=tracer2,
             client=integration_client,
             project=real_project,
+            session_id=tracer2.session_id,
             span_name="real_session2",
             unique_identifier=unique_id2,
             span_attributes={
@@ -90,6 +92,7 @@ class TestRealAPIMultiTracer:
             tracer=tracer1,
             client=integration_client,
             project=real_project,
+            session_id=tracer1.session_id,
             span_name="event_creation1",
             unique_identifier=unique_id1,
             span_attributes={
@@ -105,6 +108,7 @@ class TestRealAPIMultiTracer:
             tracer=tracer2,
             client=integration_client,
             project=real_project,
+            session_id=tracer2.session_id,
             span_name="event_creation2",
             unique_identifier=unique_id2,
             span_attributes={
@@ -180,6 +184,7 @@ class TestRealAPIMultiTracer:
         verified_event1 = verify_span_export(
             client=integration_client,
             project=real_project,
+            session_id=tracer1.session_id,
             unique_identifier=unique_id1,
             expected_event_name="function1",
         )
@@ -187,6 +192,7 @@ class TestRealAPIMultiTracer:
         verified_event2 = verify_span_export(
             client=integration_client,
             project=real_project,
+            session_id=tracer2.session_id,
             unique_identifier=unique_id2,
             expected_event_name="function2",
         )

@@ -111,6 +111,7 @@ class TestOTELEdgeCasesIntegration:
             tracer=integration_tracer,
             client=integration_client,
             project=real_project,
+            session_id=integration_tracer.session_id,
             span_name=f"{test_operation_name}_summary",
             unique_identifier=test_unique_id,
             span_attributes={
@@ -255,6 +256,7 @@ class TestOTELEdgeCasesIntegration:
             tracer=integration_tracer,
             client=integration_client,
             project=real_project,
+            session_id=integration_tracer.session_id,
             span_name=f"{test_operation_name}_summary",
             unique_identifier=test_unique_id,
             span_attributes={
@@ -397,6 +399,7 @@ class TestOTELEdgeCasesIntegration:
             tracer=integration_tracer,
             client=integration_client,
             project=real_project,
+            session_id=integration_tracer.session_id,
             span_name=f"{test_operation_name}_summary",
             unique_identifier=test_unique_id,
             span_attributes={
@@ -501,10 +504,12 @@ class TestOTELEdgeCasesIntegration:
 
         # ✅ STANDARD PATTERN: Use verify_tracer_span for span creation +
         # backend verification
+        test_tracer = tracer_factory()
         summary_event = verify_tracer_span(
-            tracer=tracer_factory(),
+            tracer=test_tracer,
             client=integration_client,
             project=real_project,
+            session_id=test_tracer.session_id,
             span_name=f"{test_operation_name}_summary",
             unique_identifier=test_unique_id,
             span_attributes={

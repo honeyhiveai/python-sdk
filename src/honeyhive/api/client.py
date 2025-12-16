@@ -34,7 +34,6 @@ from honeyhive._generated.models import (
     DeleteConfigurationResponse,
     DeleteDatapointResponse,
     DeleteDatasetResponse,
-    DeleteEventResponse,
     DeleteExperimentRunResponse,
     DeleteMetricResponse,
     DeleteSessionResponse,
@@ -44,7 +43,6 @@ from honeyhive._generated.models import (
     GetDatapointsResponse,
     GetDatasetsResponse,
     GetEventsBySessionIdResponse,
-    GetEventsChartResponse,
     GetEventsResponse,
     GetExperimentRunResponse,
     GetExperimentRunsResponse,
@@ -336,6 +334,10 @@ class EventsAPI(BaseAPI):
         }
         return events_svc.getEvents(self._api_config, **filtered_data)
 
+    def get_by_session_id(self, session_id: str) -> GetEventsBySessionIdResponse:
+        """Get events by session ID."""
+        return events_svc.getEventsBySessionId(self._api_config, session_id=session_id)
+
     def create(self, request: PostEventRequest) -> PostEventResponse:
         """Create an event."""
         return events_svc.createEvent(self._api_config, data=request)
@@ -356,6 +358,14 @@ class EventsAPI(BaseAPI):
             k: v for k, v in data.items() if k in self._GET_EVENTS_SUPPORTED_PARAMS
         }
         return await events_svc_async.getEvents(self._api_config, **filtered_data)
+
+    async def get_by_session_id_async(
+        self, session_id: str
+    ) -> GetEventsBySessionIdResponse:
+        """Get events by session ID asynchronously."""
+        return await events_svc_async.getEventsBySessionId(
+            self._api_config, session_id=session_id
+        )
 
     async def create_async(self, request: PostEventRequest) -> PostEventResponse:
         """Create an event asynchronously."""

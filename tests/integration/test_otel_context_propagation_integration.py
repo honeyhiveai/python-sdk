@@ -109,6 +109,7 @@ class TestOTELContextPropagationIntegration:
             tracer=integration_tracer,
             client=integration_client,
             project=real_project,
+            session_id=integration_tracer.session_id,
             span_name="w3c_trace_context_verification",
             unique_identifier=unique_id,
             span_attributes={

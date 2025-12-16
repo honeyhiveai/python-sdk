@@ -167,87 +167,6 @@ paths:
           description: Event updated
         '400':
           description: Bad request
-    get:
-      tags:
-        - Events
-      operationId: getEvents
-      summary: Query events with filters and projections
-      description: Retrieve events with optional filtering, projections, and pagination
-      parameters:
-        - name: dateRange
-          in: query
-          required: false
-          schema:
-            oneOf:
-              - type: string
-              - type: object
-                properties:
-                  $gte:
-                    type: string
-                    format: date-time
-                  $lte:
-                    type: string
-                    format: date-time
-          description: Date range filter (ISO string or object with $gte/$lte)
-        - name: filters
-          in: query
-          required: false
-          schema:
-            oneOf:
-              - type: array
-                items:
-                  type: object
-              - type: string
-          description: Array of filter objects or JSON string
-        - name: projections
-          in: query
-          required: false
-          schema:
-            oneOf:
-              - type: array
-                items:
-                  type: string
-              - type: string
-          description: Fields to include in response (array or JSON string)
-        - name: ignore_order
-          in: query
-          required: false
-          schema:
-            oneOf:
-              - type: boolean
-              - type: string
-          description: Whether to ignore ordering
-        - name: limit
-          in: query
-          required: false
-          schema:
-            oneOf:
-              - type: integer
-              - type: string
-          description: Maximum number of results (default 1000)
-        - name: page
-          in: query
-          required: false
-          schema:
-            oneOf:
-              - type: integer
-              - type: string
-          description: Page number (default 1)
-        - name: evaluation_id
-          in: query
-          required: false
-          schema:
-            type: string
-          description: Filter by evaluation ID
-      responses:
-        '200':
-          description: Events retrieved successfully
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/GetEventsResponse'
-        '400':
-          description: Bad request (missing required scopes or invalid parameters)
   /v1/events/chart:
     get:
       tags:
@@ -2233,7 +2152,7 @@ components:
       properties:
         name:
           type: string
-          default: Dataset 12/15
+          default: Dataset 12/16
         description:
           type: string
         datapoints:

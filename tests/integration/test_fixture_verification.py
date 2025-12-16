@@ -41,6 +41,7 @@ def test_fixture_verification(
         tracer=integration_tracer,
         client=integration_client,
         project=real_project,
+        session_id=integration_tracer.session_id,
         span_name=span_name,
         unique_identifier=unique_id,
         span_attributes={

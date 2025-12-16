@@ -154,6 +154,7 @@ class TestOTELPerformanceIntegration:
             tracer=integration_tracer,
             client=integration_client,
             project=real_project,
+            session_id=integration_tracer.session_id,
             span_name=f"{test_operation_name}_summary",
             unique_identifier=test_unique_id,
             span_attributes={
@@ -277,6 +278,7 @@ class TestOTELPerformanceIntegration:
             tracer=integration_tracer,
             client=integration_client,
             project=real_project,
+            session_id=integration_tracer.session_id,
             span_name=f"{test_operation_name}_summary",
             unique_identifier=test_unique_id,
             span_attributes={
@@ -392,6 +394,7 @@ class TestOTELPerformanceIntegration:
             tracer=integration_tracer,
             client=integration_client,
             project=real_project,
+            session_id=integration_tracer.session_id,
             span_name=f"{test_operation_name}_summary",
             unique_identifier=test_unique_id,
             span_attributes={
