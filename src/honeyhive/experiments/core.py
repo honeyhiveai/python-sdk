@@ -1002,6 +1002,7 @@ def evaluate(  # pylint: disable=too-many-locals,too-many-branches
     result_summary = get_run_result(
         client=client,
         run_id=run_id,
+        project_id=project,
         aggregate_function=aggregate_function,
     )
 

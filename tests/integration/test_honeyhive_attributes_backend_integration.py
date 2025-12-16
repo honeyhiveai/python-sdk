@@ -36,6 +36,7 @@ class TestHoneyHiveAttributesBackendIntegration:
     """
 
     @pytest.mark.tracer
+    @pytest.mark.skip(reason="GET /v1/events endpoint not deployed yet")
     def test_decorator_event_type_backend_verification(
         self,
         integration_tracer: Any,
@@ -104,6 +105,7 @@ class TestHoneyHiveAttributesBackendIntegration:
         assert event.source == real_source
 
     @pytest.mark.tracer
+    @pytest.mark.skip(reason="GET /v1/events endpoint not deployed yet")
     def test_direct_span_event_type_inference(
         self, integration_tracer: Any, integration_client: Any
     ) -> None:
@@ -160,6 +162,7 @@ class TestHoneyHiveAttributesBackendIntegration:
 
     @pytest.mark.tracer
     @pytest.mark.models
+    @pytest.mark.skip(reason="GET /v1/events endpoint not deployed yet")
     def test_all_event_types_backend_conversion(
         self, integration_tracer: Any, integration_client: Any
     ) -> None:
@@ -231,6 +234,7 @@ class TestHoneyHiveAttributesBackendIntegration:
 
     @pytest.mark.tracer
     @pytest.mark.multi_instance
+    @pytest.mark.skip(reason="GET /v1/events endpoint not deployed yet")
     def test_multi_instance_attribute_isolation(
         self,
         real_api_credentials: Any,  # pylint: disable=unused-argument
@@ -340,6 +344,7 @@ class TestHoneyHiveAttributesBackendIntegration:
 
     @pytest.mark.tracer
     @pytest.mark.end_to_end
+    @pytest.mark.skip(reason="GET /v1/events endpoint not deployed yet")
     def test_comprehensive_attribute_backend_verification(
         self, integration_tracer: Any, integration_client: Any, real_project: Any
     ) -> None:

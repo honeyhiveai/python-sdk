@@ -80,13 +80,20 @@ def verify_datapoint_creation(
         datapoint_response = client.datapoints.create(datapoint_request)
 
         # Validate creation response
+        # CreateDatapointResponse has 'result' dict containing 'insertedIds' array
         if (
-            not hasattr(datapoint_response, "field_id")
-            or datapoint_response.field_id is None
+            not hasattr(datapoint_response, "result")
+            or datapoint_response.result is None
         ):
-            raise ValidationError("Datapoint creation failed - missing field_id")
+            raise ValidationError("Datapoint creation failed - missing result field")
 
-        created_id = datapoint_response.field_id
+        inserted_ids = datapoint_response.result.get("insertedIds")
+        if not inserted_ids or len(inserted_ids) == 0:
+            raise ValidationError(
+                "Datapoint creation failed - missing insertedIds in result"
+            )
+
+        created_id = inserted_ids[0]
         logger.debug(f"✅ Datapoint created with ID: {created_id}")
 
         # Step 2: Wait for data propagation
@@ -94,9 +101,18 @@ def verify_datapoint_creation(
 
         # Step 3: Retrieve and validate persistence
         try:
-            found_datapoint = client.datapoints.get(created_id)
-            logger.debug(f"✅ Datapoint retrieval successful: {created_id}")
-            return found_datapoint
+            datapoint_response = client.datapoints.get(created_id)
+            # GetDatapointResponse has 'datapoint' field which is a List[Dict]
+            if (
+                hasattr(datapoint_response, "datapoint")
+                and datapoint_response.datapoint
+            ):
+                found_datapoint = datapoint_response.datapoint[0]
+                logger.debug(f"✅ Datapoint retrieval successful: {created_id}")
+                return found_datapoint
+            raise ValidationError(
+                f"Datapoint response missing datapoint data: {created_id}"
+            )
 
         except Exception as e:
             # Fallback: Try list-based retrieval if direct get fails
@@ -109,18 +125,23 @@ def verify_datapoint_creation(
                 else []
             )
 
-            # Find matching datapoint
+            # Find matching datapoint - datapoints are dicts, not objects
             for dp in datapoints:
-                if hasattr(dp, "field_id") and dp.field_id == created_id:
+                # Check if dict has id or field_id key matching created_id
+                # Note: API returns 'id' in datapoint dicts, not 'field_id'
+                if isinstance(dp, dict) and (
+                    dp.get("id") == created_id or dp.get("field_id") == created_id
+                ):
                     logger.debug(f"✅ Datapoint found via list: {created_id}")
                     return dp
 
                 # Fallback: Match by test_id if provided
                 if (
                     test_id
-                    and hasattr(dp, "metadata")
-                    and dp.metadata
-                    and dp.metadata.get("test_id") == test_id
+                    and isinstance(dp, dict)
+                    and "metadata" in dp
+                    and dp.get("metadata")
+                    and dp["metadata"].get("test_id") == test_id
                 ):
                     logger.debug(f"✅ Datapoint found via test_id: {test_id}")
                     return dp
@@ -233,7 +254,8 @@ def verify_configuration_creation(
         time.sleep(2)
 
         # Step 3: Retrieve and validate persistence
-        configurations = client.configurations.list(project=project)
+        # Note: v1 configurations API doesn't support project filtering
+        configurations = client.configurations.list()
 
         # Find matching configuration
         for config in configurations:

@@ -266,7 +266,7 @@ def deleteEvent(
     return DeleteEventResponse(**body) if body is not None else DeleteEventResponse()
 
 
-def getEvents(
+def exportEvents(
     api_config_override: Optional[APIConfig] = None, *, data: Dict[str, Any]
 ) -> Dict[str, Any]:
     api_config = api_config_override if api_config_override else APIConfig()
@@ -292,7 +292,7 @@ def getEvents(
     if response.status_code != 200:
         raise HTTPException(
             response.status_code,
-            f"getEvents failed with status code: {response.status_code}",
+            f"exportEvents failed with status code: {response.status_code}",
         )
     else:
         body = None if 200 == 204 else response.json()

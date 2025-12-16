@@ -4,6 +4,7 @@ import uuid
 from datetime import datetime
 
 import pytest
+from pydantic import ValidationError
 
 # v1 API imports - only models that exist in the new API
 from honeyhive.models import (
@@ -264,14 +265,14 @@ class TestModelIntegration:
 
     def test_model_error_handling_integration(self):
         """Test model error handling and validation."""
-        # v1 API: Test missing required fields with datapoint
-        with pytest.raises(ValueError):
-            CreateDatapointRequest(
-                # Missing required 'inputs' field
+        # v1 API: Test missing required fields with configuration
+        with pytest.raises(ValidationError):
+            CreateConfigurationRequest(
+                # Missing required 'name', 'provider', and 'parameters' fields
             )
 
         # Test invalid parameter types with configuration
-        with pytest.raises(ValueError):
+        with pytest.raises(ValidationError):
             CreateConfigurationRequest(
                 name="invalid-config",
                 provider="openai",
@@ -279,7 +280,7 @@ class TestModelIntegration:
             )
 
         # Test invalid provider type
-        with pytest.raises(ValueError):
+        with pytest.raises(ValidationError):
             CreateConfigurationRequest(
                 name="test-config",
                 provider=123,  # Should be a string

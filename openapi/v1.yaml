@@ -410,7 +410,7 @@ paths:
     post:
       tags:
         - Events
-      operationId: getEvents
+      operationId: exportEvents
       summary: Retrieve events based on filters
       requestBody:
         required: true

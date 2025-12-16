@@ -37,7 +37,9 @@ class TestDatasetsAPI:
         # Verify via list
         datasets_response = integration_client.datasets.list()
         datasets = (
-            datasets_response.datapoints if hasattr(datasets_response, "datapoints") else []
+            datasets_response.datapoints
+            if hasattr(datasets_response, "datapoints")
+            else []
         )
         found = None
         for ds in datasets:
@@ -72,7 +74,9 @@ class TestDatasetsAPI:
         # Test retrieval via list (v1 doesn't have get_dataset method)
         datasets_response = integration_client.datasets.list(name=dataset_name)
         datasets = (
-            datasets_response.datapoints if hasattr(datasets_response, "datapoints") else []
+            datasets_response.datapoints
+            if hasattr(datasets_response, "datapoints")
+            else []
         )
         assert len(datasets) >= 1
         dataset = datasets[0]
@@ -115,7 +119,9 @@ class TestDatasetsAPI:
 
         assert datasets_response is not None
         datasets = (
-            datasets_response.datapoints if hasattr(datasets_response, "datapoints") else []
+            datasets_response.datapoints
+            if hasattr(datasets_response, "datapoints")
+            else []
         )
         assert isinstance(datasets, list)
         assert len(datasets) >= 2
@@ -145,7 +151,9 @@ class TestDatasetsAPI:
 
         assert datasets_response is not None
         datasets = (
-            datasets_response.datapoints if hasattr(datasets_response, "datapoints") else []
+            datasets_response.datapoints
+            if hasattr(datasets_response, "datapoints")
+            else []
         )
         assert isinstance(datasets, list)
         assert len(datasets) >= 1

@@ -7,9 +7,9 @@ Tracking issues blocking integration tests from passing.
 | Endpoint | Used By | Status |
 |----------|---------|--------|
 | `POST /v1/session/start` | `test_simple_integration.py::test_session_event_workflow_with_validation` | ❌ Missing |
+| `GET /v1/events` | `test_honeyhive_attributes_backend_integration.py` (all 5 tests), `test_simple_integration.py::test_session_event_workflow_with_validation` | ❌ Missing |
 | `POST /v1/events` | `test_simple_integration.py::test_session_event_workflow_with_validation` | ⚠️ Untested (blocked by session) |
 | `GET /v1/session/{id}` | `test_simple_integration.py::test_session_event_workflow_with_validation` | ⚠️ Untested (blocked by session) |
-| `GET /v1/events` | `test_simple_integration.py::test_session_event_workflow_with_validation` | ⚠️ Untested (blocked by session) |
 
 ## API Endpoints Returning Errors
 
@@ -17,6 +17,7 @@ Tracking issues blocking integration tests from passing.
 |----------|-------|---------|--------|
 | `POST /v1/metrics` (createMetric) | 400 Bad Request | `test_metrics_api.py::test_create_metric`, `test_get_metric`, `test_list_metrics` | ❌ Broken |
 | `GET /v1/projects` (getProjects) | 404 Not Found | `test_projects_api.py::test_get_project`, `test_list_projects` | ❌ Broken |
+| `GET /v1/experiments/{run_id}/result` (getExperimentResult) | TODOSchema validation error - missing 'message' field | All `test_experiments_integration.py` tests (7 tests) | ❌ Broken |
 
 ## Tests Passing
 

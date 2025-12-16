@@ -108,8 +108,11 @@ class ConfigurationsAPI(BaseAPI):
 
     # Sync methods
     def list(self, project: Optional[str] = None) -> List[GetConfigurationsResponse]:
-        """List configurations."""
-        return configs_svc.getConfigurations(self._api_config, project=project)
+        """List configurations.
+
+        Note: project parameter is currently unused as v1 API doesn't support project filtering.
+        """
+        return configs_svc.getConfigurations(self._api_config)
 
     def create(
         self, request: CreateConfigurationRequest
@@ -131,10 +134,11 @@ class ConfigurationsAPI(BaseAPI):
     async def list_async(
         self, project: Optional[str] = None
     ) -> List[GetConfigurationsResponse]:
-        """List configurations asynchronously."""
-        return await configs_svc_async.getConfigurations(
-            self._api_config, project=project
-        )
+        """List configurations asynchronously.
+
+        Note: project parameter is currently unused as v1 API doesn't support project filtering.
+        """
+        return await configs_svc_async.getConfigurations(self._api_config)
 
     async def create_async(
         self, request: CreateConfigurationRequest
@@ -312,10 +316,25 @@ class DatasetsAPI(BaseAPI):
 class EventsAPI(BaseAPI):
     """Events API."""
 
+    # Supported parameters for getEvents() method
+    _GET_EVENTS_SUPPORTED_PARAMS = {
+        "dateRange",
+        "filters",
+        "projections",
+        "ignore_order",
+        "limit",
+        "page",
+        "evaluation_id",
+    }
+
     # Sync methods
     def list(self, data: Dict[str, Any]) -> GetEventsResponse:
         """Get events."""
-        return events_svc.getEvents(self._api_config, **data)
+        # Filter data to only include supported parameters for getEvents()
+        filtered_data = {
+            k: v for k, v in data.items() if k in self._GET_EVENTS_SUPPORTED_PARAMS
+        }
+        return events_svc.getEvents(self._api_config, **filtered_data)
 
     def create(self, request: PostEventRequest) -> PostEventResponse:
         """Create an event."""
@@ -332,7 +351,11 @@ class EventsAPI(BaseAPI):
     # Async methods
     async def list_async(self, data: Dict[str, Any]) -> GetEventsResponse:
         """Get events asynchronously."""
-        return await events_svc_async.getEvents(self._api_config, **data)
+        # Filter data to only include supported parameters for getEvents()
+        filtered_data = {
+            k: v for k, v in data.items() if k in self._GET_EVENTS_SUPPORTED_PARAMS
+        }
+        return await events_svc_async.getEvents(self._api_config, **filtered_data)
 
     async def create_async(self, request: PostEventRequest) -> PostEventResponse:
         """Create an event asynchronously."""
