@@ -19,17 +19,14 @@ paths:
               type: object
               properties:
                 session:
-                  $ref: '#/components/schemas/TODOSchema'
+                  $ref: '#/components/schemas/PostSessionRequest'
       responses:
         '200':
           description: Session successfully started
           content:
             application/json:
               schema:
-                type: object
-                properties:
-                  session_id:
-                    type: string
+                $ref: '#/components/schemas/PostSessionResponse'
   /v1/sessions/{session_id}:
     get:
       summary: Get session tree by session ID
@@ -3281,6 +3278,101 @@ components:
       required:
         - deleted
     RunMetricResponse: {}
+    PostSessionRequest:
+      type: object
+      properties:
+        event_id:
+          type: string
+        project_id:
+          type: string
+        tenant:
+          type: string
+        event_name:
+          type: string
+        event_type:
+          type: string
+        metrics:
+          type: object
+          additionalProperties: {}
+        metadata:
+          type: object
+          additionalProperties: {}
+        feedback:
+          type: object
+          properties:
+            ground_truth: {}
+      required:
+        - event_id
+        - project_id
+        - tenant
+    PostSessionResponse:
+      type: object
+      properties:
+        event_id:
+          type:
+            - string
+            - 'null'
+        session_id:
+          type:
+            - string
+            - 'null'
+        parent_id:
+          type:
+            - string
+            - 'null'
+        children_ids:
+          type: array
+          items:
+            type: string
+          default: []
+        event_type:
+          type:
+            - string
+            - 'null'
+        event_name:
+          type:
+            - string
+            - 'null'
+        config: {}
+        inputs: {}
+        outputs: {}
+        error:
+          type:
+            - string
+            - 'null'
+        source:
+          type:
+            - string
+            - 'null'
+        duration:
+          type:
+            - number
+            - 'null'
+        user_properties: {}
+        metrics: {}
+        feedback: {}
+        metadata: {}
+        org_id:
+          type:
+            - string
+            - 'null'
+        workspace_id:
+          type:
+            - string
+            - 'null'
+        project_id:
+          type:
+            - string
+            - 'null'
+        start_time:
+          type:
+            - number
+            - 'null'
+        end_time:
+          type:
+            - number
+            - 'null'
+      description: Full session event object returned after starting a new session
     EventNode:
       type: object
       properties:

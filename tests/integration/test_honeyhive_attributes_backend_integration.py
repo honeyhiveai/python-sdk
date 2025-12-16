@@ -13,6 +13,7 @@ from typing import Any
 import pytest
 
 from honeyhive.api.client import HoneyHive
+
 # NOTE: EventType was removed in v1 - event_type is now just a string
 # from honeyhive.models import EventType
 from honeyhive.tracer import HoneyHiveTracer, enrich_span, trace
@@ -35,7 +36,9 @@ class TestHoneyHiveAttributesBackendIntegration:
     """
 
     @pytest.mark.tracer
-    @pytest.mark.skip(reason="EventType enum removed in v1 - needs migration to string-based event_type")
+    @pytest.mark.skip(
+        reason="EventType enum removed in v1 - needs migration to string-based event_type"
+    )
     def test_decorator_event_type_backend_verification(
         self,
         integration_tracer: Any,
@@ -107,7 +110,9 @@ class TestHoneyHiveAttributesBackendIntegration:
         assert event.source == real_source
 
     @pytest.mark.tracer
-    @pytest.mark.skip(reason="EventType enum removed in v1 - needs migration to string-based event_type")
+    @pytest.mark.skip(
+        reason="EventType enum removed in v1 - needs migration to string-based event_type"
+    )
     def test_direct_span_event_type_inference(
         self, integration_tracer: Any, integration_client: Any
     ) -> None:
@@ -167,7 +172,9 @@ class TestHoneyHiveAttributesBackendIntegration:
 
     @pytest.mark.tracer
     @pytest.mark.models
-    @pytest.mark.skip(reason="EventType enum removed in v1 - needs migration to string-based event_type")
+    @pytest.mark.skip(
+        reason="EventType enum removed in v1 - needs migration to string-based event_type"
+    )
     def test_all_event_types_backend_conversion(
         self, integration_tracer: Any, integration_client: Any
     ) -> None:
@@ -182,10 +189,10 @@ class TestHoneyHiveAttributesBackendIntegration:
         _, test_id = generate_test_id("all_event_types_backend_conversion")
         # V0 CODE - EventType enum values converted to plain strings in v1
         event_types_to_test = [
-            "model",   # EventType.model in v0
-            "tool",    # EventType.tool in v0
-            "chain",   # EventType.chain in v0
-            "session", # EventType.session in v0
+            "model",  # EventType.model in v0
+            "tool",  # EventType.tool in v0
+            "chain",  # EventType.chain in v0
+            "session",  # EventType.session in v0
         ]
 
         created_events = []
@@ -218,9 +225,7 @@ class TestHoneyHiveAttributesBackendIntegration:
 
             test_func = create_test_function(event_type, event_name)
             _ = test_func()  # Execute test but don't need result
-            created_events.append(
-                (event_name, event_type, f"{test_id}_{event_type}")
-            )
+            created_events.append((event_name, event_type, f"{test_id}_{event_type}"))
 
         # Force flush to ensure spans are exported immediately
         integration_tracer.force_flush()
@@ -244,7 +249,9 @@ class TestHoneyHiveAttributesBackendIntegration:
 
     @pytest.mark.tracer
     @pytest.mark.multi_instance
-    @pytest.mark.skip(reason="EventType enum removed in v1 - needs migration to string-based event_type")
+    @pytest.mark.skip(
+        reason="EventType enum removed in v1 - needs migration to string-based event_type"
+    )
     def test_multi_instance_attribute_isolation(
         self,
         real_api_credentials: Any,  # pylint: disable=unused-argument
@@ -345,8 +352,8 @@ class TestHoneyHiveAttributesBackendIntegration:
         assert event2.source == "multi_instance_test_2"
 
         # V0 CODE - EventType enum comparison needs migration
-        assert event1.event_type == "tool"    # EventType.tool in v0
-        assert event2.event_type == "chain"   # EventType.chain in v0
+        assert event1.event_type == "tool"  # EventType.tool in v0
+        assert event2.event_type == "chain"  # EventType.chain in v0
 
         # Cleanup tracers
         try:

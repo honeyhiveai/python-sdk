@@ -50,6 +50,8 @@ from .GetSessionResponse import *
 from .GetToolsResponse import *
 from .PostExperimentRunRequest import *
 from .PostExperimentRunResponse import *
+from .PostSessionRequest import *
+from .PostSessionResponse import *
 from .PutExperimentRunRequest import *
 from .PutExperimentRunResponse import *
 from .RemoveDatapointFromDatasetParams import *

@@ -20,15 +20,7 @@ from typing import Any
 
 import pytest
 
-from honeyhive.models import (
-    CreateDatapointRequest,
-    # Note: The following models from v0 API don't exist in v1 API:
-    # - CreateEventRequest (events API changed in v1)
-    # - Parameters2 (replaced with Dict[str, Any] in v1)
-    # - PostConfigurationRequest (renamed to CreateConfigurationRequest in v1)
-    # - SessionStartRequest (sessions API changed in v1)
-    # These will need to be updated during API migration
-)
+from honeyhive.models import CreateConfigurationRequest, CreateDatapointRequest
 from tests.utils import (  # pylint: disable=no-name-in-module
     generate_test_id,
     verify_datapoint_creation,
@@ -71,7 +63,6 @@ class TestEndToEndValidation:
         }
 
         datapoint_request = CreateDatapointRequest(
-            project=real_project,
             inputs=test_data,
             ground_truth=expected_ground_truth,
             metadata={"integration_test": True, "test_id": test_id},
@@ -152,12 +143,12 @@ class TestEndToEndValidation:
             # Step 1: Create and validate session using centralized helper
 
             print(f"🔄 Creating and validating session: {session_name}")
-            session_request = SessionStartRequest(
-                project=real_project,
-                session_name=session_name,
-                source="integration-test",
-                metadata={"test_id": test_id, "integration_test": True},
-            )
+            session_request = {
+                "project": real_project,
+                "session_name": session_name,
+                "source": "integration-test",
+                "metadata": {"test_id": test_id, "integration_test": True},
+            }
 
             verified_session = verify_session_creation(
                 client=integration_client,
@@ -179,27 +170,27 @@ class TestEndToEndValidation:
             for i in range(3):  # Create multiple events to test relationships
                 _, unique_id = generate_test_id(f"end_to_end_event_{i}", test_id)
 
-                event_request = CreateEventRequest(
-                    project=real_project,
-                    source="integration-test",
-                    event_name=f"{event_name}-{i}",
-                    event_type="model",
-                    config={
+                event_request = {
+                    "project": real_project,
+                    "source": "integration-test",
+                    "event_name": f"{event_name}-{i}",
+                    "event_type": "model",
+                    "config": {
                         "model": "gpt-4",
                         "temperature": 0.7,
                         "test_id": test_id,
                         "event_index": i,
                     },
-                    inputs={"prompt": f"Test prompt {i} for session {test_id}"},
-                    outputs={"response": f"Test response {i}"},
-                    session_id=session_id,
-                    duration=100.0 + (i * 10),  # Varying durations
-                    metadata={
+                    "inputs": {"prompt": f"Test prompt {i} for session {test_id}"},
+                    "outputs": {"response": f"Test response {i}"},
+                    "session_id": session_id,
+                    "duration": 100.0 + (i * 10),  # Varying durations
+                    "metadata": {
                         "test_id": test_id,
                         "event_index": i,
                         "test.unique_id": unique_id,
                     },
-                )
+                }
 
                 verified_event = verify_event_creation(
                     client=integration_client,
@@ -217,7 +208,7 @@ class TestEndToEndValidation:
 
             # Step 4: Validate session persistence and metadata
             print("🔍 Validating session storage...")
-            retrieved_session = integration_client.sessions.get_session(session_id)
+            retrieved_session = integration_client.sessions.get(session_id)
             assert retrieved_session is not None, "Session not found in system"
             assert hasattr(retrieved_session, "event"), "Session missing event data"
             assert (
@@ -234,8 +225,8 @@ class TestEndToEndValidation:
                 "type": "string",
             }
 
-            events_result = integration_client.events.get_events(
-                project=real_project, filters=[session_filter], limit=20
+            events_result = integration_client.events.list(
+                data={"project": real_project, "filters": [session_filter], "limit": 20}
             )
 
             assert "events" in events_result, "Events result missing 'events' key"
@@ -313,27 +304,24 @@ class TestEndToEndValidation:
         try:
             # Step 1: Create configuration with comprehensive parameters
             print(f"🔄 Creating configuration: {config_name}")
-            config_request = PostConfigurationRequest(
+            config_request = CreateConfigurationRequest(
                 name=config_name,
-                project=integration_project_name,
                 provider="openai",
-                parameters=Parameters2(
-                    call_type="chat",
-                    model="gpt-3.5-turbo",
-                    hyperparameters={
+                parameters={
+                    "call_type": "chat",
+                    "model": "gpt-3.5-turbo",
+                    "hyperparameters": {
                         "temperature": 0.8,
                         "max_tokens": 150,
                         "top_p": 0.9,
                         "frequency_penalty": 0.1,
                         "presence_penalty": 0.1,
                     },
-                ),
+                },
                 user_properties={"test_id": test_id, "integration_test": True},
             )
 
-            config_response = integration_client.configurations.create_configuration(
-                config_request
-            )
+            config_response = integration_client.configurations.create(config_request)
             # Configuration API returns CreateConfigurationResponse with MongoDB format
             assert hasattr(
                 config_response, "acknowledged"
@@ -356,8 +344,8 @@ class TestEndToEndValidation:
 
             # Step 3: Retrieve and validate configuration
             print("🔍 Retrieving configurations to validate storage...")
-            configurations = integration_client.configurations.list_configurations(
-                project=integration_project_name, limit=50
+            configurations = integration_client.configurations.list(
+                project=integration_project_name
             )
 
             # Find our specific configuration
@@ -415,20 +403,17 @@ class TestEndToEndValidation:
 
             # 1. Create configuration
             config_name = f"consistency-config-{test_id}"
-            config_request = PostConfigurationRequest(
+            config_request = CreateConfigurationRequest(
                 name=config_name,
-                project=real_project,
                 provider="openai",
-                parameters=Parameters2(
-                    call_type="chat",
-                    model="gpt-4",
-                    hyperparameters={"temperature": 0.5},
-                ),
+                parameters={
+                    "call_type": "chat",
+                    "model": "gpt-4",
+                    "hyperparameters": {"temperature": 0.5},
+                },
                 user_properties={"test_id": test_id, "timestamp": test_timestamp},
             )
-            config_response = integration_client.configurations.create_configuration(
-                config_request
-            )
+            config_response = integration_client.configurations.create(config_request)
             entities_created["config"] = {
                 "name": config_name,
                 "response": config_response,
@@ -436,30 +421,27 @@ class TestEndToEndValidation:
 
             # 2. Create session
             session_name = f"consistency-session-{test_id}"
-            session_request = SessionStartRequest(
-                project=real_project,
-                session_name=session_name,
-                source="consistency-test",
-                metadata={"test_id": test_id, "timestamp": test_timestamp},
-            )
-            session_response = integration_client.sessions.create_session(
-                session_request
-            )
+            session_request = {
+                "project": real_project,
+                "session_name": session_name,
+                "source": "consistency-test",
+                "metadata": {"test_id": test_id, "timestamp": test_timestamp},
+            }
+            session_response = integration_client.sessions.start(session_request)
+            # sessions.start() now returns PostSessionResponse
+            session_id = session_response.session_id
             entities_created["session"] = {
                 "name": session_name,
-                "id": session_response.session_id,
+                "id": session_id,
             }
 
             # 3. Create datapoint
             datapoint_request = CreateDatapointRequest(
-                project=real_project,
                 inputs={"query": f"Consistency test query {test_id}"},
                 ground_truth={"response": f"Consistency test response {test_id}"},
                 metadata={"test_id": test_id, "timestamp": test_timestamp},
             )
-            datapoint_response = integration_client.datapoints.create_datapoint(
-                datapoint_request
-            )
+            datapoint_response = integration_client.datapoints.create(datapoint_request)
             entities_created["datapoint"] = {"id": datapoint_response.field_id}
 
             print(f"✅ All entities created with test_id: {test_id}")
@@ -474,9 +456,7 @@ class TestEndToEndValidation:
             consistency_checks = []
 
             # Validate configuration exists with correct metadata
-            configs = integration_client.configurations.list_configurations(
-                project=real_project, limit=50
-            )
+            configs = integration_client.configurations.list(project=real_project)
             found_config = next((c for c in configs if c.name == config_name), None)
             if found_config and hasattr(found_config, "metadata"):
                 consistency_checks.append(
@@ -491,7 +471,7 @@ class TestEndToEndValidation:
 
             # Validate session exists
             try:
-                session = integration_client.sessions.get_session(
+                session = integration_client.sessions.get(
                     entities_created["session"]["id"]
                 )
                 consistency_checks.append(
@@ -506,8 +486,11 @@ class TestEndToEndValidation:
                 consistency_checks.append({"entity": "session", "exists": False})
 
             # Validate datapoint exists
-            datapoints = integration_client.datapoints.list_datapoints(
-                project=real_project
+            datapoints_response = integration_client.datapoints.list()
+            datapoints = (
+                datapoints_response.datapoints
+                if hasattr(datapoints_response, "datapoints")
+                else []
             )
             found_datapoint = None
             for dp in datapoints:

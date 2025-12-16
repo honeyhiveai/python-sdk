@@ -240,11 +240,14 @@ class TestOTELOTLPExportIntegration:
         )
 
         # Create a test session via API (required for backend to accept events)
-        test_session = integration_client.sessions.start_session(
-            project=real_project,
-            session_name="otlp_backend_verification_test",
-            source=real_source,
-        )
+        # v1 API uses dict-based request and .start() method
+        session_data = {
+            "project": real_project,
+            "session_name": "otlp_backend_verification_test",
+            "source": real_source,
+        }
+        test_session = integration_client.sessions.start(session_data)
+        # v1 API returns PostSessionResponse with session_id
         test_session_id = test_session.session_id
 
         # ✅ STANDARD PATTERN: Use verify_tracer_span for span creation

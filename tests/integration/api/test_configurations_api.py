@@ -218,7 +218,5 @@ class TestConfigurationsAPI:
 
         # Verify not in list after deletion
         configs = integration_client.configurations.list()
-        found_after = any(
-            hasattr(c, "name") and c.name == config_name for c in configs
-        )
+        found_after = any(hasattr(c, "name") and c.name == config_name for c in configs)
         assert found_after is False

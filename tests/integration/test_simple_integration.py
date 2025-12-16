@@ -204,11 +204,10 @@ class TestSimpleIntegration:
             }
 
             session_response = integration_client.sessions.start(session_data)
-            # v1 API returns dict with session_id
-            assert isinstance(session_response, dict)
-            assert "session_id" in session_response
-            assert session_response["session_id"] is not None
-            session_id = session_response["session_id"]
+            # v1 API returns PostSessionResponse with session_id
+            assert hasattr(session_response, "session_id")
+            assert session_response.session_id is not None
+            session_id = session_response.session_id
 
             # Step 2: Create event linked to session - v1 API uses dict-based request
             event_data = {

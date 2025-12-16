@@ -34,10 +34,14 @@ class TestMetricsAPI:
 
         assert metric is not None
         metric_name_attr = (
-            metric.get("name") if isinstance(metric, dict) else getattr(metric, "name", None)
+            metric.get("name")
+            if isinstance(metric, dict)
+            else getattr(metric, "name", None)
         )
         metric_type_attr = (
-            metric.get("type") if isinstance(metric, dict) else getattr(metric, "type", None)
+            metric.get("type")
+            if isinstance(metric, dict)
+            else getattr(metric, "type", None)
         )
         metric_desc_attr = (
             metric.get("description")
@@ -88,9 +92,7 @@ class TestMetricsAPI:
         )
         retrieved_metric = None
         for m in metrics:
-            m_name = (
-                m.get("name") if isinstance(m, dict) else getattr(m, "name", None)
-            )
+            m_name = m.get("name") if isinstance(m, dict) else getattr(m, "name", None)
             if m_name == metric_name:
                 retrieved_metric = m
                 break

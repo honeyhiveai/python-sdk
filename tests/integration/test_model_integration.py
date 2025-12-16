@@ -7,9 +7,9 @@ import pytest
 
 # v1 API imports - only models that exist in the new API
 from honeyhive.models import (
+    CreateConfigurationRequest,
     CreateDatapointRequest,
     CreateToolRequest,
-    CreateConfigurationRequest,
     PostExperimentRunRequest,
 )
 
@@ -234,7 +234,9 @@ class TestModelIntegration:
 
         # Verify complex structures are preserved
         assert (
-            complex_datapoint.metadata["config"]["nested"]["level1"]["level2"]["level3"]["deep_value"]
+            complex_datapoint.metadata["config"]["nested"]["level1"]["level2"][
+                "level3"
+            ]["deep_value"]
             == "very_deep"
         )
         assert complex_datapoint.metadata["config"]["arrays"][0]["data"] == "test1"

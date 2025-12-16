@@ -72,7 +72,7 @@ def verify_datapoint_creation(
     try:
         # Step 1: Create datapoint
         logger.debug(f"🔄 Creating datapoint for project: {project}")
-        datapoint_response = client.datapoints.create_datapoint(datapoint_request)
+        datapoint_response = client.datapoints.create(datapoint_request)
 
         # Validate creation response
         if (
@@ -89,7 +89,7 @@ def verify_datapoint_creation(
 
         # Step 3: Retrieve and validate persistence
         try:
-            found_datapoint = client.datapoints.get_datapoint(created_id)
+            found_datapoint = client.datapoints.get(created_id)
             logger.debug(f"✅ Datapoint retrieval successful: {created_id}")
             return found_datapoint
 
@@ -97,7 +97,12 @@ def verify_datapoint_creation(
             # Fallback: Try list-based retrieval if direct get fails
             logger.debug(f"Direct retrieval failed, trying list-based: {e}")
 
-            datapoints = client.datapoints.list_datapoints(project=project)
+            datapoints_response = client.datapoints.list()
+            datapoints = (
+                datapoints_response.datapoints
+                if hasattr(datapoints_response, "datapoints")
+                else []
+            )
 
             # Find matching datapoint
             for dp in datapoints:
@@ -146,23 +151,23 @@ def verify_session_creation(
     try:
         # Step 1: Create session
         logger.debug(f"🔄 Creating session for project: {project}")
-        session_response = client.sessions.create_session(session_request)
+        session_response = client.sessions.start(session_request)
 
-        # Validate creation response
-        if (
-            not hasattr(session_response, "session_id")
-            or session_response.session_id is None
-        ):
-            raise ValidationError("Session creation failed - missing session_id")
-
+        # Validate creation response - sessions.start() now returns PostSessionResponse
+        if not hasattr(session_response, "session_id"):
+            raise ValidationError(
+                "Session creation failed - response missing session_id attribute"
+            )
         created_id = session_response.session_id
+        if not created_id:
+            raise ValidationError("Session creation failed - session_id is None")
         logger.debug(f"✅ Session created with ID: {created_id}")
 
         # Step 2: Wait for data propagation
         time.sleep(2)
 
-        # Step 3: Retrieve and validate persistence using get_session
-        retrieved_session = client.sessions.get_session(created_id)
+        # Step 3: Retrieve and validate persistence using get
+        retrieved_session = client.sessions.get(created_id)
 
         # Validate the retrieved session
         if retrieved_session and hasattr(retrieved_session, "event"):
@@ -190,7 +195,7 @@ def verify_session_creation(
 def verify_configuration_creation(
     client: HoneyHive,
     project: str,
-    config_request: Dict[str, Any],
+    config_request: CreateConfigurationRequest,
     expected_config_name: Optional[str] = None,
 ) -> Any:
     """Verify complete configuration lifecycle: create → store → retrieve → validate.
@@ -210,7 +215,7 @@ def verify_configuration_creation(
     try:
         # Step 1: Create configuration
         logger.debug(f"🔄 Creating configuration for project: {project}")
-        config_response = client.configurations.create_configuration(config_request)
+        config_response = client.configurations.create(config_request)
 
         # Validate creation response
         if not hasattr(config_response, "id") or config_response.id is None:
@@ -223,9 +228,7 @@ def verify_configuration_creation(
         time.sleep(2)
 
         # Step 3: Retrieve and validate persistence
-        configurations = client.configurations.list_configurations(
-            project=project, limit=100
-        )
+        configurations = client.configurations.list(project=project)
 
         # Find matching configuration
         for config in configurations:
@@ -276,21 +279,35 @@ def verify_event_creation(
     try:
         # Step 1: Create event
         logger.debug(f"🔄 Creating event for project: {project}")
-        event_response = client.events.create_event(event_request)
+        event_response = client.events.create(event_request)
 
-        # Validate creation response
-        if not hasattr(event_response, "event_id") or event_response.event_id is None:
-            raise ValidationError("Event creation failed - missing event_id")
-
-        created_id = event_response.event_id
+        # Validate creation response - events.create() returns a dict
+        if isinstance(event_response, dict):
+            created_id = event_response.get("event_id")
+            if not created_id:
+                raise ValidationError(
+                    "Event creation failed - missing event_id in response dict"
+                )
+        elif hasattr(event_response, "event_id"):
+            created_id = event_response.event_id
+            if not created_id:
+                raise ValidationError("Event creation failed - event_id is None")
+        else:
+            raise ValidationError("Event creation failed - invalid response format")
         logger.debug(f"✅ Event created with ID: {created_id}")
 
         # Step 2: Use standardized backend verification for events
+        # event_request is now a dict, so use dict access
+        expected_name = expected_event_name or (
+            event_request.get("event_name")
+            if isinstance(event_request, dict)
+            else event_request.event_name
+        )
         return verify_backend_event(
             client=client,
             project=project,
             unique_identifier=unique_identifier,
-            expected_event_name=expected_event_name or event_request.event_name,
+            expected_event_name=expected_name,
         )
 
     except Exception as e:
