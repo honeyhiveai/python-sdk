@@ -34,6 +34,7 @@ from honeyhive._generated.models import (
     DeleteConfigurationResponse,
     DeleteDatapointResponse,
     DeleteDatasetResponse,
+    DeleteEventResponse,
     DeleteExperimentRunResponse,
     DeleteMetricResponse,
     DeleteSessionResponse,
@@ -42,12 +43,17 @@ from honeyhive._generated.models import (
     GetDatapointResponse,
     GetDatapointsResponse,
     GetDatasetsResponse,
+    GetEventsBySessionIdResponse,
+    GetEventsChartResponse,
+    GetEventsResponse,
     GetExperimentRunResponse,
     GetExperimentRunsResponse,
     GetExperimentRunsSchemaResponse,
     GetMetricsResponse,
     GetSessionResponse,
     GetToolsResponse,
+    PostEventRequest,
+    PostEventResponse,
     PostExperimentRunRequest,
     PostExperimentRunResponse,
     PostSessionResponse,
@@ -307,13 +313,13 @@ class EventsAPI(BaseAPI):
     """Events API."""
 
     # Sync methods
-    def list(self, data: Dict[str, Any]) -> Dict[str, Any]:
+    def list(self, data: Dict[str, Any]) -> GetEventsResponse:
         """Get events."""
-        return events_svc.getEvents(self._api_config, data=data)
+        return events_svc.getEvents(self._api_config, **data)
 
-    def create(self, data: Dict[str, Any]) -> Dict[str, Any]:
+    def create(self, request: PostEventRequest) -> PostEventResponse:
         """Create an event."""
-        return events_svc.createEvent(self._api_config, data=data)
+        return events_svc.createEvent(self._api_config, data=request)
 
     def update(self, data: Dict[str, Any]) -> None:
         """Update an event."""
@@ -324,13 +330,13 @@ class EventsAPI(BaseAPI):
         return events_svc.createEventBatch(self._api_config, data=data)
 
     # Async methods
-    async def list_async(self, data: Dict[str, Any]) -> Dict[str, Any]:
+    async def list_async(self, data: Dict[str, Any]) -> GetEventsResponse:
         """Get events asynchronously."""
-        return await events_svc_async.getEvents(self._api_config, data=data)
+        return await events_svc_async.getEvents(self._api_config, **data)
 
-    async def create_async(self, data: Dict[str, Any]) -> Dict[str, Any]:
+    async def create_async(self, request: PostEventRequest) -> PostEventResponse:
         """Create an event asynchronously."""
-        return await events_svc_async.createEvent(self._api_config, data=data)
+        return await events_svc_async.createEvent(self._api_config, data=request)
 
     async def update_async(self, data: Dict[str, Any]) -> None:
         """Update an event asynchronously."""
