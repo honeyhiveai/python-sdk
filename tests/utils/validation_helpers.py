@@ -285,7 +285,9 @@ def verify_event_creation(
         # Step 1: Create event
         logger.debug(f"🔄 Creating event for project: {project}")
         # Wrap event_request dict in PostEventRequest typed model
-        event_response = client.events.create(request=PostEventRequest(event=event_request))
+        event_response = client.events.create(
+            request=PostEventRequest(event=event_request)
+        )
 
         # Validate creation response - events.create() now returns PostEventResponse
         if not isinstance(event_response, PostEventResponse):

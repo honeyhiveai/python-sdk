@@ -237,7 +237,9 @@ class TestEndToEndValidation:
             assert isinstance(
                 events_result, GetEventsResponse
             ), f"Expected GetEventsResponse, got {type(events_result)}"
-            assert hasattr(events_result, "events"), "Events result missing 'events' attribute"
+            assert hasattr(
+                events_result, "events"
+            ), "Events result missing 'events' attribute"
             retrieved_events = events_result.events
 
             # Validate all events are linked to session

@@ -103,7 +103,9 @@ def verify_backend_event(
                 continue
 
             # Extract events list from typed response
-            events = events_response.events if hasattr(events_response, "events") else []
+            events = (
+                events_response.events if hasattr(events_response, "events") else []
+            )
             if not isinstance(events, list):
                 logger.warning(
                     f"API response 'events' field is not a list: {type(events)} "
