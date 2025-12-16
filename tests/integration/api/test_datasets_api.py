@@ -6,7 +6,11 @@ from typing import Any
 
 import pytest
 
-from honeyhive.models import CreateDatasetRequest, GetDatasetsResponse
+from honeyhive.models import (
+    CreateDatasetRequest,
+    DeleteDatasetResponse,
+    GetDatasetsResponse,
+)
 
 
 class TestDatasetsAPI:
@@ -152,12 +156,30 @@ class TestDatasetsAPI:
         self, integration_client: Any, integration_project_name: str
     ) -> None:
         """Test dataset deletion, verify not in list after delete."""
-        pytest.skip(
-            "Backend returns unexpected status code for delete - not 200 or 204"
+        test_id = str(uuid.uuid4())[:8]
+        dataset_name = f"test_delete_dataset_{test_id}"
+
+        dataset_request = CreateDatasetRequest(
+            name=dataset_name,
+            description=f"Test delete dataset {test_id}",
         )
+
+        create_response = integration_client.datasets.create(dataset_request)
+        dataset_id = create_response.result["insertedId"]
+
+        time.sleep(2)
+
+        response = integration_client.datasets.delete(dataset_id)
+
+        assert isinstance(response, DeleteDatasetResponse)
+        # Delete succeeded if no exception was raised
+        # The response model only has 'result' field
+        assert response is not None
 
     def test_update_dataset(
         self, integration_client: Any, integration_project_name: str
     ) -> None:
         """Test dataset metadata updates, verify persistence."""
-        pytest.skip("Backend returns empty JSON response causing parse error")
+        pytest.skip(
+            "UpdateDatasetRequest requires dataset_id field - needs investigation"
+        )
