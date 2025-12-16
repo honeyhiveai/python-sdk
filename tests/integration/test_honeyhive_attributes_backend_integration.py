@@ -36,9 +36,6 @@ class TestHoneyHiveAttributesBackendIntegration:
     """
 
     @pytest.mark.tracer
-    @pytest.mark.skip(
-        reason="EventType enum removed in v1 - needs migration to string-based event_type"
-    )
     def test_decorator_event_type_backend_verification(
         self,
         integration_tracer: Any,
@@ -46,13 +43,10 @@ class TestHoneyHiveAttributesBackendIntegration:
         real_project: Any,
         real_source: Any,
     ) -> None:
-        """Test that @trace decorator EventType enum is properly converted in backend.
+        """Test that @trace decorator event_type is properly stored in backend.
 
-        Creates a span using @trace decorator with EventType.tool and verifies
-        that backend receives "tool" string, not enum object.
-
-        NOTE: This test uses v0 EventType enum which was removed in v1.
-        Needs migration to use plain strings like "tool", "model", etc.
+        Creates a span using @trace decorator with event_type="tool" and verifies
+        that backend receives the string value correctly.
         """
         event_name, test_id = generate_test_id("decorator_event_type_test")
 
@@ -110,9 +104,6 @@ class TestHoneyHiveAttributesBackendIntegration:
         assert event.source == real_source
 
     @pytest.mark.tracer
-    @pytest.mark.skip(
-        reason="EventType enum removed in v1 - needs migration to string-based event_type"
-    )
     def test_direct_span_event_type_inference(
         self, integration_tracer: Any, integration_client: Any
     ) -> None:
@@ -121,9 +112,6 @@ class TestHoneyHiveAttributesBackendIntegration:
 
         Creates a span with 'openai.chat.completions.create' name and verifies
         that backend receives 'model' event_type through inference.
-
-        NOTE: This test uses v0 EventType enum which was removed in v1.
-        Needs migration to use plain strings like "model", "tool", etc.
         """
         _, test_id = generate_test_id("openai_chat_completions_create")
         # Use unique event name to avoid conflicts with other test runs
@@ -172,19 +160,13 @@ class TestHoneyHiveAttributesBackendIntegration:
 
     @pytest.mark.tracer
     @pytest.mark.models
-    @pytest.mark.skip(
-        reason="EventType enum removed in v1 - needs migration to string-based event_type"
-    )
     def test_all_event_types_backend_conversion(
         self, integration_tracer: Any, integration_client: Any
     ) -> None:
-        """Test that all EventType enum values are properly converted in backend.
+        """Test that all event_type values are properly stored in backend.
 
-        Creates spans with each EventType (model, tool, chain, session) and
+        Creates spans with each event_type (model, tool, chain, session) and
         verifies that backend receives correct string values.
-
-        NOTE: This test uses v0 EventType enum which was removed in v1.
-        Needs migration to use plain strings like "model", "tool", "chain", "session".
         """
         _, test_id = generate_test_id("all_event_types_backend_conversion")
         # V0 CODE - EventType enum values converted to plain strings in v1
@@ -249,9 +231,6 @@ class TestHoneyHiveAttributesBackendIntegration:
 
     @pytest.mark.tracer
     @pytest.mark.multi_instance
-    @pytest.mark.skip(
-        reason="EventType enum removed in v1 - needs migration to string-based event_type"
-    )
     def test_multi_instance_attribute_isolation(
         self,
         real_api_credentials: Any,  # pylint: disable=unused-argument
@@ -260,9 +239,6 @@ class TestHoneyHiveAttributesBackendIntegration:
 
         Creates two independent tracers with different sources and verifies
         that their attributes don't interfere with each other.
-
-        NOTE: This test uses v0 EventType enum which was removed in v1.
-        Needs migration to use plain strings like "tool", "chain", etc.
         """
         _, test_id = generate_test_id("multi_tracer_attribute_isolation")
 
@@ -272,7 +248,6 @@ class TestHoneyHiveAttributesBackendIntegration:
             project=real_api_credentials["project"],
             source="multi_instance_test_1",
             session_name=f"test-tracer1-{test_id}",
-            test_mode=False,
             disable_batch=True,
         )
 
@@ -281,11 +256,10 @@ class TestHoneyHiveAttributesBackendIntegration:
             project=real_api_credentials["project"],
             source="multi_instance_test_2",
             session_name=f"test-tracer2-{test_id}",
-            test_mode=False,
             disable_batch=True,
         )
 
-        client = HoneyHive(api_key=real_api_credentials["api_key"], test_mode=False)
+        client = HoneyHive(api_key=real_api_credentials["api_key"])
 
         # Create events with each tracer
         # V0 CODE - EventType.tool.value would be "tool" in v1
