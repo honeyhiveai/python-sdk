@@ -9,6 +9,7 @@ import time
 from typing import Any, Optional
 
 from honeyhive import HoneyHive
+from honeyhive.models import GetEventsResponse
 from honeyhive.utils.logger import get_logger
 
 from .test_config import test_config
@@ -89,20 +90,20 @@ def verify_backend_event(
             }
             events_response = client.events.list(data=data)
 
-            # Validate API response - v1 API returns a dict with "events" key
+            # Validate API response - now returns typed GetEventsResponse model
             if events_response is None:
                 logger.warning(f"API returned None for events (attempt {attempt + 1})")
                 continue
 
-            if not isinstance(events_response, dict):
+            if not isinstance(events_response, GetEventsResponse):
                 logger.warning(
-                    f"API returned non-dict response: {type(events_response)} "
+                    f"API returned unexpected response type: {type(events_response)} "
                     f"(attempt {attempt + 1})"
                 )
                 continue
 
-            # Extract events list from response
-            events = events_response.get("events", [])
+            # Extract events list from typed response
+            events = events_response.events if hasattr(events_response, "events") else []
             if not isinstance(events, list):
                 logger.warning(
                     f"API response 'events' field is not a list: {type(events)} "

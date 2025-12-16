@@ -20,7 +20,11 @@ from typing import Any
 
 import pytest
 
-from honeyhive.models import CreateConfigurationRequest, CreateDatapointRequest
+from honeyhive.models import (
+    CreateConfigurationRequest,
+    CreateDatapointRequest,
+    GetEventsResponse,
+)
 from tests.utils import (  # pylint: disable=no-name-in-module
     generate_test_id,
     verify_datapoint_creation,
@@ -229,8 +233,12 @@ class TestEndToEndValidation:
                 data={"project": real_project, "filters": [session_filter], "limit": 20}
             )
 
-            assert "events" in events_result, "Events result missing 'events' key"
-            retrieved_events = events_result["events"]
+            # Validate typed GetEventsResponse
+            assert isinstance(
+                events_result, GetEventsResponse
+            ), f"Expected GetEventsResponse, got {type(events_result)}"
+            assert hasattr(events_result, "events"), "Events result missing 'events' attribute"
+            retrieved_events = events_result.events
 
             # Validate all events are linked to session
             found_events = []
