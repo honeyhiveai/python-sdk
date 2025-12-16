@@ -189,9 +189,7 @@ class TestToolsAPI:
         # Note: Cleanup removed - tools.delete() has a bug where client wrapper
         # passes 'tool_id' but generated service expects 'function_id' parameter
 
-    @pytest.mark.skip(
-        reason="Backend returns 400 error for updateTool endpoint"
-    )
+    @pytest.mark.skip(reason="Backend returns 400 error for updateTool endpoint")
     def test_update_tool(
         self, integration_client: Any, integration_project_name: str
     ) -> None:
@@ -232,9 +230,7 @@ class TestToolsAPI:
 
         # Create UpdateToolRequest with updated description
         updated_description = f"Updated description {test_id}"
-        update_request = UpdateToolRequest(
-            id=tool_id, description=updated_description
-        )
+        update_request = UpdateToolRequest(id=tool_id, description=updated_description)
 
         # Call client.tools.update(tool_id, update_request)
         response = integration_client.tools.update(update_request)

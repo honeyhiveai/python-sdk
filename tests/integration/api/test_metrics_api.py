@@ -6,7 +6,11 @@ from typing import Any
 
 import pytest
 
-from honeyhive.models import CreateMetricRequest, CreateMetricResponse, GetMetricsResponse
+from honeyhive.models import (
+    CreateMetricRequest,
+    CreateMetricResponse,
+    GetMetricsResponse,
+)
 
 
 class TestMetricsAPI:
@@ -58,7 +62,9 @@ class TestMetricsAPI:
         created_metric = integration_client.metrics.create(metric_request)
 
         assert isinstance(created_metric, CreateMetricResponse)
-        metric_id = getattr(created_metric, "id", getattr(created_metric, "metric_id", None))
+        metric_id = getattr(
+            created_metric, "id", getattr(created_metric, "metric_id", None)
+        )
         if not metric_id:
             pytest.skip(
                 "Metric creation didn't return ID - backend may not support retrieval"

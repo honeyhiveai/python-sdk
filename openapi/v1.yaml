@@ -5,7 +5,7 @@ info:
 servers:
   - url: https://api.honeyhive.ai
 paths:
-  /v1/session/start:
+  /session/start:
     post:
       summary: Start a new session
       operationId: startSession
@@ -80,7 +80,7 @@ paths:
           description: Invalid session ID or missing required scope
         '500':
           description: Error deleting session
-  /v1/events:
+  /events:
     post:
       tags:
         - Events
@@ -464,7 +464,7 @@ paths:
                   totalEvents:
                     type: number
                     description: Total number of events in the specified filter
-  /v1/events/model:
+  /events/model:
     post:
       tags:
         - Events
@@ -495,7 +495,7 @@ paths:
                 example:
                   event_id: 7f22137a-6911-4ed3-bc36-110f1dde6b66
                   success: true
-  /v1/events/batch:
+  /events/batch:
     post:
       tags:
         - Events
@@ -568,7 +568,7 @@ paths:
                     - Could not create event due to missing inputs
                     - Could not create event due to missing source
                   success: true
-  /v1/events/model/batch:
+  /events/model/batch:
     post:
       tags:
         - Events

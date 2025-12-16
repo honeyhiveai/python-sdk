@@ -20,7 +20,7 @@ def getEvents(
     api_config = api_config_override if api_config_override else APIConfig()
 
     base_path = api_config.base_path
-    path = f"/v1/events"
+    path = f"/events"
     headers = {
         "Content-Type": "application/json",
         "Accept": "application/json",
@@ -65,7 +65,7 @@ def createEvent(
     api_config = api_config_override if api_config_override else APIConfig()
 
     base_path = api_config.base_path
-    path = f"/v1/events"
+    path = f"/events"
     headers = {
         "Content-Type": "application/json",
         "Accept": "application/json",
@@ -103,7 +103,7 @@ def updateEvent(
     api_config = api_config_override if api_config_override else APIConfig()
 
     base_path = api_config.base_path
-    path = f"/v1/events"
+    path = f"/events"
     headers = {
         "Content-Type": "application/json",
         "Accept": "application/json",
@@ -306,7 +306,7 @@ def createModelEvent(
     api_config = api_config_override if api_config_override else APIConfig()
 
     base_path = api_config.base_path
-    path = f"/v1/events/model"
+    path = f"/events/model"
     headers = {
         "Content-Type": "application/json",
         "Accept": "application/json",
@@ -340,7 +340,7 @@ def createEventBatch(
     api_config = api_config_override if api_config_override else APIConfig()
 
     base_path = api_config.base_path
-    path = f"/v1/events/batch"
+    path = f"/events/batch"
     headers = {
         "Content-Type": "application/json",
         "Accept": "application/json",
@@ -374,7 +374,7 @@ def createModelEventBatch(
     api_config = api_config_override if api_config_override else APIConfig()
 
     base_path = api_config.base_path
-    path = f"/v1/events/model/batch"
+    path = f"/events/model/batch"
     headers = {
         "Content-Type": "application/json",
         "Accept": "application/json",

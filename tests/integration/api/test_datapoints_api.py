@@ -174,10 +174,7 @@ class TestDatapointsAPI:
         # Assert response is DeleteDatapointResponse
         assert isinstance(response, DeleteDatapointResponse)
         # Assert response.deleted is True or response.deletedCount >= 1
-        assert (
-            response.deleted is True
-            or getattr(response, "deletedCount", 0) >= 1
-        )
+        assert response.deleted is True or getattr(response, "deletedCount", 0) >= 1
 
     def test_bulk_operations(
         self, integration_client: Any, integration_project_name: str
