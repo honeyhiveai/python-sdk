@@ -7,8 +7,14 @@ import uuid
 
 import pytest
 
-# v1 models - note: Sessions and Events use dict-based APIs
-from honeyhive.models import CreateConfigurationRequest, CreateDatapointRequest
+# v1 models - note: Sessions uses dict-based API, Events now uses typed models
+from honeyhive.models import (
+    CreateConfigurationRequest,
+    CreateDatapointRequest,
+    GetEventsResponse,
+    PostEventRequest,
+    PostEventResponse,
+)
 
 
 class TestSimpleIntegration:
@@ -221,12 +227,13 @@ class TestSimpleIntegration:
                 "duration": 100.0,
             }
 
-            event_response = integration_client.events.create(event_data)
-            # v1 API returns dict with event_id
-            assert isinstance(event_response, dict)
-            assert "event_id" in event_response
-            assert event_response["event_id"] is not None
-            event_id = event_response["event_id"]
+            event_response = integration_client.events.create(
+                request=PostEventRequest(event=event_data)
+            )
+            # v1 API returns PostEventResponse with event_id
+            assert isinstance(event_response, PostEventResponse)
+            assert event_response.event_id is not None
+            event_id = event_response.event_id
 
             # Step 3: Wait for data propagation
             time.sleep(3)
@@ -249,14 +256,18 @@ class TestSimpleIntegration:
                 }
 
                 events_result = integration_client.events.list(
-                    project=integration_project_name, filters=[session_filter], limit=10
+                    data={
+                        "filters": [session_filter],
+                        "limit": 10,
+                    }
                 )
 
                 # Verify event is linked to session
-                assert "events" in events_result
+                assert isinstance(events_result, GetEventsResponse)
+                assert events_result.events is not None
                 found_event = None
-                for event in events_result["events"]:
-                    if event.get("event_id") == event_id:
+                for event in events_result.events:
+                    if event.event_id == event_id:
                         found_event = event
                         break
 
@@ -264,10 +275,10 @@ class TestSimpleIntegration:
                     found_event is not None
                 ), f"Created event {event_id} not found in session {session_id}"
                 assert (
-                    found_event["session_id"] == session_id
+                    found_event.session_id == session_id
                 ), "Event not properly linked to session"
                 assert (
-                    found_event["config"]["test_id"] == test_id
+                    found_event.config["test_id"] == test_id
                 ), "Event data not properly stored"
 
                 print("✅ Successfully validated session-event workflow:")
