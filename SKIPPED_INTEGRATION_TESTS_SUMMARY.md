@@ -266,9 +266,9 @@ Multiple files have OpenTelemetry tests skipped conditionally:
    - GET /v1/sessions/{session_id} endpoint (3 tests)
    - GET /v1/events/{session_id} endpoint (5 tests)
 
-2. **Backend Issues/Errors (12 tests)**
+2. **Backend Issues/Errors (11 tests)**
    - 400 Bad Request errors (4 tests)
-   - 404 Not Found errors (3 tests)
+   - 404 Not Found errors (2 tests)
    - Forbidden route errors (2 tests)
    - Data propagation issues (1 test)
    - Parameter issues (2 tests)
@@ -295,8 +295,13 @@ Multiple files have OpenTelemetry tests skipped conditionally:
    - Requires complex setup with dataset and metrics
 
 ### Total Skipped Tests
-- **Individual test methods:** ~40+ tests
+- **Individual test methods:** 21 API tests + 8 backend endpoint tests + 1 real instrumentor test = **30 individual tests**
 - **Entire modules/classes:** 5 (conditionally skipped)
+  - Experiments Integration (conditional on CI)
+  - Evaluate Enrich Integration (entire module)
+  - V1 Immediate Ship Requirements (conditional on CI)
+  - E2E Patterns (conditional on HH_API_KEY)
+  - Real Instrumentor Integration (1 test conditional on OPENAI_API_KEY)
 - **OpenTelemetry tests:** 9 files (conditionally skipped if OTEL not available)
 
 **Note:** The GET /v1/events endpoint mentioned in previous versions of this document was removed from the API as it never existed in production. Event verification now uses getEventsBySessionId, which requires a valid session.
