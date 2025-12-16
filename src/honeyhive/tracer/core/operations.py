@@ -24,6 +24,7 @@ from opentelemetry.trace import SpanKind, Status, StatusCode
 
 # Event request is now built as a dict and passed directly to the API
 # EventType values are now plain strings since we pass dicts to the API
+from ..._generated.models import PostEventRequest
 from ...utils.logger import is_shutdown_detected, safe_log
 from ..lifecycle.core import is_new_span_creation_disabled
 from .base import NoOpSpan
@@ -703,7 +704,9 @@ class TracerOperationsMixin(TracerOperationsInterface):
 
             # Create event via API
             if self.client is not None:
-                response = self.client.events.create(data=event_request)
+                response = self.client.events.create(
+                    request=PostEventRequest(event=event_request)
+                )
                 safe_log(
                     self,
                     "debug",
