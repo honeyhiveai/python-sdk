@@ -314,6 +314,7 @@ class TracerContextMixin(TracerContextInterface):
         metadata: Optional[Dict[str, Any]] = None,
         user_properties: Optional[Dict[str, Any]] = None,
         source: Optional[str] = None,
+        skip_api_call: bool = False,
     ) -> Optional[str]:
         """Create a new session and set it in the current request context.
 
@@ -329,14 +330,18 @@ class TracerContextMixin(TracerContextInterface):
 
         Args:
             session_name: Name for the session. Auto-generated if not provided.
-            session_id: Custom session ID. If provided, sets this ID in baggage
-                       WITHOUT making an API call (bring-your-own-session-id pattern).
-                       Useful when session was created externally or you want to
-                       use your own ID scheme.
+            session_id: Custom session ID. If provided along with skip_api_call=True,
+                       sets this ID in baggage WITHOUT making an API call
+                       (bring-your-own-session-id pattern for linking to existing
+                       sessions). If skip_api_call=False (default), creates the
+                       session via API with this ID.
             inputs: Input data for the session (e.g., user query, request data)
             metadata: Additional metadata for the session
             user_properties: User-specific properties (user_id, plan, etc.)
             source: Source environment override. Uses tracer's source if not provided.
+            skip_api_call: If True and session_id is provided, skip API call and just
+                          set session_id in baggage. Useful for linking to sessions
+                          that were already created. Defaults to False.
 
         Returns:
             Session ID if successful, None otherwise
@@ -379,8 +384,8 @@ class TracerContextMixin(TracerContextInterface):
             Added for multi-session handling with global tracer pattern.
         """
         try:
-            # If session_id is provided, just set it in baggage (no API call)
-            if session_id:
+            # If session_id provided with skip_api_call, just set in baggage
+            if session_id and skip_api_call:
                 current_ctx = context.get_current()
                 new_ctx = baggage.set_baggage("session_id", session_id, current_ctx)
                 context.attach(new_ctx)
@@ -388,11 +393,12 @@ class TracerContextMixin(TracerContextInterface):
                 safe_log(
                     self,
                     "info",
-                    f"Set provided session_id in baggage: {session_id}",
+                    f"Set provided session_id in baggage (no API call): {session_id}",
                     honeyhive_data={
                         "session_id": session_id,
                         "storage": "baggage",
                         "source": "provided",
+                        "api_call": False,
                     },
                 )
                 return session_id
@@ -413,6 +419,10 @@ class TracerContextMixin(TracerContextInterface):
                 "source": effective_source,
                 "session_name": effective_session_name,
             }
+
+            # Include customer-provided session_id if specified
+            if session_id:
+                session_params["session_id"] = session_id
 
             if inputs:
                 session_params["inputs"] = inputs
@@ -461,6 +471,7 @@ class TracerContextMixin(TracerContextInterface):
         metadata: Optional[Dict[str, Any]] = None,
         user_properties: Optional[Dict[str, Any]] = None,
         source: Optional[str] = None,
+        skip_api_call: bool = False,
     ) -> Optional[str]:
         """Async version of create_session for async frameworks like FastAPI.
 
@@ -469,12 +480,15 @@ class TracerContextMixin(TracerContextInterface):
 
         Args:
             session_name: Name for the session. Auto-generated if not provided.
-            session_id: Custom session ID. If provided, sets this ID in baggage
-                       WITHOUT making an API call (bring-your-own-session-id pattern).
+            session_id: Custom session ID. If provided along with skip_api_call=True,
+                       sets this ID in baggage WITHOUT making an API call.
+                       If skip_api_call=False (default), creates session via API
+                       with this ID.
             inputs: Input data for the session
             metadata: Additional metadata for the session
             user_properties: User-specific properties
             source: Source environment override
+            skip_api_call: If True and session_id is provided, skip API call.
 
         Returns:
             Session ID if successful, None otherwise
@@ -498,8 +512,8 @@ class TracerContextMixin(TracerContextInterface):
         .. versionadded:: 1.0.0rc8
         """
         try:
-            # If session_id is provided, just set it in baggage (no API call)
-            if session_id:
+            # If session_id provided with skip_api_call, just set in baggage
+            if session_id and skip_api_call:
                 current_ctx = context.get_current()
                 new_ctx = baggage.set_baggage("session_id", session_id, current_ctx)
                 context.attach(new_ctx)
@@ -507,11 +521,12 @@ class TracerContextMixin(TracerContextInterface):
                 safe_log(
                     self,
                     "info",
-                    f"Set provided session_id in baggage (async): {session_id}",
+                    f"Set provided session_id in baggage (async, no API): {session_id}",
                     honeyhive_data={
                         "session_id": session_id,
                         "storage": "baggage",
                         "source": "provided",
+                        "api_call": False,
                     },
                 )
                 return session_id
@@ -532,6 +547,10 @@ class TracerContextMixin(TracerContextInterface):
                 "source": effective_source,
                 "session_name": effective_session_name,
             }
+
+            # Include customer-provided session_id if specified
+            if session_id:
+                session_params["session_id"] = session_id
 
             if inputs:
                 session_params["inputs"] = inputs

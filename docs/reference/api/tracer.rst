@@ -711,7 +711,7 @@ Session Management Methods
 create_session()
 ~~~~~~~~~~~~~~~~
 
-.. py:method:: create_session(session_name: Optional[str] = None, session_id: Optional[str] = None, inputs: Optional[Dict[str, Any]] = None, metadata: Optional[Dict[str, Any]] = None, user_properties: Optional[Dict[str, Any]] = None, source: Optional[str] = None) -> Optional[str]
+.. py:method:: create_session(session_name: Optional[str] = None, session_id: Optional[str] = None, inputs: Optional[Dict[str, Any]] = None, metadata: Optional[Dict[str, Any]] = None, user_properties: Optional[Dict[str, Any]] = None, source: Optional[str] = None, skip_api_call: bool = False) -> Optional[str]
 
    Create a new session and set it in the current request context using OpenTelemetry baggage.
    
@@ -724,9 +724,9 @@ create_session()
    :param session_name: Human-readable name for the session. Auto-generated if not provided.
    :type session_name: Optional[str]
    
-   :param session_id: Custom session ID (bring-your-own-session-id pattern). If provided, 
-                      sets this ID in baggage WITHOUT making an API call. Useful when session
-                      was created externally or when linking multiple requests to the same session.
+   :param session_id: Custom session ID. By default, the API is called with this ID to create
+                      the session in the backend. If ``skip_api_call=True``, just sets this ID
+                      in baggage without making an API call (for linking to existing sessions).
    :type session_id: Optional[str]
    
    :param inputs: Input data for the session (e.g., user query, request data).
@@ -740,6 +740,11 @@ create_session()
    
    :param source: Source environment override. Uses tracer's source if not provided.
    :type source: Optional[str]
+   
+   :param skip_api_call: If True and session_id is provided, skip the API call and just
+                         set session_id in baggage. Useful for linking to sessions that
+                         were already created externally. Defaults to False.
+   :type skip_api_call: bool
    
    **Returns:**
    
@@ -771,14 +776,29 @@ create_session()
           tracer.enrich_session(outputs={"status_code": response.status_code})
           return response
    
-   **Bring-Your-Own Session ID:**
+   **Custom Session ID (API creates session with your ID):**
    
    .. code-block:: python
    
-      # Use existing session ID without making API call
+      # Create session with your own ID via API
+      my_session_id = f"user-{user_id}-{timestamp}"
+      tracer.create_session(
+          session_id=my_session_id,  # API creates session with this ID
+          session_name="user-session",
+          inputs={"user_id": user_id}
+      )
+   
+   **Link to Existing Session (no API call):**
+   
+   .. code-block:: python
+   
+      # Link to session that was already created (skip API call)
       existing_session_id = request.headers.get("X-Session-ID")
       if existing_session_id:
-          tracer.create_session(session_id=existing_session_id)
+          tracer.create_session(
+              session_id=existing_session_id,
+              skip_api_call=True  # Just set in baggage, no API call
+          )
       else:
           tracer.create_session(session_name="new-session")
    

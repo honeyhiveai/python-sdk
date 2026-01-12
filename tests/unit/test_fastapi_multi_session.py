@@ -118,22 +118,53 @@ class TestFastAPIMultiSessionMocked:
             assert call_args["session_name"] == "sync-test-session"
             assert call_args["inputs"] == {"sync": True}
 
-    def test_create_session_with_provided_session_id(self) -> None:
-        """Test that providing session_id skips API call."""
+    def test_create_session_with_provided_session_id_calls_api(self) -> None:
+        """Test that providing session_id still calls API by default."""
         tracer = HoneyHiveTracer.init(
             api_key="test-key",
             project="test-project",
             test_mode=True,
         )
 
-        # Provide our own session ID - should NOT call API
+        # Provide our own session ID - should call API with that ID
         with patch.object(tracer, "session_api") as mock_api:
-            session_id = tracer.create_session(session_id="my-custom-session-id")
+            mock_response = type(
+                "Response", (), {"session_id": "my-custom-session-id"}
+            )()
+            mock_api.create_session_from_dict.return_value = mock_response
+
+            session_id = tracer.create_session(
+                session_id="my-custom-session-id",
+                session_name="custom-session",
+            )
 
             # Verify returned session ID matches what we provided
             assert session_id == "my-custom-session-id"
 
-            # Verify API was NOT called (we provided the ID)
+            # Verify API WAS called with the provided session_id
+            mock_api.create_session_from_dict.assert_called_once()
+            call_args = mock_api.create_session_from_dict.call_args[0][0]
+            assert call_args["session_id"] == "my-custom-session-id"
+
+    def test_create_session_with_skip_api_call(self) -> None:
+        """Test that skip_api_call=True skips the API call."""
+        tracer = HoneyHiveTracer.init(
+            api_key="test-key",
+            project="test-project",
+            test_mode=True,
+        )
+
+        # Provide session_id with skip_api_call=True - should NOT call API
+        with patch.object(tracer, "session_api") as mock_api:
+            session_id = tracer.create_session(
+                session_id="existing-session-id",
+                skip_api_call=True,
+            )
+
+            # Verify returned session ID matches what we provided
+            assert session_id == "existing-session-id"
+
+            # Verify API was NOT called
             mock_api.create_session_from_dict.assert_not_called()
 
 
