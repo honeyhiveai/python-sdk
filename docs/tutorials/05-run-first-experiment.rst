@@ -511,6 +511,8 @@ Now you have TWO runs to compare!
 
 **Compare in the Dashboard OR via API:**
 
+.. note::
+   **HoneyHive vs HoneyHiveTracer**: ``HoneyHiveTracer`` (used in previous tutorials) handles tracing and observability. ``HoneyHive`` is the API client for managing HoneyHive resources like experiment results, datasets, and projects.
 
 .. code-block:: python
 

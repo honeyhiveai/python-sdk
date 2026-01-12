@@ -3,6 +3,9 @@ Results Retrieval
 
 Functions for retrieving and comparing experiment results from the backend.
 
+.. note::
+   These functions require a ``HoneyHive`` API client (not ``HoneyHiveTracer``). The client manages platform resources while the tracer handles observability.
+
 get_run_result()
 ----------------
 
