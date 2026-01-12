@@ -111,24 +111,39 @@ Main Components
 Core API
 --------
 
-Client Classes
-~~~~~~~~~~~~~~
+Tracing
+~~~~~~~
 
 .. toctree::
    :maxdepth: 1
 
-   api/client
    api/tracer
+   api/decorators
    api/tracer-architecture
    api/config-models
 
-Decorators & Functions
-~~~~~~~~~~~~~~~~~~~~~~
+Data & Platform APIs
+~~~~~~~~~~~~~~~~~~~~
+
+APIs for managing datasets, datapoints, projects, and other platform resources.
 
 .. toctree::
    :maxdepth: 1
 
-   api/decorators
+   api/client-apis
+   api/client
+
+Models & Errors
+~~~~~~~~~~~~~~~
+
+Data models, request/response classes, and error handling.
+
+.. toctree::
+   :maxdepth: 1
+
+   api/models-complete
+   api/errors
+   api/evaluators-complete
 
 Configuration
 ~~~~~~~~~~~~~
@@ -193,6 +208,16 @@ Command Line Interface
    cli/index
    cli/commands
    cli/options
+
+Utilities
+~~~~~~~~~
+
+Helper classes for caching, connection pooling, and logging.
+
+.. toctree::
+   :maxdepth: 1
+
+   api/utilities
 
 Feature Specifications
 ~~~~~~~~~~~~~~~~~~~~~~
