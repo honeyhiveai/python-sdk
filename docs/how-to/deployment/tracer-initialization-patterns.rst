@@ -399,6 +399,91 @@ For synchronous frameworks, use ``create_session()`` instead of ``acreate_sessio
        tracer.enrich_session(outputs={"status_code": response.status_code})
        return response
 
+**Custom Session IDs and the ``skip_api_call`` Parameter:**
+
+The ``create_session()`` method supports two different session ID scenarios:
+
+.. list-table::
+   :header-rows: 1
+   :widths: 25 35 40
+
+   * - Scenario
+     - Code
+     - When to Use
+   * - Auto-generate ID
+     - ``create_session(session_name="request")``
+     - Default - HoneyHive creates and returns a new session ID
+   * - Custom ID (API creates session)
+     - ``create_session(session_id="my-id")``
+     - You want to use your own ID scheme (e.g., ``user-{user_id}-{timestamp}``)
+   * - Link to existing session
+     - ``create_session(session_id="existing", skip_api_call=True)``
+     - Session already exists - just set context for tracing
+
+.. important::
+   **When to use ``skip_api_call=True``:**
+   
+   Set ``skip_api_call=True`` ONLY when linking to a session that **already exists** 
+   in HoneyHive (created by a previous request or external system).
+   
+   **Examples where ``skip_api_call=True`` makes sense:**
+   
+   - Multi-turn conversations: First request creates session, subsequent requests link to it
+   - Webhook handlers: Parent service created session, webhook links to same session
+   - Background jobs: Job receives session_id from queue message
+   
+   **Examples where ``skip_api_call=False`` (default) is correct:**
+   
+   - New user request: Create a new session in HoneyHive
+   - Custom ID scheme: Create session with your own ID format
+   - Any case where the session doesn't exist yet
+
+.. code-block:: python
+
+   # SCENARIO 1: Multi-turn conversation (first request creates, others link)
+   @app.middleware("http")
+   async def session_middleware(request: Request, call_next):
+       existing_session = request.headers.get("X-Session-ID")
+       
+       if existing_session:
+           # Link to existing session - NO API call needed
+           await tracer.acreate_session(
+               session_id=existing_session,
+               skip_api_call=True  # Session already exists
+           )
+       else:
+           # Create NEW session with auto-generated ID
+           session_id = await tracer.acreate_session(
+               session_name=f"conversation-{request.url.path}"
+           )
+           # Return session_id to client for future requests
+           request.state.new_session_id = session_id
+       
+       response = await call_next(request)
+       
+       if hasattr(request.state, "new_session_id"):
+           response.headers["X-Session-ID"] = request.state.new_session_id
+       
+       return response
+
+.. code-block:: python
+
+   # SCENARIO 2: Custom ID scheme (API creates session with YOUR ID)
+   @app.middleware("http")
+   async def session_middleware(request: Request, call_next):
+       user_id = request.headers.get("X-User-ID", "anonymous")
+       timestamp = int(time.time())
+       
+       # Create session with custom ID format
+       # skip_api_call=False (default) - API creates session with this ID
+       session_id = await tracer.acreate_session(
+           session_id=f"user-{user_id}-{timestamp}",  # Your custom ID
+           session_name=f"api-{request.url.path}",
+           inputs={"user_id": user_id}
+       )
+       
+       return await call_next(request)
+
 **Using with_session Context Manager:**
 
 For scoped session management, use the ``with_session`` context manager:
