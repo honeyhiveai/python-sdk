@@ -712,6 +712,7 @@ create_session()
 ~~~~~~~~~~~~~~~~
 
 .. py:method:: create_session(session_name: Optional[str] = None, session_id: Optional[str] = None, inputs: Optional[Dict[str, Any]] = None, metadata: Optional[Dict[str, Any]] = None, user_properties: Optional[Dict[str, Any]] = None, source: Optional[str] = None, skip_api_call: bool = False) -> Optional[str]
+   :no-index:
 
    Create a new session and set it in the current request context using OpenTelemetry baggage.
    
@@ -814,6 +815,7 @@ acreate_session()
 
 .. py:method:: acreate_session(session_name: Optional[str] = None, session_id: Optional[str] = None, inputs: Optional[Dict[str, Any]] = None, metadata: Optional[Dict[str, Any]] = None, user_properties: Optional[Dict[str, Any]] = None, source: Optional[str] = None) -> Optional[str]
    :async:
+   :no-index:
 
    Async version of ``create_session()`` for async frameworks like FastAPI.
    
@@ -878,6 +880,7 @@ with_session()
 ~~~~~~~~~~~~~~
 
 .. py:method:: with_session(session_name: Optional[str] = None, inputs: Optional[Dict[str, Any]] = None, metadata: Optional[Dict[str, Any]] = None, user_properties: Optional[Dict[str, Any]] = None, **kwargs) -> ContextManager[Optional[str]]
+   :no-index:
 
    Context manager that creates a session and ensures proper context cleanup.
    
@@ -917,6 +920,7 @@ enrich_session()
 ~~~~~~~~~~~~~~~~
 
 .. py:method:: enrich_session(inputs: Optional[Dict[str, Any]] = None, outputs: Optional[Dict[str, Any]] = None, metadata: Optional[Dict[str, Any]] = None, feedback: Optional[Dict[str, Any]] = None, metrics: Optional[Dict[str, Any]] = None, user_properties: Optional[Dict[str, Any]] = None, session_id: Optional[str] = None) -> None
+   :no-index:
 
    Update the current session with additional data.
    
