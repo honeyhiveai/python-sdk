@@ -292,7 +292,21 @@ Pattern 4: Long-Running Server (FastAPI / Flask / Django)
 - Need to trace each user request separately
 - Want distributed tracing across services
 
-**Pattern: Global Tracer + Per-Request Session Context**
+**Pattern: Global Tracer + Per-Request Session via Baggage**
+
+.. important::
+   **How Multi-Session Handling Works:**
+   
+   The ``create_session()`` method stores the session_id in OpenTelemetry **baggage**,
+   which uses Python's ``ContextVar`` internally. This means:
+   
+   - Each async task/thread gets its own isolated session context
+   - The span processor reads session_id from baggage first
+   - No race conditions between concurrent requests
+   - The tracer instance is safely shared across all requests
+   
+   **Do NOT use** ``session_start()`` for concurrent requests - it stores session_id
+   on the tracer instance, which causes race conditions.
 
 .. code-block:: python
 
@@ -300,9 +314,9 @@ Pattern 4: Long-Running Server (FastAPI / Flask / Django)
    from fastapi import FastAPI, Request
    from honeyhive import HoneyHiveTracer, trace
    import os
-   import uuid
 
    # Initialize tracer ONCE at application startup
+   # This instance is shared across ALL requests
    tracer = HoneyHiveTracer.init(
        api_key=os.getenv("HH_API_KEY"),
        project="my-api",
@@ -312,58 +326,40 @@ Pattern 4: Long-Running Server (FastAPI / Flask / Django)
    app = FastAPI()
 
    @app.middleware("http")
-   async def tracing_middleware(request: Request, call_next):
-       """Create new session for each request."""
-       # Check if session ID exists in request (e.g., from upstream service)
-       incoming_session_id = request.headers.get("X-Session-ID")
-       
-       if incoming_session_id:
-           # Validate and use existing session ID
-           session_id = validate_session_id(incoming_session_id)
-       else:
-           # Generate new UUID v4 session ID
-           session_id = str(uuid.uuid4())
-       
-       # Create session for this request
-       tracer.create_session(
-           session_name=f"request-{session_id}",
+   async def session_middleware(request: Request, call_next):
+       """Create isolated session for each request using baggage."""
+       # acreate_session() is the async version - use for async middleware
+       # It creates a session via API and stores session_id in baggage
+       # (NOT on the tracer instance - that would cause race conditions)
+       session_id = await tracer.acreate_session(
+           session_name=f"api-{request.url.path}",
            inputs={
                "method": request.method,
-               "path": request.url.path,
+               "path": str(request.url),
                "user_id": request.headers.get("X-User-ID")
            }
        )
        
-       # Process request
+       # Process request - all spans will use this session_id from baggage
        response = await call_next(request)
        
-       # Update session with response
+       # enrich_session reads session_id from baggage automatically
        tracer.enrich_session(
-           outputs={"status_code": response.status_code},
-           metadata={"session_id": session_id}
+           outputs={"status_code": response.status_code}
        )
        
-       # Add session ID to response headers for downstream services
-       response.headers["X-Session-ID"] = session_id
+       # Optionally return session_id to client
+       if session_id:
+           response.headers["X-Session-ID"] = session_id
        
        return response
-   
-   def validate_session_id(session_id: str) -> str:
-       """Validate and convert session ID to UUID v4 format."""
-       try:
-           # Check if it's already a valid UUID
-           uuid.UUID(session_id, version=4)
-           return session_id
-       except (ValueError, AttributeError):
-           # Convert non-UUID identifier deterministically
-           namespace = uuid.UUID("6ba7b810-9dad-11d1-80b4-00c04fd430c8")
-           return str(uuid.uuid5(namespace, session_id))
 
    @app.post("/api/chat")
    @trace(event_type="chain", tracer=tracer)
    async def chat_endpoint(message: str):
        """Each request traced to its own session."""
-       # This span goes to the request's session
+       # The span processor reads session_id from baggage (set by middleware)
+       # This span automatically uses the correct session for this request
        tracer.enrich_span(metadata={"message_length": len(message)})
        
        response = await process_message(message)
@@ -375,6 +371,130 @@ Pattern 4: Long-Running Server (FastAPI / Flask / Django)
        result = await llm_call(message)
        tracer.enrich_span(metadata={"tokens": len(result.split())})
        return result
+
+**Sync Version (Flask / Django):**
+
+For synchronous frameworks, use ``create_session()`` instead of ``acreate_session()``:
+
+.. code-block:: python
+
+   # Flask example
+   from flask import Flask, request, g
+   from honeyhive import HoneyHiveTracer, trace
+   
+   app = Flask(__name__)
+   tracer = HoneyHiveTracer.init(api_key="...", project="my-api")
+   
+   @app.before_request
+   def create_session_for_request():
+       """Create session before each request."""
+       g.session_id = tracer.create_session(
+           session_name=f"flask-{request.path}",
+           inputs={"method": request.method}
+       )
+   
+   @app.after_request
+   def enrich_session_after_request(response):
+       """Enrich session with response data."""
+       tracer.enrich_session(outputs={"status_code": response.status_code})
+       return response
+
+**Custom Session IDs and the ``skip_api_call`` Parameter:**
+
+The ``create_session()`` method supports two different session ID scenarios:
+
+.. list-table::
+   :header-rows: 1
+   :widths: 25 35 40
+
+   * - Scenario
+     - Code
+     - When to Use
+   * - Auto-generate ID
+     - ``create_session(session_name="request")``
+     - Default - HoneyHive creates and returns a new session ID
+   * - Custom ID (API creates session)
+     - ``create_session(session_id="my-id")``
+     - You want to use your own ID scheme (e.g., ``user-{user_id}-{timestamp}``)
+   * - Link to existing session
+     - ``create_session(session_id="existing", skip_api_call=True)``
+     - Session already exists - just set context for tracing
+
+.. important::
+   **When to use ``skip_api_call=True``:**
+   
+   Set ``skip_api_call=True`` ONLY when linking to a session that **already exists** 
+   in HoneyHive (created by a previous request or external system).
+   
+   **Examples where ``skip_api_call=True`` makes sense:**
+   
+   - Multi-turn conversations: First request creates session, subsequent requests link to it
+   - Webhook handlers: Parent service created session, webhook links to same session
+   - Background jobs: Job receives session_id from queue message
+   
+   **Examples where ``skip_api_call=False`` (default) is correct:**
+   
+   - New user request: Create a new session in HoneyHive
+   - Custom ID scheme: Create session with your own ID format
+   - Any case where the session doesn't exist yet
+
+.. code-block:: python
+
+   # SCENARIO 1: Multi-turn conversation (first request creates, others link)
+   @app.middleware("http")
+   async def session_middleware(request: Request, call_next):
+       existing_session = request.headers.get("X-Session-ID")
+       
+       if existing_session:
+           # Link to existing session - NO API call needed
+           await tracer.acreate_session(
+               session_id=existing_session,
+               skip_api_call=True  # Session already exists
+           )
+       else:
+           # Create NEW session with auto-generated ID
+           session_id = await tracer.acreate_session(
+               session_name=f"conversation-{request.url.path}"
+           )
+           # Return session_id to client for future requests
+           request.state.new_session_id = session_id
+       
+       response = await call_next(request)
+       
+       if hasattr(request.state, "new_session_id"):
+           response.headers["X-Session-ID"] = request.state.new_session_id
+       
+       return response
+
+.. code-block:: python
+
+   # SCENARIO 2: Custom ID scheme (API creates session with YOUR ID)
+   @app.middleware("http")
+   async def session_middleware(request: Request, call_next):
+       user_id = request.headers.get("X-User-ID", "anonymous")
+       timestamp = int(time.time())
+       
+       # Create session with custom ID format
+       # skip_api_call=False (default) - API creates session with this ID
+       session_id = await tracer.acreate_session(
+           session_id=f"user-{user_id}-{timestamp}",  # Your custom ID
+           session_name=f"api-{request.url.path}",
+           inputs={"user_id": user_id}
+       )
+       
+       return await call_next(request)
+
+**Using with_session Context Manager:**
+
+For scoped session management, use the ``with_session`` context manager:
+
+.. code-block:: python
+
+   # Synchronous usage
+   with tracer.with_session("batch-job", inputs={"batch_id": batch_id}) as session_id:
+       # All spans created here use this session
+       process_batch(items)
+       tracer.enrich_session(outputs={"processed": len(items)})
 
 **With Distributed Tracing:**
 
@@ -392,15 +512,15 @@ Pattern 4: Long-Running Server (FastAPI / Flask / Django)
        token = context.attach(ctx)
        
        try:
-           # Create session with parent context
-           session_id = tracer.create_session(
-               session_name=f"api-request-{uuid.uuid4()}",
-               link_carrier=ctx  # Link to parent trace
+           # Create session - will be in the attached context
+           session_id = await tracer.acreate_session(
+               session_name=f"api-request",
+               inputs={"path": str(request.url)}
            )
            
            response = await call_next(request)
            
-           # Inject trace context into response
+           # Inject trace context into response for downstream
            propagate.inject(response.headers)
            
            return response
@@ -410,30 +530,35 @@ Pattern 4: Long-Running Server (FastAPI / Flask / Django)
 **Characteristics:**
 
 ✅ **Efficient** - Single tracer instance shared across requests
-✅ **Isolated** - Each request gets own session
-✅ **Concurrent** - Handles multiple requests safely (OpenTelemetry context is thread-safe)
+✅ **Isolated** - Each request gets own session via baggage (ContextVar)
+✅ **Concurrent** - Handles multiple requests safely
 ✅ **Distributed** - Traces span multiple services
-⚠️ **Session management** - Must manage session lifecycle per request
+✅ **No race conditions** - Session stored in baggage, not on tracer instance
 
 .. note::
    **Thread & Process Safety:**
    
    The global tracer pattern is safe for multi-threaded servers (FastAPI, Flask with threads) because:
    
-   - OpenTelemetry Context is **thread-local** by design
-   - Each thread/request has isolated context
-   - Session creation uses thread-safe operations
+   - ``create_session()`` stores session_id in OpenTelemetry baggage
+   - Baggage uses Python's ``ContextVar`` (inherently request-scoped)
+   - Each thread/async task has isolated context
    
    For **multi-process** deployments (Gunicorn with workers, uWSGI):
    
    - ✅ **Safe** - Each process gets its own tracer instance
    - ✅ **Safe** - Processes don't share state
    - ⚠️ **Note** - Tracer initialization happens per-process (acceptable overhead)
+
+.. warning::
+   **Common Mistake: Using session_start() for Web Servers**
    
-   **Not recommended for:**
+   ``session_start()`` stores session_id on the tracer instance (``tracer._session_id``).
+   In concurrent environments, this causes race conditions where requests overwrite
+   each other's session_id.
    
-   - High-concurrency async workloads where tracer init overhead is critical (use singleton pattern)
-   - Edge functions with aggressive cold start constraints (use lazy init pattern)
+   **Always use** ``create_session()`` or ``acreate_session()`` for web servers.
+   These methods store session_id in baggage, which is request-scoped.
 
 Pattern 5: Testing / Multi-Session Scenarios
 ---------------------------------------------
@@ -618,16 +743,21 @@ Troubleshooting
 "My traces are getting mixed up between requests"
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-**Cause:** Using global tracer without creating separate sessions per request.
+**Cause:** Using ``session_start()`` or not creating sessions per request.
+``session_start()`` stores session_id on the tracer instance, causing race conditions.
 
-**Solution:** Create a new session for each request:
+**Solution:** Use ``create_session()`` or ``acreate_session()`` which store session_id in baggage:
 
 .. code-block:: python
 
    @app.middleware("http")
-   async def create_session_per_request(request, call_next):
-       tracer.create_session(session_name=f"request-{uuid.uuid4()}")
+   async def session_middleware(request, call_next):
+       # ✅ CORRECT: Uses baggage (request-scoped)
+       await tracer.acreate_session(session_name=f"request-{request.url.path}")
        return await call_next(request)
+   
+   # ❌ WRONG: session_start() stores on tracer instance (race condition)
+   # tracer.session_start()  # Don't use this for web servers!
 
 "evaluate() is using the wrong tracer"
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
