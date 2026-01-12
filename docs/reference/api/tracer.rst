@@ -705,6 +705,245 @@ close()
       
       atexit.register(cleanup_tracer)
 
+Session Management Methods
+--------------------------
+
+create_session()
+~~~~~~~~~~~~~~~~
+
+.. py:method:: create_session(session_name: Optional[str] = None, session_id: Optional[str] = None, inputs: Optional[Dict[str, Any]] = None, metadata: Optional[Dict[str, Any]] = None, user_properties: Optional[Dict[str, Any]] = None, source: Optional[str] = None) -> Optional[str]
+
+   Create a new session and set it in the current request context using OpenTelemetry baggage.
+   
+   **🆕 Recommended for Web Servers:** This method stores the session_id in OpenTelemetry baggage
+   (which uses Python's ``ContextVar`` internally), providing proper request-scoped isolation.
+   It does NOT modify the tracer instance's session_id, making it safe for concurrent requests.
+   
+   **Parameters:**
+   
+   :param session_name: Human-readable name for the session. Auto-generated if not provided.
+   :type session_name: Optional[str]
+   
+   :param session_id: Custom session ID (bring-your-own-session-id pattern). If provided, 
+                      sets this ID in baggage WITHOUT making an API call. Useful when session
+                      was created externally or when linking multiple requests to the same session.
+   :type session_id: Optional[str]
+   
+   :param inputs: Input data for the session (e.g., user query, request data).
+   :type inputs: Optional[Dict[str, Any]]
+   
+   :param metadata: Additional metadata for the session.
+   :type metadata: Optional[Dict[str, Any]]
+   
+   :param user_properties: User-specific properties (user_id, plan, etc.).
+   :type user_properties: Optional[Dict[str, Any]]
+   
+   :param source: Source environment override. Uses tracer's source if not provided.
+   :type source: Optional[str]
+   
+   **Returns:**
+   
+   :rtype: Optional[str]
+   :returns: Session ID if successful, None otherwise
+   
+   **Basic Usage (Flask/Django):**
+   
+   .. code-block:: python
+   
+      from flask import Flask, request, g
+      from honeyhive import HoneyHiveTracer, trace
+      
+      app = Flask(__name__)
+      tracer = HoneyHiveTracer.init(api_key="...", project="my-api")
+      
+      @app.before_request
+      def create_session_for_request():
+          """Create session before each request."""
+          g.session_id = tracer.create_session(
+              session_name=f"flask-{request.path}",
+              inputs={"method": request.method, "path": request.path},
+              user_properties={"user_id": request.headers.get("X-User-ID")}
+          )
+      
+      @app.after_request
+      def enrich_session_after_request(response):
+          """Enrich session with response data."""
+          tracer.enrich_session(outputs={"status_code": response.status_code})
+          return response
+   
+   **Bring-Your-Own Session ID:**
+   
+   .. code-block:: python
+   
+      # Use existing session ID without making API call
+      existing_session_id = request.headers.get("X-Session-ID")
+      if existing_session_id:
+          tracer.create_session(session_id=existing_session_id)
+      else:
+          tracer.create_session(session_name="new-session")
+   
+   **See Also:**
+   
+   - :meth:`acreate_session` - Async version for FastAPI and async frameworks
+   - :meth:`enrich_session` - Add data to existing session
+   
+   .. versionadded:: 1.0.0rc8
+
+acreate_session()
+~~~~~~~~~~~~~~~~~
+
+.. py:method:: acreate_session(session_name: Optional[str] = None, session_id: Optional[str] = None, inputs: Optional[Dict[str, Any]] = None, metadata: Optional[Dict[str, Any]] = None, user_properties: Optional[Dict[str, Any]] = None, source: Optional[str] = None) -> Optional[str]
+   :async:
+
+   Async version of ``create_session()`` for async frameworks like FastAPI.
+   
+   Creates a session via async API call and stores session_id in baggage.
+   This is the recommended method for async web servers.
+   
+   **Parameters:**
+   
+   Same as :meth:`create_session`.
+   
+   **Returns:**
+   
+   :rtype: Optional[str]
+   :returns: Session ID if successful, None otherwise
+   
+   **FastAPI Middleware Example:**
+   
+   .. code-block:: python
+   
+      from fastapi import FastAPI, Request
+      from honeyhive import HoneyHiveTracer, trace
+      
+      app = FastAPI()
+      tracer = HoneyHiveTracer.init(api_key="...", project="my-api")
+      
+      @app.middleware("http")
+      async def session_middleware(request: Request, call_next):
+          """Create isolated session for each request."""
+          session_id = await tracer.acreate_session(
+              session_name=f"api-{request.url.path}",
+              inputs={
+                  "method": request.method,
+                  "path": str(request.url),
+                  "user_id": request.headers.get("X-User-ID"),
+              }
+          )
+          
+          response = await call_next(request)
+          
+          # enrich_session reads session_id from baggage automatically
+          tracer.enrich_session(outputs={"status_code": response.status_code})
+          
+          if session_id:
+              response.headers["X-Session-ID"] = session_id
+          
+          return response
+      
+      @app.post("/chat")
+      @trace(event_type="chain", tracer=tracer)
+      async def chat(message: str):
+          # Span automatically uses session_id from baggage
+          tracer.enrich_span(inputs={"message": message})
+          return await process_message(message)
+   
+   **See Also:**
+   
+   - :meth:`create_session` - Sync version for Flask/Django
+   
+   .. versionadded:: 1.0.0rc8
+
+with_session()
+~~~~~~~~~~~~~~
+
+.. py:method:: with_session(session_name: Optional[str] = None, inputs: Optional[Dict[str, Any]] = None, metadata: Optional[Dict[str, Any]] = None, user_properties: Optional[Dict[str, Any]] = None, **kwargs) -> ContextManager[Optional[str]]
+
+   Context manager that creates a session and ensures proper context cleanup.
+   
+   **Parameters:**
+   
+   :param session_name: Human-readable name for the session.
+   :type session_name: Optional[str]
+   
+   :param inputs: Input data for the session.
+   :type inputs: Optional[Dict[str, Any]]
+   
+   :param metadata: Additional metadata for the session.
+   :type metadata: Optional[Dict[str, Any]]
+   
+   :param user_properties: User-specific properties.
+   :type user_properties: Optional[Dict[str, Any]]
+   
+   **Yields:**
+   
+   :rtype: Optional[str]
+   :yields: The newly created session ID
+   
+   **Usage:**
+   
+   .. code-block:: python
+   
+      # Scoped session management
+      with tracer.with_session("batch-job", inputs={"batch_id": batch_id}) as session_id:
+          # All spans created here use this session
+          process_batch(items)
+          tracer.enrich_session(outputs={"processed": len(items)})
+      # Context automatically cleaned up
+   
+   .. versionadded:: 1.0.0rc8
+
+enrich_session()
+~~~~~~~~~~~~~~~~
+
+.. py:method:: enrich_session(inputs: Optional[Dict[str, Any]] = None, outputs: Optional[Dict[str, Any]] = None, metadata: Optional[Dict[str, Any]] = None, feedback: Optional[Dict[str, Any]] = None, metrics: Optional[Dict[str, Any]] = None, user_properties: Optional[Dict[str, Any]] = None, session_id: Optional[str] = None) -> None
+
+   Update the current session with additional data.
+   
+   Automatically reads session_id from OpenTelemetry baggage if not explicitly provided,
+   making it compatible with the ``create_session()`` pattern for web servers.
+   
+   **Parameters:**
+   
+   :param inputs: Additional input data to add to session.
+   :type inputs: Optional[Dict[str, Any]]
+   
+   :param outputs: Output/response data to add to session.
+   :type outputs: Optional[Dict[str, Any]]
+   
+   :param metadata: Additional metadata to add to session.
+   :type metadata: Optional[Dict[str, Any]]
+   
+   :param feedback: User feedback data.
+   :type feedback: Optional[Dict[str, Any]]
+   
+   :param metrics: Metrics data.
+   :type metrics: Optional[Dict[str, Any]]
+   
+   :param user_properties: User properties to add.
+   :type user_properties: Optional[Dict[str, Any]]
+   
+   :param session_id: Explicit session ID override. If not provided, reads from baggage.
+   :type session_id: Optional[str]
+   
+   **Usage with create_session():**
+   
+   .. code-block:: python
+   
+      @app.middleware("http")
+      async def session_middleware(request: Request, call_next):
+          # Create session - stores in baggage
+          await tracer.acreate_session(session_name="api-request")
+          
+          response = await call_next(request)
+          
+          # enrich_session automatically reads session_id from baggage
+          tracer.enrich_session(
+              outputs={"status_code": response.status_code},
+              metadata={"response_time_ms": response_time}
+          )
+          return response
+
 Context Propagation Methods (Backwards Compatibility)
 -----------------------------------------------------
 
