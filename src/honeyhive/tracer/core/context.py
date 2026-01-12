@@ -10,8 +10,10 @@ context handling and robust state management.
 # Duplicate code represents common session enrichment and parameter building
 # patterns shared across core mixin classes for consistent behavior.
 
+import uuid
 from abc import ABC, abstractmethod
-from typing import TYPE_CHECKING, Any, Dict, Optional, cast
+from contextlib import contextmanager
+from typing import TYPE_CHECKING, Any, Dict, Iterator, Optional, cast
 
 from opentelemetry import baggage, context, trace
 from opentelemetry.context import Context
@@ -266,6 +268,11 @@ class TracerContextMixin(TracerContextInterface):
         the session ID. This provides backward compatibility with the original
         SDK's session_start() method.
 
+        .. note::
+            This method stores session_id on the tracer instance, which is NOT
+            safe for concurrent requests. For multi-session handling in web
+            servers, use :meth:`create_session` instead.
+
         Returns:
             Session ID if successful, None otherwise
 
@@ -296,6 +303,330 @@ class TracerContextMixin(TracerContextInterface):
             )
             return None
 
+    # pylint: disable=too-many-arguments,too-many-positional-arguments
+    # Justification: Session creation supports multiple optional parameters
+    # for flexibility in different use cases.
+    def create_session(
+        self,
+        session_name: Optional[str] = None,
+        session_id: Optional[str] = None,
+        inputs: Optional[Dict[str, Any]] = None,
+        metadata: Optional[Dict[str, Any]] = None,
+        user_properties: Optional[Dict[str, Any]] = None,
+        source: Optional[str] = None,
+    ) -> Optional[str]:
+        """Create a new session and set it in the current request context.
+
+        **RECOMMENDED FOR WEB SERVERS:** This method creates a session via the
+        API and stores the session_id in OpenTelemetry baggage (ContextVar-based),
+        enabling proper request-scoped session isolation. It does NOT modify
+        the tracer instance's session_id, making it safe for concurrent requests.
+
+        The session_id is stored in baggage, which means:
+        - Each async task/thread gets its own isolated session context
+        - The span processor reads from baggage first (priority over instance)
+        - No race conditions between concurrent requests
+
+        Args:
+            session_name: Name for the session. Auto-generated if not provided.
+            session_id: Custom session ID. If provided, sets this ID in baggage
+                       WITHOUT making an API call (bring-your-own-session-id pattern).
+                       Useful when session was created externally or you want to
+                       use your own ID scheme.
+            inputs: Input data for the session (e.g., user query, request data)
+            metadata: Additional metadata for the session
+            user_properties: User-specific properties (user_id, plan, etc.)
+            source: Source environment override. Uses tracer's source if not provided.
+
+        Returns:
+            Session ID if successful, None otherwise
+
+        Example:
+            FastAPI middleware for per-request sessions::
+
+                from fastapi import FastAPI, Request
+                from honeyhive import HoneyHiveTracer, trace
+
+                tracer = HoneyHiveTracer.init(api_key="...", project="my-api")
+                app = FastAPI()
+
+                @app.middleware("http")
+                async def session_middleware(request: Request, call_next):
+                    # Creates session, sets session_id in baggage (not on tracer)
+                    session_id = tracer.create_session(
+                        session_name=f"api-{request.url.path}",
+                        inputs={"method": request.method, "path": str(request.url)}
+                    )
+
+                    response = await call_next(request)
+
+                    # enrich_session reads session_id from baggage
+                    tracer.enrich_session(outputs={"status_code": response.status_code})
+                    return response
+
+                @app.post("/chat")
+                @trace(tracer=tracer, event_type="chain")
+                async def chat(message: str):
+                    # Span automatically uses session_id from baggage
+                    return await process_message(message)
+
+        See Also:
+            - :meth:`acreate_session` - Async version for async frameworks
+            - :meth:`with_session` - Context manager for automatic cleanup
+            - :meth:`session_start` - Legacy method (stores on instance, not baggage)
+
+        .. versionadded:: 1.0.0rc8
+            Added for multi-session handling with global tracer pattern.
+        """
+        try:
+            # If session_id is provided, just set it in baggage (no API call)
+            if session_id:
+                current_ctx = context.get_current()
+                new_ctx = baggage.set_baggage("session_id", session_id, current_ctx)
+                context.attach(new_ctx)
+
+                safe_log(
+                    self,
+                    "info",
+                    f"Set provided session_id in baggage: {session_id}",
+                    honeyhive_data={
+                        "session_id": session_id,
+                        "storage": "baggage",
+                        "source": "provided",
+                    },
+                )
+                return session_id
+
+            # Create session via API
+            if not self.session_api:
+                safe_log(
+                    self, "warning", "No session API available for session creation"
+                )
+                return None
+
+            # Build session parameters
+            effective_session_name = session_name or f"session-{uuid.uuid4().hex[:8]}"
+            effective_source = source or getattr(self, "source_environment", "dev")
+
+            session_params: Dict[str, Any] = {
+                "project": getattr(self, "project_name", None),
+                "source": effective_source,
+                "session_name": effective_session_name,
+            }
+
+            if inputs:
+                session_params["inputs"] = inputs
+            if metadata:
+                session_params["metadata"] = metadata
+            if user_properties:
+                session_params["user_properties"] = user_properties
+
+            # Create session via API
+            response = self.session_api.create_session_from_dict(session_params)
+            new_session_id = response.session_id
+
+            # Set session_id in baggage (ContextVar-based, request-scoped)
+            # CRITICAL: Do NOT set self._session_id - that would break concurrency
+            current_ctx = context.get_current()
+            new_ctx = baggage.set_baggage("session_id", new_session_id, current_ctx)
+            context.attach(new_ctx)
+
+            safe_log(
+                self,
+                "info",
+                f"Created session in baggage: {new_session_id}",
+                honeyhive_data={
+                    "session_id": new_session_id,
+                    "session_name": effective_session_name,
+                    "storage": "baggage",
+                },
+            )
+
+            return new_session_id
+
+        except Exception as e:
+            safe_log(
+                self,
+                "error",
+                f"Failed to create session: {e}",
+                honeyhive_data={"error_type": type(e).__name__},
+            )
+            return None
+
+    async def acreate_session(
+        self,
+        session_name: Optional[str] = None,
+        session_id: Optional[str] = None,
+        inputs: Optional[Dict[str, Any]] = None,
+        metadata: Optional[Dict[str, Any]] = None,
+        user_properties: Optional[Dict[str, Any]] = None,
+        source: Optional[str] = None,
+    ) -> Optional[str]:
+        """Async version of create_session for async frameworks like FastAPI.
+
+        Creates a session via async API call and stores session_id in baggage.
+        This is the recommended method for async web servers.
+
+        Args:
+            session_name: Name for the session. Auto-generated if not provided.
+            session_id: Custom session ID. If provided, sets this ID in baggage
+                       WITHOUT making an API call (bring-your-own-session-id pattern).
+            inputs: Input data for the session
+            metadata: Additional metadata for the session
+            user_properties: User-specific properties
+            source: Source environment override
+
+        Returns:
+            Session ID if successful, None otherwise
+
+        Example:
+            FastAPI async middleware::
+
+                @app.middleware("http")
+                async def session_middleware(request: Request, call_next):
+                    session_id = await tracer.acreate_session(
+                        session_name=f"api-{request.url.path}",
+                        inputs={"method": request.method}
+                    )
+                    response = await call_next(request)
+                    tracer.enrich_session(outputs={"status_code": response.status_code})
+                    return response
+
+        See Also:
+            - :meth:`create_session` - Sync version
+
+        .. versionadded:: 1.0.0rc8
+        """
+        try:
+            # If session_id is provided, just set it in baggage (no API call)
+            if session_id:
+                current_ctx = context.get_current()
+                new_ctx = baggage.set_baggage("session_id", session_id, current_ctx)
+                context.attach(new_ctx)
+
+                safe_log(
+                    self,
+                    "info",
+                    f"Set provided session_id in baggage (async): {session_id}",
+                    honeyhive_data={
+                        "session_id": session_id,
+                        "storage": "baggage",
+                        "source": "provided",
+                    },
+                )
+                return session_id
+
+            # Create session via API
+            if not self.session_api:
+                safe_log(
+                    self, "warning", "No session API available for session creation"
+                )
+                return None
+
+            # Build session parameters
+            effective_session_name = session_name or f"session-{uuid.uuid4().hex[:8]}"
+            effective_source = source or getattr(self, "source_environment", "dev")
+
+            session_params: Dict[str, Any] = {
+                "project": getattr(self, "project_name", None),
+                "source": effective_source,
+                "session_name": effective_session_name,
+            }
+
+            if inputs:
+                session_params["inputs"] = inputs
+            if metadata:
+                session_params["metadata"] = metadata
+            if user_properties:
+                session_params["user_properties"] = user_properties
+
+            # Create session via async API
+            response = await self.session_api.create_session_from_dict_async(
+                session_params
+            )
+            new_session_id = response.session_id
+
+            # Set session_id in baggage (ContextVar-based, request-scoped)
+            current_ctx = context.get_current()
+            new_ctx = baggage.set_baggage("session_id", new_session_id, current_ctx)
+            context.attach(new_ctx)
+
+            safe_log(
+                self,
+                "info",
+                f"Created session in baggage (async): {new_session_id}",
+                honeyhive_data={
+                    "session_id": new_session_id,
+                    "session_name": effective_session_name,
+                    "storage": "baggage",
+                },
+            )
+
+            return new_session_id
+
+        except Exception as e:
+            safe_log(
+                self,
+                "error",
+                f"Failed to create session (async): {e}",
+                honeyhive_data={"error_type": type(e).__name__},
+            )
+            return None
+
+    @contextmanager
+    def with_session(
+        self,
+        session_name: Optional[str] = None,
+        inputs: Optional[Dict[str, Any]] = None,
+        metadata: Optional[Dict[str, Any]] = None,
+        user_properties: Optional[Dict[str, Any]] = None,
+        source: Optional[str] = None,
+    ) -> Iterator[Optional[str]]:
+        """Context manager that creates a session for the enclosed scope.
+
+        Creates a session and yields the session_id. All spans created within
+        the context will use this session. The session context is automatically
+        managed via OpenTelemetry baggage.
+
+        Args:
+            session_name: Name for the session
+            inputs: Input data for the session
+            metadata: Additional metadata
+            user_properties: User-specific properties
+            source: Source environment override
+
+        Yields:
+            Session ID if successful, None otherwise
+
+        Example:
+            Using with_session for scoped tracing::
+
+                tracer = HoneyHiveTracer.init(api_key="...", project="my-app")
+
+                with tracer.with_session("user-req", inputs={"q": query}) as sid:
+                    # All spans here use this session
+                    result = process_query(query)
+                    tracer.enrich_session(outputs={"result": result})
+
+        See Also:
+            - :meth:`create_session` - Direct session creation
+
+        .. versionadded:: 1.0.0rc8
+        """
+        session_id = self.create_session(
+            session_name=session_name,
+            inputs=inputs,
+            metadata=metadata,
+            user_properties=user_properties,
+            source=source,
+        )
+        try:
+            yield session_id
+        finally:
+            # Context cleanup happens automatically when ContextVar scope ends
+            # No explicit detach needed - baggage is scoped to this context
+            pass
+
     def _can_enrich_session_dynamically(self) -> bool:
         """Dynamically check if session enrichment is possible."""
         # Check if client with events API is available (for session updates)
@@ -310,14 +641,17 @@ class TracerContextMixin(TracerContextInterface):
         return True
 
     def _get_session_id_for_enrichment_dynamically(self) -> Optional[str]:
-        """Dynamically get session ID for enrichment operations."""
-        # Priority: explicit session_id, baggage session_id
-        if self._session_id:
-            return str(self._session_id)
+        """Dynamically get session ID for enrichment operations.
 
-        # Check baggage dynamically
+        Priority order (matches span processor behavior):
+        1. Baggage session_id (request-scoped, from create_session())
+        2. Instance session_id (tracer._session_id, from session_start())
+
+        This order ensures multi-session handling works correctly with
+        a global tracer, while maintaining backwards compatibility.
+        """
+        # Priority 1: Check baggage first (for multi-session / concurrent requests)
         try:
-            # Use dynamic baggage access
             current_baggage = get_current_baggage()
             baggage_session = current_baggage.get("session_id")
             if baggage_session:
@@ -330,6 +664,10 @@ class TracerContextMixin(TracerContextInterface):
                 "Failed to get session from baggage",
                 honeyhive_data={"error_type": type(e).__name__},
             )
+
+        # Priority 2: Fallback to instance session_id (for single-session scripts)
+        if self._session_id:
+            return str(self._session_id)
 
         return None
 

@@ -1218,45 +1218,106 @@ Framework Integration Examples
            span.set_attribute("user.found", user_data is not None)
            return {"user": user_data}
 
-**FastAPI Integration:**
+**FastAPI Integration (Multi-Session Pattern):**
+
+This pattern creates isolated sessions for each request, enabling safe concurrent request handling:
 
 .. code-block:: python
 
-   from fastapi import FastAPI, Request, Response
-   import time
+   from fastapi import FastAPI, Request
+   from honeyhive import HoneyHiveTracer, trace
+   import os
    
    app = FastAPI()
-   # Requires HH_API_KEY environment variable
-   tracer = HoneyHiveTracer.init(project="fastapi-app")
+   
+   # Initialize tracer ONCE at app startup (shared across all requests)
+   tracer = HoneyHiveTracer.init(
+       api_key=os.getenv("HH_API_KEY"),
+       project="fastapi-app",
+       source="production"
+   )
    
    @app.middleware("http")
-   async def trace_requests(request: Request, call_next):
-       start_time = time.time()
+   async def session_middleware(request: Request, call_next):
+       """Create isolated session for each request using baggage.
        
-       with tracer.trace(f"{request.method} {request.url.path}") as span:
-           span.set_attribute("http.method", request.method)
-           span.set_attribute("http.url", str(request.url))
-           span.set_attribute("http.user_agent", request.headers.get("user-agent", ""))
-           
-           response = await call_next(request)
-           
-           duration = time.time() - start_time
-           span.set_attribute("http.status_code", response.status_code)
-           span.set_attribute("http.duration", duration)
-           
-           return response
+       acreate_session() stores session_id in OpenTelemetry baggage,
+       which is ContextVar-based and therefore request-scoped.
+       This enables safe concurrent request handling.
+       """
+       session_id = await tracer.acreate_session(
+           session_name=f"api-{request.url.path}",
+           inputs={
+               "method": request.method,
+               "path": str(request.url),
+               "user_id": request.headers.get("X-User-ID"),
+           }
+       )
+       
+       response = await call_next(request)
+       
+       # enrich_session reads session_id from baggage automatically
+       tracer.enrich_session(
+           outputs={"status_code": response.status_code}
+       )
+       
+       # Optionally return session_id to client
+       if session_id:
+           response.headers["X-Session-ID"] = session_id
+       
+       return response
    
-   @app.get("/users/{user_id}")
-   async def get_user(user_id: str):
-       with tracer.trace("get_user_async") as span:
-           span.set_attribute("user.id", user_id)
-           
-           # Simulate async database call
-           await asyncio.sleep(0.1)
-           user_data = {"id": user_id, "name": "User Name"}
-           
-           span.set_attribute("user.found", True)
-           return user_data
+   @app.post("/chat")
+   @trace(event_type="chain", tracer=tracer)
+   async def chat_endpoint(message: str):
+       """Endpoint with automatic session association.
+       
+       The span processor reads session_id from baggage (set by middleware).
+       """
+       tracer.enrich_span(metadata={"message_length": len(message)})
+       result = await process_message(message)
+       return {"response": result}
+   
+   @trace(event_type="tool", tracer=tracer)
+   async def process_message(message: str) -> str:
+       """Nested spans automatically use request's session context."""
+       # Simulate LLM call
+       response = f"Response to: {message}"
+       tracer.enrich_span(
+           inputs={"message": message},
+           outputs={"response": response}
+       )
+       return response
+
+.. note::
+   **Why acreate_session() instead of session_start()?**
+   
+   ``acreate_session()`` stores session_id in OpenTelemetry baggage (ContextVar-based),
+   which provides request-scoped isolation. ``session_start()`` stores on the tracer
+   instance, which causes race conditions in concurrent environments.
+
+**Bring-Your-Own Session ID:**
+
+If you already have a session ID (e.g., from a database or external system):
+
+.. code-block:: python
+
+   @app.middleware("http")
+   async def session_middleware(request: Request, call_next):
+       # Use existing session ID from headers or generate new one
+       existing_session_id = request.headers.get("X-Session-ID")
+       
+       if existing_session_id:
+           # Just set it in baggage - no API call needed
+           await tracer.acreate_session(session_id=existing_session_id)
+       else:
+           # Create new session via API
+           await tracer.acreate_session(
+               session_name=f"api-{request.url.path}",
+               inputs={"method": request.method}
+           )
+       
+       return await call_next(request)
 
 **Django Integration:**
 
