@@ -384,20 +384,57 @@ class ExperimentsAPI(BaseAPI):
     """Experiments API."""
 
     # Sync methods
-    def get_schema(self, project: str) -> GetExperimentRunsSchemaResponse:
-        """Get experiment runs schema."""
+    def get_schema(
+        self,
+        dateRange: Optional[Any] = None,
+        evaluation_id: Optional[str] = None,
+    ) -> GetExperimentRunsSchemaResponse:
+        """Get experiment runs schema.
+        
+        Args:
+            dateRange: Filter by date range (string or dict with $gte/$lte).
+            evaluation_id: Filter by evaluation/run ID.
+        """
         return experiments_svc.getExperimentRunsSchema(
-            self._api_config, project=project
+            self._api_config, dateRange=dateRange, evaluation_id=evaluation_id
         )
 
     def list_runs(
         self,
-        project: str,
-        experiment_id: Optional[str] = None,
+        dataset_id: Optional[str] = None,
+        page: Optional[int] = None,
+        limit: Optional[int] = None,
+        run_ids: Optional[List[str]] = None,
+        name: Optional[str] = None,
+        status: Optional[str] = None,
+        dateRange: Optional[Any] = None,
+        sort_by: Optional[str] = None,
+        sort_order: Optional[str] = None,
     ) -> GetExperimentRunsResponse:
-        """List experiment runs."""
+        """List experiment runs.
+        
+        Args:
+            dataset_id: Filter by dataset ID.
+            page: Page number for pagination.
+            limit: Number of results per page.
+            run_ids: Filter by specific run IDs.
+            name: Filter by run name.
+            status: Filter by run status.
+            dateRange: Filter by date range.
+            sort_by: Sort by field.
+            sort_order: Sort order (asc/desc).
+        """
         return experiments_svc.getRuns(
-            self._api_config, project=project, experiment_id=experiment_id
+            self._api_config,
+            dataset_id=dataset_id,
+            page=page,
+            limit=limit,
+            run_ids=run_ids,
+            name=name,
+            status=status,
+            dateRange=dateRange,
+            sort_by=sort_by,
+            sort_order=sort_order,
         )
 
     def get_run(self, run_id: str) -> GetExperimentRunResponse:
@@ -421,20 +458,57 @@ class ExperimentsAPI(BaseAPI):
         return experiments_svc.deleteRun(self._api_config, run_id=run_id)
 
     # Async methods
-    async def get_schema_async(self, project: str) -> GetExperimentRunsSchemaResponse:
-        """Get experiment runs schema asynchronously."""
+    async def get_schema_async(
+        self,
+        dateRange: Optional[Any] = None,
+        evaluation_id: Optional[str] = None,
+    ) -> GetExperimentRunsSchemaResponse:
+        """Get experiment runs schema asynchronously.
+        
+        Args:
+            dateRange: Filter by date range (string or dict with $gte/$lte).
+            evaluation_id: Filter by evaluation/run ID.
+        """
         return await experiments_svc_async.getExperimentRunsSchema(
-            self._api_config, project=project
+            self._api_config, dateRange=dateRange, evaluation_id=evaluation_id
         )
 
     async def list_runs_async(
         self,
-        project: str,
-        experiment_id: Optional[str] = None,
+        dataset_id: Optional[str] = None,
+        page: Optional[int] = None,
+        limit: Optional[int] = None,
+        run_ids: Optional[List[str]] = None,
+        name: Optional[str] = None,
+        status: Optional[str] = None,
+        dateRange: Optional[Any] = None,
+        sort_by: Optional[str] = None,
+        sort_order: Optional[str] = None,
     ) -> GetExperimentRunsResponse:
-        """List experiment runs asynchronously."""
+        """List experiment runs asynchronously.
+        
+        Args:
+            dataset_id: Filter by dataset ID.
+            page: Page number for pagination.
+            limit: Number of results per page.
+            run_ids: Filter by specific run IDs.
+            name: Filter by run name.
+            status: Filter by run status.
+            dateRange: Filter by date range.
+            sort_by: Sort by field.
+            sort_order: Sort order (asc/desc).
+        """
         return await experiments_svc_async.getRuns(
-            self._api_config, project=project, experiment_id=experiment_id
+            self._api_config,
+            dataset_id=dataset_id,
+            page=page,
+            limit=limit,
+            run_ids=run_ids,
+            name=name,
+            status=status,
+            dateRange=dateRange,
+            sort_by=sort_by,
+            sort_order=sort_order,
         )
 
     async def get_run_async(self, run_id: str) -> GetExperimentRunResponse:
@@ -462,66 +536,92 @@ class ExperimentsAPI(BaseAPI):
     def get_result(
         self,
         run_id: str,
-        project_id: str,
         aggregate_function: Optional[str] = None,
+        filters: Optional[Any] = None,
     ) -> Dict[str, Any]:
-        """Get experiment run result."""
+        """Get experiment run result.
+        
+        Args:
+            run_id: The experiment run ID.
+            aggregate_function: Aggregation function to apply.
+            filters: Optional filters to apply.
+        """
         result = experiments_svc.getExperimentResult(
             self._api_config,
             run_id=run_id,
-            project_id=project_id,
             aggregate_function=aggregate_function,
+            filters=filters,
         )
-        # TODOSchema is a pass-through dict model
+        # GetExperimentRunResultResponse is a pass-through dict model
         return result.model_dump() if hasattr(result, "model_dump") else dict(result)
 
     def compare_runs(
         self,
-        run_id_1: str,
-        run_id_2: str,
-        project_id: str,
+        new_run_id: str,
+        old_run_id: str,
         aggregate_function: Optional[str] = None,
+        filters: Optional[Any] = None,
     ) -> Dict[str, Any]:
-        """Compare two experiment runs."""
+        """Compare two experiment runs.
+        
+        Args:
+            new_run_id: The new run ID to compare.
+            old_run_id: The old run ID to compare against.
+            aggregate_function: Aggregation function to apply.
+            filters: Optional filters to apply.
+        """
         result = experiments_svc.getExperimentComparison(
             self._api_config,
-            project_id=project_id,
-            run_id_1=run_id_1,
-            run_id_2=run_id_2,
+            new_run_id=new_run_id,
+            old_run_id=old_run_id,
             aggregate_function=aggregate_function,
+            filters=filters,
         )
-        # TODOSchema is a pass-through dict model
+        # GetExperimentRunCompareResponse is a pass-through dict model
         return result.model_dump() if hasattr(result, "model_dump") else dict(result)
 
     async def get_result_async(
         self,
         run_id: str,
-        project_id: str,
         aggregate_function: Optional[str] = None,
+        filters: Optional[Any] = None,
     ) -> Dict[str, Any]:
-        """Get experiment run result asynchronously."""
+        """Get experiment run result asynchronously.
+        
+        Args:
+            run_id: The experiment run ID.
+            aggregate_function: Aggregation function to apply.
+            filters: Optional filters to apply.
+        """
         result = await experiments_svc_async.getExperimentResult(
             self._api_config,
             run_id=run_id,
-            project_id=project_id,
             aggregate_function=aggregate_function,
+            filters=filters,
         )
         return result.model_dump() if hasattr(result, "model_dump") else dict(result)
 
     async def compare_runs_async(
         self,
-        run_id_1: str,
-        run_id_2: str,
-        project_id: str,
+        new_run_id: str,
+        old_run_id: str,
         aggregate_function: Optional[str] = None,
+        filters: Optional[Any] = None,
     ) -> Dict[str, Any]:
-        """Compare two experiment runs asynchronously."""
+        """Compare two experiment runs asynchronously.
+        
+        Args:
+            new_run_id: The new run ID to compare.
+            old_run_id: The old run ID to compare against.
+            aggregate_function: Aggregation function to apply.
+            filters: Optional filters to apply.
+        """
         result = await experiments_svc_async.getExperimentComparison(
             self._api_config,
-            project_id=project_id,
-            run_id_1=run_id_1,
-            run_id_2=run_id_2,
+            new_run_id=new_run_id,
+            old_run_id=old_run_id,
             aggregate_function=aggregate_function,
+            filters=filters,
         )
         return result.model_dump() if hasattr(result, "model_dump") else dict(result)
 
