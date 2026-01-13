@@ -236,6 +236,27 @@ class DatapointsAPI(BaseAPI):
         """Delete a datapoint asynchronously."""
         return await datapoints_svc_async.deleteDatapoint(self._api_config, id=id)
 
+    # Backwards compatible aliases
+    def get_datapoint(self, id: str) -> GetDatapointResponse:
+        """Get a datapoint by ID (backwards compatible alias for get())."""
+        return self.get(id)
+
+    def create_datapoint(
+        self, request: CreateDatapointRequest
+    ) -> CreateDatapointResponse:
+        """Create a datapoint (backwards compatible alias for create())."""
+        return self.create(request)
+
+    def update_datapoint(
+        self, id: str, request: UpdateDatapointRequest
+    ) -> UpdateDatapointResponse:
+        """Update a datapoint (backwards compatible alias for update())."""
+        return self.update(id, request)
+
+    def delete_datapoint(self, id: str) -> DeleteDatapointResponse:
+        """Delete a datapoint (backwards compatible alias for delete())."""
+        return self.delete(id)
+
 
 class DatasetsAPI(BaseAPI):
     """Datasets API."""
@@ -309,6 +330,26 @@ class DatasetsAPI(BaseAPI):
     async def delete_async(self, id: str) -> DeleteDatasetResponse:
         """Delete a dataset asynchronously."""
         return await datasets_svc_async.deleteDataset(self._api_config, dataset_id=id)
+
+    # Backwards compatible aliases
+    def get_dataset(self, id: str) -> GetDatasetsResponse:
+        """Get a dataset by ID (backwards compatible alias).
+        
+        Note: Uses list() with dataset_id filter since there's no single-get endpoint.
+        """
+        return self.list(dataset_id=id)
+
+    def create_dataset(self, request: CreateDatasetRequest) -> CreateDatasetResponse:
+        """Create a dataset (backwards compatible alias for create())."""
+        return self.create(request)
+
+    def update_dataset(self, request: UpdateDatasetRequest) -> UpdateDatasetResponse:
+        """Update a dataset (backwards compatible alias for update())."""
+        return self.update(request)
+
+    def delete_dataset(self, id: str) -> DeleteDatasetResponse:
+        """Delete a dataset (backwards compatible alias for delete())."""
+        return self.delete(id)
 
 
 class EventsAPI(BaseAPI):
@@ -390,6 +431,15 @@ class EventsAPI(BaseAPI):
     async def create_batch_async(self, data: Dict[str, Any]) -> Dict[str, Any]:
         """Create events in batch asynchronously."""
         return await events_svc_async.createEventBatch(self._api_config, data=data)
+
+    # Backwards compatible aliases
+    def create_event(self, request: PostEventRequest) -> PostEventResponse:
+        """Create an event (backwards compatible alias for create())."""
+        return self.create(request)
+
+    def update_event(self, data: Dict[str, Any]) -> None:
+        """Update an event (backwards compatible alias for update())."""
+        return self.update(data)
 
 
 class ExperimentsAPI(BaseAPI):
@@ -637,6 +687,48 @@ class ExperimentsAPI(BaseAPI):
         )
         return result.model_dump() if hasattr(result, "model_dump") else dict(result)
 
+    # Aliases for backwards compatibility (evaluations naming)
+    def get_run_result(
+        self,
+        run_id: str,
+        aggregate_function: Optional[str] = None,
+        filters: Optional[Any] = None,
+    ) -> Dict[str, Any]:
+        """Get experiment run result (alias for get_result)."""
+        return self.get_result(run_id, aggregate_function, filters)
+
+    def compare_run_events(
+        self,
+        new_run_id: str,
+        old_run_id: str,
+        event_name: Optional[str] = None,
+        event_type: Optional[str] = None,
+        filter: Optional[Any] = None,
+        limit: Optional[int] = None,
+        page: Optional[int] = None,
+    ) -> Dict[str, Any]:
+        """Compare events between two experiment runs.
+        
+        Args:
+            new_run_id: The new run ID to compare.
+            old_run_id: The old run ID to compare against.
+            event_name: Filter by event name.
+            event_type: Filter by event type.
+            filter: Additional filter criteria.
+            limit: Maximum number of results.
+            page: Page number for pagination.
+        """
+        return experiments_svc.getExperimentCompareEvents(
+            self._api_config,
+            run_id_1=new_run_id,
+            run_id_2=old_run_id,
+            event_name=event_name,
+            event_type=event_type,
+            filter=filter,
+            limit=limit,
+            page=page,
+        )
+
 
 class MetricsAPI(BaseAPI):
     """Metrics API."""
@@ -761,6 +853,15 @@ class SessionsAPI(BaseAPI):
         """Start a new session asynchronously."""
         return await session_svc_async.startSession(self._api_config, data=data)
 
+    # Backwards compatible aliases
+    def create_session(self, request: Dict[str, Any]) -> PostSessionStartResponse:
+        """Create/start a session (backwards compatible alias for start())."""
+        return self.start(request)
+
+    def start_session(self, request: Dict[str, Any]) -> PostSessionStartResponse:
+        """Start a session (backwards compatible alias for start())."""
+        return self.start(request)
+
 
 class ToolsAPI(BaseAPI):
     """Tools API."""
@@ -857,6 +958,9 @@ class HoneyHive:
         self.projects = ProjectsAPI(self._api_config)
         self.sessions = SessionsAPI(self._api_config)
         self.tools = ToolsAPI(self._api_config)
+        
+        # Alias for backwards compatibility
+        self.evaluations = self.experiments
 
     @property
     def test_mode(self) -> bool:
