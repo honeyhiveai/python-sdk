@@ -781,10 +781,12 @@ def _create_otlp_exporter(tracer_instance: Any) -> Optional[Any]:
         session_config = _get_optimal_session_config(tracer_instance)
 
         # Use custom exporter with optimized connection pooling
+        # Use JSON format by default as backend expects application/json
         otlp_exporter = HoneyHiveOTLPExporter(
             tracer_instance=tracer_instance,
             session_config=session_config,
             use_optimized_session=True,
+            protocol="http/json",  # Use JSON format for OTLP export
             endpoint=otlp_endpoint,
             headers={
                 "Authorization": f"Bearer {tracer_instance.config.api_key}",
@@ -1286,16 +1288,20 @@ def _create_new_session(tracer_instance: Any) -> None:
         }
         session_response = tracer_instance.client.sessions.start(data=session_params)
 
-        # Response is a dict with 'session_id' key
-        if (
-            session_response
-            and isinstance(session_response, dict)
-            and "session_id" in session_response
-        ):
+        # Response can be a Pydantic model or dict with 'session_id' attribute/key
+        response_session_id = None
+        if session_response:
+            # Handle Pydantic model (has .session_id attribute)
+            if hasattr(session_response, 'session_id'):
+                response_session_id = session_response.session_id
+            # Handle dict response (legacy)
+            elif isinstance(session_response, dict) and "session_id" in session_response:
+                response_session_id = session_response["session_id"]
+
+        if response_session_id:
             # Preserve explicitly provided session_id if it was set
             # Otherwise use the session_id from the response
             provided_session_id = tracer_instance.session_id
-            response_session_id = session_response["session_id"]
 
             # Use provided session_id if it matches response (session was created with it)
             # Otherwise use response session_id (new session was created)

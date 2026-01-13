@@ -336,7 +336,7 @@ class EventsAPI(BaseAPI):
 
     def get_by_session_id(self, session_id: str) -> GetEventsBySessionIdResponse:
         """Get events by session ID."""
-        return events_svc.getEventsBySessionId(self._api_config, session_id=session_id)
+        return events_svc.getEventsBySessionId(self._api_config, id=session_id)
 
     def create(self, request: PostEventRequest) -> PostEventResponse:
         """Create an event."""
@@ -365,7 +365,7 @@ class EventsAPI(BaseAPI):
     ) -> GetEventsBySessionIdResponse:
         """Get events by session ID asynchronously."""
         return await events_svc_async.getEventsBySessionId(
-            self._api_config, session_id=session_id
+            self._api_config, id=session_id
         )
 
     async def create_async(self, request: PostEventRequest) -> PostEventResponse:
@@ -844,6 +844,11 @@ class HoneyHive:
         self.projects = ProjectsAPI(self._api_config)
         self.sessions = SessionsAPI(self._api_config)
         self.tools = ToolsAPI(self._api_config)
+
+    @property
+    def test_mode(self) -> bool:
+        """Return whether client is in test mode (always False for real API client)."""
+        return False
 
     @property
     def api_config(self) -> APIConfig:

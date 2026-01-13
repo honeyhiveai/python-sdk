@@ -47,11 +47,11 @@ class PostSessionStartResponse(BaseModel):
 
     metadata: Optional[Any] = Field(validation_alias="metadata", default=None)
 
-    org_id: str = Field(validation_alias="org_id")
+    org_id: Optional[str] = Field(validation_alias="org_id", default=None)
 
-    workspace_id: str = Field(validation_alias="workspace_id")
+    workspace_id: Optional[str] = Field(validation_alias="workspace_id", default=None)
 
-    project_id: str = Field(validation_alias="project_id")
+    project_id: Optional[str] = Field(validation_alias="project_id", default=None)
 
     start_time: Optional[float] = Field(validation_alias="start_time", default=None)
 
