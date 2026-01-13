@@ -930,22 +930,76 @@ class HoneyHive:
 
     def __init__(
         self,
-        api_key: str,
-        base_url: str = "https://api.testing-dp-1.honeyhive.ai",
-        cp_base_url: Optional[str] = "https://api.testing-cp-1.honeyhive.ai",
+        api_key: Optional[str] = None,
+        *,
+        # Primary URL parameters
+        base_url: Optional[str] = None,
+        cp_base_url: Optional[str] = None,
+        # Backwards compatible alias for base_url
+        server_url: Optional[str] = None,
+        # Backwards compatible parameters (accepted but not used in new client)
+        timeout: Optional[float] = None,
+        retry_config: Optional[Any] = None,
+        rate_limit_calls: Optional[int] = None,
+        rate_limit_window: Optional[float] = None,
+        max_connections: Optional[int] = None,
+        max_keepalive: Optional[int] = None,
+        test_mode: Optional[bool] = None,
+        verbose: Optional[bool] = None,
+        tracer_instance: Optional[Any] = None,
     ) -> None:
         """Initialize the HoneyHive client.
 
         Args:
             api_key: HoneyHive API key (typically starts with 'hh_').
-            base_url: API base URL for Data Plane/ingestion (default: https://api.honeyhive.ai).
-            cp_base_url: Control Plane API URL for query endpoints. If not set, uses base_url.
+                     Falls back to HH_API_KEY environment variable.
+            base_url: API base URL for Data Plane/ingestion.
+                      Falls back to HH_API_URL env var, then https://api.honeyhive.ai.
+            cp_base_url: Control Plane API URL for query endpoints.
+                         Falls back to HH_CP_API_URL, then HH_API_URL env var.
+            server_url: Deprecated alias for base_url (for backwards compatibility).
+            timeout: Request timeout in seconds (accepted for backwards compat, not used).
+            retry_config: Retry configuration (accepted for backwards compat, not used).
+            rate_limit_calls: Max calls per time window (accepted for backwards compat).
+            rate_limit_window: Time window in seconds (accepted for backwards compat).
+            max_connections: Max connections in pool (accepted for backwards compat).
+            max_keepalive: Max keepalive connections (accepted for backwards compat).
+            test_mode: Enable test mode (accepted for backwards compat, not used).
+            verbose: Enable verbose logging (accepted for backwards compat, not used).
+            tracer_instance: Tracer instance (accepted for backwards compat, not used).
         """
-        self._api_key = api_key
+        import os
+
+        # Resolve API key from parameter or environment
+        self._api_key = api_key or os.environ.get("HH_API_KEY", "")
+
+        # Resolve base URL: base_url > server_url (legacy) > env var > default
+        resolved_base_url = (
+            base_url
+            or server_url  # Legacy parameter
+            or os.environ.get("HH_API_URL")
+            or "https://api.honeyhive.ai"
+        )
+
+        # Resolve CP base URL: cp_base_url > HH_CP_API_URL > HH_API_URL > base_url
+        resolved_cp_base_url = (
+            cp_base_url
+            or os.environ.get("HH_CP_API_URL")
+            or os.environ.get("HH_API_URL")
+            or resolved_base_url
+        )
+
+        # Store backwards compat params (silently accepted)
+        self._timeout = timeout
+        self._test_mode = test_mode if test_mode is not None else False
+        self._verbose = verbose if verbose is not None else False
+        self._tracer_instance = tracer_instance
+
+        # Create API config
         self._api_config = APIConfig(
-            base_path=base_url,
-            cp_base_path=cp_base_url,
-            access_token=api_key,
+            base_path=resolved_base_url,
+            cp_base_path=resolved_cp_base_url,
+            access_token=self._api_key,
         )
 
         # Initialize API namespaces
@@ -958,14 +1012,24 @@ class HoneyHive:
         self.projects = ProjectsAPI(self._api_config)
         self.sessions = SessionsAPI(self._api_config)
         self.tools = ToolsAPI(self._api_config)
-        
+
         # Alias for backwards compatibility
         self.evaluations = self.experiments
 
     @property
     def test_mode(self) -> bool:
-        """Return whether client is in test mode (always False for real API client)."""
-        return False
+        """Return whether client is in test mode."""
+        return self._test_mode
+
+    @property
+    def verbose(self) -> bool:
+        """Return whether verbose mode is enabled."""
+        return self._verbose
+
+    @property
+    def timeout(self) -> Optional[float]:
+        """Return the configured timeout."""
+        return self._timeout
 
     @property
     def api_config(self) -> APIConfig:
