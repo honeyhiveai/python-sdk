@@ -448,7 +448,7 @@ class TestEndToEndValidation:
                 "metadata": {"test_id": test_id, "timestamp": test_timestamp},
             }
             session_response = integration_client.sessions.start(session_request)
-            # sessions.start() now returns PostSessionResponse
+            # sessions.start() now returns PostSessionStartResponse
             session_id = session_response.session_id
             entities_created["session"] = {
                 "name": session_name,

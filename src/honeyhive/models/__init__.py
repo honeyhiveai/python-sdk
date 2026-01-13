@@ -70,7 +70,7 @@ from honeyhive._generated.models import (
     PostExperimentRunRequest,
     PostExperimentRunResponse,
     PostSessionRequest,
-    PostSessionResponse,
+    PostSessionStartResponse,
     PutExperimentRunRequest,
     PutExperimentRunResponse,
     RemoveDatapointFromDatasetParams,
@@ -173,7 +173,7 @@ __all__ = [
     "DeleteSessionResponse",
     "GetSessionResponse",
     "PostSessionRequest",
-    "PostSessionResponse",
+    "PostSessionStartResponse",
     # Tool models
     "CreateToolRequest",
     "CreateToolResponse",

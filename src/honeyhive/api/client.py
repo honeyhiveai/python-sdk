@@ -54,7 +54,7 @@ from honeyhive._generated.models import (
     PostEventResponse,
     PostExperimentRunRequest,
     PostExperimentRunResponse,
-    PostSessionResponse,
+    PostSessionStartResponse,
     PutExperimentRunRequest,
     PutExperimentRunResponse,
     UpdateConfigurationRequest,
@@ -628,7 +628,7 @@ class SessionsAPI(BaseAPI):
         """Delete a session."""
         return sessions_svc.deleteSession(self._api_config, session_id=session_id)
 
-    def start(self, data: Dict[str, Any]) -> PostSessionResponse:
+    def start(self, data: Dict[str, Any]) -> PostSessionStartResponse:
         """Start a new session."""
         return session_svc.startSession(self._api_config, data=data)
 
@@ -645,7 +645,7 @@ class SessionsAPI(BaseAPI):
             self._api_config, session_id=session_id
         )
 
-    async def start_async(self, data: Dict[str, Any]) -> PostSessionResponse:
+    async def start_async(self, data: Dict[str, Any]) -> PostSessionStartResponse:
         """Start a new session asynchronously."""
         return await session_svc_async.startSession(self._api_config, data=data)
 

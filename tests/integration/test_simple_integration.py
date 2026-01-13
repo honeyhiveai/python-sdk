@@ -14,7 +14,7 @@ from honeyhive.models import (
     GetEventsResponse,
     PostEventRequest,
     PostEventResponse,
-    PostSessionResponse,
+    PostSessionStartResponse,
 )
 
 
@@ -211,8 +211,8 @@ class TestSimpleIntegration:
             }
 
             session_response = integration_client.sessions.start(session_data)
-            # v1 API returns PostSessionResponse with session_id
-            assert isinstance(session_response, PostSessionResponse)
+            # v1 API returns PostSessionStartResponse with session_id
+            assert isinstance(session_response, PostSessionStartResponse)
             assert session_response.session_id is not None
             session_id = session_response.session_id
 

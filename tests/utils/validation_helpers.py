@@ -179,7 +179,7 @@ def verify_session_creation(
         logger.debug(f"🔄 Creating session for project: {project}")
         session_response = client.sessions.start(session_request)
 
-        # Validate creation response - sessions.start() now returns PostSessionResponse
+        # Validate creation response - sessions.start() now returns PostSessionStartResponse
         if not hasattr(session_response, "session_id"):
             raise ValidationError(
                 "Session creation failed - response missing session_id attribute"

@@ -249,7 +249,7 @@ class TestOTELOTLPExportIntegration:
             "source": real_source,
         }
         test_session = integration_client.sessions.start(session_data)
-        # v1 API returns PostSessionResponse with session_id
+        # v1 API returns PostSessionStartResponse with session_id
         test_session_id = test_session.session_id
 
         # ✅ STANDARD PATTERN: Use verify_tracer_span for span creation
