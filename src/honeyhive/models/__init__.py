@@ -10,7 +10,8 @@ from enum import Enum
 class EventType(str, Enum):
     """Event types for tracing decorators.
 
-    Usage:
+    Example::
+
         from honeyhive import trace
         from honeyhive.models import EventType
 
