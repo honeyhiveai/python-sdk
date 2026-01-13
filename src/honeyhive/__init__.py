@@ -25,6 +25,26 @@ try:
 except ImportError:
     _TRACER_AVAILABLE = False
 
+# Evaluation/experiments module (if available)
+try:
+    from .experiments import evaluate
+    from .evaluation._compat import aevaluator, evaluator
+    from .evaluation.evaluators import BaseEvaluator
+    from .config import config
+
+    _EVALUATION_AVAILABLE = True
+except ImportError:
+    _EVALUATION_AVAILABLE = False
+
+# Utility imports (backwards compatibility)
+try:
+    from .utils.dotdict import DotDict
+    from .utils.logger import get_logger
+
+    _UTILS_AVAILABLE = True
+except ImportError:
+    _UTILS_AVAILABLE = False
+
 __all__ = [
     # Core client
     "HoneyHive",
@@ -42,5 +62,26 @@ if _TRACER_AVAILABLE:
             "enrich_span",
             "flush",
             "set_default_tracer",
+        ]
+    )
+
+# Add evaluation exports if available
+if _EVALUATION_AVAILABLE:
+    __all__.extend(
+        [
+            "evaluate",
+            "evaluator",
+            "aevaluator",
+            "config",
+            "BaseEvaluator",
+        ]
+    )
+
+# Add utility exports if available
+if _UTILS_AVAILABLE:
+    __all__.extend(
+        [
+            "DotDict",
+            "get_logger",
         ]
     )

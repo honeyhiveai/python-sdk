@@ -158,6 +158,33 @@ class ConfigurationsAPI(BaseAPI):
         """Delete a configuration asynchronously."""
         return await configs_svc_async.deleteConfiguration(self._api_config, id=id)
 
+    # Backwards compatible aliases
+    def get_configuration(self, id: str) -> GetConfigurationsResponse:
+        """Get a configuration (backwards compatible alias)."""
+        return self.list()  # No single-get endpoint, returns all
+
+    def create_configuration(
+        self, request: CreateConfigurationRequest
+    ) -> CreateConfigurationResponse:
+        """Create a configuration (backwards compatible alias)."""
+        return self.create(request)
+
+    def update_configuration(
+        self, id: str, request: UpdateConfigurationRequest
+    ) -> UpdateConfigurationResponse:
+        """Update a configuration (backwards compatible alias)."""
+        return self.update(id, request)
+
+    def delete_configuration(self, id: str) -> DeleteConfigurationResponse:
+        """Delete a configuration (backwards compatible alias)."""
+        return self.delete(id)
+
+    def list_configurations(
+        self, project: Optional[str] = None
+    ) -> List[GetConfigurationsResponse]:
+        """List configurations (backwards compatible alias)."""
+        return self.list(project)
+
 
 class DatapointsAPI(BaseAPI):
     """Datapoints API."""
@@ -257,6 +284,14 @@ class DatapointsAPI(BaseAPI):
         """Delete a datapoint (backwards compatible alias for delete())."""
         return self.delete(id)
 
+    def list_datapoints(
+        self,
+        datapoint_ids: Optional[List[str]] = None,
+        dataset_name: Optional[str] = None,
+    ) -> GetDatapointsResponse:
+        """List datapoints (backwards compatible alias)."""
+        return self.list(datapoint_ids=datapoint_ids, dataset_name=dataset_name)
+
 
 class DatasetsAPI(BaseAPI):
     """Datasets API."""
@@ -351,6 +386,17 @@ class DatasetsAPI(BaseAPI):
         """Delete a dataset (backwards compatible alias for delete())."""
         return self.delete(id)
 
+    def list_datasets(
+        self,
+        dataset_id: Optional[str] = None,
+        name: Optional[str] = None,
+        include_datapoints: Optional[bool] = None,
+    ) -> GetDatasetsResponse:
+        """List datasets (backwards compatible alias)."""
+        return self.list(
+            dataset_id=dataset_id, name=name, include_datapoints=include_datapoints
+        )
+
 
 class EventsAPI(BaseAPI):
     """Events API."""
@@ -440,6 +486,14 @@ class EventsAPI(BaseAPI):
     def update_event(self, data: Dict[str, Any]) -> None:
         """Update an event (backwards compatible alias for update())."""
         return self.update(data)
+
+    def list_events(self, data: Dict[str, Any]) -> GetEventsResponse:
+        """List events (backwards compatible alias for list())."""
+        return self.list(data)
+
+    def get_events(self, data: Dict[str, Any]) -> GetEventsResponse:
+        """Get events (backwards compatible alias for list())."""
+        return self.list(data)
 
 
 class ExperimentsAPI(BaseAPI):
@@ -781,6 +835,32 @@ class MetricsAPI(BaseAPI):
         """Delete a metric asynchronously."""
         return await metrics_svc_async.deleteMetric(self._api_config, metric_id=id)
 
+    # Backwards compatible aliases
+    def get_metric(self, id: str) -> GetMetricsResponse:
+        """Get a metric (backwards compatible alias)."""
+        return self.list()  # No single-get endpoint
+
+    def create_metric(self, request: CreateMetricRequest) -> CreateMetricResponse:
+        """Create a metric (backwards compatible alias)."""
+        return self.create(request)
+
+    def update_metric(self, request: UpdateMetricRequest) -> UpdateMetricResponse:
+        """Update a metric (backwards compatible alias)."""
+        return self.update(request)
+
+    def delete_metric(self, id: str) -> DeleteMetricResponse:
+        """Delete a metric (backwards compatible alias)."""
+        return self.delete(id)
+
+    def list_metrics(
+        self,
+        project: Optional[str] = None,
+        name: Optional[str] = None,
+        type: Optional[str] = None,
+    ) -> GetMetricsResponse:
+        """List metrics (backwards compatible alias)."""
+        return self.list(project=project, name=name, type=type)
+
 
 class ProjectsAPI(BaseAPI):
     """Projects API."""
@@ -818,6 +898,27 @@ class ProjectsAPI(BaseAPI):
     async def delete_async(self, name: str) -> Dict[str, Any]:
         """Delete a project asynchronously."""
         return await projects_svc_async.deleteProject(self._api_config, name=name)
+
+    # Backwards compatible aliases
+    def get_project(self, id: str) -> Dict[str, Any]:
+        """Get a project (backwards compatible alias)."""
+        return self.list(name=id)  # Use name filter since no single-get
+
+    def create_project(self, data: Dict[str, Any]) -> Dict[str, Any]:
+        """Create a project (backwards compatible alias)."""
+        return self.create(data)
+
+    def update_project(self, data: Dict[str, Any]) -> Dict[str, Any]:
+        """Update a project (backwards compatible alias)."""
+        return self.update(data)
+
+    def delete_project(self, name: str) -> Dict[str, Any]:
+        """Delete a project (backwards compatible alias)."""
+        return self.delete(name)
+
+    def list_projects(self, name: Optional[str] = None) -> Dict[str, Any]:
+        """List projects (backwards compatible alias)."""
+        return self.list(name=name)
 
 
 class SessionsAPI(BaseAPI):
@@ -862,6 +963,14 @@ class SessionsAPI(BaseAPI):
         """Start a session (backwards compatible alias for start())."""
         return self.start(request)
 
+    def get_session(self, session_id: str) -> GetSessionResponse:
+        """Get a session (backwards compatible alias for get())."""
+        return self.get(session_id)
+
+    def delete_session(self, session_id: str) -> DeleteSessionResponse:
+        """Delete a session (backwards compatible alias for delete())."""
+        return self.delete(session_id)
+
 
 class ToolsAPI(BaseAPI):
     """Tools API."""
@@ -899,6 +1008,27 @@ class ToolsAPI(BaseAPI):
     async def delete_async(self, id: str) -> DeleteToolResponse:
         """Delete a tool asynchronously."""
         return await tools_svc_async.deleteTool(self._api_config, tool_id=id)
+
+    # Backwards compatible aliases
+    def get_tool(self, id: str) -> List[GetToolsResponse]:
+        """Get a tool (backwards compatible alias)."""
+        return self.list()  # No single-get endpoint
+
+    def create_tool(self, request: CreateToolRequest) -> CreateToolResponse:
+        """Create a tool (backwards compatible alias)."""
+        return self.create(request)
+
+    def update_tool(self, request: UpdateToolRequest) -> UpdateToolResponse:
+        """Update a tool (backwards compatible alias)."""
+        return self.update(request)
+
+    def delete_tool(self, id: str) -> DeleteToolResponse:
+        """Delete a tool (backwards compatible alias)."""
+        return self.delete(id)
+
+    def list_tools(self) -> List[GetToolsResponse]:
+        """List tools (backwards compatible alias)."""
+        return self.list()
 
 
 class HoneyHive:
