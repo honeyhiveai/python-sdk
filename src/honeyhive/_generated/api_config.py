@@ -6,8 +6,8 @@ from pydantic import BaseModel, Field
 class APIConfig(BaseModel):
     model_config = {"validate_assignment": True}
 
-    base_path: str = "https://api.honeyhive.ai"
-    cp_base_path: Optional[str] = None  # Control Plane URL for query endpoints
+    base_path: str = "https://api.testing-dp-1.honeyhive.ai"
+    cp_base_path: Optional[str] = "https://api.testing-cp-1.honeyhive.ai"
     verify: Union[bool, str] = True
     access_token: Optional[str] = None
 

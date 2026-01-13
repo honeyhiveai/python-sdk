@@ -830,8 +830,8 @@ class HoneyHive:
     def __init__(
         self,
         api_key: str,
-        base_url: str = "https://api.honeyhive.ai",
-        cp_base_url: Optional[str] = None,
+        base_url: str = "https://api.testing-dp-1.honeyhive.ai",
+        cp_base_url: Optional[str] = "https://api.testing-cp-1.honeyhive.ai",
     ) -> None:
         """Initialize the HoneyHive client.
 

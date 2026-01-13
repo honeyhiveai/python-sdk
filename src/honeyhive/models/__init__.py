@@ -1,8 +1,30 @@
 """HoneyHive Models - Re-exported from auto-generated Pydantic models.
 
 Usage:
-    from honeyhive.models import CreateConfigurationRequest, CreateDatasetRequest
+    from honeyhive.models import CreateConfigurationRequest, CreateDatasetRequest, EventType
 """
+
+from enum import Enum
+
+
+class EventType(str, Enum):
+    """Event types for tracing decorators.
+
+    Usage:
+        from honeyhive import trace
+        from honeyhive.models import EventType
+
+        @trace(event_type=EventType.tool)
+        def my_function():
+            pass
+    """
+
+    model = "model"
+    tool = "tool"
+    chain = "chain"
+    session = "session"
+    generic = "generic"
+
 
 # Re-export all generated Pydantic models
 from honeyhive._generated.models import (
@@ -182,4 +204,6 @@ __all__ = [
     "UpdateToolResponse",
     # Other
     "TODOSchema",
+    # Enums
+    "EventType",
 ]
