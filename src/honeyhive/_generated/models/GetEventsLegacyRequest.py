@@ -15,13 +15,9 @@ class GetEventsLegacyRequest(BaseModel):
 
     filters: List[Dict[str, Any]] = Field(validation_alias="filters")
 
-    dateRange: Optional[Dict[str, Any]] = Field(
-        validation_alias="dateRange", default=None
-    )
+    dateRange: Optional[Dict[str, Any]] = Field(validation_alias="dateRange", default=None)
 
-    projections: Optional[List[str]] = Field(
-        validation_alias="projections", default=None
-    )
+    projections: Optional[List[str]] = Field(validation_alias="projections", default=None)
 
     limit: Optional[float] = Field(validation_alias="limit", default=None)
 

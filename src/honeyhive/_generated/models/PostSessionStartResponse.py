@@ -17,9 +17,7 @@ class PostSessionStartResponse(BaseModel):
 
     parent_id: Optional[str] = Field(validation_alias="parent_id", default=None)
 
-    children_ids: Optional[List[str]] = Field(
-        validation_alias="children_ids", default=None
-    )
+    children_ids: Optional[List[str]] = Field(validation_alias="children_ids", default=None)
 
     event_type: Optional[str] = Field(validation_alias="event_type", default=None)
 
@@ -37,9 +35,7 @@ class PostSessionStartResponse(BaseModel):
 
     duration: Optional[float] = Field(validation_alias="duration", default=None)
 
-    user_properties: Optional[Any] = Field(
-        validation_alias="user_properties", default=None
-    )
+    user_properties: Optional[Any] = Field(validation_alias="user_properties", default=None)
 
     metrics: Optional[Any] = Field(validation_alias="metrics", default=None)
 
@@ -47,11 +43,11 @@ class PostSessionStartResponse(BaseModel):
 
     metadata: Optional[Any] = Field(validation_alias="metadata", default=None)
 
-    org_id: Optional[str] = Field(validation_alias="org_id", default=None)
+    org_id: str = Field(validation_alias="org_id")
 
-    workspace_id: Optional[str] = Field(validation_alias="workspace_id", default=None)
+    workspace_id: str = Field(validation_alias="workspace_id")
 
-    project_id: Optional[str] = Field(validation_alias="project_id", default=None)
+    project_id: str = Field(validation_alias="project_id")
 
     start_time: Optional[float] = Field(validation_alias="start_time", default=None)
 

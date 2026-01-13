@@ -31,9 +31,7 @@ class GetSessionResponse(BaseModel):
 
     session_id: Optional[str] = Field(validation_alias="session_id", default=None)
 
-    children_ids: Optional[List[str]] = Field(
-        validation_alias="children_ids", default=None
-    )
+    children_ids: Optional[List[str]] = Field(validation_alias="children_ids", default=None)
 
     config: Optional[Any] = Field(validation_alias="config", default=None)
 
@@ -45,9 +43,7 @@ class GetSessionResponse(BaseModel):
 
     source: Optional[str] = Field(validation_alias="source", default=None)
 
-    user_properties: Optional[Any] = Field(
-        validation_alias="user_properties", default=None
-    )
+    user_properties: Optional[Any] = Field(validation_alias="user_properties", default=None)
 
     metrics: Optional[Any] = Field(validation_alias="metrics", default=None)
 

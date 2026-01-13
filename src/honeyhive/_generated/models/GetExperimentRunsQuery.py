@@ -22,9 +22,7 @@ class GetExperimentRunsQuery(BaseModel):
 
     status: Optional[str] = Field(validation_alias="status", default=None)
 
-    dateRange: Optional[Union[str, Dict[str, Any]]] = Field(
-        validation_alias="dateRange", default=None
-    )
+    dateRange: Optional[Union[str, Dict[str, Any]]] = Field(validation_alias="dateRange", default=None)
 
     sort_by: Optional[str] = Field(validation_alias="sort_by", default=None)
 

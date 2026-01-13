@@ -14,6 +14,4 @@ class GetDatasetsQuery(BaseModel):
 
     name: Optional[str] = Field(validation_alias="name", default=None)
 
-    include_datapoints: Optional[Union[bool, str]] = Field(
-        validation_alias="include_datapoints", default=None
-    )
+    include_datapoints: Optional[Union[bool, str]] = Field(validation_alias="include_datapoints", default=None)

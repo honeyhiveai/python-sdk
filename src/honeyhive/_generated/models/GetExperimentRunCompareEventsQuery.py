@@ -18,9 +18,7 @@ class GetExperimentRunCompareEventsQuery(BaseModel):
 
     event_type: Optional[str] = Field(validation_alias="event_type", default=None)
 
-    filter: Optional[Union[str, Dict[str, Any]]] = Field(
-        validation_alias="filter", default=None
-    )
+    filter: Optional[Union[str, Dict[str, Any]]] = Field(validation_alias="filter", default=None)
 
     limit: Optional[int] = Field(validation_alias="limit", default=None)
 

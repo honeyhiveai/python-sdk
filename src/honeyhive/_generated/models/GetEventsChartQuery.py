@@ -11,13 +11,9 @@ class GetEventsChartQuery(BaseModel):
 
     model_config = {"populate_by_name": True, "validate_assignment": True}
 
-    dateRange: Optional[Union[Dict[str, Any], Dict[str, Any]]] = Field(
-        validation_alias="dateRange", default=None
-    )
+    dateRange: Optional[Union[Dict[str, Any], Dict[str, Any]]] = Field(validation_alias="dateRange", default=None)
 
-    filters: Optional[List[Dict[str, Any]]] = Field(
-        validation_alias="filters", default=None
-    )
+    filters: Optional[List[Dict[str, Any]]] = Field(validation_alias="filters", default=None)
 
     metric: Optional[str] = Field(validation_alias="metric", default=None)
 
@@ -29,6 +25,4 @@ class GetEventsChartQuery(BaseModel):
 
     evaluation_id: Optional[str] = Field(validation_alias="evaluation_id", default=None)
 
-    only_experiments: Optional[bool] = Field(
-        validation_alias="only_experiments", default=None
-    )
+    only_experiments: Optional[bool] = Field(validation_alias="only_experiments", default=None)

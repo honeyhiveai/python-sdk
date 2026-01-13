@@ -14,17 +14,11 @@ class BatchCreateDatapointsRequest(BaseModel):
 
     mapping: Optional[Dict[str, Any]] = Field(validation_alias="mapping", default=None)
 
-    filters: Optional[Union[Dict[str, Any], List[Dict[str, Any]]]] = Field(
-        validation_alias="filters", default=None
-    )
+    filters: Optional[Union[Dict[str, Any], List[Dict[str, Any]]]] = Field(validation_alias="filters", default=None)
 
-    dateRange: Optional[Dict[str, Any]] = Field(
-        validation_alias="dateRange", default=None
-    )
+    dateRange: Optional[Dict[str, Any]] = Field(validation_alias="dateRange", default=None)
 
-    checkState: Optional[Dict[str, Any]] = Field(
-        validation_alias="checkState", default=None
-    )
+    checkState: Optional[Dict[str, Any]] = Field(validation_alias="checkState", default=None)
 
     selectAll: Optional[bool] = Field(validation_alias="selectAll", default=None)
 
