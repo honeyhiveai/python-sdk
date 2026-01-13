@@ -165,7 +165,7 @@ jobs:
       - name: Regenerate models
         run: |
           echo "🔄 Regenerating models from OpenAPI spec..."
-          python scripts/generate_models.py
+          python scripts/generate_client.py
 
       - name: Check for uncommitted changes
         run: |
