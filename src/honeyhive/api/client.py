@@ -340,7 +340,8 @@ class EventsAPI(BaseAPI):
 
     def create(self, request: PostEventRequest) -> PostEventResponse:
         """Create an event."""
-        return events_svc.createEvent(self._api_config, data=request)
+        data = request.model_dump(exclude_none=True) if hasattr(request, 'model_dump') else request
+        return events_svc.createEvent(self._api_config, data=data)
 
     def update(self, data: Dict[str, Any]) -> None:
         """Update an event."""
@@ -369,7 +370,8 @@ class EventsAPI(BaseAPI):
 
     async def create_async(self, request: PostEventRequest) -> PostEventResponse:
         """Create an event asynchronously."""
-        return await events_svc_async.createEvent(self._api_config, data=request)
+        data = request.model_dump(exclude_none=True) if hasattr(request, 'model_dump') else request
+        return await events_svc_async.createEvent(self._api_config, data=data)
 
     async def update_async(self, data: Dict[str, Any]) -> None:
         """Update an event asynchronously."""
