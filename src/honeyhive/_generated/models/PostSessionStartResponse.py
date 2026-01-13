@@ -3,9 +3,9 @@ from typing import *
 from pydantic import BaseModel, Field
 
 
-class PostSessionResponse(BaseModel):
+class PostSessionStartResponse(BaseModel):
     """
-    PostSessionResponse model
+    PostSessionStartResponse model
         Full session event object returned after starting a new session
     """
 
@@ -47,11 +47,11 @@ class PostSessionResponse(BaseModel):
 
     metadata: Optional[Any] = Field(validation_alias="metadata", default=None)
 
-    org_id: Optional[str] = Field(validation_alias="org_id", default=None)
+    org_id: str = Field(validation_alias="org_id")
 
-    workspace_id: Optional[str] = Field(validation_alias="workspace_id", default=None)
+    workspace_id: str = Field(validation_alias="workspace_id")
 
-    project_id: Optional[str] = Field(validation_alias="project_id", default=None)
+    project_id: str = Field(validation_alias="project_id")
 
     start_time: Optional[float] = Field(validation_alias="start_time", default=None)
 

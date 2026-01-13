@@ -8,7 +8,7 @@ from ..models import *
 
 def startSession(
     api_config_override: Optional[APIConfig] = None, *, data: Dict[str, Any]
-) -> PostSessionResponse:
+) -> PostSessionStartResponse:
     api_config = api_config_override if api_config_override else APIConfig()
 
     base_path = api_config.base_path
@@ -37,4 +37,8 @@ def startSession(
     else:
         body = None if 200 == 204 else response.json()
 
-    return PostSessionResponse(**body) if body is not None else PostSessionResponse()
+    return (
+        PostSessionStartResponse(**body)
+        if body is not None
+        else PostSessionStartResponse()
+    )

@@ -8,7 +8,7 @@ from ..models import *
 
 def getProjects(
     api_config_override: Optional[APIConfig] = None, *, name: Optional[str] = None
-) -> List[TODOSchema]:
+) -> GetProjectsResponse:
     api_config = api_config_override if api_config_override else APIConfig()
 
     base_path = api_config.base_path
@@ -40,12 +40,12 @@ def getProjects(
     else:
         body = None if 200 == 204 else response.json()
 
-    return [TODOSchema(**item) for item in body]
+    return GetProjectsResponse(**body) if body is not None else GetProjectsResponse()
 
 
 def createProject(
-    api_config_override: Optional[APIConfig] = None, *, data: TODOSchema
-) -> TODOSchema:
+    api_config_override: Optional[APIConfig] = None, *, data: PostProjectRequest
+) -> PostProjectResponse:
     api_config = api_config_override if api_config_override else APIConfig()
 
     base_path = api_config.base_path
@@ -78,11 +78,11 @@ def createProject(
     else:
         body = None if 200 == 204 else response.json()
 
-    return TODOSchema(**body) if body is not None else TODOSchema()
+    return PostProjectResponse(**body) if body is not None else PostProjectResponse()
 
 
 def updateProject(
-    api_config_override: Optional[APIConfig] = None, *, data: TODOSchema
+    api_config_override: Optional[APIConfig] = None, *, data: PutProjectRequest
 ) -> None:
     api_config = api_config_override if api_config_override else APIConfig()
 

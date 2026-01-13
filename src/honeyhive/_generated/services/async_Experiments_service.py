@@ -295,13 +295,56 @@ async def deleteRun(
     )
 
 
+async def getExperimentRunMetrics(
+    api_config_override: Optional[APIConfig] = None,
+    *,
+    run_id: str,
+    dateRange: Optional[str] = None,
+    filters: Optional[Union[str, List[Dict[str, Any]]]] = None,
+) -> Dict[str, Any]:
+    api_config = api_config_override if api_config_override else APIConfig()
+
+    base_path = api_config.base_path
+    path = f"/v1/runs/{run_id}/metrics"
+    headers = {
+        "Content-Type": "application/json",
+        "Accept": "application/json",
+        "Authorization": f"Bearer { api_config.get_access_token() }",
+    }
+    query_params: Dict[str, Any] = {"dateRange": dateRange, "filters": filters}
+
+    query_params = {
+        key: value for (key, value) in query_params.items() if value is not None
+    }
+
+    async with httpx.AsyncClient(
+        base_url=base_path, verify=api_config.verify
+    ) as client:
+        response = await client.request(
+            "get",
+            httpx.URL(path),
+            headers=headers,
+            params=query_params,
+        )
+
+    if response.status_code != 200:
+        raise HTTPException(
+            response.status_code,
+            f"getExperimentRunMetrics failed with status code: {response.status_code}",
+        )
+    else:
+        body = None if 200 == 204 else response.json()
+
+    return body
+
+
 async def getExperimentResult(
     api_config_override: Optional[APIConfig] = None,
     *,
     run_id: str,
-    project_id: str,
     aggregate_function: Optional[str] = None,
-) -> TODOSchema:
+    filters: Optional[Union[str, List[Dict[str, Any]]]] = None,
+) -> GetExperimentRunResultResponse:
     api_config = api_config_override if api_config_override else APIConfig()
 
     base_path = api_config.base_path
@@ -312,8 +355,8 @@ async def getExperimentResult(
         "Authorization": f"Bearer { api_config.get_access_token() }",
     }
     query_params: Dict[str, Any] = {
-        "project_id": project_id,
         "aggregate_function": aggregate_function,
+        "filters": filters,
     }
 
     query_params = {
@@ -338,29 +381,33 @@ async def getExperimentResult(
     else:
         body = None if 200 == 204 else response.json()
 
-    return TODOSchema(**body) if body is not None else TODOSchema()
+    return (
+        GetExperimentRunResultResponse(**body)
+        if body is not None
+        else GetExperimentRunResultResponse()
+    )
 
 
 async def getExperimentComparison(
     api_config_override: Optional[APIConfig] = None,
     *,
-    project_id: str,
-    run_id_1: str,
-    run_id_2: str,
+    new_run_id: str,
+    old_run_id: str,
     aggregate_function: Optional[str] = None,
-) -> TODOSchema:
+    filters: Optional[Union[str, List[Dict[str, Any]]]] = None,
+) -> GetExperimentRunCompareResponse:
     api_config = api_config_override if api_config_override else APIConfig()
 
     base_path = api_config.base_path
-    path = f"/v1/runs/{run_id_1}/compare-with/{run_id_2}"
+    path = f"/v1/runs/{new_run_id}/compare-with/{old_run_id}"
     headers = {
         "Content-Type": "application/json",
         "Accept": "application/json",
         "Authorization": f"Bearer { api_config.get_access_token() }",
     }
     query_params: Dict[str, Any] = {
-        "project_id": project_id,
         "aggregate_function": aggregate_function,
+        "filters": filters,
     }
 
     query_params = {
@@ -385,4 +432,63 @@ async def getExperimentComparison(
     else:
         body = None if 200 == 204 else response.json()
 
-    return TODOSchema(**body) if body is not None else TODOSchema()
+    return (
+        GetExperimentRunCompareResponse(**body)
+        if body is not None
+        else GetExperimentRunCompareResponse()
+    )
+
+
+async def getExperimentCompareEvents(
+    api_config_override: Optional[APIConfig] = None,
+    *,
+    run_id_1: str,
+    run_id_2: str,
+    event_name: Optional[str] = None,
+    event_type: Optional[str] = None,
+    filter: Optional[Union[str, Dict[str, Any]]] = None,
+    limit: Optional[int] = None,
+    page: Optional[int] = None,
+) -> Dict[str, Any]:
+    api_config = api_config_override if api_config_override else APIConfig()
+
+    base_path = api_config.base_path
+    path = f"/v1/runs/compare/events"
+    headers = {
+        "Content-Type": "application/json",
+        "Accept": "application/json",
+        "Authorization": f"Bearer { api_config.get_access_token() }",
+    }
+    query_params: Dict[str, Any] = {
+        "run_id_1": run_id_1,
+        "run_id_2": run_id_2,
+        "event_name": event_name,
+        "event_type": event_type,
+        "filter": filter,
+        "limit": limit,
+        "page": page,
+    }
+
+    query_params = {
+        key: value for (key, value) in query_params.items() if value is not None
+    }
+
+    async with httpx.AsyncClient(
+        base_url=base_path, verify=api_config.verify
+    ) as client:
+        response = await client.request(
+            "get",
+            httpx.URL(path),
+            headers=headers,
+            params=query_params,
+        )
+
+    if response.status_code != 200:
+        raise HTTPException(
+            response.status_code,
+            f"getExperimentCompareEvents failed with status code: {response.status_code}",
+        )
+    else:
+        body = None if 200 == 204 else response.json()
+
+    return body

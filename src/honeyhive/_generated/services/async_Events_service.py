@@ -6,8 +6,63 @@ from ..api_config import APIConfig, HTTPException
 from ..models import *
 
 
+async def getEvents(
+    api_config_override: Optional[APIConfig] = None,
+    *,
+    dateRange: Optional[Union[str, Dict[str, Any]]] = None,
+    filters: Optional[Union[List[Dict[str, Any]], str]] = None,
+    projections: Optional[Union[List[str], str]] = None,
+    ignore_order: Optional[Union[bool, str]] = None,
+    limit: Optional[Union[int, str]] = None,
+    page: Optional[Union[int, str]] = None,
+    evaluation_id: Optional[str] = None,
+) -> GetEventsResponse:
+    api_config = api_config_override if api_config_override else APIConfig()
+
+    base_path = api_config.base_path
+    path = f"/events"
+    headers = {
+        "Content-Type": "application/json",
+        "Accept": "application/json",
+        "Authorization": f"Bearer { api_config.get_access_token() }",
+    }
+    query_params: Dict[str, Any] = {
+        "dateRange": dateRange,
+        "filters": filters,
+        "projections": projections,
+        "ignore_order": ignore_order,
+        "limit": limit,
+        "page": page,
+        "evaluation_id": evaluation_id,
+    }
+
+    query_params = {
+        key: value for (key, value) in query_params.items() if value is not None
+    }
+
+    async with httpx.AsyncClient(
+        base_url=base_path, verify=api_config.verify
+    ) as client:
+        response = await client.request(
+            "get",
+            httpx.URL(path),
+            headers=headers,
+            params=query_params,
+        )
+
+    if response.status_code != 200:
+        raise HTTPException(
+            response.status_code,
+            f"getEvents failed with status code: {response.status_code}",
+        )
+    else:
+        body = None if 200 == 204 else response.json()
+
+    return GetEventsResponse(**body) if body is not None else GetEventsResponse()
+
+
 async def createEvent(
-    api_config_override: Optional[APIConfig] = None, *, data: PostEventRequest
+    api_config_override: Optional[APIConfig] = None, *, data: Dict[str, Any]
 ) -> PostEventResponse:
     api_config = api_config_override if api_config_override else APIConfig()
 
@@ -28,11 +83,7 @@ async def createEvent(
         base_url=base_path, verify=api_config.verify
     ) as client:
         response = await client.request(
-            "post",
-            httpx.URL(path),
-            headers=headers,
-            params=query_params,
-            json=data.model_dump(exclude_none=True),
+            "post", httpx.URL(path), headers=headers, params=query_params, json=data
         )
 
     if response.status_code != 200:
@@ -142,12 +193,12 @@ async def getEventsChart(
 
 
 async def getEventsBySessionId(
-    api_config_override: Optional[APIConfig] = None, *, session_id: str
+    api_config_override: Optional[APIConfig] = None, *, id: str
 ) -> GetEventsBySessionIdResponse:
     api_config = api_config_override if api_config_override else APIConfig()
 
     base_path = api_config.base_path
-    path = f"/v1/events/{session_id}"
+    path = f"/v1/events/{id}"
     headers = {
         "Content-Type": "application/json",
         "Accept": "application/json",
@@ -185,12 +236,12 @@ async def getEventsBySessionId(
 
 
 async def deleteEvent(
-    api_config_override: Optional[APIConfig] = None, *, event_id: str
+    api_config_override: Optional[APIConfig] = None, *, id: str
 ) -> DeleteEventResponse:
     api_config = api_config_override if api_config_override else APIConfig()
 
     base_path = api_config.base_path
-    path = f"/v1/events/{event_id}"
+    path = f"/v1/events/{id}"
     headers = {
         "Content-Type": "application/json",
         "Accept": "application/json",
@@ -224,8 +275,8 @@ async def deleteEvent(
 
 
 async def exportEvents(
-    api_config_override: Optional[APIConfig] = None, *, data: Dict[str, Any]
-) -> Dict[str, Any]:
+    api_config_override: Optional[APIConfig] = None, *, data: GetEventsLegacyRequest
+) -> GetEventsLegacyResponse:
     api_config = api_config_override if api_config_override else APIConfig()
 
     base_path = api_config.base_path
@@ -245,7 +296,11 @@ async def exportEvents(
         base_url=base_path, verify=api_config.verify
     ) as client:
         response = await client.request(
-            "post", httpx.URL(path), headers=headers, params=query_params, json=data
+            "post",
+            httpx.URL(path),
+            headers=headers,
+            params=query_params,
+            json=data.model_dump(exclude_none=True),
         )
 
     if response.status_code != 200:
@@ -256,12 +311,16 @@ async def exportEvents(
     else:
         body = None if 200 == 204 else response.json()
 
-    return body
+    return (
+        GetEventsLegacyResponse(**body)
+        if body is not None
+        else GetEventsLegacyResponse()
+    )
 
 
 async def createModelEvent(
-    api_config_override: Optional[APIConfig] = None, *, data: Dict[str, Any]
-) -> Dict[str, Any]:
+    api_config_override: Optional[APIConfig] = None, *, data: PostModelEventRequest
+) -> PostEventResponse:
     api_config = api_config_override if api_config_override else APIConfig()
 
     base_path = api_config.base_path
@@ -281,7 +340,11 @@ async def createModelEvent(
         base_url=base_path, verify=api_config.verify
     ) as client:
         response = await client.request(
-            "post", httpx.URL(path), headers=headers, params=query_params, json=data
+            "post",
+            httpx.URL(path),
+            headers=headers,
+            params=query_params,
+            json=data.model_dump(exclude_none=True),
         )
 
     if response.status_code != 200:
@@ -292,12 +355,12 @@ async def createModelEvent(
     else:
         body = None if 200 == 204 else response.json()
 
-    return body
+    return PostEventResponse(**body) if body is not None else PostEventResponse()
 
 
 async def createEventBatch(
-    api_config_override: Optional[APIConfig] = None, *, data: Dict[str, Any]
-) -> Dict[str, Any]:
+    api_config_override: Optional[APIConfig] = None, *, data: PostEventBatchRequest
+) -> PostEventBatchResponse:
     api_config = api_config_override if api_config_override else APIConfig()
 
     base_path = api_config.base_path
@@ -317,7 +380,11 @@ async def createEventBatch(
         base_url=base_path, verify=api_config.verify
     ) as client:
         response = await client.request(
-            "post", httpx.URL(path), headers=headers, params=query_params, json=data
+            "post",
+            httpx.URL(path),
+            headers=headers,
+            params=query_params,
+            json=data.model_dump(exclude_none=True),
         )
 
     if response.status_code != 200:
@@ -328,12 +395,14 @@ async def createEventBatch(
     else:
         body = None if 200 == 204 else response.json()
 
-    return body
+    return (
+        PostEventBatchResponse(**body) if body is not None else PostEventBatchResponse()
+    )
 
 
 async def createModelEventBatch(
-    api_config_override: Optional[APIConfig] = None, *, data: Dict[str, Any]
-) -> Dict[str, Any]:
+    api_config_override: Optional[APIConfig] = None, *, data: PostModelEventBatchRequest
+) -> PostEventBatchResponse:
     api_config = api_config_override if api_config_override else APIConfig()
 
     base_path = api_config.base_path
@@ -353,7 +422,11 @@ async def createModelEventBatch(
         base_url=base_path, verify=api_config.verify
     ) as client:
         response = await client.request(
-            "post", httpx.URL(path), headers=headers, params=query_params, json=data
+            "post",
+            httpx.URL(path),
+            headers=headers,
+            params=query_params,
+            json=data.model_dump(exclude_none=True),
         )
 
     if response.status_code != 200:
@@ -364,4 +437,6 @@ async def createModelEventBatch(
     else:
         body = None if 200 == 204 else response.json()
 
-    return body
+    return (
+        PostEventBatchResponse(**body) if body is not None else PostEventBatchResponse()
+    )

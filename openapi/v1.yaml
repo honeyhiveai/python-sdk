@@ -11,22 +11,26 @@ paths:
       operationId: startSession
       tags:
         - Session
+      description: Start a new session. The session field should contain a JSON-encoded session object as a string.
       requestBody:
         required: true
         content:
           application/json:
             schema:
               type: object
+              required:
+                - session
               properties:
                 session:
-                  $ref: '#/components/schemas/PostSessionRequest'
+                  type: string
+                  description: JSON-encoded session object containing session properties (session_id, project, session_name, source, user_properties, etc.)
       responses:
         '200':
           description: Session successfully started
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/PostSessionResponse'
+                $ref: '#/components/schemas/PostSessionStartResponse'
   /v1/sessions/{session_id}:
     get:
       summary: Get session tree by session ID
@@ -86,13 +90,19 @@ paths:
         - Events
       operationId: createEvent
       summary: Create a new event
-      description: Please refer to our instrumentation guide for detailed information
+      description: Please refer to our instrumentation guide for detailed information. The event field should contain a JSON-encoded event object as a string.
       requestBody:
         required: true
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/PostEventRequest'
+              type: object
+              required:
+                - event
+              properties:
+                event:
+                  type: string
+                  description: JSON-encoded event object containing event properties (event_id, session_id, event_type, event_name, inputs, outputs, etc.)
       responses:
         '200':
           description: Event created successfully
@@ -167,6 +177,87 @@ paths:
           description: Event updated
         '400':
           description: Bad request
+    get:
+      tags:
+        - Events
+      operationId: getEvents
+      summary: Query events with filters and projections
+      description: Retrieve events with optional filtering, projections, and pagination
+      parameters:
+        - name: dateRange
+          in: query
+          required: false
+          schema:
+            oneOf:
+              - type: string
+              - type: object
+                properties:
+                  $gte:
+                    type: string
+                    format: date-time
+                  $lte:
+                    type: string
+                    format: date-time
+          description: Date range filter (ISO string or object with $gte/$lte)
+        - name: filters
+          in: query
+          required: false
+          schema:
+            oneOf:
+              - type: array
+                items:
+                  type: object
+              - type: string
+          description: Array of filter objects or JSON string
+        - name: projections
+          in: query
+          required: false
+          schema:
+            oneOf:
+              - type: array
+                items:
+                  type: string
+              - type: string
+          description: Fields to include in response (array or JSON string)
+        - name: ignore_order
+          in: query
+          required: false
+          schema:
+            oneOf:
+              - type: boolean
+              - type: string
+          description: Whether to ignore ordering
+        - name: limit
+          in: query
+          required: false
+          schema:
+            oneOf:
+              - type: integer
+              - type: string
+          description: Maximum number of results (default 1000)
+        - name: page
+          in: query
+          required: false
+          schema:
+            oneOf:
+              - type: integer
+              - type: string
+          description: Page number (default 1)
+        - name: evaluation_id
+          in: query
+          required: false
+          schema:
+            type: string
+          description: Filter by evaluation ID
+      responses:
+        '200':
+          description: Events retrieved successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GetEventsResponse'
+        '400':
+          description: Bad request (missing required scopes or invalid parameters)
   /v1/events/chart:
     get:
       tags:
@@ -277,21 +368,21 @@ paths:
                 $ref: '#/components/schemas/GetEventsChartResponse'
         '400':
           description: Bad request (missing required scopes or invalid parameters)
-  /v1/events/{session_id}:
+  /v1/events/{id}:
     get:
       tags:
         - Events
       operationId: getEventsBySessionId
       summary: Get nested events for a session
-      description: Retrieve all nested events for a specific session ID
+      description: Retrieve all nested events for a specific session ID. The `id` parameter is interpreted as a session_id for this operation.
       parameters:
-        - name: session_id
+        - name: id
           in: path
           required: true
           schema:
             type: string
             format: uuid
-          description: Session ID (UUIDv4)
+          description: Session ID (UUIDv4) - retrieves all events belonging to this session
       responses:
         '200':
           description: Session events retrieved successfully
@@ -301,21 +392,20 @@ paths:
                 $ref: '#/components/schemas/GetEventsBySessionIdResponse'
         '400':
           description: Bad request (missing required scopes or invalid session ID)
-  /v1/events/{event_id}:
     delete:
       tags:
         - Events
       operationId: deleteEvent
       summary: Delete an event
-      description: Delete a specific event by event ID
+      description: Delete a specific event by event ID. The `id` parameter is interpreted as an event_id for this operation.
       parameters:
-        - name: event_id
+        - name: id
           in: path
           required: true
           schema:
             type: string
             format: uuid
-          description: Event ID (UUIDv4)
+          description: Event ID (UUIDv4) - the specific event to delete
       responses:
         '200':
           description: Event deleted successfully
@@ -336,53 +426,14 @@ paths:
         content:
           application/json:
             schema:
-              type: object
-              properties:
-                project:
-                  type: string
-                  description: Name of the project associated with the event like `New Project`
-                filters:
-                  type: array
-                  items:
-                    $ref: '#/components/schemas/TODOSchema'
-                dateRange:
-                  type: object
-                  properties:
-                    $gte:
-                      type: string
-                      description: ISO String for start of date time filter like `2024-04-01T22:38:19.000Z`
-                    $lte:
-                      type: string
-                      description: ISO String for end of date time filter like `2024-04-01T22:38:19.000Z`
-                projections:
-                  type: array
-                  items:
-                    type: string
-                  description: Fields to include in the response
-                limit:
-                  type: number
-                  description: Limit number of results to speed up query (default is 1000, max is 7500)
-                page:
-                  type: number
-                  description: Page number of results (default is 1)
-              required:
-                - project
-                - filters
+              $ref: '#/components/schemas/GetEventsLegacyRequest'
       responses:
         '200':
           description: Success
           content:
             application/json:
               schema:
-                type: object
-                properties:
-                  events:
-                    type: array
-                    items:
-                      $ref: '#/components/schemas/TODOSchema'
-                  totalEvents:
-                    type: number
-                    description: Total number of events in the specified filter
+                $ref: '#/components/schemas/GetEventsLegacyResponse'
   /events/model:
     post:
       tags:
@@ -395,25 +446,17 @@ paths:
         content:
           application/json:
             schema:
-              type: object
-              properties:
-                model_event:
-                  $ref: '#/components/schemas/TODOSchema'
+              $ref: '#/components/schemas/PostModelEventRequest'
       responses:
         '200':
           description: Model event created
           content:
             application/json:
               schema:
-                type: object
-                properties:
-                  event_id:
-                    type: string
-                  success:
-                    type: boolean
-                example:
-                  event_id: 7f22137a-6911-4ed3-bc36-110f1dde6b66
-                  success: true
+                $ref: '#/components/schemas/PostEventResponse'
+              example:
+                event_id: 7f22137a-6911-4ed3-bc36-110f1dde6b66
+                success: true
   /events/batch:
     post:
       tags:
@@ -426,41 +469,20 @@ paths:
         content:
           application/json:
             schema:
-              type: object
-              properties:
-                events:
-                  type: array
-                  items:
-                    $ref: '#/components/schemas/TODOSchema'
-                is_single_session:
-                  type: boolean
-                  description: Default is false. If true, all events will be associated with the same session
-                session_properties:
-                  $ref: '#/components/schemas/TODOSchema'
-              required:
-                - events
+              $ref: '#/components/schemas/PostEventBatchRequest'
       responses:
         '200':
           description: Events created
           content:
             application/json:
               schema:
-                type: object
-                properties:
-                  event_ids:
-                    type: array
-                    items:
-                      type: string
-                  session_id:
-                    type: string
-                  success:
-                    type: boolean
-                example:
-                  event_ids:
-                    - 7f22137a-6911-4ed3-bc36-110f1dde6b66
-                    - 7f22137a-6911-4ed3-bc36-110f1dde6b67
-                  session_id: caf77ace-3417-4da4-944d-f4a0688f3c23
-                  success: true
+                $ref: '#/components/schemas/PostEventBatchResponse'
+              example:
+                event_ids:
+                  - 7f22137a-6911-4ed3-bc36-110f1dde6b66
+                  - 7f22137a-6911-4ed3-bc36-110f1dde6b67
+                session_id: caf77ace-3417-4da4-944d-f4a0688f3c23
+                success: true
         '500':
           description: Events partially created
           content:
@@ -499,36 +521,19 @@ paths:
         content:
           application/json:
             schema:
-              type: object
-              properties:
-                model_events:
-                  type: array
-                  items:
-                    $ref: '#/components/schemas/TODOSchema'
-                is_single_session:
-                  type: boolean
-                  description: Default is false. If true, all events will be associated with the same session
-                session_properties:
-                  $ref: '#/components/schemas/TODOSchema'
+              $ref: '#/components/schemas/PostModelEventBatchRequest'
       responses:
         '200':
           description: Model events created
           content:
             application/json:
               schema:
-                type: object
-                properties:
-                  event_ids:
-                    type: array
-                    items:
-                      type: string
-                  success:
-                    type: boolean
-                example:
-                  event_ids:
-                    - 7f22137a-6911-4ed3-bc36-110f1dde6b66
-                    - 7f22137a-6911-4ed3-bc36-110f1dde6b67
-                  success: true
+                $ref: '#/components/schemas/PostEventBatchResponse'
+              example:
+                event_ids:
+                  - 7f22137a-6911-4ed3-bc36-110f1dde6b66
+                  - 7f22137a-6911-4ed3-bc36-110f1dde6b67
+                success: true
         '500':
           description: Model events partially created
           content:
@@ -1020,15 +1025,14 @@ paths:
           required: false
           schema:
             type: string
+          description: Filter projects by name
       responses:
         '200':
           description: A list of projects
           content:
             application/json:
               schema:
-                type: array
-                items:
-                  $ref: '#/components/schemas/TODOSchema'
+                $ref: '#/components/schemas/GetProjectsResponse'
     post:
       tags:
         - Projects
@@ -1039,14 +1043,14 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/TODOSchema'
+              $ref: '#/components/schemas/PostProjectRequest'
       responses:
         '200':
           description: The created project
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/TODOSchema'
+                $ref: '#/components/schemas/PostProjectResponse'
     put:
       tags:
         - Projects
@@ -1057,7 +1061,7 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/TODOSchema'
+              $ref: '#/components/schemas/PutProjectRequest'
       responses:
         '200':
           description: Successfully updated the project
@@ -1304,23 +1308,67 @@ paths:
                 $ref: '#/components/schemas/DeleteExperimentRunResponse'
         '400':
           description: Error deleting evaluation
-  /v1/runs/{run_id}/result:
+  /v1/runs/{run_id}/metrics:
     get:
-      summary: Retrieve experiment result
-      operationId: getExperimentResult
+      summary: Get event metrics for an experiment run
+      operationId: getExperimentRunMetrics
       tags:
         - Experiments
+      description: Retrieve event metrics from ClickHouse for a specific experiment run
       parameters:
         - name: run_id
           in: path
           required: true
           schema:
             type: string
-        - name: project_id
+            format: uuid
+          description: Experiment run ID (UUIDv4)
+        - name: dateRange
           in: query
+          required: false
+          schema:
+            type: string
+          description: Date range filter as JSON string
+        - name: filters
+          in: query
+          required: false
+          schema:
+            oneOf:
+              - type: string
+              - type: array
+                items:
+                  type: object
+          description: Optional filters to apply (JSON string or array of filter objects)
+      responses:
+        '200':
+          description: Event metrics retrieved successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  events:
+                    type: array
+                    items:
+                      type: object
+                    description: Array of event objects with metrics
+        '400':
+          description: Error fetching event metrics
+  /v1/runs/{run_id}/result:
+    get:
+      summary: Retrieve experiment result
+      operationId: getExperimentResult
+      tags:
+        - Experiments
+      description: Compute evaluation summary for an experiment run including pass/fail status, metrics, and datapoints
+      parameters:
+        - name: run_id
+          in: path
           required: true
           schema:
             type: string
+            format: uuid
+          description: Experiment run ID (UUIDv4)
         - name: aggregate_function
           in: query
           required: false
@@ -1336,37 +1384,49 @@ paths:
               - p90
               - sum
               - count
+            default: average
+          description: Aggregation function to apply to metrics
+        - name: filters
+          in: query
+          required: false
+          schema:
+            oneOf:
+              - type: string
+              - type: array
+                items:
+                  type: object
+          description: Optional filters to apply (JSON string or array of filter objects)
       responses:
         '200':
           description: Experiment result retrieved successfully
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/TODOSchema'
+                $ref: '#/components/schemas/GetExperimentRunResultResponse'
         '400':
           description: Error processing experiment result
-  /v1/runs/{run_id_1}/compare-with/{run_id_2}:
+  /v1/runs/{new_run_id}/compare-with/{old_run_id}:
     get:
       summary: Retrieve experiment comparison
       operationId: getExperimentComparison
       tags:
         - Experiments
+      description: Compare metrics and results between two experiment runs
       parameters:
-        - name: project_id
-          in: query
-          required: true
-          schema:
-            type: string
-        - name: run_id_1
+        - name: new_run_id
           in: path
           required: true
           schema:
             type: string
-        - name: run_id_2
+            format: uuid
+          description: New experiment run ID to compare (UUIDv4)
+        - name: old_run_id
           in: path
           required: true
           schema:
             type: string
+            format: uuid
+          description: Old experiment run ID to compare against (UUIDv4)
         - name: aggregate_function
           in: query
           required: false
@@ -1382,15 +1442,110 @@ paths:
               - p90
               - sum
               - count
+            default: average
+          description: Aggregation function to apply to metrics
+        - name: filters
+          in: query
+          required: false
+          schema:
+            oneOf:
+              - type: string
+              - type: array
+                items:
+                  type: object
+          description: Optional filters to apply (JSON string or array of filter objects)
       responses:
         '200':
           description: Experiment comparison retrieved successfully
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/TODOSchema'
+                $ref: '#/components/schemas/GetExperimentRunCompareResponse'
         '400':
           description: Error processing experiment comparison
+  /v1/runs/compare/events:
+    get:
+      summary: Compare events between two experiment runs
+      operationId: getExperimentCompareEvents
+      tags:
+        - Experiments
+      description: Retrieve and compare events between two experiment runs for detailed analysis
+      parameters:
+        - name: run_id_1
+          in: query
+          required: true
+          schema:
+            type: string
+            format: uuid
+          description: First experiment run ID (UUIDv4)
+        - name: run_id_2
+          in: query
+          required: true
+          schema:
+            type: string
+            format: uuid
+          description: Second experiment run ID (UUIDv4)
+        - name: event_name
+          in: query
+          required: false
+          schema:
+            type: string
+          description: Filter by event name
+        - name: event_type
+          in: query
+          required: false
+          schema:
+            type: string
+          description: Filter by event type
+        - name: filter
+          in: query
+          required: false
+          schema:
+            oneOf:
+              - type: string
+              - type: object
+          description: Additional filter criteria (JSON string or object)
+        - name: limit
+          in: query
+          required: false
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 1000
+            default: 1000
+          description: Maximum number of results
+        - name: page
+          in: query
+          required: false
+          schema:
+            type: integer
+            minimum: 1
+            default: 1
+          description: Page number for pagination
+      responses:
+        '200':
+          description: Event comparison retrieved successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  events:
+                    type: array
+                    items:
+                      type: object
+                    description: Array of matched event pairs from both runs
+                  pagination:
+                    type: object
+                    properties:
+                      page:
+                        type: integer
+                      limit:
+                        type: integer
+                      total:
+                        type: integer
+        '400':
+          description: Error fetching event comparison
   /v1/configurations:
     get:
       summary: Retrieve a list of configurations
@@ -1495,6 +1650,7 @@ components:
       properties:
         name:
           type: string
+          maxLength: 200
         type:
           type: string
           enum: &ref_0
@@ -1600,6 +1756,7 @@ components:
       properties:
         name:
           type: string
+          maxLength: 200
         type:
           type: string
           enum: *ref_0
@@ -1691,6 +1848,7 @@ components:
       properties:
         name:
           type: string
+          maxLength: 200
         env:
           type: string
         tags:
@@ -1851,6 +2009,7 @@ components:
             minLength: 1
         dataset_name:
           type: string
+          maxLength: 200
       additionalProperties: false
     GetDatapointParams:
       type: object
@@ -2152,7 +2311,8 @@ components:
       properties:
         name:
           type: string
-          default: Dataset 12/16
+          maxLength: 200
+          default: Dataset 1/13
         description:
           type: string
         datapoints:
@@ -2171,6 +2331,7 @@ components:
           minLength: 1
         name:
           type: string
+          maxLength: 200
         description:
           type: string
         datapoints:
@@ -2188,6 +2349,7 @@ components:
           minLength: 1
         name:
           type: string
+          maxLength: 200
         include_datapoints:
           anyOf:
             - type: boolean
@@ -2270,6 +2432,7 @@ components:
               minLength: 1
             name:
               type: string
+              maxLength: 200
             description:
               type: string
             datapoints:
@@ -2300,6 +2463,7 @@ components:
                 minLength: 1
               name:
                 type: string
+                maxLength: 200
               description:
                 type:
                   - string
@@ -2382,6 +2546,139 @@ components:
         - event_id
         - project_id
         - tenant
+    LegacyEvent:
+      type: object
+      properties:
+        project:
+          type: string
+          description: Project name
+        project_id:
+          type: string
+          description: Project ID
+        source:
+          type: string
+          description: Source of the event
+        event_name:
+          type: string
+          description: Name of the event
+        event_type:
+          type: string
+          enum: &ref_14
+            - model
+            - tool
+            - chain
+            - session
+        event_id:
+          type: string
+        session_id:
+          type: string
+        parent_id:
+          type: string
+        children_ids:
+          type: array
+          items:
+            type: string
+        config:
+          type: object
+          additionalProperties: {}
+        inputs:
+          type: object
+          additionalProperties: {}
+        outputs:
+          type: object
+          additionalProperties: {}
+        error:
+          type:
+            - string
+            - 'null'
+        start_time:
+          type: number
+        end_time:
+          type: number
+        duration:
+          type: number
+        metadata:
+          type: object
+          additionalProperties: {}
+        feedback:
+          type: object
+          additionalProperties: {}
+        metrics:
+          type: object
+          additionalProperties: {}
+        user_properties:
+          type: object
+          additionalProperties: {}
+      required:
+        - project
+      description: Full event object for legacy event creation endpoints
+    SessionProperties:
+      type: object
+      properties:
+        session_name:
+          type: string
+        user_properties:
+          type: object
+          additionalProperties: {}
+        metadata:
+          type: object
+          additionalProperties: {}
+      description: Session properties for batch event creation
+    SingleFilter:
+      type: object
+      properties:
+        field:
+          type: string
+        operator:
+          anyOf:
+            - type: string
+              enum: &ref_9
+                - exists
+                - not exists
+                - is
+                - is not
+                - contains
+                - not contains
+            - type: string
+              enum: &ref_10
+                - exists
+                - not exists
+                - is
+                - is not
+                - greater than
+                - less than
+            - type: string
+              enum: &ref_11
+                - exists
+                - not exists
+                - is
+            - type: string
+              enum: &ref_12
+                - exists
+                - not exists
+                - is
+                - is not
+                - after
+                - before
+        value:
+          anyOf:
+            - type: string
+            - type: number
+            - type: boolean
+            - type: 'null'
+            - type: 'null'
+        type:
+          type: string
+          enum: &ref_13
+            - string
+            - number
+            - boolean
+            - datetime
+      required:
+        - field
+        - operator
+        - value
+        - type
     PostEventRequest:
       type: object
       properties:
@@ -2415,6 +2712,312 @@ components:
       required:
         - event
       description: Request to create a new event
+    GetEventsLegacyRequest:
+      type: object
+      properties:
+        project:
+          type: string
+          description: Name of the project
+        filters:
+          type: array
+          items:
+            type: object
+            properties:
+              field:
+                type: string
+              operator:
+                anyOf:
+                  - type: string
+                    enum: *ref_9
+                  - type: string
+                    enum: *ref_10
+                  - type: string
+                    enum: *ref_11
+                  - type: string
+                    enum: *ref_12
+              value:
+                anyOf:
+                  - type: string
+                  - type: number
+                  - type: boolean
+                  - type: 'null'
+                  - type: 'null'
+              type:
+                type: string
+                enum: *ref_13
+            required:
+              - field
+              - operator
+              - value
+              - type
+          description: Array of filter conditions
+        dateRange:
+          type: object
+          properties:
+            $gte:
+              type: string
+              description: ISO String for start of date range
+            $lte:
+              type: string
+              description: ISO String for end of date range
+          required:
+            - $gte
+            - $lte
+        projections:
+          type: array
+          items:
+            type: string
+          description: Fields to include
+        limit:
+          type: number
+          description: Limit number of results
+        page:
+          type: number
+          description: Page number of results
+      required:
+        - project
+        - filters
+      description: Request body for GET /events legacy endpoint
+    PostModelEventRequest:
+      type: object
+      properties:
+        model_event:
+          type: object
+          properties:
+            project:
+              type: string
+              description: Project name
+            project_id:
+              type: string
+              description: Project ID
+            source:
+              type: string
+              description: Source of the event
+            event_name:
+              type: string
+              description: Name of the event
+            event_type:
+              type: string
+              enum: *ref_14
+            event_id:
+              type: string
+            session_id:
+              type: string
+            parent_id:
+              type: string
+            children_ids:
+              type: array
+              items:
+                type: string
+            config:
+              type: object
+              additionalProperties: {}
+            inputs:
+              type: object
+              additionalProperties: {}
+            outputs:
+              type: object
+              additionalProperties: {}
+            error:
+              type:
+                - string
+                - 'null'
+            start_time:
+              type: number
+            end_time:
+              type: number
+            duration:
+              type: number
+            metadata:
+              type: object
+              additionalProperties: {}
+            feedback:
+              type: object
+              additionalProperties: {}
+            metrics:
+              type: object
+              additionalProperties: {}
+            user_properties:
+              type: object
+              additionalProperties: {}
+          required:
+            - project
+          description: Full event object for legacy event creation endpoints
+      required:
+        - model_event
+      description: Request body for POST /events/model
+    PostEventBatchRequest:
+      type: object
+      properties:
+        events:
+          type: array
+          items:
+            type: object
+            properties:
+              project:
+                type: string
+                description: Project name
+              project_id:
+                type: string
+                description: Project ID
+              source:
+                type: string
+                description: Source of the event
+              event_name:
+                type: string
+                description: Name of the event
+              event_type:
+                type: string
+                enum: *ref_14
+              event_id:
+                type: string
+              session_id:
+                type: string
+              parent_id:
+                type: string
+              children_ids:
+                type: array
+                items:
+                  type: string
+              config:
+                type: object
+                additionalProperties: {}
+              inputs:
+                type: object
+                additionalProperties: {}
+              outputs:
+                type: object
+                additionalProperties: {}
+              error:
+                type:
+                  - string
+                  - 'null'
+              start_time:
+                type: number
+              end_time:
+                type: number
+              duration:
+                type: number
+              metadata:
+                type: object
+                additionalProperties: {}
+              feedback:
+                type: object
+                additionalProperties: {}
+              metrics:
+                type: object
+                additionalProperties: {}
+              user_properties:
+                type: object
+                additionalProperties: {}
+            required:
+              - project
+            description: Full event object for legacy event creation endpoints
+          description: Array of events to create
+        is_single_session:
+          type: boolean
+          description: If true, all events share the same session
+        session_properties:
+          type: object
+          properties:
+            session_name:
+              type: string
+            user_properties:
+              type: object
+              additionalProperties: {}
+            metadata:
+              type: object
+              additionalProperties: {}
+          description: Session properties for batch event creation
+      required:
+        - events
+      description: Request body for POST /events/batch
+    PostModelEventBatchRequest:
+      type: object
+      properties:
+        model_events:
+          type: array
+          items:
+            type: object
+            properties:
+              project:
+                type: string
+                description: Project name
+              project_id:
+                type: string
+                description: Project ID
+              source:
+                type: string
+                description: Source of the event
+              event_name:
+                type: string
+                description: Name of the event
+              event_type:
+                type: string
+                enum: *ref_14
+              event_id:
+                type: string
+              session_id:
+                type: string
+              parent_id:
+                type: string
+              children_ids:
+                type: array
+                items:
+                  type: string
+              config:
+                type: object
+                additionalProperties: {}
+              inputs:
+                type: object
+                additionalProperties: {}
+              outputs:
+                type: object
+                additionalProperties: {}
+              error:
+                type:
+                  - string
+                  - 'null'
+              start_time:
+                type: number
+              end_time:
+                type: number
+              duration:
+                type: number
+              metadata:
+                type: object
+                additionalProperties: {}
+              feedback:
+                type: object
+                additionalProperties: {}
+              metrics:
+                type: object
+                additionalProperties: {}
+              user_properties:
+                type: object
+                additionalProperties: {}
+            required:
+              - project
+            description: Full event object for legacy event creation endpoints
+          description: Array of model events to create
+        is_single_session:
+          type: boolean
+          description: If true, all events share the same session
+        session_properties:
+          type: object
+          properties:
+            session_name:
+              type: string
+            user_properties:
+              type: object
+              additionalProperties: {}
+            metadata:
+              type: object
+              additionalProperties: {}
+          description: Session properties for batch event creation
+      required:
+        - model_events
+      description: Request body for POST /events/model/batch
     GetEventsQuery:
       type: object
       properties:
@@ -2422,96 +3025,69 @@ components:
           anyOf:
             - type: object
               properties:
+                relative:
+                  type: string
+              required:
+                - relative
+              additionalProperties: false
+            - type: object
+              properties:
                 $gte:
                   type: string
-                  format: date-time
                 $lte:
                   type: string
-                  format: date-time
               required:
                 - $gte
                 - $lte
-            - type: string
+              additionalProperties: false
         filters:
-          anyOf:
-            - type: array
-              items:
-                type: object
-                properties:
-                  field:
-                    type: string
-                  operator:
-                    anyOf:
-                      - type: string
-                        enum: &ref_9
-                          - exists
-                          - not exists
-                          - is
-                          - is not
-                          - contains
-                          - not contains
-                      - type: string
-                        enum: &ref_10
-                          - exists
-                          - not exists
-                          - is
-                          - is not
-                          - greater than
-                          - less than
-                      - type: string
-                        enum: &ref_11
-                          - exists
-                          - not exists
-                          - is
-                      - type: string
-                        enum: &ref_12
-                          - exists
-                          - not exists
-                          - is
-                          - is not
-                          - after
-                          - before
-                  value:
-                    anyOf:
-                      - type: string
-                      - type: number
-                      - type: boolean
-                      - type: 'null'
-                      - type: 'null'
-                  type:
-                    type: string
-                    enum: &ref_13
-                      - string
-                      - number
-                      - boolean
-                      - datetime
-                required:
-                  - field
-                  - operator
-                  - value
-                  - type
-            - type: string
-            - type: array
-              items:
+          type: array
+          items:
+            type: object
+            properties:
+              field:
                 type: string
+              operator:
+                anyOf:
+                  - type: string
+                    enum: *ref_9
+                  - type: string
+                    enum: *ref_10
+                  - type: string
+                    enum: *ref_11
+                  - type: string
+                    enum: *ref_12
+              value:
+                anyOf:
+                  - type: string
+                  - type: number
+                  - type: boolean
+                  - type: 'null'
+                  - type: 'null'
+              type:
+                type: string
+                enum: *ref_13
+            required:
+              - field
+              - operator
+              - value
+              - type
         projections:
-          anyOf:
-            - type: array
-              items:
-                type: string
-            - type: string
+          type: array
+          items:
+            type: string
         ignore_order:
-          anyOf:
-            - type: boolean
-            - type: string
+          type:
+            - boolean
+            - 'null'
         limit:
-          anyOf:
-            - type: number
-            - type: string
+          type:
+            - number
+            - 'null'
         page:
-          anyOf:
-            - type: number
-            - type: string
+          type:
+            - number
+            - 'null'
         evaluation_id:
           type: string
       description: Query parameters for GET /events
@@ -2522,53 +3098,53 @@ components:
           anyOf:
             - type: object
               properties:
+                relative:
+                  type: string
+              required:
+                - relative
+              additionalProperties: false
+            - type: object
+              properties:
                 $gte:
                   type: string
-                  format: date-time
                 $lte:
                   type: string
-                  format: date-time
               required:
                 - $gte
                 - $lte
-            - type: string
+              additionalProperties: false
         filters:
-          anyOf:
-            - type: array
-              items:
-                type: object
-                properties:
-                  field:
-                    type: string
-                  operator:
-                    anyOf:
-                      - type: string
-                        enum: *ref_9
-                      - type: string
-                        enum: *ref_10
-                      - type: string
-                        enum: *ref_11
-                      - type: string
-                        enum: *ref_12
-                  value:
-                    anyOf:
-                      - type: string
-                      - type: number
-                      - type: boolean
-                      - type: 'null'
-                      - type: 'null'
-                  type:
-                    type: string
-                    enum: *ref_13
-                required:
-                  - field
-                  - operator
-                  - value
-                  - type
-            - type: string
-            - type: array
-              items:
+          type: array
+          items:
+            type: object
+            properties:
+              field:
                 type: string
+              operator:
+                anyOf:
+                  - type: string
+                    enum: *ref_9
+                  - type: string
+                    enum: *ref_10
+                  - type: string
+                    enum: *ref_11
+                  - type: string
+                    enum: *ref_12
+              value:
+                anyOf:
+                  - type: string
+                  - type: number
+                  - type: boolean
+                  - type: 'null'
+                  - type: 'null'
+              type:
+                type: string
+                enum: *ref_13
+            required:
+              - field
+              - operator
+              - value
+              - type
         metric:
           type: string
         groupBy:
@@ -2580,9 +3156,9 @@ components:
         evaluation_id:
           type: string
         only_experiments:
-          anyOf:
-            - type: boolean
-            - type: string
+          type:
+            - boolean
+            - 'null'
       description: Query parameters for GET /events/chart
     GetEventsBySessionIdParams:
       type: object
@@ -2621,6 +3197,79 @@ components:
       required:
         - events
         - totalEvents
+    GetEventsLegacyResponse:
+      type: object
+      properties:
+        events:
+          type: array
+          items:
+            type: object
+            properties:
+              project:
+                type: string
+                description: Project name
+              project_id:
+                type: string
+                description: Project ID
+              source:
+                type: string
+                description: Source of the event
+              event_name:
+                type: string
+                description: Name of the event
+              event_type:
+                type: string
+                enum: *ref_14
+              event_id:
+                type: string
+              session_id:
+                type: string
+              parent_id:
+                type: string
+              children_ids:
+                type: array
+                items:
+                  type: string
+              config:
+                type: object
+                additionalProperties: {}
+              inputs:
+                type: object
+                additionalProperties: {}
+              outputs:
+                type: object
+                additionalProperties: {}
+              error:
+                type:
+                  - string
+                  - 'null'
+              start_time:
+                type: number
+              end_time:
+                type: number
+              duration:
+                type: number
+              metadata:
+                type: object
+                additionalProperties: {}
+              feedback:
+                type: object
+                additionalProperties: {}
+              metrics:
+                type: object
+                additionalProperties: {}
+              user_properties:
+                type: object
+                additionalProperties: {}
+            required:
+              - project
+            description: Full event object for legacy event creation endpoints
+        totalEvents:
+          type: number
+      required:
+        - events
+        - totalEvents
+      description: Response for GET /events legacy endpoint
     GetEventsChartResponse:
       type: object
       properties:
@@ -2633,21 +3282,19 @@ components:
         - events
         - totalEvents
       description: Chart data response for events
-    EventNode:
+    GetEventsBySessionIdResponse:
       type: object
       properties:
         event_id:
           type: string
         event_type:
           type: string
-          enum:
+          enum: &ref_18
             - session
             - model
             - chain
             - tool
         event_name:
-          type: string
-        parent_id:
           type: string
         children:
           type: array
@@ -2680,12 +3327,30 @@ components:
               properties:
                 name:
                   type: string
+        parent_id:
+          type: string
         session_id:
           type: string
         children_ids:
           type: array
           items:
             type: string
+        config: {}
+        inputs: {}
+        outputs: {}
+        error:
+          type: string
+        source:
+          type: string
+        user_properties: {}
+        metrics: {}
+        feedback: {}
+        org_id:
+          type: string
+        workspace_id:
+          type: string
+        project_id:
+          type: string
       required:
         - event_id
         - event_type
@@ -2695,15 +3360,10 @@ components:
         - end_time
         - duration
         - metadata
+        - org_id
+        - workspace_id
+        - project_id
       description: Event node in session tree with nested children
-    GetEventsBySessionIdResponse:
-      type: object
-      properties:
-        request:
-          $ref: '#/components/schemas/EventNode'
-      required:
-        - request
-      description: Session tree with nested events
     DeleteEventResponse:
       type: object
       properties:
@@ -2715,6 +3375,21 @@ components:
         - success
         - deleted
       description: Response for DELETE /events/:event_id
+    PostEventBatchResponse:
+      type: object
+      properties:
+        event_ids:
+          type: array
+          items:
+            type: string
+        session_id:
+          type: string
+        success:
+          type: boolean
+      required:
+        - event_ids
+        - success
+      description: Response for POST /events/batch
     PostExperimentRunRequest:
       type: object
       properties:
@@ -3044,6 +3719,178 @@ components:
       type: object
       properties:
         evaluation: {}
+    GetExperimentRunResultResponse:
+      type: object
+      properties:
+        status:
+          type: string
+        success:
+          type: boolean
+        error:
+          type: string
+        passed:
+          type: array
+          items:
+            type: string
+        failed:
+          type: array
+          items:
+            type: string
+        metrics:
+          type: object
+          properties:
+            aggregation_function:
+              type: string
+            details:
+              type: array
+              items:
+                type: object
+                properties:
+                  metric_name:
+                    type: string
+                  metric_type:
+                    type: string
+                    enum:
+                      - COMPOSITE
+                      - PYTHON
+                      - LLM
+                      - HUMAN
+                      - CLIENT_SIDE
+                    description: Type of metric evaluator
+                  event_name:
+                    type: string
+                    description: Name of the event this metric was computed on
+                  event_type:
+                    type: string
+                    description: Type of event (model, tool, chain, session)
+                  aggregate:
+                    type: number
+                    description: Aggregated metric value
+                  values:
+                    type: array
+                    items:
+                      type: number
+                    description: Individual metric values across datapoints
+                  passing_range:
+                    type: object
+                    properties:
+                      min:
+                        type: number
+                      max:
+                        type: number
+                    description: Threshold range for pass/fail determination
+                  datapoints:
+                    type: object
+                    properties:
+                      passed:
+                        type: array
+                        items:
+                          type: string
+                        description: Datapoint/session IDs that passed this metric
+                      failed:
+                        type: array
+                        items:
+                          type: string
+                        description: Datapoint/session IDs that failed this metric
+                    required:
+                      - passed
+                      - failed
+                    description: Per-metric pass/fail breakdown by datapoint
+                required:
+                  - metric_name
+        datapoints:
+          type: array
+          items:
+            type: object
+            properties:
+              datapoint_id:
+                type:
+                  - string
+                  - 'null'
+              session_id:
+                type: string
+              passed:
+                type: boolean
+              metrics:
+                type: array
+                items: {}
+            required:
+              - session_id
+              - passed
+        event_details:
+          type: array
+          items:
+            type: object
+            properties:
+              event_name:
+                type: string
+              event_type:
+                type: string
+            required:
+              - event_name
+              - event_type
+        run_object: {}
+      required:
+        - status
+        - success
+        - passed
+        - failed
+        - metrics
+        - datapoints
+        - event_details
+      description: Evaluation summary for an experiment run including pass/fail status, metrics, and datapoints
+    GetExperimentRunCompareResponse:
+      type: object
+      properties:
+        metrics:
+          type: array
+          items:
+            type: object
+            properties:
+              metric_name:
+                type: string
+              metric_type:
+                type: string
+              old_aggregate:
+                type: number
+              new_aggregate:
+                type: number
+              difference:
+                type: number
+              percentage_change:
+                type: number
+            required:
+              - metric_name
+        commonDatapoints:
+          type: array
+          items:
+            type: string
+        event_details:
+          type: array
+          items:
+            type: object
+            properties:
+              event_name:
+                type: string
+              event_type:
+                type: string
+              presence:
+                type: string
+                enum:
+                  - old
+                  - new
+                  - both
+            required:
+              - event_name
+              - event_type
+              - presence
+        old_run: {}
+        new_run: {}
+      required:
+        - metrics
+        - commonDatapoints
+        - event_details
+      description: Comparison between two experiment runs including metrics, common datapoints, and event details
     GetExperimentRunsSchemaResponse:
       type: object
       properties:
@@ -3096,6 +3943,7 @@ components:
       properties:
         name:
           type: string
+          maxLength: 200
         type:
           type: string
           enum:
@@ -3111,7 +3959,7 @@ components:
           default: ''
         return_type:
           type: string
-          enum: &ref_14
+          enum: &ref_15
             - float
             - boolean
             - string
@@ -3158,6 +4006,7 @@ components:
               type: array
               items:
                 type: string
+                maxLength: 200
               minItems: 1
           additionalProperties: false
         categories:
@@ -3169,6 +4018,7 @@ components:
             properties:
               category:
                 type: string
+                maxLength: 200
               score:
                 type:
                   - number
@@ -3190,6 +4040,7 @@ components:
                 minLength: 1
               name:
                 type: string
+                maxLength: 200
               weight:
                 type: number
               scale:
@@ -3237,7 +4088,7 @@ components:
                   - operator
                   - value
                   - type
-          default: &ref_15
+          default: &ref_16
             filterArray: []
           required:
             - filterArray
@@ -3252,6 +4103,7 @@ components:
       properties:
         name:
           type: string
+          maxLength: 200
         type:
           type: string
           enum:
@@ -3267,7 +4119,7 @@ components:
           default: ''
         return_type:
           type: string
-          enum: *ref_14
+          enum: *ref_15
           default: float
         enabled_in_prod:
           type: boolean
@@ -3310,6 +4162,7 @@ components:
               type: array
               items:
                 type: string
+                maxLength: 200
               minItems: 1
           additionalProperties: false
         categories:
@@ -3321,6 +4174,7 @@ components:
             properties:
               category:
                 type: string
+                maxLength: 200
               score:
                 type:
                   - number
@@ -3342,6 +4196,7 @@ components:
                 minLength: 1
               name:
                 type: string
+                maxLength: 200
               weight:
                 type: number
               scale:
@@ -3389,7 +4244,7 @@ components:
                   - operator
                   - value
                   - type
-          default: *ref_15
+          default: *ref_16
           required:
             - filterArray
           additionalProperties: false
@@ -3423,6 +4278,7 @@ components:
           properties:
             name:
               type: string
+              maxLength: 200
             type:
               type: string
               enum:
@@ -3438,7 +4294,7 @@ components:
               default: ''
             return_type:
               type: string
-              enum: *ref_14
+              enum: *ref_15
               default: float
             enabled_in_prod:
               type: boolean
@@ -3481,6 +4337,7 @@ components:
                   type: array
                   items:
                     type: string
+                    maxLength: 200
                   minItems: 1
               additionalProperties: false
             categories:
@@ -3492,6 +4349,7 @@ components:
                 properties:
                   category:
                     type: string
+                    maxLength: 200
                   score:
                     type:
                       - number
@@ -3513,6 +4371,7 @@ components:
                     minLength: 1
                   name:
                     type: string
+                    maxLength: 200
                   weight:
                     type: number
                   scale:
@@ -3560,7 +4419,7 @@ components:
                       - operator
                       - value
                       - type
-              default: *ref_15
+              default: *ref_16
               required:
                 - filterArray
               additionalProperties: false
@@ -3579,6 +4438,7 @@ components:
         properties:
           name:
             type: string
+            maxLength: 200
           type:
             type: string
             enum:
@@ -3594,7 +4454,7 @@ components:
             default: ''
           return_type:
             type: string
-            enum: *ref_14
+            enum: *ref_15
             default: float
           enabled_in_prod:
             type: boolean
@@ -3637,6 +4497,7 @@ components:
                 type: array
                 items:
                   type: string
+                  maxLength: 200
                 minItems: 1
             additionalProperties: false
           categories:
@@ -3648,6 +4509,7 @@ components:
               properties:
                 category:
                   type: string
+                  maxLength: 200
                 score:
                   type:
                     - number
@@ -3669,6 +4531,7 @@ components:
                   minLength: 1
                 name:
                   type: string
+                  maxLength: 200
                 weight:
                   type: number
                 scale:
@@ -3716,7 +4579,7 @@ components:
                     - operator
                     - value
                     - type
-            default: *ref_15
+            default: *ref_16
             required:
               - filterArray
             additionalProperties: false
@@ -3765,6 +4628,145 @@ components:
       required:
         - deleted
     RunMetricResponse: {}
+    Project:
+      type: object
+      properties:
+        id:
+          type: string
+          minLength: 1
+        name:
+          type: string
+          minLength: 1
+          description: Project name
+        description:
+          type: string
+          description: Project description
+        type:
+          type: string
+          enum: &ref_17
+            - evaluation
+            - completion
+          description: Project type
+        org_id:
+          type: string
+          description: Organization ID
+        created_at:
+          type: string
+          format: date-time
+        updated_at:
+          type: string
+          format: date-time
+      required:
+        - id
+        - name
+        - org_id
+      description: Project object
+    PostProjectRequest:
+      type: object
+      properties:
+        name:
+          type: string
+          minLength: 1
+          description: Project name
+        description:
+          type: string
+          description: Project description
+        type:
+          type: string
+          enum:
+            - evaluation
+            - completion
+          description: Project type
+      required:
+        - name
+      description: Request body for creating a project
+    PutProjectRequest:
+      type: object
+      properties:
+        name:
+          type: string
+          minLength: 1
+          description: Project name to identify the project
+        new_name:
+          type: string
+          description: New project name
+        description:
+          type: string
+          description: New project description
+        type:
+          type: string
+          enum:
+            - evaluation
+            - completion
+          description: New project type
+      required:
+        - name
+      description: Request body for updating a project
+    GetProjectsResponse:
+      type: array
+      items:
+        type: object
+        properties:
+          id:
+            type: string
+            minLength: 1
+          name:
+            type: string
+            minLength: 1
+            description: Project name
+          description:
+            type: string
+            description: Project description
+          type:
+            type: string
+            enum: *ref_17
+            description: Project type
+          org_id:
+            type: string
+            description: Organization ID
+          created_at:
+            type: string
+            format: date-time
+          updated_at:
+            type: string
+            format: date-time
+        required:
+          - id
+          - name
+          - org_id
+        description: Project object
+      description: Array of projects
+    PostProjectResponse:
+      type: object
+      properties:
+        id:
+          type: string
+          minLength: 1
+        name:
+          type: string
+          minLength: 1
+          description: Project name
+        description:
+          type: string
+          description: Project description
+        type:
+          type: string
+          enum: *ref_17
+          description: Project type
+        org_id:
+          type: string
+          description: Organization ID
+        created_at:
+          type: string
+          format: date-time
+        updated_at:
+          type: string
+          format: date-time
+      required:
+        - id
+        - name
+        - org_id
+      description: Created project
     PostSessionRequest:
       type: object
       properties:
@@ -3792,7 +4794,7 @@ components:
         - event_id
         - project_id
         - tenant
-    PostSessionResponse:
+    PostSessionStartResponse:
       type: object
       properties:
         event_id:
@@ -3840,17 +4842,11 @@ components:
         feedback: {}
         metadata: {}
         org_id:
-          type:
-            - string
-            - 'null'
+          type: string
         workspace_id:
-          type:
-            - string
-            - 'null'
+          type: string
         project_id:
-          type:
-            - string
-            - 'null'
+          type: string
         start_time:
           type:
             - number
@@ -3859,15 +4855,89 @@ components:
           type:
             - number
             - 'null'
+      required:
+        - org_id
+        - workspace_id
+        - project_id
       description: Full session event object returned after starting a new session
     GetSessionResponse:
       type: object
       properties:
-        request:
-          $ref: '#/components/schemas/EventNode'
+        event_id:
+          type: string
+        event_type:
+          type: string
+          enum: *ref_18
+        event_name:
+          type: string
+        children:
+          type: array
+          items: {}
+        start_time:
+          type: number
+        end_time:
+          type: number
+        duration:
+          type: number
+        metadata:
+          type: object
+          properties:
+            num_events:
+              type: number
+            num_model_events:
+              type: number
+            has_feedback:
+              type: boolean
+            cost:
+              type: number
+            total_tokens:
+              type: number
+            prompt_tokens:
+              type: number
+            completion_tokens:
+              type: number
+            scope:
+              type: object
+              properties:
+                name:
+                  type: string
+        parent_id:
+          type: string
+        session_id:
+          type: string
+        children_ids:
+          type: array
+          items:
+            type: string
+        config: {}
+        inputs: {}
+        outputs: {}
+        error:
+          type: string
+        source:
+          type: string
+        user_properties: {}
+        metrics: {}
+        feedback: {}
+        org_id:
+          type: string
+        workspace_id:
+          type: string
+        project_id:
+          type: string
       required:
-        - request
-      description: Session tree with nested events
+        - event_id
+        - event_type
+        - event_name
+        - children
+        - start_time
+        - end_time
+        - duration
+        - metadata
+        - org_id
+        - workspace_id
+        - project_id
+      description: Event node in session tree with nested children
     DeleteSessionResponse:
       type: object
       properties:
@@ -3884,12 +4954,13 @@ components:
       properties:
         name:
           type: string
+          maxLength: 200
         description:
           type: string
         parameters: {}
         tool_type:
           type: string
-          enum: &ref_16
+          enum: &ref_19
             - function
             - tool
       required:
@@ -3900,12 +4971,13 @@ components:
       properties:
         name:
           type: string
+          maxLength: 200
         description:
           type: string
         parameters: {}
         tool_type:
           type: string
-          enum: *ref_16
+          enum: *ref_19
         id:
           type: string
           minLength: 1
@@ -3936,7 +5008,7 @@ components:
           parameters: {}
           tool_type:
             type: string
-            enum: *ref_16
+            enum: *ref_19
           created_at:
             type: string
           updated_at:
@@ -3965,7 +5037,7 @@ components:
             parameters: {}
             tool_type:
               type: string
-              enum: *ref_16
+              enum: *ref_19
             created_at:
               type: string
             updated_at:
@@ -3997,7 +5069,7 @@ components:
             parameters: {}
             tool_type:
               type: string
-              enum: *ref_16
+              enum: *ref_19
             created_at:
               type: string
             updated_at:
@@ -4029,7 +5101,7 @@ components:
             parameters: {}
             tool_type:
               type: string
-              enum: *ref_16
+              enum: *ref_19
             created_at:
               type: string
             updated_at:

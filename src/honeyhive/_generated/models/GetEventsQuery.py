@@ -11,24 +11,22 @@ class GetEventsQuery(BaseModel):
 
     model_config = {"populate_by_name": True, "validate_assignment": True}
 
-    dateRange: Optional[Union[Dict[str, Any], str]] = Field(
+    dateRange: Optional[Union[Dict[str, Any], Dict[str, Any]]] = Field(
         validation_alias="dateRange", default=None
     )
 
-    filters: Optional[Union[List[Dict[str, Any]], str, List[str]]] = Field(
+    filters: Optional[List[Dict[str, Any]]] = Field(
         validation_alias="filters", default=None
     )
 
-    projections: Optional[Union[List[str], str]] = Field(
+    projections: Optional[List[str]] = Field(
         validation_alias="projections", default=None
     )
 
-    ignore_order: Optional[Union[bool, str]] = Field(
-        validation_alias="ignore_order", default=None
-    )
+    ignore_order: Optional[bool] = Field(validation_alias="ignore_order", default=None)
 
-    limit: Optional[Union[float, str]] = Field(validation_alias="limit", default=None)
+    limit: Optional[float] = Field(validation_alias="limit", default=None)
 
-    page: Optional[Union[float, str]] = Field(validation_alias="page", default=None)
+    page: Optional[float] = Field(validation_alias="page", default=None)
 
     evaluation_id: Optional[str] = Field(validation_alias="evaluation_id", default=None)
