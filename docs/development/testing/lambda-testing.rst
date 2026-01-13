@@ -229,7 +229,7 @@ Local Lambda Testing
            print(f"❌ Tracer initialization failed: {e}")
            tracer = None
    
-   @trace(tracer=tracer, event_type="lambda", event_name="basic_operation")
+   @trace(tracer=tracer, event_type="tool", event_name="basic_operation")
    def process_data(data: Dict[str, Any]) -> Dict[str, Any]:
        """Process data with tracing."""
        if not tracer:
