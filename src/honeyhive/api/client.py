@@ -335,8 +335,14 @@ class EventsAPI(BaseAPI):
         return events_svc.getEvents(self._api_config, **filtered_data)
 
     def get_by_session_id(self, session_id: str) -> GetEventsBySessionIdResponse:
-        """Get events by session ID."""
-        return events_svc.getEventsBySessionId(self._api_config, id=session_id)
+        """Get events by session ID (uses Control Plane endpoint)."""
+        # This endpoint is on Control Plane, use cp_base_path
+        cp_config = APIConfig(
+            base_path=self._api_config.get_cp_base_path(),
+            access_token=self._api_config.access_token,
+            verify=self._api_config.verify,
+        )
+        return events_svc.getEventsBySessionId(cp_config, id=session_id)
 
     def create(self, request: PostEventRequest) -> PostEventResponse:
         """Create an event."""
@@ -363,10 +369,14 @@ class EventsAPI(BaseAPI):
     async def get_by_session_id_async(
         self, session_id: str
     ) -> GetEventsBySessionIdResponse:
-        """Get events by session ID asynchronously."""
-        return await events_svc_async.getEventsBySessionId(
-            self._api_config, id=session_id
+        """Get events by session ID asynchronously (uses Control Plane endpoint)."""
+        # This endpoint is on Control Plane, use cp_base_path
+        cp_config = APIConfig(
+            base_path=self._api_config.get_cp_base_path(),
+            access_token=self._api_config.access_token,
+            verify=self._api_config.verify,
         )
+        return await events_svc_async.getEventsBySessionId(cp_config, id=session_id)
 
     async def create_async(self, request: PostEventRequest) -> PostEventResponse:
         """Create an event asynchronously."""
@@ -821,16 +831,19 @@ class HoneyHive:
         self,
         api_key: str,
         base_url: str = "https://api.honeyhive.ai",
+        cp_base_url: Optional[str] = None,
     ) -> None:
         """Initialize the HoneyHive client.
 
         Args:
             api_key: HoneyHive API key (typically starts with 'hh_').
-            base_url: API base URL (default: https://api.honeyhive.ai).
+            base_url: API base URL for Data Plane/ingestion (default: https://api.honeyhive.ai).
+            cp_base_url: Control Plane API URL for query endpoints. If not set, uses base_url.
         """
         self._api_key = api_key
         self._api_config = APIConfig(
             base_path=base_url,
+            cp_base_path=cp_base_url,
             access_token=api_key,
         )
 

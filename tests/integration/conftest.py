@@ -191,6 +191,7 @@ def real_api_credentials() -> Dict[str, Any]:
             "api_key": core_credentials["HH_API_KEY"],
             "source": os.environ.get("HH_SOURCE", "pytest-integration"),
             "server_url": os.environ.get("HH_API_URL", "https://api.honeyhive.ai"),
+            "cp_server_url": os.environ.get("HH_CP_API_URL"),  # Control Plane URL (optional)
             "project": os.environ.get("HH_PROJECT", "test-project"),
         }
 
@@ -234,6 +235,7 @@ def integration_client(real_api_credentials: Dict[str, Any]) -> HoneyHive:
     return HoneyHive(
         api_key=real_api_credentials["api_key"],
         base_url=real_api_credentials["server_url"],
+        cp_base_url=real_api_credentials.get("cp_server_url"),
     )
 
 
