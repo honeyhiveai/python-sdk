@@ -269,8 +269,10 @@ jobs:
 
       - name: Check for API credentials
         id: check_credentials
+        env:
+          HH_API_KEY_EXISTS: ${{ secrets.HH_API_KEY != '' }}
         run: |
-          if [[ -n "${{ secrets.HH_API_KEY }}" ]]; then
+          if [[ "$HH_API_KEY_EXISTS" == "true" ]]; then
             echo "has_honeyhive_key=true" >> $GITHUB_OUTPUT
           else
             echo "has_honeyhive_key=false" >> $GITHUB_OUTPUT
