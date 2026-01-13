@@ -37,6 +37,10 @@ name: Tox Full Test Suite
     secrets:
       HH_API_KEY:
         required: false
+      HH_API_URL:
+        required: false
+      HH_CP_API_URL:
+        required: false
       HH_PROJECT:
         required: false
       HH_TEST_API_KEY:
@@ -80,8 +84,8 @@ permissions:
   actions: read
 
 env:
-  # Test environment variables (HH_API_KEY comes from secrets, not hardcoded)
-  HH_API_URL: https://api.honeyhive.ai
+  # Test environment variables - most come from secrets for integration tests
+  # HH_API_KEY and HH_API_URL are set per-job from secrets
   HH_SOURCE: github-actions
   HH_TEST_MODE: false
   HH_DEBUG_MODE: true
@@ -288,12 +292,13 @@ jobs:
           echo "🔗 Running integration tests with REAL APIs (NO MOCKS)..."
           tox -e integration
         env:
-          # HoneyHive credentials (required)
+          # HoneyHive credentials (required) - all from secrets
           HH_API_KEY: ${{ secrets.HH_API_KEY }}
+          HH_API_URL: ${{ secrets.HH_API_URL }}
+          HH_CP_API_URL: ${{ secrets.HH_CP_API_URL }}
           HH_PROJECT: ${{ secrets.HH_PROJECT }}
           HH_SOURCE: "github-actions-integration"
           HH_TEST_MODE: false
-          HH_API_URL: https://api.honeyhive.ai
           # LLM Provider credentials (optional - tests will skip if not available)
           OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
           ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
