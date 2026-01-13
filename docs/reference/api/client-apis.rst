@@ -27,119 +27,39 @@ Usage Example
 
 .. code-block:: python
 
-   from honeyhive import HoneyHive as Client
+   from honeyhive import HoneyHive
    
    # Initialize the client
-   client = honeyhive.HoneyHive(
-       api_key="your-api-key",
-       project="your-project"
-   )
+   client = HoneyHive(api_key="your-api-key")
    
    # Access API endpoints
-   datasets = client.datasets.list_datasets(project="your-project")
-   metrics = client.metrics.get_metrics(project="your-project")
+   datasets = client.datasets.list()
+   projects = client.projects.list()
 
-
-RateLimiter
------------
-
-Rate limiting for API calls to prevent exceeding rate limits.
-
-.. autoclass:: honeyhive.api.client.RateLimiter
-   :members:
-   :undoc-members:
-   :show-inheritance:
-   :special-members: __init__
-
-Example
-~~~~~~~
-
-.. code-block:: python
-
-   from honeyhive.api.client import RateLimiter
-   
-   # Create rate limiter (100 calls per 60 seconds)
-   limiter = RateLimiter(max_calls=100, time_window=60.0)
-   
-   # Check if call is allowed
-   if limiter.can_call():
-       # Make API call
-       pass
-   
-   # Or wait automatically
-   limiter.wait_if_needed()
-   # Make API call
-
-BaseAPI
--------
-
-Base class for all API endpoint clients.
-
-.. autoclass:: honeyhive.api.base.BaseAPI
-   :members:
-   :undoc-members:
-   :show-inheritance:
-   :special-members: __init__
 
 DatasetsAPI
 -----------
 
 API client for dataset operations.
 
-**Recent Updates**: Enhanced filtering capabilities for ``list_datasets()`` including name and include_datapoints parameters. See method documentation below for details.
-
-.. autoclass:: honeyhive.api.datasets.DatasetsAPI
+.. autoclass:: honeyhive.api.client.DatasetsAPI
    :members:
    :undoc-members:
    :show-inheritance:
    :no-index:
-
-Methods
-~~~~~~~
-
-create_dataset
-^^^^^^^^^^^^^^
-
-.. automethod:: honeyhive.api.datasets.DatasetsAPI.create_dataset
-
-create_dataset_async
-^^^^^^^^^^^^^^^^^^^^
-
-.. automethod:: honeyhive.api.datasets.DatasetsAPI.create_dataset_async
-
-list_datasets
-^^^^^^^^^^^^^
-
-.. automethod:: honeyhive.api.datasets.DatasetsAPI.list_datasets
-
-get_dataset
-^^^^^^^^^^^
-
-.. automethod:: honeyhive.api.datasets.DatasetsAPI.get_dataset
-
-update_dataset
-^^^^^^^^^^^^^^
-
-.. automethod:: honeyhive.api.datasets.DatasetsAPI.update_dataset
-
-delete_dataset
-^^^^^^^^^^^^^^
-
-.. automethod:: honeyhive.api.datasets.DatasetsAPI.delete_dataset
-
 
 Example
 ~~~~~~~
 
 .. code-block:: python
 
-   from honeyhive import HoneyHive as Client
+   from honeyhive import HoneyHive
    from honeyhive.models import CreateDatasetRequest
    
-   client = honeyhive.HoneyHive(api_key="your-api-key")
+   client = HoneyHive(api_key="your-api-key")
    
    # Create a dataset
-   dataset = client.datasets.create_dataset(
+   dataset = client.datasets.create(
        CreateDatasetRequest(
            project="your-project",
            name="test-dataset",
@@ -148,17 +68,18 @@ Example
    )
    
    # List datasets
-   datasets = client.datasets.list_datasets(project="your-project")
+   datasets = client.datasets.list()
    
-   # Get specific dataset
-   dataset = client.datasets.get_dataset(dataset_id="dataset-id")
+   # Delete a dataset
+   client.datasets.delete(id="dataset-id")
+
 
 DatapointsAPI
 -------------
 
 API client for datapoint operations. Datapoints are individual records within datasets.
 
-.. autoclass:: honeyhive.api.datapoints.DatapointsAPI
+.. autoclass:: honeyhive.api.client.DatapointsAPI
    :members:
    :undoc-members:
    :show-inheritance:
@@ -168,13 +89,13 @@ Example
 
 .. code-block:: python
 
-   from honeyhive import HoneyHive as Client
+   from honeyhive import HoneyHive
    from honeyhive.models import CreateDatapointRequest
    
-   client = honeyhive.HoneyHive(api_key="your-api-key")
+   client = HoneyHive(api_key="your-api-key")
    
    # Create a datapoint
-   datapoint = client.datapoints.create_datapoint(
+   datapoint = client.datapoints.create(
        CreateDatapointRequest(
            inputs={"query": "What is machine learning?"},
            ground_truth="Machine learning is a subset of AI...",
@@ -183,27 +104,29 @@ Example
    )
    
    # List datapoints for a dataset
-   datapoints = client.datapoints.list_datapoints(dataset_id="dataset-id")
+   datapoints = client.datapoints.list(dataset_id="dataset-id")
    
    # Get specific datapoint
-   datapoint = client.datapoints.get_datapoint(datapoint_id="datapoint-id")
+   datapoint = client.datapoints.get(id="datapoint-id")
+
 
 ConfigurationsAPI
 -----------------
 
 API client for configuration operations.
 
-.. autoclass:: honeyhive.api.configurations.ConfigurationsAPI
+.. autoclass:: honeyhive.api.client.ConfigurationsAPI
    :members:
    :undoc-members:
    :show-inheritance:
+
 
 MetricsAPI
 ----------
 
 API client for metrics operations.
 
-.. autoclass:: honeyhive.api.metrics.MetricsAPI
+.. autoclass:: honeyhive.api.client.MetricsAPI
    :members:
    :undoc-members:
    :show-inheritance:
@@ -213,16 +136,15 @@ Example
 
 .. code-block:: python
 
-   from honeyhive import HoneyHive as Client
+   from honeyhive import HoneyHive
    
-   client = honeyhive.HoneyHive(api_key="your-api-key")
+   client = HoneyHive(api_key="your-api-key")
    
-   # Get metrics for a project
-   metrics = client.metrics.get_metrics(
-       project="your-project",
-       start_time="2024-01-01T00:00:00Z",
-       end_time="2024-01-31T23:59:59Z"
-   )
+   # List metrics
+   metrics = client.metrics.list()
+   
+   # Run a metric
+   result = client.metrics.run(metric_id="metric-id", event_id="event-id")
 
 
 ProjectsAPI
@@ -230,167 +152,90 @@ ProjectsAPI
 
 API client for project operations.
 
-.. autoclass:: honeyhive.api.projects.ProjectsAPI
+.. autoclass:: honeyhive.api.client.ProjectsAPI
    :members:
    :undoc-members:
    :show-inheritance:
    :no-index:
-
-Methods
-~~~~~~~
-
-create_project
-^^^^^^^^^^^^^^
-
-.. automethod:: honeyhive.api.projects.ProjectsAPI.create_project
-
-list_projects
-^^^^^^^^^^^^^
-
-.. automethod:: honeyhive.api.projects.ProjectsAPI.list_projects
-
-get_project
-^^^^^^^^^^^
-
-.. automethod:: honeyhive.api.projects.ProjectsAPI.get_project
-
-update_project
-^^^^^^^^^^^^^^
-
-.. automethod:: honeyhive.api.projects.ProjectsAPI.update_project
-
-delete_project
-^^^^^^^^^^^^^^
-
-.. automethod:: honeyhive.api.projects.ProjectsAPI.delete_project
 
 Example
 ~~~~~~~
 
 .. code-block:: python
 
-   from honeyhive import HoneyHive as Client
-   from honeyhive.models import CreateProjectRequest
+   from honeyhive import HoneyHive
+   from honeyhive.models import PostProjectRequest
    
-   client = honeyhive.HoneyHive(api_key="your-api-key")
+   client = HoneyHive(api_key="your-api-key")
    
    # Create a project
-   project = client.projects.create_project(
-       CreateProjectRequest(
+   project = client.projects.create(
+       PostProjectRequest(
            name="my-llm-project",
-           description="Production LLM application"
+           type="evaluation"
        )
    )
    
    # List all projects
-   projects = client.projects.list_projects()
+   projects = client.projects.list()
 
-SessionAPI
-----------
+
+SessionsAPI
+-----------
 
 API client for session operations.
 
-.. autoclass:: honeyhive.api.session.SessionAPI
+.. autoclass:: honeyhive.api.client.SessionsAPI
    :members:
    :undoc-members:
    :show-inheritance:
    :no-index:
-
-SessionResponse
-~~~~~~~~~~~~~~~
-
-Response model for session operations.
-
-.. autoclass:: honeyhive.api.session.SessionResponse
-   :members:
-   :undoc-members:
-   :show-inheritance:
-
-SessionStartResponse
-~~~~~~~~~~~~~~~~~~~~
-
-Response model for session start operations.
-
-.. autoclass:: honeyhive.api.session.SessionStartResponse
-   :members:
-   :undoc-members:
-   :show-inheritance:
 
 Example
 ~~~~~~~
 
 .. code-block:: python
 
-   from honeyhive import HoneyHive as Client
+   from honeyhive import HoneyHive
+   from honeyhive.models import PostSessionRequest
    
-   client = honeyhive.HoneyHive(api_key="your-api-key")
+   client = HoneyHive(api_key="your-api-key")
    
    # Start a session
-   session = client.session.start_session(
-       project="your-project",
-       session_name="user-interaction",
-       metadata={"user_id": "123"}
+   session = client.sessions.start(
+       PostSessionRequest(
+           project="your-project",
+           session_name="user-interaction"
+       )
    )
    
-   # End the session
-   client.session.end_session(
-       session_id=session.session_id,
-       status="completed"
-   )
+   print(f"Session ID: {session.session_id}")
+
 
 ToolsAPI
 --------
 
 API client for tool operations.
 
-.. autoclass:: honeyhive.api.tools.ToolsAPI
+.. autoclass:: honeyhive.api.client.ToolsAPI
    :members:
    :undoc-members:
    :show-inheritance:
    :no-index:
-
-Methods
-~~~~~~~
-
-create_tool
-^^^^^^^^^^^
-
-.. automethod:: honeyhive.api.tools.ToolsAPI.create_tool
-
-list_tools
-^^^^^^^^^^
-
-.. automethod:: honeyhive.api.tools.ToolsAPI.list_tools
-
-get_tool
-^^^^^^^^
-
-.. automethod:: honeyhive.api.tools.ToolsAPI.get_tool
-
-update_tool
-^^^^^^^^^^^
-
-.. automethod:: honeyhive.api.tools.ToolsAPI.update_tool
-
-delete_tool
-^^^^^^^^^^^
-
-.. automethod:: honeyhive.api.tools.ToolsAPI.delete_tool
 
 Example
 ~~~~~~~
 
 .. code-block:: python
 
-   from honeyhive import HoneyHive as Client
+   from honeyhive import HoneyHive
    from honeyhive.models import CreateToolRequest
    
-   client = honeyhive.HoneyHive(api_key="your-api-key")
+   client = HoneyHive(api_key="your-api-key")
    
    # Create a tool
-   tool = client.tools.create_tool(
+   tool = client.tools.create(
        CreateToolRequest(
-           project="your-project",
            name="calculator",
            description="Performs mathematical calculations",
            parameters={
@@ -403,13 +248,17 @@ Example
            }
        )
    )
+   
+   # List all tools
+   tools = client.tools.list()
 
-EvaluationsAPI
+
+ExperimentsAPI
 --------------
 
-API client for evaluation operations.
+API client for experiment/evaluation operations.
 
-.. autoclass:: honeyhive.api.evaluations.EvaluationsAPI
+.. autoclass:: honeyhive.api.client.ExperimentsAPI
    :members:
    :undoc-members:
    :show-inheritance:
@@ -419,24 +268,23 @@ Example
 
 .. code-block:: python
 
-   from honeyhive import HoneyHive as Client
+   from honeyhive import HoneyHive
    
-   client = honeyhive.HoneyHive(api_key="your-api-key")
+   client = HoneyHive(api_key="your-api-key")
    
-   # Run evaluation
-   result = client.evaluations.evaluate(
-       project="your-project",
-       inputs={"query": "What is AI?"},
-       ground_truth="Artificial Intelligence is...",
-       evaluators=["exact_match", "semantic_similarity"]
-   )
+   # List experiment runs
+   runs = client.experiments.list_runs()
+   
+   # Get experiment result
+   result = client.experiments.get_result(run_id="run-id")
+
 
 EventsAPI
 ---------
 
 API client for event operations.
 
-.. autoclass:: honeyhive.api.events.EventsAPI
+.. autoclass:: honeyhive.api.client.EventsAPI
    :members:
    :undoc-members:
    :show-inheritance:
@@ -446,21 +294,22 @@ Example
 
 .. code-block:: python
 
-   from honeyhive import HoneyHive as Client
+   from honeyhive import HoneyHive
+   from honeyhive.models import PostEventRequest
    
-   client = honeyhive.HoneyHive(api_key="your-api-key")
+   client = HoneyHive(api_key="your-api-key")
    
-   # Send event
-   client.events.send_event(
-       project="your-project",
-       event_type="llm_call",
-       event_data={
-           "model": "gpt-4",
-           "input": "Hello",
-           "output": "Hi there!",
-           "latency": 250
-       }
+   # Post an event
+   response = client.events.post(
+       PostEventRequest(
+           project="your-project",
+           event_type="model",
+           model="gpt-4",
+           inputs={"prompt": "Hello"},
+           outputs={"response": "Hi there!"}
+       )
    )
+
 
 See Also
 --------
@@ -468,7 +317,3 @@ See Also
 - :doc:`models-complete` - Request and response models
 - :doc:`errors` - Error handling
 - :doc:`tracer` - Tracer API
-
-
-
-

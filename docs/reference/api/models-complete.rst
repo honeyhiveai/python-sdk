@@ -12,12 +12,12 @@ Core Models
 
 This section documents all data models used throughout the HoneyHive SDK.
 
-Generated Models
-~~~~~~~~~~~~~~~~
+Public Models
+~~~~~~~~~~~~~
 
-All request and response models generated from the API schema.
+All request and response models are re-exported from ``honeyhive.models``.
 
-.. automodule:: honeyhive.models.generated
+.. automodule:: honeyhive.models
    :members:
    :undoc-members:
    :show-inheritance:
@@ -27,33 +27,36 @@ All request and response models generated from the API schema.
    **Key Models Included:**
    
    **Request Models:**
-   - ``CreateRunRequest`` - Create experiment runs
+   
+   - ``CreateConfigurationRequest`` - Create configurations
    - ``CreateDatasetRequest`` - Create datasets
-   - ``CreateProjectRequest`` - Create projects
+   - ``CreateDatapointRequest`` - Create datapoints
+   - ``CreateMetricRequest`` - Create metrics
    - ``CreateToolRequest`` - Create tools
-   - ``UpdateRunRequest``, ``UpdateProjectRequest``, ``UpdateToolRequest`` - Update operations
+   - ``PostEventRequest`` - Post events
+   - ``PostSessionRequest`` - Create sessions
+   - ``PostExperimentRunRequest`` - Create experiment runs
+   - ``UpdateConfigurationRequest``, ``UpdateDatasetRequest``, ``UpdateDatapointRequest`` - Update operations
    
    **Response Models:**
-   - ``CreateRunResponse`` - Run creation response
-   - ``Dataset`` - Dataset information
-   - ``DeleteRunResponse`` - Deletion confirmation
-   - ``GetRunResponse``, ``GetRunsResponse`` - Run retrieval
-   - ``NewRun``, ``OldRun`` - Run comparison models
    
-   **Supporting Models:**
-   - ``SessionStartRequest``, ``SessionPropertiesBatch`` - Session management
-   - ``ExperimentComparisonResponse``, ``ExperimentResultResponse`` - Experiment results
-   - ``FunctionCallParams``, ``SelectedFunction``, ``Parameters`` - Configuration
-   - ``Metric1``, ``Metric2``, ``MetricEdit`` - Metrics
-   - ``Threshold``, ``Operator`` - Evaluation criteria
+   - ``CreateConfigurationResponse`` - Configuration creation response
+   - ``CreateDatasetResponse`` - Dataset creation response
+   - ``CreateDatapointResponse`` - Datapoint creation response
+   - ``GetEventsResponse`` - Events retrieval
+   - ``GetSessionResponse`` - Session retrieval
+   - ``GetExperimentRunsResponse`` - Experiment runs retrieval
+   - ``PostSessionStartResponse`` - Session start response
+   
+   **Query Parameters:**
+   
+   - ``GetEventsQuery`` - Query parameters for fetching events
+   - ``GetDatasetsQuery`` - Query parameters for fetching datasets
+   - ``GetDatapointsQuery`` - Query parameters for fetching datapoints
    
    **Enums:**
-   - ``CallType`` - LLM call types (chat, completion)
-   - ``EnvEnum`` - Environments (dev, staging, prod)
-   - ``PipelineType`` - Pipeline types (event, session)
-   - ``ToolType``, ``ReturnType`` - Tool and return type specifications
-   - ``Type1``, ``Type3``, ``Type4``, ``Type6`` - Type categorizations
-   - ``UUIDType`` - UUID handling
+   
+   - ``EventType`` - Event types (model, tool, chain, session, generic)
 
 Configuration Models
 --------------------
