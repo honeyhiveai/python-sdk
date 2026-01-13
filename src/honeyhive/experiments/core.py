@@ -170,11 +170,14 @@ def run_experiment(
         List of execution results (one per datapoint)
 
     Examples:
-        >>> def my_function(inputs, ground_truth):
+        >>> def my_function(datapoint):
+        ...     inputs = datapoint.get("inputs", {})
+        ...     ground_truth = datapoint.get("ground_truth", {})
         ...     return {"output": "test"}
         >>>
         >>> # Async functions are also supported
-        >>> async def my_async_function(inputs, ground_truth):
+        >>> async def my_async_function(datapoint):
+        ...     inputs = datapoint.get("inputs", {})
         ...     result = await some_async_call()
         ...     return {"output": result}
         >>>
@@ -844,12 +847,15 @@ def evaluate(  # pylint: disable=too-many-locals,too-many-branches
         >>> from honeyhive.experiments import evaluate
         >>>
         >>> # Define function to test (sync)
-        >>> def my_function(inputs, ground_truth):
+        >>> def my_function(datapoint):
+        ...     inputs = datapoint.get("inputs", {})
+        ...     ground_truth = datapoint.get("ground_truth", {})
         ...     # Your LLM call or function logic
         ...     return {"output": "result"}
         >>>
         >>> # Async functions are also supported
-        >>> async def my_async_function(inputs, ground_truth):
+        >>> async def my_async_function(datapoint):
+        ...     inputs = datapoint.get("inputs", {})
         ...     result = await some_async_llm_call()
         ...     return {"output": result}
         >>>
