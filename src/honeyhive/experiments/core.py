@@ -134,6 +134,7 @@ def run_experiment(
     api_key: Optional[str] = None,
     max_workers: int = 10,
     verbose: bool = False,
+    instrumentors: Optional[List[Callable[[], Any]]] = None,
 ) -> List[Dict[str, Any]]:
     """
     Run experiment with tracer multi-instance pattern.
@@ -151,13 +152,19 @@ def run_experiment(
     - Python 3.11+ GIL improvements for I/O
 
     Args:
-        function: User function to execute against each datapoint
+        function: User function to execute against each datapoint. Can be either
+            a synchronous function or an async function. Async functions are
+            automatically detected and executed with asyncio.run().
         dataset: List of datapoint dictionaries
         datapoint_ids: List of datapoint IDs (parallel to dataset)
         experiment_context: ExperimentContext with run metadata
         api_key: HoneyHive API key for tracer (or set HONEYHIVE_API_KEY env var)
         max_workers: ThreadPool size (default: 10)
         verbose: Enable verbose logging
+        instrumentors: List of instrumentor factory functions. Each factory should
+            return a new instrumentor instance when called. This ensures each
+            datapoint gets its own instrumentor instance for proper trace routing.
+            Example: [lambda: OpenAIInstrumentor(), lambda: AnthropicInstrumentor()]
 
     Returns:
         List of execution results (one per datapoint)
@@ -166,6 +173,11 @@ def run_experiment(
         >>> def my_function(inputs, ground_truth):
         ...     return {"output": "test"}
         >>>
+        >>> # Async functions are also supported
+        >>> async def my_async_function(inputs, ground_truth):
+        ...     result = await some_async_call()
+        ...     return {"output": result}
+        >>>
         >>> context = ExperimentContext(
         ...     run_id="run-123",
         ...     dataset_id="ds-456",
@@ -173,12 +185,13 @@ def run_experiment(
         ... )
         >>>
         >>> results = run_experiment(
-        ...     function=my_function,
+        ...     function=my_function,  # or my_async_function
         ...     dataset=[{"inputs": {}, "ground_truth": {}}],
         ...     datapoint_ids=["dp-1"],
         ...     experiment_context=context,
         ...     api_key="hh_...",
-        ...     max_workers=10
+        ...     max_workers=10,
+        ...     instrumentors=[lambda: OpenAIInstrumentor()]
         ... )
     """
 
@@ -186,13 +199,15 @@ def run_experiment(
         datapoint: Dict[str, Any], datapoint_id: str
     ) -> Dict[str, Any]:
         """
-        Process single datapoint with isolated tracer.
+        Process single datapoint with isolated tracer and instrumentors.
 
         This function:
         1. Creates a NEW tracer instance for this datapoint
-        2. Executes the user function with tracer active
-        3. Flushes the tracer to ensure all spans sent
-        4. Returns result with status
+        2. Creates NEW instrumentor instances and sets tracer provider on them
+        3. Executes the user function with tracer active
+        4. Uninstruments all instrumentors
+        5. Flushes the tracer to ensure all spans sent
+        6. Returns result with status
         """
         # Extract inputs and ground truths from datapoint
         inputs = datapoint.get("inputs", {})
@@ -211,6 +226,35 @@ def run_experiment(
         tracer = HoneyHiveTracer(
             api_key=api_key, server_url=server_url, verbose=verbose, **tracer_config
         )
+
+        # Create and initialize instrumentor instances for this datapoint
+        # Each datapoint gets its own instrumentor instances to ensure traces
+        # are routed correctly to the right session
+        active_instrumentors: List[Any] = []
+        if instrumentors:
+            for instrumentor_factory in instrumentors:
+                try:
+                    # Create new instrumentor instance from factory
+                    instrumentor = instrumentor_factory()
+                    # Set the tracer provider on the instrumentor
+                    instrumentor.instrument(tracer_provider=tracer.provider)
+                    active_instrumentors.append(instrumentor)
+                    if verbose:
+                        safe_log(
+                            tracer,
+                            "info",
+                            "Initialized instrumentor %s for datapoint %s",
+                            type(instrumentor).__name__,
+                            datapoint_id,
+                        )
+                except Exception as e:
+                    safe_log(
+                        tracer,
+                        "warning",
+                        "Failed to initialize instrumentor for datapoint %s: %s",
+                        datapoint_id,
+                        str(e),
+                    )
 
         try:
             # Execute function with tracer active
@@ -238,6 +282,9 @@ def run_experiment(
                 tracer=tracer,
             )(function)
 
+            # Check if the function is async
+            is_async = asyncio.iscoroutinefunction(function)
+
             if "tracer" in params:
                 # NEW v1.0 pattern: pass tracer for enrich_span/enrich_session support
                 if verbose:
@@ -246,7 +293,10 @@ def run_experiment(
                         "info",
                         "Calling function with tracer parameter (v1.0 feature)",
                     )
-                outputs = traced_function(datapoint, tracer=tracer)
+                if is_async:
+                    outputs = asyncio.run(traced_function(datapoint, tracer=tracer))
+                else:
+                    outputs = traced_function(datapoint, tracer=tracer)
             else:
                 # MAIN BRANCH pattern: backward compatible
                 if verbose:
@@ -255,7 +305,10 @@ def run_experiment(
                         "info",
                         "Calling function without tracer (main branch compatible)",
                     )
-                outputs = traced_function(datapoint)
+                if is_async:
+                    outputs = asyncio.run(traced_function(datapoint))
+                else:
+                    outputs = traced_function(datapoint)
 
             # Capture session ID from tracer for linking to run
             # Outputs will be enriched later via UpdateEventRequest after tracer flush
@@ -295,6 +348,28 @@ def run_experiment(
             }
 
         finally:
+            # Uninstrument all instrumentors for this datapoint
+            for instrumentor in active_instrumentors:
+                try:
+                    instrumentor.uninstrument()
+                    if verbose:
+                        safe_log(
+                            tracer,
+                            "info",
+                            "Uninstrumented %s for datapoint %s",
+                            type(instrumentor).__name__,
+                            datapoint_id,
+                        )
+                except Exception as e:
+                    safe_log(
+                        tracer,
+                        "warning",
+                        "Failed to uninstrument %s for datapoint %s: %s",
+                        type(instrumentor).__name__,
+                        datapoint_id,
+                        str(e),
+                    )
+
             # CRITICAL: Flush tracer to ensure all spans sent
             try:
                 force_flush_tracer(tracer)
@@ -715,6 +790,7 @@ def evaluate(  # pylint: disable=too-many-locals,too-many-branches
     dataset: Optional[List[Dict[str, Any]]] = None,
     dataset_id: Optional[str] = None,
     evaluators: Optional[List[Callable]] = None,
+    instrumentors: Optional[List[Callable[[], Any]]] = None,
     api_key: Optional[str] = None,
     server_url: Optional[str] = None,
     project: str = "default",
@@ -725,72 +801,93 @@ def evaluate(  # pylint: disable=too-many-locals,too-many-branches
     print_results: bool = True,
 ) -> Any:
     """
-        Run experiment evaluation with backend aggregation.
+    Run experiment evaluation with backend aggregation.
 
-        This is the main user-facing API for running experiments. It:
-        1. Prepares dataset (external or HoneyHive)
-        2. Creates experiment run via API
-        3. Executes function against dataset with tracer multi-instance
-        4. Runs evaluators (if provided)
-        5. Retrieves aggregated results from backend
+    This is the main user-facing API for running experiments. It:
+    1. Prepares dataset (external or HoneyHive)
+    2. Creates experiment run via API
+    3. Executes function against dataset with tracer multi-instance
+    4. Runs evaluators (if provided)
+    5. Retrieves aggregated results from backend
 
-        Args:
-            function: User function to execute against each datapoint
-            dataset: External dataset (list of dicts with 'inputs' and 'ground_truth')
-            dataset_id: HoneyHive dataset ID (alternative to external dataset)
-            evaluators: List of evaluator functions (optional)
-            api_key: HoneyHive API key (or set HONEYHIVE_API_KEY/HH_API_KEY env var)
-            server_url: HoneyHive server URL (or set HONEYHIVE_SERVER_URL/
-                HH_SERVER_URL/HH_API_URL env var)
-            project: HoneyHive project (or set HONEYHIVE_PROJECT env var)
-            name: Experiment run name (auto-generated if not provided)
-            max_workers: ThreadPool size for concurrent execution (default: 10)
-            aggregate_function: Backend aggregation function
-    +            ("average", "sum", "min", "max")
-            verbose: Enable verbose logging
-            print_results: Print formatted results table after evaluation
-                (default: True)
+    Args:
+        function: User function to execute against each datapoint. Can be either
+            a synchronous function or an async function. Async functions are
+            automatically detected and executed with asyncio.run().
+        dataset: External dataset (list of dicts with 'inputs' and 'ground_truth')
+        dataset_id: HoneyHive dataset ID (alternative to external dataset)
+        evaluators: List of evaluator functions (optional)
+        instrumentors: List of instrumentor factory functions. Each factory should
+            return a new instrumentor instance when called. This ensures each
+            datapoint gets its own tracer and instrumentor instance for proper
+            trace routing. Example: [lambda: OpenAIInstrumentor()]
+        api_key: HoneyHive API key (or set HONEYHIVE_API_KEY/HH_API_KEY env var)
+        server_url: HoneyHive server URL (or set HONEYHIVE_SERVER_URL/
+            HH_SERVER_URL/HH_API_URL env var)
+        project: HoneyHive project (or set HONEYHIVE_PROJECT env var)
+        name: Experiment run name (auto-generated if not provided)
+        max_workers: ThreadPool size for concurrent execution (default: 10)
+        aggregate_function: Backend aggregation function
+            ("average", "sum", "min", "max")
+        verbose: Enable verbose logging
+        print_results: Print formatted results table after evaluation
+            (default: True)
 
-        Returns:
-            ExperimentResultSummary with backend-computed aggregates
+    Returns:
+        ExperimentResultSummary with backend-computed aggregates
 
-        Raises:
-            ValueError: If neither dataset nor dataset_id provided, or both provided
+    Raises:
+        ValueError: If neither dataset nor dataset_id provided, or both provided
 
-        Examples:
-            >>> from honeyhive import HoneyHive
-            >>> from honeyhive.experiments import evaluate
-            >>>
-            >>> # Define function to test
-            >>> def my_function(inputs, ground_truth):
-            ...     # Your LLM call or function logic
-            ...     return {"output": "result"}
-            >>>
-            >>> # External dataset
-            >>> dataset = [
-            ...     {"inputs": {"query": "test1"}, "ground_truth": {"answer": "a1"}},
-            ...     {"inputs": {"query": "test2"}, "ground_truth": {"answer": "a2"}}
-            ... ]
-            >>>
-            >>> result = evaluate(
-            ...     function=my_function,
-            ...     dataset=dataset,
-            ...     api_key="hh_...",
-            ...     project="my-project",
-            ...     name="My Experiment"
-            ... )
-            >>>
-            >>> print(f"Success: {result.success}")
-            >>> print(f"Passed: {len(result.passed)}")
-            >>> print(f"Metrics: {result.metrics.list_metrics()}")
-            >>>
-            >>> # HoneyHive dataset
-            >>> result = evaluate(
-            ...     function=my_function,
-            ...     dataset_id="ds-123",
-            ...     api_key="hh_...",
-            ...     project="my-project"
-            ... )
+    Examples:
+        >>> from honeyhive import HoneyHive
+        >>> from honeyhive.experiments import evaluate
+        >>>
+        >>> # Define function to test (sync)
+        >>> def my_function(inputs, ground_truth):
+        ...     # Your LLM call or function logic
+        ...     return {"output": "result"}
+        >>>
+        >>> # Async functions are also supported
+        >>> async def my_async_function(inputs, ground_truth):
+        ...     result = await some_async_llm_call()
+        ...     return {"output": result}
+        >>>
+        >>> # External dataset
+        >>> dataset = [
+        ...     {"inputs": {"query": "test1"}, "ground_truth": {"answer": "a1"}},
+        ...     {"inputs": {"query": "test2"}, "ground_truth": {"answer": "a2"}}
+        ... ]
+        >>>
+        >>> result = evaluate(
+        ...     function=my_function,  # or my_async_function
+        ...     dataset=dataset,
+        ...     api_key="hh_...",
+        ...     project="my-project",
+        ...     name="My Experiment"
+        ... )
+        >>>
+        >>> print(f"Success: {result.success}")
+        >>> print(f"Passed: {len(result.passed)}")
+        >>> print(f"Metrics: {result.metrics.list_metrics()}")
+        >>>
+        >>> # HoneyHive dataset
+        >>> result = evaluate(
+        ...     function=my_function,
+        ...     dataset_id="ds-123",
+        ...     api_key="hh_...",
+        ...     project="my-project"
+        ... )
+        >>>
+        >>> # With instrumentors for automatic LLM tracing
+        >>> from openinference.instrumentation.openai import OpenAIInstrumentor
+        >>> result = evaluate(
+        ...     function=my_function,
+        ...     dataset=dataset,
+        ...     api_key="hh_...",
+        ...     project="my-project",
+        ...     instrumentors=[lambda: OpenAIInstrumentor()]
+        ... )
     """
     # Validate inputs
     if dataset is None and dataset_id is None:
@@ -943,6 +1040,7 @@ def evaluate(  # pylint: disable=too-many-locals,too-many-branches
         api_key=api_key,
         max_workers=max_workers,
         verbose=verbose,
+        instrumentors=instrumentors,
     )
 
     # Step 5: Run evaluators (if provided)

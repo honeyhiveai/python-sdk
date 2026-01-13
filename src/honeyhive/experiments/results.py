@@ -15,10 +15,11 @@ Backend Endpoints:
 - GET /runs/:new_run_id/compare-with/:old_run_id - Compare runs
 """
 
-from typing import Any, Dict, cast
+from typing import Any, Dict, List, cast
 
 from honeyhive.experiments.models import (
     AggregatedMetrics,
+    DatapointResult,
     ExperimentResultSummary,
     RunComparisonResult,
 )
@@ -72,6 +73,10 @@ def get_run_result(
         run_id=run_id, aggregate_function=aggregate_function
     )
 
+    # Parse datapoints into DatapointResult objects
+    raw_datapoints: List[Dict[str, Any]] = response.get("datapoints", [])
+    datapoints: List[DatapointResult] = [DatapointResult(**dp) for dp in raw_datapoints]
+
     # Parse response into ExperimentResultSummary
     return ExperimentResultSummary(
         run_id=run_id,
@@ -80,7 +85,7 @@ def get_run_result(
         passed=response.get("passed", []),
         failed=response.get("failed", []),
         metrics=AggregatedMetrics(**response.get("metrics", {})),
-        datapoints=response.get("datapoints", []),
+        datapoints=datapoints,
     )
 
 

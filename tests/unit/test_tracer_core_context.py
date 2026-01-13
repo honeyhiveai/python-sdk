@@ -21,6 +21,14 @@ from opentelemetry.context import Context
 
 from honeyhive.tracer.core.context import TracerContextInterface, TracerContextMixin
 
+# Check if pytest-asyncio is available for async tests
+try:
+    import pytest_asyncio  # noqa: F401
+
+    HAS_ASYNCIO = True
+except ImportError:
+    HAS_ASYNCIO = False
+
 
 class TestTracerContextInterface:
     """Test suite for TracerContextInterface abstract base class."""
@@ -585,6 +593,285 @@ class TestSessionStart:
         )
 
 
+class TestCreateSession:
+    """Test suite for create_session method (multi-session handling)."""
+
+    @pytest.fixture
+    def context_mixin(self) -> MockTracerContextMixin:
+        """Create a mock TracerContextMixin instance for testing."""
+        mixin = MockTracerContextMixin()
+        mixin.project_name = "test-project"  # type: ignore[attr-defined]
+        mixin.source_environment = "test"  # type: ignore[attr-defined]
+        return mixin
+
+    @patch("honeyhive.tracer.core.context.context.attach")
+    @patch("honeyhive.tracer.core.context.baggage.set_baggage")
+    @patch("honeyhive.tracer.core.context.context.get_current")
+    @patch("honeyhive.tracer.core.context.safe_log")
+    def test_create_session_success(
+        self,
+        mock_safe_log: Mock,
+        mock_get_current: Mock,
+        mock_set_baggage: Mock,
+        mock_attach: Mock,
+        context_mixin: MockTracerContextMixin,
+    ) -> None:
+        """Test successful session creation with baggage."""
+        # Arrange
+        mock_session_api = Mock()
+        mock_response = Mock()
+        mock_response.session_id = "new-session-123"
+        mock_session_api.create_session_from_dict.return_value = mock_response
+        context_mixin.session_api = mock_session_api
+
+        mock_current_ctx = Mock()
+        mock_new_ctx = Mock()
+        mock_get_current.return_value = mock_current_ctx
+        mock_set_baggage.return_value = mock_new_ctx
+
+        # Act
+        result = context_mixin.create_session(
+            session_name="test-session",
+            inputs={"query": "test"},
+            metadata={"source": "unit-test"},
+        )
+
+        # Assert
+        assert result == "new-session-123"
+        mock_session_api.create_session_from_dict.assert_called_once()
+        call_args = mock_session_api.create_session_from_dict.call_args[0][0]
+        assert call_args["session_name"] == "test-session"
+        assert call_args["inputs"] == {"query": "test"}
+        assert call_args["metadata"] == {"source": "unit-test"}
+
+        # Verify baggage was set (not instance _session_id)
+        mock_set_baggage.assert_called_once_with(
+            "session_id", "new-session-123", mock_current_ctx
+        )
+        mock_attach.assert_called_once_with(mock_new_ctx)
+
+    @patch("honeyhive.tracer.core.context.safe_log")
+    def test_create_session_no_session_api(
+        self, mock_safe_log: Mock, context_mixin: MockTracerContextMixin
+    ) -> None:
+        """Test create_session without session API."""
+        # Arrange
+        context_mixin.session_api = None
+
+        # Act
+        result = context_mixin.create_session(session_name="test-session")
+
+        # Assert
+        assert result is None
+        mock_safe_log.assert_called_once_with(
+            context_mixin, "warning", "No session API available for session creation"
+        )
+
+    @patch("honeyhive.tracer.core.context.context.get_current")
+    @patch("honeyhive.tracer.core.context.safe_log")
+    def test_create_session_auto_generates_name(
+        self,
+        mock_safe_log: Mock,
+        mock_get_current: Mock,
+        context_mixin: MockTracerContextMixin,
+    ) -> None:
+        """Test create_session auto-generates session name when not provided."""
+        # Arrange
+        mock_session_api = Mock()
+        mock_response = Mock()
+        mock_response.session_id = "auto-session-456"
+        mock_session_api.create_session_from_dict.return_value = mock_response
+        context_mixin.session_api = mock_session_api
+
+        with patch("honeyhive.tracer.core.context.baggage.set_baggage"):
+            with patch("honeyhive.tracer.core.context.context.attach"):
+                # Act
+                result = context_mixin.create_session()
+
+        # Assert
+        assert result == "auto-session-456"
+        call_args = mock_session_api.create_session_from_dict.call_args[0][0]
+        assert call_args["session_name"].startswith("session-")
+
+    @patch("honeyhive.tracer.core.context.safe_log")
+    def test_create_session_exception_handling(
+        self, mock_safe_log: Mock, context_mixin: MockTracerContextMixin
+    ) -> None:
+        """Test create_session exception handling."""
+        # Arrange
+        mock_session_api = Mock()
+        test_error = RuntimeError("API call failed")
+        mock_session_api.create_session_from_dict.side_effect = test_error
+        context_mixin.session_api = mock_session_api
+
+        # Act
+        result = context_mixin.create_session(session_name="test-session")
+
+        # Assert
+        assert result is None
+        mock_safe_log.assert_called_with(
+            context_mixin,
+            "error",
+            f"Failed to create session: {test_error}",
+            honeyhive_data={"error_type": "RuntimeError"},
+        )
+
+    @patch("honeyhive.tracer.core.context.context.attach")
+    @patch("honeyhive.tracer.core.context.baggage.set_baggage")
+    @patch("honeyhive.tracer.core.context.context.get_current")
+    @patch("honeyhive.tracer.core.context.safe_log")
+    def test_create_session_does_not_modify_instance_session_id(
+        self,
+        mock_safe_log: Mock,
+        mock_get_current: Mock,
+        mock_set_baggage: Mock,
+        mock_attach: Mock,
+        context_mixin: MockTracerContextMixin,
+    ) -> None:
+        """Test that create_session does NOT modify tracer._session_id.
+
+        This is critical for multi-session handling - session_id must only
+        be stored in baggage to enable concurrent request isolation.
+        """
+        # Arrange
+        mock_session_api = Mock()
+        mock_response = Mock()
+        mock_response.session_id = "baggage-only-session"
+        mock_session_api.create_session_from_dict.return_value = mock_response
+        context_mixin.session_api = mock_session_api
+        context_mixin._session_id = None  # Start with no session
+
+        # Act
+        result = context_mixin.create_session(session_name="test-session")
+
+        # Assert
+        assert result == "baggage-only-session"
+        # CRITICAL: _session_id should NOT be modified
+        assert context_mixin._session_id is None
+
+
+@pytest.mark.skipif(not HAS_ASYNCIO, reason="pytest-asyncio not installed")
+class TestAcreateSession:
+    """Test suite for acreate_session async method."""
+
+    @pytest.fixture
+    def context_mixin(self) -> MockTracerContextMixin:
+        """Create a mock TracerContextMixin instance for testing."""
+        mixin = MockTracerContextMixin()
+        mixin.project_name = "test-project"  # type: ignore[attr-defined]
+        mixin.source_environment = "test"  # type: ignore[attr-defined]
+        return mixin
+
+    @pytest.mark.asyncio
+    @patch("honeyhive.tracer.core.context.context.attach")
+    @patch("honeyhive.tracer.core.context.baggage.set_baggage")
+    @patch("honeyhive.tracer.core.context.context.get_current")
+    @patch("honeyhive.tracer.core.context.safe_log")
+    async def test_acreate_session_success(
+        self,
+        mock_safe_log: Mock,
+        mock_get_current: Mock,
+        mock_set_baggage: Mock,
+        mock_attach: Mock,
+        context_mixin: MockTracerContextMixin,
+    ) -> None:
+        """Test successful async session creation with baggage."""
+        # Arrange
+        mock_session_api = Mock()
+        mock_response = Mock()
+        mock_response.session_id = "async-session-789"
+
+        async def mock_create(*args: Any, **kwargs: Any) -> Mock:
+            return mock_response
+
+        mock_session_api.create_session_from_dict_async = mock_create
+        context_mixin.session_api = mock_session_api
+
+        mock_current_ctx = Mock()
+        mock_new_ctx = Mock()
+        mock_get_current.return_value = mock_current_ctx
+        mock_set_baggage.return_value = mock_new_ctx
+
+        # Act
+        result = await context_mixin.acreate_session(
+            session_name="async-test-session",
+            inputs={"query": "async test"},
+        )
+
+        # Assert
+        assert result == "async-session-789"
+        mock_set_baggage.assert_called_once_with(
+            "session_id", "async-session-789", mock_current_ctx
+        )
+        mock_attach.assert_called_once_with(mock_new_ctx)
+
+    @pytest.mark.asyncio
+    @patch("honeyhive.tracer.core.context.safe_log")
+    async def test_acreate_session_no_session_api(
+        self, mock_safe_log: Mock, context_mixin: MockTracerContextMixin
+    ) -> None:
+        """Test acreate_session without session API."""
+        # Arrange
+        context_mixin.session_api = None
+
+        # Act
+        result = await context_mixin.acreate_session(session_name="test-session")
+
+        # Assert
+        assert result is None
+        mock_safe_log.assert_called_once_with(
+            context_mixin, "warning", "No session API available for session creation"
+        )
+
+
+class TestWithSession:
+    """Test suite for with_session context manager."""
+
+    @pytest.fixture
+    def context_mixin(self) -> MockTracerContextMixin:
+        """Create a mock TracerContextMixin instance for testing."""
+        mixin = MockTracerContextMixin()
+        mixin.project_name = "test-project"  # type: ignore[attr-defined]
+        mixin.source_environment = "test"  # type: ignore[attr-defined]
+        return mixin
+
+    def test_with_session_yields_session_id(
+        self, context_mixin: MockTracerContextMixin
+    ) -> None:
+        """Test that with_session yields the session_id."""
+        # Arrange
+        with patch.object(
+            context_mixin, "create_session", return_value="ctx-session-123"
+        ) as mock_create:
+            # Act
+            with context_mixin.with_session(
+                session_name="ctx-test",
+                inputs={"query": "test"},
+            ) as session_id:
+                # Assert
+                assert session_id == "ctx-session-123"
+                mock_create.assert_called_once_with(
+                    session_name="ctx-test",
+                    inputs={"query": "test"},
+                    metadata=None,
+                    user_properties=None,
+                    source=None,
+                )
+
+    def test_with_session_handles_none_session_id(
+        self, context_mixin: MockTracerContextMixin
+    ) -> None:
+        """Test with_session when create_session returns None."""
+        # Arrange
+        with patch.object(context_mixin, "create_session", return_value=None):
+            # Act
+            with context_mixin.with_session(
+                session_name="failing-session"
+            ) as session_id:
+                # Assert
+                assert session_id is None
+
+
 class TestPrivateHelperMethods:
     """Test suite for private helper methods."""
 
@@ -653,37 +940,46 @@ class TestPrivateHelperMethods:
             context_mixin, "debug", "No session ID available for enrichment"
         )
 
-    def test_get_session_id_for_enrichment_from_instance(
-        self, context_mixin: MockTracerContextMixin
+    @patch("honeyhive.tracer.core.context.get_current_baggage")
+    def test_get_session_id_for_enrichment_from_instance_fallback(
+        self, mock_get_baggage: Mock, context_mixin: MockTracerContextMixin
     ) -> None:
-        """Test getting session ID from instance variable."""
+        """Test getting session ID from instance when baggage is empty.
+
+        Priority: baggage first, then instance (fallback for backwards compat).
+        """
         # Arrange
         context_mixin._session_id = "instance-session-789"
+        mock_get_baggage.return_value = {}  # Empty baggage
 
         # Act
         result = context_mixin._get_session_id_for_enrichment_dynamically()
 
-        # Assert
+        # Assert - Should fall back to instance session_id
         assert result == "instance-session-789"
 
     @patch("honeyhive.tracer.core.context.get_current_baggage")
     @patch("honeyhive.tracer.core.context.safe_log")
-    def test_get_session_id_for_enrichment_from_baggage(
+    def test_get_session_id_for_enrichment_from_baggage_priority(
         self,
         mock_safe_log: Mock,
         mock_get_baggage: Mock,
         context_mixin: MockTracerContextMixin,
     ) -> None:
-        """Test getting session ID from baggage."""
-        # Arrange
-        context_mixin._session_id = None
-        mock_get_baggage.return_value = {"session_id": "baggage-session-456"}
+        """Test that baggage session_id takes priority over instance.
+
+        This is critical for multi-session handling - baggage is request-scoped
+        while instance session_id is shared across all requests.
+        """
+        # Arrange - BOTH baggage and instance have session_id
+        context_mixin._session_id = "instance-session-should-be-ignored"
+        mock_get_baggage.return_value = {"session_id": "baggage-session-priority"}
 
         # Act
         result = context_mixin._get_session_id_for_enrichment_dynamically()
 
-        # Assert
-        assert result == "baggage-session-456"
+        # Assert - Baggage takes priority (request-scoped)
+        assert result == "baggage-session-priority"
         mock_safe_log.assert_not_called()
 
     @patch("honeyhive.tracer.core.context.get_current_baggage")

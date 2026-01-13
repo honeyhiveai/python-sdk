@@ -213,6 +213,7 @@ class TestOTLPConfigInitialization:
             "HH_OTLP_ENABLED": "false",
             "HH_OTLP_ENDPOINT": "https://env.endpoint.com",
             "HH_OTLP_HEADERS": '{"X-API-Key": "secret"}',
+            "HH_OTLP_PROTOCOL": "http/json",
             "HH_BATCH_SIZE": "300",
             "HH_FLUSH_INTERVAL": "2.5",
             "HH_MAX_EXPORT_BATCH_SIZE": "2048",
@@ -225,6 +226,7 @@ class TestOTLPConfigInitialization:
             assert config.otlp_enabled is False
             assert config.otlp_endpoint == "https://env.endpoint.com"
             assert config.otlp_headers == {"X-API-Key": "secret"}
+            assert config.otlp_protocol == "http/json"  # From HH_OTLP_PROTOCOL env var
             assert config.batch_size == 300
             assert config.flush_interval == 2.5
             assert config.max_export_batch_size == 2048
@@ -685,3 +687,23 @@ class TestOTLPConfigEdgeCases:
         # The actual case insensitivity is handled by Pydantic's settings
         config = OTLPConfig()
         assert config.model_config["case_sensitive"] is False
+
+    def test_otlp_protocol_from_environment(self) -> None:
+        """Test otlp_protocol can be set from environment variables."""
+        with patch.dict(os.environ, {"HH_OTLP_PROTOCOL": "http/json"}):
+            config = OTLPConfig()
+            assert config.otlp_protocol == "http/json"
+
+        with patch.dict(os.environ, {"OTEL_EXPORTER_OTLP_PROTOCOL": "http/json"}):
+            config = OTLPConfig()
+            assert config.otlp_protocol == "http/json"
+
+        with patch.dict(os.environ, {}, clear=True):
+            config = OTLPConfig()
+            assert config.otlp_protocol == "http/protobuf"  # Default
+
+    def test_otlp_protocol_parameter_override(self) -> None:
+        """Test that otlp_protocol parameter overrides environment variable."""
+        with patch.dict(os.environ, {"HH_OTLP_PROTOCOL": "http/json"}):
+            config = OTLPConfig(otlp_protocol="http/protobuf")
+            assert config.otlp_protocol == "http/protobuf"

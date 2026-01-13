@@ -405,6 +405,57 @@ HTTP Configuration
    
    **Range**: 1 - 100
 
+OTLP Configuration
+~~~~~~~~~~~~~~~~~~
+
+.. py:data:: otlp_enabled
+   :type: bool
+   :value: True
+
+   **Description**: Enable OTLP export to HoneyHive backend
+   
+   **Environment Variable**: ``HH_OTLP_ENABLED``
+   
+   **Default**: ``True``
+   
+   **Usage**: Set to ``False`` to disable OTLP export (useful for testing)
+
+.. py:data:: otlp_endpoint
+   :type: Optional[str]
+   :value: None
+
+   **Description**: Custom OTLP endpoint URL
+   
+   **Environment Variable**: ``HH_OTLP_ENDPOINT``
+   
+   **Default**: Auto-configured based on ``server_url``
+   
+   **Example**: ``"https://custom.honeyhive.ai/opentelemetry/v1/traces"``
+
+.. py:data:: otlp_protocol
+   :type: str
+   :value: "http/protobuf"
+
+   **Description**: OTLP protocol format for span export
+   
+   **Environment Variables**: ``HH_OTLP_PROTOCOL`` or ``OTEL_EXPORTER_OTLP_PROTOCOL``
+   
+   **Valid Values**:
+   - ``"http/protobuf"`` (default) - Binary Protobuf format
+   - ``"http/json"`` - JSON format for debugging and backend type conversion testing
+   
+   **Example**: Set ``HH_OTLP_PROTOCOL=http/json`` to use JSON format
+
+.. py:data:: otlp_headers
+   :type: Optional[Dict[str, Any]]
+   :value: None
+
+   **Description**: Additional HTTP headers for OTLP export requests
+   
+   **Environment Variable**: ``HH_OTLP_HEADERS`` (JSON string)
+   
+   **Example**: ``{"X-Custom-Header": "value"}``
+
 Tracing Configuration
 ~~~~~~~~~~~~~~~~~~~~~
 

@@ -19,7 +19,10 @@ import requests
 from opentelemetry.sdk.trace import ReadableSpan
 from opentelemetry.sdk.trace.export import SpanExportResult
 
-from honeyhive.tracer.processing.otlp_exporter import HoneyHiveOTLPExporter
+from honeyhive.tracer.processing.otlp_exporter import (
+    HoneyHiveOTLPExporter,
+    OTLPJSONExporter,
+)
 from honeyhive.tracer.processing.otlp_session import OTLPSessionConfig
 
 
@@ -108,6 +111,8 @@ class TestHoneyHiveOTLPExporterInitialization:
         assert exporter.tracer_instance is None
         assert exporter.session_config == mock_config
         assert exporter.use_optimized_session is True
+        assert exporter.protocol == "http/protobuf"
+        assert exporter._use_json is False
         assert exporter._is_shutdown is False
         mock_get_default_config.assert_called_once_with(None)
         mock_otlp_exporter.assert_called_once()
@@ -140,16 +145,22 @@ class TestHoneyHiveOTLPExporterInitialization:
             tracer_instance=mock_tracer,
             session_config=mock_otlp_session_config,
             use_optimized_session=True,
+            endpoint="https://api.honeyhive.ai/opentelemetry/v1/traces",
         )
 
         # Assert
         assert exporter.tracer_instance == mock_tracer
         assert exporter.session_config == mock_otlp_session_config
         assert exporter._session == mock_session
+        assert exporter.protocol == "http/protobuf"
+        assert exporter._use_json is False
         mock_create_session.assert_called_once_with(
             config=mock_otlp_session_config, tracer_instance=mock_tracer
         )
-        mock_otlp_exporter.assert_called_once_with(session=mock_session)
+        mock_otlp_exporter.assert_called_once_with(
+            session=mock_session,
+            endpoint="https://api.honeyhive.ai/opentelemetry/v1/traces",
+        )
 
     @patch("honeyhive.tracer.processing.otlp_exporter.OTLPSpanExporter")
     @patch("honeyhive.tracer.processing.otlp_exporter.create_optimized_otlp_session")
@@ -835,3 +846,178 @@ class TestHoneyHiveOTLPExporterEdgeCases:
                 result["session_config"] is not None
             )  # Production provides default config
             assert "pools" in result
+
+
+class TestOTLPJSONExporter:
+    """Test OTLP JSON exporter functionality."""
+
+    @patch("honeyhive.tracer.processing.otlp_exporter.requests.Session")
+    def test_json_exporter_initialization(self, mock_session_class: Mock) -> None:
+        """Test JSON exporter initialization.
+
+        Args:
+            mock_session_class: Mock for requests.Session class
+        """
+        # Arrange
+        mock_session = Mock()
+        mock_session_class.return_value = mock_session
+
+        # Act
+        exporter = OTLPJSONExporter(
+            "https://api.honeyhive.ai/opentelemetry/v1/traces",
+            headers={"Authorization": "Bearer test"},
+            timeout=30.0,
+        )
+
+        # Assert
+        assert exporter.endpoint == "https://api.honeyhive.ai/opentelemetry/v1/traces"
+        assert exporter.headers["Content-Type"] == "application/json"
+        assert exporter.headers["Authorization"] == "Bearer test"
+        assert exporter.timeout == 30.0
+        assert exporter._is_shutdown is False
+
+    @patch("honeyhive.tracer.processing.otlp_exporter.requests.Session")
+    def test_json_exporter_export_success(
+        self,
+        mock_session_class: Mock,
+        mock_tracer: Mock,
+    ) -> None:
+        """Test successful JSON export.
+
+        Args:
+            mock_session_class: Mock for requests.Session
+            mock_tracer: Mock tracer instance
+        """
+        # Arrange
+        mock_session = Mock()
+        mock_response = Mock()
+        mock_response.status_code = 200
+        mock_response.text = ""
+        mock_session.post.return_value = mock_response
+        mock_session_class.return_value = mock_session
+
+        # Create properly structured mock spans
+        span = Mock(spec=ReadableSpan)
+        span.name = "test_span"
+        span.context = Mock()
+        span.context.trace_id = 0x1234567890ABCDEF1234567890ABCDEF
+        span.context.span_id = 0x1234567890ABCDEF
+        span.parent = None
+        span.kind = Mock()
+        span.kind.name = "INTERNAL"
+        span.start_time = 1000000000
+        span.end_time = 2000000000
+        span.status = Mock()
+        span.status.status_code = Mock()
+        span.status.status_code.name = "OK"
+        span.status.description = None
+        span.attributes = {}
+        span.events = []
+        span.resource = Mock()
+        span.resource.attributes = {}
+        span.instrumentation_scope = None
+
+        exporter = OTLPJSONExporter(
+            "https://api.honeyhive.ai/opentelemetry/v1/traces",
+            tracer_instance=mock_tracer,
+        )
+
+        # Act
+        result = exporter.export([span])
+
+        # Assert
+        assert result == SpanExportResult.SUCCESS
+        mock_session.post.assert_called_once()
+        assert (
+            mock_session.post.call_args[1]["headers"]["Content-Type"]
+            == "application/json"
+        )
+
+    @patch("honeyhive.tracer.processing.otlp_exporter.requests.Session")
+    def test_json_exporter_export_empty_spans(
+        self, mock_session_class: Mock, mock_tracer: Mock
+    ) -> None:
+        """Test JSON export with empty spans.
+
+        Args:
+            mock_session_class: Mock for requests.Session
+            mock_tracer: Mock tracer instance
+        """
+        # Arrange
+        mock_session = Mock()
+        mock_session_class.return_value = mock_session
+
+        exporter = OTLPJSONExporter(
+            endpoint="https://api.honeyhive.ai/opentelemetry/v1/traces",
+            tracer_instance=mock_tracer,
+        )
+
+        # Act
+        result = exporter.export([])
+
+        # Assert
+        assert result == SpanExportResult.SUCCESS
+        mock_session.post.assert_not_called()
+
+
+class TestHoneyHiveOTLPExporterProtocol:
+    """Test HoneyHive OTLP exporter protocol selection."""
+
+    @patch("honeyhive.tracer.processing.otlp_exporter.OTLPJSONExporter")
+    def test_initialization_with_json_protocol(
+        self, mock_json_exporter: Mock, mock_tracer: Mock
+    ) -> None:
+        """Test initialization with JSON protocol.
+
+        Args:
+            mock_json_exporter: Mock for OTLPJSONExporter class
+            mock_tracer: Mock tracer instance
+        """
+        # Arrange
+        mock_exporter_instance = Mock()
+        mock_json_exporter.return_value = mock_exporter_instance
+
+        # Act
+        exporter = HoneyHiveOTLPExporter(
+            tracer_instance=mock_tracer,
+            protocol="http/json",
+            endpoint="https://api.honeyhive.ai/opentelemetry/v1/traces",
+            headers={"Authorization": "Bearer test"},
+        )
+
+        # Assert
+        assert exporter.protocol == "http/json"
+        assert exporter._use_json is True
+        mock_json_exporter.assert_called_once()
+        call_kwargs = mock_json_exporter.call_args[1]
+        assert (
+            call_kwargs["endpoint"]
+            == "https://api.honeyhive.ai/opentelemetry/v1/traces"
+        )
+        assert call_kwargs["headers"]["Authorization"] == "Bearer test"
+
+    @patch("honeyhive.tracer.processing.otlp_exporter.OTLPSpanExporter")
+    def test_initialization_with_protobuf_protocol(
+        self, mock_otlp_exporter: Mock, mock_tracer: Mock
+    ) -> None:
+        """Test initialization with Protobuf protocol (default).
+
+        Args:
+            mock_otlp_exporter: Mock for OTLPSpanExporter class
+            mock_tracer: Mock tracer instance
+        """
+        # Arrange
+        mock_exporter_instance = Mock()
+        mock_otlp_exporter.return_value = mock_exporter_instance
+
+        # Act
+        exporter = HoneyHiveOTLPExporter(
+            tracer_instance=mock_tracer,
+            protocol="http/protobuf",
+            endpoint="https://api.honeyhive.ai/opentelemetry/v1/traces",
+        )
+
+        # Assert
+        assert exporter.protocol == "http/protobuf"
+        assert exporter._use_json is False
+        mock_otlp_exporter.assert_called_once()

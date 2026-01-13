@@ -3,6 +3,9 @@ API Client Classes
 
 This section documents all API client classes for interacting with the HoneyHive platform.
 
+.. note::
+   **For tracing and observability**, use :doc:`tracer` (``HoneyHiveTracer``). This page documents the ``HoneyHive`` API client for managing platform resources (datasets, projects, etc.) - typically used in scripts and automation.
+
 .. contents:: Table of Contents
    :local:
    :depth: 2
@@ -149,6 +152,51 @@ Example
    
    # Get specific dataset
    dataset = client.datasets.get_dataset(dataset_id="dataset-id")
+
+DatapointsAPI
+-------------
+
+API client for datapoint operations. Datapoints are individual records within datasets.
+
+.. autoclass:: honeyhive.api.datapoints.DatapointsAPI
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
+Example
+~~~~~~~
+
+.. code-block:: python
+
+   from honeyhive import HoneyHive as Client
+   from honeyhive.models import CreateDatapointRequest
+   
+   client = honeyhive.HoneyHive(api_key="your-api-key")
+   
+   # Create a datapoint
+   datapoint = client.datapoints.create_datapoint(
+       CreateDatapointRequest(
+           inputs={"query": "What is machine learning?"},
+           ground_truth="Machine learning is a subset of AI...",
+           linked_datasets=["dataset-id"]
+       )
+   )
+   
+   # List datapoints for a dataset
+   datapoints = client.datapoints.list_datapoints(dataset_id="dataset-id")
+   
+   # Get specific datapoint
+   datapoint = client.datapoints.get_datapoint(datapoint_id="datapoint-id")
+
+ConfigurationsAPI
+-----------------
+
+API client for configuration operations.
+
+.. autoclass:: honeyhive.api.configurations.ConfigurationsAPI
+   :members:
+   :undoc-members:
+   :show-inheritance:
 
 MetricsAPI
 ----------

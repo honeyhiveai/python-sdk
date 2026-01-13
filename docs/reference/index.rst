@@ -66,6 +66,7 @@ Core Capabilities
 - **Graceful Degradation**: SDK never crashes host application, continues operation on failures
 - **Batch Processing**: Configurable span batching for optimal performance
 - **OTLP Performance Tuning**: Environment variables for batch size and flush interval optimization
+- **OTLP JSON Format**: Support for HTTP/JSON export format via ``HH_OTLP_PROTOCOL=http/json``
 - **Production Optimization**: ``HH_BATCH_SIZE`` and ``HH_FLUSH_INTERVAL`` for fine-tuned performance control
 
 **Development & Quality**:
@@ -110,24 +111,39 @@ Main Components
 Core API
 --------
 
-Client Classes
-~~~~~~~~~~~~~~
+Tracing
+~~~~~~~
 
 .. toctree::
    :maxdepth: 1
 
-   api/client
    api/tracer
+   api/decorators
    api/tracer-architecture
    api/config-models
 
-Decorators & Functions
-~~~~~~~~~~~~~~~~~~~~~~
+Data & Platform APIs
+~~~~~~~~~~~~~~~~~~~~
+
+APIs for managing datasets, datapoints, projects, and other platform resources.
 
 .. toctree::
    :maxdepth: 1
 
-   api/decorators
+   api/client-apis
+   api/client
+
+Models & Errors
+~~~~~~~~~~~~~~~
+
+Data models, request/response classes, and error handling.
+
+.. toctree::
+   :maxdepth: 1
+
+   api/models-complete
+   api/errors
+   api/evaluators-complete
 
 Configuration
 ~~~~~~~~~~~~~
@@ -192,6 +208,16 @@ Command Line Interface
    cli/index
    cli/commands
    cli/options
+
+Utilities
+~~~~~~~~~
+
+Helper classes for caching, connection pooling, and logging.
+
+.. toctree::
+   :maxdepth: 1
+
+   api/utilities
 
 Feature Specifications
 ~~~~~~~~~~~~~~~~~~~~~~
@@ -373,6 +399,7 @@ All configuration supports the ``HH_*`` prefix pattern:
 - **Authentication**: ``HH_API_KEY``, ``HH_SOURCE``
 - **Operational**: ``HH_TEST_MODE``, ``HH_DEBUG_MODE``, ``HH_DISABLE_TRACING``
 - **Performance**: ``HH_TIMEOUT``, ``HH_MAX_CONNECTIONS``, ``HH_RATE_LIMIT_*``, ``HH_BATCH_SIZE``, ``HH_FLUSH_INTERVAL``
+- **OTLP**: ``HH_OTLP_ENABLED``, ``HH_OTLP_ENDPOINT``, ``HH_OTLP_PROTOCOL``, ``HH_OTLP_HEADERS``
 - **Security**: ``HH_SSL_*``, ``HH_PROXY_*``
 
 **Configuration Hierarchy**:

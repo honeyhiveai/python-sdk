@@ -1,5 +1,40 @@
 ## [Unreleased]
 
+### Added
+
+- **✨ OTLP: HTTP/JSON export format support**
+  - Added `OTLPJSONExporter` class for exporting spans in JSON format over HTTP
+  - Added `otlp_protocol` configuration option to `OTLPConfig` (supports `"http/protobuf"` or `"http/json"`)
+  - `HoneyHiveOTLPExporter` now supports protocol selection via `protocol` parameter
+  - Protocol can be set via environment variable `HH_OTLP_PROTOCOL` or `OTEL_EXPORTER_OTLP_PROTOCOL`
+  - JSON exporter sends spans with `Content-Type: application/json` header
+  - All attribute values are serialized as strings to allow backend type conversion testing
+  - Files: `src/honeyhive/tracer/processing/otlp_exporter.py`, `src/honeyhive/config/models/otlp.py`, `src/honeyhive/tracer/instrumentation/initialization.py`
+
+- **✨ Experiments: Instrumentors support for evaluate()**
+  - `honeyhive.experiments.evaluate()` and `run_experiment()` now accept an `instrumentors` parameter
+  - Pass factory functions (e.g., `[lambda: GoogleADKInstrumentor()]`) to automatically instrument third-party libraries
+  - Each datapoint gets its own tracer and instrumentor instance, ensuring traces are routed correctly to the right session
+  - Instrumentors are automatically configured with the datapoint's tracer provider via `instrumentor.instrument(tracer_provider=tracer.provider)`
+  - Supports any OpenInference-compatible instrumentor (OpenAI, Anthropic, Google ADK, LangChain, etc.)
+  - Added example script `examples/evaluate_with_adk_instrumentor.py` demonstrating Google ADK agent evaluation
+  - Files: `src/honeyhive/experiments/core.py`, `examples/evaluate_with_adk_instrumentor.py`
+
+- **✨ Experiments: Async function support for evaluate()**
+  - `honeyhive.experiments.evaluate()` now accepts async functions for the `function` parameter
+  - Async functions are automatically detected using `asyncio.iscoroutinefunction()` and executed with `asyncio.run()` inside worker threads
+  - Enables use of async LLM clients and other async operations in experiment functions without changing the `evaluate()` call site
+  - Both sync and async functions work seamlessly with the tracer parameter pattern
+  - Files: `src/honeyhive/experiments/core.py`
+
+- **✨ Experiments: Typed Pydantic models for experiment results**
+  - Added `MetricDetail` model for individual metric results with fields: `metric_name`, `metric_type`, `event_name`, `event_type`, `aggregate`, `values`, `datapoints`
+  - Added `DatapointResult` model for per-datapoint results with fields: `datapoint_id`, `session_id`, `passed`, `metrics`
+  - Added `DatapointMetric` model for individual metric values within datapoints
+  - Added `MetricDatapoints` model for tracking passed/failed datapoint IDs per metric
+  - All models include proper type hints and Pydantic validation
+  - Files: `src/honeyhive/experiments/models.py`
+
 ### Changed
 
 - **🔧 Developer Experience: Streamlined Pre-commit Hooks & Added Makefile**
@@ -12,6 +47,24 @@
   - Added `comparison_output/` to `.gitignore` for generated SDK artifacts
   - Fixed Nix environment PYTHONPATH for proper package resolution
   - Files: `.pre-commit-config.yaml`, `Makefile`, `pyproject.toml`, `.gitignore`, `flake.nix`, `scripts/validate-docs-navigation.sh`
+
+### Fixed
+
+- **🐛 Experiments: Fixed metrics table printing empty values after evaluate()**
+  - Root cause: SDK expected metrics as dynamic top-level keys but backend returns them in a `details` array format per OpenAPI spec
+  - Updated `AggregatedMetrics` to use `details: List[MetricDetail]` field to match backend response format
+  - Updated `print_table()` to iterate over `details` array and extract `aggregate` values from `MetricDetail` objects
+  - Updated `get_run_result()` to parse datapoints into typed `DatapointResult` objects
+  - Maintains backward compatibility: `get_metric()`, `list_metrics()`, and `get_all_metrics()` support both new `details` array format and legacy `model_extra` format
+  - Added 19 unit tests for typed models and print_table() function
+  - Added integration test `test_experiment_result_models_match_real_api_response` to validate against real API
+  - Files: `src/honeyhive/experiments/models.py`, `src/honeyhive/experiments/results.py`, `tests/unit/test_experiments_models.py`, `tests/integration/test_experiments_integration.py`
+
+- **🐛 Tracing: Fixed enrich_session() requiring explicit metadata parameter**
+  - `enrich_session()` now works correctly even when no parameters (metadata, inputs, outputs, etc.) are explicitly provided
+  - Previously, calling `enrich_session()` without parameters would silently fail due to empty `update_params` check
+  - Fix ensures session enrichment proceeds when a valid session_id is available, regardless of whether enrichment data is provided
+  - Files: `src/honeyhive/tracer/core/context.py`
 
 ## [1.0.0rc5] - 2025-12-03
 

@@ -780,13 +780,38 @@ def _create_otlp_exporter(tracer_instance: Any) -> Optional[Any]:
         # Determine optimal session configuration based on tracer settings
         session_config = _get_optimal_session_config(tracer_instance)
 
+        # Get protocol from config or environment (defaults to http/protobuf)
+        otlp_protocol = (
+            getattr(tracer_instance.config, "otlp_protocol", None)
+            or os.getenv("HH_OTLP_PROTOCOL")
+            or os.getenv("OTEL_EXPORTER_OTLP_PROTOCOL")
+            or "http/protobuf"
+        )
+
+        safe_log(
+            tracer_instance,
+            "info",
+            f"Creating OTLP exporter with protocol: {otlp_protocol}",
+            honeyhive_data={
+                "protocol": otlp_protocol,
+                "endpoint": otlp_endpoint,
+                "config_otlp_protocol": getattr(
+                    tracer_instance.config, "otlp_protocol", None
+                ),
+                "env_HH_OTLP_PROTOCOL": os.getenv("HH_OTLP_PROTOCOL"),
+                "env_OTEL_EXPORTER_OTLP_PROTOCOL": os.getenv(
+                    "OTEL_EXPORTER_OTLP_PROTOCOL"
+                ),
+            },
+        )
+
         # Use custom exporter with optimized connection pooling
         # Use JSON format by default as backend expects application/json
         otlp_exporter = HoneyHiveOTLPExporter(
             tracer_instance=tracer_instance,
             session_config=session_config,
             use_optimized_session=True,
-            protocol="http/json",  # Use JSON format for OTLP export
+protocol="http/json",  # Use JSON format for OTLP export
             endpoint=otlp_endpoint,
             headers={
                 "Authorization": f"Bearer {tracer_instance.config.api_key}",
@@ -1059,7 +1084,10 @@ def _initialize_session_management(tracer_instance: Any) -> None:
                 safe_log(
                     tracer_instance,
                     "warning",
-                    f"Invalid session_id format: {e}. Generated new UUID for operation.",
+                    (
+                        f"Invalid session_id format: {e}. "
+                        "Generated new UUID for operation."
+                    ),
                     honeyhive_data={
                         "session_id": tracer_instance.session_id,
                         "error_type": type(e).__name__,
@@ -1303,8 +1331,8 @@ def _create_new_session(tracer_instance: Any) -> None:
             # Otherwise use the session_id from the response
             provided_session_id = tracer_instance.session_id
 
-            # Use provided session_id if it matches response (session was created with it)
-            # Otherwise use response session_id (new session was created)
+            # Use provided session_id if it matches response (session was created
+            # with it). Otherwise use response session_id (new session was created)
             if (
                 provided_session_id
                 and provided_session_id.lower() == response_session_id.lower()

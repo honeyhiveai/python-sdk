@@ -539,6 +539,99 @@ ExperimentConfig
        experiment_metadata={"model": "gpt-4", "temperature": 0.7}
    )
 
+OTLPConfig
+----------
+
+.. autoclass:: OTLPConfig
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
+**OTLP (OpenTelemetry Protocol) export configuration parameters.**
+
+**OTLP Fields:**
+
+.. py:attribute:: otlp_enabled
+   :type: bool
+   :value: True
+
+   Enable OTLP export.
+   
+   **Environment Variable**: ``HH_OTLP_ENABLED``
+
+.. py:attribute:: otlp_endpoint
+   :type: Optional[str]
+   :value: None
+
+   Custom OTLP endpoint URL.
+   
+   **Environment Variable**: ``HH_OTLP_ENDPOINT``
+
+.. py:attribute:: otlp_headers
+   :type: Optional[Dict[str, Any]]
+   :value: None
+
+   OTLP headers in JSON format.
+   
+   **Environment Variable**: ``HH_OTLP_HEADERS`` (JSON string)
+
+.. py:attribute:: otlp_protocol
+   :type: str
+   :value: "http/protobuf"
+
+   OTLP protocol format: ``"http/protobuf"`` (default) or ``"http/json"``.
+   
+   **Environment Variables**: ``HH_OTLP_PROTOCOL`` or ``OTEL_EXPORTER_OTLP_PROTOCOL``
+
+.. py:attribute:: batch_size
+   :type: int
+   :value: 100
+
+   OTLP batch size for performance optimization.
+   
+   **Environment Variable**: ``HH_BATCH_SIZE``
+
+.. py:attribute:: flush_interval
+   :type: float
+   :value: 5.0
+
+   OTLP flush interval in seconds.
+   
+   **Environment Variable**: ``HH_FLUSH_INTERVAL``
+
+.. py:attribute:: max_export_batch_size
+   :type: int
+   :value: 512
+
+   Maximum export batch size.
+   
+   **Environment Variable**: ``HH_MAX_EXPORT_BATCH_SIZE``
+
+.. py:attribute:: export_timeout
+   :type: float
+   :value: 30.0
+
+   Export timeout in seconds.
+   
+   **Environment Variable**: ``HH_EXPORT_TIMEOUT``
+
+**Example Usage:**
+
+.. code-block:: python
+
+   from honeyhive.config.models import OTLPConfig
+   
+   # Use JSON format for OTLP export
+   otlp_config = OTLPConfig(
+       otlp_protocol="http/json",
+       batch_size=200,
+       flush_interval=1.0
+   )
+   
+   # Or via environment variable
+   # export HH_OTLP_PROTOCOL=http/json
+   otlp_config = OTLPConfig()  # Loads from HH_OTLP_PROTOCOL
+
 Environment Variable Integration
 ================================
 
@@ -551,6 +644,7 @@ All configuration models support **automatic environment variable loading** usin
 - **Performance**: ``HH_TIMEOUT``, ``HH_MAX_CONNECTIONS``, ``HH_RATE_LIMIT_*``
 - **Caching**: ``HH_CACHE_ENABLED``, ``HH_CACHE_MAX_SIZE``, ``HH_CACHE_TTL``
 - **Experiments**: ``HH_EXPERIMENT_ID``, ``HH_EXPERIMENT_NAME``
+- **OTLP**: ``HH_OTLP_ENABLED``, ``HH_OTLP_ENDPOINT``, ``HH_OTLP_PROTOCOL``, ``HH_OTLP_HEADERS``, ``HH_BATCH_SIZE``, ``HH_FLUSH_INTERVAL``
 
 **Priority Order:**
 

@@ -228,6 +228,90 @@ Your function MUST accept a ``datapoint`` parameter, and can optionally accept a
        inputs = datapoint.get("inputs", {})
        return {"output": inputs["query"]}
 
+Can I use async functions with evaluate()?
+------------------------------------------
+
+.. versionadded:: 1.0
+
+   The ``evaluate()`` function now supports async functions.
+
+**Yes! Async functions are fully supported.**
+
+If your application uses async operations (like async LLM clients), you can pass an async function directly to ``evaluate()``. Async functions are automatically detected and executed correctly.
+
+.. code-block:: python
+
+   from typing import Any, Dict
+   from honeyhive.experiments import evaluate
+   import asyncio
+   
+   
+   # Option 1: Basic async function
+   async def my_async_function(datapoint: Dict[str, Any]) -> Dict[str, Any]:
+       """Async evaluation function.
+       
+       Args:
+           datapoint: Dictionary with 'inputs' and 'ground_truth' keys
+       
+       Returns:
+           dict: Your function's output
+       """
+       inputs = datapoint.get("inputs", {})
+       
+       # Use async operations (e.g., async LLM client)
+       result = await async_llm_call(inputs["prompt"])
+       
+       return {"answer": result}
+   
+   
+   # Option 2: Async function with tracer parameter
+   async def my_async_function_with_tracer(
+       datapoint: Dict[str, Any],
+       tracer: HoneyHiveTracer
+   ) -> Dict[str, Any]:
+       """Async evaluation function with tracer access.
+       
+       Args:
+           datapoint: Dictionary with 'inputs' and 'ground_truth' keys
+           tracer: HoneyHiveTracer instance (auto-injected)
+       
+       Returns:
+           dict: Your function's output
+       """
+       inputs = datapoint.get("inputs", {})
+       
+       # Use tracer for enrichment
+       tracer.enrich_session(metadata={"async": True})
+       
+       # Use async operations
+       result = await async_llm_call(inputs["prompt"])
+       
+       return {"answer": result}
+   
+   
+   # Run experiment with async function - works the same as sync!
+   result = evaluate(
+       function=my_async_function,
+       dataset=dataset,
+       api_key="your-api-key",
+       project="your-project",
+       name="Async Experiment v1"
+   )
+
+.. note::
+   **How it works:**
+   
+   - Async functions are automatically detected using ``asyncio.iscoroutinefunction()``
+   - Each datapoint is processed in a separate thread using ``ThreadPoolExecutor``
+   - Async functions are executed with ``asyncio.run()`` inside each worker thread
+   - Both sync and async functions work seamlessly with the optional ``tracer`` parameter
+
+**When to use async functions:**
+
+- When using async LLM clients (e.g., ``openai.AsyncOpenAI``)
+- When making concurrent API calls within your function
+- When your existing application code is already async
+
 How do I use ground_truth from datapoints in my experiments?
 -------------------------------------------------------------
 
@@ -452,6 +536,119 @@ add a ``tracer`` parameter to your function signature:
        """Function without tracer access."""
        inputs = datapoint.get("inputs", {})
        return {"answer": process_query(inputs["query"])}
+
+How do I trace third-party library calls in my evaluation?
+----------------------------------------------------------
+
+.. versionadded:: 1.0
+
+   The ``evaluate()`` function now supports the ``instrumentors`` parameter.
+
+**Use the instrumentors Parameter for Automatic Tracing**
+
+If your evaluation function uses third-party libraries (OpenAI, Anthropic, Google ADK, LangChain, etc.), you can automatically trace their calls by passing instrumentor factory functions:
+
+.. code-block:: python
+
+   from typing import Any, Dict
+   from honeyhive.experiments import evaluate
+   from openinference.instrumentation.openai import OpenAIInstrumentor
+   
+   
+   def my_function(datapoint: Dict[str, Any]) -> Dict[str, Any]:
+       """Evaluation function using OpenAI."""
+       inputs = datapoint.get("inputs", {})
+       
+       # OpenAI calls will be automatically traced
+       client = openai.OpenAI()
+       response = client.chat.completions.create(
+           model="gpt-4",
+           messages=[{"role": "user", "content": inputs["prompt"]}]
+       )
+       
+       return {"answer": response.choices[0].message.content}
+   
+   
+   # Pass instrumentor factories - each datapoint gets its own instance
+   result = evaluate(
+       function=my_function,
+       dataset=dataset,
+       instrumentors=[lambda: OpenAIInstrumentor()],  # Factory function
+       name="openai-traced-experiment"
+   )
+
+.. important::
+   **Why Factory Functions?**
+   
+   The ``instrumentors`` parameter accepts **factory functions** (callables that return instrumentor instances), not instrumentor instances directly. This ensures each datapoint gets its own isolated instrumentor instance, preventing trace routing issues in concurrent processing.
+   
+   - **Correct**: ``instrumentors=[lambda: OpenAIInstrumentor()]``
+   - **Incorrect**: ``instrumentors=[OpenAIInstrumentor()]``
+
+**Multiple Instrumentors:**
+
+.. code-block:: python
+
+   from openinference.instrumentation.openai import OpenAIInstrumentor
+   from openinference.instrumentation.langchain import LangChainInstrumentor
+   
+   result = evaluate(
+       function=my_function,
+       dataset=dataset,
+       instrumentors=[
+           lambda: OpenAIInstrumentor(),
+           lambda: LangChainInstrumentor(),
+       ],
+       name="multi-instrumented-experiment"
+   )
+
+**Google ADK Example:**
+
+.. code-block:: python
+
+   from openinference.instrumentation.google_adk import GoogleADKInstrumentor
+   from google.adk.agents import Agent
+   from google.adk.runners import Runner
+   
+   
+   async def run_adk_agent(datapoint: Dict[str, Any]) -> Dict[str, Any]:
+       """Run Google ADK agent - calls are automatically traced."""
+       inputs = datapoint.get("inputs", {})
+       
+       agent = Agent(name="my_agent", model="gemini-2.0-flash", ...)
+       runner = Runner(agent=agent, ...)
+       
+       # ADK agent calls will be traced
+       response = await runner.run_async(...)
+       
+       return {"response": response}
+   
+   
+   result = evaluate(
+       function=run_adk_agent,
+       dataset=dataset,
+       instrumentors=[lambda: GoogleADKInstrumentor()],
+       name="adk-agent-evaluation"
+   )
+
+.. note::
+   **How it works:**
+   
+   - Each datapoint gets its own tracer instance (multi-instance architecture)
+   - For each datapoint, the SDK creates fresh instrumentor instances from your factories
+   - Instrumentors are configured with the datapoint's tracer provider via ``instrumentor.instrument(tracer_provider=tracer.provider)``
+   - This ensures all traces from that datapoint are routed to the correct session
+
+**Supported Instrumentors:**
+
+Any OpenInference-compatible instrumentor works with this pattern:
+
+- ``openinference.instrumentation.openai.OpenAIInstrumentor``
+- ``openinference.instrumentation.anthropic.AnthropicInstrumentor``
+- ``openinference.instrumentation.google_adk.GoogleADKInstrumentor``
+- ``openinference.instrumentation.langchain.LangChainInstrumentor``
+- ``openinference.instrumentation.llama_index.LlamaIndexInstrumentor``
+- And many more...
 
 My experiments are too slow on large datasets
 ---------------------------------------------
