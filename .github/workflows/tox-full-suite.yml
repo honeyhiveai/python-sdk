@@ -80,11 +80,10 @@ permissions:
   actions: read
 
 env:
-  # Test environment variables
-  HH_API_KEY: test-api-key-12345
+  # Test environment variables (HH_API_KEY comes from secrets, not hardcoded)
   HH_API_URL: https://api.honeyhive.ai
   HH_SOURCE: github-actions
-  HH_TEST_MODE: true
+  HH_TEST_MODE: false
   HH_DEBUG_MODE: true
   HH_DISABLE_TRACING: false
   HH_DISABLE_HTTP_TRACING: false
