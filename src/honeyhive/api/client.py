@@ -3,10 +3,11 @@
 This module provides the main HoneyHive client with an ergonomic interface
 wrapping the auto-generated API code.
 
-Usage:
+Usage::
+
     from honeyhive.api import HoneyHive
 
-    client = HoneyHive(api_key="hh_...")
+    client = HoneyHive(api_key="your-api-key")
 
     # Sync usage
     configs = client.configurations.list(project="my-project")
@@ -1037,8 +1038,9 @@ class HoneyHive:
     Provides an ergonomic interface to the HoneyHive API with both
     sync and async methods.
 
-    Usage:
-        client = HoneyHive(api_key="hh_...")
+    Example::
+
+        client = HoneyHive(api_key="your-api-key")
 
         # Sync
         configs = client.configurations.list(project="my-project")
@@ -1081,7 +1083,7 @@ class HoneyHive:
         """Initialize the HoneyHive client.
 
         Args:
-            api_key: HoneyHive API key (typically starts with 'hh_').
+            api_key: HoneyHive API key (typically starts with ``hh_``).
                      Falls back to HH_API_KEY environment variable.
             base_url: API base URL for Data Plane/ingestion.
                       Falls back to HH_API_URL env var, then https://api.honeyhive.ai.

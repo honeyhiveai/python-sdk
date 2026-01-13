@@ -7,6 +7,36 @@ Usage:
     configs = client.configurations.list()
 """
 
-from .client import HoneyHive
+from .client import (
+    ConfigurationsAPI,
+    DatapointsAPI,
+    DatasetsAPI,
+    EventsAPI,
+    ExperimentsAPI,
+    HoneyHive,
+    MetricsAPI,
+    ProjectsAPI,
+    SessionsAPI,
+    ToolsAPI,
+)
 
-__all__ = ["HoneyHive"]
+# Backwards compatible aliases
+EvaluationsAPI = ExperimentsAPI
+SessionAPI = SessionsAPI
+
+__all__ = [
+    "HoneyHive",
+    # API classes
+    "ConfigurationsAPI",
+    "DatapointsAPI",
+    "DatasetsAPI",
+    "EventsAPI",
+    "ExperimentsAPI",
+    "MetricsAPI",
+    "ProjectsAPI",
+    "SessionsAPI",
+    "ToolsAPI",
+    # Backwards compatible aliases
+    "EvaluationsAPI",
+    "SessionAPI",
+]
