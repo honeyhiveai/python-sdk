@@ -16,14 +16,14 @@ Requirements:
 """
 
 import os
-from typing import Dict, Any
-
-# Import HoneyHive components
-from honeyhive import HoneyHiveTracer, trace, enrich_span
-from honeyhive.models import EventType
+from typing import Any, Dict
 
 # Import Google AI SDK
 import google.generativeai as genai
+
+# Import HoneyHive components
+from honeyhive import HoneyHiveTracer, enrich_span, trace
+from honeyhive.models import EventType
 
 # NOTE: This import currently fails due to upstream issue
 # from opentelemetry.instrumentation.google_generativeai import GoogleGenerativeAIInstrumentor

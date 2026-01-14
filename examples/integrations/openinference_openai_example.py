@@ -7,10 +7,12 @@ Zero code changes to your existing OpenAI usage!
 """
 
 import os
+
+import openai
+from openinference.instrumentation.openai import OpenAIInstrumentor
+
 from honeyhive import HoneyHiveTracer
 from honeyhive.config.models import TracerConfig
-from openinference.instrumentation.openai import OpenAIInstrumentor
-import openai
 
 
 def main():
@@ -23,10 +25,10 @@ def main():
         api_key=os.getenv("HH_API_KEY", "your-honeyhive-key"),
         project=os.getenv("HH_PROJECT", "openai-simple-demo"),
         source=__file__.split("/")[-1],  # Use script name for visibility
-        verbose=True
+        verbose=True,
     )
     print("✓ HoneyHive tracer initialized with .init() method")
-    
+
     # Alternative: Modern config approach (new pattern)
     # config = TracerConfig(
     #     api_key=os.getenv("HH_API_KEY", "your-honeyhive-key"),

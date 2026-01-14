@@ -3,12 +3,14 @@
 This service initiates the distributed trace and propagates context to downstream services.
 """
 
-from flask import Flask, request, jsonify
-from honeyhive import HoneyHiveTracer, trace
-from honeyhive.tracer.processing.context import inject_context_into_carrier
-from honeyhive.models import EventType
-import requests
 import os
+
+import requests
+from flask import Flask, jsonify, request
+
+from honeyhive import HoneyHiveTracer, trace
+from honeyhive.models import EventType
+from honeyhive.tracer.processing.context import inject_context_into_carrier
 
 # Initialize HoneyHive tracer
 tracer = HoneyHiveTracer.init(
@@ -68,6 +70,7 @@ def health():
 
 if __name__ == "__main__":
     print("🌐 API Gateway starting on port 5000...")
-    print("Environment: HH_API_KEY =", "✓ Set" if os.getenv("HH_API_KEY") else "✗ Missing")
+    print(
+        "Environment: HH_API_KEY =", "✓ Set" if os.getenv("HH_API_KEY") else "✗ Missing"
+    )
     app.run(port=5000, debug=True, use_reloader=False)
-

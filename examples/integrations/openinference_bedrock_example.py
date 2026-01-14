@@ -6,11 +6,13 @@ This example shows the simplest way to add HoneyHive tracing to AWS Bedrock call
 Zero code changes to your existing Bedrock usage!
 """
 
-import os
 import json
-from honeyhive import HoneyHiveTracer
-from openinference.instrumentation.bedrock import BedrockInstrumentor
+import os
+
 import boto3
+from openinference.instrumentation.bedrock import BedrockInstrumentor
+
+from honeyhive import HoneyHiveTracer
 
 
 def main():

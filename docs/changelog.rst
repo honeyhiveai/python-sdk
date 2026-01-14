@@ -34,6 +34,12 @@ Current Version Highlights
 * **Improved Behavior**: Session enrichment now proceeds when a valid session_id is available, regardless of whether enrichment data is provided
 * **Files**: ``src/honeyhive/tracer/core/context.py``
 
+**🔧 IMPROVED: Development Workflow (Dec 2025)**
+
+* **Fast Pre-commit Hooks**: Pre-commit now runs in seconds (only format, lint, unit tests)
+* **Comprehensive Checks via Makefile**: Run ``make check-all`` for full validation suite
+* **SDK Generation Tools**: Generate and compare SDK with ``make generate-sdk`` and ``make compare-sdk``
+
 **🐛 FIXED: Session ID Initialization (Dec 2025)**
 
 * **Backend Sync**: Sessions are now always initialized in backend, even when session_id is explicitly provided

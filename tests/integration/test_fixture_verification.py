@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 """Simple test to verify that integration test fixtures work correctly."""
+
 # pylint: disable=too-many-lines,protected-access,redefined-outer-name,too-many-public-methods,line-too-long
 # Justification: Integration test file with fixture verification
 
@@ -40,6 +41,7 @@ def test_fixture_verification(
         tracer=integration_tracer,
         client=integration_client,
         project=real_project,
+        session_id=integration_tracer.session_id,
         span_name=span_name,
         unique_identifier=unique_id,
         span_attributes={

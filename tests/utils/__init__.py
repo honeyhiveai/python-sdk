@@ -7,8 +7,6 @@ import sys
 from pathlib import Path
 from typing import Any
 
-from honeyhive.models.generated import SessionStartRequest
-
 # Add parent directory to path to import from utils.py
 parent_dir = Path(__file__).parent.parent
 sys.path.insert(0, str(parent_dir))
@@ -78,30 +76,25 @@ except ImportError:
         session_name: str = "test-session",
         source: str = "test",
     ) -> Any:
-        """Fallback implementation."""
-        try:
-
-            return SessionStartRequest(
-                project=project,
-                session_name=session_name,
-                source=source,
-                session_id=None,
-                children_ids=None,
-                config={},
-                inputs={},
-                outputs={},
-                error=None,
-                duration=None,
-                user_properties={},
-                metrics={},
-                feedback={},
-                metadata={},
-                start_time=None,
-                end_time=None,
-            )
-        except Exception as e:
-            print(f"Fallback create_session_request failed: {e}")
-            return None
+        """Fallback implementation - returns dict for v1 API."""
+        return {
+            "project": project,
+            "session_name": session_name,
+            "source": source,
+            "session_id": None,
+            "children_ids": None,
+            "config": {},
+            "inputs": {},
+            "outputs": {},
+            "error": None,
+            "duration": None,
+            "user_properties": {},
+            "metrics": {},
+            "feedback": {},
+            "metadata": {},
+            "start_time": None,
+            "end_time": None,
+        }
 
     def mock_api_error_response(
         _: str = "API Error",  # exception_message not used in fallback

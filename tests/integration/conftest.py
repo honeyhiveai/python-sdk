@@ -190,7 +190,8 @@ def real_api_credentials() -> Dict[str, Any]:
         credentials = {
             "api_key": core_credentials["HH_API_KEY"],
             "source": os.environ.get("HH_SOURCE", "pytest-integration"),
-            "server_url": os.environ.get("HH_API_URL", "https://api.honeyhive.ai"),
+            "server_url": os.environ.get("HH_API_URL", "https://api.testing-dp-1.honeyhive.ai"),
+            "cp_server_url": os.environ.get("HH_CP_API_URL", "https://api.testing-cp-1.honeyhive.ai"),
             "project": os.environ.get("HH_PROJECT", "test-project"),
         }
 
@@ -229,9 +230,13 @@ def real_source(real_api_credentials: Dict[str, Any]) -> str:
 
 
 @pytest.fixture
-def integration_client(real_api_key: str) -> HoneyHive:
+def integration_client(real_api_credentials: Dict[str, Any]) -> HoneyHive:
     """HoneyHive client for integration tests with real API credentials."""
-    return HoneyHive(api_key=real_api_key, test_mode=False)
+    return HoneyHive(
+        api_key=real_api_credentials["api_key"],
+        base_url=real_api_credentials["server_url"],
+        cp_base_url=real_api_credentials.get("cp_server_url"),
+    )
 
 
 @pytest.fixture

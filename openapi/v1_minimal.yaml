@@ -1,0 +1,124 @@
+openapi: 3.1.0
+info:
+  title: HoneyHive API (Minimal)
+  version: 1.0.0
+  description: Minimal spec for testing generation pipeline
+servers:
+  - url: https://api.honeyhive.ai
+security:
+  - BearerAuth: []
+
+paths:
+  /configurations:
+    get:
+      summary: List configurations
+      operationId: getConfigurations
+      tags:
+        - Configurations
+      parameters:
+        - name: project
+          in: query
+          required: false
+          schema:
+            type: string
+          description: Project name to filter by
+      responses:
+        '200':
+          description: List of configurations
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Configuration'
+    post:
+      summary: Create a configuration
+      operationId: createConfiguration
+      tags:
+        - Configurations
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateConfigurationRequest'
+      responses:
+        '200':
+          description: Configuration created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CreateConfigurationResponse'
+
+components:
+  schemas:
+    Configuration:
+      type: object
+      properties:
+        id:
+          type: string
+          description: Configuration ID
+        name:
+          type: string
+          description: Configuration name
+        provider:
+          type: string
+          description: LLM provider (openai, anthropic, etc.)
+        type:
+          type: string
+          enum: [LLM, pipeline]
+          default: LLM
+        env:
+          type: array
+          items:
+            type: string
+            enum: [dev, staging, prod]
+        created_at:
+          type: string
+          format: date-time
+      required:
+        - id
+        - name
+        - provider
+
+    CreateConfigurationRequest:
+      type: object
+      properties:
+        name:
+          type: string
+          description: Configuration name
+        provider:
+          type: string
+          description: LLM provider
+        type:
+          type: string
+          enum: [LLM, pipeline]
+          default: LLM
+        parameters:
+          type: object
+          additionalProperties: true
+          description: Provider-specific parameters
+        env:
+          type: array
+          items:
+            type: string
+            enum: [dev, staging, prod]
+      required:
+        - name
+        - provider
+
+    CreateConfigurationResponse:
+      type: object
+      properties:
+        acknowledged:
+          type: boolean
+        insertedId:
+          type: string
+      required:
+        - acknowledged
+        - insertedId
+
+  securitySchemes:
+    BearerAuth:
+      type: http
+      scheme: bearer

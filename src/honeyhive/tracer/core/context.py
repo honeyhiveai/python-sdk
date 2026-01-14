@@ -80,7 +80,6 @@ class TracerContextMixin(TracerContextInterface):
     # Type hint for mypy - these attributes will be provided by the composed class
     if TYPE_CHECKING:
         client: Optional[Any]
-        session_api: Optional[Any]
         _session_id: Optional[str]
         _baggage_lock: Any
 
@@ -230,16 +229,10 @@ class TracerContextMixin(TracerContextInterface):
 
             if target_session_id and update_params:
                 # Update session via EventsAPI (sessions are events in the backend)
-                # Import here to avoid circular dependency
-                from ...api.events import (  # pylint: disable=import-outside-toplevel
-                    UpdateEventRequest,
-                )
-
                 if self.client is not None and hasattr(self.client, "events"):
-                    update_request = UpdateEventRequest(
-                        event_id=target_session_id, **update_params
-                    )
-                    self.client.events.update_event(update_request)
+                    # Build update data dict with event_id and update params
+                    update_data = {"event_id": target_session_id, **update_params}
+                    self.client.events.update(data=update_data)
                 else:
                     safe_log(self, "warning", "Events API not available for update")
 
@@ -281,8 +274,8 @@ class TracerContextMixin(TracerContextInterface):
             >>> session_id = tracer.session_start()
             >>> print(f"Created session: {session_id}")
         """
-        if not self.session_api:
-            safe_log(self, "warning", "No session API available for session creation")
+        if not self.client:
+            safe_log(self, "warning", "No client available for session creation")
             return None
 
         try:

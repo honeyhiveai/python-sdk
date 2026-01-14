@@ -12,17 +12,17 @@ Requirements:
 """
 
 import os
-from typing import Dict, Any
+from typing import Any, Dict
 
-# Import HoneyHive components
-from honeyhive import HoneyHiveTracer, trace, enrich_span
-from honeyhive.models import EventType
+# Import OpenAI SDK
+import openai
 
 # Import OpenLLMetry OpenAI instrumentor (individual package)
 from opentelemetry.instrumentation.openai import OpenAIInstrumentor
 
-# Import OpenAI SDK
-import openai
+# Import HoneyHive components
+from honeyhive import HoneyHiveTracer, enrich_span, trace
+from honeyhive.models import EventType
 
 
 def setup_tracing() -> HoneyHiveTracer:

@@ -4,8 +4,7 @@ import asyncio
 import time
 from unittest.mock import Mock, patch
 
-from honeyhive.tracer.decorators import trace
-from honeyhive.tracer.otel_tracer import HoneyHiveTracer
+from honeyhive.tracer import HoneyHiveTracer, trace
 
 
 class TestTraceDecorator:
@@ -28,7 +27,7 @@ class TestTraceDecorator:
     def test_trace_basic(self) -> None:
         """Test basic trace decorator functionality."""
 
-        @trace(name="test-function", tracer=self.mock_tracer)
+        @trace(event_name="test-function", tracer=self.mock_tracer)
         def test_func():
             return "test result"
 
@@ -38,10 +37,14 @@ class TestTraceDecorator:
         self.mock_tracer.start_span.assert_called_once()
         self.mock_span.set_attribute.assert_called()
 
-    def test_trace_with_attributes(self) -> None:
-        """Test trace decorator with custom attributes."""
+    def test_trace_with_metadata(self) -> None:
+        """Test trace decorator with metadata (v0 API compatible)."""
 
-        @trace(event_name="test-function", key="value", tracer=self.mock_tracer)
+        @trace(
+            event_name="test-function",
+            metadata={"key": "value"},
+            tracer=self.mock_tracer,
+        )
         def test_func():
             return "test result"
 
@@ -56,7 +59,7 @@ class TestTraceDecorator:
     def test_trace_with_arguments(self) -> None:
         """Test trace decorator with function arguments."""
 
-        @trace(name="test-function", tracer=self.mock_tracer)
+        @trace(event_name="test-function", tracer=self.mock_tracer)
         def test_func(arg1, arg2):
             return f"{arg1} + {arg2}"
 
@@ -68,7 +71,7 @@ class TestTraceDecorator:
     def test_trace_with_keyword_arguments(self) -> None:
         """Test trace decorator with keyword arguments."""
 
-        @trace(name="test-function", tracer=self.mock_tracer)
+        @trace(event_name="test-function", tracer=self.mock_tracer)
         def test_func(**kwargs):
             return kwargs
 
@@ -80,7 +83,7 @@ class TestTraceDecorator:
     def test_trace_with_return_value(self) -> None:
         """Test trace decorator with return value handling."""
 
-        @trace(name="test-function", tracer=self.mock_tracer)
+        @trace(event_name="test-function", tracer=self.mock_tracer)
         def test_func():
             return {"status": "success", "data": [1, 2, 3]}
 
@@ -93,7 +96,7 @@ class TestTraceDecorator:
     def test_trace_with_exception(self) -> None:
         """Test trace decorator with exception handling."""
 
-        @trace(name="test-function", tracer=self.mock_tracer)
+        @trace(event_name="test-function", tracer=self.mock_tracer)
         def test_func():
             raise ValueError("Test error")
 
@@ -107,11 +110,11 @@ class TestTraceDecorator:
     def test_trace_with_nested_calls(self) -> None:
         """Test trace decorator with nested function calls."""
 
-        @trace(name="outer-function", tracer=self.mock_tracer)
+        @trace(event_name="outer-function", tracer=self.mock_tracer)
         def outer_func():
             return inner_func()
 
-        @trace(name="inner-function", tracer=self.mock_tracer)
+        @trace(event_name="inner-function", tracer=self.mock_tracer)
         def inner_func():
             return "inner result"
 
@@ -151,19 +154,21 @@ class TestTraceDecorator:
             "test_func" in call_args[0][0]
         )  # Function name should be in the span name
 
-    def test_trace_with_complex_attributes(self) -> None:
-        """Test trace decorator with complex attribute types."""
+    def test_trace_with_complex_metadata(self) -> None:
+        """Test trace decorator with complex metadata types (v0 API compatible)."""
 
         @trace(
-            name="test-function",
+            event_name="test-function",
             tracer=self.mock_tracer,
-            string_attr="test string",
-            int_attr=42,
-            float_attr=3.14,
-            bool_attr=True,
-            list_attr=[1, 2, 3],
-            dict_attr={"key": "value"},
-            none_attr=None,
+            metadata={
+                "string_attr": "test string",
+                "int_attr": 42,
+                "float_attr": 3.14,
+                "bool_attr": True,
+                "list_attr": [1, 2, 3],
+                "dict_attr": {"key": "value"},
+                "none_attr": None,
+            },
         )
         def test_func():
             return "test result"
@@ -182,7 +187,7 @@ class TestTraceDecorator:
         # Get initial memory usage
         initial_memory = sys.getsizeof({})
 
-        @trace(name="memory-test", tracer=self.mock_tracer)
+        @trace(event_name="memory-test", tracer=self.mock_tracer)
         def memory_intensive_func():
             # Create some data
             large_data = [i for i in range(1000)]
@@ -201,7 +206,7 @@ class TestTraceDecorator:
     def test_trace_error_recovery(self) -> None:
         """Test trace decorator error recovery."""
 
-        @trace(name="error-test", tracer=self.mock_tracer)
+        @trace(event_name="error-test", tracer=self.mock_tracer)
         def error_prone_func():
             # Simulate an error condition
             if True:  # Always true for testing
@@ -223,7 +228,7 @@ class TestTraceDecorator:
             "metadata": {"timestamp": time.time(), "version": "1.0.0"},
         }
 
-        @trace(name="large-data-test", tracer=self.mock_tracer)
+        @trace(event_name="large-data-test", tracer=self.mock_tracer)
         def process_large_data(data):
             return len(data["users"])
 
@@ -232,16 +237,18 @@ class TestTraceDecorator:
         assert result == 1000
         self.mock_tracer.start_span.assert_called_once()
 
-    def test_trace_with_none_attributes(self) -> None:
-        """Test trace decorator with None attributes."""
+    def test_trace_with_none_metadata(self) -> None:
+        """Test trace decorator with None metadata values (v0 API compatible)."""
 
         @trace(
-            name="none-attr-test",
+            event_name="none-attr-test",
             tracer=self.mock_tracer,
-            none_string=None,
-            none_int=None,
-            none_list=None,
-            none_dict=None,
+            metadata={
+                "none_string": None,
+                "none_int": None,
+                "none_list": None,
+                "none_dict": None,
+            },
         )
         def test_func():
             return "test result"
@@ -251,17 +258,19 @@ class TestTraceDecorator:
         assert result == "test result"
         self.mock_tracer.start_span.assert_called_once()
 
-    def test_trace_with_empty_attributes(self) -> None:
-        """Test trace decorator with empty attributes."""
+    def test_trace_with_empty_metadata(self) -> None:
+        """Test trace decorator with empty metadata values (v0 API compatible)."""
 
         @trace(
-            name="empty-attr-test",
+            event_name="empty-attr-test",
             tracer=self.mock_tracer,
-            empty_string="",
-            empty_list=[],
-            empty_dict={},
-            zero_int=0,
-            false_bool=False,
+            metadata={
+                "empty_string": "",
+                "empty_list": [],
+                "empty_dict": {},
+                "zero_int": 0,
+                "false_bool": False,
+            },
         )
         def test_func():
             return "test result"
@@ -285,7 +294,7 @@ class TestTraceDecorator:
         untraced_time = time.time() - start_time
 
         # Test with tracing
-        @trace(name="performance-test", tracer=self.mock_tracer)
+        @trace(event_name="performance-test", tracer=self.mock_tracer)
         def traced_func():
             return "traced result"
 
@@ -310,7 +319,7 @@ class TestTraceDecorator:
         results = []
         errors = []
 
-        @trace(name="concurrent-test", tracer=self.mock_tracer)
+        @trace(event_name="concurrent-test", tracer=self.mock_tracer)
         def concurrent_func(thread_id):
             time.sleep(0.01)  # Simulate some work
             return f"thread_{thread_id}_result"
@@ -345,7 +354,7 @@ class TestTraceDecorator:
     def test_trace_with_dynamic_attributes(self) -> None:
         """Test trace decorator with dynamically generated attributes."""
 
-        @trace(name="dynamic-attr-test", tracer=self.mock_tracer)
+        @trace(event_name="dynamic-attr-test", tracer=self.mock_tracer)
         def dynamic_func():
             # Generate attributes dynamically
             dynamic_attrs = {
@@ -366,7 +375,7 @@ class TestTraceDecorator:
     def test_trace_with_context_manager(self) -> None:
         """Test trace decorator with context manager behavior."""
 
-        @trace(name="context-test", tracer=self.mock_tracer)
+        @trace(event_name="context-test", tracer=self.mock_tracer)
         def context_func():
             # Simulate some work that might use context managers
             with open("/dev/null", "w") as f:
@@ -381,7 +390,7 @@ class TestTraceDecorator:
     def test_trace_with_async_function(self) -> None:
         """Test trace decorator with async functions."""
 
-        @trace(name="async-test", tracer=self.mock_tracer)
+        @trace(event_name="async-test", tracer=self.mock_tracer)
         async def async_func():
             await asyncio.sleep(0.01)  # Simulate async work
             return "async result"
@@ -395,7 +404,7 @@ class TestTraceDecorator:
     def test_trace_with_generator_function(self) -> None:
         """Test trace decorator with generator functions."""
 
-        @trace(name="generator-test", tracer=self.mock_tracer)
+        @trace(event_name="generator-test", tracer=self.mock_tracer)
         def generator_func():
             for i in range(5):
                 yield i
@@ -416,7 +425,7 @@ class TestTraceDecorator:
         mock_tracer.start_span.return_value = mock_span
 
         class TestClass:
-            @trace(name="class-method-test", tracer=mock_tracer)
+            @trace(event_name="class-method-test", tracer=mock_tracer)
             def class_method(self):
                 return "class method result"
 
@@ -437,7 +446,7 @@ class TestTraceDecorator:
 
         class TestClass:
             @staticmethod
-            @trace(name="static-method-test", tracer=mock_tracer)
+            @trace(event_name="static-method-test", tracer=mock_tracer)
             def static_method():
                 return "static method result"
 

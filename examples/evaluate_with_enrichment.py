@@ -46,7 +46,7 @@ def main():
         api_key=os.environ["HH_API_KEY"],
         project=os.environ["HH_PROJECT"],
         source="evaluate-enrichment-example",
-        verbose=True
+        verbose=True,
     )
     print(f"✓ Tracer initialized for project: {tracer.project_name}")
 
@@ -60,40 +60,32 @@ def main():
     def simple_llm_task(datapoint: Dict[str, Any]) -> Dict[str, Any]:
         """
         Simple LLM task that processes a datapoint and enriches the span.
-        
+
         This demonstrates the PRIMARY PATTERN (v1.0+):
         - Use instance method: tracer.enrich_span()
         - Pass tracer explicitly for clarity
         """
         inputs = datapoint.get("inputs", {})
         text = inputs.get("text", "")
-        
+
         print(f"  📝 Processing: {text[:50]}...")
         time.sleep(0.1)  # Simulate LLM call
-        
+
         # Simulate LLM response
-        result = {
-            "output": f"Processed: {text}",
-            "model": "gpt-4",
-            "tokens": 150
-        }
-        
+        result = {"output": f"Processed: {text}", "model": "gpt-4", "tokens": 150}
+
         # ✅ PRIMARY PATTERN (v1.0+): Use instance method
         # This now works correctly in evaluate() due to baggage propagation fix
         tracer.enrich_span(
             metadata={
                 "input_text": text,
                 "output_text": result["output"],
-                "model": result["model"]
+                "model": result["model"],
             },
-            metrics={
-                "latency_ms": 100,
-                "tokens": result["tokens"],
-                "cost_usd": 0.002
-            }
+            metrics={"latency_ms": 100, "tokens": result["tokens"], "cost_usd": 0.002},
         )
         print(f"  ✓ Span enriched with metadata and metrics")
-        
+
         return result
 
     print("✓ Task defined with instance method enrichment")
@@ -108,7 +100,7 @@ def main():
     def complex_task_with_steps(datapoint: Dict[str, Any]) -> Dict[str, Any]:
         """
         Task with multiple steps, each traced and enriched.
-        
+
         Demonstrates:
         - Nested span hierarchy
         - Multiple enrichments in different spans
@@ -116,22 +108,22 @@ def main():
         """
         inputs = datapoint.get("inputs", {})
         text = inputs.get("text", "")
-        
+
         # Step 1: Preprocess
         @trace(tracer=tracer, event_type="tool", event_name="preprocess")
         def preprocess(text: str) -> str:
             """Preprocess input text."""
             print(f"    📝 Step 1: Preprocessing...")
             processed = text.lower().strip()
-            
+
             # ✅ Enrich preprocessing span
             tracer.enrich_span(
                 metadata={"step": "preprocess", "input_length": len(text)},
-                metrics={"processing_time_ms": 10}
+                metrics={"processing_time_ms": 10},
             )
-            
+
             return processed
-        
+
         # Step 2: LLM Call
         @trace(tracer=tracer, event_type="model", event_name="llm_call")
         def llm_call(text: str) -> str:
@@ -139,57 +131,46 @@ def main():
             print(f"    📝 Step 2: LLM Call...")
             time.sleep(0.05)
             response = f"LLM response for: {text}"
-            
+
             # ✅ Enrich LLM span
             tracer.enrich_span(
-                metadata={
-                    "step": "llm_call",
-                    "model": "gpt-4",
-                    "prompt": text[:100]
-                },
-                metrics={
-                    "latency_ms": 50,
-                    "tokens": 100,
-                    "cost_usd": 0.001
-                }
+                metadata={"step": "llm_call", "model": "gpt-4", "prompt": text[:100]},
+                metrics={"latency_ms": 50, "tokens": 100, "cost_usd": 0.001},
             )
-            
+
             return response
-        
+
         # Step 3: Postprocess
         @trace(tracer=tracer, event_type="tool", event_name="postprocess")
         def postprocess(text: str) -> str:
             """Postprocess LLM output."""
             print(f"    📝 Step 3: Postprocessing...")
             final = text.upper()
-            
+
             # ✅ Enrich postprocessing span
             tracer.enrich_span(
                 metadata={"step": "postprocess", "output_length": len(final)},
-                metrics={"processing_time_ms": 5}
+                metrics={"processing_time_ms": 5},
             )
-            
+
             return final
-        
+
         # Execute pipeline
         preprocessed = preprocess(text)
         llm_output = llm_call(preprocessed)
         final_output = postprocess(llm_output)
-        
+
         # ✅ Enrich parent span with overall metrics
         tracer.enrich_span(
             metadata={
                 "steps": 3,
                 "pipeline": "preprocess -> llm -> postprocess",
-                "final_output": final_output[:100]
+                "final_output": final_output[:100],
             },
-            metrics={
-                "total_time_ms": 65,
-                "total_cost_usd": 0.001
-            }
+            metrics={"total_time_ms": 65, "total_cost_usd": 0.001},
         )
         print(f"  ✓ All steps traced and enriched")
-        
+
         return {"output": final_output}
 
     print("✓ Complex task defined with nested enrichment")
@@ -205,11 +186,11 @@ def main():
     mock_dataset = [
         {"inputs": {"text": "What is machine learning?"}},
         {"inputs": {"text": "Explain neural networks."}},
-        {"inputs": {"text": "How does gradient descent work?"}}
+        {"inputs": {"text": "How does gradient descent work?"}},
     ]
 
     print("  📝 Running simple task on mock dataset...")
-    
+
     # Note: evaluate() expects dataset name, not inline data
     # This is a simplified demo. In production:
     # results = evaluate(
@@ -217,13 +198,13 @@ def main():
     #     task=simple_llm_task,
     #     tracer=tracer
     # )
-    
+
     # For demo, manually iterate
     for i, datapoint in enumerate(mock_dataset):
         print(f"\n  Datapoint {i+1}/{len(mock_dataset)}:")
         result = simple_llm_task(datapoint)
         print(f"    ✓ Output: {result['output'][:50]}...")
-    
+
     print("\n✓ Simple task evaluation completed")
 
     print("\n  📝 Running complex task on mock dataset...")
@@ -231,7 +212,7 @@ def main():
         print(f"\n  Datapoint {i+1}/{len(mock_dataset)}:")
         result = complex_task_with_steps(datapoint)
         print(f"    ✓ Output: {result['output'][:50]}...")
-    
+
     print("\n✓ Complex task evaluation completed")
 
     # ========================================================================
@@ -245,16 +226,13 @@ def main():
         metadata={
             "evaluation_type": "demo",
             "total_datapoints": len(mock_dataset),
-            "tasks_run": 2
+            "tasks_run": 2,
         },
-        metrics={
-            "total_execution_time_s": 2.5,
-            "avg_latency_ms": 100
-        },
+        metrics={"total_execution_time_s": 2.5, "avg_latency_ms": 100},
         user_properties={
             "user_id": "demo-user",
-            "experiment_id": "eval-enrichment-demo"
-        }
+            "experiment_id": "eval-enrichment-demo",
+        },
     )
     print("✓ Session enriched with evaluation metadata")
 
@@ -266,7 +244,7 @@ def main():
     print("✅ Metadata + metrics + user properties")
     print("✅ Parent-child span relationships")
     print("✅ Session-level enrichment")
-    
+
     print("\nMigration Note:")
     print("❌ OLD (v0.2.x): enrich_span(metadata={...})")
     print("✅ NEW (v1.0+):  tracer.enrich_span(metadata={...})")
@@ -276,4 +254,3 @@ def main():
 
 if __name__ == "__main__":
     main()
-

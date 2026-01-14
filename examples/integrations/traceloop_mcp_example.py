@@ -13,10 +13,10 @@ Requirements:
 """
 
 import os
-from typing import Dict, Any, List
+from typing import Any, Dict, List
 
 # Import HoneyHive components
-from honeyhive import HoneyHiveTracer, trace, enrich_span
+from honeyhive import HoneyHiveTracer, enrich_span, trace
 from honeyhive.models import EventType
 
 # Import MCP SDK (if available)

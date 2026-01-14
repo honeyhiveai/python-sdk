@@ -9,9 +9,7 @@ for backward compatibility with existing usage patterns.
 """
 
 # Import shutdown detection from logger module (moved to avoid circular imports)
-from ...utils.logger import (
-    is_shutdown_detected,
-)
+from ...utils.logger import is_shutdown_detected
 
 # Import all public functions to maintain the existing API
 from .core import (

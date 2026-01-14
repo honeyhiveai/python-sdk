@@ -12,11 +12,7 @@ TracerConfig and specialized configs (SessionConfig/EvaluationConfig).
 # pylint: disable=protected-access
 # Justification: Testing requires verification of internal config structure
 
-from honeyhive.config.models.tracer import (
-    EvaluationConfig,
-    SessionConfig,
-    TracerConfig,
-)
+from honeyhive.config.models.tracer import EvaluationConfig, SessionConfig, TracerConfig
 from honeyhive.config.utils import create_unified_config
 
 

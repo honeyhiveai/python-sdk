@@ -24,11 +24,11 @@ import time
 from typing import Any, Dict, Optional, Tuple
 
 from honeyhive import HoneyHive
-from honeyhive.models.generated import (
+from honeyhive.models import (
+    CreateConfigurationRequest,
     CreateDatapointRequest,
-    CreateEventRequest,
-    PostConfigurationRequest,
-    SessionStartRequest,
+    PostEventRequest,
+    PostEventResponse,
 )
 from honeyhive.utils.logger import get_logger
 
@@ -77,16 +77,23 @@ def verify_datapoint_creation(
     try:
         # Step 1: Create datapoint
         logger.debug(f"🔄 Creating datapoint for project: {project}")
-        datapoint_response = client.datapoints.create_datapoint(datapoint_request)
+        datapoint_response = client.datapoints.create(datapoint_request)
 
         # Validate creation response
+        # CreateDatapointResponse has 'result' dict containing 'insertedIds' array
         if (
-            not hasattr(datapoint_response, "field_id")
-            or datapoint_response.field_id is None
+            not hasattr(datapoint_response, "result")
+            or datapoint_response.result is None
         ):
-            raise ValidationError("Datapoint creation failed - missing field_id")
+            raise ValidationError("Datapoint creation failed - missing result field")
 
-        created_id = datapoint_response.field_id
+        inserted_ids = datapoint_response.result.get("insertedIds")
+        if not inserted_ids or len(inserted_ids) == 0:
+            raise ValidationError(
+                "Datapoint creation failed - missing insertedIds in result"
+            )
+
+        created_id = inserted_ids[0]
         logger.debug(f"✅ Datapoint created with ID: {created_id}")
 
         # Step 2: Wait for data propagation
@@ -94,28 +101,47 @@ def verify_datapoint_creation(
 
         # Step 3: Retrieve and validate persistence
         try:
-            found_datapoint = client.datapoints.get_datapoint(created_id)
-            logger.debug(f"✅ Datapoint retrieval successful: {created_id}")
-            return found_datapoint
+            datapoint_response = client.datapoints.get(created_id)
+            # GetDatapointResponse has 'datapoint' field which is a List[Dict]
+            if (
+                hasattr(datapoint_response, "datapoint")
+                and datapoint_response.datapoint
+            ):
+                found_datapoint = datapoint_response.datapoint[0]
+                logger.debug(f"✅ Datapoint retrieval successful: {created_id}")
+                return found_datapoint
+            raise ValidationError(
+                f"Datapoint response missing datapoint data: {created_id}"
+            )
 
         except Exception as e:
             # Fallback: Try list-based retrieval if direct get fails
             logger.debug(f"Direct retrieval failed, trying list-based: {e}")
 
-            datapoints = client.datapoints.list_datapoints(project=project)
+            datapoints_response = client.datapoints.list()
+            datapoints = (
+                datapoints_response.datapoints
+                if hasattr(datapoints_response, "datapoints")
+                else []
+            )
 
-            # Find matching datapoint
+            # Find matching datapoint - datapoints are dicts, not objects
             for dp in datapoints:
-                if hasattr(dp, "field_id") and dp.field_id == created_id:
+                # Check if dict has id or field_id key matching created_id
+                # Note: API returns 'id' in datapoint dicts, not 'field_id'
+                if isinstance(dp, dict) and (
+                    dp.get("id") == created_id or dp.get("field_id") == created_id
+                ):
                     logger.debug(f"✅ Datapoint found via list: {created_id}")
                     return dp
 
                 # Fallback: Match by test_id if provided
                 if (
                     test_id
-                    and hasattr(dp, "metadata")
-                    and dp.metadata
-                    and dp.metadata.get("test_id") == test_id
+                    and isinstance(dp, dict)
+                    and "metadata" in dp
+                    and dp.get("metadata")
+                    and dp["metadata"].get("test_id") == test_id
                 ):
                     logger.debug(f"✅ Datapoint found via test_id: {test_id}")
                     return dp
@@ -131,7 +157,7 @@ def verify_datapoint_creation(
 def verify_session_creation(
     client: HoneyHive,
     project: str,
-    session_request: SessionStartRequest,
+    session_request: Dict[str, Any],
     expected_session_name: Optional[str] = None,  # pylint: disable=unused-argument
 ) -> Any:
     """Verify complete session lifecycle: create → store → retrieve → validate.
@@ -151,23 +177,23 @@ def verify_session_creation(
     try:
         # Step 1: Create session
         logger.debug(f"🔄 Creating session for project: {project}")
-        session_response = client.sessions.create_session(session_request)
+        session_response = client.sessions.start(session_request)
 
-        # Validate creation response
-        if (
-            not hasattr(session_response, "session_id")
-            or session_response.session_id is None
-        ):
-            raise ValidationError("Session creation failed - missing session_id")
-
+        # Validate creation response - sessions.start() now returns PostSessionStartResponse
+        if not hasattr(session_response, "session_id"):
+            raise ValidationError(
+                "Session creation failed - response missing session_id attribute"
+            )
         created_id = session_response.session_id
+        if not created_id:
+            raise ValidationError("Session creation failed - session_id is None")
         logger.debug(f"✅ Session created with ID: {created_id}")
 
         # Step 2: Wait for data propagation
         time.sleep(2)
 
-        # Step 3: Retrieve and validate persistence using get_session
-        retrieved_session = client.sessions.get_session(created_id)
+        # Step 3: Retrieve and validate persistence using get
+        retrieved_session = client.sessions.get(created_id)
 
         # Validate the retrieved session
         if retrieved_session and hasattr(retrieved_session, "event"):
@@ -195,7 +221,7 @@ def verify_session_creation(
 def verify_configuration_creation(
     client: HoneyHive,
     project: str,
-    config_request: PostConfigurationRequest,
+    config_request: CreateConfigurationRequest,
     expected_config_name: Optional[str] = None,
 ) -> Any:
     """Verify complete configuration lifecycle: create → store → retrieve → validate.
@@ -215,7 +241,7 @@ def verify_configuration_creation(
     try:
         # Step 1: Create configuration
         logger.debug(f"🔄 Creating configuration for project: {project}")
-        config_response = client.configurations.create_configuration(config_request)
+        config_response = client.configurations.create(config_request)
 
         # Validate creation response
         if not hasattr(config_response, "id") or config_response.id is None:
@@ -228,9 +254,8 @@ def verify_configuration_creation(
         time.sleep(2)
 
         # Step 3: Retrieve and validate persistence
-        configurations = client.configurations.list_configurations(
-            project=project, limit=100
-        )
+        # Note: v1 configurations API doesn't support project filtering
+        configurations = client.configurations.list()
 
         # Find matching configuration
         for config in configurations:
@@ -256,7 +281,8 @@ def verify_configuration_creation(
 def verify_event_creation(
     client: HoneyHive,
     project: str,
-    event_request: CreateEventRequest,
+    session_id: str,
+    event_request: Dict[str, Any],
     unique_identifier: str,
     expected_event_name: Optional[str] = None,
 ) -> Any:
@@ -268,6 +294,7 @@ def verify_event_creation(
     Args:
         client: HoneyHive client instance
         project: Project name for filtering
+        session_id: Session ID for backend verification
         event_request: Event creation request
         unique_identifier: Unique identifier for backend verification
         expected_event_name: Expected event name for validation
@@ -281,21 +308,34 @@ def verify_event_creation(
     try:
         # Step 1: Create event
         logger.debug(f"🔄 Creating event for project: {project}")
-        event_response = client.events.create_event(event_request)
+        # Wrap event_request dict in PostEventRequest typed model
+        event_response = client.events.create(
+            request=PostEventRequest(event=event_request)
+        )
 
-        # Validate creation response
-        if not hasattr(event_response, "event_id") or event_response.event_id is None:
-            raise ValidationError("Event creation failed - missing event_id")
-
+        # Validate creation response - events.create() now returns PostEventResponse
+        if not isinstance(event_response, PostEventResponse):
+            raise ValidationError(
+                f"Event creation failed - unexpected response type: {type(event_response)}"
+            )
+        if not hasattr(event_response, "event_id") or not event_response.event_id:
+            raise ValidationError("Event creation failed - missing or None event_id")
         created_id = event_response.event_id
         logger.debug(f"✅ Event created with ID: {created_id}")
 
         # Step 2: Use standardized backend verification for events
+        # event_request is now a dict, so use dict access
+        expected_name = expected_event_name or (
+            event_request.get("event_name")
+            if isinstance(event_request, dict)
+            else event_request.event_name
+        )
         return verify_backend_event(
             client=client,
             project=project,
+            session_id=session_id,
             unique_identifier=unique_identifier,
-            expected_event_name=expected_event_name or event_request.event_name,
+            expected_event_name=expected_name,
         )
 
     except Exception as e:
@@ -305,6 +345,7 @@ def verify_event_creation(
 def verify_span_export(
     client: HoneyHive,
     project: str,
+    session_id: str,
     unique_identifier: str,
     expected_event_name: str,
     debug_content: bool = False,
@@ -316,6 +357,7 @@ def verify_span_export(
     Args:
         client: HoneyHive client instance
         project: Project name for filtering
+        session_id: Session ID for backend verification
         unique_identifier: Unique identifier for span identification
         expected_event_name: Expected event name for the span
         debug_content: Whether to log detailed event content for debugging
@@ -330,6 +372,7 @@ def verify_span_export(
         return verify_backend_event(
             client=client,
             project=project,
+            session_id=session_id,
             unique_identifier=unique_identifier,
             expected_event_name=expected_event_name,
             debug_content=debug_content,
@@ -343,6 +386,7 @@ def verify_tracer_span(  # pylint: disable=R0917
     tracer: Any,
     client: HoneyHive,
     project: str,
+    session_id: str,
     span_name: str,
     unique_identifier: str,
     span_attributes: Optional[Dict[str, Any]] = None,
@@ -356,6 +400,7 @@ def verify_tracer_span(  # pylint: disable=R0917
         tracer: HoneyHive tracer instance
         client: HoneyHive client instance
         project: Project name
+        session_id: Session ID for backend verification
         span_name: Name for the span
         unique_identifier: Unique identifier for verification
         span_attributes: Optional attributes to set on the span
@@ -377,6 +422,7 @@ def verify_tracer_span(  # pylint: disable=R0917
     return verify_span_export(
         client=client,
         project=project,
+        session_id=session_id,
         unique_identifier=unique_identifier,
         expected_event_name=span_name,
         debug_content=debug_content,

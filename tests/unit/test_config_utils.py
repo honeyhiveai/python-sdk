@@ -21,11 +21,7 @@ Generated using enhanced comprehensive analysis framework for 90%+ coverage.
 import os
 from unittest.mock import patch
 
-from honeyhive.config.models.tracer import (
-    EvaluationConfig,
-    SessionConfig,
-    TracerConfig,
-)
+from honeyhive.config.models.tracer import EvaluationConfig, SessionConfig, TracerConfig
 from honeyhive.config.utils import create_unified_config, merge_configs_with_params
 from honeyhive.utils.dotdict import DotDict
 

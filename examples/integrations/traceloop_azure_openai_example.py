@@ -14,17 +14,17 @@ Requirements:
 """
 
 import os
-from typing import Dict, Any, List
-
-# Import HoneyHive components
-from honeyhive import HoneyHiveTracer, trace, enrich_span
-from honeyhive.models import EventType
+from typing import Any, Dict, List
 
 # Import Azure OpenAI SDK
 from openai import AzureOpenAI
 
 # Import OpenLLMetry OpenAI instrumentor (works for Azure OpenAI too)
 from opentelemetry.instrumentation.openai import OpenAIInstrumentor
+
+# Import HoneyHive components
+from honeyhive import HoneyHiveTracer, enrich_span, trace
+from honeyhive.models import EventType
 
 
 def setup_tracing() -> HoneyHiveTracer:

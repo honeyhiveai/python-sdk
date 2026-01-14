@@ -7,11 +7,13 @@ Zero code changes to your existing Google AI usage!
 """
 
 import os
-from honeyhive import HoneyHiveTracer
+
+import google.generativeai as genai
 from openinference.instrumentation.google_generativeai import (
     GoogleGenerativeAIInstrumentor,
 )
-import google.generativeai as genai
+
+from honeyhive import HoneyHiveTracer
 
 
 def main():

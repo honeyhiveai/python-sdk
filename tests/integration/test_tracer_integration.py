@@ -47,6 +47,7 @@ class TestTracerIntegration:
             tracer=integration_tracer,
             client=integration_client,
             project=real_project,
+            session_id=integration_tracer.session_id,
             span_name="test_function",
             unique_identifier=unique_id,
             span_attributes={
@@ -74,6 +75,7 @@ class TestTracerIntegration:
             tracer=integration_tracer,
             client=integration_client,
             project=real_project,
+            session_id=integration_tracer.session_id,
             span_name="test_method",
             unique_identifier=unique_id,
             span_attributes={
@@ -454,6 +456,7 @@ class TestUnifiedEnrichSpanIntegration:
             tracer=integration_tracer,
             client=integration_client,
             project=real_project,
+            session_id=integration_tracer.session_id,
             span_name="test_enrichment_backwards_compat",
             unique_identifier=unique_id,
             span_attributes={
@@ -498,6 +501,7 @@ class TestUnifiedEnrichSpanIntegration:
             tracer=integration_tracer,
             client=integration_client,
             project=real_project,
+            session_id=integration_tracer.session_id,
             span_name="test_enrichment_user_props",
             unique_identifier=unique_id,
             span_attributes={
@@ -547,6 +551,7 @@ class TestUnifiedEnrichSpanIntegration:
             tracer=integration_tracer,
             client=integration_client,
             project=real_project,
+            session_id=integration_tracer.session_id,
             span_name="test_kwargs_enrichment",
             unique_identifier=unique_id,
             span_attributes={
@@ -600,6 +605,7 @@ class TestUnifiedEnrichSpanIntegration:
             tracer=integration_tracer,
             client=integration_client,
             project=real_project,
+            session_id=integration_tracer.session_id,
             span_name="test_nested_enrichment",
             unique_identifier=unique_id,
             span_attributes={

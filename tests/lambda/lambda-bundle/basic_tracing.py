@@ -10,8 +10,7 @@ from typing import Any, Dict
 sys.path.insert(0, "/var/task")
 
 try:
-    from honeyhive.tracer import HoneyHiveTracer
-    from honeyhive.tracer.decorators import trace
+    from honeyhive.tracer import HoneyHiveTracer, enrich_span, trace
 
     SDK_AVAILABLE = True
 except ImportError as e:
@@ -36,7 +35,7 @@ if SDK_AVAILABLE:
         tracer = None
 
 
-@trace(tracer=tracer, event_type="lambda", event_name="basic_operation")
+@trace(tracer=tracer, event_type="tool", event_name="basic_operation")
 def process_data(data: Dict[str, Any]) -> Dict[str, Any]:
     """Process data with tracing."""
     if not tracer:
@@ -45,9 +44,7 @@ def process_data(data: Dict[str, Any]) -> Dict[str, Any]:
     # Simulate work
     time.sleep(0.1)
 
-    # Test span enrichment
-    from honeyhive.tracer.otel_tracer import enrich_span
-
+    # Test span enrichment (enrich_span imported at module level)
     with enrich_span(
         metadata={"lambda_test": True, "data_size": len(str(data))},
         outputs={"processed": True},

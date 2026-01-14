@@ -78,6 +78,6 @@ INNER_EOF
 RUN echo "from . import trace" > ${LAMBDA_TASK_ROOT}/honeyhive/tracer/decorators.py
 
 # Verify setup
-RUN python -c "from honeyhive.tracer import HoneyHiveTracer; from honeyhive.tracer.decorators import trace; print('✅ Complete mock SDK ready')"
+RUN python -c "from honeyhive.tracer import HoneyHiveTracer, trace; print('✅ Complete mock SDK ready')"
 
 CMD ["container_demo.lambda_handler"]

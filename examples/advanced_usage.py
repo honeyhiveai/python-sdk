@@ -20,9 +20,9 @@ import os
 import time
 from typing import Any, Dict, Optional
 
-from honeyhive import HoneyHiveTracer, trace, trace_class
 from honeyhive import enrich_span  # Legacy pattern for context manager demo
-from honeyhive.config.models import TracerConfig, SessionConfig
+from honeyhive import HoneyHiveTracer, trace, trace_class
+from honeyhive.config.models import SessionConfig, TracerConfig
 from honeyhive.models import EventType
 
 # Set environment variables for configuration
@@ -198,27 +198,24 @@ def main():
 
     # PRIMARY PATTERN (v1.0+): Instance method enrichment
     print("  📝 Instance Method Pattern (v1.0+ Primary)...")
-    
+
     @trace(tracer=prod_tracer, event_type=EventType.tool)
     def complex_operation(data):
         """Operation with comprehensive span enrichment."""
         result = f"Processed: {data}"
-        
+
         # ✅ PRIMARY PATTERN: Use instance method
         prod_tracer.enrich_span(
             metadata={
                 "operation": "complex_processing",
                 "data_type": type(data).__name__,
-                "result": result
+                "result": result,
             },
-            metrics={
-                "processing_time_ms": 150,
-                "performance_score": 0.95
-            }
+            metrics={"processing_time_ms": 150, "performance_score": 0.95},
         )
-        
+
         return result
-    
+
     result = complex_operation({"key": "value"})
     print(f"  ✓ Instance method enrichment completed: {result}")
 

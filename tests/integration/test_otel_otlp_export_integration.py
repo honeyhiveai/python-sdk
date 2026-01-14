@@ -119,6 +119,7 @@ class TestOTELOTLPExportIntegration:
             tracer=integration_tracer,
             client=integration_client,
             project=real_project,
+            session_id=integration_tracer.session_id,
             span_name="otlp_config_verification",
             unique_identifier=unique_id,
             span_attributes={
@@ -207,6 +208,7 @@ class TestOTELOTLPExportIntegration:
             tracer=integration_tracer,
             client=integration_client,
             project=real_project,
+            session_id=integration_tracer.session_id,
             span_name="otlp_real_backend_verification",
             unique_identifier=unique_id,
             span_attributes={
@@ -240,11 +242,14 @@ class TestOTELOTLPExportIntegration:
         )
 
         # Create a test session via API (required for backend to accept events)
-        test_session = integration_client.sessions.start_session(
-            project=real_project,
-            session_name="otlp_backend_verification_test",
-            source=real_source,
-        )
+        # v1 API uses dict-based request and .start() method
+        session_data = {
+            "project": real_project,
+            "session_name": "otlp_backend_verification_test",
+            "source": real_source,
+        }
+        test_session = integration_client.sessions.start(session_data)
+        # v1 API returns PostSessionStartResponse with session_id
         test_session_id = test_session.session_id
 
         # ✅ STANDARD PATTERN: Use verify_tracer_span for span creation
@@ -255,6 +260,7 @@ class TestOTELOTLPExportIntegration:
             tracer=integration_tracer,
             client=integration_client,
             project=real_project,
+            session_id=integration_tracer.session_id,
             span_name=test_operation_name,
             unique_identifier=unique_id,
             span_attributes={
@@ -364,6 +370,7 @@ class TestOTELOTLPExportIntegration:
             tracer=integration_tracer,
             client=integration_client,
             project=real_project,
+            session_id=integration_tracer.session_id,
             span_name="otlp_batch_verification",
             unique_identifier=unique_id,
             span_attributes={
@@ -447,6 +454,7 @@ class TestOTELOTLPExportIntegration:
             tracer=integration_tracer,
             client=integration_client,
             project=real_project,
+            session_id=integration_tracer.session_id,
             span_name="otlp_decorator_spans_verification",
             unique_identifier=unique_id,
             span_attributes={
@@ -562,6 +570,7 @@ class TestOTELOTLPExportIntegration:
             tracer=integration_tracer,
             client=integration_client,
             project=real_project,
+            session_id=integration_tracer.session_id,
             span_name="otlp_error_handling_verification",
             unique_identifier=unique_id,
             span_attributes={
@@ -666,6 +675,7 @@ class TestOTELOTLPExportIntegration:
             tracer=integration_tracer,
             client=integration_client,
             project=real_project,
+            session_id=integration_tracer.session_id,
             unique_identifier=unique_id,
             span_name="otlp_high_cardinality_verification",
             span_attributes={
@@ -722,6 +732,7 @@ class TestOTELOTLPExportIntegration:
             tracer=integration_tracer,
             client=integration_client,
             project=real_project,
+            session_id=integration_tracer.session_id,
             span_name="otlp_performance_verification",
             unique_identifier=unique_id,
             span_attributes={
@@ -781,6 +792,7 @@ class TestOTELOTLPExportIntegration:
             tracer=integration_tracer,
             client=integration_client,
             project=real_project,
+            session_id=integration_tracer.session_id,
             span_name="otlp_custom_headers_verification",
             unique_identifier=unique_id,
             span_attributes={
@@ -840,6 +852,7 @@ class TestOTELOTLPExportIntegration:
             tracer=tracer_batch,
             client=integration_client,
             project=real_project,
+            session_id=tracer_batch.session_id,
             span_name="otlp_batch_vs_simple_verification",
             unique_identifier=unique_id,
             span_attributes={

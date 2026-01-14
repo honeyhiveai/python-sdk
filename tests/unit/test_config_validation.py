@@ -24,11 +24,7 @@ from pydantic import ValidationError
 
 from honeyhive import HoneyHiveTracer
 from honeyhive.config.models.otlp import OTLPConfig
-from honeyhive.config.models.tracer import (
-    EvaluationConfig,
-    SessionConfig,
-    TracerConfig,
-)
+from honeyhive.config.models.tracer import EvaluationConfig, SessionConfig, TracerConfig
 
 
 class TestEnvironmentVariables:

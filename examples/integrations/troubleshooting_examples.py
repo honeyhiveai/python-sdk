@@ -8,12 +8,14 @@ HoneyHive with non-instrumentor frameworks.
 import os
 import sys
 import time
-from typing import Dict, Any, Optional
+from typing import Any, Dict, Optional
+
 from opentelemetry import trace
 from opentelemetry.sdk.trace import TracerProvider
+
 from honeyhive import HoneyHiveTracer
-from honeyhive.tracer.provider_detector import ProviderDetector
 from honeyhive.tracer.processor_integrator import ProviderIncompatibleError
+from honeyhive.tracer.provider_detector import ProviderDetector
 
 
 class ProblematicFramework:

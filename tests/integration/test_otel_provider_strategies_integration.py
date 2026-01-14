@@ -89,6 +89,7 @@ class TestOTELProviderStrategiesIntegration:
             tracer=tracer,
             client=integration_client,
             project=real_project,
+            session_id=tracer.session_id,
             span_name="main_provider_noop_verification",
             unique_identifier=unique_id,
             span_attributes={

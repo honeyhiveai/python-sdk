@@ -37,10 +37,10 @@ def get_commit_message() -> str:
 def get_change_statistics(staged_files: list) -> dict:
     """
     Analyze git diff statistics to understand the nature of changes.
-    
+
     Returns dictionary with:
     - total_additions: Total lines added
-    - total_deletions: Total lines deleted  
+    - total_deletions: Total lines deleted
     - net_change: additions - deletions (positive = growth, negative = reduction)
     - is_mostly_deletions: True if >70% of changes are deletions
     """
@@ -51,10 +51,10 @@ def get_change_statistics(staged_files: list) -> dict:
             text=True,
             check=True,
         )
-        
+
         total_additions = 0
         total_deletions = 0
-        
+
         for line in result.stdout.strip().split("\n"):
             if not line:
                 continue
@@ -66,10 +66,10 @@ def get_change_statistics(staged_files: list) -> dict:
                 if added != "-" and deleted != "-":
                     total_additions += int(added)
                     total_deletions += int(deleted)
-        
+
         total_changes = total_additions + total_deletions
         deletion_ratio = total_deletions / total_changes if total_changes > 0 else 0
-        
+
         return {
             "total_additions": total_additions,
             "total_deletions": total_deletions,
@@ -119,7 +119,7 @@ def has_significant_changes(staged_files: list) -> bool:
 def detect_change_type(staged_files: list, change_stats: dict) -> str:
     """
     Detect the type of change based on files modified and change statistics.
-    
+
     Returns:
     - "feature": New functionality being added (requires reference docs)
     - "refactor": Code cleanup/restructuring (changelog only)
@@ -131,16 +131,16 @@ def detect_change_type(staged_files: list, change_stats: dict) -> str:
     # Pure test changes
     if all(f.startswith("tests/") for f in staged_files):
         return "test"
-    
+
     # Pure documentation changes
     doc_patterns = ["docs/", "README.md", ".praxis-os/"]
     if all(any(f.startswith(p) for p in doc_patterns) for f in staged_files):
         return "docs"
-    
+
     # Mostly deletions with minimal additions suggests refactoring/cleanup
     if change_stats["is_mostly_deletions"] and change_stats["net_change"] < -100:
         return "refactor"
-    
+
     # Check for new public API additions
     api_files = [
         "src/honeyhive/__init__.py",
@@ -148,14 +148,14 @@ def detect_change_type(staged_files: list, change_stats: dict) -> str:
         "src/honeyhive/tracer/__init__.py",
     ]
     has_api_changes = any(f.startswith(tuple(api_files)) for f in staged_files)
-    
+
     # Check for new examples (usually indicates new features)
     has_new_examples = any(f.startswith("examples/") for f in staged_files)
-    
+
     # If adding new public APIs or examples with significant additions, likely a feature
     if (has_api_changes or has_new_examples) and change_stats["net_change"] > 100:
         return "feature"
-    
+
     # Internal processing/utility changes (not public API)
     internal_patterns = [
         "src/honeyhive/tracer/processing/",
@@ -167,7 +167,7 @@ def detect_change_type(staged_files: list, change_stats: dict) -> str:
         # If mostly internal changes without API changes, treat as refactor
         if not has_api_changes:
             return "refactor"
-    
+
     # Default: treat as potentially user-facing change
     return "other"
 
@@ -175,7 +175,7 @@ def detect_change_type(staged_files: list, change_stats: dict) -> str:
 def has_new_features(staged_files: list, change_type: str) -> bool:
     """
     Check if new features are being added that require reference docs.
-    
+
     Based on detected change type:
     - feature: Requires reference docs
     - refactor/fix/test/docs: No reference docs needed
@@ -195,7 +195,10 @@ def is_docs_changelog_updated(staged_files: list) -> bool:
 
 def is_reference_docs_updated(staged_files: list) -> bool:
     """Check if reference documentation is being updated."""
-    reference_files = ["docs/reference/index.rst", ".praxis-os/workspace/product/features.md"]
+    reference_files = [
+        "docs/reference/index.rst",
+        ".praxis-os/workspace/product/features.md",
+    ]
     return any(ref_file in staged_files for ref_file in reference_files)
 
 
@@ -233,11 +236,10 @@ def is_emergency_commit(commit_msg: str) -> bool:
 
 def check_commit_message_has_docs_intent() -> bool:
     """Check if commit message indicates documentation intent."""
-    # During pre-commit hooks, there is no commit message yet
     # This function should not be used to bypass CHANGELOG requirements
-    # during pre-commit validation, only during post-commit analysis
+    # during validation, only during post-commit analysis
 
-    # For now, always return False during pre-commit to enforce CHANGELOG updates
+    # For now, always return False to enforce CHANGELOG updates
     # This ensures significant changes always require proper documentation
     return False
 
@@ -252,7 +254,7 @@ def main() -> NoReturn:
     3. TERTIARY: Reference docs updates for new features (after changelog)
 
     This order ensures changelog entries are complete before derived documentation.
-    
+
     Change type detection (file and diff-based):
     - feature: New public APIs/examples -> full docs required
     - refactor: Code cleanup, mostly deletions -> changelog only
@@ -281,7 +283,9 @@ def main() -> NoReturn:
     is_emergency = is_emergency_commit(commit_msg)
 
     print(f"📁 Staged files: {len(staged_files)}")
-    print(f"📊 Change statistics: +{change_stats['total_additions']} -{change_stats['total_deletions']} (net: {change_stats['net_change']:+d})")
+    print(
+        f"📊 Change statistics: +{change_stats['total_additions']} -{change_stats['total_deletions']} (net: {change_stats['net_change']:+d})"
+    )
     print(f"🔍 Detected change type: {change_type}")
     print(f"🔧 Significant changes: {'Yes' if has_significant else 'No'}")
     print(f"✨ New features: {'Yes' if has_features else 'No'}")
@@ -363,7 +367,9 @@ def main() -> NoReturn:
     # TERTIARY CHECK: New features require reference documentation (after CHANGELOG)
     if has_features and not reference_updated:
         print("\n❌ Reference documentation update required!")
-        print("\nNew features detected (new public APIs or examples) but reference docs not updated.")
+        print(
+            "\nNew features detected (new public APIs or examples) but reference docs not updated."
+        )
         print(
             "\nReference docs should be updated AFTER changelog entries are complete."
         )

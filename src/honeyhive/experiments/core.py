@@ -16,14 +16,13 @@ from typing import Any, Callable, Dict, List, Optional
 from uuid import UUID
 
 from honeyhive.api.client import HoneyHive
-from honeyhive.api.events import UpdateEventRequest
 from honeyhive.experiments.evaluators import evaluator as evaluator_class
 from honeyhive.experiments.results import get_run_result
 from honeyhive.experiments.utils import (
     prepare_external_dataset,
     prepare_run_request_data,
 )
-from honeyhive.models import CreateRunRequest
+from honeyhive.models import PostExperimentRunRequest, PutExperimentRunRequest
 from honeyhive.tracer import HoneyHiveTracer
 from honeyhive.tracer.instrumentation.decorators import trace
 from honeyhive.tracer.lifecycle.flush import force_flush_tracer
@@ -514,7 +513,9 @@ def _update_run_with_results(  # pylint: disable=too-many-branches
                 list(update_metadata.keys()) if update_metadata else [],
             )
 
-        client.evaluations.update_run_from_dict(run_id, update_data)
+        # Use experiments API with PutExperimentRunRequest
+        update_request = PutExperimentRunRequest(**update_data)
+        client.experiments.update_run(run_id, update_request)
 
         if verbose:
             if session_ids:
@@ -633,8 +634,9 @@ def _enrich_session_with_results(
             update_data["metrics"] = evaluator_metrics[datapoint_id]
 
         if update_data:
-            update_request = UpdateEventRequest(event_id=session_id, **update_data)
-            client.events.update_event(update_request)
+            # Build update data dict with event_id and update params
+            event_update_data = {"event_id": session_id, **update_data}
+            client.events.update(data=event_update_data)
 
             if verbose:
                 enriched_fields = list(update_data.keys())
@@ -912,7 +914,10 @@ def evaluate(  # pylint: disable=too-many-locals,too-many-branches
 
     # Initialize client - passing explicit values ensures both HONEYHIVE_* and HH_*
     # environment variables work (client's config only checks HH_* prefix)
-    client = HoneyHive(api_key=api_key, server_url=server_url, verbose=verbose)
+    client_params = {"api_key": api_key}
+    if server_url:
+        client_params["base_url"] = server_url
+    client = HoneyHive(**client_params)
 
     # Step 1: Prepare dataset
     if dataset is not None:
@@ -997,9 +1002,9 @@ def evaluate(  # pylint: disable=too-many-locals,too-many-branches
         logger.info("  run_data['datapoint_ids']: %s", run_data.get("datapoint_ids"))
         logger.info("  run_data['metadata']: %s", run_data.get("metadata"))
 
-    # Create run via API
-    run_request = CreateRunRequest(**run_data)
-    run_response = client.evaluations.create_run(run_request)
+    # Create run via API (experiments API handles runs)
+    run_request = PostExperimentRunRequest(**run_data)
+    run_response = client.experiments.create_run(run_request)
 
     # Use backend-generated run_id if available
     if hasattr(run_response, "run_id") and run_response.run_id:
@@ -1095,6 +1100,7 @@ def evaluate(  # pylint: disable=too-many-locals,too-many-branches
     result_summary = get_run_result(
         client=client,
         run_id=run_id,
+        project_id=project,
         aggregate_function=aggregate_function,
     )
 

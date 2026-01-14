@@ -160,6 +160,7 @@ class TestBatchConfiguration:
                 tracer=tracer,
                 client=integration_client,
                 project=real_project,
+                session_id=tracer.session_id,
                 span_name="batch_test_operation",
                 unique_identifier=unique_id,
                 span_attributes={

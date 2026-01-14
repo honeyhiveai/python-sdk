@@ -22,17 +22,19 @@ What Gets Traced:
 - Complete message history via span events
 """
 
-import os
 import asyncio
+import os
 from pathlib import Path
+
+from agents import Agent, GuardrailFunctionOutput, InputGuardrail, Runner, function_tool
+from agents.exceptions import InputGuardrailTripwireTriggered
+from dotenv import load_dotenv
+from openinference.instrumentation.openai import OpenAIInstrumentor
+from openinference.instrumentation.openai_agents import OpenAIAgentsInstrumentor
+from pydantic import BaseModel
+
 from honeyhive import HoneyHiveTracer
 from honeyhive.tracer.instrumentation.decorators import trace
-from dotenv import load_dotenv
-from openinference.instrumentation.openai_agents import OpenAIAgentsInstrumentor
-from openinference.instrumentation.openai import OpenAIInstrumentor
-from agents import Agent, Runner, InputGuardrail, GuardrailFunctionOutput, function_tool
-from agents.exceptions import InputGuardrailTripwireTriggered
-from pydantic import BaseModel
 
 # Load environment variables from repo root .env
 root_dir = Path(__file__).parent.parent.parent
@@ -44,7 +46,7 @@ tracer = HoneyHiveTracer.init(
     project=os.getenv("HH_PROJECT", "openai-agents-demo"),
     session_name=Path(__file__).stem,  # Use filename as session name
     test_mode=False,
-    #verbose=True
+    # verbose=True
 )
 
 # Initialize OpenInference instrumentors for OpenAI Agents SDK and OpenAI
@@ -61,8 +63,10 @@ print("✓ OpenAI instrumentor initialized with HoneyHive tracer")
 # Models for structured outputs
 # ============================================================================
 
+
 class MathSolution(BaseModel):
     """Structured output for math problems."""
+
     problem: str
     solution: str
     steps: list[str]
@@ -70,12 +74,14 @@ class MathSolution(BaseModel):
 
 class HomeworkCheck(BaseModel):
     """Guardrail output to check if query is homework-related."""
+
     is_homework: bool
     reasoning: str
 
 
 class WeatherInfo(BaseModel):
     """Mock weather information."""
+
     location: str
     temperature: float
     conditions: str
@@ -85,16 +91,17 @@ class WeatherInfo(BaseModel):
 # Tool Definitions
 # ============================================================================
 
+
 @function_tool
 def calculator(operation: str, a: float, b: float) -> float:
     """
     Perform basic math operations.
-    
+
     Args:
         operation: One of 'add', 'subtract', 'multiply', 'divide'
         a: First number
         b: Second number
-    
+
     Returns:
         Result of the operation
     """
@@ -102,7 +109,7 @@ def calculator(operation: str, a: float, b: float) -> float:
         "add": lambda x, y: x + y,
         "subtract": lambda x, y: x - y,
         "multiply": lambda x, y: x * y,
-        "divide": lambda x, y: x / y if y != 0 else float('inf'),
+        "divide": lambda x, y: x / y if y != 0 else float("inf"),
     }
     return operations.get(operation, lambda x, y: 0)(a, b)
 
@@ -111,10 +118,10 @@ def calculator(operation: str, a: float, b: float) -> float:
 def get_weather(location: str) -> str:
     """
     Get weather information for a location (mock implementation).
-    
+
     Args:
         location: City name
-    
+
     Returns:
         Weather information as a formatted string
     """
@@ -125,10 +132,10 @@ def get_weather(location: str) -> str:
         "new york": {"temperature": 22.0, "conditions": "Sunny"},
         "tokyo": {"temperature": 25.0, "conditions": "Clear"},
     }
-    
+
     location_lower = location.lower()
     data = mock_data.get(location_lower, {"temperature": 20.0, "conditions": "Unknown"})
-    
+
     return f"Weather in {location}: {data['temperature']}°C, {data['conditions']}"
 
 
@@ -136,18 +143,19 @@ def get_weather(location: str) -> str:
 # Test Functions
 # ============================================================================
 
+
 @trace(event_type="chain", event_name="test_basic_invocation", tracer=tracer)
 async def test_basic_invocation():
     """Test 1: Basic agent invocation."""
     print("\n" + "=" * 60)
     print("Test 1: Basic Agent Invocation")
     print("=" * 60)
-    
+
     agent = Agent(
         name="Helper Assistant",
-        instructions="You are a helpful assistant that gives concise, friendly answers."
+        instructions="You are a helpful assistant that gives concise, friendly answers.",
     )
-    
+
     result = await Runner.run(agent, "What is 2+2?")
     print(f"✅ Result: {result.final_output}")
     print("\n📊 Expected in HoneyHive:")
@@ -166,9 +174,9 @@ async def test_agent_with_tools():
     agent = Agent(
         name="Math Assistant",
         instructions="You are a math assistant. Use the calculator tool to solve problems accurately.",
-        tools=[calculator]
+        tools=[calculator],
     )
-    
+
     result = await Runner.run(agent, "What is 123 multiplied by 456?")
     print(f"✅ Result: {result.final_output}")
     print("\n📊 Expected in HoneyHive:")
@@ -189,27 +197,27 @@ async def test_handoffs():
         name="Math Tutor",
         handoff_description="Specialist agent for math questions",
         instructions="You provide help with math problems. Explain your reasoning at each step and include examples.",
-        tools=[calculator]
+        tools=[calculator],
     )
 
     history_agent = Agent(
         name="History Tutor",
         handoff_description="Specialist agent for historical questions",
-        instructions="You provide assistance with historical queries. Explain important events and context clearly."
+        instructions="You provide assistance with historical queries. Explain important events and context clearly.",
     )
 
     weather_agent = Agent(
         name="Weather Agent",
         handoff_description="Specialist agent for weather queries",
         instructions="You provide weather information for locations.",
-        tools=[get_weather]
+        tools=[get_weather],
     )
 
     # Triage agent that routes to specialists
     triage_agent = Agent(
         name="Triage Agent",
         instructions="You determine which specialist agent to use based on the user's question.",
-        handoffs=[math_agent, history_agent, weather_agent]
+        handoffs=[math_agent, history_agent, weather_agent],
     )
 
     # Test math routing
@@ -217,7 +225,9 @@ async def test_handoffs():
     print(f"✅ Math result: {result.final_output}")
 
     # Test history routing
-    result = await Runner.run(triage_agent, "Who was the first president of the United States?")
+    result = await Runner.run(
+        triage_agent, "Who was the first president of the United States?"
+    )
     print(f"✅ History result: {result.final_output}")
 
     # Test weather routing
@@ -262,7 +272,9 @@ async def test_guardrails():
 
     # Test 1: Valid homework question (should pass)
     try:
-        result = await Runner.run(homework_agent, "Can you help me understand photosynthesis?")
+        result = await Runner.run(
+            homework_agent, "Can you help me understand photosynthesis?"
+        )
         print(f"✅ Homework question allowed: {result.final_output[:100]}...")
     except InputGuardrailTripwireTriggered as e:
         print(f"❌ Homework question blocked (unexpected): {e}")
@@ -270,9 +282,13 @@ async def test_guardrails():
     # Test 2: Non-homework question (should be blocked)
     try:
         result = await Runner.run(homework_agent, "What's the best pizza topping?")
-        print(f"⚠️  Non-homework question allowed (unexpected): {result.final_output[:100]}...")
+        print(
+            f"⚠️  Non-homework question allowed (unexpected): {result.final_output[:100]}..."
+        )
     except InputGuardrailTripwireTriggered as e:
-        print(f"✅ Non-homework question blocked (expected): Input blocked by guardrail")
+        print(
+            f"✅ Non-homework question blocked (expected): Input blocked by guardrail"
+        )
 
     print("\n📊 Expected in HoneyHive:")
     print("   - Spans for guardrail agent executions")
@@ -291,14 +307,13 @@ async def test_structured_output():
         name="Math Tutor with Steps",
         instructions="You solve math problems and show your work step by step.",
         output_type=MathSolution,
-        tools=[calculator]
+        tools=[calculator],
     )
 
     result = await Runner.run(
-        agent,
-        "Solve this problem: (15 + 25) * 3. Show me the steps."
+        agent, "Solve this problem: (15 + 25) * 3. Show me the steps."
     )
-    
+
     solution = result.final_output_as(MathSolution)
     print(f"✅ Problem: {solution.problem}")
     print(f"✅ Solution: {solution.solution}")
@@ -320,20 +335,22 @@ async def test_streaming():
 
     agent = Agent(
         name="Storyteller",
-        instructions="You are a creative storyteller who writes engaging short stories."
+        instructions="You are a creative storyteller who writes engaging short stories.",
     )
 
     print("📖 Streaming output: ", end="", flush=True)
-    
+
     full_response = ""
-    async for chunk in Runner.stream_async(agent, "Tell me a very short 2-sentence story about a curious robot."):
-        if hasattr(chunk, 'text'):
+    async for chunk in Runner.stream_async(
+        agent, "Tell me a very short 2-sentence story about a curious robot."
+    ):
+        if hasattr(chunk, "text"):
             print(chunk.text, end="", flush=True)
             full_response += chunk.text
         elif isinstance(chunk, str):
             print(chunk, end="", flush=True)
             full_response += chunk
-    
+
     print("\n✅ Streaming complete")
     print("\n📊 Expected in HoneyHive:")
     print("   - Same span structure as basic invocation")
@@ -350,7 +367,7 @@ async def test_custom_context():
 
     agent = Agent(
         name="Customer Support",
-        instructions="You are a helpful customer support agent."
+        instructions="You are a helpful customer support agent.",
     )
 
     # Add custom context for tracing
@@ -358,15 +375,13 @@ async def test_custom_context():
         "user_id": "test_user_456",
         "session_type": "integration_test",
         "test_suite": "openai_agents_demo",
-        "environment": "development"
+        "environment": "development",
     }
 
     result = await Runner.run(
-        agent,
-        "How do I reset my password?",
-        context=custom_context
+        agent, "How do I reset my password?", context=custom_context
     )
-    
+
     print(f"✅ Result: {result.final_output}")
     print("\n📊 Expected in HoneyHive:")
     print("   - Custom context attributes on span:")
@@ -388,7 +403,7 @@ async def test_complex_workflow():
         name="Research Agent",
         handoff_description="Agent that gathers information",
         instructions="You research and gather information on topics.",
-        tools=[get_weather]
+        tools=[get_weather],
     )
 
     # Analysis agent
@@ -396,28 +411,28 @@ async def test_complex_workflow():
         name="Analysis Agent",
         handoff_description="Agent that analyzes data",
         instructions="You analyze information and provide insights.",
-        tools=[calculator]
+        tools=[calculator],
     )
 
     # Synthesis agent
     synthesis_agent = Agent(
         name="Synthesis Agent",
         handoff_description="Agent that creates final reports",
-        instructions="You synthesize information from other agents into clear, actionable reports."
+        instructions="You synthesize information from other agents into clear, actionable reports.",
     )
 
     # Orchestrator
     orchestrator = Agent(
         name="Orchestrator",
         instructions="You coordinate between research, analysis, and synthesis agents to complete complex tasks.",
-        handoffs=[research_agent, analysis_agent, synthesis_agent]
+        handoffs=[research_agent, analysis_agent, synthesis_agent],
     )
 
     result = await Runner.run(
         orchestrator,
-        "Research the weather in Tokyo, calculate what the temperature would be in Fahrenheit, and create a brief summary."
+        "Research the weather in Tokyo, calculate what the temperature would be in Fahrenheit, and create a brief summary.",
     )
-    
+
     print(f"✅ Final report: {result.final_output}")
     print("\n📊 Expected in HoneyHive:")
     print("   - Complex span hierarchy showing orchestration")
@@ -430,12 +445,13 @@ async def test_complex_workflow():
 # Main Execution
 # ============================================================================
 
+
 async def main():
     """Run all integration tests."""
     print("🚀 OpenAI Agents SDK + HoneyHive Integration Test Suite")
     print(f"   Session ID: {tracer.session_id}")
     print(f"   Project: {tracer.project}")
-    
+
     if not os.getenv("OPENAI_API_KEY"):
         print("\n❌ Error: OPENAI_API_KEY environment variable not set")
         print("   Please add it to your .env file")
@@ -451,7 +467,7 @@ async def main():
         await test_streaming()
         await test_custom_context()
         await test_complex_workflow()
-        
+
         print("\n" + "=" * 60)
         print("🎉 All tests completed successfully!")
         print("=" * 60)
@@ -474,18 +490,21 @@ async def main():
         print("   • Guardrail decisions")
         print("   • Token usage metrics")
         print("   • Custom context propagation")
-        
+
     except Exception as e:
         print(f"\n❌ Test failed: {e}")
         print("\nCommon issues:")
         print("   • Verify OPENAI_API_KEY is valid")
         print("   • Ensure you have 'openai-agents' package installed")
-        print("   • Ensure you have 'openinference-instrumentation-openai-agents' installed")
+        print(
+            "   • Ensure you have 'openinference-instrumentation-openai-agents' installed"
+        )
         print("   • Check HoneyHive API key is valid")
         print(f"\n📊 Traces may still be in HoneyHive: Session {tracer.session_id}")
         import traceback
+
         traceback.print_exc()
-    
+
     finally:
         # Cleanup
         print("\n📤 Cleaning up...")
@@ -496,4 +515,3 @@ async def main():
 
 if __name__ == "__main__":
     asyncio.run(main())
-

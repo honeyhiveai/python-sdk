@@ -1,6 +1,23 @@
 ## [Unreleased]
 
+## [1.0.0rc9] - 2026-01-13
+
 ### Added
+
+- **✨ API Client: Auto-generated v1 API client from OpenAPI spec**
+  - Generated Python client from `hive-kube` OpenAPI specification using `openapi-python-generator`
+  - Full type-safe Pydantic models for all API requests/responses
+  - Sync and async methods for all endpoints
+  - New endpoint support: batch events, experiment results/comparison, project CRUD
+  - Control Plane URL support via `HH_CP_API_URL` environment variable
+  - Files: `src/honeyhive/_generated/`, `openapi/v1.yaml`
+
+- **✨ API Client: Comprehensive backwards compatible aliases**
+  - All API classes support both new (`list()`, `create()`, `get()`) and legacy (`list_datasets()`, `create_dataset()`) method names
+  - `HoneyHive` client accepts all legacy parameters: `server_url`, `timeout`, `test_mode`, `verbose`, `retry_config`, etc.
+  - Environment variable support: `HH_API_KEY`, `HH_API_URL`, `HH_CP_API_URL`
+  - `evaluations` alias for `experiments` API
+  - Files: `src/honeyhive/api/client.py`
 
 - **✨ OTLP: HTTP/JSON export format support**
   - Added `OTLPJSONExporter` class for exporting spans in JSON format over HTTP
@@ -34,6 +51,19 @@
   - Added `MetricDatapoints` model for tracking passed/failed datapoint IDs per metric
   - All models include proper type hints and Pydantic validation
   - Files: `src/honeyhive/experiments/models.py`
+
+### Changed
+
+- **🔧 Developer Experience: Streamlined Pre-commit Hooks & Added Makefile**
+  - **Pre-commit hooks now fast**: Only runs format, lint, and unit tests (seconds instead of minutes)
+  - **Comprehensive checks via Makefile**: `make check-all`, `make check-docs`, `make check-integration`
+  - **SDK Generation**: `make generate-sdk` - Generate SDK from OpenAPI specification
+  - **SDK Comparison**: `make compare-sdk` - Compare generated SDK with current implementation
+  - **Individual checks**: `make check-docs-compliance`, `make check-feature-sync`, `make check-tracer-patterns`, `make check-no-mocks`
+  - Added `openapi-python-client>=0.28.0` to dev dependencies for SDK generation
+  - Added `comparison_output/` to `.gitignore` for generated SDK artifacts
+  - Fixed Nix environment PYTHONPATH for proper package resolution
+  - Files: `.pre-commit-config.yaml`, `Makefile`, `pyproject.toml`, `.gitignore`, `flake.nix`, `scripts/validate-docs-navigation.sh`
 
 ### Fixed
 

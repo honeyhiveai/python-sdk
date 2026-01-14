@@ -7,9 +7,11 @@ Zero code changes to your existing Anthropic usage!
 """
 
 import os
-from honeyhive import HoneyHiveTracer
-from openinference.instrumentation.anthropic import AnthropicInstrumentor
+
 import anthropic
+from openinference.instrumentation.anthropic import AnthropicInstrumentor
+
+from honeyhive import HoneyHiveTracer
 
 
 def main():

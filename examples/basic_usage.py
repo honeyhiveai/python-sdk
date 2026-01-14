@@ -13,9 +13,10 @@ as full functioning executable code:
 This aligns with the code snippets shown in the documentation.
 """
 
+import asyncio
 import os
 import time
-import asyncio
+
 from honeyhive import HoneyHive, HoneyHiveTracer, trace
 from honeyhive.config.models import TracerConfig
 
@@ -45,17 +46,16 @@ def main():
         api_key="your-api-key",
         project="my-project",  # Required for OTLP tracing
         source="production",
-        verbose=True
+        verbose=True,
     )
-    print(f"✓ Traditional tracer initialized for project: {tracer_traditional.project_name}")
+    print(
+        f"✓ Traditional tracer initialized for project: {tracer_traditional.project_name}"
+    )
 
     # Method 2: Modern Pydantic Config Objects (New Pattern)
     print("\n🆕 Method 2: Modern Config Objects (New Pattern)")
     config = TracerConfig(
-        api_key="your-api-key",
-        project="my-project",
-        source="production",
-        verbose=True
+        api_key="your-api-key", project="my-project", source="production", verbose=True
     )
     tracer_modern = HoneyHiveTracer(config=config)
     print(f"✓ Modern tracer initialized for project: {tracer_modern.project_name}")
@@ -131,15 +131,15 @@ def main():
         """Process data and enrich span with metadata."""
         print(f"  📝 Processing: {input_data}")
         result = input_data.upper()
-        
+
         # ✅ PRIMARY PATTERN (v1.0+): Use instance method
         tracer.enrich_span(
             metadata={"input": input_data, "result": result},
             metrics={"processing_time_ms": 100},
-            user_properties={"user_id": "user-123", "plan": "premium"}
+            user_properties={"user_id": "user-123", "plan": "premium"},
         )
         print("  ✓ Span enriched with metadata, metrics, and user properties")
-        
+
         return result
 
     # Test enrichment
@@ -150,7 +150,7 @@ def main():
     print("\n  📝 Enriching session with user properties...")
     tracer.enrich_session(
         user_properties={"user_id": "user-123", "plan": "premium"},
-        metadata={"source": "basic_usage_example"}
+        metadata={"source": "basic_usage_example"},
     )
     print("  ✓ Session enriched")
 

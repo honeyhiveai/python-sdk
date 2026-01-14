@@ -26,7 +26,10 @@ from honeyhive.experiments.models import (
 
 
 def get_run_result(
-    client: Any, run_id: str, aggregate_function: str = "average"  # HoneyHive client
+    client: Any,  # HoneyHive client
+    run_id: str,
+    project_id: str,
+    aggregate_function: str = "average",
 ) -> ExperimentResultSummary:
     """
     Get aggregated experiment result from backend.
@@ -45,6 +48,7 @@ def get_run_result(
     Args:
         client: HoneyHive API client
         run_id: Experiment run ID
+        project_id: Project ID
         aggregate_function: Aggregation function ("average", "sum", "min", "max")
 
     Returns:
@@ -57,15 +61,15 @@ def get_run_result(
     Examples:
         >>> from honeyhive import HoneyHive
         >>> client = HoneyHive(api_key="...")
-        >>> result = get_run_result(client, "run-123", "average")
+        >>> result = get_run_result(client, "run-123", "project-456", "average")
         >>> result.success
         True
         >>> result.metrics.get_metric("accuracy")
         {'aggregate': 0.85, 'values': [0.8, 0.9, 0.85]}
     """
-    # Use existing API client method (will be added to evaluations.py)
-    # For now, call directly
-    response = client.evaluations.get_run_result(
+    # Use experiments API for run results
+    # Note: project_id is no longer passed - backend uses auth scopes
+    response = client.experiments.get_result(
         run_id=run_id, aggregate_function=aggregate_function
     )
 
@@ -85,11 +89,13 @@ def get_run_result(
     )
 
 
-def get_run_metrics(client: Any, run_id: str) -> Dict[str, Any]:  # HoneyHive client
+def get_run_metrics(
+    client: Any, run_id: str, project_id: str
+) -> Dict[str, Any]:  # HoneyHive client
     """
     Get raw metrics for a run (without aggregation).
 
-    Backend Endpoint: GET /runs/:run_id/metrics
+    Backend Endpoint: GET /runs/:run_id/result (returns metrics in response)
 
     This returns raw metric data without aggregation, useful for:
     - Debugging individual datapoint metrics
@@ -99,22 +105,29 @@ def get_run_metrics(client: Any, run_id: str) -> Dict[str, Any]:  # HoneyHive cl
     Args:
         client: HoneyHive API client
         run_id: Experiment run ID
+        project_id: Project ID
 
     Returns:
         Raw metrics data from backend
 
     Examples:
-        >>> metrics = get_run_metrics(client, "run-123")
+        >>> metrics = get_run_metrics(client, "run-123", "project-456")
         >>> metrics["events"]
         [{'event_id': '...', 'metrics': {...}}, ...]
     """
-    return cast(Dict[str, Any], client.evaluations.get_run_metrics(run_id=run_id))
+    # Use experiments API for run results (includes metrics)
+    # Note: project_id is no longer passed - backend uses auth scopes
+    return cast(
+        Dict[str, Any],
+        client.experiments.get_result(run_id=run_id),
+    )
 
 
 def compare_runs(
     client: Any,  # HoneyHive client
     new_run_id: str,
     old_run_id: str,
+    project_id: str,
     aggregate_function: str = "average",
 ) -> RunComparisonResult:
     """
@@ -135,13 +148,14 @@ def compare_runs(
         client: HoneyHive API client
         new_run_id: New experiment run ID
         old_run_id: Old experiment run ID
+        project_id: Project ID
         aggregate_function: Aggregation function ("average", "sum", "min", "max")
 
     Returns:
         RunComparisonResult with delta calculations
 
     Examples:
-        >>> comparison = compare_runs(client, "run-new", "run-old")
+        >>> comparison = compare_runs(client, "run-new", "run-old", "project-123")
         >>> comparison.common_datapoints
         3
         >>> delta = comparison.get_metric_delta("accuracy")
@@ -160,9 +174,9 @@ def compare_runs(
         >>> comparison.list_degraded_metrics()
         []
     """
-    # Use aggregated comparison endpoint (NOT compare_run_events)
-    # This endpoint returns the metric analysis we need
-    response = client.evaluations.compare_runs(
+    # Use experiments API comparison endpoint
+    # Note: project_id is no longer passed - backend uses auth scopes
+    response = client.experiments.compare_runs(
         new_run_id=new_run_id,
         old_run_id=old_run_id,
         aggregate_function=aggregate_function,

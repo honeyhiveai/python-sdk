@@ -1,25 +1,42 @@
-"""HoneyHive API Client Module"""
+"""HoneyHive API Client.
 
-from .client import HoneyHive
-from .configurations import ConfigurationsAPI
-from .datapoints import DatapointsAPI
-from .datasets import DatasetsAPI
-from .evaluations import EvaluationsAPI
-from .events import EventsAPI
-from .metrics import MetricsAPI
-from .projects import ProjectsAPI
-from .session import SessionAPI
-from .tools import ToolsAPI
+Usage:
+    from honeyhive.api import HoneyHive
+
+    client = HoneyHive(api_key="hh_...")
+    configs = client.configurations.list()
+"""
+
+from .client import (
+    ConfigurationsAPI,
+    DatapointsAPI,
+    DatasetsAPI,
+    EventsAPI,
+    ExperimentsAPI,
+    HoneyHive,
+    MetricsAPI,
+    ProjectsAPI,
+    SessionsAPI,
+    ToolsAPI,
+)
+
+# Backwards compatible aliases
+EvaluationsAPI = ExperimentsAPI
+SessionAPI = SessionsAPI
 
 __all__ = [
     "HoneyHive",
-    "SessionAPI",
-    "EventsAPI",
-    "ToolsAPI",
+    # API classes
+    "ConfigurationsAPI",
     "DatapointsAPI",
     "DatasetsAPI",
-    "ConfigurationsAPI",
-    "ProjectsAPI",
+    "EventsAPI",
+    "ExperimentsAPI",
     "MetricsAPI",
+    "ProjectsAPI",
+    "SessionsAPI",
+    "ToolsAPI",
+    # Backwards compatible aliases
     "EvaluationsAPI",
+    "SessionAPI",
 ]

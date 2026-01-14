@@ -417,7 +417,7 @@ class TestHoneyHiveTracerBaseCoreAttributes:
 
         # Mock session creation to preserve the session_id
         # Since we now always create sessions, mock it to return the same session_id
-        from honeyhive.api.session import SessionStartResponse
+        from honeyhive.models import PostSessionStartResponse as SessionStartResponse
 
         mock_response = SessionStartResponse(session_id=test_session_id)
         mock_create_session.return_value = mock_response
@@ -463,7 +463,7 @@ class TestHoneyHiveTracerBaseCoreAttributes:
         mock_create.return_value = mock_unified
 
         # Mock session creation to preserve the session_id
-        from honeyhive.api.session import SessionStartResponse
+        from honeyhive.models import PostSessionStartResponse as SessionStartResponse
 
         mock_response = SessionStartResponse(session_id=session_config_id)
         mock_create_session.return_value = mock_response
