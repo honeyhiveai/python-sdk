@@ -5,9 +5,7 @@ from honeyhive import HoneyHiveTracer, trace
 
 # Initialize tracer
 tracer = HoneyHiveTracer.init(
-    api_key="hh_4I5JJHE3EB9Nphegmw8v9dqj4mKC1GOV",
-    server_url="https://api.testing-dp-1.honeyhive.ai",
-    source="dev",  # Optional
+    verbose=True,
 )
 
 # Initialize instrumentor - auto-traces OpenAI calls
