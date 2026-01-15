@@ -466,7 +466,11 @@ class DatasetsAPI(BaseAPI):
 
 
 class EventsAPI(BaseAPI):
-    """Events API."""
+    """Events API.
+
+    Read operations (list, get_by_session_id, delete) use Control Plane.
+    Write operations (create, update, create_batch) use Data Plane.
+    """
 
     # Supported parameters for getEvents() method
     _GET_EVENTS_SUPPORTED_PARAMS = {
@@ -479,11 +483,19 @@ class EventsAPI(BaseAPI):
         "evaluation_id",
     }
 
+    def _get_cp_config(self) -> APIConfig:
+        """Get APIConfig configured for Control Plane endpoints."""
+        return APIConfig(
+            base_path=self._api_config.get_cp_base_path(),
+            access_token=self._api_config.access_token,
+            verify=self._api_config.verify,
+        )
+
     # Sync methods
     def list(
         self, query: Union[GetEventsQuery, Dict[str, Any]]
     ) -> GetEventsResponse:
-        """Get events.
+        """Get events (uses Control Plane endpoint).
 
         Args:
             query: Query parameters as GetEventsQuery model or dict.
@@ -503,17 +515,12 @@ class EventsAPI(BaseAPI):
         filtered_data = {
             k: v for k, v in data.items() if k in self._GET_EVENTS_SUPPORTED_PARAMS
         }
-        return events_svc.getEvents(self._api_config, **filtered_data)
+        # Read operations use Control Plane
+        return events_svc.getEvents(self._get_cp_config(), **filtered_data)
 
     def get_by_session_id(self, session_id: str) -> GetEventsBySessionIdResponse:
         """Get events by session ID (uses Control Plane endpoint)."""
-        # This endpoint is on Control Plane, use cp_base_path
-        cp_config = APIConfig(
-            base_path=self._api_config.get_cp_base_path(),
-            access_token=self._api_config.access_token,
-            verify=self._api_config.verify,
-        )
-        return events_svc.getEventsBySessionId(cp_config, id=session_id)
+        return events_svc.getEventsBySessionId(self._get_cp_config(), id=session_id)
 
     def create(self, request: PostEventRequest) -> PostEventResponse:
         """Create an event."""
@@ -536,7 +543,7 @@ class EventsAPI(BaseAPI):
     async def list_async(
         self, query: Union[GetEventsQuery, Dict[str, Any]]
     ) -> GetEventsResponse:
-        """Get events asynchronously.
+        """Get events asynchronously (uses Control Plane endpoint).
 
         Args:
             query: Query parameters as GetEventsQuery model or dict.
@@ -554,19 +561,16 @@ class EventsAPI(BaseAPI):
         filtered_data = {
             k: v for k, v in data.items() if k in self._GET_EVENTS_SUPPORTED_PARAMS
         }
-        return await events_svc_async.getEvents(self._api_config, **filtered_data)
+        # Read operations use Control Plane
+        return await events_svc_async.getEvents(self._get_cp_config(), **filtered_data)
 
     async def get_by_session_id_async(
         self, session_id: str
     ) -> GetEventsBySessionIdResponse:
         """Get events by session ID asynchronously (uses Control Plane endpoint)."""
-        # This endpoint is on Control Plane, use cp_base_path
-        cp_config = APIConfig(
-            base_path=self._api_config.get_cp_base_path(),
-            access_token=self._api_config.access_token,
-            verify=self._api_config.verify,
+        return await events_svc_async.getEventsBySessionId(
+            self._get_cp_config(), id=session_id
         )
-        return await events_svc_async.getEventsBySessionId(cp_config, id=session_id)
 
     async def create_async(self, request: PostEventRequest) -> PostEventResponse:
         """Create an event asynchronously."""
