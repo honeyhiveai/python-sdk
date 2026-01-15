@@ -16,7 +16,7 @@ Usage::
     configs = await client.configurations.list_async(project="my-project")
 """
 
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List, Optional, Union
 
 from honeyhive._generated.api_config import APIConfig
 
@@ -46,6 +46,7 @@ from honeyhive._generated.models import (
     GetDatapointsResponse,
     GetDatasetsResponse,
     GetEventsBySessionIdResponse,
+    GetEventsQuery,
     GetEventsResponse,
     GetExperimentRunResponse,
     GetExperimentRunsResponse,
@@ -479,8 +480,25 @@ class EventsAPI(BaseAPI):
     }
 
     # Sync methods
-    def list(self, data: Dict[str, Any]) -> GetEventsResponse:
-        """Get events."""
+    def list(
+        self, query: Union[GetEventsQuery, Dict[str, Any]]
+    ) -> GetEventsResponse:
+        """Get events.
+
+        Args:
+            query: Query parameters as GetEventsQuery model or dict.
+                   Supported fields: dateRange, filters, projections,
+                   ignore_order, limit, page, evaluation_id
+
+        Returns:
+            GetEventsResponse with matching events
+        """
+        # Convert to dict if Pydantic model
+        if hasattr(query, "model_dump"):
+            data = query.model_dump(exclude_none=True)
+        else:
+            data = query
+
         # Filter data to only include supported parameters for getEvents()
         filtered_data = {
             k: v for k, v in data.items() if k in self._GET_EVENTS_SUPPORTED_PARAMS
@@ -515,8 +533,23 @@ class EventsAPI(BaseAPI):
         return events_svc.createEventBatch(self._api_config, data=data)
 
     # Async methods
-    async def list_async(self, data: Dict[str, Any]) -> GetEventsResponse:
-        """Get events asynchronously."""
+    async def list_async(
+        self, query: Union[GetEventsQuery, Dict[str, Any]]
+    ) -> GetEventsResponse:
+        """Get events asynchronously.
+
+        Args:
+            query: Query parameters as GetEventsQuery model or dict.
+
+        Returns:
+            GetEventsResponse with matching events
+        """
+        # Convert to dict if Pydantic model
+        if hasattr(query, "model_dump"):
+            data = query.model_dump(exclude_none=True)
+        else:
+            data = query
+
         # Filter data to only include supported parameters for getEvents()
         filtered_data = {
             k: v for k, v in data.items() if k in self._GET_EVENTS_SUPPORTED_PARAMS
@@ -561,13 +594,17 @@ class EventsAPI(BaseAPI):
         """Update an event (backwards compatible alias for update())."""
         return self.update(data)
 
-    def list_events(self, data: Dict[str, Any]) -> GetEventsResponse:
+    def list_events(
+        self, query: Union[GetEventsQuery, Dict[str, Any]]
+    ) -> GetEventsResponse:
         """List events (backwards compatible alias for list())."""
-        return self.list(data)
+        return self.list(query)
 
-    def get_events(self, data: Dict[str, Any]) -> GetEventsResponse:
+    def get_events(
+        self, query: Union[GetEventsQuery, Dict[str, Any]]
+    ) -> GetEventsResponse:
         """Get events (backwards compatible alias for list())."""
-        return self.list(data)
+        return self.list(query)
 
 
 class ExperimentsAPI(BaseAPI):
