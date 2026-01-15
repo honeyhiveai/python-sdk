@@ -22,6 +22,8 @@ from honeyhive._generated.api_config import APIConfig
 
 # Import models used in type hints
 from honeyhive._generated.models import (
+    AddDatapointsResponse,
+    AddDatapointsToDatasetRequest,
     CreateConfigurationRequest,
     CreateConfigurationResponse,
     CreateDatapointRequest,
@@ -58,6 +60,7 @@ from honeyhive._generated.models import (
     PostSessionStartResponse,
     PutExperimentRunRequest,
     PutExperimentRunResponse,
+    RemoveDatapointResponse,
     UpdateConfigurationRequest,
     UpdateConfigurationResponse,
     UpdateDatapointRequest,
@@ -330,6 +333,36 @@ class DatasetsAPI(BaseAPI):
         """Delete a dataset."""
         return datasets_svc.deleteDataset(self._api_config, dataset_id=id)
 
+    def add_datapoints(
+        self, dataset_id: str, request: AddDatapointsToDatasetRequest
+    ) -> AddDatapointsResponse:
+        """Add datapoints to a dataset.
+
+        Args:
+            dataset_id: The unique identifier of the dataset to add datapoints to.
+            request: The request containing data and mapping for the datapoints.
+
+        Returns:
+            AddDatapointsResponse with inserted status and datapoint IDs.
+        """
+        return datasets_svc.addDatapoints(
+            self._api_config, dataset_id=dataset_id, data=request
+        )
+
+    def remove_datapoint(self, dataset_id: str, datapoint_id: str) -> RemoveDatapointResponse:
+        """Remove a datapoint from a dataset.
+
+        Args:
+            dataset_id: The unique identifier of the dataset.
+            datapoint_id: The unique identifier of the datapoint to remove.
+
+        Returns:
+            RemoveDatapointResponse with dereferenced status and message.
+        """
+        return datasets_svc.removeDatapoint(
+            self._api_config, dataset_id=dataset_id, datapoint_id=datapoint_id
+        )
+
     # Async methods
     async def list_async(
         self,
@@ -366,6 +399,38 @@ class DatasetsAPI(BaseAPI):
     async def delete_async(self, id: str) -> DeleteDatasetResponse:
         """Delete a dataset asynchronously."""
         return await datasets_svc_async.deleteDataset(self._api_config, dataset_id=id)
+
+    async def add_datapoints_async(
+        self, dataset_id: str, request: AddDatapointsToDatasetRequest
+    ) -> AddDatapointsResponse:
+        """Add datapoints to a dataset asynchronously.
+
+        Args:
+            dataset_id: The unique identifier of the dataset to add datapoints to.
+            request: The request containing data and mapping for the datapoints.
+
+        Returns:
+            AddDatapointsResponse with inserted status and datapoint IDs.
+        """
+        return await datasets_svc_async.addDatapoints(
+            self._api_config, dataset_id=dataset_id, data=request
+        )
+
+    async def remove_datapoint_async(
+        self, dataset_id: str, datapoint_id: str
+    ) -> RemoveDatapointResponse:
+        """Remove a datapoint from a dataset asynchronously.
+
+        Args:
+            dataset_id: The unique identifier of the dataset.
+            datapoint_id: The unique identifier of the datapoint to remove.
+
+        Returns:
+            RemoveDatapointResponse with dereferenced status and message.
+        """
+        return await datasets_svc_async.removeDatapoint(
+            self._api_config, dataset_id=dataset_id, datapoint_id=datapoint_id
+        )
 
     # Backwards compatible aliases
     def get_dataset(self, id: str) -> GetDatasetsResponse:
