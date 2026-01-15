@@ -2,6 +2,8 @@ from typing import *
 
 from pydantic import BaseModel, Field
 
+from .FilterFieldType import FilterFieldType
+
 
 class SingleFilter(BaseModel):
     """
@@ -16,4 +18,4 @@ class SingleFilter(BaseModel):
 
     value: Union[str, float, bool, None, None] = Field(validation_alias="value")
 
-    type: str = Field(validation_alias="type")
+    type: FilterFieldType = Field(validation_alias="type")

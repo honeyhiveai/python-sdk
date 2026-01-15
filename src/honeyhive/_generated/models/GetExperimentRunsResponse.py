@@ -2,6 +2,8 @@ from typing import *
 
 from pydantic import BaseModel, Field
 
+from .Pagination import Pagination
+
 
 class GetExperimentRunsResponse(BaseModel):
     """
@@ -12,6 +14,6 @@ class GetExperimentRunsResponse(BaseModel):
 
     evaluations: List[Any] = Field(validation_alias="evaluations")
 
-    pagination: Dict[str, Any] = Field(validation_alias="pagination")
+    pagination: Pagination = Field(validation_alias="pagination")
 
     metrics: List[str] = Field(validation_alias="metrics")

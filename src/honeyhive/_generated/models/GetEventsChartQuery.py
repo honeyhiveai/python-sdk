@@ -2,6 +2,9 @@ from typing import *
 
 from pydantic import BaseModel, Field
 
+from .DateRange import DateRange
+from .FiltersArray import FiltersArray
+
 
 class GetEventsChartQuery(BaseModel):
     """
@@ -11,9 +14,9 @@ class GetEventsChartQuery(BaseModel):
 
     model_config = {"populate_by_name": True, "validate_assignment": True}
 
-    dateRange: Optional[Union[Dict[str, Any], Dict[str, Any]]] = Field(validation_alias="dateRange", default=None)
+    dateRange: Optional[DateRange] = Field(validation_alias="dateRange", default=None)
 
-    filters: Optional[List[Dict[str, Any]]] = Field(validation_alias="filters", default=None)
+    filters: Optional[FiltersArray] = Field(validation_alias="filters", default=None)
 
     metric: Optional[str] = Field(validation_alias="metric", default=None)
 

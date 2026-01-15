@@ -2,6 +2,8 @@ from typing import *
 
 from pydantic import BaseModel, Field
 
+from .ConfigurationParameters import ConfigurationParameters
+
 
 class UpdateConfigurationRequest(BaseModel):
     """
@@ -16,7 +18,7 @@ class UpdateConfigurationRequest(BaseModel):
 
     provider: Optional[str] = Field(validation_alias="provider", default=None)
 
-    parameters: Optional[Dict[str, Any]] = Field(validation_alias="parameters", default=None)
+    parameters: Optional[ConfigurationParameters] = Field(validation_alias="parameters", default=None)
 
     env: Optional[List[str]] = Field(validation_alias="env", default=None)
 

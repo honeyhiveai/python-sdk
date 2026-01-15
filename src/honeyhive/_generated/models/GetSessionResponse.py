@@ -51,6 +51,6 @@ class GetSessionResponse(BaseModel):
 
     org_id: str = Field(validation_alias="org_id")
 
-    workspace_id: str = Field(validation_alias="workspace_id")
+    workspace_id: Optional[str] = Field(validation_alias="workspace_id", default=None)
 
     project_id: str = Field(validation_alias="project_id")
