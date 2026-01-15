@@ -19,6 +19,7 @@ from .CreateToolResponse import *
 from .Datapoint import *
 from .DatapointMapping import *
 from .DatapointResult import *
+from .Dataset import *
 from .DateRange import *
 from .DeleteConfigurationResponse import *
 from .DeleteDatapointParams import *
@@ -31,6 +32,7 @@ from .DeleteExperimentRunParams import *
 from .DeleteExperimentRunResponse import *
 from .DeleteMetricQuery import *
 from .DeleteMetricResponse import *
+from .DeleteResult import *
 from .DeleteSessionResponse import *
 from .DeleteToolQuery import *
 from .DeleteToolResponse import *
@@ -76,6 +78,7 @@ from .GetMetricsResponse import *
 from .GetProjectsResponse import *
 from .GetSessionResponse import *
 from .GetToolsResponse import *
+from .InsertResult import *
 from .LegacyEvent import *
 from .MetricComparison import *
 from .MetricDatapoints import *

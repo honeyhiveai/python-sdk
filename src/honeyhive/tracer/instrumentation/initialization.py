@@ -811,7 +811,7 @@ def _create_otlp_exporter(tracer_instance: Any) -> Optional[Any]:
             tracer_instance=tracer_instance,
             session_config=session_config,
             use_optimized_session=True,
-protocol="http/json",  # Use JSON format for OTLP export
+            protocol="http/json",  # Use JSON format for OTLP export
             endpoint=otlp_endpoint,
             headers={
                 "Authorization": f"Bearer {tracer_instance.config.api_key}",
@@ -1320,10 +1320,12 @@ def _create_new_session(tracer_instance: Any) -> None:
         response_session_id = None
         if session_response:
             # Handle Pydantic model (has .session_id attribute)
-            if hasattr(session_response, 'session_id'):
+            if hasattr(session_response, "session_id"):
                 response_session_id = session_response.session_id
             # Handle dict response (legacy)
-            elif isinstance(session_response, dict) and "session_id" in session_response:
+            elif (
+                isinstance(session_response, dict) and "session_id" in session_response
+            ):
                 response_session_id = session_response["session_id"]
 
         if response_session_id:

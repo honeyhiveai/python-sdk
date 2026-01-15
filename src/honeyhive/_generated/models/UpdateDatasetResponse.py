@@ -2,6 +2,8 @@ from typing import *
 
 from pydantic import BaseModel, Field
 
+from .Dataset import Dataset
+
 
 class UpdateDatasetResponse(BaseModel):
     """
@@ -10,4 +12,4 @@ class UpdateDatasetResponse(BaseModel):
 
     model_config = {"populate_by_name": True, "validate_assignment": True}
 
-    result: Dict[str, Any] = Field(validation_alias="result")
+    result: Dataset = Field(validation_alias="result")

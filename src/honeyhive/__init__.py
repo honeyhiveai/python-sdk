@@ -27,10 +27,10 @@ except ImportError:
 
 # Evaluation/experiments module (if available)
 try:
-    from .experiments import evaluate
+    from .config import config
     from .evaluation._compat import aevaluator, evaluator
     from .evaluation.evaluators import BaseEvaluator
-    from .config import config
+    from .experiments import evaluate
 
     _EVALUATION_AVAILABLE = True
 except ImportError:

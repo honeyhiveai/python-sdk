@@ -2157,6 +2157,32 @@ components:
       required:
         - inserted
         - insertedIds
+    Dataset:
+      type: object
+      properties:
+        id:
+          type: string
+          minLength: 1
+        name:
+          type: string
+          maxLength: 200
+        description:
+          type:
+            - string
+            - 'null'
+        datapoints:
+          type: array
+          items:
+            type: string
+            minLength: 1
+          default: []
+        created_at:
+          type: string
+        updated_at:
+          type: string
+      required:
+        - id
+        - name
     CreateDatasetRequest:
       type: object
       properties:
@@ -2240,19 +2266,21 @@ components:
       required:
         - dataset_id
         - datapoint_id
+    InsertResult:
+      type: object
+      properties:
+        insertedId:
+          type: string
+          minLength: 1
+      required:
+        - insertedId
     CreateDatasetResponse:
       type: object
       properties:
         inserted:
           type: boolean
         result:
-          type: object
-          properties:
-            insertedId:
-              type: string
-              minLength: 1
-          required:
-            - insertedId
+          $ref: '#/components/schemas/InsertResult'
       required:
         - inserted
         - result
@@ -2260,29 +2288,7 @@ components:
       type: object
       properties:
         result:
-          type: object
-          properties:
-            id:
-              type: string
-              minLength: 1
-            name:
-              type: string
-              maxLength: 200
-            description:
-              type: string
-            datapoints:
-              type: array
-              items:
-                type: string
-                minLength: 1
-              default: []
-            created_at:
-              type: string
-            updated_at:
-              type: string
-          required:
-            - id
-            - name
+          $ref: '#/components/schemas/Dataset'
       required:
         - result
     GetDatasetsResponse:
@@ -2291,44 +2297,22 @@ components:
         datasets:
           type: array
           items:
-            type: object
-            properties:
-              id:
-                type: string
-                minLength: 1
-              name:
-                type: string
-                maxLength: 200
-              description:
-                type:
-                  - string
-                  - 'null'
-              datapoints:
-                type: array
-                items:
-                  type: string
-                  minLength: 1
-                default: []
-              created_at:
-                type: string
-              updated_at:
-                type: string
-            required:
-              - id
-              - name
+            $ref: '#/components/schemas/Dataset'
       required:
         - datasets
+    DeleteResult:
+      type: object
+      properties:
+        id:
+          type: string
+          minLength: 1
+      required:
+        - id
     DeleteDatasetResponse:
       type: object
       properties:
         result:
-          type: object
-          properties:
-            id:
-              type: string
-              minLength: 1
-          required:
-            - id
+          $ref: '#/components/schemas/DeleteResult'
       required:
         - result
     AddDatapointsResponse:
