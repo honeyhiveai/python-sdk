@@ -96,19 +96,19 @@ dataset = [
 # Evaluation Function
 # =============================================================================
 
-def summarize(inputs: Dict[str, Any], ground_truth: Dict[str, Any]) -> Dict[str, Any]:
+def summarize(datapoint: Dict[str, Any]) -> Dict[str, Any]:
     """Run summarization on a single datapoint.
     
     This is the function that gets executed for each datapoint in the dataset.
-    It receives the inputs and ground_truth, and should return the outputs.
+    It receives the full datapoint dict and should return the outputs.
     
     Args:
-        inputs: The inputs from the datapoint (e.g., {"context": "..."})
-        ground_truth: The expected output (e.g., {"answer": "..."})
+        datapoint: Dict containing 'inputs' and optionally 'ground_truth'
     
     Returns:
         Dictionary containing the outputs to be evaluated
     """
+    inputs = datapoint.get("inputs", {})
     context = inputs.get("context", "")
     
     # Call your application logic
