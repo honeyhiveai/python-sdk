@@ -2,6 +2,8 @@ from typing import *
 
 from pydantic import BaseModel, Field
 
+from .InsertResult import InsertResult
+
 
 class CreateDatasetResponse(BaseModel):
     """
@@ -12,4 +14,4 @@ class CreateDatasetResponse(BaseModel):
 
     inserted: bool = Field(validation_alias="inserted")
 
-    result: Dict[str, Any] = Field(validation_alias="result")
+    result: InsertResult = Field(validation_alias="result")

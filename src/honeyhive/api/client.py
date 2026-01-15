@@ -16,12 +16,14 @@ Usage::
     configs = await client.configurations.list_async(project="my-project")
 """
 
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List, Optional, Union
 
 from honeyhive._generated.api_config import APIConfig
 
 # Import models used in type hints
 from honeyhive._generated.models import (
+    AddDatapointsResponse,
+    AddDatapointsToDatasetRequest,
     CreateConfigurationRequest,
     CreateConfigurationResponse,
     CreateDatapointRequest,
@@ -44,6 +46,7 @@ from honeyhive._generated.models import (
     GetDatapointsResponse,
     GetDatasetsResponse,
     GetEventsBySessionIdResponse,
+    GetEventsQuery,
     GetEventsResponse,
     GetExperimentRunResponse,
     GetExperimentRunsResponse,
@@ -58,6 +61,7 @@ from honeyhive._generated.models import (
     PostSessionStartResponse,
     PutExperimentRunRequest,
     PutExperimentRunResponse,
+    RemoveDatapointResponse,
     UpdateConfigurationRequest,
     UpdateConfigurationResponse,
     UpdateDatapointRequest,
@@ -330,6 +334,36 @@ class DatasetsAPI(BaseAPI):
         """Delete a dataset."""
         return datasets_svc.deleteDataset(self._api_config, dataset_id=id)
 
+    def add_datapoints(
+        self, dataset_id: str, request: AddDatapointsToDatasetRequest
+    ) -> AddDatapointsResponse:
+        """Add datapoints to a dataset.
+
+        Args:
+            dataset_id: The unique identifier of the dataset to add datapoints to.
+            request: The request containing data and mapping for the datapoints.
+
+        Returns:
+            AddDatapointsResponse with inserted status and datapoint IDs.
+        """
+        return datasets_svc.addDatapoints(
+            self._api_config, dataset_id=dataset_id, data=request
+        )
+
+    def remove_datapoint(self, dataset_id: str, datapoint_id: str) -> RemoveDatapointResponse:
+        """Remove a datapoint from a dataset.
+
+        Args:
+            dataset_id: The unique identifier of the dataset.
+            datapoint_id: The unique identifier of the datapoint to remove.
+
+        Returns:
+            RemoveDatapointResponse with dereferenced status and message.
+        """
+        return datasets_svc.removeDatapoint(
+            self._api_config, dataset_id=dataset_id, datapoint_id=datapoint_id
+        )
+
     # Async methods
     async def list_async(
         self,
@@ -367,10 +401,42 @@ class DatasetsAPI(BaseAPI):
         """Delete a dataset asynchronously."""
         return await datasets_svc_async.deleteDataset(self._api_config, dataset_id=id)
 
+    async def add_datapoints_async(
+        self, dataset_id: str, request: AddDatapointsToDatasetRequest
+    ) -> AddDatapointsResponse:
+        """Add datapoints to a dataset asynchronously.
+
+        Args:
+            dataset_id: The unique identifier of the dataset to add datapoints to.
+            request: The request containing data and mapping for the datapoints.
+
+        Returns:
+            AddDatapointsResponse with inserted status and datapoint IDs.
+        """
+        return await datasets_svc_async.addDatapoints(
+            self._api_config, dataset_id=dataset_id, data=request
+        )
+
+    async def remove_datapoint_async(
+        self, dataset_id: str, datapoint_id: str
+    ) -> RemoveDatapointResponse:
+        """Remove a datapoint from a dataset asynchronously.
+
+        Args:
+            dataset_id: The unique identifier of the dataset.
+            datapoint_id: The unique identifier of the datapoint to remove.
+
+        Returns:
+            RemoveDatapointResponse with dereferenced status and message.
+        """
+        return await datasets_svc_async.removeDatapoint(
+            self._api_config, dataset_id=dataset_id, datapoint_id=datapoint_id
+        )
+
     # Backwards compatible aliases
     def get_dataset(self, id: str) -> GetDatasetsResponse:
         """Get a dataset by ID (backwards compatible alias).
-        
+
         Note: Uses list() with dataset_id filter since there's no single-get endpoint.
         """
         return self.list(dataset_id=id)
@@ -400,7 +466,11 @@ class DatasetsAPI(BaseAPI):
 
 
 class EventsAPI(BaseAPI):
-    """Events API."""
+    """Events API.
+
+    Read operations (list, get_by_session_id, delete) use Control Plane.
+    Write operations (create, update, create_batch) use Data Plane.
+    """
 
     # Supported parameters for getEvents() method
     _GET_EVENTS_SUPPORTED_PARAMS = {
@@ -413,28 +483,52 @@ class EventsAPI(BaseAPI):
         "evaluation_id",
     }
 
-    # Sync methods
-    def list(self, data: Dict[str, Any]) -> GetEventsResponse:
-        """Get events."""
-        # Filter data to only include supported parameters for getEvents()
-        filtered_data = {
-            k: v for k, v in data.items() if k in self._GET_EVENTS_SUPPORTED_PARAMS
-        }
-        return events_svc.getEvents(self._api_config, **filtered_data)
-
-    def get_by_session_id(self, session_id: str) -> GetEventsBySessionIdResponse:
-        """Get events by session ID (uses Control Plane endpoint)."""
-        # This endpoint is on Control Plane, use cp_base_path
-        cp_config = APIConfig(
+    def _get_cp_config(self) -> APIConfig:
+        """Get APIConfig configured for Control Plane endpoints."""
+        return APIConfig(
             base_path=self._api_config.get_cp_base_path(),
             access_token=self._api_config.access_token,
             verify=self._api_config.verify,
         )
-        return events_svc.getEventsBySessionId(cp_config, id=session_id)
+
+    # Sync methods
+    def list(
+        self, query: Union[GetEventsQuery, Dict[str, Any]]
+    ) -> GetEventsResponse:
+        """Get events (uses Control Plane endpoint).
+
+        Args:
+            query: Query parameters as GetEventsQuery model or dict.
+                   Supported fields: dateRange, filters, projections,
+                   ignore_order, limit, page, evaluation_id
+
+        Returns:
+            GetEventsResponse with matching events
+        """
+        # Convert to dict if Pydantic model
+        if hasattr(query, "model_dump"):
+            data = query.model_dump(exclude_none=True)
+        else:
+            data = query
+
+        # Filter data to only include supported parameters for getEvents()
+        filtered_data = {
+            k: v for k, v in data.items() if k in self._GET_EVENTS_SUPPORTED_PARAMS
+        }
+        # Read operations use Control Plane
+        return events_svc.getEvents(self._get_cp_config(), **filtered_data)
+
+    def get_by_session_id(self, session_id: str) -> GetEventsBySessionIdResponse:
+        """Get events by session ID (uses Control Plane endpoint)."""
+        return events_svc.getEventsBySessionId(self._get_cp_config(), id=session_id)
 
     def create(self, request: PostEventRequest) -> PostEventResponse:
         """Create an event."""
-        data = request.model_dump(exclude_none=True) if hasattr(request, 'model_dump') else request
+        data = (
+            request.model_dump(exclude_none=True)
+            if hasattr(request, "model_dump")
+            else request
+        )
         return events_svc.createEvent(self._api_config, data=data)
 
     def update(self, data: Dict[str, Any]) -> None:
@@ -446,29 +540,45 @@ class EventsAPI(BaseAPI):
         return events_svc.createEventBatch(self._api_config, data=data)
 
     # Async methods
-    async def list_async(self, data: Dict[str, Any]) -> GetEventsResponse:
-        """Get events asynchronously."""
+    async def list_async(
+        self, query: Union[GetEventsQuery, Dict[str, Any]]
+    ) -> GetEventsResponse:
+        """Get events asynchronously (uses Control Plane endpoint).
+
+        Args:
+            query: Query parameters as GetEventsQuery model or dict.
+
+        Returns:
+            GetEventsResponse with matching events
+        """
+        # Convert to dict if Pydantic model
+        if hasattr(query, "model_dump"):
+            data = query.model_dump(exclude_none=True)
+        else:
+            data = query
+
         # Filter data to only include supported parameters for getEvents()
         filtered_data = {
             k: v for k, v in data.items() if k in self._GET_EVENTS_SUPPORTED_PARAMS
         }
-        return await events_svc_async.getEvents(self._api_config, **filtered_data)
+        # Read operations use Control Plane
+        return await events_svc_async.getEvents(self._get_cp_config(), **filtered_data)
 
     async def get_by_session_id_async(
         self, session_id: str
     ) -> GetEventsBySessionIdResponse:
         """Get events by session ID asynchronously (uses Control Plane endpoint)."""
-        # This endpoint is on Control Plane, use cp_base_path
-        cp_config = APIConfig(
-            base_path=self._api_config.get_cp_base_path(),
-            access_token=self._api_config.access_token,
-            verify=self._api_config.verify,
+        return await events_svc_async.getEventsBySessionId(
+            self._get_cp_config(), id=session_id
         )
-        return await events_svc_async.getEventsBySessionId(cp_config, id=session_id)
 
     async def create_async(self, request: PostEventRequest) -> PostEventResponse:
         """Create an event asynchronously."""
-        data = request.model_dump(exclude_none=True) if hasattr(request, 'model_dump') else request
+        data = (
+            request.model_dump(exclude_none=True)
+            if hasattr(request, "model_dump")
+            else request
+        )
         return await events_svc_async.createEvent(self._api_config, data=data)
 
     async def update_async(self, data: Dict[str, Any]) -> None:
@@ -488,13 +598,17 @@ class EventsAPI(BaseAPI):
         """Update an event (backwards compatible alias for update())."""
         return self.update(data)
 
-    def list_events(self, data: Dict[str, Any]) -> GetEventsResponse:
+    def list_events(
+        self, query: Union[GetEventsQuery, Dict[str, Any]]
+    ) -> GetEventsResponse:
         """List events (backwards compatible alias for list())."""
-        return self.list(data)
+        return self.list(query)
 
-    def get_events(self, data: Dict[str, Any]) -> GetEventsResponse:
+    def get_events(
+        self, query: Union[GetEventsQuery, Dict[str, Any]]
+    ) -> GetEventsResponse:
         """Get events (backwards compatible alias for list())."""
-        return self.list(data)
+        return self.list(query)
 
 
 class ExperimentsAPI(BaseAPI):
@@ -507,7 +621,7 @@ class ExperimentsAPI(BaseAPI):
         evaluation_id: Optional[str] = None,
     ) -> GetExperimentRunsSchemaResponse:
         """Get experiment runs schema.
-        
+
         Args:
             dateRange: Filter by date range (string or dict with $gte/$lte).
             evaluation_id: Filter by evaluation/run ID.
@@ -529,7 +643,7 @@ class ExperimentsAPI(BaseAPI):
         sort_order: Optional[str] = None,
     ) -> GetExperimentRunsResponse:
         """List experiment runs.
-        
+
         Args:
             dataset_id: Filter by dataset ID.
             page: Page number for pagination.
@@ -581,7 +695,7 @@ class ExperimentsAPI(BaseAPI):
         evaluation_id: Optional[str] = None,
     ) -> GetExperimentRunsSchemaResponse:
         """Get experiment runs schema asynchronously.
-        
+
         Args:
             dateRange: Filter by date range (string or dict with $gte/$lte).
             evaluation_id: Filter by evaluation/run ID.
@@ -603,7 +717,7 @@ class ExperimentsAPI(BaseAPI):
         sort_order: Optional[str] = None,
     ) -> GetExperimentRunsResponse:
         """List experiment runs asynchronously.
-        
+
         Args:
             dataset_id: Filter by dataset ID.
             page: Page number for pagination.
@@ -657,7 +771,7 @@ class ExperimentsAPI(BaseAPI):
         filters: Optional[Any] = None,
     ) -> Dict[str, Any]:
         """Get experiment run result.
-        
+
         Args:
             run_id: The experiment run ID.
             aggregate_function: Aggregation function to apply.
@@ -680,7 +794,7 @@ class ExperimentsAPI(BaseAPI):
         filters: Optional[Any] = None,
     ) -> Dict[str, Any]:
         """Compare two experiment runs.
-        
+
         Args:
             new_run_id: The new run ID to compare.
             old_run_id: The old run ID to compare against.
@@ -704,7 +818,7 @@ class ExperimentsAPI(BaseAPI):
         filters: Optional[Any] = None,
     ) -> Dict[str, Any]:
         """Get experiment run result asynchronously.
-        
+
         Args:
             run_id: The experiment run ID.
             aggregate_function: Aggregation function to apply.
@@ -726,7 +840,7 @@ class ExperimentsAPI(BaseAPI):
         filters: Optional[Any] = None,
     ) -> Dict[str, Any]:
         """Compare two experiment runs asynchronously.
-        
+
         Args:
             new_run_id: The new run ID to compare.
             old_run_id: The old run ID to compare against.
@@ -763,7 +877,7 @@ class ExperimentsAPI(BaseAPI):
         page: Optional[int] = None,
     ) -> Dict[str, Any]:
         """Compare events between two experiment runs.
-        
+
         Args:
             new_run_id: The new run ID to compare.
             old_run_id: The old run ID to compare against.

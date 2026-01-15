@@ -2,6 +2,8 @@ from typing import *
 
 from pydantic import BaseModel, Field
 
+from .ExperimentSchemaField import ExperimentSchemaField
+
 
 class GetExperimentRunsSchemaResponse(BaseModel):
     """
@@ -10,7 +12,7 @@ class GetExperimentRunsSchemaResponse(BaseModel):
 
     model_config = {"populate_by_name": True, "validate_assignment": True}
 
-    fields: List[Dict[str, Any]] = Field(validation_alias="fields")
+    fields: List[ExperimentSchemaField] = Field(validation_alias="fields")
 
     datasets: List[str] = Field(validation_alias="datasets")
 

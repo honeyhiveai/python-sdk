@@ -2,6 +2,10 @@ from typing import *
 
 from pydantic import BaseModel, Field
 
+from .EventComparisonDetail import EventComparisonDetail
+from .ExperimentRunObject import ExperimentRunObject
+from .MetricComparison import MetricComparison
+
 
 class GetExperimentRunCompareResponse(BaseModel):
     """
@@ -11,12 +15,12 @@ class GetExperimentRunCompareResponse(BaseModel):
 
     model_config = {"populate_by_name": True, "validate_assignment": True}
 
-    metrics: List[Dict[str, Any]] = Field(validation_alias="metrics")
+    metrics: List[MetricComparison] = Field(validation_alias="metrics")
 
     commonDatapoints: List[str] = Field(validation_alias="commonDatapoints")
 
-    event_details: List[Dict[str, Any]] = Field(validation_alias="event_details")
+    event_details: List[EventComparisonDetail] = Field(validation_alias="event_details")
 
-    old_run: Optional[Any] = Field(validation_alias="old_run", default=None)
+    old_run: ExperimentRunObject = Field(validation_alias="old_run")
 
-    new_run: Optional[Any] = Field(validation_alias="new_run", default=None)
+    new_run: ExperimentRunObject = Field(validation_alias="new_run")

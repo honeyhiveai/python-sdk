@@ -20,7 +20,7 @@ def getEvents(
     api_config = api_config_override if api_config_override else APIConfig()
 
     base_path = api_config.base_path
-    path = f"/events"
+    path = f"/v1/events"
     headers = {
         "Content-Type": "application/json",
         "Accept": "application/json",

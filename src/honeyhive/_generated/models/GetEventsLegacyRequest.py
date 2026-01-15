@@ -2,6 +2,8 @@ from typing import *
 
 from pydantic import BaseModel, Field
 
+from .FiltersArray import FiltersArray
+
 
 class GetEventsLegacyRequest(BaseModel):
     """
@@ -13,7 +15,7 @@ class GetEventsLegacyRequest(BaseModel):
 
     project: str = Field(validation_alias="project")
 
-    filters: List[Dict[str, Any]] = Field(validation_alias="filters")
+    filters: Tuple[FiltersArray, Any] = Field(validation_alias="filters")
 
     dateRange: Optional[Dict[str, Any]] = Field(validation_alias="dateRange", default=None)
 

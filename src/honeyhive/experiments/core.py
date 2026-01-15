@@ -727,6 +727,21 @@ def _run_evaluators(
                 else:
                     score = eval_func(outputs, inputs)
 
+            # Ensure score is a scalar (not a list/tuple)
+            # Evaluators should return a single numeric value
+            if isinstance(score, (list, tuple)):
+                if len(score) == 1:
+                    score = score[0]
+                elif verbose:
+                    logger.warning(
+                        "Evaluator %s returned a list/tuple with %d values for "
+                        "datapoint %s. Using first value.",
+                        eval_name,
+                        len(score),
+                        datapoint_id,
+                    )
+                    score = score[0] if score else None
+
             return datapoint_id, eval_name, score
 
         except Exception as e:
@@ -940,24 +955,33 @@ def evaluate(  # pylint: disable=too-many-locals,too-many-branches
             logger.info("DEBUG - Input dataset_id type: %s", type(dataset_id))
             logger.info("DEBUG - Is EXT- dataset: %s", dataset_id.startswith("EXT-"))
 
-        # Get dataset metadata
-        ds_response = client.datasets.get_dataset(dataset_id)
+        # Get dataset metadata - list() returns GetDatasetsResponse with datasets list
+        ds_response = client.datasets.list(dataset_id=dataset_id)
         dataset_list = []
         datapoint_ids = []
 
+        # Extract the dataset from the response
+        if not ds_response.datasets:
+            raise ValueError(f"Dataset not found: {dataset_id}")
+        dataset_obj = ds_response.datasets[0]
+
         # Dataset.datapoints is List[str] (IDs only), fetch each datapoint
-        if ds_response.datapoints:
-            for dp_id in ds_response.datapoints:
+        if dataset_obj.datapoints:
+            for dp_id in dataset_obj.datapoints:
                 try:
-                    dp = client.datapoints.get_datapoint(dp_id)
-                    dataset_list.append(
-                        {
-                            "inputs": dp.inputs or {},
-                            "ground_truth": dp.ground_truth,
-                            "id": dp.field_id or dp_id,
-                        }
-                    )
-                    datapoint_ids.append(dp.field_id or dp_id)
+                    # get_datapoint returns dict: {"datapoint": [{...}]}
+                    dp_response = client.datapoints.get_datapoint(dp_id)
+                    dp_list = dp_response.get("datapoint", [])
+                    if dp_list:
+                        dp = dp_list[0]
+                        dataset_list.append(
+                            {
+                                "inputs": dp.get("inputs") or {},
+                                "ground_truth": dp.get("ground_truth"),
+                                "id": dp.get("id") or dp_id,
+                            }
+                        )
+                        datapoint_ids.append(dp.get("id") or dp_id)
                 except Exception as e:
                     logger.warning("Failed to fetch datapoint %s: %s", dp_id, str(e))
 

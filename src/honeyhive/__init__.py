@@ -3,7 +3,7 @@ HoneyHive Python SDK - LLM Observability and Evaluation Platform
 """
 
 # Version must be defined BEFORE imports to avoid circular import issues
-__version__ = "1.0.0rc9"
+__version__ = "1.0.0rc10"
 
 # Main API client
 from .api import HoneyHive
@@ -27,10 +27,10 @@ except ImportError:
 
 # Evaluation/experiments module (if available)
 try:
-    from .experiments import evaluate
+    from .config import config
     from .evaluation._compat import aevaluator, evaluator
     from .evaluation.evaluators import BaseEvaluator
-    from .config import config
+    from .experiments import evaluate
 
     _EVALUATION_AVAILABLE = True
 except ImportError:

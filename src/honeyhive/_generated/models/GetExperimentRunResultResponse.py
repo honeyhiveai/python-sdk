@@ -2,6 +2,11 @@ from typing import *
 
 from pydantic import BaseModel, Field
 
+from .DatapointResult import DatapointResult
+from .EventDetail import EventDetail
+from .ExperimentRunObject import ExperimentRunObject
+from .MetricsAggregation import MetricsAggregation
+
 
 class GetExperimentRunResultResponse(BaseModel):
     """
@@ -21,10 +26,10 @@ class GetExperimentRunResultResponse(BaseModel):
 
     failed: List[str] = Field(validation_alias="failed")
 
-    metrics: Dict[str, Any] = Field(validation_alias="metrics")
+    metrics: MetricsAggregation = Field(validation_alias="metrics")
 
-    datapoints: List[Dict[str, Any]] = Field(validation_alias="datapoints")
+    datapoints: List[DatapointResult] = Field(validation_alias="datapoints")
 
-    event_details: List[Dict[str, Any]] = Field(validation_alias="event_details")
+    event_details: List[EventDetail] = Field(validation_alias="event_details")
 
-    run_object: Optional[Any] = Field(validation_alias="run_object", default=None)
+    run_object: ExperimentRunObject = Field(validation_alias="run_object")
