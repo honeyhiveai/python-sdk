@@ -33,19 +33,18 @@ class TestDatasetsAPI:
         assert response is not None
         # v1 API returns CreateDatasetResponse with inserted and result fields
         assert response.inserted is True
-        assert "insertedId" in response.result
-        dataset_id = response.result["insertedId"]
+        assert response.result.insertedId is not None
+        dataset_id = response.result.insertedId
 
         time.sleep(2)
 
         # Verify via list
         datasets_response = integration_client.datasets.list()
         assert isinstance(datasets_response, GetDatasetsResponse)
-        datasets = datasets_response.datapoints
+        datasets = datasets_response.datasets
         found = None
         for ds in datasets:
-            # GetDatasetsResponse.datapoints is List[Dict[str, Any]]
-            ds_name = ds.get("name")
+            ds_name = ds.name if hasattr(ds, "name") else ds.get("name")
             if ds_name == dataset_name:
                 found = ds
                 break
@@ -67,19 +66,22 @@ class TestDatasetsAPI:
         )
 
         create_response = integration_client.datasets.create(dataset_request)
-        dataset_id = create_response.result["insertedId"]
+        dataset_id = create_response.result.insertedId
 
         time.sleep(2)
 
         # Test retrieval via list (v1 doesn't have get_dataset method)
         datasets_response = integration_client.datasets.list(name=dataset_name)
         assert isinstance(datasets_response, GetDatasetsResponse)
-        datasets = datasets_response.datapoints
+        datasets = datasets_response.datasets
         assert len(datasets) >= 1
         dataset = datasets[0]
-        # GetDatasetsResponse.datapoints is List[Dict[str, Any]]
-        ds_name = dataset.get("name")
-        ds_desc = dataset.get("description")
+        ds_name = dataset.name if hasattr(dataset, "name") else dataset.get("name")
+        ds_desc = (
+            dataset.description
+            if hasattr(dataset, "description")
+            else dataset.get("description")
+        )
         assert ds_name == dataset_name
         assert ds_desc == "Test get dataset"
 
@@ -99,7 +101,7 @@ class TestDatasetsAPI:
                 name=f"test_list_dataset_{test_id}_{i}",
             )
             response = integration_client.datasets.create(dataset_request)
-            dataset_id = response.result["insertedId"]
+            dataset_id = response.result.insertedId
             created_ids.append(dataset_id)
 
         time.sleep(2)
@@ -108,7 +110,7 @@ class TestDatasetsAPI:
         datasets_response = integration_client.datasets.list()
 
         assert isinstance(datasets_response, GetDatasetsResponse)
-        datasets = datasets_response.datapoints
+        datasets = datasets_response.datasets
         assert isinstance(datasets, list)
         assert len(datasets) >= 2
 
@@ -128,7 +130,7 @@ class TestDatasetsAPI:
             description="Test name filtering",
         )
         response = integration_client.datasets.create(dataset_request)
-        dataset_id = response.result["insertedId"]
+        dataset_id = response.result.insertedId
 
         time.sleep(2)
 
@@ -136,11 +138,13 @@ class TestDatasetsAPI:
         datasets_response = integration_client.datasets.list(name=unique_name)
 
         assert isinstance(datasets_response, GetDatasetsResponse)
-        datasets = datasets_response.datapoints
+        datasets = datasets_response.datasets
         assert isinstance(datasets, list)
         assert len(datasets) >= 1
-        # GetDatasetsResponse.datapoints is List[Dict[str, Any]]
-        found = any(d.get("name") == unique_name for d in datasets)
+        found = any(
+            (d.name if hasattr(d, "name") else d.get("name")) == unique_name
+            for d in datasets
+        )
         assert found, f"Dataset with name {unique_name} not found in results"
 
         # Cleanup
@@ -165,7 +169,7 @@ class TestDatasetsAPI:
         )
 
         create_response = integration_client.datasets.create(dataset_request)
-        dataset_id = create_response.result["insertedId"]
+        dataset_id = create_response.result.insertedId
 
         time.sleep(2)
 
