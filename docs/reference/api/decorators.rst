@@ -347,8 +347,6 @@ Alias for ``@trace`` specifically for async functions (both work identically).
 @evaluate Decorator
 -------------------
 
-.. autofunction:: evaluate
-
 The ``@evaluate`` decorator automatically evaluates function outputs using specified evaluators.
 
 **Function Signature:**
