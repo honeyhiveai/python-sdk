@@ -727,6 +727,21 @@ def _run_evaluators(
                 else:
                     score = eval_func(outputs, inputs)
 
+            # Ensure score is a scalar (not a list/tuple)
+            # Evaluators should return a single numeric value
+            if isinstance(score, (list, tuple)):
+                if len(score) == 1:
+                    score = score[0]
+                elif verbose:
+                    logger.warning(
+                        "Evaluator %s returned a list/tuple with %d values for "
+                        "datapoint %s. Using first value.",
+                        eval_name,
+                        len(score),
+                        datapoint_id,
+                    )
+                    score = score[0] if score else None
+
             return datapoint_id, eval_name, score
 
         except Exception as e:
