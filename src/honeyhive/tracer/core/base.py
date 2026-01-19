@@ -20,6 +20,7 @@ import platform
 import threading
 from typing import Any, Dict, Optional, Self, Union
 
+from opentelemetry import baggage, context
 from opentelemetry.trace import INVALID_SPAN_CONTEXT, SpanKind
 
 from ...api.client import HoneyHive
@@ -567,12 +568,24 @@ class HoneyHiveTracerBase:  # pylint: disable=too-many-instance-attributes
                 # This is legitimate reassignment during dynamic session creation,
                 # not a first-time attribute definition.
                 self._session_id = response["session_id"]
+
+                # CRITICAL: Also set session_id in baggage for request-scoped access
+                # This enables proper session isolation in Lambda/serverless environments
+                # where the tracer instance persists but each request should have its
+                # own session context. Span processor reads from baggage first.
+                current_ctx = context.get_current()
+                new_ctx = baggage.set_baggage("session_id", self._session_id, current_ctx)
+                context.attach(new_ctx)
+
                 safe_log(
                     self,
                     "info",
-                    "Created session automatically: %s",
+                    "Created session automatically: %s (stored in baggage)",
                     str(self._session_id),
-                    honeyhive_data={"session_name": self._session_name},
+                    honeyhive_data={
+                        "session_name": self._session_name,
+                        "storage": "baggage+instance",
+                    },
                 )
 
         except Exception as e:
