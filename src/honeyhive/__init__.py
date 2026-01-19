@@ -27,7 +27,6 @@ except ImportError:
 
 # Evaluation/experiments module (if available)
 try:
-    from .config import config
     from .evaluation._compat import aevaluator, evaluator
     from .evaluation.evaluators import BaseEvaluator
     from .experiments import evaluate
@@ -72,7 +71,6 @@ if _EVALUATION_AVAILABLE:
             "evaluate",
             "evaluator",
             "aevaluator",
-            "config",
             "BaseEvaluator",
         ]
     )

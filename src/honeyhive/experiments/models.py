@@ -136,6 +136,9 @@ class DatapointResult(BaseModel):
         default_factory=list, description="Metrics for this datapoint"
     )
 
+    # Required for Pydantic 2.12+ when using extra="allow"
+    __pydantic_extra__: Dict[str, Any] = None
+
     model_config = ConfigDict(extra="allow")
 
 
@@ -182,6 +185,9 @@ class AggregatedMetrics(BaseModel):
         default_factory=list,
         description="List of metric details from backend",
     )
+
+    # Required for Pydantic 2.12+ when using extra="allow"
+    __pydantic_extra__: Dict[str, Any] = None
 
     # Allow extra fields for backward compatibility with dynamic metric keys
     model_config = ConfigDict(extra="allow")
