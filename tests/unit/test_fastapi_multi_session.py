@@ -12,25 +12,6 @@ import pytest
 # Skip entire module - tests expect session_api attribute which no longer exists
 pytestmark = pytest.mark.skip(reason="Tests expect session_api which no longer exists")
 
-from typing import Any, Dict
-from unittest.mock import patch
-
-# Check for required dependencies
-try:
-    from fastapi import FastAPI, Request
-    from fastapi.testclient import TestClient
-
-    HAS_FASTAPI = True
-except ImportError:
-    HAS_FASTAPI = False
-
-from honeyhive import HoneyHiveTracer, trace
-
-# Skip all tests if FastAPI is not installed
-pytestmark = pytest.mark.skipif(
-    not HAS_FASTAPI, reason="FastAPI not installed (pip install fastapi httpx)"
-)
-
 
 class TestFastAPIMultiSessionMocked:
     """Tests for FastAPI multi-session pattern with mocked API calls."""
