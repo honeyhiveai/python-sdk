@@ -47,7 +47,7 @@ dev = [
     "pytest-xdist>=3.0.0",
     "tox>=4.0.0",
     "black==25.1.0",
-    "isort==5.13.2",
+    "isort==7.0.0",
     "flake8>=6.0.0",
     "mypy>=1.0.0",
     "typeguard>=4.0.0",
