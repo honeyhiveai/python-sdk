@@ -9,4 +9,8 @@ class GetProjectsResponse(BaseModel):
         Array of projects
     """
 
-    model_config = {"populate_by_name": True, "validate_assignment": True}
+    model_config = {
+        "populate_by_name": True,
+        "validate_assignment": True,
+        "extra": "allow",
+    }
