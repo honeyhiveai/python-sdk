@@ -28,5 +28,5 @@ sphinx-sitemap>=2.5.0
 pygments>=2.16.0
 
 # Building
-docutils>=0.20.0
+docutils>=0.20.0,<0.22  # Pin to <0.22 for sphinx-tabs compatibility
 jinja2>=3.1.0
