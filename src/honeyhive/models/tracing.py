@@ -27,4 +27,7 @@ class TracingParams(BaseModel):
     error: Optional[Exception] = None
     event_id: Optional[str] = None
 
+    # Required for Pydantic 2.12+ when using extra="allow"
+    __pydantic_extra__: Dict[str, Any] = None
+
     model_config = ConfigDict(arbitrary_types_allowed=True, extra="allow")
