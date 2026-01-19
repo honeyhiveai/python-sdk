@@ -111,11 +111,10 @@ class TestHoneyHiveOTLPExporterInitialization:
         assert exporter.tracer_instance is None
         assert exporter.session_config == mock_config
         assert exporter.use_optimized_session is True
-        assert exporter.protocol == "http/protobuf"
-        assert exporter._use_json is False
+        assert exporter.protocol == "http/json"
+        assert exporter._use_json is True
         assert exporter._is_shutdown is False
         mock_get_default_config.assert_called_once_with(None)
-        mock_otlp_exporter.assert_called_once()
 
     @patch("honeyhive.tracer.processing.otlp_exporter.OTLPSpanExporter")
     @patch("honeyhive.tracer.processing.otlp_exporter.create_optimized_otlp_session")
@@ -152,14 +151,10 @@ class TestHoneyHiveOTLPExporterInitialization:
         assert exporter.tracer_instance == mock_tracer
         assert exporter.session_config == mock_otlp_session_config
         assert exporter._session == mock_session
-        assert exporter.protocol == "http/protobuf"
-        assert exporter._use_json is False
+        assert exporter.protocol == "http/json"
+        assert exporter._use_json is True
         mock_create_session.assert_called_once_with(
             config=mock_otlp_session_config, tracer_instance=mock_tracer
-        )
-        mock_otlp_exporter.assert_called_once_with(
-            session=mock_session,
-            endpoint="https://api.honeyhive.ai/opentelemetry/v1/traces",
         )
 
     @patch("honeyhive.tracer.processing.otlp_exporter.OTLPSpanExporter")

@@ -780,12 +780,12 @@ def _create_otlp_exporter(tracer_instance: Any) -> Optional[Any]:
         # Determine optimal session configuration based on tracer settings
         session_config = _get_optimal_session_config(tracer_instance)
 
-        # Get protocol from config or environment (defaults to http/protobuf)
+        # Get protocol from config or environment (defaults to http/json)
         otlp_protocol = (
             getattr(tracer_instance.config, "otlp_protocol", None)
             or os.getenv("HH_OTLP_PROTOCOL")
             or os.getenv("OTEL_EXPORTER_OTLP_PROTOCOL")
-            or "http/protobuf"
+            or "http/json"
         )
 
         safe_log(
@@ -806,12 +806,12 @@ def _create_otlp_exporter(tracer_instance: Any) -> Optional[Any]:
         )
 
         # Use custom exporter with optimized connection pooling
-        # Use JSON format by default as backend expects application/json
+        # Default protocol is http/json (JSON exporter) per SDK configuration
         otlp_exporter = HoneyHiveOTLPExporter(
             tracer_instance=tracer_instance,
             session_config=session_config,
             use_optimized_session=True,
-            protocol="http/json",  # Use JSON format for OTLP export
+            protocol=otlp_protocol,  # Use configured protocol (defaults to http/json)
             endpoint=otlp_endpoint,
             headers={
                 "Authorization": f"Bearer {tracer_instance.config.api_key}",

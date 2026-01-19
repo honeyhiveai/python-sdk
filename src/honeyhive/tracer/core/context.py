@@ -397,9 +397,9 @@ class TracerContextMixin(TracerContextInterface):
                 return session_id
 
             # Create session via API
-            if not self.session_api:
+            if not self.client:
                 safe_log(
-                    self, "warning", "No session API available for session creation"
+                    self, "warning", "No API client available for session creation"
                 )
                 return None
 
@@ -424,8 +424,8 @@ class TracerContextMixin(TracerContextInterface):
             if user_properties:
                 session_params["user_properties"] = user_properties
 
-            # Create session via API
-            response = self.session_api.create_session_from_dict(session_params)
+            # Create session via API using the sessions service
+            response = self.client.sessions.start(session_params)
             new_session_id = response.session_id
 
             # Set session_id in baggage (ContextVar-based, request-scoped)
@@ -525,9 +525,9 @@ class TracerContextMixin(TracerContextInterface):
                 return session_id
 
             # Create session via API
-            if not self.session_api:
+            if not self.client:
                 safe_log(
-                    self, "warning", "No session API available for session creation"
+                    self, "warning", "No API client available for session creation"
                 )
                 return None
 
@@ -552,10 +552,8 @@ class TracerContextMixin(TracerContextInterface):
             if user_properties:
                 session_params["user_properties"] = user_properties
 
-            # Create session via async API
-            response = await self.session_api.create_session_from_dict_async(
-                session_params
-            )
+            # Create session via async API using the sessions service
+            response = await self.client.sessions.start_async(session_params)
             new_session_id = response.session_id
 
             # Set session_id in baggage (ContextVar-based, request-scoped)

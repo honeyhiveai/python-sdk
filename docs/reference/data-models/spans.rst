@@ -597,9 +597,9 @@ Span Export Format
 
 **OTLP Format** (OpenTelemetry Protocol):
 
-The SDK supports both Protobuf (default) and JSON formats for OTLP export.
-Set the ``HH_OTLP_PROTOCOL`` environment variable to ``http/json`` to use JSON format,
-or ``http/protobuf`` (default) for Protobuf format.
+The SDK supports both JSON (default) and Protobuf formats for OTLP export.
+Set the ``HH_OTLP_PROTOCOL`` environment variable to ``http/protobuf`` to use Protobuf format,
+or ``http/json`` (default) for JSON format.
 
 .. code-block:: json
 

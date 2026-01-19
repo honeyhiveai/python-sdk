@@ -577,9 +577,9 @@ OTLPConfig
 
 .. py:attribute:: otlp_protocol
    :type: str
-   :value: "http/protobuf"
+   :value: "http/json"
 
-   OTLP protocol format: ``"http/protobuf"`` (default) or ``"http/json"``.
+   OTLP protocol format: ``"http/json"`` (default) or ``"http/protobuf"``.
    
    **Environment Variables**: ``HH_OTLP_PROTOCOL`` or ``OTEL_EXPORTER_OTLP_PROTOCOL``
 

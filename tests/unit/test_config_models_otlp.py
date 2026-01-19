@@ -700,7 +700,7 @@ class TestOTLPConfigEdgeCases:
 
         with patch.dict(os.environ, {}, clear=True):
             config = OTLPConfig()
-            assert config.otlp_protocol == "http/protobuf"  # Default
+            assert config.otlp_protocol == "http/json"  # Default
 
     def test_otlp_protocol_parameter_override(self) -> None:
         """Test that otlp_protocol parameter overrides environment variable."""

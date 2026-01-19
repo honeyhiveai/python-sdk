@@ -100,12 +100,12 @@ class OTLPConfig(BaseHoneyHiveConfig):
     )
 
     otlp_protocol: str = Field(  # type: ignore[call-overload,pydantic-alias]
-        default="http/protobuf",
-        description="OTLP protocol format: 'http/protobuf' or 'http/json'",
+        default="http/json",
+        description="OTLP protocol format: 'http/json' (default) or 'http/protobuf'",
         validation_alias=AliasChoices(
             "HH_OTLP_PROTOCOL", "OTEL_EXPORTER_OTLP_PROTOCOL", "otlp_protocol"
         ),
-        examples=["http/protobuf", "http/json"],
+        examples=["http/json", "http/protobuf"],
     )
 
     # Batch processing settings
@@ -154,7 +154,7 @@ class OTLPConfig(BaseHoneyHiveConfig):
             "otlp_headers": _get_env_json("HH_OTLP_HEADERS"),
             "otlp_protocol": os.getenv("HH_OTLP_PROTOCOL")
             or os.getenv("OTEL_EXPORTER_OTLP_PROTOCOL")
-            or "http/protobuf",
+            or "http/json",
             "batch_size": _get_env_int("HH_BATCH_SIZE", 100),
             "flush_interval": _get_env_float("HH_FLUSH_INTERVAL", 5.0),
             "max_export_batch_size": _get_env_int("HH_MAX_EXPORT_BATCH_SIZE", 512),

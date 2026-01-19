@@ -434,17 +434,17 @@ OTLP Configuration
 
 .. py:data:: otlp_protocol
    :type: str
-   :value: "http/protobuf"
+   :value: "http/json"
 
    **Description**: OTLP protocol format for span export
    
    **Environment Variables**: ``HH_OTLP_PROTOCOL`` or ``OTEL_EXPORTER_OTLP_PROTOCOL``
    
    **Valid Values**:
-   - ``"http/protobuf"`` (default) - Binary Protobuf format
-   - ``"http/json"`` - JSON format for debugging and backend type conversion testing
+   - ``"http/json"`` (default) - JSON format for HoneyHive backend
+   - ``"http/protobuf"`` - Binary Protobuf format
    
-   **Example**: Set ``HH_OTLP_PROTOCOL=http/json`` to use JSON format
+   **Example**: Set ``HH_OTLP_PROTOCOL=http/protobuf`` to use Protobuf format
 
 .. py:data:: otlp_headers
    :type: Optional[Dict[str, Any]]

@@ -326,7 +326,7 @@ class HoneyHiveOTLPExporter(SpanExporter):
         tracer_instance: Any = None,
         session_config: Optional[OTLPSessionConfig] = None,
         use_optimized_session: bool = True,
-        protocol: str = "http/protobuf",
+        protocol: str = "http/json",
         **kwargs: Any,
     ) -> None:
         """Initialize the HoneyHive OTLP exporter with optional connection pooling.
@@ -336,7 +336,7 @@ class HoneyHiveOTLPExporter(SpanExporter):
             session_config: Optional configuration for optimized HTTP session
             use_optimized_session: Whether to use optimized session (default: True)
             protocol: OTLP protocol format
-                - "http/protobuf" (default) or "http/json"
+                - "http/json" (default) or "http/protobuf"
             **kwargs: Arguments passed to underlying OTLPSpanExporter or
                 OTLPJSONExporter
         """
