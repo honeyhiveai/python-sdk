@@ -43,6 +43,110 @@ SAFE_PROPAGATION_KEYS = frozenset(
     }
 )
 
+# Keys that should be cleared when starting a new session (Lambda container reuse fix)
+# These keys can persist in OpenTelemetry context between Lambda invocations
+SESSION_SCOPED_KEYS = frozenset(
+    {
+        "session_id",
+        "project",
+        "source",
+        "parent_id",
+        "honeyhive_tracer_id",
+    }
+)
+
+
+def clear_baggage_context(tracer_instance: Any = None) -> None:
+    """Clear session-scoped baggage to prevent context bleeding between invocations.
+
+    This function is critical for AWS Lambda and other serverless environments
+    where container reuse can cause OpenTelemetry context to persist between
+    invocations, leading to session bleeding issues.
+
+    The function creates a fresh context without session-scoped baggage items,
+    preventing spans from new sessions being incorrectly linked to previous sessions.
+
+    :param tracer_instance: Optional tracer instance for logging context
+    :type tracer_instance: Any
+
+    **Example (AWS Lambda):**
+
+    .. code-block:: python
+
+        def lambda_handler(event, context):
+            # Clear stale context from previous invocation
+            clear_baggage_context()
+
+            # Now create a new session - spans will be correctly isolated
+            tracer = HoneyHiveTracer.init(api_key="...", project="...")
+
+            # ... rest of handler
+
+    **Note:**
+
+    This function should be called at the START of each Lambda invocation
+    or serverless function execution before creating new sessions or tracers.
+    """
+    try:
+        # Get current context
+        current_ctx = context.get_current()
+
+        # Get all current baggage items
+        all_baggage = baggage.get_all(current_ctx)
+
+        if not all_baggage:
+            safe_log(
+                tracer_instance,
+                "debug",
+                "No baggage to clear",
+            )
+            return
+
+        # Log what we're clearing for debugging
+        session_keys_present = [k for k in all_baggage.keys() if k in SESSION_SCOPED_KEYS]
+
+        if session_keys_present:
+            safe_log(
+                tracer_instance,
+                "debug",
+                "Clearing stale session-scoped baggage (Lambda container reuse fix)",
+                honeyhive_data={
+                    "cleared_keys": session_keys_present,
+                    "previous_session_id": all_baggage.get("session_id"),
+                },
+            )
+
+        # Create a new context without session-scoped keys
+        # Start fresh and only preserve non-session-scoped baggage
+        new_ctx = context.get_current()
+
+        for key, value in all_baggage.items():
+            if key not in SESSION_SCOPED_KEYS and value is not None:
+                # Preserve non-session-scoped baggage (e.g., evaluation context)
+                new_ctx = baggage.set_baggage(key, str(value), new_ctx)
+
+        # Attach the clean context
+        context.attach(new_ctx)
+
+        safe_log(
+            tracer_instance,
+            "info",
+            "Cleared session-scoped baggage context (Lambda/serverless fix)",
+            honeyhive_data={
+                "cleared_keys": session_keys_present,
+                "preserved_keys": [k for k in all_baggage.keys() if k not in SESSION_SCOPED_KEYS],
+            },
+        )
+
+    except Exception as e:
+        safe_log(
+            tracer_instance,
+            "warning",
+            f"Failed to clear baggage context: {e}",
+            honeyhive_data={"error_type": type(e).__name__},
+        )
+        # Graceful degradation - continue without clearing
+
 
 def _get_dynamic_experiment_patterns() -> List[str]:
     """Get dynamic experiment patterns that can be extended at runtime.
@@ -83,6 +187,12 @@ def setup_baggage_context(tracer_instance: "HoneyHiveTracer") -> None:
     tracer configuration and environment. It supports experiment harness
     integration and evaluation context propagation.
 
+    **Lambda/Serverless Fix (v1.0.0rc9-legacy+):** This function now clears any
+    stale session-scoped baggage before setting up new context. This prevents
+    session bleeding in AWS Lambda and other serverless environments where
+    container reuse can cause OpenTelemetry context to persist between
+    invocations.
+
     :param tracer_instance: The tracer instance to setup baggage for
     :type tracer_instance: HoneyHiveTracer
 
@@ -101,6 +211,10 @@ def setup_baggage_context(tracer_instance: "HoneyHiveTracer") -> None:
     It gracefully handles missing or invalid configuration.
     """
     try:
+        # CRITICAL: Clear stale session-scoped baggage first (Lambda container reuse fix)
+        # This prevents session bleeding when containers are reused between invocations
+        clear_baggage_context(tracer_instance)
+
         # Dynamically discover baggage items
         baggage_items = _discover_baggage_items(tracer_instance)
 

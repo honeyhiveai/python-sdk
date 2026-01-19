@@ -3,7 +3,7 @@ HoneyHive Python SDK - LLM Observability and Evaluation Platform
 """
 
 # Version must be defined BEFORE imports to avoid circular import issues
-__version__ = "1.0.0rc9"
+__version__ = "1.0.0rc9.post1"
 
 # Main API client
 from .api import HoneyHive
@@ -13,6 +13,7 @@ try:
     from .tracer import (
         HoneyHiveTracer,
         atrace,
+        clear_baggage_context,
         enrich_session,
         enrich_span,
         flush,
@@ -58,6 +59,7 @@ if _TRACER_AVAILABLE:
             "trace",
             "atrace",
             "trace_class",
+            "clear_baggage_context",
             "enrich_session",
             "enrich_span",
             "flush",

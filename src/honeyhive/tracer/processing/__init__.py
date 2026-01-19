@@ -7,6 +7,7 @@ All components use dynamic logic patterns for flexible, extensible processing.
 
 # Context management
 from .context import (
+    clear_baggage_context,
     extract_context_from_carrier,
     get_current_baggage,
     inject_context_into_carrier,
@@ -26,6 +27,7 @@ __all__ = [
     # OTLP export
     "HoneyHiveOTLPExporter",
     # Context management
+    "clear_baggage_context",
     "extract_context_from_carrier",
     "get_current_baggage",
     "inject_context_into_carrier",

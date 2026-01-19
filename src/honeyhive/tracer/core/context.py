@@ -25,11 +25,13 @@ from ..processing.context import get_current_baggage
 # Context processing imports - handle potential circular imports gracefully
 try:
     from ..processing.context import (
+        clear_baggage_context,
         extract_context_from_carrier,
         inject_context_into_carrier,
     )
 except ImportError:
     # Fallback for circular import issues
+    clear_baggage_context = None  # type: ignore[assignment]
     extract_context_from_carrier = None  # type: ignore[assignment]
     inject_context_into_carrier = None  # type: ignore[assignment]
 
@@ -375,8 +377,16 @@ class TracerContextMixin(TracerContextInterface):
 
         .. versionadded:: 1.0.0rc8
             Added for multi-session handling with global tracer pattern.
+
+        .. versionchanged:: 1.0.0rc9-legacy
+            Added Lambda/serverless session bleeding fix - clears stale baggage.
         """
         try:
+            # CRITICAL: Clear stale session baggage first (Lambda container reuse fix)
+            # This prevents session bleeding when containers are reused
+            if clear_baggage_context is not None:
+                clear_baggage_context(self)
+
             # If session_id provided with skip_api_call, just set in baggage
             if session_id and skip_api_call:
                 current_ctx = context.get_current()
@@ -503,8 +513,15 @@ class TracerContextMixin(TracerContextInterface):
             - :meth:`create_session` - Sync version
 
         .. versionadded:: 1.0.0rc8
+
+        .. versionchanged:: 1.0.0rc9-legacy
+            Added Lambda/serverless session bleeding fix - clears stale baggage.
         """
         try:
+            # CRITICAL: Clear stale session baggage first (Lambda container reuse fix)
+            if clear_baggage_context is not None:
+                clear_baggage_context(self)
+
             # If session_id provided with skip_api_call, just set in baggage
             if session_id and skip_api_call:
                 current_ctx = context.get_current()

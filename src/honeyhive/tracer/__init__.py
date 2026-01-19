@@ -20,6 +20,7 @@ from .integration.compatibility import enrich_session
 from .integration.detection import get_global_provider, set_global_provider
 from .lifecycle import graceful_shutdown_all, shutdown_tracer
 from .lifecycle.flush import force_flush_tracer as flush
+from .processing.context import clear_baggage_context
 from .processing.span_processor import HoneyHiveSpanProcessor
 from .registry import clear_registry, get_default_tracer, set_default_tracer
 
@@ -33,6 +34,8 @@ __all__ = [
     # Span enrichment
     "enrich_session",
     "enrich_span",
+    # Context management (Lambda/serverless support)
+    "clear_baggage_context",
     # Registry management
     "set_default_tracer",
     "get_default_tracer",
