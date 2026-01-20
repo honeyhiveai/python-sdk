@@ -154,7 +154,7 @@ def check_response_contains(outputs, inputs, ground_truth):
     """Evaluator that checks if the response contains expected content."""
     response = outputs.get("response", "").lower()
     expected = ground_truth.get("contains", "").lower()
-    return {"contains_expected": 1 if expected in response else 0}
+    return 1 if expected in response else 0
 
 
 if __name__ == "__main__":
