@@ -521,9 +521,46 @@ class EventsAPI(BaseAPI):
         # Read operations use Control Plane
         return events_svc.getEvents(self._get_cp_config(), **filtered_data)
 
-    def get_by_session_id(self, session_id: str) -> GetEventsBySessionIdResponse:
-        """Get events by session ID (uses Control Plane endpoint)."""
-        return events_svc.getEventsBySessionId(self._get_cp_config(), id=session_id)
+    def get_by_session_id(
+        self,
+        session_id: str,
+        project: str,
+        *,
+        limit: int = 1000,
+    ) -> EventExportResponse:
+        """Get events by session ID using the Data Plane export endpoint.
+
+        This is a convenience wrapper around export() that filters by session_id.
+
+        Args:
+            session_id: The session ID to fetch events for.
+            project: Project name associated with the events.
+            limit: Maximum number of events to return (default 1000).
+
+        Returns:
+            EventExportResponse with events for the session.
+
+        Example::
+
+            response = client.events.get_by_session_id(
+                session_id="abc-123",
+                project="my-project"
+            )
+            for event in response.events:
+                print(event["event_name"])
+        """
+        return self.export(
+            project=project,
+            filters=[
+                EventFilter(
+                    field="session_id",
+                    operator="is",
+                    value=session_id,
+                    type="string",
+                )
+            ],
+            limit=limit,
+        )
 
     def create(self, request: PostEventRequest) -> PostEventResponse:
         """Create an event."""
@@ -678,11 +715,35 @@ class EventsAPI(BaseAPI):
         return await events_svc_async.getEvents(self._get_cp_config(), **filtered_data)
 
     async def get_by_session_id_async(
-        self, session_id: str
-    ) -> GetEventsBySessionIdResponse:
-        """Get events by session ID asynchronously (uses Control Plane endpoint)."""
-        return await events_svc_async.getEventsBySessionId(
-            self._get_cp_config(), id=session_id
+        self,
+        session_id: str,
+        project: str,
+        *,
+        limit: int = 1000,
+    ) -> EventExportResponse:
+        """Get events by session ID asynchronously using the Data Plane export endpoint.
+
+        Async version of get_by_session_id(). See get_by_session_id() for full documentation.
+
+        Args:
+            session_id: The session ID to fetch events for.
+            project: Project name associated with the events.
+            limit: Maximum number of events to return (default 1000).
+
+        Returns:
+            EventExportResponse with events for the session.
+        """
+        return await self.export_async(
+            project=project,
+            filters=[
+                EventFilter(
+                    field="session_id",
+                    operator="is",
+                    value=session_id,
+                    type="string",
+                )
+            ],
+            limit=limit,
         )
 
     async def create_async(self, request: PostEventRequest) -> PostEventResponse:
