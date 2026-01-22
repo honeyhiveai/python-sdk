@@ -18,7 +18,10 @@ Usage::
 
 from typing import Any, Dict, List, Optional, Union
 
+import httpx
+
 from honeyhive._generated.api_config import APIConfig
+from honeyhive.models import EventFilter, EventExportRequest, EventExportResponse
 
 # Import models used in type hints
 from honeyhive._generated.models import (
@@ -539,6 +542,116 @@ class EventsAPI(BaseAPI):
         """Create events in batch."""
         return events_svc.createEventBatch(self._api_config, data=data)
 
+    def export(
+        self,
+        project: str,
+        filters: Optional[List[Union[EventFilter, Dict[str, Any]]]] = None,
+        *,
+        date_range: Optional[Dict[str, str]] = None,
+        projections: Optional[List[str]] = None,
+        limit: int = 1000,
+        page: int = 1,
+    ) -> EventExportResponse:
+        """Export events via POST /events/export (Data Plane).
+
+        This is the primary method for retrieving events from HoneyHive.
+        It uses the Data Plane endpoint which supports filtering by session_id,
+        event_type, and other fields.
+
+        Args:
+            project: Project name associated with the events (required).
+            filters: List of EventFilter objects or dicts with filter criteria.
+                Each filter should have: field, operator, value, type.
+            date_range: Optional date range filter with '$gte' and '$lte' keys
+                containing ISO timestamp strings.
+            projections: Optional list of fields to include in the response.
+            limit: Maximum number of results (default 1000, max 7500).
+            page: Page number for pagination (default 1).
+
+        Returns:
+            EventExportResponse with events list and total_events count.
+
+        Example::
+
+            from honeyhive.models import EventFilter
+
+            # Export events for a session
+            response = client.events.export(
+                project="my-project",
+                filters=[
+                    EventFilter(
+                        field="session_id",
+                        operator="is",
+                        value="abc-123",
+                        type="string"
+                    )
+                ],
+                limit=100
+            )
+
+            for event in response.events:
+                print(event["event_name"])
+
+            # Export with date range
+            response = client.events.export(
+                project="my-project",
+                filters=[],
+                date_range={
+                    "$gte": "2024-01-01T00:00:00Z",
+                    "$lte": "2024-01-31T23:59:59Z"
+                }
+            )
+        """
+        # Build filters array
+        filters_data = []
+        if filters:
+            for f in filters:
+                if isinstance(f, EventFilter):
+                    filters_data.append(f.to_dict())
+                elif isinstance(f, dict):
+                    filters_data.append(f)
+
+        # Build request body
+        request_body: Dict[str, Any] = {
+            "project": project,
+            "filters": filters_data,
+            "limit": limit,
+            "page": page,
+        }
+
+        if date_range:
+            request_body["dateRange"] = date_range
+        if projections:
+            request_body["projections"] = projections
+
+        # Make direct request to /events/export (bypasses generated model issues)
+        base_path = self._api_config.base_path
+        headers = {
+            "Content-Type": "application/json",
+            "Accept": "application/json",
+            "Authorization": f"Bearer {self._api_config.get_access_token()}",
+        }
+
+        with httpx.Client(base_url=base_path, verify=self._api_config.verify) as client:
+            response = client.request(
+                "POST",
+                "/v1/events/export",
+                headers=headers,
+                json=request_body,
+            )
+
+        if response.status_code != 200:
+            raise Exception(
+                f"export() failed with status code: {response.status_code}, "
+                f"response: {response.text}"
+            )
+
+        data = response.json()
+        return EventExportResponse(
+            events=data.get("events", []),
+            total_events=data.get("totalEvents", data.get("count", 0)),
+        )
+
     # Async methods
     async def list_async(
         self, query: Union[GetEventsQuery, Dict[str, Any]]
@@ -589,6 +702,83 @@ class EventsAPI(BaseAPI):
         """Create events in batch asynchronously."""
         return await events_svc_async.createEventBatch(self._api_config, data=data)
 
+    async def export_async(
+        self,
+        project: str,
+        filters: Optional[List[Union[EventFilter, Dict[str, Any]]]] = None,
+        *,
+        date_range: Optional[Dict[str, str]] = None,
+        projections: Optional[List[str]] = None,
+        limit: int = 1000,
+        page: int = 1,
+    ) -> EventExportResponse:
+        """Export events via POST /events/export asynchronously (Data Plane).
+
+        Async version of export(). See export() for full documentation.
+
+        Args:
+            project: Project name associated with the events (required).
+            filters: List of EventFilter objects or dicts with filter criteria.
+            date_range: Optional date range filter.
+            projections: Optional list of fields to include in the response.
+            limit: Maximum number of results (default 1000, max 7500).
+            page: Page number for pagination (default 1).
+
+        Returns:
+            EventExportResponse with events list and total_events count.
+        """
+        # Build filters array
+        filters_data = []
+        if filters:
+            for f in filters:
+                if isinstance(f, EventFilter):
+                    filters_data.append(f.to_dict())
+                elif isinstance(f, dict):
+                    filters_data.append(f)
+
+        # Build request body
+        request_body: Dict[str, Any] = {
+            "project": project,
+            "filters": filters_data,
+            "limit": limit,
+            "page": page,
+        }
+
+        if date_range:
+            request_body["dateRange"] = date_range
+        if projections:
+            request_body["projections"] = projections
+
+        # Make direct async request to /events/export
+        base_path = self._api_config.base_path
+        headers = {
+            "Content-Type": "application/json",
+            "Accept": "application/json",
+            "Authorization": f"Bearer {self._api_config.get_access_token()}",
+        }
+
+        async with httpx.AsyncClient(
+            base_url=base_path, verify=self._api_config.verify
+        ) as client:
+            response = await client.request(
+                "POST",
+                "/v1/events/export",
+                headers=headers,
+                json=request_body,
+            )
+
+        if response.status_code != 200:
+            raise Exception(
+                f"export_async() failed with status code: {response.status_code}, "
+                f"response: {response.text}"
+            )
+
+        data = response.json()
+        return EventExportResponse(
+            events=data.get("events", []),
+            total_events=data.get("totalEvents", data.get("count", 0)),
+        )
+
     # Backwards compatible aliases
     def create_event(self, request: PostEventRequest) -> PostEventResponse:
         """Create an event (backwards compatible alias for create())."""
@@ -599,16 +789,114 @@ class EventsAPI(BaseAPI):
         return self.update(data)
 
     def list_events(
-        self, query: Union[GetEventsQuery, Dict[str, Any]]
-    ) -> GetEventsResponse:
-        """List events (backwards compatible alias for list())."""
-        return self.list(query)
+        self,
+        project: str,
+        filters: Optional[List[Union[EventFilter, Dict[str, Any]]]] = None,
+        *,
+        date_range: Optional[Dict[str, str]] = None,
+        projections: Optional[List[str]] = None,
+        limit: int = 1000,
+        page: int = 1,
+    ) -> EventExportResponse:
+        """List events via export endpoint (backwards compatible alias).
+
+        This is a backwards compatible alias for export(). Uses the Data Plane
+        POST /events/export endpoint.
+
+        Args:
+            project: Project name.
+            filters: List of EventFilter objects or dicts.
+            date_range: Optional date range filter.
+            projections: Optional list of fields to include.
+            limit: Maximum number of results (default 1000).
+            page: Page number (default 1).
+
+        Returns:
+            EventExportResponse with events and total count.
+        """
+        return self.export(
+            project=project,
+            filters=filters,
+            date_range=date_range,
+            projections=projections,
+            limit=limit,
+            page=page,
+        )
 
     def get_events(
-        self, query: Union[GetEventsQuery, Dict[str, Any]]
-    ) -> GetEventsResponse:
-        """Get events (backwards compatible alias for list())."""
-        return self.list(query)
+        self,
+        project: str,
+        filters: Optional[List[Union[EventFilter, Dict[str, Any]]]] = None,
+        *,
+        date_range: Optional[Dict[str, str]] = None,
+        projections: Optional[List[str]] = None,
+        limit: int = 1000,
+        page: int = 1,
+    ) -> EventExportResponse:
+        """Get events via export endpoint (backwards compatible alias).
+
+        This is a backwards compatible alias for export(). Uses the Data Plane
+        POST /events/export endpoint.
+
+        Args:
+            project: Project name.
+            filters: List of EventFilter objects or dicts.
+            date_range: Optional date range filter.
+            projections: Optional list of fields to include.
+            limit: Maximum number of results (default 1000).
+            page: Page number (default 1).
+
+        Returns:
+            EventExportResponse with events and total count.
+        """
+        return self.export(
+            project=project,
+            filters=filters,
+            date_range=date_range,
+            projections=projections,
+            limit=limit,
+            page=page,
+        )
+
+    async def list_events_async(
+        self,
+        project: str,
+        filters: Optional[List[Union[EventFilter, Dict[str, Any]]]] = None,
+        *,
+        date_range: Optional[Dict[str, str]] = None,
+        projections: Optional[List[str]] = None,
+        limit: int = 1000,
+        page: int = 1,
+    ) -> EventExportResponse:
+        """List events asynchronously (backwards compatible alias for export_async)."""
+        return await self.export_async(
+            project=project,
+            filters=filters,
+            date_range=date_range,
+            projections=projections,
+            limit=limit,
+            page=page,
+        )
+
+    async def get_events_async(
+        self,
+        project: str,
+        filters: Optional[List[Union[EventFilter, Dict[str, Any]]]] = None,
+        *,
+        date_range: Optional[Dict[str, str]] = None,
+        projections: Optional[List[str]] = None,
+        limit: int = 1000,
+        page: int = 1,
+    ) -> EventExportResponse:
+        """Get events asynchronously (backwards compatible alias for export_async)."""
+        return await self.export_async(
+            project=project,
+            filters=filters,
+            date_range=date_range,
+            projections=projections,
+            limit=limit,
+            page=page,
+        )
 
 
 class ExperimentsAPI(BaseAPI):
