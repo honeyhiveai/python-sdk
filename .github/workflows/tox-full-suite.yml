@@ -7,7 +7,7 @@ name: Tox Full Test Suite
       python_versions:
         description: 'Python versions to test (comma-separated)'
         required: false
-        default: '3.11,3.12,3.13'
+        default: '3.12,3.13'
       tox_environments:
         description: 'Additional tox environments to run'
         required: false
@@ -22,7 +22,7 @@ name: Tox Full Test Suite
       python_versions:
         description: 'Python versions to test (comma-separated)'
         required: false
-        default: '3.11,3.12,3.13'
+        default: '3.12,3.13'
         type: string
       tox_environments:
         description: 'Additional tox environments to run'
@@ -104,7 +104,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        python-version: ['3.11', '3.12', '3.13']
+        python-version: ['3.12', '3.13']
 
     steps:
       - name: Checkout code
@@ -123,7 +123,7 @@ jobs:
 
       - name: Run comprehensive test suite
         run: |
-          tox -e py${{ matrix.python-version == '3.11' && '311' || matrix.python-version == '3.12' && '312' || '313' }}
+          tox -e py${{ matrix.python-version == '3.12' && '312' || '313' }}
         env:
           HH_API_KEY: ${{ secrets.HH_API_KEY || env.HH_API_KEY }}
 
@@ -364,7 +364,7 @@ jobs:
           # Python Version Results
           echo "## 🐍 Python Version Testing" >> $GITHUB_STEP_SUMMARY
           python_result="${{ needs.python-tests.result == 'success' && '✅ PASSED' || '❌ FAILED' }}"
-          echo "- **Python 3.11:** $python_result" >> $GITHUB_STEP_SUMMARY
+          echo "- **Python 3.12+:** $python_result" >> $GITHUB_STEP_SUMMARY
           echo "- **Python 3.12:** $python_result" >> $GITHUB_STEP_SUMMARY
           echo "- **Python 3.13:** $python_result" >> $GITHUB_STEP_SUMMARY
 
