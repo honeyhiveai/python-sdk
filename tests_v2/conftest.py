@@ -27,7 +27,7 @@ from honeyhive.tracer import HoneyHiveTracer
 def setup_test_environment() -> None:
     """Setup test environment variables for isolated testing."""
     os.environ.setdefault("HH_API_KEY", "test-api-key-12345")
-    os.environ.setdefault("HH_API_URL", "https://api.honeyhive.ai")
+    os.environ.setdefault("HH_API_URL", "https://api.testing-dp-1.honeyhive.ai")
     os.environ.setdefault("HH_SOURCE", "test")
     os.environ.setdefault("HH_TEST_MODE", "true")
     os.environ.setdefault("HH_OTLP_ENABLED", "false")
