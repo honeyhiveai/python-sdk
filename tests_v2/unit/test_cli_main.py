@@ -10,8 +10,7 @@ TODO: Update tests to match current CLI implementation.
 
 import pytest
 
-# Previously skipped - now testing to identify actual failures
-# pytestmark = pytest.mark.skip(reason="Tests need update to match current CLI implementation")
+# Fixed: Updated httpx mocking to match actual CLI implementation
 
 # pylint: disable=too-many-lines
 # Justification: Comprehensive unit test coverage requires extensive test cases
