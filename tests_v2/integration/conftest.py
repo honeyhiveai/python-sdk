@@ -20,7 +20,7 @@ def get_api_key() -> Optional[str]:
 
 def get_api_url() -> str:
     """Get API URL from environment."""
-    return os.environ.get("HH_API_URL", "https://api.honeyhive.ai")
+    return os.environ.get("HH_API_URL", "https://api.testing-dp-1.honeyhive.ai")
 
 
 @pytest.fixture
