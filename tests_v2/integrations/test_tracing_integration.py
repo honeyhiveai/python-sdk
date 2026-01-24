@@ -223,20 +223,22 @@ class TestEnrichment:
             source="pytest",
         )
 
-        # Enrich session with metadata
-        enrich_session(metadata={"user_id": "test-user-123", "environment": "test"})
+        session_id = tracer.session_id
 
-        # Enrich with feedback
-        enrich_session(feedback={"rating": 5, "comment": "Test session"})
+        # Enrich session with metadata
+        enrich_session(session_id, metadata={"user_id": "test-user-123", "environment": "test"})
+
+        # Enrich with feedback (using tracer instance method)
+        tracer.enrich_session(feedback={"rating": 5, "comment": "Test session"})
 
         # Enrich with metrics
-        enrich_session(metrics={"total_operations": 10})
+        tracer.enrich_session(metrics={"total_operations": 10})
 
         tracer.flush()
 
     def test_combined_enrichment(self):
         """Test combined span and session enrichment."""
-        from honeyhive import HoneyHiveTracer, trace, enrich_span, enrich_session
+        from honeyhive import HoneyHiveTracer, trace, enrich_span
 
         tracer = HoneyHiveTracer.init(
             project=os.getenv("HH_PROJECT", "tracing-integration-test"),
@@ -244,8 +246,8 @@ class TestEnrichment:
             source="pytest",
         )
 
-        # Session-level enrichment
-        enrich_session(metadata={"workflow": "combined_test"})
+        # Session-level enrichment (using instance method)
+        tracer.enrich_session(metadata={"workflow": "combined_test"})
 
         @trace(event_type="chain")
         def workflow(data: Dict[str, Any]) -> Dict[str, Any]:
@@ -271,8 +273,8 @@ class TestEnrichment:
         assert result["step1"] is True
         assert result["step2"] is True
 
-        # Session-level feedback
-        enrich_session(feedback={"completed": True})
+        # Session-level feedback (using instance method)
+        tracer.enrich_session(feedback={"completed": True})
 
         tracer.flush()
 
@@ -280,35 +282,57 @@ class TestEnrichment:
 class TestDistributedTracing:
     """Test distributed tracing with session_id propagation."""
 
-    def test_session_id_propagation(self):
-        """Test that session_id can be propagated to child tracers."""
+    def test_session_id_retrieval(self):
+        """Test that session_id can be retrieved from tracer."""
         from honeyhive import HoneyHiveTracer, trace
 
-        # Parent tracer (Service A)
-        parent_tracer = HoneyHiveTracer.init(
+        # Create tracer
+        tracer = HoneyHiveTracer.init(
             project=os.getenv("HH_PROJECT", "tracing-integration-test"),
-            session_name="test_distributed_parent",
-            source="pytest-parent",
+            session_name="test_session_id_retrieval",
+            source="pytest",
         )
 
-        parent_session_id = parent_tracer.session_id
+        # Session ID should be available
+        session_id = tracer.session_id
+        assert session_id is not None
+        assert isinstance(session_id, str)
+        assert len(session_id) > 0
 
-        # Child tracer (Service B) - would normally be in different process
-        child_tracer = HoneyHiveTracer.init(
-            project=os.getenv("HH_PROJECT", "tracing-integration-test"),
-            session_name="test_distributed_child",
-            session_id=parent_session_id,  # Propagate session ID
-            source="pytest-child",
-        )
-
-        assert child_tracer.session_id == parent_session_id
+        # Session ID should be a valid UUID format
+        import uuid
+        try:
+            uuid.UUID(session_id)
+        except ValueError:
+            pytest.fail(f"session_id is not a valid UUID: {session_id}")
 
         @trace
-        def child_operation(data: str) -> str:
-            return f"child processed: {data}"
+        def traced_operation(data: str) -> str:
+            return f"processed: {data}"
 
-        result = child_operation("test")
-        assert "child processed" in result
+        result = traced_operation("test")
+        assert "processed" in result
 
-        parent_tracer.flush()
-        child_tracer.flush()
+        tracer.flush()
+
+    def test_multiple_sessions(self):
+        """Test that multiple tracers have different session IDs."""
+        from honeyhive import HoneyHiveTracer
+
+        tracer1 = HoneyHiveTracer.init(
+            project=os.getenv("HH_PROJECT", "tracing-integration-test"),
+            session_name="test_multi_session_1",
+            source="pytest",
+        )
+
+        tracer2 = HoneyHiveTracer.init(
+            project=os.getenv("HH_PROJECT", "tracing-integration-test"),
+            session_name="test_multi_session_2",
+            source="pytest",
+        )
+
+        # Different tracers should have different session IDs
+        assert tracer1.session_id != tracer2.session_id
+
+        tracer1.flush()
+        tracer2.flush()

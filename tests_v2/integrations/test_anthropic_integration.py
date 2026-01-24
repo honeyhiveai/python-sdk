@@ -165,14 +165,18 @@ class TestAnthropicIntegration:
         try:
             client = anthropic.Anthropic()
 
-            chunks = []
-            with client.messages.stream(
+            # Use stream=True for basic streaming
+            stream = client.messages.create(
                 model="claude-3-haiku-20240307",
                 max_tokens=50,
                 messages=[{"role": "user", "content": "Count from 1 to 5."}],
-            ) as stream:
-                for text in stream.text_stream:
-                    chunks.append(text)
+                stream=True,
+            )
+
+            chunks = []
+            for event in stream:
+                if hasattr(event, 'delta') and hasattr(event.delta, 'text'):
+                    chunks.append(event.delta.text)
 
             full_response = "".join(chunks)
             assert len(full_response) > 0
