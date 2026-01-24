@@ -2,8 +2,30 @@
 
 ## Executive Summary
 
-**Total Integration Tests:** 226 tests across 34 files  
+**Total Integration Tests:** 226 tests across 34 files (legacy) + 30 new tests in `tests_v2/integrations/`  
 **Primary Issue:** Most tests hit real backend APIs, causing slow execution (>5 min for full suite)
+
+### NEW: Provider Integration Test Suite (`tests_v2/integrations/`)
+
+| Test File | Provider | Tests | Docs Coverage |
+|-----------|----------|-------|---------------|
+| `test_openai_integration.py` | OpenAI | 6 | `/integrations/openai.mdx` |
+| `test_anthropic_integration.py` | Anthropic | 4 | `/integrations/anthropic.mdx` |
+| `test_langchain_integration.py` | LangChain/LangGraph | 5 | `/integrations/langchain.mdx`, `/integrations/langgraph.mdx` |
+| `test_evaluate_integration.py` | evaluate() | 5 | `/evaluation/running-experiments.mdx` |
+| `test_tracing_integration.py` | Core Tracing | 10 | `/tracing/introduction.mdx`, `/tracing/custom-spans.mdx` |
+
+**Run with:**
+```bash
+tox -e integrations              # All providers
+tox -e integrations-openai       # OpenAI only
+tox -e integrations-anthropic    # Anthropic only
+tox -e integrations-langchain    # LangChain only
+tox -e integrations-evaluate     # evaluate() only
+tox -e integrations-tracing      # Core tracing only
+```
+
+---
 
 ---
 
