@@ -63,6 +63,42 @@ class HoneyHiveTracer(HoneyHiveTracerBase, TracerOperationsMixin, TracerContextM
         """
         return TracerContextMixin.get_baggage(self, key)
 
+    def flush(self, timeout_millis: float = 30000) -> bool:
+        """Flush tracer data. Alias for force_flush().
+
+        Args:
+            timeout_millis: Timeout in milliseconds (default 30000)
+
+        Returns:
+            True if flush successful, False otherwise
+        """
+        return self.force_flush(timeout_millis)
+
+    @classmethod
+    def flush_all(cls, timeout_millis: float = 30000) -> bool:
+        """Flush all active tracer instances.
+
+        This is a convenience class method that flushes all active tracers.
+
+        Args:
+            timeout_millis: Timeout in milliseconds (default 30000)
+
+        Returns:
+            True if all flushes successful, False otherwise
+        """
+        from honeyhive.tracer.lifecycle.flush import force_flush_tracer
+
+        # Get current tracer from context if available
+        try:
+            from honeyhive.tracer.processing.context import get_current_tracer
+
+            current = get_current_tracer()
+            if current:
+                return force_flush_tracer(current, timeout_millis)
+        except Exception:
+            pass
+        return True
+
     def __repr__(self) -> str:
         """Dynamic string representation of tracer instance."""
         return (
