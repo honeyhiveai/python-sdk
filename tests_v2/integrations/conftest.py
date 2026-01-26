@@ -169,6 +169,8 @@ def verify_session_logged(
     expected_event_count: Optional[int] = None,
     expected_metadata: Optional[Dict[str, Any]] = None,
     expected_metrics: Optional[Dict[str, Any]] = None,
+    expected_inputs: Optional[Dict[str, Any]] = None,
+    expected_outputs: Optional[Dict[str, Any]] = None,
     max_retries: int = 3,
     retry_delay: float = 2.0,
 ) -> Dict[str, Any]:
@@ -179,10 +181,12 @@ def verify_session_logged(
     
     Args:
         session_id: The session ID to verify.
-        project: Project name.
+        project: Project name (defaults to HH_PROJECT env var).
         expected_event_count: If set, assert this many events exist.
         expected_metadata: If set, assert metadata contains these keys/values.
         expected_metrics: If set, assert metrics contains these keys/values.
+        expected_inputs: If set, assert inputs contain these keys/values.
+        expected_outputs: If set, assert outputs contain these keys/values.
         max_retries: Retry count for fetching events.
         retry_delay: Delay between retries.
         
@@ -192,6 +196,8 @@ def verify_session_logged(
         - event_count: Number of events
         - session_id: The session ID
         - verified: True if all assertions passed
+        - all_inputs: Aggregated inputs from all events
+        - all_outputs: Aggregated outputs from all events
         
     Raises:
         AssertionError: If any verification fails.
@@ -208,7 +214,22 @@ def verify_session_logged(
         "event_count": len(events),
         "session_id": session_id,
         "verified": False,
+        "all_inputs": {},
+        "all_outputs": {},
+        "all_metadata": {},
+        "all_metrics": {},
     }
+    
+    # Aggregate all inputs, outputs, metadata, metrics across events
+    for event in events:
+        if "inputs" in event and event["inputs"]:
+            result["all_inputs"].update(event["inputs"])
+        if "outputs" in event and event["outputs"]:
+            result["all_outputs"].update(event["outputs"])
+        if "metadata" in event and event["metadata"]:
+            result["all_metadata"].update(event["metadata"])
+        if "metrics" in event and event["metrics"]:
+            result["all_metrics"].update(event["metrics"])
     
     # Verify event count if specified
     if expected_event_count is not None:
@@ -221,31 +242,42 @@ def verify_session_logged(
     
     # Verify metadata if specified
     if expected_metadata:
-        # Check across all events
-        all_metadata = {}
-        for event in events:
-            if "metadata" in event:
-                all_metadata.update(event["metadata"])
-        
         for key, value in expected_metadata.items():
-            assert key in all_metadata, f"Expected metadata key '{key}' not found"
+            assert key in result["all_metadata"], f"Expected metadata key '{key}' not found"
             if value is not None:
-                assert all_metadata[key] == value, (
-                    f"Metadata '{key}' expected {value}, got {all_metadata[key]}"
+                assert result["all_metadata"][key] == value, (
+                    f"Metadata '{key}' expected {value}, got {result['all_metadata'][key]}"
                 )
     
     # Verify metrics if specified
     if expected_metrics:
-        all_metrics = {}
-        for event in events:
-            if "metrics" in event:
-                all_metrics.update(event["metrics"])
-        
         for key, value in expected_metrics.items():
-            assert key in all_metrics, f"Expected metric key '{key}' not found"
+            assert key in result["all_metrics"], f"Expected metric key '{key}' not found"
             if value is not None:
-                assert all_metrics[key] == value, (
-                    f"Metric '{key}' expected {value}, got {all_metrics[key]}"
+                assert result["all_metrics"][key] == value, (
+                    f"Metric '{key}' expected {value}, got {result['all_metrics'][key]}"
+                )
+    
+    # Verify inputs if specified
+    if expected_inputs:
+        for key, value in expected_inputs.items():
+            assert key in result["all_inputs"], (
+                f"Expected input key '{key}' not found. Available: {list(result['all_inputs'].keys())}"
+            )
+            if value is not None:
+                assert result["all_inputs"][key] == value, (
+                    f"Input '{key}' expected {value}, got {result['all_inputs'][key]}"
+                )
+    
+    # Verify outputs if specified
+    if expected_outputs:
+        for key, value in expected_outputs.items():
+            assert key in result["all_outputs"], (
+                f"Expected output key '{key}' not found. Available: {list(result['all_outputs'].keys())}"
+            )
+            if value is not None:
+                assert result["all_outputs"][key] == value, (
+                    f"Output '{key}' expected {value}, got {result['all_outputs'][key]}"
                 )
     
     result["verified"] = True

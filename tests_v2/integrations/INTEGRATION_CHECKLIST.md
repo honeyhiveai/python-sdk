@@ -19,7 +19,7 @@ This directory contains integration tests for the HoneyHive Python SDK across 13
 | `TestUserFeedback` | 4 | Boolean/numeric ratings, ground_truth, span-level feedback | Assert feedback dict is accepted by enrich methods |
 | `TestUserProperties` | 3 | Session/span user properties, combined context | Assert user_properties dict is accepted by enrich methods |
 | `TestDistributedTracing` | 2 | Session ID retrieval, multiple session isolation | Assert session_id is valid UUID, different tracers have different IDs |
-| `TestEndToEndVerification` | 4 | **Full pipeline: SDK -> export -> ingest -> fetch via API** | **Fetch events.export() and assert data matches logged values** |
+| `TestEndToEndVerification` | 6 | **Full pipeline: SDK -> export -> ingest -> fetch via API** | **Fetch events.export() and assert inputs/outputs/metadata match** |
 
 **Total: 23 tests**
 
@@ -213,7 +213,7 @@ assert verification["event_count"] >= 1
 | Category | Tests |
 |----------|-------|
 | Core Tracing | 19 |
-| **E2E Verification** | **4** |
+| **E2E Verification** | **6** |
 | OpenAI | 5 |
 | Anthropic | 4 |
 | LangChain/LangGraph | 5 |
@@ -227,7 +227,7 @@ assert verification["event_count"] >= 1
 | AutoGen | 2 |
 | DSPy | 3 |
 | evaluate() | 5 |
-| **Total** | **62** |
+| **Total** | **64** |
 
 ## Running Tests
 
