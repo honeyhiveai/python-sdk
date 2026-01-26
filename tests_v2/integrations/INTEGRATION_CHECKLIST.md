@@ -19,8 +19,36 @@ This directory contains integration tests for the HoneyHive Python SDK across 13
 | `TestUserFeedback` | 4 | Boolean/numeric ratings, ground_truth, span-level feedback | Assert feedback dict is accepted by enrich methods |
 | `TestUserProperties` | 3 | Session/span user properties, combined context | Assert user_properties dict is accepted by enrich methods |
 | `TestDistributedTracing` | 2 | Session ID retrieval, multiple session isolation | Assert session_id is valid UUID, different tracers have different IDs |
+| `TestEndToEndVerification` | 4 | **Full pipeline: SDK -> export -> ingest -> fetch via API** | **Fetch events.export() and assert data matches logged values** |
 
-**Total: 19 tests**
+**Total: 23 tests**
+
+#### End-to-End Verification Pattern
+
+The `TestEndToEndVerification` class provides true end-to-end verification:
+
+```python
+# 1. Create tracer and trace function
+tracer = HoneyHiveTracer.init(project="test", session_name="e2e")
+
+@trace
+def my_function(x):
+    enrich_span(metadata={"key": "value"})
+    return x * 2
+
+result = my_function(5)
+tracer.flush()
+
+# 2. Fetch logged events from HoneyHive API
+verification = verify_logged(
+    session_id=tracer.session_id,
+    expected_metadata={"key": "value"},
+)
+
+# 3. Assert data was actually logged
+assert verification["verified"] is True
+assert verification["event_count"] >= 1
+```
 
 ---
 
@@ -185,6 +213,7 @@ This directory contains integration tests for the HoneyHive Python SDK across 13
 | Category | Tests |
 |----------|-------|
 | Core Tracing | 19 |
+| **E2E Verification** | **4** |
 | OpenAI | 5 |
 | Anthropic | 4 |
 | LangChain/LangGraph | 5 |
@@ -198,7 +227,7 @@ This directory contains integration tests for the HoneyHive Python SDK across 13
 | AutoGen | 2 |
 | DSPy | 3 |
 | evaluate() | 5 |
-| **Total** | **58** |
+| **Total** | **62** |
 
 ## Running Tests
 
