@@ -836,18 +836,22 @@ class TestEndToEndVerification:
             )
             
             if len(events) > 0:
-                # Find the LLM event (should have model-related data)
+                # Find the LLM event (should have model-related data with actual inputs)
                 llm_event = None
                 for event in events:
                     event_type = event.get("event_type", "")
                     event_name = event.get("event_name", "")
-                    # Look for OpenAI/LLM events
-                    if "model" in event_type.lower() or "openai" in event_name.lower() or "chat" in event_name.lower():
-                        llm_event = event
-                        break
-                    # Also check if inputs have LLM-like structure
                     inputs = event.get("inputs", {})
-                    if "messages" in inputs or "model" in inputs or "llm.input_messages" in str(inputs):
+                    
+                    # Must have non-empty inputs to be the actual LLM call
+                    if not inputs:
+                        continue
+                    
+                    # Look for OpenAI/LLM events with actual data
+                    if ("model" in event_type.lower() or 
+                        "chatcompletion" in event_name.lower() or
+                        "chat_history" in inputs or
+                        "messages" in inputs):
                         llm_event = event
                         break
                 
@@ -856,11 +860,12 @@ class TestEndToEndVerification:
                     outputs = llm_event.get("outputs", {})
                     
                     # Verify inputs captured the prompt
-                    # OpenInference may use different field names
+                    # OpenInference uses chat_history, messages, or similar
                     input_str = str(inputs).lower()
                     assert (
                         test_prompt.lower() in input_str or
                         "integration test" in input_str or
+                        "chat_history" in inputs or
                         "messages" in inputs or
                         len(inputs) > 0
                     ), f"Expected prompt in inputs. Got: {list(inputs.keys())}"
