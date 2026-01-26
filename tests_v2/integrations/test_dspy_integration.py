@@ -41,8 +41,15 @@ class TestDSPyIntegration:
     """Test DSPy integration via OpenInference instrumentor."""
 
     @pytest.fixture(autouse=True)
-    def setup(self):
-        """Check if dependencies are available."""
+    def setup(self, tmp_path):
+        """Check if dependencies are available and set up cache."""
+        # Set DSPy cache directory BEFORE importing dspy
+        import os
+        cache_dir = tmp_path / "dspy_cache"
+        cache_dir.mkdir(exist_ok=True)
+        os.environ["DSPY_CACHEDIR"] = str(cache_dir)
+        os.environ["DSP_CACHEDIR"] = str(cache_dir)  # Legacy env var
+        
         pytest.importorskip("dspy")
         pytest.importorskip("openinference.instrumentation.dspy")
 

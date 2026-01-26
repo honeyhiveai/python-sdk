@@ -80,8 +80,10 @@ class TestPydanticAIIntegration:
 
             result = await agent.run("Say 'test' and nothing else.")
 
-            assert result.data is not None
-            assert len(str(result.data)) > 0
+            # Handle both old API (result.data) and new API (result.output)
+            output = getattr(result, 'output', None) or getattr(result, 'data', None)
+            assert output is not None
+            assert len(str(output)) > 0
 
             tracer.flush()
 
@@ -119,18 +121,28 @@ class TestPydanticAIIntegration:
                 name: str = Field(description="City name")
                 country: str = Field(description="Country name")
 
-            agent = Agent(
-                "claude-3-haiku-20240307",
-                result_type=CityInfo,
-                system_prompt="Extract city information from the query.",
-            )
+            # Try new API (output_type) first, fall back to old API (result_type)
+            try:
+                agent = Agent(
+                    "claude-3-haiku-20240307",
+                    output_type=CityInfo,
+                    system_prompt="Extract city information from the query.",
+                )
+            except TypeError:
+                agent = Agent(
+                    "claude-3-haiku-20240307",
+                    result_type=CityInfo,
+                    system_prompt="Extract city information from the query.",
+                )
 
             @trace(event_type="chain")
             async def get_city_info(query: str) -> CityInfo:
                 enrich_span(metadata={"query": query})
                 result = await agent.run(query)
-                enrich_span(metrics={"response_fields": len(result.data.model_fields)})
-                return result.data
+                # Handle both old API (result.data) and new API (result.output)
+                output = getattr(result, 'output', None) or getattr(result, 'data', None)
+                enrich_span(metrics={"response_fields": len(output.model_fields)})
+                return output
 
             result = await get_city_info("Tell me about Paris, France")
             assert result.name.lower() == "paris"

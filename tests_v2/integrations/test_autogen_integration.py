@@ -96,13 +96,11 @@ class TestAutoGenIntegration:
         """Test AutoGen agent with tool is traced.
         
         Verifies:
-        - AgentTool wraps Python function
-        - Agent accepts tools parameter
+        - Agent accepts callable functions as tools
         - Tool execution is traced via OpenAI spans
         - enrich_span() captures query metadata
         """
         from autogen_agentchat.agents import AssistantAgent
-        from autogen_agentchat.tools import AgentTool
         from autogen_ext.models.openai import OpenAIChatCompletionClient
         from openinference.instrumentation.openai import OpenAIInstrumentor
         from honeyhive import HoneyHiveTracer, trace, enrich_span
@@ -125,22 +123,17 @@ class TestAutoGenIntegration:
                     return a * b
                 return 0
 
-            calc_tool = AgentTool(
-                name="calculator",
-                description="Perform basic math operations",
-                func=calculator,
-            )
-
             model_client = OpenAIChatCompletionClient(
                 model="gpt-3.5-turbo",
                 api_key=os.getenv("OPENAI_API_KEY"),
             )
 
+            # Pass callable directly - AutoGen accepts Callable as tools
             agent = AssistantAgent(
                 name="math_assistant",
                 model_client=model_client,
                 system_message="You are a math assistant. Use the calculator tool.",
-                tools=[calc_tool],
+                tools=[calculator],
             )
 
             @trace(event_type="chain")

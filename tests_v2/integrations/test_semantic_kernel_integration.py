@@ -79,7 +79,14 @@ class TestSemanticKernelIntegration:
             history = ChatHistory()
             history.add_user_message("Say 'test' and nothing else.")
 
-            response = await chat_service.get_chat_message_content(history)
+            # New API requires settings parameter
+            try:
+                from semantic_kernel.connectors.ai.open_ai import OpenAIChatPromptExecutionSettings
+                settings = OpenAIChatPromptExecutionSettings(max_tokens=50)
+                response = await chat_service.get_chat_message_content(history, settings)
+            except (ImportError, TypeError):
+                # Fall back to old API without settings
+                response = await chat_service.get_chat_message_content(history)
 
             assert response is not None
             assert len(str(response)) > 0

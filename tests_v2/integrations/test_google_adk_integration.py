@@ -59,6 +59,7 @@ class TestGoogleADKIntegration:
         from google.adk.agents import LlmAgent
         from google.adk.runners import Runner
         from google.adk.sessions import InMemorySessionService
+        from google.genai import types
         from openinference.instrumentation.google_adk import GoogleADKInstrumentor
         from honeyhive import HoneyHiveTracer
 
@@ -92,15 +93,22 @@ class TestGoogleADKIntegration:
                 session_service=session_service,
             )
 
-            response = await runner.run(
-                user_id="test_user",
-                session_id=session.id,
-                new_message="Say 'test' and nothing else.",
+            # new_message must be Content type, not string
+            message = types.Content(
+                role="user",
+                parts=[types.Part(text="Say 'test' and nothing else.")]
             )
 
-            # Get response text
+            # runner.run() returns a generator (not async)
+            response = runner.run(
+                user_id="test_user",
+                session_id=session.id,
+                new_message=message,
+            )
+
+            # Get response text - iterate sync generator
             response_text = ""
-            async for event in response:
+            for event in response:
                 if hasattr(event, "content") and event.content:
                     if hasattr(event.content, "parts"):
                         for part in event.content.parts:
@@ -127,6 +135,7 @@ class TestGoogleADKIntegration:
         from google.adk.agents import LlmAgent
         from google.adk.runners import Runner
         from google.adk.sessions import InMemorySessionService
+        from google.genai import types
         from openinference.instrumentation.google_adk import GoogleADKInstrumentor
         from honeyhive import HoneyHiveTracer, trace, enrich_span
 
@@ -162,14 +171,21 @@ class TestGoogleADKIntegration:
                     session_service=session_service,
                 )
 
-                response = await runner.run(
+                # new_message must be Content type
+                message = types.Content(
+                    role="user",
+                    parts=[types.Part(text=query)]
+                )
+
+                # runner.run() returns a sync generator
+                response = runner.run(
                     user_id="test_user",
                     session_id=session.id,
-                    new_message=query,
+                    new_message=message,
                 )
 
                 response_text = ""
-                async for event in response:
+                for event in response:
                     if hasattr(event, "content") and event.content:
                         if hasattr(event.content, "parts"):
                             for part in event.content.parts:
