@@ -84,17 +84,32 @@ def anthropic_api_key() -> Optional[str]:
 
 
 @pytest.fixture(autouse=True)
-def reset_otel_state():
-    """Reset OpenTelemetry state between tests."""
-    from opentelemetry import context, trace
+def enable_real_tracing():
+    """Override parent conftest settings to enable real trace export.
     
-    # Reset context
-    context.attach(context.Context())
+    The parent tests_v2/conftest.py sets HH_TEST_MODE=true and HH_OTLP_ENABLED=false
+    which disables trace export. Integration tests need real tracing.
+    """
+    # Save original values
+    original_test_mode = os.environ.get("HH_TEST_MODE")
+    original_otlp_enabled = os.environ.get("HH_OTLP_ENABLED")
+    
+    # Enable real tracing for integration tests
+    os.environ["HH_TEST_MODE"] = "false"
+    os.environ["HH_OTLP_ENABLED"] = "true"
     
     yield
     
-    # Cleanup after test
-    context.attach(context.Context())
+    # Restore original values
+    if original_test_mode is not None:
+        os.environ["HH_TEST_MODE"] = original_test_mode
+    else:
+        os.environ.pop("HH_TEST_MODE", None)
+    
+    if original_otlp_enabled is not None:
+        os.environ["HH_OTLP_ENABLED"] = original_otlp_enabled
+    else:
+        os.environ.pop("HH_OTLP_ENABLED", None)
 
 
 # ============================================================================
@@ -104,13 +119,15 @@ def reset_otel_state():
 def fetch_session_events(
     session_id: str,
     project: Optional[str] = None,
-    max_retries: int = 5,
-    retry_delay: float = 3.0,
+    max_retries: int = 10,
+    retry_delay: float = 5.0,
 ) -> List[Dict[str, Any]]:
-    """Fetch events for a session from HoneyHive API.
+    """Fetch events for a session from HoneyHive API (Data Plane only).
     
     This provides end-to-end verification that traces were actually
     exported and ingested by the HoneyHive backend.
+    
+    Uses HH_API_URL (Data Plane) for both sending and querying traces.
     
     Args:
         session_id: The session ID to fetch events for.
@@ -131,22 +148,18 @@ def fetch_session_events(
     if not api_key:
         raise ValueError("HH_API_KEY not set")
     
+    # Use HH_API_URL for both base_url and cp_base_url (DP only)
+    dp_url = os.getenv("HH_API_URL", "https://api.honeyhive.ai")
     project = project or os.getenv("HH_PROJECT", "sdk-integration-tests")
     
-    client = HoneyHive(api_key=api_key)
+    # Use DP URL for both data plane and control plane operations
+    client = HoneyHive(api_key=api_key, base_url=dp_url, cp_base_url=dp_url)
     
     for attempt in range(max_retries):
         try:
-            response = client.events.export(
+            response = client.events.get_by_session_id(
+                session_id=session_id,
                 project=project,
-                filters=[
-                    EventFilter(
-                        field="session_id",
-                        operator="is",
-                        value=session_id,
-                        type="string"
-                    )
-                ],
                 limit=100,
             )
             
@@ -171,8 +184,8 @@ def verify_session_logged(
     expected_metrics: Optional[Dict[str, Any]] = None,
     expected_inputs: Optional[Dict[str, Any]] = None,
     expected_outputs: Optional[Dict[str, Any]] = None,
-    max_retries: int = 3,
-    retry_delay: float = 2.0,
+    max_retries: int = 10,
+    retry_delay: float = 5.0,
 ) -> Dict[str, Any]:
     """Verify a session was logged correctly to HoneyHive.
     
@@ -284,6 +297,94 @@ def verify_session_logged(
     return result
 
 
+def verify_inputs_outputs_captured(
+    session_id: str,
+    expected_inputs: Dict[str, Any],
+    expected_output: Any,
+    project: Optional[str] = None,
+    max_retries: int = 10,
+    retry_delay: float = 5.0,
+) -> Dict[str, Any]:
+    """Verify that specific inputs and outputs were captured in traces.
+    
+    This is the primary verification for ensuring the SDK correctly captures
+    function inputs and outputs (both from @trace decorator and instrumentors).
+    
+    Args:
+        session_id: The session ID to verify.
+        expected_inputs: Dict of input names to expected values.
+                        Values are checked as substrings in the captured data.
+        expected_output: The expected output value (checked as substring).
+        project: Project name (defaults to HH_PROJECT env var).
+        max_retries: Retry count for fetching events.
+        retry_delay: Delay between retries.
+        
+    Returns:
+        Dict with verification results including which checks passed/failed.
+        
+    Raises:
+        AssertionError: If inputs or outputs are not found in captured traces.
+    """
+    events = fetch_session_events(
+        session_id=session_id,
+        project=project,
+        max_retries=max_retries,
+        retry_delay=retry_delay,
+    )
+    
+    if not events:
+        raise AssertionError(f"No events found for session {session_id}")
+    
+    result = {
+        "events_found": len(events),
+        "inputs_verified": False,
+        "outputs_verified": False,
+        "captured_inputs": {},
+        "captured_outputs": {},
+    }
+    
+    # Aggregate all inputs and outputs from all events
+    all_inputs_str = ""
+    all_outputs_str = ""
+    
+    for event in events:
+        inputs = event.get("inputs", {})
+        outputs = event.get("outputs", {})
+        
+        if inputs:
+            result["captured_inputs"].update(inputs)
+            all_inputs_str += str(inputs)
+        
+        if outputs:
+            result["captured_outputs"].update(outputs)
+            all_outputs_str += str(outputs)
+    
+    # Verify each expected input is present (as string match)
+    missing_inputs = []
+    for key, value in expected_inputs.items():
+        value_str = str(value)
+        if value_str not in all_inputs_str:
+            missing_inputs.append(f"{key}={value}")
+    
+    if missing_inputs:
+        raise AssertionError(
+            f"Expected inputs not found in traces: {missing_inputs}. "
+            f"Captured inputs: {result['captured_inputs']}"
+        )
+    result["inputs_verified"] = True
+    
+    # Verify expected output is present
+    output_str = str(expected_output)
+    if output_str not in all_outputs_str:
+        raise AssertionError(
+            f"Expected output '{expected_output}' not found in traces. "
+            f"Captured outputs: {result['captured_outputs']}"
+        )
+    result["outputs_verified"] = True
+    
+    return result
+
+
 @pytest.fixture
 def verify_logged():
     """Fixture providing the verify_session_logged function."""
@@ -294,3 +395,9 @@ def verify_logged():
 def fetch_events():
     """Fixture providing the fetch_session_events function."""
     return fetch_session_events
+
+
+@pytest.fixture
+def verify_io():
+    """Fixture providing the verify_inputs_outputs_captured function."""
+    return verify_inputs_outputs_captured
