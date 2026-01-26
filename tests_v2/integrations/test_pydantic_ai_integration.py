@@ -1,0 +1,116 @@
+"""
+Pydantic AI Integration Tests
+
+Tests Pydantic AI agent framework integration with HoneyHive.
+Based on examples/integrations/pydantic_ai_integration.py.
+
+Requirements:
+    pip install honeyhive pydantic-ai openinference-instrumentation-anthropic
+
+Environment Variables:
+    HH_API_KEY: HoneyHive API key
+    HH_PROJECT: HoneyHive project name
+    ANTHROPIC_API_KEY: Anthropic API key (Pydantic AI uses Anthropic by default)
+"""
+
+import os
+import pytest
+
+
+# Skip entire module if keys not present
+pytestmark = [
+    pytest.mark.skipif(not os.getenv("HH_API_KEY"), reason="HH_API_KEY not set"),
+    pytest.mark.skipif(not os.getenv("ANTHROPIC_API_KEY"), reason="ANTHROPIC_API_KEY not set"),
+    pytest.mark.slow,
+]
+
+
+class TestPydanticAIIntegration:
+    """Test Pydantic AI integration via Anthropic instrumentor."""
+
+    @pytest.fixture(autouse=True)
+    def setup(self):
+        """Check if dependencies are available."""
+        pytest.importorskip("pydantic_ai")
+        pytest.importorskip("openinference.instrumentation.anthropic")
+
+    @pytest.mark.asyncio
+    async def test_basic_agent(self):
+        """Test basic Pydantic AI agent is traced."""
+        from pydantic_ai import Agent
+        from openinference.instrumentation.anthropic import AnthropicInstrumentor
+        from honeyhive import HoneyHiveTracer
+
+        tracer = HoneyHiveTracer.init(
+            project=os.getenv("HH_PROJECT", "pydantic-ai-integration-test"),
+            session_name="test_basic_agent",
+            source="pytest",
+        )
+
+        instrumentor = AnthropicInstrumentor()
+        instrumentor.instrument(tracer_provider=tracer.provider)
+
+        try:
+            # Enable Pydantic AI instrumentation
+            Agent.instrument_all()
+
+            agent = Agent(
+                "claude-3-haiku-20240307",
+                system_prompt="You are a helpful assistant. Keep responses brief.",
+            )
+
+            result = await agent.run("Say 'test' and nothing else.")
+
+            assert result.data is not None
+            assert len(str(result.data)) > 0
+
+            tracer.flush()
+
+        finally:
+            instrumentor.uninstrument()
+
+    @pytest.mark.asyncio
+    async def test_structured_output(self):
+        """Test Pydantic AI with structured output is traced."""
+        from pydantic import BaseModel, Field
+        from pydantic_ai import Agent
+        from openinference.instrumentation.anthropic import AnthropicInstrumentor
+        from honeyhive import HoneyHiveTracer, trace, enrich_span
+
+        tracer = HoneyHiveTracer.init(
+            project=os.getenv("HH_PROJECT", "pydantic-ai-integration-test"),
+            session_name="test_structured_output",
+            source="pytest",
+        )
+
+        instrumentor = AnthropicInstrumentor()
+        instrumentor.instrument(tracer_provider=tracer.provider)
+
+        try:
+            Agent.instrument_all()
+
+            class CityInfo(BaseModel):
+                name: str = Field(description="City name")
+                country: str = Field(description="Country name")
+
+            agent = Agent(
+                "claude-3-haiku-20240307",
+                result_type=CityInfo,
+                system_prompt="Extract city information from the query.",
+            )
+
+            @trace(event_type="chain")
+            async def get_city_info(query: str) -> CityInfo:
+                enrich_span(metadata={"query": query})
+                result = await agent.run(query)
+                enrich_span(metrics={"response_fields": len(result.data.model_fields)})
+                return result.data
+
+            result = await get_city_info("Tell me about Paris, France")
+            assert result.name.lower() == "paris"
+            assert "france" in result.country.lower()
+
+            tracer.flush()
+
+        finally:
+            instrumentor.uninstrument()

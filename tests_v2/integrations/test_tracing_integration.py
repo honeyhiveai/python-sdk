@@ -279,6 +279,168 @@ class TestEnrichment:
         tracer.flush()
 
 
+class TestUserFeedback:
+    """Test user feedback functionality (per /tracing/setting-user-feedback.mdx)."""
+
+    def test_session_feedback_boolean_rating(self):
+        """Test boolean rating (thumbs up/down) on session."""
+        from honeyhive import HoneyHiveTracer
+
+        tracer = HoneyHiveTracer.init(
+            project=os.getenv("HH_PROJECT", "tracing-integration-test"),
+            session_name="test_session_feedback_boolean",
+            source="pytest",
+        )
+
+        # Thumbs up
+        tracer.enrich_session(feedback={
+            "rating": True,
+            "comment": "The response was helpful",
+        })
+
+        tracer.flush()
+
+    def test_session_feedback_numeric_rating(self):
+        """Test numeric rating (1-5 scale) on session."""
+        from honeyhive import HoneyHiveTracer
+
+        tracer = HoneyHiveTracer.init(
+            project=os.getenv("HH_PROJECT", "tracing-integration-test"),
+            session_name="test_session_feedback_numeric",
+            source="pytest",
+        )
+
+        # 5-star rating
+        tracer.enrich_session(feedback={
+            "rating": 5,
+            "comment": "Excellent response!",
+        })
+
+        tracer.flush()
+
+    def test_session_feedback_with_ground_truth(self):
+        """Test feedback with ground truth for evaluation."""
+        from honeyhive import HoneyHiveTracer
+
+        tracer = HoneyHiveTracer.init(
+            project=os.getenv("HH_PROJECT", "tracing-integration-test"),
+            session_name="test_session_feedback_ground_truth",
+            source="pytest",
+        )
+
+        tracer.enrich_session(feedback={
+            "rating": True,
+            "ground_truth": "The capital of France is Paris.",
+        })
+
+        tracer.flush()
+
+    def test_span_feedback(self):
+        """Test feedback on specific span."""
+        from honeyhive import HoneyHiveTracer, trace, enrich_span
+
+        tracer = HoneyHiveTracer.init(
+            project=os.getenv("HH_PROJECT", "tracing-integration-test"),
+            session_name="test_span_feedback",
+            source="pytest",
+        )
+
+        @trace
+        def generate_response(query: str) -> str:
+            result = f"Response to: {query}"
+            # Add feedback to this specific span
+            enrich_span(feedback={
+                "rating": True,
+                "comment": "Good response quality",
+            })
+            return result
+
+        result = generate_response("What is Python?")
+        assert "Response to" in result
+
+        tracer.flush()
+
+
+class TestUserProperties:
+    """Test user properties functionality (per /tracing/setting-user-properties.mdx)."""
+
+    def test_session_user_properties(self):
+        """Test adding user properties to session."""
+        from honeyhive import HoneyHiveTracer
+
+        tracer = HoneyHiveTracer.init(
+            project=os.getenv("HH_PROJECT", "tracing-integration-test"),
+            session_name="test_session_user_properties",
+            source="pytest",
+        )
+
+        tracer.enrich_session(user_properties={
+            "user_id": "user_12345",
+            "email": "test@example.com",
+            "plan": "premium",
+            "is_beta": True,
+        })
+
+        tracer.flush()
+
+    def test_span_user_properties(self):
+        """Test adding user properties to specific span."""
+        from honeyhive import HoneyHiveTracer, trace, enrich_span
+
+        tracer = HoneyHiveTracer.init(
+            project=os.getenv("HH_PROJECT", "tracing-integration-test"),
+            session_name="test_span_user_properties",
+            source="pytest",
+        )
+
+        @trace
+        def process_request(query: str, user_id: str) -> str:
+            # Add user context to this span
+            enrich_span(user_properties={
+                "user_id": user_id,
+                "request_type": "query",
+            })
+            return f"Processed for {user_id}: {query}"
+
+        result = process_request("Hello", "user_456")
+        assert "user_456" in result
+
+        tracer.flush()
+
+    def test_combined_user_context(self):
+        """Test combining user properties with other enrichments."""
+        from honeyhive import HoneyHiveTracer, trace, enrich_span
+
+        tracer = HoneyHiveTracer.init(
+            project=os.getenv("HH_PROJECT", "tracing-integration-test"),
+            session_name="test_combined_user_context",
+            source="pytest",
+        )
+
+        # Session-level user context
+        tracer.enrich_session(
+            user_properties={"user_id": "user_789", "plan": "enterprise"},
+            metadata={"session_type": "api_request"},
+        )
+
+        @trace
+        def handle_request(data: str) -> str:
+            enrich_span(
+                user_properties={"request_source": "api"},
+                metadata={"input_size": len(data)},
+                metrics={"latency_ms": 50},
+            )
+            return data.upper()
+
+        result = handle_request("test data")
+        assert result == "TEST DATA"
+
+        # Session feedback after processing
+        tracer.enrich_session(feedback={"rating": True})
+
+        tracer.flush()
+
+
 class TestDistributedTracing:
     """Test distributed tracing with session_id propagation."""
 
