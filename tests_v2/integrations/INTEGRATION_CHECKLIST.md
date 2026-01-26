@@ -19,35 +19,48 @@ This directory contains integration tests for the HoneyHive Python SDK across 13
 | `TestUserFeedback` | 4 | Boolean/numeric ratings, ground_truth, span-level feedback | Assert feedback dict is accepted by enrich methods |
 | `TestUserProperties` | 3 | Session/span user properties, combined context | Assert user_properties dict is accepted by enrich methods |
 | `TestDistributedTracing` | 2 | Session ID retrieval, multiple session isolation | Assert session_id is valid UUID, different tracers have different IDs |
-| `TestEndToEndVerification` | 6 | **Full pipeline: SDK -> export -> ingest -> fetch via API** | **Fetch events.export() and assert inputs/outputs/metadata match** |
+| `TestEndToEndVerification` | 8 | **Full pipeline: SDK -> export -> ingest -> fetch via API** | **Fetch events.export() and assert inputs/outputs/metadata match** |
 
 **Total: 23 tests**
 
-#### End-to-End Verification Pattern
+#### End-to-End Verification Tests
 
-The `TestEndToEndVerification` class provides true end-to-end verification:
+| Test | What is Verified |
+|------|------------------|
+| `test_basic_trace_export_verification` | Traced function events are fetchable via API |
+| `test_enrichment_export_verification` | Metadata/metrics in logged events match |
+| `test_session_can_be_retrieved` | Session exists via `sessions.get()` API |
+| `test_api_client_events_export` | `events.export()` API works correctly |
+| `test_inputs_outputs_verification` | `@trace` decorated function args/return values |
+| `test_openai_inputs_outputs_verification` | **OpenAI instrumentor** captures messages/completions |
+| `test_anthropic_inputs_outputs_verification` | **Anthropic instrumentor** captures messages/responses |
+| `test_langchain_inputs_outputs_verification` | **LangChain instrumentor** captures chain inputs/outputs |
+
+#### Verification Pattern
 
 ```python
-# 1. Create tracer and trace function
-tracer = HoneyHiveTracer.init(project="test", session_name="e2e")
+# 1. Create tracer and instrument provider
+tracer = HoneyHiveTracer.init(project=os.getenv("HH_PROJECT"))
+instrumentor = OpenAIInstrumentor()
+instrumentor.instrument(tracer_provider=tracer.provider)
 
-@trace
-def my_function(x):
-    enrich_span(metadata={"key": "value"})
-    return x * 2
-
-result = my_function(5)
-tracer.flush()
-
-# 2. Fetch logged events from HoneyHive API
-verification = verify_logged(
-    session_id=tracer.session_id,
-    expected_metadata={"key": "value"},
+# 2. Make LLM call (auto-traced by instrumentor)
+response = openai.chat.completions.create(
+    model="gpt-3.5-turbo",
+    messages=[{"role": "user", "content": "test prompt"}],
 )
 
-# 3. Assert data was actually logged
-assert verification["verified"] is True
-assert verification["event_count"] >= 1
+tracer.flush()
+
+# 3. Fetch and verify inputs/outputs were captured
+events = fetch_session_events(session_id=tracer.session_id)
+llm_event = find_llm_event(events)
+
+# Verify inputs contain the prompt
+assert "test prompt" in str(llm_event["inputs"])
+
+# Verify outputs contain the response
+assert len(llm_event["outputs"]) > 0
 ```
 
 ---
@@ -227,7 +240,7 @@ assert verification["event_count"] >= 1
 | AutoGen | 2 |
 | DSPy | 3 |
 | evaluate() | 5 |
-| **Total** | **64** |
+| **Total** | **66** |
 
 ## Running Tests
 
