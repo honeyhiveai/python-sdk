@@ -242,8 +242,15 @@ class TestEvaluateIntegration:
         assert result.run_id is not None
 
     def test_evaluate_with_metadata(self):
-        """Test evaluate() with custom metadata on experiment run."""
-        from honeyhive import evaluate, evaluator
+        """Test evaluate() with custom metadata on experiment run.
+
+        This test verifies that metadata passed to evaluate() is correctly
+        persisted to the backend by fetching the run via GET /runs/:runId
+        and validating the metadata field.
+        """
+        import time
+
+        from honeyhive import HoneyHive, evaluate, evaluator
 
         def simple_function(inputs: Dict[str, Any]) -> Dict[str, Any]:
             """Simple function to evaluate."""
@@ -280,3 +287,45 @@ class TestEvaluateIntegration:
         assert result is not None
         assert result.run_id is not None
         assert result.status in ["completed", "pending", "running"]
+
+        # Fetch the run from the backend to verify metadata was persisted
+        client = HoneyHive(api_key=os.getenv("HH_API_KEY"))
+
+        # Allow some time for eventual consistency
+        time.sleep(1)
+
+        # Get the run by ID
+        run_response = client.experiments.get_run(run_id=result.run_id)
+        assert run_response is not None
+        assert run_response.evaluation is not None
+
+        # The evaluation field contains the run object
+        run_data = run_response.evaluation
+
+        # Verify metadata was correctly persisted
+        # The run_data could be a dict or an object depending on the response
+        if isinstance(run_data, dict):
+            run_metadata = run_data.get("metadata", {})
+        else:
+            run_metadata = getattr(run_data, "metadata", {}) or {}
+
+        # Verify the custom metadata fields are present
+        assert (
+            run_metadata.get("model_version") == "gpt-5.2"
+        ), f"Expected model_version='gpt-5.2', got {run_metadata.get('model_version')}"
+        assert (
+            run_metadata.get("git_commit") == "abc123def456"
+        ), f"Expected git_commit='abc123def456', got {run_metadata.get('git_commit')}"
+        assert run_metadata.get("experiment_type") == "model_comparison", (
+            f"Expected experiment_type='model_comparison', "
+            f"got {run_metadata.get('experiment_type')}"
+        )
+
+        # Verify nested hyperparameters
+        hyperparams = run_metadata.get("hyperparameters", {})
+        assert (
+            hyperparams.get("temperature") == 0.7
+        ), f"Expected temperature=0.7, got {hyperparams.get('temperature')}"
+        assert (
+            hyperparams.get("max_tokens") == 100
+        ), f"Expected max_tokens=100, got {hyperparams.get('max_tokens')}"
