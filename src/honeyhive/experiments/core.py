@@ -810,6 +810,7 @@ def evaluate(  # pylint: disable=too-many-locals,too-many-branches
     server_url: Optional[str] = None,
     project: str = "default",
     name: Optional[str] = None,
+    metadata: Optional[Dict[str, Any]] = None,
     max_workers: int = 10,
     aggregate_function: str = "average",
     verbose: bool = False,
@@ -841,6 +842,9 @@ def evaluate(  # pylint: disable=too-many-locals,too-many-branches
             HH_SERVER_URL/HH_API_URL env var)
         project: HoneyHive project (or set HONEYHIVE_PROJECT env var)
         name: Experiment run name (auto-generated if not provided)
+        metadata: Custom metadata to attach to the experiment run. This can be
+            used to track experiment details like model version, git commit,
+            hyperparameters, or any other relevant information.
         max_workers: ThreadPool size for concurrent execution (default: 10)
         aggregate_function: Backend aggregation function
             ("average", "sum", "min", "max")
@@ -1017,6 +1021,7 @@ def evaluate(  # pylint: disable=too-many-locals,too-many-branches
             "max_workers": max_workers,
             "aggregate_function": aggregate_function,
         },
+        metadata=metadata,
         status="pending",
     )
 
