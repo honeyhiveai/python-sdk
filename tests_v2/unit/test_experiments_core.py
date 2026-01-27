@@ -16,7 +16,17 @@ NOTE: Tests temporarily skipped - test expectations don't match current implemen
 TODO: Update tests to match current experiments core implementation.
 """
 
+from typing import Any, Dict
+from unittest.mock import Mock, patch
+
 import pytest
+
+from honeyhive.experiments.core import (
+    ExperimentContext,
+    _run_evaluators,
+    evaluate,
+    run_experiment,
+)
 
 # Tests updated to match current implementation (base_url instead of server_url)
 
@@ -30,17 +40,8 @@ import pytest
 # Justification: Mock setup and test names require descriptive length
 # Justification: Mock objects have dynamic attributes
 
-from typing import Any, Dict
-from unittest.mock import Mock, patch
 
-import pytest
 
-from honeyhive.experiments.core import (
-    ExperimentContext,
-    _run_evaluators,
-    evaluate,
-    run_experiment,
-)
 
 
 class TestExperimentContext:
@@ -666,8 +667,16 @@ class TestEvaluate:
 
         # Mock datapoint responses - returns dict with "datapoint" key
         mock_client.datapoints.get_datapoint.side_effect = [
-            {"datapoint": [{"inputs": {"x": 1}, "ground_truth": {"y": 2}, "id": "dp-1"}]},
-            {"datapoint": [{"inputs": {"x": 3}, "ground_truth": {"y": 4}, "id": "dp-2"}]},
+            {
+                "datapoint": [
+                    {"inputs": {"x": 1}, "ground_truth": {"y": 2}, "id": "dp-1"}
+                ]
+            },
+            {
+                "datapoint": [
+                    {"inputs": {"x": 3}, "ground_truth": {"y": 4}, "id": "dp-2"}
+                ]
+            },
         ]
 
         mock_run_response = Mock()
@@ -744,7 +753,11 @@ class TestEvaluate:
 
         # First datapoint succeeds, second fails
         mock_client.datapoints.get_datapoint.side_effect = [
-            {"datapoint": [{"inputs": {"x": 1}, "ground_truth": {"y": 2}, "id": "dp-1"}]},
+            {
+                "datapoint": [
+                    {"inputs": {"x": 1}, "ground_truth": {"y": 2}, "id": "dp-1"}
+                ]
+            },
             Exception("Network error"),
         ]
 
@@ -813,9 +826,7 @@ class TestEvaluate:
         mock_client.evaluations.create_run.return_value = mock_run_response
 
         # experiments.update_run raises error (not evaluations.update_run_from_dict)
-        mock_client.experiments.update_run.side_effect = Exception(
-            "API error"
-        )
+        mock_client.experiments.update_run.side_effect = Exception("API error")
         mock_honeyhive_class.return_value = mock_client
 
         mock_context = Mock()
@@ -1206,6 +1217,142 @@ class TestEvaluate:
         mock_honeyhive_class.assert_called_once()
         call_kwargs = mock_honeyhive_class.call_args[1]
         assert call_kwargs["base_url"] == "https://staging.honeyhive.com"
+        assert result == mock_result
+
+    @patch("honeyhive.experiments.core.get_run_result")
+    @patch("honeyhive.experiments.core.run_experiment")
+    @patch("honeyhive.experiments.core.ExperimentContext")
+    @patch("honeyhive.experiments.core.prepare_run_request_data")
+    @patch("honeyhive.experiments.core.prepare_external_dataset")
+    @patch("honeyhive.experiments.core.uuid.uuid4")
+    @patch("honeyhive.experiments.core.HoneyHive")
+    def test_evaluate_with_metadata(
+        self,
+        mock_honeyhive_class: Mock,
+        mock_uuid: Mock,
+        mock_prepare_external: Mock,
+        mock_prepare_run: Mock,
+        mock_context_class: Mock,
+        mock_run_experiment: Mock,
+        mock_get_result: Mock,
+        simple_function: Any,
+    ) -> None:
+        """Test evaluate() passes metadata to prepare_run_request_data."""
+        # Setup mocks
+        mock_uuid.return_value = Mock(hex="abc123")
+        mock_prepare_external.return_value = ("EXT-dataset-123", ["dp-1"])
+        mock_prepare_run.return_value = {
+            "name": "test-experiment",
+            "project": "test-project",
+            "dataset_id": "EXT-dataset-123",
+            "event_ids": [],
+            "metadata": {"model_version": "gpt-5.2", "git_commit": "abc123"},
+        }
+
+        mock_client = Mock()
+        mock_run_response = Mock()
+        mock_run_response.run_id = "run-456"
+        mock_client.evaluations.create_run.return_value = mock_run_response
+        mock_honeyhive_class.return_value = mock_client
+
+        mock_context = Mock()
+        mock_context_class.return_value = mock_context
+
+        mock_run_experiment.return_value = [
+            {"datapoint_id": "dp-1", "outputs": {"result": "A"}},
+        ]
+
+        mock_result = Mock()
+        mock_result.success = True
+        mock_result.passed = ["dp-1"]
+        mock_result.failed = []
+        mock_get_result.return_value = mock_result
+
+        # Execute with metadata
+        dataset = [{"inputs": {"x": 1}}]
+        custom_metadata = {
+            "model_version": "gpt-5.2",
+            "git_commit": "abc123",
+            "hyperparameters": {"temperature": 0.7},
+        }
+
+        result = evaluate(
+            function=simple_function,
+            dataset=dataset,
+            api_key="test-key",
+            project="test-project",
+            name="test-experiment",
+            metadata=custom_metadata,
+        )
+
+        # Verify metadata was passed to prepare_run_request_data
+        mock_prepare_run.assert_called_once()
+        call_kwargs = mock_prepare_run.call_args[1]
+        assert call_kwargs["metadata"] == custom_metadata
+        assert result == mock_result
+
+    @patch("honeyhive.experiments.core.get_run_result")
+    @patch("honeyhive.experiments.core.run_experiment")
+    @patch("honeyhive.experiments.core.ExperimentContext")
+    @patch("honeyhive.experiments.core.prepare_run_request_data")
+    @patch("honeyhive.experiments.core.prepare_external_dataset")
+    @patch("honeyhive.experiments.core.uuid.uuid4")
+    @patch("honeyhive.experiments.core.HoneyHive")
+    def test_evaluate_without_metadata_passes_none(
+        self,
+        mock_honeyhive_class: Mock,
+        mock_uuid: Mock,
+        mock_prepare_external: Mock,
+        mock_prepare_run: Mock,
+        mock_context_class: Mock,
+        mock_run_experiment: Mock,
+        mock_get_result: Mock,
+        simple_function: Any,
+    ) -> None:
+        """Test evaluate() passes None metadata when not provided."""
+        # Setup mocks
+        mock_uuid.return_value = Mock(hex="abc123")
+        mock_prepare_external.return_value = ("EXT-dataset-123", ["dp-1"])
+        mock_prepare_run.return_value = {
+            "name": "test-experiment",
+            "project": "test-project",
+            "dataset_id": "EXT-dataset-123",
+            "event_ids": [],
+        }
+
+        mock_client = Mock()
+        mock_run_response = Mock()
+        mock_run_response.run_id = "run-456"
+        mock_client.evaluations.create_run.return_value = mock_run_response
+        mock_honeyhive_class.return_value = mock_client
+
+        mock_context = Mock()
+        mock_context_class.return_value = mock_context
+
+        mock_run_experiment.return_value = [
+            {"datapoint_id": "dp-1", "outputs": {"result": "A"}},
+        ]
+
+        mock_result = Mock()
+        mock_result.success = True
+        mock_result.passed = ["dp-1"]
+        mock_result.failed = []
+        mock_get_result.return_value = mock_result
+
+        # Execute without metadata
+        dataset = [{"inputs": {"x": 1}}]
+
+        result = evaluate(
+            function=simple_function,
+            dataset=dataset,
+            api_key="test-key",
+            project="test-project",
+        )
+
+        # Verify metadata=None was passed to prepare_run_request_data
+        mock_prepare_run.assert_called_once()
+        call_kwargs = mock_prepare_run.call_args[1]
+        assert call_kwargs["metadata"] is None
         assert result == mock_result
 
 

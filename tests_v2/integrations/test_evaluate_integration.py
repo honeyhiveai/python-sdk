@@ -13,9 +13,9 @@ Environment Variables:
 """
 
 import os
-import pytest
 from typing import Any, Dict, List
 
+import pytest
 
 # Skip entire module if key not present
 pytestmark = [
@@ -45,8 +45,14 @@ class TestEvaluateIntegration:
 
         # Dataset
         dataset = [
-            {"inputs": {"text": "hello"}, "ground_truths": {"expected": "Processed: hello"}},
-            {"inputs": {"text": "world"}, "ground_truths": {"expected": "Processed: world"}},
+            {
+                "inputs": {"text": "hello"},
+                "ground_truths": {"expected": "Processed: hello"},
+            },
+            {
+                "inputs": {"text": "world"},
+                "ground_truths": {"expected": "Processed: world"},
+            },
         ]
 
         # Run evaluation
@@ -64,7 +70,7 @@ class TestEvaluateIntegration:
 
     def test_evaluate_with_enrichment(self):
         """Test evaluate() with span enrichment inside the function."""
-        from honeyhive import evaluate, evaluator, trace, enrich_span
+        from honeyhive import enrich_span, evaluate, evaluator, trace
 
         @trace(event_type="chain")
         def function_with_enrichment(inputs: Dict[str, Any]) -> Dict[str, Any]:
@@ -128,14 +134,19 @@ class TestEvaluateIntegration:
             return outputs.get("confidence", 0) >= 0.8
 
         @evaluator()
-        def answer_mentions_question(outputs: Dict, inputs: Dict, ground_truths: Dict) -> bool:
+        def answer_mentions_question(
+            outputs: Dict, inputs: Dict, ground_truths: Dict
+        ) -> bool:
             """Check answer references the question."""
             question = inputs.get("question", "")
             answer = outputs.get("answer", "")
             return question.lower() in answer.lower()
 
         dataset = [
-            {"inputs": {"question": "what is the meaning of life"}, "ground_truths": {}},
+            {
+                "inputs": {"question": "what is the meaning of life"},
+                "ground_truths": {},
+            },
         ]
 
         result = evaluate(
@@ -200,6 +211,7 @@ class TestEvaluateIntegration:
     def test_evaluate_async_function(self):
         """Test evaluate() with async function."""
         import asyncio
+
         from honeyhive import evaluate, evaluator
 
         async def async_function(inputs: Dict[str, Any]) -> Dict[str, Any]:
@@ -228,3 +240,43 @@ class TestEvaluateIntegration:
 
         assert result is not None
         assert result.run_id is not None
+
+    def test_evaluate_with_metadata(self):
+        """Test evaluate() with custom metadata on experiment run."""
+        from honeyhive import evaluate, evaluator
+
+        def simple_function(inputs: Dict[str, Any]) -> Dict[str, Any]:
+            """Simple function to evaluate."""
+            text = inputs.get("text", "")
+            return {"result": f"Processed: {text}"}
+
+        @evaluator()
+        def has_result(outputs: Dict, inputs: Dict, ground_truths: Dict) -> bool:
+            """Check result exists."""
+            return bool(outputs.get("result"))
+
+        dataset = [
+            {"inputs": {"text": "hello"}, "ground_truths": {}},
+            {"inputs": {"text": "world"}, "ground_truths": {}},
+        ]
+
+        # Custom metadata to track experiment details
+        custom_metadata = {
+            "model_version": "gpt-5.2",
+            "git_commit": "abc123def456",
+            "hyperparameters": {"temperature": 0.7, "max_tokens": 100},
+            "experiment_type": "model_comparison",
+        }
+
+        result = evaluate(
+            function=simple_function,
+            project=os.getenv("HH_PROJECT", "evaluate-integration-test"),
+            name="test_evaluate_with_metadata",
+            dataset=dataset,
+            evaluators=[has_result],
+            metadata=custom_metadata,
+        )
+
+        assert result is not None
+        assert result.run_id is not None
+        assert result.status in ["completed", "pending", "running"]
