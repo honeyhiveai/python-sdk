@@ -16,9 +16,13 @@ Usage::
     configs = await client.configurations.list_async(project="my-project")
 """
 
+import time
+import warnings
 from typing import Any, Dict, List, Optional, Union
 
 import httpx
+
+from honeyhive.utils.retry import RetryConfig
 
 from honeyhive._generated.api_config import APIConfig
 from honeyhive.models import EventFilter, EventExportRequest, EventExportResponse
@@ -524,31 +528,42 @@ class EventsAPI(BaseAPI):
     def get_by_session_id(
         self,
         session_id: str,
-        project: str,
+        project: Optional[str] = None,
         *,
         limit: int = 1000,
     ) -> EventExportResponse:
         """Get events by session ID using the Data Plane export endpoint.
 
         This is a convenience wrapper around export() that filters by session_id.
+        Events are returned sorted by start_time in chronological order.
 
         Args:
             session_id: The session ID to fetch events for.
             project: Project name associated with the events.
+                .. deprecated:: 1.0
+                    The project parameter is deprecated and will be removed in v2.0.
+                    The backend now infers project from session_id.
             limit: Maximum number of events to return (default 1000).
 
         Returns:
-            EventExportResponse with events for the session.
+            EventExportResponse with events for the session, sorted by start_time.
 
         Example::
 
             response = client.events.get_by_session_id(
-                session_id="abc-123",
-                project="my-project"
+                session_id="abc-123"
             )
             for event in response.events:
                 print(event["event_name"])
         """
+        if project is not None:
+            warnings.warn(
+                "The 'project' parameter is deprecated and will be removed in v2.0. "
+                "The backend now infers project from session_id.",
+                DeprecationWarning,
+                stacklevel=2,
+            )
+
         return self.export(
             project=project,
             filters=[
@@ -560,6 +575,7 @@ class EventsAPI(BaseAPI):
                 )
             ],
             limit=limit,
+            _sort_by_time=True,  # Enable time-based sorting
         )
 
     def create(self, request: PostEventRequest) -> PostEventResponse:
@@ -581,13 +597,14 @@ class EventsAPI(BaseAPI):
 
     def export(
         self,
-        project: str,
+        project: Optional[str] = None,
         filters: Optional[List[Union[EventFilter, Dict[str, Any]]]] = None,
         *,
         date_range: Optional[Dict[str, str]] = None,
         projections: Optional[List[str]] = None,
         limit: int = 1000,
         page: int = 1,
+        _sort_by_time: bool = False,
     ) -> EventExportResponse:
         """Export events via POST /events/export (Data Plane).
 
@@ -596,7 +613,10 @@ class EventsAPI(BaseAPI):
         event_type, and other fields.
 
         Args:
-            project: Project name associated with the events (required).
+            project: Project name associated with the events.
+                .. deprecated:: 1.0
+                    The project parameter is deprecated and will be removed in v2.0.
+                    The backend now infers project from filters (e.g., session_id).
             filters: List of EventFilter objects or dicts with filter criteria.
                 Each filter should have: field, operator, value, type.
             date_range: Optional date range filter with '$gte' and '$lte' keys
@@ -604,6 +624,7 @@ class EventsAPI(BaseAPI):
             projections: Optional list of fields to include in the response.
             limit: Maximum number of results (default 1000, max 7500).
             page: Page number for pagination (default 1).
+            _sort_by_time: Internal flag to sort events by start_time (default False).
 
         Returns:
             EventExportResponse with events list and total_events count.
@@ -614,7 +635,6 @@ class EventsAPI(BaseAPI):
 
             # Export events for a session
             response = client.events.export(
-                project="my-project",
                 filters=[
                     EventFilter(
                         field="session_id",
@@ -631,7 +651,6 @@ class EventsAPI(BaseAPI):
 
             # Export with date range
             response = client.events.export(
-                project="my-project",
                 filters=[],
                 date_range={
                     "$gte": "2024-01-01T00:00:00Z",
@@ -639,6 +658,14 @@ class EventsAPI(BaseAPI):
                 }
             )
         """
+        if project is not None:
+            warnings.warn(
+                "The 'project' parameter is deprecated and will be removed in v2.0. "
+                "The backend now infers project from filters (e.g., session_id).",
+                DeprecationWarning,
+                stacklevel=2,
+            )
+
         # Build filters array
         filters_data = []
         if filters:
@@ -650,11 +677,14 @@ class EventsAPI(BaseAPI):
 
         # Build request body
         request_body: Dict[str, Any] = {
-            "project": project,
             "filters": filters_data,
             "limit": limit,
             "page": page,
         }
+
+        # Only include project if provided (for backwards compatibility)
+        if project is not None:
+            request_body["project"] = project
 
         if date_range:
             request_body["dateRange"] = date_range
@@ -669,25 +699,102 @@ class EventsAPI(BaseAPI):
             "Authorization": f"Bearer {self._api_config.get_access_token()}",
         }
 
-        with httpx.Client(base_url=base_path, verify=self._api_config.verify) as client:
-            response = client.request(
-                "POST",
-                "/v1/events/export",
-                headers=headers,
-                json=request_body,
-            )
+        # Use retry logic for transient errors (502, 503, 504, etc.)
+        retry_config = RetryConfig.default()
+        last_exception: Optional[Exception] = None
+        last_response: Optional[httpx.Response] = None
 
-        if response.status_code != 200:
-            raise Exception(
-                f"export() failed with status code: {response.status_code}, "
-                f"response: {response.text}"
-            )
+        for attempt in range(retry_config.max_retries + 1):
+            try:
+                with httpx.Client(base_url=base_path, verify=self._api_config.verify) as client:
+                    response = client.request(
+                        "POST",
+                        "/v1/events/export",
+                        headers=headers,
+                        json=request_body,
+                    )
+
+                if response.status_code == 200:
+                    break  # Success, exit retry loop
+
+                # Check if we should retry this status code
+                if retry_config.should_retry(response):
+                    last_response = response
+                    if attempt < retry_config.max_retries:
+                        delay = retry_config.backoff_strategy.get_delay(attempt + 1)
+                        time.sleep(delay)
+                        continue
+
+                # Non-retryable error, raise immediately
+                raise Exception(
+                    f"export() failed with status code: {response.status_code}, "
+                    f"response: {response.text}"
+                )
+
+            except httpx.HTTPError as e:
+                if retry_config.should_retry_exception(e):
+                    last_exception = e
+                    if attempt < retry_config.max_retries:
+                        delay = retry_config.backoff_strategy.get_delay(attempt + 1)
+                        time.sleep(delay)
+                        continue
+                raise
+
+        else:
+            # All retries exhausted
+            if last_response is not None:
+                raise Exception(
+                    f"export() failed after {retry_config.max_retries + 1} attempts "
+                    f"with status code: {last_response.status_code}, "
+                    f"response: {last_response.text}"
+                )
+            if last_exception is not None:
+                raise last_exception
 
         data = response.json()
+        events = data.get("events", [])
+
+        # Sort events by start_time if requested (fixes jumbled order issue)
+        if _sort_by_time and events:
+            events = self._sort_events_by_time(events)
+
         return EventExportResponse(
-            events=data.get("events", []),
+            events=events,
             total_events=data.get("totalEvents", data.get("count", 0)),
         )
+
+    def _sort_events_by_time(self, events: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
+        """Sort events by start_time in chronological order.
+
+        Args:
+            events: List of event dictionaries.
+
+        Returns:
+            Sorted list of events by start_time.
+        """
+
+        def get_start_time(event: Dict[str, Any]) -> float:
+            """Extract start_time from event, handling various formats."""
+            # Try different possible field names for start time
+            start_time = event.get("start_time") or event.get("startTime") or event.get("created_at")
+            if start_time is None:
+                return 0.0
+            # Handle both numeric timestamps and ISO string formats
+            if isinstance(start_time, (int, float)):
+                return float(start_time)
+            if isinstance(start_time, str):
+                try:
+                    from datetime import datetime
+
+                    # Try ISO format parsing
+                    if "T" in start_time:
+                        dt = datetime.fromisoformat(start_time.replace("Z", "+00:00"))
+                        return dt.timestamp()
+                except (ValueError, TypeError):
+                    pass
+            return 0.0
+
+        return sorted(events, key=get_start_time)
 
     # Async methods
     async def list_async(
@@ -717,22 +824,34 @@ class EventsAPI(BaseAPI):
     async def get_by_session_id_async(
         self,
         session_id: str,
-        project: str,
+        project: Optional[str] = None,
         *,
         limit: int = 1000,
     ) -> EventExportResponse:
         """Get events by session ID asynchronously using the Data Plane export endpoint.
 
         Async version of get_by_session_id(). See get_by_session_id() for full documentation.
+        Events are returned sorted by start_time in chronological order.
 
         Args:
             session_id: The session ID to fetch events for.
             project: Project name associated with the events.
+                .. deprecated:: 1.0
+                    The project parameter is deprecated and will be removed in v2.0.
+                    The backend now infers project from session_id.
             limit: Maximum number of events to return (default 1000).
 
         Returns:
-            EventExportResponse with events for the session.
+            EventExportResponse with events for the session, sorted by start_time.
         """
+        if project is not None:
+            warnings.warn(
+                "The 'project' parameter is deprecated and will be removed in v2.0. "
+                "The backend now infers project from session_id.",
+                DeprecationWarning,
+                stacklevel=2,
+            )
+
         return await self.export_async(
             project=project,
             filters=[
@@ -744,6 +863,7 @@ class EventsAPI(BaseAPI):
                 )
             ],
             limit=limit,
+            _sort_by_time=True,  # Enable time-based sorting
         )
 
     async def create_async(self, request: PostEventRequest) -> PostEventResponse:
@@ -765,29 +885,42 @@ class EventsAPI(BaseAPI):
 
     async def export_async(
         self,
-        project: str,
+        project: Optional[str] = None,
         filters: Optional[List[Union[EventFilter, Dict[str, Any]]]] = None,
         *,
         date_range: Optional[Dict[str, str]] = None,
         projections: Optional[List[str]] = None,
         limit: int = 1000,
         page: int = 1,
+        _sort_by_time: bool = False,
     ) -> EventExportResponse:
         """Export events via POST /events/export asynchronously (Data Plane).
 
         Async version of export(). See export() for full documentation.
 
         Args:
-            project: Project name associated with the events (required).
+            project: Project name associated with the events.
+                .. deprecated:: 1.0
+                    The project parameter is deprecated and will be removed in v2.0.
+                    The backend now infers project from filters (e.g., session_id).
             filters: List of EventFilter objects or dicts with filter criteria.
             date_range: Optional date range filter.
             projections: Optional list of fields to include in the response.
             limit: Maximum number of results (default 1000, max 7500).
             page: Page number for pagination (default 1).
+            _sort_by_time: Internal flag to sort events by start_time (default False).
 
         Returns:
             EventExportResponse with events list and total_events count.
         """
+        if project is not None:
+            warnings.warn(
+                "The 'project' parameter is deprecated and will be removed in v2.0. "
+                "The backend now infers project from filters (e.g., session_id).",
+                DeprecationWarning,
+                stacklevel=2,
+            )
+
         # Build filters array
         filters_data = []
         if filters:
@@ -799,11 +932,14 @@ class EventsAPI(BaseAPI):
 
         # Build request body
         request_body: Dict[str, Any] = {
-            "project": project,
             "filters": filters_data,
             "limit": limit,
             "page": page,
         }
+
+        # Only include project if provided (for backwards compatibility)
+        if project is not None:
+            request_body["project"] = project
 
         if date_range:
             request_body["dateRange"] = date_range
@@ -835,8 +971,14 @@ class EventsAPI(BaseAPI):
             )
 
         data = response.json()
+        events = data.get("events", [])
+
+        # Sort events by start_time if requested (fixes jumbled order issue)
+        if _sort_by_time and events:
+            events = self._sort_events_by_time(events)
+
         return EventExportResponse(
-            events=data.get("events", []),
+            events=events,
             total_events=data.get("totalEvents", data.get("count", 0)),
         )
 
@@ -851,7 +993,7 @@ class EventsAPI(BaseAPI):
 
     def list_events(
         self,
-        project: str,
+        project: Optional[str] = None,
         filters: Optional[List[Union[EventFilter, Dict[str, Any]]]] = None,
         *,
         date_range: Optional[Dict[str, str]] = None,
@@ -866,6 +1008,8 @@ class EventsAPI(BaseAPI):
 
         Args:
             project: Project name.
+                .. deprecated:: 1.0
+                    The project parameter is deprecated and will be removed in v2.0.
             filters: List of EventFilter objects or dicts.
             date_range: Optional date range filter.
             projections: Optional list of fields to include.
@@ -886,7 +1030,7 @@ class EventsAPI(BaseAPI):
 
     def get_events(
         self,
-        project: str,
+        project: Optional[str] = None,
         filters: Optional[List[Union[EventFilter, Dict[str, Any]]]] = None,
         *,
         date_range: Optional[Dict[str, str]] = None,
@@ -901,6 +1045,8 @@ class EventsAPI(BaseAPI):
 
         Args:
             project: Project name.
+                .. deprecated:: 1.0
+                    The project parameter is deprecated and will be removed in v2.0.
             filters: List of EventFilter objects or dicts.
             date_range: Optional date range filter.
             projections: Optional list of fields to include.
@@ -921,7 +1067,7 @@ class EventsAPI(BaseAPI):
 
     async def list_events_async(
         self,
-        project: str,
+        project: Optional[str] = None,
         filters: Optional[List[Union[EventFilter, Dict[str, Any]]]] = None,
         *,
         date_range: Optional[Dict[str, str]] = None,
@@ -929,7 +1075,13 @@ class EventsAPI(BaseAPI):
         limit: int = 1000,
         page: int = 1,
     ) -> EventExportResponse:
-        """List events asynchronously (backwards compatible alias for export_async)."""
+        """List events asynchronously (backwards compatible alias for export_async).
+
+        Args:
+            project: Project name.
+                .. deprecated:: 1.0
+                    The project parameter is deprecated and will be removed in v2.0.
+        """
         return await self.export_async(
             project=project,
             filters=filters,
@@ -941,7 +1093,7 @@ class EventsAPI(BaseAPI):
 
     async def get_events_async(
         self,
-        project: str,
+        project: Optional[str] = None,
         filters: Optional[List[Union[EventFilter, Dict[str, Any]]]] = None,
         *,
         date_range: Optional[Dict[str, str]] = None,
@@ -949,7 +1101,13 @@ class EventsAPI(BaseAPI):
         limit: int = 1000,
         page: int = 1,
     ) -> EventExportResponse:
-        """Get events asynchronously (backwards compatible alias for export_async)."""
+        """Get events asynchronously (backwards compatible alias for export_async).
+
+        Args:
+            project: Project name.
+                .. deprecated:: 1.0
+                    The project parameter is deprecated and will be removed in v2.0.
+        """
         return await self.export_async(
             project=project,
             filters=filters,

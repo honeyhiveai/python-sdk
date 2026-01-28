@@ -43,11 +43,146 @@ class NoOpSpan:
 # Using simple caller parameter approach instead
 
 
+def _enrich_existing_event_via_api(
+    event_id: str,
+    metadata: Optional[Dict[str, Any]] = None,
+    metrics: Optional[Dict[str, Any]] = None,
+    feedback: Optional[Dict[str, Any]] = None,
+    inputs: Optional[Dict[str, Any]] = None,
+    outputs: Optional[Dict[str, Any]] = None,
+    config: Optional[Dict[str, Any]] = None,
+    user_properties: Optional[Dict[str, Any]] = None,
+    error: Optional[str] = None,
+    attributes: Optional[Dict[str, Any]] = None,
+    tracer_instance: Optional[Any] = None,
+    **kwargs: Any,
+) -> Dict[str, Any]:
+    """Enrich an existing event by event_id via PUT /events API.
+
+    This function is called when enrich_span() is invoked with an event_id,
+    allowing users to update a specific existing event with new enrichment data.
+
+    Args:
+        event_id: The ID of the existing event to update.
+        metadata: Metadata to add/update on the event.
+        metrics: Metrics to add/update on the event.
+        feedback: Feedback to add/update on the event.
+        inputs: Inputs to add/update on the event.
+        outputs: Outputs to add/update on the event.
+        config: Config to add/update on the event.
+        user_properties: User properties to add/update on the event.
+        error: Error message to set on the event.
+        attributes: Additional attributes to merge into metadata.
+        tracer_instance: Optional tracer instance with API client.
+        **kwargs: Additional kwargs to merge into metadata.
+
+    Returns:
+        Dict with success status and event_id.
+    """
+    try:
+        # Discover tracer if not provided
+        if tracer_instance is None:
+            try:
+                current_ctx = context.get_current()
+                tracer_instance = discover_tracer(explicit_tracer=None, ctx=current_ctx)
+            except Exception as e:
+                safe_log(
+                    None,
+                    "debug",
+                    f"Failed to discover tracer for event update: {e}",
+                    honeyhive_data={"error_type": type(e).__name__},
+                )
+
+        # Check if we have a client available
+        if tracer_instance is None or not hasattr(tracer_instance, "client"):
+            safe_log(
+                tracer_instance,
+                "warning",
+                "No API client available to update event by event_id",
+                honeyhive_data={"event_id": event_id},
+            )
+            return {"success": False, "error": "No API client available", "event_id": event_id}
+
+        client = getattr(tracer_instance, "client", None)
+        if client is None:
+            safe_log(
+                tracer_instance,
+                "warning",
+                "Tracer client is None, cannot update event",
+                honeyhive_data={"event_id": event_id},
+            )
+            return {"success": False, "error": "Tracer client is None", "event_id": event_id}
+
+        # Build update data for the event
+        update_data: Dict[str, Any] = {"event_id": event_id}
+
+        # Add enrichment fields if provided
+        if metadata:
+            update_data["metadata"] = metadata
+        if metrics:
+            update_data["metrics"] = metrics
+        if feedback:
+            update_data["feedback"] = feedback
+        if inputs:
+            update_data["inputs"] = inputs
+        if outputs:
+            update_data["outputs"] = outputs
+        if config:
+            update_data["config"] = config
+        if user_properties:
+            update_data["user_properties"] = user_properties
+        if error:
+            update_data["error"] = error
+
+        # Merge attributes and kwargs into metadata
+        extra_metadata: Dict[str, Any] = {}
+        if attributes:
+            extra_metadata.update(attributes)
+        if kwargs:
+            extra_metadata.update(kwargs)
+        if extra_metadata:
+            if "metadata" in update_data:
+                update_data["metadata"].update(extra_metadata)
+            else:
+                update_data["metadata"] = extra_metadata
+
+        # Call the Events API to update the event
+        if hasattr(client, "events") and hasattr(client.events, "update"):
+            client.events.update(data=update_data)
+            safe_log(
+                tracer_instance,
+                "debug",
+                "Successfully updated event via API",
+                honeyhive_data={
+                    "event_id": event_id,
+                    "updated_fields": list(update_data.keys()),
+                },
+            )
+            return {"success": True, "event_id": event_id, "span": NoOpSpan()}
+        else:
+            safe_log(
+                tracer_instance,
+                "warning",
+                "Events API update method not available",
+                honeyhive_data={"event_id": event_id},
+            )
+            return {"success": False, "error": "Events API not available", "event_id": event_id}
+
+    except Exception as e:
+        safe_log(
+            tracer_instance,
+            "error",
+            f"Failed to update event {event_id}: {e}",
+            honeyhive_data={"event_id": event_id, "error_type": type(e).__name__},
+        )
+        return {"success": False, "error": str(e), "event_id": event_id, "span": NoOpSpan()}
+
+
 # pylint: disable=too-many-arguments,too-many-positional-arguments,too-many-branches
 # Justification: Enrichment requires multiple optional parameters for comprehensive
 # span metadata (metadata, metrics, feedback, inputs, outputs, config, etc.).
 # Many branches are needed to handle reserved parameters correctly.
-def enrich_span_core(  # pylint: disable=too-many-locals
+def enrich_span_core(  # pylint: disable=too-many-locals,too-many-statements
     attributes: Optional[Dict[str, Any]] = None,
     metadata: Optional[Dict[str, Any]] = None,
     metrics: Optional[Dict[str, Any]] = None,
@@ -141,6 +276,24 @@ def enrich_span_core(  # pylint: disable=too-many-locals
     propagation to access the current span automatically.
     """
     try:
+        # If event_id is provided, prioritize updating the existing event via API
+        # This allows users to enrich a specific event by ID rather than the current span
+        if event_id:
+            return _enrich_existing_event_via_api(
+                event_id=event_id,
+                metadata=metadata,
+                metrics=metrics,
+                feedback=feedback,
+                inputs=inputs,
+                outputs=outputs,
+                config=config,
+                user_properties=user_properties,
+                error=error,
+                attributes=attributes,
+                tracer_instance=tracer_instance,
+                **kwargs,
+            )
+
         # Get current span from OpenTelemetry context
         current_span = trace.get_current_span()
 
@@ -298,9 +451,8 @@ def enrich_span_core(  # pylint: disable=too-many-locals
             current_span.set_attribute("honeyhive_error", error)
             attribute_count += 1
 
-        if event_id:
-            current_span.set_attribute("honeyhive_event_id", event_id)
-            attribute_count += 1
+        # Note: event_id is handled at the start of this function via API call
+        # It's no longer set as a span attribute since it represents an existing event
 
         # Log success if verbose mode is enabled
         if verbose:
