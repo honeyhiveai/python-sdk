@@ -539,10 +539,9 @@ class EventsAPI(BaseAPI):
 
         Args:
             session_id: The session ID to fetch events for.
-            project: Project name associated with the events.
-                .. deprecated:: 1.0
-                    The project parameter is deprecated and will be removed in v2.0.
-                    The backend now infers project from session_id.
+            project: Project name associated with the events. Deprecated in v1.0
+                and will be removed in v2.0. The backend now infers project from
+                session_id.
             limit: Maximum number of events to return (default 1000).
 
         Returns:
@@ -613,10 +612,9 @@ class EventsAPI(BaseAPI):
         event_type, and other fields.
 
         Args:
-            project: Project name associated with the events.
-                .. deprecated:: 1.0
-                    The project parameter is deprecated and will be removed in v2.0.
-                    The backend now infers project from filters (e.g., session_id).
+            project: Project name associated with the events. Deprecated in v1.0
+                and will be removed in v2.0. The backend now infers project from
+                filters (e.g., session_id).
             filters: List of EventFilter objects or dicts with filter criteria.
                 Each filter should have: field, operator, value, type.
             date_range: Optional date range filter with '$gte' and '$lte' keys
@@ -835,10 +833,9 @@ class EventsAPI(BaseAPI):
 
         Args:
             session_id: The session ID to fetch events for.
-            project: Project name associated with the events.
-                .. deprecated:: 1.0
-                    The project parameter is deprecated and will be removed in v2.0.
-                    The backend now infers project from session_id.
+            project: Project name associated with the events. Deprecated in v1.0
+                and will be removed in v2.0. The backend now infers project from
+                session_id.
             limit: Maximum number of events to return (default 1000).
 
         Returns:
@@ -899,10 +896,9 @@ class EventsAPI(BaseAPI):
         Async version of export(). See export() for full documentation.
 
         Args:
-            project: Project name associated with the events.
-                .. deprecated:: 1.0
-                    The project parameter is deprecated and will be removed in v2.0.
-                    The backend now infers project from filters (e.g., session_id).
+            project: Project name associated with the events. Deprecated in v1.0
+                and will be removed in v2.0. The backend now infers project from
+                filters (e.g., session_id).
             filters: List of EventFilter objects or dicts with filter criteria.
             date_range: Optional date range filter.
             projections: Optional list of fields to include in the response.
@@ -1007,9 +1003,7 @@ class EventsAPI(BaseAPI):
         POST /events/export endpoint.
 
         Args:
-            project: Project name.
-                .. deprecated:: 1.0
-                    The project parameter is deprecated and will be removed in v2.0.
+            project: Project name. Deprecated in v1.0 and will be removed in v2.0.
             filters: List of EventFilter objects or dicts.
             date_range: Optional date range filter.
             projections: Optional list of fields to include.
@@ -1044,9 +1038,7 @@ class EventsAPI(BaseAPI):
         POST /events/export endpoint.
 
         Args:
-            project: Project name.
-                .. deprecated:: 1.0
-                    The project parameter is deprecated and will be removed in v2.0.
+            project: Project name. Deprecated in v1.0 and will be removed in v2.0.
             filters: List of EventFilter objects or dicts.
             date_range: Optional date range filter.
             projections: Optional list of fields to include.
@@ -1078,9 +1070,7 @@ class EventsAPI(BaseAPI):
         """List events asynchronously (backwards compatible alias for export_async).
 
         Args:
-            project: Project name.
-                .. deprecated:: 1.0
-                    The project parameter is deprecated and will be removed in v2.0.
+            project: Project name. Deprecated in v1.0 and will be removed in v2.0.
         """
         return await self.export_async(
             project=project,
@@ -1104,9 +1094,7 @@ class EventsAPI(BaseAPI):
         """Get events asynchronously (backwards compatible alias for export_async).
 
         Args:
-            project: Project name.
-                .. deprecated:: 1.0
-                    The project parameter is deprecated and will be removed in v2.0.
+            project: Project name. Deprecated in v1.0 and will be removed in v2.0.
         """
         return await self.export_async(
             project=project,
