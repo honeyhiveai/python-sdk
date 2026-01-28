@@ -1,10 +1,11 @@
 """Metrics API module for HoneyHive."""
 
-from typing import List, Optional
+from typing import Any, Dict, List, Optional
 
-from ..models import Metric, MetricEdit
+from .._generated.models import CreateMetricRequest as Metric
+from .._generated.models import UpdateMetricRequest as MetricEdit
 from ..utils.error_handler import AuthenticationError, ErrorResponse
-from .base import BaseAPI
+from ._base import BaseAPI
 
 
 class MetricsAPI(BaseAPI):

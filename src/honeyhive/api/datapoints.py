@@ -1,9 +1,10 @@
 """Datapoints API module for HoneyHive."""
 
-from typing import List, Optional
+from typing import Any, List, Optional
 
-from ..models import CreateDatapointRequest, Datapoint, UpdateDatapointRequest
-from .base import BaseAPI
+from ..models import CreateDatapointRequest, UpdateDatapointRequest
+from .._generated.models import GetDatapointResponse as Datapoint
+from ._base import BaseAPI
 
 
 class DatapointsAPI(BaseAPI):
