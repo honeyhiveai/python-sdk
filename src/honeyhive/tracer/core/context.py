@@ -782,6 +782,7 @@ class TracerContextMixin(TracerContextInterface):
         user_properties: Optional[Dict[str, Any]] = None,
         error: Optional[str] = None,
         event_id: Optional[str] = None,
+        update_event_id: Optional[str] = None,
         **kwargs: Any,
     ) -> bool:
         """Enrich current span with dynamic attribute management.
@@ -807,7 +808,10 @@ class TracerContextMixin(TracerContextInterface):
             user_properties: User properties to add (automatically prefixed with
                 'honeyhive_user_properties.' for spans)
             error: Error message (stored as 'honeyhive_error')
-            event_id: Event ID (stored as 'honeyhive_event_id')
+            event_id: If provided, update an existing event with this ID
+                via PUT /events API instead of enriching the current span
+            update_event_id: Event ID to override the default event ID on the span
+                (stored as 'honeyhive_event_id' span attribute)
             **kwargs: Additional dynamic attributes (routed to metadata namespace)
 
         Returns:
@@ -852,18 +856,15 @@ class TracerContextMixin(TracerContextInterface):
             Instance method pattern introduced as primary API.
         """
         try:
-            # Get current span dynamically
-            current_span = self._get_current_span_dynamically()
-            if not current_span or not current_span.is_recording():
-                safe_log(self, "debug", "No active recording span for enrichment")
-                return False
-
             # Use the enrichment core logic which handles reserved parameters correctly
             # Import here to avoid circular dependency
             from ..instrumentation.enrichment import (  # pylint: disable=import-outside-toplevel
                 enrich_span_core,
             )
 
+            # enrich_span_core handles both:
+            # - update_event_id: Updates an existing event via PUT /events API
+            # - event_id: Overrides the default event ID on the span attribute
             result = enrich_span_core(
                 attributes=attributes,
                 metadata=metadata,
@@ -874,6 +875,7 @@ class TracerContextMixin(TracerContextInterface):
                 config=config,
                 error=error,
                 event_id=event_id,
+                update_event_id=update_event_id,
                 tracer_instance=self,
                 verbose=False,
                 # Handle user_properties specially - for spans, it goes to a namespace
@@ -899,6 +901,116 @@ class TracerContextMixin(TracerContextInterface):
                 "error",
                 f"Failed to enrich span: {e}",
                 honeyhive_data={"error_type": type(e).__name__},
+            )
+            return False
+
+    def _enrich_existing_event(
+        self,
+        event_id: str,
+        metadata: Optional[Dict[str, Any]] = None,
+        metrics: Optional[Dict[str, Any]] = None,
+        feedback: Optional[Dict[str, Any]] = None,
+        inputs: Optional[Dict[str, Any]] = None,
+        outputs: Optional[Dict[str, Any]] = None,
+        config: Optional[Dict[str, Any]] = None,
+        user_properties: Optional[Dict[str, Any]] = None,
+        error: Optional[str] = None,
+        attributes: Optional[Dict[str, Any]] = None,
+        **kwargs: Any,
+    ) -> bool:
+        """Enrich an existing event by event_id via PUT /events API.
+
+        This method is called when enrich_span() is invoked with an event_id,
+        allowing users to update a specific existing event with new enrichment data.
+
+        Args:
+            event_id: The ID of the existing event to update.
+            metadata: Metadata to add/update on the event.
+            metrics: Metrics to add/update on the event.
+            feedback: Feedback to add/update on the event.
+            inputs: Inputs to add/update on the event.
+            outputs: Outputs to add/update on the event.
+            config: Config to add/update on the event.
+            user_properties: User properties to add/update on the event.
+            error: Error message to set on the event.
+            attributes: Additional attributes to merge into metadata.
+            **kwargs: Additional kwargs to merge into metadata.
+
+        Returns:
+            True if the event was successfully updated, False otherwise.
+        """
+        try:
+            # Check if we have a client available
+            if not hasattr(self, "client") or self.client is None:
+                safe_log(
+                    self,
+                    "warning",
+                    "No API client available to update event by event_id",
+                    honeyhive_data={"event_id": event_id},
+                )
+                return False
+
+            # Build update data for the event
+            update_data: Dict[str, Any] = {"event_id": event_id}
+
+            # Add enrichment fields if provided
+            if metadata:
+                update_data["metadata"] = metadata
+            if metrics:
+                update_data["metrics"] = metrics
+            if feedback:
+                update_data["feedback"] = feedback
+            if inputs:
+                update_data["inputs"] = inputs
+            if outputs:
+                update_data["outputs"] = outputs
+            if config:
+                update_data["config"] = config
+            if user_properties:
+                update_data["user_properties"] = user_properties
+            if error:
+                update_data["error"] = error
+
+            # Merge attributes and kwargs into metadata
+            extra_metadata: Dict[str, Any] = {}
+            if attributes:
+                extra_metadata.update(attributes)
+            if kwargs:
+                extra_metadata.update(kwargs)
+            if extra_metadata:
+                if "metadata" in update_data:
+                    update_data["metadata"].update(extra_metadata)
+                else:
+                    update_data["metadata"] = extra_metadata
+
+            # Call the Events API to update the event
+            if hasattr(self.client, "events") and hasattr(self.client.events, "update"):
+                self.client.events.update(data=update_data)
+                safe_log(
+                    self,
+                    "debug",
+                    "Successfully updated event via API",
+                    honeyhive_data={
+                        "event_id": event_id,
+                        "updated_fields": list(update_data.keys()),
+                    },
+                )
+                return True
+            else:
+                safe_log(
+                    self,
+                    "warning",
+                    "Events API update method not available",
+                    honeyhive_data={"event_id": event_id},
+                )
+                return False
+
+        except Exception as e:
+            safe_log(
+                self,
+                "error",
+                f"Failed to update event {event_id}: {e}",
+                honeyhive_data={"event_id": event_id, "error_type": type(e).__name__},
             )
             return False
 

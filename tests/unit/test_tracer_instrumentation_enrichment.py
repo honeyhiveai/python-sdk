@@ -908,29 +908,31 @@ class TestBackwardsCompatibility:
         mock_set_attrs.assert_any_call(mock_span, "honeyhive_config", config)
 
     @patch("honeyhive.tracer.instrumentation.enrichment.trace.get_current_span")
-    def test_error_and_event_id_attributes(
+    def test_error_and_update_event_id_attributes(
         self, mock_get_span: Any, honeyhive_tracer: Any
     ) -> None:
-        """Test error and event_id are set as non-namespaced attributes.
+        """Test error and update_event_id are set as non-namespaced attributes.
 
         These are special attributes that don't use namespace routing.
+        Note: update_event_id sets the honeyhive_event_id span attribute,
+        while event_id triggers an API call to update an existing event.
         """
         mock_span = Mock()
         mock_span.set_attribute = Mock()
         mock_get_span.return_value = mock_span
 
         error = "Something went wrong"
-        event_id = "evt_123"
+        update_event_id = "evt_123"
 
         result = enrich_span_core(
-            error=error, event_id=event_id, tracer_instance=honeyhive_tracer
+            error=error, update_event_id=update_event_id, tracer_instance=honeyhive_tracer
         )
 
         assert result["success"] is True
 
         # Verify direct attribute setting (no namespace)
         mock_span.set_attribute.assert_any_call("honeyhive_error", error)
-        mock_span.set_attribute.assert_any_call("honeyhive_event_id", event_id)
+        mock_span.set_attribute.assert_any_call("honeyhive_event_id", update_event_id)
 
 
 class TestNewFeatures:
@@ -1126,7 +1128,7 @@ class TestComplexDataHandling:
             outputs={"response": "hi"},
             config={"temp": 0.7},
             error="test error",
-            event_id="evt_123",
+            update_event_id="evt_123",  # Use update_event_id for span attribute
             tracer_instance=honeyhive_tracer,
         )
 
