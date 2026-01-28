@@ -193,6 +193,7 @@ def enrich_span_core(  # pylint: disable=too-many-locals,too-many-statements
     user_properties: Optional[Dict[str, Any]] = None,
     error: Optional[str] = None,
     event_id: Optional[str] = None,
+    update_event_id: Optional[str] = None,
     tracer_instance: Optional[Any] = None,
     verbose: bool = False,
     **kwargs: Any,
@@ -237,8 +238,12 @@ def enrich_span_core(  # pylint: disable=too-many-locals,too-many-statements
     :type user_properties: Optional[Dict[str, Any]]
     :param error: Error string (honeyhive_error, non-namespaced)
     :type error: Optional[str]
-    :param event_id: Event ID (honeyhive_event_id, non-namespaced)
+    :param event_id: If provided, update an existing event with this ID
+        via PUT /events API instead of enriching the current span
     :type event_id: Optional[str]
+    :param update_event_id: Event ID to override the default event ID on the span
+        (stored as honeyhive_event_id span attribute)
+    :type update_event_id: Optional[str]
     :param tracer_instance: Optional tracer instance for logging
     :type tracer_instance: Optional[Any]
     :param verbose: Whether to log debug information
@@ -276,8 +281,8 @@ def enrich_span_core(  # pylint: disable=too-many-locals,too-many-statements
     propagation to access the current span automatically.
     """
     try:
-        # If event_id is provided, prioritize updating the existing event via API
-        # This allows users to enrich a specific event by ID rather than the current span
+        # If event_id is provided, update an existing event via PUT /events API
+        # This allows users to enrich a specific existing event by ID
         if event_id:
             return _enrich_existing_event_via_api(
                 event_id=event_id,
@@ -385,6 +390,7 @@ def enrich_span_core(  # pylint: disable=too-many-locals,too-many-statements
             "user_properties",
             "error",
             "event_id",
+            "update_event_id",
             "tracer_instance",
             "verbose",
         }
@@ -451,8 +457,10 @@ def enrich_span_core(  # pylint: disable=too-many-locals,too-many-statements
             current_span.set_attribute("honeyhive_error", error)
             attribute_count += 1
 
-        # Note: event_id is handled at the start of this function via API call
-        # It's no longer set as a span attribute since it represents an existing event
+        # update_event_id allows overriding the default event ID on the span
+        if update_event_id:
+            current_span.set_attribute("honeyhive_event_id", update_event_id)
+            attribute_count += 1
 
         # Log success if verbose mode is enabled
         if verbose:

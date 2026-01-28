@@ -782,6 +782,7 @@ class TracerContextMixin(TracerContextInterface):
         user_properties: Optional[Dict[str, Any]] = None,
         error: Optional[str] = None,
         event_id: Optional[str] = None,
+        update_event_id: Optional[str] = None,
         **kwargs: Any,
     ) -> bool:
         """Enrich current span with dynamic attribute management.
@@ -807,7 +808,10 @@ class TracerContextMixin(TracerContextInterface):
             user_properties: User properties to add (automatically prefixed with
                 'honeyhive_user_properties.' for spans)
             error: Error message (stored as 'honeyhive_error')
-            event_id: Event ID (stored as 'honeyhive_event_id')
+            event_id: If provided, update an existing event with this ID
+                via PUT /events API instead of enriching the current span
+            update_event_id: Event ID to override the default event ID on the span
+                (stored as 'honeyhive_event_id' span attribute)
             **kwargs: Additional dynamic attributes (routed to metadata namespace)
 
         Returns:
@@ -852,35 +856,15 @@ class TracerContextMixin(TracerContextInterface):
             Instance method pattern introduced as primary API.
         """
         try:
-            # If event_id is provided, prioritize updating the existing event via API
-            # This allows users to enrich a specific event by ID rather than the current span
-            if event_id:
-                return self._enrich_existing_event(
-                    event_id=event_id,
-                    metadata=metadata,
-                    metrics=metrics,
-                    feedback=feedback,
-                    inputs=inputs,
-                    outputs=outputs,
-                    config=config,
-                    user_properties=user_properties,
-                    error=error,
-                    attributes=attributes,
-                    **kwargs,
-                )
-
-            # Get current span dynamically
-            current_span = self._get_current_span_dynamically()
-            if not current_span or not current_span.is_recording():
-                safe_log(self, "debug", "No active recording span for enrichment")
-                return False
-
             # Use the enrichment core logic which handles reserved parameters correctly
             # Import here to avoid circular dependency
             from ..instrumentation.enrichment import (  # pylint: disable=import-outside-toplevel
                 enrich_span_core,
             )
 
+            # enrich_span_core handles both:
+            # - update_event_id: Updates an existing event via PUT /events API
+            # - event_id: Overrides the default event ID on the span attribute
             result = enrich_span_core(
                 attributes=attributes,
                 metadata=metadata,
@@ -890,7 +874,8 @@ class TracerContextMixin(TracerContextInterface):
                 outputs=outputs,
                 config=config,
                 error=error,
-                event_id=None,  # Don't set event_id on span when enriching current span
+                event_id=event_id,
+                update_event_id=update_event_id,
                 tracer_instance=self,
                 verbose=False,
                 # Handle user_properties specially - for spans, it goes to a namespace
