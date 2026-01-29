@@ -1,5 +1,57 @@
 ## [Unreleased]
 
+## [1.0.0rc15] - 2026-01-29
+
+### Added
+
+- **Events API: Events export endpoint for session retrieval**
+  - Added `get_by_session_id()` method to EventsAPI that uses the Data Plane export endpoint
+  - Returns all events for a given session ID with proper typing
+  - Backwards-compatible interface that works with existing code
+  - Files: `src/honeyhive/api/client.py`
+
+- **Tracing: flush() method for HoneyHiveTracer**
+  - Added `flush()` method to explicitly flush pending spans to the backend
+  - Useful for ensuring all traces are exported before application shutdown
+  - Files: `src/honeyhive/tracer/core/tracer.py`
+
+- **Testing: Comprehensive provider integration test suite**
+  - Added 58 integration tests covering 13 LLM providers
+  - Providers: OpenAI, Anthropic, Google ADK, Azure OpenAI, AWS Bedrock, LangChain, LlamaIndex, CrewAI, AutoGen, DSPy, Pydantic AI, Semantic Kernel, Strands
+  - Tests verify inputs/outputs are correctly captured for each provider
+  - Files: `tests_v2/integrations/`
+
+- **Testing: tests_v2 folder with verified unit tests**
+  - Added 1324 verified passing unit tests in new `tests_v2/` folder
+  - Organized by component: tracer, experiments, API clients
+  - All tests run in CI pipeline
+  - Files: `tests_v2/`
+
+### Changed
+
+- **Events API: Improved event ordering and filtering**
+  - Events are now returned in chronological order by default
+  - Deprecated `project` parameter in favor of project-scoped API keys
+  - Files: `src/honeyhive/api/client.py`
+
+### Fixed
+
+- **Tracing: enrich_span() event_id parameter behavior**
+  - Added `update_event_id` parameter to `enrich_span()` for overriding span's event_id attribute
+  - Separated from `event_id` parameter which updates the event via API
+  - Fixes issue where event_id couldn't be set on spans without making API calls
+  - Files: `src/honeyhive/tracer/instrumentation/enrichment.py`, `src/honeyhive/tracer/core/context.py`
+
+- **Models: Pydantic models preserve extra API response data**
+  - Added `extra="allow"` to Pydantic model configs for API responses
+  - Prevents data loss when backend returns additional fields not in the model
+  - Files: `src/honeyhive/_generated/models/`
+
+- **CI: Simplified Python version matrix**
+  - Removed Python 3.11 from CI (end of life)
+  - Now testing Python 3.12 and 3.13 only
+  - Files: `.github/workflows/tox-full-suite.yml`
+
 ## [1.0.0rc9] - 2026-01-13
 
 ### Added

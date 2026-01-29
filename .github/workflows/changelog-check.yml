@@ -1,0 +1,96 @@
+---
+name: Changelog Check
+
+on:
+  pull_request:
+    branches:
+      - main
+      - complete-refactor
+    paths:
+      - 'src/**'
+      - 'tests/**'
+      - 'tests_v2/**'
+
+permissions:
+  contents: read
+  pull-requests: write
+
+jobs:
+  changelog-check:
+    name: Verify CHANGELOG.md Updated
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+
+      - name: Check if CHANGELOG.md was modified
+        id: changelog_modified
+        run: |
+          # Get the base branch
+          BASE_BRANCH="${{ github.base_ref }}"
+          echo "Base branch: $BASE_BRANCH"
+
+          # Check if CHANGELOG.md was modified in this PR
+          if git diff --name-only origin/$BASE_BRANCH...HEAD | grep -q "^CHANGELOG.md$"; then
+            echo "modified=true" >> $GITHUB_OUTPUT
+            echo "CHANGELOG.md was modified in this PR"
+          else
+            echo "modified=false" >> $GITHUB_OUTPUT
+            echo "CHANGELOG.md was NOT modified in this PR"
+          fi
+
+      - name: Check for source code changes
+        id: source_changes
+        run: |
+          BASE_BRANCH="${{ github.base_ref }}"
+
+          # Check if there are meaningful source code changes (not just tests/docs)
+          src_changes=$(git diff --name-only origin/$BASE_BRANCH...HEAD | grep -E "^src/" | grep -v "__pycache__" | wc -l)
+
+          if [ "$src_changes" -gt 0 ]; then
+            echo "has_src_changes=true" >> $GITHUB_OUTPUT
+            echo "Found $src_changes source file changes"
+          else
+            echo "has_src_changes=false" >> $GITHUB_OUTPUT
+            echo "No source file changes found"
+          fi
+
+      - name: Fail if CHANGELOG not updated for source changes
+        if: steps.source_changes.outputs.has_src_changes == 'true' && steps.changelog_modified.outputs.modified == 'false'
+        run: |
+          echo "::error::CHANGELOG.md must be updated when making changes to source code (src/)"
+          echo ""
+          echo "Please add an entry to CHANGELOG.md describing your changes."
+          echo ""
+          echo "Format:"
+          echo "  ## [Unreleased]"
+          echo ""
+          echo "  ### Added"
+          echo "  - Description of new features"
+          echo ""
+          echo "  ### Changed"
+          echo "  - Description of changes to existing functionality"
+          echo ""
+          echo "  ### Fixed"
+          echo "  - Description of bug fixes"
+          echo ""
+          echo "If this PR only contains test changes, documentation, or CI updates,"
+          echo "you can skip this check by adding [skip-changelog] to your PR title."
+          exit 1
+
+      - name: Skip changelog check (PR title contains skip flag)
+        if: contains(github.event.pull_request.title, '[skip-changelog]')
+        run: |
+          echo "Skipping changelog check - PR title contains [skip-changelog]"
+
+      - name: Changelog check passed
+        if: steps.changelog_modified.outputs.modified == 'true' || steps.source_changes.outputs.has_src_changes == 'false'
+        run: |
+          if [ "${{ steps.changelog_modified.outputs.modified }}" = "true" ]; then
+            echo "CHANGELOG.md was updated - check passed!"
+          else
+            echo "No source code changes detected - changelog update not required"
+          fi
