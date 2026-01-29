@@ -38,7 +38,6 @@ extensions = [
     "sphinx.ext.intersphinx",
     "sphinx.ext.todo",
     "sphinxcontrib.mermaid",
-    "sphinx_tabs.tabs",
 ]
 
 # Add any paths that contain templates here, relative to this directory.

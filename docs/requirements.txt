@@ -8,7 +8,6 @@ myst-parser>=2.0.0
 
 # Extensions
 sphinx-copybutton>=0.5.2
-sphinx-tabs>=3.4.0
 sphinxcontrib-mermaid>=0.9.0
 sphinx-design>=0.5.0
 
@@ -21,14 +20,11 @@ sphinx-autoapi>=3.0.0
 sphinxcontrib-openapi>=0.8.0
 
 # Search and navigation
-sphinx-search>=0.1.0
 sphinx-sitemap>=2.5.0
 
 # Code highlighting
 pygments>=2.16.0
 
 # Building
-# Pin <0.22 due to breaking change that removed 'backrefs' attribute from nodes
-# (breaks sphinx_tabs which does attrs.pop("backrefs"))
-docutils>=0.20.0,<0.22
+docutils>=0.20.0
 jinja2>=3.1.0
