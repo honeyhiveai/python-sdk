@@ -16,7 +16,7 @@ get_run_result()
    The backend computes aggregated metrics across all datapoints using the specified aggregation function.
 
    :param client: HoneyHive API client instance
-   :type client: HoneyHive
+   :type client: honeyhive.HoneyHive
    
    :param run_id: Experiment run ID
    :type run_id: str
@@ -69,7 +69,7 @@ get_run_metrics()
    useful for detailed analysis or custom aggregation.
 
    :param client: HoneyHive API client instance
-   :type client: HoneyHive
+   :type client: honeyhive.HoneyHive
    
    :param run_id: Experiment run ID
    :type run_id: str
@@ -102,7 +102,7 @@ compare_runs()
    and classifies changes as improvements or degradations.
 
    :param client: HoneyHive API client instance
-   :type client: HoneyHive
+   :type client: honeyhive.HoneyHive
    
    :param new_run_id: ID of the new (more recent) run
    :type new_id: str
