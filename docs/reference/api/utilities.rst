@@ -273,7 +273,7 @@ If you need to use ``asyncio.run()`` inside your handler, you'll need to re-atta
 See Also
 --------
 
-- :doc:`client-apis` - API client reference
+- :doc:`../client/index` - API client reference
 - :doc:`/reference/configuration/config-options` - Configuration options
 - :doc:`/tutorials/06-distributed-tracing` - Distributed tracing tutorial
 

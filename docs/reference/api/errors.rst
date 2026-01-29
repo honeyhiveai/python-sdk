@@ -109,6 +109,6 @@ ResilienceLevel
 See Also
 --------
 
-- :doc:`client-apis` - API client reference
+- :doc:`../client/index` - API client reference
 - :doc:`tracer` - Tracer API
 

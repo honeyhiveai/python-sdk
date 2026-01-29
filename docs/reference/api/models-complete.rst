@@ -99,6 +99,6 @@ ExperimentContext
 See Also
 --------
 
-- :doc:`client-apis` - API client classes
+- :doc:`../client/index` - API client classes
 - :doc:`/reference/experiments/experiments` - Experiments API
 - :doc:`/how-to/evaluation/index` - Evaluation guides
