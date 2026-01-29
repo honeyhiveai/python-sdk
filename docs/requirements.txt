@@ -28,5 +28,7 @@ sphinx-sitemap>=2.5.0
 pygments>=2.16.0
 
 # Building
-docutils>=0.20.0
+# Pin <0.22 due to breaking change that removed 'backrefs' attribute from nodes
+# (breaks sphinx_tabs which does attrs.pop("backrefs"))
+docutils>=0.20.0,<0.22
 jinja2>=3.1.0
