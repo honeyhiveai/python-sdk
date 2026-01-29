@@ -56,6 +56,7 @@ exclude_patterns = [
 # Suppress warnings from external packages
 suppress_warnings = [
     "ref.ref",  # Undefined label warnings
+    "ref.python",  # Ambiguous Python cross-references (e.g., 'type' in signatures)
     "toc.not_included",  # Site-packages not in toctree
 ]
 
