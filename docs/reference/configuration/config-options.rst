@@ -28,85 +28,83 @@ The HoneyHive SDK supports multiple configuration approaches:
 Configuration Methods
 ---------------------
 
-.. tabs::
+**Modern Config Objects (Recommended)**
 
-   .. tab:: 🆕 Modern Config Objects (Recommended)
+**Type-safe, validated configuration with IDE support:**
 
-      **Type-safe, validated configuration with IDE support:**
+.. code-block:: python
 
-      .. code-block:: python
+   from honeyhive import HoneyHiveTracer
+   from honeyhive.config.models import TracerConfig, SessionConfig
+   
+   # Create configuration objects
+   config = TracerConfig(
+       api_key="hh_1234567890abcdef",
+       project="my-llm-project",
+       source="production",
+       verbose=True,
+       disable_http_tracing=True,
+       test_mode=False
+   )
+   
+   session_config = SessionConfig(
+       session_name="user-chat-session",
+       inputs={"user_id": "123", "query": "Hello world"}
+   )
+   
+   # Initialize with config objects
+   tracer = HoneyHiveTracer(
+       config=config,
+       session_config=session_config
+   )
 
-         from honeyhive import HoneyHiveTracer
-         from honeyhive.config.models import TracerConfig, SessionConfig
-         
-         # Create configuration objects
-         config = TracerConfig(
-             api_key="hh_1234567890abcdef",
-             project="my-llm-project",
-             source="production",
-             verbose=True,
-             disable_http_tracing=True,
-             test_mode=False
-         )
-         
-         session_config = SessionConfig(
-             session_name="user-chat-session",
-             inputs={"user_id": "123", "query": "Hello world"}
-         )
-         
-         # Initialize with config objects
-         tracer = HoneyHiveTracer(
-             config=config,
-             session_config=session_config
-         )
+**Benefits**: Type safety, IDE autocomplete, validation, reduced argument count
 
-      **Benefits**: Type safety, IDE autocomplete, validation, reduced argument count
+**Traditional Parameters (Backwards Compatible)**
 
-   .. tab:: 🔄 Traditional Parameters (Backwards Compatible)
+**Existing code continues to work exactly as before:**
 
-      **Existing code continues to work exactly as before:**
+.. code-block:: python
 
-      .. code-block:: python
+   from honeyhive import HoneyHiveTracer
+   
+   # This continues to work exactly as before
+   tracer = HoneyHiveTracer(
+       api_key="hh_1234567890abcdef",
+       project="my-llm-project",
+       session_name="user-chat-session",
+       source="production",
+       verbose=True,
+       disable_http_tracing=True,
+       test_mode=False
+   )
 
-         from honeyhive import HoneyHiveTracer
-         
-         # This continues to work exactly as before
-         tracer = HoneyHiveTracer(
-             api_key="hh_1234567890abcdef",
-             project="my-llm-project",
-             session_name="user-chat-session",
-             source="production",
-             verbose=True,
-             disable_http_tracing=True,
-             test_mode=False
-         )
+**Benefits**: No code changes required, familiar pattern
 
-      **Benefits**: No code changes required, familiar pattern
+**Mixed Approach**
 
-   .. tab:: 🔀 Mixed Approach
+**Config objects with parameter overrides (individual parameters take precedence):**
 
-      **Config objects with parameter overrides (individual parameters take precedence):**
+.. code-block:: python
 
-      .. code-block:: python
+   from honeyhive import HoneyHiveTracer
+   from honeyhive.config.models import TracerConfig
+   
+   # Base configuration
+   config = TracerConfig(
+       api_key="hh_1234567890abcdef",
+       project="my-llm-project",
+       source="production"
+   )
+   
+   # Individual parameters override config values
+   tracer = HoneyHiveTracer(
+       config=config,
+       verbose=True,  # Overrides config.verbose
+       session_name="override-session"  # Additional parameter
+   )
 
-         from honeyhive import HoneyHiveTracer
-         from honeyhive.config.models import TracerConfig
-         
-         # Base configuration
-         config = TracerConfig(
-             api_key="hh_1234567890abcdef",
-             project="my-llm-project",
-             source="production"
-         )
-         
-         # Individual parameters override config values
-         tracer = HoneyHiveTracer(
-             config=config,
-             verbose=True,  # Overrides config.verbose
-             session_name="override-session"  # Additional parameter
-         )
-
-      **Benefits**: Flexible configuration with selective overrides
+**Benefits**: Flexible configuration with selective overrides
 
 Configuration Precedence
 ------------------------
@@ -206,33 +204,31 @@ Authentication
 
    **Usage Examples**:
 
-   .. tabs::
+   **Config Object**
 
-      .. tab:: Config Object
+   .. code-block:: python
 
-         .. code-block:: python
+      from honeyhive.config.models import TracerConfig
+      
+      config = TracerConfig(api_key="hh_1234567890abcdef")
+      tracer = HoneyHiveTracer(config=config)
 
-            from honeyhive.config.models import TracerConfig
-            
-            config = TracerConfig(api_key="hh_1234567890abcdef")
-            tracer = HoneyHiveTracer(config=config)
+   **Traditional Parameter**
 
-      .. tab:: Traditional Parameter
+   .. code-block:: python
 
-         .. code-block:: python
+      tracer = HoneyHiveTracer(api_key="hh_1234567890abcdef")
 
-            tracer = HoneyHiveTracer(api_key="hh_1234567890abcdef")
+   **Environment Variable**
 
-      .. tab:: Environment Variable
+   .. code-block:: bash
 
-         .. code-block:: bash
+      export HH_API_KEY="hh_1234567890abcdef"
 
-            export HH_API_KEY="hh_1234567890abcdef"
+   .. code-block:: python
 
-         .. code-block:: python
-
-            # API key loaded automatically from environment
-            tracer = HoneyHiveTracer(project="my-project")
+      # API key loaded automatically from environment
+      tracer = HoneyHiveTracer(project="my-project")
 
 .. py:data:: base_url
    :type: str

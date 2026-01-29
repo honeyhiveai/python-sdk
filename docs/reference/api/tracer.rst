@@ -56,43 +56,41 @@ The tracer is now composed from multiple mixins using dynamic inheritance:
 
 The tracer supports three initialization patterns:
 
-.. tabs::
+**Modern Config Objects (Recommended)**
 
-   .. tab:: 🆕 Modern Config Objects (Recommended)
+.. code-block:: python
 
-      .. code-block:: python
+   from honeyhive import HoneyHiveTracer
+   from honeyhive.config.models import TracerConfig
+   
+   config = TracerConfig(
+       api_key="hh_1234567890abcdef",
+       project="my-llm-project",
+       verbose=True
+   )
+   tracer = HoneyHiveTracer(config=config)
 
-         from honeyhive import HoneyHiveTracer
-         from honeyhive.config.models import TracerConfig
-         
-         config = TracerConfig(
-             api_key="hh_1234567890abcdef",
-             project="my-llm-project",
-             verbose=True
-         )
-         tracer = HoneyHiveTracer(config=config)
+**Traditional Parameters (Backwards Compatible)**
 
-   .. tab:: 🔄 Traditional Parameters (Backwards Compatible)
+.. code-block:: python
 
-      .. code-block:: python
+   from honeyhive import HoneyHiveTracer
+   
+   tracer = HoneyHiveTracer(
+       api_key="hh_1234567890abcdef",
+       project="my-llm-project",
+       verbose=True
+   )
 
-         from honeyhive import HoneyHiveTracer
-         
-         tracer = HoneyHiveTracer(
-             api_key="hh_1234567890abcdef",
-             project="my-llm-project",
-             verbose=True
-         )
+**Mixed Approach**
 
-   .. tab:: 🔀 Mixed Approach
+.. code-block:: python
 
-      .. code-block:: python
-
-         from honeyhive import HoneyHiveTracer
-         from honeyhive.config.models import TracerConfig
-         
-         config = TracerConfig(api_key="hh_1234567890abcdef", project="my-llm-project")
-         tracer = HoneyHiveTracer(config=config, verbose=True)  # verbose overrides config
+   from honeyhive import HoneyHiveTracer
+   from honeyhive.config.models import TracerConfig
+   
+   config = TracerConfig(api_key="hh_1234567890abcdef", project="my-llm-project")
+   tracer = HoneyHiveTracer(config=config, verbose=True)  # verbose overrides config
 
 Class Methods
 -------------

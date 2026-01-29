@@ -41,42 +41,40 @@ Basic Configuration Review
 
 The HoneyHive SDK supports three configuration approaches:
 
-.. tabs::
+**Modern Pydantic (Recommended)**
 
-   .. tab:: Modern Pydantic (Recommended)
+.. code-block:: python
 
-      .. code-block:: python
+   from honeyhive import HoneyHiveTracer
+   from honeyhive.config.models import TracerConfig
+   
+   config = TracerConfig(
+       api_key="hh_1234567890abcdef",
+       project="my-project",
+       verbose=True
+   )
+   tracer = HoneyHiveTracer(config=config)
 
-         from honeyhive import HoneyHiveTracer
-         from honeyhive.config.models import TracerConfig
-         
-         config = TracerConfig(
-             api_key="hh_1234567890abcdef",
-             project="my-project",
-             verbose=True
-         )
-         tracer = HoneyHiveTracer(config=config)
+**Traditional Parameters**
 
-   .. tab:: Traditional Parameters
+.. code-block:: python
 
-      .. code-block:: python
+   from honeyhive import HoneyHiveTracer
+   
+   tracer = HoneyHiveTracer(
+       api_key="hh_1234567890abcdef",
+       project="my-project",
+       verbose=True
+   )
 
-         from honeyhive import HoneyHiveTracer
-         
-         tracer = HoneyHiveTracer(
-             api_key="hh_1234567890abcdef",
-             project="my-project",
-             verbose=True
-         )
+**Mixed Approach**
 
-   .. tab:: Mixed Approach
+.. code-block:: python
 
-      .. code-block:: python
-
-         from honeyhive.config.models import TracerConfig
-         
-         config = TracerConfig(api_key="hh_key", project="my-project")
-         tracer = HoneyHiveTracer(config=config, verbose=True)
+   from honeyhive.config.models import TracerConfig
+   
+   config = TracerConfig(api_key="hh_key", project="my-project")
+   tracer = HoneyHiveTracer(config=config, verbose=True)
 
 Advanced Configuration Patterns
 ===============================
