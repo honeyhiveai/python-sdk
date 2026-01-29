@@ -760,14 +760,14 @@ def atrace(
     return decorator
 
 
-def trace_class(cls: type) -> type:
+def trace_class(cls):
     """Class decorator to automatically trace all public methods.
 
     Uses dynamic reflection to discover and wrap all public methods of a class.
     Automatically detects sync/async methods and applies appropriate tracing.
 
     Args:
-        cls: The class to be decorated
+        cls: The class to be decorated (any class type)
 
     Returns:
         The decorated class with all public methods traced
