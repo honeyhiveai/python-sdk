@@ -767,7 +767,7 @@ def trace_class(cls: type) -> type:
     Automatically detects sync/async methods and applies appropriate tracing.
 
     Args:
-        cls: The class to be decorated
+        cls (type): The class to be decorated
 
     Returns:
         The decorated class with all public methods traced
