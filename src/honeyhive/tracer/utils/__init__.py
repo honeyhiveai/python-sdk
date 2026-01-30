@@ -28,6 +28,15 @@ from .git import get_git_information, is_telemetry_enabled
 # Context propagation utilities
 from .propagation import sanitize_carrier
 
+# Threading utilities for trace context propagation
+from .threading import (
+    TracedThreadPoolExecutor,
+    instrument_threading,
+    is_threading_instrumented,
+    uninstrument_threading,
+    with_trace_context,
+)
+
 # Session and ID utilities
 from .session import (
     extract_filename_from_path,
@@ -55,4 +64,10 @@ __all__ = [
     "validate_session_id",
     # Propagation utilities
     "sanitize_carrier",
+    # Threading utilities
+    "with_trace_context",
+    "TracedThreadPoolExecutor",
+    "instrument_threading",
+    "uninstrument_threading",
+    "is_threading_instrumented",
 ]

@@ -220,6 +220,42 @@ class HoneyHiveTracerBase:  # pylint: disable=too-many-instance-attributes
         # Set up API clients using dynamic configuration
         self._initialize_api_clients()
 
+        # Automatically instrument ThreadPoolExecutor for trace context propagation
+        # This ensures that spans created in thread pool workers maintain parent-child
+        # relationships with spans from the calling thread
+        self._instrument_threading_automatically()
+
+    def _instrument_threading_automatically(self) -> None:
+        """Automatically instrument ThreadPoolExecutor for context propagation.
+
+        This ensures that when users use ThreadPoolExecutor, the OpenTelemetry
+        trace context is automatically propagated to worker threads, maintaining
+        proper parent-child span relationships.
+
+        This is idempotent - calling it multiple times has no additional effect.
+        """
+        try:
+            from ..utils.threading import (
+                instrument_threading,
+                is_threading_instrumented,
+            )
+
+            if not is_threading_instrumented():
+                instrument_threading()
+                safe_log(
+                    self,
+                    "debug",
+                    "Automatically instrumented ThreadPoolExecutor for context propagation",
+                )
+        except Exception as e:
+            # Graceful degradation - don't fail tracer init if threading instrumentation fails
+            safe_log(
+                self,
+                "debug",
+                "Failed to auto-instrument threading: %s",
+                str(e),
+            )
+
     # Configuration merging moved to config module - see create_unified_config()
 
     def _initialize_core_attributes(self) -> None:
