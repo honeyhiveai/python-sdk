@@ -20,20 +20,59 @@ This document provides a comprehensive analysis of agent framework integrations 
 4. PyPI registry - OpenInference and Traceloop packages
 5. Arize-ai/openinference GitHub - 39 published packages
 
-### Agent Frameworks (10 Total)
+### Superset of All Competitor Integrations (37 Python Frameworks)
 
-| Framework | OpenInference Package | Traceloop Package | In HoneyHive SDK |
-|-----------|----------------------|-------------------|------------------|
-| LangChain/LangGraph | `openinference-instrumentation-langchain` | `opentelemetry-instrumentation-langchain` | Yes (pyproject.toml + examples) |
-| OpenAI Agents SDK | `openinference-instrumentation-openai-agents` | `opentelemetry-instrumentation-openai-agents` | Yes (examples) |
-| CrewAI | `openinference-instrumentation-crewai` | `opentelemetry-instrumentation-crewai` | Docs only |
-| AutoGen | (via LangSmith OTEL) | (via LangSmith OTEL) | Example only |
-| Pydantic AI | `openinference-instrumentation-pydantic-ai` | - | Example only |
-| DSPy | `openinference-instrumentation-dspy` | - | Example only |
-| LlamaIndex | `openinference-instrumentation-llama-index` | - | Docs only |
-| Google ADK | `openinference-instrumentation-google-adk` | - | Yes (pyproject.toml) |
-| Semantic Kernel | (via OTEL) | - | Example only |
-| AWS Strands | - | - | Example only |
+Based on comprehensive analysis of Langfuse, Braintrust, LangSmith, and Arize Phoenix integration lists:
+
+| Framework | OpenInference Package | Traceloop Package | In HoneyHive SDK | Competitors |
+|-----------|----------------------|-------------------|------------------|-------------|
+| LangChain/LangGraph | `openinference-instrumentation-langchain` | `opentelemetry-instrumentation-langchain` | Yes | All |
+| OpenAI Agents SDK | `openinference-instrumentation-openai-agents` | `opentelemetry-instrumentation-openai-agents` | Yes | All |
+| CrewAI | `openinference-instrumentation-crewai` | `opentelemetry-instrumentation-crewai` | Docs only | All |
+| AutoGen | (via LangSmith OTEL) | (via LangSmith OTEL) | Example only | All |
+| Pydantic AI | `openinference-instrumentation-pydantic-ai` | - | Example only | All |
+| DSPy | `openinference-instrumentation-dspy` | - | Example only | All |
+| LlamaIndex | `openinference-instrumentation-llama-index` | - | Docs only | All |
+| Google ADK | `openinference-instrumentation-google-adk` | - | Yes | All |
+| Semantic Kernel | (via OTEL) | - | Example only | LangSmith, Langfuse |
+| AWS Strands | - | - | Example only | Langfuse, Braintrust |
+| **Agno** | `openinference-instrumentation-agno` | - | **MISSING** | Langfuse, Braintrust |
+| **Haystack** | `openinference-instrumentation-haystack` | - | **MISSING** | Langfuse |
+| **SmolAgents** | `openinference-instrumentation-smolagents` | - | **MISSING** | Langfuse |
+| **BeeAI** | `openinference-instrumentation-beeai` | - | **MISSING** | Langfuse |
+| **Claude Agent SDK** | - | - | **MISSING** | LangSmith, Braintrust, Langfuse |
+| **Instructor** | - | - | **MISSING** | Langfuse, Braintrust |
+| **LiteLLM** | - | - | **MISSING** | Langfuse, Braintrust |
+| **Mirascope** | - | - | **MISSING** | Langfuse |
+| **LiveKit** | - | - | **MISSING** | LangSmith, Braintrust, Langfuse |
+| **Mastra** | - | - | **MISSING** | LangSmith, Braintrust, Langfuse |
+| **Pipecat** | - | - | **MISSING** | LangSmith, Langfuse |
+| **Temporal** | - | - | **MISSING** | LangSmith, Braintrust, Langfuse |
+| **Microsoft Agent Framework** | - | - | **MISSING** | LangSmith, Langfuse |
+| **Ragas** | - | - | **MISSING** | Langfuse |
+| **VoltAgent** | - | - | **MISSING** | Langfuse |
+| **Watsonx Orchestrate ADK** | - | - | **MISSING** | Langfuse |
+| **Amazon Bedrock AgentCore** | - | - | **MISSING** | Langfuse |
+| **LlamaIndex Workflows** | - | - | **MISSING** | Langfuse |
+| **Langserve** | - | - | **MISSING** | Langfuse |
+| **Koog** | - | - | **MISSING** | Langfuse |
+| **Swiftide** | - | - | **MISSING** | Langfuse |
+| **Spring AI** | - | - | **MISSING** | Langfuse (Java) |
+| **Quarkus LangChain4j** | - | - | **MISSING** | Langfuse (Java) |
+| **Vercel AI SDK** | - | - | **MISSING** | LangSmith, Braintrust, Langfuse |
+| **Apollo GraphQL** | - | - | **MISSING** | Braintrust |
+| **Cloudflare Workers AI** | - | - | **MISSING** | Braintrust |
+| **TrueFoundry** | - | - | **MISSING** | Braintrust |
+
+### Coverage Summary
+
+| Metric | Count |
+|--------|-------|
+| Total frameworks in competitor superset | 37 |
+| Currently in HoneyHive SDK | 10 |
+| **Missing from HoneyHive SDK** | **27** |
+| Missing with OpenInference packages available | 5 |
+| Missing requiring custom integration | 22 |
 
 ### LLM Provider Integrations (13 Packages in pyproject.toml)
 
@@ -54,13 +93,27 @@ This document provides a comprehensive analysis of agent framework integrations 
 - `traceloop-azure-openai`
 - `traceloop-mcp`
 
-### Gap Analysis vs PyPI Registry
+### Priority Integration Gaps (with OpenInference packages available)
 
-**Missing from HoneyHive SDK that exist on PyPI:**
-- `openinference-instrumentation-haystack`
-- `openinference-instrumentation-smolagents`
-- `openinference-instrumentation-beeai`
-- `openinference-instrumentation-agno`
+These frameworks have existing OpenInference instrumentors on PyPI and should be prioritized:
+
+1. **Agno** - Popular agent framework, supported by Langfuse and Braintrust
+2. **Haystack** - Major RAG framework from deepset, enterprise adoption
+3. **SmolAgents** - HuggingFace's lightweight agent framework
+4. **BeeAI** - IBM's agent framework for enterprise
+5. **CrewAI** - Multi-agent orchestration (docs only, needs pyproject.toml)
+6. **LlamaIndex** - RAG framework (docs only, needs pyproject.toml)
+
+### Secondary Integration Gaps (require custom integration)
+
+These frameworks are supported by competitors but lack OpenInference packages:
+
+1. **Claude Agent SDK** - Anthropic's native agent framework (LangSmith, Braintrust, Langfuse)
+2. **Instructor** - Structured output framework (Langfuse, Braintrust)
+3. **LiteLLM** - Universal LLM gateway (Langfuse, Braintrust)
+4. **LiveKit** - Real-time AI agents (LangSmith, Braintrust, Langfuse)
+5. **Temporal** - Durable workflow orchestration (LangSmith, Braintrust, Langfuse)
+6. **Microsoft Agent Framework** - Enterprise agent framework (LangSmith, Langfuse)
 
 ---
 
@@ -277,4 +330,267 @@ def error_prone_workflow(should_fail: bool) -> dict:
 
 ---
 
+## 6. Framework Integration Test Examples
+
+### Test: Haystack RAG Pipeline
+
+```python
+"""Test Haystack integration with HoneyHive tracing."""
+from honeyhive.tracer import HoneyHiveTracer
+from honeyhive.tracer.instrumentation.decorators import trace
+
+# Note: Requires openinference-instrumentation-haystack from PyPI
+# pip install openinference-instrumentation-haystack
+
+tracer = HoneyHiveTracer.init(
+    api_key=os.environ["HH_API_KEY"],
+    project=os.environ["HH_PROJECT"],
+    session_name="haystack_rag_test",
+    source="agent_framework_evaluation",
+)
+
+# Haystack instrumentor (when available in SDK)
+# from openinference.instrumentation.haystack import HaystackInstrumentor
+# HaystackInstrumentor().instrument(tracer_provider=tracer.provider)
+
+@trace(event_type="chain", event_name="haystack_rag_pipeline", tracer=tracer)
+def run_rag_pipeline(query: str) -> dict:
+    """Simulate Haystack RAG pipeline for enterprise document search."""
+    # In production, this would use Haystack components:
+    # - DocumentStore (Elasticsearch, Pinecone, etc.)
+    # - Retriever
+    # - PromptBuilder
+    # - Generator (OpenAI, Anthropic, etc.)
+    return {
+        "query": query,
+        "documents_retrieved": 5,
+        "answer": "Simulated RAG response",
+        "confidence": 0.92
+    }
+```
+
+### Test: Instructor Structured Output
+
+```python
+"""Test Instructor integration with HoneyHive tracing."""
+from honeyhive.tracer import HoneyHiveTracer
+from honeyhive.tracer.instrumentation.decorators import trace
+
+tracer = HoneyHiveTracer.init(
+    api_key=os.environ["HH_API_KEY"],
+    project=os.environ["HH_PROJECT"],
+    session_name="instructor_structured_output_test",
+    source="agent_framework_evaluation",
+)
+
+@trace(event_type="chain", event_name="instructor_extraction", tracer=tracer)
+def extract_structured_data(text: str) -> dict:
+    """Simulate Instructor structured extraction for compliance documents."""
+    # In production, this would use Instructor with Pydantic models:
+    # import instructor
+    # from pydantic import BaseModel
+    # client = instructor.from_openai(OpenAI())
+    # result = client.chat.completions.create(
+    #     model="gpt-4",
+    #     response_model=ComplianceReport,
+    #     messages=[{"role": "user", "content": text}]
+    # )
+    return {
+        "extracted_fields": {
+            "document_type": "compliance_report",
+            "risk_level": "medium",
+            "entities": ["ACME Corp", "Regulation XYZ"],
+            "dates": ["2026-01-15", "2026-06-30"]
+        },
+        "validation_passed": True
+    }
+```
+
+### Test: LiteLLM Universal Gateway
+
+```python
+"""Test LiteLLM integration with HoneyHive tracing."""
+from honeyhive.tracer import HoneyHiveTracer
+from honeyhive.tracer.instrumentation.decorators import trace
+
+tracer = HoneyHiveTracer.init(
+    api_key=os.environ["HH_API_KEY"],
+    project=os.environ["HH_PROJECT"],
+    session_name="litellm_gateway_test",
+    source="agent_framework_evaluation",
+)
+
+@trace(event_type="chain", event_name="litellm_multi_provider", tracer=tracer)
+def call_multiple_providers(prompt: str) -> dict:
+    """Simulate LiteLLM calls to multiple providers for enterprise redundancy."""
+    # In production, this would use LiteLLM:
+    # import litellm
+    # response = litellm.completion(
+    #     model="gpt-4",  # or "claude-3", "gemini-pro", etc.
+    #     messages=[{"role": "user", "content": prompt}]
+    # )
+    return {
+        "provider": "openai",
+        "model": "gpt-4",
+        "response": "Simulated LiteLLM response",
+        "latency_ms": 245,
+        "cost_usd": 0.003
+    }
+```
+
+### Test: SmolAgents (HuggingFace)
+
+```python
+"""Test SmolAgents integration with HoneyHive tracing."""
+from honeyhive.tracer import HoneyHiveTracer
+from honeyhive.tracer.instrumentation.decorators import trace
+
+# Note: Requires openinference-instrumentation-smolagents from PyPI
+# pip install openinference-instrumentation-smolagents
+
+tracer = HoneyHiveTracer.init(
+    api_key=os.environ["HH_API_KEY"],
+    project=os.environ["HH_PROJECT"],
+    session_name="smolagents_test",
+    source="agent_framework_evaluation",
+)
+
+@trace(event_type="chain", event_name="smolagents_code_agent", tracer=tracer)
+def run_code_agent(task: str) -> dict:
+    """Simulate SmolAgents code execution for data analysis."""
+    # In production, this would use SmolAgents:
+    # from smolagents import CodeAgent, HfApiModel
+    # agent = CodeAgent(tools=[], model=HfApiModel())
+    # result = agent.run(task)
+    return {
+        "task": task,
+        "code_generated": "import pandas as pd\\ndf = pd.read_csv('data.csv')",
+        "execution_result": "Analysis complete",
+        "steps_taken": 3
+    }
+```
+
+### Test: CrewAI Multi-Agent
+
+```python
+"""Test CrewAI integration with HoneyHive tracing."""
+from honeyhive.tracer import HoneyHiveTracer
+from honeyhive.tracer.instrumentation.decorators import trace
+
+# Note: Requires openinference-instrumentation-crewai from PyPI
+# pip install openinference-instrumentation-crewai
+
+tracer = HoneyHiveTracer.init(
+    api_key=os.environ["HH_API_KEY"],
+    project=os.environ["HH_PROJECT"],
+    session_name="crewai_multi_agent_test",
+    source="agent_framework_evaluation",
+)
+
+@trace(event_type="chain", event_name="crewai_compliance_crew", tracer=tracer)
+def run_compliance_crew(document: str) -> dict:
+    """Simulate CrewAI multi-agent compliance review."""
+    # In production, this would use CrewAI:
+    # from crewai import Agent, Task, Crew
+    # analyst = Agent(role="Compliance Analyst", ...)
+    # reviewer = Agent(role="Senior Reviewer", ...)
+    # crew = Crew(agents=[analyst, reviewer], tasks=[...])
+    # result = crew.kickoff()
+    
+    @trace(event_type="tool", event_name="analyst_review", tracer=tracer)
+    def analyst_review(doc: str) -> dict:
+        return {"findings": ["Issue A", "Issue B"], "risk_score": 0.7}
+    
+    @trace(event_type="tool", event_name="senior_review", tracer=tracer)
+    def senior_review(findings: dict) -> dict:
+        return {"approved": True, "comments": "Minor issues noted"}
+    
+    analyst_result = analyst_review(document)
+    senior_result = senior_review(analyst_result)
+    
+    return {
+        "document": document[:50] + "...",
+        "analyst_findings": analyst_result,
+        "senior_review": senior_result,
+        "final_status": "approved_with_conditions"
+    }
+```
+
+### Test: Agno Agent Framework
+
+```python
+"""Test Agno integration with HoneyHive tracing."""
+from honeyhive.tracer import HoneyHiveTracer
+from honeyhive.tracer.instrumentation.decorators import trace
+
+# Note: Requires openinference-instrumentation-agno from PyPI
+# pip install openinference-instrumentation-agno
+
+tracer = HoneyHiveTracer.init(
+    api_key=os.environ["HH_API_KEY"],
+    project=os.environ["HH_PROJECT"],
+    session_name="agno_agent_test",
+    source="agent_framework_evaluation",
+)
+
+@trace(event_type="chain", event_name="agno_enterprise_agent", tracer=tracer)
+def run_agno_agent(query: str) -> dict:
+    """Simulate Agno agent for enterprise task automation."""
+    # In production, this would use Agno:
+    # from agno import Agent
+    # agent = Agent(model="gpt-4", tools=[...])
+    # result = agent.run(query)
+    return {
+        "query": query,
+        "agent_response": "Simulated Agno response",
+        "tools_used": ["search", "calculator"],
+        "reasoning_steps": 4
+    }
+```
+
+---
+
+## 7. Competitor Integration Comparison Matrix
+
+### Framework Coverage by Platform
+
+| Framework | HoneyHive | Langfuse | Braintrust | LangSmith | Arize Phoenix |
+|-----------|-----------|----------|------------|-----------|---------------|
+| LangChain/LangGraph | Yes | Yes | Yes | Yes | Yes |
+| OpenAI Agents SDK | Yes | Yes | Yes | Yes | Yes |
+| CrewAI | Docs | Yes | Yes | Yes | Yes |
+| AutoGen | Example | Yes | Yes | Yes | Yes |
+| Pydantic AI | Example | Yes | Yes | Yes | Yes |
+| DSPy | Example | Yes | Yes | - | Yes |
+| LlamaIndex | Docs | Yes | Yes | - | Yes |
+| Google ADK | Yes | Yes | Yes | Yes | Yes |
+| Semantic Kernel | Example | Yes | - | Yes | - |
+| AWS Strands | Example | Yes | Yes | - | - |
+| Agno | **No** | Yes | Yes | - | Yes |
+| Haystack | **No** | Yes | - | - | Yes |
+| SmolAgents | **No** | Yes | - | - | Yes |
+| BeeAI | **No** | Yes | - | - | Yes |
+| Claude Agent SDK | **No** | Yes | Yes | Yes | - |
+| Instructor | **No** | Yes | Yes | Yes | - |
+| LiteLLM | **No** | Yes | Yes | - | - |
+| LiveKit | **No** | Yes | Yes | Yes | - |
+| Temporal | **No** | Yes | Yes | Yes | - |
+| Microsoft Agent Framework | **No** | Yes | - | Yes | - |
+
+### Enterprise Feature Comparison
+
+| Feature | HoneyHive | Langfuse | Braintrust | LangSmith |
+|---------|-----------|----------|------------|-----------|
+| SOC2 Compliance | Yes | Yes | Yes | Yes |
+| GDPR Compliance | Yes | Yes | Yes | Yes |
+| HIPAA Compliance | Yes | - | - | Enterprise |
+| On-Premise Deployment | - | Yes (self-host) | Yes | Enterprise |
+| Cost Tracking | Traceloop | Yes | Yes | Yes |
+| Evaluation Framework | Yes | Yes | Yes | Yes |
+| RBAC | Yes | Yes | Yes | Yes |
+| Audit Trails | Yes | Yes | Yes | Yes |
+
+---
+
 *Analysis conducted using HoneyHive Python SDK 1.0.0rc16 against staging environment.*
+*Competitor data sourced from official documentation as of February 2026.*
