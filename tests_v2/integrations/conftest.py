@@ -31,6 +31,21 @@ def pytest_configure(config):
     config.addinivalue_line(
         "markers", "slow: marks tests as slow running"
     )
+    config.addinivalue_line(
+        "markers", "haystack: marks tests requiring Haystack"
+    )
+    config.addinivalue_line(
+        "markers", "llamaindex: marks tests requiring LlamaIndex"
+    )
+    config.addinivalue_line(
+        "markers", "crewai: marks tests requiring CrewAI"
+    )
+    config.addinivalue_line(
+        "markers", "smolagents: marks tests requiring SmolAgents"
+    )
+    config.addinivalue_line(
+        "markers", "agno: marks tests requiring Agno"
+    )
 
 
 # Skip conditions
