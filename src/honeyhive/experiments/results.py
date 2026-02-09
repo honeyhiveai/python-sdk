@@ -15,7 +15,7 @@ Backend Endpoints:
 - GET /runs/:new_run_id/compare-with/:old_run_id - Compare runs
 """
 
-from typing import Any, Dict, List, cast
+from typing import Any, Dict, List, Optional, cast
 
 from honeyhive.experiments.models import (
     AggregatedMetrics,
@@ -28,7 +28,7 @@ from honeyhive.experiments.models import (
 def get_run_result(
     client: Any,  # HoneyHive client
     run_id: str,
-    project_id: str,
+    project_id: Optional[str] = None,
     aggregate_function: str = "average",
 ) -> ExperimentResultSummary:
     """
@@ -48,7 +48,7 @@ def get_run_result(
     Args:
         client: HoneyHive API client
         run_id: Experiment run ID
-        project_id: Project ID
+        project_id: Deprecated, no longer required. Backend uses auth scopes.
         aggregate_function: Aggregation function ("average", "sum", "min", "max")
 
     Returns:
@@ -61,14 +61,14 @@ def get_run_result(
     Examples:
         >>> from honeyhive import HoneyHive
         >>> client = HoneyHive(api_key="...")
-        >>> result = get_run_result(client, "run-123", "project-456", "average")
+        >>> result = get_run_result(client, "run-123", aggregate_function="average")
         >>> result.success
         True
         >>> result.metrics.get_metric("accuracy")
         {'aggregate': 0.85, 'values': [0.8, 0.9, 0.85]}
     """
-    # Use experiments API for run results
-    # Note: project_id is no longer passed - backend uses auth scopes
+    # project_id is accepted for backwards compatibility but not used
+    # Backend uses auth scopes for project resolution
     response = client.experiments.get_result(
         run_id=run_id, aggregate_function=aggregate_function
     )
@@ -90,8 +90,10 @@ def get_run_result(
 
 
 def get_run_metrics(
-    client: Any, run_id: str, project_id: str
-) -> Dict[str, Any]:  # HoneyHive client
+    client: Any,  # HoneyHive client
+    run_id: str,
+    project_id: Optional[str] = None,
+) -> Dict[str, Any]:
     """
     Get raw metrics for a run (without aggregation).
 
@@ -105,18 +107,18 @@ def get_run_metrics(
     Args:
         client: HoneyHive API client
         run_id: Experiment run ID
-        project_id: Project ID
+        project_id: Deprecated, no longer required. Backend uses auth scopes.
 
     Returns:
         Raw metrics data from backend
 
     Examples:
-        >>> metrics = get_run_metrics(client, "run-123", "project-456")
+        >>> metrics = get_run_metrics(client, "run-123")
         >>> metrics["events"]
         [{'event_id': '...', 'metrics': {...}}, ...]
     """
-    # Use experiments API for run results (includes metrics)
-    # Note: project_id is no longer passed - backend uses auth scopes
+    # project_id is accepted for backwards compatibility but not used
+    # Backend uses auth scopes for project resolution
     return cast(
         Dict[str, Any],
         client.experiments.get_result(run_id=run_id),
@@ -127,7 +129,7 @@ def compare_runs(
     client: Any,  # HoneyHive client
     new_run_id: str,
     old_run_id: str,
-    project_id: str,
+    project_id: Optional[str] = None,
     aggregate_function: str = "average",
 ) -> RunComparisonResult:
     """
@@ -148,14 +150,14 @@ def compare_runs(
         client: HoneyHive API client
         new_run_id: New experiment run ID
         old_run_id: Old experiment run ID
-        project_id: Project ID
+        project_id: Deprecated, no longer required. Backend uses auth scopes.
         aggregate_function: Aggregation function ("average", "sum", "min", "max")
 
     Returns:
         RunComparisonResult with delta calculations
 
     Examples:
-        >>> comparison = compare_runs(client, "run-new", "run-old", "project-123")
+        >>> comparison = compare_runs(client, "run-new", "run-old")
         >>> comparison.common_datapoints
         3
         >>> delta = comparison.get_metric_delta("accuracy")
@@ -174,8 +176,8 @@ def compare_runs(
         >>> comparison.list_degraded_metrics()
         []
     """
-    # Use experiments API comparison endpoint
-    # Note: project_id is no longer passed - backend uses auth scopes
+    # project_id is accepted for backwards compatibility but not used
+    # Backend uses auth scopes for project resolution
     response = client.experiments.compare_runs(
         new_run_id=new_run_id,
         old_run_id=old_run_id,
