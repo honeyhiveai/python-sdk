@@ -22,6 +22,7 @@ from honeyhive.experiments.utils import (
     prepare_external_dataset,
     prepare_run_request_data,
 )
+from honeyhive.utils.git_context import get_git_context
 from honeyhive.models import PostExperimentRunRequest, PutExperimentRunRequest
 from honeyhive.tracer import HoneyHiveTracer
 from honeyhive.tracer.instrumentation.decorators import trace
@@ -1004,6 +1005,12 @@ def evaluate(  # pylint: disable=too-many-locals,too-many-branches
         logger.info("  external_dataset_id: %s", external_dataset_id)
         logger.info("  datapoint_ids: %s", datapoint_ids)
 
+    git_context = get_git_context()
+
+    run_metadata: Dict[str, Any] = {}
+    if git_context:
+        run_metadata["git"] = git_context
+
     run_data = prepare_run_request_data(
         run_id=run_id,
         name=run_name,
@@ -1017,6 +1024,7 @@ def evaluate(  # pylint: disable=too-many-locals,too-many-branches
             "max_workers": max_workers,
             "aggregate_function": aggregate_function,
         },
+        metadata=run_metadata,
         status="pending",
     )
 
