@@ -148,6 +148,7 @@ class TracerConfigInterface:
             "is_evaluation": False,  # Original constructor default
             "test_mode": False,  # Not in original, but logical default
             "disable_tracing": False,  # Not in original, but logical default
+            "skip_default_session": False,  # Skip default session creation on init
             "api_key": None,  # Required field
             "project": None,  # Required field
             "session_id": None,  # Generated UUID in original

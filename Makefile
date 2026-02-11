@@ -1,4 +1,4 @@
-.PHONY: help install install-dev test test-all test-unit test-integration check-integration lint format check check-format check-lint typecheck check-docs check-docs-compliance check-feature-sync check-tracer-patterns check-no-mocks docs docs-serve docs-clean generate generate-sdk compare-sdk clean clean-all
+.PHONY: help install install-dev test test-all test-unit test-integration check-integration lint format check check-format check-lint typecheck check-docs check-docs-compliance check-feature-sync check-tracer-patterns check-no-mocks docs docs-serve docs-clean generate generate-sdk compare-sdk clean clean-all build build-bundled publish publish-bundled
 
 # Default target
 help:
@@ -42,6 +42,12 @@ help:
 	@echo "  make generate-minimal - Generate v1 client from minimal spec (testing)"
 	@echo "  make generate-sdk    - Generate full SDK to comparison_output/ (for analysis)"
 	@echo "  make compare-sdk     - Compare generated SDK with current implementation"
+	@echo ""
+	@echo "Build & Publish:"
+	@echo "  make build           - Build honeyhive package"
+	@echo "  make build-bundled   - Build honeyhive-bundled package"
+	@echo "  make publish         - Publish honeyhive to PyPI"
+	@echo "  make publish-bundled - Publish honeyhive-bundled to PyPI"
 	@echo ""
 	@echo "Maintenance:"
 	@echo "  make clean           - Remove build artifacts"
@@ -146,6 +152,31 @@ compare-sdk:
 		exit 1; \
 	fi
 	python comparison_output/full_sdk/compare_with_current.py
+
+# Build & Publish
+build:
+	python -m build
+
+build-bundled:
+	@echo "Building honeyhive-bundled package..."
+	cp pyproject.toml pyproject.toml.backup
+	cp pyproject.bundled.toml pyproject.toml
+	python -m build
+	mv pyproject.toml.backup pyproject.toml
+	@echo "✅ Built honeyhive-bundled package in dist/"
+
+publish:
+	@echo "Publishing honeyhive to PyPI..."
+	python -m twine upload dist/*
+
+publish-bundled:
+	@echo "Publishing honeyhive-bundled to PyPI..."
+	cp pyproject.toml pyproject.toml.backup
+	cp pyproject.bundled.toml pyproject.toml
+	python -m build
+	python -m twine upload dist/*
+	mv pyproject.toml.backup pyproject.toml
+	@echo "✅ Published honeyhive-bundled to PyPI"
 
 # Maintenance
 clean:

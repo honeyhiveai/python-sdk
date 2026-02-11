@@ -5,6 +5,13 @@ HoneyHive Python SDK - LLM Observability and Evaluation Platform
 # Version must be defined BEFORE imports to avoid circular import issues
 __version__ = "1.0.0rc9.post2"
 
+# Bundled package version (used by honeyhive-bundled PyPI package)
+__version_bundled__ = "1.0.1"
+
+# Package name indicator (set during build based on which pyproject.toml is used)
+# Users can check this to know which package they installed
+__package_name__ = "honeyhive"  # or "honeyhive-bundled"
+
 # Main API client
 from .api import HoneyHive
 

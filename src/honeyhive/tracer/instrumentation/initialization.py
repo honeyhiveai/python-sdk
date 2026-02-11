@@ -806,12 +806,11 @@ def _create_otlp_exporter(tracer_instance: Any) -> Optional[Any]:
         )
 
         # Use custom exporter with optimized connection pooling
-        # Use JSON format by default as backend expects application/json
         otlp_exporter = HoneyHiveOTLPExporter(
             tracer_instance=tracer_instance,
             session_config=session_config,
             use_optimized_session=True,
-protocol="http/json",  # Use JSON format for OTLP export
+            protocol=otlp_protocol,  # Use detected protocol from config/env
             endpoint=otlp_endpoint,
             headers={
                 "Authorization": f"Bearer {tracer_instance.config.api_key}",
@@ -1094,6 +1093,33 @@ def _initialize_session_management(tracer_instance: Any) -> None:
                         "operation": "session_id_validation",
                     },
                 )
+
+        # Check if default session creation should be skipped
+        # When enabled, sessions are created per-request via create_session()
+        skip_default_session = getattr(
+            tracer_instance.config, "skip_default_session", False
+        )
+        if skip_default_session is None:
+            # Also check environment variable
+            skip_default_session = os.getenv(
+                "HH_SKIP_DEFAULT_SESSION", ""
+            ).lower() in ("true", "1", "yes")
+
+        if skip_default_session:
+            safe_log(
+                tracer_instance,
+                "info",
+                "Skipping default session creation on init. "
+                "Use tracer.create_session() to create sessions per-request.",
+                honeyhive_data={"skip_default_session": True},
+            )
+            # Generate a placeholder session_id but don't create in backend
+            # This prevents errors but sessions will be created per-request
+            if not tracer_instance.session_id:
+                placeholder_id = str(uuid.uuid4())
+                tracer_instance.session_id = placeholder_id
+                tracer_instance._session_id = placeholder_id
+            return
 
         # Always create/initialize session in backend (even if session_id was provided)
         # This ensures session exists and prevents backend auto-population bug
