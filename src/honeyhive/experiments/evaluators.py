@@ -914,7 +914,9 @@ class evaluator(metaclass=EvaluatorMeta):  # pylint: disable=invalid-name
             results = tuple(results)
             scores = tuple(scores)
         else:
-            _, scores = await asingle_evaluation()
+            result, score = await asingle_evaluation()
+            results = (result,)
+            scores = (score,)
 
         # apply aggregation
         aggregate_result, aggregate_score = await self.async_apply_aggregation(
