@@ -25,6 +25,7 @@ from opentelemetry.trace import StatusCode
 
 # Local imports
 from ...utils.logger import safe_log
+from ..custom_otel_transformation.strands_otel_mapping import transform_strands_span
 from .otlp_session import (
     OTLPSessionConfig,
     create_optimized_otlp_session,
@@ -108,6 +109,26 @@ class OTLPJSONExporter(SpanExporter):
                     "value": {"stringValue": str(value)},
                 }
                 attributes.append(attr)
+
+        # Apply Strands OTEL transformation: read span events + attributes,
+        # produce honeyhive_* canonical attributes for automatic ingestion routing
+        scope_name = ""
+        if (
+            hasattr(span, "instrumentation_scope")
+            and span.instrumentation_scope
+        ):
+            scope_name = span.instrumentation_scope.name or ""
+        try:
+            raw_attrs = dict(span.attributes) if span.attributes else {}
+            span_events = span.events if span.events else []
+            remapped = transform_strands_span(raw_attrs, span_events, scope_name)
+            for rkey, rvalue in remapped.items():
+                attributes.append({
+                    "key": rkey,
+                    "value": {"stringValue": str(rvalue)},
+                })
+        except Exception:
+            pass
 
         # Convert events
         events = []
