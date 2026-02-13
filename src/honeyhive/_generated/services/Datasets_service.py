@@ -9,23 +9,23 @@ from ..models import *
 def getDatasets(
     api_config_override: Optional[APIConfig] = None,
     *,
+    project: str,
+    type: Optional[str] = None,
     dataset_id: Optional[str] = None,
-    name: Optional[str] = None,
-    include_datapoints: Optional[Union[bool, str]] = None,
-) -> GetDatasetsResponse:
+) -> Dict[str, Any]:
     api_config = api_config_override if api_config_override else APIConfig()
 
     base_path = api_config.base_path
-    path = f"/v1/datasets"
+    path = f"/datasets"
     headers = {
         "Content-Type": "application/json",
         "Accept": "application/json",
         "Authorization": f"Bearer { api_config.get_access_token() }",
     }
     query_params: Dict[str, Any] = {
+        "project": project,
+        "type": type,
         "dataset_id": dataset_id,
-        "name": name,
-        "include_datapoints": include_datapoints,
     }
 
     query_params = {
@@ -48,16 +48,16 @@ def getDatasets(
     else:
         body = None if 200 == 204 else response.json()
 
-    return GetDatasetsResponse(**body) if body is not None else GetDatasetsResponse()
+    return body
 
 
 def createDataset(
     api_config_override: Optional[APIConfig] = None, *, data: CreateDatasetRequest
-) -> CreateDatasetResponse:
+) -> Dict[str, Any]:
     api_config = api_config_override if api_config_override else APIConfig()
 
     base_path = api_config.base_path
-    path = f"/v1/datasets"
+    path = f"/datasets"
     headers = {
         "Content-Type": "application/json",
         "Accept": "application/json",
@@ -86,18 +86,16 @@ def createDataset(
     else:
         body = None if 200 == 204 else response.json()
 
-    return (
-        CreateDatasetResponse(**body) if body is not None else CreateDatasetResponse()
-    )
+    return body
 
 
 def updateDataset(
-    api_config_override: Optional[APIConfig] = None, *, data: UpdateDatasetRequest
-) -> UpdateDatasetResponse:
+    api_config_override: Optional[APIConfig] = None, *, data: DatasetUpdate
+) -> None:
     api_config = api_config_override if api_config_override else APIConfig()
 
     base_path = api_config.base_path
-    path = f"/v1/datasets"
+    path = f"/datasets"
     headers = {
         "Content-Type": "application/json",
         "Accept": "application/json",
@@ -126,18 +124,16 @@ def updateDataset(
     else:
         body = None if 200 == 204 else response.json()
 
-    return (
-        UpdateDatasetResponse(**body) if body is not None else UpdateDatasetResponse()
-    )
+    return None
 
 
 def deleteDataset(
     api_config_override: Optional[APIConfig] = None, *, dataset_id: str
-) -> DeleteDatasetResponse:
+) -> None:
     api_config = api_config_override if api_config_override else APIConfig()
 
     base_path = api_config.base_path
-    path = f"/v1/datasets"
+    path = f"/datasets"
     headers = {
         "Content-Type": "application/json",
         "Accept": "application/json",
@@ -165,21 +161,19 @@ def deleteDataset(
     else:
         body = None if 200 == 204 else response.json()
 
-    return (
-        DeleteDatasetResponse(**body) if body is not None else DeleteDatasetResponse()
-    )
+    return None
 
 
 def addDatapoints(
     api_config_override: Optional[APIConfig] = None,
     *,
     dataset_id: str,
-    data: AddDatapointsToDatasetRequest,
-) -> AddDatapointsResponse:
+    data: Dict[str, Any],
+) -> Dict[str, Any]:
     api_config = api_config_override if api_config_override else APIConfig()
 
     base_path = api_config.base_path
-    path = f"/v1/datasets/{dataset_id}/datapoints"
+    path = f"/datasets/{dataset_id}/datapoints"
     headers = {
         "Content-Type": "application/json",
         "Accept": "application/json",
@@ -193,11 +187,7 @@ def addDatapoints(
 
     with httpx.Client(base_url=base_path, verify=api_config.verify) as client:
         response = client.request(
-            "post",
-            httpx.URL(path),
-            headers=headers,
-            params=query_params,
-            json=data.model_dump(exclude_none=True),
+            "post", httpx.URL(path), headers=headers, params=query_params, json=data
         )
 
     if response.status_code != 200:
@@ -208,50 +198,4 @@ def addDatapoints(
     else:
         body = None if 200 == 204 else response.json()
 
-    return (
-        AddDatapointsResponse(**body) if body is not None else AddDatapointsResponse()
-    )
-
-
-def removeDatapoint(
-    api_config_override: Optional[APIConfig] = None,
-    *,
-    dataset_id: str,
-    datapoint_id: str,
-) -> RemoveDatapointResponse:
-    api_config = api_config_override if api_config_override else APIConfig()
-
-    base_path = api_config.base_path
-    path = f"/v1/datasets/{dataset_id}/datapoints/{datapoint_id}"
-    headers = {
-        "Content-Type": "application/json",
-        "Accept": "application/json",
-        "Authorization": f"Bearer { api_config.get_access_token() }",
-    }
-    query_params: Dict[str, Any] = {}
-
-    query_params = {
-        key: value for (key, value) in query_params.items() if value is not None
-    }
-
-    with httpx.Client(base_url=base_path, verify=api_config.verify) as client:
-        response = client.request(
-            "delete",
-            httpx.URL(path),
-            headers=headers,
-            params=query_params,
-        )
-
-    if response.status_code != 200:
-        raise HTTPException(
-            response.status_code,
-            f"removeDatapoint failed with status code: {response.status_code}",
-        )
-    else:
-        body = None if 200 == 204 else response.json()
-
-    return (
-        RemoveDatapointResponse(**body)
-        if body is not None
-        else RemoveDatapointResponse()
-    )
+    return body

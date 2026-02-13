@@ -10,10 +10,12 @@ class CreateToolRequest(BaseModel):
 
     model_config = {"populate_by_name": True, "validate_assignment": True}
 
+    task: str = Field(validation_alias="task")
+
     name: str = Field(validation_alias="name")
 
     description: Optional[str] = Field(validation_alias="description", default=None)
 
-    parameters: Optional[Any] = Field(validation_alias="parameters", default=None)
+    parameters: Dict[str, Any] = Field(validation_alias="parameters")
 
-    tool_type: Optional[str] = Field(validation_alias="tool_type", default=None)
+    type: str = Field(validation_alias="type")

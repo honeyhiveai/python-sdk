@@ -574,7 +574,9 @@ class HoneyHiveTracerBase:  # pylint: disable=too-many-instance-attributes
                 # where the tracer instance persists but each request should have its
                 # own session context. Span processor reads from baggage first.
                 current_ctx = context.get_current()
-                new_ctx = baggage.set_baggage("session_id", self._session_id, current_ctx)
+                new_ctx = baggage.set_baggage(
+                    "session_id", self._session_id, current_ctx
+                )
                 context.attach(new_ctx)
 
                 safe_log(

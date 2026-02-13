@@ -68,17 +68,17 @@ app = FastAPI(
 @app.middleware("http")
 async def session_middleware(request: Request, call_next):
     """Create isolated session for each request.
-    
+
     acreate_session() creates a session via the HoneyHive API and stores
     the session_id in OpenTelemetry baggage. This enables:
-    
+
     1. Request-scoped isolation (each request has its own session)
     2. No race conditions (session_id is NOT stored on tracer instance)
     3. Automatic span association (span processor reads from baggage)
     """
     # Extract user info from headers (example)
     user_id = request.headers.get("X-User-ID")
-    
+
     # Create session via API (async version for async middleware)
     # If you have an existing session_id, you can pass it directly:
     #   await tracer.acreate_session(session_id=existing_session_id)
@@ -89,25 +89,29 @@ async def session_middleware(request: Request, call_next):
             "path": str(request.url.path),
             "query_params": dict(request.query_params),
         },
-        user_properties={
-            "user_id": user_id,
-        } if user_id else None,
+        user_properties=(
+            {
+                "user_id": user_id,
+            }
+            if user_id
+            else None
+        ),
     )
-    
+
     # Process the request
     response = await call_next(request)
-    
+
     # Enrich session with response data
     # enrich_session reads session_id from baggage automatically
     tracer.enrich_session(
         outputs={"status_code": response.status_code},
         metadata={"completed": True},
     )
-    
+
     # Optionally return session_id to client for debugging/linking
     if session_id:
         response.headers["X-Session-ID"] = session_id
-    
+
     return response
 
 
@@ -137,7 +141,7 @@ class ChatResponse(BaseModel):
 @trace(event_type="chain", tracer=tracer)
 async def chat_endpoint(request: Request, body: ChatRequest) -> ChatResponse:
     """Chat endpoint with automatic session association.
-    
+
     The @trace decorator creates a span that automatically picks up
     the session_id from baggage (set by middleware).
     """
@@ -146,24 +150,24 @@ async def chat_endpoint(request: Request, body: ChatRequest) -> ChatResponse:
         inputs={"message": body.message, "context": body.context},
         metadata={"message_length": len(body.message)},
     )
-    
+
     # Process the message (traced as nested span)
     response = await process_message(body.message, body.context)
-    
+
     # Enrich span with output
     tracer.enrich_span(outputs={"response": response})
-    
+
     # Get session_id from request state (set by middleware)
     # Note: In production, you might want to read this from baggage
     session_id = request.headers.get("X-Session-ID")
-    
+
     return ChatResponse(response=response, session_id=session_id)
 
 
 @trace(event_type="tool", tracer=tracer)
 async def process_message(message: str, context: Optional[str] = None) -> str:
     """Process message - span automatically uses parent's session context.
-    
+
     Nested functions decorated with @trace automatically inherit the
     session context from the parent span.
     """
@@ -171,19 +175,19 @@ async def process_message(message: str, context: Optional[str] = None) -> str:
         inputs={"message": message, "context": context},
         metadata={"step": "message_processing"},
     )
-    
+
     # Simulate LLM call (in real app, this would call OpenAI, Anthropic, etc.)
     response = await generate_response(message)
-    
+
     tracer.enrich_span(outputs={"response": response})
-    
+
     return response
 
 
 @trace(event_type="model", tracer=tracer)
 async def generate_response(message: str) -> str:
     """Simulate LLM response generation.
-    
+
     In a real application, this would call an LLM provider.
     The span is automatically associated with the correct session.
     """
@@ -191,15 +195,15 @@ async def generate_response(message: str) -> str:
         inputs={"prompt": message},
         metadata={"model": "simulated"},
     )
-    
+
     # Simulate LLM response
     response = f"Response to: {message}"
-    
+
     tracer.enrich_span(
         outputs={"completion": response},
         metadata={"tokens": len(response.split())},
     )
-    
+
     return response
 
 
@@ -214,18 +218,18 @@ async def chat_with_existing_session(
     request: Request, session_id: str, body: ChatRequest
 ) -> ChatResponse:
     """Chat endpoint that uses an existing session ID.
-    
+
     Use this pattern when you want to link multiple requests to
     the same session (e.g., multi-turn conversations).
     """
     # Set the provided session_id in baggage (no API call)
     tracer.create_session(session_id=session_id)
-    
+
     # Now all spans will use this session_id
     tracer.enrich_span(inputs={"message": body.message})
-    
+
     response = await process_message(body.message, body.context)
-    
+
     return ChatResponse(response=response, session_id=session_id)
 
 
@@ -246,15 +250,15 @@ async def health_check():
 
 if __name__ == "__main__":
     import uvicorn
-    
+
     print("Starting FastAPI server with HoneyHive tracing...")
     print(f"Project: {os.getenv('HH_PROJECT', 'fastapi-example')}")
     print(f"Source: {os.getenv('HH_SOURCE', 'development')}")
     print()
     print("Test with:")
-    print('  curl -X POST http://localhost:8000/chat \\')
+    print("  curl -X POST http://localhost:8000/chat \\")
     print('       -H "Content-Type: application/json" \\')
     print('       -H "X-User-ID: user-123" \\')
-    print("       -d '{\"message\": \"Hello!\"}'")
-    
+    print('       -d \'{"message": "Hello!"}\'')
+
     uvicorn.run(app, host="0.0.0.0", port=8000)

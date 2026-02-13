@@ -6,13 +6,11 @@ from ..api_config import APIConfig, HTTPException
 from ..models import *
 
 
-async def getTools(
-    api_config_override: Optional[APIConfig] = None,
-) -> List[GetToolsResponse]:
+async def getTools(api_config_override: Optional[APIConfig] = None) -> List[Tool]:
     api_config = api_config_override if api_config_override else APIConfig()
 
     base_path = api_config.base_path
-    path = f"/v1/tools"
+    path = f"/tools"
     headers = {
         "Content-Type": "application/json",
         "Accept": "application/json",
@@ -42,16 +40,16 @@ async def getTools(
     else:
         body = None if 200 == 204 else response.json()
 
-    return [GetToolsResponse(**item) for item in body]
+    return [Tool(**item) for item in body]
 
 
 async def createTool(
     api_config_override: Optional[APIConfig] = None, *, data: CreateToolRequest
-) -> CreateToolResponse:
+) -> Dict[str, Any]:
     api_config = api_config_override if api_config_override else APIConfig()
 
     base_path = api_config.base_path
-    path = f"/v1/tools"
+    path = f"/tools"
     headers = {
         "Content-Type": "application/json",
         "Accept": "application/json",
@@ -82,16 +80,16 @@ async def createTool(
     else:
         body = None if 200 == 204 else response.json()
 
-    return CreateToolResponse(**body) if body is not None else CreateToolResponse()
+    return body
 
 
 async def updateTool(
     api_config_override: Optional[APIConfig] = None, *, data: UpdateToolRequest
-) -> UpdateToolResponse:
+) -> None:
     api_config = api_config_override if api_config_override else APIConfig()
 
     base_path = api_config.base_path
-    path = f"/v1/tools"
+    path = f"/tools"
     headers = {
         "Content-Type": "application/json",
         "Accept": "application/json",
@@ -122,16 +120,16 @@ async def updateTool(
     else:
         body = None if 200 == 204 else response.json()
 
-    return UpdateToolResponse(**body) if body is not None else UpdateToolResponse()
+    return None
 
 
 async def deleteTool(
     api_config_override: Optional[APIConfig] = None, *, function_id: str
-) -> DeleteToolResponse:
+) -> None:
     api_config = api_config_override if api_config_override else APIConfig()
 
     base_path = api_config.base_path
-    path = f"/v1/tools"
+    path = f"/tools"
     headers = {
         "Content-Type": "application/json",
         "Accept": "application/json",
@@ -161,4 +159,4 @@ async def deleteTool(
     else:
         body = None if 200 == 204 else response.json()
 
-    return DeleteToolResponse(**body) if body is not None else DeleteToolResponse()
+    return None

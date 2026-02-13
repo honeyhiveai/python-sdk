@@ -8,11 +8,11 @@ from ..models import *
 
 async def getProjects(
     api_config_override: Optional[APIConfig] = None, *, name: Optional[str] = None
-) -> GetProjectsResponse:
+) -> List[Project]:
     api_config = api_config_override if api_config_override else APIConfig()
 
     base_path = api_config.base_path
-    path = f"/v1/projects"
+    path = f"/projects"
     headers = {
         "Content-Type": "application/json",
         "Accept": "application/json",
@@ -42,16 +42,16 @@ async def getProjects(
     else:
         body = None if 200 == 204 else response.json()
 
-    return GetProjectsResponse(**body) if body is not None else GetProjectsResponse()
+    return [Project(**item) for item in body]
 
 
 async def createProject(
-    api_config_override: Optional[APIConfig] = None, *, data: PostProjectRequest
-) -> PostProjectResponse:
+    api_config_override: Optional[APIConfig] = None, *, data: CreateProjectRequest
+) -> Project:
     api_config = api_config_override if api_config_override else APIConfig()
 
     base_path = api_config.base_path
-    path = f"/v1/projects"
+    path = f"/projects"
     headers = {
         "Content-Type": "application/json",
         "Accept": "application/json",
@@ -82,16 +82,16 @@ async def createProject(
     else:
         body = None if 200 == 204 else response.json()
 
-    return PostProjectResponse(**body) if body is not None else PostProjectResponse()
+    return Project(**body) if body is not None else Project()
 
 
 async def updateProject(
-    api_config_override: Optional[APIConfig] = None, *, data: PutProjectRequest
+    api_config_override: Optional[APIConfig] = None, *, data: UpdateProjectRequest
 ) -> None:
     api_config = api_config_override if api_config_override else APIConfig()
 
     base_path = api_config.base_path
-    path = f"/v1/projects"
+    path = f"/projects"
     headers = {
         "Content-Type": "application/json",
         "Accept": "application/json",
@@ -131,7 +131,7 @@ async def deleteProject(
     api_config = api_config_override if api_config_override else APIConfig()
 
     base_path = api_config.base_path
-    path = f"/v1/projects"
+    path = f"/projects"
     headers = {
         "Content-Type": "application/json",
         "Accept": "application/json",

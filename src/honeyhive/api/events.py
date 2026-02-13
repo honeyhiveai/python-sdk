@@ -2,8 +2,8 @@
 
 from typing import Any, Dict, List, Optional, Union
 
-from ..models import Event
 from .._generated.models import PostEventRequest, SingleFilter
+from ..models import Event
 from ._base import BaseAPI
 
 # Type aliases for backwards compatibility

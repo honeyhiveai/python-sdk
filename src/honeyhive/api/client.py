@@ -369,7 +369,7 @@ class DatasetsAPI(BaseAPI):
     # Backwards compatible aliases
     def get_dataset(self, id: str) -> GetDatasetsResponse:
         """Get a dataset by ID (backwards compatible alias).
-        
+
         Note: Uses list() with dataset_id filter since there's no single-get endpoint.
         """
         return self.list(dataset_id=id)
@@ -433,7 +433,11 @@ class EventsAPI(BaseAPI):
 
     def create(self, request: PostEventRequest) -> PostEventResponse:
         """Create an event."""
-        data = request.model_dump(exclude_none=True) if hasattr(request, 'model_dump') else request
+        data = (
+            request.model_dump(exclude_none=True)
+            if hasattr(request, "model_dump")
+            else request
+        )
         return events_svc.createEvent(self._api_config, data=data)
 
     def update(self, data: Dict[str, Any]) -> None:
@@ -467,7 +471,11 @@ class EventsAPI(BaseAPI):
 
     async def create_async(self, request: PostEventRequest) -> PostEventResponse:
         """Create an event asynchronously."""
-        data = request.model_dump(exclude_none=True) if hasattr(request, 'model_dump') else request
+        data = (
+            request.model_dump(exclude_none=True)
+            if hasattr(request, "model_dump")
+            else request
+        )
         return await events_svc_async.createEvent(self._api_config, data=data)
 
     async def update_async(self, data: Dict[str, Any]) -> None:
@@ -506,7 +514,7 @@ class ExperimentsAPI(BaseAPI):
         evaluation_id: Optional[str] = None,
     ) -> GetExperimentRunsSchemaResponse:
         """Get experiment runs schema.
-        
+
         Args:
             dateRange: Filter by date range (string or dict with $gte/$lte).
             evaluation_id: Filter by evaluation/run ID.
@@ -528,7 +536,7 @@ class ExperimentsAPI(BaseAPI):
         sort_order: Optional[str] = None,
     ) -> GetExperimentRunsResponse:
         """List experiment runs.
-        
+
         Args:
             dataset_id: Filter by dataset ID.
             page: Page number for pagination.
@@ -580,7 +588,7 @@ class ExperimentsAPI(BaseAPI):
         evaluation_id: Optional[str] = None,
     ) -> GetExperimentRunsSchemaResponse:
         """Get experiment runs schema asynchronously.
-        
+
         Args:
             dateRange: Filter by date range (string or dict with $gte/$lte).
             evaluation_id: Filter by evaluation/run ID.
@@ -602,7 +610,7 @@ class ExperimentsAPI(BaseAPI):
         sort_order: Optional[str] = None,
     ) -> GetExperimentRunsResponse:
         """List experiment runs asynchronously.
-        
+
         Args:
             dataset_id: Filter by dataset ID.
             page: Page number for pagination.
@@ -656,7 +664,7 @@ class ExperimentsAPI(BaseAPI):
         filters: Optional[Any] = None,
     ) -> Dict[str, Any]:
         """Get experiment run result.
-        
+
         Args:
             run_id: The experiment run ID.
             aggregate_function: Aggregation function to apply.
@@ -679,7 +687,7 @@ class ExperimentsAPI(BaseAPI):
         filters: Optional[Any] = None,
     ) -> Dict[str, Any]:
         """Compare two experiment runs.
-        
+
         Args:
             new_run_id: The new run ID to compare.
             old_run_id: The old run ID to compare against.
@@ -703,7 +711,7 @@ class ExperimentsAPI(BaseAPI):
         filters: Optional[Any] = None,
     ) -> Dict[str, Any]:
         """Get experiment run result asynchronously.
-        
+
         Args:
             run_id: The experiment run ID.
             aggregate_function: Aggregation function to apply.
@@ -725,7 +733,7 @@ class ExperimentsAPI(BaseAPI):
         filters: Optional[Any] = None,
     ) -> Dict[str, Any]:
         """Compare two experiment runs asynchronously.
-        
+
         Args:
             new_run_id: The new run ID to compare.
             old_run_id: The old run ID to compare against.
@@ -762,7 +770,7 @@ class ExperimentsAPI(BaseAPI):
         page: Optional[int] = None,
     ) -> Dict[str, Any]:
         """Compare events between two experiment runs.
-        
+
         Args:
             new_run_id: The new run ID to compare.
             old_run_id: The old run ID to compare against.

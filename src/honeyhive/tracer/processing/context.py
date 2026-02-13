@@ -103,7 +103,9 @@ def clear_baggage_context(tracer_instance: Any = None) -> None:
             return
 
         # Log what we're clearing for debugging
-        session_keys_present = [k for k in all_baggage.keys() if k in SESSION_SCOPED_KEYS]
+        session_keys_present = [
+            k for k in all_baggage.keys() if k in SESSION_SCOPED_KEYS
+        ]
 
         if session_keys_present:
             safe_log(
@@ -134,7 +136,9 @@ def clear_baggage_context(tracer_instance: Any = None) -> None:
             "Cleared session-scoped baggage context (Lambda/serverless fix)",
             honeyhive_data={
                 "cleared_keys": session_keys_present,
-                "preserved_keys": [k for k in all_baggage.keys() if k not in SESSION_SCOPED_KEYS],
+                "preserved_keys": [
+                    k for k in all_baggage.keys() if k not in SESSION_SCOPED_KEYS
+                ],
             },
         )
 

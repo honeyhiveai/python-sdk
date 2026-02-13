@@ -3,17 +3,15 @@ from typing import *
 from pydantic import BaseModel, Field
 
 
-class UpdateToolRequest(BaseModel):
+class UpdateProjectRequest(BaseModel):
     """
-    UpdateToolRequest model
+    UpdateProjectRequest model
     """
 
     model_config = {"populate_by_name": True, "validate_assignment": True}
 
-    id: str = Field(validation_alias="id")
+    project_id: str = Field(validation_alias="project_id")
 
-    name: str = Field(validation_alias="name")
+    name: Optional[str] = Field(validation_alias="name", default=None)
 
     description: Optional[str] = Field(validation_alias="description", default=None)
-
-    parameters: Dict[str, Any] = Field(validation_alias="parameters")

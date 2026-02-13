@@ -10,7 +10,9 @@ class CreateDatapointRequest(BaseModel):
 
     model_config = {"populate_by_name": True, "validate_assignment": True}
 
-    inputs: Optional[Dict[str, Any]] = Field(validation_alias="inputs", default=None)
+    project: str = Field(validation_alias="project")
+
+    inputs: Dict[str, Any] = Field(validation_alias="inputs")
 
     history: Optional[List[Dict[str, Any]]] = Field(
         validation_alias="history", default=None
@@ -20,12 +22,12 @@ class CreateDatapointRequest(BaseModel):
         validation_alias="ground_truth", default=None
     )
 
-    metadata: Optional[Dict[str, Any]] = Field(
-        validation_alias="metadata", default=None
-    )
-
     linked_event: Optional[str] = Field(validation_alias="linked_event", default=None)
 
     linked_datasets: Optional[List[str]] = Field(
         validation_alias="linked_datasets", default=None
+    )
+
+    metadata: Optional[Dict[str, Any]] = Field(
+        validation_alias="metadata", default=None
     )

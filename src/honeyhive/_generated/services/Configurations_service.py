@@ -9,20 +9,20 @@ from ..models import *
 def getConfigurations(
     api_config_override: Optional[APIConfig] = None,
     *,
-    name: Optional[str] = None,
+    project: str,
     env: Optional[str] = None,
-    tags: Optional[str] = None,
-) -> List[GetConfigurationsResponse]:
+    name: Optional[str] = None,
+) -> List[Configuration]:
     api_config = api_config_override if api_config_override else APIConfig()
 
     base_path = api_config.base_path
-    path = f"/v1/configurations"
+    path = f"/configurations"
     headers = {
         "Content-Type": "application/json",
         "Accept": "application/json",
         "Authorization": f"Bearer { api_config.get_access_token() }",
     }
-    query_params: Dict[str, Any] = {"name": name, "env": env, "tags": tags}
+    query_params: Dict[str, Any] = {"project": project, "env": env, "name": name}
 
     query_params = {
         key: value for (key, value) in query_params.items() if value is not None
@@ -44,16 +44,16 @@ def getConfigurations(
     else:
         body = None if 200 == 204 else response.json()
 
-    return [GetConfigurationsResponse(**item) for item in body]
+    return [Configuration(**item) for item in body]
 
 
 def createConfiguration(
-    api_config_override: Optional[APIConfig] = None, *, data: CreateConfigurationRequest
-) -> CreateConfigurationResponse:
+    api_config_override: Optional[APIConfig] = None, *, data: PostConfigurationRequest
+) -> None:
     api_config = api_config_override if api_config_override else APIConfig()
 
     base_path = api_config.base_path
-    path = f"/v1/configurations"
+    path = f"/configurations"
     headers = {
         "Content-Type": "application/json",
         "Accept": "application/json",
@@ -82,23 +82,19 @@ def createConfiguration(
     else:
         body = None if 200 == 204 else response.json()
 
-    return (
-        CreateConfigurationResponse(**body)
-        if body is not None
-        else CreateConfigurationResponse()
-    )
+    return None
 
 
 def updateConfiguration(
     api_config_override: Optional[APIConfig] = None,
     *,
     id: str,
-    data: UpdateConfigurationRequest,
-) -> UpdateConfigurationResponse:
+    data: PutConfigurationRequest,
+) -> None:
     api_config = api_config_override if api_config_override else APIConfig()
 
     base_path = api_config.base_path
-    path = f"/v1/configurations/{id}"
+    path = f"/configurations/{id}"
     headers = {
         "Content-Type": "application/json",
         "Accept": "application/json",
@@ -127,20 +123,16 @@ def updateConfiguration(
     else:
         body = None if 200 == 204 else response.json()
 
-    return (
-        UpdateConfigurationResponse(**body)
-        if body is not None
-        else UpdateConfigurationResponse()
-    )
+    return None
 
 
 def deleteConfiguration(
     api_config_override: Optional[APIConfig] = None, *, id: str
-) -> DeleteConfigurationResponse:
+) -> None:
     api_config = api_config_override if api_config_override else APIConfig()
 
     base_path = api_config.base_path
-    path = f"/v1/configurations/{id}"
+    path = f"/configurations/{id}"
     headers = {
         "Content-Type": "application/json",
         "Accept": "application/json",
@@ -168,8 +160,4 @@ def deleteConfiguration(
     else:
         body = None if 200 == 204 else response.json()
 
-    return (
-        DeleteConfigurationResponse(**body)
-        if body is not None
-        else DeleteConfigurationResponse()
-    )
+    return None

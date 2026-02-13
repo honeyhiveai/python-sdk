@@ -3,20 +3,20 @@ from typing import *
 from pydantic import BaseModel, Field
 
 
-class Event(BaseModel):
+class CreateEventRequest(BaseModel):
     """
-    Event model
+    CreateEventRequest model
     """
 
     model_config = {"populate_by_name": True, "validate_assignment": True}
 
-    project_id: Optional[str] = Field(validation_alias="project_id", default=None)
+    project: str = Field(validation_alias="project")
 
-    source: Optional[str] = Field(validation_alias="source", default=None)
+    source: str = Field(validation_alias="source")
 
-    event_name: Optional[str] = Field(validation_alias="event_name", default=None)
+    event_name: str = Field(validation_alias="event_name")
 
-    event_type: Optional[str] = Field(validation_alias="event_type", default=None)
+    event_type: str = Field(validation_alias="event_type")
 
     event_id: Optional[str] = Field(validation_alias="event_id", default=None)
 
@@ -28,9 +28,9 @@ class Event(BaseModel):
         validation_alias="children_ids", default=None
     )
 
-    config: Optional[Dict[str, Any]] = Field(validation_alias="config", default=None)
+    config: Dict[str, Any] = Field(validation_alias="config")
 
-    inputs: Optional[Dict[str, Any]] = Field(validation_alias="inputs", default=None)
+    inputs: Dict[str, Any] = Field(validation_alias="inputs")
 
     outputs: Optional[Dict[str, Any]] = Field(validation_alias="outputs", default=None)
 
@@ -40,7 +40,7 @@ class Event(BaseModel):
 
     end_time: Optional[int] = Field(validation_alias="end_time", default=None)
 
-    duration: Optional[float] = Field(validation_alias="duration", default=None)
+    duration: float = Field(validation_alias="duration")
 
     metadata: Optional[Dict[str, Any]] = Field(
         validation_alias="metadata", default=None

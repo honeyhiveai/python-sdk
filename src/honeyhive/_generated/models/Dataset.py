@@ -3,22 +3,24 @@ from typing import *
 from pydantic import BaseModel, Field
 
 
-class CreateDatasetRequest(BaseModel):
+class Dataset(BaseModel):
     """
-    CreateDatasetRequest model
+    Dataset model
     """
 
     model_config = {"populate_by_name": True, "validate_assignment": True}
 
-    project: str = Field(validation_alias="project")
+    project: Optional[str] = Field(validation_alias="project", default=None)
 
-    name: str = Field(validation_alias="name")
+    name: Optional[str] = Field(validation_alias="name", default=None)
 
     description: Optional[str] = Field(validation_alias="description", default=None)
 
     type: Optional[str] = Field(validation_alias="type", default=None)
 
     datapoints: Optional[List[str]] = Field(validation_alias="datapoints", default=None)
+
+    num_points: Optional[int] = Field(validation_alias="num_points", default=None)
 
     linked_evals: Optional[List[str]] = Field(
         validation_alias="linked_evals", default=None
@@ -28,6 +30,6 @@ class CreateDatasetRequest(BaseModel):
 
     pipeline_type: Optional[str] = Field(validation_alias="pipeline_type", default=None)
 
-    metadata: Optional[Dict[str, Any]] = Field(
-        validation_alias="metadata", default=None
-    )
+    created_at: Optional[str] = Field(validation_alias="created_at", default=None)
+
+    updated_at: Optional[str] = Field(validation_alias="updated_at", default=None)
