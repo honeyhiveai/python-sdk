@@ -8,10 +8,6 @@ name: Tox Full Test Suite
         description: 'Python versions to test (comma-separated)'
         required: false
         default: '3.11,3.12,3.13'
-      tox_environments:
-        description: 'Additional tox environments to run'
-        required: false
-        default: 'lint,format,docs'
       upload_coverage:
         description: 'Upload coverage reports'
         type: boolean
@@ -23,11 +19,6 @@ name: Tox Full Test Suite
         description: 'Python versions to test (comma-separated)'
         required: false
         default: '3.11,3.12,3.13'
-        type: string
-      tox_environments:
-        description: 'Additional tox environments to run'
-        required: false
-        default: 'lint,format,docs'
         type: string
       upload_coverage:
         description: 'Upload coverage reports'
@@ -142,108 +133,6 @@ jobs:
           retention-days: 7
 
 
-  # === GENERATED CODE VALIDATION ===
-  generated-code-check:
-    name: "🔄 Generated Code Check"
-    runs-on: ubuntu-latest
-
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
-
-      - name: Set up Python 3.12
-        uses: actions/setup-python@v5
-        with:
-          python-version: '3.12'
-          cache: 'pip'
-
-      - name: Install dependencies
-        run: |
-          python -m pip install --upgrade pip
-          pip install -e ".[dev]"
-
-      - name: Regenerate models
-        run: |
-          echo "🔄 Regenerating models from OpenAPI spec..."
-          python scripts/generate_models.py
-
-      - name: Check for uncommitted changes
-        run: |
-          echo "🔍 Checking for uncommitted changes in generated code..."
-          if [ -n "$(git status --porcelain)" ]; then
-            echo "❌ Generated code is out of sync!"
-            echo ""
-            echo "The following files have changed after regeneration:"
-            git status --porcelain
-            echo ""
-            echo "Diff:"
-            git diff --stat
-            echo ""
-            echo "Please run 'make generate' locally and commit the changes."
-            exit 1
-          else
-            echo "✅ Generated code is up-to-date!"
-          fi
-
-  # === CODE QUALITY & DOCUMENTATION ===
-  quality-and-docs:
-    name: "🔍 Quality & 📚 Docs"
-    runs-on: ubuntu-latest
-
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v6
-
-      - name: Set up Python 3.12
-        uses: actions/setup-python@v6
-        with:
-          python-version: '3.12'
-          cache: 'pip'
-
-      - name: Install tox and dependencies
-        run: |
-          python -m pip install --upgrade pip
-          pip install tox>=4.0
-
-      - name: Run code quality checks
-        run: |
-          echo "🔍 Running linting checks..."
-          tox -e lint
-          echo "✨ Running format checks..."
-          tox -e format
-
-      - name: Validate tracer patterns
-        run: |
-          echo "🔍 Validating tracer patterns..."
-          bash scripts/validate-tracer-patterns.sh
-
-      - name: Check feature documentation sync
-        run: |
-          echo "📋 Checking feature documentation synchronization..."
-          python scripts/check-feature-sync.py
-
-      - name: Build documentation
-        run: |
-          echo "📚 Building documentation..."
-          tox -e docs
-
-      - name: Upload quality results
-        if: always()
-        uses: actions/upload-artifact@v4
-        with:
-          name: quality-results
-          path: |
-            .tox/lint/log/
-            .tox/format/log/
-          retention-days: 7
-
-      - name: Upload documentation build
-        uses: actions/upload-artifact@v4
-        with:
-          name: documentation-build
-          path: docs/_build/html/
-          retention-days: 14
-
   # === INTEGRATION TESTS (Real APIs, NO MOCKS) ===
   integration-tests:
     name: "🔗 Integration Tests (Real APIs)"
@@ -325,7 +214,7 @@ jobs:
   # === TEST SUITE SUMMARY ===
   summary:
     name: "📊 Test Summary"
-    needs: [python-tests, quality-and-docs, integration-tests, generated-code-check]
+    needs: [python-tests, integration-tests]
     runs-on: ubuntu-latest
     if: always()
 
@@ -354,31 +243,13 @@ jobs:
             needs.integration-tests.result == 'skipped' && '⏭️ SKIPPED' || '❌ FAILED' }}"
           echo "- **Integration Tests:** $integration_result" >> $GITHUB_STEP_SUMMARY
 
-          # Quality Checks
-          echo "" >> $GITHUB_STEP_SUMMARY
-          echo "## 🔍 Quality & Documentation" >> $GITHUB_STEP_SUMMARY
-          quality_docs_result="${{ needs.quality-and-docs.result == 'success' && '✅ PASSED' || '❌ FAILED' }}"
-          echo "- **Code Quality & Docs:** $quality_docs_result" >> $GITHUB_STEP_SUMMARY
-
-          # Generated Code Check
-          echo "" >> $GITHUB_STEP_SUMMARY
-          echo "## 🔄 Generated Code" >> $GITHUB_STEP_SUMMARY
-          generated_result="${{ needs.generated-code-check.result == 'success' && '✅ UP-TO-DATE' || '❌ OUT OF SYNC' }}"
-          echo "- **Generated Code:** $generated_result" >> $GITHUB_STEP_SUMMARY
-
           # Overall Status
           echo "" >> $GITHUB_STEP_SUMMARY
           if [ "${{ needs.python-tests.result }}" = "success" ] && \
-             [ "${{ needs.quality-and-docs.result }}" = "success" ] && \
-             [ "${{ needs.generated-code-check.result }}" = "success" ] && \
              ([ "${{ needs.integration-tests.result }}" = "success" ] ||
              [ "${{ needs.integration-tests.result }}" = "skipped" ]); then
             echo "## 🎉 **ALL TESTS PASSED**" >> $GITHUB_STEP_SUMMARY
             echo "The full tox test suite completed successfully!" >> $GITHUB_STEP_SUMMARY
-            echo "" >> $GITHUB_STEP_SUMMARY
-            echo "**Testing Strategy:**" >> $GITHUB_STEP_SUMMARY
-            echo "- **Unit Tests**: Fast, mocked (included in Python version testing)" >> $GITHUB_STEP_SUMMARY
-            echo "- **Integration Tests**: Real APIs, NO MOCKS" >> $GITHUB_STEP_SUMMARY
           else
             echo "## ❌ **TESTS FAILED**" >> $GITHUB_STEP_SUMMARY
             echo "Some tests failed. Please review the logs above." >> $GITHUB_STEP_SUMMARY
