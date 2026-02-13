@@ -19,58 +19,34 @@ from typing import Any, Dict, List, Optional
 
 from honeyhive._generated.api_config import APIConfig
 
-# Import models used in type hints
+# Import only models that exist in NWD's generated code
 from honeyhive._generated.models import (
-    CreateConfigurationRequest,
-    CreateConfigurationResponse,
+    Configuration,
     CreateDatapointRequest,
-    CreateDatapointResponse,
     CreateDatasetRequest,
-    CreateDatasetResponse,
-    CreateMetricRequest,
-    CreateMetricResponse,
+    CreateRunRequest,
+    CreateRunResponse,
     CreateToolRequest,
-    CreateToolResponse,
-    DeleteConfigurationResponse,
-    DeleteDatapointResponse,
-    DeleteDatasetResponse,
-    DeleteExperimentRunResponse,
-    DeleteMetricResponse,
-    DeleteSessionResponse,
-    DeleteToolResponse,
-    GetConfigurationsResponse,
-    GetDatapointResponse,
-    GetDatapointsResponse,
-    GetDatasetsResponse,
-    GetEventsBySessionIdResponse,
-    GetEventsResponse,
-    GetExperimentRunResponse,
-    GetExperimentRunsResponse,
-    GetExperimentRunsSchemaResponse,
-    GetMetricsResponse,
-    GetSessionResponse,
-    GetToolsResponse,
-    PostEventRequest,
-    PostEventResponse,
-    PostExperimentRunRequest,
-    PostExperimentRunResponse,
-    PostSessionStartResponse,
-    PutExperimentRunRequest,
-    PutExperimentRunResponse,
-    UpdateConfigurationRequest,
-    UpdateConfigurationResponse,
+    DatasetUpdate,
+    DeleteRunResponse,
+    Event,
+    ExperimentComparisonResponse,
+    ExperimentResultResponse,
+    GetRunResponse,
+    GetRunsResponse,
+    Metric,
+    MetricEdit,
+    PostConfigurationRequest,
+    Project,
+    PutConfigurationRequest,
+    Tool,
     UpdateDatapointRequest,
-    UpdateDatapointResponse,
-    UpdateDatasetRequest,
-    UpdateDatasetResponse,
-    UpdateMetricRequest,
-    UpdateMetricResponse,
+    UpdateRunRequest,
+    UpdateRunResponse,
     UpdateToolRequest,
-    UpdateToolResponse,
 )
 
-# Import async services
-# Import sync services
+# Import sync services (9 services — no Sessions_service plural)
 from honeyhive._generated.services import Configurations_service as configs_svc
 from honeyhive._generated.services import Datapoints_service as datapoints_svc
 from honeyhive._generated.services import Datasets_service as datasets_svc
@@ -79,8 +55,9 @@ from honeyhive._generated.services import Experiments_service as experiments_svc
 from honeyhive._generated.services import Metrics_service as metrics_svc
 from honeyhive._generated.services import Projects_service as projects_svc
 from honeyhive._generated.services import Session_service as session_svc
-from honeyhive._generated.services import Sessions_service as sessions_svc
 from honeyhive._generated.services import Tools_service as tools_svc
+
+# Import async services
 from honeyhive._generated.services import (
     async_Configurations_service as configs_svc_async,
 )
@@ -95,7 +72,6 @@ from honeyhive._generated.services import (
 from honeyhive._generated.services import async_Metrics_service as metrics_svc_async
 from honeyhive._generated.services import async_Projects_service as projects_svc_async
 from honeyhive._generated.services import async_Session_service as session_svc_async
-from honeyhive._generated.services import async_Sessions_service as sessions_svc_async
 from honeyhive._generated.services import async_Tools_service as tools_svc_async
 
 from ._base import BaseAPI
@@ -105,85 +81,63 @@ class ConfigurationsAPI(BaseAPI):
     """Configurations API."""
 
     # Sync methods
-    def list(self, project: Optional[str] = None) -> List[GetConfigurationsResponse]:
+    def list(self, project: str, env: Optional[str] = None, name: Optional[str] = None) -> List[Configuration]:
         """List configurations.
 
-        Note: project parameter is currently unused as v1 API doesn't support project filtering.
+        Args:
+            project: Project name (required by NWD API).
+            env: Optional environment filter.
+            name: Optional name filter.
         """
-        return configs_svc.getConfigurations(self._api_config)
+        return configs_svc.getConfigurations(self._api_config, project=project, env=env, name=name)
 
-    def create(
-        self, request: CreateConfigurationRequest
-    ) -> CreateConfigurationResponse:
+    def create(self, request: PostConfigurationRequest) -> None:
         """Create a configuration."""
         return configs_svc.createConfiguration(self._api_config, data=request)
 
-    def update(
-        self, id: str, request: UpdateConfigurationRequest
-    ) -> UpdateConfigurationResponse:
+    def update(self, id: str, request: PutConfigurationRequest) -> None:
         """Update a configuration."""
         return configs_svc.updateConfiguration(self._api_config, id=id, data=request)
 
-    def delete(self, id: str) -> DeleteConfigurationResponse:
+    def delete(self, id: str) -> None:
         """Delete a configuration."""
         return configs_svc.deleteConfiguration(self._api_config, id=id)
 
     # Async methods
     async def list_async(
-        self, project: Optional[str] = None
-    ) -> List[GetConfigurationsResponse]:
-        """List configurations asynchronously.
+        self, project: str, env: Optional[str] = None, name: Optional[str] = None
+    ) -> List[Configuration]:
+        """List configurations asynchronously."""
+        return await configs_svc_async.getConfigurations(self._api_config, project=project, env=env, name=name)
 
-        Note: project parameter is currently unused as v1 API doesn't support project filtering.
-        """
-        return await configs_svc_async.getConfigurations(self._api_config)
-
-    async def create_async(
-        self, request: CreateConfigurationRequest
-    ) -> CreateConfigurationResponse:
+    async def create_async(self, request: PostConfigurationRequest) -> None:
         """Create a configuration asynchronously."""
-        return await configs_svc_async.createConfiguration(
-            self._api_config, data=request
-        )
+        return await configs_svc_async.createConfiguration(self._api_config, data=request)
 
-    async def update_async(
-        self, id: str, request: UpdateConfigurationRequest
-    ) -> UpdateConfigurationResponse:
+    async def update_async(self, id: str, request: PutConfigurationRequest) -> None:
         """Update a configuration asynchronously."""
-        return await configs_svc_async.updateConfiguration(
-            self._api_config, id=id, data=request
-        )
+        return await configs_svc_async.updateConfiguration(self._api_config, id=id, data=request)
 
-    async def delete_async(self, id: str) -> DeleteConfigurationResponse:
+    async def delete_async(self, id: str) -> None:
         """Delete a configuration asynchronously."""
         return await configs_svc_async.deleteConfiguration(self._api_config, id=id)
 
     # Backwards compatible aliases
-    def get_configuration(self, id: str) -> GetConfigurationsResponse:
-        """Get a configuration (backwards compatible alias)."""
-        return self.list()  # No single-get endpoint, returns all
-
-    def create_configuration(
-        self, request: CreateConfigurationRequest
-    ) -> CreateConfigurationResponse:
+    def create_configuration(self, request: PostConfigurationRequest) -> None:
         """Create a configuration (backwards compatible alias)."""
         return self.create(request)
 
-    def update_configuration(
-        self, id: str, request: UpdateConfigurationRequest
-    ) -> UpdateConfigurationResponse:
+    def update_configuration(self, id: str, request: PutConfigurationRequest) -> None:
         """Update a configuration (backwards compatible alias)."""
         return self.update(id, request)
 
-    def delete_configuration(self, id: str) -> DeleteConfigurationResponse:
+    def delete_configuration(self, id: str) -> None:
         """Delete a configuration (backwards compatible alias)."""
         return self.delete(id)
 
-    def list_configurations(
-        self, project: Optional[str] = None
-    ) -> List[GetConfigurationsResponse]:
+    def list_configurations(self, project: str, **kwargs: Any) -> List[Configuration]:
         """List configurations (backwards compatible alias)."""
-        return self.list(project)
+        return self.list(project=project, **kwargs)
 
 
 class DatapointsAPI(BaseAPI):
@@ -192,105 +146,85 @@ class DatapointsAPI(BaseAPI):
     # Sync methods
     def list(
         self,
+        project: str,
         datapoint_ids: Optional[List[str]] = None,
         dataset_name: Optional[str] = None,
-    ) -> GetDatapointsResponse:
+    ) -> Dict[str, Any]:
         """List datapoints.
 
         Args:
+            project: Project name (required by NWD API).
             datapoint_ids: Optional list of datapoint IDs to fetch.
             dataset_name: Optional dataset name to filter by.
         """
         return datapoints_svc.getDatapoints(
-            self._api_config, datapoint_ids=datapoint_ids, dataset_name=dataset_name
+            self._api_config, project=project, datapoint_ids=datapoint_ids, dataset_name=dataset_name
         )
 
-    def get(self, id: str) -> GetDatapointResponse:
+    def get(self, id: str) -> Dict[str, Any]:
         """Get a datapoint by ID."""
         return datapoints_svc.getDatapoint(self._api_config, id=id)
 
-    def create(self, request: CreateDatapointRequest) -> CreateDatapointResponse:
+    def create(self, request: CreateDatapointRequest) -> Dict[str, Any]:
         """Create a datapoint."""
         return datapoints_svc.createDatapoint(self._api_config, data=request)
 
-    def update(
-        self, id: str, request: UpdateDatapointRequest
-    ) -> UpdateDatapointResponse:
+    def update(self, id: str, request: UpdateDatapointRequest) -> None:
         """Update a datapoint."""
         return datapoints_svc.updateDatapoint(self._api_config, id=id, data=request)
 
-    def delete(self, id: str) -> DeleteDatapointResponse:
+    def delete(self, id: str) -> Dict[str, Any]:
         """Delete a datapoint."""
         return datapoints_svc.deleteDatapoint(self._api_config, id=id)
 
     # Async methods
     async def list_async(
         self,
+        project: str,
         datapoint_ids: Optional[List[str]] = None,
         dataset_name: Optional[str] = None,
-    ) -> GetDatapointsResponse:
-        """List datapoints asynchronously.
-
-        Args:
-            datapoint_ids: Optional list of datapoint IDs to fetch.
-            dataset_name: Optional dataset name to filter by.
-        """
+    ) -> Dict[str, Any]:
+        """List datapoints asynchronously."""
         return await datapoints_svc_async.getDatapoints(
-            self._api_config, datapoint_ids=datapoint_ids, dataset_name=dataset_name
+            self._api_config, project=project, datapoint_ids=datapoint_ids, dataset_name=dataset_name
         )
 
-    async def get_async(self, id: str) -> GetDatapointResponse:
+    async def get_async(self, id: str) -> Dict[str, Any]:
         """Get a datapoint by ID asynchronously."""
         return await datapoints_svc_async.getDatapoint(self._api_config, id=id)
 
-    async def create_async(
-        self, request: CreateDatapointRequest
-    ) -> CreateDatapointResponse:
+    async def create_async(self, request: CreateDatapointRequest) -> Dict[str, Any]:
         """Create a datapoint asynchronously."""
-        return await datapoints_svc_async.createDatapoint(
-            self._api_config, data=request
-        )
+        return await datapoints_svc_async.createDatapoint(self._api_config, data=request)
 
-    async def update_async(
-        self, id: str, request: UpdateDatapointRequest
-    ) -> UpdateDatapointResponse:
+    async def update_async(self, id: str, request: UpdateDatapointRequest) -> None:
         """Update a datapoint asynchronously."""
-        return await datapoints_svc_async.updateDatapoint(
-            self._api_config, id=id, data=request
-        )
+        return await datapoints_svc_async.updateDatapoint(self._api_config, id=id, data=request)
 
-    async def delete_async(self, id: str) -> DeleteDatapointResponse:
+    async def delete_async(self, id: str) -> Dict[str, Any]:
         """Delete a datapoint asynchronously."""
         return await datapoints_svc_async.deleteDatapoint(self._api_config, id=id)
 
     # Backwards compatible aliases
-    def get_datapoint(self, id: str) -> GetDatapointResponse:
+    def get_datapoint(self, id: str) -> Dict[str, Any]:
         """Get a datapoint by ID (backwards compatible alias for get())."""
         return self.get(id)
 
-    def create_datapoint(
-        self, request: CreateDatapointRequest
-    ) -> CreateDatapointResponse:
+    def create_datapoint(self, request: CreateDatapointRequest) -> Dict[str, Any]:
         """Create a datapoint (backwards compatible alias for create())."""
         return self.create(request)
 
-    def update_datapoint(
-        self, id: str, request: UpdateDatapointRequest
-    ) -> UpdateDatapointResponse:
+    def update_datapoint(self, id: str, request: UpdateDatapointRequest) -> None:
         """Update a datapoint (backwards compatible alias for update())."""
         return self.update(id, request)
 
-    def delete_datapoint(self, id: str) -> DeleteDatapointResponse:
+    def delete_datapoint(self, id: str) -> Dict[str, Any]:
         """Delete a datapoint (backwards compatible alias for delete())."""
         return self.delete(id)
 
-    def list_datapoints(
-        self,
-        datapoint_ids: Optional[List[str]] = None,
-        dataset_name: Optional[str] = None,
-    ) -> GetDatapointsResponse:
+    def list_datapoints(self, project: str, **kwargs: Any) -> Dict[str, Any]:
         """List datapoints (backwards compatible alias)."""
-        return self.list(datapoint_ids=datapoint_ids, dataset_name=dataset_name)
+        return self.list(project=project, **kwargs)
 
 
 class DatasetsAPI(BaseAPI):
@@ -299,145 +233,95 @@ class DatasetsAPI(BaseAPI):
     # Sync methods
     def list(
         self,
+        project: str,
+        type: Optional[str] = None,
         dataset_id: Optional[str] = None,
-        name: Optional[str] = None,
-        include_datapoints: Optional[bool] = None,
-    ) -> GetDatasetsResponse:
+    ) -> Dict[str, Any]:
         """List datasets.
 
         Args:
+            project: Project name (required by NWD API).
+            type: Optional dataset type filter.
             dataset_id: Optional dataset ID to fetch.
-            name: Optional dataset name to filter by.
-            include_datapoints: Whether to include datapoints in the response.
         """
         return datasets_svc.getDatasets(
-            self._api_config,
-            dataset_id=dataset_id,
-            name=name,
-            include_datapoints=include_datapoints,
+            self._api_config, project=project, type=type, dataset_id=dataset_id
         )
 
-    def create(self, request: CreateDatasetRequest) -> CreateDatasetResponse:
+    def create(self, request: CreateDatasetRequest) -> Dict[str, Any]:
         """Create a dataset."""
         return datasets_svc.createDataset(self._api_config, data=request)
 
-    def update(self, request: UpdateDatasetRequest) -> UpdateDatasetResponse:
+    def update(self, request: DatasetUpdate) -> None:
         """Update a dataset."""
         return datasets_svc.updateDataset(self._api_config, data=request)
 
-    def delete(self, id: str) -> DeleteDatasetResponse:
+    def delete(self, id: str) -> None:
         """Delete a dataset."""
         return datasets_svc.deleteDataset(self._api_config, dataset_id=id)
 
     # Async methods
     async def list_async(
         self,
+        project: str,
+        type: Optional[str] = None,
         dataset_id: Optional[str] = None,
-        name: Optional[str] = None,
-        include_datapoints: Optional[bool] = None,
-    ) -> GetDatasetsResponse:
-        """List datasets asynchronously.
-
-        Args:
-            dataset_id: Optional dataset ID to fetch.
-            name: Optional dataset name to filter by.
-            include_datapoints: Whether to include datapoints in the response.
-        """
+    ) -> Dict[str, Any]:
+        """List datasets asynchronously."""
         return await datasets_svc_async.getDatasets(
-            self._api_config,
-            dataset_id=dataset_id,
-            name=name,
-            include_datapoints=include_datapoints,
+            self._api_config, project=project, type=type, dataset_id=dataset_id
         )
 
-    async def create_async(
-        self, request: CreateDatasetRequest
-    ) -> CreateDatasetResponse:
+    async def create_async(self, request: CreateDatasetRequest) -> Dict[str, Any]:
         """Create a dataset asynchronously."""
         return await datasets_svc_async.createDataset(self._api_config, data=request)
 
-    async def update_async(
-        self, request: UpdateDatasetRequest
-    ) -> UpdateDatasetResponse:
+    async def update_async(self, request: DatasetUpdate) -> None:
         """Update a dataset asynchronously."""
         return await datasets_svc_async.updateDataset(self._api_config, data=request)
 
-    async def delete_async(self, id: str) -> DeleteDatasetResponse:
+    async def delete_async(self, id: str) -> None:
         """Delete a dataset asynchronously."""
         return await datasets_svc_async.deleteDataset(self._api_config, dataset_id=id)
 
     # Backwards compatible aliases
-    def get_dataset(self, id: str) -> GetDatasetsResponse:
-        """Get a dataset by ID (backwards compatible alias).
+    def get_dataset(self, id: str) -> Dict[str, Any]:
+        """Get a dataset by ID (backwards compatible alias)."""
+        return self.list(project="", dataset_id=id)
 
-        Note: Uses list() with dataset_id filter since there's no single-get endpoint.
-        """
-        return self.list(dataset_id=id)
-
-    def create_dataset(self, request: CreateDatasetRequest) -> CreateDatasetResponse:
+    def create_dataset(self, request: CreateDatasetRequest) -> Dict[str, Any]:
         """Create a dataset (backwards compatible alias for create())."""
         return self.create(request)
 
-    def update_dataset(self, request: UpdateDatasetRequest) -> UpdateDatasetResponse:
+    def update_dataset(self, request: DatasetUpdate) -> None:
         """Update a dataset (backwards compatible alias for update())."""
         return self.update(request)
 
-    def delete_dataset(self, id: str) -> DeleteDatasetResponse:
+    def delete_dataset(self, id: str) -> None:
         """Delete a dataset (backwards compatible alias for delete())."""
         return self.delete(id)
 
-    def list_datasets(
-        self,
-        dataset_id: Optional[str] = None,
-        name: Optional[str] = None,
-        include_datapoints: Optional[bool] = None,
-    ) -> GetDatasetsResponse:
+    def list_datasets(self, project: str, **kwargs: Any) -> Dict[str, Any]:
         """List datasets (backwards compatible alias)."""
-        return self.list(
-            dataset_id=dataset_id, name=name, include_datapoints=include_datapoints
-        )
+        return self.list(project=project, **kwargs)
+
+    def add_datapoints(self, dataset_id: str, data: Dict[str, Any]) -> Dict[str, Any]:
+        """Add datapoints to a dataset."""
+        return datasets_svc.addDatapoints(self._api_config, dataset_id=dataset_id, data=data)
 
 
 class EventsAPI(BaseAPI):
     """Events API."""
 
-    # Supported parameters for getEvents() method
-    _GET_EVENTS_SUPPORTED_PARAMS = {
-        "dateRange",
-        "filters",
-        "projections",
-        "ignore_order",
-        "limit",
-        "page",
-        "evaluation_id",
-    }
-
     # Sync methods
-    def list(self, data: Dict[str, Any]) -> GetEventsResponse:
-        """Get events."""
-        # Filter data to only include supported parameters for getEvents()
-        filtered_data = {
-            k: v for k, v in data.items() if k in self._GET_EVENTS_SUPPORTED_PARAMS
-        }
-        return events_svc.getEvents(self._api_config, **filtered_data)
+    def list(self, data: Dict[str, Any]) -> Dict[str, Any]:
+        """Get events (POST /events/export)."""
+        return events_svc.getEvents(self._api_config, data=data)
 
-    def get_by_session_id(self, session_id: str) -> GetEventsBySessionIdResponse:
-        """Get events by session ID (uses Control Plane endpoint)."""
-        # This endpoint is on Control Plane, use cp_base_path
-        cp_config = APIConfig(
-            base_path=self._api_config.get_cp_base_path(),
-            access_token=self._api_config.access_token,
-            verify=self._api_config.verify,
-        )
-        return events_svc.getEventsBySessionId(cp_config, id=session_id)
-
-    def create(self, request: PostEventRequest) -> PostEventResponse:
+    def create(self, data: Dict[str, Any]) -> Dict[str, Any]:
         """Create an event."""
-        data = (
-            request.model_dump(exclude_none=True)
-            if hasattr(request, "model_dump")
-            else request
-        )
+        if hasattr(data, "model_dump"):
+            data = data.model_dump(exclude_none=True)
         return events_svc.createEvent(self._api_config, data=data)
 
     def update(self, data: Dict[str, Any]) -> None:
@@ -448,34 +332,23 @@ class EventsAPI(BaseAPI):
         """Create events in batch."""
         return events_svc.createEventBatch(self._api_config, data=data)
 
+    def create_model_event(self, data: Dict[str, Any]) -> Dict[str, Any]:
+        """Create a model event."""
+        return events_svc.createModelEvent(self._api_config, data=data)
+
+    def create_model_event_batch(self, data: Dict[str, Any]) -> Dict[str, Any]:
+        """Create model events in batch."""
+        return events_svc.createModelEventBatch(self._api_config, data=data)
+
     # Async methods
-    async def list_async(self, data: Dict[str, Any]) -> GetEventsResponse:
+    async def list_async(self, data: Dict[str, Any]) -> Dict[str, Any]:
         """Get events asynchronously."""
-        # Filter data to only include supported parameters for getEvents()
-        filtered_data = {
-            k: v for k, v in data.items() if k in self._GET_EVENTS_SUPPORTED_PARAMS
-        }
-        return await events_svc_async.getEvents(self._api_config, **filtered_data)
+        return await events_svc_async.getEvents(self._api_config, data=data)
 
-    async def get_by_session_id_async(
-        self, session_id: str
-    ) -> GetEventsBySessionIdResponse:
-        """Get events by session ID asynchronously (uses Control Plane endpoint)."""
-        # This endpoint is on Control Plane, use cp_base_path
-        cp_config = APIConfig(
-            base_path=self._api_config.get_cp_base_path(),
-            access_token=self._api_config.access_token,
-            verify=self._api_config.verify,
-        )
-        return await events_svc_async.getEventsBySessionId(cp_config, id=session_id)
-
-    async def create_async(self, request: PostEventRequest) -> PostEventResponse:
+    async def create_async(self, data: Dict[str, Any]) -> Dict[str, Any]:
         """Create an event asynchronously."""
-        data = (
-            request.model_dump(exclude_none=True)
-            if hasattr(request, "model_dump")
-            else request
-        )
+        if hasattr(data, "model_dump"):
+            data = data.model_dump(exclude_none=True)
         return await events_svc_async.createEvent(self._api_config, data=data)
 
     async def update_async(self, data: Dict[str, Any]) -> None:
@@ -487,19 +360,19 @@ class EventsAPI(BaseAPI):
         return await events_svc_async.createEventBatch(self._api_config, data=data)
 
     # Backwards compatible aliases
-    def create_event(self, request: PostEventRequest) -> PostEventResponse:
+    def create_event(self, data: Dict[str, Any]) -> Dict[str, Any]:
         """Create an event (backwards compatible alias for create())."""
-        return self.create(request)
+        return self.create(data)
 
     def update_event(self, data: Dict[str, Any]) -> None:
         """Update an event (backwards compatible alias for update())."""
         return self.update(data)
 
-    def list_events(self, data: Dict[str, Any]) -> GetEventsResponse:
+    def list_events(self, data: Dict[str, Any]) -> Dict[str, Any]:
         """List events (backwards compatible alias for list())."""
         return self.list(data)
 
-    def get_events(self, data: Dict[str, Any]) -> GetEventsResponse:
+    def get_events(self, data: Dict[str, Any]) -> Dict[str, Any]:
         """Get events (backwards compatible alias for list())."""
         return self.list(data)
 
@@ -508,220 +381,112 @@ class ExperimentsAPI(BaseAPI):
     """Experiments API."""
 
     # Sync methods
-    def get_schema(
-        self,
-        dateRange: Optional[Any] = None,
-        evaluation_id: Optional[str] = None,
-    ) -> GetExperimentRunsSchemaResponse:
-        """Get experiment runs schema.
-
-        Args:
-            dateRange: Filter by date range (string or dict with $gte/$lte).
-            evaluation_id: Filter by evaluation/run ID.
-        """
-        return experiments_svc.getExperimentRunsSchema(
-            self._api_config, dateRange=dateRange, evaluation_id=evaluation_id
-        )
-
-    def list_runs(
-        self,
-        dataset_id: Optional[str] = None,
-        page: Optional[int] = None,
-        limit: Optional[int] = None,
-        run_ids: Optional[List[str]] = None,
-        name: Optional[str] = None,
-        status: Optional[str] = None,
-        dateRange: Optional[Any] = None,
-        sort_by: Optional[str] = None,
-        sort_order: Optional[str] = None,
-    ) -> GetExperimentRunsResponse:
+    def list_runs(self, project: Optional[str] = None) -> GetRunsResponse:
         """List experiment runs.
 
         Args:
-            dataset_id: Filter by dataset ID.
-            page: Page number for pagination.
-            limit: Number of results per page.
-            run_ids: Filter by specific run IDs.
-            name: Filter by run name.
-            status: Filter by run status.
-            dateRange: Filter by date range.
-            sort_by: Sort by field.
-            sort_order: Sort order (asc/desc).
+            project: Optional project name filter.
         """
-        return experiments_svc.getRuns(
-            self._api_config,
-            dataset_id=dataset_id,
-            page=page,
-            limit=limit,
-            run_ids=run_ids,
-            name=name,
-            status=status,
-            dateRange=dateRange,
-            sort_by=sort_by,
-            sort_order=sort_order,
-        )
+        return experiments_svc.getRuns(self._api_config, project=project)
 
-    def get_run(self, run_id: str) -> GetExperimentRunResponse:
+    def get_run(self, run_id: str) -> GetRunResponse:
         """Get an experiment run by ID."""
         return experiments_svc.getRun(self._api_config, run_id=run_id)
 
-    def create_run(
-        self, request: PostExperimentRunRequest
-    ) -> PostExperimentRunResponse:
+    def create_run(self, request: CreateRunRequest) -> CreateRunResponse:
         """Create an experiment run."""
         return experiments_svc.createRun(self._api_config, data=request)
 
-    def update_run(
-        self, run_id: str, request: PutExperimentRunRequest
-    ) -> PutExperimentRunResponse:
+    def update_run(self, run_id: str, request: UpdateRunRequest) -> UpdateRunResponse:
         """Update an experiment run."""
         return experiments_svc.updateRun(self._api_config, run_id=run_id, data=request)
 
-    def delete_run(self, run_id: str) -> DeleteExperimentRunResponse:
+    def delete_run(self, run_id: str) -> DeleteRunResponse:
         """Delete an experiment run."""
         return experiments_svc.deleteRun(self._api_config, run_id=run_id)
-
-    # Async methods
-    async def get_schema_async(
-        self,
-        dateRange: Optional[Any] = None,
-        evaluation_id: Optional[str] = None,
-    ) -> GetExperimentRunsSchemaResponse:
-        """Get experiment runs schema asynchronously.
-
-        Args:
-            dateRange: Filter by date range (string or dict with $gte/$lte).
-            evaluation_id: Filter by evaluation/run ID.
-        """
-        return await experiments_svc_async.getExperimentRunsSchema(
-            self._api_config, dateRange=dateRange, evaluation_id=evaluation_id
-        )
-
-    async def list_runs_async(
-        self,
-        dataset_id: Optional[str] = None,
-        page: Optional[int] = None,
-        limit: Optional[int] = None,
-        run_ids: Optional[List[str]] = None,
-        name: Optional[str] = None,
-        status: Optional[str] = None,
-        dateRange: Optional[Any] = None,
-        sort_by: Optional[str] = None,
-        sort_order: Optional[str] = None,
-    ) -> GetExperimentRunsResponse:
-        """List experiment runs asynchronously.
-
-        Args:
-            dataset_id: Filter by dataset ID.
-            page: Page number for pagination.
-            limit: Number of results per page.
-            run_ids: Filter by specific run IDs.
-            name: Filter by run name.
-            status: Filter by run status.
-            dateRange: Filter by date range.
-            sort_by: Sort by field.
-            sort_order: Sort order (asc/desc).
-        """
-        return await experiments_svc_async.getRuns(
-            self._api_config,
-            dataset_id=dataset_id,
-            page=page,
-            limit=limit,
-            run_ids=run_ids,
-            name=name,
-            status=status,
-            dateRange=dateRange,
-            sort_by=sort_by,
-            sort_order=sort_order,
-        )
-
-    async def get_run_async(self, run_id: str) -> GetExperimentRunResponse:
-        """Get an experiment run by ID asynchronously."""
-        return await experiments_svc_async.getRun(self._api_config, run_id=run_id)
-
-    async def create_run_async(
-        self, request: PostExperimentRunRequest
-    ) -> PostExperimentRunResponse:
-        """Create an experiment run asynchronously."""
-        return await experiments_svc_async.createRun(self._api_config, data=request)
-
-    async def update_run_async(
-        self, run_id: str, request: PutExperimentRunRequest
-    ) -> PutExperimentRunResponse:
-        """Update an experiment run asynchronously."""
-        return await experiments_svc_async.updateRun(
-            self._api_config, run_id=run_id, data=request
-        )
-
-    async def delete_run_async(self, run_id: str) -> DeleteExperimentRunResponse:
-        """Delete an experiment run asynchronously."""
-        return await experiments_svc_async.deleteRun(self._api_config, run_id=run_id)
 
     def get_result(
         self,
         run_id: str,
+        project_id: str,
         aggregate_function: Optional[str] = None,
-        filters: Optional[Any] = None,
     ) -> Dict[str, Any]:
         """Get experiment run result.
 
         Args:
             run_id: The experiment run ID.
+            project_id: The project ID (required by NWD API).
             aggregate_function: Aggregation function to apply.
-            filters: Optional filters to apply.
         """
         result = experiments_svc.getExperimentResult(
             self._api_config,
             run_id=run_id,
+            project_id=project_id,
             aggregate_function=aggregate_function,
-            filters=filters,
         )
-        # GetExperimentRunResultResponse is a pass-through dict model
         return result.model_dump() if hasattr(result, "model_dump") else dict(result)
 
     def compare_runs(
         self,
         new_run_id: str,
         old_run_id: str,
+        project_id: str,
         aggregate_function: Optional[str] = None,
-        filters: Optional[Any] = None,
     ) -> Dict[str, Any]:
         """Compare two experiment runs.
 
         Args:
-            new_run_id: The new run ID to compare.
-            old_run_id: The old run ID to compare against.
+            new_run_id: The new run ID to compare (maps to run_id_1).
+            old_run_id: The old run ID to compare against (maps to run_id_2).
+            project_id: The project ID (required by NWD API).
             aggregate_function: Aggregation function to apply.
-            filters: Optional filters to apply.
         """
         result = experiments_svc.getExperimentComparison(
             self._api_config,
-            new_run_id=new_run_id,
-            old_run_id=old_run_id,
+            project_id=project_id,
+            run_id_1=new_run_id,
+            run_id_2=old_run_id,
             aggregate_function=aggregate_function,
-            filters=filters,
         )
-        # GetExperimentRunCompareResponse is a pass-through dict model
         return result.model_dump() if hasattr(result, "model_dump") else dict(result)
+
+    # Async methods
+    async def list_runs_async(self, project: Optional[str] = None) -> GetRunsResponse:
+        """List experiment runs asynchronously."""
+        return await experiments_svc_async.getRuns(self._api_config, project=project)
+
+    async def get_run_async(self, run_id: str) -> GetRunResponse:
+        """Get an experiment run by ID asynchronously."""
+        return await experiments_svc_async.getRun(self._api_config, run_id=run_id)
+
+    async def create_run_async(self, request: CreateRunRequest) -> CreateRunResponse:
+        """Create an experiment run asynchronously."""
+        return await experiments_svc_async.createRun(self._api_config, data=request)
+
+    async def update_run_async(
+        self, run_id: str, request: UpdateRunRequest
+    ) -> UpdateRunResponse:
+        """Update an experiment run asynchronously."""
+        return await experiments_svc_async.updateRun(
+            self._api_config, run_id=run_id, data=request
+        )
+
+    async def delete_run_async(self, run_id: str) -> DeleteRunResponse:
+        """Delete an experiment run asynchronously."""
+        return await experiments_svc_async.deleteRun(self._api_config, run_id=run_id)
 
     async def get_result_async(
         self,
         run_id: str,
+        project_id: str,
         aggregate_function: Optional[str] = None,
-        filters: Optional[Any] = None,
     ) -> Dict[str, Any]:
-        """Get experiment run result asynchronously.
-
-        Args:
-            run_id: The experiment run ID.
-            aggregate_function: Aggregation function to apply.
-            filters: Optional filters to apply.
-        """
+        """Get experiment run result asynchronously."""
         result = await experiments_svc_async.getExperimentResult(
             self._api_config,
             run_id=run_id,
+            project_id=project_id,
             aggregate_function=aggregate_function,
-            filters=filters,
         )
         return result.model_dump() if hasattr(result, "model_dump") else dict(result)
 
@@ -729,312 +494,242 @@ class ExperimentsAPI(BaseAPI):
         self,
         new_run_id: str,
         old_run_id: str,
+        project_id: str,
         aggregate_function: Optional[str] = None,
-        filters: Optional[Any] = None,
     ) -> Dict[str, Any]:
-        """Compare two experiment runs asynchronously.
-
-        Args:
-            new_run_id: The new run ID to compare.
-            old_run_id: The old run ID to compare against.
-            aggregate_function: Aggregation function to apply.
-            filters: Optional filters to apply.
-        """
+        """Compare two experiment runs asynchronously."""
         result = await experiments_svc_async.getExperimentComparison(
             self._api_config,
-            new_run_id=new_run_id,
-            old_run_id=old_run_id,
+            project_id=project_id,
+            run_id_1=new_run_id,
+            run_id_2=old_run_id,
             aggregate_function=aggregate_function,
-            filters=filters,
         )
         return result.model_dump() if hasattr(result, "model_dump") else dict(result)
 
-    # Aliases for backwards compatibility (evaluations naming)
+    # Backwards compatible aliases
     def get_run_result(
         self,
         run_id: str,
+        project_id: str = "",
         aggregate_function: Optional[str] = None,
-        filters: Optional[Any] = None,
     ) -> Dict[str, Any]:
         """Get experiment run result (alias for get_result)."""
-        return self.get_result(run_id, aggregate_function, filters)
-
-    def compare_run_events(
-        self,
-        new_run_id: str,
-        old_run_id: str,
-        event_name: Optional[str] = None,
-        event_type: Optional[str] = None,
-        filter: Optional[Any] = None,
-        limit: Optional[int] = None,
-        page: Optional[int] = None,
-    ) -> Dict[str, Any]:
-        """Compare events between two experiment runs.
-
-        Args:
-            new_run_id: The new run ID to compare.
-            old_run_id: The old run ID to compare against.
-            event_name: Filter by event name.
-            event_type: Filter by event type.
-            filter: Additional filter criteria.
-            limit: Maximum number of results.
-            page: Page number for pagination.
-        """
-        return experiments_svc.getExperimentCompareEvents(
-            self._api_config,
-            run_id_1=new_run_id,
-            run_id_2=old_run_id,
-            event_name=event_name,
-            event_type=event_type,
-            filter=filter,
-            limit=limit,
-            page=page,
-        )
+        return self.get_result(run_id, project_id, aggregate_function)
 
 
 class MetricsAPI(BaseAPI):
     """Metrics API."""
 
     # Sync methods
-    def list(
-        self,
-        project: Optional[str] = None,
-        name: Optional[str] = None,
-        type: Optional[str] = None,
-    ) -> GetMetricsResponse:
-        """List metrics."""
-        return metrics_svc.getMetrics(
-            self._api_config, project=project, name=name, type=type
-        )
+    def list(self, project_name: str) -> List[Metric]:
+        """List metrics.
 
-    def create(self, request: CreateMetricRequest) -> CreateMetricResponse:
+        Args:
+            project_name: Project name (required by NWD API).
+        """
+        return metrics_svc.getMetrics(self._api_config, project_name=project_name)
+
+    def create(self, request: Metric) -> None:
         """Create a metric."""
         return metrics_svc.createMetric(self._api_config, data=request)
 
-    def update(self, request: UpdateMetricRequest) -> UpdateMetricResponse:
+    def update(self, request: MetricEdit) -> None:
         """Update a metric."""
         return metrics_svc.updateMetric(self._api_config, data=request)
 
-    def delete(self, id: str) -> DeleteMetricResponse:
+    def delete(self, id: str) -> None:
         """Delete a metric."""
         return metrics_svc.deleteMetric(self._api_config, metric_id=id)
 
     # Async methods
-    async def list_async(
-        self,
-        project: Optional[str] = None,
-        name: Optional[str] = None,
-        type: Optional[str] = None,
-    ) -> GetMetricsResponse:
+    async def list_async(self, project_name: str) -> List[Metric]:
         """List metrics asynchronously."""
-        return await metrics_svc_async.getMetrics(
-            self._api_config, project=project, name=name, type=type
-        )
+        return await metrics_svc_async.getMetrics(self._api_config, project_name=project_name)
 
-    async def create_async(self, request: CreateMetricRequest) -> CreateMetricResponse:
+    async def create_async(self, request: Metric) -> None:
         """Create a metric asynchronously."""
         return await metrics_svc_async.createMetric(self._api_config, data=request)
 
-    async def update_async(self, request: UpdateMetricRequest) -> UpdateMetricResponse:
+    async def update_async(self, request: MetricEdit) -> None:
         """Update a metric asynchronously."""
         return await metrics_svc_async.updateMetric(self._api_config, data=request)
 
-    async def delete_async(self, id: str) -> DeleteMetricResponse:
+    async def delete_async(self, id: str) -> None:
         """Delete a metric asynchronously."""
         return await metrics_svc_async.deleteMetric(self._api_config, metric_id=id)
 
     # Backwards compatible aliases
-    def get_metric(self, id: str) -> GetMetricsResponse:
-        """Get a metric (backwards compatible alias)."""
-        return self.list()  # No single-get endpoint
-
-    def create_metric(self, request: CreateMetricRequest) -> CreateMetricResponse:
+    def create_metric(self, request: Metric) -> None:
         """Create a metric (backwards compatible alias)."""
         return self.create(request)
 
-    def update_metric(self, request: UpdateMetricRequest) -> UpdateMetricResponse:
+    def update_metric(self, request: MetricEdit) -> None:
         """Update a metric (backwards compatible alias)."""
         return self.update(request)
 
-    def delete_metric(self, id: str) -> DeleteMetricResponse:
+    def delete_metric(self, id: str) -> None:
         """Delete a metric (backwards compatible alias)."""
         return self.delete(id)
 
-    def list_metrics(
-        self,
-        project: Optional[str] = None,
-        name: Optional[str] = None,
-        type: Optional[str] = None,
-    ) -> GetMetricsResponse:
+    def list_metrics(self, project_name: str) -> List[Metric]:
         """List metrics (backwards compatible alias)."""
-        return self.list(project=project, name=name, type=type)
+        return self.list(project_name=project_name)
 
 
 class ProjectsAPI(BaseAPI):
     """Projects API."""
 
     # Sync methods
-    def list(self, name: Optional[str] = None) -> Dict[str, Any]:
+    def list(self, name: Optional[str] = None) -> List[Project]:
         """List projects."""
         return projects_svc.getProjects(self._api_config, name=name)
 
-    def create(self, data: Dict[str, Any]) -> Dict[str, Any]:
+    def create(self, data: Any) -> Project:
         """Create a project."""
         return projects_svc.createProject(self._api_config, data=data)
 
-    def update(self, data: Dict[str, Any]) -> Dict[str, Any]:
+    def update(self, data: Any) -> None:
         """Update a project."""
         return projects_svc.updateProject(self._api_config, data=data)
 
-    def delete(self, name: str) -> Dict[str, Any]:
+    def delete(self, name: str) -> None:
         """Delete a project."""
         return projects_svc.deleteProject(self._api_config, name=name)
 
     # Async methods
-    async def list_async(self, name: Optional[str] = None) -> Dict[str, Any]:
+    async def list_async(self, name: Optional[str] = None) -> List[Project]:
         """List projects asynchronously."""
         return await projects_svc_async.getProjects(self._api_config, name=name)
 
-    async def create_async(self, data: Dict[str, Any]) -> Dict[str, Any]:
+    async def create_async(self, data: Any) -> Project:
         """Create a project asynchronously."""
         return await projects_svc_async.createProject(self._api_config, data=data)
 
-    async def update_async(self, data: Dict[str, Any]) -> Dict[str, Any]:
+    async def update_async(self, data: Any) -> None:
         """Update a project asynchronously."""
         return await projects_svc_async.updateProject(self._api_config, data=data)
 
-    async def delete_async(self, name: str) -> Dict[str, Any]:
+    async def delete_async(self, name: str) -> None:
         """Delete a project asynchronously."""
         return await projects_svc_async.deleteProject(self._api_config, name=name)
 
     # Backwards compatible aliases
-    def get_project(self, id: str) -> Dict[str, Any]:
+    def get_project(self, id: str) -> List[Project]:
         """Get a project (backwards compatible alias)."""
-        return self.list(name=id)  # Use name filter since no single-get
+        return self.list(name=id)
 
-    def create_project(self, data: Dict[str, Any]) -> Dict[str, Any]:
+    def create_project(self, data: Any) -> Project:
         """Create a project (backwards compatible alias)."""
         return self.create(data)
 
-    def update_project(self, data: Dict[str, Any]) -> Dict[str, Any]:
+    def update_project(self, data: Any) -> None:
         """Update a project (backwards compatible alias)."""
         return self.update(data)
 
-    def delete_project(self, name: str) -> Dict[str, Any]:
+    def delete_project(self, name: str) -> None:
         """Delete a project (backwards compatible alias)."""
         return self.delete(name)
 
-    def list_projects(self, name: Optional[str] = None) -> Dict[str, Any]:
+    def list_projects(self, name: Optional[str] = None) -> List[Project]:
         """List projects (backwards compatible alias)."""
         return self.list(name=name)
 
 
 class SessionsAPI(BaseAPI):
-    """Sessions API."""
+    """Sessions API.
+
+    NWD only has Session_service (singular) with startSession and getSession.
+    No deleteSession or Sessions_service (plural).
+    """
 
     # Sync methods
-    def get(self, session_id: str) -> GetSessionResponse:
+    def get(self, session_id: str) -> Event:
         """Get a session by ID."""
-        return sessions_svc.getSession(self._api_config, session_id=session_id)
+        return session_svc.getSession(self._api_config, session_id=session_id)
 
-    def delete(self, session_id: str) -> DeleteSessionResponse:
-        """Delete a session."""
-        return sessions_svc.deleteSession(self._api_config, session_id=session_id)
-
-    def start(self, data: Dict[str, Any]) -> PostSessionStartResponse:
+    def start(self, data: Dict[str, Any]) -> Dict[str, Any]:
         """Start a new session."""
         return session_svc.startSession(self._api_config, data=data)
 
     # Async methods
-    async def get_async(self, session_id: str) -> GetSessionResponse:
+    async def get_async(self, session_id: str) -> Event:
         """Get a session by ID asynchronously."""
-        return await sessions_svc_async.getSession(
-            self._api_config, session_id=session_id
-        )
+        return await session_svc_async.getSession(self._api_config, session_id=session_id)
 
-    async def delete_async(self, session_id: str) -> DeleteSessionResponse:
-        """Delete a session asynchronously."""
-        return await sessions_svc_async.deleteSession(
-            self._api_config, session_id=session_id
-        )
-
-    async def start_async(self, data: Dict[str, Any]) -> PostSessionStartResponse:
+    async def start_async(self, data: Dict[str, Any]) -> Dict[str, Any]:
         """Start a new session asynchronously."""
         return await session_svc_async.startSession(self._api_config, data=data)
 
     # Backwards compatible aliases
-    def create_session(self, request: Dict[str, Any]) -> PostSessionStartResponse:
+    def create_session(self, request: Dict[str, Any]) -> Dict[str, Any]:
         """Create/start a session (backwards compatible alias for start())."""
         return self.start(request)
 
-    def start_session(self, request: Dict[str, Any]) -> PostSessionStartResponse:
+    def start_session(self, request: Dict[str, Any]) -> Dict[str, Any]:
         """Start a session (backwards compatible alias for start())."""
         return self.start(request)
 
-    def get_session(self, session_id: str) -> GetSessionResponse:
+    def get_session(self, session_id: str) -> Event:
         """Get a session (backwards compatible alias for get())."""
         return self.get(session_id)
-
-    def delete_session(self, session_id: str) -> DeleteSessionResponse:
-        """Delete a session (backwards compatible alias for delete())."""
-        return self.delete(session_id)
 
 
 class ToolsAPI(BaseAPI):
     """Tools API."""
 
     # Sync methods
-    def list(self) -> List[GetToolsResponse]:
+    def list(self) -> List[Tool]:
         """List tools."""
         return tools_svc.getTools(self._api_config)
 
-    def create(self, request: CreateToolRequest) -> CreateToolResponse:
+    def create(self, request: CreateToolRequest) -> Dict[str, Any]:
         """Create a tool."""
         return tools_svc.createTool(self._api_config, data=request)
 
-    def update(self, request: UpdateToolRequest) -> UpdateToolResponse:
+    def update(self, request: UpdateToolRequest) -> None:
         """Update a tool."""
         return tools_svc.updateTool(self._api_config, data=request)
 
-    def delete(self, id: str) -> DeleteToolResponse:
+    def delete(self, id: str) -> None:
         """Delete a tool."""
-        return tools_svc.deleteTool(self._api_config, tool_id=id)
+        return tools_svc.deleteTool(self._api_config, function_id=id)
 
     # Async methods
-    async def list_async(self) -> List[GetToolsResponse]:
+    async def list_async(self) -> List[Tool]:
         """List tools asynchronously."""
         return await tools_svc_async.getTools(self._api_config)
 
-    async def create_async(self, request: CreateToolRequest) -> CreateToolResponse:
+    async def create_async(self, request: CreateToolRequest) -> Dict[str, Any]:
         """Create a tool asynchronously."""
         return await tools_svc_async.createTool(self._api_config, data=request)
 
-    async def update_async(self, request: UpdateToolRequest) -> UpdateToolResponse:
+    async def update_async(self, request: UpdateToolRequest) -> None:
         """Update a tool asynchronously."""
         return await tools_svc_async.updateTool(self._api_config, data=request)
 
-    async def delete_async(self, id: str) -> DeleteToolResponse:
+    async def delete_async(self, id: str) -> None:
         """Delete a tool asynchronously."""
-        return await tools_svc_async.deleteTool(self._api_config, tool_id=id)
+        return await tools_svc_async.deleteTool(self._api_config, function_id=id)
 
     # Backwards compatible aliases
-    def get_tool(self, id: str) -> List[GetToolsResponse]:
+    def get_tool(self, id: str) -> List[Tool]:
         """Get a tool (backwards compatible alias)."""
         return self.list()  # No single-get endpoint
 
-    def create_tool(self, request: CreateToolRequest) -> CreateToolResponse:
+    def create_tool(self, request: CreateToolRequest) -> Dict[str, Any]:
         """Create a tool (backwards compatible alias)."""
         return self.create(request)
 
-    def update_tool(self, request: UpdateToolRequest) -> UpdateToolResponse:
+    def update_tool(self, request: UpdateToolRequest) -> None:
         """Update a tool (backwards compatible alias)."""
         return self.update(request)
 
-    def delete_tool(self, id: str) -> DeleteToolResponse:
+    def delete_tool(self, id: str) -> None:
         """Delete a tool (backwards compatible alias)."""
         return self.delete(id)
 
-    def list_tools(self) -> List[GetToolsResponse]:
+    def list_tools(self) -> List[Tool]:
         """List tools (backwards compatible alias)."""
         return self.list()
 
@@ -1133,12 +828,14 @@ class HoneyHive:
         self._verbose = verbose if verbose is not None else False
         self._tracer_instance = tracer_instance
 
-        # Create API config
+        # Create API config (NWD APIConfig: base_path, verify, access_token only)
         self._api_config = APIConfig(
             base_path=resolved_base_url,
-            cp_base_path=resolved_cp_base_url,
             access_token=self._api_key,
         )
+
+        # Store CP URL separately (NWD APIConfig doesn't have cp_base_path)
+        self._cp_base_url = resolved_cp_base_url
 
         # Initialize API namespaces
         self.configurations = ConfigurationsAPI(self._api_config)

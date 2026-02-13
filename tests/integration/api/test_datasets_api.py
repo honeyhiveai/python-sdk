@@ -8,8 +8,6 @@ import pytest
 
 from honeyhive.models import (
     CreateDatasetRequest,
-    DeleteDatasetResponse,
-    GetDatasetsResponse,
 )
 
 
@@ -31,17 +29,18 @@ class TestDatasetsAPI:
         response = integration_client.datasets.create(dataset_request)
 
         assert response is not None
-        # v1 API returns CreateDatasetResponse with inserted and result fields
-        assert response.inserted is True
-        assert "insertedId" in response.result
-        dataset_id = response.result["insertedId"]
+        # v1 API returns a dict with inserted and result fields
+        assert isinstance(response, dict)
+        assert response.get("inserted") is True
+        assert "insertedId" in response.get("result", {})
+        dataset_id = response["result"]["insertedId"]
 
         time.sleep(2)
 
         # Verify via list
         datasets_response = integration_client.datasets.list()
-        assert isinstance(datasets_response, GetDatasetsResponse)
-        datasets = datasets_response.datapoints
+        assert isinstance(datasets_response, dict)
+        datasets = datasets_response.get("datapoints", [])
         found = None
         for ds in datasets:
             # GetDatasetsResponse.datapoints is List[Dict[str, Any]]
@@ -67,14 +66,14 @@ class TestDatasetsAPI:
         )
 
         create_response = integration_client.datasets.create(dataset_request)
-        dataset_id = create_response.result["insertedId"]
+        dataset_id = create_response["result"]["insertedId"]
 
         time.sleep(2)
 
         # Test retrieval via list (v1 doesn't have get_dataset method)
         datasets_response = integration_client.datasets.list(name=dataset_name)
-        assert isinstance(datasets_response, GetDatasetsResponse)
-        datasets = datasets_response.datapoints
+        assert isinstance(datasets_response, dict)
+        datasets = datasets_response.get("datapoints", [])
         assert len(datasets) >= 1
         dataset = datasets[0]
         # GetDatasetsResponse.datapoints is List[Dict[str, Any]]
@@ -99,7 +98,7 @@ class TestDatasetsAPI:
                 name=f"test_list_dataset_{test_id}_{i}",
             )
             response = integration_client.datasets.create(dataset_request)
-            dataset_id = response.result["insertedId"]
+            dataset_id = response["result"]["insertedId"]
             created_ids.append(dataset_id)
 
         time.sleep(2)
@@ -107,8 +106,8 @@ class TestDatasetsAPI:
         # Test listing
         datasets_response = integration_client.datasets.list()
 
-        assert isinstance(datasets_response, GetDatasetsResponse)
-        datasets = datasets_response.datapoints
+        assert isinstance(datasets_response, dict)
+        datasets = datasets_response.get("datapoints", [])
         assert isinstance(datasets, list)
         assert len(datasets) >= 2
 
@@ -128,15 +127,15 @@ class TestDatasetsAPI:
             description="Test name filtering",
         )
         response = integration_client.datasets.create(dataset_request)
-        dataset_id = response.result["insertedId"]
+        dataset_id = response["result"]["insertedId"]
 
         time.sleep(2)
 
         # Test filtering by name
         datasets_response = integration_client.datasets.list(name=unique_name)
 
-        assert isinstance(datasets_response, GetDatasetsResponse)
-        datasets = datasets_response.datapoints
+        assert isinstance(datasets_response, dict)
+        datasets = datasets_response.get("datapoints", [])
         assert isinstance(datasets, list)
         assert len(datasets) >= 1
         # GetDatasetsResponse.datapoints is List[Dict[str, Any]]
@@ -165,15 +164,13 @@ class TestDatasetsAPI:
         )
 
         create_response = integration_client.datasets.create(dataset_request)
-        dataset_id = create_response.result["insertedId"]
+        dataset_id = create_response["result"]["insertedId"]
 
         time.sleep(2)
 
         response = integration_client.datasets.delete(dataset_id)
 
-        assert isinstance(response, DeleteDatasetResponse)
         # Delete succeeded if no exception was raised
-        # The response model only has 'result' field
         assert response is not None
 
     def test_update_dataset(

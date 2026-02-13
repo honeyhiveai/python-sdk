@@ -8,11 +8,7 @@ import pytest
 
 from honeyhive.models import (
     CreateDatapointRequest,
-    CreateDatapointResponse,
-    DeleteDatapointResponse,
-    GetDatapointsResponse,
     UpdateDatapointRequest,
-    UpdateDatapointResponse,
 )
 
 
@@ -34,11 +30,11 @@ class TestDatapointsAPI:
 
         response = integration_client.datapoints.create(datapoint_request)
 
-        # v1 API returns CreateDatapointResponse with inserted and result fields
-        assert isinstance(response, CreateDatapointResponse)
-        assert response.inserted is True
-        assert "insertedIds" in response.result
-        assert len(response.result["insertedIds"]) > 0
+        # v1 API returns a dict with inserted and result fields
+        assert isinstance(response, dict)
+        assert response.get("inserted") is True
+        assert "insertedIds" in response.get("result", {})
+        assert len(response["result"]["insertedIds"]) > 0
 
     def test_get_datapoint(
         self, integration_client: Any, integration_project_name: str
@@ -54,12 +50,12 @@ class TestDatapointsAPI:
         )
 
         create_resp = integration_client.datapoints.create(datapoint_request)
-        assert isinstance(create_resp, CreateDatapointResponse)
-        assert create_resp.inserted is True
-        assert "insertedIds" in create_resp.result
-        assert len(create_resp.result["insertedIds"]) > 0
+        assert isinstance(create_resp, dict)
+        assert create_resp.get("inserted") is True
+        assert "insertedIds" in create_resp.get("result", {})
+        assert len(create_resp["result"]["insertedIds"]) > 0
 
-        datapoint_id = create_resp.result["insertedIds"][0]
+        datapoint_id = create_resp["result"]["insertedIds"][0]
 
         # Wait for indexing
         time.sleep(3)
@@ -91,16 +87,16 @@ class TestDatapointsAPI:
                 ground_truth={"response": f"response {i}"},
             )
             response = integration_client.datapoints.create(datapoint_request)
-            assert isinstance(response, CreateDatapointResponse)
-            assert response.inserted is True
+            assert isinstance(response, dict)
+            assert response.get("inserted") is True
 
         time.sleep(2)
 
         # Test listing - v1 API uses datapoint_ids or dataset_name, not project
         datapoints_response = integration_client.datapoints.list()
 
-        assert isinstance(datapoints_response, GetDatapointsResponse)
-        datapoints = datapoints_response.datapoints
+        assert isinstance(datapoints_response, (dict, list))
+        datapoints = datapoints_response.get("datapoints", datapoints_response) if isinstance(datapoints_response, dict) else datapoints_response
         assert isinstance(datapoints, list)
 
     def test_update_datapoint(
@@ -117,12 +113,12 @@ class TestDatapointsAPI:
         )
 
         create_resp = integration_client.datapoints.create(datapoint_request)
-        assert isinstance(create_resp, CreateDatapointResponse)
-        assert create_resp.inserted is True
-        assert "insertedIds" in create_resp.result
-        assert len(create_resp.result["insertedIds"]) > 0
+        assert isinstance(create_resp, dict)
+        assert create_resp.get("inserted") is True
+        assert "insertedIds" in create_resp.get("result", {})
+        assert len(create_resp["result"]["insertedIds"]) > 0
 
-        datapoint_id = create_resp.result["insertedIds"][0]
+        datapoint_id = create_resp["result"]["insertedIds"][0]
 
         # Wait for indexing
         time.sleep(2)
@@ -134,14 +130,13 @@ class TestDatapointsAPI:
         # Update the datapoint
         response = integration_client.datapoints.update(datapoint_id, update_request)
 
-        # Assert response is UpdateDatapointResponse
-        assert isinstance(response, UpdateDatapointResponse)
-        # Assert response.modified is True or response.modifiedCount >= 1
-        # Check for 'modified' attribute or 'updated' (model field) or modifiedCount in result
+        # Assert response is a dict with modification info
+        assert isinstance(response, dict)
+        # Assert response indicates modification succeeded
         assert (
-            getattr(response, "modified", False) is True
-            or getattr(response, "updated", False) is True
-            or response.result.get("modifiedCount", 0) >= 1
+            response.get("modified", False) is True
+            or response.get("updated", False) is True
+            or response.get("result", {}).get("modifiedCount", 0) >= 1
         )
 
     def test_delete_datapoint(
@@ -158,12 +153,12 @@ class TestDatapointsAPI:
         )
 
         create_resp = integration_client.datapoints.create(datapoint_request)
-        assert isinstance(create_resp, CreateDatapointResponse)
-        assert create_resp.inserted is True
-        assert "insertedIds" in create_resp.result
-        assert len(create_resp.result["insertedIds"]) > 0
+        assert isinstance(create_resp, dict)
+        assert create_resp.get("inserted") is True
+        assert "insertedIds" in create_resp.get("result", {})
+        assert len(create_resp["result"]["insertedIds"]) > 0
 
-        datapoint_id = create_resp.result["insertedIds"][0]
+        datapoint_id = create_resp["result"]["insertedIds"][0]
 
         # Wait for indexing
         time.sleep(2)
@@ -171,10 +166,10 @@ class TestDatapointsAPI:
         # Delete the datapoint
         response = integration_client.datapoints.delete(datapoint_id)
 
-        # Assert response is DeleteDatapointResponse
-        assert isinstance(response, DeleteDatapointResponse)
+        # Assert response is a dict indicating deletion
+        assert isinstance(response, dict)
         # Assert response.deleted is True or response.deletedCount >= 1
-        assert response.deleted is True or getattr(response, "deletedCount", 0) >= 1
+        assert response.get("deleted") is True or response.get("deletedCount", 0) >= 1
 
     def test_bulk_operations(
         self, integration_client: Any, integration_project_name: str

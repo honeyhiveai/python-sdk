@@ -2,7 +2,7 @@
 
 from typing import Any, List, Optional
 
-from .._generated.models import GetDatapointResponse as Datapoint
+from .._generated.models import Datapoint
 from ..models import CreateDatapointRequest, UpdateDatapointRequest
 from ._base import BaseAPI
 

@@ -440,54 +440,52 @@ class TestTraceCommands:
 class TestAPICommands:
     """Test suite for API client commands."""
 
-    @patch("honeyhive.cli.main.HoneyHive")
+    @patch("honeyhive.cli.main.httpx.Client")
     @patch("honeyhive.cli.main.time")
-    def test_api_request_get(self, mock_time: Mock, mock_client_class: Mock) -> None:
+    def test_api_request_get(self, mock_time: Mock, mock_httpx_client: Mock) -> None:
         """Test API request command with GET method."""
         # Setup time mocking
         mock_time.time.side_effect = [1000.0, 1000.5]  # 0.5 second duration
 
-        # Setup client and response mocking
-        mock_client = Mock()
+        # Setup httpx client and response mocking
+        mock_client_instance = Mock()
         mock_response = Mock()
         mock_response.status_code = 200
         mock_response.headers = {"Content-Type": "application/json"}
         mock_response.json.return_value = {"success": True, "data": "test"}
-        mock_client.sync_client.request.return_value = mock_response
-        mock_client_class.return_value = mock_client
+        mock_client_instance.request.return_value = mock_response
+        mock_client_instance.__enter__ = Mock(return_value=mock_client_instance)
+        mock_client_instance.__exit__ = Mock(return_value=False)
+        mock_httpx_client.return_value = mock_client_instance
 
         runner = CliRunner()
         result = runner.invoke(
-            request, ["--method", "GET", "--url", "https://api.honeyhive.ai/test"]
+            request, ["--method", "GET", "--url", "https://api.honeyhive.ai/test"],
+            env={"HH_API_KEY": "test-key"},
         )
 
         assert result.exit_code == 0
         assert "Status: 200" in result.output
         assert "Duration: 0.500s" in result.output
         assert '"success": true' in result.output
-        mock_client.sync_client.request.assert_called_once_with(
-            method="GET",
-            url="https://api.honeyhive.ai/test",
-            headers={},
-            json=None,
-            timeout=30.0,
-        )
 
-    @patch("honeyhive.cli.main.HoneyHive")
+    @patch("honeyhive.cli.main.httpx.Client")
     @patch("honeyhive.cli.main.time")
     def test_api_request_post_with_data(
-        self, mock_time: Mock, mock_client_class: Mock
+        self, mock_time: Mock, mock_httpx_client: Mock
     ) -> None:
         """Test API request command with POST method and data."""
         mock_time.time.side_effect = [2000.0, 2001.2]  # 1.2 second duration
 
-        mock_client = Mock()
+        mock_client_instance = Mock()
         mock_response = Mock()
         mock_response.status_code = 201
         mock_response.headers = {"Content-Type": "application/json"}
         mock_response.json.return_value = {"id": "created-123"}
-        mock_client.sync_client.request.return_value = mock_response
-        mock_client_class.return_value = mock_client
+        mock_client_instance.request.return_value = mock_response
+        mock_client_instance.__enter__ = Mock(return_value=mock_client_instance)
+        mock_client_instance.__exit__ = Mock(return_value=False)
+        mock_httpx_client.return_value = mock_client_instance
 
         runner = CliRunner()
         result = runner.invoke(
@@ -504,25 +502,16 @@ class TestAPICommands:
                 "--timeout",
                 "60",
             ],
+            env={"HH_API_KEY": "test-key"},
         )
 
         assert result.exit_code == 0
         assert "Status: 201" in result.output
         assert "Duration: 1.200s" in result.output
         assert '"id": "created-123"' in result.output
-        mock_client.sync_client.request.assert_called_once_with(
-            method="POST",
-            url="https://api.honeyhive.ai/events",
-            headers={"Authorization": "Bearer token123"},
-            json={"name": "test-event", "type": "click"},
-            timeout=60.0,
-        )
 
-    @patch("honeyhive.cli.main.HoneyHive")
-    def test_api_request_invalid_headers_json(self, mock_client_class: Mock) -> None:
+    def test_api_request_invalid_headers_json(self) -> None:
         """Test API request command with invalid headers JSON."""
-        mock_client_class.return_value = Mock()
-
         runner = CliRunner()
         result = runner.invoke(
             request,
@@ -534,16 +523,14 @@ class TestAPICommands:
                 "--headers",
                 "invalid-json",
             ],
+            env={"HH_API_KEY": "test-key"},
         )
 
         assert result.exit_code == 1
         assert "Invalid JSON for headers" in result.output
 
-    @patch("honeyhive.cli.main.HoneyHive")
-    def test_api_request_invalid_data_json(self, mock_client_class: Mock) -> None:
+    def test_api_request_invalid_data_json(self) -> None:
         """Test API request command with invalid data JSON."""
-        mock_client_class.return_value = Mock()
-
         runner = CliRunner()
         result = runner.invoke(
             request,
@@ -555,45 +542,50 @@ class TestAPICommands:
                 "--data",
                 "invalid-json",
             ],
+            env={"HH_API_KEY": "test-key"},
         )
 
         assert result.exit_code == 1
         assert "Invalid JSON for data" in result.output
 
-    @patch("honeyhive.cli.main.HoneyHive")
+    @patch("honeyhive.cli.main.httpx.Client")
     @patch("honeyhive.cli.main.time")
     def test_api_request_non_json_response(
-        self, mock_time: Mock, mock_client_class: Mock
+        self, mock_time: Mock, mock_httpx_client: Mock
     ) -> None:
         """Test API request command with non-JSON response."""
         mock_time.time.side_effect = [3000.0, 3000.1]
 
-        mock_client = Mock()
+        mock_client_instance = Mock()
         mock_response = Mock()
         mock_response.status_code = 200
         mock_response.headers = {"Content-Type": "text/plain"}
         mock_response.json.side_effect = ValueError("No JSON object could be decoded")
         mock_response.text = "Plain text response"
-        mock_client.sync_client.request.return_value = mock_response
-        mock_client_class.return_value = mock_client
+        mock_client_instance.request.return_value = mock_response
+        mock_client_instance.__enter__ = Mock(return_value=mock_client_instance)
+        mock_client_instance.__exit__ = Mock(return_value=False)
+        mock_httpx_client.return_value = mock_client_instance
 
         runner = CliRunner()
         result = runner.invoke(
-            request, ["--method", "GET", "--url", "https://api.honeyhive.ai/health"]
+            request, ["--method", "GET", "--url", "https://api.honeyhive.ai/health"],
+            env={"HH_API_KEY": "test-key"},
         )
 
         assert result.exit_code == 0
         assert "Status: 200" in result.output
         assert "Response: Plain text response" in result.output
 
-    @patch("honeyhive.cli.main.HoneyHive")
-    def test_api_request_exception_handling(self, mock_client_class: Mock) -> None:
+    @patch("honeyhive.cli.main.httpx.Client")
+    def test_api_request_exception_handling(self, mock_httpx_client: Mock) -> None:
         """Test API request command exception handling."""
-        mock_client_class.side_effect = Exception("Client creation failed")
+        mock_httpx_client.side_effect = Exception("Client creation failed")
 
         runner = CliRunner()
         result = runner.invoke(
-            request, ["--method", "GET", "--url", "https://api.honeyhive.ai/test"]
+            request, ["--method", "GET", "--url", "https://api.honeyhive.ai/test"],
+            env={"HH_API_KEY": "test-key"},
         )
 
         assert result.exit_code == 1

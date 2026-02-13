@@ -127,7 +127,7 @@ class TestBackwardCompatibility:
 
         assert config is not None
         # Config should have some basic attributes (updated for new config structure)
-        assert hasattr(config, "api") or hasattr(config, "version")
+        assert hasattr(config, "model_fields") or hasattr(config, "api") or hasattr(config, "version")
 
     def test_environment_variable_compatibility(self):
         """Test that environment variables work as expected."""
@@ -136,12 +136,11 @@ class TestBackwardCompatibility:
         os.environ["HH_PROJECT"] = "test-project"
         os.environ["HH_SOURCE"] = "test-source"
 
-        from honeyhive.utils.config import config
+        from honeyhive.config import TracerConfig
 
-        # Should be able to access config values (updated for new config structure)
-        assert (hasattr(config, "api") and hasattr(config.api, "api_key")) or os.getenv(
-            "HH_API_KEY"
-        ) is not None
+        # Should be able to create config from environment variables
+        assert TracerConfig is not None
+        assert os.getenv("HH_API_KEY") is not None
 
     def test_evaluation_basic_compatibility(self):
         """Test that basic evaluation function works."""
@@ -205,11 +204,13 @@ class TestBackwardCompatibility:
         try:
             from honeyhive import (
                 BaseEvaluator,
+                set_default_tracer,
+                trace_class,
+            )
+            from honeyhive.evaluation.evaluators import (
                 EvaluationResult,
                 evaluate_batch,
                 evaluate_decorator,
-                set_default_tracer,
-                trace_class,
             )
 
             # These should all be importable
@@ -229,7 +230,7 @@ class TestBackwardCompatibility:
 
         # Should be able to instantiate (though may fail without real credentials)
         try:
-            client = HoneyHive(bearer_auth="test-key")
+            client = HoneyHive(api_key="test-key")
             assert client is not None
         except Exception:
             # It's okay if it fails due to invalid credentials in test

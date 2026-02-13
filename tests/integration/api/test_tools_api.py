@@ -8,11 +8,7 @@ import pytest
 
 from honeyhive.models import (
     CreateToolRequest,
-    CreateToolResponse,
-    DeleteToolResponse,
-    GetToolsResponse,
     UpdateToolRequest,
-    UpdateToolResponse,
 )
 
 
@@ -56,11 +52,11 @@ class TestToolsAPI:
         response = integration_client.tools.create(tool_request)
 
         # Verify response is CreateToolResponse with inserted and result fields
-        assert isinstance(response, CreateToolResponse)
-        assert response.inserted is True
+        assert isinstance(response, dict)
+        assert response.get("inserted") is True
         # Tools API returns id directly in result, not insertedIds
-        assert "id" in response.result
-        tool_id = response.result["id"]
+        assert "id" in response.get("result", {})
+        tool_id = response["result"]["id"]
         assert tool_id is not None
 
         # Note: Cleanup removed - tools.delete() has a bug where client wrapper
@@ -98,11 +94,11 @@ class TestToolsAPI:
         )
 
         create_resp = integration_client.tools.create(tool_request)
-        assert isinstance(create_resp, CreateToolResponse)
-        assert create_resp.inserted is True
+        assert isinstance(create_resp, dict)
+        assert create_resp.get("inserted") is True
         # Tools API returns id directly in result
-        assert "id" in create_resp.result
-        tool_id = create_resp.result["id"]
+        assert "id" in create_resp.get("result", {})
+        tool_id = create_resp["result"]["id"]
 
         # Wait for indexing
         time.sleep(2)
@@ -169,11 +165,11 @@ class TestToolsAPI:
             )
 
             create_resp = integration_client.tools.create(tool_request)
-            assert isinstance(create_resp, CreateToolResponse)
-            assert create_resp.inserted is True
+            assert isinstance(create_resp, dict)
+            assert create_resp.get("inserted") is True
             # Tools API returns id directly in result
-            assert "id" in create_resp.result
-            tool_ids.append(create_resp.result["id"])
+            assert "id" in create_resp.get("result", {})
+            tool_ids.append(create_resp["result"]["id"])
 
         # Wait for indexing
         time.sleep(2)
@@ -219,11 +215,11 @@ class TestToolsAPI:
         )
 
         create_resp = integration_client.tools.create(tool_request)
-        assert isinstance(create_resp, CreateToolResponse)
-        assert create_resp.inserted is True
+        assert isinstance(create_resp, dict)
+        assert create_resp.get("inserted") is True
         # Tools API returns id directly in result
-        assert "id" in create_resp.result
-        tool_id = create_resp.result["id"]
+        assert "id" in create_resp.get("result", {})
+        tool_id = create_resp["result"]["id"]
 
         # Wait for indexing
         time.sleep(2)
@@ -236,8 +232,8 @@ class TestToolsAPI:
         response = integration_client.tools.update(update_request)
 
         # Verify response
-        assert isinstance(response, UpdateToolResponse)
-        assert response.updated is True
+        assert isinstance(response, dict)
+        assert response.get("updated") is True
 
         # Note: Cleanup removed - tools.delete() has a bug where client wrapper
         # passes 'tool_id' but generated service expects 'function_id' parameter
@@ -274,11 +270,11 @@ class TestToolsAPI:
         )
 
         create_resp = integration_client.tools.create(tool_request)
-        assert isinstance(create_resp, CreateToolResponse)
-        assert create_resp.inserted is True
+        assert isinstance(create_resp, dict)
+        assert create_resp.get("inserted") is True
         # Tools API returns id directly in result
-        assert "id" in create_resp.result
-        tool_id = create_resp.result["id"]
+        assert "id" in create_resp.get("result", {})
+        tool_id = create_resp["result"]["id"]
 
         # Wait for indexing
         time.sleep(2)
@@ -287,5 +283,5 @@ class TestToolsAPI:
         response = integration_client.tools.delete(tool_id)
 
         # Verify response indicates deletion
-        assert isinstance(response, DeleteToolResponse)
-        assert response.deleted is True
+        assert isinstance(response, dict)
+        assert response.get("deleted") is True

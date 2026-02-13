@@ -18,7 +18,6 @@ from opentelemetry.context import Context
 from opentelemetry.sdk.trace import ReadableSpan, Span, SpanProcessor
 
 # Removed get_config import - using per-instance configuration instead
-from ..._generated.models import PostEventRequest
 from ..utils import convert_enum_to_string
 from ..utils.event_type import detect_event_type_from_patterns, extract_raw_attributes
 
@@ -810,7 +809,7 @@ class HoneyHiveSpanProcessor(SpanProcessor):
                 and hasattr(self.client.events, "create")
             ):
                 response = self.client.events.create(
-                    request=PostEventRequest(event=event_data)
+                    data=event_data
                 )
                 self._safe_log("debug", "✅ Event sent via client: %s", response)
             else:

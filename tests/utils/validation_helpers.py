@@ -28,7 +28,6 @@ from honeyhive.models import (
     CreateConfigurationRequest,
     CreateDatapointRequest,
     PostEventRequest,
-    PostEventResponse,
 )
 from honeyhive.utils.logger import get_logger
 
@@ -308,19 +307,17 @@ def verify_event_creation(
     try:
         # Step 1: Create event
         logger.debug(f"🔄 Creating event for project: {project}")
-        # Wrap event_request dict in PostEventRequest typed model
-        event_response = client.events.create(
-            request=PostEventRequest(event=event_request)
-        )
+        # Pass event_request dict directly to events.create()
+        event_response = client.events.create(data=event_request)
 
-        # Validate creation response - events.create() now returns PostEventResponse
-        if not isinstance(event_response, PostEventResponse):
+        # Validate creation response - events.create() now returns Dict[str, Any]
+        if not isinstance(event_response, dict):
             raise ValidationError(
                 f"Event creation failed - unexpected response type: {type(event_response)}"
             )
-        if not hasattr(event_response, "event_id") or not event_response.event_id:
+        created_id = event_response.get("event_id")
+        if not created_id:
             raise ValidationError("Event creation failed - missing or None event_id")
-        created_id = event_response.event_id
         logger.debug(f"✅ Event created with ID: {created_id}")
 
         # Step 2: Use standardized backend verification for events

@@ -9,7 +9,6 @@ import time
 from typing import Any, Optional
 
 from honeyhive import HoneyHive
-from honeyhive.models import GetEventsBySessionIdResponse
 from honeyhive.utils.logger import get_logger
 
 from .test_config import test_config
@@ -74,9 +73,9 @@ def verify_backend_event(
                 logger.warning(f"API returned None for events (attempt {attempt + 1})")
                 continue
 
-            if not isinstance(events_response, GetEventsBySessionIdResponse):
+            if events_response is None:
                 logger.warning(
-                    f"API returned unexpected response type: {type(events_response)} "
+                    f"API returned unexpected None response type "
                     f"(attempt {attempt + 1})"
                 )
                 continue

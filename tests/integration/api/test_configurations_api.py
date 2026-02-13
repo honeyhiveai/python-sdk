@@ -8,9 +8,6 @@ import pytest
 
 from honeyhive.models import (
     CreateConfigurationRequest,
-    CreateConfigurationResponse,
-    GetConfigurationsResponse,
-    UpdateConfigurationResponse,
 )
 
 
@@ -41,11 +38,11 @@ class TestConfigurationsAPI:
 
         response = integration_client.configurations.create(config_request)
 
-        assert isinstance(response, CreateConfigurationResponse)
-        assert response.acknowledged is True
-        assert response.insertedId is not None
+        assert isinstance(response, dict)
+        assert response.get("acknowledged") is True
+        assert response.get("insertedId") is not None
 
-        created_id = response.insertedId
+        created_id = response.get("insertedId") or response["insertedId"]
 
         # Cleanup
         integration_client.configurations.delete(created_id)
@@ -71,7 +68,7 @@ class TestConfigurationsAPI:
         )
 
         create_response = integration_client.configurations.create(config_request)
-        created_id = create_response.insertedId
+        created_id = create_response.get("insertedId") if isinstance(create_response, dict) else getattr(create_response, "insertedId", None)
 
         time.sleep(2)
 
@@ -108,13 +105,13 @@ class TestConfigurationsAPI:
                 parameters=parameters,
             )
             response = integration_client.configurations.create(config_request)
-            created_ids.append(response.insertedId)
+            resp_id = response.get("insertedId") if isinstance(response, dict) else getattr(response, "insertedId", None)
+            created_ids.append(resp_id)
 
         configs = integration_client.configurations.list()
 
-        # configurations.list() returns List[GetConfigurationsResponse]
+        # configurations.list() returns a list of configuration objects
         assert isinstance(configs, list)
-        assert all(isinstance(cfg, GetConfigurationsResponse) for cfg in configs)
 
         # Cleanup
         for config_id in created_ids:
@@ -139,7 +136,7 @@ class TestConfigurationsAPI:
         )
 
         create_response = integration_client.configurations.create(config_request)
-        created_id = create_response.insertedId
+        created_id = create_response.get("insertedId") if isinstance(create_response, dict) else getattr(create_response, "insertedId", None)
 
         from honeyhive.models import UpdateConfigurationRequest
 
@@ -154,8 +151,8 @@ class TestConfigurationsAPI:
         )
         response = integration_client.configurations.update(created_id, update_request)
 
-        assert isinstance(response, UpdateConfigurationResponse)
-        assert response.acknowledged is True
+        assert isinstance(response, dict)
+        assert response.get("acknowledged") is True
 
         # Cleanup
         integration_client.configurations.delete(created_id)
@@ -179,7 +176,7 @@ class TestConfigurationsAPI:
         )
 
         create_response = integration_client.configurations.create(config_request)
-        created_id = create_response.insertedId
+        created_id = create_response.get("insertedId") if isinstance(create_response, dict) else getattr(create_response, "insertedId", None)
 
         # Delete
         response = integration_client.configurations.delete(created_id)
