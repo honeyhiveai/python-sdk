@@ -11,14 +11,13 @@
 # no-else-return: Early return pattern improves readability in complex conditionals
 
 import json
+import warnings
 from typing import Any, Optional
 
 from opentelemetry import baggage, context
 from opentelemetry.context import Context
 from opentelemetry.sdk.trace import ReadableSpan, Span, SpanProcessor
 
-# Removed get_config import - using per-instance configuration instead
-from ..._generated.models import PostEventRequest
 from ..utils import convert_enum_to_string
 from ..utils.event_type import detect_event_type_from_patterns, extract_raw_attributes
 
@@ -30,12 +29,15 @@ from ..utils.event_type import detect_event_type_from_patterns, extract_raw_attr
 
 
 class HoneyHiveSpanProcessor(SpanProcessor):
-    """HoneyHive span processor with two modes:
+    """HoneyHive span processor for OpenTelemetry span export.
 
-    1. Client mode: Use HoneyHive SDK client directly (Events API)
-    2. OTLP mode: Use OTLP exporter for both immediate and batch processing
+    OTLP mode: Use OTLP exporter for both immediate and batch processing
        - disable_batch=True: OTLP exporter sends spans immediately
        - disable_batch=False: OTLP exporter batches spans before sending
+
+    .. deprecated::
+        Client mode (direct Events API) is deprecated and will be removed
+        in a future release. OTLP is the only supported export path.
     """
 
     def __init__(
@@ -64,28 +66,29 @@ class HoneyHiveSpanProcessor(SpanProcessor):
         # Multi-instance logging architecture uses safe_log utility
         # No need to store logger reference directly
 
-        # Determine processing mode
         if client is not None:
-            self.mode = "client"
-            self._safe_log(
-                "debug",
-                "🚀 HoneyHiveSpanProcessor initialized in CLIENT mode (direct API)",
+            warnings.warn(
+                "HoneyHiveSpanProcessor 'client' mode is deprecated and will be "
+                "removed in a future release. Use OTLP mode instead. "
+                "The client parameter is ignored; OTLP is the only supported "
+                "export path.",
+                DeprecationWarning,
+                stacklevel=2,
             )
-        else:
-            # Both disable_batch=True and False use OTLP exporter
-            self.mode = "otlp"
-            batch_mode = "immediate" if disable_batch else "batched"
-            self._safe_log(
-                "debug",
-                "🚀 HoneyHiveSpanProcessor initialized in OTLP mode (%s)",
-                batch_mode,
-            )
+
+        # OTLP is the only supported export mode
+        self.mode = "otlp"
+        batch_mode = "immediate" if disable_batch else "batched"
+        self._safe_log(
+            "debug",
+            "🚀 HoneyHiveSpanProcessor initialized in OTLP mode (%s)",
+            batch_mode,
+        )
 
         self._safe_log(
             "debug",
-            "🔧 Span processor mode: %s, client: %s, disable_batch: %s",
+            "🔧 Span processor mode: %s, disable_batch: %s",
             self.mode,
-            client is not None,
             disable_batch,
         )
 
@@ -764,20 +767,12 @@ class HoneyHiveSpanProcessor(SpanProcessor):
                 raw_span_data,
             )
 
-            # Process span based on mode
-            if self.mode == "client" and self.client:
-                self._send_via_client(span, attributes, session_id)
-            elif self.mode == "otlp" and self.otlp_exporter:
+            if self.otlp_exporter:
                 self._send_via_otlp(span, attributes, session_id)
             else:
                 self._safe_log(
                     "warning",
-                    (
-                        "⚠️ No valid export method for mode: %s, "
-                        "client: %s, exporter: %s"
-                    ),
-                    self.mode,
-                    self.client is not None,
+                    "⚠️ No valid export method: OTLP exporter is %s",
                     self.otlp_exporter is not None,
                 )
 
@@ -790,34 +785,27 @@ class HoneyHiveSpanProcessor(SpanProcessor):
     ) -> None:
         """Send span via HoneyHive SDK client (Events API).
 
+        .. deprecated::
+            Client mode is deprecated. Use OTLP export instead.
+            This method will be removed in a future release.
+
         :param span: The span to send
         :type span: ReadableSpan
         :param attributes: Span attributes dictionary
         :type attributes: dict
         :param session_id: HoneyHive session ID
         :type session_id: str
+        :raises NotImplementedError: Always. Client mode is deprecated.
         """
-        try:
-            self._safe_log("debug", "🚀 OTLP EXPORT CALLED - CLIENT MODE")
-
-            # Convert span to HoneyHive event format
-            event_data = self._convert_span_to_event(span, attributes, session_id)
-
-            # Send via client Events API
-            if (
-                self.client is not None
-                and hasattr(self.client, "events")
-                and hasattr(self.client.events, "create")
-            ):
-                response = self.client.events.create(
-                    request=PostEventRequest(event=event_data)
-                )
-                self._safe_log("debug", "✅ Event sent via client: %s", response)
-            else:
-                self._safe_log("warning", "⚠️ Client missing events.create method")
-
-        except Exception as e:
-            self._safe_log("debug", "❌ Error sending via client: %s", e)
+        warnings.warn(
+            "_send_via_client is deprecated and will be removed in a future "
+            "release. Use OTLP export mode instead.",
+            DeprecationWarning,
+            stacklevel=2,
+        )
+        raise NotImplementedError(
+            "Client mode is deprecated. Use OTLP export mode instead."
+        )
 
     def _send_via_otlp(
         self, span: ReadableSpan, _attributes: dict, _session_id: str
@@ -1113,85 +1101,28 @@ class HoneyHiveSpanProcessor(SpanProcessor):
     ) -> dict:
         """Convert OpenTelemetry span to HoneyHive event format.
 
+        .. deprecated::
+            Client mode is deprecated. This conversion is no longer needed
+            since OTLP export handles span serialization natively.
+            This method will be removed in a future release.
+
         :param span: The span to convert
         :type span: ReadableSpan
         :param attributes: Span attributes dictionary
         :type attributes: dict
         :param session_id: HoneyHive session ID
         :type session_id: str
-        :return: Event data dictionary for HoneyHive Events API
-        :rtype: dict
+        :raises NotImplementedError: Always. Client mode is deprecated.
         """
-        try:
-            # Extract raw attributes from span for event type detection
-            span_attributes = {}
-            if hasattr(span, "attributes") and span.attributes:
-                span_attributes = dict(span.attributes)
-
-            raw_attributes = extract_raw_attributes(span_attributes)
-
-            # Detect event type dynamically using patterns
-            detected_event_type = detect_event_type_from_patterns(
-                span.name, raw_attributes
-            )
-
-            # Basic event structure
-            event_data = {
-                "project": attributes.get("honeyhive.project", "Unknown"),
-                "source": attributes.get("honeyhive.source", "python-sdk"),
-                "session_id": session_id,
-                "event_name": span.name,
-                "event_type": attributes.get(
-                    "honeyhive_event_type", detected_event_type
-                ),
-                "start_time": span.start_time,
-                "end_time": span.end_time,
-                "metadata": {},
-                "inputs": {},
-                "outputs": {},
-            }
-
-            # Add all attributes as inputs (for test compatibility)
-            for key, value in attributes.items():
-                if not key.startswith("honeyhive.") and not key.startswith(
-                    "traceloop."
-                ):
-                    event_data["inputs"][key] = value
-
-            # Add span attributes as inputs too
-            for key, value in raw_attributes.items():
-                if not key.startswith("honeyhive.") and not key.startswith(
-                    "traceloop."
-                ):
-                    event_data["inputs"][key] = value
-
-            # Add HoneyHive-specific attributes as metadata
-            for key, value in attributes.items():
-                if key.startswith("honeyhive.") and key not in [
-                    "honeyhive.project",
-                    "honeyhive.source",
-                    "honeyhive.session_id",
-                ]:
-                    clean_key = key.replace("honeyhive.", "")
-                    event_data["metadata"][clean_key] = value
-
-            # Handle error status
-            if span.status and hasattr(span.status, "status_code"):
-                # pylint: disable=import-outside-toplevel  # Only needed when
-                # span has error status
-                from opentelemetry.trace import StatusCode
-
-                if span.status.status_code == StatusCode.ERROR:
-                    event_data["error"] = {
-                        "message": getattr(span.status, "description", "Unknown error"),
-                        "type": "span_error",
-                    }
-
-            return event_data
-
-        except Exception as e:
-            self._safe_log("debug", "❌ Error converting span to event: %s", e)
-            return {}
+        warnings.warn(
+            "_convert_span_to_event is deprecated and will be removed in a "
+            "future release. OTLP export handles span serialization natively.",
+            DeprecationWarning,
+            stacklevel=2,
+        )
+        raise NotImplementedError(
+            "Client mode is deprecated. Use OTLP export mode instead."
+        )
 
     def shutdown(self) -> None:
         """Shutdown the span processor.

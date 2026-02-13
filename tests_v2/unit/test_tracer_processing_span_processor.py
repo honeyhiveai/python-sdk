@@ -14,9 +14,11 @@ Analysis Applied:
 # pylint: disable=protected-access,too-many-lines,unused-argument,unnecessary-lambda,line-too-long,use-implicit-booleaness-not-comparison
 # Justification: line-too-long: Complex processor assertions; use-implicit-booleaness-not-comparison: Explicit empty dict check for clarity
 
+import warnings
 from typing import Any, Dict, Optional
 from unittest.mock import Mock, call, patch
 
+import pytest
 from opentelemetry.context import Context
 from opentelemetry.sdk.trace import ReadableSpan, Span
 from opentelemetry.trace import Status, StatusCode
@@ -39,12 +41,17 @@ class TestHoneyHiveSpanProcessorInitialization:
         assert processor.mode == "otlp"
 
     def test_init_with_client_mode(self) -> None:
-        """Test initialization with client (Events API mode)."""
+        """Test initialization with client emits DeprecationWarning and forces OTLP mode."""
         mock_client = Mock()
-        processor = HoneyHiveSpanProcessor(client=mock_client)
+        with warnings.catch_warnings(record=True) as w:
+            warnings.simplefilter("always")
+            processor = HoneyHiveSpanProcessor(client=mock_client)
 
         assert processor.client is mock_client
-        assert processor.mode == "client"
+        assert processor.mode == "otlp"
+        assert len(w) == 1
+        assert issubclass(w[0].category, DeprecationWarning)
+        assert "deprecated" in str(w[0].message).lower()
 
     def test_init_with_otlp_exporter(self) -> None:
         """Test initialization with OTLP exporter."""
@@ -63,23 +70,24 @@ class TestHoneyHiveSpanProcessorInitialization:
 
     @patch("honeyhive.utils.logger.safe_log")
     def test_init_logging_client_mode(self, mock_safe_log: Mock) -> None:
-        """Test initialization logging for client mode - EXACT messages."""
+        """Test initialization logging when client is provided: OTLP forced + deprecation."""
         mock_client = Mock()
         mock_tracer = Mock(spec=HoneyHiveTracer)
 
-        HoneyHiveSpanProcessor(client=mock_client, tracer_instance=mock_tracer)
+        with warnings.catch_warnings(record=True):
+            warnings.simplefilter("always")
+            HoneyHiveSpanProcessor(client=mock_client, tracer_instance=mock_tracer)
 
-        # Production code makes TWO logging calls - test both with exact messages
         expected_calls = [
             call(
                 mock_tracer,
                 "debug",
-                "🚀 HoneyHiveSpanProcessor initialized in CLIENT mode (direct API)",
+                "🚀 HoneyHiveSpanProcessor initialized in OTLP mode (batched)",
             ),
             call(
                 mock_tracer,
                 "debug",
-                "🔧 Span processor mode: client, client: True, disable_batch: False",
+                "🔧 Span processor mode: otlp, disable_batch: False",
             ),
         ]
         mock_safe_log.assert_has_calls(expected_calls)
@@ -91,7 +99,6 @@ class TestHoneyHiveSpanProcessorInitialization:
 
         HoneyHiveSpanProcessor(disable_batch=True, tracer_instance=mock_tracer)
 
-        # Production code makes TWO logging calls with format strings
         expected_calls = [
             call(
                 mock_tracer,
@@ -101,7 +108,7 @@ class TestHoneyHiveSpanProcessorInitialization:
             call(
                 mock_tracer,
                 "debug",
-                "🔧 Span processor mode: otlp, client: False, disable_batch: True",
+                "🔧 Span processor mode: otlp, disable_batch: True",
             ),
         ]
         mock_safe_log.assert_has_calls(expected_calls)
@@ -113,7 +120,6 @@ class TestHoneyHiveSpanProcessorInitialization:
 
         HoneyHiveSpanProcessor(disable_batch=False, tracer_instance=mock_tracer)
 
-        # Production code makes TWO logging calls with format strings
         expected_calls = [
             call(
                 mock_tracer,
@@ -123,7 +129,7 @@ class TestHoneyHiveSpanProcessorInitialization:
             call(
                 mock_tracer,
                 "debug",
-                "🔧 Span processor mode: otlp, client: False, disable_batch: False",
+                "🔧 Span processor mode: otlp, disable_batch: False",
             ),
         ]
         mock_safe_log.assert_has_calls(expected_calls)
@@ -774,35 +780,29 @@ class TestHoneyHiveSpanProcessorOnStart:
 class TestHoneyHiveSpanProcessorOnEnd:
     """Test on_end method functionality with all conditional branches."""
 
-    @patch("honeyhive.tracer.processing.span_processor.baggage.get_baggage")
     @patch("honeyhive.utils.logger.safe_log")
-    def test_on_end_client_mode_success(
-        self, mock_safe_log: Mock, mock_get_baggage: Mock
-    ) -> None:
-        """Test on_end in client mode with successful processing."""
+    def test_on_end_client_param_uses_otlp(self, mock_safe_log: Mock) -> None:
+        """Test on_end with client param still uses OTLP mode (client mode deprecated)."""
         mock_client = Mock()
-        mock_client.events.create.return_value = {"id": "event-123"}
-        mock_tracer = Mock(spec=HoneyHiveTracer)
+        mock_exporter = Mock()
+        mock_exporter.export.return_value = Mock(name="SUCCESS")
 
-        processor = HoneyHiveSpanProcessor(
-            client=mock_client, tracer_instance=mock_tracer
-        )
+        with warnings.catch_warnings(record=True):
+            warnings.simplefilter("always")
+            processor = HoneyHiveSpanProcessor(
+                client=mock_client, otlp_exporter=mock_exporter
+            )
+
+        assert processor.mode == "otlp"
 
         mock_span = Mock(spec=ReadableSpan)
         mock_span.name = "test_operation"
-        mock_span.start_time = 1000000000
-        mock_span.end_time = 2000000000
-        mock_span.attributes = {"test": "value", "honeyhive.session_id": "session-123"}
-        mock_span.status = Status(StatusCode.OK)
-        mock_span.get_span_context.return_value = Mock(span_id=12345, trace_id=67890)
-
-        mock_get_baggage.side_effect = lambda key, ctx: (
-            "session-123" if key == "session_id" else None
-        )
+        mock_span.attributes = {"honeyhive.session_id": "session-123"}
 
         processor.on_end(mock_span)
 
-        mock_client.events.create.assert_called_once()
+        mock_exporter.export.assert_called_once_with([mock_span])
+        mock_client.events.create.assert_not_called()
 
     @patch("honeyhive.utils.logger.safe_log")
     def test_on_end_otlp_mode_success(self, mock_safe_log: Mock) -> None:
@@ -864,10 +864,10 @@ class TestHoneyHiveSpanProcessorOnEnd:
     @patch("honeyhive.utils.logger.safe_log")
     def test_on_end_exception_handling(self, mock_safe_log: Mock) -> None:
         """Test on_end exception handling."""
-        mock_client = Mock()
-        mock_client.events.create.side_effect = Exception("API Error")
+        mock_exporter = Mock()
+        mock_exporter.export.side_effect = Exception("OTLP Error")
 
-        processor = HoneyHiveSpanProcessor(client=mock_client)
+        processor = HoneyHiveSpanProcessor(otlp_exporter=mock_exporter)
 
         mock_span = Mock(spec=ReadableSpan)
         mock_span.name = "test_operation"
@@ -882,51 +882,19 @@ class TestHoneyHiveSpanProcessorOnEnd:
 class TestHoneyHiveSpanProcessorSending:
     """Test span sending functionality with all conditional branches."""
 
-    @patch("honeyhive.utils.logger.safe_log")
-    def test_send_via_client_success(self, mock_safe_log: Mock) -> None:
-        """Test successful span sending via client."""
-        mock_client = Mock()
-        mock_client.events.create.return_value = {"id": "event-123"}
-
-        processor = HoneyHiveSpanProcessor(client=mock_client)
-
+    def test_send_via_client_raises_not_implemented(self) -> None:
+        """Test _send_via_client raises NotImplementedError with deprecation warning."""
+        processor = HoneyHiveSpanProcessor()
         mock_span = Mock(spec=ReadableSpan)
-        mock_span.name = "test_operation"
-        mock_span.start_time = 1000000000
-        mock_span.end_time = 2000000000
-        mock_span.attributes = {}
-        mock_span.status = Status(StatusCode.OK)
-        mock_span.get_span_context.return_value = Mock(span_id=12345, trace_id=67890)
 
-        processor._send_via_client(mock_span, {}, "session-123")
+        with warnings.catch_warnings(record=True) as w:
+            warnings.simplefilter("always")
+            with pytest.raises(NotImplementedError, match="Client mode is deprecated"):
+                processor._send_via_client(mock_span, {}, "session-123")
 
-        mock_client.events.create.assert_called_once()
-
-    @patch("honeyhive.utils.logger.safe_log")
-    def test_send_via_client_no_events_method(self, mock_safe_log: Mock) -> None:
-        """Test client without events.create method."""
-        mock_client = Mock()
-        del mock_client.events
-
-        processor = HoneyHiveSpanProcessor(client=mock_client)
-
-        mock_span = Mock(spec=ReadableSpan)
-        processor._send_via_client(mock_span, {}, "session-123")
-
-        mock_safe_log.assert_called()
-
-    @patch("honeyhive.utils.logger.safe_log")
-    def test_send_via_client_exception_handling(self, mock_safe_log: Mock) -> None:
-        """Test client sending with exception handling."""
-        mock_client = Mock()
-        mock_client.events.create.side_effect = Exception("Client error")
-
-        processor = HoneyHiveSpanProcessor(client=mock_client)
-
-        mock_span = Mock(spec=ReadableSpan)
-        processor._send_via_client(mock_span, {}, "session-123")
-
-        mock_safe_log.assert_called()
+        assert len(w) == 1
+        assert issubclass(w[0].category, DeprecationWarning)
+        assert "_send_via_client is deprecated" in str(w[0].message)
 
     @patch("honeyhive.utils.logger.safe_log")
     def test_send_via_otlp_batched_mode(self, mock_safe_log: Mock) -> None:
@@ -1153,134 +1121,16 @@ class TestHoneyHiveSpanProcessorLifecycle:
 class TestHoneyHiveSpanProcessorConversion:
     """Test span to event conversion functionality with all conditional branches."""
 
-    def test_convert_span_to_event_success(self) -> None:
-        """Test successful span to event conversion."""
+    def test_convert_span_to_event_raises_not_implemented(self) -> None:
+        """Test _convert_span_to_event raises NotImplementedError with deprecation warning."""
         processor = HoneyHiveSpanProcessor()
-
         mock_span = Mock(spec=ReadableSpan)
-        mock_span.name = "test_operation"
-        mock_span.start_time = 1000000000
-        mock_span.end_time = 2000000000
-        mock_span.status = Status(StatusCode.OK)
-        mock_span.attributes = {}
 
-        mock_context = Mock()
-        mock_context.span_id = 12345
-        mock_context.trace_id = 67890
-        mock_span.get_span_context.return_value = mock_context
+        with warnings.catch_warnings(record=True) as w:
+            warnings.simplefilter("always")
+            with pytest.raises(NotImplementedError, match="Client mode is deprecated"):
+                processor._convert_span_to_event(mock_span, {}, "session-123")
 
-        attributes = {"test": "value"}
-        session_id = "session-123"
-
-        with patch.object(processor, "_detect_event_type", return_value="tool"):
-            result = processor._convert_span_to_event(mock_span, attributes, session_id)
-
-        assert result["event_name"] == "test_operation"
-        assert result["session_id"] == "session-123"
-        assert result["event_type"] == "tool"
-        assert "start_time" in result
-        assert "end_time" in result
-
-    def test_convert_span_to_event_with_error_status(self) -> None:
-        """Test span to event conversion with error status."""
-        processor = HoneyHiveSpanProcessor()
-
-        mock_span = Mock(spec=ReadableSpan)
-        mock_span.name = "failed_operation"
-        mock_span.start_time = 1000000000
-        mock_span.end_time = 2000000000
-        mock_span.status = Status(StatusCode.ERROR, "Test error")
-        mock_span.attributes = {}
-
-        mock_context = Mock()
-        mock_context.span_id = 12345
-        mock_context.trace_id = 67890
-        mock_span.get_span_context.return_value = mock_context
-
-        attributes: Dict[str, Any] = {}
-        session_id = "session-123"
-
-        with patch.object(processor, "_detect_event_type", return_value="tool"):
-            result = processor._convert_span_to_event(mock_span, attributes, session_id)
-
-        assert result["event_name"] == "failed_operation"
-        assert "error" in result
-        assert result["error"]["type"] == "span_error"
-        assert result["error"]["message"] == "Test error"
-
-    def test_convert_span_to_event_no_span_attributes(self) -> None:
-        """Test conversion with no span attributes."""
-        processor = HoneyHiveSpanProcessor()
-
-        mock_span = Mock(spec=ReadableSpan)
-        mock_span.name = "test_operation"
-        mock_span.start_time = 1000000000
-        mock_span.end_time = 2000000000
-        mock_span.status = Status(StatusCode.OK)
-        mock_span.attributes = None
-
-        mock_context = Mock()
-        mock_context.span_id = 12345
-        mock_context.trace_id = 67890
-        mock_span.get_span_context.return_value = mock_context
-
-        attributes: Dict[str, Any] = {}
-        session_id = "session-123"
-
-        with patch.object(processor, "_detect_event_type", return_value="tool"):
-            result = processor._convert_span_to_event(mock_span, attributes, session_id)
-
-        assert result["event_name"] == "test_operation"
-        assert result["session_id"] == "session-123"
-
-    def test_convert_span_to_event_no_status(self) -> None:
-        """Test conversion with no span status."""
-        processor = HoneyHiveSpanProcessor()
-
-        mock_span = Mock(spec=ReadableSpan)
-        mock_span.name = "test_operation"
-        mock_span.start_time = 1000000000
-        mock_span.end_time = 2000000000
-        mock_span.status = None
-        mock_span.attributes = {}
-
-        mock_context = Mock()
-        mock_context.span_id = 12345
-        mock_context.trace_id = 67890
-        mock_span.get_span_context.return_value = mock_context
-
-        attributes: Dict[str, Any] = {}
-        session_id = "session-123"
-
-        with patch.object(processor, "_detect_event_type", return_value="tool"):
-            result = processor._convert_span_to_event(mock_span, attributes, session_id)
-
-        assert result["event_name"] == "test_operation"
-        assert "error" not in result
-
-    @patch("honeyhive.utils.logger.safe_log")
-    def test_convert_span_to_event_exception_handling(
-        self, mock_safe_log: Mock
-    ) -> None:
-        """Test conversion with exception handling."""
-        processor = HoneyHiveSpanProcessor()
-
-        mock_span = Mock(spec=ReadableSpan)
-        mock_span.name = "test_operation"
-        mock_span.get_span_context.side_effect = Exception("Context error")
-
-        attributes: Dict[str, Any] = {}
-        session_id = "session-123"
-
-        # Exception should be caught and return empty dict or basic structure
-        try:
-            result = processor._convert_span_to_event(mock_span, attributes, session_id)
-            # If no exception, should have basic structure
-            if result:
-                assert "event_name" in result
-                assert "session_id" in result
-        except Exception:
-            # Exception might not be fully caught, that's ok for this test
-            pass
-
-        mock_safe_log.assert_called()
+        assert len(w) == 1
+        assert issubclass(w[0].category, DeprecationWarning)
+        assert "_convert_span_to_event is deprecated" in str(w[0].message)
