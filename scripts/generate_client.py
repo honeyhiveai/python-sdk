@@ -116,6 +116,30 @@ def post_process(output_dir: Path) -> bool:
         init_file.write_text('"""Auto-generated HoneyHive API client."""\n')
         print("  ✓ Created __init__.py")
 
+    # Fix leading-underscore fields (e.g. _id) that Pydantic v2 rejects.
+    # Rename the Python field to drop the underscore while keeping the
+    # validation_alias so the original JSON key still works.
+    import re
+
+    models_dir = output_dir / "models"
+    if models_dir.exists():
+        underscore_fixed = 0
+        pattern = re.compile(
+            r"^(\s+)(_\w+)(:\s+.*Field\(.*validation_alias=[\"'])(_\w+)([\"'])",
+            re.MULTILINE,
+        )
+        for model_file in models_dir.glob("*.py"):
+            content = model_file.read_text()
+            new_content, count = pattern.subn(
+                lambda m: f"{m.group(1)}{m.group(2).lstrip('_')}{m.group(3)}{m.group(4)}{m.group(5)}",
+                content,
+            )
+            if count > 0:
+                model_file.write_text(new_content)
+                underscore_fixed += count
+        if underscore_fixed > 0:
+            print(f"  ✓ Fixed {underscore_fixed} leading-underscore field(s) in models")
+
     # Fix serialization to exclude None values
     # The API rejects null values, so we must use model_dump(exclude_none=True)
     services_dir = output_dir / "services"
