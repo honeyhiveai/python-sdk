@@ -44,8 +44,12 @@ openinference-instrumentation-bedrock
 # Google ADK instrumentor
 openinference-instrumentation-google-adk
 
-# LangChain instrumentor (for LangGraph)
+# LangChain instrumentor (for LangGraph, LangChain)
 openinference-instrumentation-langchain
+
+# CrewAI instrumentors
+openinference-instrumentation-crewai
+openinference-instrumentation-litellm
 
 # DSPy instrumentor
 openinference-instrumentation-dspy
@@ -88,9 +92,16 @@ strands
 # Pydantic AI
 pydantic-ai
 
+# CrewAI (multi-agent crews)
+crewai
+
 # LangGraph (State graphs for agents)
+langchain
 langgraph
 langchain-openai
+
+# Strands Agents (lightweight agent framework)
+strands-agents
 
 # OpenAI Agents SDK
 openai-agents
@@ -129,8 +140,17 @@ google-adk
 # Strands:
 #   pip install honeyhive strands boto3
 
+# CrewAI:
+#   pip install honeyhive crewai openinference-instrumentation-crewai openinference-instrumentation-litellm
+
+# Strands Agents:
+#   pip install honeyhive strands-agents
+
 # Pydantic AI:
 #   pip install honeyhive pydantic-ai openinference-instrumentation-anthropic
+
+# LangChain:
+#   pip install honeyhive langchain langchain-openai openinference-instrumentation-langchain
 
 # LangGraph:
 #   pip install honeyhive langgraph langchain-openai openinference-instrumentation-langchain
