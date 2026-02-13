@@ -7,11 +7,10 @@ import uuid
 
 import pytest
 
-# v1 models - note: Sessions uses dict-based API, Events now uses typed models
+# v1 models - note: Sessions uses dict-based API, Events uses dict-based create
 from honeyhive.models import (
     CreateConfigurationRequest,
     CreateDatapointRequest,
-    PostEventRequest,
 )
 
 
@@ -228,7 +227,7 @@ class TestSimpleIntegration:
             }
 
             event_response = integration_client.events.create(
-                request=PostEventRequest(event=event_data)
+                {"event": event_data}
             )
             # v1 API returns a dict or object with event_id
             assert event_response is not None
@@ -254,6 +253,7 @@ class TestSimpleIntegration:
 
                 events_result = integration_client.events.list(
                     data={
+                        "project": integration_project_name,
                         "filters": [session_filter],
                         "limit": 10,
                     }

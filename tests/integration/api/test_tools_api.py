@@ -30,23 +30,17 @@ class TestToolsAPI:
         tool_name = f"test_tool_{test_id}"
 
         tool_request = CreateToolRequest(
+            task=integration_project_name,
             name=tool_name,
             description=f"Integration test tool {test_id}",
             parameters={
-                "type": "function",
-                "function": {
-                    "name": tool_name,
-                    "description": "Test function",
-                    "parameters": {
-                        "type": "object",
-                        "properties": {
-                            "query": {"type": "string", "description": "Search query"}
-                        },
-                        "required": ["query"],
-                    },
+                "type": "object",
+                "properties": {
+                    "query": {"type": "string", "description": "Search query"}
                 },
+                "required": ["query"],
             },
-            tool_type="function",
+            type="function",
         )
 
         response = integration_client.tools.create(tool_request)
@@ -74,23 +68,17 @@ class TestToolsAPI:
 
         # Create a tool first
         tool_request = CreateToolRequest(
+            task=integration_project_name,
             name=tool_name,
             description=f"Integration test tool for retrieval {test_id}",
             parameters={
-                "type": "function",
-                "function": {
-                    "name": tool_name,
-                    "description": "Test function",
-                    "parameters": {
-                        "type": "object",
-                        "properties": {
-                            "query": {"type": "string", "description": "Search query"}
-                        },
-                        "required": ["query"],
-                    },
+                "type": "object",
+                "properties": {
+                    "query": {"type": "string", "description": "Search query"}
                 },
+                "required": ["query"],
             },
-            tool_type="function",
+            type="function",
         )
 
         create_resp = integration_client.tools.create(tool_request)
@@ -142,26 +130,20 @@ class TestToolsAPI:
         for i in range(3):
             tool_name = f"test_list_tool_{test_id}_{i}"
             tool_request = CreateToolRequest(
+                task=integration_project_name,
                 name=tool_name,
                 description=f"Integration test tool {i} for listing {test_id}",
                 parameters={
-                    "type": "function",
-                    "function": {
-                        "name": tool_name,
-                        "description": f"Test function {i}",
-                        "parameters": {
-                            "type": "object",
-                            "properties": {
-                                "query": {
-                                    "type": "string",
-                                    "description": "Search query",
-                                }
-                            },
-                            "required": ["query"],
-                        },
+                    "type": "object",
+                    "properties": {
+                        "query": {
+                            "type": "string",
+                            "description": "Search query",
+                        }
                     },
+                    "required": ["query"],
                 },
-                tool_type="function",
+                type="function",
             )
 
             create_resp = integration_client.tools.create(tool_request)
@@ -195,23 +177,17 @@ class TestToolsAPI:
 
         # Create a tool
         tool_request = CreateToolRequest(
+            task=integration_project_name,
             name=tool_name,
             description=f"Integration test tool {test_id}",
             parameters={
-                "type": "function",
-                "function": {
-                    "name": tool_name,
-                    "description": "Test function",
-                    "parameters": {
-                        "type": "object",
-                        "properties": {
-                            "query": {"type": "string", "description": "Search query"}
-                        },
-                        "required": ["query"],
-                    },
+                "type": "object",
+                "properties": {
+                    "query": {"type": "string", "description": "Search query"}
                 },
+                "required": ["query"],
             },
-            tool_type="function",
+            type="function",
         )
 
         create_resp = integration_client.tools.create(tool_request)
@@ -250,23 +226,17 @@ class TestToolsAPI:
 
         # Create a tool
         tool_request = CreateToolRequest(
+            task=integration_project_name,
             name=tool_name,
             description=f"Integration test tool {test_id}",
             parameters={
-                "type": "function",
-                "function": {
-                    "name": tool_name,
-                    "description": "Test function",
-                    "parameters": {
-                        "type": "object",
-                        "properties": {
-                            "query": {"type": "string", "description": "Search query"}
-                        },
-                        "required": ["query"],
-                    },
+                "type": "object",
+                "properties": {
+                    "query": {"type": "string", "description": "Search query"}
                 },
+                "required": ["query"],
             },
-            tool_type="function",
+            type="function",
         )
 
         create_resp = integration_client.tools.create(tool_request)

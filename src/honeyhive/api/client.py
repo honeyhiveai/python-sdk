@@ -377,8 +377,17 @@ class EventsAPI(BaseAPI):
         return self.list(data)
 
     def get_by_session_id(self, session_id: str) -> Dict[str, Any]:
-        """Get events by session ID (GET /v1/events/{session_id})."""
-        return events_svc.getEventsBySessionId(self._api_config, id=session_id)
+        """Get session event by session ID (GET /session/{session_id}).
+
+        Returns a dict with 'events' key containing the session event.
+        """
+        result = session_svc.getSession(self._api_config, session_id=session_id)
+        # getSession returns an Event object; wrap in standard dict format
+        if hasattr(result, "model_dump"):
+            return {"events": [result.model_dump()]}
+        elif isinstance(result, dict):
+            return {"events": [result]}
+        return {"events": [result]}
 
 
 class ExperimentsAPI(BaseAPI):

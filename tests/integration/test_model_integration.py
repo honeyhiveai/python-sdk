@@ -159,6 +159,7 @@ class TestModelIntegration:
 
         # Step 3: Create experiment run request (replaces CreateRunRequest)
         run_request = PostExperimentRunRequest(
+            project="test-project",
             name="workflow-evaluation",
             event_ids=[str(uuid.uuid4())],  # Use real UUID string
             configuration={"metrics": ["accuracy", "precision"]},

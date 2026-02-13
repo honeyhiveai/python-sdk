@@ -66,14 +66,24 @@ def verify_backend_event(
     for attempt in range(test_config.max_attempts):
         try:
             # SDK client handles HTTP retries automatically
+            # Use POST /events/export which requires both project and filters
             if session_id:
-                events_response = client.events.get_by_session_id(
-                    session_id=session_id
+                events_response = client.events.list(
+                    data={
+                        "project": project,
+                        "filters": [
+                            {
+                                "field": "session_id",
+                                "value": session_id,
+                                "operator": "is",
+                            }
+                        ],
+                    }
                 )
             else:
                 # Fallback: use events export endpoint filtered by project
                 events_response = client.events.list(
-                    data={"project": project, "limit": 100}
+                    data={"project": project, "filters": [], "limit": 100}
                 )
 
             # Validate API response (may be dict or typed model)
