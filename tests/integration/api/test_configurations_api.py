@@ -31,6 +31,7 @@ class TestConfigurationsAPI:
             "hyperparameters": {"temperature": 0.7, "test_id": test_id},
         }
         config_request = CreateConfigurationRequest(
+            project=integration_project_name,
             name=config_name,
             provider="openai",
             parameters=parameters,
@@ -62,6 +63,7 @@ class TestConfigurationsAPI:
             "model": "gpt-3.5-turbo",
         }
         config_request = CreateConfigurationRequest(
+            project=integration_project_name,
             name=config_name,
             provider="openai",
             parameters=parameters,
@@ -100,6 +102,7 @@ class TestConfigurationsAPI:
                 "hyperparameters": {"test_id": test_id, "index": i},
             }
             config_request = CreateConfigurationRequest(
+                project=integration_project_name,
                 name=f"test_list_config_{test_id}_{i}",
                 provider="openai",
                 parameters=parameters,
@@ -130,6 +133,7 @@ class TestConfigurationsAPI:
             "hyperparameters": {"temperature": 0.5},
         }
         config_request = CreateConfigurationRequest(
+            project=integration_project_name,
             name=config_name,
             provider="openai",
             parameters=parameters,
@@ -170,6 +174,7 @@ class TestConfigurationsAPI:
             "hyperparameters": {"test": "delete"},
         }
         config_request = CreateConfigurationRequest(
+            project=integration_project_name,
             name=config_name,
             provider="openai",
             parameters=parameters,

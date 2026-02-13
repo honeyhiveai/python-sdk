@@ -37,6 +37,7 @@ class TestSimpleIntegration:
         test_response = f"integration test response {test_id}"
 
         datapoint_request = CreateDatapointRequest(
+            project=integration_project_name,
             inputs={"query": test_query, "test_id": test_id},
             ground_truth={"response": test_response},
         )
@@ -119,6 +120,7 @@ class TestSimpleIntegration:
         # v1 API uses CreateConfigurationRequest with dict parameters
         # Note: project is passed to list(), not in the request body
         config_request = CreateConfigurationRequest(
+            project=integration_project_name,
             name=config_name,
             provider="openai",
             parameters={
@@ -302,12 +304,13 @@ class TestSimpleIntegration:
             # required
             pytest.fail(f"API call failed - real system must work: {e}")
 
-    def test_model_serialization_workflow(self):
+    def test_model_serialization_workflow(self, integration_project_name):
         """Test that models can be created and serialized."""
         # v1 API uses dict-based requests for sessions and events, test with typed models
 
         # Test datapoint request serialization
         datapoint_request = CreateDatapointRequest(
+            project=integration_project_name,
             inputs={"query": "test query"},
             ground_truth={"response": "test response"},
         )
@@ -317,6 +320,7 @@ class TestSimpleIntegration:
 
         # Test configuration request serialization
         config_request = CreateConfigurationRequest(
+            project=integration_project_name,
             name="test-config",
             provider="openai",
             parameters={"model": "gpt-4", "temperature": 0.7},
@@ -326,7 +330,7 @@ class TestSimpleIntegration:
         assert config_dict["provider"] == "openai"
         assert config_dict["parameters"]["model"] == "gpt-4"
 
-    def test_error_handling(self, integration_client):
+    def test_error_handling(self, integration_client, integration_project_name):
         """Test error handling with real API calls."""
         # Agent OS Zero Failing Tests Policy: NO SKIPPING - must use real credentials
         if (
@@ -339,6 +343,7 @@ class TestSimpleIntegration:
 
         # Test with invalid data to trigger real API error
         invalid_request = CreateDatapointRequest(
+            project=integration_project_name,
             inputs={},  # Empty inputs
             linked_datasets=[],  # Empty linked datasets
         )

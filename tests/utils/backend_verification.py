@@ -37,8 +37,8 @@ class BackendVerificationError(Exception):
 def verify_backend_event(
     client: HoneyHive,
     project: str,
-    session_id: str,
-    unique_identifier: str,
+    session_id: Optional[str] = None,
+    unique_identifier: str = "",
     expected_event_name: Optional[str] = None,
     debug_content: bool = False,
 ) -> Any:
@@ -50,7 +50,7 @@ def verify_backend_event(
     Args:
         client: HoneyHive client instance (uses its configured retry settings)
         project: Project name for filtering
-        session_id: Session ID to retrieve events for
+        session_id: Session ID to retrieve events for (optional; falls back to export)
         unique_identifier: Unique identifier to search for (test.unique_id attribute)
         expected_event_name: Expected event name for validation
         debug_content: Whether to log detailed event content for debugging
@@ -66,24 +66,28 @@ def verify_backend_event(
     for attempt in range(test_config.max_attempts):
         try:
             # SDK client handles HTTP retries automatically
-            events_response = client.events.get_by_session_id(session_id=session_id)
+            if session_id:
+                events_response = client.events.get_by_session_id(
+                    session_id=session_id
+                )
+            else:
+                # Fallback: use events export endpoint filtered by project
+                events_response = client.events.list(
+                    data={"project": project, "limit": 100}
+                )
 
-            # Validate API response - now returns typed GetEventsBySessionIdResponse model
+            # Validate API response (may be dict or typed model)
             if events_response is None:
                 logger.warning(f"API returned None for events (attempt {attempt + 1})")
                 continue
 
-            if events_response is None:
-                logger.warning(
-                    f"API returned unexpected None response type "
-                    f"(attempt {attempt + 1})"
-                )
-                continue
-
-            # Extract events list from typed response
-            events = (
-                events_response.events if hasattr(events_response, "events") else []
-            )
+            # Extract events list from response (dict or typed model)
+            if isinstance(events_response, dict):
+                events = events_response.get("events", [])
+            elif hasattr(events_response, "events"):
+                events = events_response.events
+            else:
+                events = []
             if not isinstance(events, list):
                 logger.warning(
                     f"API response 'events' field is not a list: {type(events)} "

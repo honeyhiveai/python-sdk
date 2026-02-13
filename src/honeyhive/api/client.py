@@ -376,6 +376,10 @@ class EventsAPI(BaseAPI):
         """Get events (backwards compatible alias for list())."""
         return self.list(data)
 
+    def get_by_session_id(self, session_id: str) -> Dict[str, Any]:
+        """Get events by session ID (GET /v1/events/{session_id})."""
+        return events_svc.getEventsBySessionId(self._api_config, id=session_id)
+
 
 class ExperimentsAPI(BaseAPI):
     """Experiments API."""

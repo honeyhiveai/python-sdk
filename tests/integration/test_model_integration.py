@@ -32,6 +32,7 @@ class TestModelIntegration:
         """Test complete model serialization workflow."""
         # v1 API: Create a configuration request with simplified structure
         config_request = CreateConfigurationRequest(
+            project="test-project",
             name="complex-config",
             provider="openai",
             parameters={
@@ -91,6 +92,7 @@ class TestModelIntegration:
         """Test model validation with complex data."""
         # v1 API: Test datapoint creation instead (events API changed)
         datapoint_request = CreateDatapointRequest(
+            project="test-project",
             inputs={
                 "prompt": "Test prompt for validation",
                 "user_id": "user-123",
@@ -141,6 +143,7 @@ class TestModelIntegration:
 
         # Step 1: Create datapoint request
         datapoint_request = CreateDatapointRequest(
+            project="test-project",
             inputs={"query": "What is AI?", "context": "Technology question"},
             metadata={"workflow_step": "datapoint_creation"},
         )
@@ -163,6 +166,7 @@ class TestModelIntegration:
 
         # Step 4: Create configuration request
         config_request = CreateConfigurationRequest(
+            project="test-project",
             name="workflow-config",
             provider="openai",
             parameters={"model": "gpt-4", "temperature": 0.7},
@@ -206,6 +210,7 @@ class TestModelIntegration:
         """Test model edge cases and boundary conditions."""
         # v1 API: Test with minimal required fields using datapoint
         minimal_datapoint = CreateDatapointRequest(
+            project="test-project",
             inputs={},
         )
 
@@ -229,6 +234,7 @@ class TestModelIntegration:
         }
 
         complex_datapoint = CreateDatapointRequest(
+            project="test-project",
             inputs={"complex_input": complex_config},
             metadata={"config": complex_config},
         )
@@ -274,6 +280,7 @@ class TestModelIntegration:
         # Test invalid parameter types with configuration
         with pytest.raises(ValidationError):
             CreateConfigurationRequest(
+                project="test-project",
                 name="invalid-config",
                 provider="openai",
                 parameters="invalid_parameters",  # Should be a dict
@@ -282,6 +289,7 @@ class TestModelIntegration:
         # Test invalid provider type
         with pytest.raises(ValidationError):
             CreateConfigurationRequest(
+                project="test-project",
                 name="test-config",
                 provider=123,  # Should be a string
                 parameters={"model": "gpt-4"},
@@ -318,6 +326,7 @@ class TestModelIntegration:
             }
 
         large_config = CreateConfigurationRequest(
+            project="test-project",
             name="large-config",
             provider="openai",
             parameters=large_parameters,

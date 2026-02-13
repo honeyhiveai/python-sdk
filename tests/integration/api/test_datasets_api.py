@@ -22,6 +22,7 @@ class TestDatasetsAPI:
         dataset_name = f"test_dataset_{test_id}"
 
         dataset_request = CreateDatasetRequest(
+            project=integration_project_name,
             name=dataset_name,
             description=f"Test dataset {test_id}",
         )
@@ -61,6 +62,7 @@ class TestDatasetsAPI:
         dataset_name = f"test_get_dataset_{test_id}"
 
         dataset_request = CreateDatasetRequest(
+            project=integration_project_name,
             name=dataset_name,
             description="Test get dataset",
         )
@@ -95,6 +97,7 @@ class TestDatasetsAPI:
         # Create multiple datasets
         for i in range(2):
             dataset_request = CreateDatasetRequest(
+                project=integration_project_name,
                 name=f"test_list_dataset_{test_id}_{i}",
             )
             response = integration_client.datasets.create(dataset_request)
@@ -123,6 +126,7 @@ class TestDatasetsAPI:
         unique_name = f"test_name_filter_{test_id}"
 
         dataset_request = CreateDatasetRequest(
+            project=integration_project_name,
             name=unique_name,
             description="Test name filtering",
         )
@@ -159,6 +163,7 @@ class TestDatasetsAPI:
         dataset_name = f"test_delete_dataset_{test_id}"
 
         dataset_request = CreateDatasetRequest(
+            project=integration_project_name,
             name=dataset_name,
             description=f"Test delete dataset {test_id}",
         )

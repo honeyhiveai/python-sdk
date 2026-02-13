@@ -66,6 +66,7 @@ class TestEndToEndValidation:
         }
 
         datapoint_request = CreateDatapointRequest(
+            project=real_project,
             inputs=test_data,
             ground_truth=expected_ground_truth,
             metadata={"integration_test": True, "test_id": test_id},
@@ -322,6 +323,7 @@ class TestEndToEndValidation:
             # Step 1: Create configuration with comprehensive parameters
             print(f"🔄 Creating configuration: {config_name}")
             config_request = CreateConfigurationRequest(
+                project=integration_project_name,
                 name=config_name,
                 provider="openai",
                 parameters={
@@ -424,6 +426,7 @@ class TestEndToEndValidation:
             # 1. Create configuration
             config_name = f"consistency-config-{test_id}"
             config_request = CreateConfigurationRequest(
+                project=real_project,
                 name=config_name,
                 provider="openai",
                 parameters={
@@ -457,6 +460,7 @@ class TestEndToEndValidation:
 
             # 3. Create datapoint
             datapoint_request = CreateDatapointRequest(
+                project=real_project,
                 inputs={"query": f"Consistency test query {test_id}"},
                 ground_truth={"response": f"Consistency test response {test_id}"},
                 metadata={"test_id": test_id, "timestamp": test_timestamp},

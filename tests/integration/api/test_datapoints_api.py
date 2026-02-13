@@ -24,6 +24,7 @@ class TestDatapointsAPI:
         test_ground_truth = {"response": f"test response {test_id}"}
 
         datapoint_request = CreateDatapointRequest(
+            project=integration_project_name,
             inputs=test_inputs,
             ground_truth=test_ground_truth,
         )
@@ -45,6 +46,7 @@ class TestDatapointsAPI:
         test_ground_truth = {"response": f"test response {test_id}"}
 
         datapoint_request = CreateDatapointRequest(
+            project=integration_project_name,
             inputs=test_inputs,
             ground_truth=test_ground_truth,
         )
@@ -83,6 +85,7 @@ class TestDatapointsAPI:
         # Create multiple datapoints
         for i in range(3):
             datapoint_request = CreateDatapointRequest(
+                project=integration_project_name,
                 inputs={"query": f"test {test_id} item {i}", "test_id": test_id},
                 ground_truth={"response": f"response {i}"},
             )
@@ -108,6 +111,7 @@ class TestDatapointsAPI:
         test_ground_truth = {"response": f"test response {test_id}"}
 
         datapoint_request = CreateDatapointRequest(
+            project=integration_project_name,
             inputs=test_inputs,
             ground_truth=test_ground_truth,
         )
@@ -148,6 +152,7 @@ class TestDatapointsAPI:
         test_ground_truth = {"response": f"test response {test_id}"}
 
         datapoint_request = CreateDatapointRequest(
+            project=integration_project_name,
             inputs=test_inputs,
             ground_truth=test_ground_truth,
         )
