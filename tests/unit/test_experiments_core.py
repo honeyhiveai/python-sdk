@@ -610,8 +610,10 @@ class TestEvaluate:
 
         # Verify
         assert result == mock_result
-        # The code only passes api_key and optionally base_url to HoneyHive
-        mock_honeyhive_class.assert_called_once_with(api_key="test-key")
+        # The code passes api_key and optionally base_url (if env var set) to HoneyHive
+        mock_honeyhive_class.assert_called_once()
+        call_kwargs = mock_honeyhive_class.call_args[1]
+        assert call_kwargs["api_key"] == "test-key"
         mock_prepare_external.assert_called_once_with(dataset)
         mock_run_experiment.assert_called_once()
         mock_run_evaluators.assert_called_once()

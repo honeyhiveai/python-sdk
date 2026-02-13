@@ -46,6 +46,7 @@ class MockHoneyHiveTracer:
         self.config.verbose = False
         self.config.session = Mock()
         self.config.session.inputs = {}
+        self.config.skip_default_session = False
         # Span limit configuration
         self.config.max_attributes = 1024
         self.config.max_events = 1024
