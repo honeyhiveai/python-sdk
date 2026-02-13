@@ -9,11 +9,10 @@ specification using openapi-python-generator. The generated code includes:
 - API configuration with Bearer auth support
 
 Usage:
-    python scripts/generate_client.py [--spec PATH] [--minimal]
+    python scripts/generate_client.py [--spec PATH]
 
 Options:
-    --spec PATH    Path to OpenAPI spec (default: openapi/v1.yaml)
-    --minimal      Use minimal spec for testing (openapi/v1_minimal.yaml)
+    --spec PATH    Path to OpenAPI spec (default: openapi/openapi.yaml)
 
 The generated client is written to:
     src/honeyhive/_generated/
@@ -27,8 +26,7 @@ from pathlib import Path
 
 # Get the repo root directory
 REPO_ROOT = Path(__file__).parent.parent
-DEFAULT_SPEC = REPO_ROOT / "openapi" / "v1.yaml"
-MINIMAL_SPEC = REPO_ROOT / "openapi" / "v1_minimal.yaml"
+DEFAULT_SPEC = REPO_ROOT / "openapi" / "openapi.yaml"
 OUTPUT_DIR = REPO_ROOT / "src" / "honeyhive" / "_generated"
 TEMP_DIR = REPO_ROOT / ".generated_temp"
 
@@ -148,20 +146,10 @@ def main() -> int:
         type=Path,
         help=f"Path to OpenAPI spec (default: {DEFAULT_SPEC.relative_to(REPO_ROOT)})",
     )
-    parser.add_argument(
-        "--minimal",
-        action="store_true",
-        help="Use minimal spec for testing",
-    )
     args = parser.parse_args()
 
     # Determine which spec to use
-    if args.spec:
-        spec_path = args.spec
-    elif args.minimal:
-        spec_path = MINIMAL_SPEC
-    else:
-        spec_path = DEFAULT_SPEC
+    spec_path = args.spec if args.spec else DEFAULT_SPEC
 
     print("🚀 Generating SDK Client (openapi-python-generator)")
     print("=" * 55)

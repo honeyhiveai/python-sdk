@@ -10,7 +10,7 @@
   - Sync and async methods for all endpoints
   - New endpoint support: batch events, experiment results/comparison, project CRUD
   - Control Plane URL support via `HH_CP_API_URL` environment variable
-  - Files: `src/honeyhive/_generated/`, `openapi/v1.yaml`
+  - Files: `src/honeyhive/_generated/`, `openapi/openapi.yaml`
 
 - **✨ API Client: Comprehensive backwards compatible aliases**
   - All API classes support both new (`list()`, `create()`, `get()`) and legacy (`list_datasets()`, `create_dataset()`) method names
