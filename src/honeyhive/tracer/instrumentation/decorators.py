@@ -358,16 +358,15 @@ def _execute_with_tracing_sync(
                         enrich_kwargs["event_type"] = params.event_type
                     if params.event_name is not None:
                         enrich_kwargs["event_name"] = params.event_name
-                    if params.source is not None:
-                        enrich_kwargs["source"] = params.source
-                    if params.project is not None:
-                        enrich_kwargs["project"] = params.project
-                    if params.session_id is not None:
-                        enrich_kwargs["session_id"] = params.session_id
-                    if params.user_id is not None:
-                        enrich_kwargs["user_id"] = params.user_id
-                    if params.session_name is not None:
-                        enrich_kwargs["session_name"] = params.session_name
+                    # Use getattr for fields that may not be declared
+                    # on TracingParams (they can be passed as extra fields)
+                    for _field in (
+                        "source", "project", "session_id",
+                        "user_id", "session_name",
+                    ):
+                        _val = getattr(params, _field, None)
+                        if _val is not None:
+                            enrich_kwargs[_field] = _val
                     if params.config is not None:
                         enrich_kwargs["config"] = params.config
                     if params.metadata is not None:
@@ -514,16 +513,15 @@ async def _execute_with_tracing(
                         enrich_kwargs["event_type"] = params.event_type
                     if params.event_name is not None:
                         enrich_kwargs["event_name"] = params.event_name
-                    if params.source is not None:
-                        enrich_kwargs["source"] = params.source
-                    if params.project is not None:
-                        enrich_kwargs["project"] = params.project
-                    if params.session_id is not None:
-                        enrich_kwargs["session_id"] = params.session_id
-                    if params.user_id is not None:
-                        enrich_kwargs["user_id"] = params.user_id
-                    if params.session_name is not None:
-                        enrich_kwargs["session_name"] = params.session_name
+                    # Use getattr for fields that may not be declared
+                    # on TracingParams (they can be passed as extra fields)
+                    for _field in (
+                        "source", "project", "session_id",
+                        "user_id", "session_name",
+                    ):
+                        _val = getattr(params, _field, None)
+                        if _val is not None:
+                            enrich_kwargs[_field] = _val
                     if params.config is not None:
                         enrich_kwargs["config"] = params.config
                     if params.metadata is not None:
