@@ -204,8 +204,13 @@ class TestOpenAIIntegration:
 
         # Execute (will skip if no OPENAI_API_KEY)
         if os.environ.get("OPENAI_API_KEY"):
-            result = call_openai("Say 'test'")
-            assert isinstance(result, str)
+            try:
+                result = call_openai("Say 'test'")
+                assert isinstance(result, str)
+            except Exception as e:
+                if "insufficient_quota" in str(e) or "429" in str(e):
+                    pytest.skip(f"OpenAI API quota exceeded: {e}")
+                raise
 
 
 @pytest.mark.integration

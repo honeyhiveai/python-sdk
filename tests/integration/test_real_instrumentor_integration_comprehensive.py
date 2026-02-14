@@ -203,6 +203,8 @@ print("✅ Subprocess integration test passed")
                 "OpenAI or OpenInference instrumentor not available - "
                 "install required dependencies"
             )
+        except openai.RateLimitError as e:
+            pytest.skip(f"OpenAI API quota exceeded: {e}")
 
     @pytest.mark.anthropic_required
     def test_real_anthropic_instrumentor_integration(
@@ -253,6 +255,10 @@ print("✅ Subprocess integration test passed")
                 "Anthropic or OpenInference instrumentor not available - "
                 "install required dependencies"
             )
+        except (TypeError, anthropic.AuthenticationError) as e:
+            # TypeError: "Could not resolve authentication method" when key is missing
+            # AuthenticationError: when key is invalid
+            pytest.skip(f"Anthropic API key not configured or invalid: {e}")
 
     def test_multiple_instrumentor_coexistence(
         self,

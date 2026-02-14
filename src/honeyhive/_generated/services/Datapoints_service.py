@@ -32,7 +32,7 @@ def getDatapoints(
         key: value for (key, value) in query_params.items() if value is not None
     }
 
-    with httpx.Client(base_url=base_path, verify=api_config.verify) as client:
+    with httpx.Client(base_url=base_path, verify=api_config.verify, timeout=api_config.timeout) as client:
         response = client.request(
             "get",
             httpx.URL(path),
@@ -71,7 +71,7 @@ def createDatapoint(
         key: value for (key, value) in query_params.items() if value is not None
     }
 
-    with httpx.Client(base_url=base_path, verify=api_config.verify) as client:
+    with httpx.Client(base_url=base_path, verify=api_config.verify, timeout=api_config.timeout) as client:
         response = client.request(
             "post",
             httpx.URL(path),
@@ -113,7 +113,7 @@ def getDatapoint(
         key: value for (key, value) in query_params.items() if value is not None
     }
 
-    with httpx.Client(base_url=base_path, verify=api_config.verify) as client:
+    with httpx.Client(base_url=base_path, verify=api_config.verify, timeout=api_config.timeout) as client:
         response = client.request(
             "get",
             httpx.URL(path),
@@ -153,7 +153,7 @@ def updateDatapoint(
         key: value for (key, value) in query_params.items() if value is not None
     }
 
-    with httpx.Client(base_url=base_path, verify=api_config.verify) as client:
+    with httpx.Client(base_url=base_path, verify=api_config.verify, timeout=api_config.timeout) as client:
         response = client.request(
             "put",
             httpx.URL(path),
@@ -191,7 +191,7 @@ def deleteDatapoint(
         key: value for (key, value) in query_params.items() if value is not None
     }
 
-    with httpx.Client(base_url=base_path, verify=api_config.verify) as client:
+    with httpx.Client(base_url=base_path, verify=api_config.verify, timeout=api_config.timeout) as client:
         response = client.request(
             "delete",
             httpx.URL(path),

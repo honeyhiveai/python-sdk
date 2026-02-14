@@ -9,6 +9,7 @@ class APIConfig(BaseModel):
     base_path: str = "https://api.honeyhive.ai"
     verify: Union[bool, str] = True
     access_token: Optional[str] = None
+    timeout: float = 30.0
 
     def get_access_token(self) -> Optional[str]:
         return self.access_token

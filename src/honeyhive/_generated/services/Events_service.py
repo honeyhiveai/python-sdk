@@ -24,7 +24,7 @@ def createEvent(
         key: value for (key, value) in query_params.items() if value is not None
     }
 
-    with httpx.Client(base_url=base_path, verify=api_config.verify) as client:
+    with httpx.Client(base_url=base_path, verify=api_config.verify, timeout=api_config.timeout) as client:
         response = client.request(
             "post",
             httpx.URL(path),
@@ -62,7 +62,7 @@ def updateEvent(
         key: value for (key, value) in query_params.items() if value is not None
     }
 
-    with httpx.Client(base_url=base_path, verify=api_config.verify) as client:
+    with httpx.Client(base_url=base_path, verify=api_config.verify, timeout=api_config.timeout) as client:
         response = client.request(
             "put",
             httpx.URL(path),
@@ -100,7 +100,7 @@ def getEvents(
         key: value for (key, value) in query_params.items() if value is not None
     }
 
-    with httpx.Client(base_url=base_path, verify=api_config.verify) as client:
+    with httpx.Client(base_url=base_path, verify=api_config.verify, timeout=api_config.timeout) as client:
         response = client.request(
             "post",
             httpx.URL(path),
@@ -140,7 +140,7 @@ def createModelEvent(
         key: value for (key, value) in query_params.items() if value is not None
     }
 
-    with httpx.Client(base_url=base_path, verify=api_config.verify) as client:
+    with httpx.Client(base_url=base_path, verify=api_config.verify, timeout=api_config.timeout) as client:
         response = client.request(
             "post",
             httpx.URL(path),
@@ -178,7 +178,7 @@ def createEventBatch(
         key: value for (key, value) in query_params.items() if value is not None
     }
 
-    with httpx.Client(base_url=base_path, verify=api_config.verify) as client:
+    with httpx.Client(base_url=base_path, verify=api_config.verify, timeout=api_config.timeout) as client:
         response = client.request(
             "post",
             httpx.URL(path),
@@ -222,7 +222,7 @@ def createModelEventBatch(
         key: value for (key, value) in query_params.items() if value is not None
     }
 
-    with httpx.Client(base_url=base_path, verify=api_config.verify) as client:
+    with httpx.Client(base_url=base_path, verify=api_config.verify, timeout=api_config.timeout) as client:
         response = client.request(
             "post",
             httpx.URL(path),

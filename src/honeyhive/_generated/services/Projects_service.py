@@ -24,7 +24,7 @@ def getProjects(
         key: value for (key, value) in query_params.items() if value is not None
     }
 
-    with httpx.Client(base_url=base_path, verify=api_config.verify) as client:
+    with httpx.Client(base_url=base_path, verify=api_config.verify, timeout=api_config.timeout) as client:
         response = client.request(
             "get",
             httpx.URL(path),
@@ -61,7 +61,7 @@ def createProject(
         key: value for (key, value) in query_params.items() if value is not None
     }
 
-    with httpx.Client(base_url=base_path, verify=api_config.verify) as client:
+    with httpx.Client(base_url=base_path, verify=api_config.verify, timeout=api_config.timeout) as client:
         response = client.request(
             "post",
             httpx.URL(path),
@@ -99,7 +99,7 @@ def updateProject(
         key: value for (key, value) in query_params.items() if value is not None
     }
 
-    with httpx.Client(base_url=base_path, verify=api_config.verify) as client:
+    with httpx.Client(base_url=base_path, verify=api_config.verify, timeout=api_config.timeout) as client:
         response = client.request(
             "put",
             httpx.URL(path),
@@ -137,7 +137,7 @@ def deleteProject(
         key: value for (key, value) in query_params.items() if value is not None
     }
 
-    with httpx.Client(base_url=base_path, verify=api_config.verify) as client:
+    with httpx.Client(base_url=base_path, verify=api_config.verify, timeout=api_config.timeout) as client:
         response = client.request(
             "delete",
             httpx.URL(path),
