@@ -28,6 +28,8 @@ name: Tox Full Test Suite
     secrets:
       HH_API_KEY:
         required: false
+      HH_API_KEY_MULTITENENT:
+        required: false
       HH_PROJECT:
         required: false
       HH_TEST_API_KEY:
@@ -159,7 +161,7 @@ jobs:
       - name: Check for API credentials
         id: check_credentials
         env:
-          HH_KEY: ${{ secrets.HH_API_KEY }}
+          HH_KEY: ${{ secrets.HH_API_KEY_MULTITENENT || secrets.HH_API_KEY }}
         run: |
           if [[ -n "$HH_KEY" ]]; then
             echo "has_honeyhive_key=true" >> $GITHUB_OUTPUT
@@ -179,7 +181,8 @@ jobs:
           tox -e integration
         env:
           # HoneyHive credentials (required)
-          HH_API_KEY: ${{ secrets.HH_API_KEY }}
+          # Use multitenent key for old backend (this branch), fall back to standard key
+          HH_API_KEY: ${{ secrets.HH_API_KEY_MULTITENENT || secrets.HH_API_KEY }}
           HH_PROJECT: ${{ secrets.HH_PROJECT }}
           HH_SOURCE: "github-actions-integration"
           HH_TEST_MODE: false
