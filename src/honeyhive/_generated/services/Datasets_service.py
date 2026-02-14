@@ -1,8 +1,6 @@
 from typing import *
 
-import httpx
-
-from ..api_config import APIConfig, HTTPException
+from ..api_config import APIConfig, HTTPException, _make_request
 from ..models import *
 
 
@@ -15,7 +13,6 @@ def getDatasets(
 ) -> GetDatasetsResponse:
     api_config = api_config_override if api_config_override else APIConfig()
 
-    base_path = api_config.base_path
     path = f"/datasets"
     headers = {
         "Content-Type": "application/json",
@@ -32,18 +29,12 @@ def getDatasets(
         key: value for (key, value) in query_params.items() if value is not None
     }
 
-    with httpx.Client(base_url=base_path, verify=api_config.verify, timeout=api_config.timeout) as client:
-        response = client.request(
-            "get",
-            httpx.URL(path),
-            headers=headers,
-            params=query_params,
-        )
+    response = _make_request(api_config, "get", path, headers, params=query_params)
 
     if response.status_code != 200:
         raise HTTPException(
             response.status_code,
-            f"getDatasets failed with status code: {response.status_code}",
+            f"getDatasets failed with status code: {response.status_code}. Response: {response.text[:500]}",
         )
     else:
         body = None if 200 == 204 else response.json()
@@ -56,7 +47,6 @@ def createDataset(
 ) -> CreateDatasetResponse:
     api_config = api_config_override if api_config_override else APIConfig()
 
-    base_path = api_config.base_path
     path = f"/datasets"
     headers = {
         "Content-Type": "application/json",
@@ -69,19 +59,15 @@ def createDataset(
         key: value for (key, value) in query_params.items() if value is not None
     }
 
-    with httpx.Client(base_url=base_path, verify=api_config.verify, timeout=api_config.timeout) as client:
-        response = client.request(
-            "post",
-            httpx.URL(path),
-            headers=headers,
-            params=query_params,
-            json=data.model_dump(exclude_none=True),
-        )
+    response = _make_request(
+        api_config, "post", path, headers, params=query_params,
+        json=data.model_dump(exclude_none=True),
+    )
 
     if response.status_code != 200:
         raise HTTPException(
             response.status_code,
-            f"createDataset failed with status code: {response.status_code}",
+            f"createDataset failed with status code: {response.status_code}. Response: {response.text[:500]}",
         )
     else:
         body = None if 200 == 204 else response.json()
@@ -96,7 +82,6 @@ def updateDataset(
 ) -> None:
     api_config = api_config_override if api_config_override else APIConfig()
 
-    base_path = api_config.base_path
     path = f"/datasets"
     headers = {
         "Content-Type": "application/json",
@@ -109,19 +94,15 @@ def updateDataset(
         key: value for (key, value) in query_params.items() if value is not None
     }
 
-    with httpx.Client(base_url=base_path, verify=api_config.verify, timeout=api_config.timeout) as client:
-        response = client.request(
-            "put",
-            httpx.URL(path),
-            headers=headers,
-            params=query_params,
-            json=data.model_dump(exclude_none=True),
-        )
+    response = _make_request(
+        api_config, "put", path, headers, params=query_params,
+        json=data.model_dump(exclude_none=True),
+    )
 
     if response.status_code != 200:
         raise HTTPException(
             response.status_code,
-            f"updateDataset failed with status code: {response.status_code}",
+            f"updateDataset failed with status code: {response.status_code}. Response: {response.text[:500]}",
         )
     else:
         body = None if 200 == 204 else response.json()
@@ -134,7 +115,6 @@ def deleteDataset(
 ) -> None:
     api_config = api_config_override if api_config_override else APIConfig()
 
-    base_path = api_config.base_path
     path = f"/datasets"
     headers = {
         "Content-Type": "application/json",
@@ -147,18 +127,12 @@ def deleteDataset(
         key: value for (key, value) in query_params.items() if value is not None
     }
 
-    with httpx.Client(base_url=base_path, verify=api_config.verify, timeout=api_config.timeout) as client:
-        response = client.request(
-            "delete",
-            httpx.URL(path),
-            headers=headers,
-            params=query_params,
-        )
+    response = _make_request(api_config, "delete", path, headers, params=query_params)
 
     if response.status_code != 200:
         raise HTTPException(
             response.status_code,
-            f"deleteDataset failed with status code: {response.status_code}",
+            f"deleteDataset failed with status code: {response.status_code}. Response: {response.text[:500]}",
         )
     else:
         body = None if 200 == 204 else response.json()
@@ -174,7 +148,6 @@ def addDatapoints(
 ) -> AddDatapointsResponse:
     api_config = api_config_override if api_config_override else APIConfig()
 
-    base_path = api_config.base_path
     path = f"/datasets/{dataset_id}/datapoints"
     headers = {
         "Content-Type": "application/json",
@@ -187,19 +160,15 @@ def addDatapoints(
         key: value for (key, value) in query_params.items() if value is not None
     }
 
-    with httpx.Client(base_url=base_path, verify=api_config.verify, timeout=api_config.timeout) as client:
-        response = client.request(
-            "post",
-            httpx.URL(path),
-            headers=headers,
-            params=query_params,
-            json=data.model_dump(exclude_none=True),
-        )
+    response = _make_request(
+        api_config, "post", path, headers, params=query_params,
+        json=data.model_dump(exclude_none=True),
+    )
 
     if response.status_code != 200:
         raise HTTPException(
             response.status_code,
-            f"addDatapoints failed with status code: {response.status_code}",
+            f"addDatapoints failed with status code: {response.status_code}. Response: {response.text[:500]}",
         )
     else:
         body = None if 200 == 204 else response.json()

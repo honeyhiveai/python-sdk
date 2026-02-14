@@ -1,8 +1,6 @@
 from typing import *
 
-import httpx
-
-from ..api_config import APIConfig, HTTPException
+from ..api_config import APIConfig, HTTPException, _make_request
 from ..models import *
 
 
@@ -11,7 +9,6 @@ def createEvent(
 ) -> CreateEventResponse:
     api_config = api_config_override if api_config_override else APIConfig()
 
-    base_path = api_config.base_path
     path = f"/events"
     headers = {
         "Content-Type": "application/json",
@@ -24,19 +21,12 @@ def createEvent(
         key: value for (key, value) in query_params.items() if value is not None
     }
 
-    with httpx.Client(base_url=base_path, verify=api_config.verify, timeout=api_config.timeout) as client:
-        response = client.request(
-            "post",
-            httpx.URL(path),
-            headers=headers,
-            params=query_params,
-            json=data.model_dump(exclude_none=True),
-        )
+    response = _make_request(api_config, "post", path, headers, params=query_params, json=data.model_dump(exclude_none=True))
 
     if response.status_code != 200:
         raise HTTPException(
             response.status_code,
-            f"createEvent failed with status code: {response.status_code}",
+            f"createEvent failed with status code: {response.status_code}. Response: {response.text[:500]}",
         )
     else:
         body = None if 200 == 204 else response.json()
@@ -49,7 +39,6 @@ def updateEvent(
 ) -> None:
     api_config = api_config_override if api_config_override else APIConfig()
 
-    base_path = api_config.base_path
     path = f"/events"
     headers = {
         "Content-Type": "application/json",
@@ -62,19 +51,12 @@ def updateEvent(
         key: value for (key, value) in query_params.items() if value is not None
     }
 
-    with httpx.Client(base_url=base_path, verify=api_config.verify, timeout=api_config.timeout) as client:
-        response = client.request(
-            "put",
-            httpx.URL(path),
-            headers=headers,
-            params=query_params,
-            json=data.model_dump(exclude_none=True),
-        )
+    response = _make_request(api_config, "put", path, headers, params=query_params, json=data.model_dump(exclude_none=True))
 
     if response.status_code != 200:
         raise HTTPException(
             response.status_code,
-            f"updateEvent failed with status code: {response.status_code}",
+            f"updateEvent failed with status code: {response.status_code}. Response: {response.text[:500]}",
         )
     else:
         body = None if 200 == 204 else response.json()
@@ -87,7 +69,6 @@ def getEvents(
 ) -> GetEventsResponse:
     api_config = api_config_override if api_config_override else APIConfig()
 
-    base_path = api_config.base_path
     path = f"/events/export"
     headers = {
         "Content-Type": "application/json",
@@ -100,19 +81,12 @@ def getEvents(
         key: value for (key, value) in query_params.items() if value is not None
     }
 
-    with httpx.Client(base_url=base_path, verify=api_config.verify, timeout=api_config.timeout) as client:
-        response = client.request(
-            "post",
-            httpx.URL(path),
-            headers=headers,
-            params=query_params,
-            json=data.model_dump(exclude_none=True),
-        )
+    response = _make_request(api_config, "post", path, headers, params=query_params, json=data.model_dump(exclude_none=True))
 
     if response.status_code != 200:
         raise HTTPException(
             response.status_code,
-            f"getEvents failed with status code: {response.status_code}",
+            f"getEvents failed with status code: {response.status_code}. Response: {response.text[:500]}",
         )
     else:
         body = None if 200 == 204 else response.json()
@@ -127,7 +101,6 @@ def createModelEvent(
 ) -> CreateEventResponse:
     api_config = api_config_override if api_config_override else APIConfig()
 
-    base_path = api_config.base_path
     path = f"/events/model"
     headers = {
         "Content-Type": "application/json",
@@ -140,19 +113,12 @@ def createModelEvent(
         key: value for (key, value) in query_params.items() if value is not None
     }
 
-    with httpx.Client(base_url=base_path, verify=api_config.verify, timeout=api_config.timeout) as client:
-        response = client.request(
-            "post",
-            httpx.URL(path),
-            headers=headers,
-            params=query_params,
-            json=data.model_dump(exclude_none=True),
-        )
+    response = _make_request(api_config, "post", path, headers, params=query_params, json=data.model_dump(exclude_none=True))
 
     if response.status_code != 200:
         raise HTTPException(
             response.status_code,
-            f"createModelEvent failed with status code: {response.status_code}",
+            f"createModelEvent failed with status code: {response.status_code}. Response: {response.text[:500]}",
         )
     else:
         body = None if 200 == 204 else response.json()
@@ -165,7 +131,6 @@ def createEventBatch(
 ) -> CreateEventBatchResponse:
     api_config = api_config_override if api_config_override else APIConfig()
 
-    base_path = api_config.base_path
     path = f"/events/batch"
     headers = {
         "Content-Type": "application/json",
@@ -178,19 +143,12 @@ def createEventBatch(
         key: value for (key, value) in query_params.items() if value is not None
     }
 
-    with httpx.Client(base_url=base_path, verify=api_config.verify, timeout=api_config.timeout) as client:
-        response = client.request(
-            "post",
-            httpx.URL(path),
-            headers=headers,
-            params=query_params,
-            json=data.model_dump(exclude_none=True),
-        )
+    response = _make_request(api_config, "post", path, headers, params=query_params, json=data.model_dump(exclude_none=True))
 
     if response.status_code != 200:
         raise HTTPException(
             response.status_code,
-            f"createEventBatch failed with status code: {response.status_code}",
+            f"createEventBatch failed with status code: {response.status_code}. Response: {response.text[:500]}",
         )
     else:
         body = None if 200 == 204 else response.json()
@@ -209,7 +167,6 @@ def createModelEventBatch(
 ) -> CreateModelEventBatchResponse:
     api_config = api_config_override if api_config_override else APIConfig()
 
-    base_path = api_config.base_path
     path = f"/events/model/batch"
     headers = {
         "Content-Type": "application/json",
@@ -222,19 +179,12 @@ def createModelEventBatch(
         key: value for (key, value) in query_params.items() if value is not None
     }
 
-    with httpx.Client(base_url=base_path, verify=api_config.verify, timeout=api_config.timeout) as client:
-        response = client.request(
-            "post",
-            httpx.URL(path),
-            headers=headers,
-            params=query_params,
-            json=data.model_dump(exclude_none=True),
-        )
+    response = _make_request(api_config, "post", path, headers, params=query_params, json=data.model_dump(exclude_none=True))
 
     if response.status_code != 200:
         raise HTTPException(
             response.status_code,
-            f"createModelEventBatch failed with status code: {response.status_code}",
+            f"createModelEventBatch failed with status code: {response.status_code}. Response: {response.text[:500]}",
         )
     else:
         body = None if 200 == 204 else response.json()

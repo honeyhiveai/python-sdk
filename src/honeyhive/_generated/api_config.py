@@ -1,5 +1,7 @@
-from typing import Optional, Union
+import time as _time
+from typing import Any, Dict, Optional, Union
 
+import httpx
 from pydantic import BaseModel, Field
 
 
@@ -10,6 +12,7 @@ class APIConfig(BaseModel):
     verify: Union[bool, str] = True
     access_token: Optional[str] = None
     timeout: float = 30.0
+    max_retries: int = 2
 
     def get_access_token(self) -> Optional[str]:
         return self.access_token
@@ -26,3 +29,69 @@ class HTTPException(Exception):
 
     def __str__(self):
         return f"{self.status_code} {self.message}"
+
+
+def _make_request(
+    api_config: APIConfig,
+    method: str,
+    path: str,
+    headers: Dict[str, str],
+    params: Optional[Dict[str, Any]] = None,
+    json: Optional[Any] = None,
+) -> httpx.Response:
+    """Make an HTTP request with retry for 5xx server errors."""
+    last_response = None
+    for attempt in range(api_config.max_retries + 1):
+        with httpx.Client(
+            base_url=api_config.base_path,
+            verify=api_config.verify,
+            timeout=api_config.timeout,
+        ) as client:
+            kwargs: Dict[str, Any] = {"headers": headers}
+            if params is not None:
+                kwargs["params"] = params
+            if json is not None:
+                kwargs["json"] = json
+            last_response = client.request(method, httpx.URL(path), **kwargs)
+
+        if last_response.status_code < 500:
+            return last_response
+
+        if attempt < api_config.max_retries:
+            _time.sleep(1.0 * (attempt + 1))
+
+    return last_response  # type: ignore[return-value]
+
+
+async def _make_request_async(
+    api_config: APIConfig,
+    method: str,
+    path: str,
+    headers: Dict[str, str],
+    params: Optional[Dict[str, Any]] = None,
+    json: Optional[Any] = None,
+) -> httpx.Response:
+    """Make an async HTTP request with retry for 5xx server errors."""
+    import asyncio
+
+    last_response = None
+    for attempt in range(api_config.max_retries + 1):
+        async with httpx.AsyncClient(
+            base_url=api_config.base_path,
+            verify=api_config.verify,
+            timeout=api_config.timeout,
+        ) as client:
+            kwargs: Dict[str, Any] = {"headers": headers}
+            if params is not None:
+                kwargs["params"] = params
+            if json is not None:
+                kwargs["json"] = json
+            last_response = await client.request(method, httpx.URL(path), **kwargs)
+
+        if last_response.status_code < 500:
+            return last_response
+
+        if attempt < api_config.max_retries:
+            await asyncio.sleep(1.0 * (attempt + 1))
+
+    return last_response  # type: ignore[return-value]
