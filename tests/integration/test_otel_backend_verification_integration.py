@@ -345,11 +345,7 @@ class TestOTELBackendVerificationIntegration:
 
             # Verify error type is captured in metadata
             assert error_event.metadata is not None
-            assert error_event.metadata.get("honeyhive_error_type") == "ValueError"
-
-            # NOTE: honeyhive_error is routed to top-level error field (verified above)
-            # NOT to metadata - this is correct per ingestion service fixture
-            # test_honeyhive_error_override.json (backend behavior as of Oct 23, 2025)
+            assert error_event.metadata.get("error_type") == "ValueError"
 
             # Verify timing data (should still be captured despite error)
             assert error_event.duration is not None

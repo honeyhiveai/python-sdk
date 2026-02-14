@@ -425,6 +425,10 @@ def verify_tracer_span(  # pylint: disable=R0917
             for key, value in span_attributes.items():
                 span.set_attribute(key, value)
 
+    # Ensure spans are exported before verification
+    if hasattr(tracer, "force_flush"):
+        tracer.force_flush()
+
     # Verify span was exported to backend
     return verify_span_export(
         client=client,

@@ -554,6 +554,7 @@ class TestOTELConcurrencyIntegration:
         parent_event = verify_backend_event(
             client=integration_client,
             project=real_project,
+            session_id=verbose_tracer.session_id,
             unique_identifier=f"{test_unique_id}_parent",
             expected_event_name=f"{test_operation_name}_async_parent",
         )
@@ -572,6 +573,7 @@ class TestOTELConcurrencyIntegration:
             child_event = verify_backend_event(
                 client=integration_client,
                 project=real_project,
+                session_id=verbose_tracer.session_id,
                 unique_identifier=f"{test_unique_id}_child_0",
                 expected_event_name=f"{test_operation_name}_async_child",
             )
@@ -586,6 +588,7 @@ class TestOTELConcurrencyIntegration:
             child_event = verify_backend_event(
                 client=integration_client,
                 project=real_project,
+                session_id=verbose_tracer.session_id,
                 unique_identifier=f"{test_unique_id}_child_1",
                 expected_event_name=f"{test_operation_name}_async_child",
             )
@@ -958,6 +961,7 @@ class TestOTELConcurrencyIntegration:
                     verified_event = verify_backend_event(
                         client=integration_client,
                         project=real_project,
+                        session_id=integration_tracer.session_id,
                         unique_identifier=str(expected_unique_id),
                         expected_event_name=f"{test_operation_name}_span_{span_id}",
                     )
