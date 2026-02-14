@@ -19,19 +19,39 @@ from typing import Any, Dict, List, Optional
 
 from honeyhive._generated.api_config import APIConfig
 
-# Import only models that exist in NWD's generated code
+# Import all models needed by the wrapper layer
 from honeyhive._generated.models import (
+    AddDatapointsRequest,
+    AddDatapointsResponse,
     Configuration,
     CreateDatapointRequest,
+    CreateDatapointResponse,
     CreateDatasetRequest,
+    CreateDatasetResponse,
+    CreateEventBatchRequest,
+    CreateEventBatchResponse,
+    CreateEventRequest,
+    CreateEventRequestBody,
+    CreateEventResponse,
+    CreateModelEvent,
+    CreateModelEventBatchRequest,
+    CreateModelEventBatchResponse,
+    CreateModelEventRequestBody,
     CreateRunRequest,
     CreateRunResponse,
     CreateToolRequest,
+    CreateToolResponse,
     DatasetUpdate,
+    DeleteDatapointResponse,
     DeleteRunResponse,
     Event,
     ExperimentComparisonResponse,
     ExperimentResultResponse,
+    GetDatapointResponse,
+    GetDatapointsResponse,
+    GetDatasetsResponse,
+    GetEventsRequest,
+    GetEventsResponse,
     GetRunResponse,
     GetRunsResponse,
     Metric,
@@ -39,15 +59,18 @@ from honeyhive._generated.models import (
     PostConfigurationRequest,
     Project,
     PutConfigurationRequest,
+    SessionStartRequest,
+    StartSessionRequestBody,
+    StartSessionResponse,
     Tool,
     UpdateDatapointRequest,
+    UpdateEventRequest,
     UpdateRunRequest,
     UpdateRunResponse,
     UpdateToolRequest,
 )
 
-# Import async services
-# Import sync services (9 services — no Sessions_service plural)
+# Import sync services (9 services)
 from honeyhive._generated.services import Configurations_service as configs_svc
 from honeyhive._generated.services import Datapoints_service as datapoints_svc
 from honeyhive._generated.services import Datasets_service as datasets_svc
@@ -57,6 +80,8 @@ from honeyhive._generated.services import Metrics_service as metrics_svc
 from honeyhive._generated.services import Projects_service as projects_svc
 from honeyhive._generated.services import Session_service as session_svc
 from honeyhive._generated.services import Tools_service as tools_svc
+
+# Import async services
 from honeyhive._generated.services import (
     async_Configurations_service as configs_svc_async,
 )
@@ -158,7 +183,7 @@ class DatapointsAPI(BaseAPI):
         project: str,
         datapoint_ids: Optional[List[str]] = None,
         dataset_name: Optional[str] = None,
-    ) -> Dict[str, Any]:
+    ) -> GetDatapointsResponse:
         """List datapoints.
 
         Args:
@@ -173,11 +198,11 @@ class DatapointsAPI(BaseAPI):
             dataset_name=dataset_name,
         )
 
-    def get(self, id: str) -> Dict[str, Any]:
+    def get(self, id: str) -> GetDatapointResponse:
         """Get a datapoint by ID."""
         return datapoints_svc.getDatapoint(self._api_config, id=id)
 
-    def create(self, request: CreateDatapointRequest) -> Dict[str, Any]:
+    def create(self, request: CreateDatapointRequest) -> CreateDatapointResponse:
         """Create a datapoint."""
         return datapoints_svc.createDatapoint(self._api_config, data=request)
 
@@ -185,7 +210,7 @@ class DatapointsAPI(BaseAPI):
         """Update a datapoint."""
         return datapoints_svc.updateDatapoint(self._api_config, id=id, data=request)
 
-    def delete(self, id: str) -> Dict[str, Any]:
+    def delete(self, id: str) -> DeleteDatapointResponse:
         """Delete a datapoint."""
         return datapoints_svc.deleteDatapoint(self._api_config, id=id)
 
@@ -195,7 +220,7 @@ class DatapointsAPI(BaseAPI):
         project: str,
         datapoint_ids: Optional[List[str]] = None,
         dataset_name: Optional[str] = None,
-    ) -> Dict[str, Any]:
+    ) -> GetDatapointsResponse:
         """List datapoints asynchronously."""
         return await datapoints_svc_async.getDatapoints(
             self._api_config,
@@ -204,11 +229,13 @@ class DatapointsAPI(BaseAPI):
             dataset_name=dataset_name,
         )
 
-    async def get_async(self, id: str) -> Dict[str, Any]:
+    async def get_async(self, id: str) -> GetDatapointResponse:
         """Get a datapoint by ID asynchronously."""
         return await datapoints_svc_async.getDatapoint(self._api_config, id=id)
 
-    async def create_async(self, request: CreateDatapointRequest) -> Dict[str, Any]:
+    async def create_async(
+        self, request: CreateDatapointRequest
+    ) -> CreateDatapointResponse:
         """Create a datapoint asynchronously."""
         return await datapoints_svc_async.createDatapoint(
             self._api_config, data=request
@@ -220,16 +247,18 @@ class DatapointsAPI(BaseAPI):
             self._api_config, id=id, data=request
         )
 
-    async def delete_async(self, id: str) -> Dict[str, Any]:
+    async def delete_async(self, id: str) -> DeleteDatapointResponse:
         """Delete a datapoint asynchronously."""
         return await datapoints_svc_async.deleteDatapoint(self._api_config, id=id)
 
     # Backwards compatible aliases
-    def get_datapoint(self, id: str) -> Dict[str, Any]:
+    def get_datapoint(self, id: str) -> GetDatapointResponse:
         """Get a datapoint by ID (backwards compatible alias for get())."""
         return self.get(id)
 
-    def create_datapoint(self, request: CreateDatapointRequest) -> Dict[str, Any]:
+    def create_datapoint(
+        self, request: CreateDatapointRequest
+    ) -> CreateDatapointResponse:
         """Create a datapoint (backwards compatible alias for create())."""
         return self.create(request)
 
@@ -237,11 +266,11 @@ class DatapointsAPI(BaseAPI):
         """Update a datapoint (backwards compatible alias for update())."""
         return self.update(id, request)
 
-    def delete_datapoint(self, id: str) -> Dict[str, Any]:
+    def delete_datapoint(self, id: str) -> DeleteDatapointResponse:
         """Delete a datapoint (backwards compatible alias for delete())."""
         return self.delete(id)
 
-    def list_datapoints(self, project: str, **kwargs: Any) -> Dict[str, Any]:
+    def list_datapoints(self, project: str, **kwargs: Any) -> GetDatapointsResponse:
         """List datapoints (backwards compatible alias)."""
         return self.list(project=project, **kwargs)
 
@@ -255,7 +284,7 @@ class DatasetsAPI(BaseAPI):
         project: str,
         type: Optional[str] = None,
         dataset_id: Optional[str] = None,
-    ) -> Dict[str, Any]:
+    ) -> GetDatasetsResponse:
         """List datasets.
 
         Args:
@@ -267,7 +296,7 @@ class DatasetsAPI(BaseAPI):
             self._api_config, project=project, type=type, dataset_id=dataset_id
         )
 
-    def create(self, request: CreateDatasetRequest) -> Dict[str, Any]:
+    def create(self, request: CreateDatasetRequest) -> CreateDatasetResponse:
         """Create a dataset."""
         return datasets_svc.createDataset(self._api_config, data=request)
 
@@ -279,19 +308,33 @@ class DatasetsAPI(BaseAPI):
         """Delete a dataset."""
         return datasets_svc.deleteDataset(self._api_config, dataset_id=id)
 
+    def add_datapoints(self, dataset_id: str, data: Any) -> AddDatapointsResponse:
+        """Add datapoints to a dataset."""
+        if isinstance(data, AddDatapointsRequest):
+            req = data
+        elif isinstance(data, dict):
+            req = AddDatapointsRequest(**data)
+        else:
+            req = data
+        return datasets_svc.addDatapoints(
+            self._api_config, dataset_id=dataset_id, data=req
+        )
+
     # Async methods
     async def list_async(
         self,
         project: str,
         type: Optional[str] = None,
         dataset_id: Optional[str] = None,
-    ) -> Dict[str, Any]:
+    ) -> GetDatasetsResponse:
         """List datasets asynchronously."""
         return await datasets_svc_async.getDatasets(
             self._api_config, project=project, type=type, dataset_id=dataset_id
         )
 
-    async def create_async(self, request: CreateDatasetRequest) -> Dict[str, Any]:
+    async def create_async(
+        self, request: CreateDatasetRequest
+    ) -> CreateDatasetResponse:
         """Create a dataset asynchronously."""
         return await datasets_svc_async.createDataset(self._api_config, data=request)
 
@@ -303,12 +346,26 @@ class DatasetsAPI(BaseAPI):
         """Delete a dataset asynchronously."""
         return await datasets_svc_async.deleteDataset(self._api_config, dataset_id=id)
 
+    async def add_datapoints_async(
+        self, dataset_id: str, data: Any
+    ) -> AddDatapointsResponse:
+        """Add datapoints to a dataset asynchronously."""
+        if isinstance(data, AddDatapointsRequest):
+            req = data
+        elif isinstance(data, dict):
+            req = AddDatapointsRequest(**data)
+        else:
+            req = data
+        return await datasets_svc_async.addDatapoints(
+            self._api_config, dataset_id=dataset_id, data=req
+        )
+
     # Backwards compatible aliases
-    def get_dataset(self, id: str) -> Dict[str, Any]:
+    def get_dataset(self, id: str) -> GetDatasetsResponse:
         """Get a dataset by ID (backwards compatible alias)."""
         return self.list(project="", dataset_id=id)
 
-    def create_dataset(self, request: CreateDatasetRequest) -> Dict[str, Any]:
+    def create_dataset(self, request: CreateDatasetRequest) -> CreateDatasetResponse:
         """Create a dataset (backwards compatible alias for create())."""
         return self.create(request)
 
@@ -320,80 +377,136 @@ class DatasetsAPI(BaseAPI):
         """Delete a dataset (backwards compatible alias for delete())."""
         return self.delete(id)
 
-    def list_datasets(self, project: str, **kwargs: Any) -> Dict[str, Any]:
+    def list_datasets(self, project: str, **kwargs: Any) -> GetDatasetsResponse:
         """List datasets (backwards compatible alias)."""
         return self.list(project=project, **kwargs)
-
-    def add_datapoints(self, dataset_id: str, data: Dict[str, Any]) -> Dict[str, Any]:
-        """Add datapoints to a dataset."""
-        return datasets_svc.addDatapoints(
-            self._api_config, dataset_id=dataset_id, data=data
-        )
 
 
 class EventsAPI(BaseAPI):
     """Events API."""
 
     # Sync methods
-    def list(self, data: Dict[str, Any]) -> Dict[str, Any]:
+    def list(self, data: Any) -> GetEventsResponse:
         """Get events (POST /events/export)."""
-        return events_svc.getEvents(self._api_config, data=data)
+        if isinstance(data, GetEventsRequest):
+            req = data
+        elif isinstance(data, dict):
+            req = GetEventsRequest(**data)
+        else:
+            req = data
+        return events_svc.getEvents(self._api_config, data=req)
 
-    def create(self, data: Dict[str, Any]) -> Dict[str, Any]:
+    def create(self, data: Any) -> CreateEventResponse:
         """Create an event."""
-        if hasattr(data, "model_dump"):
-            data = data.model_dump(exclude_none=True)
-        return events_svc.createEvent(self._api_config, data=data)
+        if isinstance(data, CreateEventRequestBody):
+            req = data
+        elif isinstance(data, dict):
+            req = CreateEventRequestBody(event=CreateEventRequest(**data))
+        elif hasattr(data, "model_dump"):
+            req = CreateEventRequestBody(event=data)
+        else:
+            req = data
+        return events_svc.createEvent(self._api_config, data=req)
 
-    def update(self, data: Dict[str, Any]) -> None:
+    def update(self, data: Any) -> None:
         """Update an event."""
-        return events_svc.updateEvent(self._api_config, data=data)
+        if isinstance(data, UpdateEventRequest):
+            req = data
+        elif isinstance(data, dict):
+            req = UpdateEventRequest(**data)
+        else:
+            req = data
+        return events_svc.updateEvent(self._api_config, data=req)
 
-    def create_batch(self, data: Dict[str, Any]) -> Dict[str, Any]:
+    def create_batch(self, data: Any) -> CreateEventBatchResponse:
         """Create events in batch."""
-        return events_svc.createEventBatch(self._api_config, data=data)
+        if isinstance(data, CreateEventBatchRequest):
+            req = data
+        elif isinstance(data, dict):
+            req = CreateEventBatchRequest(**data)
+        else:
+            req = data
+        return events_svc.createEventBatch(self._api_config, data=req)
 
-    def create_model_event(self, data: Dict[str, Any]) -> Dict[str, Any]:
+    def create_model_event(self, data: Any) -> CreateEventResponse:
         """Create a model event."""
-        return events_svc.createModelEvent(self._api_config, data=data)
+        if isinstance(data, CreateModelEventRequestBody):
+            req = data
+        elif isinstance(data, dict):
+            req = CreateModelEventRequestBody(model_event=CreateModelEvent(**data))
+        elif hasattr(data, "model_dump"):
+            req = CreateModelEventRequestBody(model_event=data)
+        else:
+            req = data
+        return events_svc.createModelEvent(self._api_config, data=req)
 
-    def create_model_event_batch(self, data: Dict[str, Any]) -> Dict[str, Any]:
+    def create_model_event_batch(self, data: Any) -> CreateModelEventBatchResponse:
         """Create model events in batch."""
-        return events_svc.createModelEventBatch(self._api_config, data=data)
+        if isinstance(data, CreateModelEventBatchRequest):
+            req = data
+        elif isinstance(data, dict):
+            req = CreateModelEventBatchRequest(**data)
+        else:
+            req = data
+        return events_svc.createModelEventBatch(self._api_config, data=req)
 
     # Async methods
-    async def list_async(self, data: Dict[str, Any]) -> Dict[str, Any]:
+    async def list_async(self, data: Any) -> GetEventsResponse:
         """Get events asynchronously."""
-        return await events_svc_async.getEvents(self._api_config, data=data)
+        if isinstance(data, GetEventsRequest):
+            req = data
+        elif isinstance(data, dict):
+            req = GetEventsRequest(**data)
+        else:
+            req = data
+        return await events_svc_async.getEvents(self._api_config, data=req)
 
-    async def create_async(self, data: Dict[str, Any]) -> Dict[str, Any]:
+    async def create_async(self, data: Any) -> CreateEventResponse:
         """Create an event asynchronously."""
-        if hasattr(data, "model_dump"):
-            data = data.model_dump(exclude_none=True)
-        return await events_svc_async.createEvent(self._api_config, data=data)
+        if isinstance(data, CreateEventRequestBody):
+            req = data
+        elif isinstance(data, dict):
+            req = CreateEventRequestBody(event=CreateEventRequest(**data))
+        elif hasattr(data, "model_dump"):
+            req = CreateEventRequestBody(event=data)
+        else:
+            req = data
+        return await events_svc_async.createEvent(self._api_config, data=req)
 
-    async def update_async(self, data: Dict[str, Any]) -> None:
+    async def update_async(self, data: Any) -> None:
         """Update an event asynchronously."""
-        return await events_svc_async.updateEvent(self._api_config, data=data)
+        if isinstance(data, UpdateEventRequest):
+            req = data
+        elif isinstance(data, dict):
+            req = UpdateEventRequest(**data)
+        else:
+            req = data
+        return await events_svc_async.updateEvent(self._api_config, data=req)
 
-    async def create_batch_async(self, data: Dict[str, Any]) -> Dict[str, Any]:
+    async def create_batch_async(self, data: Any) -> CreateEventBatchResponse:
         """Create events in batch asynchronously."""
-        return await events_svc_async.createEventBatch(self._api_config, data=data)
+        if isinstance(data, CreateEventBatchRequest):
+            req = data
+        elif isinstance(data, dict):
+            req = CreateEventBatchRequest(**data)
+        else:
+            req = data
+        return await events_svc_async.createEventBatch(self._api_config, data=req)
 
     # Backwards compatible aliases
-    def create_event(self, data: Dict[str, Any]) -> Dict[str, Any]:
+    def create_event(self, data: Any) -> CreateEventResponse:
         """Create an event (backwards compatible alias for create())."""
         return self.create(data)
 
-    def update_event(self, data: Dict[str, Any]) -> None:
+    def update_event(self, data: Any) -> None:
         """Update an event (backwards compatible alias for update())."""
         return self.update(data)
 
-    def list_events(self, data: Dict[str, Any]) -> Dict[str, Any]:
+    def list_events(self, data: Any) -> GetEventsResponse:
         """List events (backwards compatible alias for list())."""
         return self.list(data)
 
-    def get_events(self, data: Dict[str, Any]) -> Dict[str, Any]:
+    def get_events(self, data: Any) -> GetEventsResponse:
         """Get events (backwards compatible alias for list())."""
         return self.list(data)
 
@@ -684,9 +797,17 @@ class SessionsAPI(BaseAPI):
         """Get a session by ID."""
         return session_svc.getSession(self._api_config, session_id=session_id)
 
-    def start(self, data: Dict[str, Any]) -> Dict[str, Any]:
+    def start(self, data: Any) -> StartSessionResponse:
         """Start a new session."""
-        return session_svc.startSession(self._api_config, data=data)
+        if isinstance(data, StartSessionRequestBody):
+            req = data
+        elif isinstance(data, dict):
+            req = StartSessionRequestBody(session=SessionStartRequest(**data))
+        elif hasattr(data, "model_dump"):
+            req = StartSessionRequestBody(session=data)
+        else:
+            req = data
+        return session_svc.startSession(self._api_config, data=req)
 
     # Async methods
     async def get_async(self, session_id: str) -> Event:
@@ -695,16 +816,24 @@ class SessionsAPI(BaseAPI):
             self._api_config, session_id=session_id
         )
 
-    async def start_async(self, data: Dict[str, Any]) -> Dict[str, Any]:
+    async def start_async(self, data: Any) -> StartSessionResponse:
         """Start a new session asynchronously."""
-        return await session_svc_async.startSession(self._api_config, data=data)
+        if isinstance(data, StartSessionRequestBody):
+            req = data
+        elif isinstance(data, dict):
+            req = StartSessionRequestBody(session=SessionStartRequest(**data))
+        elif hasattr(data, "model_dump"):
+            req = StartSessionRequestBody(session=data)
+        else:
+            req = data
+        return await session_svc_async.startSession(self._api_config, data=req)
 
     # Backwards compatible aliases
-    def create_session(self, request: Dict[str, Any]) -> Dict[str, Any]:
+    def create_session(self, request: Any) -> StartSessionResponse:
         """Create/start a session (backwards compatible alias for start())."""
         return self.start(request)
 
-    def start_session(self, request: Dict[str, Any]) -> Dict[str, Any]:
+    def start_session(self, request: Any) -> StartSessionResponse:
         """Start a session (backwards compatible alias for start())."""
         return self.start(request)
 
@@ -721,7 +850,7 @@ class ToolsAPI(BaseAPI):
         """List tools."""
         return tools_svc.getTools(self._api_config)
 
-    def create(self, request: CreateToolRequest) -> Dict[str, Any]:
+    def create(self, request: CreateToolRequest) -> CreateToolResponse:
         """Create a tool."""
         return tools_svc.createTool(self._api_config, data=request)
 
@@ -738,7 +867,7 @@ class ToolsAPI(BaseAPI):
         """List tools asynchronously."""
         return await tools_svc_async.getTools(self._api_config)
 
-    async def create_async(self, request: CreateToolRequest) -> Dict[str, Any]:
+    async def create_async(self, request: CreateToolRequest) -> CreateToolResponse:
         """Create a tool asynchronously."""
         return await tools_svc_async.createTool(self._api_config, data=request)
 
@@ -755,7 +884,7 @@ class ToolsAPI(BaseAPI):
         """Get a tool (backwards compatible alias)."""
         return self.list()  # No single-get endpoint
 
-    def create_tool(self, request: CreateToolRequest) -> Dict[str, Any]:
+    def create_tool(self, request: CreateToolRequest) -> CreateToolResponse:
         """Create a tool (backwards compatible alias)."""
         return self.create(request)
 

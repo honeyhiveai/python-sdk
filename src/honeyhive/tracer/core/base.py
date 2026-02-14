@@ -561,13 +561,18 @@ class HoneyHiveTracerBase:  # pylint: disable=too-many-instance-attributes
             # Create session via API using the new client.sessions.start() method
             response = self.client.sessions.start(data=session_params)
 
-            # Response is a dict with 'session_id' key
-            if isinstance(response, dict) and "session_id" in response:
+            # Response is a StartSessionResponse model or dict with 'session_id'
+            session_id = None
+            if hasattr(response, "session_id"):
+                session_id = response.session_id
+            elif isinstance(response, dict) and "session_id" in response:
+                session_id = response["session_id"]
+            if session_id:
                 # pylint: disable=attribute-defined-outside-init
                 # Justification: _session_id is properly initialized in __init__.
                 # This is legitimate reassignment during dynamic session creation,
                 # not a first-time attribute definition.
-                self._session_id = response["session_id"]
+                self._session_id = session_id
 
                 # CRITICAL: Also set session_id in baggage for request-scoped access
                 # This enables proper session isolation in Lambda/serverless environments
