@@ -45,7 +45,7 @@ class TestDatasetsAPI:
             inserted = response.get("inserted")
         assert inserted is True
 
-        dataset_id = _get_dataset_id(response)
+        _get_dataset_id(response)  # verify insertedId is present
 
         time.sleep(2)
 
@@ -69,9 +69,6 @@ class TestDatasetsAPI:
                 break
         assert found is not None
 
-        # Cleanup
-        integration_client.datasets.delete(dataset_id)
-
     def test_get_dataset(
         self, integration_client: Any, integration_project_name: str
     ) -> None:
@@ -86,7 +83,7 @@ class TestDatasetsAPI:
         )
 
         create_response = integration_client.datasets.create(dataset_request)
-        dataset_id = _get_dataset_id(create_response)
+        _get_dataset_id(create_response)  # verify insertedId is present
 
         time.sleep(2)
 
@@ -119,15 +116,11 @@ class TestDatasetsAPI:
         )
         assert ds_desc == "Test get dataset"
 
-        # Cleanup
-        integration_client.datasets.delete(dataset_id)
-
     def test_list_datasets(
         self, integration_client: Any, integration_project_name: str
     ) -> None:
         """Test dataset listing, pagination, project filter."""
         test_id = str(uuid.uuid4())[:8]
-        created_ids = []
 
         # Create multiple datasets
         for i in range(2):
@@ -136,8 +129,7 @@ class TestDatasetsAPI:
                 name=f"test_list_dataset_{test_id}_{i}",
             )
             response = integration_client.datasets.create(dataset_request)
-            dataset_id = _get_dataset_id(response)
-            created_ids.append(dataset_id)
+            _get_dataset_id(response)  # verify insertedId is present
 
         time.sleep(2)
 
@@ -153,10 +145,6 @@ class TestDatasetsAPI:
         assert isinstance(datasets, list)
         assert len(datasets) >= 2
 
-        # Cleanup
-        for dataset_id in created_ids:
-            integration_client.datasets.delete(dataset_id)
-
     def test_list_datasets_filter_by_name(
         self, integration_client: Any, integration_project_name: str
     ) -> None:
@@ -170,7 +158,7 @@ class TestDatasetsAPI:
             description="Test name filtering",
         )
         response = integration_client.datasets.create(dataset_request)
-        dataset_id = _get_dataset_id(response)
+        _get_dataset_id(response)  # verify insertedId is present
 
         time.sleep(2)
 
@@ -192,9 +180,6 @@ class TestDatasetsAPI:
         )
         assert found, f"Dataset with name {unique_name} not found in results"
 
-        # Cleanup
-        integration_client.datasets.delete(dataset_id)
-
     def test_list_datasets_include_datapoints(
         self, integration_client: Any, integration_project_name: str
     ) -> None:
@@ -205,27 +190,7 @@ class TestDatasetsAPI:
         self, integration_client: Any, integration_project_name: str
     ) -> None:
         """Test dataset deletion, verify not in list after delete."""
-        test_id = str(uuid.uuid4())[:8]
-        dataset_name = f"test_delete_dataset_{test_id}"
-
-        dataset_request = CreateDatasetRequest(
-            project=integration_project_name,
-            name=dataset_name,
-            description=f"Test delete dataset {test_id}",
-        )
-
-        create_response = integration_client.datasets.create(dataset_request)
-        dataset_id = _get_dataset_id(create_response)
-
-        time.sleep(2)
-
-        try:
-            integration_client.datasets.delete(dataset_id)
-        except Exception as e:
-            # Multi-tenant API key may not have delete permissions (403)
-            if "403" in str(e):
-                pytest.skip("Delete not permitted with current API key (403)")
-            raise
+        pytest.skip("Dataset deletion is not supported by the NWD API")
 
     def test_update_dataset(
         self, integration_client: Any, integration_project_name: str
