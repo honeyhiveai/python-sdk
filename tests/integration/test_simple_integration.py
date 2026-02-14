@@ -61,8 +61,10 @@ class TestSimpleIntegration:
 
             # Step 3: Validate data is actually stored by retrieving it
             try:
-                # List datapoints to find our created one
-                datapoints_response = integration_client.datapoints.list()
+                # List datapoints to find our created one - NWD API requires project
+                datapoints_response = integration_client.datapoints.list(
+                    project=integration_project_name
+                )
                 datapoints = getattr(datapoints_response, "datapoints", None)
                 if datapoints is None and isinstance(datapoints_response, list):
                     datapoints = datapoints_response

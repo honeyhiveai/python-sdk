@@ -112,6 +112,9 @@ def verify_datapoint_creation(
                 and datapoint_response.datapoint
             ):
                 found_datapoint = datapoint_response.datapoint[0]
+                # Convert Pydantic model to dict for callers that use .get()
+                if hasattr(found_datapoint, "model_dump"):
+                    found_datapoint = found_datapoint.model_dump(by_alias=True)
                 logger.debug(f"✅ Datapoint retrieval successful: {created_id}")
                 return found_datapoint
             raise ValidationError(
@@ -122,33 +125,40 @@ def verify_datapoint_creation(
             # Fallback: Try list-based retrieval if direct get fails
             logger.debug(f"Direct retrieval failed, trying list-based: {e}")
 
-            datapoints_response = client.datapoints.list()
+            datapoints_response = client.datapoints.list(project=project)
             datapoints = (
                 datapoints_response.datapoints
                 if hasattr(datapoints_response, "datapoints")
                 else []
             )
 
-            # Find matching datapoint - datapoints are dicts, not objects
+            # Find matching datapoint - may be Datapoint models or dicts
             for dp in datapoints:
+                # Convert to dict if Pydantic model
+                dp_dict = (
+                    dp.model_dump(by_alias=True) if hasattr(dp, "model_dump") else dp
+                )
+                if not isinstance(dp_dict, dict):
+                    continue
+
                 # Check if dict has id or field_id key matching created_id
-                # Note: API returns 'id' in datapoint dicts, not 'field_id'
-                if isinstance(dp, dict) and (
-                    dp.get("id") == created_id or dp.get("field_id") == created_id
+                if (
+                    dp_dict.get("id") == created_id
+                    or dp_dict.get("field_id") == created_id
+                    or dp_dict.get("_id") == created_id
                 ):
                     logger.debug(f"✅ Datapoint found via list: {created_id}")
-                    return dp
+                    return dp_dict
 
                 # Fallback: Match by test_id if provided
                 if (
                     test_id
-                    and isinstance(dp, dict)
-                    and "metadata" in dp
-                    and dp.get("metadata")
-                    and dp["metadata"].get("test_id") == test_id
+                    and "metadata" in dp_dict
+                    and dp_dict.get("metadata")
+                    and dp_dict["metadata"].get("test_id") == test_id
                 ):
                     logger.debug(f"✅ Datapoint found via test_id: {test_id}")
-                    return dp
+                    return dp_dict
 
             raise ValidationError(
                 f"Datapoint not found after creation: {created_id}"
