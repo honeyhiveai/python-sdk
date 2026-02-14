@@ -1,6 +1,5 @@
 """Integration tests for model validation and serialization in HoneyHive."""
 
-import uuid
 from datetime import datetime
 
 import pytest
@@ -12,6 +11,7 @@ from honeyhive.models import (
     CreateDatapointRequest,
     CreateToolRequest,
     PostExperimentRunRequest,
+    UUIDType,
 )
 
 # v0 models - these don't exist in v1, tests need to be migrated
@@ -161,7 +161,7 @@ class TestModelIntegration:
         run_request = PostExperimentRunRequest(
             project="test-project",
             name="workflow-evaluation",
-            event_ids=[str(uuid.uuid4())],  # Use real UUID string
+            event_ids=[UUIDType()],  # UUIDType is an empty model in NWD spec
             configuration={"metrics": ["accuracy", "precision"]},
         )
 
