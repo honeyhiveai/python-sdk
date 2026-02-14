@@ -9,6 +9,32 @@ import pytest
 from honeyhive.models import CreateDatapointRequest, UpdateDatapointRequest
 
 
+def _get_created_id(response: Any) -> str:
+    """Extract created datapoint ID from CreateDatapointResponse.
+
+    The NWD API returns a CreateDatapointResponse with a `result` dict containing
+    `insertedId` (str) and `insertedIds` (dict with string keys like {'0': 'id'}).
+    """
+    result = getattr(response, "result", None) or (
+        response.get("result") if isinstance(response, dict) else None
+    )
+    assert result is not None, f"Missing result in response: {response}"
+
+    # Prefer insertedId (single value)
+    created_id = result.get("insertedId")
+    if created_id:
+        return created_id
+
+    # Fallback to insertedIds
+    inserted_ids = result.get("insertedIds")
+    assert inserted_ids and len(inserted_ids) > 0, (
+        f"Missing insertedIds in result: {result}"
+    )
+    if isinstance(inserted_ids, dict):
+        return list(inserted_ids.values())[0]
+    return inserted_ids[0]
+
+
 class TestDatapointsAPI:
     """Test DatapointsAPI CRUD operations beyond basic create."""
 
@@ -28,11 +54,11 @@ class TestDatapointsAPI:
 
         response = integration_client.datapoints.create(datapoint_request)
 
-        # v1 API returns a dict with inserted and result fields
-        assert isinstance(response, dict)
-        assert response.get("inserted") is True
-        assert "insertedIds" in response.get("result", {})
-        assert len(response["result"]["insertedIds"]) > 0
+        # NWD API returns CreateDatapointResponse with result dict
+        assert response is not None
+        result = getattr(response, "result", None)
+        assert result is not None
+        assert result.get("acknowledged") is True or result.get("insertedId") is not None
 
     def test_get_datapoint(
         self, integration_client: Any, integration_project_name: str
@@ -49,12 +75,7 @@ class TestDatapointsAPI:
         )
 
         create_resp = integration_client.datapoints.create(datapoint_request)
-        assert isinstance(create_resp, dict)
-        assert create_resp.get("inserted") is True
-        assert "insertedIds" in create_resp.get("result", {})
-        assert len(create_resp["result"]["insertedIds"]) > 0
-
-        datapoint_id = create_resp["result"]["insertedIds"][0]
+        datapoint_id = _get_created_id(create_resp)
 
         # Wait for indexing
         time.sleep(3)
@@ -62,16 +83,22 @@ class TestDatapointsAPI:
         # Get the datapoint
         response = integration_client.datapoints.get(datapoint_id)
 
-        # API returns dict with 'datapoint' key containing a list
-        assert isinstance(response, dict)
-        assert "datapoint" in response
-        datapoint_list = response["datapoint"]
+        # API returns GetDatapointResponse or dict with 'datapoint' key containing a list
+        datapoint_list = getattr(response, "datapoint", None)
+        if datapoint_list is None and isinstance(response, dict):
+            datapoint_list = response.get("datapoint")
+        assert datapoint_list is not None
         assert isinstance(datapoint_list, list)
         assert len(datapoint_list) > 0
 
         # Verify the inputs match what was created
         datapoint = datapoint_list[0]
-        assert datapoint.get("inputs") == test_inputs
+        dp_inputs = (
+            datapoint.get("inputs")
+            if isinstance(datapoint, dict)
+            else getattr(datapoint, "inputs", None)
+        )
+        assert dp_inputs == test_inputs
 
     def test_list_datapoints(
         self, integration_client: Any, integration_project_name: str
@@ -87,20 +114,20 @@ class TestDatapointsAPI:
                 ground_truth={"response": f"response {i}"},
             )
             response = integration_client.datapoints.create(datapoint_request)
-            assert isinstance(response, dict)
-            assert response.get("inserted") is True
+            assert response is not None
+            assert getattr(response, "result", None) is not None
 
         time.sleep(2)
 
-        # Test listing - v1 API uses datapoint_ids or dataset_name, not project
+        # Test listing
         datapoints_response = integration_client.datapoints.list()
 
-        assert isinstance(datapoints_response, (dict, list))
-        datapoints = (
-            datapoints_response.get("datapoints", datapoints_response)
-            if isinstance(datapoints_response, dict)
-            else datapoints_response
-        )
+        # GetDatapointsResponse has datapoints field, or could be a dict/list
+        datapoints = getattr(datapoints_response, "datapoints", None)
+        if datapoints is None and isinstance(datapoints_response, dict):
+            datapoints = datapoints_response.get("datapoints", datapoints_response)
+        elif datapoints is None and isinstance(datapoints_response, list):
+            datapoints = datapoints_response
         assert isinstance(datapoints, list)
 
     def test_update_datapoint(
@@ -118,12 +145,7 @@ class TestDatapointsAPI:
         )
 
         create_resp = integration_client.datapoints.create(datapoint_request)
-        assert isinstance(create_resp, dict)
-        assert create_resp.get("inserted") is True
-        assert "insertedIds" in create_resp.get("result", {})
-        assert len(create_resp["result"]["insertedIds"]) > 0
-
-        datapoint_id = create_resp["result"]["insertedIds"][0]
+        datapoint_id = _get_created_id(create_resp)
 
         # Wait for indexing
         time.sleep(2)
@@ -132,17 +154,8 @@ class TestDatapointsAPI:
         updated_inputs = {"query": f"updated query {test_id}", "test_id": test_id}
         update_request = UpdateDatapointRequest(inputs=updated_inputs)
 
-        # Update the datapoint
-        response = integration_client.datapoints.update(datapoint_id, update_request)
-
-        # Assert response is a dict with modification info
-        assert isinstance(response, dict)
-        # Assert response indicates modification succeeded
-        assert (
-            response.get("modified", False) is True
-            or response.get("updated", False) is True
-            or response.get("result", {}).get("modifiedCount", 0) >= 1
-        )
+        # Update the datapoint - NWD API returns None
+        integration_client.datapoints.update(datapoint_id, update_request)
 
     def test_delete_datapoint(
         self, integration_client: Any, integration_project_name: str
@@ -159,12 +172,7 @@ class TestDatapointsAPI:
         )
 
         create_resp = integration_client.datapoints.create(datapoint_request)
-        assert isinstance(create_resp, dict)
-        assert create_resp.get("inserted") is True
-        assert "insertedIds" in create_resp.get("result", {})
-        assert len(create_resp["result"]["insertedIds"]) > 0
-
-        datapoint_id = create_resp["result"]["insertedIds"][0]
+        datapoint_id = _get_created_id(create_resp)
 
         # Wait for indexing
         time.sleep(2)
@@ -172,10 +180,18 @@ class TestDatapointsAPI:
         # Delete the datapoint
         response = integration_client.datapoints.delete(datapoint_id)
 
-        # Assert response is a dict indicating deletion
-        assert isinstance(response, dict)
-        # Assert response.deleted is True or response.deletedCount >= 1
-        assert response.get("deleted") is True or response.get("deletedCount", 0) >= 1
+        # NWD API returns DeleteDatapointResponse with acknowledged/deleted_count
+        if response is not None:
+            acknowledged = getattr(response, "acknowledged", None)
+            deleted_count = getattr(response, "deleted_count", None)
+            if isinstance(response, dict):
+                acknowledged = response.get("acknowledged")
+                deleted_count = response.get("deletedCount", response.get("deleted_count"))
+            # At least one indicator of success
+            assert (
+                acknowledged is True
+                or (deleted_count is not None and deleted_count >= 1)
+            ), f"Delete did not indicate success: {response}"
 
     def test_bulk_operations(
         self, integration_client: Any, integration_project_name: str

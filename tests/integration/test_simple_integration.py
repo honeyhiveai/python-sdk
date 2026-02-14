@@ -42,13 +42,19 @@ class TestSimpleIntegration:
             # Step 1: Create datapoint
             datapoint_response = integration_client.datapoints.create(datapoint_request)
 
-            # Verify creation response - v1 API returns different structure
-            assert hasattr(datapoint_response, "inserted")
-            assert datapoint_response.inserted is True
-            assert hasattr(datapoint_response, "result")
-            assert "insertedIds" in datapoint_response.result
-            assert len(datapoint_response.result["insertedIds"]) > 0
-            created_id = datapoint_response.result["insertedIds"][0]
+            # Verify creation response - NWD API returns CreateDatapointResponse
+            assert datapoint_response is not None
+            result = getattr(datapoint_response, "result", None)
+            assert result is not None, "CreateDatapointResponse missing result"
+            # Extract created ID - insertedId is a str, insertedIds may be dict with string keys
+            created_id = result.get("insertedId")
+            if not created_id:
+                inserted_ids = result.get("insertedIds", {})
+                if isinstance(inserted_ids, dict):
+                    created_id = list(inserted_ids.values())[0]
+                elif isinstance(inserted_ids, list) and len(inserted_ids) > 0:
+                    created_id = inserted_ids[0]
+            assert created_id is not None, "No created ID found in response"
 
             # Step 2: Wait for data propagation (real systems need time)
             time.sleep(2)
@@ -56,17 +62,22 @@ class TestSimpleIntegration:
             # Step 3: Validate data is actually stored by retrieving it
             try:
                 # List datapoints to find our created one
-                # Note: v1 API uses datapoint_ids or dataset_name, not project
-                datapoints = integration_client.datapoints.list()
+                datapoints_response = integration_client.datapoints.list()
+                datapoints = getattr(datapoints_response, "datapoints", None)
+                if datapoints is None and isinstance(datapoints_response, list):
+                    datapoints = datapoints_response
+                if datapoints is None:
+                    datapoints = []
 
                 # Find our specific datapoint
                 found_datapoint = None
                 for dp in datapoints:
-                    if (
-                        hasattr(dp, "inputs")
-                        and dp.inputs
-                        and dp.inputs.get("test_id") == test_id
-                    ):
+                    dp_inputs = (
+                        dp.get("inputs")
+                        if isinstance(dp, dict)
+                        else getattr(dp, "inputs", None)
+                    )
+                    if dp_inputs and dp_inputs.get("test_id") == test_id:
                         found_datapoint = dp
                         break
 
@@ -75,11 +86,22 @@ class TestSimpleIntegration:
                     f"Created datapoint with test_id {test_id} not found in "
                     f"HoneyHive system"
                 )
+                dp_inputs = (
+                    found_datapoint.get("inputs")
+                    if isinstance(found_datapoint, dict)
+                    else getattr(found_datapoint, "inputs", None)
+                )
                 assert (
-                    found_datapoint.inputs["query"] == test_query
+                    dp_inputs["query"] == test_query
                 ), "Stored query doesn't match created query"
+
+                dp_gt = (
+                    found_datapoint.get("ground_truth")
+                    if isinstance(found_datapoint, dict)
+                    else getattr(found_datapoint, "ground_truth", None)
+                )
                 assert (
-                    found_datapoint.ground_truth["response"] == test_response
+                    dp_gt["response"] == test_response
                 ), "Stored ground truth doesn't match created ground truth"
 
                 print(f"✅ Successfully validated datapoint storage: {created_id}")
@@ -113,8 +135,6 @@ class TestSimpleIntegration:
         test_id = str(uuid.uuid4())[:8]
         config_name = f"integration-test-config-{test_id}"
 
-        # v1 API uses CreateConfigurationRequest with dict parameters
-        # Note: project is passed to list(), not in the request body
         config_request = CreateConfigurationRequest(
             project=integration_project_name,
             name=config_name,
@@ -128,22 +148,17 @@ class TestSimpleIntegration:
         )
 
         try:
-            # Step 1: Create configuration - v1 API uses .create() method
-            config_response = integration_client.configurations.create(config_request)
+            # Step 1: Create configuration - NWD API returns None
+            integration_client.configurations.create(config_request)
 
-            # Verify creation response - v1 API response structure
-            assert config_response.acknowledged is True
-            assert hasattr(config_response, "insertedId")
-            assert config_response.insertedId is not None
-
-            print(f"✅ Configuration created with ID: {config_response.insertedId}")
+            print(f"✅ Configuration create request sent for: {config_name}")
 
             # Step 2: Wait for data propagation
             time.sleep(2)
 
             # Step 3: Validate data is actually stored by retrieving it
             try:
-                # List configurations to find our created one - v1 API uses .list() method
+                # List configurations - NWD API requires project param
                 configurations = integration_client.configurations.list(
                     project=integration_project_name
                 )
@@ -167,6 +182,16 @@ class TestSimpleIntegration:
                 ), "Stored provider doesn't match created provider"
 
                 print(f"✅ Successfully validated configuration storage: {config_name}")
+
+                # Cleanup
+                config_id = getattr(found_config, "id", None) or getattr(
+                    found_config, "_id", None
+                )
+                if config_id:
+                    try:
+                        integration_client.configurations.delete(config_id)
+                    except Exception:
+                        pass
 
             except Exception as retrieval_error:
                 # If retrieval fails, still consider test successful if creation worked
@@ -206,16 +231,14 @@ class TestSimpleIntegration:
             }
 
             session_response = integration_client.sessions.start(session_data)
-            # v1 API returns a dict or object with session_id
+            # NWD API returns StartSessionResponse with session_id attribute
             assert session_response is not None
-            session_id = (
-                session_response.get("session_id")
-                if isinstance(session_response, dict)
-                else getattr(session_response, "session_id", None)
-            )
+            session_id = getattr(session_response, "session_id", None)
+            if session_id is None and isinstance(session_response, dict):
+                session_id = session_response.get("session_id")
             assert session_id is not None
 
-            # Step 2: Create event linked to session - v1 API uses dict-based request
+            # Step 2: Create event linked to session - pass flat event data dict
             event_data = {
                 "project": integration_project_name,
                 "source": "integration-test",
@@ -227,14 +250,13 @@ class TestSimpleIntegration:
                 "duration": 100.0,
             }
 
-            event_response = integration_client.events.create({"event": event_data})
-            # v1 API returns a dict or object with event_id
+            # Pass flat event data - wrapper handles wrapping into CreateEventRequestBody
+            event_response = integration_client.events.create(event_data)
+            # NWD API returns CreateEventResponse with event_id attribute
             assert event_response is not None
-            event_id = (
-                event_response.get("event_id")
-                if isinstance(event_response, dict)
-                else getattr(event_response, "event_id", None)
-            )
+            event_id = getattr(event_response, "event_id", None)
+            if event_id is None and isinstance(event_response, dict):
+                event_id = event_response.get("event_id")
             assert event_id is not None
 
             # Step 3: Wait for data propagation
@@ -264,11 +286,9 @@ class TestSimpleIntegration:
 
                 # Verify event is linked to session
                 assert events_result is not None
-                events_list = (
-                    events_result.get("events", [])
-                    if isinstance(events_result, dict)
-                    else getattr(events_result, "events", [])
-                )
+                events_list = getattr(events_result, "events", None)
+                if events_list is None and isinstance(events_result, dict):
+                    events_list = events_result.get("events", [])
                 assert events_list is not None
                 found_event = None
                 for event in events_list:
