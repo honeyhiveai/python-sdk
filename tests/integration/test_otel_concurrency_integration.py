@@ -754,6 +754,7 @@ class TestOTELConcurrencyIntegration:
                     target_event = verify_backend_event(
                         client=integration_client,
                         project=real_project,
+                        session_id=tracers[tracer_index].session_id,
                         unique_identifier=expected_unique_id,
                         expected_event_name=f"{test_operation_name}_tracer_{tracer_index}",
                     )

@@ -113,15 +113,29 @@ def verify_backend_event(
             # Find matching event using dynamic relationship analysis
             verified_event = None
             if expected_event_name and events:
-                # Dynamic approach: First try exact unique_id match
+                # Prefer events matching BOTH unique_id AND expected_event_name
+                # (avoids returning Session event when test span is expected)
                 verified_event = next(
                     (
                         event
                         for event in events
                         if _extract_unique_id(event) == unique_identifier
+                        and _get_field(event, "event_name", "")
+                        == expected_event_name
                     ),
                     None,
                 )
+
+                # Fallback: match by unique_id only
+                if not verified_event:
+                    verified_event = next(
+                        (
+                            event
+                            for event in events
+                            if _extract_unique_id(event) == unique_identifier
+                        ),
+                        None,
+                    )
 
                 # If no exact match, use dynamic relationship analysis
                 if not verified_event:
