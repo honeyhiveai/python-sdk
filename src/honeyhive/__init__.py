@@ -33,12 +33,19 @@ try:
 except ImportError:
     _TRACER_AVAILABLE = False
 
+# Config module (per-instance configuration)
+try:
+    from .config import TracerConfig as config  # backwards-compat alias
+
+    _CONFIG_AVAILABLE = True
+except ImportError:
+    _CONFIG_AVAILABLE = False
+
 # Evaluation/experiments module (if available)
 try:
-    from .experiments import evaluate
     from .evaluation._compat import aevaluator, evaluator
     from .evaluation.evaluators import BaseEvaluator
-    from .config import config
+    from .experiments import evaluate
 
     _EVALUATION_AVAILABLE = True
 except ImportError:
@@ -74,6 +81,10 @@ if _TRACER_AVAILABLE:
         ]
     )
 
+# Add config export if available
+if _CONFIG_AVAILABLE:
+    __all__.append("config")
+
 # Add evaluation exports if available
 if _EVALUATION_AVAILABLE:
     __all__.extend(
@@ -81,7 +92,6 @@ if _EVALUATION_AVAILABLE:
             "evaluate",
             "evaluator",
             "aevaluator",
-            "config",
             "BaseEvaluator",
         ]
     )

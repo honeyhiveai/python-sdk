@@ -2,6 +2,8 @@ from typing import *
 
 from pydantic import BaseModel, Field
 
+from .Datapoint import Datapoint
+
 
 class GetDatapointsResponse(BaseModel):
     """
@@ -10,4 +12,6 @@ class GetDatapointsResponse(BaseModel):
 
     model_config = {"populate_by_name": True, "validate_assignment": True}
 
-    datapoints: List[Dict[str, Any]] = Field(validation_alias="datapoints")
+    datapoints: Optional[List[Optional[Datapoint]]] = Field(
+        validation_alias="datapoints", default=None
+    )

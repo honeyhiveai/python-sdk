@@ -9,11 +9,10 @@ specification using openapi-python-generator. The generated code includes:
 - API configuration with Bearer auth support
 
 Usage:
-    python scripts/generate_client.py [--spec PATH] [--minimal]
+    python scripts/generate_client.py [--spec PATH]
 
 Options:
-    --spec PATH    Path to OpenAPI spec (default: openapi/v1.yaml)
-    --minimal      Use minimal spec for testing (openapi/v1_minimal.yaml)
+    --spec PATH    Path to OpenAPI spec (default: openapi/openapi.yaml)
 
 The generated client is written to:
     src/honeyhive/_generated/
@@ -27,8 +26,7 @@ from pathlib import Path
 
 # Get the repo root directory
 REPO_ROOT = Path(__file__).parent.parent
-DEFAULT_SPEC = REPO_ROOT / "openapi" / "v1.yaml"
-MINIMAL_SPEC = REPO_ROOT / "openapi" / "v1_minimal.yaml"
+DEFAULT_SPEC = REPO_ROOT / "openapi" / "openapi.yaml"
 OUTPUT_DIR = REPO_ROOT / "src" / "honeyhive" / "_generated"
 TEMP_DIR = REPO_ROOT / ".generated_temp"
 
@@ -118,6 +116,30 @@ def post_process(output_dir: Path) -> bool:
         init_file.write_text('"""Auto-generated HoneyHive API client."""\n')
         print("  ✓ Created __init__.py")
 
+    # Fix leading-underscore fields (e.g. _id) that Pydantic v2 rejects.
+    # Rename the Python field to drop the underscore while keeping the
+    # validation_alias so the original JSON key still works.
+    import re
+
+    models_dir = output_dir / "models"
+    if models_dir.exists():
+        underscore_fixed = 0
+        pattern = re.compile(
+            r"^(\s+)(_\w+)(:\s+.*Field\(.*validation_alias=[\"'])(_\w+)([\"'])",
+            re.MULTILINE,
+        )
+        for model_file in models_dir.glob("*.py"):
+            content = model_file.read_text()
+            new_content, count = pattern.subn(
+                lambda m: f"{m.group(1)}{m.group(2).lstrip('_')}{m.group(3)}{m.group(4)}{m.group(5)}",
+                content,
+            )
+            if count > 0:
+                model_file.write_text(new_content)
+                underscore_fixed += count
+        if underscore_fixed > 0:
+            print(f"  ✓ Fixed {underscore_fixed} leading-underscore field(s) in models")
+
     # Fix serialization to exclude None values
     # The API rejects null values, so we must use model_dump(exclude_none=True)
     services_dir = output_dir / "services"
@@ -148,20 +170,10 @@ def main() -> int:
         type=Path,
         help=f"Path to OpenAPI spec (default: {DEFAULT_SPEC.relative_to(REPO_ROOT)})",
     )
-    parser.add_argument(
-        "--minimal",
-        action="store_true",
-        help="Use minimal spec for testing",
-    )
     args = parser.parse_args()
 
     # Determine which spec to use
-    if args.spec:
-        spec_path = args.spec
-    elif args.minimal:
-        spec_path = MINIMAL_SPEC
-    else:
-        spec_path = DEFAULT_SPEC
+    spec_path = args.spec if args.spec else DEFAULT_SPEC
 
     print("🚀 Generating SDK Client (openapi-python-generator)")
     print("=" * 55)

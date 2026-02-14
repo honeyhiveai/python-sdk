@@ -9,7 +9,6 @@ import time
 from typing import Any, Optional
 
 from honeyhive import HoneyHive
-from honeyhive.models import GetEventsBySessionIdResponse
 from honeyhive.utils.logger import get_logger
 
 from .test_config import test_config
@@ -38,8 +37,8 @@ class BackendVerificationError(Exception):
 def verify_backend_event(
     client: HoneyHive,
     project: str,
-    session_id: str,
-    unique_identifier: str,
+    session_id: Optional[str] = None,
+    unique_identifier: str = "",
     expected_event_name: Optional[str] = None,
     debug_content: bool = False,
 ) -> Any:
@@ -51,7 +50,7 @@ def verify_backend_event(
     Args:
         client: HoneyHive client instance (uses its configured retry settings)
         project: Project name for filtering
-        session_id: Session ID to retrieve events for
+        session_id: Session ID to retrieve events for (optional; falls back to export)
         unique_identifier: Unique identifier to search for (test.unique_id attribute)
         expected_event_name: Expected event name for validation
         debug_content: Whether to log detailed event content for debugging
@@ -67,24 +66,38 @@ def verify_backend_event(
     for attempt in range(test_config.max_attempts):
         try:
             # SDK client handles HTTP retries automatically
-            events_response = client.events.get_by_session_id(session_id=session_id)
+            # Use POST /events/export which requires both project and filters
+            if session_id:
+                events_response = client.events.list(
+                    data={
+                        "project": project,
+                        "filters": [
+                            {
+                                "field": "session_id",
+                                "value": session_id,
+                                "operator": "is",
+                            }
+                        ],
+                    }
+                )
+            else:
+                # Fallback: use events export endpoint filtered by project
+                events_response = client.events.list(
+                    data={"project": project, "filters": [], "limit": 100}
+                )
 
-            # Validate API response - now returns typed GetEventsBySessionIdResponse model
+            # Validate API response (may be dict or typed model)
             if events_response is None:
                 logger.warning(f"API returned None for events (attempt {attempt + 1})")
                 continue
 
-            if not isinstance(events_response, GetEventsBySessionIdResponse):
-                logger.warning(
-                    f"API returned unexpected response type: {type(events_response)} "
-                    f"(attempt {attempt + 1})"
-                )
-                continue
-
-            # Extract events list from typed response
-            events = (
-                events_response.events if hasattr(events_response, "events") else []
-            )
+            # Extract events list from response (dict or typed model)
+            if isinstance(events_response, dict):
+                events = events_response.get("events", [])
+            elif hasattr(events_response, "events"):
+                events = events_response.events
+            else:
+                events = []
             if not isinstance(events, list):
                 logger.warning(
                     f"API response 'events' field is not a list: {type(events)} "
@@ -100,15 +113,29 @@ def verify_backend_event(
             # Find matching event using dynamic relationship analysis
             verified_event = None
             if expected_event_name and events:
-                # Dynamic approach: First try exact unique_id match
+                # Prefer events matching BOTH unique_id AND expected_event_name
+                # (avoids returning Session event when test span is expected)
                 verified_event = next(
                     (
                         event
                         for event in events
                         if _extract_unique_id(event) == unique_identifier
+                        and _get_field(event, "event_name", "")
+                        == expected_event_name
                     ),
                     None,
                 )
+
+                # Fallback: match by unique_id only
+                if not verified_event:
+                    verified_event = next(
+                        (
+                            event
+                            for event in events
+                            if _extract_unique_id(event) == unique_identifier
+                        ),
+                        None,
+                    )
 
                 # If no exact match, use dynamic relationship analysis
                 if not verified_event:

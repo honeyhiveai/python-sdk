@@ -10,6 +10,6 @@ class CreateDatasetResponse(BaseModel):
 
     model_config = {"populate_by_name": True, "validate_assignment": True}
 
-    inserted: bool = Field(validation_alias="inserted")
+    inserted: Optional[bool] = Field(validation_alias="inserted", default=None)
 
-    result: Dict[str, Any] = Field(validation_alias="result")
+    result: Optional[Dict[str, Any]] = Field(validation_alias="result", default=None)

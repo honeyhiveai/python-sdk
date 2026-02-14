@@ -20,12 +20,14 @@ class UpdateDatapointRequest(BaseModel):
         validation_alias="ground_truth", default=None
     )
 
-    metadata: Optional[Dict[str, Any]] = Field(
-        validation_alias="metadata", default=None
+    linked_evals: Optional[List[str]] = Field(
+        validation_alias="linked_evals", default=None
     )
-
-    linked_event: Optional[str] = Field(validation_alias="linked_event", default=None)
 
     linked_datasets: Optional[List[str]] = Field(
         validation_alias="linked_datasets", default=None
+    )
+
+    metadata: Optional[Dict[str, Any]] = Field(
+        validation_alias="metadata", default=None
     )

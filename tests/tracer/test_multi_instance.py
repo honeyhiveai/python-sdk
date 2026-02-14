@@ -51,7 +51,7 @@ class TestMultiInstanceSafety:
                         attrs = dict(span.attributes or {})
 
                         # Check metadata was set correctly
-                        expected_key = "honeyhive.metadata.thread_id"
+                        expected_key = "honeyhive_metadata.thread_id"
                         if expected_key in attrs:
                             actual_thread_id = attrs[expected_key]
                             assert (
@@ -251,7 +251,7 @@ class TestMultiInstanceSafety:
                         attrs = dict(span.attributes or {})
                         results[thread_id] = {
                             "unique_id": str(
-                                attrs.get("honeyhive.metadata.unique_id", "")
+                                attrs.get("honeyhive_metadata.unique_id", "")
                             ),
                             "tracer_id": tracer._tracer_id,
                         }
@@ -315,14 +315,14 @@ class TestMultiInstanceIntegration:
 
             if prod_span and prod_span.is_recording():
                 prod_attrs = dict(prod_span.attributes or {})
-                assert prod_attrs.get("honeyhive.metadata.env") == "production"
+                assert prod_attrs.get("honeyhive_metadata.env") == "production"
 
         with staging_tracer.start_span("staging-operation") as staging_span:
             staging_tracer.enrich_span(metadata={"env": "staging"})
 
             if staging_span and staging_span.is_recording():
                 staging_attrs = dict(staging_span.attributes or {})
-                assert staging_attrs.get("honeyhive.metadata.env") == "staging"
+                assert staging_attrs.get("honeyhive_metadata.env") == "staging"
 
         # Verify tracers are distinct
         assert prod_tracer._tracer_id != staging_tracer._tracer_id

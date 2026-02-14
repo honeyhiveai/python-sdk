@@ -46,6 +46,7 @@ class MockHoneyHiveTracer:
         self.config.verbose = False
         self.config.session = Mock()
         self.config.session.inputs = {}
+        self.config.skip_default_session = False
         # Span limit configuration
         self.config.max_attributes = 1024
         self.config.max_events = 1024
@@ -1189,14 +1190,12 @@ class TestTracerInitialization:
 
     @patch("honeyhive.tracer.instrumentation.initialization._create_new_session")
     @patch("honeyhive.tracer.instrumentation.initialization.uuid")
-    @patch("honeyhive.tracer.instrumentation.initialization.SessionAPI")
     @patch("honeyhive.tracer.instrumentation.initialization.HoneyHive")
     @patch("honeyhive.tracer.instrumentation.initialization.safe_log")
     def test__initialize_session_management_success_existing_session(
         self,
         mock_log: Any,
         mock_client: Any,
-        mock_session_api: Any,
         mock_uuid: Any,
         mock_create: Any,
     ) -> None:
@@ -1207,9 +1206,7 @@ class TestTracerInitialization:
         """
         # Arrange
         mock_client_instance = Mock()
-        mock_session_api_instance = Mock()
         mock_client.return_value = mock_client_instance
-        mock_session_api.return_value = mock_session_api_instance
         # Use a valid UUID format
         valid_session_id = "550e8400-e29b-41d4-a716-446655440000"
         self.mock_tracer.session_id = valid_session_id
@@ -1222,7 +1219,6 @@ class TestTracerInitialization:
 
         # Assert
         assert self.mock_tracer.client == mock_client_instance
-        assert self.mock_tracer.session_api == mock_session_api_instance
         # Now we always call _create_new_session even when session_id is provided
         mock_create.assert_called_once_with(self.mock_tracer)
         # UUID validation should have been called inline
@@ -1230,31 +1226,25 @@ class TestTracerInitialization:
         mock_log.assert_called()
 
     @patch("honeyhive.tracer.instrumentation.initialization._create_new_session")
-    @patch("honeyhive.tracer.instrumentation.initialization._validate_session_id")
-    @patch("honeyhive.tracer.instrumentation.initialization.SessionAPI")
     @patch("honeyhive.tracer.instrumentation.initialization.HoneyHive")
     @patch("honeyhive.tracer.instrumentation.initialization.safe_log")
     def test__initialize_session_management_success_new_session(
         self,
         mock_log: Any,
         mock_client: Any,
-        mock_session_api: Any,
-        mock_validate: Any,
         mock_create: Any,
     ) -> None:
         """Test session management initialization with new session creation."""
         # Arrange
         mock_client_instance = Mock()
-        mock_session_api_instance = Mock()
         mock_client.return_value = mock_client_instance
-        mock_session_api.return_value = mock_session_api_instance
         self.mock_tracer.session_id = None
 
         # Act
         initialization._initialize_session_management(self.mock_tracer)
 
         # Assert
-        mock_validate.assert_not_called()
+        assert self.mock_tracer.client == mock_client_instance
         mock_create.assert_called_once_with(self.mock_tracer)
 
     @patch("honeyhive.tracer.instrumentation.initialization.HoneyHive")
@@ -1473,19 +1463,18 @@ class TestTracerInitialization:
         self.mock_tracer.session_name = "test-session"
         self.mock_tracer.session_id = None
 
-        # Mock session API response with a UUID
+        # Mock client.sessions.start() response with a UUID
         test_session_id = str(uuid.uuid4())
-        mock_response = MagicMock()
-        mock_response.session_id = test_session_id
-        self.mock_tracer.session_api = MagicMock()
-        self.mock_tracer.session_api.start_session.return_value = mock_response
+        mock_response = {"session_id": test_session_id}
+        self.mock_tracer.client = MagicMock()
+        self.mock_tracer.client.sessions.start.return_value = mock_response
 
         # Act
         initialization._create_new_session(self.mock_tracer)
 
         # Assert - verify a valid session_id was set
         assert self.mock_tracer.session_id == test_session_id
-        self.mock_tracer.session_api.start_session.assert_called_once()
+        self.mock_tracer.client.sessions.start.assert_called_once()
 
     @patch("honeyhive.tracer.instrumentation.initialization.uuid")
     @patch("honeyhive.tracer.instrumentation.initialization.safe_log")
@@ -1496,7 +1485,7 @@ class TestTracerInitialization:
         # Arrange
         self.mock_tracer.test_mode = False
         self.mock_tracer.session_name = "test-session"
-        self.mock_tracer.session_api.start_session.side_effect = Exception(
+        self.mock_tracer.client.sessions.start.side_effect = Exception(
             "API call failed"
         )
 
@@ -1530,10 +1519,10 @@ class TestTracerInitialization:
         self, mock_log: Any, mock_uuid_module: Any
     ) -> None:
         """Test new session creation edge cases."""
-        # Test with session API returning None
+        # Test with client.sessions.start() returning None
         self.mock_tracer.test_mode = False
         self.mock_tracer.session_name = "test-session"
-        self.mock_tracer.session_api.start_session.return_value = None
+        self.mock_tracer.client.sessions.start.return_value = None
 
         new_uuid = "550e8400-e29b-41d4-a716-446655440005"
         mock_uuid_obj = Mock()

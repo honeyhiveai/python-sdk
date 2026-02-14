@@ -1,18 +1,13 @@
 from typing import *
 
-import httpx
-
-from ..api_config import APIConfig, HTTPException
+from ..api_config import APIConfig, HTTPException, _make_request_async
 from ..models import *
 
 
-async def getTools(
-    api_config_override: Optional[APIConfig] = None,
-) -> List[GetToolsResponse]:
+async def getTools(api_config_override: Optional[APIConfig] = None) -> List[Tool]:
     api_config = api_config_override if api_config_override else APIConfig()
 
-    base_path = api_config.base_path
-    path = f"/v1/tools"
+    path = f"/tools"
     headers = {
         "Content-Type": "application/json",
         "Accept": "application/json",
@@ -24,25 +19,17 @@ async def getTools(
         key: value for (key, value) in query_params.items() if value is not None
     }
 
-    async with httpx.AsyncClient(
-        base_url=base_path, verify=api_config.verify
-    ) as client:
-        response = await client.request(
-            "get",
-            httpx.URL(path),
-            headers=headers,
-            params=query_params,
-        )
+    response = await _make_request_async(api_config, "get", path, headers, params=query_params)
 
     if response.status_code != 200:
         raise HTTPException(
             response.status_code,
-            f"getTools failed with status code: {response.status_code}",
+            f"getTools failed with status code: {response.status_code}. Response: {response.text[:500]}",
         )
     else:
         body = None if 200 == 204 else response.json()
 
-    return [GetToolsResponse(**item) for item in body]
+    return [Tool(**item) for item in body]
 
 
 async def createTool(
@@ -50,8 +37,7 @@ async def createTool(
 ) -> CreateToolResponse:
     api_config = api_config_override if api_config_override else APIConfig()
 
-    base_path = api_config.base_path
-    path = f"/v1/tools"
+    path = f"/tools"
     headers = {
         "Content-Type": "application/json",
         "Accept": "application/json",
@@ -63,21 +49,12 @@ async def createTool(
         key: value for (key, value) in query_params.items() if value is not None
     }
 
-    async with httpx.AsyncClient(
-        base_url=base_path, verify=api_config.verify
-    ) as client:
-        response = await client.request(
-            "post",
-            httpx.URL(path),
-            headers=headers,
-            params=query_params,
-            json=data.model_dump(exclude_none=True),
-        )
+    response = await _make_request_async(api_config, "post", path, headers, params=query_params, json=data.model_dump(exclude_none=True))
 
     if response.status_code != 200:
         raise HTTPException(
             response.status_code,
-            f"createTool failed with status code: {response.status_code}",
+            f"createTool failed with status code: {response.status_code}. Response: {response.text[:500]}",
         )
     else:
         body = None if 200 == 204 else response.json()
@@ -87,11 +64,10 @@ async def createTool(
 
 async def updateTool(
     api_config_override: Optional[APIConfig] = None, *, data: UpdateToolRequest
-) -> UpdateToolResponse:
+) -> None:
     api_config = api_config_override if api_config_override else APIConfig()
 
-    base_path = api_config.base_path
-    path = f"/v1/tools"
+    path = f"/tools"
     headers = {
         "Content-Type": "application/json",
         "Accept": "application/json",
@@ -103,35 +79,25 @@ async def updateTool(
         key: value for (key, value) in query_params.items() if value is not None
     }
 
-    async with httpx.AsyncClient(
-        base_url=base_path, verify=api_config.verify
-    ) as client:
-        response = await client.request(
-            "put",
-            httpx.URL(path),
-            headers=headers,
-            params=query_params,
-            json=data.model_dump(exclude_none=True),
-        )
+    response = await _make_request_async(api_config, "put", path, headers, params=query_params, json=data.model_dump(exclude_none=True))
 
     if response.status_code != 200:
         raise HTTPException(
             response.status_code,
-            f"updateTool failed with status code: {response.status_code}",
+            f"updateTool failed with status code: {response.status_code}. Response: {response.text[:500]}",
         )
     else:
         body = None if 200 == 204 else response.json()
 
-    return UpdateToolResponse(**body) if body is not None else UpdateToolResponse()
+    return None
 
 
 async def deleteTool(
     api_config_override: Optional[APIConfig] = None, *, function_id: str
-) -> DeleteToolResponse:
+) -> None:
     api_config = api_config_override if api_config_override else APIConfig()
 
-    base_path = api_config.base_path
-    path = f"/v1/tools"
+    path = f"/tools"
     headers = {
         "Content-Type": "application/json",
         "Accept": "application/json",
@@ -143,22 +109,14 @@ async def deleteTool(
         key: value for (key, value) in query_params.items() if value is not None
     }
 
-    async with httpx.AsyncClient(
-        base_url=base_path, verify=api_config.verify
-    ) as client:
-        response = await client.request(
-            "delete",
-            httpx.URL(path),
-            headers=headers,
-            params=query_params,
-        )
+    response = await _make_request_async(api_config, "delete", path, headers, params=query_params)
 
     if response.status_code != 200:
         raise HTTPException(
             response.status_code,
-            f"deleteTool failed with status code: {response.status_code}",
+            f"deleteTool failed with status code: {response.status_code}. Response: {response.text[:500]}",
         )
     else:
         body = None if 200 == 204 else response.json()
 
-    return DeleteToolResponse(**body) if body is not None else DeleteToolResponse()
+    return None

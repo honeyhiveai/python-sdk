@@ -407,7 +407,11 @@ class TracerContextMixin(TracerContextInterface):
                 return session_id
 
             # Create session via API
-            if not (hasattr(self, 'client') and self.client and hasattr(self.client, 'sessions')):
+            if not (
+                hasattr(self, "client")
+                and self.client
+                and hasattr(self.client, "sessions")
+            ):
                 safe_log(
                     self, "warning", "No session API available for session creation"
                 )
@@ -542,7 +546,11 @@ class TracerContextMixin(TracerContextInterface):
                 return session_id
 
             # Create session via API
-            if not (hasattr(self, 'client') and self.client and hasattr(self.client, 'sessions')):
+            if not (
+                hasattr(self, "client")
+                and self.client
+                and hasattr(self.client, "sessions")
+            ):
                 safe_log(
                     self, "warning", "No session API available for session creation"
                 )

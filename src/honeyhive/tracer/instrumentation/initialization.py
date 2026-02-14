@@ -1101,9 +1101,11 @@ def _initialize_session_management(tracer_instance: Any) -> None:
         )
         if skip_default_session is None:
             # Also check environment variable
-            skip_default_session = os.getenv(
-                "HH_SKIP_DEFAULT_SESSION", ""
-            ).lower() in ("true", "1", "yes")
+            skip_default_session = os.getenv("HH_SKIP_DEFAULT_SESSION", "").lower() in (
+                "true",
+                "1",
+                "yes",
+            )
 
         if skip_default_session:
             safe_log(
@@ -1346,10 +1348,12 @@ def _create_new_session(tracer_instance: Any) -> None:
         response_session_id = None
         if session_response:
             # Handle Pydantic model (has .session_id attribute)
-            if hasattr(session_response, 'session_id'):
+            if hasattr(session_response, "session_id"):
                 response_session_id = session_response.session_id
             # Handle dict response (legacy)
-            elif isinstance(session_response, dict) and "session_id" in session_response:
+            elif (
+                isinstance(session_response, dict) and "session_id" in session_response
+            ):
                 response_session_id = session_response["session_id"]
 
         if response_session_id:

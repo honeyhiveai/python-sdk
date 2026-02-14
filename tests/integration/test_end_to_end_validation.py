@@ -20,12 +20,7 @@ from typing import Any
 
 import pytest
 
-from honeyhive.models import (
-    CreateConfigurationRequest,
-    CreateDatapointRequest,
-    GetDatasetsResponse,
-    GetEventsResponse,
-)
+from honeyhive.models import CreateConfigurationRequest, CreateDatapointRequest
 from tests.utils import (  # pylint: disable=no-name-in-module
     generate_test_id,
     verify_datapoint_creation,
@@ -68,6 +63,7 @@ class TestEndToEndValidation:
         }
 
         datapoint_request = CreateDatapointRequest(
+            project=real_project,
             inputs=test_data,
             ground_truth=expected_ground_truth,
             metadata={"integration_test": True, "test_id": test_id},
@@ -237,22 +233,26 @@ class TestEndToEndValidation:
                 data={"project": real_project, "filters": [session_filter], "limit": 20}
             )
 
-            # Validate typed GetEventsResponse
-            assert isinstance(
-                events_result, GetEventsResponse
-            ), f"Expected GetEventsResponse, got {type(events_result)}"
-            assert hasattr(
-                events_result, "events"
-            ), "Events result missing 'events' attribute"
-            retrieved_events = events_result.events
+            # Validate events result
+            assert events_result is not None
+            retrieved_events = (
+                events_result.get("events", [])
+                if isinstance(events_result, dict)
+                else getattr(events_result, "events", [])
+            )
 
             # Validate all events are linked to session
+            def _get(obj, key, default=None):
+                """Get attribute from dict or object."""
+                if isinstance(obj, dict):
+                    return obj.get(key, default)
+                return getattr(obj, key, default)
+
             found_events = []
             for event_id in event_ids:
                 found_event = None
                 for event in retrieved_events:
-                    # Events are now Event objects, not dictionaries
-                    if event.event_id == event_id:
+                    if _get(event, "event_id") == event_id:
                         found_event = event
                         break
 
@@ -260,28 +260,28 @@ class TestEndToEndValidation:
                     found_event is not None
                 ), f"Event {event_id} not found in session {session_id}"
                 assert (
-                    found_event.session_id == session_id
+                    _get(found_event, "session_id") == session_id
                 ), f"Event {event_id} not properly linked to session"
                 assert (
-                    found_event.config["test_id"] == test_id
+                    _get(found_event, "config", {})["test_id"] == test_id
                 ), f"Event {event_id} test_id corrupted"
                 found_events.append(found_event)
 
             # Step 6: Validate event data integrity and ordering
             print("🔍 Validating event data integrity...")
             for i, event in enumerate(found_events):
-                # Events are Event objects, use attribute access
-                expected_index = event.config["event_index"]
-                assert event.config["model"] == "gpt-4", f"Event {i} model corrupted"
+                config = _get(event, "config", {})
+                expected_index = config["event_index"]
+                assert config["model"] == "gpt-4", f"Event {i} model corrupted"
+                assert config["temperature"] == 0.7, f"Event {i} temperature corrupted"
+                inputs = _get(event, "inputs", {})
+                outputs = _get(event, "outputs", {})
                 assert (
-                    event.config["temperature"] == 0.7
-                ), f"Event {i} temperature corrupted"
-                assert (
-                    event.inputs["prompt"]
+                    inputs["prompt"]
                     == f"Test prompt {expected_index} for session {test_id}"
                 ), f"Event {i} input corrupted"
                 assert (
-                    event.outputs["response"] == f"Test response {expected_index}"
+                    outputs["response"] == f"Test response {expected_index}"
                 ), f"Event {i} output corrupted"
 
             print("✅ RELATIONSHIP VALIDATION SUCCESSFUL:")
@@ -322,6 +322,7 @@ class TestEndToEndValidation:
             # Step 1: Create configuration with comprehensive parameters
             print(f"🔄 Creating configuration: {config_name}")
             config_request = CreateConfigurationRequest(
+                project=integration_project_name,
                 name=config_name,
                 provider="openai",
                 parameters={
@@ -424,6 +425,7 @@ class TestEndToEndValidation:
             # 1. Create configuration
             config_name = f"consistency-config-{test_id}"
             config_request = CreateConfigurationRequest(
+                project=real_project,
                 name=config_name,
                 provider="openai",
                 parameters={
@@ -457,6 +459,7 @@ class TestEndToEndValidation:
 
             # 3. Create datapoint
             datapoint_request = CreateDatapointRequest(
+                project=real_project,
                 inputs={"query": f"Consistency test query {test_id}"},
                 ground_truth={"response": f"Consistency test response {test_id}"},
                 metadata={"test_id": test_id, "timestamp": test_timestamp},

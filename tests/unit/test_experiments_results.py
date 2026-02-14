@@ -32,7 +32,7 @@ from honeyhive.experiments.results import compare_runs, get_run_metrics, get_run
 def mock_client() -> Mock:
     """Create a mock HoneyHive client."""
     client = Mock()
-    client.evaluations = Mock()
+    client.experiments = Mock()
     return client
 
 
@@ -59,9 +59,9 @@ class TestGetRunResult:
                 {"id": "dp-3", "result": "fail"},
             ],
         }
-        mock_client.evaluations.get_run_result.return_value = mock_response
+        mock_client.experiments.get_result.return_value = mock_response
 
-        result = get_run_result(mock_client, "run-123")
+        result = get_run_result(mock_client, "run-123", "test-project-id")
 
         assert isinstance(result, ExperimentResultSummary)
         assert result.run_id == "run-123"
@@ -70,8 +70,8 @@ class TestGetRunResult:
         assert result.passed == ["dp-1", "dp-2"]
         assert result.failed == ["dp-3"]
         assert isinstance(result.metrics, AggregatedMetrics)
-        mock_client.evaluations.get_run_result.assert_called_once_with(
-            run_id="run-123", aggregate_function="average"
+        mock_client.experiments.get_result.assert_called_once_with(
+            run_id="run-123", project_id="test-project-id", aggregate_function="average"
         )
 
     def test_custom_aggregation_function(self, mock_client: Mock) -> None:
@@ -82,12 +82,14 @@ class TestGetRunResult:
             "success": True,
             "metrics": {},
         }
-        mock_client.evaluations.get_run_result.return_value = mock_response
+        mock_client.experiments.get_result.return_value = mock_response
 
-        get_run_result(mock_client, "run-123", aggregate_function="median")
+        get_run_result(
+            mock_client, "run-123", "test-project-id", aggregate_function="median"
+        )
 
-        mock_client.evaluations.get_run_result.assert_called_once_with(
-            run_id="run-123", aggregate_function="median"
+        mock_client.experiments.get_result.assert_called_once_with(
+            run_id="run-123", project_id="test-project-id", aggregate_function="median"
         )
 
     def test_metrics_parsing(self, mock_client: Mock) -> None:
@@ -102,9 +104,9 @@ class TestGetRunResult:
                 "cost": {"aggregate": 0.05},
             },
         }
-        mock_client.evaluations.get_run_result.return_value = mock_response
+        mock_client.experiments.get_result.return_value = mock_response
 
-        result = get_run_result(mock_client, "run-123")
+        result = get_run_result(mock_client, "run-123", "test-project-id")
 
         assert result.metrics.aggregation_function == "p95"
         assert result.metrics.get_metric("accuracy") == {"aggregate": 0.92}
@@ -118,9 +120,9 @@ class TestGetRunResult:
             "success": False,
             "metrics": {},
         }
-        mock_client.evaluations.get_run_result.return_value = mock_response
+        mock_client.experiments.get_result.return_value = mock_response
 
-        result = get_run_result(mock_client, "run-123")
+        result = get_run_result(mock_client, "run-123", "test-project-id")
 
         assert isinstance(result.metrics, AggregatedMetrics)
         assert result.metrics.list_metrics() == []
@@ -136,24 +138,24 @@ class TestGetRunMetrics:
             "latency": {"aggregate": 1.2, "values": [1.0, 1.4]},
             "cost": {"aggregate": 0.05},
         }
-        mock_client.evaluations.get_run_metrics.return_value = mock_response
+        mock_client.experiments.get_result.return_value = mock_response
 
-        result = get_run_metrics(mock_client, "run-123")
+        result = get_run_metrics(mock_client, "run-123", "test-project-id")
 
         assert isinstance(result, dict)
         assert result["accuracy"]["aggregate"] == 0.85
         assert result["latency"]["aggregate"] == 1.2
         assert result["cost"]["aggregate"] == 0.05
-        mock_client.evaluations.get_run_metrics.assert_called_once_with(
-            run_id="run-123"
+        mock_client.experiments.get_result.assert_called_once_with(
+            run_id="run-123", project_id="test-project-id"
         )
 
     def test_empty_metrics_response(self, mock_client: Mock) -> None:
         """Test handling of empty metrics response."""
         mock_response = {}
-        mock_client.evaluations.get_run_metrics.return_value = mock_response
+        mock_client.experiments.get_result.return_value = mock_response
 
-        result = get_run_metrics(mock_client, "run-123")
+        result = get_run_metrics(mock_client, "run-123", "test-project-id")
 
         assert result == {}
 
@@ -172,9 +174,9 @@ class TestGetRunMetrics:
                 "p99": 2.0,
             },
         }
-        mock_client.evaluations.get_run_metrics.return_value = mock_response
+        mock_client.experiments.get_result.return_value = mock_response
 
-        result = get_run_metrics(mock_client, "run-123")
+        result = get_run_metrics(mock_client, "run-123", "test-project-id")
 
         assert result["accuracy"]["per_class"] == {"A": 0.9, "B": 0.8}
         assert result["latency"]["p95"] == 1.5
@@ -223,9 +225,9 @@ class TestCompareRuns:
             "old_run": {"run_id": "run-old"},
             "new_run": {"run_id": "run-new"},
         }
-        mock_client.evaluations.compare_runs.return_value = mock_response
+        mock_client.experiments.compare_runs.return_value = mock_response
 
-        result = compare_runs(mock_client, "run-new", "run-old")
+        result = compare_runs(mock_client, "run-new", "run-old", "test-project-id")
 
         assert isinstance(result, RunComparisonResult)
         assert result.new_run_id == "run-new"
@@ -233,8 +235,11 @@ class TestCompareRuns:
         assert result.common_datapoints == 10
         assert result.new_only_datapoints == 0
         assert result.old_only_datapoints == 0
-        mock_client.evaluations.compare_runs.assert_called_once_with(
-            new_run_id="run-new", old_run_id="run-old", aggregate_function="average"
+        mock_client.experiments.compare_runs.assert_called_once_with(
+            new_run_id="run-new",
+            old_run_id="run-old",
+            project_id="test-project-id",
+            aggregate_function="average",
         )
 
     def test_custom_aggregation_function_in_comparison(self, mock_client: Mock) -> None:
@@ -245,12 +250,21 @@ class TestCompareRuns:
             "old_run": {},
             "new_run": {},
         }
-        mock_client.evaluations.compare_runs.return_value = mock_response
+        mock_client.experiments.compare_runs.return_value = mock_response
 
-        compare_runs(mock_client, "run-new", "run-old", aggregate_function="median")
+        compare_runs(
+            mock_client,
+            "run-new",
+            "run-old",
+            "test-project-id",
+            aggregate_function="median",
+        )
 
-        mock_client.evaluations.compare_runs.assert_called_once_with(
-            new_run_id="run-new", old_run_id="run-old", aggregate_function="median"
+        mock_client.experiments.compare_runs.assert_called_once_with(
+            new_run_id="run-new",
+            old_run_id="run-old",
+            project_id="test-project-id",
+            aggregate_function="median",
         )
 
     def test_metric_deltas_parsing(self, mock_client: Mock) -> None:
@@ -287,9 +301,9 @@ class TestCompareRuns:
             "old_run": {},
             "new_run": {},
         }
-        mock_client.evaluations.compare_runs.return_value = mock_response
+        mock_client.experiments.compare_runs.return_value = mock_response
 
-        result = compare_runs(mock_client, "run-new", "run-old")
+        result = compare_runs(mock_client, "run-new", "run-old", "test-project-id")
 
         accuracy_delta = result.get_metric_delta("accuracy")
         assert accuracy_delta["old_aggregate"] == 0.85
@@ -306,9 +320,9 @@ class TestCompareRuns:
             "old_run": {},
             "new_run": {},
         }
-        mock_client.evaluations.compare_runs.return_value = mock_response
+        mock_client.experiments.compare_runs.return_value = mock_response
 
-        result = compare_runs(mock_client, "run-new", "run-old")
+        result = compare_runs(mock_client, "run-new", "run-old", "test-project-id")
 
         assert result.common_datapoints == 0
         assert result.new_only_datapoints == 0
@@ -363,9 +377,9 @@ class TestCompareRuns:
             "old_run": {},
             "new_run": {},
         }
-        mock_client.evaluations.compare_runs.return_value = mock_response
+        mock_client.experiments.compare_runs.return_value = mock_response
 
-        result = compare_runs(mock_client, "run-new", "run-old")
+        result = compare_runs(mock_client, "run-new", "run-old", "test-project-id")
 
         improved = result.list_improved_metrics()
         degraded = result.list_degraded_metrics()

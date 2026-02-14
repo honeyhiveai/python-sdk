@@ -10,4 +10,4 @@ class DeleteDatapointResponse(BaseModel):
 
     model_config = {"populate_by_name": True, "validate_assignment": True}
 
-    deleted: bool = Field(validation_alias="deleted")
+    deleted: Optional[bool] = Field(validation_alias="deleted", default=None)

@@ -68,9 +68,8 @@ def get_run_result(
         {'aggregate': 0.85, 'values': [0.8, 0.9, 0.85]}
     """
     # Use experiments API for run results
-    # Note: project_id is no longer passed - backend uses auth scopes
     response = client.experiments.get_result(
-        run_id=run_id, aggregate_function=aggregate_function
+        run_id=run_id, project_id=project_id, aggregate_function=aggregate_function
     )
 
     # Parse datapoints into DatapointResult objects
@@ -116,10 +115,9 @@ def get_run_metrics(
         [{'event_id': '...', 'metrics': {...}}, ...]
     """
     # Use experiments API for run results (includes metrics)
-    # Note: project_id is no longer passed - backend uses auth scopes
     return cast(
         Dict[str, Any],
-        client.experiments.get_result(run_id=run_id),
+        client.experiments.get_result(run_id=run_id, project_id=project_id),
     )
 
 
@@ -175,10 +173,10 @@ def compare_runs(
         []
     """
     # Use experiments API comparison endpoint
-    # Note: project_id is no longer passed - backend uses auth scopes
     response = client.experiments.compare_runs(
         new_run_id=new_run_id,
         old_run_id=old_run_id,
+        project_id=project_id,
         aggregate_function=aggregate_function,
     )
 

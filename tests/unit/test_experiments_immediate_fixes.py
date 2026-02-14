@@ -205,7 +205,7 @@ class TestGroundTruthsInFeedback:
         """Test that ground_truth are added to feedback field."""
         mock_client = Mock()
         mock_update_event = Mock()
-        mock_client.events.update_event = mock_update_event
+        mock_client.events.update = mock_update_event
 
         ground_truth_data = {"answer": "expected answer", "score": 0.95}
 
@@ -219,22 +219,22 @@ class TestGroundTruthsInFeedback:
             verbose=False,
         )
 
-        # Verify update_event was called
+        # Verify update was called with data= keyword arg
         assert mock_update_event.called
-        update_request = mock_update_event.call_args[0][0]
+        update_data = mock_update_event.call_args[1]["data"]
 
         # Verify feedback contains ground_truth
-        assert hasattr(update_request, "feedback")
-        assert update_request.feedback is not None
-        assert "ground_truth" in update_request.feedback
-        assert update_request.feedback["ground_truth"] == ground_truth_data
+        assert "feedback" in update_data
+        assert update_data["feedback"] is not None
+        assert "ground_truth" in update_data["feedback"]
+        assert update_data["feedback"]["ground_truth"] == ground_truth_data
 
     @patch("honeyhive.experiments.core.logger")
     def test_no_ground_truth_no_feedback(self, _mock_logger: Mock) -> None:
         """Test that feedback is not added when ground_truth is None."""
         mock_client = Mock()
         mock_update_event = Mock()
-        mock_client.events.update_event = mock_update_event
+        mock_client.events.update = mock_update_event
 
         _enrich_session_with_results(
             session_id="session-123",
@@ -246,13 +246,12 @@ class TestGroundTruthsInFeedback:
             verbose=False,
         )
 
-        # Verify update_event was called
+        # Verify update was called with data= keyword arg
         assert mock_update_event.called
-        update_request = mock_update_event.call_args[0][0]
+        update_data = mock_update_event.call_args[1]["data"]
 
-        # Verify feedback is None when no ground_truth
-        feedback = getattr(update_request, "feedback", None)
-        assert feedback is None
+        # Verify feedback is not present when no ground_truth
+        assert "feedback" not in update_data
 
 
 class TestAutoInputCapture:

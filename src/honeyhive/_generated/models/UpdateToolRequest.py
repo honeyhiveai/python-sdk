@@ -10,12 +10,10 @@ class UpdateToolRequest(BaseModel):
 
     model_config = {"populate_by_name": True, "validate_assignment": True}
 
-    name: Optional[str] = Field(validation_alias="name", default=None)
+    id: str = Field(validation_alias="id")
+
+    name: str = Field(validation_alias="name")
 
     description: Optional[str] = Field(validation_alias="description", default=None)
 
-    parameters: Optional[Any] = Field(validation_alias="parameters", default=None)
-
-    tool_type: Optional[str] = Field(validation_alias="tool_type", default=None)
-
-    id: str = Field(validation_alias="id")
+    parameters: Dict[str, Any] = Field(validation_alias="parameters")

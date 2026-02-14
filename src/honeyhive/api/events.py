@@ -2,13 +2,9 @@
 
 from typing import Any, Dict, List, Optional, Union
 
+from .._generated.models import CreateEventRequest, EventFilter
 from ..models import Event
-from .._generated.models import PostEventRequest, SingleFilter
 from ._base import BaseAPI
-
-# Type aliases for backwards compatibility
-CreateEventRequest = PostEventRequest
-EventFilter = SingleFilter
 
 
 class CreateEventResponse:  # pylint: disable=too-few-public-methods

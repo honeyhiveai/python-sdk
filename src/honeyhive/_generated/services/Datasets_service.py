@@ -1,49 +1,40 @@
 from typing import *
 
-import httpx
-
-from ..api_config import APIConfig, HTTPException
+from ..api_config import APIConfig, HTTPException, _make_request
 from ..models import *
 
 
 def getDatasets(
     api_config_override: Optional[APIConfig] = None,
     *,
+    project: str,
+    type: Optional[str] = None,
     dataset_id: Optional[str] = None,
-    name: Optional[str] = None,
-    include_datapoints: Optional[Union[bool, str]] = None,
 ) -> GetDatasetsResponse:
     api_config = api_config_override if api_config_override else APIConfig()
 
-    base_path = api_config.base_path
-    path = f"/v1/datasets"
+    path = f"/datasets"
     headers = {
         "Content-Type": "application/json",
         "Accept": "application/json",
         "Authorization": f"Bearer { api_config.get_access_token() }",
     }
     query_params: Dict[str, Any] = {
+        "project": project,
+        "type": type,
         "dataset_id": dataset_id,
-        "name": name,
-        "include_datapoints": include_datapoints,
     }
 
     query_params = {
         key: value for (key, value) in query_params.items() if value is not None
     }
 
-    with httpx.Client(base_url=base_path, verify=api_config.verify) as client:
-        response = client.request(
-            "get",
-            httpx.URL(path),
-            headers=headers,
-            params=query_params,
-        )
+    response = _make_request(api_config, "get", path, headers, params=query_params)
 
     if response.status_code != 200:
         raise HTTPException(
             response.status_code,
-            f"getDatasets failed with status code: {response.status_code}",
+            f"getDatasets failed with status code: {response.status_code}. Response: {response.text[:500]}",
         )
     else:
         body = None if 200 == 204 else response.json()
@@ -56,8 +47,7 @@ def createDataset(
 ) -> CreateDatasetResponse:
     api_config = api_config_override if api_config_override else APIConfig()
 
-    base_path = api_config.base_path
-    path = f"/v1/datasets"
+    path = f"/datasets"
     headers = {
         "Content-Type": "application/json",
         "Accept": "application/json",
@@ -69,19 +59,15 @@ def createDataset(
         key: value for (key, value) in query_params.items() if value is not None
     }
 
-    with httpx.Client(base_url=base_path, verify=api_config.verify) as client:
-        response = client.request(
-            "post",
-            httpx.URL(path),
-            headers=headers,
-            params=query_params,
-            json=data.model_dump(exclude_none=True),
-        )
+    response = _make_request(
+        api_config, "post", path, headers, params=query_params,
+        json=data.model_dump(exclude_none=True),
+    )
 
     if response.status_code != 200:
         raise HTTPException(
             response.status_code,
-            f"createDataset failed with status code: {response.status_code}",
+            f"createDataset failed with status code: {response.status_code}. Response: {response.text[:500]}",
         )
     else:
         body = None if 200 == 204 else response.json()
@@ -92,12 +78,11 @@ def createDataset(
 
 
 def updateDataset(
-    api_config_override: Optional[APIConfig] = None, *, data: UpdateDatasetRequest
-) -> UpdateDatasetResponse:
+    api_config_override: Optional[APIConfig] = None, *, data: DatasetUpdate
+) -> None:
     api_config = api_config_override if api_config_override else APIConfig()
 
-    base_path = api_config.base_path
-    path = f"/v1/datasets"
+    path = f"/datasets"
     headers = {
         "Content-Type": "application/json",
         "Accept": "application/json",
@@ -109,35 +94,28 @@ def updateDataset(
         key: value for (key, value) in query_params.items() if value is not None
     }
 
-    with httpx.Client(base_url=base_path, verify=api_config.verify) as client:
-        response = client.request(
-            "put",
-            httpx.URL(path),
-            headers=headers,
-            params=query_params,
-            json=data.model_dump(exclude_none=True),
-        )
+    response = _make_request(
+        api_config, "put", path, headers, params=query_params,
+        json=data.model_dump(exclude_none=True),
+    )
 
     if response.status_code != 200:
         raise HTTPException(
             response.status_code,
-            f"updateDataset failed with status code: {response.status_code}",
+            f"updateDataset failed with status code: {response.status_code}. Response: {response.text[:500]}",
         )
     else:
         body = None if 200 == 204 else response.json()
 
-    return (
-        UpdateDatasetResponse(**body) if body is not None else UpdateDatasetResponse()
-    )
+    return None
 
 
 def deleteDataset(
     api_config_override: Optional[APIConfig] = None, *, dataset_id: str
-) -> DeleteDatasetResponse:
+) -> None:
     api_config = api_config_override if api_config_override else APIConfig()
 
-    base_path = api_config.base_path
-    path = f"/v1/datasets"
+    path = f"/datasets"
     headers = {
         "Content-Type": "application/json",
         "Accept": "application/json",
@@ -149,37 +127,28 @@ def deleteDataset(
         key: value for (key, value) in query_params.items() if value is not None
     }
 
-    with httpx.Client(base_url=base_path, verify=api_config.verify) as client:
-        response = client.request(
-            "delete",
-            httpx.URL(path),
-            headers=headers,
-            params=query_params,
-        )
+    response = _make_request(api_config, "delete", path, headers, params=query_params)
 
     if response.status_code != 200:
         raise HTTPException(
             response.status_code,
-            f"deleteDataset failed with status code: {response.status_code}",
+            f"deleteDataset failed with status code: {response.status_code}. Response: {response.text[:500]}",
         )
     else:
         body = None if 200 == 204 else response.json()
 
-    return (
-        DeleteDatasetResponse(**body) if body is not None else DeleteDatasetResponse()
-    )
+    return None
 
 
 def addDatapoints(
     api_config_override: Optional[APIConfig] = None,
     *,
     dataset_id: str,
-    data: AddDatapointsToDatasetRequest,
+    data: AddDatapointsRequest,
 ) -> AddDatapointsResponse:
     api_config = api_config_override if api_config_override else APIConfig()
 
-    base_path = api_config.base_path
-    path = f"/v1/datasets/{dataset_id}/datapoints"
+    path = f"/datasets/{dataset_id}/datapoints"
     headers = {
         "Content-Type": "application/json",
         "Accept": "application/json",
@@ -191,67 +160,19 @@ def addDatapoints(
         key: value for (key, value) in query_params.items() if value is not None
     }
 
-    with httpx.Client(base_url=base_path, verify=api_config.verify) as client:
-        response = client.request(
-            "post",
-            httpx.URL(path),
-            headers=headers,
-            params=query_params,
-            json=data.model_dump(exclude_none=True),
-        )
+    response = _make_request(
+        api_config, "post", path, headers, params=query_params,
+        json=data.model_dump(exclude_none=True),
+    )
 
     if response.status_code != 200:
         raise HTTPException(
             response.status_code,
-            f"addDatapoints failed with status code: {response.status_code}",
+            f"addDatapoints failed with status code: {response.status_code}. Response: {response.text[:500]}",
         )
     else:
         body = None if 200 == 204 else response.json()
 
     return (
         AddDatapointsResponse(**body) if body is not None else AddDatapointsResponse()
-    )
-
-
-def removeDatapoint(
-    api_config_override: Optional[APIConfig] = None,
-    *,
-    dataset_id: str,
-    datapoint_id: str,
-) -> RemoveDatapointResponse:
-    api_config = api_config_override if api_config_override else APIConfig()
-
-    base_path = api_config.base_path
-    path = f"/v1/datasets/{dataset_id}/datapoints/{datapoint_id}"
-    headers = {
-        "Content-Type": "application/json",
-        "Accept": "application/json",
-        "Authorization": f"Bearer { api_config.get_access_token() }",
-    }
-    query_params: Dict[str, Any] = {}
-
-    query_params = {
-        key: value for (key, value) in query_params.items() if value is not None
-    }
-
-    with httpx.Client(base_url=base_path, verify=api_config.verify) as client:
-        response = client.request(
-            "delete",
-            httpx.URL(path),
-            headers=headers,
-            params=query_params,
-        )
-
-    if response.status_code != 200:
-        raise HTTPException(
-            response.status_code,
-            f"removeDatapoint failed with status code: {response.status_code}",
-        )
-    else:
-        body = None if 200 == 204 else response.json()
-
-    return (
-        RemoveDatapointResponse(**body)
-        if body is not None
-        else RemoveDatapointResponse()
     )

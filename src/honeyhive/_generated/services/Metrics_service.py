@@ -1,58 +1,45 @@
 from typing import *
 
-import httpx
-
-from ..api_config import APIConfig, HTTPException
+from ..api_config import APIConfig, HTTPException, _make_request
 from ..models import *
 
 
 def getMetrics(
-    api_config_override: Optional[APIConfig] = None,
-    *,
-    type: Optional[str] = None,
-    id: Optional[str] = None,
-) -> List[GetMetricsResponse]:
+    api_config_override: Optional[APIConfig] = None, *, project_name: str
+) -> List[Metric]:
     api_config = api_config_override if api_config_override else APIConfig()
 
-    base_path = api_config.base_path
-    path = f"/v1/metrics"
+    path = f"/metrics"
     headers = {
         "Content-Type": "application/json",
         "Accept": "application/json",
         "Authorization": f"Bearer { api_config.get_access_token() }",
     }
-    query_params: Dict[str, Any] = {"type": type, "id": id}
+    query_params: Dict[str, Any] = {"project_name": project_name}
 
     query_params = {
         key: value for (key, value) in query_params.items() if value is not None
     }
 
-    with httpx.Client(base_url=base_path, verify=api_config.verify) as client:
-        response = client.request(
-            "get",
-            httpx.URL(path),
-            headers=headers,
-            params=query_params,
-        )
+    response = _make_request(api_config, "get", path, headers, params=query_params)
 
     if response.status_code != 200:
         raise HTTPException(
             response.status_code,
-            f"getMetrics failed with status code: {response.status_code}",
+            f"getMetrics failed with status code: {response.status_code}. Response: {response.text[:500]}",
         )
     else:
         body = None if 200 == 204 else response.json()
 
-    return [GetMetricsResponse(**item) for item in body]
+    return [Metric(**item) for item in body]
 
 
 def createMetric(
-    api_config_override: Optional[APIConfig] = None, *, data: CreateMetricRequest
-) -> CreateMetricResponse:
+    api_config_override: Optional[APIConfig] = None, *, data: Metric
+) -> None:
     api_config = api_config_override if api_config_override else APIConfig()
 
-    base_path = api_config.base_path
-    path = f"/v1/metrics"
+    path = f"/metrics"
     headers = {
         "Content-Type": "application/json",
         "Accept": "application/json",
@@ -64,33 +51,25 @@ def createMetric(
         key: value for (key, value) in query_params.items() if value is not None
     }
 
-    with httpx.Client(base_url=base_path, verify=api_config.verify) as client:
-        response = client.request(
-            "post",
-            httpx.URL(path),
-            headers=headers,
-            params=query_params,
-            json=data.model_dump(exclude_none=True),
-        )
+    response = _make_request(api_config, "post", path, headers, params=query_params, json=data.model_dump(exclude_none=True))
 
     if response.status_code != 200:
         raise HTTPException(
             response.status_code,
-            f"createMetric failed with status code: {response.status_code}",
+            f"createMetric failed with status code: {response.status_code}. Response: {response.text[:500]}",
         )
     else:
         body = None if 200 == 204 else response.json()
 
-    return CreateMetricResponse(**body) if body is not None else CreateMetricResponse()
+    return None
 
 
 def updateMetric(
-    api_config_override: Optional[APIConfig] = None, *, data: UpdateMetricRequest
-) -> UpdateMetricResponse:
+    api_config_override: Optional[APIConfig] = None, *, data: MetricEdit
+) -> None:
     api_config = api_config_override if api_config_override else APIConfig()
 
-    base_path = api_config.base_path
-    path = f"/v1/metrics"
+    path = f"/metrics"
     headers = {
         "Content-Type": "application/json",
         "Accept": "application/json",
@@ -102,33 +81,25 @@ def updateMetric(
         key: value for (key, value) in query_params.items() if value is not None
     }
 
-    with httpx.Client(base_url=base_path, verify=api_config.verify) as client:
-        response = client.request(
-            "put",
-            httpx.URL(path),
-            headers=headers,
-            params=query_params,
-            json=data.model_dump(exclude_none=True),
-        )
+    response = _make_request(api_config, "put", path, headers, params=query_params, json=data.model_dump(exclude_none=True))
 
     if response.status_code != 200:
         raise HTTPException(
             response.status_code,
-            f"updateMetric failed with status code: {response.status_code}",
+            f"updateMetric failed with status code: {response.status_code}. Response: {response.text[:500]}",
         )
     else:
         body = None if 200 == 204 else response.json()
 
-    return UpdateMetricResponse(**body) if body is not None else UpdateMetricResponse()
+    return None
 
 
 def deleteMetric(
     api_config_override: Optional[APIConfig] = None, *, metric_id: str
-) -> DeleteMetricResponse:
+) -> None:
     api_config = api_config_override if api_config_override else APIConfig()
 
-    base_path = api_config.base_path
-    path = f"/v1/metrics"
+    path = f"/metrics"
     headers = {
         "Content-Type": "application/json",
         "Accept": "application/json",
@@ -140,58 +111,14 @@ def deleteMetric(
         key: value for (key, value) in query_params.items() if value is not None
     }
 
-    with httpx.Client(base_url=base_path, verify=api_config.verify) as client:
-        response = client.request(
-            "delete",
-            httpx.URL(path),
-            headers=headers,
-            params=query_params,
-        )
+    response = _make_request(api_config, "delete", path, headers, params=query_params)
 
     if response.status_code != 200:
         raise HTTPException(
             response.status_code,
-            f"deleteMetric failed with status code: {response.status_code}",
+            f"deleteMetric failed with status code: {response.status_code}. Response: {response.text[:500]}",
         )
     else:
         body = None if 200 == 204 else response.json()
 
-    return DeleteMetricResponse(**body) if body is not None else DeleteMetricResponse()
-
-
-def runMetric(
-    api_config_override: Optional[APIConfig] = None, *, data: RunMetricRequest
-) -> RunMetricResponse:
-    api_config = api_config_override if api_config_override else APIConfig()
-
-    base_path = api_config.base_path
-    path = f"/v1/metrics/run_metric"
-    headers = {
-        "Content-Type": "application/json",
-        "Accept": "application/json",
-        "Authorization": f"Bearer { api_config.get_access_token() }",
-    }
-    query_params: Dict[str, Any] = {}
-
-    query_params = {
-        key: value for (key, value) in query_params.items() if value is not None
-    }
-
-    with httpx.Client(base_url=base_path, verify=api_config.verify) as client:
-        response = client.request(
-            "post",
-            httpx.URL(path),
-            headers=headers,
-            params=query_params,
-            json=data.model_dump(exclude_none=True),
-        )
-
-    if response.status_code != 200:
-        raise HTTPException(
-            response.status_code,
-            f"runMetric failed with status code: {response.status_code}",
-        )
-    else:
-        body = None if 200 == 204 else response.json()
-
-    return RunMetricResponse(**body) if body is not None else RunMetricResponse()
+    return None

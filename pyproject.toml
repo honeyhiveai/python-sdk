@@ -56,6 +56,7 @@ dev = [
     "requests>=2.31.0",  # For docs navigation validation
     "beautifulsoup4>=4.12.0",  # For docs navigation validation
     "openapi-python-generator>=2.1.0",  # For SDK generation (pydantic models + client)
+    "openapi-python-client>=0.28.0",  # For full SDK generation (generate-sdk target)
     "docker>=7.0.0",  # For Lambda container tests
     "build>=1.0.0",  # For building packages
     "hatchling>=1.18.0",  # Build backend

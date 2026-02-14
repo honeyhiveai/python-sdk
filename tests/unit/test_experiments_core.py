@@ -514,7 +514,7 @@ class TestEvaluate:
         # The evaluate function no longer validates api_key presence
         # It's passed to HoneyHive client which handles missing keys gracefully
         mock_client = Mock()
-        mock_client.evaluations.create_run.side_effect = Exception("No API key")
+        mock_client.experiments.create_run.side_effect = Exception("No API key")
         mock_honeyhive_class.return_value = mock_client
 
         with pytest.raises(Exception):  # Client will raise error, not evaluate
@@ -568,8 +568,8 @@ class TestEvaluate:
         mock_client = Mock()
         mock_run_response = Mock()
         mock_run_response.run_id = "run-456"
-        mock_client.evaluations.create_run.return_value = mock_run_response
-        mock_client.evaluations.update_run_from_dict.return_value = None
+        mock_client.experiments.create_run.return_value = mock_run_response
+        mock_client.experiments.update_run.return_value = None
         mock_honeyhive_class.return_value = mock_client
 
         mock_context = Mock()
@@ -610,14 +610,14 @@ class TestEvaluate:
 
         # Verify
         assert result == mock_result
-        # Note: server_url comes from HH_API_URL environment variable set in tox.ini
-        mock_honeyhive_class.assert_called_once_with(
-            api_key="test-key", server_url="https://api.honeyhive.ai", verbose=True
-        )
+        # The code passes api_key and optionally base_url (if env var set) to HoneyHive
+        mock_honeyhive_class.assert_called_once()
+        call_kwargs = mock_honeyhive_class.call_args[1]
+        assert call_kwargs["api_key"] == "test-key"
         mock_prepare_external.assert_called_once_with(dataset)
         mock_run_experiment.assert_called_once()
         mock_run_evaluators.assert_called_once()
-        mock_client.evaluations.update_run_from_dict.assert_called_once()
+        mock_client.experiments.update_run.assert_called_once()
         mock_get_result.assert_called_once()
 
     @patch("honeyhive.experiments.core.get_run_result")
@@ -668,8 +668,8 @@ class TestEvaluate:
 
         mock_run_response = Mock()
         mock_run_response.run_id = "run-789"
-        mock_client.evaluations.create_run.return_value = mock_run_response
-        mock_client.evaluations.update_run.return_value = None
+        mock_client.experiments.create_run.return_value = mock_run_response
+        mock_client.experiments.update_run.return_value = None
         mock_honeyhive_class.return_value = mock_client
 
         mock_context = Mock()
@@ -749,8 +749,8 @@ class TestEvaluate:
 
         mock_run_response = Mock()
         mock_run_response.run_id = "run-abc"
-        mock_client.evaluations.create_run.return_value = mock_run_response
-        mock_client.evaluations.update_run.return_value = None
+        mock_client.experiments.create_run.return_value = mock_run_response
+        mock_client.experiments.update_run.return_value = None
         mock_honeyhive_class.return_value = mock_client
 
         mock_context = Mock()
@@ -809,12 +809,10 @@ class TestEvaluate:
         mock_client = Mock()
         mock_run_response = Mock()
         mock_run_response.run_id = "run-xyz"
-        mock_client.evaluations.create_run.return_value = mock_run_response
+        mock_client.experiments.create_run.return_value = mock_run_response
 
         # update_run_from_dict raises error
-        mock_client.evaluations.update_run_from_dict.side_effect = Exception(
-            "API error"
-        )
+        mock_client.experiments.update_run.side_effect = Exception("API error")
         mock_honeyhive_class.return_value = mock_client
 
         mock_context = Mock()
@@ -840,7 +838,7 @@ class TestEvaluate:
 
         # Verify - should still return result despite update failure
         assert result == mock_result
-        mock_client.evaluations.update_run_from_dict.assert_called_once()
+        mock_client.experiments.update_run.assert_called_once()
 
     @patch("honeyhive.experiments.core.get_run_result")
     @patch("honeyhive.experiments.core.run_experiment")
@@ -873,8 +871,8 @@ class TestEvaluate:
         mock_client = Mock()
         mock_run_response = Mock()
         mock_run_response.run_id = "run-123"
-        mock_client.evaluations.create_run.return_value = mock_run_response
-        mock_client.evaluations.update_run.return_value = None
+        mock_client.experiments.create_run.return_value = mock_run_response
+        mock_client.experiments.update_run.return_value = None
         mock_honeyhive_class.return_value = mock_client
 
         mock_context = Mock()
@@ -937,8 +935,8 @@ class TestEvaluate:
         mock_client = Mock()
         mock_run_response = Mock()
         mock_run_response.run_id = "run-123"
-        mock_client.evaluations.create_run.return_value = mock_run_response
-        mock_client.evaluations.update_run.return_value = None
+        mock_client.experiments.create_run.return_value = mock_run_response
+        mock_client.experiments.update_run.return_value = None
         mock_honeyhive_class.return_value = mock_client
 
         mock_context = Mock()
@@ -997,8 +995,8 @@ class TestEvaluate:
         mock_client = Mock()
         mock_run_response = Mock()
         mock_run_response.run_id = "run-123"
-        mock_client.evaluations.create_run.return_value = mock_run_response
-        mock_client.evaluations.update_run.return_value = None
+        mock_client.experiments.create_run.return_value = mock_run_response
+        mock_client.experiments.update_run.return_value = None
         mock_honeyhive_class.return_value = mock_client
 
         mock_context = Mock()
@@ -1058,8 +1056,8 @@ class TestEvaluate:
         mock_client = Mock()
         mock_run_response = Mock()
         mock_run_response.run_id = "run-123"
-        mock_client.evaluations.create_run.return_value = mock_run_response
-        mock_client.evaluations.update_run.return_value = None
+        mock_client.experiments.create_run.return_value = mock_run_response
+        mock_client.experiments.update_run.return_value = None
         mock_honeyhive_class.return_value = mock_client
 
         mock_context = Mock()
@@ -1117,8 +1115,8 @@ class TestEvaluate:
         mock_client = Mock()
         mock_run_response = Mock()
         mock_run_response.run_id = "run-123"
-        mock_client.evaluations.create_run.return_value = mock_run_response
-        mock_client.evaluations.update_run.return_value = None
+        mock_client.experiments.create_run.return_value = mock_run_response
+        mock_client.experiments.update_run.return_value = None
         mock_honeyhive_class.return_value = mock_client
 
         mock_context = Mock()
@@ -1139,10 +1137,10 @@ class TestEvaluate:
             project="test-project",
         )
 
-        # Verify HoneyHive client was initialized with env var value
+        # Verify HoneyHive client was initialized with env var value mapped to base_url
         mock_honeyhive_class.assert_called_once()
         call_kwargs = mock_honeyhive_class.call_args[1]
-        assert call_kwargs["server_url"] == "https://custom.server.com"
+        assert call_kwargs.get("base_url") == "https://custom.server.com"
         assert result == mock_result
 
     @patch("honeyhive.experiments.core.get_run_result")
@@ -1176,8 +1174,8 @@ class TestEvaluate:
         mock_client = Mock()
         mock_run_response = Mock()
         mock_run_response.run_id = "run-123"
-        mock_client.evaluations.create_run.return_value = mock_run_response
-        mock_client.evaluations.update_run.return_value = None
+        mock_client.experiments.create_run.return_value = mock_run_response
+        mock_client.experiments.update_run.return_value = None
         mock_honeyhive_class.return_value = mock_client
 
         mock_context = Mock()
@@ -1199,10 +1197,10 @@ class TestEvaluate:
             project="test-project",
         )
 
-        # Verify HoneyHive client was initialized with explicit server_url
+        # Verify HoneyHive client was initialized with explicit server_url mapped to base_url
         mock_honeyhive_class.assert_called_once()
         call_kwargs = mock_honeyhive_class.call_args[1]
-        assert call_kwargs["server_url"] == "https://staging.honeyhive.com"
+        assert call_kwargs.get("base_url") == "https://staging.honeyhive.com"
         assert result == mock_result
 
 

@@ -27,8 +27,6 @@ from honeyhive import HoneyHive
 from honeyhive.models import (
     CreateConfigurationRequest,
     CreateDatapointRequest,
-    PostEventRequest,
-    PostEventResponse,
 )
 from honeyhive.utils.logger import get_logger
 
@@ -87,13 +85,19 @@ def verify_datapoint_creation(
         ):
             raise ValidationError("Datapoint creation failed - missing result field")
 
-        inserted_ids = datapoint_response.result.get("insertedIds")
-        if not inserted_ids or len(inserted_ids) == 0:
-            raise ValidationError(
-                "Datapoint creation failed - missing insertedIds in result"
-            )
-
-        created_id = inserted_ids[0]
+        # Try insertedId first (single value), then insertedIds (dict or list)
+        created_id = datapoint_response.result.get("insertedId")
+        if not created_id:
+            inserted_ids = datapoint_response.result.get("insertedIds")
+            if not inserted_ids or len(inserted_ids) == 0:
+                raise ValidationError(
+                    "Datapoint creation failed - missing insertedIds in result"
+                )
+            # insertedIds may be a dict with string keys {'0': 'id'} or a list
+            if isinstance(inserted_ids, dict):
+                created_id = list(inserted_ids.values())[0]
+            else:
+                created_id = inserted_ids[0]
         logger.debug(f"✅ Datapoint created with ID: {created_id}")
 
         # Step 2: Wait for data propagation
@@ -108,6 +112,9 @@ def verify_datapoint_creation(
                 and datapoint_response.datapoint
             ):
                 found_datapoint = datapoint_response.datapoint[0]
+                # Convert Pydantic model to dict for callers that use .get()
+                if hasattr(found_datapoint, "model_dump"):
+                    found_datapoint = found_datapoint.model_dump(by_alias=True)
                 logger.debug(f"✅ Datapoint retrieval successful: {created_id}")
                 return found_datapoint
             raise ValidationError(
@@ -118,33 +125,40 @@ def verify_datapoint_creation(
             # Fallback: Try list-based retrieval if direct get fails
             logger.debug(f"Direct retrieval failed, trying list-based: {e}")
 
-            datapoints_response = client.datapoints.list()
+            datapoints_response = client.datapoints.list(project=project)
             datapoints = (
                 datapoints_response.datapoints
                 if hasattr(datapoints_response, "datapoints")
                 else []
             )
 
-            # Find matching datapoint - datapoints are dicts, not objects
+            # Find matching datapoint - may be Datapoint models or dicts
             for dp in datapoints:
+                # Convert to dict if Pydantic model
+                dp_dict = (
+                    dp.model_dump(by_alias=True) if hasattr(dp, "model_dump") else dp
+                )
+                if not isinstance(dp_dict, dict):
+                    continue
+
                 # Check if dict has id or field_id key matching created_id
-                # Note: API returns 'id' in datapoint dicts, not 'field_id'
-                if isinstance(dp, dict) and (
-                    dp.get("id") == created_id or dp.get("field_id") == created_id
+                if (
+                    dp_dict.get("id") == created_id
+                    or dp_dict.get("field_id") == created_id
+                    or dp_dict.get("_id") == created_id
                 ):
                     logger.debug(f"✅ Datapoint found via list: {created_id}")
-                    return dp
+                    return dp_dict
 
                 # Fallback: Match by test_id if provided
                 if (
                     test_id
-                    and isinstance(dp, dict)
-                    and "metadata" in dp
-                    and dp.get("metadata")
-                    and dp["metadata"].get("test_id") == test_id
+                    and "metadata" in dp_dict
+                    and dp_dict.get("metadata")
+                    and dp_dict["metadata"].get("test_id") == test_id
                 ):
                     logger.debug(f"✅ Datapoint found via test_id: {test_id}")
-                    return dp
+                    return dp_dict
 
             raise ValidationError(
                 f"Datapoint not found after creation: {created_id}"
@@ -241,38 +255,30 @@ def verify_configuration_creation(
     try:
         # Step 1: Create configuration
         logger.debug(f"🔄 Creating configuration for project: {project}")
-        config_response = client.configurations.create(config_request)
-
-        # Validate creation response
-        if not hasattr(config_response, "id") or config_response.id is None:
-            raise ValidationError("Configuration creation failed - missing id")
-
-        created_id = config_response.id
-        logger.debug(f"✅ Configuration created with ID: {created_id}")
+        client.configurations.create(config_request)
+        # NWD API create returns None - verify via list instead
+        logger.debug("✅ Configuration create request sent")
 
         # Step 2: Wait for data propagation
         time.sleep(2)
 
         # Step 3: Retrieve and validate persistence
-        # Note: v1 configurations API doesn't support project filtering
-        configurations = client.configurations.list()
+        configurations = client.configurations.list(project=project)
 
-        # Find matching configuration
+        # Find matching configuration by name
+        config_name = expected_config_name or getattr(config_request, "name", None)
         for config in configurations:
-            if hasattr(config, "id") and config.id == created_id:
-                logger.debug(f"✅ Configuration found: {created_id}")
-                return config
-
-            # Fallback: Match by configuration name if provided
             if (
-                expected_config_name
+                config_name
                 and hasattr(config, "name")
-                and config.name == expected_config_name
+                and config.name == config_name
             ):
-                logger.debug(f"✅ Configuration found via name: {expected_config_name}")
+                logger.debug(f"✅ Configuration found via name: {config_name}")
                 return config
 
-        raise ValidationError(f"Configuration not found after creation: {created_id}")
+        raise ValidationError(
+            f"Configuration not found after creation: {config_name}"
+        )
 
     except Exception as e:
         raise ValidationError(f"Configuration validation failed: {e}") from e
@@ -308,19 +314,20 @@ def verify_event_creation(
     try:
         # Step 1: Create event
         logger.debug(f"🔄 Creating event for project: {project}")
-        # Wrap event_request dict in PostEventRequest typed model
-        event_response = client.events.create(
-            request=PostEventRequest(event=event_request)
-        )
+        # Pass event_request dict directly to events.create()
+        event_response = client.events.create(data=event_request)
 
-        # Validate creation response - events.create() now returns PostEventResponse
-        if not isinstance(event_response, PostEventResponse):
+        # Validate creation response - events.create() returns CreateEventResponse or dict
+        if hasattr(event_response, "event_id"):
+            created_id = event_response.event_id
+        elif isinstance(event_response, dict):
+            created_id = event_response.get("event_id")
+        else:
             raise ValidationError(
                 f"Event creation failed - unexpected response type: {type(event_response)}"
             )
-        if not hasattr(event_response, "event_id") or not event_response.event_id:
+        if not created_id:
             raise ValidationError("Event creation failed - missing or None event_id")
-        created_id = event_response.event_id
         logger.debug(f"✅ Event created with ID: {created_id}")
 
         # Step 2: Use standardized backend verification for events
@@ -417,6 +424,10 @@ def verify_tracer_span(  # pylint: disable=R0917
         if span_attributes:
             for key, value in span_attributes.items():
                 span.set_attribute(key, value)
+
+    # Ensure spans are exported before verification
+    if hasattr(tracer, "force_flush"):
+        tracer.force_flush()
 
     # Verify span was exported to backend
     return verify_span_export(

@@ -260,7 +260,7 @@ class TestOTELOTLPExportIntegration:
             tracer=integration_tracer,
             client=integration_client,
             project=real_project,
-            session_id=integration_tracer.session_id,
+            session_id=test_session_id,  # Query the API-created session where span is stored
             span_name=test_operation_name,
             unique_identifier=unique_id,
             span_attributes={

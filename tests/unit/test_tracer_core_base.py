@@ -415,12 +415,9 @@ class TestHoneyHiveTracerBaseCoreAttributes:
         mock_unified.session_id = test_session_id
         mock_create.return_value = mock_unified
 
-        # Mock session creation to preserve the session_id
-        # Since we now always create sessions, mock it to return the same session_id
-        from honeyhive.api.session import SessionStartResponse
-
-        mock_response = SessionStartResponse(session_id=test_session_id)
-        mock_create_session.return_value = mock_response
+        # Mock session creation - _create_new_session sets session_id directly
+        # on the tracer instance, so we just need a no-op mock
+        mock_create_session.return_value = None
 
         # Initialize tracer with both configs
         tracer = HoneyHiveTracerBase(
@@ -462,11 +459,9 @@ class TestHoneyHiveTracerBaseCoreAttributes:
         mock_unified.session_id = session_config_id
         mock_create.return_value = mock_unified
 
-        # Mock session creation to preserve the session_id
-        from honeyhive.api.session import SessionStartResponse
-
-        mock_response = SessionStartResponse(session_id=session_config_id)
-        mock_create_session.return_value = mock_response
+        # Mock session creation - _create_new_session sets session_id directly
+        # on the tracer instance, so we just need a no-op mock
+        mock_create_session.return_value = None
 
         # Initialize tracer
         tracer = HoneyHiveTracerBase(
@@ -742,10 +737,8 @@ class TestHoneyHiveTracerBaseAPIClients:
 
     @patch("honeyhive.tracer.core.base.create_unified_config")
     @patch("honeyhive.tracer.core.base.HoneyHive")
-    @patch("honeyhive.tracer.core.base.SessionAPI")
     def test_initialize_api_clients_success(
         self,
-        mock_session_api: Mock,
         mock_honeyhive: Mock,
         mock_create: Mock,
         mock_unified_config: Mock,
@@ -754,16 +747,12 @@ class TestHoneyHiveTracerBaseAPIClients:
         mock_create.return_value = mock_unified_config
         mock_client = Mock()
         mock_honeyhive.return_value = mock_client
-        mock_session = Mock()
-        mock_session_api.return_value = mock_session
 
         tracer = HoneyHiveTracerBase(api_key="test")
 
-        # Verify clients were initialized
+        # Verify client was initialized (sessions are accessed via client.sessions)
         assert tracer.client == mock_client
-        assert tracer.session_api == mock_session
         mock_honeyhive.assert_called_once()
-        mock_session_api.assert_called_once_with(mock_client)
 
     @patch("honeyhive.tracer.core.base.create_unified_config")
     def test_initialize_api_clients_no_params(
@@ -780,9 +769,8 @@ class TestHoneyHiveTracerBaseAPIClients:
 
         tracer = HoneyHiveTracerBase()
 
-        # Clients should be None when params are missing
+        # Client should be None when params are missing
         assert tracer.client is None
-        assert tracer.session_api is None
 
     @patch("honeyhive.tracer.core.base.create_unified_config")
     @patch("honeyhive.tracer.core.base.HoneyHive")
@@ -797,7 +785,6 @@ class TestHoneyHiveTracerBaseAPIClients:
 
         # Should handle exception gracefully
         assert tracer.client is None
-        assert tracer.session_api is None
 
     @patch("honeyhive.tracer.core.base.create_unified_config")
     def test_extract_api_parameters_dynamically_success(
@@ -813,10 +800,10 @@ class TestHoneyHiveTracerBaseAPIClients:
         assert api_params is not None
         assert isinstance(api_params, dict)
         # Should contain mapped parameters
-        expected_keys = ["api_key", "server_url", "test_mode", "verbose"]
+        # Note: server_url is mapped to base_url in the new client
+        expected_keys = ["api_key", "base_url"]
         for key in expected_keys:
-            if mock_unified_config.get(key) is not None:
-                assert key in api_params
+            assert key in api_params
 
     @patch("honeyhive.tracer.core.base.create_unified_config")
     def test_extract_api_parameters_missing_required(self, mock_create: Mock) -> None:
@@ -953,7 +940,7 @@ class TestHoneyHiveTracerBaseUtilityMethods:
         mock_create.return_value = mock_unified_config
 
         tracer = HoneyHiveTracerBase(api_key="test")
-        tracer.session_api = Mock()  # API available
+        tracer.client = Mock()  # API client available
         tracer._session_name = "test-session"  # Session name available
         tracer._session_id = None  # No existing session ID
         tracer.test_mode = False  # Not in test mode
@@ -971,29 +958,29 @@ class TestHoneyHiveTracerBaseUtilityMethods:
 
         tracer = HoneyHiveTracerBase(api_key="test")
 
-        # Test with no session API
-        tracer.session_api = None
+        # Test with no client
+        tracer.client = None
         tracer._session_name = "test-session"
         tracer._session_id = None
         tracer.test_mode = False
         assert tracer._should_create_session_automatically() is False
 
         # Test with no session name
-        tracer.session_api = Mock()
+        tracer.client = Mock()
         tracer._session_name = None
         tracer._session_id = None
         tracer.test_mode = False
         assert tracer._should_create_session_automatically() is False
 
         # Test with existing session ID
-        tracer.session_api = Mock()
+        tracer.client = Mock()
         tracer._session_name = "test-session"
         tracer._session_id = "existing-id"
         tracer.test_mode = False
         assert tracer._should_create_session_automatically() is False
 
         # Test in test mode
-        tracer.session_api = Mock()
+        tracer.client = Mock()
         tracer._session_name = "test-session"
         tracer._session_id = None
         tracer.test_mode = True
@@ -1026,17 +1013,18 @@ class TestHoneyHiveTracerBaseUtilityMethods:
         tracer = HoneyHiveTracerBase(api_key="test")
         tracer._session_name = "test-session"
 
-        # Mock session API
-        mock_response = Mock()
-        mock_response.session_id = "created-session-123"
-        tracer.session_api = Mock()
-        tracer.session_api.create_session_from_dict.return_value = mock_response
+        # Mock client.sessions.start() - returns a dict with session_id key
+        mock_sessions = Mock()
+        mock_sessions.start.return_value = {"session_id": "created-session-123"}
+        mock_client = Mock()
+        mock_client.sessions = mock_sessions
+        tracer.client = mock_client
 
         tracer._create_session_dynamically()
 
         # Verify session was created and ID was set
         assert tracer._session_id == "created-session-123"
-        tracer.session_api.create_session_from_dict.assert_called_once()
+        mock_sessions.start.assert_called_once()
 
     @patch("honeyhive.tracer.core.base.create_unified_config")
     def test_create_session_dynamically_no_api(
@@ -1046,7 +1034,7 @@ class TestHoneyHiveTracerBaseUtilityMethods:
         mock_create.return_value = mock_unified_config
 
         tracer = HoneyHiveTracerBase(api_key="test")
-        tracer.session_api = None
+        tracer.client = None
         tracer._session_name = "test-session"
 
         # Store original session ID (set during initialization)
@@ -1070,8 +1058,12 @@ class TestHoneyHiveTracerBaseUtilityMethods:
 
         tracer = HoneyHiveTracerBase(api_key="test")
         tracer._session_name = "test-session"
-        tracer.session_api = Mock()
-        tracer.session_api.create_session_from_dict.side_effect = Exception("API error")
+        # Mock client.sessions.start() to raise an exception
+        mock_sessions = Mock()
+        mock_sessions.start.side_effect = Exception("API error")
+        mock_client = Mock()
+        mock_client.sessions = mock_sessions
+        tracer.client = mock_client
 
         # Store original session ID (set during initialization)
         original_session_id = tracer._session_id
