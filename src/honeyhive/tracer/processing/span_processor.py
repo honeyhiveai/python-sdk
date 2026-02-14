@@ -757,6 +757,13 @@ class HoneyHiveSpanProcessor(SpanProcessor):
             # Convert session_id to string
             session_id = str(session_id_raw)
 
+            # Re-evaluate event type using full span data (events + attributes)
+            # At on_start, third-party instrumentors may not have set all
+            # attributes yet. Now that the span is complete, check if a
+            # "tool" classification should be upgraded based on message
+            # history in span events.
+            self._reevaluate_event_type_on_end(span, attributes)
+
             # Dump raw span data for debugging
             raw_span_data = self._dump_raw_span_data(span)
             self._safe_log(
@@ -949,6 +956,74 @@ class HoneyHiveSpanProcessor(SpanProcessor):
         except Exception as e:
             self._safe_log("debug", "Error processing honeyhive attributes: %s", e)
 
+    def _reevaluate_event_type_on_end(
+        self, span: ReadableSpan, attributes: dict
+    ) -> None:
+        """Re-evaluate event type when span ends using complete span data.
+
+        At on_start, third-party instrumentors (e.g. strands-agents) may not
+        have set all attributes or events yet. By on_end, the span has its
+        full set of events (gen_ai.user.message, gen_ai.assistant.message,
+        gen_ai.choice, etc.) and attributes (gen_ai.request.model, etc.).
+
+        If the current event type is "tool" but the span contains message
+        history events, upgrade to "chain" (orchestration with conversation
+        context) or "model" (if model-specific attributes are also present).
+
+        This ensures the ingestion service extracts chat_history from
+        inputs and populates outputs correctly.
+
+        :param span: The completed span
+        :type span: ReadableSpan
+        :param attributes: Span attributes dictionary
+        :type attributes: dict
+        """
+        try:
+            current_type = attributes.get("honeyhive_event_type", "tool")
+            if current_type != "tool":
+                return
+
+            MESSAGE_HISTORY_EVENTS = {
+                "gen_ai.user.message",
+                "gen_ai.assistant.message",
+                "gen_ai.choice",
+                "gen_ai.system.message",
+            }
+            span_events = span.events if hasattr(span, "events") and span.events else []
+            has_message_history = any(
+                event.name in MESSAGE_HISTORY_EVENTS for event in span_events
+            )
+
+            if not has_message_history:
+                return
+
+            MODEL_INDICATOR_ATTRIBUTES = {
+                "gen_ai.request.model",
+                "gen_ai.response.model",
+                "llm.request.model",
+                "llm.response.model",
+            }
+            has_model_attrs = any(
+                attr in attributes for attr in MODEL_INDICATOR_ATTRIBUTES
+            )
+
+            new_type = "model" if has_model_attrs else "chain"
+
+            if hasattr(span, "_attributes") and isinstance(span._attributes, dict):
+                span._attributes["honeyhive_event_type"] = new_type
+                attributes["honeyhive_event_type"] = new_type
+                self._safe_log(
+                    "debug",
+                    "Event type upgraded from 'tool' to '%s' for span '%s' "
+                    "(message history detected at on_end)",
+                    new_type,
+                    span.name,
+                )
+        except Exception as e:
+            self._safe_log(
+                "debug", "Error in event type re-evaluation: %s", e
+            )
+
     def _detect_event_type(self, span: Span) -> Optional[str]:
         """Dynamically detect event type using priority-based patterns.
 
@@ -957,8 +1032,9 @@ class HoneyHiveSpanProcessor(SpanProcessor):
         2. honeyhive_event_type - Alternative explicit format
         3. openinference.span.kind - Standard instrumentor convention
            (LLM/CHAIN/TOOL/AGENT)
-        4. Span name inference - Pattern matching fallback
-        5. Default to "tool" - Final fallback
+        4. gen_ai.operation.name - OTel GenAI semantic convention
+        5. Span name inference - Pattern matching fallback
+        6. Default to "tool" - Final fallback
 
         OpenInference span.kind mappings:
         - LLM → model (actual LLM invocations)
@@ -969,6 +1045,14 @@ class HoneyHiveSpanProcessor(SpanProcessor):
         - EMBEDDING → tool (embedding generation)
         - RERANKER → tool (reranking operations)
         - GUARDRAIL → tool (guardrail checks)
+
+        gen_ai.operation.name mappings:
+        - chat → model (LLM chat completions)
+        - text_completion → model (text completions)
+        - execute_tool → tool (tool/function execution)
+        - create_agent → chain (agent creation)
+        - Other operations (invoke_agent, invoke_swarm,
+          execute_event_loop_cycle, agent_session, etc.) → chain
 
         :param span: The span to analyze for event type
         :type span: Span
@@ -1027,6 +1111,7 @@ class HoneyHiveSpanProcessor(SpanProcessor):
             # Priority 4: OpenInference span.kind attribute (standard
             # instrumentor convention)
             span_kind = attributes.get("openinference.span.kind")
+            has_openinference = span_kind is not None
             if span_kind:
                 # Map OpenInference span kinds to HoneyHive event types
                 # Complete OpenInference span.kind mapping
@@ -1065,7 +1150,29 @@ class HoneyHiveSpanProcessor(SpanProcessor):
                     )
                     return "tool"
 
-            # Priority 5: Dynamic pattern matching using utility function
+            # Priority 5: gen_ai.operation.name (OTel GenAI semantic convention)
+            # Available at span creation for instrumentors like strands-agents
+            if not has_openinference:
+                operation_name = attributes.get("gen_ai.operation.name")
+                if operation_name:
+                    operation_name_lower = str(operation_name).lower()
+                    GENAI_OPERATION_MODEL = {"chat", "text_completion"}
+                    GENAI_OPERATION_TOOL = {"execute_tool"}
+                    if operation_name_lower in GENAI_OPERATION_MODEL:
+                        event_type = "model"
+                    elif operation_name_lower in GENAI_OPERATION_TOOL:
+                        event_type = "tool"
+                    else:
+                        event_type = "chain"
+                    self._safe_log(
+                        "debug",
+                        "Event type from gen_ai.operation.name: %s (%s)",
+                        event_type,
+                        operation_name,
+                    )
+                    return event_type
+
+            # Priority 6: Dynamic pattern matching using utility function
             self._safe_log(
                 "debug", "🔍 Using dynamic pattern matching for span: '%s'", span.name
             )
@@ -1084,7 +1191,7 @@ class HoneyHiveSpanProcessor(SpanProcessor):
                 )
                 return detected_type
 
-            # Priority 6: Default fallback
+            # Priority 7: Default fallback
             self._safe_log(
                 "debug",
                 "⚠️ No event type pattern matched for '%s', defaulting to 'tool'",

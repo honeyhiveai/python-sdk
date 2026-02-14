@@ -677,6 +677,226 @@ class TestHoneyHiveSpanProcessorEventTypeDetection:
         mock_safe_log.assert_called()
 
 
+class TestHoneyHiveSpanProcessorGenAIOperationName:
+    """Test gen_ai.operation.name event type detection (Priority 5)."""
+
+    @patch("honeyhive.utils.logger.safe_log")
+    def test_operation_name_chat_returns_model(self, mock_safe_log: Mock) -> None:
+        processor = HoneyHiveSpanProcessor()
+        mock_span = Mock(spec=Span)
+        mock_span.name = "chat"
+        mock_span.attributes = {"gen_ai.operation.name": "chat"}
+        mock_span.get_span_context.return_value = Mock(span_id="test-span-id")
+
+        result = processor._detect_event_type(mock_span)
+        assert result == "model"
+
+    @patch("honeyhive.utils.logger.safe_log")
+    def test_operation_name_text_completion_returns_model(self, mock_safe_log: Mock) -> None:
+        processor = HoneyHiveSpanProcessor()
+        mock_span = Mock(spec=Span)
+        mock_span.name = "text_completion"
+        mock_span.attributes = {"gen_ai.operation.name": "text_completion"}
+        mock_span.get_span_context.return_value = Mock(span_id="test-span-id")
+
+        result = processor._detect_event_type(mock_span)
+        assert result == "model"
+
+    @patch("honeyhive.utils.logger.safe_log")
+    def test_operation_name_execute_tool_returns_tool(self, mock_safe_log: Mock) -> None:
+        processor = HoneyHiveSpanProcessor()
+        mock_span = Mock(spec=Span)
+        mock_span.name = "execute_tool calculator"
+        mock_span.attributes = {"gen_ai.operation.name": "execute_tool"}
+        mock_span.get_span_context.return_value = Mock(span_id="test-span-id")
+
+        result = processor._detect_event_type(mock_span)
+        assert result == "tool"
+
+    @patch("honeyhive.utils.logger.safe_log")
+    def test_operation_name_invoke_agent_returns_chain(self, mock_safe_log: Mock) -> None:
+        processor = HoneyHiveSpanProcessor()
+        mock_span = Mock(spec=Span)
+        mock_span.name = "invoke_agent MathAgent"
+        mock_span.attributes = {
+            "gen_ai.operation.name": "invoke_agent",
+            "gen_ai.system": "strands-agents",
+        }
+        mock_span.get_span_context.return_value = Mock(span_id="test-span-id")
+
+        result = processor._detect_event_type(mock_span)
+        assert result == "chain"
+
+    @patch("honeyhive.utils.logger.safe_log")
+    def test_operation_name_invoke_swarm_returns_chain(self, mock_safe_log: Mock) -> None:
+        processor = HoneyHiveSpanProcessor()
+        mock_span = Mock(spec=Span)
+        mock_span.name = "invoke_swarm"
+        mock_span.attributes = {"gen_ai.operation.name": "invoke_swarm"}
+        mock_span.get_span_context.return_value = Mock(span_id="test-span-id")
+
+        result = processor._detect_event_type(mock_span)
+        assert result == "chain"
+
+    @patch("honeyhive.utils.logger.safe_log")
+    def test_operation_name_event_loop_cycle_returns_chain(self, mock_safe_log: Mock) -> None:
+        processor = HoneyHiveSpanProcessor()
+        mock_span = Mock(spec=Span)
+        mock_span.name = "execute_event_loop_cycle"
+        mock_span.attributes = {"gen_ai.operation.name": "execute_event_loop_cycle"}
+        mock_span.get_span_context.return_value = Mock(span_id="test-span-id")
+
+        result = processor._detect_event_type(mock_span)
+        assert result == "chain"
+
+    @patch("honeyhive.utils.logger.safe_log")
+    def test_operation_name_agent_session_returns_chain(self, mock_safe_log: Mock) -> None:
+        processor = HoneyHiveSpanProcessor()
+        mock_span = Mock(spec=Span)
+        mock_span.name = "agent_session"
+        mock_span.attributes = {"gen_ai.operation.name": "agent_session"}
+        mock_span.get_span_context.return_value = Mock(span_id="test-span-id")
+
+        result = processor._detect_event_type(mock_span)
+        assert result == "chain"
+
+    @patch("honeyhive.utils.logger.safe_log")
+    def test_operation_name_skipped_when_openinference_present(self, mock_safe_log: Mock) -> None:
+        processor = HoneyHiveSpanProcessor()
+        mock_span = Mock(spec=Span)
+        mock_span.name = "invoke_agent"
+        mock_span.attributes = {
+            "openinference.span.kind": "AGENT",
+            "gen_ai.operation.name": "invoke_agent",
+        }
+        mock_span.get_span_context.return_value = Mock(span_id="test-span-id")
+
+        result = processor._detect_event_type(mock_span)
+        assert result == "chain"
+
+
+class TestHoneyHiveSpanProcessorReevaluateOnEnd:
+    """Test event type re-evaluation at on_end using message history."""
+
+    @patch("honeyhive.utils.logger.safe_log")
+    def test_upgrade_tool_to_chain_with_message_history(self, mock_safe_log: Mock) -> None:
+        processor = HoneyHiveSpanProcessor()
+        mock_span = Mock(spec=ReadableSpan)
+        mock_span.name = "invoke_agent"
+        mock_span._attributes = {"honeyhive_event_type": "tool"}
+
+        mock_event = Mock()
+        mock_event.name = "gen_ai.user.message"
+        mock_span.events = [mock_event]
+
+        attributes = {"honeyhive_event_type": "tool"}
+        processor._reevaluate_event_type_on_end(mock_span, attributes)
+
+        assert mock_span._attributes["honeyhive_event_type"] == "chain"
+        assert attributes["honeyhive_event_type"] == "chain"
+
+    @patch("honeyhive.utils.logger.safe_log")
+    def test_upgrade_tool_to_model_with_message_history_and_model_attrs(
+        self, mock_safe_log: Mock
+    ) -> None:
+        processor = HoneyHiveSpanProcessor()
+        mock_span = Mock(spec=ReadableSpan)
+        mock_span.name = "invoke_agent"
+        mock_span._attributes = {
+            "honeyhive_event_type": "tool",
+            "gen_ai.request.model": "gpt-4o-mini",
+        }
+
+        mock_event = Mock()
+        mock_event.name = "gen_ai.user.message"
+        mock_span.events = [mock_event]
+
+        attributes = {
+            "honeyhive_event_type": "tool",
+            "gen_ai.request.model": "gpt-4o-mini",
+        }
+        processor._reevaluate_event_type_on_end(mock_span, attributes)
+
+        assert mock_span._attributes["honeyhive_event_type"] == "model"
+        assert attributes["honeyhive_event_type"] == "model"
+
+    @patch("honeyhive.utils.logger.safe_log")
+    def test_no_upgrade_when_not_tool(self, mock_safe_log: Mock) -> None:
+        processor = HoneyHiveSpanProcessor()
+        mock_span = Mock(spec=ReadableSpan)
+        mock_span.name = "chat"
+        mock_span._attributes = {"honeyhive_event_type": "model"}
+
+        mock_event = Mock()
+        mock_event.name = "gen_ai.user.message"
+        mock_span.events = [mock_event]
+
+        attributes = {"honeyhive_event_type": "model"}
+        processor._reevaluate_event_type_on_end(mock_span, attributes)
+
+        assert attributes["honeyhive_event_type"] == "model"
+
+    @patch("honeyhive.utils.logger.safe_log")
+    def test_no_upgrade_without_message_history(self, mock_safe_log: Mock) -> None:
+        processor = HoneyHiveSpanProcessor()
+        mock_span = Mock(spec=ReadableSpan)
+        mock_span.name = "execute_tool"
+        mock_span._attributes = {"honeyhive_event_type": "tool"}
+        mock_span.events = []
+
+        attributes = {"honeyhive_event_type": "tool"}
+        processor._reevaluate_event_type_on_end(mock_span, attributes)
+
+        assert attributes["honeyhive_event_type"] == "tool"
+
+    @patch("honeyhive.utils.logger.safe_log")
+    def test_upgrade_with_choice_event(self, mock_safe_log: Mock) -> None:
+        processor = HoneyHiveSpanProcessor()
+        mock_span = Mock(spec=ReadableSpan)
+        mock_span.name = "invoke_swarm"
+        mock_span._attributes = {"honeyhive_event_type": "tool"}
+
+        mock_event = Mock()
+        mock_event.name = "gen_ai.choice"
+        mock_span.events = [mock_event]
+
+        attributes = {"honeyhive_event_type": "tool"}
+        processor._reevaluate_event_type_on_end(mock_span, attributes)
+
+        assert attributes["honeyhive_event_type"] == "chain"
+
+    @patch("honeyhive.utils.logger.safe_log")
+    def test_upgrade_with_multiple_message_types(self, mock_safe_log: Mock) -> None:
+        processor = HoneyHiveSpanProcessor()
+        mock_span = Mock(spec=ReadableSpan)
+        mock_span.name = "execute_event_loop_cycle"
+        mock_span._attributes = {"honeyhive_event_type": "tool"}
+
+        events = []
+        for name in ["gen_ai.user.message", "gen_ai.assistant.message", "gen_ai.choice"]:
+            e = Mock()
+            e.name = name
+            events.append(e)
+        mock_span.events = events
+
+        attributes = {"honeyhive_event_type": "tool"}
+        processor._reevaluate_event_type_on_end(mock_span, attributes)
+
+        assert attributes["honeyhive_event_type"] == "chain"
+
+    @patch("honeyhive.utils.logger.safe_log")
+    def test_graceful_degradation_on_error(self, mock_safe_log: Mock) -> None:
+        processor = HoneyHiveSpanProcessor()
+        mock_span = Mock(spec=ReadableSpan)
+        mock_span.name = "test"
+        type(mock_span).events = property(lambda self: (_ for _ in ()).throw(RuntimeError("test")))
+
+        attributes = {"honeyhive_event_type": "tool"}
+        processor._reevaluate_event_type_on_end(mock_span, attributes)
+
+        assert attributes["honeyhive_event_type"] == "tool"
+
+
 class TestHoneyHiveSpanProcessorOnStart:
     """Test on_start method functionality with all conditional branches."""
 
