@@ -84,7 +84,9 @@ class TestGetRunResult:
         }
         mock_client.experiments.get_result.return_value = mock_response
 
-        get_run_result(mock_client, "run-123", "test-project-id", aggregate_function="median")
+        get_run_result(
+            mock_client, "run-123", "test-project-id", aggregate_function="median"
+        )
 
         mock_client.experiments.get_result.assert_called_once_with(
             run_id="run-123", project_id="test-project-id", aggregate_function="median"
@@ -234,7 +236,10 @@ class TestCompareRuns:
         assert result.new_only_datapoints == 0
         assert result.old_only_datapoints == 0
         mock_client.experiments.compare_runs.assert_called_once_with(
-            new_run_id="run-new", old_run_id="run-old", project_id="test-project-id", aggregate_function="average"
+            new_run_id="run-new",
+            old_run_id="run-old",
+            project_id="test-project-id",
+            aggregate_function="average",
         )
 
     def test_custom_aggregation_function_in_comparison(self, mock_client: Mock) -> None:
@@ -247,10 +252,19 @@ class TestCompareRuns:
         }
         mock_client.experiments.compare_runs.return_value = mock_response
 
-        compare_runs(mock_client, "run-new", "run-old", "test-project-id", aggregate_function="median")
+        compare_runs(
+            mock_client,
+            "run-new",
+            "run-old",
+            "test-project-id",
+            aggregate_function="median",
+        )
 
         mock_client.experiments.compare_runs.assert_called_once_with(
-            new_run_id="run-new", old_run_id="run-old", project_id="test-project-id", aggregate_function="median"
+            new_run_id="run-new",
+            old_run_id="run-old",
+            project_id="test-project-id",
+            aggregate_function="median",
         )
 
     def test_metric_deltas_parsing(self, mock_client: Mock) -> None:

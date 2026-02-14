@@ -8,10 +8,7 @@ import uuid
 import pytest
 
 # v1 models - note: Sessions uses dict-based API, Events uses dict-based create
-from honeyhive.models import (
-    CreateConfigurationRequest,
-    CreateDatapointRequest,
-)
+from honeyhive.models import CreateConfigurationRequest, CreateDatapointRequest
 
 
 class TestSimpleIntegration:
@@ -211,7 +208,11 @@ class TestSimpleIntegration:
             session_response = integration_client.sessions.start(session_data)
             # v1 API returns a dict or object with session_id
             assert session_response is not None
-            session_id = session_response.get("session_id") if isinstance(session_response, dict) else getattr(session_response, "session_id", None)
+            session_id = (
+                session_response.get("session_id")
+                if isinstance(session_response, dict)
+                else getattr(session_response, "session_id", None)
+            )
             assert session_id is not None
 
             # Step 2: Create event linked to session - v1 API uses dict-based request
@@ -226,12 +227,14 @@ class TestSimpleIntegration:
                 "duration": 100.0,
             }
 
-            event_response = integration_client.events.create(
-                {"event": event_data}
-            )
+            event_response = integration_client.events.create({"event": event_data})
             # v1 API returns a dict or object with event_id
             assert event_response is not None
-            event_id = event_response.get("event_id") if isinstance(event_response, dict) else getattr(event_response, "event_id", None)
+            event_id = (
+                event_response.get("event_id")
+                if isinstance(event_response, dict)
+                else getattr(event_response, "event_id", None)
+            )
             assert event_id is not None
 
             # Step 3: Wait for data propagation
@@ -261,11 +264,19 @@ class TestSimpleIntegration:
 
                 # Verify event is linked to session
                 assert events_result is not None
-                events_list = events_result.get("events", []) if isinstance(events_result, dict) else getattr(events_result, "events", [])
+                events_list = (
+                    events_result.get("events", [])
+                    if isinstance(events_result, dict)
+                    else getattr(events_result, "events", [])
+                )
                 assert events_list is not None
                 found_event = None
                 for event in events_list:
-                    ev_id = event.get("event_id") if isinstance(event, dict) else getattr(event, "event_id", None)
+                    ev_id = (
+                        event.get("event_id")
+                        if isinstance(event, dict)
+                        else getattr(event, "event_id", None)
+                    )
                     if ev_id == event_id:
                         found_event = event
                         break
@@ -273,11 +284,19 @@ class TestSimpleIntegration:
                 assert (
                     found_event is not None
                 ), f"Created event {event_id} not found in session {session_id}"
-                found_session_id = found_event.get("session_id") if isinstance(found_event, dict) else getattr(found_event, "session_id", None)
+                found_session_id = (
+                    found_event.get("session_id")
+                    if isinstance(found_event, dict)
+                    else getattr(found_event, "session_id", None)
+                )
                 assert (
                     found_session_id == session_id
                 ), "Event not properly linked to session"
-                found_config = found_event.get("config", {}) if isinstance(found_event, dict) else getattr(found_event, "config", {})
+                found_config = (
+                    found_event.get("config", {})
+                    if isinstance(found_event, dict)
+                    else getattr(found_event, "config", {})
+                )
                 assert (
                     found_config["test_id"] == test_id
                 ), "Event data not properly stored"

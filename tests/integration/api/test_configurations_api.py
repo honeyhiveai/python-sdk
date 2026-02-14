@@ -6,9 +6,7 @@ from typing import Any
 
 import pytest
 
-from honeyhive.models import (
-    CreateConfigurationRequest,
-)
+from honeyhive.models import CreateConfigurationRequest
 
 
 class TestConfigurationsAPI:
@@ -70,7 +68,11 @@ class TestConfigurationsAPI:
         )
 
         create_response = integration_client.configurations.create(config_request)
-        created_id = create_response.get("insertedId") if isinstance(create_response, dict) else getattr(create_response, "insertedId", None)
+        created_id = (
+            create_response.get("insertedId")
+            if isinstance(create_response, dict)
+            else getattr(create_response, "insertedId", None)
+        )
 
         time.sleep(2)
 
@@ -108,7 +110,11 @@ class TestConfigurationsAPI:
                 parameters=parameters,
             )
             response = integration_client.configurations.create(config_request)
-            resp_id = response.get("insertedId") if isinstance(response, dict) else getattr(response, "insertedId", None)
+            resp_id = (
+                response.get("insertedId")
+                if isinstance(response, dict)
+                else getattr(response, "insertedId", None)
+            )
             created_ids.append(resp_id)
 
         configs = integration_client.configurations.list()
@@ -140,7 +146,11 @@ class TestConfigurationsAPI:
         )
 
         create_response = integration_client.configurations.create(config_request)
-        created_id = create_response.get("insertedId") if isinstance(create_response, dict) else getattr(create_response, "insertedId", None)
+        created_id = (
+            create_response.get("insertedId")
+            if isinstance(create_response, dict)
+            else getattr(create_response, "insertedId", None)
+        )
 
         from honeyhive.models import UpdateConfigurationRequest
 
@@ -181,7 +191,11 @@ class TestConfigurationsAPI:
         )
 
         create_response = integration_client.configurations.create(config_request)
-        created_id = create_response.get("insertedId") if isinstance(create_response, dict) else getattr(create_response, "insertedId", None)
+        created_id = (
+            create_response.get("insertedId")
+            if isinstance(create_response, dict)
+            else getattr(create_response, "insertedId", None)
+        )
 
         # Delete
         response = integration_client.configurations.delete(created_id)

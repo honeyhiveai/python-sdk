@@ -7,8 +7,8 @@ from ..models import *
 
 
 async def startSession(
-    api_config_override: Optional[APIConfig] = None, *, data: Dict[str, Any]
-) -> Dict[str, Any]:
+    api_config_override: Optional[APIConfig] = None, *, data: StartSessionRequestBody
+) -> StartSessionResponse:
     api_config = api_config_override if api_config_override else APIConfig()
 
     base_path = api_config.base_path
@@ -28,7 +28,11 @@ async def startSession(
         base_url=base_path, verify=api_config.verify
     ) as client:
         response = await client.request(
-            "post", httpx.URL(path), headers=headers, params=query_params, json=data
+            "post",
+            httpx.URL(path),
+            headers=headers,
+            params=query_params,
+            json=data.model_dump(exclude_none=True),
         )
 
     if response.status_code != 200:
@@ -39,7 +43,7 @@ async def startSession(
     else:
         body = None if 200 == 204 else response.json()
 
-    return body
+    return StartSessionResponse(**body) if body is not None else StartSessionResponse()
 
 
 async def getSession(

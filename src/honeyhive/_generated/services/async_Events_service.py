@@ -7,8 +7,8 @@ from ..models import *
 
 
 async def createEvent(
-    api_config_override: Optional[APIConfig] = None, *, data: Dict[str, Any]
-) -> Dict[str, Any]:
+    api_config_override: Optional[APIConfig] = None, *, data: CreateEventRequestBody
+) -> CreateEventResponse:
     api_config = api_config_override if api_config_override else APIConfig()
 
     base_path = api_config.base_path
@@ -28,7 +28,11 @@ async def createEvent(
         base_url=base_path, verify=api_config.verify
     ) as client:
         response = await client.request(
-            "post", httpx.URL(path), headers=headers, params=query_params, json=data
+            "post",
+            httpx.URL(path),
+            headers=headers,
+            params=query_params,
+            json=data.model_dump(exclude_none=True),
         )
 
     if response.status_code != 200:
@@ -39,11 +43,11 @@ async def createEvent(
     else:
         body = None if 200 == 204 else response.json()
 
-    return body
+    return CreateEventResponse(**body) if body is not None else CreateEventResponse()
 
 
 async def updateEvent(
-    api_config_override: Optional[APIConfig] = None, *, data: Dict[str, Any]
+    api_config_override: Optional[APIConfig] = None, *, data: UpdateEventRequest
 ) -> None:
     api_config = api_config_override if api_config_override else APIConfig()
 
@@ -64,7 +68,11 @@ async def updateEvent(
         base_url=base_path, verify=api_config.verify
     ) as client:
         response = await client.request(
-            "put", httpx.URL(path), headers=headers, params=query_params, json=data
+            "put",
+            httpx.URL(path),
+            headers=headers,
+            params=query_params,
+            json=data.model_dump(exclude_none=True),
         )
 
     if response.status_code != 200:
@@ -79,8 +87,8 @@ async def updateEvent(
 
 
 async def getEvents(
-    api_config_override: Optional[APIConfig] = None, *, data: Dict[str, Any]
-) -> Dict[str, Any]:
+    api_config_override: Optional[APIConfig] = None, *, data: GetEventsRequest
+) -> GetEventsResponse:
     api_config = api_config_override if api_config_override else APIConfig()
 
     base_path = api_config.base_path
@@ -100,7 +108,11 @@ async def getEvents(
         base_url=base_path, verify=api_config.verify
     ) as client:
         response = await client.request(
-            "post", httpx.URL(path), headers=headers, params=query_params, json=data
+            "post",
+            httpx.URL(path),
+            headers=headers,
+            params=query_params,
+            json=data.model_dump(exclude_none=True),
         )
 
     if response.status_code != 200:
@@ -111,12 +123,14 @@ async def getEvents(
     else:
         body = None if 200 == 204 else response.json()
 
-    return body
+    return GetEventsResponse(**body) if body is not None else GetEventsResponse()
 
 
 async def createModelEvent(
-    api_config_override: Optional[APIConfig] = None, *, data: Dict[str, Any]
-) -> Dict[str, Any]:
+    api_config_override: Optional[APIConfig] = None,
+    *,
+    data: CreateModelEventRequestBody,
+) -> CreateEventResponse:
     api_config = api_config_override if api_config_override else APIConfig()
 
     base_path = api_config.base_path
@@ -136,7 +150,11 @@ async def createModelEvent(
         base_url=base_path, verify=api_config.verify
     ) as client:
         response = await client.request(
-            "post", httpx.URL(path), headers=headers, params=query_params, json=data
+            "post",
+            httpx.URL(path),
+            headers=headers,
+            params=query_params,
+            json=data.model_dump(exclude_none=True),
         )
 
     if response.status_code != 200:
@@ -147,12 +165,12 @@ async def createModelEvent(
     else:
         body = None if 200 == 204 else response.json()
 
-    return body
+    return CreateEventResponse(**body) if body is not None else CreateEventResponse()
 
 
 async def createEventBatch(
-    api_config_override: Optional[APIConfig] = None, *, data: Dict[str, Any]
-) -> Dict[str, Any]:
+    api_config_override: Optional[APIConfig] = None, *, data: CreateEventBatchRequest
+) -> CreateEventBatchResponse:
     api_config = api_config_override if api_config_override else APIConfig()
 
     base_path = api_config.base_path
@@ -172,7 +190,11 @@ async def createEventBatch(
         base_url=base_path, verify=api_config.verify
     ) as client:
         response = await client.request(
-            "post", httpx.URL(path), headers=headers, params=query_params, json=data
+            "post",
+            httpx.URL(path),
+            headers=headers,
+            params=query_params,
+            json=data.model_dump(exclude_none=True),
         )
 
     if response.status_code != 200:
@@ -183,12 +205,18 @@ async def createEventBatch(
     else:
         body = None if 200 == 204 else response.json()
 
-    return body
+    return (
+        CreateEventBatchResponse(**body)
+        if body is not None
+        else CreateEventBatchResponse()
+    )
 
 
 async def createModelEventBatch(
-    api_config_override: Optional[APIConfig] = None, *, data: Dict[str, Any]
-) -> Dict[str, Any]:
+    api_config_override: Optional[APIConfig] = None,
+    *,
+    data: CreateModelEventBatchRequest,
+) -> CreateModelEventBatchResponse:
     api_config = api_config_override if api_config_override else APIConfig()
 
     base_path = api_config.base_path
@@ -208,7 +236,11 @@ async def createModelEventBatch(
         base_url=base_path, verify=api_config.verify
     ) as client:
         response = await client.request(
-            "post", httpx.URL(path), headers=headers, params=query_params, json=data
+            "post",
+            httpx.URL(path),
+            headers=headers,
+            params=query_params,
+            json=data.model_dump(exclude_none=True),
         )
 
     if response.status_code != 200:
@@ -219,4 +251,8 @@ async def createModelEventBatch(
     else:
         body = None if 200 == 204 else response.json()
 
-    return body
+    return (
+        CreateModelEventBatchResponse(**body)
+        if body is not None
+        else CreateModelEventBatchResponse()
+    )

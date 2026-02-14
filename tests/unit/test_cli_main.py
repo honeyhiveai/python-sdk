@@ -460,7 +460,8 @@ class TestAPICommands:
 
         runner = CliRunner()
         result = runner.invoke(
-            request, ["--method", "GET", "--url", "https://api.honeyhive.ai/test"],
+            request,
+            ["--method", "GET", "--url", "https://api.honeyhive.ai/test"],
             env={"HH_API_KEY": "test-key"},
         )
 
@@ -569,7 +570,8 @@ class TestAPICommands:
 
         runner = CliRunner()
         result = runner.invoke(
-            request, ["--method", "GET", "--url", "https://api.honeyhive.ai/health"],
+            request,
+            ["--method", "GET", "--url", "https://api.honeyhive.ai/health"],
             env={"HH_API_KEY": "test-key"},
         )
 
@@ -584,7 +586,8 @@ class TestAPICommands:
 
         runner = CliRunner()
         result = runner.invoke(
-            request, ["--method", "GET", "--url", "https://api.honeyhive.ai/test"],
+            request,
+            ["--method", "GET", "--url", "https://api.honeyhive.ai/test"],
             env={"HH_API_KEY": "test-key"},
         )
 

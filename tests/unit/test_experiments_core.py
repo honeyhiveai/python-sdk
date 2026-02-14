@@ -812,9 +812,7 @@ class TestEvaluate:
         mock_client.experiments.create_run.return_value = mock_run_response
 
         # update_run_from_dict raises error
-        mock_client.experiments.update_run.side_effect = Exception(
-            "API error"
-        )
+        mock_client.experiments.update_run.side_effect = Exception("API error")
         mock_honeyhive_class.return_value = mock_client
 
         mock_context = Mock()

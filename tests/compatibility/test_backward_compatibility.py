@@ -127,7 +127,11 @@ class TestBackwardCompatibility:
 
         assert config is not None
         # Config should have some basic attributes (updated for new config structure)
-        assert hasattr(config, "model_fields") or hasattr(config, "api") or hasattr(config, "version")
+        assert (
+            hasattr(config, "model_fields")
+            or hasattr(config, "api")
+            or hasattr(config, "version")
+        )
 
     def test_environment_variable_compatibility(self):
         """Test that environment variables work as expected."""
@@ -202,11 +206,7 @@ class TestBackwardCompatibility:
         """Test that new features are available without breaking old code."""
         # Test that new features can be imported
         try:
-            from honeyhive import (
-                BaseEvaluator,
-                set_default_tracer,
-                trace_class,
-            )
+            from honeyhive import BaseEvaluator, set_default_tracer, trace_class
             from honeyhive.evaluation.evaluators import (
                 EvaluationResult,
                 evaluate_batch,

@@ -6,10 +6,7 @@ from typing import Any
 
 import pytest
 
-from honeyhive.models import (
-    CreateDatapointRequest,
-    UpdateDatapointRequest,
-)
+from honeyhive.models import CreateDatapointRequest, UpdateDatapointRequest
 
 
 class TestDatapointsAPI:
@@ -99,7 +96,11 @@ class TestDatapointsAPI:
         datapoints_response = integration_client.datapoints.list()
 
         assert isinstance(datapoints_response, (dict, list))
-        datapoints = datapoints_response.get("datapoints", datapoints_response) if isinstance(datapoints_response, dict) else datapoints_response
+        datapoints = (
+            datapoints_response.get("datapoints", datapoints_response)
+            if isinstance(datapoints_response, dict)
+            else datapoints_response
+        )
         assert isinstance(datapoints, list)
 
     def test_update_datapoint(

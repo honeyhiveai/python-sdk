@@ -4,9 +4,8 @@ Usage:
     from honeyhive.models import PostConfigurationRequest, CreateDatasetRequest, EventType
 """
 
-from typing import Any, Dict
-
 from enum import Enum
+from typing import Any, Dict
 
 
 class EventType(str, Enum):

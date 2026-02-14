@@ -20,10 +20,7 @@ from typing import Any
 
 import pytest
 
-from honeyhive.models import (
-    CreateConfigurationRequest,
-    CreateDatapointRequest,
-)
+from honeyhive.models import CreateConfigurationRequest, CreateDatapointRequest
 from tests.utils import (  # pylint: disable=no-name-in-module
     generate_test_id,
     verify_datapoint_creation,
@@ -238,7 +235,11 @@ class TestEndToEndValidation:
 
             # Validate events result
             assert events_result is not None
-            retrieved_events = events_result.get("events", []) if isinstance(events_result, dict) else getattr(events_result, "events", [])
+            retrieved_events = (
+                events_result.get("events", [])
+                if isinstance(events_result, dict)
+                else getattr(events_result, "events", [])
+            )
 
             # Validate all events are linked to session
             def _get(obj, key, default=None):
@@ -272,9 +273,7 @@ class TestEndToEndValidation:
                 config = _get(event, "config", {})
                 expected_index = config["event_index"]
                 assert config["model"] == "gpt-4", f"Event {i} model corrupted"
-                assert (
-                    config["temperature"] == 0.7
-                ), f"Event {i} temperature corrupted"
+                assert config["temperature"] == 0.7, f"Event {i} temperature corrupted"
                 inputs = _get(event, "inputs", {})
                 outputs = _get(event, "outputs", {})
                 assert (

@@ -2,8 +2,7 @@
 
 from typing import Any, Dict, List, Optional
 
-from .._generated.models import Metric
-from .._generated.models import MetricEdit
+from .._generated.models import Metric, MetricEdit
 from ..utils.error_handler import AuthenticationError, ErrorResponse
 from ._base import BaseAPI
 

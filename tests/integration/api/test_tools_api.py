@@ -6,10 +6,7 @@ from typing import Any
 
 import pytest
 
-from honeyhive.models import (
-    CreateToolRequest,
-    UpdateToolRequest,
-)
+from honeyhive.models import CreateToolRequest, UpdateToolRequest
 
 
 class TestToolsAPI:

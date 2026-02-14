@@ -808,9 +808,7 @@ class HoneyHiveSpanProcessor(SpanProcessor):
                 and hasattr(self.client, "events")
                 and hasattr(self.client.events, "create")
             ):
-                response = self.client.events.create(
-                    data=event_data
-                )
+                response = self.client.events.create(data=event_data)
                 self._safe_log("debug", "✅ Event sent via client: %s", response)
             else:
                 self._safe_log("warning", "⚠️ Client missing events.create method")

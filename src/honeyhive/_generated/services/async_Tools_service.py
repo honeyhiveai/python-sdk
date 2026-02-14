@@ -45,7 +45,7 @@ async def getTools(api_config_override: Optional[APIConfig] = None) -> List[Tool
 
 async def createTool(
     api_config_override: Optional[APIConfig] = None, *, data: CreateToolRequest
-) -> Dict[str, Any]:
+) -> CreateToolResponse:
     api_config = api_config_override if api_config_override else APIConfig()
 
     base_path = api_config.base_path
@@ -80,7 +80,7 @@ async def createTool(
     else:
         body = None if 200 == 204 else response.json()
 
-    return body
+    return CreateToolResponse(**body) if body is not None else CreateToolResponse()
 
 
 async def updateTool(

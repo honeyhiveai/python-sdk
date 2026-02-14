@@ -12,7 +12,7 @@ def getDatasets(
     project: str,
     type: Optional[str] = None,
     dataset_id: Optional[str] = None,
-) -> Dict[str, Any]:
+) -> GetDatasetsResponse:
     api_config = api_config_override if api_config_override else APIConfig()
 
     base_path = api_config.base_path
@@ -48,12 +48,12 @@ def getDatasets(
     else:
         body = None if 200 == 204 else response.json()
 
-    return body
+    return GetDatasetsResponse(**body) if body is not None else GetDatasetsResponse()
 
 
 def createDataset(
     api_config_override: Optional[APIConfig] = None, *, data: CreateDatasetRequest
-) -> Dict[str, Any]:
+) -> CreateDatasetResponse:
     api_config = api_config_override if api_config_override else APIConfig()
 
     base_path = api_config.base_path
@@ -86,7 +86,9 @@ def createDataset(
     else:
         body = None if 200 == 204 else response.json()
 
-    return body
+    return (
+        CreateDatasetResponse(**body) if body is not None else CreateDatasetResponse()
+    )
 
 
 def updateDataset(
@@ -168,8 +170,8 @@ def addDatapoints(
     api_config_override: Optional[APIConfig] = None,
     *,
     dataset_id: str,
-    data: Dict[str, Any],
-) -> Dict[str, Any]:
+    data: AddDatapointsRequest,
+) -> AddDatapointsResponse:
     api_config = api_config_override if api_config_override else APIConfig()
 
     base_path = api_config.base_path
@@ -187,7 +189,11 @@ def addDatapoints(
 
     with httpx.Client(base_url=base_path, verify=api_config.verify) as client:
         response = client.request(
-            "post", httpx.URL(path), headers=headers, params=query_params, json=data
+            "post",
+            httpx.URL(path),
+            headers=headers,
+            params=query_params,
+            json=data.model_dump(exclude_none=True),
         )
 
     if response.status_code != 200:
@@ -198,4 +204,6 @@ def addDatapoints(
     else:
         body = None if 200 == 204 else response.json()
 
-    return body
+    return (
+        AddDatapointsResponse(**body) if body is not None else AddDatapointsResponse()
+    )

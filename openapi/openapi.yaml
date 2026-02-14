@@ -16,20 +16,14 @@ paths:
         content:
           application/json:
             schema:
-              type: object
-              properties:
-                session:
-                  $ref: '#/components/schemas/SessionStartRequest'
+              $ref: '#/components/schemas/StartSessionRequestBody'
       responses:
         '200':
           description: Session successfully started
           content:
             application/json:
               schema:
-                type: object
-                properties:
-                  session_id:
-                    type: string
+                $ref: '#/components/schemas/StartSessionResponse'
   /session/{session_id}:
     get:
       summary: Retrieve a session
@@ -61,25 +55,14 @@ paths:
         content:
           application/json:
             schema:
-              type: object
-              properties:
-                event:
-                  $ref: '#/components/schemas/CreateEventRequest'
+              $ref: '#/components/schemas/CreateEventRequestBody'
       responses:
         '200':
           description: Event created
           content:
             application/json:
               schema:
-                type: object
-                properties:
-                  event_id:
-                    type: string
-                  success:
-                    type: boolean
-                example:
-                  event_id: 7f22137a-6911-4ed3-bc36-110f1dde6b66
-                  success: true
+                $ref: '#/components/schemas/CreateEventResponse'
     put:
       tags:
       - Events
@@ -90,53 +73,7 @@ paths:
         content:
           application/json:
             schema:
-              type: object
-              properties:
-                event_id:
-                  type: string
-                metadata:
-                  type: object
-                  additionalProperties: true
-                feedback:
-                  type: object
-                  additionalProperties: true
-                metrics:
-                  type: object
-                  additionalProperties: true
-                outputs:
-                  type: object
-                  additionalProperties: true
-                config:
-                  type: object
-                  additionalProperties: true
-                user_properties:
-                  type: object
-                  additionalProperties: true
-                duration:
-                  type: number
-              required:
-              - event_id
-            example:
-              event_id: 7f22137a-6911-4ed3-bc36-110f1dde6b66
-              metadata:
-                cost: 8.0e-05
-                completion_tokens: 23
-                prompt_tokens: 35
-                total_tokens: 58
-              feedback:
-                rating: 5
-              metrics:
-                num_words: 2
-              outputs:
-                role: assistant
-                content: Hello world
-              config:
-                template:
-                - role: system
-                  content: Hello, {{ name }}!
-              user_properties:
-                user_id: 691b1f94-d38c-4e92-b051-5e03fee9ff86
-              duration: 42
+              $ref: '#/components/schemas/UpdateEventRequest'
       responses:
         '200':
           description: Event updated
@@ -153,55 +90,14 @@ paths:
         content:
           application/json:
             schema:
-              type: object
-              properties:
-                project:
-                  type: string
-                  description: Name of the project associated with the event like
-                    `New Project`
-                filters:
-                  type: array
-                  items:
-                    $ref: '#/components/schemas/EventFilter'
-                dateRange:
-                  type: object
-                  properties:
-                    $gte:
-                      type: string
-                      description: ISO String for start of date time filter like `2024-04-01T22:38:19.000Z`
-                    $lte:
-                      type: string
-                      description: ISO String for end of date time filter like `2024-04-01T22:38:19.000Z`
-                projections:
-                  type: array
-                  items:
-                    type: string
-                  description: Fields to include in the response
-                limit:
-                  type: number
-                  description: Limit number of results to speed up query (default
-                    is 1000, max is 7500)
-                page:
-                  type: number
-                  description: Page number of results (default is 1)
-              required:
-              - project
-              - filters
+              $ref: '#/components/schemas/GetEventsRequest'
       responses:
         '200':
           description: Success
           content:
             application/json:
               schema:
-                type: object
-                properties:
-                  events:
-                    type: array
-                    items:
-                      $ref: '#/components/schemas/Event'
-                  totalEvents:
-                    type: number
-                    description: Total number of events in the specified filter
+                $ref: '#/components/schemas/GetEventsResponse'
   /events/model:
     post:
       tags:
@@ -214,25 +110,14 @@ paths:
         content:
           application/json:
             schema:
-              type: object
-              properties:
-                model_event:
-                  $ref: '#/components/schemas/CreateModelEvent'
+              $ref: '#/components/schemas/CreateModelEventRequestBody'
       responses:
         '200':
           description: Model event created
           content:
             application/json:
               schema:
-                type: object
-                properties:
-                  event_id:
-                    type: string
-                  success:
-                    type: boolean
-                example:
-                  event_id: 7f22137a-6911-4ed3-bc36-110f1dde6b66
-                  success: true
+                $ref: '#/components/schemas/CreateEventResponse'
   /events/batch:
     post:
       tags:
@@ -245,42 +130,14 @@ paths:
         content:
           application/json:
             schema:
-              type: object
-              properties:
-                events:
-                  type: array
-                  items:
-                    $ref: '#/components/schemas/CreateEventRequest'
-                is_single_session:
-                  type: boolean
-                  description: Default is false. If true, all events will be associated
-                    with the same session
-                session_properties:
-                  $ref: '#/components/schemas/SessionPropertiesBatch'
-              required:
-              - events
+              $ref: '#/components/schemas/CreateEventBatchRequest'
       responses:
         '200':
           description: Events created
           content:
             application/json:
               schema:
-                type: object
-                properties:
-                  event_ids:
-                    type: array
-                    items:
-                      type: string
-                  session_id:
-                    type: string
-                  success:
-                    type: boolean
-                example:
-                  event_ids:
-                  - 7f22137a-6911-4ed3-bc36-110f1dde6b66
-                  - 7f22137a-6911-4ed3-bc36-110f1dde6b67
-                  session_id: caf77ace-3417-4da4-944d-f4a0688f3c23
-                  success: true
+                $ref: '#/components/schemas/CreateEventBatchResponse'
         '500':
           description: Events partially created
           content:
@@ -320,37 +177,14 @@ paths:
         content:
           application/json:
             schema:
-              type: object
-              properties:
-                model_events:
-                  type: array
-                  items:
-                    $ref: '#/components/schemas/CreateModelEvent'
-                is_single_session:
-                  type: boolean
-                  description: Default is false. If true, all events will be associated
-                    with the same session
-                session_properties:
-                  $ref: '#/components/schemas/SessionPropertiesBatch'
+              $ref: '#/components/schemas/CreateModelEventBatchRequest'
       responses:
         '200':
           description: Model events created
           content:
             application/json:
               schema:
-                type: object
-                properties:
-                  event_ids:
-                    type: array
-                    items:
-                      type: string
-                  success:
-                    type: boolean
-                example:
-                  event_ids:
-                  - 7f22137a-6911-4ed3-bc36-110f1dde6b66
-                  - 7f22137a-6911-4ed3-bc36-110f1dde6b67
-                  success: true
+                $ref: '#/components/schemas/CreateModelEventBatchResponse'
         '500':
           description: Model events partially created
           content:
@@ -479,13 +313,7 @@ paths:
           content:
             application/json:
               schema:
-                type: object
-                properties:
-                  result:
-                    type: object
-                    properties:
-                      insertedId:
-                        type: string
+                $ref: '#/components/schemas/CreateToolResponse'
     put:
       tags:
       - Tools
@@ -547,12 +375,7 @@ paths:
           content:
             application/json:
               schema:
-                type: object
-                properties:
-                  datapoints:
-                    type: array
-                    items:
-                      $ref: '#/components/schemas/Datapoint'
+                $ref: '#/components/schemas/GetDatapointsResponse'
     post:
       summary: Create a new datapoint
       operationId: createDatapoint
@@ -570,13 +393,7 @@ paths:
           content:
             application/json:
               schema:
-                type: object
-                properties:
-                  result:
-                    type: object
-                    properties:
-                      insertedId:
-                        type: string
+                $ref: '#/components/schemas/CreateDatapointResponse'
   /datapoints/{id}:
     get:
       summary: Retrieve a specific datapoint
@@ -595,12 +412,7 @@ paths:
           content:
             application/json:
               schema:
-                type: object
-                properties:
-                  datapoint:
-                    type: array
-                    items:
-                      $ref: '#/components/schemas/Datapoint'
+                $ref: '#/components/schemas/GetDatapointResponse'
           description: Successful response
     put:
       summary: Update a specific datapoint
@@ -642,12 +454,7 @@ paths:
           content:
             application/json:
               schema:
-                type: object
-                properties:
-                  deleted:
-                    type: boolean
-              example:
-                deleted: true
+                $ref: '#/components/schemas/DeleteDatapointResponse'
           description: Datapoint successfully deleted
   /datasets:
     get:
@@ -681,12 +488,7 @@ paths:
           content:
             application/json:
               schema:
-                type: object
-                properties:
-                  testcases:
-                    type: array
-                    items:
-                      $ref: '#/components/schemas/Dataset'
+                $ref: '#/components/schemas/GetDatasetsResponse'
     post:
       tags:
       - Datasets
@@ -704,16 +506,7 @@ paths:
           content:
             application/json:
               schema:
-                type: object
-                properties:
-                  inserted:
-                    type: boolean
-                  result:
-                    type: object
-                    properties:
-                      insertedId:
-                        type: string
-                        description: UUID for the created dataset
+                $ref: '#/components/schemas/CreateDatasetResponse'
     put:
       tags:
       - Datasets
@@ -761,63 +554,14 @@ paths:
         content:
           application/json:
             schema:
-              type: object
-              properties:
-                project:
-                  type: string
-                  description: Name of the project associated with this dataset like
-                    `New Project`
-                data:
-                  type: array
-                  items:
-                    type: object
-                    additionalProperties: true
-                  description: List of JSON objects to be added as datapoints
-                mapping:
-                  description: Mapping of keys in the data object to be used as inputs,
-                    ground truth, and history, everything else goes into metadata
-                  type: object
-                  properties:
-                    inputs:
-                      type: array
-                      items:
-                        type: string
-                      description: List of keys in the data object to be used as inputs
-                    ground_truth:
-                      type: array
-                      items:
-                        type: string
-                      description: List of keys in the data object to be used as ground
-                        truth
-                    history:
-                      type: array
-                      items:
-                        type: string
-                      description: List of keys in the data object to be used as chat
-                        history, can be empty list if not needed
-                  required:
-                  - inputs
-                  - ground_truth
-                  - history
-              required:
-              - project
-              - data
-              - mapping
+              $ref: '#/components/schemas/AddDatapointsRequest'
       responses:
         '200':
           description: Successful addition
           content:
             application/json:
               schema:
-                type: object
-                properties:
-                  inserted:
-                    type: boolean
-                  datapoint_ids:
-                    type: array
-                    items:
-                      type: string
-                    description: List of unique datapoint ids added to the dataset
+                $ref: '#/components/schemas/AddDatapointsResponse'
   /projects:
     get:
       tags:
@@ -3222,5 +2966,263 @@ components:
           user_name: Dhruv Singh
           user_picture: https://lh3.googleusercontent.com/a/ACg8ocLyQilNtK9RIv4M0p-0FBSbxljBP0p5JabnStku1AQKtFSK=s96-c
           user_email: dhruv@honeyhive.ai
+    StartSessionRequestBody:
+      type: object
+      properties:
+        session:
+          $ref: '#/components/schemas/SessionStartRequest'
+    StartSessionResponse:
+      type: object
+      properties:
+        session_id:
+          type: string
+    CreateEventRequestBody:
+      type: object
+      properties:
+        event:
+          $ref: '#/components/schemas/CreateEventRequest'
+    CreateEventResponse:
+      type: object
+      properties:
+        event_id:
+          type: string
+        success:
+          type: boolean
+    UpdateEventRequest:
+      type: object
+      properties:
+        event_id:
+          type: string
+          description: Unique identifier for the event
+        metadata:
+          type: object
+          additionalProperties: true
+          description: Metadata JSON blob
+        feedback:
+          type: object
+          additionalProperties: true
+          description: Feedback JSON blob
+        metrics:
+          type: object
+          additionalProperties: true
+          description: Metrics JSON blob
+        outputs:
+          type: object
+          additionalProperties: true
+          description: Final output JSON
+        config:
+          type: object
+          additionalProperties: true
+          description: Associated configuration JSON
+        user_properties:
+          type: object
+          additionalProperties: true
+          description: User properties JSON
+        duration:
+          type: number
+          description: Duration of the event in milliseconds
+        error:
+          type: string
+          description: Error description if event failed
+      required:
+      - event_id
+    GetEventsRequest:
+      type: object
+      properties:
+        project:
+          type: string
+          description: Name of the project associated with the event
+        filters:
+          type: array
+          items:
+            $ref: '#/components/schemas/EventFilter'
+        dateRange:
+          type: object
+          properties:
+            $gte:
+              type: string
+              description: ISO String for start of date time filter
+            $lte:
+              type: string
+              description: ISO String for end of date time filter
+        projections:
+          type: array
+          items:
+            type: string
+          description: Fields to include in the response
+        limit:
+          type: number
+          description: Limit number of results to speed up query (default is 1000, max is 7500)
+        page:
+          type: number
+          description: Page number of results (default is 1)
+      required:
+      - project
+      - filters
+    GetEventsResponse:
+      type: object
+      properties:
+        events:
+          type: array
+          items:
+            $ref: '#/components/schemas/Event'
+        totalEvents:
+          type: number
+          description: Total number of events in the specified filter
+    CreateModelEventRequestBody:
+      type: object
+      properties:
+        model_event:
+          $ref: '#/components/schemas/CreateModelEvent'
+    CreateEventBatchRequest:
+      type: object
+      properties:
+        events:
+          type: array
+          items:
+            $ref: '#/components/schemas/CreateEventRequest'
+        is_single_session:
+          type: boolean
+          description: Default is false. If true, all events will be associated with the same session
+        session_properties:
+          $ref: '#/components/schemas/SessionPropertiesBatch'
+      required:
+      - events
+    CreateEventBatchResponse:
+      type: object
+      properties:
+        event_ids:
+          type: array
+          items:
+            type: string
+        session_id:
+          type: string
+        success:
+          type: boolean
+    CreateModelEventBatchRequest:
+      type: object
+      properties:
+        model_events:
+          type: array
+          items:
+            $ref: '#/components/schemas/CreateModelEvent'
+        is_single_session:
+          type: boolean
+          description: Default is false. If true, all events will be associated with the same session
+        session_properties:
+          $ref: '#/components/schemas/SessionPropertiesBatch'
+      required:
+      - model_events
+    CreateModelEventBatchResponse:
+      type: object
+      properties:
+        event_ids:
+          type: array
+          items:
+            type: string
+        success:
+          type: boolean
+    CreateToolResponse:
+      type: object
+      properties:
+        result:
+          type: object
+          properties:
+            insertedId:
+              type: string
+    GetDatapointsResponse:
+      type: object
+      properties:
+        datapoints:
+          type: array
+          items:
+            $ref: '#/components/schemas/Datapoint'
+    CreateDatapointResponse:
+      type: object
+      properties:
+        result:
+          type: object
+          properties:
+            insertedId:
+              type: string
+    GetDatapointResponse:
+      type: object
+      properties:
+        datapoint:
+          type: array
+          items:
+            $ref: '#/components/schemas/Datapoint'
+    DeleteDatapointResponse:
+      type: object
+      properties:
+        deleted:
+          type: boolean
+    GetDatasetsResponse:
+      type: object
+      properties:
+        testcases:
+          type: array
+          items:
+            $ref: '#/components/schemas/Dataset'
+    CreateDatasetResponse:
+      type: object
+      properties:
+        inserted:
+          type: boolean
+        result:
+          type: object
+          properties:
+            insertedId:
+              type: string
+              description: UUID for the created dataset
+    AddDatapointsRequest:
+      type: object
+      properties:
+        project:
+          type: string
+          description: Name of the project associated with this dataset
+        data:
+          type: array
+          items:
+            type: object
+            additionalProperties: true
+          description: List of JSON objects to be added as datapoints
+        mapping:
+          description: Mapping of keys in the data object to be used as inputs, ground truth, and history
+          type: object
+          properties:
+            inputs:
+              type: array
+              items:
+                type: string
+              description: List of keys in the data object to be used as inputs
+            ground_truth:
+              type: array
+              items:
+                type: string
+              description: List of keys in the data object to be used as ground truth
+            history:
+              type: array
+              items:
+                type: string
+              description: List of keys in the data object to be used as chat history
+          required:
+          - inputs
+          - ground_truth
+          - history
+      required:
+      - project
+      - data
+      - mapping
+    AddDatapointsResponse:
+      type: object
+      properties:
+        inserted:
+          type: boolean
+        datapoint_ids:
+          type: array
+          items:
+            type: string
+          description: List of unique datapoint ids added to the dataset
 security:
 - BearerAuth: []

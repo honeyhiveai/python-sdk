@@ -6,9 +6,7 @@ from typing import Any
 
 import pytest
 
-from honeyhive.models import (
-    CreateDatasetRequest,
-)
+from honeyhive.models import CreateDatasetRequest
 
 
 class TestDatasetsAPI:

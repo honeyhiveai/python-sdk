@@ -12,7 +12,7 @@ def getDatapoints(
     project: str,
     datapoint_ids: Optional[List[str]] = None,
     dataset_name: Optional[str] = None,
-) -> Dict[str, Any]:
+) -> GetDatapointsResponse:
     api_config = api_config_override if api_config_override else APIConfig()
 
     base_path = api_config.base_path
@@ -48,12 +48,14 @@ def getDatapoints(
     else:
         body = None if 200 == 204 else response.json()
 
-    return body
+    return (
+        GetDatapointsResponse(**body) if body is not None else GetDatapointsResponse()
+    )
 
 
 def createDatapoint(
     api_config_override: Optional[APIConfig] = None, *, data: CreateDatapointRequest
-) -> Dict[str, Any]:
+) -> CreateDatapointResponse:
     api_config = api_config_override if api_config_override else APIConfig()
 
     base_path = api_config.base_path
@@ -86,12 +88,16 @@ def createDatapoint(
     else:
         body = None if 200 == 204 else response.json()
 
-    return body
+    return (
+        CreateDatapointResponse(**body)
+        if body is not None
+        else CreateDatapointResponse()
+    )
 
 
 def getDatapoint(
     api_config_override: Optional[APIConfig] = None, *, id: str
-) -> Dict[str, Any]:
+) -> GetDatapointResponse:
     api_config = api_config_override if api_config_override else APIConfig()
 
     base_path = api_config.base_path
@@ -123,7 +129,7 @@ def getDatapoint(
     else:
         body = None if 200 == 204 else response.json()
 
-    return body
+    return GetDatapointResponse(**body) if body is not None else GetDatapointResponse()
 
 
 def updateDatapoint(
@@ -169,7 +175,7 @@ def updateDatapoint(
 
 def deleteDatapoint(
     api_config_override: Optional[APIConfig] = None, *, id: str
-) -> Dict[str, Any]:
+) -> DeleteDatapointResponse:
     api_config = api_config_override if api_config_override else APIConfig()
 
     base_path = api_config.base_path
@@ -201,4 +207,8 @@ def deleteDatapoint(
     else:
         body = None if 200 == 204 else response.json()
 
-    return body
+    return (
+        DeleteDatapointResponse(**body)
+        if body is not None
+        else DeleteDatapointResponse()
+    )

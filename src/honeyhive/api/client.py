@@ -46,6 +46,7 @@ from honeyhive._generated.models import (
     UpdateToolRequest,
 )
 
+# Import async services
 # Import sync services (9 services — no Sessions_service plural)
 from honeyhive._generated.services import Configurations_service as configs_svc
 from honeyhive._generated.services import Datapoints_service as datapoints_svc
@@ -56,8 +57,6 @@ from honeyhive._generated.services import Metrics_service as metrics_svc
 from honeyhive._generated.services import Projects_service as projects_svc
 from honeyhive._generated.services import Session_service as session_svc
 from honeyhive._generated.services import Tools_service as tools_svc
-
-# Import async services
 from honeyhive._generated.services import (
     async_Configurations_service as configs_svc_async,
 )
@@ -81,7 +80,9 @@ class ConfigurationsAPI(BaseAPI):
     """Configurations API."""
 
     # Sync methods
-    def list(self, project: str, env: Optional[str] = None, name: Optional[str] = None) -> List[Configuration]:
+    def list(
+        self, project: str, env: Optional[str] = None, name: Optional[str] = None
+    ) -> List[Configuration]:
         """List configurations.
 
         Args:
@@ -89,7 +90,9 @@ class ConfigurationsAPI(BaseAPI):
             env: Optional environment filter.
             name: Optional name filter.
         """
-        return configs_svc.getConfigurations(self._api_config, project=project, env=env, name=name)
+        return configs_svc.getConfigurations(
+            self._api_config, project=project, env=env, name=name
+        )
 
     def create(self, request: PostConfigurationRequest) -> None:
         """Create a configuration."""
@@ -108,15 +111,21 @@ class ConfigurationsAPI(BaseAPI):
         self, project: str, env: Optional[str] = None, name: Optional[str] = None
     ) -> List[Configuration]:
         """List configurations asynchronously."""
-        return await configs_svc_async.getConfigurations(self._api_config, project=project, env=env, name=name)
+        return await configs_svc_async.getConfigurations(
+            self._api_config, project=project, env=env, name=name
+        )
 
     async def create_async(self, request: PostConfigurationRequest) -> None:
         """Create a configuration asynchronously."""
-        return await configs_svc_async.createConfiguration(self._api_config, data=request)
+        return await configs_svc_async.createConfiguration(
+            self._api_config, data=request
+        )
 
     async def update_async(self, id: str, request: PutConfigurationRequest) -> None:
         """Update a configuration asynchronously."""
-        return await configs_svc_async.updateConfiguration(self._api_config, id=id, data=request)
+        return await configs_svc_async.updateConfiguration(
+            self._api_config, id=id, data=request
+        )
 
     async def delete_async(self, id: str) -> None:
         """Delete a configuration asynchronously."""
@@ -158,7 +167,10 @@ class DatapointsAPI(BaseAPI):
             dataset_name: Optional dataset name to filter by.
         """
         return datapoints_svc.getDatapoints(
-            self._api_config, project=project, datapoint_ids=datapoint_ids, dataset_name=dataset_name
+            self._api_config,
+            project=project,
+            datapoint_ids=datapoint_ids,
+            dataset_name=dataset_name,
         )
 
     def get(self, id: str) -> Dict[str, Any]:
@@ -186,7 +198,10 @@ class DatapointsAPI(BaseAPI):
     ) -> Dict[str, Any]:
         """List datapoints asynchronously."""
         return await datapoints_svc_async.getDatapoints(
-            self._api_config, project=project, datapoint_ids=datapoint_ids, dataset_name=dataset_name
+            self._api_config,
+            project=project,
+            datapoint_ids=datapoint_ids,
+            dataset_name=dataset_name,
         )
 
     async def get_async(self, id: str) -> Dict[str, Any]:
@@ -195,11 +210,15 @@ class DatapointsAPI(BaseAPI):
 
     async def create_async(self, request: CreateDatapointRequest) -> Dict[str, Any]:
         """Create a datapoint asynchronously."""
-        return await datapoints_svc_async.createDatapoint(self._api_config, data=request)
+        return await datapoints_svc_async.createDatapoint(
+            self._api_config, data=request
+        )
 
     async def update_async(self, id: str, request: UpdateDatapointRequest) -> None:
         """Update a datapoint asynchronously."""
-        return await datapoints_svc_async.updateDatapoint(self._api_config, id=id, data=request)
+        return await datapoints_svc_async.updateDatapoint(
+            self._api_config, id=id, data=request
+        )
 
     async def delete_async(self, id: str) -> Dict[str, Any]:
         """Delete a datapoint asynchronously."""
@@ -307,7 +326,9 @@ class DatasetsAPI(BaseAPI):
 
     def add_datapoints(self, dataset_id: str, data: Dict[str, Any]) -> Dict[str, Any]:
         """Add datapoints to a dataset."""
-        return datasets_svc.addDatapoints(self._api_config, dataset_id=dataset_id, data=data)
+        return datasets_svc.addDatapoints(
+            self._api_config, dataset_id=dataset_id, data=data
+        )
 
 
 class EventsAPI(BaseAPI):
@@ -558,7 +579,9 @@ class MetricsAPI(BaseAPI):
     # Async methods
     async def list_async(self, project_name: str) -> List[Metric]:
         """List metrics asynchronously."""
-        return await metrics_svc_async.getMetrics(self._api_config, project_name=project_name)
+        return await metrics_svc_async.getMetrics(
+            self._api_config, project_name=project_name
+        )
 
     async def create_async(self, request: Metric) -> None:
         """Create a metric asynchronously."""
@@ -668,7 +691,9 @@ class SessionsAPI(BaseAPI):
     # Async methods
     async def get_async(self, session_id: str) -> Event:
         """Get a session by ID asynchronously."""
-        return await session_svc_async.getSession(self._api_config, session_id=session_id)
+        return await session_svc_async.getSession(
+            self._api_config, session_id=session_id
+        )
 
     async def start_async(self, data: Dict[str, Any]) -> Dict[str, Any]:
         """Start a new session asynchronously."""

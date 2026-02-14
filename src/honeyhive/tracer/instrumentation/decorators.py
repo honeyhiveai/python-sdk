@@ -361,8 +361,11 @@ def _execute_with_tracing_sync(
                     # Use getattr for fields that may not be declared
                     # on TracingParams (they can be passed as extra fields)
                     for _field in (
-                        "source", "project", "session_id",
-                        "user_id", "session_name",
+                        "source",
+                        "project",
+                        "session_id",
+                        "user_id",
+                        "session_name",
                     ):
                         _val = getattr(params, _field, None)
                         if _val is not None:
@@ -516,8 +519,11 @@ async def _execute_with_tracing(
                     # Use getattr for fields that may not be declared
                     # on TracingParams (they can be passed as extra fields)
                     for _field in (
-                        "source", "project", "session_id",
-                        "user_id", "session_name",
+                        "source",
+                        "project",
+                        "session_id",
+                        "user_id",
+                        "session_name",
                     ):
                         _val = getattr(params, _field, None)
                         if _val is not None:
