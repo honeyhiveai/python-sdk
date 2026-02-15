@@ -10,6 +10,8 @@ class Dataset(BaseModel):
 
     model_config = {"populate_by_name": True, "validate_assignment": True}
 
+    id: Optional[str] = Field(validation_alias="id", default=None)
+
     project: Optional[str] = Field(validation_alias="project", default=None)
 
     name: Optional[str] = Field(validation_alias="name", default=None)
