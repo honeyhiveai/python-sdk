@@ -284,6 +284,7 @@ class DatasetsAPI(BaseAPI):
         project: str,
         type: Optional[str] = None,
         dataset_id: Optional[str] = None,
+        name: Optional[str] = None,
     ) -> GetDatasetsResponse:
         """List datasets.
 
@@ -291,9 +292,10 @@ class DatasetsAPI(BaseAPI):
             project: Project name (required by NWD API).
             type: Optional dataset type filter.
             dataset_id: Optional dataset ID to fetch.
+            name: Optional dataset name filter.
         """
         return datasets_svc.getDatasets(
-            self._api_config, project=project, type=type, dataset_id=dataset_id
+            self._api_config, project=project, type=type, dataset_id=dataset_id, name=name
         )
 
     def create(self, request: CreateDatasetRequest) -> CreateDatasetResponse:
@@ -326,10 +328,11 @@ class DatasetsAPI(BaseAPI):
         project: str,
         type: Optional[str] = None,
         dataset_id: Optional[str] = None,
+        name: Optional[str] = None,
     ) -> GetDatasetsResponse:
         """List datasets asynchronously."""
         return await datasets_svc_async.getDatasets(
-            self._api_config, project=project, type=type, dataset_id=dataset_id
+            self._api_config, project=project, type=type, dataset_id=dataset_id, name=name
         )
 
     async def create_async(
