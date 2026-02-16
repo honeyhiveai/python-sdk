@@ -697,10 +697,10 @@ Best Practices
       def my_function():
           tracer.enrich_span(...)
 
-      # ❌ AVOID - Implicit tracer discovery (deprecated in v2.0)
+      # ❌ AVOID - Implicit tracer discovery (harder to debug)
       @trace(event_type="tool")
       def my_function():
-          enrich_span(...)  # Global function - will be deprecated
+          enrich_span(...)  # Relies on baggage-based discovery
 
 3. **Create Sessions for Isolation**
 
@@ -728,14 +728,19 @@ Best Practices
 
    .. code-block:: python
 
-      from opentelemetry import propagate
+      from opentelemetry import propagate, context
 
-      # Service A: Inject context
+      # Service A: Inject context into outgoing request
       propagate.inject(outgoing_request.headers)
       
-      # Service B: Extract context
+      # Service B: Extract and attach context from incoming request
       ctx = propagate.extract(incoming_request.headers)
-      tracer.create_session(..., link_carrier=ctx)
+      token = context.attach(ctx)
+      try:
+          tracer.create_session(session_name="downstream-request")
+          # All spans created here are linked to the upstream trace
+      finally:
+          context.detach(token)
 
 Troubleshooting
 ---------------
