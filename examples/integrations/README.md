@@ -33,7 +33,10 @@ Comprehensive examples for popular AI agent frameworks:
 - **[`semantic_kernel_integration.py`](semantic_kernel_integration.py)** - Microsoft Semantic Kernel with OpenAI instrumentor (✅ agents, plugins, function calling, streaming)
 - **[`strands_integration.py`](strands_integration.py)** - AWS Strands with TracerProvider pattern (✅ Bedrock models, streaming, tools)
 - **[`bedrock_integration.py`](bedrock_integration.py)** - AWS Bedrock direct with Bedrock instrumentor (✅ Nova, Titan, Claude, Converse API, streaming)
+- **[`crewai_integration.py`](crewai_integration.py)** - CrewAI crews with OpenInference instrumentors (✅ sequential crew, hierarchical crew with tools)
+- **[`langchain_integration.py`](langchain_integration.py)** - LangChain agents with LangChain instrumentor (✅ single-agent+tools, multi-agent routing, session enrichment)
 - **[`langgraph_integration.py`](langgraph_integration.py)** - LangGraph workflows with LangChain instrumentor (✅ state graphs, conditional routing, agent graphs)
+- **[`strands_agents_integration.py`](strands_agents_integration.py)** - Strands Agents SDK with HoneyHive tracing (✅ agent with tools, multi-agent orchestration)
 - **[`pydantic_ai_integration.py`](pydantic_ai_integration.py)** - Pydantic AI agents with Anthropic instrumentor (✅ structured outputs, tools, dependencies, streaming)
 - **[`openinference_google_adk_example.py`](openinference_google_adk_example.py)** - Google ADK with workflow agents (✅ sequential, parallel, loop workflows)
 
@@ -157,22 +160,63 @@ python integrations/bedrock_integration.py
 - ✅ Native Bedrock Runtime client integration
 - ✅ Multiple authentication methods (keys, session tokens, IAM roles)
 
+#### CrewAI
+```bash
+pip install honeyhive crewai openinference-instrumentation-crewai openinference-instrumentation-litellm
+export OPENAI_API_KEY=sk-...
+export HH_API_KEY=your-honeyhive-key
+export HH_PROJECT=your-project
+python integrations/crewai_integration.py
+```
+
+**Features demonstrated:**
+- ✅ Sequential crew (researcher + writer)
+- ✅ Hierarchical crew with manager and tool-equipped specialists
+- ✅ CrewAI + LiteLLM instrumentors for full trace capture
+
 #### LangGraph
 ```bash
 pip install langgraph langchain-openai openinference-instrumentation-langchain
 export OPENAI_API_KEY=sk-...
 export HH_API_KEY=your-honeyhive-key
+export HH_PROJECT=your-project
 python integrations/langgraph_integration.py
 ```
 
 **Features demonstrated:**
-- ✅ Basic state graph workflows
-- ✅ Sequential node execution
-- ✅ Conditional routing based on state
-- ✅ Multi-step agent graphs
-- ✅ Node-level tracing with @trace decorator
-- ✅ Automatic LangChain call tracing
+- ✅ Agent with tool-calling loop (bind_tools, tool_node, conditional edges)
+- ✅ Routing workflow with structured output
+- ✅ Automatic LangChain call tracing via OpenInference
 - ✅ State management across nodes
+
+#### LangChain
+```bash
+pip install langchain langchain-openai openinference-instrumentation-langchain
+export OPENAI_API_KEY=sk-...
+export HH_API_KEY=your-honeyhive-key
+export HH_PROJECT=your-project
+python integrations/langchain_integration.py
+```
+
+**Features demonstrated:**
+- ✅ Single-agent pattern with tools
+- ✅ Multi-agent routing across specialist agents
+- ✅ HoneyHive session and span enrichment
+- ✅ Automatic LangChain span capture via OpenInference
+
+#### Strands Agents
+```bash
+pip install honeyhive strands-agents
+export ANTHROPIC_API_KEY=your-anthropic-key
+export HH_API_KEY=your-honeyhive-key
+export HH_PROJECT=your-project
+python integrations/strands_agents_integration.py
+```
+
+**Features demonstrated:**
+- ✅ Agent with tools
+- ✅ Multi-agent orchestration (agents-as-tools)
+- ✅ Anthropic model provider
 
 #### Pydantic AI
 ```bash

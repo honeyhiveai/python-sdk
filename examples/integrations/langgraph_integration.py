@@ -1,368 +1,192 @@
-#!/usr/bin/env python3
 """
-LangGraph Integration Example with HoneyHive
+LangGraph + HoneyHive integration example.
 
-This example demonstrates how to integrate LangGraph with HoneyHive using the
-OpenInference LangChain instrumentor for comprehensive graph observability and tracing.
+Patterns:
+  1) Agent with tool calling loop (canonical LangGraph pattern)
+  2) Routing workflow with structured output + conditional edges
 
 Requirements:
     pip install honeyhive langgraph langchain-openai openinference-instrumentation-langchain
 
-Environment Variables:
-    HH_API_KEY: Your HoneyHive API key
-    HH_PROJECT: Your HoneyHive project name
-    OPENAI_API_KEY: Your OpenAI API key
+Environment variables:
+    HH_API_KEY, HH_PROJECT, OPENAI_API_KEY
 """
 
-import asyncio
+import operator
 import os
-import sys
-from pathlib import Path
-from typing import Dict, TypedDict
+from typing import Annotated, Literal, TypedDict
+
+from honeyhive import HoneyHiveTracer
+from langchain.messages import AnyMessage, HumanMessage, SystemMessage, ToolMessage
+from langchain.tools import tool
+from langchain_openai import ChatOpenAI
+from langgraph.graph import END, START, StateGraph
+from openinference.instrumentation.langchain import LangChainInstrumentor
+from pydantic import BaseModel, Field
+
+# --- HoneyHive setup (add these 3 lines to any LangGraph app) ---
+
+tracer = HoneyHiveTracer.init(
+    api_key=os.environ["HH_API_KEY"],
+    project=os.environ["HH_PROJECT"],
+    session_name="langgraph-example",
+)
+LangChainInstrumentor().instrument(tracer_provider=tracer.provider)
+
+# --- Tools ---
+
+model = ChatOpenAI(model="gpt-4o-mini")
 
 
-async def main():
-    """Main example demonstrating LangGraph integration with HoneyHive."""
+@tool
+def calculator(a: float, b: float, operation: str) -> str:
+    """Perform arithmetic on two numbers.
 
-    # Check required environment variables
-    hh_api_key = os.getenv("HH_API_KEY")
-    hh_project = os.getenv("HH_PROJECT")
-    openai_api_key = os.getenv("OPENAI_API_KEY")
-
-    if not all([hh_api_key, hh_project, openai_api_key]):
-        print("❌ Missing required environment variables:")
-        print("   - HH_API_KEY: Your HoneyHive API key")
-        print("   - HH_PROJECT: Your HoneyHive project name")
-        print("   - OPENAI_API_KEY: Your OpenAI API key")
-        print("\nSet these environment variables and try again.")
-        return False
-
-    try:
-        # Import required packages
-        from langchain_openai import ChatOpenAI
-        from langgraph.graph import END, START, StateGraph
-        from openinference.instrumentation.langchain import LangChainInstrumentor
-
-        from honeyhive import HoneyHiveTracer
-        from honeyhive.tracer.instrumentation.decorators import trace
-
-        print("🚀 LangGraph + HoneyHive Integration Example")
-        print("=" * 50)
-
-        # 1. Initialize the LangChain instrumentor
-        print("🔧 Setting up LangChain instrumentor...")
-        langchain_instrumentor = LangChainInstrumentor()
-        print("✓ LangChain instrumentor initialized")
-
-        # 2. Initialize HoneyHive tracer
-        print("🔧 Setting up HoneyHive tracer...")
-        tracer = HoneyHiveTracer.init(
-            api_key=hh_api_key,
-            project=hh_project,
-            session_name=Path(__file__).stem,  # Use filename as session name
-            source="langgraph_example",
-        )
-        print("✓ HoneyHive tracer initialized")
-
-        # Instrument LangChain with tracer provider
-        langchain_instrumentor.instrument(tracer_provider=tracer.provider)
-        print("✓ HoneyHive tracer initialized with LangChain instrumentor")
-
-        # 3. Initialize LangChain model
-        print("✓ OpenAI API key configured from environment")
-        model = ChatOpenAI(model="gpt-4o-mini")
-
-        # 4. Test basic graph workflow
-        print("\n📊 Testing basic graph workflow...")
-        result1 = await test_basic_graph(tracer, model)
-        print(f"✓ Basic graph completed: {result1[:100]}...")
-
-        # 5. Test conditional graph workflow
-        print("\n🔀 Testing conditional graph workflow...")
-        result2 = await test_conditional_graph(tracer, model)
-        print(f"✓ Conditional graph completed: {result2[:100]}...")
-
-        # 6. Test multi-step agent graph
-        print("\n🤖 Testing multi-step agent graph...")
-        result3 = await test_agent_graph(tracer, model)
-        print(f"✓ Agent graph completed: {result3[:100]}...")
-
-        # 7. Clean up instrumentor
-        print("\n🧹 Cleaning up...")
-        langchain_instrumentor.uninstrument()
-        print("✓ Instrumentor cleaned up")
-
-        print("\n🎉 LangGraph integration example completed successfully!")
-        print(f"📊 Check your HoneyHive project '{hh_project}' for trace data")
-
-        return True
-
-    except ImportError as e:
-        print(f"❌ Import error: {e}")
-        print("\n💡 Install required packages:")
-        print(
-            "   pip install honeyhive langgraph langchain-openai openinference-instrumentation-langchain"
-        )
-        return False
-
-    except Exception as e:
-        print(f"❌ Example failed: {e}")
-        import traceback
-
-        traceback.print_exc()
-        return False
+    Args:
+        a: First number
+        b: Second number
+        operation: One of 'add', 'subtract', 'multiply', 'divide'
+    """
+    ops = {"add": lambda x, y: x + y, "subtract": lambda x, y: x - y,
+           "multiply": lambda x, y: x * y, "divide": lambda x, y: x / y if y else "err"}
+    fn = ops.get(operation)
+    return str(fn(a, b)) if fn else f"Unknown operation: {operation}"
 
 
-async def test_basic_graph(tracer: "HoneyHiveTracer", model: "ChatOpenAI") -> str:
-    """Test basic LangGraph workflow with sequential nodes."""
+@tool
+def knowledge_base(topic: str) -> str:
+    """Look up information on a topic.
 
-    from langchain_openai import ChatOpenAI
-    from langgraph.graph import END, START, StateGraph
+    Args:
+        topic: The topic to look up
+    """
+    topics = {
+        "renewable energy": "Solar and wind generate 30% of global electricity. Costs dropped 90% since 2010.",
+        "machine learning": "ML models learn patterns from data. Key types: supervised, unsupervised, reinforcement.",
+    }
+    for k, v in topics.items():
+        if k in topic.lower():
+            return v
+    return f"No match for '{topic}'."
 
-    from honeyhive.tracer.instrumentation.decorators import trace
 
-    # Define state schema
-    class GraphState(TypedDict):
-        message: str
-        response: str
+# --- Pattern 1: Agent with tool calling loop ---
+# The LLM decides which tools to call via bind_tools.
+# A loop runs until no more tool calls remain.
 
-    # Define node functions with @trace decorator
-    @trace(event_type="tool", event_name="say_hello_node", tracer=tracer)
-    def say_hello(state: GraphState) -> GraphState:
-        """First node: generates a greeting."""
-        response = model.invoke("Say hello in a friendly way")
-        return {"message": "hello", "response": response.content}
+tools = [calculator, knowledge_base]
+tools_by_name = {t.name: t for t in tools}
+model_with_tools = model.bind_tools(tools)
 
-    @trace(event_type="tool", event_name="say_goodbye_node", tracer=tracer)
-    def say_goodbye(state: GraphState) -> GraphState:
-        """Second node: generates a farewell."""
-        print(f"Previous response: {state.get('response', 'N/A')}")
-        response = model.invoke("Say goodbye in a friendly way")
-        return {"message": "goodbye", "response": response.content}
 
-    # Create the state graph
-    workflow = (
-        StateGraph(GraphState)
-        .add_node("sayHello", say_hello)
-        .add_node("sayGoodbye", say_goodbye)
-        .add_edge(START, "sayHello")
-        .add_edge("sayHello", "sayGoodbye")
-        .add_edge("sayGoodbye", END)
+class AgentState(TypedDict):
+    messages: Annotated[list[AnyMessage], operator.add]
+
+
+def llm_call(state: AgentState):
+    """LLM decides whether to call a tool or respond."""
+    return {"messages": [model_with_tools.invoke(
+        [SystemMessage(content="You are a helpful assistant. Use tools when needed.")]
+        + state["messages"]
+    )]}
+
+
+def tool_node(state: AgentState):
+    """Execute tool calls from the LLM response."""
+    results = []
+    for tc in state["messages"][-1].tool_calls:
+        result = tools_by_name[tc["name"]].invoke(tc["args"])
+        results.append(ToolMessage(content=str(result), tool_call_id=tc["id"]))
+    return {"messages": results}
+
+
+def should_continue(state: AgentState) -> Literal["tool_node", "__end__"]:
+    if state["messages"][-1].tool_calls:
+        return "tool_node"
+    return END
+
+
+agent = (
+    StateGraph(AgentState)
+    .add_node("llm_call", llm_call)
+    .add_node("tool_node", tool_node)
+    .add_edge(START, "llm_call")
+    .add_conditional_edges("llm_call", should_continue, ["tool_node", END])
+    .add_edge("tool_node", "llm_call")
+    .compile()
+)
+
+result = agent.invoke({"messages": [HumanMessage(content="What is 256 divided by 8?")]})
+print(result["messages"][-1].content)
+
+result = agent.invoke({"messages": [HumanMessage(content="Look up renewable energy")]})
+print(result["messages"][-1].content)
+
+
+# --- Pattern 2: Routing workflow with structured output ---
+# Classify the question, then route to a specialized handler node.
+
+
+class Route(BaseModel):
+    category: Literal["math", "knowledge", "general"] = Field(
+        description="The category of the question"
     )
 
-    graph = workflow.compile()
 
-    # Execute the graph - all operations will be logged to HoneyHive
-    result = await graph.ainvoke({"message": "", "response": ""})
+class RouterState(TypedDict):
+    question: str
+    category: str
+    answer: str
 
-    return result.get("response", "No response")
+
+router_llm = model.with_structured_output(Route)
 
 
-async def test_conditional_graph(tracer: "HoneyHiveTracer", model: "ChatOpenAI") -> str:
-    """Test LangGraph with conditional routing based on state."""
+def classify(state: RouterState):
+    result = router_llm.invoke([
+        SystemMessage(content="Classify as 'math', 'knowledge', or 'general'."),
+        HumanMessage(content=state["question"]),
+    ])
+    return {"category": result.category}
 
-    from langchain_openai import ChatOpenAI
-    from langgraph.graph import END, START, StateGraph
 
-    from honeyhive.tracer.instrumentation.decorators import trace
+def handle_math(state: RouterState):
+    response = model.invoke(f"Solve this math problem: {state['question']}")
+    return {"answer": response.content}
 
-    # Define state schema
-    class ConditionalState(TypedDict):
-        question: str
-        category: str
-        response: str
 
-    # Node 1: Classify the question
-    @trace(event_type="tool", event_name="classify_question_node", tracer=tracer)
-    def classify_question(state: ConditionalState) -> ConditionalState:
-        """Classify the type of question."""
-        question = state["question"]
-        response = model.invoke(
-            f"Classify this question as either 'technical' or 'general': {question}\n"
-            "Respond with only one word: technical or general"
-        )
-        category = response.content.strip().lower()
-        return {"question": question, "category": category, "response": ""}
+def handle_knowledge(state: RouterState):
+    # Use tool directly for lookup, then summarize
+    result = knowledge_base.invoke(state["question"])
+    response = model.invoke(f"Question: {state['question']}\nFacts: {result}\nBrief answer.")
+    return {"answer": response.content}
 
-    # Node 2: Handle technical questions
-    @trace(event_type="tool", event_name="handle_technical_node", tracer=tracer)
-    def handle_technical(state: ConditionalState) -> ConditionalState:
-        """Handle technical questions with detailed response."""
-        question = state["question"]
-        response = model.invoke(f"Provide a technical, detailed answer to: {question}")
-        return {
-            "question": question,
-            "category": state["category"],
-            "response": response.content,
-        }
 
-    # Node 3: Handle general questions
-    @trace(event_type="tool", event_name="handle_general_node", tracer=tracer)
-    def handle_general(state: ConditionalState) -> ConditionalState:
-        """Handle general questions with simple response."""
-        question = state["question"]
-        response = model.invoke(f"Provide a brief, friendly answer to: {question}")
-        return {
-            "question": question,
-            "category": state["category"],
-            "response": response.content,
-        }
+def handle_general(state: RouterState):
+    response = model.invoke(f"Answer concisely: {state['question']}")
+    return {"answer": response.content}
 
-    # Routing function
-    def route_question(state: ConditionalState) -> str:
-        """Route to appropriate handler based on category."""
-        category = state["category"]
-        if "technical" in category:
-            return "handleTechnical"
-        else:
-            return "handleGeneral"
 
-    # Create the conditional graph
-    workflow = (
-        StateGraph(ConditionalState)
-        .add_node("classify", classify_question)
-        .add_node("handleTechnical", handle_technical)
-        .add_node("handleGeneral", handle_general)
-        .add_edge(START, "classify")
-        .add_conditional_edges("classify", route_question)
-        .add_edge("handleTechnical", END)
-        .add_edge("handleGeneral", END)
+router = (
+    StateGraph(RouterState)
+    .add_node("classify", classify)
+    .add_node("math", handle_math)
+    .add_node("knowledge", handle_knowledge)
+    .add_node("general", handle_general)
+    .add_edge(START, "classify")
+    .add_conditional_edges(
+        "classify",
+        lambda state: state["category"],
+        {"math": "math", "knowledge": "knowledge", "general": "general"},
     )
+    .add_edge("math", END)
+    .add_edge("knowledge", END)
+    .add_edge("general", END)
+    .compile()
+)
 
-    graph = workflow.compile()
+result = router.invoke({"question": "What is 42 times 15?", "category": "", "answer": ""})
+print(f"Route: {result['category']} | {result['answer']}")
 
-    # Test with a technical question
-    result = await graph.ainvoke(
-        {"question": "How does machine learning work?", "category": "", "response": ""}
-    )
-
-    return result.get("response", "No response")
-
-
-async def test_agent_graph(tracer: "HoneyHiveTracer", model: "ChatOpenAI") -> str:
-    """Test multi-step agent graph with tools and decision making."""
-
-    from langchain_openai import ChatOpenAI
-    from langgraph.graph import END, START, StateGraph
-
-    from honeyhive.tracer.instrumentation.decorators import trace
-
-    # Define state schema
-    class AgentState(TypedDict):
-        input: str
-        plan: str
-        research: str
-        answer: str
-        iterations: int
-
-    # Node 1: Create a plan
-    @trace(event_type="tool", event_name="create_plan_node", tracer=tracer)
-    def create_plan(state: AgentState) -> AgentState:
-        """Create a plan for answering the question."""
-        user_input = state["input"]
-        response = model.invoke(
-            f"Create a brief plan (2-3 steps) for answering this question: {user_input}"
-        )
-        return {
-            "input": user_input,
-            "plan": response.content,
-            "research": "",
-            "answer": "",
-            "iterations": state.get("iterations", 0),
-        }
-
-    # Node 2: Gather information
-    @trace(event_type="tool", event_name="research_node", tracer=tracer)
-    def research(state: AgentState) -> AgentState:
-        """Gather information based on the plan."""
-        plan = state["plan"]
-        response = model.invoke(
-            f"Based on this plan: {plan}\n\n"
-            "Provide key information and facts that would help answer the question. "
-            "Keep it concise (3-4 sentences)."
-        )
-        return {
-            "input": state["input"],
-            "plan": plan,
-            "research": response.content,
-            "answer": "",
-            "iterations": state.get("iterations", 0) + 1,
-        }
-
-    # Node 3: Synthesize answer
-    @trace(event_type="tool", event_name="synthesize_answer_node", tracer=tracer)
-    def synthesize_answer(state: AgentState) -> AgentState:
-        """Synthesize final answer from research."""
-        user_input = state["input"]
-        research = state["research"]
-        response = model.invoke(
-            f"Question: {user_input}\n\n"
-            f"Research: {research}\n\n"
-            "Provide a clear, concise answer to the question based on the research."
-        )
-        return {
-            "input": user_input,
-            "plan": state["plan"],
-            "research": research,
-            "answer": response.content,
-            "iterations": state.get("iterations", 0),
-        }
-
-    # Node 4: Evaluate if answer is sufficient
-    @trace(event_type="tool", event_name="evaluate_answer_node", tracer=tracer)
-    def evaluate_answer(state: AgentState) -> AgentState:
-        """Evaluate if the answer is sufficient."""
-        # For this example, we'll just mark it as complete
-        # In a real scenario, you might use the LLM to evaluate
-        return state
-
-    # Routing function
-    def should_continue(state: AgentState) -> str:
-        """Decide whether to continue or end."""
-        iterations = state.get("iterations", 0)
-        # Limit to 1 iteration for this example
-        if iterations >= 1:
-            return "synthesize"
-        else:
-            return "research"
-
-    # Create the agent graph
-    workflow = (
-        StateGraph(AgentState)
-        .add_node("plan", create_plan)
-        .add_node("research", research)
-        .add_node("synthesize", synthesize_answer)
-        .add_node("evaluate", evaluate_answer)
-        .add_edge(START, "plan")
-        .add_edge("plan", "research")
-        .add_edge("research", "synthesize")
-        .add_edge("synthesize", "evaluate")
-        .add_edge("evaluate", END)
-    )
-
-    graph = workflow.compile()
-
-    # Execute the agent graph
-    result = await graph.ainvoke(
-        {
-            "input": "What are the benefits of renewable energy?",
-            "plan": "",
-            "research": "",
-            "answer": "",
-            "iterations": 0,
-        }
-    )
-
-    return result.get("answer", "No answer generated")
-
-
-if __name__ == "__main__":
-    """Run the LangGraph integration example."""
-    success = asyncio.run(main())
-
-    if success:
-        print("\n✅ Example completed successfully!")
-        sys.exit(0)
-    else:
-        print("\n❌ Example failed!")
-        sys.exit(1)
+result = router.invoke({"question": "Tell me about machine learning", "category": "", "answer": ""})
+print(f"Route: {result['category']} | {result['answer']}")
