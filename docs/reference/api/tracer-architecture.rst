@@ -428,7 +428,6 @@ Optimization Features
 - **Lazy Loading**: Modules loaded only when needed
 - **Efficient Composition**: Mixin composition has minimal overhead
 - **Connection Pooling**: Shared HTTP connection pools across modules
-- **Batch Processing**: Optimized span batching and export
 
 Benchmarks
 ----------
