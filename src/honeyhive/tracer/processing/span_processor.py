@@ -11,6 +11,7 @@
 # no-else-return: Early return pattern improves readability in complex conditionals
 
 import json
+from types import MappingProxyType
 from typing import Any, Optional
 
 from opentelemetry import baggage, context
@@ -763,6 +764,10 @@ class HoneyHiveSpanProcessor(SpanProcessor):
                 raw_span_data,
             )
 
+            span = self._override_tool_event_type_if_span_has_events(
+                span, attributes
+            )
+
             # Process span based on mode
             if self.mode == "client" and self.client:
                 self._send_via_client(span, attributes, session_id)
@@ -783,6 +788,49 @@ class HoneyHiveSpanProcessor(SpanProcessor):
         except Exception as e:
             # Error processing span end - continue without disrupting application
             self._safe_log("debug", "❌ Error in span processor on_end: %s", e)
+
+    def _override_tool_event_type_if_span_has_events(
+        self, span: ReadableSpan, attributes: dict
+    ) -> ReadableSpan:
+        """Override 'tool' event type if the span has any recorded span events.
+
+        Spans with recorded events (e.g. exceptions, logs) represent
+        higher-level operations and should not be classified as 'tool'.
+
+        :param span: The span to check
+        :type span: ReadableSpan
+        :param attributes: Extracted span attributes dict
+        :type attributes: dict
+        :return: The span, potentially with modified attributes
+        :rtype: ReadableSpan
+        """
+        span_events = getattr(span, "events", None) or []
+        if not span_events:
+            return span
+
+        event_type = attributes.get("honeyhive_event_type")
+        if event_type != "tool":
+            return span
+
+        self._safe_log(
+            "debug",
+            "Span '%s' has %d event(s), overriding event_type from 'tool'",
+            span.name,
+            len(span_events),
+        )
+
+        new_attrs = dict(span.attributes) if span.attributes else {}
+        new_attrs.pop("honeyhive_event_type", None)
+        try:
+            # Replace the immutable MappingProxyType on the ReadableSpan
+            span._attributes = MappingProxyType(new_attrs)  # noqa: SLF001
+        except (AttributeError, TypeError):
+            self._safe_log(
+                "debug",
+                "Could not override event_type on ReadableSpan for '%s'",
+                span.name,
+            )
+        return span
 
     def _send_via_client(
         self, span: ReadableSpan, attributes: dict, session_id: str
