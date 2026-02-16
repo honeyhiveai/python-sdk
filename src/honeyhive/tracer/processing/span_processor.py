@@ -816,7 +816,7 @@ class HoneyHiveSpanProcessor(SpanProcessor):
         )
 
         new_attrs = dict(span.attributes) if span.attributes else {}
-        del new_attrs["honeyhive_event_type"]
+        new_attrs.pop("honeyhive_event_type", None)
         try:
             # Replace the immutable MappingProxyType on the ReadableSpan
             span._attributes = MappingProxyType(new_attrs)  # noqa: SLF001
