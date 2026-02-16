@@ -10,6 +10,7 @@ def getDatasets(
     project: str,
     type: Optional[str] = None,
     dataset_id: Optional[str] = None,
+    name: Optional[str] = None,
 ) -> GetDatasetsResponse:
     api_config = api_config_override if api_config_override else APIConfig()
 
@@ -23,6 +24,7 @@ def getDatasets(
         "project": project,
         "type": type,
         "dataset_id": dataset_id,
+        "name": name,
     }
 
     query_params = {
