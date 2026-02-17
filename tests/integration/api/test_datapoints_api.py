@@ -157,7 +157,7 @@ class TestDatapointsAPI:
         datapoint_id = _get_created_id(create_resp)
 
         # Wait for indexing
-        time.sleep(2)
+        time.sleep(10)
 
         # Delete the datapoint
         try:
@@ -168,16 +168,19 @@ class TestDatapointsAPI:
                 pytest.skip("Delete not permitted with current API key (403)")
             raise
 
-        # NWD API returns DeleteDatapointResponse with acknowledged/deleted_count
+        # NWD API returns DeleteDatapointResponse with a 'deleted' field
         if response is not None:
+            deleted = getattr(response, "deleted", None)
             acknowledged = getattr(response, "acknowledged", None)
             deleted_count = getattr(response, "deleted_count", None)
             if isinstance(response, dict):
+                deleted = response.get("deleted")
                 acknowledged = response.get("acknowledged")
                 deleted_count = response.get("deletedCount", response.get("deleted_count"))
             # At least one indicator of success
             assert (
-                acknowledged is True
+                deleted is True
+                or acknowledged is True
                 or (deleted_count is not None and deleted_count >= 1)
             ), f"Delete did not indicate success: {response}"
 
