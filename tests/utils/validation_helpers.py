@@ -256,7 +256,7 @@ def verify_configuration_creation(
         # Step 1: Create configuration
         logger.debug(f"🔄 Creating configuration for project: {project}")
         client.configurations.create(config_request)
-        # NWD API create returns None - verify via list instead
+        # API create returns None - verify via list instead
         logger.debug("✅ Configuration create request sent")
 
         # Step 2: Wait for data propagation

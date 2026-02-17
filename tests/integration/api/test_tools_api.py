@@ -42,7 +42,7 @@ class TestToolsAPI:
 
         response = integration_client.tools.create(tool_request)
 
-        # NWD API returns CreateToolResponse with result dict
+        # API returns CreateToolResponse with result dict
         assert response is not None
         result = getattr(response, "result", None)
         if result is None and isinstance(response, dict):
