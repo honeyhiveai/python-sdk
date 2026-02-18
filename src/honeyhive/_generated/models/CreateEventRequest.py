@@ -10,11 +10,11 @@ class CreateEventRequest(BaseModel):
 
     model_config = {"populate_by_name": True, "validate_assignment": True}
 
-    project: str = Field(validation_alias="project")
+    project: Optional[str] = Field(validation_alias="project", default=None)
 
-    source: str = Field(validation_alias="source")
+    source: Optional[str] = Field(validation_alias="source", default=None)
 
-    event_name: str = Field(validation_alias="event_name")
+    event_name: Optional[str] = Field(validation_alias="event_name", default=None)
 
     event_type: str = Field(validation_alias="event_type")
 
@@ -28,9 +28,9 @@ class CreateEventRequest(BaseModel):
         validation_alias="children_ids", default=None
     )
 
-    config: Dict[str, Any] = Field(validation_alias="config")
+    config: Optional[Dict[str, Any]] = Field(validation_alias="config", default=None)
 
-    inputs: Dict[str, Any] = Field(validation_alias="inputs")
+    inputs: Optional[Dict[str, Any]] = Field(validation_alias="inputs", default=None)
 
     outputs: Optional[Dict[str, Any]] = Field(validation_alias="outputs", default=None)
 
@@ -40,7 +40,7 @@ class CreateEventRequest(BaseModel):
 
     end_time: Optional[int] = Field(validation_alias="end_time", default=None)
 
-    duration: float = Field(validation_alias="duration")
+    duration: Optional[float] = Field(validation_alias="duration", default=None)
 
     metadata: Optional[Dict[str, Any]] = Field(
         validation_alias="metadata", default=None

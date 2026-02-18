@@ -27,9 +27,9 @@ def _get_created_id(response: Any) -> str:
 
     # Fallback to insertedIds
     inserted_ids = result.get("insertedIds")
-    assert inserted_ids and len(inserted_ids) > 0, (
-        f"Missing insertedIds in result: {result}"
-    )
+    assert (
+        inserted_ids and len(inserted_ids) > 0
+    ), f"Missing insertedIds in result: {result}"
     if isinstance(inserted_ids, dict):
         return list(inserted_ids.values())[0]
     return inserted_ids[0]
@@ -58,7 +58,9 @@ class TestDatapointsAPI:
         assert response is not None
         result = getattr(response, "result", None)
         assert result is not None
-        assert result.get("acknowledged") is True or result.get("insertedId") is not None
+        assert (
+            result.get("acknowledged") is True or result.get("insertedId") is not None
+        )
 
     def test_get_datapoint(
         self, integration_client: Any, integration_project_name: str
@@ -176,7 +178,9 @@ class TestDatapointsAPI:
             if isinstance(response, dict):
                 deleted = response.get("deleted")
                 acknowledged = response.get("acknowledged")
-                deleted_count = response.get("deletedCount", response.get("deleted_count"))
+                deleted_count = response.get(
+                    "deletedCount", response.get("deleted_count")
+                )
             # At least one indicator of success
             assert (
                 deleted is True

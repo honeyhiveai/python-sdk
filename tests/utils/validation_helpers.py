@@ -24,10 +24,7 @@ import time
 from typing import Any, Dict, Optional, Tuple
 
 from honeyhive import HoneyHive
-from honeyhive.models import (
-    CreateConfigurationRequest,
-    CreateDatapointRequest,
-)
+from honeyhive.models import CreateConfigurationRequest, CreateDatapointRequest
 from honeyhive.utils.logger import get_logger
 
 from .backend_verification import verify_backend_event
@@ -268,17 +265,11 @@ def verify_configuration_creation(
         # Find matching configuration by name
         config_name = expected_config_name or getattr(config_request, "name", None)
         for config in configurations:
-            if (
-                config_name
-                and hasattr(config, "name")
-                and config.name == config_name
-            ):
+            if config_name and hasattr(config, "name") and config.name == config_name:
                 logger.debug(f"✅ Configuration found via name: {config_name}")
                 return config
 
-        raise ValidationError(
-            f"Configuration not found after creation: {config_name}"
-        )
+        raise ValidationError(f"Configuration not found after creation: {config_name}")
 
     except Exception as e:
         raise ValidationError(f"Configuration validation failed: {e}") from e

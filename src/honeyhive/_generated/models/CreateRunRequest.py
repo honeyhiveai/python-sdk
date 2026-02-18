@@ -16,7 +16,9 @@ class CreateRunRequest(BaseModel):
 
     name: str = Field(validation_alias="name")
 
-    event_ids: List[UUIDType] = Field(validation_alias="event_ids")
+    event_ids: Optional[List[Optional[UUIDType]]] = Field(
+        validation_alias="event_ids", default=None
+    )
 
     dataset_id: Optional[str] = Field(validation_alias="dataset_id", default=None)
 
