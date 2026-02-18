@@ -86,8 +86,7 @@ from honeyhive._generated.models import (
     UUIDType,
 )
 
-# Backwards-compatible aliases: FED model names -> NWD model names
-# These allow existing code that uses FED naming to keep working.
+# Backwards-compatible aliases for legacy model names.
 CreateConfigurationRequest = PostConfigurationRequest
 UpdateConfigurationRequest = PutConfigurationRequest
 UpdateDatasetRequest = DatasetUpdate
@@ -96,7 +95,7 @@ PutExperimentRunRequest = UpdateRunRequest
 PostEventRequest = CreateEventRequest
 
 __all__ = [
-    # Generated models (NWD names)
+    # Generated models
     "AddDatapointsRequest",
     "AddDatapointsResponse",
     "Configuration",
@@ -152,7 +151,7 @@ __all__ = [
     "UpdateRunResponse",
     "UpdateToolRequest",
     "UUIDType",
-    # Backwards-compatible aliases (FED names)
+    # Backwards-compatible aliases
     "CreateConfigurationRequest",
     "UpdateConfigurationRequest",
     "UpdateDatasetRequest",

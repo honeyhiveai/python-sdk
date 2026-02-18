@@ -15,7 +15,7 @@ class TestConfigurationsAPI:
     NOTE: test_get_configuration is skipped because v1 API has no get_configuration
     method - must use list() to retrieve configurations. Other CRUD operations work.
 
-    NOTE: NWD API's createConfiguration and deleteConfiguration return None
+    NOTE: The API's createConfiguration and deleteConfiguration return None
     (no response body). Verification is done via list() instead.
     """
 
@@ -38,7 +38,7 @@ class TestConfigurationsAPI:
             parameters=parameters,
         )
 
-        # NWD API createConfiguration returns None - just verify no exception
+        # API createConfiguration returns None - just verify no exception
         integration_client.configurations.create(config_request)
 
         # Verify via list
@@ -164,7 +164,7 @@ class TestConfigurationsAPI:
                 "hyperparameters": {"temperature": 0.9, "updated": True},
             },
         )
-        # NWD API updateConfiguration returns None
+        # API updateConfiguration returns None
         integration_client.configurations.update(created_id, update_request)
 
         # Cleanup
@@ -213,7 +213,7 @@ class TestConfigurationsAPI:
         )
         assert created_id is not None
 
-        # Delete - NWD API returns None, just verify no exception
+        # Delete - API returns None, just verify no exception
         try:
             integration_client.configurations.delete(created_id)
         except Exception as e:

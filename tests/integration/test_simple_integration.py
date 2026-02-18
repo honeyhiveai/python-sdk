@@ -42,7 +42,7 @@ class TestSimpleIntegration:
             # Step 1: Create datapoint
             datapoint_response = integration_client.datapoints.create(datapoint_request)
 
-            # Verify creation response - NWD API returns CreateDatapointResponse
+            # Verify creation response - API returns CreateDatapointResponse
             assert datapoint_response is not None
             result = getattr(datapoint_response, "result", None)
             assert result is not None, "CreateDatapointResponse missing result"
@@ -61,7 +61,7 @@ class TestSimpleIntegration:
 
             # Step 3: Validate data is actually stored by retrieving it
             try:
-                # List datapoints to find our created one - NWD API requires project
+                # List datapoints to find our created one - API requires project
                 datapoints_response = integration_client.datapoints.list(
                     project=integration_project_name
                 )
@@ -150,7 +150,7 @@ class TestSimpleIntegration:
         )
 
         try:
-            # Step 1: Create configuration - NWD API returns None
+            # Step 1: Create configuration - API returns None
             integration_client.configurations.create(config_request)
 
             print(f"✅ Configuration create request sent for: {config_name}")
@@ -160,7 +160,7 @@ class TestSimpleIntegration:
 
             # Step 3: Validate data is actually stored by retrieving it
             try:
-                # List configurations - NWD API requires project param
+                # List configurations - API requires project param
                 configurations = integration_client.configurations.list(
                     project=integration_project_name
                 )
@@ -233,7 +233,7 @@ class TestSimpleIntegration:
             }
 
             session_response = integration_client.sessions.start(session_data)
-            # NWD API returns StartSessionResponse with session_id attribute
+            # API returns StartSessionResponse with session_id attribute
             assert session_response is not None
             session_id = getattr(session_response, "session_id", None)
             if session_id is None and isinstance(session_response, dict):
@@ -254,7 +254,7 @@ class TestSimpleIntegration:
 
             # Pass flat event data - wrapper handles wrapping into CreateEventRequestBody
             event_response = integration_client.events.create(event_data)
-            # NWD API returns CreateEventResponse with event_id attribute
+            # API returns CreateEventResponse with event_id attribute
             assert event_response is not None
             event_id = getattr(event_response, "event_id", None)
             if event_id is None and isinstance(event_response, dict):

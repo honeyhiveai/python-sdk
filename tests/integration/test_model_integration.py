@@ -161,7 +161,7 @@ class TestModelIntegration:
         run_request = PostExperimentRunRequest(
             project="test-project",
             name="workflow-evaluation",
-            event_ids=[UUIDType()],  # UUIDType is an empty model in NWD spec
+            event_ids=[UUIDType()],  # UUIDType is an empty model in the spec
             configuration={"metrics": ["accuracy", "precision"]},
         )
 

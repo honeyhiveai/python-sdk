@@ -111,7 +111,7 @@ class ConfigurationsAPI(BaseAPI):
         """List configurations.
 
         Args:
-            project: Project name (required by NWD API).
+            project: Project name (required).
             env: Optional environment filter.
             name: Optional name filter.
         """
@@ -187,7 +187,7 @@ class DatapointsAPI(BaseAPI):
         """List datapoints.
 
         Args:
-            project: Project name (required by NWD API).
+            project: Project name (required).
             datapoint_ids: Optional list of datapoint IDs to fetch.
             dataset_name: Optional dataset name to filter by.
         """
@@ -289,7 +289,7 @@ class DatasetsAPI(BaseAPI):
         """List datasets.
 
         Args:
-            project: Project name (required by NWD API).
+            project: Project name (required).
             type: Optional dataset type filter.
             dataset_id: Optional dataset ID to fetch.
             name: Optional dataset name filter.
@@ -565,7 +565,7 @@ class ExperimentsAPI(BaseAPI):
 
         Args:
             run_id: The experiment run ID.
-            project_id: The project ID (required by NWD API).
+            project_id: The project ID (required).
             aggregate_function: Aggregation function to apply.
         """
         result = experiments_svc.getExperimentResult(
@@ -588,7 +588,7 @@ class ExperimentsAPI(BaseAPI):
         Args:
             new_run_id: The new run ID to compare (maps to run_id_1).
             old_run_id: The old run ID to compare against (maps to run_id_2).
-            project_id: The project ID (required by NWD API).
+            project_id: The project ID (required).
             aggregate_function: Aggregation function to apply.
         """
         result = experiments_svc.getExperimentComparison(
@@ -676,7 +676,7 @@ class MetricsAPI(BaseAPI):
         """List metrics.
 
         Args:
-            project_name: Project name (required by NWD API).
+            project_name: Project name (required).
         """
         return metrics_svc.getMetrics(self._api_config, project_name=project_name)
 
@@ -791,8 +791,7 @@ class ProjectsAPI(BaseAPI):
 class SessionsAPI(BaseAPI):
     """Sessions API.
 
-    NWD only has Session_service (singular) with startSession and getSession.
-    No deleteSession or Sessions_service (plural).
+    Supports startSession and getSession operations.
     """
 
     # Sync methods
@@ -998,13 +997,13 @@ class HoneyHive:
         self._verbose = verbose if verbose is not None else False
         self._tracer_instance = tracer_instance
 
-        # Create API config (NWD APIConfig: base_path, verify, access_token only)
+        # Create API config
         self._api_config = APIConfig(
             base_path=resolved_base_url,
             access_token=self._api_key,
         )
 
-        # Store CP URL separately (NWD APIConfig doesn't have cp_base_path)
+        # Store CP URL separately
         self._cp_base_url = resolved_cp_base_url
 
         # Initialize API namespaces

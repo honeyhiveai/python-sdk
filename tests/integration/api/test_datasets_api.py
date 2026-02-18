@@ -49,7 +49,7 @@ class TestDatasetsAPI:
 
         time.sleep(2)
 
-        # Verify via list - NWD API requires project param
+        # Verify via list - API requires project param
         datasets_response = integration_client.datasets.list(
             project=integration_project_name
         )
@@ -88,7 +88,7 @@ class TestDatasetsAPI:
         time.sleep(2)
 
         # Test retrieval via list (v1 doesn't have get_dataset method)
-        # NWD API list() requires project, doesn't support name filter
+        # API list() requires project, doesn't support name filter
         datasets_response = integration_client.datasets.list(
             project=integration_project_name
         )
@@ -133,7 +133,7 @@ class TestDatasetsAPI:
 
         time.sleep(2)
 
-        # Test listing - NWD API requires project param
+        # Test listing - API requires project param
         datasets_response = integration_client.datasets.list(
             project=integration_project_name
         )
@@ -162,7 +162,7 @@ class TestDatasetsAPI:
 
         time.sleep(2)
 
-        # NWD API list() doesn't support name filter - list all and filter in-memory
+        # API list() doesn't support name filter - list all and filter in-memory
         datasets_response = integration_client.datasets.list(
             project=integration_project_name
         )
@@ -190,7 +190,7 @@ class TestDatasetsAPI:
         self, integration_client: Any, integration_project_name: str
     ) -> None:
         """Test dataset deletion, verify not in list after delete."""
-        pytest.skip("Dataset deletion is not supported by the NWD API")
+        pytest.skip("Dataset deletion is not supported by the API")
 
     def test_update_dataset(
         self, integration_client: Any, integration_project_name: str

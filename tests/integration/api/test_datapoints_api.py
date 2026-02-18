@@ -12,7 +12,7 @@ from honeyhive.models import CreateDatapointRequest, UpdateDatapointRequest
 def _get_created_id(response: Any) -> str:
     """Extract created datapoint ID from CreateDatapointResponse.
 
-    The NWD API returns a CreateDatapointResponse with a `result` dict containing
+    The API returns a CreateDatapointResponse with a `result` dict containing
     `insertedId` (str) and `insertedIds` (dict with string keys like {'0': 'id'}).
     """
     result = getattr(response, "result", None) or (
@@ -54,7 +54,7 @@ class TestDatapointsAPI:
 
         response = integration_client.datapoints.create(datapoint_request)
 
-        # NWD API returns CreateDatapointResponse with result dict
+        # API returns CreateDatapointResponse with result dict
         assert response is not None
         result = getattr(response, "result", None)
         assert result is not None
@@ -136,7 +136,7 @@ class TestDatapointsAPI:
         updated_inputs = {"query": f"updated query {test_id}", "test_id": test_id}
         update_request = UpdateDatapointRequest(inputs=updated_inputs)
 
-        # Update the datapoint - NWD API returns None
+        # Update the datapoint - API returns None
         integration_client.datapoints.update(datapoint_id, update_request)
 
     def test_delete_datapoint(
@@ -168,7 +168,7 @@ class TestDatapointsAPI:
                 pytest.skip("Delete not permitted with current API key (403)")
             raise
 
-        # NWD API returns DeleteDatapointResponse with a 'deleted' field
+        # API returns DeleteDatapointResponse with a 'deleted' field
         if response is not None:
             deleted = getattr(response, "deleted", None)
             acknowledged = getattr(response, "acknowledged", None)
