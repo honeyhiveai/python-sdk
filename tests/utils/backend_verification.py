@@ -120,8 +120,7 @@ def verify_backend_event(
                         event
                         for event in events
                         if _extract_unique_id(event) == unique_identifier
-                        and _get_field(event, "event_name", "")
-                        == expected_event_name
+                        and _get_field(event, "event_name", "") == expected_event_name
                     ),
                     None,
                 )

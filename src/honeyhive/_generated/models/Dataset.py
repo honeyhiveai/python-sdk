@@ -10,7 +10,15 @@ class Dataset(BaseModel):
 
     model_config = {"populate_by_name": True, "validate_assignment": True}
 
-    id: Optional[str] = Field(validation_alias="id", default=None)
+    id: Optional[str] = Field(validation_alias="_id", default=None)
+
+    dataset_id: Optional[str] = Field(validation_alias="dataset_id", default=None)
+
+    org_id: Optional[str] = Field(validation_alias="org_id", default=None)
+
+    project_id: Optional[str] = Field(validation_alias="project_id", default=None)
+
+    tenant: Optional[str] = Field(validation_alias="tenant", default=None)
 
     project: Optional[str] = Field(validation_alias="project", default=None)
 
@@ -35,3 +43,7 @@ class Dataset(BaseModel):
     created_at: Optional[str] = Field(validation_alias="created_at", default=None)
 
     updated_at: Optional[str] = Field(validation_alias="updated_at", default=None)
+
+    metadata: Optional[Dict[str, Any]] = Field(
+        validation_alias="metadata", default=None
+    )

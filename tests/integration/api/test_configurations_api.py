@@ -55,7 +55,9 @@ class TestConfigurationsAPI:
                 created_config = cfg
                 break
 
-        assert created_config is not None, f"Config {config_name} not found after create"
+        assert (
+            created_config is not None
+        ), f"Config {config_name} not found after create"
 
         # Cleanup
         config_id = getattr(created_config, "id", None) or getattr(
@@ -205,9 +207,7 @@ class TestConfigurationsAPI:
             if hasattr(cfg, "name") and cfg.name == config_name:
                 created_config = cfg
                 break
-        assert (
-            created_config is not None
-        ), f"Config {config_name} not found for delete"
+        assert created_config is not None, f"Config {config_name} not found for delete"
         created_id = getattr(created_config, "id", None) or getattr(
             created_config, "_id", None
         )

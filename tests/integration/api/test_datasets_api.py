@@ -54,9 +54,13 @@ class TestDatasetsAPI:
             project=integration_project_name
         )
         # GetDatasetsResponse has datasets field (list of Dataset objects)
-        datasets = getattr(datasets_response, "testcases", None) or getattr(datasets_response, "datasets", None)
+        datasets = getattr(datasets_response, "testcases", None) or getattr(
+            datasets_response, "datasets", None
+        )
         if datasets is None and isinstance(datasets_response, dict):
-            datasets = datasets_response.get("testcases", datasets_response.get("datasets", []))
+            datasets = datasets_response.get(
+                "testcases", datasets_response.get("datasets", [])
+            )
         assert datasets is not None
 
         found = None
@@ -92,9 +96,13 @@ class TestDatasetsAPI:
         datasets_response = integration_client.datasets.list(
             project=integration_project_name
         )
-        datasets = getattr(datasets_response, "testcases", None) or getattr(datasets_response, "datasets", None)
+        datasets = getattr(datasets_response, "testcases", None) or getattr(
+            datasets_response, "datasets", None
+        )
         if datasets is None and isinstance(datasets_response, dict):
-            datasets = datasets_response.get("testcases", datasets_response.get("datasets", []))
+            datasets = datasets_response.get(
+                "testcases", datasets_response.get("datasets", [])
+            )
         assert datasets is not None
         assert len(datasets) >= 1
 
@@ -138,9 +146,13 @@ class TestDatasetsAPI:
             project=integration_project_name
         )
 
-        datasets = getattr(datasets_response, "testcases", None) or getattr(datasets_response, "datasets", None)
+        datasets = getattr(datasets_response, "testcases", None) or getattr(
+            datasets_response, "datasets", None
+        )
         if datasets is None and isinstance(datasets_response, dict):
-            datasets = datasets_response.get("testcases", datasets_response.get("datasets", []))
+            datasets = datasets_response.get(
+                "testcases", datasets_response.get("datasets", [])
+            )
         assert datasets is not None
         assert isinstance(datasets, list)
         assert len(datasets) >= 2
@@ -167,9 +179,13 @@ class TestDatasetsAPI:
             project=integration_project_name
         )
 
-        datasets = getattr(datasets_response, "testcases", None) or getattr(datasets_response, "datasets", None)
+        datasets = getattr(datasets_response, "testcases", None) or getattr(
+            datasets_response, "datasets", None
+        )
         if datasets is None and isinstance(datasets_response, dict):
-            datasets = datasets_response.get("testcases", datasets_response.get("datasets", []))
+            datasets = datasets_response.get(
+                "testcases", datasets_response.get("datasets", [])
+            )
         assert datasets is not None
         assert isinstance(datasets, list)
         assert len(datasets) >= 1

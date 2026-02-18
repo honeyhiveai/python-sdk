@@ -2022,6 +2022,21 @@ components:
     Dataset:
       type: object
       properties:
+        _id:
+          type: string
+          description: Legacy document ID (alias for dataset_id)
+        dataset_id:
+          type: string
+          description: The unique identifier of the dataset
+        org_id:
+          type: string
+          description: The organization ID
+        project_id:
+          type: string
+          description: The project ID
+        tenant:
+          type: string
+          description: Legacy alias for org_id
         project:
           type: string
           description: UUID of the project associated with this dataset
@@ -2066,6 +2081,10 @@ components:
         updated_at:
           type: string
           description: Timestamp of when the dataset was last updated
+        metadata:
+          type: object
+          additionalProperties: true
+          description: Additional metadata for the dataset
       example:
         project: New Project
         name: test-dataset
@@ -2158,7 +2177,6 @@ components:
       required:
       - project
       - name
-      - event_ids
       properties:
         project:
           type: string
