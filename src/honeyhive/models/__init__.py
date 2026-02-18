@@ -86,7 +86,7 @@ from honeyhive._generated.models import (
     UUIDType,
 )
 
-# Backwards-compatible aliases for legacy model names.
+# Forwards-compatible aliases for legacy model names.
 CreateConfigurationRequest = PostConfigurationRequest
 UpdateConfigurationRequest = PutConfigurationRequest
 UpdateDatasetRequest = DatasetUpdate
@@ -95,10 +95,10 @@ PutExperimentRunRequest = UpdateRunRequest
 PostEventRequest = CreateEventRequest
 CreateMetricRequest = Metric
 UpdateMetricRequest = MetricEdit
+AddDatapointsToDatasetRequest = AddDatapointsRequest
 
 __all__ = [
     # Generated models
-    "AddDatapointsRequest",
     "AddDatapointsResponse",
     "Configuration",
     "CreateDatapointRequest",
@@ -145,7 +145,7 @@ __all__ = [
     "UpdateRunResponse",
     "UpdateToolRequest",
     "UUIDType",
-    # Backwards-compatible aliases
+    # Forwards-compatible aliases
     "CreateConfigurationRequest",
     "UpdateConfigurationRequest",
     "UpdateDatasetRequest",
@@ -154,6 +154,7 @@ __all__ = [
     "PostEventRequest",
     "CreateMetricRequest",
     "UpdateMetricRequest",
+    "AddDatapointsToDatasetRequest",
     # Custom types
     "EventType",
 ]
