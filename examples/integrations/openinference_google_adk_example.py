@@ -206,8 +206,10 @@ async def run_workflow_scenario(
         model=MODEL,
         description="Builds policy context.",
         instruction=(
-            "Use lookup_policy for the relevant policy in the request. Output one "
-            "concise line of policy context."
+            "Identify the single most relevant policy topic from the customer request "
+            "(one of: refund, cancellation, shipping). Call lookup_policy exactly once "
+            "with that topic, then immediately output one concise line summarizing the "
+            "policy. Do not call the tool more than once."
         ),
         tools=[lookup_policy],
         output_key="policy_context",
