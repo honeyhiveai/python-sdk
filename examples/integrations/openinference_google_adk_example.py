@@ -35,8 +35,6 @@ from openinference.instrumentation.google_adk import GoogleADKInstrumentor
 
 from honeyhive import HoneyHiveTracer
 
-from capture_spans import setup_span_capture
-
 MODEL = "gemini-3-flash-preview"
 
 
@@ -331,7 +329,6 @@ async def main() -> None:
         session_name="openinference_google_adk_example",
         source=os.getenv("HH_SOURCE", "python_sdk_example"),
     )
-    setup_span_capture("google_adk", tracer)
     instrumentor = GoogleADKInstrumentor()
     instrumentor.instrument(tracer_provider=tracer.provider)
     session_service = InMemorySessionService()
