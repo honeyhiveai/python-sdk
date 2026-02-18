@@ -149,13 +149,15 @@ compare-sdk:
 
 # Build & Publish
 build:
-	python -m build
+	# Clear PYTHONPATH to prevent Nix shell paths from leaking into
+	# the isolated build environment and breaking hatchling imports.
+	PYTHONPATH="" .venv/bin/python -m build
 
 build-bundled:
 	@echo "Building honeyhive-bundled package..."
 	cp pyproject.toml pyproject.toml.backup
 	cp pyproject.bundled.toml pyproject.toml
-	python -m build
+	PYTHONPATH="" .venv/bin/python -m build
 	mv pyproject.toml.backup pyproject.toml
 	@echo "✅ Built honeyhive-bundled package in dist/"
 
