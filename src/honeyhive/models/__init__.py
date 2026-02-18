@@ -1,7 +1,7 @@
 """HoneyHive Models - Re-exported from auto-generated Pydantic models.
 
 Usage:
-    from honeyhive.models import PostConfigurationRequest, CreateDatasetRequest, EventType
+    from honeyhive.models import CreateConfigurationRequest, CreateDatasetRequest, EventType
 """
 
 from enum import Enum
@@ -93,6 +93,8 @@ UpdateDatasetRequest = DatasetUpdate
 PostExperimentRunRequest = CreateRunRequest
 PutExperimentRunRequest = UpdateRunRequest
 PostEventRequest = CreateEventRequest
+CreateMetricRequest = Metric
+UpdateMetricRequest = MetricEdit
 
 __all__ = [
     # Generated models
@@ -105,7 +107,6 @@ __all__ = [
     "CreateDatasetResponse",
     "CreateEventBatchRequest",
     "CreateEventBatchResponse",
-    "CreateEventRequest",
     "CreateEventRequestBody",
     "CreateEventResponse",
     "CreateModelEvent",
@@ -113,13 +114,11 @@ __all__ = [
     "CreateModelEventBatchResponse",
     "CreateModelEventRequestBody",
     "CreateProjectRequest",
-    "CreateRunRequest",
     "CreateRunResponse",
     "CreateToolRequest",
     "CreateToolResponse",
     "Datapoint",
     "Dataset",
-    "DatasetUpdate",
     "DeleteDatapointResponse",
     "DeleteRunResponse",
     "EvaluationRun",
@@ -134,11 +133,7 @@ __all__ = [
     "GetEventsResponse",
     "GetRunResponse",
     "GetRunsResponse",
-    "Metric",
-    "MetricEdit",
-    "PostConfigurationRequest",
     "Project",
-    "PutConfigurationRequest",
     "SessionPropertiesBatch",
     "SessionStartRequest",
     "StartSessionRequestBody",
@@ -147,7 +142,6 @@ __all__ = [
     "UpdateDatapointRequest",
     "UpdateEventRequest",
     "UpdateProjectRequest",
-    "UpdateRunRequest",
     "UpdateRunResponse",
     "UpdateToolRequest",
     "UUIDType",
@@ -158,6 +152,8 @@ __all__ = [
     "PostExperimentRunRequest",
     "PutExperimentRunRequest",
     "PostEventRequest",
+    "CreateMetricRequest",
+    "UpdateMetricRequest",
     # Custom types
     "EventType",
 ]
