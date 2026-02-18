@@ -37,11 +37,9 @@ from honeyhive._generated.models import (
     CreateModelEventBatchRequest,
     CreateModelEventBatchResponse,
     CreateModelEventRequestBody,
-    CreateRunRequest,
     CreateRunResponse,
     CreateToolRequest,
     CreateToolResponse,
-    DatasetUpdate,
     DeleteDatapointResponse,
     DeleteRunResponse,
     Event,
@@ -55,19 +53,27 @@ from honeyhive._generated.models import (
     GetRunResponse,
     GetRunsResponse,
     Metric,
-    MetricEdit,
-    PostConfigurationRequest,
     Project,
-    PutConfigurationRequest,
     SessionStartRequest,
     StartSessionRequestBody,
     StartSessionResponse,
     Tool,
     UpdateDatapointRequest,
     UpdateEventRequest,
-    UpdateRunRequest,
     UpdateRunResponse,
     UpdateToolRequest,
+)
+
+# Import aliased model names for FED-compatible type annotations
+from honeyhive.models import (
+    CreateConfigurationRequest,
+    UpdateConfigurationRequest,
+    UpdateDatasetRequest,
+    PostExperimentRunRequest,
+    PutExperimentRunRequest,
+    PostEventRequest,
+    CreateMetricRequest,
+    UpdateMetricRequest,
 )
 
 # Import sync services (9 services)
@@ -119,11 +125,11 @@ class ConfigurationsAPI(BaseAPI):
             self._api_config, project=project, env=env, name=name
         )
 
-    def create(self, request: PostConfigurationRequest) -> None:
+    def create(self, request: CreateConfigurationRequest) -> None:
         """Create a configuration."""
         return configs_svc.createConfiguration(self._api_config, data=request)
 
-    def update(self, id: str, request: PutConfigurationRequest) -> None:
+    def update(self, id: str, request: UpdateConfigurationRequest) -> None:
         """Update a configuration."""
         return configs_svc.updateConfiguration(self._api_config, id=id, data=request)
 
@@ -140,13 +146,13 @@ class ConfigurationsAPI(BaseAPI):
             self._api_config, project=project, env=env, name=name
         )
 
-    async def create_async(self, request: PostConfigurationRequest) -> None:
+    async def create_async(self, request: CreateConfigurationRequest) -> None:
         """Create a configuration asynchronously."""
         return await configs_svc_async.createConfiguration(
             self._api_config, data=request
         )
 
-    async def update_async(self, id: str, request: PutConfigurationRequest) -> None:
+    async def update_async(self, id: str, request: UpdateConfigurationRequest) -> None:
         """Update a configuration asynchronously."""
         return await configs_svc_async.updateConfiguration(
             self._api_config, id=id, data=request
@@ -157,11 +163,11 @@ class ConfigurationsAPI(BaseAPI):
         return await configs_svc_async.deleteConfiguration(self._api_config, id=id)
 
     # Backwards compatible aliases
-    def create_configuration(self, request: PostConfigurationRequest) -> None:
+    def create_configuration(self, request: CreateConfigurationRequest) -> None:
         """Create a configuration (backwards compatible alias)."""
         return self.create(request)
 
-    def update_configuration(self, id: str, request: PutConfigurationRequest) -> None:
+    def update_configuration(self, id: str, request: UpdateConfigurationRequest) -> None:
         """Update a configuration (backwards compatible alias)."""
         return self.update(id, request)
 
@@ -302,7 +308,7 @@ class DatasetsAPI(BaseAPI):
         """Create a dataset."""
         return datasets_svc.createDataset(self._api_config, data=request)
 
-    def update(self, request: DatasetUpdate) -> None:
+    def update(self, request: UpdateDatasetRequest) -> None:
         """Update a dataset."""
         return datasets_svc.updateDataset(self._api_config, data=request)
 
@@ -339,7 +345,7 @@ class DatasetsAPI(BaseAPI):
         """Create a dataset asynchronously."""
         return await datasets_svc_async.createDataset(self._api_config, data=request)
 
-    async def update_async(self, request: DatasetUpdate) -> None:
+    async def update_async(self, request: UpdateDatasetRequest) -> None:
         """Update a dataset asynchronously."""
         return await datasets_svc_async.updateDataset(self._api_config, data=request)
 
@@ -368,7 +374,7 @@ class DatasetsAPI(BaseAPI):
         """Create a dataset (backwards compatible alias for create())."""
         return self.create(request)
 
-    def update_dataset(self, request: DatasetUpdate) -> None:
+    def update_dataset(self, request: UpdateDatasetRequest) -> None:
         """Update a dataset (backwards compatible alias for update())."""
         return self.update(request)
 
@@ -519,11 +525,11 @@ class ExperimentsAPI(BaseAPI):
         """Get an experiment run by ID."""
         return experiments_svc.getRun(self._api_config, run_id=run_id)
 
-    def create_run(self, request: CreateRunRequest) -> CreateRunResponse:
+    def create_run(self, request: PostExperimentRunRequest) -> CreateRunResponse:
         """Create an experiment run."""
         return experiments_svc.createRun(self._api_config, data=request)
 
-    def update_run(self, run_id: str, request: UpdateRunRequest) -> UpdateRunResponse:
+    def update_run(self, run_id: str, request: PutExperimentRunRequest) -> UpdateRunResponse:
         """Update an experiment run."""
         return experiments_svc.updateRun(self._api_config, run_id=run_id, data=request)
 
@@ -585,12 +591,12 @@ class ExperimentsAPI(BaseAPI):
         """Get an experiment run by ID asynchronously."""
         return await experiments_svc_async.getRun(self._api_config, run_id=run_id)
 
-    async def create_run_async(self, request: CreateRunRequest) -> CreateRunResponse:
+    async def create_run_async(self, request: PostExperimentRunRequest) -> CreateRunResponse:
         """Create an experiment run asynchronously."""
         return await experiments_svc_async.createRun(self._api_config, data=request)
 
     async def update_run_async(
-        self, run_id: str, request: UpdateRunRequest
+        self, run_id: str, request: PutExperimentRunRequest
     ) -> UpdateRunResponse:
         """Update an experiment run asynchronously."""
         return await experiments_svc_async.updateRun(
@@ -656,11 +662,11 @@ class MetricsAPI(BaseAPI):
         """
         return metrics_svc.getMetrics(self._api_config, project_name=project_name)
 
-    def create(self, request: Metric) -> None:
+    def create(self, request: CreateMetricRequest) -> None:
         """Create a metric."""
         return metrics_svc.createMetric(self._api_config, data=request)
 
-    def update(self, request: MetricEdit) -> None:
+    def update(self, request: UpdateMetricRequest) -> None:
         """Update a metric."""
         return metrics_svc.updateMetric(self._api_config, data=request)
 
@@ -675,11 +681,11 @@ class MetricsAPI(BaseAPI):
             self._api_config, project_name=project_name
         )
 
-    async def create_async(self, request: Metric) -> None:
+    async def create_async(self, request: CreateMetricRequest) -> None:
         """Create a metric asynchronously."""
         return await metrics_svc_async.createMetric(self._api_config, data=request)
 
-    async def update_async(self, request: MetricEdit) -> None:
+    async def update_async(self, request: UpdateMetricRequest) -> None:
         """Update a metric asynchronously."""
         return await metrics_svc_async.updateMetric(self._api_config, data=request)
 
@@ -688,11 +694,11 @@ class MetricsAPI(BaseAPI):
         return await metrics_svc_async.deleteMetric(self._api_config, metric_id=id)
 
     # Backwards compatible aliases
-    def create_metric(self, request: Metric) -> None:
+    def create_metric(self, request: CreateMetricRequest) -> None:
         """Create a metric (backwards compatible alias)."""
         return self.create(request)
 
-    def update_metric(self, request: MetricEdit) -> None:
+    def update_metric(self, request: UpdateMetricRequest) -> None:
         """Update a metric (backwards compatible alias)."""
         return self.update(request)
 
