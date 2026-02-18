@@ -1,352 +1,214 @@
 #!/usr/bin/env python3
 """
-Pydantic AI Integration Example with HoneyHive
+PydanticAI Example for HoneyHive UI validation.
 
-This example demonstrates how to integrate Pydantic AI with HoneyHive using the
-OpenInference Anthropic/OpenAI instrumentors for comprehensive agent observability.
+This example is designed as a single, comprehensive run for SDK integration.
+It focuses on high-value patterns that should map clearly in HoneyHive:
 
-Requirements:
-    pip install honeyhive pydantic-ai openinference-instrumentation-anthropic openinference-instrumentation-openai
+1) Single agent with tools and structured output
+2) Agent delegation with usage propagation
+3) Multi-turn conversation with message history
+4) Streaming response
 
-Environment Variables:
-    HH_API_KEY: Your HoneyHive API key
-    HH_PROJECT: Your HoneyHive project name
-    ANTHROPIC_API_KEY: Your Anthropic API key (for Claude models)
-    OPENAI_API_KEY: Your OpenAI API key (for GPT models, optional)
+Install:
+    uv pip install honeyhive pydantic-ai
+
+Run:
+    uv run python examples/integrations/pydantic_ai_integration.py
+
+Environment:
+    HH_API_KEY
+    HH_PROJECT
+    ANTHROPIC_API_KEY       (or key for whichever provider MODEL uses)
+    PYDANTIC_AI_MODEL       (optional, defaults to "anthropic:claude-3-5-haiku-latest")
+    HH_SOURCE               (optional, defaults to "python_sdk_example")
 """
 
 import asyncio
 import os
-import sys
-from pathlib import Path
-from typing import Optional
+from dataclasses import dataclass
+
+from pydantic import BaseModel, Field
+from pydantic_ai import Agent, RunContext
+
+from honeyhive import HoneyHiveTracer
+
+MODEL = os.getenv("PYDANTIC_AI_MODEL", "anthropic:claude-3-5-haiku-latest")
 
 
-async def main():
-    """Main example demonstrating Pydantic AI integration with HoneyHive."""
+@dataclass
+class CustomerProfile:
+    """Typed dependency injected into tools via RunContext."""
 
-    # Check required environment variables
-    hh_api_key = os.getenv("HH_API_KEY")
-    hh_project = os.getenv("HH_PROJECT")
-    anthropic_api_key = os.getenv("ANTHROPIC_API_KEY")
+    name: str
+    account_tier: str
+    timezone: str
 
-    if not all([hh_api_key, hh_project, anthropic_api_key]):
-        print("❌ Missing required environment variables:")
-        print("   - HH_API_KEY: Your HoneyHive API key")
-        print("   - HH_PROJECT: Your HoneyHive project name")
-        print("   - ANTHROPIC_API_KEY: Your Anthropic API key")
-        print("\nSet these environment variables and try again.")
-        return False
+
+class SupportReply(BaseModel):
+    """Structured output returned by the support agent."""
+
+    summary: str = Field(description="Short summary of what is happening.")
+    recommended_steps: list[str] = Field(
+        description="Actionable steps for the customer."
+    )
+    escalation_level: str = Field(
+        description="One of: none, monitor, urgent."
+    )
+
+
+class EscalationRequired(BaseModel):
+    """Returned when the issue must be escalated to a human."""
+
+    reason: str = Field(description="Why escalation is needed.")
+    severity: str = Field(description="One of: high, critical.")
+
+
+async def run_single_agent_tool_scenario() -> None:
+    """Scenario 1: single agent with deps, tools, and structured output."""
+    agent = Agent(
+        MODEL,
+        name="support_agent",
+        deps_type=CustomerProfile,
+        output_type=SupportReply,
+        instructions=(
+            "You are a HoneyHive support assistant. "
+            "Always call check_service_health and search_knowledge_base "
+            "before composing the final answer."
+        ),
+    )
+
+    @agent.tool
+    def check_service_health(ctx: RunContext[CustomerProfile], service: str) -> str:
+        """Return current service status for the customer's tier."""
+        statuses = {
+            "ingestion": "degraded — elevated retry volume in one region",
+            "dashboard": "operational",
+            "evaluations": "operational",
+        }
+        status = statuses.get(service.lower(), "unknown service")
+        return f"[{ctx.deps.account_tier}] {service}: {status}"
+
+    @agent.tool_plain
+    def search_knowledge_base(topic: str) -> str:
+        """Search internal knowledge base for a support topic."""
+        articles = {
+            "missing traces": "Verify API key scope and project match. Normal delay is under 2 minutes.",
+            "rate limit": "Use retries with exponential backoff and reduce burst concurrency.",
+            "dashboard latency": "Large batch uploads can temporarily increase query latency.",
+        }
+        for key, summary in articles.items():
+            if key in topic.lower():
+                return summary
+        return "No KB match. Ask for additional details and timestamps."
+
+    customer = CustomerProfile(name="Alex Kim", account_tier="pro", timezone="UTC")
+
+    await agent.run(
+        "Our traces stopped showing up around 10:15 UTC. "
+        "Investigate likely causes and suggest next steps.",
+        deps=customer,
+    )
+
+
+async def run_delegation_scenario() -> None:
+    """Scenario 2: parent agent delegates billing questions to a specialist."""
+    billing_agent = Agent(
+        MODEL,
+        name="billing_specialist",
+        instructions=(
+            "You are a billing specialist. Return short, policy-safe answers "
+            "about credits and invoice adjustments."
+        ),
+    )
+
+    support_agent = Agent(
+        MODEL,
+        name="support_coordinator",
+        deps_type=CustomerProfile,
+        output_type=SupportReply,
+        instructions=(
+            "You are a support agent. If the customer asks about credits or "
+            "billing, delegate to ask_billing_specialist. "
+            "Include the specialist's answer in your response."
+        ),
+    )
+
+    @support_agent.tool
+    async def ask_billing_specialist(
+        ctx: RunContext[CustomerProfile], question: str
+    ) -> str:
+        """Delegate billing questions to a specialist sub-agent."""
+        prompt = f"Customer tier: {ctx.deps.account_tier}\nQuestion: {question}"
+        result = await billing_agent.run(prompt, usage=ctx.usage)
+        return str(result.output)
+
+    customer = CustomerProfile(
+        name="Jordan Lee", account_tier="enterprise", timezone="US/Pacific"
+    )
+
+    await support_agent.run(
+        "We had a 4-hour ingestion outage yesterday. "
+        "Are we eligible for billing credits under the enterprise SLA?",
+        deps=customer,
+    )
+
+
+async def run_multi_turn_scenario() -> None:
+    """Scenario 3: two-turn conversation with union output and message history."""
+    triage_agent = Agent(
+        MODEL,
+        name="triage_agent",
+        output_type=[SupportReply, EscalationRequired],  # type: ignore[arg-type]
+        instructions=(
+            "You are a triage agent. Return SupportReply for standard issues "
+            "or EscalationRequired for critical production outages."
+        ),
+    )
+
+    result1 = await triage_agent.run(
+        "Our dashboard has been loading slowly for the past 30 minutes."
+    )
+
+    await triage_agent.run(
+        "Update: it's now completely down. Our whole team is blocked.",
+        message_history=result1.new_messages(),
+    )
+
+
+async def run_streaming_scenario() -> None:
+    """Scenario 4: streaming response via run_stream()."""
+    agent = Agent(
+        MODEL,
+        name="incident_writer",
+        instructions="Write concise incident updates for technical support teams.",
+    )
+
+    async with agent.run_stream(
+        "Write a short 3-bullet internal update for a temporary ingestion delay."
+    ) as streamed:
+        async for _ in streamed.stream_text():
+            pass
+
+
+async def main() -> None:
+    """Run PydanticAI example scenarios and emit HoneyHive traces."""
+    tracer = HoneyHiveTracer.init(
+        api_key=os.getenv("HH_API_KEY"),
+        project=os.getenv("HH_PROJECT"),
+        session_name="pydantic_ai_integration_example",
+        source=os.getenv("HH_SOURCE", "python_sdk_example"),
+    )
+    Agent.instrument_all()
 
     try:
-        # Import required packages
-        from openinference.instrumentation.anthropic import AnthropicInstrumentor
-        from pydantic import BaseModel, Field
-        from pydantic_ai import Agent
-
-        from honeyhive import HoneyHiveTracer
-        from honeyhive.tracer.instrumentation.decorators import trace
-
-        print("🚀 Pydantic AI + HoneyHive Integration Example")
-        print("=" * 50)
-
-        # 1. Initialize the Anthropic instrumentor
-        print("🔧 Setting up Anthropic instrumentor...")
-        anthropic_instrumentor = AnthropicInstrumentor()
-        print("✓ Anthropic instrumentor initialized")
-
-        # 2. Initialize HoneyHive tracer
-        print("🔧 Setting up HoneyHive tracer...")
-        tracer = HoneyHiveTracer.init(
-            api_key=hh_api_key,
-            project=hh_project,
-            session_name=Path(__file__).stem,  # Use filename as session name
-            source="pydantic_ai_example",
-        )
-        print("✓ HoneyHive tracer initialized")
-
-        Agent.instrument_all()
-        # Instrument Anthropic with tracer provider
-        anthropic_instrumentor.instrument(tracer_provider=tracer.provider)
-        print("✓ HoneyHive tracer initialized with Anthropic instrumentor")
-
-        # 3. Test basic agent
-        print("\n🤖 Testing basic agent...")
-        result1 = await test_basic_agent(tracer)
-        print(f"✓ Basic agent completed: {result1[:100]}...")
-
-        # 4. Test agent with structured output
-        print("\n📋 Testing structured output...")
-        result2 = await test_structured_output(tracer)
-        print(f"✓ Structured output completed: {result2[:100]}...")
-
-        # 5. Test agent with tools
-        print("\n🔧 Testing agent with tools...")
-        result3 = await test_agent_with_tools(tracer)
-        print(f"✓ Agent with tools completed: {result3[:100]}...")
-
-        # 6. Test agent with system prompt
-        print("\n💬 Testing agent with system prompt...")
-        result4 = await test_agent_with_system_prompt(tracer)
-        print(f"✓ System prompt test completed: {result4[:100]}...")
-
-        # 7. Test agent with dependencies
-        print("\n🔗 Testing agent with dependencies...")
-        result5 = await test_agent_with_dependencies(tracer)
-        print(f"✓ Dependencies test completed: {result5[:100]}...")
-
-        # 8. Test streaming agent
-        print("\n🌊 Testing streaming agent...")
-        result6 = await test_streaming_agent(tracer)
-        print(f"✓ Streaming test completed: {result6} chunks received")
-
-        # 9. Clean up instrumentor
-        print("\n🧹 Cleaning up...")
-        anthropic_instrumentor.uninstrument()
-        print("✓ Instrumentor cleaned up")
-
-        print("\n🎉 Pydantic AI integration example completed successfully!")
-        print(f"📊 Check your HoneyHive project '{hh_project}' for trace data")
-
-        return True
-
-    except ImportError as e:
-        print(f"❌ Import error: {e}")
-        print("\n💡 Install required packages:")
-        print(
-            "   pip install honeyhive pydantic-ai openinference-instrumentation-anthropic"
-        )
-        return False
-
-    except Exception as e:
-        print(f"❌ Example failed: {e}")
-        import traceback
-
-        traceback.print_exc()
-        return False
-
-
-async def test_basic_agent(tracer: "HoneyHiveTracer") -> str:
-    """Test 1: Basic agent with simple query."""
-
-    from pydantic_ai import Agent
-
-    from honeyhive.tracer.instrumentation.decorators import trace
-
-    @trace(event_type="chain", event_name="test_basic_agent", tracer=tracer)
-    async def _test():
-        agent = Agent(
-            "anthropic:claude-sonnet-4-0",
-            instructions="Be concise, reply with one sentence.",
-        )
-
-        result = await agent.run('Where does "hello world" come from?')
-        return result.output
-
-    return await _test()
-
-
-async def test_structured_output(tracer: "HoneyHiveTracer") -> str:
-    """Test 2: Agent with structured output using Pydantic models."""
-
-    import json
-
-    from pydantic import BaseModel, Field
-    from pydantic_ai import Agent
-
-    from honeyhive.tracer.instrumentation.decorators import trace
-
-    class CityInfo(BaseModel):
-        name: str = Field(description="The name of the city")
-        country: str = Field(description="The country the city is in")
-        population: int = Field(description="The approximate population")
-        famous_for: str = Field(description="What the city is famous for")
-
-    @trace(event_type="chain", event_name="test_structured_output", tracer=tracer)
-    async def _test():
-        # Agent that returns structured JSON output
-        agent = Agent(
-            "anthropic:claude-sonnet-4-0",
-        )
-
-        result = await agent.run(
-            """Extract information about Paris and return it as JSON with these fields:
-- name: The name of the city
-- country: The country the city is in  
-- population: The approximate population (as a number)
-- famous_for: What the city is famous for
-
-Return ONLY the JSON, no other text."""
-        )
-
-        # Parse the JSON response
-        try:
-            city_data = json.loads(result.output)
-            return json.dumps(city_data, indent=2)
-        except:
-            # If not valid JSON, return the raw output
-            return str(result.output)
-
-    return await _test()
-
-
-async def test_agent_with_tools(tracer: "HoneyHiveTracer") -> str:
-    """Test 3: Agent with custom tools/functions."""
-
-    from pydantic_ai import Agent, RunContext
-
-    from honeyhive.tracer.instrumentation.decorators import trace
-
-    @trace(event_type="chain", event_name="test_agent_with_tools", tracer=tracer)
-    async def _test():
-        agent = Agent(
-            "anthropic:claude-sonnet-4-0",
-            instructions="You are a helpful assistant with access to tools. Use them when needed.",
-        )
-
-        @agent.tool
-        def get_weather(ctx: RunContext[None], city: str) -> str:
-            """Get the current weather for a city."""
-            # Mock weather data
-            weather_data = {
-                "london": "Cloudy, 15°C",
-                "new york": "Sunny, 22°C",
-                "tokyo": "Rainy, 18°C",
-                "paris": "Partly cloudy, 17°C",
-            }
-            return weather_data.get(
-                city.lower(), f"Weather data not available for {city}"
-            )
-
-        @agent.tool
-        def calculate(ctx: RunContext[None], expression: str) -> str:
-            """Calculate a mathematical expression."""
-            try:
-                result = eval(expression)
-                return f"Result: {result}"
-            except Exception as e:
-                return f"Error: {str(e)}"
-
-        result = await agent.run("What is the weather in London and what is 15 * 8?")
-        return result.output
-
-    return await _test()
-
-
-async def test_agent_with_system_prompt(tracer: "HoneyHiveTracer") -> str:
-    """Test 4: Agent with dynamic system prompt."""
-
-    from pydantic_ai import Agent, RunContext
-
-    from honeyhive.tracer.instrumentation.decorators import trace
-
-    @trace(
-        event_type="chain", event_name="test_agent_with_system_prompt", tracer=tracer
-    )
-    async def _test():
-        agent = Agent(
-            "anthropic:claude-sonnet-4-0",
-        )
-
-        @agent.system_prompt
-        def system_prompt(ctx: RunContext[None]) -> str:
-            return """You are a helpful AI assistant specializing in technology.
-You should:
-- Provide accurate, up-to-date information
-- Explain complex concepts in simple terms
-- Be concise but thorough
-- Use examples when helpful"""
-
-        result = await agent.run("Explain what an API is")
-        return result.output
-
-    return await _test()
-
-
-async def test_agent_with_dependencies(tracer: "HoneyHiveTracer") -> str:
-    """Test 5: Agent with dependency injection for context."""
-
-    from dataclasses import dataclass
-
-    from pydantic_ai import Agent, RunContext
-
-    from honeyhive.tracer.instrumentation.decorators import trace
-
-    @dataclass
-    class UserContext:
-        user_name: str
-        user_role: str
-        preferences: dict
-
-    @trace(event_type="chain", event_name="test_agent_with_dependencies", tracer=tracer)
-    async def _test():
-        agent = Agent(
-            "anthropic:claude-sonnet-4-0",
-            deps_type=UserContext,
-        )
-
-        @agent.system_prompt
-        def system_prompt(ctx: RunContext[UserContext]) -> str:
-            return f"""You are assisting {ctx.deps.user_name}, who is a {ctx.deps.user_role}.
-Tailor your responses to their role and preferences: {ctx.deps.preferences}"""
-
-        @agent.tool
-        def get_user_info(ctx: RunContext[UserContext]) -> str:
-            """Get information about the current user."""
-            return f"User: {ctx.deps.user_name}, Role: {ctx.deps.user_role}"
-
-        user_ctx = UserContext(
-            user_name="Alice",
-            user_role="Software Engineer",
-            preferences={"language": "Python", "level": "advanced"},
-        )
-
-        result = await agent.run("Give me a programming tip", deps=user_ctx)
-        return result.output
-
-    return await _test()
-
-
-async def test_streaming_agent(tracer: "HoneyHiveTracer") -> int:
-    """Test 6: Agent with streaming responses."""
-
-    from pydantic_ai import Agent
-
-    from honeyhive.tracer.instrumentation.decorators import trace
-
-    @trace(event_type="chain", event_name="test_streaming_agent", tracer=tracer)
-    async def _test():
-        agent = Agent(
-            "anthropic:claude-sonnet-4-0",
-            instructions="Provide a detailed response about the topic.",
-        )
-
-        chunk_count = 0
-        full_response = ""
-
-        async with agent.run_stream(
-            "Explain the concept of machine learning in 3 paragraphs"
-        ) as response:
-            async for chunk in response.stream_text():
-                full_response += chunk
-                chunk_count += 1
-
-        # Get final result
-        final = await response.get_data()
-        print(f"   Received {chunk_count} chunks, final output: {final.output[:50]}...")
-
-        return chunk_count
-
-    return await _test()
+        await run_single_agent_tool_scenario()
+        await run_delegation_scenario()
+        await run_multi_turn_scenario()
+        await run_streaming_scenario()
+    finally:
+        tracer.force_flush()
 
 
 if __name__ == "__main__":
-    """Run the Pydantic AI integration example."""
-    success = asyncio.run(main())
-
-    if success:
-        print("\n✅ Example completed successfully!")
-        sys.exit(0)
-    else:
-        print("\n❌ Example failed!")
-        sys.exit(1)
+    asyncio.run(main())
