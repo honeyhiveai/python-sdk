@@ -27,3 +27,13 @@ class Configuration(BaseModel):
     user_properties: Optional[Dict[str, Any]] = Field(
         validation_alias="user_properties", default=None
     )
+
+    org_id: Optional[str] = Field(validation_alias="org_id", default=None)
+
+    project_id: Optional[str] = Field(validation_alias="project_id", default=None)
+
+    tenant: Optional[str] = Field(validation_alias="tenant", default=None)
+
+    created_at: Optional[str] = Field(validation_alias="created_at", default=None)
+
+    updated_at: Optional[str] = Field(validation_alias="updated_at", default=None)

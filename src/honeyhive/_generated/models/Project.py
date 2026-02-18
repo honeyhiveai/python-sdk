@@ -14,4 +14,12 @@ class Project(BaseModel):
 
     name: str = Field(validation_alias="name")
 
-    description: str = Field(validation_alias="description")
+    description: Optional[str] = Field(validation_alias="description", default=None)
+
+    org_id: Optional[str] = Field(validation_alias="org_id", default=None)
+
+    is_active: Optional[bool] = Field(validation_alias="is_active", default=None)
+
+    created_at: Optional[str] = Field(validation_alias="created_at", default=None)
+
+    updated_at: Optional[str] = Field(validation_alias="updated_at", default=None)

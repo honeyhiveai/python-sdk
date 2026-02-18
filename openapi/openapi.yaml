@@ -1320,13 +1320,7 @@ components:
           additionalProperties: true
           description: Any user properties associated with the event
       required:
-      - project
       - event_type
-      - event_name
-      - source
-      - config
-      - inputs
-      - duration
       example:
         project: Simple RAG
         event_type: model
@@ -1526,6 +1520,9 @@ components:
     Metric:
       type: object
       properties:
+        _id:
+          type: string
+          description: Unique identifier
         name:
           type: string
           description: Name of the metric
@@ -1573,15 +1570,14 @@ components:
               type: number
             max:
               type: number
-          description: Threshold for numeric metrics to decide passing or failing
-            in tests
+            pass_when:
+              type: boolean
+              description: Threshold for boolean metrics to decide passing or failing
+          description: Threshold for metrics to decide passing or failing in tests
         pass_when:
           type: boolean
           description: Threshold for boolean metrics to decide passing or failing
-            in tests
-        _id:
-          type: string
-          description: Unique idenitifier
+            in tests (legacy, now nested in threshold)
         event_name:
           type: string
           description: Name of event that the metric is set to be computed on
@@ -1600,12 +1596,26 @@ components:
             type: object
             additionalProperties: true
           description: Child metrics added under composite events
+        sampling_percentage:
+          type: number
+          description: Percentage of events to sample for metric computation
+        filters:
+          type: object
+          additionalProperties: true
+          description: Filters for metric computation
+        created_at:
+          type: string
+          format: date-time
+          description: Timestamp of when the metric was created
+        updated_at:
+          type: string
+          format: date-time
+          nullable: true
+          description: Timestamp of when the metric was last updated
       required:
       - name
-      - task
       - type
-      - description
-      - return_type
+      - criteria
     MetricEdit:
       type: object
       properties:
@@ -1692,9 +1702,10 @@ components:
       properties:
         _id:
           type: string
+          description: Legacy document ID (alias for id)
         task:
           type: string
-          description: Name of the project associated with this tool
+          description: Name of the project associated with this tool (legacy alias for project_name)
         name:
           type: string
         description:
@@ -1708,15 +1719,37 @@ components:
           enum:
           - function
           - tool
-      required:
-      - task
-      - name
-      - parameters
-      - tool_type
+        type:
+          type: string
+          enum:
+          - function
+          - tool
+          description: Legacy alias for tool_type
+        org_id:
+          type: string
+          description: The organization ID
+        project_id:
+          type: string
+          description: The project ID
+        tenant:
+          type: string
+          description: Legacy alias for org_id
+        created_at:
+          type: string
+          format: date-time
+          description: Timestamp of when the tool was created
+        updated_at:
+          type: string
+          format: date-time
+          nullable: true
+          description: Timestamp of when the tool was last updated
     CreateToolRequest:
       type: object
       properties:
         task:
+          type: string
+          description: Name of the project associated with this tool (legacy alias for project_name)
+        project_name:
           type: string
           description: Name of the project associated with this tool
         name:
@@ -1732,11 +1765,15 @@ components:
           enum:
           - function
           - tool
+          description: Legacy alias for tool_type
+        tool_type:
+          type: string
+          enum:
+          - function
+          - tool
       required:
-      - task
       - name
       - parameters
-      - type
     UpdateToolRequest:
       type: object
       properties:
@@ -2168,10 +2205,24 @@ components:
           type: string
         description:
           type: string
+          nullable: true
+        org_id:
+          type: string
+          description: The organization ID
+        is_active:
+          type: boolean
+          description: Whether the project is active
+        created_at:
+          type: string
+          format: date-time
+          description: Timestamp of when the project was created
+        updated_at:
+          type: string
+          format: date-time
+          nullable: true
+          description: Timestamp of when the project was last updated
       required:
       - name
-      - description
-      - type
     CreateRunRequest:
       type: object
       required:
@@ -2660,6 +2711,24 @@ components:
           type: object
           additionalProperties: true
           description: Details of user who created the configuration
+        org_id:
+          type: string
+          description: The organization ID
+        project_id:
+          type: string
+          description: The project ID
+        tenant:
+          type: string
+          description: Legacy alias for org_id
+        created_at:
+          type: string
+          format: date-time
+          description: Timestamp of when the configuration was created
+        updated_at:
+          type: string
+          format: date-time
+          nullable: true
+          description: Timestamp of when the configuration was last updated
       required:
       - project
       - name

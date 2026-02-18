@@ -12,12 +12,26 @@ class Tool(BaseModel):
 
     id: Optional[str] = Field(validation_alias="_id", default=None)
 
-    task: str = Field(validation_alias="task")
+    task: Optional[str] = Field(validation_alias="task", default=None)
 
-    name: str = Field(validation_alias="name")
+    name: Optional[str] = Field(validation_alias="name", default=None)
 
     description: Optional[str] = Field(validation_alias="description", default=None)
 
-    parameters: Dict[str, Any] = Field(validation_alias="parameters")
+    parameters: Optional[Dict[str, Any]] = Field(
+        validation_alias="parameters", default=None
+    )
 
-    tool_type: str = Field(validation_alias="tool_type")
+    tool_type: Optional[str] = Field(validation_alias="tool_type", default=None)
+
+    type: Optional[str] = Field(validation_alias="type", default=None)
+
+    org_id: Optional[str] = Field(validation_alias="org_id", default=None)
+
+    project_id: Optional[str] = Field(validation_alias="project_id", default=None)
+
+    tenant: Optional[str] = Field(validation_alias="tenant", default=None)
+
+    created_at: Optional[str] = Field(validation_alias="created_at", default=None)
+
+    updated_at: Optional[str] = Field(validation_alias="updated_at", default=None)
