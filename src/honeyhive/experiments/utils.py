@@ -212,6 +212,11 @@ def prepare_run_request_data(  # pylint: disable=unused-argument
         request_data["metadata"]["offline_dataset_id"] = dataset_id
         # Clear dataset_id to avoid FK constraint
         request_data["dataset_id"] = None
+        # Store external datapoint IDs in metadata and clear from request
+        # (backend validates datapoint_ids as real database IDs)
+        if request_data.get("datapoint_ids"):
+            request_data["metadata"]["offline_datapoint_ids"] = request_data["datapoint_ids"]
+            request_data["datapoint_ids"] = []
     else:
         request_data["dataset_id"] = dataset_id
 
