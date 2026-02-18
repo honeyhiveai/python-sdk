@@ -15,7 +15,7 @@ Usage:
     configs = await client.configurations.list_async(project="my-project")
 """
 
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List, Optional, Union
 
 from honeyhive._generated.api_config import APIConfig
 
@@ -37,11 +37,9 @@ from honeyhive._generated.models import (
     CreateModelEventBatchRequest,
     CreateModelEventBatchResponse,
     CreateModelEventRequestBody,
-    CreateRunRequest,
     CreateRunResponse,
     CreateToolRequest,
     CreateToolResponse,
-    DatasetUpdate,
     DeleteDatapointResponse,
     DeleteRunResponse,
     Event,
@@ -55,19 +53,27 @@ from honeyhive._generated.models import (
     GetRunResponse,
     GetRunsResponse,
     Metric,
-    MetricEdit,
-    PostConfigurationRequest,
     Project,
-    PutConfigurationRequest,
     SessionStartRequest,
     StartSessionRequestBody,
     StartSessionResponse,
     Tool,
     UpdateDatapointRequest,
     UpdateEventRequest,
-    UpdateRunRequest,
     UpdateRunResponse,
     UpdateToolRequest,
+)
+
+# Import aliased model names for FED-compatible type annotations
+from honeyhive.models import (
+    CreateConfigurationRequest,
+    UpdateConfigurationRequest,
+    UpdateDatasetRequest,
+    PostExperimentRunRequest,
+    PutExperimentRunRequest,
+    PostEventRequest,
+    CreateMetricRequest,
+    UpdateMetricRequest,
 )
 
 # Import sync services (9 services)
@@ -119,11 +125,11 @@ class ConfigurationsAPI(BaseAPI):
             self._api_config, project=project, env=env, name=name
         )
 
-    def create(self, request: PostConfigurationRequest) -> None:
+    def create(self, request: CreateConfigurationRequest) -> None:
         """Create a configuration."""
         return configs_svc.createConfiguration(self._api_config, data=request)
 
-    def update(self, id: str, request: PutConfigurationRequest) -> None:
+    def update(self, id: str, request: UpdateConfigurationRequest) -> None:
         """Update a configuration."""
         return configs_svc.updateConfiguration(self._api_config, id=id, data=request)
 
@@ -140,13 +146,13 @@ class ConfigurationsAPI(BaseAPI):
             self._api_config, project=project, env=env, name=name
         )
 
-    async def create_async(self, request: PostConfigurationRequest) -> None:
+    async def create_async(self, request: CreateConfigurationRequest) -> None:
         """Create a configuration asynchronously."""
         return await configs_svc_async.createConfiguration(
             self._api_config, data=request
         )
 
-    async def update_async(self, id: str, request: PutConfigurationRequest) -> None:
+    async def update_async(self, id: str, request: UpdateConfigurationRequest) -> None:
         """Update a configuration asynchronously."""
         return await configs_svc_async.updateConfiguration(
             self._api_config, id=id, data=request
@@ -157,11 +163,11 @@ class ConfigurationsAPI(BaseAPI):
         return await configs_svc_async.deleteConfiguration(self._api_config, id=id)
 
     # Backwards compatible aliases
-    def create_configuration(self, request: PostConfigurationRequest) -> None:
+    def create_configuration(self, request: CreateConfigurationRequest) -> None:
         """Create a configuration (backwards compatible alias)."""
         return self.create(request)
 
-    def update_configuration(self, id: str, request: PutConfigurationRequest) -> None:
+    def update_configuration(self, id: str, request: UpdateConfigurationRequest) -> None:
         """Update a configuration (backwards compatible alias)."""
         return self.update(id, request)
 
@@ -302,7 +308,7 @@ class DatasetsAPI(BaseAPI):
         """Create a dataset."""
         return datasets_svc.createDataset(self._api_config, data=request)
 
-    def update(self, request: DatasetUpdate) -> None:
+    def update(self, request: UpdateDatasetRequest) -> None:
         """Update a dataset."""
         return datasets_svc.updateDataset(self._api_config, data=request)
 
@@ -310,14 +316,12 @@ class DatasetsAPI(BaseAPI):
         """Delete a dataset."""
         return datasets_svc.deleteDataset(self._api_config, dataset_id=id)
 
-    def add_datapoints(self, dataset_id: str, data: Any) -> AddDatapointsResponse:
+    def add_datapoints(self, dataset_id: str, data: Union[AddDatapointsRequest, Dict[str, Any]]) -> AddDatapointsResponse:
         """Add datapoints to a dataset."""
         if isinstance(data, AddDatapointsRequest):
             req = data
-        elif isinstance(data, dict):
-            req = AddDatapointsRequest(**data)
         else:
-            req = data
+            req = AddDatapointsRequest(**data)
         return datasets_svc.addDatapoints(
             self._api_config, dataset_id=dataset_id, data=req
         )
@@ -341,7 +345,7 @@ class DatasetsAPI(BaseAPI):
         """Create a dataset asynchronously."""
         return await datasets_svc_async.createDataset(self._api_config, data=request)
 
-    async def update_async(self, request: DatasetUpdate) -> None:
+    async def update_async(self, request: UpdateDatasetRequest) -> None:
         """Update a dataset asynchronously."""
         return await datasets_svc_async.updateDataset(self._api_config, data=request)
 
@@ -350,15 +354,13 @@ class DatasetsAPI(BaseAPI):
         return await datasets_svc_async.deleteDataset(self._api_config, dataset_id=id)
 
     async def add_datapoints_async(
-        self, dataset_id: str, data: Any
+        self, dataset_id: str, data: Union[AddDatapointsRequest, Dict[str, Any]]
     ) -> AddDatapointsResponse:
         """Add datapoints to a dataset asynchronously."""
         if isinstance(data, AddDatapointsRequest):
             req = data
-        elif isinstance(data, dict):
-            req = AddDatapointsRequest(**data)
         else:
-            req = data
+            req = AddDatapointsRequest(**data)
         return await datasets_svc_async.addDatapoints(
             self._api_config, dataset_id=dataset_id, data=req
         )
@@ -372,7 +374,7 @@ class DatasetsAPI(BaseAPI):
         """Create a dataset (backwards compatible alias for create())."""
         return self.create(request)
 
-    def update_dataset(self, request: DatasetUpdate) -> None:
+    def update_dataset(self, request: UpdateDatasetRequest) -> None:
         """Update a dataset (backwards compatible alias for update())."""
         return self.update(request)
 
@@ -389,127 +391,107 @@ class EventsAPI(BaseAPI):
     """Events API."""
 
     # Sync methods
-    def list(self, data: Any) -> GetEventsResponse:
+    def list(self, data: Union[GetEventsRequest, Dict[str, Any]]) -> GetEventsResponse:
         """Get events (POST /events/export)."""
         if isinstance(data, GetEventsRequest):
             req = data
-        elif isinstance(data, dict):
-            req = GetEventsRequest(**data)
         else:
-            req = data
+            req = GetEventsRequest(**data)
         return events_svc.getEvents(self._api_config, data=req)
 
-    def create(self, data: Any) -> CreateEventResponse:
+    def create(self, data: Union[CreateEventRequestBody, CreateEventRequest, Dict[str, Any]]) -> CreateEventResponse:
         """Create an event."""
         if isinstance(data, CreateEventRequestBody):
             req = data
         elif isinstance(data, dict):
             req = CreateEventRequestBody(event=CreateEventRequest(**data))
-        elif hasattr(data, "model_dump"):
-            req = CreateEventRequestBody(event=data)
         else:
-            req = data
+            req = CreateEventRequestBody(event=data)
         return events_svc.createEvent(self._api_config, data=req)
 
-    def update(self, data: Any) -> None:
+    def update(self, data: Union[UpdateEventRequest, Dict[str, Any]]) -> None:
         """Update an event."""
         if isinstance(data, UpdateEventRequest):
             req = data
-        elif isinstance(data, dict):
-            req = UpdateEventRequest(**data)
         else:
-            req = data
+            req = UpdateEventRequest(**data)
         return events_svc.updateEvent(self._api_config, data=req)
 
-    def create_batch(self, data: Any) -> CreateEventBatchResponse:
+    def create_batch(self, data: Union[CreateEventBatchRequest, Dict[str, Any]]) -> CreateEventBatchResponse:
         """Create events in batch."""
         if isinstance(data, CreateEventBatchRequest):
             req = data
-        elif isinstance(data, dict):
-            req = CreateEventBatchRequest(**data)
         else:
-            req = data
+            req = CreateEventBatchRequest(**data)
         return events_svc.createEventBatch(self._api_config, data=req)
 
-    def create_model_event(self, data: Any) -> CreateEventResponse:
+    def create_model_event(self, data: Union[CreateModelEventRequestBody, CreateModelEvent, Dict[str, Any]]) -> CreateEventResponse:
         """Create a model event."""
         if isinstance(data, CreateModelEventRequestBody):
             req = data
         elif isinstance(data, dict):
             req = CreateModelEventRequestBody(model_event=CreateModelEvent(**data))
-        elif hasattr(data, "model_dump"):
-            req = CreateModelEventRequestBody(model_event=data)
         else:
-            req = data
+            req = CreateModelEventRequestBody(model_event=data)
         return events_svc.createModelEvent(self._api_config, data=req)
 
-    def create_model_event_batch(self, data: Any) -> CreateModelEventBatchResponse:
+    def create_model_event_batch(self, data: Union[CreateModelEventBatchRequest, Dict[str, Any]]) -> CreateModelEventBatchResponse:
         """Create model events in batch."""
         if isinstance(data, CreateModelEventBatchRequest):
             req = data
-        elif isinstance(data, dict):
-            req = CreateModelEventBatchRequest(**data)
         else:
-            req = data
+            req = CreateModelEventBatchRequest(**data)
         return events_svc.createModelEventBatch(self._api_config, data=req)
 
     # Async methods
-    async def list_async(self, data: Any) -> GetEventsResponse:
+    async def list_async(self, data: Union[GetEventsRequest, Dict[str, Any]]) -> GetEventsResponse:
         """Get events asynchronously."""
         if isinstance(data, GetEventsRequest):
             req = data
-        elif isinstance(data, dict):
-            req = GetEventsRequest(**data)
         else:
-            req = data
+            req = GetEventsRequest(**data)
         return await events_svc_async.getEvents(self._api_config, data=req)
 
-    async def create_async(self, data: Any) -> CreateEventResponse:
+    async def create_async(self, data: Union[CreateEventRequestBody, CreateEventRequest, Dict[str, Any]]) -> CreateEventResponse:
         """Create an event asynchronously."""
         if isinstance(data, CreateEventRequestBody):
             req = data
         elif isinstance(data, dict):
             req = CreateEventRequestBody(event=CreateEventRequest(**data))
-        elif hasattr(data, "model_dump"):
-            req = CreateEventRequestBody(event=data)
         else:
-            req = data
+            req = CreateEventRequestBody(event=data)
         return await events_svc_async.createEvent(self._api_config, data=req)
 
-    async def update_async(self, data: Any) -> None:
+    async def update_async(self, data: Union[UpdateEventRequest, Dict[str, Any]]) -> None:
         """Update an event asynchronously."""
         if isinstance(data, UpdateEventRequest):
             req = data
-        elif isinstance(data, dict):
-            req = UpdateEventRequest(**data)
         else:
-            req = data
+            req = UpdateEventRequest(**data)
         return await events_svc_async.updateEvent(self._api_config, data=req)
 
-    async def create_batch_async(self, data: Any) -> CreateEventBatchResponse:
+    async def create_batch_async(self, data: Union[CreateEventBatchRequest, Dict[str, Any]]) -> CreateEventBatchResponse:
         """Create events in batch asynchronously."""
         if isinstance(data, CreateEventBatchRequest):
             req = data
-        elif isinstance(data, dict):
-            req = CreateEventBatchRequest(**data)
         else:
-            req = data
+            req = CreateEventBatchRequest(**data)
         return await events_svc_async.createEventBatch(self._api_config, data=req)
 
     # Backwards compatible aliases
-    def create_event(self, data: Any) -> CreateEventResponse:
+    def create_event(self, data: Union[CreateEventRequestBody, CreateEventRequest, Dict[str, Any]]) -> CreateEventResponse:
         """Create an event (backwards compatible alias for create())."""
         return self.create(data)
 
-    def update_event(self, data: Any) -> None:
+    def update_event(self, data: Union[UpdateEventRequest, Dict[str, Any]]) -> None:
         """Update an event (backwards compatible alias for update())."""
         return self.update(data)
 
-    def list_events(self, data: Any) -> GetEventsResponse:
+    def list_events(self, data: Union[GetEventsRequest, Dict[str, Any]]) -> GetEventsResponse:
         """List events (backwards compatible alias for list())."""
         return self.list(data)
 
-    def get_events(self, data: Any) -> GetEventsResponse:
+    def get_events(self, data: Union[GetEventsRequest, Dict[str, Any]]) -> GetEventsResponse:
         """Get events (backwards compatible alias for list())."""
         return self.list(data)
 
@@ -543,11 +525,11 @@ class ExperimentsAPI(BaseAPI):
         """Get an experiment run by ID."""
         return experiments_svc.getRun(self._api_config, run_id=run_id)
 
-    def create_run(self, request: CreateRunRequest) -> CreateRunResponse:
+    def create_run(self, request: PostExperimentRunRequest) -> CreateRunResponse:
         """Create an experiment run."""
         return experiments_svc.createRun(self._api_config, data=request)
 
-    def update_run(self, run_id: str, request: UpdateRunRequest) -> UpdateRunResponse:
+    def update_run(self, run_id: str, request: PutExperimentRunRequest) -> UpdateRunResponse:
         """Update an experiment run."""
         return experiments_svc.updateRun(self._api_config, run_id=run_id, data=request)
 
@@ -609,12 +591,12 @@ class ExperimentsAPI(BaseAPI):
         """Get an experiment run by ID asynchronously."""
         return await experiments_svc_async.getRun(self._api_config, run_id=run_id)
 
-    async def create_run_async(self, request: CreateRunRequest) -> CreateRunResponse:
+    async def create_run_async(self, request: PostExperimentRunRequest) -> CreateRunResponse:
         """Create an experiment run asynchronously."""
         return await experiments_svc_async.createRun(self._api_config, data=request)
 
     async def update_run_async(
-        self, run_id: str, request: UpdateRunRequest
+        self, run_id: str, request: PutExperimentRunRequest
     ) -> UpdateRunResponse:
         """Update an experiment run asynchronously."""
         return await experiments_svc_async.updateRun(
@@ -680,11 +662,11 @@ class MetricsAPI(BaseAPI):
         """
         return metrics_svc.getMetrics(self._api_config, project_name=project_name)
 
-    def create(self, request: Metric) -> None:
+    def create(self, request: CreateMetricRequest) -> None:
         """Create a metric."""
         return metrics_svc.createMetric(self._api_config, data=request)
 
-    def update(self, request: MetricEdit) -> None:
+    def update(self, request: UpdateMetricRequest) -> None:
         """Update a metric."""
         return metrics_svc.updateMetric(self._api_config, data=request)
 
@@ -699,11 +681,11 @@ class MetricsAPI(BaseAPI):
             self._api_config, project_name=project_name
         )
 
-    async def create_async(self, request: Metric) -> None:
+    async def create_async(self, request: CreateMetricRequest) -> None:
         """Create a metric asynchronously."""
         return await metrics_svc_async.createMetric(self._api_config, data=request)
 
-    async def update_async(self, request: MetricEdit) -> None:
+    async def update_async(self, request: UpdateMetricRequest) -> None:
         """Update a metric asynchronously."""
         return await metrics_svc_async.updateMetric(self._api_config, data=request)
 
@@ -712,11 +694,11 @@ class MetricsAPI(BaseAPI):
         return await metrics_svc_async.deleteMetric(self._api_config, metric_id=id)
 
     # Backwards compatible aliases
-    def create_metric(self, request: Metric) -> None:
+    def create_metric(self, request: CreateMetricRequest) -> None:
         """Create a metric (backwards compatible alias)."""
         return self.create(request)
 
-    def update_metric(self, request: MetricEdit) -> None:
+    def update_metric(self, request: UpdateMetricRequest) -> None:
         """Update a metric (backwards compatible alias)."""
         return self.update(request)
 
@@ -737,11 +719,11 @@ class ProjectsAPI(BaseAPI):
         """List projects."""
         return projects_svc.getProjects(self._api_config, name=name)
 
-    def create(self, data: Any) -> Project:
+    def create(self, data: Dict[str, Any]) -> Project:
         """Create a project."""
         return projects_svc.createProject(self._api_config, data=data)
 
-    def update(self, data: Any) -> None:
+    def update(self, data: Dict[str, Any]) -> None:
         """Update a project."""
         return projects_svc.updateProject(self._api_config, data=data)
 
@@ -754,11 +736,11 @@ class ProjectsAPI(BaseAPI):
         """List projects asynchronously."""
         return await projects_svc_async.getProjects(self._api_config, name=name)
 
-    async def create_async(self, data: Any) -> Project:
+    async def create_async(self, data: Dict[str, Any]) -> Project:
         """Create a project asynchronously."""
         return await projects_svc_async.createProject(self._api_config, data=data)
 
-    async def update_async(self, data: Any) -> None:
+    async def update_async(self, data: Dict[str, Any]) -> None:
         """Update a project asynchronously."""
         return await projects_svc_async.updateProject(self._api_config, data=data)
 
@@ -771,11 +753,11 @@ class ProjectsAPI(BaseAPI):
         """Get a project (backwards compatible alias)."""
         return self.list(name=id)
 
-    def create_project(self, data: Any) -> Project:
+    def create_project(self, data: Dict[str, Any]) -> Project:
         """Create a project (backwards compatible alias)."""
         return self.create(data)
 
-    def update_project(self, data: Any) -> None:
+    def update_project(self, data: Dict[str, Any]) -> None:
         """Update a project (backwards compatible alias)."""
         return self.update(data)
 
@@ -799,16 +781,14 @@ class SessionsAPI(BaseAPI):
         """Get a session by ID."""
         return session_svc.getSession(self._api_config, session_id=session_id)
 
-    def start(self, data: Any) -> StartSessionResponse:
+    def start(self, data: Union[StartSessionRequestBody, SessionStartRequest, Dict[str, Any]]) -> StartSessionResponse:
         """Start a new session."""
         if isinstance(data, StartSessionRequestBody):
             req = data
         elif isinstance(data, dict):
             req = StartSessionRequestBody(session=SessionStartRequest(**data))
-        elif hasattr(data, "model_dump"):
-            req = StartSessionRequestBody(session=data)
         else:
-            req = data
+            req = StartSessionRequestBody(session=data)
         return session_svc.startSession(self._api_config, data=req)
 
     # Async methods
@@ -818,24 +798,22 @@ class SessionsAPI(BaseAPI):
             self._api_config, session_id=session_id
         )
 
-    async def start_async(self, data: Any) -> StartSessionResponse:
+    async def start_async(self, data: Union[StartSessionRequestBody, SessionStartRequest, Dict[str, Any]]) -> StartSessionResponse:
         """Start a new session asynchronously."""
         if isinstance(data, StartSessionRequestBody):
             req = data
         elif isinstance(data, dict):
             req = StartSessionRequestBody(session=SessionStartRequest(**data))
-        elif hasattr(data, "model_dump"):
-            req = StartSessionRequestBody(session=data)
         else:
-            req = data
+            req = StartSessionRequestBody(session=data)
         return await session_svc_async.startSession(self._api_config, data=req)
 
     # Backwards compatible aliases
-    def create_session(self, request: Any) -> StartSessionResponse:
+    def create_session(self, request: Union[StartSessionRequestBody, SessionStartRequest, Dict[str, Any]]) -> StartSessionResponse:
         """Create/start a session (backwards compatible alias for start())."""
         return self.start(request)
 
-    def start_session(self, request: Any) -> StartSessionResponse:
+    def start_session(self, request: Union[StartSessionRequestBody, SessionStartRequest, Dict[str, Any]]) -> StartSessionResponse:
         """Start a session (backwards compatible alias for start())."""
         return self.start(request)
 
