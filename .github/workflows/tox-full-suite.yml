@@ -84,6 +84,33 @@ env:
   HH_OTLP_ENABLED: false
 
 jobs:
+  # === CODE QUALITY (lint, typecheck, format) ===
+  code-quality:
+    name: "🔍 Code Quality (mypy + pylint + format)"
+    if: "!contains(github.event.head_commit.message, '[skip-tests]')"
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v6
+
+      - name: Set up Python 3.12
+        uses: actions/setup-python@v6
+        with:
+          python-version: '3.12'
+          cache: 'pip'
+
+      - name: Install tox and dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install tox>=4.0
+
+      - name: Run lint checks (pylint + mypy)
+        run: tox -e lint
+
+      - name: Run format checks (black + isort)
+        run: tox -e format
+
   # === PYTHON VERSION TESTING ===
   python-tests:
     name: "🐍 Python ${{ matrix.python-version }}"
@@ -219,7 +246,7 @@ jobs:
   # === TEST SUITE SUMMARY ===
   summary:
     name: "📊 Test Summary"
-    needs: [python-tests, integration-tests]
+    needs: [code-quality, python-tests, integration-tests]
     runs-on: ubuntu-latest
     if: always()
 
@@ -234,7 +261,13 @@ jobs:
           echo "# 🧪 Tox Test Suite Summary" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
 
+          # Code Quality Results
+          echo "## 🔍 Code Quality" >> $GITHUB_STEP_SUMMARY
+          quality_result="${{ needs.code-quality.result == 'success' && '✅ PASSED' || '❌ FAILED' }}"
+          echo "- **Lint + Type Check + Format:** $quality_result" >> $GITHUB_STEP_SUMMARY
+
           # Python Version Results
+          echo "" >> $GITHUB_STEP_SUMMARY
           echo "## 🐍 Python Version Testing" >> $GITHUB_STEP_SUMMARY
           python_result="${{ needs.python-tests.result == 'success' && '✅ PASSED' || '❌ FAILED' }}"
           echo "- **Python 3.11:** $python_result" >> $GITHUB_STEP_SUMMARY
@@ -250,7 +283,8 @@ jobs:
 
           # Overall Status
           echo "" >> $GITHUB_STEP_SUMMARY
-          if [ "${{ needs.python-tests.result }}" = "success" ] && \
+          if [ "${{ needs.code-quality.result }}" = "success" ] && \
+             [ "${{ needs.python-tests.result }}" = "success" ] && \
              ([ "${{ needs.integration-tests.result }}" = "success" ] ||
              [ "${{ needs.integration-tests.result }}" = "skipped" ]); then
             echo "## 🎉 **ALL TESTS PASSED**" >> $GITHUB_STEP_SUMMARY

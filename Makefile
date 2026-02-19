@@ -103,7 +103,7 @@ check-lint:
 	tox -e lint
 
 # Comprehensive check - runs all quality checks
-check: check-format check-lint test-unit check-no-mocks check-integration check-docs check-docs-compliance check-feature-sync check-tracer-patterns
+check: check-format check-lint typecheck test-unit check-no-mocks check-integration check-docs check-docs-compliance check-feature-sync check-tracer-patterns
 	@echo ""
 	@echo "✅ All checks passed!"
 
