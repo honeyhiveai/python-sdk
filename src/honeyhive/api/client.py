@@ -8,8 +8,9 @@ Usage:
 
     client = HoneyHive(api_key="hh_...")
 
-    # Sync usage
+    # Sync usage (project falls back to HH_PROJECT env var if not provided)
     configs = client.configurations.list(project="my-project")
+    configs = client.configurations.list()  # uses HH_PROJECT env var
 
     # Async usage
     configs = await client.configurations.list_async(project="my-project")
@@ -111,15 +112,16 @@ class ConfigurationsAPI(BaseAPI):
 
     # Sync methods
     def list(
-        self, project: str, env: Optional[str] = None, name: Optional[str] = None
+        self, project: Optional[str] = None, env: Optional[str] = None, name: Optional[str] = None
     ) -> List[Configuration]:
         """List configurations.
 
         Args:
-            project: Project name (required).
+            project: Project name. Falls back to HH_PROJECT env var if not provided.
             env: Optional environment filter.
             name: Optional name filter.
         """
+        project = self._resolve_project(project)
         return configs_svc.getConfigurations(
             self._api_config, project=project, env=env, name=name
         )
@@ -138,9 +140,10 @@ class ConfigurationsAPI(BaseAPI):
 
     # Async methods
     async def list_async(
-        self, project: str, env: Optional[str] = None, name: Optional[str] = None
+        self, project: Optional[str] = None, env: Optional[str] = None, name: Optional[str] = None
     ) -> List[Configuration]:
         """List configurations asynchronously."""
+        project = self._resolve_project(project)
         return await configs_svc_async.getConfigurations(
             self._api_config, project=project, env=env, name=name
         )
@@ -176,7 +179,7 @@ class ConfigurationsAPI(BaseAPI):
         """Delete a configuration (backwards compatible alias)."""
         return self.delete(id)
 
-    def list_configurations(self, project: str, **kwargs: Any) -> List[Configuration]:
+    def list_configurations(self, project: Optional[str] = None, **kwargs: Any) -> List[Configuration]:
         """List configurations (backwards compatible alias)."""
         return self.list(project=project, **kwargs)
 
@@ -187,17 +190,18 @@ class DatapointsAPI(BaseAPI):
     # Sync methods
     def list(
         self,
-        project: str,
+        project: Optional[str] = None,
         datapoint_ids: Optional[List[str]] = None,
         dataset_name: Optional[str] = None,
     ) -> GetDatapointsResponse:
         """List datapoints.
 
         Args:
-            project: Project name (required).
+            project: Project name. Falls back to HH_PROJECT env var if not provided.
             datapoint_ids: Optional list of datapoint IDs to fetch.
             dataset_name: Optional dataset name to filter by.
         """
+        project = self._resolve_project(project)
         return datapoints_svc.getDatapoints(
             self._api_config,
             project=project,
@@ -224,11 +228,12 @@ class DatapointsAPI(BaseAPI):
     # Async methods
     async def list_async(
         self,
-        project: str,
+        project: Optional[str] = None,
         datapoint_ids: Optional[List[str]] = None,
         dataset_name: Optional[str] = None,
     ) -> GetDatapointsResponse:
         """List datapoints asynchronously."""
+        project = self._resolve_project(project)
         return await datapoints_svc_async.getDatapoints(
             self._api_config,
             project=project,
@@ -277,7 +282,7 @@ class DatapointsAPI(BaseAPI):
         """Delete a datapoint (backwards compatible alias for delete())."""
         return self.delete(id)
 
-    def list_datapoints(self, project: str, **kwargs: Any) -> GetDatapointsResponse:
+    def list_datapoints(self, project: Optional[str] = None, **kwargs: Any) -> GetDatapointsResponse:
         """List datapoints (backwards compatible alias)."""
         return self.list(project=project, **kwargs)
 
@@ -288,7 +293,7 @@ class DatasetsAPI(BaseAPI):
     # Sync methods
     def list(
         self,
-        project: str,
+        project: Optional[str] = None,
         type: Optional[str] = None,
         dataset_id: Optional[str] = None,
         name: Optional[str] = None,
@@ -296,11 +301,12 @@ class DatasetsAPI(BaseAPI):
         """List datasets.
 
         Args:
-            project: Project name (required).
+            project: Project name. Falls back to HH_PROJECT env var if not provided.
             type: Optional dataset type filter.
             dataset_id: Optional dataset ID to fetch.
             name: Optional dataset name filter.
         """
+        project = self._resolve_project(project)
         return datasets_svc.getDatasets(
             self._api_config,
             project=project,
@@ -336,12 +342,13 @@ class DatasetsAPI(BaseAPI):
     # Async methods
     async def list_async(
         self,
-        project: str,
+        project: Optional[str] = None,
         type: Optional[str] = None,
         dataset_id: Optional[str] = None,
         name: Optional[str] = None,
     ) -> GetDatasetsResponse:
         """List datasets asynchronously."""
+        project = self._resolve_project(project)
         return await datasets_svc_async.getDatasets(
             self._api_config,
             project=project,
@@ -379,7 +386,7 @@ class DatasetsAPI(BaseAPI):
     # Backwards compatible aliases
     def get_dataset(self, id: str) -> GetDatasetsResponse:
         """Get a dataset by ID (backwards compatible alias)."""
-        return self.list(project="", dataset_id=id)
+        return datasets_svc.getDatasets(self._api_config, project="", dataset_id=id)
 
     def create_dataset(self, request: CreateDatasetRequest) -> CreateDatasetResponse:
         """Create a dataset (backwards compatible alias for create())."""
@@ -393,7 +400,7 @@ class DatasetsAPI(BaseAPI):
         """Delete a dataset (backwards compatible alias for delete())."""
         return self.delete(id)
 
-    def list_datasets(self, project: str, **kwargs: Any) -> GetDatasetsResponse:
+    def list_datasets(self, project: Optional[str] = None, **kwargs: Any) -> GetDatasetsResponse:
         """List datasets (backwards compatible alias)."""
         return self.list(project=project, **kwargs)
 
@@ -575,16 +582,17 @@ class ExperimentsAPI(BaseAPI):
     def get_result(
         self,
         run_id: str,
-        project_id: str,
+        project_id: Optional[str] = None,
         aggregate_function: Optional[str] = None,
     ) -> Dict[str, Any]:
         """Get experiment run result.
 
         Args:
             run_id: The experiment run ID.
-            project_id: The project ID (required).
+            project_id: The project ID. Falls back to HH_PROJECT env var if not provided.
             aggregate_function: Aggregation function to apply.
         """
+        project_id = self._resolve_project(project_id)
         result = experiments_svc.getExperimentResult(
             self._api_config,
             run_id=run_id,
@@ -597,7 +605,7 @@ class ExperimentsAPI(BaseAPI):
         self,
         new_run_id: str,
         old_run_id: str,
-        project_id: str,
+        project_id: Optional[str] = None,
         aggregate_function: Optional[str] = None,
     ) -> Dict[str, Any]:
         """Compare two experiment runs.
@@ -605,9 +613,10 @@ class ExperimentsAPI(BaseAPI):
         Args:
             new_run_id: The new run ID to compare (maps to run_id_1).
             old_run_id: The old run ID to compare against (maps to run_id_2).
-            project_id: The project ID (required).
+            project_id: The project ID. Falls back to HH_PROJECT env var if not provided.
             aggregate_function: Aggregation function to apply.
         """
+        project_id = self._resolve_project(project_id)
         result = experiments_svc.getExperimentComparison(
             self._api_config,
             project_id=project_id,
@@ -647,10 +656,11 @@ class ExperimentsAPI(BaseAPI):
     async def get_result_async(
         self,
         run_id: str,
-        project_id: str,
+        project_id: Optional[str] = None,
         aggregate_function: Optional[str] = None,
     ) -> Dict[str, Any]:
         """Get experiment run result asynchronously."""
+        project_id = self._resolve_project(project_id)
         result = await experiments_svc_async.getExperimentResult(
             self._api_config,
             run_id=run_id,
@@ -663,10 +673,11 @@ class ExperimentsAPI(BaseAPI):
         self,
         new_run_id: str,
         old_run_id: str,
-        project_id: str,
+        project_id: Optional[str] = None,
         aggregate_function: Optional[str] = None,
     ) -> Dict[str, Any]:
         """Compare two experiment runs asynchronously."""
+        project_id = self._resolve_project(project_id)
         result = await experiments_svc_async.getExperimentComparison(
             self._api_config,
             project_id=project_id,
@@ -680,7 +691,7 @@ class ExperimentsAPI(BaseAPI):
     def get_run_result(
         self,
         run_id: str,
-        project_id: str = "",
+        project_id: Optional[str] = None,
         aggregate_function: Optional[str] = None,
     ) -> Dict[str, Any]:
         """Get experiment run result (alias for get_result)."""
@@ -691,12 +702,13 @@ class MetricsAPI(BaseAPI):
     """Metrics API."""
 
     # Sync methods
-    def list(self, project_name: str) -> List[Metric]:
+    def list(self, project_name: Optional[str] = None) -> List[Metric]:
         """List metrics.
 
         Args:
-            project_name: Project name (required).
+            project_name: Project name. Falls back to HH_PROJECT env var if not provided.
         """
+        project_name = self._resolve_project(project_name)
         return metrics_svc.getMetrics(self._api_config, project_name=project_name)
 
     def create(self, request: CreateMetricRequest) -> None:
@@ -712,8 +724,9 @@ class MetricsAPI(BaseAPI):
         return metrics_svc.deleteMetric(self._api_config, metric_id=id)
 
     # Async methods
-    async def list_async(self, project_name: str) -> List[Metric]:
+    async def list_async(self, project_name: Optional[str] = None) -> List[Metric]:
         """List metrics asynchronously."""
+        project_name = self._resolve_project(project_name)
         return await metrics_svc_async.getMetrics(
             self._api_config, project_name=project_name
         )
@@ -743,7 +756,7 @@ class MetricsAPI(BaseAPI):
         """Delete a metric (backwards compatible alias)."""
         return self.delete(id)
 
-    def list_metrics(self, project_name: str) -> List[Metric]:
+    def list_metrics(self, project_name: Optional[str] = None) -> List[Metric]:
         """List metrics (backwards compatible alias)."""
         return self.list(project_name=project_name)
 
