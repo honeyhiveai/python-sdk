@@ -83,7 +83,6 @@ from honeyhive._generated.models import (
     UpdateRunRequest,
     UpdateRunResponse,
     UpdateToolRequest,
-    UUIDType,
 )
 
 # Forwards-compatible aliases for legacy model names.
@@ -144,7 +143,6 @@ __all__ = [
     "UpdateProjectRequest",
     "UpdateRunResponse",
     "UpdateToolRequest",
-    "UUIDType",
     # Forwards-compatible aliases
     "CreateConfigurationRequest",
     "UpdateConfigurationRequest",
