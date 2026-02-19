@@ -198,6 +198,3 @@ var/
 venv.bak/
 venv/
 wheels/
-
-# Integration test span/session dumps
-span_dumps/
