@@ -1,5 +1,8 @@
 .PHONY: help install install-dev test test-all test-unit test-integration check-integration lint format check check-format check-lint typecheck check-docs check-docs-compliance check-feature-sync check-tracer-patterns check-no-mocks docs docs-serve docs-clean generate generate-sdk compare-sdk clean clean-all build build-bundled publish publish-bundled
 
+# Use the venv python so make recipes get venv site-packages
+PYTHON := .venv/bin/python
+
 # Default target
 help:
 	@echo "HoneyHive Python SDK - Available Commands"
@@ -105,10 +108,10 @@ check: check-format check-lint test-unit check-no-mocks check-integration check-
 	@echo "✅ All checks passed!"
 
 check-docs-compliance:
-	python scripts/check-documentation-compliance.py
+	$(PYTHON) scripts/check-documentation-compliance.py
 
 check-feature-sync:
-	python scripts/check-feature-sync.py
+	$(PYTHON) scripts/check-feature-sync.py
 
 check-tracer-patterns:
 	scripts/validate-tracer-patterns.sh
@@ -125,7 +128,7 @@ docs:
 	cd docs && $(MAKE) html
 
 docs-serve:
-	cd docs && python serve.py
+	cd docs && ../$(PYTHON) serve.py
 
 docs-clean:
 	cd docs && $(MAKE) clean
@@ -133,42 +136,42 @@ docs-clean:
 # SDK Generation
 # Generate client from OpenAPI spec
 generate:
-	python scripts/generate_client.py
+	$(PYTHON) scripts/generate_client.py
 	$(MAKE) format
 
 # Generate full SDK to comparison_output/ (for analysis)
 generate-sdk:
-	python scripts/generate_models_and_client.py
+	$(PYTHON) scripts/generate_models_and_client.py
 
 compare-sdk:
 	@if [ ! -d "comparison_output/full_sdk" ]; then \
 		echo "❌ No generated SDK found. Run 'make generate-sdk' first."; \
 		exit 1; \
 	fi
-	python comparison_output/full_sdk/compare_with_current.py
+	$(PYTHON) comparison_output/full_sdk/compare_with_current.py
 
 # Build & Publish
 build:
-	python -m build
+	$(PYTHON) -m build
 
 build-bundled:
 	@echo "Building honeyhive-bundled package..."
 	cp pyproject.toml pyproject.toml.backup
 	cp pyproject.bundled.toml pyproject.toml
-	python -m build
+	$(PYTHON) -m build
 	mv pyproject.toml.backup pyproject.toml
 	@echo "✅ Built honeyhive-bundled package in dist/"
 
 publish:
 	@echo "Publishing honeyhive to PyPI..."
-	python -m twine upload dist/*
+	$(PYTHON) -m twine upload dist/*
 
 publish-bundled:
 	@echo "Publishing honeyhive-bundled to PyPI..."
 	cp pyproject.toml pyproject.toml.backup
 	cp pyproject.bundled.toml pyproject.toml
-	python -m build
-	python -m twine upload dist/*
+	$(PYTHON) -m build
+	$(PYTHON) -m twine upload dist/*
 	mv pyproject.toml.backup pyproject.toml
 	@echo "✅ Published honeyhive-bundled to PyPI"
 
