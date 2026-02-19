@@ -386,9 +386,9 @@ class DatasetsAPI(BaseAPI):
         )
 
     # Backwards compatible aliases
-    def get_dataset(self, id: str) -> GetDatasetsResponse:
+    def get_dataset(self, id: str, project: Optional[str] = None) -> GetDatasetsResponse:
         """Get a dataset by ID (backwards compatible alias)."""
-        return datasets_svc.getDatasets(self._api_config, project="", dataset_id=id)
+        return self.list(project=project, dataset_id=id)
 
     def create_dataset(self, request: CreateDatasetRequest) -> CreateDatasetResponse:
         """Create a dataset (backwards compatible alias for create())."""
