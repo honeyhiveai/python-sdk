@@ -2239,7 +2239,7 @@ components:
           type: array
           description: The UUIDs of the sessions/events this run is associated with
           items:
-            $ref: '#/components/schemas/UUIDType'
+            type: string
         dataset_id:
           type: string
           description: The UUID of the dataset this run is associated with
@@ -2270,7 +2270,7 @@ components:
           $ref: '#/components/schemas/EvaluationRun'
           description: The evaluation run created
         run_id:
-          $ref: '#/components/schemas/UUIDType'
+          type: string
           description: The UUID of the run created
     GetRunsResponse:
       type: object
@@ -2291,7 +2291,7 @@ components:
           type: array
           description: Additional sessions/events to associate with this run
           items:
-            $ref: '#/components/schemas/UUIDType'
+            type: string
         dataset_id:
           type: string
           description: The UUID of the dataset this run is associated with
@@ -2332,14 +2332,14 @@ components:
       type: object
       properties:
         id:
-          $ref: '#/components/schemas/UUIDType'
+          type: string
         deleted:
           type: boolean
     EvaluationRun:
       type: object
       properties:
         run_id:
-          $ref: '#/components/schemas/UUIDType'
+          type: string
           description: The UUID of the run
         project:
           type: string
@@ -2352,7 +2352,7 @@ components:
           type: array
           description: The UUIDs of the sessions/events this run is associated with
           items:
-            $ref: '#/components/schemas/UUIDType'
+            type: string
         dataset_id:
           type: string
           description: The UUID of the dataset this run is associated with
@@ -2618,9 +2618,6 @@ components:
               type: string
             name:
               type: string
-    UUIDType:
-      type: string
-      format: uuid
     Configuration:
       type: object
       properties:

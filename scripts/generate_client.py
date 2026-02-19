@@ -156,6 +156,54 @@ def post_process(output_dir: Path) -> bool:
         if fixed_count > 0:
             print(f"  ✓ Fixed serialization in {fixed_count} service files")
 
+    # Fix mypy errors in api_config.py (missing return type annotations)
+    api_config_file = output_dir / "api_config.py"
+    if api_config_file.exists():
+        content = api_config_file.read_text()
+        content = content.replace(
+            "def set_access_token(self, value: str):",
+            "def set_access_token(self, value: str) -> None:",
+        )
+        content = re.sub(
+            r"def __str__\(self\):",
+            "def __str__(self) -> str:",
+            content,
+        )
+        api_config_file.write_text(content)
+        print("  ✓ Fixed return type annotations in api_config.py")
+
+    # Fix mypy errors in service files:
+    # 1. Dead-code None branch: `body = None if STATUS == 204 else response.json()`
+    #    When STATUS != 204, this is always `response.json()`, but mypy sees
+    #    the type as `Any | None` and complains when the result is iterated.
+    #    Simplify to `body = response.json()` for non-204 status codes.
+    # 2. No-arg model construction: `Model(**body) if body is not None else Model()`
+    #    The else branch is dead code (body is never None for non-204) and fails
+    #    if the model has required fields. Simplify to `Model(**body)`.
+    if services_dir.exists():
+        body_assign = re.compile(r"body = None if (\d+) == 204 else response\.json\(\)")
+        model_fallback = re.compile(
+            r"return (\w+)\(\*\*body\) if body is not None else \1\(\)"
+        )
+        svc_fixed = 0
+        for service_file in services_dir.glob("*.py"):
+            content = service_file.read_text()
+            original = content
+            # Replace dead None branch for non-204 status codes
+            content = body_assign.sub(
+                lambda m: (
+                    "body = response.json()" if m.group(1) != "204" else m.group(0)
+                ),
+                content,
+            )
+            # Replace dead Model() fallback
+            content = model_fallback.sub(r"return \1(**body)", content)
+            if content != original:
+                service_file.write_text(content)
+                svc_fixed += 1
+        if svc_fixed > 0:
+            print(f"  ✓ Fixed mypy type issues in {svc_fixed} service files")
+
     print("  ✓ Post-processing complete")
     return True
 

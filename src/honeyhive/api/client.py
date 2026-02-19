@@ -317,7 +317,7 @@ class DatasetsAPI(BaseAPI):
             project: Project name. Falls back to HH_PROJECT env var if not provided.
             type: Optional dataset type filter.
             dataset_id: Optional dataset ID to fetch.
-            name: Optional dataset name filter.
+            name: Optional dataset name filter (accepted for FED compat, not supported by API).
         """
         project = resolve_project(project)
         return datasets_svc.getDatasets(
@@ -325,7 +325,6 @@ class DatasetsAPI(BaseAPI):
             project=project,
             type=type,
             dataset_id=dataset_id,
-            name=name,
         )
 
     def create(self, request: CreateDatasetRequest) -> CreateDatasetResponse:
@@ -367,7 +366,6 @@ class DatasetsAPI(BaseAPI):
             project=project,
             type=type,
             dataset_id=dataset_id,
-            name=name,
         )
 
     async def create_async(

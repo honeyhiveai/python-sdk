@@ -2,8 +2,6 @@ from typing import *
 
 from pydantic import BaseModel, Field
 
-from .UUIDType import UUIDType
-
 
 class EvaluationRun(BaseModel):
     """
@@ -12,15 +10,13 @@ class EvaluationRun(BaseModel):
 
     model_config = {"populate_by_name": True, "validate_assignment": True}
 
-    run_id: Optional[UUIDType] = Field(validation_alias="run_id", default=None)
+    run_id: Optional[str] = Field(validation_alias="run_id", default=None)
 
     project: Optional[str] = Field(validation_alias="project", default=None)
 
     created_at: Optional[str] = Field(validation_alias="created_at", default=None)
 
-    event_ids: Optional[List[Optional[UUIDType]]] = Field(
-        validation_alias="event_ids", default=None
-    )
+    event_ids: Optional[List[str]] = Field(validation_alias="event_ids", default=None)
 
     dataset_id: Optional[str] = Field(validation_alias="dataset_id", default=None)
 

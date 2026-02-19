@@ -2,8 +2,6 @@ from typing import *
 
 from pydantic import BaseModel, Field
 
-from .UUIDType import UUIDType
-
 
 class UpdateRunRequest(BaseModel):
     """
@@ -12,9 +10,7 @@ class UpdateRunRequest(BaseModel):
 
     model_config = {"populate_by_name": True, "validate_assignment": True}
 
-    event_ids: Optional[List[Optional[UUIDType]]] = Field(
-        validation_alias="event_ids", default=None
-    )
+    event_ids: Optional[List[str]] = Field(validation_alias="event_ids", default=None)
 
     dataset_id: Optional[str] = Field(validation_alias="dataset_id", default=None)
 

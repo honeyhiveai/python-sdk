@@ -301,10 +301,6 @@ module = [
 ignore_missing_imports = true
 
 [[tool.mypy.overrides]]
-module = "honeyhive._generated.*"
-ignore_errors = true
-
-[[tool.mypy.overrides]]
 module = [
     "honeyhive.experiments.evaluators",
     "honeyhive.experiments.core",
