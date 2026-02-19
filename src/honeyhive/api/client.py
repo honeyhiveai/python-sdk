@@ -38,6 +38,7 @@ from honeyhive._generated.models import (
     CreateModelEventBatchRequest,
     CreateModelEventBatchResponse,
     CreateModelEventRequestBody,
+    CreateProjectRequest,
     CreateRunResponse,
     CreateToolRequest,
     CreateToolResponse,
@@ -61,6 +62,7 @@ from honeyhive._generated.models import (
     Tool,
     UpdateDatapointRequest,
     UpdateEventRequest,
+    UpdateProjectRequest,
     UpdateRunResponse,
     UpdateToolRequest,
 )
@@ -775,11 +777,11 @@ class ProjectsAPI(BaseAPI):
 
     def create(self, data: Dict[str, Any]) -> Project:
         """Create a project."""
-        return projects_svc.createProject(self._api_config, data=data)
+        return projects_svc.createProject(self._api_config, data=CreateProjectRequest(**data))
 
     def update(self, data: Dict[str, Any]) -> None:
         """Update a project."""
-        return projects_svc.updateProject(self._api_config, data=data)
+        return projects_svc.updateProject(self._api_config, data=UpdateProjectRequest(**data))
 
     def delete(self, name: str) -> None:
         """Delete a project."""
@@ -792,11 +794,11 @@ class ProjectsAPI(BaseAPI):
 
     async def create_async(self, data: Dict[str, Any]) -> Project:
         """Create a project asynchronously."""
-        return await projects_svc_async.createProject(self._api_config, data=data)
+        return await projects_svc_async.createProject(self._api_config, data=CreateProjectRequest(**data))
 
     async def update_async(self, data: Dict[str, Any]) -> None:
         """Update a project asynchronously."""
-        return await projects_svc_async.updateProject(self._api_config, data=data)
+        return await projects_svc_async.updateProject(self._api_config, data=UpdateProjectRequest(**data))
 
     async def delete_async(self, name: str) -> None:
         """Delete a project asynchronously."""

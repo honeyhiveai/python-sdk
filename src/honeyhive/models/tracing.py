@@ -26,5 +26,11 @@ class TracingParams(BaseModel):
     feedback: Optional[Dict[str, Any]] = None
     error: Optional[Exception] = None
     event_id: Optional[str] = None
+    source: Optional[str] = None
+    project: Optional[str] = None
+    session_id: Optional[str] = None
+    user_id: Optional[str] = None
+    session_name: Optional[str] = None
+    tracer: Optional[Any] = None
 
     model_config = ConfigDict(arbitrary_types_allowed=True, extra="allow")

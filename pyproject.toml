@@ -301,7 +301,15 @@ module = [
 ignore_missing_imports = true
 
 [[tool.mypy.overrides]]
-module = "honeyhive.experiments.evaluators"
+module = "honeyhive._generated.*"
+ignore_errors = true
+
+[[tool.mypy.overrides]]
+module = [
+    "honeyhive.experiments.evaluators",
+    "honeyhive.experiments.core",
+    "honeyhive.evaluation.evaluators",
+]
 ignore_errors = true
 
 [tool.pydantic-mypy]
