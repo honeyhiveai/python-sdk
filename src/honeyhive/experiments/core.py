@@ -942,24 +942,32 @@ def evaluate(  # pylint: disable=too-many-locals,too-many-branches
             logger.info("DEBUG - Input dataset_id type: %s", type(dataset_id))
             logger.info("DEBUG - Is EXT- dataset: %s", dataset_id.startswith("EXT-"))
 
-        # Get dataset metadata
+        # Get dataset metadata — get_dataset returns GetDatasetsResponse (a list
+        # wrapper), so unwrap the first entry to get the actual Dataset object.
         ds_response = client.datasets.get_dataset(dataset_id, project=project)
+        ds = ds_response.testcases[0] if ds_response.testcases else None
         dataset_list = []
         datapoint_ids = []
 
-        # Dataset.datapoints is List[str] (IDs only), fetch each datapoint
-        if ds_response.datapoints:
-            for dp_id in ds_response.datapoints:
+        # Dataset.datapoints is List[str] (IDs only), fetch each datapoint.
+        # get_datapoint returns GetDatapointResponse (wrapper with .datapoint
+        # list), so we unwrap the first entry to get the actual Datapoint.
+        if ds and ds.datapoints:
+            for dp_id in ds.datapoints:
                 try:
-                    dp = client.datapoints.get_datapoint(dp_id)
+                    dp_response = client.datapoints.get_datapoint(dp_id)
+                    dp = dp_response.datapoint[0] if dp_response.datapoint else None
+                    if dp is None:
+                        logger.warning("Datapoint %s returned empty response", dp_id)
+                        continue
                     dataset_list.append(
                         {
                             "inputs": dp.inputs or {},
                             "ground_truth": dp.ground_truth,
-                            "id": dp.field_id or dp_id,
+                            "id": dp.id or dp_id,
                         }
                     )
-                    datapoint_ids.append(dp.field_id or dp_id)
+                    datapoint_ids.append(dp.id or dp_id)
                 except Exception as e:
                     logger.warning("Failed to fetch datapoint %s: %s", dp_id, str(e))
 
