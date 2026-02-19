@@ -648,23 +648,31 @@ class TestEvaluate:
 
         mock_client = Mock()
 
-        # Mock dataset response
+        # Mock dataset response — get_dataset returns GetDatasetsResponse
+        # with .testcases list; each entry is a Dataset with .datapoints
         mock_ds = Mock()
         mock_ds.datapoints = ["dp-1", "dp-2"]
-        mock_client.datasets.get_dataset.return_value = mock_ds
+        mock_ds_response = Mock()
+        mock_ds_response.testcases = [mock_ds]
+        mock_client.datasets.get_dataset.return_value = mock_ds_response
 
-        # Mock datapoint responses
+        # Mock datapoint responses — get_datapoint returns
+        # GetDatapointResponse with .datapoint list
         mock_dp1 = Mock()
         mock_dp1.inputs = {"x": 1}
         mock_dp1.ground_truth = {"y": 2}
-        mock_dp1.field_id = "dp-1"
+        mock_dp1.id = "dp-1"
+        mock_dp1_response = Mock()
+        mock_dp1_response.datapoint = [mock_dp1]
 
         mock_dp2 = Mock()
         mock_dp2.inputs = {"x": 3}
         mock_dp2.ground_truth = {"y": 4}
-        mock_dp2.field_id = "dp-2"
+        mock_dp2.id = "dp-2"
+        mock_dp2_response = Mock()
+        mock_dp2_response.datapoint = [mock_dp2]
 
-        mock_client.datapoints.get_datapoint.side_effect = [mock_dp1, mock_dp2]
+        mock_client.datapoints.get_datapoint.side_effect = [mock_dp1_response, mock_dp2_response]
 
         mock_run_response = Mock()
         mock_run_response.run_id = "run-789"
@@ -731,19 +739,23 @@ class TestEvaluate:
 
         mock_client = Mock()
 
-        # Mock dataset response
+        # Mock dataset response — wrapped in GetDatasetsResponse
         mock_ds = Mock()
         mock_ds.datapoints = ["dp-1", "dp-2"]
-        mock_client.datasets.get_dataset.return_value = mock_ds
+        mock_ds_response = Mock()
+        mock_ds_response.testcases = [mock_ds]
+        mock_client.datasets.get_dataset.return_value = mock_ds_response
 
-        # First datapoint succeeds, second fails
+        # First datapoint succeeds (wrapped), second fails
         mock_dp1 = Mock()
         mock_dp1.inputs = {"x": 1}
         mock_dp1.ground_truth = {"y": 2}
-        mock_dp1.field_id = "dp-1"
+        mock_dp1.id = "dp-1"
+        mock_dp1_response = Mock()
+        mock_dp1_response.datapoint = [mock_dp1]
 
         mock_client.datapoints.get_datapoint.side_effect = [
-            mock_dp1,
+            mock_dp1_response,
             Exception("Network error"),
         ]
 
