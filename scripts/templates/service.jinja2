@@ -1,0 +1,15 @@
+from typing import *
+
+{% if use_orjson %}
+import orjson
+from uuid import UUID
+{% endif %}
+
+from ..models import *
+{% if async_client %}
+from ..api_config import APIConfig, HTTPException, _make_request_async
+{% else %}
+from ..api_config import APIConfig, HTTPException, _make_request
+{% endif %}
+
+{{ content | safe}}

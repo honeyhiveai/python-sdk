@@ -29,6 +29,7 @@ REPO_ROOT = Path(__file__).parent.parent
 DEFAULT_SPEC = REPO_ROOT / "openapi" / "openapi.yaml"
 OUTPUT_DIR = REPO_ROOT / "src" / "honeyhive" / "_generated"
 TEMP_DIR = REPO_ROOT / ".generated_temp"
+TEMPLATES_DIR = REPO_ROOT / "scripts" / "templates"
 
 
 def clean_output_dir(output_dir: Path) -> None:
@@ -60,6 +61,8 @@ def run_generator(spec_path: Path, temp_dir: Path) -> bool:
         "v2",
         "--formatter",
         "black",
+        "--custom-template-path",
+        str(TEMPLATES_DIR),
     ]
 
     print(f"Running: {' '.join(cmd)}")
@@ -106,9 +109,9 @@ def post_process(output_dir: Path) -> bool:
     """
     Apply any post-processing customizations to the generated code.
 
-    Works around bugs in openapi-python-generator v2.1.2 (latest as of
-    2025-09-29). These are not fixed upstream and no issues have been filed.
-    See https://github.com/MarcoMuellner/openapi-python-generator
+    Most customizations are handled by custom Jinja2 templates in
+    scripts/templates/ (passed via --custom-template-path).  This function
+    only fixes issues that cannot be addressed through templates.
 
     Returns True if successful, False otherwise.
     """
@@ -144,69 +147,6 @@ def post_process(output_dir: Path) -> bool:
                 underscore_fixed += count
         if underscore_fixed > 0:
             print(f"  ✓ Fixed {underscore_fixed} leading-underscore field(s) in models")
-
-    # Generator bug: generate_body_param() in service_generator.py emits
-    # Pydantic v1's `data.dict()` regardless of the --pydantic-version flag.
-    # Replace with `data.model_dump(exclude_none=True)` for Pydantic v2.
-    services_dir = output_dir / "services"
-    if services_dir.exists():
-        fixed_count = 0
-        for service_file in services_dir.glob("*.py"):
-            content = service_file.read_text()
-            if "data.dict()" in content:
-                content = content.replace(
-                    "data.dict()", "data.model_dump(exclude_none=True)"
-                )
-                service_file.write_text(content)
-                fixed_count += 1
-        if fixed_count > 0:
-            print(f"  ✓ Fixed serialization in {fixed_count} service files")
-
-    # Generator bug: apiconfig_pydantic_2.jinja2 is missing return type
-    # annotations on set_access_token (-> None) and __str__ (-> str).
-    api_config_file = output_dir / "api_config.py"
-    if api_config_file.exists():
-        content = api_config_file.read_text()
-        content = content.replace(
-            "def set_access_token(self, value: str):",
-            "def set_access_token(self, value: str) -> None:",
-        )
-        content = re.sub(
-            r"def __str__\(self\):",
-            "def __str__(self) -> str:",
-            content,
-        )
-        api_config_file.write_text(content)
-        print("  ✓ Fixed return type annotations in api_config.py")
-
-    # Generator bug: the httpx/requests/aiohttp templates render the success
-    # status code as a literal, producing dead code like
-    # `body = None if 200 == 204 else response.json()`. The companion pattern
-    # `Model(**body) if body is not None else Model()` then confuses mypy
-    # because body's inferred type is `Any | None`. Simplify both patterns.
-    if services_dir.exists():
-        body_assign = re.compile(r"body = None if (\d+) == 204 else response\.json\(\)")
-        model_fallback = re.compile(
-            r"return (\w+)\(\*\*body\) if body is not None else \1\(\)"
-        )
-        svc_fixed = 0
-        for service_file in services_dir.glob("*.py"):
-            content = service_file.read_text()
-            original = content
-            # Replace dead None branch for non-204 status codes
-            content = body_assign.sub(
-                lambda m: (
-                    "body = response.json()" if m.group(1) != "204" else m.group(0)
-                ),
-                content,
-            )
-            # Replace dead Model() fallback
-            content = model_fallback.sub(r"return \1(**body)", content)
-            if content != original:
-                service_file.write_text(content)
-                svc_fixed += 1
-        if svc_fixed > 0:
-            print(f"  ✓ Fixed mypy type issues in {svc_fixed} service files")
 
     print("  ✓ Post-processing complete")
     return True

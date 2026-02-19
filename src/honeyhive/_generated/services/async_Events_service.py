@@ -1,8 +1,6 @@
 from typing import *
 
-import httpx
-
-from ..api_config import APIConfig, HTTPException
+from ..api_config import APIConfig, HTTPException, _make_request_async
 from ..models import *
 
 
@@ -11,7 +9,6 @@ async def createEvent(
 ) -> CreateEventResponse:
     api_config = api_config_override if api_config_override else APIConfig()
 
-    base_path = api_config.base_path
     path = f"/events"
     headers = {
         "Content-Type": "application/json",
@@ -24,16 +21,14 @@ async def createEvent(
         key: value for (key, value) in query_params.items() if value is not None
     }
 
-    async with httpx.AsyncClient(
-        base_url=base_path, verify=api_config.verify
-    ) as client:
-        response = await client.request(
-            "post",
-            httpx.URL(path),
-            headers=headers,
-            params=query_params,
-            json=data.model_dump(exclude_none=True),
-        )
+    response = await _make_request_async(
+        api_config,
+        "post",
+        path,
+        headers,
+        params=query_params,
+        json=data.model_dump(exclude_none=True),
+    )
 
     if response.status_code != 200:
         raise HTTPException(
@@ -51,7 +46,6 @@ async def updateEvent(
 ) -> None:
     api_config = api_config_override if api_config_override else APIConfig()
 
-    base_path = api_config.base_path
     path = f"/events"
     headers = {
         "Content-Type": "application/json",
@@ -64,16 +58,14 @@ async def updateEvent(
         key: value for (key, value) in query_params.items() if value is not None
     }
 
-    async with httpx.AsyncClient(
-        base_url=base_path, verify=api_config.verify
-    ) as client:
-        response = await client.request(
-            "put",
-            httpx.URL(path),
-            headers=headers,
-            params=query_params,
-            json=data.model_dump(exclude_none=True),
-        )
+    response = await _make_request_async(
+        api_config,
+        "put",
+        path,
+        headers,
+        params=query_params,
+        json=data.model_dump(exclude_none=True),
+    )
 
     if response.status_code != 200:
         raise HTTPException(
@@ -91,7 +83,6 @@ async def getEvents(
 ) -> GetEventsResponse:
     api_config = api_config_override if api_config_override else APIConfig()
 
-    base_path = api_config.base_path
     path = f"/events/export"
     headers = {
         "Content-Type": "application/json",
@@ -104,16 +95,14 @@ async def getEvents(
         key: value for (key, value) in query_params.items() if value is not None
     }
 
-    async with httpx.AsyncClient(
-        base_url=base_path, verify=api_config.verify
-    ) as client:
-        response = await client.request(
-            "post",
-            httpx.URL(path),
-            headers=headers,
-            params=query_params,
-            json=data.model_dump(exclude_none=True),
-        )
+    response = await _make_request_async(
+        api_config,
+        "post",
+        path,
+        headers,
+        params=query_params,
+        json=data.model_dump(exclude_none=True),
+    )
 
     if response.status_code != 200:
         raise HTTPException(
@@ -133,7 +122,6 @@ async def createModelEvent(
 ) -> CreateEventResponse:
     api_config = api_config_override if api_config_override else APIConfig()
 
-    base_path = api_config.base_path
     path = f"/events/model"
     headers = {
         "Content-Type": "application/json",
@@ -146,16 +134,14 @@ async def createModelEvent(
         key: value for (key, value) in query_params.items() if value is not None
     }
 
-    async with httpx.AsyncClient(
-        base_url=base_path, verify=api_config.verify
-    ) as client:
-        response = await client.request(
-            "post",
-            httpx.URL(path),
-            headers=headers,
-            params=query_params,
-            json=data.model_dump(exclude_none=True),
-        )
+    response = await _make_request_async(
+        api_config,
+        "post",
+        path,
+        headers,
+        params=query_params,
+        json=data.model_dump(exclude_none=True),
+    )
 
     if response.status_code != 200:
         raise HTTPException(
@@ -173,7 +159,6 @@ async def createEventBatch(
 ) -> CreateEventBatchResponse:
     api_config = api_config_override if api_config_override else APIConfig()
 
-    base_path = api_config.base_path
     path = f"/events/batch"
     headers = {
         "Content-Type": "application/json",
@@ -186,16 +171,14 @@ async def createEventBatch(
         key: value for (key, value) in query_params.items() if value is not None
     }
 
-    async with httpx.AsyncClient(
-        base_url=base_path, verify=api_config.verify
-    ) as client:
-        response = await client.request(
-            "post",
-            httpx.URL(path),
-            headers=headers,
-            params=query_params,
-            json=data.model_dump(exclude_none=True),
-        )
+    response = await _make_request_async(
+        api_config,
+        "post",
+        path,
+        headers,
+        params=query_params,
+        json=data.model_dump(exclude_none=True),
+    )
 
     if response.status_code != 200:
         raise HTTPException(
@@ -215,7 +198,6 @@ async def createModelEventBatch(
 ) -> CreateModelEventBatchResponse:
     api_config = api_config_override if api_config_override else APIConfig()
 
-    base_path = api_config.base_path
     path = f"/events/model/batch"
     headers = {
         "Content-Type": "application/json",
@@ -228,16 +210,14 @@ async def createModelEventBatch(
         key: value for (key, value) in query_params.items() if value is not None
     }
 
-    async with httpx.AsyncClient(
-        base_url=base_path, verify=api_config.verify
-    ) as client:
-        response = await client.request(
-            "post",
-            httpx.URL(path),
-            headers=headers,
-            params=query_params,
-            json=data.model_dump(exclude_none=True),
-        )
+    response = await _make_request_async(
+        api_config,
+        "post",
+        path,
+        headers,
+        params=query_params,
+        json=data.model_dump(exclude_none=True),
+    )
 
     if response.status_code != 200:
         raise HTTPException(
