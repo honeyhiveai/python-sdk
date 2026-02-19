@@ -3,7 +3,6 @@ from typing import *
 from pydantic import BaseModel, Field
 
 from .EvaluationRun import EvaluationRun
-from .UUIDType import UUIDType
 
 
 class CreateRunResponse(BaseModel):
@@ -17,4 +16,4 @@ class CreateRunResponse(BaseModel):
         validation_alias="evaluation", default=None
     )
 
-    run_id: Optional[UUIDType] = Field(validation_alias="run_id", default=None)
+    run_id: Optional[str] = Field(validation_alias="run_id", default=None)

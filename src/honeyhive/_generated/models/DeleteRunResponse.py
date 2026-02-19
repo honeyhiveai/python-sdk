@@ -2,8 +2,6 @@ from typing import *
 
 from pydantic import BaseModel, Field
 
-from .UUIDType import UUIDType
-
 
 class DeleteRunResponse(BaseModel):
     """
@@ -12,6 +10,6 @@ class DeleteRunResponse(BaseModel):
 
     model_config = {"populate_by_name": True, "validate_assignment": True}
 
-    id: Optional[UUIDType] = Field(validation_alias="id", default=None)
+    id: Optional[str] = Field(validation_alias="id", default=None)
 
     deleted: Optional[bool] = Field(validation_alias="deleted", default=None)

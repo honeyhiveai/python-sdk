@@ -1,6 +1,8 @@
 from typing import *
 
-from ..api_config import APIConfig, HTTPException, _make_request_async
+import httpx
+
+from ..api_config import APIConfig, HTTPException
 from ..models import *
 
 
@@ -10,10 +12,10 @@ async def getDatasets(
     project: str,
     type: Optional[str] = None,
     dataset_id: Optional[str] = None,
-    name: Optional[str] = None,
 ) -> GetDatasetsResponse:
     api_config = api_config_override if api_config_override else APIConfig()
 
+    base_path = api_config.base_path
     path = f"/datasets"
     headers = {
         "Content-Type": "application/json",
@@ -24,26 +26,31 @@ async def getDatasets(
         "project": project,
         "type": type,
         "dataset_id": dataset_id,
-        "name": name,
     }
 
     query_params = {
         key: value for (key, value) in query_params.items() if value is not None
     }
 
-    response = await _make_request_async(
-        api_config, "get", path, headers, params=query_params
-    )
+    async with httpx.AsyncClient(
+        base_url=base_path, verify=api_config.verify
+    ) as client:
+        response = await client.request(
+            "get",
+            httpx.URL(path),
+            headers=headers,
+            params=query_params,
+        )
 
     if response.status_code != 200:
         raise HTTPException(
             response.status_code,
-            f"getDatasets failed with status code: {response.status_code}. Response: {response.text[:500]}",
+            f"getDatasets failed with status code: {response.status_code}",
         )
     else:
-        body = None if 200 == 204 else response.json()
+        body = response.json()
 
-    return GetDatasetsResponse(**body) if body is not None else GetDatasetsResponse()
+    return GetDatasetsResponse(**body)
 
 
 async def createDataset(
@@ -51,6 +58,7 @@ async def createDataset(
 ) -> CreateDatasetResponse:
     api_config = api_config_override if api_config_override else APIConfig()
 
+    base_path = api_config.base_path
     path = f"/datasets"
     headers = {
         "Content-Type": "application/json",
@@ -63,26 +71,26 @@ async def createDataset(
         key: value for (key, value) in query_params.items() if value is not None
     }
 
-    response = await _make_request_async(
-        api_config,
-        "post",
-        path,
-        headers,
-        params=query_params,
-        json=data.model_dump(exclude_none=True),
-    )
+    async with httpx.AsyncClient(
+        base_url=base_path, verify=api_config.verify
+    ) as client:
+        response = await client.request(
+            "post",
+            httpx.URL(path),
+            headers=headers,
+            params=query_params,
+            json=data.model_dump(exclude_none=True),
+        )
 
     if response.status_code != 200:
         raise HTTPException(
             response.status_code,
-            f"createDataset failed with status code: {response.status_code}. Response: {response.text[:500]}",
+            f"createDataset failed with status code: {response.status_code}",
         )
     else:
-        body = None if 200 == 204 else response.json()
+        body = response.json()
 
-    return (
-        CreateDatasetResponse(**body) if body is not None else CreateDatasetResponse()
-    )
+    return CreateDatasetResponse(**body)
 
 
 async def updateDataset(
@@ -90,6 +98,7 @@ async def updateDataset(
 ) -> None:
     api_config = api_config_override if api_config_override else APIConfig()
 
+    base_path = api_config.base_path
     path = f"/datasets"
     headers = {
         "Content-Type": "application/json",
@@ -102,22 +111,24 @@ async def updateDataset(
         key: value for (key, value) in query_params.items() if value is not None
     }
 
-    response = await _make_request_async(
-        api_config,
-        "put",
-        path,
-        headers,
-        params=query_params,
-        json=data.model_dump(exclude_none=True),
-    )
+    async with httpx.AsyncClient(
+        base_url=base_path, verify=api_config.verify
+    ) as client:
+        response = await client.request(
+            "put",
+            httpx.URL(path),
+            headers=headers,
+            params=query_params,
+            json=data.model_dump(exclude_none=True),
+        )
 
     if response.status_code != 200:
         raise HTTPException(
             response.status_code,
-            f"updateDataset failed with status code: {response.status_code}. Response: {response.text[:500]}",
+            f"updateDataset failed with status code: {response.status_code}",
         )
     else:
-        body = None if 200 == 204 else response.json()
+        body = response.json()
 
     return None
 
@@ -127,6 +138,7 @@ async def deleteDataset(
 ) -> None:
     api_config = api_config_override if api_config_override else APIConfig()
 
+    base_path = api_config.base_path
     path = f"/datasets"
     headers = {
         "Content-Type": "application/json",
@@ -139,17 +151,23 @@ async def deleteDataset(
         key: value for (key, value) in query_params.items() if value is not None
     }
 
-    response = await _make_request_async(
-        api_config, "delete", path, headers, params=query_params
-    )
+    async with httpx.AsyncClient(
+        base_url=base_path, verify=api_config.verify
+    ) as client:
+        response = await client.request(
+            "delete",
+            httpx.URL(path),
+            headers=headers,
+            params=query_params,
+        )
 
     if response.status_code != 200:
         raise HTTPException(
             response.status_code,
-            f"deleteDataset failed with status code: {response.status_code}. Response: {response.text[:500]}",
+            f"deleteDataset failed with status code: {response.status_code}",
         )
     else:
-        body = None if 200 == 204 else response.json()
+        body = response.json()
 
     return None
 
@@ -162,6 +180,7 @@ async def addDatapoints(
 ) -> AddDatapointsResponse:
     api_config = api_config_override if api_config_override else APIConfig()
 
+    base_path = api_config.base_path
     path = f"/datasets/{dataset_id}/datapoints"
     headers = {
         "Content-Type": "application/json",
@@ -174,23 +193,23 @@ async def addDatapoints(
         key: value for (key, value) in query_params.items() if value is not None
     }
 
-    response = await _make_request_async(
-        api_config,
-        "post",
-        path,
-        headers,
-        params=query_params,
-        json=data.model_dump(exclude_none=True),
-    )
+    async with httpx.AsyncClient(
+        base_url=base_path, verify=api_config.verify
+    ) as client:
+        response = await client.request(
+            "post",
+            httpx.URL(path),
+            headers=headers,
+            params=query_params,
+            json=data.model_dump(exclude_none=True),
+        )
 
     if response.status_code != 200:
         raise HTTPException(
             response.status_code,
-            f"addDatapoints failed with status code: {response.status_code}. Response: {response.text[:500]}",
+            f"addDatapoints failed with status code: {response.status_code}",
         )
     else:
-        body = None if 200 == 204 else response.json()
+        body = response.json()
 
-    return (
-        AddDatapointsResponse(**body) if body is not None else AddDatapointsResponse()
-    )
+    return AddDatapointsResponse(**body)
