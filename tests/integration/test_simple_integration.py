@@ -279,7 +279,7 @@ class TestSimpleIntegration:
                 }
 
                 events_result = integration_client.events.list(
-                    data={
+                    query={
                         "project": integration_project_name,
                         "filters": [session_filter],
                         "limit": 10,

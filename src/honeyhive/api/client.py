@@ -473,7 +473,8 @@ class EventsAPI(BaseAPI):
 
     # Async methods
     async def list_async(
-        self, query: Union[GetEventsRequest, Dict[str, Any]]
+        self,
+        query: Union[GetEventsRequest, Dict[str, Any]],
     ) -> GetEventsResponse:
         """Get events asynchronously."""
         if isinstance(query, GetEventsRequest):
@@ -483,7 +484,8 @@ class EventsAPI(BaseAPI):
         return await events_svc_async.getEvents(self._api_config, data=req)
 
     async def create_async(
-        self, request: Union[CreateEventRequestBody, CreateEventRequest, Dict[str, Any]]
+        self,
+        request: Union[CreateEventRequestBody, CreateEventRequest, Dict[str, Any]],
     ) -> CreateEventResponse:
         """Create an event asynchronously."""
         if isinstance(request, CreateEventRequestBody):

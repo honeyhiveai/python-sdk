@@ -703,7 +703,7 @@ class TracerOperationsMixin(TracerOperationsInterface):
 
             # Create event via API
             if self.client is not None:
-                response = self.client.events.create(data=event_request)
+                response = self.client.events.create(request=event_request)
                 safe_log(
                     self,
                     "debug",

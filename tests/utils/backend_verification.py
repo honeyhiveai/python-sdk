@@ -69,7 +69,7 @@ def verify_backend_event(
             # Use POST /events/export which requires both project and filters
             if session_id:
                 events_response = client.events.list(
-                    data={
+                    query={
                         "project": project,
                         "filters": [
                             {
@@ -83,7 +83,7 @@ def verify_backend_event(
             else:
                 # Fallback: use events export endpoint filtered by project
                 events_response = client.events.list(
-                    data={"project": project, "filters": [], "limit": 100}
+                    query={"project": project, "filters": [], "limit": 100}
                 )
 
             # Validate API response (may be dict or typed model)
