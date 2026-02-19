@@ -306,7 +306,7 @@ def verify_event_creation(
         # Step 1: Create event
         logger.debug(f"🔄 Creating event for project: {project}")
         # Pass event_request dict directly to events.create()
-        event_response = client.events.create(data=event_request)
+        event_response = client.events.create(request=event_request)
 
         # Validate creation response - events.create() returns CreateEventResponse or dict
         if hasattr(event_response, "event_id"):

@@ -699,7 +699,7 @@ class TestEvaluate:
 
         # Verify
         assert result == mock_result
-        mock_client.datasets.get_dataset.assert_called_once_with("ds-123")
+        mock_client.datasets.get_dataset.assert_called_once_with("ds-123", project="test-project")
         assert mock_client.datapoints.get_datapoint.call_count == 2
         mock_run_experiment.assert_called_once()
         mock_get_result.assert_called_once()

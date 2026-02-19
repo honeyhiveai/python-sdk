@@ -943,7 +943,7 @@ def evaluate(  # pylint: disable=too-many-locals,too-many-branches
             logger.info("DEBUG - Is EXT- dataset: %s", dataset_id.startswith("EXT-"))
 
         # Get dataset metadata
-        ds_response = client.datasets.get_dataset(dataset_id)
+        ds_response = client.datasets.get_dataset(dataset_id, project=project)
         dataset_list = []
         datapoint_ids = []
 
