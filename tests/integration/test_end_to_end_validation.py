@@ -230,7 +230,11 @@ class TestEndToEndValidation:
             }
 
             events_result = integration_client.events.list(
-                query={"project": real_project, "filters": [session_filter], "limit": 20}
+                query={
+                    "project": real_project,
+                    "filters": [session_filter],
+                    "limit": 20,
+                }
             )
 
             # Validate events result
