@@ -7,8 +7,6 @@ This module provides base functionality that can be extended for features like:
 - Custom error handling
 """
 
-from typing import Optional
-
 from honeyhive._generated.api_config import APIConfig
 
 

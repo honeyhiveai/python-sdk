@@ -16,6 +16,7 @@ from typing import Any, Callable, Dict, List, Optional
 from uuid import UUID
 
 from honeyhive.api.client import HoneyHive
+from honeyhive.config.utils import resolve_project
 from honeyhive.experiments.evaluators import evaluator as evaluator_class
 from honeyhive.experiments.results import get_run_result
 from honeyhive.experiments.utils import (
@@ -793,7 +794,7 @@ def evaluate(  # pylint: disable=too-many-locals,too-many-branches
     instrumentors: Optional[List[Callable[[], Any]]] = None,
     api_key: Optional[str] = None,
     server_url: Optional[str] = None,
-    project: str = "default",
+    project: Optional[str] = None,
     name: Optional[str] = None,
     max_workers: int = 10,
     aggregate_function: str = "average",
@@ -824,7 +825,7 @@ def evaluate(  # pylint: disable=too-many-locals,too-many-branches
         api_key: HoneyHive API key (or set HONEYHIVE_API_KEY/HH_API_KEY env var)
         server_url: HoneyHive server URL (or set HONEYHIVE_SERVER_URL/
             HH_SERVER_URL/HH_API_URL env var)
-        project: HoneyHive project (or set HONEYHIVE_PROJECT env var)
+        project: HoneyHive project (or set HONEYHIVE_PROJECT/HH_PROJECT env var)
         name: Experiment run name (auto-generated if not provided)
         max_workers: ThreadPool size for concurrent execution (default: 10)
         aggregate_function: Backend aggregation function
@@ -894,8 +895,9 @@ def evaluate(  # pylint: disable=too-many-locals,too-many-branches
         raise ValueError("Must provide either 'dataset' or 'dataset_id'")
     if dataset is not None and dataset_id is not None:
         raise ValueError("Cannot provide both 'dataset' and 'dataset_id'")
-    if project is None:
-        raise ValueError("Must provide 'project' or set HONEYHIVE_PROJECT env var")
+
+    # Resolve project from parameter or HONEYHIVE_PROJECT / HH_PROJECT env vars
+    project = resolve_project(project)
 
     # Load from environment variables if not provided
     # Support both HONEYHIVE_* and HH_* prefixes for convenience

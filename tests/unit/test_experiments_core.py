@@ -526,7 +526,7 @@ class TestEvaluate:
 
     def test_validation_no_project(self, simple_function: Any) -> None:
         """Test that ValueError is raised when project is None."""
-        with pytest.raises(ValueError, match="Must provide 'project'"):
+        with pytest.raises(ValueError, match="project name is required"):
             evaluate(
                 function=simple_function,
                 dataset=[{"inputs": {}}],
