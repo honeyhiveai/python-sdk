@@ -704,14 +704,14 @@ class MetricsAPI(BaseAPI):
     """Metrics API."""
 
     # Sync methods
-    def list(self, project_name: Optional[str] = None) -> List[Metric]:
+    def list(self, project: Optional[str] = None) -> List[Metric]:
         """List metrics.
 
         Args:
-            project_name: Project name. Falls back to HH_PROJECT env var if not provided.
+            project: Project name. Falls back to HH_PROJECT env var if not provided.
         """
-        project_name = resolve_project(project_name)
-        return metrics_svc.getMetrics(self._api_config, project_name=project_name)
+        project = resolve_project(project)
+        return metrics_svc.getMetrics(self._api_config, project_name=project)
 
     def create(self, request: CreateMetricRequest) -> None:
         """Create a metric."""
@@ -726,11 +726,11 @@ class MetricsAPI(BaseAPI):
         return metrics_svc.deleteMetric(self._api_config, metric_id=id)
 
     # Async methods
-    async def list_async(self, project_name: Optional[str] = None) -> List[Metric]:
+    async def list_async(self, project: Optional[str] = None) -> List[Metric]:
         """List metrics asynchronously."""
-        project_name = resolve_project(project_name)
+        project = resolve_project(project)
         return await metrics_svc_async.getMetrics(
-            self._api_config, project_name=project_name
+            self._api_config, project_name=project
         )
 
     async def create_async(self, request: CreateMetricRequest) -> None:
@@ -758,9 +758,9 @@ class MetricsAPI(BaseAPI):
         """Delete a metric (backwards compatible alias)."""
         return self.delete(id)
 
-    def list_metrics(self, project_name: Optional[str] = None) -> List[Metric]:
+    def list_metrics(self, project: Optional[str] = None) -> List[Metric]:
         """List metrics (backwards compatible alias)."""
-        return self.list(project_name=project_name)
+        return self.list(project=project)
 
 
 class ProjectsAPI(BaseAPI):
