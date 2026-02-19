@@ -55,7 +55,14 @@ def createConfiguration(
         key: value for (key, value) in query_params.items() if value is not None
     }
 
-    response = _make_request(api_config, "post", path, headers, params=query_params, json=data.model_dump(exclude_none=True))
+    response = _make_request(
+        api_config,
+        "post",
+        path,
+        headers,
+        params=query_params,
+        json=data.model_dump(exclude_none=True),
+    )
 
     if response.status_code != 200:
         raise HTTPException(
@@ -88,7 +95,14 @@ def updateConfiguration(
         key: value for (key, value) in query_params.items() if value is not None
     }
 
-    response = _make_request(api_config, "put", path, headers, params=query_params, json=data.model_dump(exclude_none=True))
+    response = _make_request(
+        api_config,
+        "put",
+        path,
+        headers,
+        params=query_params,
+        json=data.model_dump(exclude_none=True),
+    )
 
     if response.status_code != 200:
         raise HTTPException(

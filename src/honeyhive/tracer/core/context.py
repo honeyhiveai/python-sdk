@@ -441,7 +441,9 @@ class TracerContextMixin(TracerContextInterface):
                 session_params["user_properties"] = user_properties
 
             # Create session via API
-            response: StartSessionResponse = self.client.sessions.start(data=session_params)
+            response: StartSessionResponse = self.client.sessions.start(
+                data=session_params
+            )
             new_session_id = response.session_id
 
             # Set session_id in baggage (ContextVar-based, request-scoped)
@@ -580,7 +582,9 @@ class TracerContextMixin(TracerContextInterface):
                 session_params["user_properties"] = user_properties
 
             # Create session via async API
-            response: StartSessionResponse = await self.client.sessions.start_async(data=session_params)
+            response: StartSessionResponse = await self.client.sessions.start_async(
+                data=session_params
+            )
             new_session_id = response.session_id
 
             # Set session_id in baggage (ContextVar-based, request-scoped)
