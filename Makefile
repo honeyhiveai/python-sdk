@@ -76,7 +76,7 @@ test-all:
 	pytest -n auto
 
 test-integration:
-	pytest tests/integration/
+	pytest tests/integration/ --cov=src/honeyhive --cov-report=term-missing --cov-report=html
 
 test-unit:
 	pytest tests/unit/ -n auto
