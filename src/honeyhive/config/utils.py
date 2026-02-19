@@ -8,6 +8,7 @@ compatibility and creating unified flattened configurations.
 # pylint: disable=too-many-branches
 # Justification: Config merging logic requires comprehensive validation branches
 
+import os
 from typing import Any, Optional, Tuple
 
 from ..utils.dotdict import DotDict
@@ -20,6 +21,34 @@ from .models import (
     SessionConfig,
     TracerConfig,
 )
+
+
+def resolve_project(project: Optional[str] = None) -> str:
+    """Resolve project name from parameter or environment variable.
+
+    Checks HONEYHIVE_PROJECT first, then HH_PROJECT, matching the
+    convention used for api_key (HONEYHIVE_API_KEY / HH_API_KEY) and
+    server_url (HONEYHIVE_SERVER_URL / HH_SERVER_URL).
+
+    Args:
+        project: Explicit project name. If None or empty, falls back to
+                 HONEYHIVE_PROJECT or HH_PROJECT environment variables.
+
+    Returns:
+        The resolved project name.
+
+    Raises:
+        ValueError: If no project name is available from either source.
+    """
+    if project:
+        return project
+    env_project = os.getenv("HONEYHIVE_PROJECT") or os.getenv("HH_PROJECT")
+    if env_project:
+        return env_project
+    raise ValueError(
+        "A project name is required. "
+        "Pass it as a parameter or set the HH_PROJECT environment variable."
+    )
 
 
 def merge_configs_with_params(
