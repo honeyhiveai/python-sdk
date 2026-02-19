@@ -330,13 +330,13 @@ class DatasetsAPI(BaseAPI):
         return datasets_svc.deleteDataset(self._api_config, dataset_id=id)
 
     def add_datapoints(
-        self, dataset_id: str, data: Union[AddDatapointsRequest, Dict[str, Any]]
+        self, dataset_id: str, request: Union[AddDatapointsRequest, Dict[str, Any]]
     ) -> AddDatapointsResponse:
         """Add datapoints to a dataset."""
-        if isinstance(data, AddDatapointsRequest):
-            req = data
+        if isinstance(request, AddDatapointsRequest):
+            req = request
         else:
-            req = AddDatapointsRequest(**data)
+            req = AddDatapointsRequest(**request)
         return datasets_svc.addDatapoints(
             self._api_config, dataset_id=dataset_id, data=req
         )
@@ -374,13 +374,13 @@ class DatasetsAPI(BaseAPI):
         return await datasets_svc_async.deleteDataset(self._api_config, dataset_id=id)
 
     async def add_datapoints_async(
-        self, dataset_id: str, data: Union[AddDatapointsRequest, Dict[str, Any]]
+        self, dataset_id: str, request: Union[AddDatapointsRequest, Dict[str, Any]]
     ) -> AddDatapointsResponse:
         """Add datapoints to a dataset asynchronously."""
-        if isinstance(data, AddDatapointsRequest):
-            req = data
+        if isinstance(request, AddDatapointsRequest):
+            req = request
         else:
-            req = AddDatapointsRequest(**data)
+            req = AddDatapointsRequest(**request)
         return await datasets_svc_async.addDatapoints(
             self._api_config, dataset_id=dataset_id, data=req
         )
@@ -411,24 +411,24 @@ class EventsAPI(BaseAPI):
     """Events API."""
 
     # Sync methods
-    def list(self, data: Union[GetEventsRequest, Dict[str, Any]]) -> GetEventsResponse:
+    def list(self, query: Union[GetEventsRequest, Dict[str, Any]]) -> GetEventsResponse:
         """Get events (POST /events/export)."""
-        if isinstance(data, GetEventsRequest):
-            req = data
+        if isinstance(query, GetEventsRequest):
+            req = query
         else:
-            req = GetEventsRequest(**data)
+            req = GetEventsRequest(**query)
         return events_svc.getEvents(self._api_config, data=req)
 
     def create(
-        self, data: Union[CreateEventRequestBody, CreateEventRequest, Dict[str, Any]]
+        self, request: Union[CreateEventRequestBody, CreateEventRequest, Dict[str, Any]]
     ) -> CreateEventResponse:
         """Create an event."""
-        if isinstance(data, CreateEventRequestBody):
-            req = data
-        elif isinstance(data, dict):
-            req = CreateEventRequestBody(event=CreateEventRequest(**data))
+        if isinstance(request, CreateEventRequestBody):
+            req = request
+        elif isinstance(request, dict):
+            req = CreateEventRequestBody(event=CreateEventRequest(**request))
         else:
-            req = CreateEventRequestBody(event=data)
+            req = CreateEventRequestBody(event=request)
         return events_svc.createEvent(self._api_config, data=req)
 
     def update(self, data: Union[UpdateEventRequest, Dict[str, Any]]) -> None:
@@ -473,25 +473,25 @@ class EventsAPI(BaseAPI):
 
     # Async methods
     async def list_async(
-        self, data: Union[GetEventsRequest, Dict[str, Any]]
+        self, query: Union[GetEventsRequest, Dict[str, Any]]
     ) -> GetEventsResponse:
         """Get events asynchronously."""
-        if isinstance(data, GetEventsRequest):
-            req = data
+        if isinstance(query, GetEventsRequest):
+            req = query
         else:
-            req = GetEventsRequest(**data)
+            req = GetEventsRequest(**query)
         return await events_svc_async.getEvents(self._api_config, data=req)
 
     async def create_async(
-        self, data: Union[CreateEventRequestBody, CreateEventRequest, Dict[str, Any]]
+        self, request: Union[CreateEventRequestBody, CreateEventRequest, Dict[str, Any]]
     ) -> CreateEventResponse:
         """Create an event asynchronously."""
-        if isinstance(data, CreateEventRequestBody):
-            req = data
-        elif isinstance(data, dict):
-            req = CreateEventRequestBody(event=CreateEventRequest(**data))
+        if isinstance(request, CreateEventRequestBody):
+            req = request
+        elif isinstance(request, dict):
+            req = CreateEventRequestBody(event=CreateEventRequest(**request))
         else:
-            req = CreateEventRequestBody(event=data)
+            req = CreateEventRequestBody(event=request)
         return await events_svc_async.createEvent(self._api_config, data=req)
 
     async def update_async(
@@ -516,26 +516,26 @@ class EventsAPI(BaseAPI):
 
     # Backwards compatible aliases
     def create_event(
-        self, data: Union[CreateEventRequestBody, CreateEventRequest, Dict[str, Any]]
+        self, request: Union[CreateEventRequestBody, CreateEventRequest, Dict[str, Any]]
     ) -> CreateEventResponse:
         """Create an event (backwards compatible alias for create())."""
-        return self.create(data)
+        return self.create(request)
 
     def update_event(self, data: Union[UpdateEventRequest, Dict[str, Any]]) -> None:
         """Update an event (backwards compatible alias for update())."""
         return self.update(data)
 
     def list_events(
-        self, data: Union[GetEventsRequest, Dict[str, Any]]
+        self, query: Union[GetEventsRequest, Dict[str, Any]]
     ) -> GetEventsResponse:
         """List events (backwards compatible alias for list())."""
-        return self.list(data)
+        return self.list(query)
 
     def get_events(
-        self, data: Union[GetEventsRequest, Dict[str, Any]]
+        self, query: Union[GetEventsRequest, Dict[str, Any]]
     ) -> GetEventsResponse:
         """Get events (backwards compatible alias for list())."""
-        return self.list(data)
+        return self.list(query)
 
     def get_by_session_id(self, session_id: str) -> Dict[str, Any]:
         """Get session event by session ID (GET /session/{session_id}).
