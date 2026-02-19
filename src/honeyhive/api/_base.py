@@ -7,10 +7,7 @@ This module provides base functionality that can be extended for features like:
 - Custom error handling
 """
 
-from typing import Optional
-
 from honeyhive._generated.api_config import APIConfig
-from honeyhive.config.utils import resolve_project
 
 
 class BaseAPI:
@@ -27,11 +24,3 @@ class BaseAPI:
     def api_config(self) -> APIConfig:
         """Access the API configuration."""
         return self._api_config
-
-    @staticmethod
-    def _resolve_project(project: Optional[str] = None) -> str:
-        """Resolve project name from parameter or environment variable.
-
-        Delegates to honeyhive.config.utils.resolve_project().
-        """
-        return resolve_project(project)

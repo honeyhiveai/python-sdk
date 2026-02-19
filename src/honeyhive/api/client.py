@@ -104,6 +104,8 @@ from honeyhive.models import (
     UpdateMetricRequest,
 )
 
+from honeyhive.config.utils import resolve_project
+
 from ._base import BaseAPI
 
 
@@ -121,7 +123,7 @@ class ConfigurationsAPI(BaseAPI):
             env: Optional environment filter.
             name: Optional name filter.
         """
-        project = self._resolve_project(project)
+        project = resolve_project(project)
         return configs_svc.getConfigurations(
             self._api_config, project=project, env=env, name=name
         )
@@ -143,7 +145,7 @@ class ConfigurationsAPI(BaseAPI):
         self, project: Optional[str] = None, env: Optional[str] = None, name: Optional[str] = None
     ) -> List[Configuration]:
         """List configurations asynchronously."""
-        project = self._resolve_project(project)
+        project = resolve_project(project)
         return await configs_svc_async.getConfigurations(
             self._api_config, project=project, env=env, name=name
         )
@@ -201,7 +203,7 @@ class DatapointsAPI(BaseAPI):
             datapoint_ids: Optional list of datapoint IDs to fetch.
             dataset_name: Optional dataset name to filter by.
         """
-        project = self._resolve_project(project)
+        project = resolve_project(project)
         return datapoints_svc.getDatapoints(
             self._api_config,
             project=project,
@@ -233,7 +235,7 @@ class DatapointsAPI(BaseAPI):
         dataset_name: Optional[str] = None,
     ) -> GetDatapointsResponse:
         """List datapoints asynchronously."""
-        project = self._resolve_project(project)
+        project = resolve_project(project)
         return await datapoints_svc_async.getDatapoints(
             self._api_config,
             project=project,
@@ -306,7 +308,7 @@ class DatasetsAPI(BaseAPI):
             dataset_id: Optional dataset ID to fetch.
             name: Optional dataset name filter.
         """
-        project = self._resolve_project(project)
+        project = resolve_project(project)
         return datasets_svc.getDatasets(
             self._api_config,
             project=project,
@@ -348,7 +350,7 @@ class DatasetsAPI(BaseAPI):
         name: Optional[str] = None,
     ) -> GetDatasetsResponse:
         """List datasets asynchronously."""
-        project = self._resolve_project(project)
+        project = resolve_project(project)
         return await datasets_svc_async.getDatasets(
             self._api_config,
             project=project,
@@ -592,7 +594,7 @@ class ExperimentsAPI(BaseAPI):
             project_id: The project ID. Falls back to HH_PROJECT env var if not provided.
             aggregate_function: Aggregation function to apply.
         """
-        project_id = self._resolve_project(project_id)
+        project_id = resolve_project(project_id)
         result = experiments_svc.getExperimentResult(
             self._api_config,
             run_id=run_id,
@@ -616,7 +618,7 @@ class ExperimentsAPI(BaseAPI):
             project_id: The project ID. Falls back to HH_PROJECT env var if not provided.
             aggregate_function: Aggregation function to apply.
         """
-        project_id = self._resolve_project(project_id)
+        project_id = resolve_project(project_id)
         result = experiments_svc.getExperimentComparison(
             self._api_config,
             project_id=project_id,
@@ -660,7 +662,7 @@ class ExperimentsAPI(BaseAPI):
         aggregate_function: Optional[str] = None,
     ) -> Dict[str, Any]:
         """Get experiment run result asynchronously."""
-        project_id = self._resolve_project(project_id)
+        project_id = resolve_project(project_id)
         result = await experiments_svc_async.getExperimentResult(
             self._api_config,
             run_id=run_id,
@@ -677,7 +679,7 @@ class ExperimentsAPI(BaseAPI):
         aggregate_function: Optional[str] = None,
     ) -> Dict[str, Any]:
         """Compare two experiment runs asynchronously."""
-        project_id = self._resolve_project(project_id)
+        project_id = resolve_project(project_id)
         result = await experiments_svc_async.getExperimentComparison(
             self._api_config,
             project_id=project_id,
@@ -708,7 +710,7 @@ class MetricsAPI(BaseAPI):
         Args:
             project_name: Project name. Falls back to HH_PROJECT env var if not provided.
         """
-        project_name = self._resolve_project(project_name)
+        project_name = resolve_project(project_name)
         return metrics_svc.getMetrics(self._api_config, project_name=project_name)
 
     def create(self, request: CreateMetricRequest) -> None:
@@ -726,7 +728,7 @@ class MetricsAPI(BaseAPI):
     # Async methods
     async def list_async(self, project_name: Optional[str] = None) -> List[Metric]:
         """List metrics asynchronously."""
-        project_name = self._resolve_project(project_name)
+        project_name = resolve_project(project_name)
         return await metrics_svc_async.getMetrics(
             self._api_config, project_name=project_name
         )
