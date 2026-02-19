@@ -307,7 +307,6 @@ class DatasetsAPI(BaseAPI):
         project: Optional[str] = None,
         type: Optional[str] = None,
         dataset_id: Optional[str] = None,
-        name: Optional[str] = None,
     ) -> GetDatasetsResponse:
         """List datasets.
 
@@ -315,7 +314,6 @@ class DatasetsAPI(BaseAPI):
             project: Project name. Falls back to HH_PROJECT env var if not provided.
             type: Optional dataset type filter.
             dataset_id: Optional dataset ID to fetch.
-            name: Optional dataset name filter.
         """
         project = resolve_project(project)
         return datasets_svc.getDatasets(
@@ -323,7 +321,6 @@ class DatasetsAPI(BaseAPI):
             project=project,
             type=type,
             dataset_id=dataset_id,
-            name=name,
         )
 
     def create(self, request: CreateDatasetRequest) -> CreateDatasetResponse:
@@ -356,7 +353,6 @@ class DatasetsAPI(BaseAPI):
         project: Optional[str] = None,
         type: Optional[str] = None,
         dataset_id: Optional[str] = None,
-        name: Optional[str] = None,
     ) -> GetDatasetsResponse:
         """List datasets asynchronously."""
         project = resolve_project(project)
@@ -365,7 +361,6 @@ class DatasetsAPI(BaseAPI):
             project=project,
             type=type,
             dataset_id=dataset_id,
-            name=name,
         )
 
     async def create_async(

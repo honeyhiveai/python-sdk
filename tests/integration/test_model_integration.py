@@ -11,7 +11,6 @@ from honeyhive.models import (
     CreateDatapointRequest,
     CreateToolRequest,
     PostExperimentRunRequest,
-    UUIDType,
 )
 
 # v0 models - these don't exist in v1, tests need to be migrated
@@ -161,7 +160,7 @@ class TestModelIntegration:
         run_request = PostExperimentRunRequest(
             project="test-project",
             name="workflow-evaluation",
-            event_ids=[UUIDType()],  # UUIDType is an empty model in the spec
+            event_ids=["test-event-id"],
             configuration={"metrics": ["accuracy", "precision"]},
         )
 
