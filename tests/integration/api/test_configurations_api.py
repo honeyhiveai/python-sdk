@@ -43,9 +43,7 @@ class TestConfigurationsAPI:
 
         # Verify via list
         time.sleep(2)
-        configs = integration_client.configurations.list(
-            project=integration_project_name
-        )
+        configs = integration_client.configurations.list()
         assert isinstance(configs, list)
 
         # Find our config and get its ID for cleanup
@@ -99,9 +97,7 @@ class TestConfigurationsAPI:
             integration_client.configurations.create(config_request)
 
         time.sleep(2)
-        configs = integration_client.configurations.list(
-            project=integration_project_name
-        )
+        configs = integration_client.configurations.list()
 
         # configurations.list() returns a list of configuration objects
         assert isinstance(configs, list)
@@ -140,9 +136,7 @@ class TestConfigurationsAPI:
         time.sleep(2)
 
         # Find the created config to get its ID
-        configs = integration_client.configurations.list(
-            project=integration_project_name
-        )
+        configs = integration_client.configurations.list()
         created_config = None
         for cfg in configs:
             if hasattr(cfg, "name") and cfg.name == config_name:
@@ -199,9 +193,7 @@ class TestConfigurationsAPI:
         time.sleep(2)
 
         # Find created config ID
-        configs = integration_client.configurations.list(
-            project=integration_project_name
-        )
+        configs = integration_client.configurations.list()
         created_config = None
         for cfg in configs:
             if hasattr(cfg, "name") and cfg.name == config_name:

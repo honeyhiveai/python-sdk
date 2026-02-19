@@ -92,9 +92,7 @@ class TestExperimentsAPI:
 
         time.sleep(2)
 
-        runs_response = integration_client.experiments.list_runs(
-            project=integration_project_name
-        )
+        runs_response = integration_client.experiments.list_runs()
 
         assert runs_response is not None
         runs = runs_response.runs if hasattr(runs_response, "runs") else []

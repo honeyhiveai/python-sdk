@@ -50,9 +50,7 @@ class TestDatasetsAPI:
         time.sleep(2)
 
         # Verify via list - API requires project param
-        datasets_response = integration_client.datasets.list(
-            project=integration_project_name
-        )
+        datasets_response = integration_client.datasets.list()
         # GetDatasetsResponse has datasets field (list of Dataset objects)
         datasets = getattr(datasets_response, "testcases", None) or getattr(
             datasets_response, "datasets", None
@@ -93,9 +91,7 @@ class TestDatasetsAPI:
 
         # Test retrieval via list (v1 doesn't have get_dataset method)
         # API list() requires project, doesn't support name filter
-        datasets_response = integration_client.datasets.list(
-            project=integration_project_name
-        )
+        datasets_response = integration_client.datasets.list()
         datasets = getattr(datasets_response, "testcases", None) or getattr(
             datasets_response, "datasets", None
         )
@@ -142,9 +138,7 @@ class TestDatasetsAPI:
         time.sleep(2)
 
         # Test listing - API requires project param
-        datasets_response = integration_client.datasets.list(
-            project=integration_project_name
-        )
+        datasets_response = integration_client.datasets.list()
 
         datasets = getattr(datasets_response, "testcases", None) or getattr(
             datasets_response, "datasets", None
@@ -175,9 +169,7 @@ class TestDatasetsAPI:
         time.sleep(2)
 
         # API list() doesn't support name filter - list all and filter in-memory
-        datasets_response = integration_client.datasets.list(
-            project=integration_project_name
-        )
+        datasets_response = integration_client.datasets.list()
 
         datasets = getattr(datasets_response, "testcases", None) or getattr(
             datasets_response, "datasets", None
