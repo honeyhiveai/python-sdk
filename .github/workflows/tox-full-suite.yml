@@ -106,7 +106,7 @@ jobs:
           pip install tox>=4.0
 
       - name: Run format checks (black + isort)
-        run: tox -e format
+        run: make check-format
 
   # === TYPE CHECKING (mypy) ===
   typecheck:
@@ -130,7 +130,7 @@ jobs:
           pip install tox>=4.0
 
       - name: Run mypy type checking
-        run: tox -e typecheck
+        run: make check-typecheck
 
   # === PYTHON VERSION TESTING ===
   python-tests:
