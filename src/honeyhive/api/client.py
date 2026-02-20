@@ -91,6 +91,7 @@ from honeyhive._generated.services import async_Metrics_service as metrics_svc_a
 from honeyhive._generated.services import async_Projects_service as projects_svc_async
 from honeyhive._generated.services import async_Session_service as session_svc_async
 from honeyhive._generated.services import async_Tools_service as tools_svc_async
+from honeyhive.config.utils import resolve_project
 
 # Import aliased model names for FED-compatible type annotations
 from honeyhive.models import (
@@ -104,8 +105,6 @@ from honeyhive.models import (
     UpdateMetricRequest,
 )
 
-from honeyhive.config.utils import resolve_project
-
 from ._base import BaseAPI
 
 
@@ -114,7 +113,10 @@ class ConfigurationsAPI(BaseAPI):
 
     # Sync methods
     def list(
-        self, project: Optional[str] = None, env: Optional[str] = None, name: Optional[str] = None
+        self,
+        project: Optional[str] = None,
+        env: Optional[str] = None,
+        name: Optional[str] = None,
     ) -> List[Configuration]:
         """List configurations.
 
@@ -142,7 +144,10 @@ class ConfigurationsAPI(BaseAPI):
 
     # Async methods
     async def list_async(
-        self, project: Optional[str] = None, env: Optional[str] = None, name: Optional[str] = None
+        self,
+        project: Optional[str] = None,
+        env: Optional[str] = None,
+        name: Optional[str] = None,
     ) -> List[Configuration]:
         """List configurations asynchronously."""
         project = resolve_project(project)
@@ -181,7 +186,9 @@ class ConfigurationsAPI(BaseAPI):
         """Delete a configuration (backwards compatible alias)."""
         return self.delete(id)
 
-    def list_configurations(self, project: Optional[str] = None, **kwargs: Any) -> List[Configuration]:
+    def list_configurations(
+        self, project: Optional[str] = None, **kwargs: Any
+    ) -> List[Configuration]:
         """List configurations (backwards compatible alias)."""
         return self.list(project=project, **kwargs)
 
@@ -284,7 +291,9 @@ class DatapointsAPI(BaseAPI):
         """Delete a datapoint (backwards compatible alias for delete())."""
         return self.delete(id)
 
-    def list_datapoints(self, project: Optional[str] = None, **kwargs: Any) -> GetDatapointsResponse:
+    def list_datapoints(
+        self, project: Optional[str] = None, **kwargs: Any
+    ) -> GetDatapointsResponse:
         """List datapoints (backwards compatible alias)."""
         return self.list(project=project, **kwargs)
 
@@ -386,7 +395,9 @@ class DatasetsAPI(BaseAPI):
         )
 
     # Backwards compatible aliases
-    def get_dataset(self, id: str, project: Optional[str] = None) -> GetDatasetsResponse:
+    def get_dataset(
+        self, id: str, project: Optional[str] = None
+    ) -> GetDatasetsResponse:
         """Get a dataset by ID (backwards compatible alias)."""
         return self.list(project=project, dataset_id=id)
 
@@ -402,7 +413,9 @@ class DatasetsAPI(BaseAPI):
         """Delete a dataset (backwards compatible alias for delete())."""
         return self.delete(id)
 
-    def list_datasets(self, project: Optional[str] = None, **kwargs: Any) -> GetDatasetsResponse:
+    def list_datasets(
+        self, project: Optional[str] = None, **kwargs: Any
+    ) -> GetDatasetsResponse:
         """List datasets (backwards compatible alias)."""
         return self.list(project=project, **kwargs)
 

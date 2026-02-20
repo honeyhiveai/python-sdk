@@ -62,7 +62,11 @@ def createDataset(
     }
 
     response = _make_request(
-        api_config, "post", path, headers, params=query_params,
+        api_config,
+        "post",
+        path,
+        headers,
+        params=query_params,
         json=data.model_dump(exclude_none=True),
     )
 
@@ -97,7 +101,11 @@ def updateDataset(
     }
 
     response = _make_request(
-        api_config, "put", path, headers, params=query_params,
+        api_config,
+        "put",
+        path,
+        headers,
+        params=query_params,
         json=data.model_dump(exclude_none=True),
     )
 
@@ -163,7 +171,11 @@ def addDatapoints(
     }
 
     response = _make_request(
-        api_config, "post", path, headers, params=query_params,
+        api_config,
+        "post",
+        path,
+        headers,
+        params=query_params,
         json=data.model_dump(exclude_none=True),
     )
 
