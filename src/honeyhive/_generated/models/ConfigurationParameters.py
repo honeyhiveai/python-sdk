@@ -12,7 +12,11 @@ class ConfigurationParameters(BaseModel):
     ConfigurationParameters model
     """
 
-    model_config = {"populate_by_name": True, "validate_assignment": True}
+    model_config = {
+        "populate_by_name": True,
+        "validate_assignment": True,
+        "extra": "allow",
+    }
 
     call_type: str = Field(validation_alias="call_type")
 

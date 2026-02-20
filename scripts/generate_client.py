@@ -107,7 +107,22 @@ def move_generated_code(temp_dir: Path, output_dir: Path) -> bool:
     return True
 
 
-def post_process(output_dir: Path) -> bool:
+def _get_additional_properties_schemas(spec_path: Path) -> set[str]:
+    """Return the set of schema names that have additionalProperties: true."""
+    import yaml
+
+    with open(spec_path) as f:
+        spec = yaml.safe_load(f)
+
+    schemas = spec.get("components", {}).get("schemas", {})
+    result = set()
+    for name, schema in schemas.items():
+        if schema.get("additionalProperties") is True:
+            result.add(name)
+    return result
+
+
+def post_process(output_dir: Path, spec_path: Path) -> bool:
     """
     Apply any post-processing customizations to the generated code.
 
@@ -125,14 +140,14 @@ def post_process(output_dir: Path) -> bool:
         init_file.write_text('"""Auto-generated HoneyHive API client."""\n')
         print("  ✓ Created __init__.py")
 
-    # Generator bug: fields named with a leading underscore (e.g. _id) are
-    # emitted verbatim, but Pydantic v2 forbids underscore-prefixed field
-    # names. Rename the Python field to drop the underscore while keeping
-    # the validation_alias so the original JSON key still works.
     import re
 
     models_dir = output_dir / "models"
     if models_dir.exists():
+        # Generator bug: fields named with a leading underscore (e.g. _id) are
+        # emitted verbatim, but Pydantic v2 forbids underscore-prefixed field
+        # names. Rename the Python field to drop the underscore while keeping
+        # the validation_alias so the original JSON key still works.
         underscore_fixed = 0
         pattern = re.compile(
             r"^(\s+)(_\w+)(:\s+.*Field\(.*validation_alias=[\"'])(_\w+)([\"'])",
@@ -149,6 +164,28 @@ def post_process(output_dir: Path) -> bool:
                 underscore_fixed += count
         if underscore_fixed > 0:
             print(f"  ✓ Fixed {underscore_fixed} leading-underscore field(s) in models")
+
+        # Generator limitation: schemas with additionalProperties: true need
+        # Pydantic's extra="allow" so that arbitrary extra keys are preserved
+        # during validation and serialization. The generator does not handle
+        # this, so we patch the model_config in the generated files.
+        extra_allow_schemas = _get_additional_properties_schemas(spec_path)
+        extra_allow_fixed = 0
+        for schema_name in extra_allow_schemas:
+            model_file = models_dir / f"{schema_name}.py"
+            if not model_file.exists():
+                continue
+            content = model_file.read_text()
+            old = '"populate_by_name": True, "validate_assignment": True}'
+            new = '"populate_by_name": True, "validate_assignment": True, "extra": "allow"}'
+            if old in content:
+                model_file.write_text(content.replace(old, new))
+                extra_allow_fixed += 1
+        if extra_allow_fixed > 0:
+            print(
+                f"  ✓ Added extra='allow' to {extra_allow_fixed} model(s) "
+                f"with additionalProperties: {', '.join(sorted(extra_allow_schemas))}"
+            )
 
     print("  ✓ Post-processing complete")
     return True
@@ -199,7 +236,7 @@ def main() -> int:
         return 1
 
     # Apply post-processing
-    if not post_process(OUTPUT_DIR):
+    if not post_process(OUTPUT_DIR, spec_path):
         return 1
 
     print()

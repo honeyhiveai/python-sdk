@@ -344,7 +344,7 @@ class TestModelIntegration:
         # Verify serialization completed
         assert isinstance(config_dict, dict)
         assert config_dict["name"] == "large-config"
-        assert len(config_dict["parameters"]) == 100
+        assert len(config_dict["parameters"]) == 102
 
         # Verify reasonable performance (should complete in under 1 second)
         duration = (end_time - start_time).total_seconds()
